@@ -1,0 +1,164 @@
+[project]
+name = "taskdog"
+version = "0.3.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "click>=8.3.0",
+  "rich>=14.2.0",
+  "textual>=0.88.0",
+  "python-dateutil>=2.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pre-commit>=3.6.0",
+  "ruff>=0.3.0",
+  "mypy>=1.8.0",
+  "types-python-dateutil>=2.8.0",
+]
+
+[project.scripts]
+taskdog = "taskdog.cli:cli"
+
+[tool.setuptools]
+packages = [
+  # Core CLI
+  "taskdog",
+  "utils",
+  # Clean Architecture packages
+  "domain",
+  "domain.entities",
+  "domain.services",
+  "domain.exceptions",
+  "application",
+  "application.use_cases",
+  "application.validators",
+  "application.services",
+  "application.services.optimization",
+  "application.sorters",
+  "application.queries",
+  "application.queries.filters",
+  "application.dto",
+  "infrastructure",
+  "infrastructure.persistence",
+  "presentation",
+  "presentation.cli",
+  "presentation.cli.commands",
+  "presentation.console",
+  "presentation.constants",
+  "presentation.exporters",
+  "presentation.renderers",
+  "presentation.utils",
+  "presentation.tui",
+  "presentation.tui.commands",
+  "presentation.tui.forms",
+  "presentation.tui.mixins",
+  "presentation.tui.screens",
+  "presentation.tui.services",
+  "presentation.tui.widgets",
+  "shared",
+  "shared.click_types",
+  "shared.utils",
+]
+package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+"presentation.tui" = ["styles/*.tcss"]
+
+# Ruff configuration
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "UP",  # pyupgrade
+  "B",   # flake8-bugbear
+  "C90", # mccabe
+  "N",   # pep8-naming
+  "SIM", # simplify
+  "RUF", # ruff-specific rules
+]
+ignore = [
+  "E501", # line too long (handled by formatter)
+]
+
+# Per-file ignores for complex functions that need refactoring
+[tool.ruff.lint.per-file-ignores]
+"src/application/services/hierarchy_manager.py" = ["C901"]
+"src/application/services/optimization_summary_builder.py" = ["C901"]
+"src/application/services/workload_allocator.py" = ["C901"]
+"src/domain/services/workload_calculator.py" = ["C901"]
+"src/infrastructure/persistence/json_task_repository.py" = ["C901"]
+"src/presentation/cli/batch_executor.py" = ["C901"]
+"src/presentation/renderers/rich_gantt_renderer.py" = ["C901"]
+"src/domain/exceptions/task_exceptions.py" = ["N818"]  # TaskNotFoundException is widely used
+"tests/**/*.py" = ["SIM115", "RUF015"]  # Test code patterns are acceptable
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.isort]
+known-first-party = ["taskdog", "domain", "application", "infrastructure", "presentation", "shared", "utils"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+# mypy configuration
+[tool.mypy]
+python_version = "3.13"
+mypy_path = "src"
+# Progressive type checking - Phase 2: Enabled with permissive settings
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+# Phase 2: Basic checks only, stricter checks disabled for gradual migration
+check_untyped_defs = false
+disallow_untyped_defs = false
+disallow_any_generics = false
+warn_return_any = false
+strict_equality = false
+disallow_untyped_calls = false
+show_error_context = true
+warn_no_return = false
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+check_untyped_defs = false
+
+# Ignore third-party library without type stubs
+[[tool.mypy.overrides]]
+module = "textual.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "dateutil.*"
+ignore_missing_imports = true
+
+# Temporarily ignore complex modules with many type issues for Phase 2
+# These will be fixed in Phase 3
+[[tool.mypy.overrides]]
+module = [
+    "application.services.workload_allocator",
+    "application.services.hierarchy_manager",
+    "application.services.optimization_summary_builder",
+    "application.sorters.optimization_task_sorter",
+    "application.sorters.task_sorter",
+    "application.queries.filters.today_filter",
+    "application.queries.task_query_service",
+    "application.services.task_validator",
+    "presentation.renderers.rich_renderer_base",
+    "presentation.renderers.rich_table_renderer",
+    "presentation.renderers.rich_gantt_renderer",
+    "presentation.cli.commands.*",
+    "presentation.tui.app",
+    "presentation.tui.widgets.*",
+    "presentation.tui.screens.algorithm_selection_screen",
+]
+ignore_errors = true

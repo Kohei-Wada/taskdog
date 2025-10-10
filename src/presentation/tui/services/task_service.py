@@ -1,0 +1,175 @@
+"""Task service facade for TUI operations."""
+
+from datetime import datetime, timedelta
+
+from application.dto.complete_task_input import CompleteTaskInput
+from application.dto.create_task_input import CreateTaskInput
+from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.pause_task_input import PauseTaskInput
+from application.dto.remove_task_input import RemoveTaskInput
+from application.dto.start_task_input import StartTaskInput
+from application.queries.filters.incomplete_filter import IncompleteFilter
+from application.queries.task_query_service import TaskQueryService
+from application.use_cases.complete_task import CompleteTaskUseCase
+from application.use_cases.create_task import CreateTaskUseCase
+from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
+from application.use_cases.pause_task import PauseTaskUseCase
+from application.use_cases.remove_task import RemoveTaskUseCase
+from application.use_cases.start_task import StartTaskUseCase
+from domain.entities.task import Task
+from domain.services.time_tracker import TimeTracker
+from infrastructure.persistence.task_repository import TaskRepository
+from presentation.tui.config import TUIConfig
+
+
+class TaskService:
+    """Facade service for task operations in TUI.
+
+    This service provides a simplified interface to use cases,
+    reducing boilerplate in command classes.
+    """
+
+    def __init__(
+        self,
+        repository: TaskRepository,
+        time_tracker: TimeTracker,
+        query_service: TaskQueryService,
+        config: TUIConfig,
+    ):
+        """Initialize the task service.
+
+        Args:
+            repository: Task repository
+            time_tracker: Time tracker service
+            query_service: Query service for read operations
+            config: TUI configuration
+        """
+        self.repository = repository
+        self.time_tracker = time_tracker
+        self.query_service = query_service
+        self.config = config
+
+    def create_task(self, name: str, priority: int | None = None) -> Task:
+        """Create a new task.
+
+        Args:
+            name: Task name
+            priority: Task priority (default: from config)
+
+        Returns:
+            The created task
+        """
+        use_case = CreateTaskUseCase(self.repository)
+        task_input = CreateTaskInput(name=name, priority=priority or self.config.default_priority)
+        return use_case.execute(task_input)
+
+    def start_task(self, task_id: int) -> Task:
+        """Start a task.
+
+        Args:
+            task_id: Task ID
+
+        Returns:
+            The updated task
+        """
+        use_case = StartTaskUseCase(self.repository, self.time_tracker)
+        start_input = StartTaskInput(task_id=task_id)
+        return use_case.execute(start_input)
+
+    def pause_task(self, task_id: int) -> Task:
+        """Pause a task.
+
+        Args:
+            task_id: Task ID
+
+        Returns:
+            The updated task
+        """
+        use_case = PauseTaskUseCase(self.repository, self.time_tracker)
+        pause_input = PauseTaskInput(task_id=task_id)
+        return use_case.execute(pause_input)
+
+    def complete_task(self, task_id: int) -> Task:
+        """Complete a task.
+
+        Args:
+            task_id: Task ID
+
+        Returns:
+            The updated task
+        """
+        use_case = CompleteTaskUseCase(self.repository, self.time_tracker)
+        complete_input = CompleteTaskInput(task_id=task_id)
+        return use_case.execute(complete_input)
+
+    def remove_task(self, task_id: int) -> None:
+        """Remove a task.
+
+        Args:
+            task_id: Task ID
+        """
+        use_case = RemoveTaskUseCase(self.repository)
+        remove_input = RemoveTaskInput(task_id=task_id)
+        use_case.execute(remove_input)
+
+    def optimize_schedule(
+        self,
+        algorithm: str,
+        start_date: datetime | None = None,
+        max_hours_per_day: float | None = None,
+        force_override: bool | None = None,
+        dry_run: bool = False,
+    ) -> tuple[list[Task], dict[str, float]]:
+        """Optimize task schedules.
+
+        Args:
+            algorithm: Optimization algorithm name
+            start_date: Start date (default: calculated)
+            max_hours_per_day: Max hours per day (default: from config)
+            force_override: Force override existing schedules (default: from config)
+            dry_run: Preview without saving
+
+        Returns:
+            Tuple of (optimized tasks, summary)
+        """
+        if start_date is None:
+            start_date = self._calculate_start_date()
+
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=max_hours_per_day or self.config.default_max_hours_per_day,
+            force_override=(
+                force_override if force_override is not None else self.config.default_force_override
+            ),
+            dry_run=dry_run,
+            algorithm_name=algorithm,
+        )
+
+        use_case = OptimizeScheduleUseCase(self.repository)
+        return use_case.execute(optimize_input)
+
+    def get_incomplete_tasks(self, sort_by: str = "id") -> list[Task]:
+        """Get incomplete tasks (PENDING, IN_PROGRESS, FAILED).
+
+        Args:
+            sort_by: Sort field
+
+        Returns:
+            List of incomplete tasks
+        """
+        incomplete_filter = IncompleteFilter()
+        return self.query_service.get_filtered_tasks(incomplete_filter, sort_by=sort_by)
+
+    def _calculate_start_date(self) -> datetime:
+        """Calculate the start date for optimization.
+
+        Returns:
+            Today if it's a weekday, otherwise next Monday
+        """
+        today = datetime.now()
+        # If today is a weekday, use today; otherwise use next Monday
+        if today.weekday() < 5:  # Monday=0, Friday=4
+            return today
+        # Move to next Monday
+        days_until_monday = (7 - today.weekday()) % 7
+        return today + timedelta(days=days_until_monday)

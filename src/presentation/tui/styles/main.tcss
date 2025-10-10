@@ -1,0 +1,38 @@
+/* Main Screen Styles */
+
+MainScreen {
+    background: transparent;
+}
+
+#title {
+    padding: 1;
+    background: transparent;
+    text-align: center;
+}
+
+#gantt-title, #table-title {
+    padding: 1 0;
+    text-align: left;
+    background: transparent;
+}
+
+/* Gantt chart - main display area */
+#gantt-widget {
+    width: 100%;
+    height: auto;
+    max-height: 40;
+    border: solid $primary;
+    margin-bottom: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* Task table - full width */
+#task-table {
+    width: 100%;
+    height: auto;
+    min-height: 10;
+    max-height: 30;
+    border: solid $primary;
+    overflow-y: auto;
+}
