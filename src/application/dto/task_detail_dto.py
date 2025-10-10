@@ -1,0 +1,20 @@
+"""DTO for task detail information."""
+
+from typing import Optional
+from dataclasses import dataclass
+from domain.entities.task import Task
+
+
+@dataclass
+class TaskDetailDTO:
+    """Data transfer object for task detail with notes.
+
+    Attributes:
+        task: Task entity
+        notes_content: Content of the notes file (optional)
+        has_notes: Whether notes file exists
+    """
+
+    task: Task
+    notes_content: Optional[str]
+    has_notes: bool

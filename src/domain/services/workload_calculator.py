@@ -1,0 +1,119 @@
+"""Domain service for calculating workload from tasks."""
+
+from typing import List, Dict, Optional
+from datetime import date, datetime, timedelta
+from domain.entities.task import Task, TaskStatus
+
+
+class WorkloadCalculator:
+    """Calculates daily workload from tasks with estimated duration."""
+
+    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+    def calculate_daily_workload(
+        self, tasks: List[Task], start_date: date, end_date: date
+    ) -> Dict[date, float]:
+        """Calculate daily workload from tasks, excluding weekends and completed tasks.
+
+        This method uses the daily_allocations field if available (set by ScheduleOptimizer),
+        otherwise falls back to equal distribution across weekdays in the planned period.
+
+        Args:
+            tasks: List of all tasks
+            start_date: Start date of the calculation period
+            end_date: End date of the calculation period
+
+        Returns:
+            Dictionary mapping date to total estimated hours {date: hours}
+        """
+        days = (end_date - start_date).days + 1
+        daily_workload = {start_date + timedelta(days=i): 0.0 for i in range(days)}
+
+        # Filter schedulable tasks
+        for task in tasks:
+            # Skip completed tasks
+            if task.status == TaskStatus.COMPLETED:
+                continue
+
+            # Skip tasks without estimated duration
+            if not task.estimated_duration:
+                continue
+
+            # Use planned dates if available, otherwise skip
+            if not (task.planned_start and task.planned_end):
+                continue
+
+            # Use daily_allocations if available (from ScheduleOptimizer)
+            if task.daily_allocations:
+                for date_str, hours in task.daily_allocations.items():
+                    try:
+                        task_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                        if task_date in daily_workload:
+                            daily_workload[task_date] += hours
+                    except ValueError:
+                        # Skip invalid date strings
+                        pass
+            else:
+                # Fallback: distribute equally across weekdays (for backward compatibility)
+                planned_start = self._parse_date(task.planned_start)
+                planned_end = self._parse_date(task.planned_end)
+
+                if not (planned_start and planned_end):
+                    continue
+
+                # Count weekdays in the task's planned period
+                weekday_count = self._count_weekdays(planned_start, planned_end)
+
+                if weekday_count == 0:
+                    continue
+
+                # Distribute hours equally across weekdays
+                hours_per_day = task.estimated_duration / weekday_count
+
+                # Add to each weekday in the period
+                current_date = planned_start
+                while current_date <= planned_end:
+                    # Skip weekends
+                    if current_date.weekday() < 5:  # Monday=0, Friday=4
+                        if current_date in daily_workload:
+                            daily_workload[current_date] += hours_per_day
+                    current_date += timedelta(days=1)
+
+        return daily_workload
+
+
+    def _count_weekdays(self, start: date, end: date) -> int:
+        """Count weekdays (Monday-Friday) in a date range.
+
+        Args:
+            start: Start date (inclusive)
+            end: End date (inclusive)
+
+        Returns:
+            Number of weekdays in the range
+        """
+        weekday_count = 0
+        current_date = start
+        while current_date <= end:
+            # Skip weekends (Saturday=5, Sunday=6)
+            if current_date.weekday() < 5:
+                weekday_count += 1
+            current_date += timedelta(days=1)
+        return weekday_count
+
+    def _parse_date(self, date_str: Optional[str]) -> Optional[date]:
+        """Parse date string to date object.
+
+        Args:
+            date_str: Date string in format YYYY-MM-DD HH:MM:SS
+
+        Returns:
+            date object or None
+        """
+        if not date_str:
+            return None
+        try:
+            dt = datetime.strptime(date_str, self.DATETIME_FORMAT)
+            return dt.date()
+        except ValueError:
+            return None

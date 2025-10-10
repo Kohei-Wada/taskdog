@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(PYTHONPATH=src uv run python:*)",
+      "WebSearch",
+      "Bash(gh issue create:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
