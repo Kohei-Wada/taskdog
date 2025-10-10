@@ -1,0 +1,39 @@
+[project]
+name = "taskdog"
+version = "0.2.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "click>=8.3.0",
+  "rich>=14.2.0",
+]
+
+[project.scripts]
+taskdog = "taskdog.cli:cli"
+
+[tool.setuptools]
+packages = [
+  # Core CLI
+  "taskdog",
+  "utils",
+  # Clean Architecture packages
+  "domain",
+  "domain.entities",
+  "domain.services",
+  "domain.exceptions",
+  "application",
+  "application.use_cases",
+  "application.queries",
+  "application.queries.filters",
+  "application.dto",
+  "infrastructure",
+  "infrastructure.persistence",
+  "presentation",
+  "presentation.cli",
+  "presentation.cli.commands",
+  "presentation.formatters",
+  "shared",
+  "shared.click_types",
+]
+package-dir = { "" = "src" }

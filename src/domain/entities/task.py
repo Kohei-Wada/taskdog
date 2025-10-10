@@ -1,0 +1,93 @@
+import time
+from datetime import datetime
+
+
+class TaskStatus:
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class Task:
+    def __init__(
+        self,
+        name,
+        priority,
+        id=None,
+        status=None,
+        timestamp=None,
+        parent_id=None,
+        planned_start=None,
+        planned_end=None,
+        deadline=None,
+        actual_start=None,
+        actual_end=None,
+        estimated_duration=None,
+    ):
+        self.id = id  # Will be set by TaskManager
+        self.name = name
+        self.priority = priority
+        self.status = status or TaskStatus.PENDING
+        self.timestamp = timestamp or time.time()
+        self.parent_id = parent_id
+
+        # Time management fields
+        self.planned_start = planned_start
+        self.planned_end = planned_end
+        self.deadline = deadline
+        self.actual_start = actual_start
+        self.actual_end = actual_end
+        self.estimated_duration = estimated_duration  # in hours
+
+    @property
+    def created_at_str(self):
+        """Return human-readable creation timestamp"""
+        return datetime.fromtimestamp(self.timestamp).strftime("%Y-%m-%d %H:%M:%S")
+
+    @property
+    def actual_duration_hours(self):
+        """Calculate actual duration in hours from actual_start and actual_end"""
+        if not self.actual_start or not self.actual_end:
+            return None
+
+        start = datetime.strptime(self.actual_start, "%Y-%m-%d %H:%M:%S")
+        end = datetime.strptime(self.actual_end, "%Y-%m-%d %H:%M:%S")
+        duration = (end - start).total_seconds() / 3600
+        return round(duration, 1)
+
+    def to_dict(self) -> dict:
+        """Serialize task to dictionary for persistence.
+
+        Returns:
+            Dictionary containing all task fields
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "priority": self.priority,
+            "status": self.status,
+            "timestamp": self.timestamp,
+            "parent_id": self.parent_id,
+            "planned_start": self.planned_start,
+            "planned_end": self.planned_end,
+            "deadline": self.deadline,
+            "actual_start": self.actual_start,
+            "actual_end": self.actual_end,
+            "estimated_duration": self.estimated_duration,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Task":
+        """Deserialize task from dictionary.
+
+        Args:
+            data: Dictionary containing task fields
+
+        Returns:
+            Task instance
+        """
+        return cls(**data)
+
+    def __repr__(self):
+        return f"Task({self.name}, {self.priority}, {self.status})"

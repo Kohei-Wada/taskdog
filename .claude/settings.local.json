@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//tmp/**)",
+      "Bash(find:*)",
+      "Bash(uv add:*)",
+      "Bash(PYTHONPATH=src uv run python:*)",
+      "WebSearch",
+      "Read(//home/kohei/.local/share/taskdog/**)",
+      "Bash(cat:*)",
+      "Bash(gh issue list:*)",
+      "Bash(cloc:*)",
+      "Bash(git add:*)",
+      "Bash(taskdog today:*)",
+      "Bash(taskdog today-new:*)",
+      "Bash(make:*)",
+      "Bash(/dev/null)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

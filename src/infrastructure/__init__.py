@@ -1,0 +1,1 @@
+"""Infrastructure layer - External dependencies."""
