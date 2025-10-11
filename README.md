@@ -15,6 +15,8 @@ A personal hierarchical task management CLI tool with time tracking, beautiful t
 - **Today View**: Quick view of tasks scheduled for today
 - **Priority Management**: Set and update task priorities
 - **Deadline Support**: Track deadlines with visual indicators
+- **Markdown Notes**: Add detailed notes to tasks with editor integration and Rich markdown rendering
+- **Batch Operations**: Start or complete multiple tasks at once
 
 ## Installation
 
@@ -51,8 +53,20 @@ taskdog today
 # Start working on a task
 taskdog start 2
 
+# Start multiple tasks at once
+taskdog start 2 3 4
+
 # Complete a task
 taskdog done 2
+
+# Complete multiple tasks at once
+taskdog done 2 3 4
+
+# Add notes to a task (opens editor)
+taskdog note 2
+
+# View task details with notes
+taskdog show 2
 
 # View Gantt chart
 taskdog gantt
@@ -121,21 +135,21 @@ Visualizes tasks on a timeline showing:
 - Deadlines (� flag symbol)
 - Weekend coloring (Saturday/Sunday highlighted)
 
-### `start` - Start working on a task
+### `start` - Start working on task(s)
 
 ```bash
-taskdog start <TASK_ID>
+taskdog start <TASK_ID> [TASK_ID ...]
 ```
 
-Sets task status to IN_PROGRESS and records actual start time.
+Sets task status to IN_PROGRESS and records actual start time. Supports multiple task IDs to start several tasks at once.
 
-### `done` - Mark task as completed
+### `done` - Mark task(s) as completed
 
 ```bash
-taskdog done <TASK_ID>
+taskdog done <TASK_ID> [TASK_ID ...]
 ```
 
-Sets task status to COMPLETED and records actual end time.
+Sets task status to COMPLETED and records actual end time. Supports multiple task IDs to complete several tasks at once. Shows duration comparison with estimates if available.
 
 ### `update` - Update task properties
 
@@ -162,6 +176,25 @@ Options:
 - `--cascade`: Delete task and all its children recursively
 
 Default behavior: orphan children (set their parent_id to None).
+
+### `note` - Edit task notes
+
+```bash
+taskdog note <TASK_ID>
+```
+
+Opens the task's markdown notes in your editor ($EDITOR environment variable, defaults to vim/nano/vi). Creates a template if the notes file doesn't exist. Notes are stored at `$XDG_DATA_HOME/taskdog/notes/{task_id}.md`.
+
+### `show` - Display task details
+
+```bash
+taskdog show <TASK_ID> [OPTIONS]
+```
+
+Options:
+- `--raw`: Show raw markdown instead of rendered notes
+
+Displays detailed task information including all fields and renders markdown notes with Rich formatting.
 
 ### `dump` - Dump all tasks as JSON
 

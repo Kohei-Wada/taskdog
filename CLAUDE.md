@@ -81,7 +81,7 @@ The application follows **Clean Architecture** with distinct layers:
 
 ### Dependency Injection Pattern
 
-Dependencies are initialized in `cli.py` (lines 41-77) and stored in Click's context object (`ctx.obj`):
+Dependencies are initialized in `cli.py` (lines 43-79) and stored in Click's context object (`ctx.obj`):
 - Use cases: `create_task_use_case`, `start_task_use_case`, `complete_task_use_case`, `update_task_use_case`, `remove_task_use_case`
 - Queries: `task_query_service`
 - Infrastructure: `repository`, `time_tracker`
@@ -132,8 +132,18 @@ All commands access dependencies via `@click.pass_context` and `ctx.obj["depende
 - Core fields: id, name, priority, status, parent_id, timestamp
 - Time fields: planned_start/end, deadline, actual_start/end, estimated_duration
 - Property: `actual_duration_hours` auto-calculated from actual_start/end timestamps
+- Property: `notes_path` returns Path to markdown notes at `$XDG_DATA_HOME/taskdog/notes/{id}.md`
 - Methods: `to_dict()`, `from_dict()` for serialization
 - Datetime format: `YYYY-MM-DD HH:MM:SS`
+
+### Notes Feature
+**Task Notes** (`src/presentation/cli/commands/note.py` and `show.py`)
+- Each task can have markdown notes stored at `$XDG_DATA_HOME/taskdog/notes/{task_id}.md`
+- `note` command: Opens notes in editor (uses $EDITOR env var, falls back to vim/nano/vi)
+- `show` command: Displays task details and renders markdown notes with Rich
+  - `--raw` flag: Shows raw markdown instead of rendered
+- Template auto-generated on first edit with task metadata
+- Notes directory created automatically when needed
 
 ### Commands
 All commands live in `src/presentation/cli/commands/` and are registered in `cli.py`:
@@ -142,11 +152,13 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `table`: Display flat table view (uses TaskQueryService)
 - `today`: Show today's tasks (uses TaskQueryService.get_today_tasks())
 - `today-new`: Alias for today command
-- `start`: Start task (uses StartTaskUseCase)
-- `done`: Complete task (uses CompleteTaskUseCase)
+- `start`: Start task(s) - supports multiple task IDs (uses StartTaskUseCase)
+- `done`: Complete task(s) - supports multiple task IDs (uses CompleteTaskUseCase)
 - `update`: Update task properties (uses UpdateTaskUseCase)
 - `remove`: Remove task with cascade/orphan options (uses RemoveTaskUseCase)
 - `gantt`: Display Gantt chart timeline (uses TaskQueryService)
+- `note`: Edit task notes in markdown using $EDITOR (direct repository access)
+- `show`: Display task details and notes with Rich formatting (direct repository access)
 - `dump`: Dump all tasks as JSON (direct repository access)
 
 ### Key Design Decisions
