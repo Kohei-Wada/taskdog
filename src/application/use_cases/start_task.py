@@ -5,7 +5,6 @@ from application.dto.start_task_input import StartTaskInput
 from infrastructure.persistence.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 from domain.entities.task import Task, TaskStatus
-from domain.exceptions.task_exceptions import TaskNotFoundException
 
 
 class StartTaskUseCase(UseCase[StartTaskInput, Task]):
@@ -36,9 +35,7 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
         Raises:
             TaskNotFoundException: If task doesn't exist
         """
-        task = self.repository.get_by_id(input_dto.task_id)
-        if not task:
-            raise TaskNotFoundException(input_dto.task_id)
+        task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
         # Record time based on status change
         self.time_tracker.record_time_on_status_change(task, TaskStatus.IN_PROGRESS)

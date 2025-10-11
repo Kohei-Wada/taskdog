@@ -3,7 +3,6 @@
 from application.use_cases.base import UseCase
 from application.dto.remove_task_input import RemoveTaskInput
 from infrastructure.persistence.task_repository import TaskRepository
-from domain.exceptions.task_exceptions import TaskNotFoundException
 
 
 class RemoveTaskUseCase(UseCase[RemoveTaskInput, int]):
@@ -36,9 +35,7 @@ class RemoveTaskUseCase(UseCase[RemoveTaskInput, int]):
         Raises:
             TaskNotFoundException: If task doesn't exist
         """
-        task = self.repository.get_by_id(input_dto.task_id)
-        if not task:
-            raise TaskNotFoundException(input_dto.task_id)
+        self._get_task_or_raise(self.repository, input_dto.task_id)
 
         if input_dto.cascade:
             return self._remove_cascade(input_dto.task_id)

@@ -6,7 +6,6 @@ from application.dto.update_task_input import UpdateTaskInput
 from infrastructure.persistence.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 from domain.entities.task import Task
-from domain.exceptions.task_exceptions import TaskNotFoundException
 
 
 class UpdateTaskUseCase(UseCase[UpdateTaskInput, Tuple[Task, List[str]]]):
@@ -38,9 +37,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, Tuple[Task, List[str]]]):
         Raises:
             TaskNotFoundException: If task doesn't exist
         """
-        task = self.repository.get_by_id(input_dto.task_id)
-        if not task:
-            raise TaskNotFoundException(input_dto.task_id)
+        task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
         updated_fields = []
 
