@@ -2,8 +2,10 @@
 
 import click
 from domain.exceptions.task_exceptions import TaskNotFoundException
+from domain.services.time_tracker import TimeTracker
 from utils.console_messages import print_success, print_task_not_found_error, print_error
 from application.dto.complete_task_input import CompleteTaskInput
+from application.use_cases.complete_task import CompleteTaskUseCase
 
 
 @click.command(name="done", help="Mark task(s) as completed.")
@@ -12,7 +14,9 @@ from application.dto.complete_task_input import CompleteTaskInput
 def done_command(ctx, task_ids):
     """Mark task(s) as completed."""
     console = ctx.obj["console"]
-    complete_task_use_case = ctx.obj["complete_task_use_case"]
+    repository = ctx.obj["repository"]
+    time_tracker = TimeTracker()
+    complete_task_use_case = CompleteTaskUseCase(repository, time_tracker)
 
     success_count = 0
     error_count = 0

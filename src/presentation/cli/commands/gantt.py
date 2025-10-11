@@ -3,6 +3,7 @@
 import click
 from datetime import datetime, timedelta
 from domain.constants import DATETIME_FORMAT
+from application.queries.task_query_service import TaskQueryService
 from presentation.formatters.rich_gantt_formatter import RichGanttFormatter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
@@ -37,7 +38,7 @@ def get_previous_monday(from_date=None):
 def gantt_command(ctx, start_date, end_date):
     """Display all tasks as a Gantt chart."""
     repository = ctx.obj["repository"]
-    task_query_service = ctx.obj["task_query_service"]
+    task_query_service = TaskQueryService(repository)
 
     try:
         tasks = task_query_service.get_all_tasks()

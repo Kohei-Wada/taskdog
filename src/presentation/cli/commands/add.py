@@ -9,6 +9,7 @@ from utils.console_messages import (
     print_error,
 )
 from application.dto.create_task_input import CreateTaskInput
+from application.use_cases.create_task import CreateTaskUseCase
 
 
 @click.command(name="add", help="Add a new task with optional planning and deadline.")
@@ -70,7 +71,8 @@ def add_command(
 ):
     """Add a new task with optional planning and deadline."""
     console = ctx.obj["console"]
-    create_task_use_case = ctx.obj["create_task_use_case"]
+    repository = ctx.obj["repository"]
+    create_task_use_case = CreateTaskUseCase(repository)
 
     try:
         # Build input DTO

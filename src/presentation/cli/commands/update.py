@@ -3,9 +3,11 @@
 import click
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from domain.entities.task import TaskStatus
+from domain.services.time_tracker import TimeTracker
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 from utils.console_messages import print_task_not_found_error, print_error
 from application.dto.update_task_input import UpdateTaskInput
+from application.use_cases.update_task import UpdateTaskUseCase
 
 
 @click.command(
@@ -67,7 +69,9 @@ def update_command(
 ):
     """Update task properties."""
     console = ctx.obj["console"]
-    update_task_use_case = ctx.obj["update_task_use_case"]
+    repository = ctx.obj["repository"]
+    time_tracker = TimeTracker()
+    update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
 
     try:
         # Convert status string to Enum if provided

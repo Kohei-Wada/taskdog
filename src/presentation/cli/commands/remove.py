@@ -4,6 +4,7 @@ import click
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from utils.console_messages import print_task_not_found_error, print_error
 from application.dto.remove_task_input import RemoveTaskInput
+from application.use_cases.remove_task import RemoveTaskUseCase
 
 
 @click.command(
@@ -19,7 +20,8 @@ from application.dto.remove_task_input import RemoveTaskInput
 def remove_command(ctx, task_id, cascade):
     """Remove a task."""
     console = ctx.obj["console"]
-    remove_task_use_case = ctx.obj["remove_task_use_case"]
+    repository = ctx.obj["repository"]
+    remove_task_use_case = RemoveTaskUseCase(repository)
 
     try:
         input_dto = RemoveTaskInput(task_id=task_id, cascade=cascade)

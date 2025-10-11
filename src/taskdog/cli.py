@@ -3,17 +3,8 @@ import os
 from pathlib import Path
 from rich.console import Console
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
-from domain.services.time_tracker import TimeTracker
 
-# New Clean Architecture components
-from application.queries.task_query_service import TaskQueryService
-from application.use_cases.create_task import CreateTaskUseCase
-from application.use_cases.start_task import StartTaskUseCase
-from application.use_cases.complete_task import CompleteTaskUseCase
-from application.use_cases.update_task import UpdateTaskUseCase
-from application.use_cases.remove_task import RemoveTaskUseCase
-
-# New commands (Clean Architecture)
+# Commands
 from presentation.cli.commands.today import today_command
 from presentation.cli.commands.add import add_command
 from presentation.cli.commands.start import start_command
@@ -33,7 +24,6 @@ from presentation.cli.commands.show import show_command
 def cli(ctx):
     """Taskdog: Hierarchical task management CLI tool."""
 
-    # Initialize dependencies
     # Follow XDG Base Directory specification
     xdg_data_home = os.environ.get(
         "XDG_DATA_HOME", os.path.expanduser("~/.local/share")
@@ -42,29 +32,13 @@ def cli(ctx):
     data_dir.mkdir(parents=True, exist_ok=True)
     tasksfile = str(data_dir / "tasks.json")
 
-    # Core dependencies
+    # Initialize shared dependencies
     console = Console()
     repository = JsonTaskRepository(tasksfile)
-    time_tracker = TimeTracker()
-
-    # New Clean Architecture dependencies
-    task_query_service = TaskQueryService(repository)
-    create_task_use_case = CreateTaskUseCase(repository)
-    start_task_use_case = StartTaskUseCase(repository, time_tracker)
-    complete_task_use_case = CompleteTaskUseCase(repository, time_tracker)
-    update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
-    remove_task_use_case = RemoveTaskUseCase(repository)
 
     ctx.ensure_object(dict)
     ctx.obj["console"] = console
     ctx.obj["repository"] = repository
-    ctx.obj["time_tracker"] = time_tracker
-    ctx.obj["task_query_service"] = task_query_service
-    ctx.obj["create_task_use_case"] = create_task_use_case
-    ctx.obj["start_task_use_case"] = start_task_use_case
-    ctx.obj["complete_task_use_case"] = complete_task_use_case
-    ctx.obj["update_task_use_case"] = update_task_use_case
-    ctx.obj["remove_task_use_case"] = remove_task_use_case
 
 
 cli.add_command(add_command)

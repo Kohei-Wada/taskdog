@@ -1,6 +1,7 @@
 """Table command - Display tasks in flat table format."""
 
 import click
+from application.queries.task_query_service import TaskQueryService
 from presentation.formatters.rich_table_formatter import RichTableFormatter
 
 
@@ -19,7 +20,7 @@ def table_command(ctx, all):
     Use --all to include completed tasks.
     """
     repository = ctx.obj["repository"]
-    task_query_service = ctx.obj["task_query_service"]
+    task_query_service = TaskQueryService(repository)
 
     try:
         # Get tasks using query service

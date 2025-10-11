@@ -1,6 +1,7 @@
 """Today command - Display tasks for today."""
 
 import click
+from application.queries.task_query_service import TaskQueryService
 from presentation.formatters.rich_tree_formatter import RichTreeFormatter
 from presentation.formatters.rich_table_formatter import RichTableFormatter
 
@@ -31,8 +32,8 @@ def today_command(ctx, format, all):
     By default, completed tasks are excluded unless --all is specified.
     Parent tasks are included if they have children matching today's criteria.
     """
-    query_service = ctx.obj["task_query_service"]
     repository = ctx.obj["repository"]
+    query_service = TaskQueryService(repository)
 
     try:
         # Get today's tasks (filtered and sorted)

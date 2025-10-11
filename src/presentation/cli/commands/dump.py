@@ -2,13 +2,15 @@
 
 import click
 import json
+from application.queries.task_query_service import TaskQueryService
 
 
 @click.command(name="dump", help="Dump all tasks as JSON.")
 @click.pass_context
 def dump_command(ctx):
     """Dump all tasks as JSON."""
-    task_query_service = ctx.obj["task_query_service"]
+    repository = ctx.obj["repository"]
+    task_query_service = TaskQueryService(repository)
 
     try:
         tasks = task_query_service.get_all_tasks()
