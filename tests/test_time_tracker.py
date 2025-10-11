@@ -1,5 +1,6 @@
 import unittest
 from datetime import datetime
+from domain.constants import DATETIME_FORMAT
 from domain.services.time_tracker import TimeTracker
 from domain.entities.task import Task, TaskStatus
 
@@ -20,7 +21,7 @@ class TestTimeTracker(unittest.TestCase):
 
         self.assertIsNotNone(task.actual_start)
         # Verify format: YYYY-MM-DD HH:MM:SS
-        datetime.strptime(task.actual_start, "%Y-%m-%d %H:%M:%S")
+        datetime.strptime(task.actual_start, DATETIME_FORMAT)
 
     def test_record_time_to_completed(self):
         """Test that actual_end is recorded when status changes to COMPLETED"""
@@ -31,7 +32,7 @@ class TestTimeTracker(unittest.TestCase):
 
         self.assertIsNotNone(task.actual_end)
         # Verify format: YYYY-MM-DD HH:MM:SS
-        datetime.strptime(task.actual_end, "%Y-%m-%d %H:%M:%S")
+        datetime.strptime(task.actual_end, DATETIME_FORMAT)
 
     def test_record_time_to_failed(self):
         """Test that actual_end is recorded when status changes to FAILED"""
@@ -42,7 +43,7 @@ class TestTimeTracker(unittest.TestCase):
 
         self.assertIsNotNone(task.actual_end)
         # Verify format: YYYY-MM-DD HH:MM:SS
-        datetime.strptime(task.actual_end, "%Y-%m-%d %H:%M:%S")
+        datetime.strptime(task.actual_end, DATETIME_FORMAT)
 
     def test_no_record_for_pending(self):
         """Test that no timestamps are recorded for PENDING status"""
@@ -106,7 +107,7 @@ class TestTimeTracker(unittest.TestCase):
         self.tracker.record_time_on_status_change(task, TaskStatus.IN_PROGRESS)
 
         # Should be able to parse the timestamp
-        parsed = datetime.strptime(task.actual_start, "%Y-%m-%d %H:%M:%S")
+        parsed = datetime.strptime(task.actual_start, DATETIME_FORMAT)
         self.assertIsInstance(parsed, datetime)
 
     def test_multiple_status_changes(self):

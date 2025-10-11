@@ -2,6 +2,7 @@
 
 import click
 from datetime import datetime, time
+from domain.constants import DATETIME_FORMAT
 
 
 class DateTimeWithDefault(click.DateTime):
@@ -14,7 +15,7 @@ class DateTimeWithDefault(click.DateTime):
 
     def __init__(self):
         """Initialize with supported datetime formats."""
-        super().__init__(formats=["%Y-%m-%d %H:%M:%S", "%Y-%m-%d"])
+        super().__init__(formats=[DATETIME_FORMAT, "%Y-%m-%d"])
 
     def convert(self, value, param, ctx):
         """Convert date string to datetime, adding default time if needed.
@@ -52,4 +53,4 @@ class DateTimeWithDefault(click.DateTime):
             dt = datetime.combine(dt.date(), time(18, 0, 0))
 
         # Return formatted string
-        return dt.strftime("%Y-%m-%d %H:%M:%S")
+        return dt.strftime(DATETIME_FORMAT)

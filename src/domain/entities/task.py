@@ -4,6 +4,8 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
+from domain.constants import DATETIME_FORMAT
+
 
 class TaskStatus(Enum):
     PENDING = "PENDING"
@@ -46,7 +48,7 @@ class Task:
     @property
     def created_at_str(self):
         """Return human-readable creation timestamp"""
-        return datetime.fromtimestamp(self.timestamp).strftime("%Y-%m-%d %H:%M:%S")
+        return datetime.fromtimestamp(self.timestamp).strftime(DATETIME_FORMAT)
 
     @property
     def actual_duration_hours(self):
@@ -54,8 +56,8 @@ class Task:
         if not self.actual_start or not self.actual_end:
             return None
 
-        start = datetime.strptime(self.actual_start, "%Y-%m-%d %H:%M:%S")
-        end = datetime.strptime(self.actual_end, "%Y-%m-%d %H:%M:%S")
+        start = datetime.strptime(self.actual_start, DATETIME_FORMAT)
+        end = datetime.strptime(self.actual_end, DATETIME_FORMAT)
         duration = (end - start).total_seconds() / 3600
         return round(duration, 1)
 

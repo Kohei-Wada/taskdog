@@ -1,6 +1,7 @@
 """Template generator for task notes markdown files."""
 
 from datetime import datetime
+from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 
 
@@ -13,7 +14,7 @@ def generate_notes_template(task: Task) -> str:
     Returns:
         Markdown template string with task information
     """
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = datetime.now().strftime(DATETIME_FORMAT)
 
     template = f"""# Task #{task.id}: {task.name}
 

@@ -1,5 +1,6 @@
 """Shared constants for task formatters."""
 
+from domain.constants import DATETIME_FORMAT
 from domain.entities.task import TaskStatus
 
 # Status style mappings for Rich formatting
@@ -18,5 +19,5 @@ STATUS_COLORS_BOLD = {
     TaskStatus.FAILED: "bold red",
 }
 
-# Default datetime format used in task data
-DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+# Re-export DATETIME_FORMAT for backward compatibility
+__all__ = ["STATUS_STYLES", "STATUS_COLORS_BOLD", "DATETIME_FORMAT"]

@@ -2,6 +2,7 @@
 
 import click
 from datetime import datetime, timedelta
+from domain.constants import DATETIME_FORMAT
 from presentation.formatters.rich_gantt_formatter import RichGanttFormatter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
@@ -45,13 +46,13 @@ def gantt_command(ctx, start_date, end_date):
         # Convert datetime strings to date objects if provided
         # Default to previous Monday if start_date not provided
         if start_date:
-            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S").date()
+            start_date_obj = datetime.strptime(start_date, DATETIME_FORMAT).date()
         else:
             start_date_obj = get_previous_monday()
 
         end_date_obj = None
         if end_date:
-            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S").date()
+            end_date_obj = datetime.strptime(end_date, DATETIME_FORMAT).date()
 
         output = formatter.format_tasks(tasks, repository, start_date_obj, end_date_obj)
         print(output)
