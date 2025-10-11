@@ -1,5 +1,7 @@
+import os
 import time
 from datetime import datetime
+from pathlib import Path
 
 
 class TaskStatus:
@@ -55,6 +57,17 @@ class Task:
         end = datetime.strptime(self.actual_end, "%Y-%m-%d %H:%M:%S")
         duration = (end - start).total_seconds() / 3600
         return round(duration, 1)
+
+    @property
+    def notes_path(self) -> Path:
+        """Return path to task's markdown notes file.
+
+        Returns:
+            Path to notes file at $XDG_DATA_HOME/taskdog/notes/{id}.md
+        """
+        data_dir = os.getenv("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
+        notes_dir = Path(data_dir) / "taskdog" / "notes"
+        return notes_dir / f"{self.id}.md"
 
     def to_dict(self) -> dict:
         """Serialize task to dictionary for persistence.

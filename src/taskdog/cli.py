@@ -36,6 +36,8 @@ from presentation.cli.commands.tree import tree_command
 from presentation.cli.commands.table import table_command
 from presentation.cli.commands.dump import dump_command
 from presentation.cli.commands.gantt import gantt_command
+from presentation.cli.commands.note import note_command
+from presentation.cli.commands.show import show_command
 
 
 @click.group()
@@ -87,6 +89,8 @@ cli.add_command(start_command)  # NEW (Clean Architecture - replaces old)
 cli.add_command(done_command)  # NEW (Clean Architecture - replaces old)
 cli.add_command(gantt_command)  # NEW (Clean Architecture - replaces old)
 cli.add_command(today_command_new)  # NEW (Clean Architecture - replaces old)
+cli.add_command(note_command)  # NEW (notes feature)
+cli.add_command(show_command)  # NEW (notes feature)
 
 if __name__ == "__main__":
     cli()

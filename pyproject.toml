@@ -33,6 +33,7 @@ packages = [
   "presentation.cli",
   "presentation.cli.commands",
   "presentation.formatters",
+  "presentation.utils",
   "shared",
   "shared.click_types",
 ]

@@ -14,7 +14,8 @@
       "Bash(taskdog today:*)",
       "Bash(taskdog today-new:*)",
       "Bash(make:*)",
-      "Bash(/dev/null)"
+      "Bash(/dev/null)",
+      "Bash(gh issue view:*)"
     ],
     "deny": [],
     "ask": []
