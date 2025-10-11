@@ -53,7 +53,7 @@ The application follows **Clean Architecture** with distinct layers:
 
 **Domain Layer** (`src/domain/`)
 - `entities/`: Core business entities (Task, TaskStatus)
-- `services/`: Domain services (TimeTracker, TaskValidator)
+- `services/`: Domain services (TimeTracker)
 - `exceptions/`: Domain-specific exceptions (TaskNotFoundException)
 - No dependencies on other layers; defines core business logic
 
@@ -61,6 +61,7 @@ The application follows **Clean Architecture** with distinct layers:
 - `use_cases/`: Business logic orchestration (CreateTaskUseCase, StartTaskUseCase, etc.)
   - Each use case inherits from `UseCase[TInput, TOutput]` base class
   - Use cases are stateless and dependency-injected
+- `services/`: Application services (TaskValidator - validation logic requiring repository access)
 - `queries/`: Read-optimized operations (TaskQueryService with filters and sorters)
 - `dto/`: Data Transfer Objects for use case inputs (CreateTaskInput, StartTaskInput, etc.)
 - Depends on domain layer; defines application-specific logic

@@ -24,6 +24,7 @@ packages = [
   "domain.exceptions",
   "application",
   "application.use_cases",
+  "application.services",
   "application.queries",
   "application.queries.filters",
   "application.dto",
