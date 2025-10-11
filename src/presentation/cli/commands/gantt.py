@@ -1,9 +1,24 @@
 """Gantt command - Display tasks in Gantt chart format."""
 
 import click
-from datetime import datetime
+from datetime import datetime, timedelta
 from presentation.formatters.rich_gantt_formatter import RichGanttFormatter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
+
+
+def get_previous_monday(from_date=None):
+    """Get the previous Monday (or today if today is Monday).
+
+    Args:
+        from_date: Optional date to calculate from (defaults to today)
+
+    Returns:
+        date object representing the previous Monday
+    """
+    target_date = from_date or datetime.now().date()
+    # weekday(): Monday=0, Sunday=6
+    days_since_monday = target_date.weekday()
+    return target_date - timedelta(days=days_since_monday)
 
 
 @click.command(name="gantt", help="Display tasks in Gantt chart format.")
@@ -28,10 +43,13 @@ def gantt_command(ctx, start_date, end_date):
         formatter = RichGanttFormatter()
 
         # Convert datetime strings to date objects if provided
-        start_date_obj = None
-        end_date_obj = None
+        # Default to previous Monday if start_date not provided
         if start_date:
             start_date_obj = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S").date()
+        else:
+            start_date_obj = get_previous_monday()
+
+        end_date_obj = None
         if end_date:
             end_date_obj = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S").date()
 

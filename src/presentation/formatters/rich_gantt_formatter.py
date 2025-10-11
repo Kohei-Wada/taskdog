@@ -107,6 +107,7 @@ class RichGanttFormatter(TaskFormatter):
             current_date = start_date + timedelta(days=day_offset)
             month = current_date.month
             day = current_date.day
+            weekday = current_date.weekday()
 
             # Line 1: Show month when it changes
             if month != current_month:
@@ -117,9 +118,15 @@ class RichGanttFormatter(TaskFormatter):
             else:
                 line1.append(" " * 3, style="dim")
 
-            # Line 2: Show day number (always)
+            # Line 2: Show day number with color based on weekday
             day_str = f"{day:2d} "  # Right-aligned, 2 digits + space
-            line2.append(day_str, style="cyan")
+            if weekday == 5:  # Saturday
+                day_style = "blue"
+            elif weekday == 6:  # Sunday
+                day_style = "red"
+            else:  # Weekday
+                day_style = "cyan"
+            line2.append(day_str, style=day_style)
 
         # Combine both lines
         header = Text()
