@@ -29,7 +29,7 @@ def format_task_info(task) -> Table:
 
     # Status with color
     status_style = STATUS_STYLES.get(task.status, "white")
-    table.add_row("Status", f"[{status_style}]{task.status}[/{status_style}]")
+    table.add_row("Status", f"[{status_style}]{task.status.value}[/{status_style}]")
 
     # Parent info
     if task.parent_id:

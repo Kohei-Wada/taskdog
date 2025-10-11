@@ -1,10 +1,11 @@
 import os
 import time
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 
 
-class TaskStatus:
+class TaskStatus(Enum):
     PENDING = "PENDING"
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
@@ -79,7 +80,7 @@ class Task:
             "id": self.id,
             "name": self.name,
             "priority": self.priority,
-            "status": self.status,
+            "status": self.status.value,
             "timestamp": self.timestamp,
             "parent_id": self.parent_id,
             "planned_start": self.planned_start,
@@ -100,7 +101,11 @@ class Task:
         Returns:
             Task instance
         """
-        return cls(**data)
+        # Convert status string to Enum if present
+        task_data = data.copy()
+        if "status" in task_data and isinstance(task_data["status"], str):
+            task_data["status"] = TaskStatus(task_data["status"])
+        return cls(**task_data)
 
     def __repr__(self):
-        return f"Task({self.name}, {self.priority}, {self.status})"
+        return f"Task({self.name}, {self.priority}, {self.status.value})"

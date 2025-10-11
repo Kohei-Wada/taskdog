@@ -15,7 +15,22 @@
       "Bash(taskdog today-new:*)",
       "Bash(make:*)",
       "Bash(/dev/null)",
-      "Bash(gh issue view:*)"
+      "Bash(gh issue view:*)",
+      "Bash(gh issue create --title \"Refactor: Convert TaskStatus to Enum\" --label \"priority: high,refactoring\" --body \"$(cat <<''EOF''\n## 概要\n現在クラス変数として定義されている `TaskStatus` を Python の `Enum` に変更し、型安全性を向上させる。\n\n## 問題点\n**場所**: `src/domain/entities/task.py:7-11`\n\n現在の実装:\n```python\nclass TaskStatus:\n    PENDING = \"PENDING\"\n    IN_PROGRESS = \"IN_PROGRESS\"\n    COMPLETED = \"COMPLETED\"\n    FAILED = \"FAILED\"\n```\n\n**問題**:\n- 型安全性が低い（文字列リテラルとして扱われる）\n- IDE補完やタイプチェックのサポートが弱い\n- 誤った値の代入を防げない\n\n## 提案\n\n```python\nfrom enum import Enum\n\nclass TaskStatus(Enum):\n    PENDING = \"PENDING\"\n    IN_PROGRESS = \"IN_PROGRESS\"\n    COMPLETED = \"COMPLETED\"\n    FAILED = \"FAILED\"\n```\n\n## 影響範囲\n全体的な変更が必要だが、機械的な置換で対応可能:\n- `.value` プロパティで文字列値にアクセス\n- 比較演算子は変更不要（Enumは等価比較をサポート）\n\n## 実装のヒント\n1. `task.py` でEnumに変更\n2. 文字列との比較が必要な箇所で `.value` を使用\n3. JSON シリアライズ時に `.value` を使用\n4. 既存のテストを実行して動作確認\n\n## 優先度\n**High** - 型安全性の基盤となる改善\n\n## 関連ファイル\n- `src/domain/entities/task.py`\n- `src/application/use_cases/*.py`\n- `src/presentation/cli/commands/*.py`\n- `tests/**/*.py`\nEOF\n)\")",
+      "Bash(gh issue create --title \"Refactor: Convert TaskStatus to Enum (Priority: High)\" --body \"$(cat <<''EOF''\n## 概要\n現在クラス変数として定義されている `TaskStatus` を Python の `Enum` に変更し、型安全性を向上させる。\n\n## 問題点\n**場所**: `src/domain/entities/task.py:7-11`\n\n現在の実装:\n```python\nclass TaskStatus:\n    PENDING = \"PENDING\"\n    IN_PROGRESS = \"IN_PROGRESS\"\n    COMPLETED = \"COMPLETED\"\n    FAILED = \"FAILED\"\n```\n\n**問題**:\n- 型安全性が低い（文字列リテラルとして扱われる）\n- IDE補完やタイプチェックのサポートが弱い\n- 誤った値の代入を防げない\n\n## 提案\n\n```python\nfrom enum import Enum\n\nclass TaskStatus(Enum):\n    PENDING = \"PENDING\"\n    IN_PROGRESS = \"IN_PROGRESS\"\n    COMPLETED = \"COMPLETED\"\n    FAILED = \"FAILED\"\n```\n\n## 影響範囲\n全体的な変更が必要だが、機械的な置換で対応可能:\n- `.value` プロパティで文字列値にアクセス\n- 比較演算子は変更不要（Enumは等価比較をサポート）\n\n## 実装のヒント\n1. `task.py` でEnumに変更\n2. 文字列との比較が必要な箇所で `.value` を使用\n3. JSON シリアライズ時に `.value` を使用\n4. 既存のテストを実行して動作確認\n\n## 優先度\n**High** - 型安全性の基盤となる改善\n\n## 関連ファイル\n- `src/domain/entities/task.py`\n- `src/application/use_cases/*.py`\n- `src/presentation/cli/commands/*.py`\n- `tests/**/*.py`\nEOF\n)\")",
+      "Bash(__NEW_LINE__ Args:)",
+      "Bash(repository: Task repository)",
+      "Bash(task_id: Task ID to retrieve)",
+      "Bash(__NEW_LINE__ Returns:)",
+      "Bash(Task instance)",
+      "Bash(__NEW_LINE__ Raises:)",
+      "Bash(TaskNotFoundException: If task not found)",
+      "Bash(gh issue create:*)",
+      "Bash(__NEW_LINE__ Handles status transitions with automatic time tracking.)",
+      "Bash(\"\"\"\n\n    def __init__(self, repository: TaskRepository, time_tracker: TimeTracker):\n        self.repository = repository\n        self.time_tracker = time_tracker\n\n    def execute(self, input_dto: ChangeTaskStatusInput) -> Task:\n        \"\"\"Execute status change.)",
+      "Bash(input_dto: Status change input data)",
+      "Bash(Updated task with new status)",
+      "Bash(TaskNotFoundException: If task doesn 't exist)"
     ],
     "deny": [],
     "ask": []

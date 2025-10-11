@@ -221,7 +221,7 @@ class RichGanttFormatter(TaskFormatter):
         task_name = f"{indent}{task.name}"
 
         status_style = self._get_status_style(task.status)
-        status_text = f"[{status_style}]{task.status}[/{status_style}]"
+        status_text = f"[{status_style}]{task.status.value}[/{status_style}]"
 
         table.add_row(str(task.id), task_name, status_text)
 

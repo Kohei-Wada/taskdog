@@ -84,7 +84,7 @@ class RichTreeFormatter(TaskFormatter):
         label.append(f"[{task.id}] ", style="bold")
         label.append(task.name, style="bold white")
         label.append(f" (P:{task.priority}, ", style="dim")
-        label.append(task.status, style=f"bold {status_color}")
+        label.append(task.status.value, style=f"bold {status_color}")
         label.append(")", style="dim")
 
         return label

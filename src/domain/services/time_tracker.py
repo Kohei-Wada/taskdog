@@ -5,7 +5,7 @@ from domain.entities.task import Task, TaskStatus
 class TimeTracker:
     """Handles automatic time tracking for tasks."""
 
-    def record_time_on_status_change(self, task: Task, new_status: str) -> None:
+    def record_time_on_status_change(self, task: Task, new_status: TaskStatus) -> None:
         """Record timestamps when task status changes.
 
         Args:

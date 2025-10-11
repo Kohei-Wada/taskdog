@@ -26,14 +26,7 @@ from application.dto.update_task_input import UpdateTaskInput
 )
 @click.option(
     "--status",
-    type=click.Choice(
-        [
-            TaskStatus.PENDING,
-            TaskStatus.IN_PROGRESS,
-            TaskStatus.COMPLETED,
-            TaskStatus.FAILED,
-        ]
-    ),
+    type=click.Choice([e.value for e in TaskStatus]),
     default=None,
     help="New status",
 )
@@ -77,11 +70,14 @@ def update_command(
     update_task_use_case = ctx.obj["update_task_use_case"]
 
     try:
+        # Convert status string to Enum if provided
+        status_enum = TaskStatus(status) if status else None
+
         # Build input DTO
         input_dto = UpdateTaskInput(
             task_id=task_id,
             priority=priority,
-            status=status,
+            status=status_enum,
             planned_start=planned_start,
             planned_end=planned_end,
             deadline=deadline,

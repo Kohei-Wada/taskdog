@@ -71,7 +71,7 @@ class RichTableFormatter(TaskFormatter):
                 str(task.id),
                 task.name,
                 str(task.priority),
-                f"[{status_style}]{task.status}[/{status_style}]",
+                f"[{status_style}]{task.status.value}[/{status_style}]",
                 parent_str,
                 planned_start_str,
                 planned_end_str,
