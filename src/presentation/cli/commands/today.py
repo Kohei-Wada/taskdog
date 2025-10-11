@@ -20,7 +20,7 @@ from presentation.formatters.rich_table_formatter import RichTableFormatter
     help="Show all tasks including completed ones",
 )
 @click.pass_context
-def today_command_new(ctx, format, all):
+def today_command(ctx, format, all):
     """Display tasks for today.
 
     Shows tasks that meet any of these criteria:

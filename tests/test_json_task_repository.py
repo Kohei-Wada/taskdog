@@ -1,7 +1,6 @@
 import unittest
 import os
 import tempfile
-import json
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from domain.entities.task import Task, TaskStatus
 

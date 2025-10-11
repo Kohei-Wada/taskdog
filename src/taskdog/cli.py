@@ -13,20 +13,8 @@ from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.update_task import UpdateTaskUseCase
 from application.use_cases.remove_task import RemoveTaskUseCase
 
-# Commands module (existing)
-# from commands.add_command import add_command  # OLD (replaced)
-# from commands.tree_command import tree_command  # OLD (replaced)
-# from commands.table_command import table_command  # OLD (replaced)
-# from commands.dump_command import dump_command  # OLD (replaced)
-# from commands.remove_command import remove_command  # OLD (replaced)
-# from commands.update_command import update_command  # OLD (replaced)
-# from commands.start_command import start_command  # OLD (replaced)
-# from commands.done_command import done_command  # OLD (replaced)
-# from commands.gantt_command import gantt_command  # OLD (replaced)
-# from commands.today_command import today_command  # OLD (replaced)
-
 # New commands (Clean Architecture)
-from presentation.cli.commands.today import today_command_new
+from presentation.cli.commands.today import today_command
 from presentation.cli.commands.add import add_command
 from presentation.cli.commands.start import start_command
 from presentation.cli.commands.done import done_command
@@ -79,18 +67,18 @@ def cli(ctx):
     ctx.obj["remove_task_use_case"] = remove_task_use_case
 
 
-cli.add_command(add_command)  # NEW (Clean Architecture - replaces old)
-cli.add_command(tree_command)  # NEW (Clean Architecture - replaces old)
-cli.add_command(table_command)  # NEW (Clean Architecture - replaces old)
-cli.add_command(dump_command)  # NEW (Clean Architecture - replaces old)
-cli.add_command(remove_command)  # NEW (Clean Architecture - replaces old)
-cli.add_command(update_command)  # NEW (Clean Architecture - replaces old)
-cli.add_command(start_command)  # NEW (Clean Architecture - replaces old)
-cli.add_command(done_command)  # NEW (Clean Architecture - replaces old)
-cli.add_command(gantt_command)  # NEW (Clean Architecture - replaces old)
-cli.add_command(today_command_new)  # NEW (Clean Architecture - replaces old)
-cli.add_command(note_command)  # NEW (notes feature)
-cli.add_command(show_command)  # NEW (notes feature)
+cli.add_command(add_command)
+cli.add_command(tree_command)
+cli.add_command(table_command)
+cli.add_command(dump_command)
+cli.add_command(remove_command)
+cli.add_command(update_command)
+cli.add_command(start_command)
+cli.add_command(done_command)
+cli.add_command(gantt_command)
+cli.add_command(today_command)
+cli.add_command(note_command)
+cli.add_command(show_command)
 
 if __name__ == "__main__":
     cli()
