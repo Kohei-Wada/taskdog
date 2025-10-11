@@ -1,11 +1,11 @@
 import json
-from typing import List, Optional
+from typing import Dict, List, Optional
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
 
 
 class JsonTaskRepository(TaskRepository):
-    """JSON file-based implementation of TaskRepository."""
+    """JSON file-based implementation of TaskRepository with index optimization."""
 
     def __init__(self, filename: str):
         """Initialize the repository with a JSON file.
@@ -15,6 +15,19 @@ class JsonTaskRepository(TaskRepository):
         """
         self.filename = filename
         self.tasks = self._load_tasks()
+        self._task_index: Dict[int, Task] = self._build_index()
+
+    def _build_index(self) -> Dict[int, Task]:
+        """Build task ID to task object index.
+
+        Returns:
+            Dictionary mapping task IDs to task objects
+        """
+        return {task.id: task for task in self.tasks}
+
+    def _rebuild_index(self) -> None:
+        """Rebuild the task index after modifications."""
+        self._task_index = self._build_index()
 
     def get_all(self) -> List[Task]:
         """Retrieve all tasks.
@@ -25,7 +38,7 @@ class JsonTaskRepository(TaskRepository):
         return self.tasks
 
     def get_by_id(self, task_id: int) -> Optional[Task]:
-        """Retrieve a task by its ID.
+        """Retrieve a task by its ID in O(1) time.
 
         Args:
             task_id: The ID of the task to retrieve
@@ -33,10 +46,7 @@ class JsonTaskRepository(TaskRepository):
         Returns:
             The task if found, None otherwise
         """
-        for task in self.tasks:
-            if task.id == task_id:
-                return task
-        return None
+        return self._task_index.get(task_id)
 
     def get_children(self, task_id: int) -> List[Task]:
         """Retrieve all child tasks of a given task.
@@ -56,10 +66,11 @@ class JsonTaskRepository(TaskRepository):
             task: The task to save
         """
         # Check if task already exists
-        existing = self.get_by_id(task.id)
+        existing = self._task_index.get(task.id)
         if not existing:
-            # New task - add to list
+            # New task - add to list and index
             self.tasks.append(task)
+            self._task_index[task.id] = task
 
         # Save to file (existing task is already updated in-place)
         self._save_to_file()
@@ -71,6 +82,7 @@ class JsonTaskRepository(TaskRepository):
             task_id: The ID of the task to delete
         """
         self.tasks = [task for task in self.tasks if task.id != task_id]
+        self._rebuild_index()
         self._save_to_file()
 
     def create(self, name: str, priority: int, **kwargs) -> Task:
