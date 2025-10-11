@@ -3,7 +3,11 @@
 import click
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from shared.click_types.datetime_with_default import DateTimeWithDefault
-from utils.console_messages import print_success, print_task_not_found_error, print_error
+from utils.console_messages import (
+    print_success,
+    print_task_not_found_error,
+    print_error,
+)
 from application.dto.create_task_input import CreateTaskInput
 
 
@@ -27,7 +31,7 @@ from application.dto.create_task_input import CreateTaskInput
     "--planned-start",
     type=DateTimeWithDefault(),
     default=None,
-    prompt="Planned start (leave empty to skip)",
+    prompt="Planned start",
     prompt_required=False,
     help="Planned start (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, defaults to 18:00:00)",
 )
@@ -35,7 +39,7 @@ from application.dto.create_task_input import CreateTaskInput
     "--planned-end",
     type=DateTimeWithDefault(),
     default=None,
-    prompt="Planned end (leave empty to skip)",
+    prompt="Planned end",
     prompt_required=False,
     help="Planned end (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, defaults to 18:00:00)",
 )
@@ -43,14 +47,14 @@ from application.dto.create_task_input import CreateTaskInput
     "--deadline",
     type=DateTimeWithDefault(),
     default=None,
-    prompt="Task deadline (leave empty to skip)",
+    prompt="Task deadline",
     help="Deadline (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, defaults to 18:00:00)",
 )
 @click.option(
     "--estimated-duration",
     type=float,
     default=None,
-    prompt="Estimated duration in hours (leave empty to skip)",
+    prompt="Estimated duration in hours",
     help="Estimated duration in hours (e.g., 2.5)",
 )
 @click.pass_context
