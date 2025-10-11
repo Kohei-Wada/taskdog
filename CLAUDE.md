@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Taskdog is a hierarchical task management CLI tool built with Python, Click, and Rich. It supports parent-child task relationships, time tracking, and multiple task states (PENDING, IN_PROGRESS, COMPLETED, FAILED) with beautiful terminal output.
+Taskdog is a hierarchical task management CLI tool built with Python, Click, and Rich. It supports parent-child task relationships, time tracking, and multiple task states (PENDING, IN_PROGRESS, COMPLETED, FAILED) with beautiful terminal output. The codebase follows Clean Architecture principles with clear separation between layers.
 
 ### Data Storage
 
@@ -21,10 +21,10 @@ Tasks are stored in `tasks.json` following the XDG Base Directory specification:
 make test
 
 # Run a single test file
-PYTHONPATH=src uv run python -m unittest tests/test_task_service.py
+PYTHONPATH=src uv run python -m unittest tests/test_create_task_use_case.py
 
 # Run a specific test case
-PYTHONPATH=src uv run python -m unittest tests.test_task_service.TaskServiceTest.test_create_task
+PYTHONPATH=src uv run python -m unittest tests.test_create_task_use_case.CreateTaskUseCaseTest.test_execute_success
 ```
 
 ### Installation
@@ -47,92 +47,116 @@ PYTHONPATH=src uv run python -m taskdog.cli --help
 
 ## Architecture
 
+The application follows **Clean Architecture** with distinct layers:
+
+### Layer Structure
+
+**Domain Layer** (`src/domain/`)
+- `entities/`: Core business entities (Task, TaskStatus)
+- `services/`: Domain services (TimeTracker, TaskValidator)
+- `exceptions/`: Domain-specific exceptions (TaskNotFoundException)
+- No dependencies on other layers; defines core business logic
+
+**Application Layer** (`src/application/`)
+- `use_cases/`: Business logic orchestration (CreateTaskUseCase, StartTaskUseCase, etc.)
+  - Each use case inherits from `UseCase[TInput, TOutput]` base class
+  - Use cases are stateless and dependency-injected
+- `queries/`: Read-optimized operations (TaskQueryService with filters and sorters)
+- `dto/`: Data Transfer Objects for use case inputs (CreateTaskInput, StartTaskInput, etc.)
+- Depends on domain layer; defines application-specific logic
+
+**Infrastructure Layer** (`src/infrastructure/`)
+- `persistence/`: Repository implementations (TaskRepository abstract, JsonTaskRepository concrete)
+- Provides concrete implementations of interfaces defined in domain/application
+- Handles external concerns (file I/O, data persistence)
+
+**Presentation Layer** (`src/presentation/`)
+- `cli/commands/`: Click command implementations (add, tree, table, gantt, start, done, etc.)
+- `formatters/`: Rich-based output formatting (RichTreeFormatter, RichTableFormatter, RichGanttFormatter)
+- Depends on application layer use cases and queries
+
+**Shared Layer** (`src/shared/`)
+- `click_types/`: Custom Click parameter types (DateTimeWithDefault)
+- Cross-cutting utilities used across layers
+
 ### Dependency Injection Pattern
-The application uses Click's context object for dependency injection (cli.py:28-37). Dependencies are initialized once and stored in `ctx.obj` as a dictionary, making them accessible to all commands via `@click.pass_context`.
+
+Dependencies are initialized in `cli.py` (lines 41-77) and stored in Click's context object (`ctx.obj`):
+- Use cases: `create_task_use_case`, `start_task_use_case`, `complete_task_use_case`, `update_task_use_case`, `remove_task_use_case`
+- Queries: `task_query_service`
+- Infrastructure: `repository`, `time_tracker`
+- Presentation: `console`
+
+All commands access dependencies via `@click.pass_context` and `ctx.obj["dependency_name"]`.
 
 ### Core Components
 
-**TaskService** (`src/services/task_service.py`)
-- Central service layer that coordinates repository and time tracking
-- Manages task lifecycle: create, remove (cascade/orphan), update
-- Delegates validation to TaskValidator and time tracking to TimeTracker
-- Methods: `create_task()`, `remove_cascade()`, `remove_orphan()`, `update_task()`, `update_status()`
-- `update_status()` is used by start/done commands for quick status changes with automatic time tracking
+**Use Cases** (`src/application/use_cases/`)
+- Generic base class: `UseCase[TInput, TOutput]` with abstract `execute(input_dto)` method
+- Concrete implementations: CreateTaskUseCase, StartTaskUseCase, CompleteTaskUseCase, UpdateTaskUseCase, RemoveTaskUseCase
+- Each use case encapsulates a single business operation
+- Use cases validate inputs, orchestrate domain logic, and coordinate with repository/services
 
-**Repository Pattern** (`src/repository/`)
-- Abstract interface `TaskRepository` with concrete `JsonTaskRepository` implementation
-- Persistence layer for task storage in `tasks.json`
-- Responsible for ID generation (`generate_next_id()`)
-- Key methods: `get_all()`, `get_by_id()`, `get_children()`, `save()`, `delete()`, `generate_next_id()`
+**Query Service** (`src/application/queries/task_query_service.py`)
+- Read-only operations optimized for data retrieval
+- Methods: `get_today_tasks()`, `get_all_tasks()`, `get_incomplete_tasks_with_hierarchy()`, `get_incomplete_tasks()`
+- Uses filters (TodayFilter) and sorters (TaskSorter) for query composition
+- Separates reads from writes (CQRS-like pattern)
 
-**TimeTracker** (`src/trackers/time_tracker.py`)
-- Automatically records `actual_start` when status → IN_PROGRESS
-- Automatically records `actual_end` when status → COMPLETED/FAILED
-- Invoked by TaskService during status updates
+**Repository Pattern** (`src/infrastructure/persistence/`)
+- Abstract interface `TaskRepository` defines contract
+- Concrete `JsonTaskRepository` handles JSON file persistence
+- Key methods: `get_all()`, `get_by_id()`, `get_children()`, `save()`, `delete()`, `generate_next_id()`, `create()`
+- Repository is responsible for ID generation and task persistence
 
-**TaskValidator** (`src/validators/task_validator.py`)
-- Validates parent existence before task creation
-- Prevents circular parent references by checking ancestor chain
-- Raises `TaskNotFoundException` on validation failures
+**TimeTracker** (`src/domain/services/time_tracker.py`)
+- Domain service that automatically records timestamps
+- Records `actual_start` when status → IN_PROGRESS
+- Records `actual_end` when status → COMPLETED/FAILED
+- Invoked by use cases during status updates
 
-**Command Registration** (`src/taskdog/cli.py`)
-- Commands are defined as standalone Click commands using `@click.command()` decorator
-- Each command uses `@click.pass_context` to access dependencies from `ctx.obj`
-- Commands are registered via `cli.add_command()` in cli.py after imports
-- Pattern: Direct command definition with context-based dependency injection
-- Commands: add, list, dump, remove, update, start, done, gantt
-  - `start <ID>`: Quick command to start a task (sets status to IN_PROGRESS)
-  - `done <ID>`: Quick command to complete a task (sets status to COMPLETED)
-  - `gantt`: Display tasks as a Gantt chart with timeline visualization
-
-**Rich Formatters** (`src/formatters/`)
-- `RichTreeFormatter`: Renders hierarchical task tree with colored status, icons, and indentation (default)
-- `RichTableFormatter`: Renders tasks as a beautiful table with borders and column alignment
-  - Columns: ID, Name, Priority, Status, Parent, Plan Start, Plan End, Actual Start, Actual End, Deadline, Duration
-  - Datetime displayed as `YYYY-MM-DD HH:MM` (seconds omitted for space)
-- `RichGanttFormatter`: Renders tasks as a Gantt chart with timeline visualization
-  - Shows planned periods (background), actual periods (colored symbols), and deadlines
-  - Uses layered rendering: base → planned → actual → deadline (highest priority)
+**Rich Formatters** (`src/presentation/formatters/`)
+- `RichTreeFormatter`: Renders hierarchical task tree with colored status and indentation
+- `RichTableFormatter`: Renders tasks as a table (columns: ID, Name, Priority, Status, Parent, Plan Start/End, Actual Start/End, Deadline, Duration)
+- `RichGanttFormatter`: Renders timeline visualization with layered rendering (base → planned → actual → deadline)
   - Weekend coloring: Saturday (blueish), Sunday (reddish), weekdays (gray)
   - Status-based colors: IN_PROGRESS (blue), COMPLETED (green), FAILED (red)
-  - Hierarchical display with date header showing months and days
-  - Accessed via `taskdog gantt` command
-- Status colors: PENDING (yellow), IN_PROGRESS (blue), COMPLETED (green), FAILED (red)
-- Shows task info, datetime fields (deadline, planned, actual), duration estimates
-- Format selected with `taskdog list --format [tree|table]` or `-f [tree|table]`
+- Shared constants in `formatters/constants.py`: STATUS_STYLES, STATUS_COLORS_BOLD, DATETIME_FORMAT
 
-**Custom Click Types** (`src/click_types/`)
-- `DateTimeWithDefault`: Extends Click's DateTime type to add default time (18:00:00) when only date is provided
-- Accepts formats: `YYYY-MM-DD` (adds 18:00:00) or `YYYY-MM-DD HH:MM:SS` (preserves time)
-- Used in add/update commands for date options
+**Custom Click Types** (`src/shared/click_types/datetime_with_default.py`)
+- `DateTimeWithDefault`: Extends Click's DateTime to add default time (18:00:00) when only date provided
+- Accepts: `YYYY-MM-DD` (adds 18:00:00) or `YYYY-MM-DD HH:MM:SS` (preserves time)
 
 ### Task Model
-**Task** (`src/task/task.py`)
-- Core fields: id, name, priority, status, parent_id
+**Task** (`src/domain/entities/task.py`)
+- Core fields: id, name, priority, status, parent_id, timestamp
 - Time fields: planned_start/end, deadline, actual_start/end, estimated_duration
-- Auto-calculates `actual_duration_hours` from actual_start/end timestamps
+- Property: `actual_duration_hours` auto-calculated from actual_start/end timestamps
+- Methods: `to_dict()`, `from_dict()` for serialization
 - Datetime format: `YYYY-MM-DD HH:MM:SS`
 
-### Module Structure
-All source code lives in `src/` with the following top-level packages:
-- `taskdog/` - CLI entry point and context setup
-- `task/` - Task model and exceptions
-- `commands/` - Click command implementations
-- `repository/` - Data persistence layer
-- `validators/` - Business rule validation
-- `trackers/` - Automatic time tracking
-- `formatters/` - Rich-based output formatting
-- `services/` - Business logic coordination
-- `click_types/` - Custom Click parameter types
+### Commands
+All commands live in `src/presentation/cli/commands/` and are registered in `cli.py`:
+- `add`: Add new task (uses CreateTaskUseCase)
+- `tree`: Display hierarchical tree view (uses TaskQueryService)
+- `table`: Display flat table view (uses TaskQueryService)
+- `today`: Show today's tasks (uses TaskQueryService.get_today_tasks())
+- `today-new`: Alias for today command
+- `start`: Start task (uses StartTaskUseCase)
+- `done`: Complete task (uses CompleteTaskUseCase)
+- `update`: Update task properties (uses UpdateTaskUseCase)
+- `remove`: Remove task with cascade/orphan options (uses RemoveTaskUseCase)
+- `gantt`: Display Gantt chart timeline (uses TaskQueryService)
+- `dump`: Dump all tasks as JSON (direct repository access)
 
 ### Key Design Decisions
 1. **All tests require `PYTHONPATH=src`** - Source modules are not installed during test runs
-2. **Commands use Click context** - Dependencies injected via `ctx.obj` dict, accessed with `@click.pass_context`
-3. **Command registration via `add_command()`** - Commands imported and registered in `cli.py` via `cli.add_command()`
-4. **Repository returns object references** - `save()` updates existing tasks in-place; only adds new tasks to list
-5. **Cascade delete vs orphan** - `remove_orphan(id)` orphans children; `remove_cascade(id)` recursively deletes
-6. **Repository manages ID generation** - TaskService is stateless; ID generation delegated to Repository
-7. **Rich for all output** - Console output uses Rich library for colors, tables, trees, and formatting
-8. **Package list in pyproject.toml** - All modules must be explicitly listed in `packages` array for installation
-9. **Formatter constants** - Shared constants (STATUS_STYLES, STATUS_COLORS_BOLD, DATETIME_FORMAT) centralized in `formatters/constants.py`
-10. **Gantt chart layering** - Timeline visualization applies layers in priority order: empty → planned → actual → deadline
+2. **Clean Architecture layers** - Strict dependency rules: Presentation → Application → Domain ← Infrastructure
+3. **Use case pattern** - Each business operation is a separate use case class with `execute()` method
+4. **DTO pattern** - Input data transferred via dataclass DTOs (CreateTaskInput, StartTaskInput, etc.)
+5. **CQRS-like separation** - Use cases handle writes, QueryService handles reads
+6. **Repository manages ID generation** - `create()` method auto-assigns IDs, use cases are stateless
+7. **Context-based DI** - Dependencies injected via Click's `ctx.obj` dict, accessed with `@click.pass_context`
+8. **Command registration** - Commands imported and registered in `cli.py` via `cli.add_command()`
+9. **Package list in pyproject.toml** - All modules must be explicitly listed in `packages` array for installation
+10. **Rich for all output** - Console output uses Rich library for colors, tables, trees, and formatting
