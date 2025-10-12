@@ -4,6 +4,7 @@ import click
 
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
+from domain.constants import DEFAULT_START_HOUR
 from domain.entities.task import TaskStatus
 from domain.services.time_tracker import TimeTracker
 from presentation.cli.error_handler import handle_task_errors
@@ -40,7 +41,7 @@ from shared.click_types.datetime_with_default import DateTimeWithDefault
 )
 @click.option(
     "--planned-start",
-    type=DateTimeWithDefault(default_hour=9),
+    type=DateTimeWithDefault(default_hour=DEFAULT_START_HOUR),
     default=None,
     help="Planned start (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 09:00:00)",
 )

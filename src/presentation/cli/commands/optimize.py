@@ -6,7 +6,7 @@ import click
 from rich.table import Table
 
 from application.use_cases.optimize_schedule import OptimizeScheduleInput, OptimizeScheduleUseCase
-from domain.constants import DATETIME_FORMAT
+from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
 from presentation.cli.error_handler import handle_command_errors
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
@@ -24,8 +24,8 @@ def get_next_weekday():
     while next_day.weekday() >= 5:
         next_day += timedelta(days=1)
 
-    # Set time to 18:00:00 for consistency with DateTimeWithDefault
-    return next_day.replace(hour=18, minute=0, second=0, microsecond=0)
+    # Set time to DEFAULT_START_HOUR (9:00) for schedule start times
+    return next_day.replace(hour=DEFAULT_START_HOUR, minute=0, second=0, microsecond=0)
 
 
 @click.command(
@@ -72,7 +72,7 @@ EXAMPLES:
 )
 @click.option(
     "--start-date",
-    type=DateTimeWithDefault(default_hour=9),
+    type=DateTimeWithDefault(default_hour=DEFAULT_START_HOUR),
     help="Start date for scheduling (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 09:00:00). Defaults to next weekday.",
 )
 @click.option(

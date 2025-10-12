@@ -3,7 +3,7 @@
 import copy
 from datetime import datetime, timedelta
 
-from domain.constants import DATETIME_FORMAT
+from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
 from domain.entities.task import Task, TaskStatus
 
 
@@ -214,11 +214,13 @@ class ScheduleOptimizer:
 
             current_date += timedelta(days=1)
 
-        # Set planned times (default to 18:00:00 for consistency with DateTimeWithDefault)
+        # Set planned times with appropriate default hours
         if start_date and end_date:
+            # Start date keeps its time (from self.start_date, typically 9:00)
             task_copy.planned_start = start_date.strftime(DATETIME_FORMAT)
-            # End date should be end of work day
-            task_copy.planned_end = end_date.strftime(DATETIME_FORMAT)
+            # End date should be end of work day (18:00)
+            end_date_with_time = end_date.replace(hour=DEFAULT_END_HOUR, minute=0, second=0)
+            task_copy.planned_end = end_date_with_time.strftime(DATETIME_FORMAT)
             task_copy.daily_allocations = task_daily_allocations
             return task_copy
 

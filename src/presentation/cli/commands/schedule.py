@@ -4,6 +4,7 @@ import click
 
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
+from domain.constants import DEFAULT_START_HOUR
 from domain.services.time_tracker import TimeTracker
 from presentation.cli.error_handler import handle_task_errors
 from shared.click_types.datetime_with_default import DateTimeWithDefault
@@ -11,7 +12,7 @@ from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 @click.command(name="schedule", help="Set planned schedule for a task.")
 @click.argument("task_id", type=int)
-@click.argument("start", type=DateTimeWithDefault(default_hour=9))
+@click.argument("start", type=DateTimeWithDefault(default_hour=DEFAULT_START_HOUR))
 @click.argument("end", type=DateTimeWithDefault(), required=False)
 @click.pass_context
 @handle_task_errors("setting schedule")

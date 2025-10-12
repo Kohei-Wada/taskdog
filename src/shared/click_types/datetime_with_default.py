@@ -4,7 +4,7 @@ from datetime import datetime, time
 
 import click
 
-from domain.constants import DATETIME_FORMAT
+from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
 
 
 class DateTimeWithDefault(click.DateTime):
@@ -20,11 +20,12 @@ class DateTimeWithDefault(click.DateTime):
         default_hour: Default hour to use when only date is provided (default: 18 for end times)
     """
 
-    def __init__(self, default_hour=18):
+    def __init__(self, default_hour=DEFAULT_END_HOUR):
         """Initialize with supported datetime formats and default hour.
 
         Args:
             default_hour: Hour to use as default when only date provided (0-23)
+                         Defaults to DEFAULT_END_HOUR (18) for end times/deadlines
         """
         super().__init__(formats=[DATETIME_FORMAT, "%Y-%m-%d", "%m-%d", "%m/%d"])
         self.default_hour = default_hour
