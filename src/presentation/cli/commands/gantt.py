@@ -71,13 +71,22 @@ EXAMPLE:
 )
 @click.option(
     "--hide-completed",
+    "-c",
     is_flag=True,
     default=False,
     help="Hide completed tasks from the chart.",
 )
+@click.option(
+    "--all",
+    "-a",
+    "show_all",
+    is_flag=True,
+    default=False,
+    help="Show all tasks including archived ones.",
+)
 @click.pass_context
 @handle_command_errors("displaying Gantt chart")
-def gantt_command(ctx, start_date, end_date, hide_completed):
+def gantt_command(ctx, start_date, end_date, hide_completed, show_all):
     """Display all tasks as a Gantt chart with workload analysis.
 
     The Gantt chart visualizes task timelines and provides daily workload
@@ -87,6 +96,10 @@ def gantt_command(ctx, start_date, end_date, hide_completed):
     task_query_service = TaskQueryService(repository)
 
     tasks = task_query_service.get_all_tasks()
+
+    # Filter out archived tasks by default (unless --all is specified)
+    if not show_all:
+        tasks = [task for task in tasks if task.status != TaskStatus.ARCHIVED]
 
     # Filter out completed tasks if requested
     if hide_completed:
