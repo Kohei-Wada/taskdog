@@ -45,17 +45,21 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
 
         # Handle parent_id separately for validation
         # Use UNSET sentinel to distinguish "not provided" from "explicitly None"
-        from application.dto.update_task_input import UNSET
+        from application.dto.update_task_input import UNSET, _Unset
 
         if input_dto.parent_id is not UNSET:
-            # Validate if parent_id is not None
-            if input_dto.parent_id is not None:
+            # Validate if parent_id is not None and not UNSET
+            if input_dto.parent_id is not None and not isinstance(input_dto.parent_id, _Unset):
+                # Type narrowing: parent_id is int here
+                parent_id_int: int = input_dto.parent_id
                 self.validator.validate_parent(
-                    parent_id=input_dto.parent_id,
+                    parent_id=parent_id_int,
                     repository=self.repository,
                     task_id=input_dto.task_id,
                 )
-            task.parent_id = input_dto.parent_id
+            # Update parent_id (int | None)
+            if not isinstance(input_dto.parent_id, _Unset):
+                task.parent_id = input_dto.parent_id
             updated_fields.append("parent_id")
 
         # Handle status separately for time tracking

@@ -56,6 +56,7 @@ class RemoveTaskUseCase(UseCase[RemoveTaskInput, int]):
         # Recursively remove all children first
         children = self.repository.get_children(task_id)
         for child in children:
+            assert child.id is not None  # Children from repository always have IDs
             removed_count += self._remove_cascade(child.id)
 
         # Remove the task itself

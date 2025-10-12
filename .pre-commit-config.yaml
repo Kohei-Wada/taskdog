@@ -13,15 +13,14 @@ repos:
       - id: ruff-format
 
   # mypy - static type checker
-  # Phase 1: mypy configured but temporarily disabled in pre-commit
-  # Run manually with: PYTHONPATH=src uv run mypy src/
-  # Will be enabled in Phase 2 after type errors are fixed
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.13.0
-  #   hooks:
-  #     - id: mypy
-  #       additional_dependencies: [click>=8.3.0, rich>=14.2.0]
-  #       args: [--config-file=pyproject.toml, src/]
+  # Phase 2: mypy enabled with permissive settings
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [click>=8.3.0, rich>=14.2.0]
+        args: [--config-file=pyproject.toml, src/]
+        pass_filenames: false
 
   # Standard pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks

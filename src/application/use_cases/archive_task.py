@@ -57,10 +57,13 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, int]):
         # Recursively archive all children first
         children = self.repository.get_children(task_id)
         for child in children:
+            assert child.id is not None  # Children from repository always have IDs
             archived_count += self._archive_cascade(child.id)
 
         # Archive the task itself
         task = self.repository.get_by_id(task_id)
+        if task is None:
+            return archived_count  # Task was deleted, skip
         task.status = TaskStatus.ARCHIVED
         self.repository.save(task)
         archived_count += 1
@@ -84,6 +87,8 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, int]):
 
         # Archive the task itself
         task = self.repository.get_by_id(task_id)
+        if task is None:
+            return 0  # Task was deleted, skip
         task.status = TaskStatus.ARCHIVED
         self.repository.save(task)
 

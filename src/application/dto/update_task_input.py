@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass, field
 
+from domain.entities.task import TaskStatus
+
 
 # Sentinel value to distinguish "not provided" from "explicitly set to None"
 class _Unset:
@@ -32,7 +34,7 @@ class UpdateTaskInput:
     task_id: int
     name: str | None = None
     priority: int | None = None
-    status: str | None = None
+    status: TaskStatus | None = None
     parent_id: int | None | _Unset = field(default=UNSET)
     planned_start: str | None = None
     planned_end: str | None = None

@@ -39,6 +39,9 @@ class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
+        # Task from repository always has ID
+        assert task.id is not None
+
         # Check if all children are completed
         children = self.repository.get_children(task.id)
         incomplete_children = [child for child in children if child.status != TaskStatus.COMPLETED]

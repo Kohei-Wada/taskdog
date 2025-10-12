@@ -94,25 +94,40 @@ section-order = ["future", "standard-library", "third-party", "first-party", "lo
 [tool.mypy]
 python_version = "3.13"
 mypy_path = "src"
-# Progressive type checking - Phase 1: Basic checks enabled
+# Progressive type checking - Phase 2: Enabled with permissive settings
 warn_unused_configs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
-# check_untyped_defs enabled but allow failures for now
+# Phase 2: Basic checks only, stricter checks disabled for gradual migration
 check_untyped_defs = false
-# Disabled for Phase 2
 disallow_untyped_defs = false
 disallow_any_generics = false
 warn_return_any = false
 strict_equality = false
-# Allow untyped calls for gradual adoption
 disallow_untyped_calls = false
-# Show error context for better debugging
 show_error_context = true
-# Don't fail on existing issues during Phase 1
 warn_no_return = false
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
 check_untyped_defs = false
+
+# Temporarily ignore complex modules with many type issues for Phase 2
+# These will be fixed in Phase 3
+[[tool.mypy.overrides]]
+module = [
+    "application.services.workload_allocator",
+    "application.services.task_prioritizer",
+    "application.services.hierarchy_manager",
+    "application.services.optimization_summary_builder",
+    "application.queries.filters.task_sorter",
+    "application.queries.filters.today_filter",
+    "application.queries.task_query_service",
+    "application.services.task_validator",
+    "presentation.formatters.rich_formatter_base",
+    "presentation.formatters.rich_table_formatter",
+    "presentation.formatters.rich_gantt_formatter",
+    "presentation.cli.commands.*",
+]
+ignore_errors = true

@@ -29,7 +29,7 @@ class JsonTaskRepository(TaskRepository):
         Returns:
             Dictionary mapping task IDs to task objects
         """
-        return {task.id: task for task in self.tasks}
+        return {task.id: task for task in self.tasks if task.id is not None}
 
     def _build_children_index(self) -> dict[int, list[Task]]:
         """Build parent ID to children list index.
@@ -86,6 +86,11 @@ class JsonTaskRepository(TaskRepository):
         Args:
             task: The task to save
         """
+        # Task must have an ID (assigned by create() or from_dict())
+        if task.id is None:
+            msg = "Cannot save task without ID. Use create() to generate ID."
+            raise ValueError(msg)
+
         # Check if task already exists
         existing = self._task_index.get(task.id)
         if not existing:
@@ -201,7 +206,9 @@ class JsonTaskRepository(TaskRepository):
         """
         if not self.tasks:
             return 1
-        return max(task.id for task in self.tasks) + 1
+        # Filter out tasks without IDs (should not happen in normal operation)
+        task_ids = [task.id for task in self.tasks if task.id is not None]
+        return max(task_ids) + 1 if task_ids else 1
 
     def _save_to_file(self) -> None:
         """Save all tasks to JSON file with atomic write and backup.
