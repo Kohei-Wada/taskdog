@@ -154,6 +154,85 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
         self.assertEqual(context.exception.task_id, 999)
 
+    def test_execute_update_all_fields_at_once(self):
+        """Test updating all fields simultaneously"""
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        input_dto = UpdateTaskInput(
+            task_id=task.id,
+            status=TaskStatus.IN_PROGRESS,
+            priority=3,
+            planned_start="2025-10-12 09:00:00",
+            planned_end="2025-10-12 18:00:00",
+            deadline="2025-10-15 18:00:00",
+            estimated_duration=8.0,
+        )
+        result_task, updated_fields = self.use_case.execute(input_dto)
+
+        # Verify all fields were updated
+        self.assertEqual(result_task.status, TaskStatus.IN_PROGRESS)
+        self.assertEqual(result_task.priority, 3)
+        self.assertEqual(result_task.planned_start, "2025-10-12 09:00:00")
+        self.assertEqual(result_task.planned_end, "2025-10-12 18:00:00")
+        self.assertEqual(result_task.deadline, "2025-10-15 18:00:00")
+        self.assertEqual(result_task.estimated_duration, 8.0)
+        self.assertIsNotNone(result_task.actual_start)
+
+        # Verify all field names are in updated_fields
+        self.assertEqual(len(updated_fields), 6)
+        self.assertIn("status", updated_fields)
+        self.assertIn("priority", updated_fields)
+        self.assertIn("planned_start", updated_fields)
+        self.assertIn("planned_end", updated_fields)
+        self.assertIn("deadline", updated_fields)
+        self.assertIn("estimated_duration", updated_fields)
+
+    def test_execute_status_change_to_completed_records_end_time(self):
+        """Test that changing status to COMPLETED records actual_end timestamp"""
+        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        task.actual_start = "2025-10-12 09:00:00"
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        input_dto = UpdateTaskInput(task_id=task.id, status=TaskStatus.COMPLETED)
+        result_task, updated_fields = self.use_case.execute(input_dto)
+
+        self.assertEqual(result_task.status, TaskStatus.COMPLETED)
+        self.assertIsNotNone(result_task.actual_end)
+        self.assertIn("status", updated_fields)
+
+    def test_execute_status_change_to_failed_records_end_time(self):
+        """Test that changing status to FAILED records actual_end timestamp"""
+        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        task.actual_start = "2025-10-12 09:00:00"
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        input_dto = UpdateTaskInput(task_id=task.id, status=TaskStatus.FAILED)
+        result_task, updated_fields = self.use_case.execute(input_dto)
+
+        self.assertEqual(result_task.status, TaskStatus.FAILED)
+        self.assertIsNotNone(result_task.actual_end)
+        self.assertIn("status", updated_fields)
+
+    def test_execute_updates_are_persisted(self):
+        """Test that updates are correctly persisted to repository"""
+        task = Task(name="Test Task", priority=1)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        input_dto = UpdateTaskInput(
+            task_id=task.id, priority=5, deadline="2025-10-20 18:00:00"
+        )
+        self.use_case.execute(input_dto)
+
+        # Reload from repository to verify persistence
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertEqual(persisted_task.priority, 5)
+        self.assertEqual(persisted_task.deadline, "2025-10-20 18:00:00")
+
 
 if __name__ == "__main__":
     unittest.main()

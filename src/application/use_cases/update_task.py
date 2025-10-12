@@ -47,26 +47,19 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, Tuple[Task, List[str]]]):
             task.status = input_dto.status
             updated_fields.append("status")
 
-        # Update remaining fields
-        if input_dto.priority is not None:
-            task.priority = input_dto.priority
-            updated_fields.append("priority")
+        # Update remaining fields using dictionary mapping
+        field_mapping = {
+            "priority": input_dto.priority,
+            "planned_start": input_dto.planned_start,
+            "planned_end": input_dto.planned_end,
+            "deadline": input_dto.deadline,
+            "estimated_duration": input_dto.estimated_duration,
+        }
 
-        if input_dto.planned_start is not None:
-            task.planned_start = input_dto.planned_start
-            updated_fields.append("planned_start")
-
-        if input_dto.planned_end is not None:
-            task.planned_end = input_dto.planned_end
-            updated_fields.append("planned_end")
-
-        if input_dto.deadline is not None:
-            task.deadline = input_dto.deadline
-            updated_fields.append("deadline")
-
-        if input_dto.estimated_duration is not None:
-            task.estimated_duration = input_dto.estimated_duration
-            updated_fields.append("estimated_duration")
+        for field_name, value in field_mapping.items():
+            if value is not None:
+                setattr(task, field_name, value)
+                updated_fields.append(field_name)
 
         if updated_fields:
             self.repository.save(task)
