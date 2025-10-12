@@ -3,12 +3,12 @@
 from datetime import datetime, timedelta
 
 import click
-from rich.table import Table
 
 from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from application.use_cases.optimize_schedule import OptimizeScheduleInput, OptimizeScheduleUseCase
 from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
 from presentation.cli.error_handler import handle_command_errors
+from presentation.formatters.rich_optimization_formatter import RichOptimizationFormatter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
@@ -150,87 +150,15 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
     else:
         console.print(f"[green]✓[/green] Optimized schedules for {len(modified_tasks)} task(s)\n")
 
-    # Create table
-    table = Table(title="Optimized Tasks")
-    table.add_column("ID", style="cyan", justify="right")
-    table.add_column("Name", style="white")
-    table.add_column("Change", style="yellow")
-    table.add_column("Priority", justify="right")
-    table.add_column("Duration", justify="right")
-    table.add_column("Planned Start", style="green")
-    table.add_column("Planned End", style="green")
-    table.add_column("Deadline", style="red")
-
-    # Sort by planned_start
-    sorted_tasks = sorted(modified_tasks, key=lambda t: t.planned_start if t.planned_start else "")
-
-    for task in sorted_tasks:
-        # Determine change type
-        if task.id in task_states_before:
-            if task_states_before[task.id] is None:
-                change_type = "NEW"
-            else:
-                change_type = "RESCHEDULED"
-        else:
-            change_type = "NEW"
-
-        # Format duration
-        duration_str = f"{task.estimated_duration}h" if task.estimated_duration else "-"
-
-        # Format dates
-        start_str = task.planned_start if task.planned_start else "-"
-        end_str = task.planned_end if task.planned_end else "-"
-        deadline_str = task.deadline if task.deadline else "-"
-
-        table.add_row(
-            str(task.id),
-            task.name,
-            change_type,
-            str(task.priority),
-            duration_str,
-            start_str,
-            end_str,
-            deadline_str,
-        )
-
-    console.print(table)
+    # Format and print table
+    formatter = RichOptimizationFormatter(console)
+    formatter.format_table(modified_tasks, task_states_before)
 
     # Show summary section
-    console.print("\n[bold]Summary:[/bold]")
-    console.print(f"  • {summary.new_count} task(s) newly scheduled")
-    if summary.rescheduled_count > 0:
-        console.print(f"  • {summary.rescheduled_count} task(s) rescheduled (--force)")
-    console.print(f"  • Total workload: {summary.total_hours}h across {summary.days_span} days")
-    if summary.deadline_conflicts > 0:
-        console.print(f"  • [red]⚠[/red] Deadline conflicts: {summary.deadline_conflicts}")
-    else:
-        console.print("  • Deadline conflicts: 0")
+    formatter.format_summary(summary)
 
-    if summary.unscheduled_tasks:
-        console.print(
-            f"\n  [yellow]⚠[/yellow] {len(summary.unscheduled_tasks)} task(s) could not be scheduled:"
-        )
-        for task in summary.unscheduled_tasks[:5]:  # Show first 5
-            reason = "No available time slots"
-            if task.deadline:
-                reason = "Cannot meet deadline with current constraints"
-            console.print(f"    • #{task.id} {task.name} - {reason}")
-        if len(summary.unscheduled_tasks) > 5:
-            console.print(f"    ... and {len(summary.unscheduled_tasks) - 5} more")
-        console.print(
-            "\n  [dim]Tip: Try increasing --max-hours-per-day or adjusting task deadlines[/dim]"
-        )
-
-    # Workload validation
-    console.print("\n[bold]Workload Validation:[/bold]")
-    if summary.overloaded_days:
-        console.print(f"  [red]⚠[/red] {len(summary.overloaded_days)} day(s) exceed max hours:")
-        for date_str, hours in summary.overloaded_days[:5]:  # Show first 5
-            console.print(f"    • {date_str}: {hours}h (max: {max_hours_per_day}h)")
-        if len(summary.overloaded_days) > 5:
-            console.print(f"    ... and {len(summary.overloaded_days) - 5} more")
-    else:
-        console.print(f"  [green]✓[/green] All days within max hours ({max_hours_per_day}h/day)")
+    # Show warnings
+    formatter.format_warnings(summary, max_hours_per_day)
 
     # Show configuration
     console.print("\n[bold]Configuration:[/bold]")
