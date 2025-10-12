@@ -6,6 +6,7 @@ from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.constants import DEFAULT_START_HOUR
 from domain.entities.task import TaskStatus
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
@@ -101,9 +102,10 @@ def update_command(
         taskdog estimate <ID> <HOURS>
         taskdog schedule <ID> <START> [END]
     """
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
-    time_tracker = ctx.obj["time_tracker"]
+    ctx_obj: CliContext = ctx.obj
+    console = ctx_obj.console
+    repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
     update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
 
     # Validate parent options

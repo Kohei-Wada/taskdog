@@ -7,6 +7,7 @@ import click
 from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from application.use_cases.optimize_schedule import OptimizeScheduleInput, OptimizeScheduleUseCase
 from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_optimization_formatter import RichOptimizationFormatter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
@@ -97,8 +98,9 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
     Analyzes all tasks and assigns planned_start/end dates based on
     priorities, deadlines, estimated durations, and workload constraints.
     """
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
+    ctx_obj: CliContext = ctx.obj
+    console = ctx_obj.console
+    repository = ctx_obj.repository
 
     # Parse start_date or use next weekday
     if start_date:

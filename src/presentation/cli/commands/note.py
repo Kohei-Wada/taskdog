@@ -5,6 +5,7 @@ import subprocess
 
 import click
 
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from presentation.utils.notes_template import generate_notes_template
 from utils.console_messages import print_error
@@ -50,8 +51,9 @@ def get_editor():
 @handle_task_errors("editing notes")
 def note_command(ctx, task_id):
     """Edit task notes in markdown."""
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
+    ctx_obj: CliContext = ctx.obj
+    console = ctx_obj.console
+    repository = ctx_obj.repository
 
     # Get task from repository
     task = repository.get_by_id(task_id)

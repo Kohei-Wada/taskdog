@@ -5,6 +5,7 @@ from functools import wraps
 import click
 
 from domain.exceptions.task_exceptions import TaskNotFoundException
+from presentation.cli.context import CliContext
 from utils.console_messages import print_error, print_task_not_found_error
 
 
@@ -32,7 +33,8 @@ def handle_task_errors(action_name: str, is_parent: bool = False):
         def wrapper(*args, **kwargs):
             # Extract console from context
             ctx = click.get_current_context()
-            console = ctx.obj.get("console")
+            ctx_obj: CliContext = ctx.obj
+            console = ctx_obj.console
 
             try:
                 return func(*args, **kwargs)
@@ -69,7 +71,8 @@ def handle_command_errors(action_name: str):
         def wrapper(*args, **kwargs):
             # Extract console from context
             ctx = click.get_current_context()
-            console = ctx.obj.get("console")
+            ctx_obj: CliContext = ctx.obj
+            console = ctx_obj.console
 
             try:
                 return func(*args, **kwargs)

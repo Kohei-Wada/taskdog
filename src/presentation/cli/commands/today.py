@@ -3,6 +3,7 @@
 import click
 
 from application.queries.task_query_service import TaskQueryService
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_table_formatter import RichTableFormatter
 from presentation.formatters.rich_tree_formatter import RichTreeFormatter
@@ -48,7 +49,8 @@ def today_command(ctx, format, all, sort, reverse):
     By default, completed tasks are excluded unless --all is specified.
     Parent tasks are included if they have children matching today's criteria.
     """
-    repository = ctx.obj["repository"]
+    ctx_obj: CliContext = ctx.obj
+    repository = ctx_obj.repository
     query_service = TaskQueryService(repository)
 
     # Get today's tasks (filtered and sorted)

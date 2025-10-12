@@ -4,6 +4,7 @@ import click
 
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 
 
@@ -29,18 +30,16 @@ def parent_command(ctx, task_id, parent_id, clear):
         taskdog parent 10 1     # Set task 10's parent to task 1
         taskdog parent 5 --clear  # Clear task 5's parent (make it a root task)
     """
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
-    time_tracker = ctx.obj["time_tracker"]
-    update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
+    ctx_obj: CliContext = ctx.obj
+    update_task_use_case = UpdateTaskUseCase(ctx_obj.repository, ctx_obj.time_tracker)
 
     # Validate arguments
     if clear and parent_id is not None:
-        console.print("[red]Error:[/red] Cannot specify both parent ID and --clear flag")
+        ctx_obj.console.print("[red]Error:[/red] Cannot specify both parent ID and --clear flag")
         return
 
     if not clear and parent_id is None:
-        console.print("[red]Error:[/red] Must specify either parent ID or --clear flag")
+        ctx_obj.console.print("[red]Error:[/red] Must specify either parent ID or --clear flag")
         return
 
     # Determine the parent value to set
@@ -54,11 +53,11 @@ def parent_command(ctx, task_id, parent_id, clear):
 
     # Print success
     if clear:
-        console.print(
+        ctx_obj.console.print(
             f"[green]✓[/green] Cleared parent for [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan])"
         )
     else:
-        parent_task = repository.get_by_id(parent_id)
-        console.print(
+        parent_task = ctx_obj.repository.get_by_id(parent_id)
+        ctx_obj.console.print(
             f"[green]✓[/green] Set parent for [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan]): [yellow]{parent_task.name}[/yellow] (ID: [cyan]{parent_id}[/cyan])"
         )

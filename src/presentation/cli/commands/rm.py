@@ -5,6 +5,7 @@ import click
 from application.dto.remove_task_input import RemoveTaskInput
 from application.use_cases.remove_task import RemoveTaskUseCase
 from presentation.cli.batch_executor import BatchCommandExecutor
+from presentation.cli.context import CliContext
 
 
 @click.command(name="rm", help="Remove task(s) permanently (use archive to preserve data).")
@@ -17,8 +18,9 @@ from presentation.cli.batch_executor import BatchCommandExecutor
 @click.pass_context
 def rm_command(ctx, task_ids, cascade):
     """Remove task(s)."""
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
+    ctx_obj: CliContext = ctx.obj
+    console = ctx_obj.console
+    repository = ctx_obj.repository
     remove_task_use_case = RemoveTaskUseCase(repository)
 
     # Track total removed for summary

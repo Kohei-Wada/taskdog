@@ -7,6 +7,7 @@ import click
 from application.queries.task_query_service import TaskQueryService
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import TaskStatus
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_gantt_formatter import RichGanttFormatter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
@@ -106,7 +107,8 @@ def gantt_command(ctx, start_date, end_date, hide_completed, show_all, sort, rev
     The Gantt chart visualizes task timelines and provides daily workload
     analysis to help identify scheduling conflicts and overallocated days.
     """
-    repository = ctx.obj["repository"]
+    ctx_obj: CliContext = ctx.obj
+    repository = ctx_obj.repository
     task_query_service = TaskQueryService(repository)
 
     tasks = task_query_service.get_all_tasks(sort_by=sort, reverse=reverse)

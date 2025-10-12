@@ -5,6 +5,7 @@ import click
 from application.dto.archive_task_input import ArchiveTaskInput
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from presentation.cli.batch_executor import BatchCommandExecutor
+from presentation.cli.context import CliContext
 
 
 @click.command(
@@ -19,8 +20,9 @@ from presentation.cli.batch_executor import BatchCommandExecutor
 @click.pass_context
 def archive_command(ctx, task_ids, cascade):
     """Archive task(s)."""
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
+    ctx_obj: CliContext = ctx.obj
+    console = ctx_obj.console
+    repository = ctx_obj.repository
     archive_task_use_case = ArchiveTaskUseCase(repository)
 
     # Track total archived for summary

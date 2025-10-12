@@ -7,6 +7,7 @@ from application.use_cases.complete_task import CompleteTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import IncompleteChildrenError
 from presentation.cli.batch_executor import BatchCommandExecutor
+from presentation.cli.context import CliContext
 from utils.console_messages import print_success
 
 
@@ -15,9 +16,10 @@ from utils.console_messages import print_success
 @click.pass_context
 def done_command(ctx, task_ids):
     """Mark task(s) as completed."""
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
-    time_tracker = ctx.obj["time_tracker"]
+    ctx_obj: CliContext = ctx.obj
+    console = ctx_obj.console
+    repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
     complete_task_use_case = CompleteTaskUseCase(repository, time_tracker)
 
     # Define processing function

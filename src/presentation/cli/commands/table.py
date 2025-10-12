@@ -3,6 +3,7 @@
 import click
 
 from application.queries.task_query_service import TaskQueryService
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_table_formatter import RichTableFormatter
 
@@ -37,7 +38,8 @@ def table_command(ctx, all, sort, reverse):
     By default, only shows incomplete tasks (PENDING, IN_PROGRESS, FAILED).
     Use --all to include completed tasks.
     """
-    repository = ctx.obj["repository"]
+    ctx_obj: CliContext = ctx.obj
+    repository = ctx_obj.repository
     task_query_service = TaskQueryService(repository)
 
     # Get tasks using query service

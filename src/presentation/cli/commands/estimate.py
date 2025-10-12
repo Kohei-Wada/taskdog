@@ -4,7 +4,9 @@ import click
 
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from utils.console_messages import print_update_success
 
 
 @click.command(name="estimate", help="Set estimated duration for a task.")
@@ -22,10 +24,8 @@ def estimate_command(ctx, task_id, hours):
         taskdog estimate 5 2.5
         taskdog estimate 10 8.0
     """
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
-    time_tracker = ctx.obj["time_tracker"]
-    update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
+    ctx_obj: CliContext = ctx.obj
+    update_task_use_case = UpdateTaskUseCase(ctx_obj.repository, ctx_obj.time_tracker)
 
     # Build input DTO
     input_dto = UpdateTaskInput(task_id=task_id, estimated_duration=hours)
@@ -34,6 +34,4 @@ def estimate_command(ctx, task_id, hours):
     task, _ = update_task_use_case.execute(input_dto)
 
     # Print success
-    console.print(
-        f"[green]✓[/green] Set estimate for [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan]): [yellow]{hours}h[/yellow]"
-    )
+    print_update_success(ctx_obj.console, task, "estimated duration", hours, lambda h: f"{h}h")

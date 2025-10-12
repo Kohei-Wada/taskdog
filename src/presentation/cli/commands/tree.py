@@ -3,6 +3,7 @@
 import click
 
 from application.queries.task_query_service import TaskQueryService
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_tree_formatter import RichTreeFormatter
 
@@ -39,7 +40,8 @@ def tree_command(ctx, all, sort, reverse):
     Completed parent tasks are shown if they have incomplete children.
     Use --all to include all completed tasks.
     """
-    repository = ctx.obj["repository"]
+    ctx_obj: CliContext = ctx.obj
+    repository = ctx_obj.repository
     task_query_service = TaskQueryService(repository)
 
     # Get tasks using query service

@@ -4,8 +4,10 @@ import click
 
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from shared.click_types.datetime_with_default import DateTimeWithDefault
+from utils.console_messages import print_update_success
 
 
 @click.command(name="deadline", help="Set task deadline.")
@@ -26,10 +28,8 @@ def deadline_command(ctx, task_id, deadline):
         taskdog deadline 5 2025-10-10
         taskdog deadline 5 "2025-10-10 18:00:00"
     """
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
-    time_tracker = ctx.obj["time_tracker"]
-    update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
+    ctx_obj: CliContext = ctx.obj
+    update_task_use_case = UpdateTaskUseCase(ctx_obj.repository, ctx_obj.time_tracker)
 
     # Build input DTO
     input_dto = UpdateTaskInput(task_id=task_id, deadline=deadline)
@@ -38,8 +38,4 @@ def deadline_command(ctx, task_id, deadline):
     task, _ = update_task_use_case.execute(input_dto)
 
     # Print success
-    console.print(
-        f"[green]✓[/green] Set deadline for [bold]{task.name}[/bold] (ID: [cyan]{
-            task.id
-        }[/cyan]): [magenta]{deadline}[/magenta]"
-    )
+    print_update_success(ctx_obj.console, task, "deadline", deadline)

@@ -5,6 +5,7 @@ import click
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.constants import DEFAULT_START_HOUR
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
@@ -30,10 +31,8 @@ def schedule_command(ctx, task_id, start, end):
         taskdog schedule 5 2025-10-15 2025-10-17
         taskdog schedule 5 "2025-10-15 09:00:00" "2025-10-17 18:00:00"
     """
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
-    time_tracker = ctx.obj["time_tracker"]
-    update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
+    ctx_obj: CliContext = ctx.obj
+    update_task_use_case = UpdateTaskUseCase(ctx_obj.repository, ctx_obj.time_tracker)
 
     # Build input DTO
     input_dto = UpdateTaskInput(
@@ -46,10 +45,10 @@ def schedule_command(ctx, task_id, start, end):
     task, updated_fields = update_task_use_case.execute(input_dto)
 
     # Print success
-    console.print(
+    ctx_obj.console.print(
         f"[green]✓[/green] Set schedule for [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan]):"
     )
     if start:
-        console.print(f"  Start: [green]{start}[/green]")
+        ctx_obj.console.print(f"  Start: [green]{start}[/green]")
     if end:
-        console.print(f"  End: [green]{end}[/green]")
+        ctx_obj.console.print(f"  End: [green]{end}[/green]")

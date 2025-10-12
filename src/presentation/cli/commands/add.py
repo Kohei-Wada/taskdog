@@ -4,6 +4,7 @@ import click
 
 from application.dto.create_task_input import CreateTaskInput
 from application.use_cases.create_task import CreateTaskUseCase
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from utils.console_messages import print_success
 
@@ -44,8 +45,9 @@ def add_command(ctx, name, priority, parent):
         taskdog add "Fix login bug" -p 5
         taskdog add "Add unit tests" --parent 10
     """
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
+    ctx_obj: CliContext = ctx.obj
+    console = ctx_obj.console
+    repository = ctx_obj.repository
     create_task_use_case = CreateTaskUseCase(repository)
 
     # Build input DTO (only basic fields)

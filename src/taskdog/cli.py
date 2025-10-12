@@ -28,6 +28,7 @@ from presentation.cli.commands.table import table_command
 from presentation.cli.commands.today import today_command
 from presentation.cli.commands.tree import tree_command
 from presentation.cli.commands.update import update_command
+from presentation.cli.context import CliContext
 
 
 @click.group()
@@ -46,10 +47,13 @@ def cli(ctx):
     repository = JsonTaskRepository(tasksfile)
     time_tracker = TimeTracker()
 
+    # Store in CliContext for type-safe access
     ctx.ensure_object(dict)
-    ctx.obj["console"] = console
-    ctx.obj["repository"] = repository
-    ctx.obj["time_tracker"] = time_tracker
+    ctx.obj = CliContext(
+        console=console,
+        repository=repository,
+        time_tracker=time_tracker,
+    )
 
 
 cli.add_command(add_command)

@@ -5,6 +5,7 @@ import json
 import click
 
 from application.queries.task_query_service import TaskQueryService
+from presentation.cli.context import CliContext
 
 
 @click.command(name="export", help="Export tasks to various formats (currently JSON only).")
@@ -32,8 +33,9 @@ def export_command(ctx, format, output):
         taskdog export -o tasks.json      # Save JSON to file
         taskdog export --format json      # Explicit format specification
     """
-    repository = ctx.obj["repository"]
-    console = ctx.obj["console"]
+    ctx_obj: CliContext = ctx.obj
+    repository = ctx_obj.repository
+    console = ctx_obj.console
     task_query_service = TaskQueryService(repository)
 
     try:

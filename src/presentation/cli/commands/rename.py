@@ -4,7 +4,9 @@ import click
 
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from utils.console_messages import print_update_success
 
 
 @click.command(name="rename", help="Rename a task.")
@@ -22,10 +24,8 @@ def rename_command(ctx, task_id, name):
         taskdog rename 5 "Implement authentication"
         taskdog rename 10 "Fix bug in login form"
     """
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
-    time_tracker = ctx.obj["time_tracker"]
-    update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
+    ctx_obj: CliContext = ctx.obj
+    update_task_use_case = UpdateTaskUseCase(ctx_obj.repository, ctx_obj.time_tracker)
 
     # Build input DTO
     input_dto = UpdateTaskInput(task_id=task_id, name=name)
@@ -34,6 +34,4 @@ def rename_command(ctx, task_id, name):
     task, _ = update_task_use_case.execute(input_dto)
 
     # Print success
-    console.print(
-        f"[green]✓[/green] Renamed task (ID: [cyan]{task.id}[/cyan]): [bold]{name}[/bold]"
-    )
+    print_update_success(ctx_obj.console, task, "name", name)

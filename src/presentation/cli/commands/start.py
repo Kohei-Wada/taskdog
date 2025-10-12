@@ -5,6 +5,7 @@ import click
 from application.dto.start_task_input import StartTaskInput
 from application.use_cases.start_task import StartTaskUseCase
 from presentation.cli.batch_executor import BatchCommandExecutor
+from presentation.cli.context import CliContext
 from utils.console_messages import print_success
 
 
@@ -13,9 +14,10 @@ from utils.console_messages import print_success
 @click.pass_context
 def start_command(ctx, task_ids):
     """Start working on tasks (set status to IN_PROGRESS)."""
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
-    time_tracker = ctx.obj["time_tracker"]
+    ctx_obj: CliContext = ctx.obj
+    console = ctx_obj.console
+    repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
     start_task_use_case = StartTaskUseCase(repository, time_tracker)
 
     # Define processing function

@@ -6,6 +6,7 @@ from application.use_cases.get_task_detail import (
     GetTaskDetailInput,
     GetTaskDetailUseCase,
 )
+from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from presentation.formatters.rich_detail_formatter import RichDetailFormatter
 
@@ -17,8 +18,9 @@ from presentation.formatters.rich_detail_formatter import RichDetailFormatter
 @handle_task_errors("showing task")
 def show_command(ctx, task_id, raw):
     """Show task details and notes with rich formatting."""
-    console = ctx.obj["console"]
-    repository = ctx.obj["repository"]
+    ctx_obj: CliContext = ctx.obj
+    console = ctx_obj.console
+    repository = ctx_obj.repository
 
     # Execute use case to get task detail
     use_case = GetTaskDetailUseCase(repository)
