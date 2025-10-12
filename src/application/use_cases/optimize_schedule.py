@@ -31,7 +31,7 @@ class OptimizeScheduleInput:
         self.dry_run = dry_run
 
 
-class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, list[Task]]):
+class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, tuple[list[Task], dict[str, float]]]):
     """Use case for optimizing task schedules.
 
     Analyzes all tasks and generates optimal schedules based on
@@ -46,14 +46,15 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, list[Task]]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: OptimizeScheduleInput) -> list[Task]:
+    def execute(self, input_dto: OptimizeScheduleInput) -> tuple[list[Task], dict[str, float]]:
         """Execute schedule optimization.
 
         Args:
             input_dto: Optimization parameters
 
         Returns:
-            List of tasks that were updated with new schedules
+            Tuple of (modified tasks, daily_allocations dict)
+            daily_allocations: dict mapping date strings to allocated hours
 
         Raises:
             Exception: If optimization fails
@@ -76,4 +77,4 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, list[Task]]):
             for task in modified_tasks:
                 self.repository.save(task)
 
-        return modified_tasks
+        return modified_tasks, optimizer.daily_allocations

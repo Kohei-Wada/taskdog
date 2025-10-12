@@ -38,7 +38,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)  # Wednesday
         optimize_input = OptimizeScheduleInput(start_date=start_date)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # Verify
         self.assertEqual(len(modified_tasks), 1)
@@ -63,7 +63,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize with 6h/day limit
         start_date = datetime(2025, 10, 15, 18, 0, 0)
         optimize_input = OptimizeScheduleInput(start_date=start_date, max_hours_per_day=6.0)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # All 3 tasks (6h total) should fit in one day
         self.assertEqual(len(modified_tasks), 3)
@@ -91,7 +91,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)  # Wednesday
         optimize_input = OptimizeScheduleInput(start_date=start_date, max_hours_per_day=6.0)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # Tasks should span multiple days
         self.assertEqual(len(modified_tasks), 2)
@@ -120,7 +120,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Start on Friday
         start_date = datetime(2025, 10, 17, 18, 0, 0)  # Friday
         optimize_input = OptimizeScheduleInput(start_date=start_date)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # Task should start on Friday
         self.assertEqual(modified_tasks[0].planned_start, "2025-10-17 18:00:00")
@@ -139,7 +139,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
         optimize_input = OptimizeScheduleInput(start_date=start_date)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # Both tasks should be scheduled on same day (6h total)
         self.assertEqual(len(modified_tasks), 2)
@@ -167,7 +167,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
         optimize_input = OptimizeScheduleInput(start_date=start_date)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # Both should be scheduled
         self.assertEqual(len(modified_tasks), 2)
@@ -186,7 +186,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
         optimize_input = OptimizeScheduleInput(start_date=start_date)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # No tasks should be scheduled
         self.assertEqual(len(modified_tasks), 0)
@@ -200,7 +200,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
         optimize_input = OptimizeScheduleInput(start_date=start_date)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # No tasks should be scheduled
         self.assertEqual(len(modified_tasks), 0)
@@ -220,7 +220,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize without force
         start_date = datetime(2025, 10, 15, 18, 0, 0)
         optimize_input = OptimizeScheduleInput(start_date=start_date, force_override=False)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # No tasks should be modified
         self.assertEqual(len(modified_tasks), 0)
@@ -241,7 +241,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize with force
         start_date = datetime(2025, 10, 15, 18, 0, 0)
         optimize_input = OptimizeScheduleInput(start_date=start_date, force_override=True)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # Task should be rescheduled
         self.assertEqual(len(modified_tasks), 1)
@@ -257,7 +257,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize with dry_run
         start_date = datetime(2025, 10, 15, 18, 0, 0)
         optimize_input = OptimizeScheduleInput(start_date=start_date, dry_run=True)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # Modified tasks returned
         self.assertEqual(len(modified_tasks), 1)
@@ -286,7 +286,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
         optimize_input = OptimizeScheduleInput(start_date=start_date, max_hours_per_day=6.0)
-        modified_tasks = self.optimize_use_case.execute(optimize_input)
+        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
 
         # Parent should be in modified list with period encompassing children
         parent_task = [t for t in modified_tasks if t.id == parent.id][0]

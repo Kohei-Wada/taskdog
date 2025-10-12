@@ -110,6 +110,10 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
         console.print("[red]Error:[/red] max-hours-per-day must be positive")
         return
 
+    # Get all tasks before optimization to track changes
+    all_tasks_before = repository.get_all()
+    task_states_before = {t.id: t.planned_start for t in all_tasks_before}
+
     # Create input DTO
     input_dto = OptimizeScheduleInput(
         start_date=start_dt,
@@ -120,7 +124,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
 
     # Execute optimization
     use_case = OptimizeScheduleUseCase(repository)
-    modified_tasks = use_case.execute(input_dto)
+    modified_tasks, daily_allocations = use_case.execute(input_dto)
 
     # Display results
     if not modified_tasks:
@@ -131,7 +135,48 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
         console.print("  - All tasks are completed")
         return
 
-    # Show summary
+    # Analyze changes
+    new_count = 0
+    rescheduled_count = 0
+    total_hours = 0.0
+    deadline_conflicts = 0
+
+    for task in modified_tasks:
+        if task.estimated_duration:
+            total_hours += task.estimated_duration
+
+        # Check if this was new or rescheduled
+        if task.id in task_states_before:
+            if task_states_before[task.id] is None:
+                new_count += 1
+            else:
+                rescheduled_count += 1
+
+        # Check deadline conflicts
+        if task.deadline and task.planned_end:
+            deadline_dt = datetime.strptime(task.deadline, DATETIME_FORMAT)
+            end_dt = datetime.strptime(task.planned_end, DATETIME_FORMAT)
+            if end_dt > deadline_dt:
+                deadline_conflicts += 1
+
+    # Calculate date range
+    start_dates = [
+        datetime.strptime(t.planned_start, DATETIME_FORMAT)
+        for t in modified_tasks
+        if t.planned_start
+    ]
+    end_dates = [
+        datetime.strptime(t.planned_end, DATETIME_FORMAT) for t in modified_tasks if t.planned_end
+    ]
+
+    if start_dates and end_dates:
+        min_date = min(start_dates).date()
+        max_date = max(end_dates).date()
+        days_span = (max_date - min_date).days + 1
+    else:
+        days_span = 0
+
+    # Show summary header
     if dry_run:
         console.print(
             f"[cyan]DRY RUN:[/cyan] Preview of {len(modified_tasks)} task(s) to be optimized\n"
@@ -143,6 +188,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
     table = Table(title="Optimized Tasks")
     table.add_column("ID", style="cyan", justify="right")
     table.add_column("Name", style="white")
+    table.add_column("Change", style="yellow")
     table.add_column("Priority", justify="right")
     table.add_column("Duration", justify="right")
     table.add_column("Planned Start", style="green")
@@ -153,6 +199,15 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
     sorted_tasks = sorted(modified_tasks, key=lambda t: t.planned_start if t.planned_start else "")
 
     for task in sorted_tasks:
+        # Determine change type
+        if task.id in task_states_before:
+            if task_states_before[task.id] is None:
+                change_type = "NEW"
+            else:
+                change_type = "RESCHEDULED"
+        else:
+            change_type = "NEW"
+
         # Format duration
         duration_str = f"{task.estimated_duration}h" if task.estimated_duration else "-"
 
@@ -164,6 +219,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
         table.add_row(
             str(task.id),
             task.name,
+            change_type,
             str(task.priority),
             duration_str,
             start_str,
@@ -173,8 +229,35 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
 
     console.print(table)
 
+    # Show summary section
+    console.print("\n[bold]Summary:[/bold]")
+    console.print(f"  • {new_count} task(s) newly scheduled")
+    if rescheduled_count > 0:
+        console.print(f"  • {rescheduled_count} task(s) rescheduled (--force)")
+    console.print(f"  • Total workload: {total_hours}h across {days_span} days")
+    if deadline_conflicts > 0:
+        console.print(f"  • [red]⚠[/red] Deadline conflicts: {deadline_conflicts}")
+    else:
+        console.print("  • Deadline conflicts: 0")
+
+    # Workload validation
+    console.print("\n[bold]Workload Validation:[/bold]")
+    overloaded_days = []
+    for date_str, hours in sorted(daily_allocations.items()):
+        if hours > max_hours_per_day:
+            overloaded_days.append((date_str, hours))
+
+    if overloaded_days:
+        console.print(f"  [red]⚠[/red] {len(overloaded_days)} day(s) exceed max hours:")
+        for date_str, hours in overloaded_days[:5]:  # Show first 5
+            console.print(f"    • {date_str}: {hours}h (max: {max_hours_per_day}h)")
+        if len(overloaded_days) > 5:
+            console.print(f"    ... and {len(overloaded_days) - 5} more")
+    else:
+        console.print(f"  [green]✓[/green] All days within max hours ({max_hours_per_day}h/day)")
+
     # Show configuration
-    console.print("\n[dim]Configuration:[/dim]")
+    console.print("\n[bold]Configuration:[/bold]")
     console.print(f"  Start date: {start_dt.strftime(DATETIME_FORMAT)}")
     console.print(f"  Max hours/day: {max_hours_per_day}h")
     console.print(f"  Force override: {force}")
