@@ -17,6 +17,7 @@ from presentation.cli.commands.dump import dump_command
 from presentation.cli.commands.gantt import gantt_command
 from presentation.cli.commands.note import note_command
 from presentation.cli.commands.show import show_command
+from presentation.cli.commands.plan import plan_command
 
 
 @click.group()
@@ -53,6 +54,7 @@ cli.add_command(gantt_command)
 cli.add_command(today_command)
 cli.add_command(note_command)
 cli.add_command(show_command)
+cli.add_command(plan_command)
 
 if __name__ == "__main__":
     cli()
