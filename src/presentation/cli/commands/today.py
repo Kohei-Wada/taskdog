@@ -8,7 +8,7 @@ from presentation.formatters.rich_table_formatter import RichTableFormatter
 from presentation.formatters.rich_tree_formatter import RichTreeFormatter
 
 
-@click.command(name="today", help="Display tasks for today.")
+@click.command(name="today", help="Display tasks for today (deadline, planned, or in-progress).")
 @click.option(
     "-f",
     "--format",

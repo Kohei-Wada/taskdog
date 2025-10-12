@@ -8,7 +8,7 @@ from presentation.cli.batch_executor import BatchCommandExecutor
 
 
 @click.command(
-    name="archive", help="Archive task(s) (orphan children by default, or cascade archive)."
+    name="archive", help="Archive task(s) for data retention (hidden from views by default)."
 )
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.option(

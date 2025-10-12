@@ -10,7 +10,7 @@ from presentation.cli.error_handler import handle_task_errors
 from presentation.formatters.rich_detail_formatter import RichDetailFormatter
 
 
-@click.command(name="show", help="Show task details and notes.")
+@click.command(name="show", help="Show task details and notes with markdown rendering.")
 @click.argument("task_id", type=int)
 @click.option("--raw", is_flag=True, help="Show raw markdown instead of rendered")
 @click.pass_context

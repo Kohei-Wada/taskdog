@@ -42,19 +42,19 @@ from shared.click_types.datetime_with_default import DateTimeWithDefault
     "--planned-start",
     type=DateTimeWithDefault(),
     default=None,
-    help="Planned start (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, defaults to 18:00:00)",
+    help="Planned start (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 18:00:00)",
 )
 @click.option(
     "--planned-end",
     type=DateTimeWithDefault(),
     default=None,
-    help="Planned end (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, defaults to 18:00:00)",
+    help="Planned end (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 18:00:00)",
 )
 @click.option(
     "--deadline",
     type=DateTimeWithDefault(),
     default=None,
-    help="Deadline (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, defaults to 18:00:00)",
+    help="Deadline (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 18:00:00)",
 )
 @click.option(
     "--estimated-duration",

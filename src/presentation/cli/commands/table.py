@@ -7,12 +7,14 @@ from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_table_formatter import RichTableFormatter
 
 
-@click.command(name="table", help="Display tasks in flat table format.")
+@click.command(
+    name="table", help="Display tasks in flat table format (shows incomplete tasks by default)."
+)
 @click.option(
     "--all",
     "-a",
     is_flag=True,
-    help="Show all tasks including completed ones",
+    help="Show all tasks including completed and archived ones",
 )
 @click.pass_context
 @handle_command_errors("displaying tasks")

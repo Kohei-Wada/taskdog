@@ -44,7 +44,7 @@ def get_editor():
     )
 
 
-@click.command(name="note", help="Edit task notes in markdown.")
+@click.command(name="note", help="Edit task notes in markdown ($EDITOR).")
 @click.argument("task_id", type=int)
 @click.pass_context
 @handle_task_errors("editing notes")

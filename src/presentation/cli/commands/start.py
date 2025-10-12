@@ -9,7 +9,7 @@ from presentation.cli.batch_executor import BatchCommandExecutor
 from utils.console_messages import print_success
 
 
-@click.command(name="start", help="Start working on tasks (set status to IN_PROGRESS).")
+@click.command(name="start", help="Start working on task(s) (sets status to IN_PROGRESS).")
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.pass_context
 def start_command(ctx, task_ids):

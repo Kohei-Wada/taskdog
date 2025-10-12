@@ -84,7 +84,7 @@ EXAMPLE:
     "show_all",
     is_flag=True,
     default=False,
-    help="Show all tasks including archived ones.",
+    help="Show all tasks including archived ones",
 )
 @click.pass_context
 @handle_command_errors("displaying Gantt chart")

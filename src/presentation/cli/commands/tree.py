@@ -7,12 +7,15 @@ from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_tree_formatter import RichTreeFormatter
 
 
-@click.command(name="tree", help="Display tasks in hierarchical tree format.")
+@click.command(
+    name="tree",
+    help="Display tasks in hierarchical tree format (shows incomplete tasks by default).",
+)
 @click.option(
     "--all",
     "-a",
     is_flag=True,
-    help="Show all tasks including completed ones",
+    help="Show all tasks including completed and archived ones",
 )
 @click.pass_context
 @handle_command_errors("displaying tasks")

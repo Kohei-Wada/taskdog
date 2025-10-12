@@ -21,8 +21,10 @@ def schedule_command(ctx, task_id, start, end):
     Usage:
         taskdog schedule <TASK_ID> <START> [END]
 
+    Date formats: YYYY-MM-DD, MM-DD, or MM/DD (defaults to 18:00:00)
+
     Examples:
-        taskdog schedule 5 2025-10-15
+        taskdog schedule 5 10-15
         taskdog schedule 5 2025-10-15 2025-10-17
         taskdog schedule 5 "2025-10-15 09:00:00" "2025-10-17 18:00:00"
     """

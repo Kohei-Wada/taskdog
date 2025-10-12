@@ -73,7 +73,7 @@ EXAMPLES:
 @click.option(
     "--start-date",
     type=DateTimeWithDefault(),
-    help="Start date for scheduling (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS). Defaults to next weekday.",
+    help="Start date for scheduling (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 18:00:00). Defaults to next weekday.",
 )
 @click.option(
     "--max-hours-per-day",

@@ -7,7 +7,7 @@ from application.use_cases.remove_task import RemoveTaskUseCase
 from presentation.cli.batch_executor import BatchCommandExecutor
 
 
-@click.command(name="rm", help="Remove task(s) (orphan children by default, or cascade delete).")
+@click.command(name="rm", help="Remove task(s) permanently (use archive to preserve data).")
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.option(
     "--cascade",

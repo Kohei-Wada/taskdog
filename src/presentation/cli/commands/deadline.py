@@ -20,7 +20,10 @@ def deadline_command(ctx, task_id, deadline):
     Usage:
         taskdog deadline <TASK_ID> <DATE>
 
+    Date formats: YYYY-MM-DD, MM-DD, or MM/DD (defaults to 18:00:00)
+
     Examples:
+        taskdog deadline 5 10-10
         taskdog deadline 5 2025-10-10
         taskdog deadline 5 "2025-10-10 18:00:00"
     """
