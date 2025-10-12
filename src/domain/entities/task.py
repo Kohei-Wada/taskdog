@@ -12,6 +12,7 @@ class TaskStatus(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    ARCHIVED = "ARCHIVED"
 
 
 class Task:

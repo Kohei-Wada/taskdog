@@ -9,6 +9,7 @@ STATUS_STYLES = {
     TaskStatus.IN_PROGRESS: "blue",
     TaskStatus.COMPLETED: "green",
     TaskStatus.FAILED: "red",
+    TaskStatus.ARCHIVED: "dim white",
 }
 
 # Status colors with bold modifiers for Gantt charts
@@ -17,6 +18,7 @@ STATUS_COLORS_BOLD = {
     TaskStatus.IN_PROGRESS: "bold blue",
     TaskStatus.COMPLETED: "bold green",
     TaskStatus.FAILED: "bold red",
+    TaskStatus.ARCHIVED: "dim white",
 }
 
 # Re-export DATETIME_FORMAT for backward compatibility

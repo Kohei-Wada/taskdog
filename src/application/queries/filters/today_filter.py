@@ -41,6 +41,10 @@ class TodayFilter:
         matching_task_ids = set()
 
         for task in tasks:
+            # Always skip archived tasks
+            if task.status == TaskStatus.ARCHIVED:
+                continue
+
             # Skip completed tasks unless include_completed is True
             if not include_completed and task.status == TaskStatus.COMPLETED:
                 continue

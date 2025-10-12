@@ -56,7 +56,7 @@ class TaskQueryService(QueryService):
     def get_incomplete_tasks_with_hierarchy(self) -> list[Task]:
         """Get incomplete tasks, preserving hierarchy by including necessary ancestors.
 
-        Completed parent tasks are included if they have incomplete descendants.
+        Completed and archived parent tasks are included if they have incomplete descendants.
         Used by tree view to show meaningful hierarchy while hiding fully completed branches.
 
         Returns:
@@ -64,8 +64,10 @@ class TaskQueryService(QueryService):
         """
         tasks = self.repository.get_all()
 
-        # Get all incomplete task IDs
-        incomplete_ids = {t.id for t in tasks if t.status != TaskStatus.COMPLETED}
+        # Get all incomplete task IDs (exclude COMPLETED and ARCHIVED)
+        incomplete_ids = {
+            t.id for t in tasks if t.status not in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED)
+        }
 
         # Get all ancestor IDs of incomplete tasks
         ancestor_ids = set()
@@ -87,10 +89,11 @@ class TaskQueryService(QueryService):
         """Get only incomplete tasks without hierarchy preservation.
 
         Returns tasks with status PENDING, IN_PROGRESS, or FAILED.
+        Excludes COMPLETED and ARCHIVED tasks.
         Used by flat views like table.
 
         Returns:
             List of incomplete tasks
         """
         tasks = self.repository.get_all()
-        return [t for t in tasks if t.status != TaskStatus.COMPLETED]
+        return [t for t in tasks if t.status not in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED)]

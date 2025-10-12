@@ -6,6 +6,7 @@ from rich.console import Console
 
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.cli.commands.add import add_command
+from presentation.cli.commands.archive import archive_command
 from presentation.cli.commands.deadline import deadline_command
 from presentation.cli.commands.done import done_command
 from presentation.cli.commands.estimate import estimate_command
@@ -53,6 +54,7 @@ cli.add_command(tree_command)
 cli.add_command(table_command)
 cli.add_command(export_command)
 cli.add_command(rm_command)
+cli.add_command(archive_command)
 cli.add_command(update_command)
 cli.add_command(start_command)
 cli.add_command(done_command)
