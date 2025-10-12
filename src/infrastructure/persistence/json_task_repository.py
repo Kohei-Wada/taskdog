@@ -1,3 +1,4 @@
+import contextlib
 import json
 import os
 import shutil
@@ -112,17 +113,14 @@ class JsonTaskRepository(TaskRepository):
             if existing.parent_id != task.parent_id:
                 # Parent changed - rebuild children index
                 self._children_index = self._build_children_index()
-            else:
-                # Update children index if task has a parent
-                if task.parent_id is not None:
-                    # Rebuild children for this parent
-                    if task.parent_id in self._children_index:
-                        # Replace the child in the list
-                        children = self._children_index[task.parent_id]
-                        for i, child in enumerate(children):
-                            if child.id == task.id:
-                                children[i] = task
-                                break
+            # Update children index if task has a parent and is in the index
+            elif task.parent_id is not None and task.parent_id in self._children_index:
+                # Replace the child in the list
+                children = self._children_index[task.parent_id]
+                for i, child in enumerate(children):
+                    if child.id == task.id:
+                        children[i] = task
+                        break
 
         # Save to file
         self._save_to_file()
@@ -242,8 +240,6 @@ class JsonTaskRepository(TaskRepository):
 
         except Exception as e:
             # Clean up temp file on error
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(temp_path)
-            except OSError:
-                pass
             raise OSError(f"Failed to save tasks to {self.filename}: {e}") from e

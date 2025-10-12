@@ -1,12 +1,10 @@
 """Base class for query services."""
 
-from abc import ABC
-
 from infrastructure.persistence.task_repository import TaskRepository
 
 
-class QueryService(ABC):
-    """Abstract base class for query services.
+class QueryService:
+    """Base class for query services.
 
     Query services handle read-only operations and complex filtering logic.
     They are optimized for data retrieval and don't modify state.

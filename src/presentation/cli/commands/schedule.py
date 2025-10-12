@@ -42,7 +42,7 @@ def schedule_command(ctx, task_id, start, end):
     )
 
     # Execute use case
-    task, updated_fields = update_task_use_case.execute(input_dto)
+    task, _updated_fields = update_task_use_case.execute(input_dto)
 
     # Print success
     ctx_obj.console.print(

@@ -103,10 +103,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
     repository = ctx_obj.repository
 
     # Parse start_date or use next weekday
-    if start_date:
-        start_dt = datetime.strptime(start_date, DATETIME_FORMAT)
-    else:
-        start_dt = get_next_weekday()
+    start_dt = datetime.strptime(start_date, DATETIME_FORMAT) if start_date else get_next_weekday()
 
     # Validate max_hours_per_day
     if max_hours_per_day <= 0:

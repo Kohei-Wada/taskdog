@@ -1,13 +1,13 @@
 """Custom exceptions for task operations."""
 
 
-class TaskException(Exception):
+class TaskError(Exception):
     """Base exception for all task-related errors."""
 
     pass
 
 
-class TaskNotFoundException(TaskException):
+class TaskNotFoundException(TaskError):
     """Raised when a task with given ID is not found."""
 
     def __init__(self, task_id: int):
@@ -15,7 +15,7 @@ class TaskNotFoundException(TaskException):
         super().__init__(f"Task with ID {task_id} not found")
 
 
-class TaskValidationError(TaskException):
+class TaskValidationError(TaskError):
     """Raised when task validation fails."""
 
     pass

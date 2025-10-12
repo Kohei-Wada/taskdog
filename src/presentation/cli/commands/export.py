@@ -59,4 +59,4 @@ def export_command(ctx, format, output):
 
     except Exception as e:
         console.print(f"[red]Error exporting tasks:[/red] {e}")
-        raise click.Abort()
+        raise click.Abort() from e

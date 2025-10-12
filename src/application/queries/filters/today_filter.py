@@ -94,7 +94,4 @@ class TodayFilter:
                 return True
 
         # Criterion C: Status is IN_PROGRESS
-        if task.status == TaskStatus.IN_PROGRESS:
-            return True
-
-        return False
+        return task.status == TaskStatus.IN_PROGRESS

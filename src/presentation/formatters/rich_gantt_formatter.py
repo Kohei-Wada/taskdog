@@ -351,10 +351,9 @@ class RichGanttFormatter(RichFormatterBase):
         # Add to each weekday in the period
         current_date = planned_start
         while current_date <= planned_end:
-            # Skip weekends
-            if current_date.weekday() < 5:  # Monday=0, Friday=4
-                if current_date in daily_hours:
-                    daily_hours[current_date] = hours_per_day
+            # Skip weekends and add hours to weekdays in range
+            if current_date.weekday() < 5 and current_date in daily_hours:  # Monday=0, Friday=4
+                daily_hours[current_date] = hours_per_day
             current_date += timedelta(days=1)
 
         return daily_hours
@@ -469,10 +468,7 @@ class RichGanttFormatter(RichFormatterBase):
         # Format hours display for planned period (3 characters for consistency)
         if hours > 0:
             # Format: "4  " or "2.5" (right-aligned, 3 chars)
-            if hours == int(hours):
-                display = f"{int(hours):2d} "  # Integer: "4  ", " 8 "
-            else:
-                display = f"{hours:3.1f}"  # Decimal: "2.5", "4.3"
+            display = f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
         else:
             display = self.SYMBOL_EMPTY  # No hours allocated: " · "
 

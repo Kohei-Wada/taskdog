@@ -5,7 +5,9 @@
       "Bash(gh issue list:*)",
       "Bash(PYTHONPATH=src uv run python:*)",
       "WebSearch",
-      "Bash(gh issue create:*)"
+      "Bash(gh issue create:*)",
+      "Bash(mypy --version)",
+      "Bash(uv run ruff:*)"
     ],
     "deny": [],
     "ask": []

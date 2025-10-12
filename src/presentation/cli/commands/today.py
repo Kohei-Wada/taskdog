@@ -59,10 +59,7 @@ def today_command(ctx, format, all, sort, reverse):
     )
 
     # Format and display
-    if format == "tree":
-        formatter = RichTreeFormatter()
-    else:
-        formatter = RichTableFormatter()
+    formatter = RichTreeFormatter() if format == "tree" else RichTableFormatter()
 
     output = formatter.format_tasks(today_tasks, repository)
     print(output)

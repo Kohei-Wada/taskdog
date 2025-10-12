@@ -84,10 +84,11 @@ class WorkloadCalculator:
                 # Add to each weekday in the period
                 current_date = planned_start
                 while current_date <= planned_end:
-                    # Skip weekends
-                    if current_date.weekday() < 5:  # Monday=0, Friday=4
-                        if current_date in daily_workload:
-                            daily_workload[current_date] += hours_per_day
+                    # Skip weekends and add hours to weekdays in range
+                    if (
+                        current_date.weekday() < 5 and current_date in daily_workload
+                    ):  # Monday=0, Friday=4
+                        daily_workload[current_date] += hours_per_day
                     current_date += timedelta(days=1)
 
         return daily_workload

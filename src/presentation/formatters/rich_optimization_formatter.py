@@ -54,10 +54,7 @@ class RichOptimizationFormatter:
         for task in sorted_tasks:
             # Determine change type
             if task.id in task_states_before:
-                if task_states_before[task.id] is None:
-                    change_type = "NEW"
-                else:
-                    change_type = "RESCHEDULED"
+                change_type = "NEW" if task_states_before[task.id] is None else "RESCHEDULED"
             else:
                 change_type = "NEW"
 

@@ -22,4 +22,4 @@ STATUS_COLORS_BOLD = {
 }
 
 # Re-export DATETIME_FORMAT for backward compatibility
-__all__ = ["STATUS_STYLES", "STATUS_COLORS_BOLD", "DATETIME_FORMAT"]
+__all__ = ["DATETIME_FORMAT", "STATUS_COLORS_BOLD", "STATUS_STYLES"]

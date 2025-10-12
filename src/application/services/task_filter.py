@@ -52,7 +52,4 @@ class TaskFilter:
             return False
 
         # Skip tasks with existing schedule unless force_override
-        if task.planned_start and not force_override:
-            return False
-
-        return True
+        return not (task.planned_start and not force_override)

@@ -1,17 +1,14 @@
 """Base class for use cases."""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from domain.entities.task import Task
     from infrastructure.persistence.task_repository import TaskRepository
 
-TInput = TypeVar("TInput")
-TOutput = TypeVar("TOutput")
 
-
-class UseCase(ABC, Generic[TInput, TOutput]):
+class UseCase[TInput, TOutput](ABC):
     """Abstract base class for use cases.
 
     Use cases encapsulate business logic and orchestrate operations
