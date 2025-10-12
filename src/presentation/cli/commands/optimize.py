@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import click
 from rich.table import Table
 
+from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from application.use_cases.optimize_schedule import OptimizeScheduleInput, OptimizeScheduleUseCase
 from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
 from presentation.cli.error_handler import handle_command_errors
@@ -135,46 +136,11 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
         console.print("  - All tasks are completed")
         return
 
-    # Analyze changes
-    new_count = 0
-    rescheduled_count = 0
-    total_hours = 0.0
-    deadline_conflicts = 0
-
-    for task in modified_tasks:
-        if task.estimated_duration:
-            total_hours += task.estimated_duration
-
-        # Check if this was new or rescheduled
-        if task.id in task_states_before:
-            if task_states_before[task.id] is None:
-                new_count += 1
-            else:
-                rescheduled_count += 1
-
-        # Check deadline conflicts
-        if task.deadline and task.planned_end:
-            deadline_dt = datetime.strptime(task.deadline, DATETIME_FORMAT)
-            end_dt = datetime.strptime(task.planned_end, DATETIME_FORMAT)
-            if end_dt > deadline_dt:
-                deadline_conflicts += 1
-
-    # Calculate date range
-    start_dates = [
-        datetime.strptime(t.planned_start, DATETIME_FORMAT)
-        for t in modified_tasks
-        if t.planned_start
-    ]
-    end_dates = [
-        datetime.strptime(t.planned_end, DATETIME_FORMAT) for t in modified_tasks if t.planned_end
-    ]
-
-    if start_dates and end_dates:
-        min_date = min(start_dates).date()
-        max_date = max(end_dates).date()
-        days_span = (max_date - min_date).days + 1
-    else:
-        days_span = 0
+    # Calculate summary
+    summary_builder = OptimizationSummaryBuilder(repository)
+    summary = summary_builder.build(
+        modified_tasks, task_states_before, daily_allocations, max_hours_per_day
+    )
 
     # Show summary header
     if dry_run:
@@ -231,63 +197,38 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
 
     # Show summary section
     console.print("\n[bold]Summary:[/bold]")
-    console.print(f"  • {new_count} task(s) newly scheduled")
-    if rescheduled_count > 0:
-        console.print(f"  • {rescheduled_count} task(s) rescheduled (--force)")
-    console.print(f"  • Total workload: {total_hours}h across {days_span} days")
-    if deadline_conflicts > 0:
-        console.print(f"  • [red]⚠[/red] Deadline conflicts: {deadline_conflicts}")
+    console.print(f"  • {summary.new_count} task(s) newly scheduled")
+    if summary.rescheduled_count > 0:
+        console.print(f"  • {summary.rescheduled_count} task(s) rescheduled (--force)")
+    console.print(f"  • Total workload: {summary.total_hours}h across {summary.days_span} days")
+    if summary.deadline_conflicts > 0:
+        console.print(f"  • [red]⚠[/red] Deadline conflicts: {summary.deadline_conflicts}")
     else:
         console.print("  • Deadline conflicts: 0")
 
-    # Check for tasks that couldn't be scheduled
-    all_tasks_after = repository.get_all()
-    unscheduled_tasks = []
-    from domain.entities.task import TaskStatus
-
-    for task in all_tasks_after:
-        # Skip archived and completed tasks
-        if task.status in [TaskStatus.ARCHIVED, TaskStatus.COMPLETED]:
-            continue
-        # Skip parent tasks (they don't have allocations)
-        children = repository.get_children(task.id)
-        if len(children) > 0:
-            continue
-        # Skip tasks without estimated duration
-        if not task.estimated_duration:
-            continue
-        # Check if task has no schedule
-        if not task.planned_start:
-            unscheduled_tasks.append(task)
-
-    if unscheduled_tasks:
+    if summary.unscheduled_tasks:
         console.print(
-            f"\n  [yellow]⚠[/yellow] {len(unscheduled_tasks)} task(s) could not be scheduled:"
+            f"\n  [yellow]⚠[/yellow] {len(summary.unscheduled_tasks)} task(s) could not be scheduled:"
         )
-        for task in unscheduled_tasks[:5]:  # Show first 5
+        for task in summary.unscheduled_tasks[:5]:  # Show first 5
             reason = "No available time slots"
             if task.deadline:
                 reason = "Cannot meet deadline with current constraints"
             console.print(f"    • #{task.id} {task.name} - {reason}")
-        if len(unscheduled_tasks) > 5:
-            console.print(f"    ... and {len(unscheduled_tasks) - 5} more")
+        if len(summary.unscheduled_tasks) > 5:
+            console.print(f"    ... and {len(summary.unscheduled_tasks) - 5} more")
         console.print(
             "\n  [dim]Tip: Try increasing --max-hours-per-day or adjusting task deadlines[/dim]"
         )
 
     # Workload validation
     console.print("\n[bold]Workload Validation:[/bold]")
-    overloaded_days = []
-    for date_str, hours in sorted(daily_allocations.items()):
-        if hours > max_hours_per_day:
-            overloaded_days.append((date_str, hours))
-
-    if overloaded_days:
-        console.print(f"  [red]⚠[/red] {len(overloaded_days)} day(s) exceed max hours:")
-        for date_str, hours in overloaded_days[:5]:  # Show first 5
+    if summary.overloaded_days:
+        console.print(f"  [red]⚠[/red] {len(summary.overloaded_days)} day(s) exceed max hours:")
+        for date_str, hours in summary.overloaded_days[:5]:  # Show first 5
             console.print(f"    • {date_str}: {hours}h (max: {max_hours_per_day}h)")
-        if len(overloaded_days) > 5:
-            console.print(f"    ... and {len(overloaded_days) - 5} more")
+        if len(summary.overloaded_days) > 5:
+            console.print(f"    ... and {len(summary.overloaded_days) - 5} more")
     else:
         console.print(f"  [green]✓[/green] All days within max hours ({max_hours_per_day}h/day)")
 
