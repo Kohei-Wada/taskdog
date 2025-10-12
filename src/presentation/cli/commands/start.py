@@ -4,9 +4,9 @@ import click
 
 from application.dto.start_task_input import StartTaskInput
 from application.use_cases.start_task import StartTaskUseCase
-from domain.exceptions.task_exceptions import TaskNotFoundException
 from domain.services.time_tracker import TimeTracker
-from utils.console_messages import print_error, print_success, print_task_not_found_error
+from presentation.cli.batch_executor import BatchCommandExecutor
+from utils.console_messages import print_success
 
 
 @click.command(name="start", help="Start working on tasks (set status to IN_PROGRESS).")
@@ -19,15 +19,22 @@ def start_command(ctx, task_ids):
     time_tracker = TimeTracker()
     start_task_use_case = StartTaskUseCase(repository, time_tracker)
 
-    for task_id in task_ids:
-        try:
-            input_dto = StartTaskInput(task_id=task_id)
-            task = start_task_use_case.execute(input_dto)
+    # Define processing function
+    def process_task(task_id: int):
+        input_dto = StartTaskInput(task_id=task_id)
+        return start_task_use_case.execute(input_dto)
 
-            print_success(console, "Started", task)
-            if task.actual_start:
-                console.print(f"  Started at: [blue]{task.actual_start}[/blue]")
-        except TaskNotFoundException as e:
-            print_task_not_found_error(console, e.task_id)
-        except Exception as e:
-            print_error(console, "starting task", e)
+    # Define success callback
+    def on_success(task):
+        print_success(console, "Started", task)
+        if task.actual_start:
+            console.print(f"  Started at: [blue]{task.actual_start}[/blue]")
+
+    # Execute batch operation
+    executor = BatchCommandExecutor(console)
+    executor.execute_batch(
+        task_ids=task_ids,
+        process_func=process_task,
+        operation_name="starting task",
+        success_callback=on_success,
+    )
