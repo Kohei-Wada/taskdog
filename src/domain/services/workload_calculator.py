@@ -29,8 +29,18 @@ class WorkloadCalculator:
         days = (end_date - start_date).days + 1
         daily_workload = {start_date + timedelta(days=i): 0.0 for i in range(days)}
 
+        # Build parent-child map to identify parent tasks
+        parent_ids = set()
+        for task in tasks:
+            if task.parent_id:
+                parent_ids.add(task.parent_id)
+
         # Filter schedulable tasks
         for task in tasks:
+            # Skip parent tasks (tasks that have children)
+            # Parent tasks are summary tasks and their work is done by children
+            if task.id in parent_ids:
+                continue
             # Skip completed tasks
             if task.status == TaskStatus.COMPLETED:
                 continue
@@ -44,6 +54,8 @@ class WorkloadCalculator:
                 continue
 
             # Use daily_allocations if available (from ScheduleOptimizer)
+            # Note: Parent tasks don't have daily_allocations, so they will be skipped here
+            # and fall through to the else block, which will distribute their estimated_duration
             if task.daily_allocations:
                 for date_str, hours in task.daily_allocations.items():
                     try:

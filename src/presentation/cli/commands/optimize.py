@@ -240,6 +240,41 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
     else:
         console.print("  • Deadline conflicts: 0")
 
+    # Check for tasks that couldn't be scheduled
+    all_tasks_after = repository.get_all()
+    unscheduled_tasks = []
+    from domain.entities.task import TaskStatus
+
+    for task in all_tasks_after:
+        # Skip archived and completed tasks
+        if task.status in [TaskStatus.ARCHIVED, TaskStatus.COMPLETED]:
+            continue
+        # Skip parent tasks (they don't have allocations)
+        children = repository.get_children(task.id)
+        if len(children) > 0:
+            continue
+        # Skip tasks without estimated duration
+        if not task.estimated_duration:
+            continue
+        # Check if task has no schedule
+        if not task.planned_start:
+            unscheduled_tasks.append(task)
+
+    if unscheduled_tasks:
+        console.print(
+            f"\n  [yellow]⚠[/yellow] {len(unscheduled_tasks)} task(s) could not be scheduled:"
+        )
+        for task in unscheduled_tasks[:5]:  # Show first 5
+            reason = "No available time slots"
+            if task.deadline:
+                reason = "Cannot meet deadline with current constraints"
+            console.print(f"    • #{task.id} {task.name} - {reason}")
+        if len(unscheduled_tasks) > 5:
+            console.print(f"    ... and {len(unscheduled_tasks) - 5} more")
+        console.print(
+            "\n  [dim]Tip: Try increasing --max-hours-per-day or adjusting task deadlines[/dim]"
+        )
+
     # Workload validation
     console.print("\n[bold]Workload Validation:[/bold]")
     overloaded_days = []

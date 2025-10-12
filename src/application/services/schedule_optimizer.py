@@ -42,6 +42,10 @@ class ScheduleOptimizer:
         Returns:
             List of tasks with updated schedules
         """
+        # Initialize daily_allocations with existing scheduled tasks
+        # This ensures we account for tasks that won't be rescheduled
+        self._initialize_daily_allocations(tasks)
+
         # Filter tasks that need scheduling
         schedulable_tasks = self._get_schedulable_tasks(tasks)
 
@@ -59,7 +63,55 @@ class ScheduleOptimizer:
         # Update parent task periods based on children
         all_tasks_with_updates = self._update_parent_periods(tasks, updated_tasks, repository)
 
+        # If force_override, clear schedules for tasks that couldn't be scheduled
+        if self.force_override:
+            all_tasks_with_updates = self._clear_unscheduled_tasks(
+                tasks, all_tasks_with_updates, repository
+            )
+
         return all_tasks_with_updates
+
+    def _initialize_daily_allocations(self, tasks: list[Task]):
+        """Initialize daily_allocations with existing scheduled tasks.
+
+        This method pre-populates daily_allocations with hours from tasks
+        that already have schedules. This ensures that when we optimize new tasks,
+        we account for existing workload commitments.
+
+        Args:
+            tasks: All tasks in the system
+        """
+        # Build parent-child map to identify parent tasks
+        parent_ids = set()
+        for task in tasks:
+            if task.parent_id:
+                parent_ids.add(task.parent_id)
+
+        for task in tasks:
+            # Skip parent tasks (they don't have actual work, only children do)
+            if task.id in parent_ids:
+                continue
+
+            # Skip completed tasks
+            if task.status == TaskStatus.COMPLETED:
+                continue
+
+            # Skip tasks without schedules
+            if not (task.planned_start and task.estimated_duration):
+                continue
+
+            # If force_override, we'll reschedule PENDING tasks, so don't count their old allocation
+            # But IN_PROGRESS tasks should NOT be rescheduled, so count their allocation
+            if self.force_override and task.status != TaskStatus.IN_PROGRESS:
+                continue
+
+            # Use daily_allocations if available
+            if task.daily_allocations:
+                for date_str, hours in task.daily_allocations.items():
+                    if date_str in self.daily_allocations:
+                        self.daily_allocations[date_str] += hours
+                    else:
+                        self.daily_allocations[date_str] = hours
 
     def _get_schedulable_tasks(self, tasks: list[Task]) -> list[Task]:
         """Get tasks that can be scheduled.
@@ -76,6 +128,10 @@ class ScheduleOptimizer:
         for task in tasks:
             # Skip completed tasks
             if task.status == TaskStatus.COMPLETED:
+                continue
+
+            # Skip IN_PROGRESS tasks (don't reschedule tasks already being worked on)
+            if task.status == TaskStatus.IN_PROGRESS:
                 continue
 
             # Skip tasks without estimated duration
@@ -305,3 +361,66 @@ class ScheduleOptimizer:
                         parent_ids_to_update.add(parent_task_copy.parent_id)
 
         return modified_tasks
+
+    def _clear_unscheduled_tasks(
+        self, all_tasks: list[Task], updated_tasks: list[Task], repository
+    ) -> list[Task]:
+        """Clear schedules for tasks that couldn't be scheduled with force_override.
+
+        When force_override is True, tasks that had schedules but couldn't be
+        rescheduled (e.g., due to deadline constraints) should have their old
+        schedules removed to avoid inconsistency.
+
+        Args:
+            all_tasks: All tasks in the system
+            updated_tasks: Tasks that were successfully scheduled
+            repository: Task repository for hierarchy queries
+
+        Returns:
+            Combined list of updated tasks and cleared tasks
+        """
+        # Build set of updated task IDs
+        updated_ids = {t.id for t in updated_tasks}
+
+        # Build parent-child map
+        parent_ids = set()
+        for task in all_tasks:
+            if task.parent_id:
+                parent_ids.add(task.parent_id)
+
+        # Find tasks that need their schedules cleared
+        cleared_tasks = []
+        for task in all_tasks:
+            # Skip if already updated
+            if task.id in updated_ids:
+                continue
+
+            # Skip parent tasks (they don't have allocations)
+            if task.id in parent_ids:
+                continue
+
+            # Skip completed tasks
+            if task.status == TaskStatus.COMPLETED:
+                continue
+
+            # Skip IN_PROGRESS tasks (they keep their schedules)
+            if task.status == TaskStatus.IN_PROGRESS:
+                continue
+
+            # Skip tasks that never had schedules
+            if not task.planned_start:
+                continue
+
+            # Skip tasks without estimated_duration (they shouldn't have been scheduled)
+            if not task.estimated_duration:
+                continue
+
+            # This task had a schedule but wasn't successfully rescheduled
+            # Clear its schedule to avoid inconsistency
+            task_copy = copy.deepcopy(task)
+            task_copy.planned_start = None
+            task_copy.planned_end = None
+            task_copy.daily_allocations = None
+            cleared_tasks.append(task_copy)
+
+        return updated_tasks + cleared_tasks
