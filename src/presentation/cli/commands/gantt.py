@@ -86,9 +86,21 @@ EXAMPLE:
     default=False,
     help="Show all tasks including archived ones",
 )
+@click.option(
+    "--sort",
+    type=click.Choice(["id", "priority", "deadline", "name", "status", "planned_start"]),
+    default="id",
+    help="Sort tasks by specified field (default: id)",
+)
+@click.option(
+    "--reverse",
+    "-r",
+    is_flag=True,
+    help="Reverse sort order",
+)
 @click.pass_context
 @handle_command_errors("displaying Gantt chart")
-def gantt_command(ctx, start_date, end_date, hide_completed, show_all):
+def gantt_command(ctx, start_date, end_date, hide_completed, show_all, sort, reverse):
     """Display all tasks as a Gantt chart with workload analysis.
 
     The Gantt chart visualizes task timelines and provides daily workload
@@ -97,7 +109,7 @@ def gantt_command(ctx, start_date, end_date, hide_completed, show_all):
     repository = ctx.obj["repository"]
     task_query_service = TaskQueryService(repository)
 
-    tasks = task_query_service.get_all_tasks()
+    tasks = task_query_service.get_all_tasks(sort_by=sort, reverse=reverse)
 
     # Filter out archived tasks by default (unless --all is specified)
     if not show_all:

@@ -23,7 +23,9 @@ class TaskQueryService(QueryService):
         self.today_filter = TodayFilter(repository)
         self.sorter = TaskSorter()
 
-    def get_today_tasks(self, include_completed: bool = False) -> list[Task]:
+    def get_today_tasks(
+        self, include_completed: bool = False, sort_by: str = "deadline", reverse: bool = False
+    ) -> list[Task]:
         """Get tasks relevant for today.
 
         Returns tasks that meet any of these criteria:
@@ -31,36 +33,48 @@ class TaskQueryService(QueryService):
         - Planned period includes today
         - Status is IN_PROGRESS
 
-        Tasks are sorted by deadline -> priority -> id.
         Ancestor tasks are included to preserve hierarchy.
 
         Args:
             include_completed: Whether to include completed tasks
+            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
+            reverse: Reverse sort order (default: False)
 
         Returns:
             Filtered and sorted list of today's tasks
         """
         tasks = self.repository.get_all()
         filtered_tasks = self.today_filter.filter(tasks, include_completed)
-        sorted_tasks = self.sorter.sort(filtered_tasks)
+        sorted_tasks = self.sorter.sort(filtered_tasks, sort_by, reverse)
         return sorted_tasks
 
-    def get_all_tasks(self) -> list[Task]:
+    def get_all_tasks(self, sort_by: str = "id", reverse: bool = False) -> list[Task]:
         """Get all tasks without filtering.
 
-        Returns:
-            List of all tasks
-        """
-        return self.repository.get_all()
+        Args:
+            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
+            reverse: Reverse sort order (default: False)
 
-    def get_incomplete_tasks_with_hierarchy(self) -> list[Task]:
+        Returns:
+            Sorted list of all tasks
+        """
+        tasks = self.repository.get_all()
+        return self.sorter.sort(tasks, sort_by, reverse)
+
+    def get_incomplete_tasks_with_hierarchy(
+        self, sort_by: str = "id", reverse: bool = False
+    ) -> list[Task]:
         """Get incomplete tasks, preserving hierarchy by including necessary ancestors.
 
         Completed and archived parent tasks are included if they have incomplete descendants.
         Used by tree view to show meaningful hierarchy while hiding fully completed branches.
 
+        Args:
+            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
+            reverse: Reverse sort order (default: False)
+
         Returns:
-            List of incomplete tasks with necessary ancestor tasks
+            Sorted list of incomplete tasks with necessary ancestor tasks
         """
         tasks = self.repository.get_all()
 
@@ -83,17 +97,25 @@ class TaskQueryService(QueryService):
 
         # Include incomplete tasks and their necessary ancestors
         included_ids = incomplete_ids | ancestor_ids
-        return [t for t in tasks if t.id in included_ids]
+        filtered_tasks = [t for t in tasks if t.id in included_ids]
+        return self.sorter.sort(filtered_tasks, sort_by, reverse)
 
-    def get_incomplete_tasks(self) -> list[Task]:
+    def get_incomplete_tasks(self, sort_by: str = "id", reverse: bool = False) -> list[Task]:
         """Get only incomplete tasks without hierarchy preservation.
 
         Returns tasks with status PENDING, IN_PROGRESS, or FAILED.
         Excludes COMPLETED and ARCHIVED tasks.
         Used by flat views like table.
 
+        Args:
+            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
+            reverse: Reverse sort order (default: False)
+
         Returns:
-            List of incomplete tasks
+            Sorted list of incomplete tasks
         """
         tasks = self.repository.get_all()
-        return [t for t in tasks if t.status not in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED)]
+        filtered_tasks = [
+            t for t in tasks if t.status not in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED)
+        ]
+        return self.sorter.sort(filtered_tasks, sort_by, reverse)

@@ -22,9 +22,22 @@ from presentation.formatters.rich_tree_formatter import RichTreeFormatter
     is_flag=True,
     help="Show all tasks including completed ones",
 )
+@click.option(
+    "--sort",
+    "-s",
+    type=click.Choice(["id", "priority", "deadline", "name", "status", "planned_start"]),
+    default="deadline",
+    help="Sort tasks by specified field (default: deadline)",
+)
+@click.option(
+    "--reverse",
+    "-r",
+    is_flag=True,
+    help="Reverse sort order",
+)
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def today_command(ctx, format, all):
+def today_command(ctx, format, all, sort, reverse):
     """Display tasks for today.
 
     Shows tasks that meet any of these criteria:
@@ -39,7 +52,9 @@ def today_command(ctx, format, all):
     query_service = TaskQueryService(repository)
 
     # Get today's tasks (filtered and sorted)
-    today_tasks = query_service.get_today_tasks(include_completed=all)
+    today_tasks = query_service.get_today_tasks(
+        include_completed=all, sort_by=sort, reverse=reverse
+    )
 
     # Format and display
     if format == "tree":

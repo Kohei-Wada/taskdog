@@ -17,9 +17,22 @@ from presentation.formatters.rich_tree_formatter import RichTreeFormatter
     is_flag=True,
     help="Show all tasks including completed and archived ones",
 )
+@click.option(
+    "--sort",
+    "-s",
+    type=click.Choice(["id", "priority", "deadline", "name", "status", "planned_start"]),
+    default="id",
+    help="Sort tasks by specified field (default: id)",
+)
+@click.option(
+    "--reverse",
+    "-r",
+    is_flag=True,
+    help="Reverse sort order",
+)
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def tree_command(ctx, all):
+def tree_command(ctx, all, sort, reverse):
     """Display tasks as a hierarchical tree.
 
     By default, only shows incomplete tasks (PENDING, IN_PROGRESS, FAILED).
@@ -31,9 +44,11 @@ def tree_command(ctx, all):
 
     # Get tasks using query service
     if all:
-        tasks = task_query_service.get_all_tasks()
+        tasks = task_query_service.get_all_tasks(sort_by=sort, reverse=reverse)
     else:
-        tasks = task_query_service.get_incomplete_tasks_with_hierarchy()
+        tasks = task_query_service.get_incomplete_tasks_with_hierarchy(
+            sort_by=sort, reverse=reverse
+        )
 
     # Format and display
     formatter = RichTreeFormatter()

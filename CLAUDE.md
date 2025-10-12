@@ -108,8 +108,20 @@ Commands access shared dependencies via `@click.pass_context` and `ctx.obj["depe
 **Query Service** (`src/application/queries/task_query_service.py`)
 - Read-only operations optimized for data retrieval
 - Methods: `get_today_tasks()`, `get_all_tasks()`, `get_incomplete_tasks_with_hierarchy()`, `get_incomplete_tasks()`
+  - All methods support `sort_by` and `reverse` parameters for flexible sorting
+  - Sort keys: `id`, `priority`, `deadline`, `name`, `status`, `planned_start`
 - Uses filters (TodayFilter) and sorters (TaskSorter) for query composition
 - Separates reads from writes (CQRS-like pattern)
+
+**TaskSorter** (`src/application/queries/filters/task_sorter.py`)
+- Provides sorting functionality for task lists
+- Supports multiple sort keys: `id`, `priority`, `deadline`, `name`, `status`, `planned_start`
+- Default behaviors:
+  - `priority`: Descending by default (higher priority first)
+  - Other keys: Ascending by default
+  - None values: Sorted last for date/time fields
+- `reverse` parameter inverts sort order
+- Used by TaskQueryService to sort query results
 
 **Repository Pattern** (`src/infrastructure/persistence/`)
 - Abstract interface `TaskRepository` defines contract
@@ -196,9 +208,15 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 **Task Creation & Viewing:**
 - `add`: Add new task with minimal interface: `taskdog add "Task name" [--priority N] [--parent ID]` (uses CreateTaskUseCase)
   - Detailed fields (deadline, estimate, schedule) should be set using dedicated commands after creation
-- `tree`: Display hierarchical tree view (uses TaskQueryService)
-- `table`: Display flat table view (uses TaskQueryService)
-- `today`: Show today's tasks (uses TaskQueryService.get_today_tasks())
+- `tree`: Display hierarchical tree view with sorting options (uses TaskQueryService)
+  - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: id)
+  - `--reverse`: Reverse sort order
+- `table`: Display flat table view with sorting options (uses TaskQueryService)
+  - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: id)
+  - `--reverse`: Reverse sort order
+- `today`: Show today's tasks with sorting options (uses TaskQueryService.get_today_tasks())
+  - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: deadline)
+  - `--reverse`: Reverse sort order
 - `show`: Display task details and notes with Rich formatting (direct repository access)
 
 **Task Status Management:**
@@ -219,7 +237,9 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `rm`: Remove task(s) with cascade/orphan options - supports multiple task IDs (uses RemoveTaskUseCase)
 
 **Visualization & Export:**
-- `gantt`: Display Gantt chart timeline with workload summary (uses TaskQueryService)
+- `gantt`: Display Gantt chart timeline with workload summary and sorting options (uses TaskQueryService)
+  - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: id)
+  - `--reverse`: Reverse sort order
 - `export`: Export tasks to various formats with `--format` and `--output` options (uses TaskQueryService)
 
 **Notes:**

@@ -16,9 +16,22 @@ from presentation.formatters.rich_table_formatter import RichTableFormatter
     is_flag=True,
     help="Show all tasks including completed and archived ones",
 )
+@click.option(
+    "--sort",
+    "-s",
+    type=click.Choice(["id", "priority", "deadline", "name", "status", "planned_start"]),
+    default="id",
+    help="Sort tasks by specified field (default: id)",
+)
+@click.option(
+    "--reverse",
+    "-r",
+    is_flag=True,
+    help="Reverse sort order",
+)
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def table_command(ctx, all):
+def table_command(ctx, all, sort, reverse):
     """Display tasks as a flat table.
 
     By default, only shows incomplete tasks (PENDING, IN_PROGRESS, FAILED).
@@ -29,9 +42,9 @@ def table_command(ctx, all):
 
     # Get tasks using query service
     if all:
-        tasks = task_query_service.get_all_tasks()
+        tasks = task_query_service.get_all_tasks(sort_by=sort, reverse=reverse)
     else:
-        tasks = task_query_service.get_incomplete_tasks()
+        tasks = task_query_service.get_incomplete_tasks(sort_by=sort, reverse=reverse)
 
     # Format and display
     formatter = RichTableFormatter()

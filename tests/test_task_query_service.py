@@ -90,8 +90,8 @@ class TestTaskQueryService(unittest.TestCase):
         self.assertEqual(today_tasks[1].name, "Today")
         self.assertEqual(today_tasks[2].name, "Later")
 
-    def test_get_today_tasks_sorts_by_priority_when_deadline_same(self):
-        """Test get_today_tasks sorts by priority when deadline is same"""
+    def test_get_today_tasks_sorts_by_priority_when_specified(self):
+        """Test get_today_tasks can sort by priority when specified"""
         # Create tasks with same deadline, different priorities
         task1 = Task(name="Low Priority", priority=1, id=1, deadline=self.today_str)
         task1.id = self.repository.generate_next_id()
@@ -105,10 +105,12 @@ class TestTaskQueryService(unittest.TestCase):
         task3.id = self.repository.generate_next_id()
         self.repository.save(task3)
 
-        # Query
-        today_tasks = self.query_service.get_today_tasks(include_completed=False)
+        # Query with priority sorting
+        today_tasks = self.query_service.get_today_tasks(
+            include_completed=False, sort_by="priority"
+        )
 
-        # Verify sorted by priority (descending)
+        # Verify sorted by priority (descending by default)
         self.assertEqual(len(today_tasks), 3)
         self.assertEqual(today_tasks[0].name, "High Priority")
         self.assertEqual(today_tasks[1].name, "Mid Priority")
