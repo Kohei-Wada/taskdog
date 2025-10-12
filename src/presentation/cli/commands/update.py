@@ -40,9 +40,9 @@ from shared.click_types.datetime_with_default import DateTimeWithDefault
 )
 @click.option(
     "--planned-start",
-    type=DateTimeWithDefault(),
+    type=DateTimeWithDefault(default_hour=9),
     default=None,
-    help="Planned start (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 18:00:00)",
+    help="Planned start (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 09:00:00)",
 )
 @click.option(
     "--planned-end",

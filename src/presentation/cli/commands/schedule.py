@@ -11,7 +11,7 @@ from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 @click.command(name="schedule", help="Set planned schedule for a task.")
 @click.argument("task_id", type=int)
-@click.argument("start", type=DateTimeWithDefault())
+@click.argument("start", type=DateTimeWithDefault(default_hour=9))
 @click.argument("end", type=DateTimeWithDefault(), required=False)
 @click.pass_context
 @handle_task_errors("setting schedule")
@@ -21,7 +21,9 @@ def schedule_command(ctx, task_id, start, end):
     Usage:
         taskdog schedule <TASK_ID> <START> [END]
 
-    Date formats: YYYY-MM-DD, MM-DD, or MM/DD (defaults to 18:00:00)
+    Date formats:
+        START: YYYY-MM-DD, MM-DD, or MM/DD (defaults to 09:00:00)
+        END: YYYY-MM-DD, MM-DD, or MM/DD (defaults to 18:00:00)
 
     Examples:
         taskdog schedule 5 10-15

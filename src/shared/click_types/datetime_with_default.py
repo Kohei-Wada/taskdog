@@ -8,18 +8,26 @@ from domain.constants import DATETIME_FORMAT
 
 
 class DateTimeWithDefault(click.DateTime):
-    """DateTime parameter type that adds default time (18:00:00) when only date is provided.
+    """DateTime parameter type that adds default time when only date is provided.
 
     Accepts the following formats:
-    - YYYY-MM-DD (adds default time 18:00:00)
-    - MM-DD (adds current year and default time 18:00:00)
-    - MM/DD (adds current year and default time 18:00:00)
+    - YYYY-MM-DD (adds default time)
+    - MM-DD (adds current year and default time)
+    - MM/DD (adds current year and default time)
     - YYYY-MM-DD HH:MM:SS (uses provided time)
+
+    Args:
+        default_hour: Default hour to use when only date is provided (default: 18 for end times)
     """
 
-    def __init__(self):
-        """Initialize with supported datetime formats."""
+    def __init__(self, default_hour=18):
+        """Initialize with supported datetime formats and default hour.
+
+        Args:
+            default_hour: Hour to use as default when only date provided (0-23)
+        """
         super().__init__(formats=[DATETIME_FORMAT, "%Y-%m-%d", "%m-%d", "%m/%d"])
+        self.default_hour = default_hour
 
     def convert(self, value, param, ctx):
         """Convert date string to datetime, adding default time if needed.
@@ -66,8 +74,8 @@ class DateTimeWithDefault(click.DateTime):
 
         # Only add default time if no time was provided in the input
         if not has_time and dt.time() == time(0, 0, 0):
-            # Add default time 18:00:00
-            dt = datetime.combine(dt.date(), time(18, 0, 0))
+            # Add default time using configured hour
+            dt = datetime.combine(dt.date(), time(self.default_hour, 0, 0))
 
         # Return formatted string
         return dt.strftime(DATETIME_FORMAT)
