@@ -36,7 +36,9 @@ def rm_command(ctx, task_ids, cascade):
         task_id, removed_count = result
         if cascade:
             console.print(
-                f"[green]✓[/green] Removed task [cyan]{task_id}[/cyan] and [bold]{removed_count - 1}[/bold] child task(s)"
+                f"[green]✓[/green] Removed task [cyan]{task_id}[/cyan] and [bold]{
+                    removed_count - 1
+                }[/bold] child task(s)"
             )
         else:
             console.print(f"[green]✓[/green] Removed task with ID: [cyan]{task_id}[/cyan]")
