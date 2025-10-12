@@ -44,6 +44,7 @@ packages = [
   "presentation.utils",
   "shared",
   "shared.click_types",
+  "shared.utils",
 ]
 package-dir = { "" = "src" }
 
