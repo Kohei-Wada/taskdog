@@ -13,12 +13,13 @@ class DateTimeWithDefault(click.DateTime):
     Accepts the following formats:
     - YYYY-MM-DD (adds default time 18:00:00)
     - MM-DD (adds current year and default time 18:00:00)
+    - MM/DD (adds current year and default time 18:00:00)
     - YYYY-MM-DD HH:MM:SS (uses provided time)
     """
 
     def __init__(self):
         """Initialize with supported datetime formats."""
-        super().__init__(formats=[DATETIME_FORMAT, "%Y-%m-%d", "%m-%d"])
+        super().__init__(formats=[DATETIME_FORMAT, "%Y-%m-%d", "%m-%d", "%m/%d"])
 
     def convert(self, value, param, ctx):
         """Convert date string to datetime, adding default time if needed.
@@ -41,8 +42,13 @@ class DateTimeWithDefault(click.DateTime):
         if isinstance(value, str):
             value = value.strip()
 
-        # Check if input is in MM-DD format (no year provided)
-        is_short_format = isinstance(value, str) and len(value.split()[0].split("-")) == 2
+        # Check if input is in MM-DD or MM/DD format (no year provided)
+        if isinstance(value, str):
+            date_part = value.split()[0]  # Get date part (before any space/time)
+            # Check if it's 2-part date (MM-DD or MM/DD)
+            is_short_format = len(date_part.split("-")) == 2 or len(date_part.split("/")) == 2
+        else:
+            is_short_format = False
 
         # Check if input contains time component
         has_time = isinstance(value, str) and " " in value
