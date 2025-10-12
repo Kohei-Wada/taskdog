@@ -47,7 +47,9 @@ def done_command(ctx, task_ids):
                     )
                 elif diff < 0:
                     console.print(
-                        f"  [green]✓[/green] Finished [green]{abs(diff)}h faster[/green] than estimated"
+                        f"  [green]✓[/green] Finished [green]{
+                            abs(diff)
+                        }h faster[/green] than estimated"
                     )
                 else:
                     console.print("  [green]✓[/green] Finished exactly on estimate!")
@@ -59,7 +61,9 @@ def done_command(ctx, task_ids):
         for child in e.incomplete_children:
             status_color = "blue" if child.status == TaskStatus.IN_PROGRESS else "yellow"
             console.print(
-                f"    - Task {child.id}: {child.name} ([{status_color}]{child.status.value}[/{status_color}])"
+                f"    - Task {child.id}: {child.name} ([{status_color}]{child.status.value}[/{
+                    status_color
+                }])"
             )
         console.print("  [dim]Complete all child tasks first, then try again.[/dim]")
 
