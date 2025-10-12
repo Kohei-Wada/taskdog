@@ -61,13 +61,15 @@ EXAMPLE:
 )
 @click.option(
     "--start-date",
+    "-s",
     type=DateTimeWithDefault(),
-    help="Start date for the chart (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS). Defaults to previous Monday.",
+    help="Start date for the chart (YYYY-MM-DD, MM-DD, or MM/DD). Defaults to previous Monday.",
 )
 @click.option(
     "--end-date",
+    "-e",
     type=DateTimeWithDefault(),
-    help="End date for the chart (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS). Defaults to last task date.",
+    help="End date for the chart (YYYY-MM-DD, MM-DD, or MM/DD). Defaults to last task date.",
 )
 @click.option(
     "--hide-completed",
