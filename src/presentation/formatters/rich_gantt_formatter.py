@@ -7,6 +7,7 @@ from domain.entities.task import Task, TaskStatus
 from domain.services.workload_calculator import WorkloadCalculator
 from presentation.formatters.constants import DATETIME_FORMAT
 from presentation.formatters.rich_formatter_base import RichFormatterBase
+from shared.utils.date_utils import DateTimeParser
 
 
 class RichGanttFormatter(RichFormatterBase):
@@ -332,8 +333,8 @@ class RichGanttFormatter(RichFormatterBase):
         if not (task.planned_start and task.planned_end):
             return daily_hours
 
-        planned_start = self._parse_date(task.planned_start)
-        planned_end = self._parse_date(task.planned_end)
+        planned_start = DateTimeParser.parse_date(task.planned_start)
+        planned_end = DateTimeParser.parse_date(task.planned_end)
 
         if not (planned_start and planned_end):
             return daily_hours
@@ -495,11 +496,11 @@ class RichGanttFormatter(RichFormatterBase):
             Dictionary with parsed dates (planned_start, planned_end, actual_start, actual_end, deadline)
         """
         return {
-            "planned_start": self._parse_date(task.planned_start),
-            "planned_end": self._parse_date(task.planned_end),
-            "actual_start": self._parse_date(task.actual_start),
-            "actual_end": self._parse_date(task.actual_end),
-            "deadline": self._parse_date(task.deadline),
+            "planned_start": DateTimeParser.parse_date(task.planned_start),
+            "planned_end": DateTimeParser.parse_date(task.planned_end),
+            "actual_start": DateTimeParser.parse_date(task.actual_start),
+            "actual_end": DateTimeParser.parse_date(task.actual_end),
+            "deadline": DateTimeParser.parse_date(task.deadline),
         }
 
     def _is_in_date_range(self, current_date: date, start: date | None, end: date | None) -> bool:
@@ -533,23 +534,6 @@ class RichGanttFormatter(RichFormatterBase):
             return self.BACKGROUND_COLOR_SUNDAY
         else:
             return self.BACKGROUND_COLOR
-
-    def _parse_date(self, date_str: str | None) -> date | None:
-        """Parse date string to date object.
-
-        Args:
-            date_str: Date string in format YYYY-MM-DD HH:MM:SS
-
-        Returns:
-            date object or None
-        """
-        if not date_str:
-            return None
-        try:
-            dt = datetime.strptime(date_str, DATETIME_FORMAT)
-            return dt.date()
-        except ValueError:
-            return None
 
     def _format_estimated_hours(self, estimated_duration: float | None) -> str:
         """Format estimated duration for display.

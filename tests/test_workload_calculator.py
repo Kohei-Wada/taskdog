@@ -247,21 +247,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
         self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)  # Thursday (task2 excluded)
         self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday (task2 excluded)
 
-    def test_parse_date_valid(self):
-        """Test date parsing with valid input."""
-        result = self.calculator._parse_date("2025-01-06 09:00:00")
-        self.assertEqual(result, date(2025, 1, 6))
-
-    def test_parse_date_invalid(self):
-        """Test date parsing with invalid input."""
-        result = self.calculator._parse_date("invalid-date")
-        self.assertIsNone(result)
-
-    def test_parse_date_none(self):
-        """Test date parsing with None input."""
-        result = self.calculator._parse_date(None)
-        self.assertIsNone(result)
-
     def test_calculate_daily_workload_with_daily_allocations(self):
         """Test workload calculation using daily_allocations from ScheduleOptimizer."""
         # Task with daily_allocations (from ScheduleOptimizer)

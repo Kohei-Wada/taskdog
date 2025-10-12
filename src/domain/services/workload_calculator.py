@@ -3,12 +3,11 @@
 from datetime import date, datetime, timedelta
 
 from domain.entities.task import Task, TaskStatus
+from shared.utils.date_utils import DateTimeParser
 
 
 class WorkloadCalculator:
     """Calculates daily workload from tasks with estimated duration."""
-
-    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     def calculate_daily_workload(
         self, tasks: list[Task], start_date: date, end_date: date
@@ -67,8 +66,8 @@ class WorkloadCalculator:
                         pass
             else:
                 # Fallback: distribute equally across weekdays (for backward compatibility)
-                planned_start = self._parse_date(task.planned_start)
-                planned_end = self._parse_date(task.planned_end)
+                planned_start = DateTimeParser.parse_date(task.planned_start)
+                planned_end = DateTimeParser.parse_date(task.planned_end)
 
                 if not (planned_start and planned_end):
                     continue
@@ -111,20 +110,3 @@ class WorkloadCalculator:
                 weekday_count += 1
             current_date += timedelta(days=1)
         return weekday_count
-
-    def _parse_date(self, date_str: str | None) -> date | None:
-        """Parse date string to date object.
-
-        Args:
-            date_str: Date string in format YYYY-MM-DD HH:MM:SS
-
-        Returns:
-            date object or None
-        """
-        if not date_str:
-            return None
-        try:
-            dt = datetime.strptime(date_str, self.DATETIME_FORMAT)
-            return dt.date()
-        except ValueError:
-            return None
