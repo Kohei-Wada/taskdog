@@ -1,8 +1,9 @@
-import unittest
 import os
 import tempfile
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+import unittest
+
 from domain.entities.task import Task, TaskStatus
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
 class TestJsonTaskRepository(unittest.TestCase):
@@ -10,9 +11,7 @@ class TestJsonTaskRepository(unittest.TestCase):
 
     def setUp(self):
         """Create a temporary file for each test"""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".json"
-        )
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
@@ -192,9 +191,7 @@ class TestJsonTaskRepository(unittest.TestCase):
         """Test generate_next_id() produces sequential IDs"""
         # Add tasks using generate_next_id()
         for i in range(3):
-            task = Task(
-                name=f"Task {i}", priority=1, id=self.repository.generate_next_id()
-            )
+            task = Task(name=f"Task {i}", priority=1, id=self.repository.generate_next_id())
             self.repository.save(task)
 
         tasks = self.repository.get_all()
@@ -214,7 +211,7 @@ class TestJsonTaskRepository(unittest.TestCase):
         self.repository.save(task)
 
         # Check backup file exists
-        backup_path = self.test_filename.replace('.json', '.json.bak')
+        backup_path = self.test_filename.replace(".json", ".json.bak")
         self.assertTrue(os.path.exists(backup_path))
 
         # Clean up backup file
@@ -231,7 +228,7 @@ class TestJsonTaskRepository(unittest.TestCase):
 
         # Check no temp files left in directory
         test_dir = pathlib.Path(self.test_filename).parent
-        temp_files = list(test_dir.glob('.*.tmp'))
+        temp_files = list(test_dir.glob(".*.tmp"))
         self.assertEqual(len(temp_files), 0)
 
     def test_recovery_from_corrupted_file(self):
@@ -245,12 +242,12 @@ class TestJsonTaskRepository(unittest.TestCase):
         self.repository.save(task2)
 
         # Verify backup exists
-        backup_path = self.test_filename.replace('.json', '.json.bak')
+        backup_path = self.test_filename.replace(".json", ".json.bak")
         self.assertTrue(os.path.exists(backup_path))
 
         # Corrupt the main file
-        with open(self.test_filename, 'w') as f:
-            f.write('{ invalid json data }')
+        with open(self.test_filename, "w") as f:
+            f.write("{ invalid json data }")
 
         # Try to load - should recover from backup
         new_repository = JsonTaskRepository(self.test_filename)
@@ -266,8 +263,8 @@ class TestJsonTaskRepository(unittest.TestCase):
     def test_load_with_no_backup(self):
         """Test that IOError is raised when both main and backup are corrupted"""
         # Create a corrupted file with no backup
-        with open(self.test_filename, 'w') as f:
-            f.write('{ invalid json }')
+        with open(self.test_filename, "w") as f:
+            f.write("{ invalid json }")
 
         # Should raise IOError since no backup exists
         with self.assertRaises(IOError) as context:

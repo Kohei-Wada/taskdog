@@ -4,6 +4,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
+
 from application.dto.task_detail_dto import TaskDetailDTO
 from presentation.formatters.constants import STATUS_STYLES
 

@@ -1,10 +1,10 @@
 """Schedule optimizer service for automatic task scheduling."""
 
-from datetime import datetime, timedelta
-from typing import List, Dict, Tuple, Optional
 import copy
-from domain.entities.task import Task, TaskStatus
+from datetime import datetime, timedelta
+
 from domain.constants import DATETIME_FORMAT
+from domain.entities.task import Task, TaskStatus
 
 
 class ScheduleOptimizer:
@@ -18,10 +18,7 @@ class ScheduleOptimizer:
     """
 
     def __init__(
-        self,
-        start_date: datetime,
-        max_hours_per_day: float = 6.0,
-        force_override: bool = False
+        self, start_date: datetime, max_hours_per_day: float = 6.0, force_override: bool = False
     ):
         """Initialize optimizer.
 
@@ -33,13 +30,9 @@ class ScheduleOptimizer:
         self.start_date = start_date
         self.max_hours_per_day = max_hours_per_day
         self.force_override = force_override
-        self.daily_allocations: Dict[str, float] = {}  # date_str -> hours
+        self.daily_allocations: dict[str, float] = {}  # date_str -> hours
 
-    def optimize_tasks(
-        self,
-        tasks: List[Task],
-        repository
-    ) -> List[Task]:
+    def optimize_tasks(self, tasks: list[Task], repository) -> list[Task]:
         """Optimize schedules for all tasks.
 
         Args:
@@ -64,13 +57,11 @@ class ScheduleOptimizer:
                     updated_tasks.append(updated_task)
 
         # Update parent task periods based on children
-        all_tasks_with_updates = self._update_parent_periods(
-            tasks, updated_tasks, repository
-        )
+        all_tasks_with_updates = self._update_parent_periods(tasks, updated_tasks, repository)
 
         return all_tasks_with_updates
 
-    def _get_schedulable_tasks(self, tasks: List[Task]) -> List[Task]:
+    def _get_schedulable_tasks(self, tasks: list[Task]) -> list[Task]:
         """Get tasks that can be scheduled.
 
         Filters out completed tasks and optionally tasks with existing schedules.
@@ -99,11 +90,7 @@ class ScheduleOptimizer:
 
         return schedulable
 
-    def _sort_by_priority(
-        self,
-        tasks: List[Task],
-        repository
-    ) -> List[Task]:
+    def _sort_by_priority(self, tasks: list[Task], repository) -> list[Task]:
         """Sort tasks by scheduling priority.
 
         Priority order:
@@ -119,7 +106,8 @@ class ScheduleOptimizer:
         Returns:
             Sorted task list
         """
-        def priority_key(task: Task) -> Tuple:
+
+        def priority_key(task: Task) -> tuple:
             # Check if task is a parent (has children)
             children = repository.get_children(task.id)
             is_parent = len(children) > 0
@@ -129,7 +117,7 @@ class ScheduleOptimizer:
                 deadline_dt = datetime.strptime(task.deadline, DATETIME_FORMAT)
                 days_until = (deadline_dt - self.start_date).days
             else:
-                days_until = float('inf')
+                days_until = float("inf")
 
             # Return tuple for sorting: (deadline, -priority, is_parent, id)
             # Higher priority value means higher priority (200 > 100 > 50)
@@ -157,7 +145,7 @@ class ScheduleOptimizer:
 
         return True
 
-    def _allocate_timeblock(self, task: Task) -> Optional[Task]:
+    def _allocate_timeblock(self, task: Task) -> Task | None:
         """Allocate time block for a task.
 
         Finds the earliest available time slot that satisfies:
@@ -237,11 +225,8 @@ class ScheduleOptimizer:
         return None
 
     def _update_parent_periods(
-        self,
-        all_tasks: List[Task],
-        updated_tasks: List[Task],
-        repository
-    ) -> List[Task]:
+        self, all_tasks: list[Task], updated_tasks: list[Task], repository
+    ) -> list[Task]:
         """Update parent task periods to encompass their children.
 
         Args:
@@ -291,9 +276,7 @@ class ScheduleOptimizer:
                 if c.planned_start
             ]
             child_ends = [
-                datetime.strptime(c.planned_end, DATETIME_FORMAT)
-                for c in children
-                if c.planned_end
+                datetime.strptime(c.planned_end, DATETIME_FORMAT) for c in children if c.planned_end
             ]
 
             if child_starts and child_ends:
@@ -301,7 +284,10 @@ class ScheduleOptimizer:
                 parent_end = max(child_ends).strftime(DATETIME_FORMAT)
 
                 # Update parent if period changed
-                if parent_task.planned_start != parent_start or parent_task.planned_end != parent_end:
+                if (
+                    parent_task.planned_start != parent_start
+                    or parent_task.planned_end != parent_end
+                ):
                     # Create a copy of parent task
                     parent_task_copy = copy.deepcopy(parent_task)
                     parent_task_copy.planned_start = parent_start

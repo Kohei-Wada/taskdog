@@ -1,7 +1,7 @@
 """Sorter for tasks."""
 
 from datetime import datetime
-from typing import List
+
 from domain.entities.task import Task
 
 
@@ -16,7 +16,7 @@ class TaskSorter:
     Tasks without deadlines are sorted last.
     """
 
-    def sort(self, tasks: List[Task]) -> List[Task]:
+    def sort(self, tasks: list[Task]) -> list[Task]:
         """Sort tasks by deadline -> priority -> id.
 
         Args:
@@ -31,9 +31,7 @@ class TaskSorter:
             deadline_date = self._parse_date(task.deadline) if task.deadline else None
 
             # Use a far future date for None deadlines so they sort last
-            deadline_sort_value = (
-                deadline_date if deadline_date else datetime(9999, 12, 31).date()
-            )
+            deadline_sort_value = deadline_date if deadline_date else datetime(9999, 12, 31).date()
 
             # Priority (descending, so negate)
             priority_value = -task.priority

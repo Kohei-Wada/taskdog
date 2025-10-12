@@ -1,7 +1,7 @@
 """Filter for today's tasks."""
 
 from datetime import datetime
-from typing import List
+
 from domain.entities.task import Task, TaskStatus
 from infrastructure.persistence.task_repository import TaskRepository
 
@@ -25,7 +25,7 @@ class TodayFilter:
         """
         self.repository = repository
 
-    def filter(self, tasks: List[Task], include_completed: bool = False) -> List[Task]:
+    def filter(self, tasks: list[Task], include_completed: bool = False) -> list[Task]:
         """Filter tasks that are relevant for today.
 
         Args:

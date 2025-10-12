@@ -1,10 +1,11 @@
-import unittest
-import tempfile
 import os
+import tempfile
+import unittest
 from datetime import datetime, timedelta
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task, TaskStatus
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
 class TestTaskQueryService(unittest.TestCase):
@@ -12,9 +13,7 @@ class TestTaskQueryService(unittest.TestCase):
 
     def setUp(self):
         """Create temporary file and initialize service for each test"""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".json"
-        )
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
@@ -94,21 +93,15 @@ class TestTaskQueryService(unittest.TestCase):
     def test_get_today_tasks_sorts_by_priority_when_deadline_same(self):
         """Test get_today_tasks sorts by priority when deadline is same"""
         # Create tasks with same deadline, different priorities
-        task1 = Task(
-            name="Low Priority", priority=1, id=1, deadline=self.today_str
-        )
+        task1 = Task(name="Low Priority", priority=1, id=1, deadline=self.today_str)
         task1.id = self.repository.generate_next_id()
         self.repository.save(task1)
 
-        task2 = Task(
-            name="High Priority", priority=5, id=2, deadline=self.today_str
-        )
+        task2 = Task(name="High Priority", priority=5, id=2, deadline=self.today_str)
         task2.id = self.repository.generate_next_id()
         self.repository.save(task2)
 
-        task3 = Task(
-            name="Mid Priority", priority=3, id=3, deadline=self.today_str
-        )
+        task3 = Task(name="Mid Priority", priority=3, id=3, deadline=self.today_str)
         task3.id = self.repository.generate_next_id()
         self.repository.save(task3)
 
@@ -160,9 +153,7 @@ class TestTaskQueryService(unittest.TestCase):
         self.repository.save(parent)
 
         # Create child task matching today's criteria
-        child = Task(
-            name="Child", priority=1, deadline=self.today_str, parent_id=parent.id
-        )
+        child = Task(name="Child", priority=1, deadline=self.today_str, parent_id=parent.id)
         child.id = self.repository.generate_next_id()
         self.repository.save(child)
 

@@ -1,12 +1,13 @@
-import unittest
-import tempfile
 import os
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
-from domain.services.time_tracker import TimeTracker
-from application.use_cases.complete_task import CompleteTaskUseCase
+import tempfile
+import unittest
+
 from application.dto.complete_task_input import CompleteTaskInput
+from application.use_cases.complete_task import CompleteTaskUseCase
 from domain.entities.task import Task, TaskStatus
-from domain.exceptions.task_exceptions import TaskNotFoundException, IncompleteChildrenError
+from domain.exceptions.task_exceptions import IncompleteChildrenError, TaskNotFoundException
+from domain.services.time_tracker import TimeTracker
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
 class TestCompleteTaskUseCase(unittest.TestCase):
@@ -14,9 +15,7 @@ class TestCompleteTaskUseCase(unittest.TestCase):
 
     def setUp(self):
         """Create temporary file and initialize use case for each test"""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".json"
-        )
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
@@ -94,7 +93,9 @@ class TestCompleteTaskUseCase(unittest.TestCase):
         self.repository.save(parent)
 
         # Create child task with IN_PROGRESS status
-        child = Task(name="Child Task", priority=1, status=TaskStatus.IN_PROGRESS, parent_id=parent.id)
+        child = Task(
+            name="Child Task", priority=1, status=TaskStatus.IN_PROGRESS, parent_id=parent.id
+        )
         child.id = self.repository.generate_next_id()
         self.repository.save(child)
 
@@ -115,7 +116,9 @@ class TestCompleteTaskUseCase(unittest.TestCase):
         self.repository.save(parent)
 
         # Create child task with COMPLETED status
-        child = Task(name="Child Task", priority=1, status=TaskStatus.COMPLETED, parent_id=parent.id)
+        child = Task(
+            name="Child Task", priority=1, status=TaskStatus.COMPLETED, parent_id=parent.id
+        )
         child.id = self.repository.generate_next_id()
         self.repository.save(child)
 
@@ -132,11 +135,15 @@ class TestCompleteTaskUseCase(unittest.TestCase):
         self.repository.save(parent)
 
         # Create two incomplete child tasks
-        child1 = Task(name="Child Task 1", priority=1, status=TaskStatus.PENDING, parent_id=parent.id)
+        child1 = Task(
+            name="Child Task 1", priority=1, status=TaskStatus.PENDING, parent_id=parent.id
+        )
         child1.id = self.repository.generate_next_id()
         self.repository.save(child1)
 
-        child2 = Task(name="Child Task 2", priority=1, status=TaskStatus.IN_PROGRESS, parent_id=parent.id)
+        child2 = Task(
+            name="Child Task 2", priority=1, status=TaskStatus.IN_PROGRESS, parent_id=parent.id
+        )
         child2.id = self.repository.generate_next_id()
         self.repository.save(child2)
 

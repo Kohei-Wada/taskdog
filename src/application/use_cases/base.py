@@ -1,7 +1,7 @@
 """Base class for use cases."""
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
     from domain.entities.task import Task
@@ -45,9 +45,7 @@ class UseCase(ABC, Generic[TInput, TOutput]):
         """
         pass
 
-    def _get_task_or_raise(
-        self, repository: "TaskRepository", task_id: int
-    ) -> "Task":
+    def _get_task_or_raise(self, repository: "TaskRepository", task_id: int) -> "Task":
         """Get task by ID or raise TaskNotFoundException.
 
         Args:

@@ -1,6 +1,7 @@
 """Rename command - Rename a task."""
 
 import click
+
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.services.time_tracker import TimeTracker

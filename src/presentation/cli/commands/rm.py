@@ -1,15 +1,14 @@
 """Rm command - Remove a task."""
 
 import click
-from domain.exceptions.task_exceptions import TaskNotFoundException
-from utils.console_messages import print_task_not_found_error, print_error
+
 from application.dto.remove_task_input import RemoveTaskInput
 from application.use_cases.remove_task import RemoveTaskUseCase
+from domain.exceptions.task_exceptions import TaskNotFoundException
+from utils.console_messages import print_error, print_task_not_found_error
 
 
-@click.command(
-    name="rm", help="Remove task(s) (orphan children by default, or cascade delete)."
-)
+@click.command(name="rm", help="Remove task(s) (orphan children by default, or cascade delete).")
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.option(
     "--cascade",
@@ -38,9 +37,7 @@ def rm_command(ctx, task_ids, cascade):
                     f"[green]✓[/green] Removed task [cyan]{task_id}[/cyan] and [bold]{removed_count - 1}[/bold] child task(s)"
                 )
             else:
-                console.print(
-                    f"[green]✓[/green] Removed task with ID: [cyan]{task_id}[/cyan]"
-                )
+                console.print(f"[green]✓[/green] Removed task with ID: [cyan]{task_id}[/cyan]")
 
             success_count += 1
 
@@ -64,6 +61,8 @@ def rm_command(ctx, task_ids, cascade):
         if success_count > 0 and error_count == 0:
             console.print(f"[green]✓[/green] Successfully removed {total_removed} task(s)")
         elif success_count > 0 and error_count > 0:
-            console.print(f"[yellow]⚠[/yellow] Removed {total_removed} task(s), {error_count} error(s)")
+            console.print(
+                f"[yellow]⚠[/yellow] Removed {total_removed} task(s), {error_count} error(s)"
+            )
         elif error_count > 0:
             console.print(f"[red]✗[/red] Failed to remove {error_count} task(s)")

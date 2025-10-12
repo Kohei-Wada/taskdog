@@ -1,14 +1,15 @@
-import unittest
-import tempfile
 import os
+import tempfile
+import unittest
 from pathlib import Path
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+
 from application.use_cases.get_task_detail import (
-    GetTaskDetailUseCase,
     GetTaskDetailInput,
+    GetTaskDetailUseCase,
 )
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskNotFoundException
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
 class TestGetTaskDetailUseCase(unittest.TestCase):
@@ -16,9 +17,7 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
 
     def setUp(self):
         """Create temporary file and initialize use case for each test"""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".json"
-        )
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)

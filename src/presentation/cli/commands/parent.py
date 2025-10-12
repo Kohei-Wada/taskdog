@@ -1,6 +1,7 @@
 """Parent command - Set or clear task parent."""
 
 import click
+
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.services.time_tracker import TimeTracker
@@ -40,9 +41,7 @@ def parent_command(ctx, task_id, parent_id, clear):
         return
 
     if not clear and parent_id is None:
-        console.print(
-            "[red]Error:[/red] Must specify either parent ID or --clear flag"
-        )
+        console.print("[red]Error:[/red] Must specify either parent ID or --clear flag")
         return
 
     # Determine the parent value to set

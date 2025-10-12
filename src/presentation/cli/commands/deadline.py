@@ -1,11 +1,12 @@
 """Deadline command - Set task deadline."""
 
 import click
-from shared.click_types.datetime_with_default import DateTimeWithDefault
+
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.services.time_tracker import TimeTracker
 from presentation.cli.error_handler import handle_task_errors
+from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
 @click.command(name="deadline", help="Set task deadline.")

@@ -1,13 +1,15 @@
 """Gantt command - Display tasks in Gantt chart format."""
 
-import click
 from datetime import datetime, timedelta
+
+import click
+
+from application.queries.task_query_service import TaskQueryService
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import TaskStatus
-from application.queries.task_query_service import TaskQueryService
+from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_gantt_formatter import RichGanttFormatter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
-from presentation.cli.error_handler import handle_command_errors
 
 
 def get_previous_monday(from_date=None):

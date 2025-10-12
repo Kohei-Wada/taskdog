@@ -1,12 +1,13 @@
-import unittest
-import tempfile
 import os
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
-from domain.services.time_tracker import TimeTracker
-from application.use_cases.update_task import UpdateTaskUseCase
+import tempfile
+import unittest
+
 from application.dto.update_task_input import UpdateTaskInput
+from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
+from domain.services.time_tracker import TimeTracker
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
 class TestUpdateTaskUseCase(unittest.TestCase):
@@ -14,9 +15,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
     def setUp(self):
         """Create temporary file and initialize use case for each test"""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".json"
-        )
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
@@ -61,9 +60,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskInput(
-            task_id=task.id, planned_start="2025-10-12 09:00:00"
-        )
+        input_dto = UpdateTaskInput(task_id=task.id, planned_start="2025-10-12 09:00:00")
         result_task, updated_fields = self.use_case.execute(input_dto)
 
         self.assertEqual(result_task.planned_start, "2025-10-12 09:00:00")
@@ -223,9 +220,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskInput(
-            task_id=task.id, priority=5, deadline="2025-10-20 18:00:00"
-        )
+        input_dto = UpdateTaskInput(task_id=task.id, priority=5, deadline="2025-10-20 18:00:00")
         self.use_case.execute(input_dto)
 
         # Reload from repository to verify persistence

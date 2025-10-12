@@ -9,6 +9,13 @@ dependencies = [
   "rich>=14.2.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pre-commit>=3.6.0",
+  "ruff>=0.3.0",
+  "mypy>=1.8.0",
+]
+
 [project.scripts]
 taskdog = "taskdog.cli:cli"
 
@@ -39,3 +46,53 @@ packages = [
   "shared.click_types",
 ]
 package-dir = { "" = "src" }
+
+# Ruff configuration
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "UP",  # pyupgrade
+]
+ignore = [
+  "E501", # line too long (handled by formatter)
+  # Disable stylistic suggestions for now
+  "N818", # exception naming
+  "B024", # abstract base class without abstract methods
+  "B904", # raise from
+  "SIM102", # nested if simplification
+  "SIM103", # return condition directly
+  "SIM105", # contextlib.suppress
+  "SIM108", # ternary operator
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["taskdog", "domain", "application", "infrastructure", "presentation", "shared", "utils"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+# mypy configuration
+[tool.mypy]
+python_version = "3.13"
+mypy_path = "src"
+# Start with minimal type checking, gradually increase strictness
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = false
+# Disabled for now, enable later as codebase improves
+check_untyped_defs = false
+disallow_untyped_defs = false
+disallow_any_generics = false
+warn_return_any = false
+strict_equality = false
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+check_untyped_defs = false

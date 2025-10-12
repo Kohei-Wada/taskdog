@@ -1,9 +1,8 @@
 """Task query service for read-optimized operations."""
 
-from typing import List
 from application.queries.base import QueryService
-from application.queries.filters.today_filter import TodayFilter
 from application.queries.filters.task_sorter import TaskSorter
+from application.queries.filters.today_filter import TodayFilter
 from domain.entities.task import Task, TaskStatus
 
 
@@ -24,7 +23,7 @@ class TaskQueryService(QueryService):
         self.today_filter = TodayFilter(repository)
         self.sorter = TaskSorter()
 
-    def get_today_tasks(self, include_completed: bool = False) -> List[Task]:
+    def get_today_tasks(self, include_completed: bool = False) -> list[Task]:
         """Get tasks relevant for today.
 
         Returns tasks that meet any of these criteria:
@@ -46,7 +45,7 @@ class TaskQueryService(QueryService):
         sorted_tasks = self.sorter.sort(filtered_tasks)
         return sorted_tasks
 
-    def get_all_tasks(self) -> List[Task]:
+    def get_all_tasks(self) -> list[Task]:
         """Get all tasks without filtering.
 
         Returns:
@@ -54,7 +53,7 @@ class TaskQueryService(QueryService):
         """
         return self.repository.get_all()
 
-    def get_incomplete_tasks_with_hierarchy(self) -> List[Task]:
+    def get_incomplete_tasks_with_hierarchy(self) -> list[Task]:
         """Get incomplete tasks, preserving hierarchy by including necessary ancestors.
 
         Completed parent tasks are included if they have incomplete descendants.
@@ -84,7 +83,7 @@ class TaskQueryService(QueryService):
         included_ids = incomplete_ids | ancestor_ids
         return [t for t in tasks if t.id in included_ids]
 
-    def get_incomplete_tasks(self) -> List[Task]:
+    def get_incomplete_tasks(self) -> list[Task]:
         """Get only incomplete tasks without hierarchy preservation.
 
         Returns tasks with status PENDING, IN_PROGRESS, or FAILED.

@@ -1,9 +1,10 @@
 """Tree command - Display tasks in hierarchical tree format."""
 
 import click
+
 from application.queries.task_query_service import TaskQueryService
-from presentation.formatters.rich_tree_formatter import RichTreeFormatter
 from presentation.cli.error_handler import handle_command_errors
+from presentation.formatters.rich_tree_formatter import RichTreeFormatter
 
 
 @click.command(name="tree", help="Display tasks in hierarchical tree format.")

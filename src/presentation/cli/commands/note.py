@@ -2,10 +2,12 @@
 
 import os
 import subprocess
+
 import click
-from utils.console_messages import print_error
-from presentation.utils.notes_template import generate_notes_template
+
 from presentation.cli.error_handler import handle_task_errors
+from presentation.utils.notes_template import generate_notes_template
+from utils.console_messages import print_error
 
 
 def get_editor():

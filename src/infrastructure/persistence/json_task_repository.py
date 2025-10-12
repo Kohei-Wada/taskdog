@@ -1,9 +1,9 @@
 import json
 import os
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional
+
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
 
@@ -19,10 +19,10 @@ class JsonTaskRepository(TaskRepository):
         """
         self.filename = filename
         self.tasks = self._load_tasks()
-        self._task_index: Dict[int, Task] = self._build_index()
-        self._children_index: Dict[int, List[Task]] = self._build_children_index()
+        self._task_index: dict[int, Task] = self._build_index()
+        self._children_index: dict[int, list[Task]] = self._build_children_index()
 
-    def _build_index(self) -> Dict[int, Task]:
+    def _build_index(self) -> dict[int, Task]:
         """Build task ID to task object index.
 
         Returns:
@@ -30,13 +30,13 @@ class JsonTaskRepository(TaskRepository):
         """
         return {task.id: task for task in self.tasks}
 
-    def _build_children_index(self) -> Dict[int, List[Task]]:
+    def _build_children_index(self) -> dict[int, list[Task]]:
         """Build parent ID to children list index.
 
         Returns:
             Dictionary mapping parent task IDs to lists of child tasks
         """
-        children_index: Dict[int, List[Task]] = {}
+        children_index: dict[int, list[Task]] = {}
         for task in self.tasks:
             if task.parent_id is not None:
                 if task.parent_id not in children_index:
@@ -49,7 +49,7 @@ class JsonTaskRepository(TaskRepository):
         self._task_index = self._build_index()
         self._children_index = self._build_children_index()
 
-    def get_all(self) -> List[Task]:
+    def get_all(self) -> list[Task]:
         """Retrieve all tasks.
 
         Returns:
@@ -57,7 +57,7 @@ class JsonTaskRepository(TaskRepository):
         """
         return self.tasks
 
-    def get_by_id(self, task_id: int) -> Optional[Task]:
+    def get_by_id(self, task_id: int) -> Task | None:
         """Retrieve a task by its ID in O(1) time.
 
         Args:
@@ -68,7 +68,7 @@ class JsonTaskRepository(TaskRepository):
         """
         return self._task_index.get(task_id)
 
-    def get_children(self, task_id: int) -> List[Task]:
+    def get_children(self, task_id: int) -> list[Task]:
         """Retrieve all child tasks of a given task in O(1) time.
 
         Args:
@@ -155,7 +155,7 @@ class JsonTaskRepository(TaskRepository):
         self.save(task)
         return task
 
-    def _load_tasks(self) -> List[Task]:
+    def _load_tasks(self) -> list[Task]:
         """Load tasks from JSON file with fallback to backup.
 
         Returns:
@@ -166,7 +166,7 @@ class JsonTaskRepository(TaskRepository):
         """
         # Try loading from main file
         try:
-            with open(self.filename, "r", encoding="utf-8") as f:
+            with open(self.filename, encoding="utf-8") as f:
                 content = f.read().strip()
                 # Empty file is valid, return empty list
                 if not content:
@@ -181,7 +181,7 @@ class JsonTaskRepository(TaskRepository):
             backup_path = Path(self.filename).with_suffix(".json.bak")
             if backup_path.exists():
                 try:
-                    with open(backup_path, "r", encoding="utf-8") as f:
+                    with open(backup_path, encoding="utf-8") as f:
                         content = f.read().strip()
                         if not content:
                             return []
@@ -189,11 +189,11 @@ class JsonTaskRepository(TaskRepository):
                         # Restore from backup
                         shutil.copy2(backup_path, self.filename)
                         return [Task.from_dict(data) for data in tasks_data]
-                except (json.JSONDecodeError, IOError):
+                except (OSError, json.JSONDecodeError):
                     pass
 
             # Both main and backup failed
-            raise IOError(f"Failed to load tasks: corrupted data file ({e})") from e
+            raise OSError(f"Failed to load tasks: corrupted data file ({e})") from e
 
     def generate_next_id(self) -> int:
         """Generate the next available task ID.
@@ -246,4 +246,4 @@ class JsonTaskRepository(TaskRepository):
                 os.unlink(temp_path)
             except OSError:
                 pass
-            raise IOError(f"Failed to save tasks to {self.filename}: {e}") from e
+            raise OSError(f"Failed to save tasks to {self.filename}: {e}") from e

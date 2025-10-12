@@ -1,29 +1,31 @@
-import click
 import os
 from pathlib import Path
-from rich.console import Console
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
-# Commands
-from presentation.cli.commands.today import today_command
+import click
+from rich.console import Console
+
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.cli.commands.add import add_command
-from presentation.cli.commands.start import start_command
+from presentation.cli.commands.deadline import deadline_command
 from presentation.cli.commands.done import done_command
-from presentation.cli.commands.update import update_command
-from presentation.cli.commands.rm import rm_command
-from presentation.cli.commands.tree import tree_command
-from presentation.cli.commands.table import table_command
+from presentation.cli.commands.estimate import estimate_command
 from presentation.cli.commands.export import export_command
 from presentation.cli.commands.gantt import gantt_command
 from presentation.cli.commands.note import note_command
-from presentation.cli.commands.show import show_command
-from presentation.cli.commands.deadline import deadline_command
+from presentation.cli.commands.optimize import optimize_command
+from presentation.cli.commands.parent import parent_command
 from presentation.cli.commands.priority import priority_command
 from presentation.cli.commands.rename import rename_command
-from presentation.cli.commands.estimate import estimate_command
+from presentation.cli.commands.rm import rm_command
 from presentation.cli.commands.schedule import schedule_command
-from presentation.cli.commands.parent import parent_command
-from presentation.cli.commands.optimize import optimize_command
+from presentation.cli.commands.show import show_command
+from presentation.cli.commands.start import start_command
+from presentation.cli.commands.table import table_command
+
+# Commands
+from presentation.cli.commands.today import today_command
+from presentation.cli.commands.tree import tree_command
+from presentation.cli.commands.update import update_command
 
 
 @click.group()
@@ -32,9 +34,7 @@ def cli(ctx):
     """Taskdog: Hierarchical task management CLI tool."""
 
     # Follow XDG Base Directory specification
-    xdg_data_home = os.environ.get(
-        "XDG_DATA_HOME", os.path.expanduser("~/.local/share")
-    )
+    xdg_data_home = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
     data_dir = Path(xdg_data_home) / "taskdog"
     data_dir.mkdir(parents=True, exist_ok=True)
     tasksfile = str(data_dir / "tasks.json")

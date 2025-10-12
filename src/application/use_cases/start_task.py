@@ -1,10 +1,10 @@
 """Use case for starting a task."""
 
-from application.use_cases.base import UseCase
 from application.dto.start_task_input import StartTaskInput
-from infrastructure.persistence.task_repository import TaskRepository
-from domain.services.time_tracker import TimeTracker
+from application.use_cases.base import UseCase
 from domain.entities.task import Task, TaskStatus
+from domain.services.time_tracker import TimeTracker
+from infrastructure.persistence.task_repository import TaskRepository
 
 
 class StartTaskUseCase(UseCase[StartTaskInput, Task]):
@@ -47,9 +47,7 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
         if task.parent_id is not None:
             parent = self.repository.get_by_id(task.parent_id)
             if parent and parent.status == TaskStatus.PENDING:
-                self.time_tracker.record_time_on_status_change(
-                    parent, TaskStatus.IN_PROGRESS
-                )
+                self.time_tracker.record_time_on_status_change(parent, TaskStatus.IN_PROGRESS)
                 parent.status = TaskStatus.IN_PROGRESS
                 self.repository.save(parent)
 

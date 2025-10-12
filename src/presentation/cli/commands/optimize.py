@@ -1,15 +1,14 @@
 """Optimize command - Auto-generate optimal task schedules."""
 
-import click
 from datetime import datetime, timedelta
+
+import click
 from rich.table import Table
-from application.use_cases.optimize_schedule import (
-    OptimizeScheduleUseCase,
-    OptimizeScheduleInput
-)
-from shared.click_types.datetime_with_default import DateTimeWithDefault
+
+from application.use_cases.optimize_schedule import OptimizeScheduleInput, OptimizeScheduleUseCase
 from domain.constants import DATETIME_FORMAT
 from presentation.cli.error_handler import handle_command_errors
+from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
 def get_next_weekday():
@@ -69,30 +68,25 @@ EXAMPLES:
 
   # Re-optimize all tasks (including already scheduled)
   taskdog optimize --force
-"""
+""",
 )
 @click.option(
     "--start-date",
     type=DateTimeWithDefault(),
-    help="Start date for scheduling (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS). Defaults to next weekday."
+    help="Start date for scheduling (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS). Defaults to next weekday.",
 )
 @click.option(
-    "--max-hours-per-day", "-m",
+    "--max-hours-per-day",
+    "-m",
     type=float,
     default=6.0,
-    help="Maximum work hours per day (default: 6.0)"
+    help="Maximum work hours per day (default: 6.0)",
 )
 @click.option(
-    "--force", "-f",
-    is_flag=True,
-    default=False,
-    help="Override existing schedules for all tasks"
+    "--force", "-f", is_flag=True, default=False, help="Override existing schedules for all tasks"
 )
 @click.option(
-    "--dry-run",
-    is_flag=True,
-    default=False,
-    help="Preview changes without saving to database"
+    "--dry-run", is_flag=True, default=False, help="Preview changes without saving to database"
 )
 @click.pass_context
 @handle_command_errors("optimizing schedules")
@@ -121,7 +115,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
         start_date=start_dt,
         max_hours_per_day=max_hours_per_day,
         force_override=force,
-        dry_run=dry_run
+        dry_run=dry_run,
     )
 
     # Execute optimization
@@ -139,7 +133,9 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
 
     # Show summary
     if dry_run:
-        console.print(f"[cyan]DRY RUN:[/cyan] Preview of {len(modified_tasks)} task(s) to be optimized\n")
+        console.print(
+            f"[cyan]DRY RUN:[/cyan] Preview of {len(modified_tasks)} task(s) to be optimized\n"
+        )
     else:
         console.print(f"[green]✓[/green] Optimized schedules for {len(modified_tasks)} task(s)\n")
 
@@ -154,10 +150,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
     table.add_column("Deadline", style="red")
 
     # Sort by planned_start
-    sorted_tasks = sorted(
-        modified_tasks,
-        key=lambda t: t.planned_start if t.planned_start else ""
-    )
+    sorted_tasks = sorted(modified_tasks, key=lambda t: t.planned_start if t.planned_start else "")
 
     for task in sorted_tasks:
         # Format duration
@@ -175,13 +168,13 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
             duration_str,
             start_str,
             end_str,
-            deadline_str
+            deadline_str,
         )
 
     console.print(table)
 
     # Show configuration
-    console.print(f"\n[dim]Configuration:[/dim]")
+    console.print("\n[dim]Configuration:[/dim]")
     console.print(f"  Start date: {start_dt.strftime(DATETIME_FORMAT)}")
     console.print(f"  Max hours/day: {max_hours_per_day}h")
     console.print(f"  Force override: {force}")

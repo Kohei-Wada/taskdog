@@ -1,13 +1,12 @@
 """Tests for RemoveTaskUseCase."""
 
-import unittest
-from application.use_cases.remove_task import RemoveTaskUseCase
-from application.dto.remove_task_input import RemoveTaskInput
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
-from domain.entities.task import Task
-from domain.exceptions.task_exceptions import TaskNotFoundException
 import tempfile
-import json
+import unittest
+
+from application.dto.remove_task_input import RemoveTaskInput
+from application.use_cases.remove_task import RemoveTaskUseCase
+from domain.exceptions.task_exceptions import TaskNotFoundException
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
 class RemoveTaskUseCaseTest(unittest.TestCase):
@@ -15,9 +14,7 @@ class RemoveTaskUseCaseTest(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.temp_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".json"
-        )
+        self.temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         self.temp_file.write("[]")
         self.temp_file.close()
 
@@ -52,9 +49,7 @@ class RemoveTaskUseCaseTest(unittest.TestCase):
         # Create hierarchy: parent -> child -> grandchild
         parent = self.repository.create(name="Parent", priority=1)
         child = self.repository.create(name="Child", priority=1, parent_id=parent.id)
-        grandchild = self.repository.create(
-            name="Grandchild", priority=1, parent_id=child.id
-        )
+        grandchild = self.repository.create(name="Grandchild", priority=1, parent_id=child.id)
 
         # Remove parent in cascade mode
         input_dto = RemoveTaskInput(task_id=parent.id, cascade=True)
@@ -72,12 +67,8 @@ class RemoveTaskUseCaseTest(unittest.TestCase):
         root = self.repository.create(name="Root", priority=1)
         child1 = self.repository.create(name="Child 1", priority=1, parent_id=root.id)
         child2 = self.repository.create(name="Child 2", priority=1, parent_id=root.id)
-        grandchild1 = self.repository.create(
-            name="Grandchild 1", priority=1, parent_id=child1.id
-        )
-        grandchild2 = self.repository.create(
-            name="Grandchild 2", priority=1, parent_id=child2.id
-        )
+        grandchild1 = self.repository.create(name="Grandchild 1", priority=1, parent_id=child1.id)
+        grandchild2 = self.repository.create(name="Grandchild 2", priority=1, parent_id=child2.id)
 
         # Remove root in cascade mode
         input_dto = RemoveTaskInput(task_id=root.id, cascade=True)

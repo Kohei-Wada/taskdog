@@ -1,11 +1,12 @@
 """Start command - Start working on a task."""
 
 import click
-from domain.exceptions.task_exceptions import TaskNotFoundException
-from domain.services.time_tracker import TimeTracker
-from utils.console_messages import print_success, print_task_not_found_error, print_error
+
 from application.dto.start_task_input import StartTaskInput
 from application.use_cases.start_task import StartTaskUseCase
+from domain.exceptions.task_exceptions import TaskNotFoundException
+from domain.services.time_tracker import TimeTracker
+from utils.console_messages import print_error, print_success, print_task_not_found_error
 
 
 @click.command(name="start", help="Start working on tasks (set status to IN_PROGRESS).")

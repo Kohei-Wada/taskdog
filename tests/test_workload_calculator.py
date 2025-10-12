@@ -2,6 +2,7 @@
 
 import unittest
 from datetime import date, timedelta
+
 from domain.entities.task import Task, TaskStatus
 from domain.services.workload_calculator import WorkloadCalculator
 
@@ -102,17 +103,15 @@ class WorkloadCalculatorTest(unittest.TestCase):
         start_date = date(2025, 1, 6)  # Monday
         end_date = date(2025, 1, 10)  # Friday
 
-        result = self.calculator.calculate_daily_workload(
-            [task1, task2], start_date, end_date
-        )
+        result = self.calculator.calculate_daily_workload([task1, task2], start_date, end_date)
 
         # Task 1: 2h on Mon, Tue, Wed
         # Task 2: 3h on Wed, Thu, Fri
         # Wednesday has both: 2h + 3h = 5h
-        self.assertAlmostEqual(result[date(2025, 1, 6)], 2.0, places=2)   # Monday (task1)
-        self.assertAlmostEqual(result[date(2025, 1, 7)], 2.0, places=2)   # Tuesday (task1)
-        self.assertAlmostEqual(result[date(2025, 1, 8)], 5.0, places=2)   # Wednesday (task1 + task2)
-        self.assertAlmostEqual(result[date(2025, 1, 9)], 3.0, places=2)   # Thursday (task2)
+        self.assertAlmostEqual(result[date(2025, 1, 6)], 2.0, places=2)  # Monday (task1)
+        self.assertAlmostEqual(result[date(2025, 1, 7)], 2.0, places=2)  # Tuesday (task1)
+        self.assertAlmostEqual(result[date(2025, 1, 8)], 5.0, places=2)  # Wednesday (task1 + task2)
+        self.assertAlmostEqual(result[date(2025, 1, 9)], 3.0, places=2)  # Thursday (task2)
         self.assertAlmostEqual(result[date(2025, 1, 10)], 3.0, places=2)  # Friday (task2)
 
     def test_calculate_daily_workload_no_estimated_duration(self):
@@ -238,9 +237,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
         start_date = date(2025, 1, 6)  # Monday
         end_date = date(2025, 1, 10)  # Friday
 
-        result = self.calculator.calculate_daily_workload(
-            [task1, task2], start_date, end_date
-        )
+        result = self.calculator.calculate_daily_workload([task1, task2], start_date, end_date)
 
         # Only task1 (PENDING) should be counted with equal distribution
         # Task2 (COMPLETED) is excluded entirely
@@ -282,7 +279,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             daily_allocations={
                 "2025-01-06": 5.0,  # Monday
                 "2025-01-07": 1.0,  # Tuesday
-            }
+            },
         )
 
         start_date = date(2025, 1, 6)  # Monday
@@ -291,10 +288,10 @@ class WorkloadCalculatorTest(unittest.TestCase):
         result = self.calculator.calculate_daily_workload([task], start_date, end_date)
 
         # Should use daily_allocations instead of equal distribution
-        self.assertAlmostEqual(result[date(2025, 1, 6)], 5.0, places=2)   # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 7)], 1.0, places=2)   # Tuesday
-        self.assertAlmostEqual(result[date(2025, 1, 8)], 0.0, places=2)   # Wednesday
-        self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)   # Thursday
+        self.assertAlmostEqual(result[date(2025, 1, 6)], 5.0, places=2)  # Monday
+        self.assertAlmostEqual(result[date(2025, 1, 7)], 1.0, places=2)  # Tuesday
+        self.assertAlmostEqual(result[date(2025, 1, 8)], 0.0, places=2)  # Wednesday
+        self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)  # Thursday
         self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
 
     def test_calculate_daily_workload_fallback_to_equal_distribution(self):
@@ -310,7 +307,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             planned_start="2025-01-06 09:00:00",  # Monday
             planned_end="2025-01-08 18:00:00",  # Wednesday
             estimated_duration=6.0,
-            daily_allocations={}  # Empty dict (no optimizer data)
+            daily_allocations={},  # Empty dict (no optimizer data)
         )
 
         start_date = date(2025, 1, 6)  # Monday
@@ -319,10 +316,10 @@ class WorkloadCalculatorTest(unittest.TestCase):
         result = self.calculator.calculate_daily_workload([task], start_date, end_date)
 
         # Should fall back to equal distribution: 6h / 3 weekdays = 2h per day
-        self.assertAlmostEqual(result[date(2025, 1, 6)], 2.0, places=2)   # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 7)], 2.0, places=2)   # Tuesday
-        self.assertAlmostEqual(result[date(2025, 1, 8)], 2.0, places=2)   # Wednesday
-        self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)   # Thursday
+        self.assertAlmostEqual(result[date(2025, 1, 6)], 2.0, places=2)  # Monday
+        self.assertAlmostEqual(result[date(2025, 1, 7)], 2.0, places=2)  # Tuesday
+        self.assertAlmostEqual(result[date(2025, 1, 8)], 2.0, places=2)  # Wednesday
+        self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)  # Thursday
         self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
 
 

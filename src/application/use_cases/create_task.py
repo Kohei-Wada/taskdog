@@ -1,10 +1,10 @@
 """Use case for creating a task."""
 
-from application.use_cases.base import UseCase
 from application.dto.create_task_input import CreateTaskInput
-from infrastructure.persistence.task_repository import TaskRepository
+from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskNotFoundException
+from infrastructure.persistence.task_repository import TaskRepository
 
 
 class CreateTaskUseCase(UseCase[CreateTaskInput, Task]):

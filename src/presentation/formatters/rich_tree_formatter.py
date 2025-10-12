@@ -1,7 +1,7 @@
-from typing import List
-from rich.tree import Tree
 from rich.console import Console
 from rich.text import Text
+from rich.tree import Tree
+
 from domain.entities.task import Task
 from presentation.formatters.rich_formatter_base import RichFormatterBase
 
@@ -9,7 +9,7 @@ from presentation.formatters.rich_formatter_base import RichFormatterBase
 class RichTreeFormatter(RichFormatterBase):
     """Formats tasks as a hierarchical tree structure using Rich."""
 
-    def format_tasks(self, tasks: List[Task], repository) -> str:
+    def format_tasks(self, tasks: list[Task], repository) -> str:
         """Format tasks into a hierarchical tree structure with Rich.
 
         Args:
@@ -85,7 +85,7 @@ class RichTreeFormatter(RichFormatterBase):
 
         return label
 
-    def _get_datetime_info(self, task: Task) -> List[str]:
+    def _get_datetime_info(self, task: Task) -> list[str]:
         """Get datetime and duration information for a task.
 
         Args:
@@ -102,15 +102,11 @@ class RichTreeFormatter(RichFormatterBase):
 
         # Planned time
         if task.planned_start:
-            datetime_info.append(
-                f"📅 Planned: {task.planned_start} - {task.planned_end or '?'}"
-            )
+            datetime_info.append(f"📅 Planned: {task.planned_start} - {task.planned_end or '?'}")
 
         # Actual time
         if task.actual_start:
-            datetime_info.append(
-                f"✓ Actual: {task.actual_start} - {task.actual_end or 'ongoing'}"
-            )
+            datetime_info.append(f"✓ Actual: {task.actual_start} - {task.actual_end or 'ongoing'}")
 
         # Duration info
         duration_line = self._format_duration_info(task)

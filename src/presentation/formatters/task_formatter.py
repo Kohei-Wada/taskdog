@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+
 from domain.entities.task import Task
 
 
@@ -7,7 +7,7 @@ class TaskFormatter(ABC):
     """Abstract interface for task formatting."""
 
     @abstractmethod
-    def format_tasks(self, tasks: List[Task], task_manager) -> str:
+    def format_tasks(self, tasks: list[Task], task_manager) -> str:
         """Format tasks into string representation.
 
         Args:

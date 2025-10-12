@@ -1,12 +1,12 @@
-from typing import List, Optional, Tuple
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
+
 from rich.table import Table
-from rich.console import Console
 from rich.text import Text
+
 from domain.entities.task import Task, TaskStatus
 from domain.services.workload_calculator import WorkloadCalculator
-from presentation.formatters.rich_formatter_base import RichFormatterBase
 from presentation.formatters.constants import DATETIME_FORMAT
+from presentation.formatters.rich_formatter_base import RichFormatterBase
 
 
 class RichGanttFormatter(RichFormatterBase):
@@ -28,10 +28,10 @@ class RichGanttFormatter(RichFormatterBase):
 
     def format_tasks(
         self,
-        tasks: List[Task],
+        tasks: list[Task],
         repository,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> str:
         """Format tasks into a Gantt chart with Rich.
 
@@ -55,7 +55,6 @@ class RichGanttFormatter(RichFormatterBase):
             return self._format_tasks_without_dates(tasks, repository)
 
         start_date, end_date = date_range
-        days = (end_date - start_date).days + 1
 
         # Create Rich table
         table = Table(
@@ -79,9 +78,7 @@ class RichGanttFormatter(RichFormatterBase):
         # Get root tasks and render hierarchically
         root_tasks = [t for t in tasks if t.parent_id is None]
         for task in root_tasks:
-            self._add_task_to_gantt(
-                task, table, repository, start_date, end_date, depth=0
-            )
+            self._add_task_to_gantt(task, table, repository, start_date, end_date, depth=0)
 
         # Add section divider before workload summary
         table.add_section()
@@ -159,10 +156,10 @@ class RichGanttFormatter(RichFormatterBase):
 
     def _calculate_date_range(
         self,
-        tasks: List[Task],
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
-    ) -> Optional[Tuple[date, date]]:
+        tasks: list[Task],
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> tuple[date, date] | None:
         """Calculate the date range for the Gantt chart.
 
         Args:
@@ -208,7 +205,7 @@ class RichGanttFormatter(RichFormatterBase):
 
         return final_start, final_end
 
-    def _format_tasks_without_dates(self, tasks: List[Task], repository) -> str:
+    def _format_tasks_without_dates(self, tasks: list[Task], repository) -> str:
         """Format tasks when no date information is available.
 
         Args:
@@ -295,13 +292,9 @@ class RichGanttFormatter(RichFormatterBase):
         # Add children recursively
         children = repository.get_children(task.id)
         for child in children:
-            self._add_task_to_gantt(
-                child, table, repository, start_date, end_date, depth + 1
-            )
+            self._add_task_to_gantt(child, table, repository, start_date, end_date, depth + 1)
 
-    def _calculate_task_daily_hours(
-        self, task: Task, start_date: date, end_date: date
-    ) -> dict:
+    def _calculate_task_daily_hours(self, task: Task, start_date: date, end_date: date) -> dict:
         """Calculate daily hours allocation for a single task.
 
         Uses task.daily_allocations if available (from ScheduleOptimizer),
@@ -428,7 +421,7 @@ class RichGanttFormatter(RichFormatterBase):
         hours: float,
         parsed_dates: dict,
         status: str,
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """Format a single timeline cell with daily hours and styling.
 
         Args:
@@ -456,9 +449,7 @@ class RichGanttFormatter(RichFormatterBase):
                 current_date, parsed_dates["actual_start"], parsed_dates["actual_end"]
             )
 
-        is_deadline = (
-            parsed_dates["deadline"] and current_date == parsed_dates["deadline"]
-        )
+        is_deadline = parsed_dates["deadline"] and current_date == parsed_dates["deadline"]
 
         # Layer 3: Deadline (highest priority) - special symbol instead of hours
         if is_deadline:
@@ -511,9 +502,7 @@ class RichGanttFormatter(RichFormatterBase):
             "deadline": self._parse_date(task.deadline),
         }
 
-    def _is_in_date_range(
-        self, current_date: date, start: Optional[date], end: Optional[date]
-    ) -> bool:
+    def _is_in_date_range(self, current_date: date, start: date | None, end: date | None) -> bool:
         """Check if a date is within a range.
 
         Args:
@@ -545,7 +534,7 @@ class RichGanttFormatter(RichFormatterBase):
         else:
             return self.BACKGROUND_COLOR
 
-    def _parse_date(self, date_str: Optional[str]) -> Optional[date]:
+    def _parse_date(self, date_str: str | None) -> date | None:
         """Parse date string to date object.
 
         Args:
@@ -562,7 +551,7 @@ class RichGanttFormatter(RichFormatterBase):
         except ValueError:
             return None
 
-    def _format_estimated_hours(self, estimated_duration: Optional[float]) -> str:
+    def _format_estimated_hours(self, estimated_duration: float | None) -> str:
         """Format estimated duration for display.
 
         Args:
@@ -598,7 +587,7 @@ class RichGanttFormatter(RichFormatterBase):
         return legend
 
     def _build_workload_summary_row(
-        self, tasks: List[Task], start_date: date, end_date: date
+        self, tasks: list[Task], start_date: date, end_date: date
     ) -> Text:
         """Build workload summary timeline showing daily total hours.
 
@@ -623,6 +612,7 @@ class RichGanttFormatter(RichFormatterBase):
             # Format hours display (3 characters for consistency)
             # Ceil to round up (e.g., 4.3 -> 5, 4.0 -> 4)
             import math
+
             hours_ceiled = math.ceil(hours)
 
             # Format with consistent width (3 characters, right-aligned)

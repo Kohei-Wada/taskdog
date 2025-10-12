@@ -1,17 +1,15 @@
 """Tests for OptimizeScheduleUseCase."""
 
-import unittest
-import tempfile
 import os
-from datetime import datetime, timedelta
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
-from application.use_cases.optimize_schedule import (
-    OptimizeScheduleUseCase,
-    OptimizeScheduleInput
-)
-from application.use_cases.create_task import CreateTaskUseCase
+import tempfile
+import unittest
+from datetime import datetime
+
 from application.dto.create_task_input import CreateTaskInput
+from application.use_cases.create_task import CreateTaskUseCase
+from application.use_cases.optimize_schedule import OptimizeScheduleInput, OptimizeScheduleUseCase
 from domain.entities.task import TaskStatus
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
 class TestOptimizeScheduleUseCase(unittest.TestCase):
@@ -19,9 +17,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
     def setUp(self):
         """Create temporary file and initialize use case for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".json"
-        )
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
@@ -36,12 +32,8 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
     def test_optimize_single_task(self):
         """Test optimizing a single task with estimated duration."""
         # Create task with estimated duration
-        input_dto = CreateTaskInput(
-            name="Task 1",
-            priority=100,
-            estimated_duration=4.0
-        )
-        task = self.create_use_case.execute(input_dto)
+        input_dto = CreateTaskInput(name="Task 1", priority=100, estimated_duration=4.0)
+        self.create_use_case.execute(input_dto)
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)  # Wednesday
@@ -65,19 +57,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         """Test optimizing multiple tasks that fit in one day."""
         # Create tasks
         for i in range(3):
-            input_dto = CreateTaskInput(
-                name=f"Task {i+1}",
-                priority=100,
-                estimated_duration=2.0
-            )
+            input_dto = CreateTaskInput(name=f"Task {i + 1}", priority=100, estimated_duration=2.0)
             self.create_use_case.execute(input_dto)
 
         # Optimize with 6h/day limit
         start_date = datetime(2025, 10, 15, 18, 0, 0)
-        optimize_input = OptimizeScheduleInput(
-            start_date=start_date,
-            max_hours_per_day=6.0
-        )
+        optimize_input = OptimizeScheduleInput(start_date=start_date, max_hours_per_day=6.0)
         modified_tasks = self.optimize_use_case.execute(optimize_input)
 
         # All 3 tasks (6h total) should fit in one day
@@ -93,22 +78,19 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         input_dto1 = CreateTaskInput(
             name="Task 1",
             priority=200,  # High priority
-            estimated_duration=5.0
+            estimated_duration=5.0,
         )
         input_dto2 = CreateTaskInput(
             name="Task 2",
             priority=100,  # Normal priority
-            estimated_duration=5.0
+            estimated_duration=5.0,
         )
         self.create_use_case.execute(input_dto1)
         self.create_use_case.execute(input_dto2)
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)  # Wednesday
-        optimize_input = OptimizeScheduleInput(
-            start_date=start_date,
-            max_hours_per_day=6.0
-        )
+        optimize_input = OptimizeScheduleInput(start_date=start_date, max_hours_per_day=6.0)
         modified_tasks = self.optimize_use_case.execute(optimize_input)
 
         # Tasks should span multiple days
@@ -132,11 +114,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
     def test_optimize_skips_weekends(self):
         """Test that optimization skips weekends."""
         # Create task with 5h duration
-        input_dto = CreateTaskInput(
-            name="Weekend Task",
-            priority=100,
-            estimated_duration=5.0
-        )
+        input_dto = CreateTaskInput(name="Weekend Task", priority=100, estimated_duration=5.0)
         self.create_use_case.execute(input_dto)
 
         # Start on Friday
@@ -153,16 +131,8 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
     def test_optimize_respects_priority(self):
         """Test that high priority tasks are scheduled first."""
         # Create tasks with different priorities
-        low_priority = CreateTaskInput(
-            name="Low Priority",
-            priority=50,
-            estimated_duration=3.0
-        )
-        high_priority = CreateTaskInput(
-            name="High Priority",
-            priority=200,
-            estimated_duration=3.0
-        )
+        low_priority = CreateTaskInput(name="Low Priority", priority=50, estimated_duration=3.0)
+        high_priority = CreateTaskInput(name="High Priority", priority=200, estimated_duration=3.0)
         self.create_use_case.execute(low_priority)
         self.create_use_case.execute(high_priority)
 
@@ -183,13 +153,13 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
             name="Far Deadline",
             priority=100,
             estimated_duration=3.0,
-            deadline="2025-12-31 18:00:00"
+            deadline="2025-12-31 18:00:00",
         )
         near_deadline = CreateTaskInput(
             name="Near Deadline",
             priority=100,
             estimated_duration=3.0,
-            deadline="2025-10-20 18:00:00"
+            deadline="2025-10-20 18:00:00",
         )
         self.create_use_case.execute(far_deadline)
         self.create_use_case.execute(near_deadline)
@@ -208,11 +178,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
     def test_optimize_skips_completed_tasks(self):
         """Test that completed tasks are not scheduled."""
         # Create completed task
-        input_dto = CreateTaskInput(
-            name="Completed Task",
-            priority=100,
-            estimated_duration=3.0
-        )
+        input_dto = CreateTaskInput(name="Completed Task", priority=100, estimated_duration=3.0)
         task = self.create_use_case.execute(input_dto)
         task.status = TaskStatus.COMPLETED
         self.repository.save(task)
@@ -228,11 +194,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
     def test_optimize_skips_tasks_without_duration(self):
         """Test that tasks without estimated duration are not scheduled."""
         # Create task without estimated duration
-        input_dto = CreateTaskInput(
-            name="No Duration",
-            priority=100,
-            estimated_duration=None
-        )
+        input_dto = CreateTaskInput(name="No Duration", priority=100, estimated_duration=None)
         self.create_use_case.execute(input_dto)
 
         # Optimize
@@ -251,7 +213,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
             priority=100,
             estimated_duration=3.0,
             planned_start="2025-10-10 18:00:00",
-            planned_end="2025-10-10 18:00:00"
+            planned_end="2025-10-10 18:00:00",
         )
         self.create_use_case.execute(input_dto)
 
@@ -271,7 +233,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
             priority=100,
             estimated_duration=3.0,
             planned_start="2025-10-10 18:00:00",
-            planned_end="2025-10-10 18:00:00"
+            planned_end="2025-10-10 18:00:00",
         )
         task = self.create_use_case.execute(input_dto)
         old_start = task.planned_start
@@ -289,11 +251,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
     def test_optimize_dry_run_does_not_save(self):
         """Test that dry_run=True does not save changes."""
         # Create task
-        input_dto = CreateTaskInput(
-            name="Test Task",
-            priority=100,
-            estimated_duration=3.0
-        )
+        input_dto = CreateTaskInput(name="Test Task", priority=100, estimated_duration=3.0)
         task = self.create_use_case.execute(input_dto)
 
         # Optimize with dry_run
@@ -312,35 +270,22 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
     def test_optimize_parent_child_hierarchy(self):
         """Test that parent periods encompass children."""
         # Create parent task
-        parent_input = CreateTaskInput(
-            name="Parent",
-            priority=100,
-            estimated_duration=None
-        )
+        parent_input = CreateTaskInput(name="Parent", priority=100, estimated_duration=None)
         parent = self.create_use_case.execute(parent_input)
 
         # Create child tasks
         child1_input = CreateTaskInput(
-            name="Child 1",
-            priority=100,
-            parent_id=parent.id,
-            estimated_duration=3.0
+            name="Child 1", priority=100, parent_id=parent.id, estimated_duration=3.0
         )
         child2_input = CreateTaskInput(
-            name="Child 2",
-            priority=100,
-            parent_id=parent.id,
-            estimated_duration=5.0
+            name="Child 2", priority=100, parent_id=parent.id, estimated_duration=5.0
         )
         self.create_use_case.execute(child1_input)
         self.create_use_case.execute(child2_input)
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
-        optimize_input = OptimizeScheduleInput(
-            start_date=start_date,
-            max_hours_per_day=6.0
-        )
+        optimize_input = OptimizeScheduleInput(start_date=start_date, max_hours_per_day=6.0)
         modified_tasks = self.optimize_use_case.execute(optimize_input)
 
         # Parent should be in modified list with period encompassing children
@@ -351,7 +296,9 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         self.assertIsNotNone(parent_task.planned_end)
 
         # Parent start should be earliest child start
-        child_starts = [datetime.strptime(c.planned_start, "%Y-%m-%d %H:%M:%S") for c in child_tasks]
+        child_starts = [
+            datetime.strptime(c.planned_start, "%Y-%m-%d %H:%M:%S") for c in child_tasks
+        ]
         parent_start = datetime.strptime(parent_task.planned_start, "%Y-%m-%d %H:%M:%S")
         self.assertEqual(parent_start, min(child_starts))
 

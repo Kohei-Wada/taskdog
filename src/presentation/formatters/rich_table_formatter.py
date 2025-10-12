@@ -1,6 +1,6 @@
-from typing import List
-from rich.table import Table
 from rich.console import Console
+from rich.table import Table
+
 from domain.entities.task import Task
 from presentation.formatters.rich_formatter_base import RichFormatterBase
 
@@ -8,7 +8,7 @@ from presentation.formatters.rich_formatter_base import RichFormatterBase
 class RichTableFormatter(RichFormatterBase):
     """Formats tasks as a table using Rich."""
 
-    def format_tasks(self, tasks: List[Task], repository) -> str:
+    def format_tasks(self, tasks: list[Task], repository) -> str:
         """Format tasks into a table with Rich.
 
         Args:

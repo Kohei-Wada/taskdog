@@ -1,11 +1,11 @@
 """Use case for completing a task."""
 
-from application.use_cases.base import UseCase
 from application.dto.complete_task_input import CompleteTaskInput
-from infrastructure.persistence.task_repository import TaskRepository
-from domain.services.time_tracker import TimeTracker
+from application.use_cases.base import UseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import IncompleteChildrenError
+from domain.services.time_tracker import TimeTracker
+from infrastructure.persistence.task_repository import TaskRepository
 
 
 class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
@@ -41,9 +41,7 @@ class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
 
         # Check if all children are completed
         children = self.repository.get_children(task.id)
-        incomplete_children = [
-            child for child in children if child.status != TaskStatus.COMPLETED
-        ]
+        incomplete_children = [child for child in children if child.status != TaskStatus.COMPLETED]
 
         if incomplete_children:
             raise IncompleteChildrenError(task.id, incomplete_children)

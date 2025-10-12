@@ -1,12 +1,13 @@
 """Show command - Display task details and notes."""
 
 import click
+
 from application.use_cases.get_task_detail import (
-    GetTaskDetailUseCase,
     GetTaskDetailInput,
+    GetTaskDetailUseCase,
 )
-from presentation.formatters.rich_detail_formatter import RichDetailFormatter
 from presentation.cli.error_handler import handle_task_errors
+from presentation.formatters.rich_detail_formatter import RichDetailFormatter
 
 
 @click.command(name="show", help="Show task details and notes.")

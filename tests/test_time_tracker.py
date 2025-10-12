@@ -1,8 +1,9 @@
 import unittest
 from datetime import datetime
+
 from domain.constants import DATETIME_FORMAT
-from domain.services.time_tracker import TimeTracker
 from domain.entities.task import Task, TaskStatus
+from domain.services.time_tracker import TimeTracker
 
 
 class TestTimeTracker(unittest.TestCase):
@@ -56,9 +57,7 @@ class TestTimeTracker(unittest.TestCase):
 
     def test_do_not_overwrite_existing_actual_start(self):
         """Test that existing actual_start is not overwritten"""
-        task = Task(
-            name="Test Task", priority=1, id=1, actual_start="2025-01-01 10:00:00"
-        )
+        task = Task(name="Test Task", priority=1, id=1, actual_start="2025-01-01 10:00:00")
         original_start = task.actual_start
 
         self.tracker.record_time_on_status_change(task, TaskStatus.IN_PROGRESS)
@@ -67,9 +66,7 @@ class TestTimeTracker(unittest.TestCase):
 
     def test_do_not_overwrite_existing_actual_end(self):
         """Test that existing actual_end is not overwritten"""
-        task = Task(
-            name="Test Task", priority=1, id=1, actual_end="2025-01-01 18:00:00"
-        )
+        task = Task(name="Test Task", priority=1, id=1, actual_end="2025-01-01 18:00:00")
         original_end = task.actual_end
 
         self.tracker.record_time_on_status_change(task, TaskStatus.COMPLETED)

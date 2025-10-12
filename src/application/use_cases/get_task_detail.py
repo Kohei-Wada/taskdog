@@ -1,8 +1,7 @@
 """Use case for getting task detail with notes."""
 
-from typing import Optional
-from application.use_cases.base import UseCase
 from application.dto.task_detail_dto import TaskDetailDTO
+from application.use_cases.base import UseCase
 from infrastructure.persistence.task_repository import TaskRepository
 
 
@@ -53,7 +52,7 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, TaskDetailDTO]):
 
         # Check if notes file exists and read content
         notes_path = task.notes_path
-        notes_content: Optional[str] = None
+        notes_content: str | None = None
         has_notes = False
 
         if notes_path.exists():
@@ -64,6 +63,4 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, TaskDetailDTO]):
                 # If reading fails, treat as no notes
                 pass
 
-        return TaskDetailDTO(
-            task=task, notes_content=notes_content, has_notes=has_notes
-        )
+        return TaskDetailDTO(task=task, notes_content=notes_content, has_notes=has_notes)

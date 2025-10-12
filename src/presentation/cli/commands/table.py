@@ -1,9 +1,10 @@
 """Table command - Display tasks in flat table format."""
 
 import click
+
 from application.queries.task_query_service import TaskQueryService
-from presentation.formatters.rich_table_formatter import RichTableFormatter
 from presentation.cli.error_handler import handle_command_errors
+from presentation.formatters.rich_table_formatter import RichTableFormatter
 
 
 @click.command(name="table", help="Display tasks in flat table format.")

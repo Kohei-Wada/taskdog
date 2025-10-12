@@ -1,10 +1,11 @@
 """Today command - Display tasks for today."""
 
 import click
+
 from application.queries.task_query_service import TaskQueryService
-from presentation.formatters.rich_tree_formatter import RichTreeFormatter
-from presentation.formatters.rich_table_formatter import RichTableFormatter
 from presentation.cli.error_handler import handle_command_errors
+from presentation.formatters.rich_table_formatter import RichTableFormatter
+from presentation.formatters.rich_tree_formatter import RichTreeFormatter
 
 
 @click.command(name="today", help="Display tasks for today.")

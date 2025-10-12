@@ -1,7 +1,7 @@
 """Use case for removing a task."""
 
-from application.use_cases.base import UseCase
 from application.dto.remove_task_input import RemoveTaskInput
+from application.use_cases.base import UseCase
 from infrastructure.persistence.task_repository import TaskRepository
 
 

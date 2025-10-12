@@ -1,10 +1,11 @@
-import unittest
-import tempfile
 import os
+import tempfile
+import unittest
 from datetime import datetime, timedelta
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+
 from application.queries.filters.today_filter import TodayFilter
 from domain.entities.task import Task, TaskStatus
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
 class TestTodayFilter(unittest.TestCase):
@@ -12,9 +13,7 @@ class TestTodayFilter(unittest.TestCase):
 
     def setUp(self):
         """Create temporary file and initialize filter for each test"""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".json"
-        )
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
@@ -128,9 +127,7 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(parent)
 
         # Create child task matching today's criteria
-        child = Task(
-            name="Child", priority=1, deadline=self.today_str, parent_id=parent.id
-        )
+        child = Task(name="Child", priority=1, deadline=self.today_str, parent_id=parent.id)
         child.id = self.repository.generate_next_id()
         self.repository.save(child)
 
@@ -156,9 +153,7 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(parent)
 
         # Child matching today's criteria
-        child = Task(
-            name="Child", priority=1, deadline=self.today_str, parent_id=parent.id
-        )
+        child = Task(name="Child", priority=1, deadline=self.today_str, parent_id=parent.id)
         child.id = self.repository.generate_next_id()
         self.repository.save(child)
 

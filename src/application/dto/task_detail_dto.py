@@ -1,7 +1,7 @@
 """DTO for task detail information."""
 
-from typing import Optional
 from dataclasses import dataclass
+
 from domain.entities.task import Task
 
 
@@ -16,5 +16,5 @@ class TaskDetailDTO:
     """
 
     task: Task
-    notes_content: Optional[str]
+    notes_content: str | None
     has_notes: bool

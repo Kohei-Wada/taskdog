@@ -1,6 +1,7 @@
 """Template generator for task notes markdown files."""
 
 from datetime import datetime
+
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 

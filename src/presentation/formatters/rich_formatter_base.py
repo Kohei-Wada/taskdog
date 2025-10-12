@@ -1,13 +1,14 @@
 """Base class for Rich-based task formatters."""
 
-from typing import Optional
 from io import StringIO
+
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
+
 from domain.entities.task import TaskStatus
+from presentation.formatters.constants import STATUS_COLORS_BOLD, STATUS_STYLES
 from presentation.formatters.task_formatter import TaskFormatter
-from presentation.formatters.constants import STATUS_STYLES, STATUS_COLORS_BOLD
 
 
 class RichFormatterBase(TaskFormatter):
@@ -40,7 +41,7 @@ class RichFormatterBase(TaskFormatter):
         return STATUS_COLORS_BOLD.get(status, "white")
 
     def _render_to_string(
-        self, table: Table, footer: Optional[Text] = None, width: Optional[int] = None
+        self, table: Table, footer: Text | None = None, width: int | None = None
     ) -> str:
         """Render a Rich table to string with optional footer.
 

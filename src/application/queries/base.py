@@ -1,6 +1,7 @@
 """Base class for query services."""
 
 from abc import ABC
+
 from infrastructure.persistence.task_repository import TaskRepository
 
 

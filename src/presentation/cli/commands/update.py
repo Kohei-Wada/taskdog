@@ -1,12 +1,13 @@
 """Update command - Update task properties."""
 
 import click
-from domain.entities.task import TaskStatus
-from domain.services.time_tracker import TimeTracker
-from shared.click_types.datetime_with_default import DateTimeWithDefault
+
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
+from domain.entities.task import TaskStatus
+from domain.services.time_tracker import TimeTracker
 from presentation.cli.error_handler import handle_task_errors
+from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
 @click.command(
@@ -107,9 +108,7 @@ def update_command(
 
     # Validate parent options
     if parent is not None and clear_parent:
-        console.print(
-            "[red]Error:[/red] Cannot specify both --parent and --clear-parent"
-        )
+        console.print("[red]Error:[/red] Cannot specify both --parent and --clear-parent")
         return
 
     # Convert status string to Enum if provided
@@ -159,8 +158,6 @@ def update_command(
                 console.print(f"  • {field}: [cyan]None (root task)[/cyan]")
             else:
                 parent_task = repository.get_by_id(value)
-                console.print(
-                    f"  • {field}: [cyan]{value}[/cyan] ({parent_task.name})"
-                )
+                console.print(f"  • {field}: [cyan]{value}[/cyan] ({parent_task.name})")
         else:
             console.print(f"  • {field}: [cyan]{value}[/cyan]")

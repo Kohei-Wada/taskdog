@@ -1,9 +1,11 @@
 """Common error handling decorators for CLI commands."""
 
 from functools import wraps
+
 import click
+
 from domain.exceptions.task_exceptions import TaskNotFoundException
-from utils.console_messages import print_task_not_found_error, print_error
+from utils.console_messages import print_error, print_task_not_found_error
 
 
 def handle_task_errors(action_name: str, is_parent: bool = False):

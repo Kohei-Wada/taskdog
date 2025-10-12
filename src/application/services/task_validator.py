@@ -1,4 +1,3 @@
-from typing import Optional
 from infrastructure.persistence.task_repository import TaskRepository
 
 
@@ -6,10 +5,7 @@ class TaskValidator:
     """Validator for task business rules."""
 
     def validate_parent(
-        self,
-        parent_id: Optional[int],
-        repository: TaskRepository,
-        task_id: Optional[int] = None
+        self, parent_id: int | None, repository: TaskRepository, task_id: int | None = None
     ) -> bool:
         """Validate that parent exists and no circular reference.
 

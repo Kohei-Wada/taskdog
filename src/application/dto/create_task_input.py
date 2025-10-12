@@ -1,6 +1,5 @@
 """DTO for creating a task."""
 
-from typing import Optional
 from dataclasses import dataclass
 
 
@@ -20,8 +19,8 @@ class CreateTaskInput:
 
     name: str
     priority: int = 100
-    parent_id: Optional[int] = None
-    planned_start: Optional[str] = None
-    planned_end: Optional[str] = None
-    deadline: Optional[str] = None
-    estimated_duration: Optional[float] = None
+    parent_id: int | None = None
+    planned_start: str | None = None
+    planned_end: str | None = None
+    deadline: str | None = None
+    estimated_duration: float | None = None

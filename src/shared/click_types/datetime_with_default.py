@@ -1,7 +1,9 @@
 """Custom Click DateTime type that adds default time when only date is provided."""
 
-import click
 from datetime import datetime, time
+
+import click
+
 from domain.constants import DATETIME_FORMAT
 
 

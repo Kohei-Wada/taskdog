@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task, TaskStatus
 
@@ -24,8 +25,5 @@ class TimeTracker:
             task.actual_start = now
 
         # Record actual end when moving to COMPLETED or FAILED
-        if (
-            new_status in [TaskStatus.COMPLETED, TaskStatus.FAILED]
-            and not task.actual_end
-        ):
+        if new_status in [TaskStatus.COMPLETED, TaskStatus.FAILED] and not task.actual_end:
             task.actual_end = now

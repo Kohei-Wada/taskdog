@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+
 from domain.entities.task import Task
 
 
@@ -7,7 +7,7 @@ class TaskRepository(ABC):
     """Abstract interface for task data persistence."""
 
     @abstractmethod
-    def get_all(self) -> List[Task]:
+    def get_all(self) -> list[Task]:
         """Retrieve all tasks.
 
         Returns:
@@ -16,7 +16,7 @@ class TaskRepository(ABC):
         pass
 
     @abstractmethod
-    def get_by_id(self, task_id: int) -> Optional[Task]:
+    def get_by_id(self, task_id: int) -> Task | None:
         """Retrieve a task by its ID.
 
         Args:
@@ -28,7 +28,7 @@ class TaskRepository(ABC):
         pass
 
     @abstractmethod
-    def get_children(self, task_id: int) -> List[Task]:
+    def get_children(self, task_id: int) -> list[Task]:
         """Retrieve all child tasks of a given task.
 
         Args:

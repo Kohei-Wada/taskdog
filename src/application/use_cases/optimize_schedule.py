@@ -1,11 +1,11 @@
 """Use case for optimizing task schedules."""
 
 from datetime import datetime
-from typing import List
-from application.use_cases.base import UseCase
+
 from application.services.schedule_optimizer import ScheduleOptimizer
-from infrastructure.persistence.task_repository import TaskRepository
+from application.use_cases.base import UseCase
 from domain.entities.task import Task
+from infrastructure.persistence.task_repository import TaskRepository
 
 
 class OptimizeScheduleInput:
@@ -23,7 +23,7 @@ class OptimizeScheduleInput:
         start_date: datetime,
         max_hours_per_day: float = 6.0,
         force_override: bool = False,
-        dry_run: bool = False
+        dry_run: bool = False,
     ):
         self.start_date = start_date
         self.max_hours_per_day = max_hours_per_day
@@ -31,7 +31,7 @@ class OptimizeScheduleInput:
         self.dry_run = dry_run
 
 
-class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, List[Task]]):
+class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, list[Task]]):
     """Use case for optimizing task schedules.
 
     Analyzes all tasks and generates optimal schedules based on
@@ -46,7 +46,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, List[Task]]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: OptimizeScheduleInput) -> List[Task]:
+    def execute(self, input_dto: OptimizeScheduleInput) -> list[Task]:
         """Execute schedule optimization.
 
         Args:
@@ -65,7 +65,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, List[Task]]):
         optimizer = ScheduleOptimizer(
             start_date=input_dto.start_date,
             max_hours_per_day=input_dto.max_hours_per_day,
-            force_override=input_dto.force_override
+            force_override=input_dto.force_override,
         )
 
         # Run optimization

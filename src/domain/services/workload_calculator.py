@@ -1,7 +1,7 @@
 """Domain service for calculating workload from tasks."""
 
-from typing import List, Dict, Optional
 from datetime import date, datetime, timedelta
+
 from domain.entities.task import Task, TaskStatus
 
 
@@ -11,8 +11,8 @@ class WorkloadCalculator:
     DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     def calculate_daily_workload(
-        self, tasks: List[Task], start_date: date, end_date: date
-    ) -> Dict[date, float]:
+        self, tasks: list[Task], start_date: date, end_date: date
+    ) -> dict[date, float]:
         """Calculate daily workload from tasks, excluding weekends and completed tasks.
 
         This method uses the daily_allocations field if available (set by ScheduleOptimizer),
@@ -81,7 +81,6 @@ class WorkloadCalculator:
 
         return daily_workload
 
-
     def _count_weekdays(self, start: date, end: date) -> int:
         """Count weekdays (Monday-Friday) in a date range.
 
@@ -101,7 +100,7 @@ class WorkloadCalculator:
             current_date += timedelta(days=1)
         return weekday_count
 
-    def _parse_date(self, date_str: Optional[str]) -> Optional[date]:
+    def _parse_date(self, date_str: str | None) -> date | None:
         """Parse date string to date object.
 
         Args:

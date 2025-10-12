@@ -1,15 +1,14 @@
 """Use case for updating a task."""
 
-from typing import Tuple, List
-from application.use_cases.base import UseCase
 from application.dto.update_task_input import UpdateTaskInput
 from application.services.task_validator import TaskValidator
-from infrastructure.persistence.task_repository import TaskRepository
-from domain.services.time_tracker import TimeTracker
+from application.use_cases.base import UseCase
 from domain.entities.task import Task
+from domain.services.time_tracker import TimeTracker
+from infrastructure.persistence.task_repository import TaskRepository
 
 
-class UpdateTaskUseCase(UseCase[UpdateTaskInput, Tuple[Task, List[str]]]):
+class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
     """Use case for updating task properties.
 
     Supports updating multiple fields and handles time tracking for status changes.
@@ -27,7 +26,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, Tuple[Task, List[str]]]):
         self.time_tracker = time_tracker
         self.validator = TaskValidator()
 
-    def execute(self, input_dto: UpdateTaskInput) -> Tuple[Task, List[str]]:
+    def execute(self, input_dto: UpdateTaskInput) -> tuple[Task, list[str]]:
         """Execute task update.
 
         Args:
@@ -54,7 +53,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, Tuple[Task, List[str]]]):
                 self.validator.validate_parent(
                     parent_id=input_dto.parent_id,
                     repository=self.repository,
-                    task_id=input_dto.task_id
+                    task_id=input_dto.task_id,
                 )
             task.parent_id = input_dto.parent_id
             updated_fields.append("parent_id")
