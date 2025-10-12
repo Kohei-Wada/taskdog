@@ -4,7 +4,6 @@ import click
 
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
-from domain.services.time_tracker import TimeTracker
 from presentation.cli.error_handler import handle_task_errors
 
 
@@ -32,7 +31,7 @@ def parent_command(ctx, task_id, parent_id, clear):
     """
     console = ctx.obj["console"]
     repository = ctx.obj["repository"]
-    time_tracker = TimeTracker()
+    time_tracker = ctx.obj["time_tracker"]
     update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
 
     # Validate arguments

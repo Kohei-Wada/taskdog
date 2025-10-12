@@ -4,7 +4,6 @@ import click
 
 from application.dto.start_task_input import StartTaskInput
 from application.use_cases.start_task import StartTaskUseCase
-from domain.services.time_tracker import TimeTracker
 from presentation.cli.batch_executor import BatchCommandExecutor
 from utils.console_messages import print_success
 
@@ -16,7 +15,7 @@ def start_command(ctx, task_ids):
     """Start working on tasks (set status to IN_PROGRESS)."""
     console = ctx.obj["console"]
     repository = ctx.obj["repository"]
-    time_tracker = TimeTracker()
+    time_tracker = ctx.obj["time_tracker"]
     start_task_use_case = StartTaskUseCase(repository, time_tracker)
 
     # Define processing function

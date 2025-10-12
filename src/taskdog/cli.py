@@ -4,6 +4,7 @@ from pathlib import Path
 import click
 from rich.console import Console
 
+from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.cli.commands.add import add_command
 from presentation.cli.commands.archive import archive_command
@@ -43,10 +44,12 @@ def cli(ctx):
     # Initialize shared dependencies
     console = Console()
     repository = JsonTaskRepository(tasksfile)
+    time_tracker = TimeTracker()
 
     ctx.ensure_object(dict)
     ctx.obj["console"] = console
     ctx.obj["repository"] = repository
+    ctx.obj["time_tracker"] = time_tracker
 
 
 cli.add_command(add_command)

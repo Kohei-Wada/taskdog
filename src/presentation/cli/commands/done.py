@@ -6,7 +6,6 @@ from application.dto.complete_task_input import CompleteTaskInput
 from application.use_cases.complete_task import CompleteTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import IncompleteChildrenError
-from domain.services.time_tracker import TimeTracker
 from presentation.cli.batch_executor import BatchCommandExecutor
 from utils.console_messages import print_success
 
@@ -18,7 +17,7 @@ def done_command(ctx, task_ids):
     """Mark task(s) as completed."""
     console = ctx.obj["console"]
     repository = ctx.obj["repository"]
-    time_tracker = TimeTracker()
+    time_tracker = ctx.obj["time_tracker"]
     complete_task_use_case = CompleteTaskUseCase(repository, time_tracker)
 
     # Define processing function
