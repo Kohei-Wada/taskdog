@@ -1,13 +1,12 @@
 """Update command - Update task properties."""
 
 import click
-from domain.exceptions.task_exceptions import TaskNotFoundException
 from domain.entities.task import TaskStatus
 from domain.services.time_tracker import TimeTracker
 from shared.click_types.datetime_with_default import DateTimeWithDefault
-from utils.console_messages import print_task_not_found_error, print_error
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
+from presentation.cli.error_handler import handle_task_errors
 
 
 @click.command(
@@ -57,6 +56,7 @@ from application.use_cases.update_task import UpdateTaskUseCase
     help="Estimated duration in hours (e.g., 2.5)",
 )
 @click.pass_context
+@handle_task_errors("updating task")
 def update_command(
     ctx,
     task_id,
@@ -73,42 +73,38 @@ def update_command(
     time_tracker = TimeTracker()
     update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
 
-    try:
-        # Convert status string to Enum if provided
-        status_enum = TaskStatus(status) if status else None
+    # Convert status string to Enum if provided
+    status_enum = TaskStatus(status) if status else None
 
-        # Build input DTO
-        input_dto = UpdateTaskInput(
-            task_id=task_id,
-            priority=priority,
-            status=status_enum,
-            planned_start=planned_start,
-            planned_end=planned_end,
-            deadline=deadline,
-            estimated_duration=estimated_duration,
-        )
+    # Build input DTO
+    input_dto = UpdateTaskInput(
+        task_id=task_id,
+        priority=priority,
+        status=status_enum,
+        planned_start=planned_start,
+        planned_end=planned_end,
+        deadline=deadline,
+        estimated_duration=estimated_duration,
+    )
 
-        # Execute use case
-        task, updated_fields = update_task_use_case.execute(input_dto)
+    # Execute use case
+    task, updated_fields = update_task_use_case.execute(input_dto)
 
-        if not updated_fields:
-            console.print(
-                "[yellow]No fields to update.[/yellow] Use --priority, --status, --planned-start, --planned-end, --deadline, or --estimated-duration"
-            )
-            return
-
-        # Print updates
+    if not updated_fields:
         console.print(
-            f"[green]✓[/green] Updated task [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan]):"
+            "[yellow]No fields to update.[/yellow] Use --priority, --status, --planned-start, --planned-end, --deadline, or --estimated-duration"
         )
-        for field in updated_fields:
-            value = getattr(task, field)
-            if field == "estimated_duration":
-                console.print(f"  • {field}: [cyan]{value}h[/cyan]")
-            else:
-                console.print(f"  • {field}: [cyan]{value}[/cyan]")
+        return
 
-    except TaskNotFoundException as e:
-        print_task_not_found_error(console, e.task_id)
-    except Exception as e:
-        print_error(console, "updating task", e)
+    # Print updates
+    console.print(
+        f"[green]✓[/green] Updated task [bold]{task.name}[/bold] (ID: [cyan]{
+            task.id
+        }[/cyan]):"
+    )
+    for field in updated_fields:
+        value = getattr(task, field)
+        if field == "estimated_duration":
+            console.print(f"  • {field}: [cyan]{value}h[/cyan]")
+        else:
+            console.print(f"  • {field}: [cyan]{value}[/cyan]")

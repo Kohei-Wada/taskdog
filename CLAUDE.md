@@ -82,13 +82,19 @@ The application follows **Clean Architecture** with distinct layers:
 
 ### Dependency Injection Pattern
 
-Dependencies are initialized in `cli.py` (lines 43-79) and stored in Click's context object (`ctx.obj`):
-- Use cases: `create_task_use_case`, `start_task_use_case`, `complete_task_use_case`, `update_task_use_case`, `remove_task_use_case`
-- Queries: `task_query_service`
-- Infrastructure: `repository`, `time_tracker`
-- Presentation: `console`
+Dependencies are partially managed through Click's context object (`ctx.obj`):
 
-All commands access dependencies via `@click.pass_context` and `ctx.obj["dependency_name"]`.
+**Shared dependencies in `ctx.obj`** (initialized in `cli.py:36-41`):
+- `repository`: JsonTaskRepository instance
+- `console`: Rich Console instance
+
+**Local instantiation in commands**:
+- Use cases are created locally in each command function (e.g., `CreateTaskUseCase(repository)` in add.py:75)
+- `TimeTracker` is instantiated locally in commands that need time tracking (start.py:18, done.py:18, update.py:73)
+- `TaskQueryService` is instantiated locally in query commands (tree.py:24, table.py:23, today.py:36, gantt.py:41)
+- Formatters are instantiated locally per command (e.g., `RichTreeFormatter()` in tree.py:34, `RichTableFormatter()` in table.py:33)
+
+Commands access shared dependencies via `@click.pass_context` and `ctx.obj["dependency_name"]`.
 
 ### Core Components
 
@@ -127,6 +133,23 @@ All commands access dependencies via `@click.pass_context` and `ctx.obj["depende
 **Custom Click Types** (`src/shared/click_types/datetime_with_default.py`)
 - `DateTimeWithDefault`: Extends Click's DateTime to add default time (18:00:00) when only date provided
 - Accepts: `YYYY-MM-DD` (adds 18:00:00) or `YYYY-MM-DD HH:MM:SS` (preserves time)
+
+**Error Handlers** (`src/presentation/cli/error_handler.py`)
+Two decorators for consistent error handling across CLI commands:
+
+1. `handle_task_errors(action_name, is_parent=False)`: For task-specific operations
+   - Catches `TaskNotFoundException` and general `Exception`
+   - Use for commands operating on specific task IDs
+   - Usage: `@handle_task_errors("adding task", is_parent=True)`
+   - Used in: add, update, remove commands
+
+2. `handle_command_errors(action_name)`: For general query operations
+   - Catches only general `Exception` (lighter weight)
+   - Use for commands that don't operate on specific task IDs
+   - Usage: `@handle_command_errors("displaying tasks")`
+   - Used in: tree, table, gantt, today commands
+
+Not used in: start, done commands (these handle errors per-task in loops for multiple task processing)
 
 ### Task Model
 **Task** (`src/domain/entities/task.py`)

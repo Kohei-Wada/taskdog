@@ -3,6 +3,7 @@
 import click
 from application.queries.task_query_service import TaskQueryService
 from presentation.formatters.rich_tree_formatter import RichTreeFormatter
+from presentation.cli.error_handler import handle_command_errors
 
 
 @click.command(name="tree", help="Display tasks in hierarchical tree format.")
@@ -13,6 +14,7 @@ from presentation.formatters.rich_tree_formatter import RichTreeFormatter
     help="Show all tasks including completed ones",
 )
 @click.pass_context
+@handle_command_errors("displaying tasks")
 def tree_command(ctx, all):
     """Display tasks as a hierarchical tree.
 
@@ -23,16 +25,13 @@ def tree_command(ctx, all):
     repository = ctx.obj["repository"]
     task_query_service = TaskQueryService(repository)
 
-    try:
-        # Get tasks using query service
-        if all:
-            tasks = task_query_service.get_all_tasks()
-        else:
-            tasks = task_query_service.get_incomplete_tasks_with_hierarchy()
+    # Get tasks using query service
+    if all:
+        tasks = task_query_service.get_all_tasks()
+    else:
+        tasks = task_query_service.get_incomplete_tasks_with_hierarchy()
 
-        # Format and display
-        formatter = RichTreeFormatter()
-        output = formatter.format_tasks(tasks, repository)
-        print(output)
-    except Exception as e:
-        print(f"Error displaying tasks: {e}")
+    # Format and display
+    formatter = RichTreeFormatter()
+    output = formatter.format_tasks(tasks, repository)
+    print(output)

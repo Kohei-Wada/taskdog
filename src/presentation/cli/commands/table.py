@@ -3,6 +3,7 @@
 import click
 from application.queries.task_query_service import TaskQueryService
 from presentation.formatters.rich_table_formatter import RichTableFormatter
+from presentation.cli.error_handler import handle_command_errors
 
 
 @click.command(name="table", help="Display tasks in flat table format.")
@@ -13,6 +14,7 @@ from presentation.formatters.rich_table_formatter import RichTableFormatter
     help="Show all tasks including completed ones",
 )
 @click.pass_context
+@handle_command_errors("displaying tasks")
 def table_command(ctx, all):
     """Display tasks as a flat table.
 
@@ -22,16 +24,13 @@ def table_command(ctx, all):
     repository = ctx.obj["repository"]
     task_query_service = TaskQueryService(repository)
 
-    try:
-        # Get tasks using query service
-        if all:
-            tasks = task_query_service.get_all_tasks()
-        else:
-            tasks = task_query_service.get_incomplete_tasks()
+    # Get tasks using query service
+    if all:
+        tasks = task_query_service.get_all_tasks()
+    else:
+        tasks = task_query_service.get_incomplete_tasks()
 
-        # Format and display
-        formatter = RichTableFormatter()
-        output = formatter.format_tasks(tasks, repository)
-        print(output)
-    except Exception as e:
-        print(f"Error displaying tasks: {e}")
+    # Format and display
+    formatter = RichTableFormatter()
+    output = formatter.format_tasks(tasks, repository)
+    print(output)

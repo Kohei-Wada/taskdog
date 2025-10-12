@@ -1,15 +1,11 @@
 """Add command - Add a new task."""
 
 import click
-from domain.exceptions.task_exceptions import TaskNotFoundException
 from shared.click_types.datetime_with_default import DateTimeWithDefault
-from utils.console_messages import (
-    print_success,
-    print_task_not_found_error,
-    print_error,
-)
+from utils.console_messages import print_success
 from application.dto.create_task_input import CreateTaskInput
 from application.use_cases.create_task import CreateTaskUseCase
+from presentation.cli.error_handler import handle_task_errors
 
 
 @click.command(name="add", help="Add a new task with optional planning and deadline.")
@@ -59,6 +55,7 @@ from application.use_cases.create_task import CreateTaskUseCase
     help="Estimated duration in hours (e.g., 2.5)",
 )
 @click.pass_context
+@handle_task_errors("adding task", is_parent=True)
 def add_command(
     ctx,
     name,
@@ -74,23 +71,18 @@ def add_command(
     repository = ctx.obj["repository"]
     create_task_use_case = CreateTaskUseCase(repository)
 
-    try:
-        # Build input DTO
-        input_dto = CreateTaskInput(
-            name=name,
-            priority=priority,
-            parent_id=parent_id,
-            planned_start=planned_start,
-            planned_end=planned_end,
-            deadline=deadline,
-            estimated_duration=estimated_duration,
-        )
+    # Build input DTO
+    input_dto = CreateTaskInput(
+        name=name,
+        priority=priority,
+        parent_id=parent_id,
+        planned_start=planned_start,
+        planned_end=planned_end,
+        deadline=deadline,
+        estimated_duration=estimated_duration,
+    )
 
-        # Execute use case
-        task = create_task_use_case.execute(input_dto)
+    # Execute use case
+    task = create_task_use_case.execute(input_dto)
 
-        print_success(console, "Added", task)
-    except TaskNotFoundException as e:
-        print_task_not_found_error(console, e.task_id, is_parent=True)
-    except Exception as e:
-        print_error(console, "adding task", e)
+    print_success(console, "Added", task)
