@@ -77,4 +77,4 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, tuple[list[Task], d
             for task in modified_tasks:
                 self.repository.save(task)
 
-        return modified_tasks, optimizer.daily_allocations
+        return modified_tasks, optimizer.allocator.daily_allocations

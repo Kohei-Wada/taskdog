@@ -1,0 +1,58 @@
+"""Task filter service for scheduling."""
+
+from domain.entities.task import Task, TaskStatus
+
+
+class TaskFilter:
+    """Service for filtering tasks based on scheduling criteria.
+
+    Determines which tasks should be considered for scheduling
+    based on their status, estimated duration, and existing schedules.
+    """
+
+    def get_schedulable_tasks(self, tasks: list[Task], force_override: bool) -> list[Task]:
+        """Get tasks that can be scheduled.
+
+        Filters out completed tasks and optionally tasks with existing schedules.
+
+        Args:
+            tasks: All tasks
+            force_override: Whether to include tasks with existing schedules
+
+        Returns:
+            List of schedulable tasks
+        """
+        schedulable = []
+        for task in tasks:
+            if self.should_schedule_task(task, force_override):
+                schedulable.append(task)
+
+        return schedulable
+
+    def should_schedule_task(self, task: Task, force_override: bool) -> bool:
+        """Check if task should be scheduled.
+
+        Args:
+            task: Task to check
+            force_override: Whether to override existing schedules
+
+        Returns:
+            True if task should be scheduled
+        """
+        # Skip completed tasks
+        if task.status == TaskStatus.COMPLETED:
+            return False
+
+        # Skip IN_PROGRESS tasks (don't reschedule tasks already being worked on)
+        if task.status == TaskStatus.IN_PROGRESS:
+            return False
+
+        # Skip tasks without estimated duration
+        if not task.estimated_duration:
+            return False
+
+        # Skip tasks with existing schedule unless force_override
+        if task.planned_start and not force_override:
+            return False
+
+        return True
