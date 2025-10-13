@@ -1,0 +1,191 @@
+"""Monte Carlo optimization strategy implementation."""
+
+import random
+from datetime import datetime
+
+from application.services.hierarchy_manager import HierarchyManager
+from application.services.optimization.optimization_strategy import OptimizationStrategy
+from application.services.task_filter import TaskFilter
+from application.services.workload_allocator import WorkloadAllocator
+from domain.constants import DATETIME_FORMAT
+from domain.entities.task import Task
+
+
+class MonteCarloOptimizationStrategy(OptimizationStrategy):
+    """Monte Carlo simulation algorithm for task scheduling optimization.
+
+    This strategy uses random sampling to find optimal schedules:
+    1. Filter schedulable tasks
+    2. Generate many random task orderings
+    3. Simulate scheduling for each ordering
+    4. Evaluate score (deadline compliance, priority, workload balance)
+    5. Return the best schedule found
+
+    Parameters:
+    - Number of simulations: 100
+    """
+
+    NUM_SIMULATIONS = 100
+
+    def optimize_tasks(
+        self,
+        tasks: list[Task],
+        repository,
+        start_date: datetime,
+        max_hours_per_day: float,
+        force_override: bool,
+    ) -> tuple[list[Task], dict[str, float]]:
+        """Optimize task schedules using Monte Carlo simulation.
+
+        Args:
+            tasks: List of all tasks to consider for optimization
+            repository: Task repository for hierarchy queries
+            start_date: Starting date for schedule optimization
+            max_hours_per_day: Maximum work hours per day
+            force_override: Whether to override existing schedules
+
+        Returns:
+            Tuple of (modified_tasks, daily_allocations)
+            - modified_tasks: List of tasks with updated schedules
+            - daily_allocations: Dict mapping date strings to allocated hours
+        """
+        # Initialize service instances
+        task_filter = TaskFilter()
+        hierarchy_manager = HierarchyManager(repository)
+
+        # Filter tasks that need scheduling
+        schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
+
+        if not schedulable_tasks:
+            return [], {}
+
+        # Run Monte Carlo simulation
+        best_order = self._monte_carlo_simulation(
+            schedulable_tasks, tasks, start_date, max_hours_per_day, force_override
+        )
+
+        # Schedule tasks according to best order
+        allocator = WorkloadAllocator(max_hours_per_day, start_date)
+        allocator.initialize_allocations(tasks, force_override)
+
+        updated_tasks = []
+        for task in best_order:
+            updated_task = allocator.allocate_timeblock(task)
+            if updated_task:
+                updated_tasks.append(updated_task)
+
+        # Update parent task periods based on children
+        all_tasks_with_updates = hierarchy_manager.update_parent_periods(tasks, updated_tasks)
+
+        # If force_override, clear schedules for tasks that couldn't be scheduled
+        if force_override:
+            all_tasks_with_updates = hierarchy_manager.clear_unscheduled_tasks(
+                tasks, all_tasks_with_updates
+            )
+
+        # Return modified tasks and daily allocations
+        return all_tasks_with_updates, allocator.daily_allocations
+
+    def _monte_carlo_simulation(
+        self,
+        schedulable_tasks: list[Task],
+        all_tasks: list[Task],
+        start_date: datetime,
+        max_hours_per_day: float,
+        force_override: bool,
+    ) -> list[Task]:
+        """Run Monte Carlo simulation to find optimal task ordering.
+
+        Args:
+            schedulable_tasks: List of tasks to schedule
+            all_tasks: All tasks (for initializing allocations)
+            start_date: Starting date for scheduling
+            max_hours_per_day: Maximum work hours per day
+            force_override: Whether to override existing schedules
+
+        Returns:
+            List of tasks in optimal order
+        """
+        best_order = None
+        best_score = float("-inf")
+
+        for _ in range(self.NUM_SIMULATIONS):
+            # Generate random ordering
+            random_order = random.sample(schedulable_tasks, len(schedulable_tasks))
+
+            # Evaluate this ordering
+            score = self._evaluate_ordering(
+                random_order, all_tasks, start_date, max_hours_per_day, force_override
+            )
+
+            # Track best ordering
+            if score > best_score:
+                best_score = score
+                best_order = random_order
+
+        return best_order if best_order else schedulable_tasks
+
+    def _evaluate_ordering(
+        self,
+        task_order: list[Task],
+        all_tasks: list[Task],
+        start_date: datetime,
+        max_hours_per_day: float,
+        force_override: bool,
+    ) -> float:
+        """Evaluate a task ordering by simulating scheduling.
+
+        Higher score = better schedule.
+
+        Args:
+            task_order: Ordering of tasks to evaluate
+            all_tasks: All tasks (for initializing allocations)
+            start_date: Starting date for scheduling
+            max_hours_per_day: Maximum work hours per day
+            force_override: Whether to override existing schedules
+
+        Returns:
+            Score (higher is better)
+        """
+        # Simulate scheduling with this order
+        allocator = WorkloadAllocator(max_hours_per_day, start_date)
+        allocator.initialize_allocations(all_tasks, force_override)
+
+        scheduled_tasks = []
+        for task in task_order:
+            updated_task = allocator.allocate_timeblock(task)
+            if updated_task:
+                scheduled_tasks.append(updated_task)
+
+        # Calculate score components
+        deadline_penalty = 0.0
+        priority_score = 0.0
+
+        for i, task in enumerate(scheduled_tasks):
+            # Priority bonus (higher priority tasks scheduled earlier get bonus)
+            if task.priority:
+                priority_score += task.priority * (len(scheduled_tasks) - i)
+
+            # Deadline penalty (tasks finishing after deadline get penalty)
+            if task.deadline and task.planned_end:
+                deadline_dt = datetime.strptime(task.deadline, DATETIME_FORMAT)
+                end_dt = datetime.strptime(task.planned_end, DATETIME_FORMAT)
+                if end_dt > deadline_dt:
+                    days_late = (end_dt - deadline_dt).days
+                    deadline_penalty += days_late * 100  # Heavy penalty
+
+        # Workload variance penalty (prefer even distribution)
+        if allocator.daily_allocations:
+            daily_hours = list(allocator.daily_allocations.values())
+            avg_hours = sum(daily_hours) / len(daily_hours)
+            variance = sum((h - avg_hours) ** 2 for h in daily_hours) / len(daily_hours)
+            workload_penalty = variance * 10
+        else:
+            workload_penalty = 0
+
+        # Number of successfully scheduled tasks bonus
+        scheduled_bonus = len(scheduled_tasks) * 50
+
+        # Score = benefits - penalties
+        score = priority_score + scheduled_bonus - deadline_penalty - workload_penalty
+        return score

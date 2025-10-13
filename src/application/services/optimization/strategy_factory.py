@@ -8,10 +8,28 @@ from application.services.optimization.backward_optimization_strategy import (
 from application.services.optimization.balanced_optimization_strategy import (
     BalancedOptimizationStrategy,
 )
+from application.services.optimization.dependency_aware_optimization_strategy import (
+    DependencyAwareOptimizationStrategy,
+)
+from application.services.optimization.earliest_deadline_optimization_strategy import (
+    EarliestDeadlineOptimizationStrategy,
+)
+from application.services.optimization.genetic_optimization_strategy import (
+    GeneticOptimizationStrategy,
+)
 from application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
 )
+from application.services.optimization.monte_carlo_optimization_strategy import (
+    MonteCarloOptimizationStrategy,
+)
 from application.services.optimization.optimization_strategy import OptimizationStrategy
+from application.services.optimization.priority_first_optimization_strategy import (
+    PriorityFirstOptimizationStrategy,
+)
+from application.services.optimization.round_robin_optimization_strategy import (
+    RoundRobinOptimizationStrategy,
+)
 
 
 class StrategyFactory:
@@ -26,9 +44,12 @@ class StrategyFactory:
         "greedy": GreedyOptimizationStrategy,
         "balanced": BalancedOptimizationStrategy,
         "backward": BackwardOptimizationStrategy,
-        # Future algorithms can be added here:
-        # "genetic": GeneticOptimizationStrategy,
-        # "dp": DynamicProgrammingStrategy,
+        "priority_first": PriorityFirstOptimizationStrategy,
+        "earliest_deadline": EarliestDeadlineOptimizationStrategy,
+        "round_robin": RoundRobinOptimizationStrategy,
+        "dependency_aware": DependencyAwareOptimizationStrategy,
+        "genetic": GeneticOptimizationStrategy,
+        "monte_carlo": MonteCarloOptimizationStrategy,
     }
 
     @classmethod

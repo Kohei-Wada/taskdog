@@ -42,7 +42,18 @@ Use --force to override existing schedules, --dry-run to preview changes.
     "-a",
     type=str,
     default="greedy",
-    help="Optimization algorithm: greedy (front-load), balanced (even distribution), backward (JIT from deadline)",
+    help=(
+        "Optimization algorithm: "
+        "greedy (front-load), "
+        "balanced (even distribution), "
+        "backward (JIT from deadline), "
+        "priority_first (priority only), "
+        "earliest_deadline (EDF), "
+        "round_robin (parallel progress), "
+        "dependency_aware (CPM), "
+        "genetic (evolutionary), "
+        "monte_carlo (random sampling)"
+    ),
 )
 @click.option("--force", "-f", is_flag=True, help="Override existing schedules")
 @click.option("--dry-run", "-d", is_flag=True, help="Preview without saving")
