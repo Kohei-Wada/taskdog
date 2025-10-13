@@ -88,6 +88,8 @@ class TestTaskPrioritizer(unittest.TestCase):
             return []
 
         self.mock_repository.get_children.side_effect = get_children_side_effect
+        # Mock get_by_id to return the parent task
+        self.mock_repository.get_by_id.return_value = tasks[0]
 
         result = self.prioritizer.sort_by_priority(tasks)
 

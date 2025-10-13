@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
 from domain.entities.task import Task, TaskStatus
+from domain.services.deadline_calculator import DeadlineCalculator
 from domain.services.task_eligibility_checker import TaskEligibilityChecker
 
 
@@ -15,15 +16,17 @@ class WorkloadAllocator:
     while respecting workload constraints (weekdays only, max hours per day).
     """
 
-    def __init__(self, max_hours_per_day: float, start_date: datetime):
+    def __init__(self, max_hours_per_day: float, start_date: datetime, repository=None):
         """Initialize allocator.
 
         Args:
             max_hours_per_day: Maximum work hours per day
             start_date: Starting date for allocations
+            repository: Task repository for parent task lookups (optional)
         """
         self.max_hours_per_day = max_hours_per_day
         self.start_date = start_date
+        self.repository = repository
         self.daily_allocations: dict[str, float] = {}  # date_str -> hours
 
     def initialize_allocations(self, tasks: list[Task], force_override: bool):
@@ -89,6 +92,9 @@ class WorkloadAllocator:
         # Create a deep copy to avoid modifying the original task
         task_copy = copy.deepcopy(task)
 
+        # Calculate effective deadline considering parent task deadlines
+        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy, self.repository)
+
         # Find earliest available start date
         current_date = self.start_date
         remaining_hours = task_copy.estimated_duration
@@ -107,9 +113,9 @@ class WorkloadAllocator:
                 current_date += timedelta(days=1)
                 continue
 
-            # Check deadline constraint
-            if task_copy.deadline:
-                deadline_dt = datetime.strptime(task_copy.deadline, DATETIME_FORMAT)
+            # Check deadline constraint using effective deadline
+            if effective_deadline:
+                deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
                 if current_date > deadline_dt:
                     # Cannot schedule before deadline
                     return None

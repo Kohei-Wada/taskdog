@@ -4,6 +4,7 @@ from datetime import datetime
 
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
+from domain.services.deadline_calculator import DeadlineCalculator
 
 
 class TaskPrioritizer:
@@ -44,16 +45,22 @@ class TaskPrioritizer:
             children = self.repository.get_children(task.id)
             is_parent = len(children) > 0
 
+            # Get effective deadline considering parent task deadlines
+            effective_deadline = DeadlineCalculator.get_effective_deadline(task, self.repository)
+
             # Deadline score: None = infinity, otherwise days until deadline
-            if task.deadline:
-                deadline_dt = datetime.strptime(task.deadline, DATETIME_FORMAT)
+            if effective_deadline:
+                deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
                 days_until = (deadline_dt - self.start_date).days
             else:
                 days_until = float("inf")
 
+            # Handle priority=None (treat as 0)
+            priority_value = task.priority if task.priority is not None else 0
+
             # Return tuple for sorting: (deadline, -priority, is_parent, id)
             # Higher priority value means higher priority (200 > 100 > 50)
             # Negative priority so higher values come first
-            return (days_until, -task.priority, is_parent, task.id)
+            return (days_until, -priority_value, is_parent, task.id)
 
         return sorted(tasks, key=priority_key)

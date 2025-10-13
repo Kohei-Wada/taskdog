@@ -67,10 +67,12 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             return [], {}
 
         # Run genetic algorithm
-        best_order = self._genetic_algorithm(schedulable_tasks, start_date, max_hours_per_day)
+        best_order = self._genetic_algorithm(
+            schedulable_tasks, start_date, max_hours_per_day, repository
+        )
 
         # Schedule tasks according to best order
-        allocator = WorkloadAllocator(max_hours_per_day, start_date)
+        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
         allocator.initialize_allocations(tasks, force_override)
 
         updated_tasks = []
@@ -92,7 +94,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         return all_tasks_with_updates, allocator.daily_allocations
 
     def _genetic_algorithm(
-        self, tasks: list[Task], start_date: datetime, max_hours_per_day: float
+        self, tasks: list[Task], start_date: datetime, max_hours_per_day: float, repository=None
     ) -> list[Task]:
         """Run genetic algorithm to find optimal task ordering.
 
@@ -111,7 +113,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         for _generation in range(self.GENERATIONS):
             # Evaluate fitness for each individual
             fitness_scores = [
-                self._evaluate_fitness(individual, start_date, max_hours_per_day)
+                self._evaluate_fitness(individual, start_date, max_hours_per_day, repository)
                 for individual in population
             ]
 
@@ -146,14 +148,18 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         # Return best individual from final generation
         final_fitness = [
-            self._evaluate_fitness(individual, start_date, max_hours_per_day)
+            self._evaluate_fitness(individual, start_date, max_hours_per_day, repository)
             for individual in population
         ]
         best_idx = final_fitness.index(max(final_fitness))
         return population[best_idx]
 
     def _evaluate_fitness(
-        self, task_order: list[Task], start_date: datetime, max_hours_per_day: float
+        self,
+        task_order: list[Task],
+        start_date: datetime,
+        max_hours_per_day: float,
+        repository=None,
     ) -> float:
         """Evaluate fitness of a task ordering.
 
@@ -168,7 +174,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             Fitness score (higher is better)
         """
         # Simulate scheduling with this order
-        allocator = WorkloadAllocator(max_hours_per_day, start_date)
+        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
         scheduled_tasks = []
 
         for task in task_order:

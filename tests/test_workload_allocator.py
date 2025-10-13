@@ -2,9 +2,11 @@
 
 import unittest
 from datetime import datetime
+from unittest.mock import Mock
 
 from application.services.workload_allocator import WorkloadAllocator
 from domain.entities.task import Task, TaskStatus
+from domain.services.deadline_calculator import DeadlineCalculator
 
 
 class TestWorkloadAllocator(unittest.TestCase):
@@ -282,6 +284,156 @@ class TestWorkloadAllocator(unittest.TestCase):
 
         # Second task should take remaining 2 hours on Monday + 3 hours on Tuesday
         self.assertEqual(result2.daily_allocations, {"2025-01-06": 2.0, "2025-01-07": 3.0})
+
+    def test_get_effective_deadline_uses_own_deadline(self):
+        """Test that get_effective_deadline returns task's own deadline when no parent exists."""
+        mock_repo = Mock()
+
+        task = Task(
+            id=1,
+            name="Task with deadline",
+            priority=100,
+            status=TaskStatus.PENDING,
+            deadline="2025-01-10 18:00:00",
+        )
+
+        effective_deadline = DeadlineCalculator.get_effective_deadline(task, mock_repo)
+        self.assertEqual(effective_deadline, "2025-01-10 18:00:00")
+
+    def test_get_effective_deadline_uses_parent_deadline(self):
+        """Test that get_effective_deadline uses parent's deadline when child has no deadline."""
+        mock_repo = Mock()
+        parent_task = Task(
+            id=1,
+            name="Parent task",
+            priority=100,
+            status=TaskStatus.PENDING,
+            deadline="2025-01-08 18:00:00",
+        )
+        mock_repo.get_by_id.return_value = parent_task
+
+        child_task = Task(
+            id=2,
+            name="Child task without deadline",
+            priority=100,
+            status=TaskStatus.PENDING,
+            parent_id=1,
+            deadline=None,
+        )
+
+        effective_deadline = DeadlineCalculator.get_effective_deadline(child_task, mock_repo)
+        self.assertEqual(effective_deadline, "2025-01-08 18:00:00")
+
+    def test_get_effective_deadline_uses_most_restrictive(self):
+        """Test that get_effective_deadline returns the earliest deadline among task and ancestors."""
+        mock_repo = Mock()
+
+        # Parent with earlier deadline
+        parent_task = Task(
+            id=1,
+            name="Parent task",
+            priority=100,
+            status=TaskStatus.PENDING,
+            deadline="2025-01-08 18:00:00",  # Earlier (more restrictive)
+        )
+
+        # Child with later deadline
+        child_task = Task(
+            id=2,
+            name="Child task",
+            priority=100,
+            status=TaskStatus.PENDING,
+            parent_id=1,
+            deadline="2025-01-15 18:00:00",  # Later
+        )
+
+        mock_repo.get_by_id.return_value = parent_task
+
+        effective_deadline = DeadlineCalculator.get_effective_deadline(child_task, mock_repo)
+        # Should return parent's earlier deadline
+        self.assertEqual(effective_deadline, "2025-01-08 18:00:00")
+
+    def test_get_effective_deadline_with_grandparent(self):
+        """Test that get_effective_deadline considers grandparent deadlines too."""
+        mock_repo = Mock()
+
+        # Grandparent with earliest deadline
+        grandparent_task = Task(
+            id=1,
+            name="Grandparent task",
+            priority=100,
+            status=TaskStatus.PENDING,
+            deadline="2025-01-07 18:00:00",  # Earliest
+        )
+
+        # Parent with later deadline
+        parent_task = Task(
+            id=2,
+            name="Parent task",
+            priority=100,
+            status=TaskStatus.PENDING,
+            parent_id=1,
+            deadline="2025-01-10 18:00:00",
+        )
+
+        # Child with even later deadline
+        child_task = Task(
+            id=3,
+            name="Child task",
+            priority=100,
+            status=TaskStatus.PENDING,
+            parent_id=2,
+            deadline="2025-01-15 18:00:00",
+        )
+
+        def get_by_id_mock(task_id):
+            if task_id == 1:
+                return grandparent_task
+            elif task_id == 2:
+                return parent_task
+            return None
+
+        mock_repo.get_by_id.side_effect = get_by_id_mock
+
+        effective_deadline = DeadlineCalculator.get_effective_deadline(child_task, mock_repo)
+        # Should return grandparent's earliest deadline
+        self.assertEqual(effective_deadline, "2025-01-07 18:00:00")
+
+    def test_allocate_respects_parent_deadline(self):
+        """Test that allocate_timeblock respects parent task's deadline."""
+        mock_repo = Mock()
+
+        # Parent with tight deadline (only 1 day available)
+        parent_task = Task(
+            id=1,
+            name="Parent task",
+            priority=100,
+            status=TaskStatus.PENDING,
+            deadline="2025-01-06 18:00:00",  # Same as start date
+        )
+
+        mock_repo.get_by_id.return_value = parent_task
+
+        allocator = WorkloadAllocator(
+            max_hours_per_day=6.0, start_date=self.start_date, repository=mock_repo
+        )
+
+        # Child task with 10h duration and no own deadline
+        # Would normally take 2 days, but parent deadline restricts it to 1 day
+        child_task = Task(
+            id=2,
+            name="Child task",
+            priority=100,
+            status=TaskStatus.PENDING,
+            parent_id=1,
+            estimated_duration=10.0,
+            deadline=None,
+        )
+
+        result = allocator.allocate_timeblock(child_task)
+
+        # Should fail because 10h cannot fit in 1 day (max 6h/day)
+        self.assertIsNone(result)
 
 
 if __name__ == "__main__":

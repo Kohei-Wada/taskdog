@@ -61,11 +61,11 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         # Run Monte Carlo simulation
         best_order = self._monte_carlo_simulation(
-            schedulable_tasks, tasks, start_date, max_hours_per_day, force_override
+            schedulable_tasks, tasks, start_date, max_hours_per_day, force_override, repository
         )
 
         # Schedule tasks according to best order
-        allocator = WorkloadAllocator(max_hours_per_day, start_date)
+        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
         allocator.initialize_allocations(tasks, force_override)
 
         updated_tasks = []
@@ -93,6 +93,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
+        repository=None,
     ) -> list[Task]:
         """Run Monte Carlo simulation to find optimal task ordering.
 
@@ -115,7 +116,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
             # Evaluate this ordering
             score = self._evaluate_ordering(
-                random_order, all_tasks, start_date, max_hours_per_day, force_override
+                random_order, all_tasks, start_date, max_hours_per_day, force_override, repository
             )
 
             # Track best ordering
@@ -132,6 +133,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
+        repository=None,
     ) -> float:
         """Evaluate a task ordering by simulating scheduling.
 
@@ -148,7 +150,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             Score (higher is better)
         """
         # Simulate scheduling with this order
-        allocator = WorkloadAllocator(max_hours_per_day, start_date)
+        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
         allocator.initialize_allocations(all_tasks, force_override)
 
         scheduled_tasks = []

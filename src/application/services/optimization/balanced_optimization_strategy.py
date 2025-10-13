@@ -10,6 +10,7 @@ from application.services.task_prioritizer import TaskPrioritizer
 from application.services.workload_allocator import WorkloadAllocator
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
 from domain.entities.task import Task
+from domain.services.deadline_calculator import DeadlineCalculator
 
 
 class BalancedOptimizationStrategy(OptimizationStrategy):
@@ -51,7 +52,7 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
             - daily_allocations: Dict mapping date strings to allocated hours
         """
         # Initialize service instances
-        allocator = WorkloadAllocator(max_hours_per_day, start_date)
+        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
         task_filter = TaskFilter()
         prioritizer = TaskPrioritizer(start_date, repository)
         schedule_propagator = SchedulePropagator(repository)
@@ -113,9 +114,14 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         # Type narrowing: estimated_duration is guaranteed to be float at this point
         assert task_copy.estimated_duration is not None
 
+        # Calculate effective deadline considering parent task deadlines
+        effective_deadline = DeadlineCalculator.get_effective_deadline(
+            task_copy, allocator.repository
+        )
+
         # Calculate end date for distribution
-        if task_copy.deadline:
-            end_date = datetime.strptime(task_copy.deadline, DATETIME_FORMAT)
+        if effective_deadline:
+            end_date = datetime.strptime(effective_deadline, DATETIME_FORMAT)
         else:
             # If no deadline, use a reasonable period (2 weeks = 10 weekdays)
             # 13 days from start gives us 2 weeks of weekdays

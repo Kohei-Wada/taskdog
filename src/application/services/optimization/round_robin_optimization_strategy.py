@@ -8,6 +8,7 @@ from application.services.schedule_propagator import SchedulePropagator
 from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR, DEFAULT_START_HOUR
 from domain.entities.task import Task
+from domain.services.deadline_calculator import DeadlineCalculator
 
 
 class RoundRobinOptimizationStrategy(OptimizationStrategy):
@@ -56,6 +57,13 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         # Filter out tasks without ID (should not happen, but for type safety)
         schedulable_tasks = [t for t in schedulable_tasks if t.id is not None]
 
+        # Calculate effective deadlines for all tasks
+        task_effective_deadlines: dict[int, str | None] = {
+            task.id: DeadlineCalculator.get_effective_deadline(task, repository)
+            for task in schedulable_tasks
+            if task.id is not None
+        }
+
         # Track remaining hours for each task
         task_remaining: dict[int, float] = {
             task.id: task.estimated_duration or 0.0
@@ -85,6 +93,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             task_end_dates,
             start_date,
             max_hours_per_day,
+            task_effective_deadlines,
         )
 
         # Build updated tasks with schedules
@@ -113,6 +122,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         task_end_dates: dict[int, datetime],
         start_date: datetime,
         max_hours_per_day: float,
+        task_effective_deadlines: dict[int, str | None],
     ) -> None:
         """Allocate time in round-robin fashion across tasks.
 
@@ -152,6 +162,16 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
             daily_total = 0.0
             for task_id in active_tasks:
+                # Check effective deadline constraint
+                effective_deadline = task_effective_deadlines.get(task_id)
+                if effective_deadline:
+                    from domain.constants import DATETIME_FORMAT
+
+                    deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
+                    if current_date > deadline_dt:
+                        # Skip this task - deadline exceeded
+                        continue
+
                 # Allocate up to hours_per_task, but not more than remaining
                 allocated = min(hours_per_task, task_remaining[task_id])
                 task_remaining[task_id] -= allocated

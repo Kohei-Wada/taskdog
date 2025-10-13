@@ -44,7 +44,7 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
             - daily_allocations: Dict mapping date strings to allocated hours
         """
         # Initialize service instances
-        allocator = WorkloadAllocator(max_hours_per_day, start_date)
+        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
         task_filter = TaskFilter()
         prioritizer = TaskPrioritizer(start_date, repository)
         schedule_propagator = SchedulePropagator(repository)
