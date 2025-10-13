@@ -103,7 +103,7 @@ class TestBatchCommandExecutor(unittest.TestCase):
         process_func = MagicMock(side_effect=process_with_custom_error)
         custom_handler = MagicMock()
 
-        success_count, error_count, results = self.executor.execute_batch(
+        success_count, error_count, _results = self.executor.execute_batch(
             task_ids=(1, 2, 3),
             process_func=process_func,
             operation_name="testing",
@@ -125,7 +125,7 @@ class TestBatchCommandExecutor(unittest.TestCase):
 
         process_func = MagicMock(side_effect=process_with_error)
 
-        success_count, error_count, results = self.executor.execute_batch(
+        success_count, error_count, _results = self.executor.execute_batch(
             task_ids=(1, 2, 3),
             process_func=process_func,
             operation_name="testing",

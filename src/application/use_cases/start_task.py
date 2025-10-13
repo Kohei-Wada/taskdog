@@ -3,8 +3,8 @@
 from application.dto.start_task_input import StartTaskInput
 from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
+from application.validators.validator_registry import TaskFieldValidatorRegistry
 from domain.entities.task import Task, TaskStatus
-from domain.services.task_eligibility_checker import TaskEligibilityChecker
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
 
@@ -24,6 +24,7 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
         """
         self.repository = repository
         self.time_tracker = time_tracker
+        self.validator_registry = TaskFieldValidatorRegistry(repository)
         self.status_service = TaskStatusService()
 
     def execute(self, input_dto: StartTaskInput) -> Task:
@@ -42,12 +43,8 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
-        # Task from repository always has ID
-        assert task.id is not None
-
-        # Validate task can be started (raises exception if not)
-        children = self.repository.get_children(task.id)
-        TaskEligibilityChecker.validate_can_be_started(task, children)
+        # Validate status transition using validator registry (Clean Architecture)
+        self.validator_registry.validate_field("status", TaskStatus.IN_PROGRESS, task)
 
         # Change status with time tracking
         task = self.status_service.change_status_with_tracking(

@@ -3,8 +3,8 @@
 from application.dto.complete_task_input import CompleteTaskInput
 from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
+from application.validators.validator_registry import TaskFieldValidatorRegistry
 from domain.entities.task import Task, TaskStatus
-from domain.services.task_eligibility_checker import TaskEligibilityChecker
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
 
@@ -24,6 +24,7 @@ class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
         """
         self.repository = repository
         self.time_tracker = time_tracker
+        self.validator_registry = TaskFieldValidatorRegistry(repository)
         self.status_service = TaskStatusService()
 
     def execute(self, input_dto: CompleteTaskInput) -> Task:
@@ -39,19 +40,15 @@ class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
             TaskNotFoundException: If task doesn't exist
             TaskNotStartedError: If task is PENDING (not started yet)
             IncompleteChildrenError: If task has incomplete children
+
+        Note:
+            Idempotent: Completing an already-finished task returns the task unchanged.
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
-        # Task from repository always has ID
-        assert task.id is not None
-
-        # Check if task is already finished (early return, not an error)
-        if task.is_finished:
-            return task
-
-        # Validate task can be completed (raises exception if not)
-        children = self.repository.get_children(task.id)
-        TaskEligibilityChecker.validate_can_be_completed(task, children)
+        # Validate status transition using validator registry (Clean Architecture)
+        # Note: Validator handles idempotency (returns early if already finished)
+        self.validator_registry.validate_field("status", TaskStatus.COMPLETED, task)
 
         # Change status with time tracking
         return self.status_service.change_status_with_tracking(
