@@ -1,8 +1,8 @@
 """Utilities for parsing datetime strings."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
-from domain.constants import DATETIME_FORMAT
+from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
 
 
 class DateTimeParser:
@@ -42,3 +42,20 @@ class DateTimeParser:
             return datetime.strptime(date_str, DATETIME_FORMAT)
         except ValueError:
             return None
+
+
+def get_next_weekday() -> datetime:
+    """Get the next weekday (skip weekends).
+
+    Returns:
+        datetime object representing the next weekday at DEFAULT_START_HOUR
+    """
+    today = datetime.now()
+    next_day = today + timedelta(days=1)
+
+    # If next day is Saturday (5) or Sunday (6), move to Monday
+    while next_day.weekday() >= 5:
+        next_day += timedelta(days=1)
+
+    # Set time to DEFAULT_START_HOUR (9:00) for schedule start times
+    return next_day.replace(hour=DEFAULT_START_HOUR, minute=0, second=0, microsecond=0)

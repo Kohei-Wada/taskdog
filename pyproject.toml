@@ -32,6 +32,7 @@ packages = [
   "application",
   "application.use_cases",
   "application.services",
+  "application.services.optimization",
   "application.queries",
   "application.queries.filters",
   "application.dto",

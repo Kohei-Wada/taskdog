@@ -1,6 +1,6 @@
 """Optimize command - Auto-generate optimal task schedules."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import click
 
@@ -11,93 +11,35 @@ from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_optimization_formatter import RichOptimizationFormatter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
-
-
-def get_next_weekday():
-    """Get the next weekday (skip weekends).
-
-    Returns:
-        datetime object representing the next weekday
-    """
-    today = datetime.now()
-    next_day = today + timedelta(days=1)
-
-    # If next day is Saturday (5) or Sunday (6), move to Monday
-    while next_day.weekday() >= 5:
-        next_day += timedelta(days=1)
-
-    # Set time to DEFAULT_START_HOUR (9:00) for schedule start times
-    return next_day.replace(hour=DEFAULT_START_HOUR, minute=0, second=0, microsecond=0)
+from shared.utils.date_utils import get_next_weekday
 
 
 @click.command(
     name="optimize",
-    help="""Auto-generate optimal schedules for tasks.
+    help="""Auto-generate optimal schedules for tasks based on priority, deadlines, and workload.
 
-\b
-OPTIMIZATION LOGIC:
-  The optimizer analyzes all tasks and assigns planned_start/end dates based on:
-  - Priority and deadline urgency
-  - Estimated duration
-  - Task hierarchy (children scheduled before parents)
-  - Workload constraints (weekdays only, max hours per day)
-
-\b
-CONSTRAINTS:
-  - Only schedules tasks with estimated_duration set
-  - Skips tasks with existing planned_start (unless --force)
-  - Distributes workload across weekdays only
-  - Respects max hours per day (default: 6h)
-  - Parent task periods encompass all children
-
-\b
-OPTIONS:
-  --start-date DATE       Start date for scheduling (default: next weekday)
-  --max-hours-per-day N   Maximum work hours per day (default: 6.0)
-  --force                 Override existing schedules
-  --dry-run               Preview changes without saving
-
-\b
-EXAMPLES:
-  # Optimize all unscheduled tasks
-  taskdog optimize
-
-  # Start scheduling from specific date with 8h/day limit
-  taskdog optimize --start-date 2025-10-15 --max-hours-per-day 8
-
-  # Preview optimization without saving
-  taskdog optimize --dry-run
-
-  # Re-optimize all tasks (including already scheduled)
-  taskdog optimize --force
+Schedules tasks with estimated_duration across weekdays, respecting max hours/day.
+Use --force to override existing schedules, --dry-run to preview changes.
 """,
 )
 @click.option(
     "--start-date",
     type=DateTimeWithDefault(default_hour=DEFAULT_START_HOUR),
-    help="Start date for scheduling (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 09:00:00). Defaults to next weekday.",
+    help="Start date for scheduling (default: next weekday at 09:00)",
 )
 @click.option(
     "--max-hours-per-day",
     "-m",
     type=float,
     default=6.0,
-    help="Maximum work hours per day (default: 6.0)",
+    help="Max work hours per day (default: 6.0)",
 )
-@click.option(
-    "--force", "-f", is_flag=True, default=False, help="Override existing schedules for all tasks"
-)
-@click.option(
-    "--dry-run", is_flag=True, default=False, help="Preview changes without saving to database"
-)
+@click.option("--force", "-f", is_flag=True, help="Override existing schedules")
+@click.option("--dry-run", is_flag=True, help="Preview without saving")
 @click.pass_context
 @handle_command_errors("optimizing schedules")
 def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
-    """Auto-generate optimal schedules for tasks.
-
-    Analyzes all tasks and assigns planned_start/end dates based on
-    priorities, deadlines, estimated durations, and workload constraints.
-    """
+    """Auto-generate optimal schedules for tasks."""
     ctx_obj: CliContext = ctx.obj
     console = ctx_obj.console
     repository = ctx_obj.repository
