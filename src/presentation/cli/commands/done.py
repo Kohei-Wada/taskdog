@@ -14,7 +14,7 @@ from utils.console_messages import print_success
 @click.command(name="done", help="Mark task(s) as completed.")
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.pass_context
-def done_command(ctx, task_ids):
+def done_command(ctx, task_ids):  # noqa: C901
     """Mark task(s) as completed."""
     ctx_obj: CliContext = ctx.obj
     console = ctx_obj.console
@@ -24,12 +24,29 @@ def done_command(ctx, task_ids):
 
     # Define processing function
     def process_task(task_id: int):
+        # Check current status before completing
+        task_before = repository.get_by_id(task_id)
+        was_already_completed = task_before and task_before.status == TaskStatus.COMPLETED
+
         input_dto = CompleteTaskInput(task_id=task_id)
-        return complete_task_use_case.execute(input_dto)
+        result = complete_task_use_case.execute(input_dto)
+
+        # Add marker to result for warning message
+        result._was_already_completed = was_already_completed
+        return result
 
     # Define success callback
     def on_success(task):
         print_success(console, "Completed", task)
+
+        # Show warning if already completed
+        if hasattr(task, "_was_already_completed") and task._was_already_completed:
+            console.print(
+                f"  [yellow]⚠[/yellow] Task was already COMPLETED (completed at [blue]{
+                    task.actual_end
+                }[/blue])"
+            )
+            return
 
         # Show completion time and duration if available
         if task.actual_end:

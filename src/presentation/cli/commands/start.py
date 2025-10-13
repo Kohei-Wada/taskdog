@@ -4,6 +4,7 @@ import click
 
 from application.dto.start_task_input import StartTaskInput
 from application.use_cases.start_task import StartTaskUseCase
+from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import TaskWithChildrenError
 from presentation.cli.batch_executor import BatchCommandExecutor
 from presentation.cli.context import CliContext
@@ -23,13 +24,25 @@ def start_command(ctx, task_ids):
 
     # Define processing function
     def process_task(task_id: int):
+        # Check current status before starting
+        task_before = repository.get_by_id(task_id)
+        was_already_in_progress = task_before and task_before.status == TaskStatus.IN_PROGRESS
+
         input_dto = StartTaskInput(task_id=task_id)
-        return start_task_use_case.execute(input_dto)
+        result = start_task_use_case.execute(input_dto)
+
+        # Add marker to result for warning message
+        result._was_already_in_progress = was_already_in_progress
+        return result
 
     # Define success callback
     def on_success(task):
         print_success(console, "Started", task)
-        if task.actual_start:
+        if hasattr(task, "_was_already_in_progress") and task._was_already_in_progress:
+            console.print(
+                f"  [yellow]⚠[/yellow] Task was already IN_PROGRESS (started at [blue]{task.actual_start}[/blue])"
+            )
+        elif task.actual_start:
             console.print(f"  Started at: [blue]{task.actual_start}[/blue]")
 
     # Define error handler for TaskWithChildrenError
