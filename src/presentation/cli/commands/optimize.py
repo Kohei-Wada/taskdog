@@ -4,8 +4,9 @@ from datetime import datetime
 
 import click
 
+from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.services.optimization_summary_builder import OptimizationSummaryBuilder
-from application.use_cases.optimize_schedule import OptimizeScheduleInput, OptimizeScheduleUseCase
+from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors

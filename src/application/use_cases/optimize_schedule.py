@@ -1,37 +1,10 @@
 """Use case for optimizing task schedules."""
 
-from datetime import datetime
-
+from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.services.optimization.strategy_factory import StrategyFactory
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
-
-
-class OptimizeScheduleInput:
-    """Input data for schedule optimization.
-
-    Attributes:
-        start_date: Starting date for optimization (datetime object)
-        max_hours_per_day: Maximum work hours per day
-        force_override: Whether to override existing schedules
-        dry_run: If True, only return preview without saving
-        algorithm_name: Name of optimization algorithm to use (default: "greedy")
-    """
-
-    def __init__(
-        self,
-        start_date: datetime,
-        max_hours_per_day: float = 6.0,
-        force_override: bool = False,
-        dry_run: bool = False,
-        algorithm_name: str = "greedy",
-    ):
-        self.start_date = start_date
-        self.max_hours_per_day = max_hours_per_day
-        self.force_override = force_override
-        self.dry_run = dry_run
-        self.algorithm_name = algorithm_name
 
 
 class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, tuple[list[Task], dict[str, float]]]):
