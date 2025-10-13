@@ -40,7 +40,9 @@ def start_command(ctx, task_ids):
         print_success(console, "Started", task)
         if hasattr(task, "_was_already_in_progress") and task._was_already_in_progress:
             console.print(
-                f"  [yellow]⚠[/yellow] Task was already IN_PROGRESS (started at [blue]{task.actual_start}[/blue])"
+                f"  [yellow]⚠[/yellow] Task was already IN_PROGRESS (started at [blue]{
+                    task.actual_start
+                }[/blue])"
             )
         elif task.actual_start:
             console.print(f"  Started at: [blue]{task.actual_start}[/blue]")
