@@ -92,3 +92,38 @@ class TaskEligibilityChecker:
             - Include all other statuses
         """
         return task.can_be_modified
+
+    @staticmethod
+    def can_be_started(task: Task, children: list[Task]) -> bool:
+        """Check if task can be started.
+
+        Args:
+            task: The task to check
+            children: Child tasks of the task
+
+        Returns:
+            True if task can be started
+
+        Business Rules:
+            - Cannot start if task has children (must start leaf tasks instead)
+            - Parent tasks are auto-started when child tasks start
+        """
+        return len(children) == 0
+
+    @staticmethod
+    def can_be_completed(task: Task, children: list[Task]) -> bool:
+        """Check if task can be completed.
+
+        Args:
+            task: The task to check
+            children: Child tasks of the task
+
+        Returns:
+            True if task can be completed
+
+        Business Rules:
+            - Cannot complete if task has incomplete children
+            - All children must be COMPLETED before parent can be completed
+        """
+        incomplete_children = [c for c in children if c.status != TaskStatus.COMPLETED]
+        return len(incomplete_children) == 0

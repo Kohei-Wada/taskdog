@@ -5,6 +5,7 @@ from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskWithChildrenError
+from domain.services.task_eligibility_checker import TaskEligibilityChecker
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
 
@@ -44,9 +45,9 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
         # Task from repository always has ID
         assert task.id is not None
 
-        # Check if task has children
+        # Check if task can be started (business rule in domain layer)
         children = self.repository.get_children(task.id)
-        if children:
+        if not TaskEligibilityChecker.can_be_started(task, children):
             raise TaskWithChildrenError(task.id, children)
 
         # Change status with time tracking
