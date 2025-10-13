@@ -286,7 +286,7 @@ class RichGanttFormatter(RichFormatterBase):
         estimated_hours = self._format_estimated_hours(task.estimated_duration)
 
         # Build timeline
-        timeline = self._build_timeline(task, start_date, end_date)
+        timeline = self._build_timeline(task, start_date, end_date, repository)
 
         table.add_row(str(task.id), task_name, estimated_hours, timeline)
 
@@ -295,23 +295,34 @@ class RichGanttFormatter(RichFormatterBase):
         for child in children:
             self._add_task_to_gantt(child, table, repository, start_date, end_date, depth + 1)
 
-    def _calculate_task_daily_hours(self, task: Task, start_date: date, end_date: date) -> dict:
+    def _calculate_task_daily_hours(
+        self, task: Task, start_date: date, end_date: date, repository
+    ) -> dict:
         """Calculate daily hours allocation for a single task.
 
         Uses task.daily_allocations if available (from optimization),
         otherwise distributes estimated_duration equally across weekdays
         in the planned period.
 
+        Parent tasks (tasks with children) always return zero allocations
+        since their estimated_duration is automatically calculated from children.
+
         Args:
             task: Task to calculate daily hours for
             start_date: Start date of the chart
             end_date: End date of the chart
+            repository: Repository instance for checking task relationships
 
         Returns:
             Dictionary mapping date to hours {date: float}
         """
         days = (end_date - start_date).days + 1
         daily_hours = {start_date + timedelta(days=i): 0.0 for i in range(days)}
+
+        # Skip parent tasks (tasks with children) - they don't have their own work hours
+        children = repository.get_children(task.id)
+        if children:
+            return daily_hours
 
         # Skip tasks without estimated duration
         if not task.estimated_duration:
@@ -377,13 +388,14 @@ class RichGanttFormatter(RichFormatterBase):
             current_date += timedelta(days=1)
         return weekday_count
 
-    def _build_timeline(self, task: Task, start_date: date, end_date: date) -> Text:
+    def _build_timeline(self, task: Task, start_date: date, end_date: date, repository) -> Text:
         """Build timeline visualization for a task using layered approach.
 
         Args:
             task: Task to build timeline for
             start_date: Start date of the chart
             end_date: End date of the chart
+            repository: Repository instance for checking task relationships
 
         Returns:
             Rich Text object with timeline visualization
@@ -398,7 +410,7 @@ class RichGanttFormatter(RichFormatterBase):
             return Text("(no dates)", style="dim")
 
         # Calculate daily hours for this task
-        daily_hours = self._calculate_task_daily_hours(task, start_date, end_date)
+        daily_hours = self._calculate_task_daily_hours(task, start_date, end_date, repository)
 
         # Build timeline with daily hours displayed in each cell
         timeline = Text()

@@ -1,6 +1,7 @@
 """Use case for updating a task."""
 
 from application.dto.update_task_input import UpdateTaskInput
+from application.services.hierarchy_manager import HierarchyManager
 from application.services.task_validator import TaskValidator
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
@@ -12,6 +13,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
     """Use case for updating task properties.
 
     Supports updating multiple fields and handles time tracking for status changes.
+    When estimated_duration or parent_id changes, updates parent's estimated_duration.
     Returns the updated task and list of updated field names.
     """
 
@@ -25,8 +27,9 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
         self.repository = repository
         self.time_tracker = time_tracker
         self.validator = TaskValidator()
+        self.hierarchy_manager = HierarchyManager(repository)
 
-    def execute(self, input_dto: UpdateTaskInput) -> tuple[Task, list[str]]:
+    def execute(self, input_dto: UpdateTaskInput) -> tuple[Task, list[str]]:  # noqa: C901
         """Execute task update.
 
         Args:
@@ -41,7 +44,12 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
+        # Track original parent_id for updating old parent's estimated_duration
+        original_parent_id = task.parent_id
+
         updated_fields = []
+        parent_id_changed = False
+        estimated_duration_changed = False
 
         # Handle parent_id separately for validation
         # Use UNSET sentinel to distinguish "not provided" from "explicitly None"
@@ -59,6 +67,8 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
                 )
             # Update parent_id (int | None)
             if not isinstance(input_dto.parent_id, _Unset):
+                if task.parent_id != input_dto.parent_id:
+                    parent_id_changed = True
                 task.parent_id = input_dto.parent_id
             updated_fields.append("parent_id")
 
@@ -80,10 +90,24 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
 
         for field_name, value in field_mapping.items():
             if value is not None:
+                # Track if estimated_duration changed
+                if field_name == "estimated_duration":
+                    estimated_duration_changed = True
                 setattr(task, field_name, value)
                 updated_fields.append(field_name)
 
         if updated_fields:
             self.repository.save(task)
+
+            # Update parent's estimated_duration if necessary
+            if parent_id_changed:
+                # Parent changed: update both old and new parent
+                if original_parent_id is not None:
+                    self.hierarchy_manager.update_parent_estimated_duration(original_parent_id)
+                if task.parent_id is not None:
+                    self.hierarchy_manager.update_parent_estimated_duration(task.parent_id)
+            elif estimated_duration_changed and task.parent_id is not None:
+                # Estimated duration changed: update current parent
+                self.hierarchy_manager.update_parent_estimated_duration(task.parent_id)
 
         return task, updated_fields

@@ -16,7 +16,12 @@
       "Read(//home/kohei/.local/share/taskdog/**)",
       "Bash(taskdog estimate:*)",
       "Bash(cat:*)",
-      "Bash(taskdog tree:*)"
+      "Bash(taskdog tree:*)",
+      "Bash(taskdog deadline:*)",
+      "Bash(taskdog start:*)",
+      "Bash(taskdog done:*)",
+      "Bash(taskdog table:*)",
+      "Bash(PYTHONPATH=src XDG_DATA_HOME=/tmp/test_taskdog uv run python -m taskdog.cli:*)"
     ],
     "deny": [],
     "ask": []

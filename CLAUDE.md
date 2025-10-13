@@ -81,7 +81,7 @@ The application follows **Clean Architecture** with distinct layers:
 - `services/`: Application services that coordinate complex operations
   - `TaskValidator`: Validation logic requiring repository access
   - `WorkloadAllocator`: Distributes task hours across weekdays respecting max hours/day
-  - `HierarchyManager`: Manages parent-child relationships and propagates schedule changes
+  - `HierarchyManager`: Manages parent-child relationships, propagates schedule changes, and auto-calculates parent task estimated_duration from children
   - `TaskPrioritizer`: Sorts tasks by urgency (deadline proximity) and priority
   - `OptimizationSummaryBuilder`: Builds summary reports for schedule optimization
   - `optimization/`: Multiple scheduling algorithms implementing the Strategy pattern
@@ -230,6 +230,9 @@ Commands that support multiple task IDs use `BatchCommandExecutor` for consisten
 **Task** (`src/domain/entities/task.py`)
 - Core fields: id, name, priority, status, parent_id, timestamp
 - Time fields: planned_start/end, deadline, actual_start/end, estimated_duration
+  - **Parent task `estimated_duration` is auto-calculated**: Sum of all children's `estimated_duration`
+  - Only leaf tasks (tasks without children) can have manually set `estimated_duration`
+  - Updated automatically when child tasks are created, modified, or removed
 - Scheduling field: `daily_allocations` (dict mapping date strings to hours, set by ScheduleOptimizer)
 - Property: `actual_duration_hours` auto-calculated from actual_start/end timestamps
 - Property: `notes_path` returns Path to markdown notes at `$XDG_DATA_HOME/taskdog/notes/{id}.md`
@@ -271,6 +274,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `priority`: Set priority with positional args: `taskdog priority <ID> <PRIORITY>` (uses UpdateTaskUseCase)
 - `rename`: Rename task with positional args: `taskdog rename <ID> <NAME>` (uses UpdateTaskUseCase)
 - `estimate`: Set estimated duration with positional args: `taskdog estimate <ID> <HOURS>` (uses UpdateTaskUseCase)
+  - **Cannot be used on parent tasks** (tasks with children); parent estimated_duration is auto-calculated from children
 - `schedule`: Set planned schedule with positional args: `taskdog schedule <ID> <START> [END]` (uses UpdateTaskUseCase)
 - `parent`: Set or clear parent with positional args: `taskdog parent <ID> <PARENT_ID>` or `taskdog parent <ID> --clear` (uses UpdateTaskUseCase)
 - `update`: Multi-field update command: `taskdog update <ID> [--priority] [--status] [--parent] [--clear-parent] [--planned-start] [--planned-end] [--deadline] [--estimated-duration]` (uses UpdateTaskUseCase)
@@ -319,6 +323,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 13. **Schedule optimization with Strategy pattern** - Multiple scheduling algorithms (9 strategies) implementing Strategy pattern, managed by StrategyFactory
 14. **Task eligibility checks** - Centralized logic in TaskEligibilityChecker for determining which tasks can be updated, rescheduled, or included in hierarchy operations
 15. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
+16. **Automatic parent task estimated_duration calculation** - Parent tasks' `estimated_duration` is automatically calculated as the sum of children's estimates; recursively updates ancestors when child tasks are created, modified, or removed
 
 ### Console Messaging Guidelines
 

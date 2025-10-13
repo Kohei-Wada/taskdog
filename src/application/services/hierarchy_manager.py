@@ -162,3 +162,50 @@ class HierarchyManager:
             cleared_tasks.append(task_copy)
 
         return updated_tasks + cleared_tasks
+
+    def update_parent_estimated_duration(self, parent_id: int) -> Task | None:
+        """Update parent task's estimated_duration based on sum of children's estimates.
+
+        Recursively updates all ancestor tasks' estimated_duration.
+        Parent task's estimated_duration = sum of all children's estimated_duration.
+
+        Args:
+            parent_id: ID of the parent task to update
+
+        Returns:
+            Updated parent task if successful, None if parent not found or no children
+        """
+        parent_task = self.repository.get_by_id(parent_id)
+        if not parent_task:
+            return None
+
+        # Skip archived parent tasks - they should not be updated
+        if not TaskEligibilityChecker.can_be_updated_in_hierarchy(parent_task):
+            return None
+
+        # Get all children
+        children = self.repository.get_children(parent_id)
+        if not children:
+            return None
+
+        # Calculate sum of children's estimated_duration
+        total_estimate = 0.0
+        has_estimates = False
+        for child in children:
+            if child.estimated_duration is not None:
+                total_estimate += child.estimated_duration
+                has_estimates = True
+
+        # Update parent's estimated_duration if children have estimates
+        if has_estimates:
+            parent_task_copy = copy.deepcopy(parent_task)
+            parent_task_copy.estimated_duration = total_estimate
+            self.repository.save(parent_task_copy)
+
+            # Recursively update grandparent if exists
+            if parent_task_copy.parent_id:
+                self.update_parent_estimated_duration(parent_task_copy.parent_id)
+
+            return parent_task_copy
+
+        return None
