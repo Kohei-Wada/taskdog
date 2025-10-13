@@ -560,6 +560,8 @@ class RichGanttFormatter(RichFormatterBase):
         legend.append(" Actual (COMPLETED)  ", style="dim")
         legend.append(self.SYMBOL_ACTUAL, style="bold red")
         legend.append(" Deadline  ", style="dim")
+        legend.append("●", style="bold yellow")
+        legend.append(" Today  ", style="dim")
         legend.append("   ", style=f"on {self.BACKGROUND_COLOR_SATURDAY}")
         legend.append(" Saturday  ", style="dim")
         legend.append("   ", style=f"on {self.BACKGROUND_COLOR_SUNDAY}")
