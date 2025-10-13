@@ -4,7 +4,7 @@ from rich.console import Console
 from rich.table import Table
 
 from application.dto.optimization_summary import OptimizationSummary
-from domain.entities.task import Task
+from domain.entities.task import Task, TaskStatus
 
 
 class RichOptimizationFormatter:
@@ -100,6 +100,26 @@ class RichOptimizationFormatter:
         else:
             self.console.print("  • Deadline conflicts: 0")
 
+    def _get_unscheduled_reason(self, task: Task) -> str:
+        """Determine why a task could not be scheduled.
+
+        Args:
+            task: The unscheduled task
+
+        Returns:
+            Human-readable reason string
+        """
+        # Check if task is in progress
+        if task.status == TaskStatus.IN_PROGRESS:
+            return "Currently in progress (not reschedulable)"
+
+        # Check if task has a deadline constraint
+        if task.deadline:
+            return "Cannot meet deadline with current constraints"
+
+        # Default reason - truly no available time slots
+        return "No available time slots"
+
     def format_warnings(
         self,
         summary: OptimizationSummary,
@@ -117,9 +137,7 @@ class RichOptimizationFormatter:
                 f"\n  [yellow]⚠[/yellow] {len(summary.unscheduled_tasks)} task(s) could not be scheduled:"
             )
             for task in summary.unscheduled_tasks[:5]:  # Show first 5
-                reason = "No available time slots"
-                if task.deadline:
-                    reason = "Cannot meet deadline with current constraints"
+                reason = self._get_unscheduled_reason(task)
                 self.console.print(f"    • #{task.id} {task.name} - {reason}")
             if len(summary.unscheduled_tasks) > 5:
                 self.console.print(f"    ... and {len(summary.unscheduled_tasks) - 5} more")
