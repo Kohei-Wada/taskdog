@@ -22,7 +22,12 @@
       "Bash(taskdog done:*)",
       "Bash(taskdog table:*)",
       "Bash(PYTHONPATH=src XDG_DATA_HOME=/tmp/test_taskdog uv run python -m taskdog.cli:*)",
-      "Bash(make check:*)"
+      "Bash(make check:*)",
+      "Bash(for:*)",
+      "Bash(do)",
+      "Bash(echo:*)",
+      "Bash(done)",
+      "Bash(XDG_DATA_HOME=/tmp/test_taskdog_optimize PYTHONPATH=src uv run python -m taskdog.cli:*)"
     ],
     "deny": [],
     "ask": []

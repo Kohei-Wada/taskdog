@@ -1,7 +1,7 @@
 """Use case for removing a task."""
 
 from application.dto.remove_task_input import RemoveTaskInput
-from application.services.hierarchy_manager import HierarchyManager
+from application.services.estimated_duration_propagator import EstimatedDurationPropagator
 from application.services.hierarchy_operation_service import HierarchyOperationService
 from application.use_cases.base import UseCase
 from infrastructure.persistence.task_repository import TaskRepository
@@ -26,7 +26,7 @@ class RemoveTaskUseCase(UseCase[RemoveTaskInput, int]):
         """
         self.repository = repository
         self.hierarchy_service = HierarchyOperationService()
-        self.hierarchy_manager = HierarchyManager(repository)
+        self.duration_propagator = EstimatedDurationPropagator(repository)
 
     def execute(self, input_dto: RemoveTaskInput) -> int:
         """Execute task removal.
@@ -61,6 +61,6 @@ class RemoveTaskUseCase(UseCase[RemoveTaskInput, int]):
 
         # Update parent's estimated_duration after removal
         if parent_id_to_update is not None:
-            self.hierarchy_manager.update_parent_estimated_duration(parent_id_to_update)
+            self.duration_propagator.propagate(parent_id_to_update)
 
         return removed_count

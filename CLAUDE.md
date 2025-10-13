@@ -104,7 +104,8 @@ The application follows **Clean Architecture** with distinct layers:
   - All validators use custom domain exceptions for consistent error handling
 - `services/`: Application services that coordinate complex operations
   - `WorkloadAllocator`: Distributes task hours across weekdays respecting max hours/day
-  - `HierarchyManager`: Manages parent-child relationships, propagates schedule changes, and auto-calculates parent task estimated_duration from children
+  - `EstimatedDurationPropagator`: Auto-calculates parent task `estimated_duration` as sum of children's estimates; recursively updates ancestors when child tasks are created, modified, or removed
+  - `SchedulePropagator`: Propagates schedule changes to parent tasks; updates parent periods to encompass children and clears unscheduled tasks during force-override operations
   - `TaskPrioritizer`: Sorts tasks by urgency (deadline proximity) and priority
   - `OptimizationSummaryBuilder`: Builds summary reports for schedule optimization
   - `optimization/`: Multiple scheduling algorithms implementing the Strategy pattern
@@ -153,7 +154,7 @@ Dependencies are managed through Click's context object using the `CliContext` d
 - Use cases are created locally in each command function (e.g., `CreateTaskUseCase(repository)`)
 - `TaskQueryService` is instantiated locally in query commands
 - Formatters are instantiated locally per command
-- Application services (ScheduleOptimizer, HierarchyManager, etc.) instantiated as needed
+- Application services (EstimatedDurationPropagator, SchedulePropagator, etc.) instantiated as needed
 
 **BatchCommandExecutor Pattern**:
 - Unified pattern for processing multiple task IDs (used in `start`, `done`, `rm`, `archive` commands)

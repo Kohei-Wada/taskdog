@@ -1,4 +1,4 @@
-"""Hierarchy manager service for task relationships."""
+"""Service for propagating schedule changes to parent tasks."""
 
 import copy
 from datetime import datetime
@@ -8,22 +8,25 @@ from domain.entities.task import Task
 from domain.services.task_eligibility_checker import TaskEligibilityChecker
 
 
-class HierarchyManager:
-    """Service for managing task hierarchy relationships.
+class SchedulePropagator:
+    """Service for propagating schedule changes to parent tasks.
 
-    Handles updating parent task periods and clearing unscheduled
-    tasks when force_override is enabled.
+    When child tasks are scheduled, this service updates parent task schedules
+    to encompass all child schedules. This is used during schedule optimization
+    to ensure parent tasks reflect their children's planned periods.
     """
 
     def __init__(self, repository):
-        """Initialize hierarchy manager.
+        """Initialize propagator.
 
         Args:
             repository: Task repository for hierarchy queries
         """
         self.repository = repository
 
-    def update_parent_periods(self, all_tasks: list[Task], updated_tasks: list[Task]) -> list[Task]:
+    def propagate_periods(  # noqa: C901
+        self, all_tasks: list[Task], updated_tasks: list[Task]
+    ) -> list[Task]:
         """Update parent task periods to encompass their children.
 
         Args:
@@ -158,54 +161,7 @@ class HierarchyManager:
             task_copy = copy.deepcopy(task)
             task_copy.planned_start = None
             task_copy.planned_end = None
-            task_copy.daily_allocations = None
+            task_copy.daily_allocations = {}
             cleared_tasks.append(task_copy)
 
         return updated_tasks + cleared_tasks
-
-    def update_parent_estimated_duration(self, parent_id: int) -> Task | None:
-        """Update parent task's estimated_duration based on sum of children's estimates.
-
-        Recursively updates all ancestor tasks' estimated_duration.
-        Parent task's estimated_duration = sum of all children's estimated_duration.
-
-        Args:
-            parent_id: ID of the parent task to update
-
-        Returns:
-            Updated parent task if successful, None if parent not found or no children
-        """
-        parent_task = self.repository.get_by_id(parent_id)
-        if not parent_task:
-            return None
-
-        # Skip archived parent tasks - they should not be updated
-        if not TaskEligibilityChecker.can_be_updated_in_hierarchy(parent_task):
-            return None
-
-        # Get all children
-        children = self.repository.get_children(parent_id)
-        if not children:
-            return None
-
-        # Calculate sum of children's estimated_duration
-        total_estimate = 0.0
-        has_estimates = False
-        for child in children:
-            if child.estimated_duration is not None:
-                total_estimate += child.estimated_duration
-                has_estimates = True
-
-        # Update parent's estimated_duration if children have estimates
-        if has_estimates:
-            parent_task_copy = copy.deepcopy(parent_task)
-            parent_task_copy.estimated_duration = total_estimate
-            self.repository.save(parent_task_copy)
-
-            # Recursively update grandparent if exists
-            if parent_task_copy.parent_id:
-                self.update_parent_estimated_duration(parent_task_copy.parent_id)
-
-            return parent_task_copy
-
-        return None

@@ -1,7 +1,7 @@
 """Use case for creating a task."""
 
 from application.dto.create_task_input import CreateTaskInput
-from application.services.hierarchy_manager import HierarchyManager
+from application.services.estimated_duration_propagator import EstimatedDurationPropagator
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskNotFoundException
@@ -22,7 +22,7 @@ class CreateTaskUseCase(UseCase[CreateTaskInput, Task]):
             repository: Task repository for data access
         """
         self.repository = repository
-        self.hierarchy_manager = HierarchyManager(repository)
+        self.duration_propagator = EstimatedDurationPropagator(repository)
 
     def execute(self, input_dto: CreateTaskInput) -> Task:
         """Execute task creation.
@@ -55,6 +55,6 @@ class CreateTaskUseCase(UseCase[CreateTaskInput, Task]):
 
         # Update parent's estimated_duration if child task has a parent
         if task.parent_id is not None:
-            self.hierarchy_manager.update_parent_estimated_duration(task.parent_id)
+            self.duration_propagator.propagate(task.parent_id)
 
         return task

@@ -1,7 +1,7 @@
 """Use case for updating a task."""
 
 from application.dto.update_task_input import UpdateTaskInput
-from application.services.hierarchy_manager import HierarchyManager
+from application.services.estimated_duration_propagator import EstimatedDurationPropagator
 from application.use_cases.base import UseCase
 from application.validators.validator_registry import TaskFieldValidatorRegistry
 from domain.entities.task import Task
@@ -27,7 +27,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
         self.repository = repository
         self.time_tracker = time_tracker
         self.validator_registry = TaskFieldValidatorRegistry(repository)
-        self.hierarchy_manager = HierarchyManager(repository)
+        self.duration_propagator = EstimatedDurationPropagator(repository)
 
     def _update_parent_id(
         self,
@@ -162,12 +162,12 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
         if parent_id_changed:
             # Parent changed: update both old and new parent
             if original_parent_id is not None:
-                self.hierarchy_manager.update_parent_estimated_duration(original_parent_id)
+                self.duration_propagator.propagate(original_parent_id)
             if task.parent_id is not None:
-                self.hierarchy_manager.update_parent_estimated_duration(task.parent_id)
+                self.duration_propagator.propagate(task.parent_id)
         elif estimated_duration_changed and task.parent_id is not None:
             # Estimated duration changed: update current parent
-            self.hierarchy_manager.update_parent_estimated_duration(task.parent_id)
+            self.duration_propagator.propagate(task.parent_id)
 
     def execute(self, input_dto: UpdateTaskInput) -> tuple[Task, list[str]]:
         """Execute task update.
