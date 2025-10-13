@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
 from domain.entities.task import Task, TaskStatus
+from domain.services.task_eligibility_checker import TaskEligibilityChecker
 
 
 class WorkloadAllocator:
@@ -47,8 +48,8 @@ class WorkloadAllocator:
             if task.id in parent_ids:
                 continue
 
-            # Skip completed and archived tasks
-            if task.status in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED):
+            # Skip finished tasks (completed/archived) - they don't contribute to future workload
+            if not TaskEligibilityChecker.should_count_in_workload(task):
                 continue
 
             # Skip tasks without schedules

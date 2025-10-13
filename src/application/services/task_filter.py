@@ -1,6 +1,7 @@
 """Task filter service for scheduling."""
 
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
+from domain.services.task_eligibility_checker import TaskEligibilityChecker
 
 
 class TaskFilter:
@@ -39,17 +40,4 @@ class TaskFilter:
         Returns:
             True if task should be scheduled
         """
-        # Skip completed and archived tasks
-        if task.status in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED):
-            return False
-
-        # Skip IN_PROGRESS tasks (don't reschedule tasks already being worked on)
-        if task.status == TaskStatus.IN_PROGRESS:
-            return False
-
-        # Skip tasks without estimated duration
-        if not task.estimated_duration:
-            return False
-
-        # Skip tasks with existing schedule unless force_override
-        return not (task.planned_start and not force_override)
+        return TaskEligibilityChecker.is_schedulable(task, force_override)

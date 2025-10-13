@@ -2,7 +2,8 @@
 
 from datetime import date, datetime, timedelta
 
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
+from domain.services.task_eligibility_checker import TaskEligibilityChecker
 from shared.utils.date_utils import DateTimeParser
 
 
@@ -40,8 +41,9 @@ class WorkloadCalculator:
             # Parent tasks are summary tasks and their work is done by children
             if task.id in parent_ids:
                 continue
-            # Skip completed and archived tasks
-            if task.status in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED):
+
+            # Skip finished tasks (completed/archived) - they don't contribute to future workload
+            if not TaskEligibilityChecker.should_count_in_workload(task):
                 continue
 
             # Skip tasks without estimated duration

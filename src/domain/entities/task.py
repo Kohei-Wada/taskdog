@@ -77,6 +77,35 @@ class Task:
         notes_dir = Path(data_dir) / "taskdog" / "notes"
         return notes_dir / f"{self.id}.md"
 
+    @property
+    def is_active(self) -> bool:
+        """Check if task is in active state (work in progress or pending).
+
+        Returns:
+            True if task status is PENDING or IN_PROGRESS
+        """
+        return self.status in (TaskStatus.PENDING, TaskStatus.IN_PROGRESS)
+
+    @property
+    def is_finished(self) -> bool:
+        """Check if task is in finished state (completed, failed, or archived).
+
+        Returns:
+            True if task status is COMPLETED, FAILED, or ARCHIVED
+        """
+        return self.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.ARCHIVED)
+
+    @property
+    def can_be_modified(self) -> bool:
+        """Check if task can be modified (not archived).
+
+        Archived tasks should not be updated as they are historical records.
+
+        Returns:
+            True if task status is not ARCHIVED
+        """
+        return self.status != TaskStatus.ARCHIVED
+
     def to_dict(self) -> dict:
         """Serialize task to dictionary for persistence.
 

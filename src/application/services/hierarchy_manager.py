@@ -4,7 +4,8 @@ import copy
 from datetime import datetime
 
 from domain.constants import DATETIME_FORMAT
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
+from domain.services.task_eligibility_checker import TaskEligibilityChecker
 
 
 class HierarchyManager:
@@ -52,7 +53,7 @@ class HierarchyManager:
                 continue
 
             # Skip archived parent tasks - they should not be updated
-            if parent_task.status == TaskStatus.ARCHIVED:
+            if not TaskEligibilityChecker.can_be_updated_in_hierarchy(parent_task):
                 continue
 
             # Get all children from repository
@@ -139,12 +140,8 @@ class HierarchyManager:
             if task.id in parent_ids:
                 continue
 
-            # Skip completed and archived tasks
-            if task.status in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED):
-                continue
-
-            # Skip IN_PROGRESS tasks (they keep their schedules)
-            if task.status == TaskStatus.IN_PROGRESS:
+            # Skip tasks that shouldn't be rescheduled (completed/archived/in-progress)
+            if not TaskEligibilityChecker.can_be_rescheduled(task):
                 continue
 
             # Skip tasks that never had schedules
