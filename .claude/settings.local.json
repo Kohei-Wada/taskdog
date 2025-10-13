@@ -8,7 +8,8 @@
       "Bash(gh issue create:*)",
       "Bash(mypy --version)",
       "Bash(uv run ruff:*)",
-      "Bash(PYTHONPATH=src uv run mypy:*)"
+      "Bash(PYTHONPATH=src uv run mypy:*)",
+      "Bash(taskdog add:*)"
     ],
     "deny": [],
     "ask": []
