@@ -4,7 +4,7 @@ from application.dto.start_task_input import StartTaskInput
 from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
 from domain.entities.task import Task, TaskStatus
-from domain.exceptions.task_exceptions import TaskWithChildrenError
+from domain.exceptions.task_exceptions import TaskAlreadyFinishedError, TaskWithChildrenError
 from domain.services.task_eligibility_checker import TaskEligibilityChecker
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
@@ -39,6 +39,7 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
         Raises:
             TaskNotFoundException: If task doesn't exist
             TaskWithChildrenError: If task has child tasks
+            TaskAlreadyFinishedError: If task is already finished
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
@@ -48,7 +49,11 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
         # Check if task can be started (business rule in domain layer)
         children = self.repository.get_children(task.id)
         if not TaskEligibilityChecker.can_be_started(task, children):
-            raise TaskWithChildrenError(task.id, children)
+            # Determine the specific reason why task cannot be started
+            if task.is_finished:
+                raise TaskAlreadyFinishedError(task.id, task.status.value)
+            if children:
+                raise TaskWithChildrenError(task.id, children)
 
         # Change status with time tracking
         task = self.status_service.change_status_with_tracking(

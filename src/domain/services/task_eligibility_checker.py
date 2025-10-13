@@ -106,9 +106,15 @@ class TaskEligibilityChecker:
 
         Business Rules:
             - Cannot start if task has children (must start leaf tasks instead)
+            - Cannot start if task is already finished (COMPLETED/FAILED)
             - Parent tasks are auto-started when child tasks start
         """
-        return len(children) == 0
+        # Cannot start if task has children
+        if len(children) > 0:
+            return False
+
+        # Cannot start if task is already finished
+        return not task.is_finished
 
     @staticmethod
     def can_be_completed(task: Task, children: list[Task]) -> bool:

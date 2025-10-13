@@ -50,3 +50,12 @@ class TaskWithChildrenError(TaskValidationError):
         super().__init__(
             f"Cannot start task {task_id}: has child tasks [{children_ids}]. Start child tasks instead."
         )
+
+
+class TaskAlreadyFinishedError(TaskValidationError):
+    """Raised when trying to start a task that is already finished."""
+
+    def __init__(self, task_id: int, status: str):
+        self.task_id = task_id
+        self.status = status
+        super().__init__(f"Cannot start task {task_id}: task is already {status}")

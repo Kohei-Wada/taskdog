@@ -37,6 +37,42 @@ class TestTaskEligibilityChecker(unittest.TestCase):
 
         self.assertFalse(result)
 
+    def test_can_be_started_with_completed_task_returns_false(self):
+        """Test can_be_started returns False when task is COMPLETED"""
+        task = Task(name="Completed Task", priority=1, status=TaskStatus.COMPLETED)
+        children = []
+
+        result = TaskEligibilityChecker.can_be_started(task, children)
+
+        self.assertFalse(result)
+
+    def test_can_be_started_with_failed_task_returns_false(self):
+        """Test can_be_started returns False when task is FAILED"""
+        task = Task(name="Failed Task", priority=1, status=TaskStatus.FAILED)
+        children = []
+
+        result = TaskEligibilityChecker.can_be_started(task, children)
+
+        self.assertFalse(result)
+
+    def test_can_be_started_with_pending_task_returns_true(self):
+        """Test can_be_started returns True when task is PENDING"""
+        task = Task(name="Pending Task", priority=1, status=TaskStatus.PENDING)
+        children = []
+
+        result = TaskEligibilityChecker.can_be_started(task, children)
+
+        self.assertTrue(result)
+
+    def test_can_be_started_with_in_progress_task_returns_true(self):
+        """Test can_be_started returns True when task is IN_PROGRESS"""
+        task = Task(name="In Progress Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        children = []
+
+        result = TaskEligibilityChecker.can_be_started(task, children)
+
+        self.assertTrue(result)
+
     def test_can_be_completed_with_all_completed_children_returns_true(self):
         """Test can_be_completed returns True when all children are completed"""
         task = Task(name="Parent Task", priority=1)

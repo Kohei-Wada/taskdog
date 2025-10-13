@@ -1,3 +1,4 @@
+import contextlib
 import os
 import tempfile
 import unittest
@@ -5,7 +6,11 @@ import unittest
 from application.dto.start_task_input import StartTaskInput
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task, TaskStatus
-from domain.exceptions.task_exceptions import TaskNotFoundException, TaskWithChildrenError
+from domain.exceptions.task_exceptions import (
+    TaskAlreadyFinishedError,
+    TaskNotFoundException,
+    TaskWithChildrenError,
+)
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
@@ -298,6 +303,65 @@ class TestStartTaskUseCase(unittest.TestCase):
         # Verify child is IN_PROGRESS
         self.assertEqual(result.status, TaskStatus.IN_PROGRESS)
         self.assertIsNotNone(result.actual_start)
+
+    def test_execute_raises_error_when_starting_completed_task(self):
+        """Test execute raises TaskAlreadyFinishedError when starting COMPLETED task"""
+        # Create and complete a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
+        task.id = self.repository.generate_next_id()
+        task.actual_start = "2024-01-01 10:00:00"
+        task.actual_end = "2024-01-01 12:00:00"
+        self.repository.save(task)
+
+        # Try to start the completed task - should raise error
+        input_dto = StartTaskInput(task_id=task.id)
+
+        with self.assertRaises(TaskAlreadyFinishedError) as context:
+            self.use_case.execute(input_dto)
+
+        # Verify error details
+        self.assertEqual(context.exception.task_id, task.id)
+        self.assertEqual(context.exception.status, TaskStatus.COMPLETED.value)
+
+    def test_execute_raises_error_when_starting_failed_task(self):
+        """Test execute raises TaskAlreadyFinishedError when starting FAILED task"""
+        # Create a failed task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.FAILED)
+        task.id = self.repository.generate_next_id()
+        task.actual_start = "2024-01-01 10:00:00"
+        task.actual_end = "2024-01-01 11:00:00"
+        self.repository.save(task)
+
+        # Try to start the failed task - should raise error
+        input_dto = StartTaskInput(task_id=task.id)
+
+        with self.assertRaises(TaskAlreadyFinishedError) as context:
+            self.use_case.execute(input_dto)
+
+        # Verify error details
+        self.assertEqual(context.exception.task_id, task.id)
+        self.assertEqual(context.exception.status, TaskStatus.FAILED.value)
+
+    def test_execute_does_not_modify_completed_task_state(self):
+        """Test execute does not modify state when attempted on COMPLETED task"""
+        # Create and complete a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
+        task.id = self.repository.generate_next_id()
+        task.actual_start = "2024-01-01 10:00:00"
+        task.actual_end = "2024-01-01 12:00:00"
+        self.repository.save(task)
+
+        # Try to start the completed task
+        input_dto = StartTaskInput(task_id=task.id)
+
+        with contextlib.suppress(TaskAlreadyFinishedError):
+            self.use_case.execute(input_dto)
+
+        # Verify task state remains unchanged
+        retrieved = self.repository.get_by_id(task.id)
+        self.assertEqual(retrieved.status, TaskStatus.COMPLETED)
+        self.assertEqual(retrieved.actual_start, "2024-01-01 10:00:00")
+        self.assertEqual(retrieved.actual_end, "2024-01-01 12:00:00")
 
 
 if __name__ == "__main__":
