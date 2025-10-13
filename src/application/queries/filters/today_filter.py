@@ -42,8 +42,8 @@ class TodayFilter:
         matching_task_ids = set()
 
         for task in tasks:
-            # Always skip archived tasks
-            if task.status == TaskStatus.ARCHIVED:
+            # Always skip archived tasks (historical records, not relevant to today)
+            if not task.can_be_modified:
                 continue
 
             # Skip completed tasks unless include_completed is True
