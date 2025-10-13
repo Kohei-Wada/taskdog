@@ -4,6 +4,7 @@ from application.dto.start_task_input import StartTaskInput
 from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
 from domain.entities.task import Task, TaskStatus
+from domain.exceptions.task_exceptions import TaskWithChildrenError
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
 
@@ -36,20 +37,32 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
 
         Raises:
             TaskNotFoundException: If task doesn't exist
+            TaskWithChildrenError: If task has child tasks
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
+
+        # Task from repository always has ID
+        assert task.id is not None
+
+        # Check if task has children
+        children = self.repository.get_children(task.id)
+        if children:
+            raise TaskWithChildrenError(task.id, children)
 
         # Change status with time tracking
         task = self.status_service.change_status_with_tracking(
             task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
         )
 
-        # Auto-start parent task if it's still pending
-        if task.parent_id is not None:
-            parent = self.repository.get_by_id(task.parent_id)
+        # Auto-start all ancestor tasks if they're still pending
+        current_parent_id = task.parent_id
+        while current_parent_id is not None:
+            parent = self.repository.get_by_id(current_parent_id)
             if parent and parent.status == TaskStatus.PENDING:
                 self.status_service.change_status_with_tracking(
                     parent, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
                 )
+            # Move to next ancestor
+            current_parent_id = parent.parent_id if parent else None
 
         return task

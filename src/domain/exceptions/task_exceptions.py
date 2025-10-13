@@ -38,3 +38,15 @@ class IncompleteChildrenError(TaskValidationError):
         super().__init__(
             f"Cannot complete task {task_id}: has incomplete child tasks [{children_ids}]"
         )
+
+
+class TaskWithChildrenError(TaskValidationError):
+    """Raised when trying to start a task that has children."""
+
+    def __init__(self, task_id: int, children: list):
+        self.task_id = task_id
+        self.children = children
+        children_ids = ", ".join(str(child.id) for child in children)
+        super().__init__(
+            f"Cannot start task {task_id}: has child tasks [{children_ids}]. Start child tasks instead."
+        )

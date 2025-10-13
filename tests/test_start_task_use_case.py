@@ -5,7 +5,7 @@ import unittest
 from application.dto.start_task_input import StartTaskInput
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task, TaskStatus
-from domain.exceptions.task_exceptions import TaskNotFoundException
+from domain.exceptions.task_exceptions import TaskNotFoundException, TaskWithChildrenError
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
@@ -156,6 +156,146 @@ class TestStartTaskUseCase(unittest.TestCase):
         input_dto = StartTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
+        self.assertEqual(result.status, TaskStatus.IN_PROGRESS)
+        self.assertIsNotNone(result.actual_start)
+
+    def test_execute_auto_starts_all_ancestor_tasks(self):
+        """Test execute auto-starts all ancestor tasks (grandparent and beyond)"""
+        # Create grandparent task (PENDING)
+        grandparent = Task(name="Grandparent Task", priority=1)
+        grandparent.id = self.repository.generate_next_id()
+        self.repository.save(grandparent)
+
+        # Create parent task (PENDING)
+        parent = Task(name="Parent Task", priority=1, parent_id=grandparent.id)
+        parent.id = self.repository.generate_next_id()
+        self.repository.save(parent)
+
+        # Create child task (PENDING)
+        child = Task(name="Child Task", priority=2, parent_id=parent.id)
+        child.id = self.repository.generate_next_id()
+        self.repository.save(child)
+
+        # Start child task
+        input_dto = StartTaskInput(task_id=child.id)
+        self.use_case.execute(input_dto)
+
+        # Verify child is IN_PROGRESS
+        child_updated = self.repository.get_by_id(child.id)
+        self.assertEqual(child_updated.status, TaskStatus.IN_PROGRESS)
+        self.assertIsNotNone(child_updated.actual_start)
+
+        # Verify parent is IN_PROGRESS
+        parent_updated = self.repository.get_by_id(parent.id)
+        self.assertEqual(parent_updated.status, TaskStatus.IN_PROGRESS)
+        self.assertIsNotNone(parent_updated.actual_start)
+
+        # Verify grandparent is also IN_PROGRESS
+        grandparent_updated = self.repository.get_by_id(grandparent.id)
+        self.assertEqual(grandparent_updated.status, TaskStatus.IN_PROGRESS)
+        self.assertIsNotNone(grandparent_updated.actual_start)
+
+    def test_execute_skips_non_pending_ancestors(self):
+        """Test execute skips ancestors that are not PENDING"""
+        # Create grandparent task (IN_PROGRESS)
+        grandparent = Task(name="Grandparent Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        grandparent.id = self.repository.generate_next_id()
+        grandparent.actual_start = "2024-01-01 09:00:00"
+        self.repository.save(grandparent)
+
+        # Create parent task (PENDING)
+        parent = Task(name="Parent Task", priority=1, parent_id=grandparent.id)
+        parent.id = self.repository.generate_next_id()
+        self.repository.save(parent)
+
+        # Create child task (PENDING)
+        child = Task(name="Child Task", priority=2, parent_id=parent.id)
+        child.id = self.repository.generate_next_id()
+        self.repository.save(child)
+
+        # Start child task
+        input_dto = StartTaskInput(task_id=child.id)
+        self.use_case.execute(input_dto)
+
+        # Verify parent is IN_PROGRESS
+        parent_updated = self.repository.get_by_id(parent.id)
+        self.assertEqual(parent_updated.status, TaskStatus.IN_PROGRESS)
+
+        # Verify grandparent status and timestamp remain unchanged
+        grandparent_updated = self.repository.get_by_id(grandparent.id)
+        self.assertEqual(grandparent_updated.status, TaskStatus.IN_PROGRESS)
+        self.assertEqual(grandparent_updated.actual_start, "2024-01-01 09:00:00")
+
+    def test_execute_raises_error_when_task_has_children(self):
+        """Test execute raises TaskWithChildrenError when starting a parent task"""
+        # Create parent task
+        parent = Task(name="Parent Task", priority=1)
+        parent.id = self.repository.generate_next_id()
+        self.repository.save(parent)
+
+        # Create child task
+        child = Task(name="Child Task", priority=2, parent_id=parent.id)
+        child.id = self.repository.generate_next_id()
+        self.repository.save(child)
+
+        # Try to start parent task - should raise error
+        input_dto = StartTaskInput(task_id=parent.id)
+
+        with self.assertRaises(TaskWithChildrenError) as context:
+            self.use_case.execute(input_dto)
+
+        # Verify error details
+        self.assertEqual(context.exception.task_id, parent.id)
+        self.assertEqual(len(context.exception.children), 1)
+        self.assertEqual(context.exception.children[0].id, child.id)
+
+    def test_execute_raises_error_when_task_has_multiple_children(self):
+        """Test execute raises TaskWithChildrenError with multiple children"""
+        # Create parent task
+        parent = Task(name="Parent Task", priority=1)
+        parent.id = self.repository.generate_next_id()
+        self.repository.save(parent)
+
+        # Create multiple child tasks
+        child1 = Task(name="Child Task 1", priority=2, parent_id=parent.id)
+        child1.id = self.repository.generate_next_id()
+        self.repository.save(child1)
+
+        child2 = Task(name="Child Task 2", priority=3, parent_id=parent.id)
+        child2.id = self.repository.generate_next_id()
+        self.repository.save(child2)
+
+        child3 = Task(name="Child Task 3", priority=4, parent_id=parent.id)
+        child3.id = self.repository.generate_next_id()
+        self.repository.save(child3)
+
+        # Try to start parent task - should raise error
+        input_dto = StartTaskInput(task_id=parent.id)
+
+        with self.assertRaises(TaskWithChildrenError) as context:
+            self.use_case.execute(input_dto)
+
+        # Verify error details
+        self.assertEqual(context.exception.task_id, parent.id)
+        self.assertEqual(len(context.exception.children), 3)
+
+    def test_execute_allows_leaf_task_to_start(self):
+        """Test execute allows leaf tasks (without children) to start normally"""
+        # Create parent task
+        parent = Task(name="Parent Task", priority=1)
+        parent.id = self.repository.generate_next_id()
+        self.repository.save(parent)
+
+        # Create leaf child task
+        child = Task(name="Child Task", priority=2, parent_id=parent.id)
+        child.id = self.repository.generate_next_id()
+        self.repository.save(child)
+
+        # Start leaf child task - should succeed
+        input_dto = StartTaskInput(task_id=child.id)
+        result = self.use_case.execute(input_dto)
+
+        # Verify child is IN_PROGRESS
         self.assertEqual(result.status, TaskStatus.IN_PROGRESS)
         self.assertIsNotNone(result.actual_start)
 
