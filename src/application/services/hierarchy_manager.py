@@ -33,9 +33,10 @@ class HierarchyManager:
         Returns:
             All tasks that were modified (updated tasks + affected parents)
         """
-        modified_tasks = list(updated_tasks)
+        # Use a dict to track modified tasks by ID to prevent duplicates
+        modified_task_dict = {t.id: t for t in updated_tasks}
         task_map = {t.id: t for t in all_tasks}
-        # Create map of updated tasks for easy lookup
+        # Create map of updated tasks for easy lookup (will be updated with parent changes)
         updated_task_map = {t.id: t for t in updated_tasks}
 
         # Collect all parent IDs that need updating
@@ -93,8 +94,8 @@ class HierarchyManager:
                     parent_task_copy.planned_start = parent_start
                     parent_task_copy.planned_end = parent_end
 
-                    # Add to modified list
-                    modified_tasks.append(parent_task_copy)
+                    # Add to modified dict (overwrites if already exists, preventing duplicates)
+                    modified_task_dict[parent_task_copy.id] = parent_task_copy
                     # Update the map so nested parents can use this updated version
                     updated_task_map[parent_task_copy.id] = parent_task_copy
 
@@ -102,7 +103,7 @@ class HierarchyManager:
                     if parent_task_copy.parent_id:
                         parent_ids_to_update.add(parent_task_copy.parent_id)
 
-        return modified_tasks
+        return list(modified_task_dict.values())
 
     def clear_unscheduled_tasks(
         self, all_tasks: list[Task], updated_tasks: list[Task]
