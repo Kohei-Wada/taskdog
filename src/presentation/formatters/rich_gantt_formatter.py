@@ -23,6 +23,7 @@ class RichGanttFormatter(RichFormatterBase):
     BACKGROUND_COLOR = "rgb(100,100,100)"  # Weekday
     BACKGROUND_COLOR_SATURDAY = "rgb(100,100,150)"  # Saturday (blueish)
     BACKGROUND_COLOR_SUNDAY = "rgb(150,100,100)"  # Sunday (reddish)
+    BACKGROUND_COLOR_DEADLINE = "rgb(200,100,0)"  # Deadline (orange)
 
     def __init__(self):
         self.workload_calculator = WorkloadCalculator()
@@ -466,34 +467,30 @@ class RichGanttFormatter(RichFormatterBase):
 
         is_deadline = parsed_dates["deadline"] and current_date == parsed_dates["deadline"]
 
-        # Layer 3: Deadline (highest priority) - special symbol instead of hours
+        # Determine background color (deadline gets orange background)
         if is_deadline:
-            display = f" {self.SYMBOL_ACTUAL} "
-            style = "bold red"
-            return display, style
+            bg_color = self.BACKGROUND_COLOR_DEADLINE
+        elif is_planned:
+            bg_color = self._get_background_color(current_date)
+        else:
+            bg_color = None
 
-        # Layer 2: Actual period (done tasks) - use symbol instead of hours
+        # Layer 2: Actual period (highest priority for display) - use symbol
         if is_actual:
             display = f" {self.SYMBOL_ACTUAL} "
             status_color = self._get_status_color(status)
-            bg_color = self._get_background_color(current_date)
-            style = f"{status_color} on {bg_color}"
+            style = f"{status_color} on {bg_color}" if bg_color else status_color
             return display, style
 
-        # Format hours display for planned period (3 characters for consistency)
+        # Layer 1: Show hours (for planned or deadline without actual)
         if hours > 0:
             # Format: "4  " or "2.5" (right-aligned, 3 chars)
             display = f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
         else:
             display = self.SYMBOL_EMPTY  # No hours allocated: " · "
 
-        # Determine styling
-        style = "dim"  # Base style
-
-        # Layer 1: Planned period (background only)
-        if is_planned:
-            bg_color = self._get_background_color(current_date)
-            style = f"on {bg_color}"
+        # Apply background color
+        style = f"on {bg_color}" if bg_color else "dim"
 
         return display, style
 
@@ -573,7 +570,7 @@ class RichGanttFormatter(RichFormatterBase):
         legend.append(" Actual (IN_PROGRESS)  ", style="dim")
         legend.append(self.SYMBOL_ACTUAL, style="bold green")
         legend.append(" Actual (COMPLETED)  ", style="dim")
-        legend.append(self.SYMBOL_ACTUAL, style="bold red")
+        legend.append("   ", style=f"on {self.BACKGROUND_COLOR_DEADLINE}")
         legend.append(" Deadline  ", style="dim")
         legend.append("●", style="bold yellow")
         legend.append(" Today  ", style="dim")
