@@ -42,8 +42,7 @@ Use --force to override existing schedules, --dry-run to preview changes.
     help="Optimization algorithm to use (default: greedy)",
 )
 @click.option("--force", "-f", is_flag=True, help="Override existing schedules")
-@click.option("--dry-run", is_flag=True, help="Preview without saving")
-@click.pass_context
+@click.option("--dry-run", "-d", is_flag=True, help="Preview without saving")
 @handle_command_errors("optimizing schedules")
 def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_run):
     """Auto-generate optimal schedules for tasks."""
