@@ -1,6 +1,6 @@
 [project]
 name = "taskdog"
-version = "0.2.0"
+version = "0.3.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -31,6 +31,7 @@ packages = [
   "domain.exceptions",
   "application",
   "application.use_cases",
+  "application.validators",
   "application.services",
   "application.services.optimization",
   "application.queries",
