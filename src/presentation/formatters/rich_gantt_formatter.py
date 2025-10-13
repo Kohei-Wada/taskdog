@@ -76,10 +76,18 @@ class RichGanttFormatter(RichFormatterBase):
         date_header = self._build_date_header(start_date, end_date)
         table.add_row("", "[dim]Date[/dim]", "", date_header)
 
-        # Get root tasks and render hierarchically
-        root_tasks = [t for t in tasks if t.parent_id is None]
-        for task in root_tasks:
-            self._add_task_to_gantt(task, table, repository, start_date, end_date, depth=0)
+        # Build set of parent task IDs (tasks with children)
+        parent_ids = set()
+        for task in tasks:
+            if task.parent_id:
+                parent_ids.add(task.parent_id)
+
+        # Filter out parent tasks and display only leaf tasks in sort order
+        # This ensures the sort order specified by the user is respected
+        for task in tasks:
+            if task.id not in parent_ids:
+                # This is a leaf task - add it to the gantt
+                self._add_leaf_task_to_gantt(task, table, repository, start_date, end_date)
 
         # Add section divider before workload summary
         table.add_section()
@@ -256,27 +264,27 @@ class RichGanttFormatter(RichFormatterBase):
         for child in children:
             self._add_simple_task(child, table, repository, depth + 1)
 
-    def _add_task_to_gantt(
+    def _add_leaf_task_to_gantt(
         self,
         task: Task,
         table: Table,
         repository,
         start_date: date,
         end_date: date,
-        depth: int,
     ):
-        """Add task to Gantt chart table recursively.
+        """Add a leaf task to Gantt chart table.
+
+        This method displays only leaf tasks (tasks without children) in the order
+        they appear in the tasks list, preserving any sorting applied.
 
         Args:
-            task: Task to add
+            task: Leaf task to add
             table: Rich Table object
             repository: Repository instance
             start_date: Start date of the chart
             end_date: End date of the chart
-            depth: Indentation depth for hierarchy
         """
-        indent = "  " * depth
-        task_name = f"{indent}{task.name}"
+        task_name = task.name
 
         # Add strikethrough for completed tasks
         if task.status == TaskStatus.COMPLETED:
@@ -289,11 +297,6 @@ class RichGanttFormatter(RichFormatterBase):
         timeline = self._build_timeline(task, start_date, end_date, repository)
 
         table.add_row(str(task.id), task_name, estimated_hours, timeline)
-
-        # Add children recursively
-        children = repository.get_children(task.id)
-        for child in children:
-            self._add_task_to_gantt(child, table, repository, start_date, end_date, depth + 1)
 
     def _calculate_task_daily_hours(
         self, task: Task, start_date: date, end_date: date, repository
