@@ -7,6 +7,7 @@ from application.use_cases.complete_task import CompleteTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import (
     IncompleteChildrenError,
+    TaskAlreadyFinishedError,
     TaskNotFoundException,
     TaskNotStartedError,
 )
@@ -173,8 +174,8 @@ class TestCompleteTaskUseCase(unittest.TestCase):
 
         self.assertEqual(context.exception.task_id, task.id)
 
-    def test_execute_with_already_completed_task_returns_unchanged(self):
-        """Test execute with already COMPLETED task returns task as-is"""
+    def test_execute_with_already_completed_task_raises_error(self):
+        """Test execute with already COMPLETED task raises TaskAlreadyFinishedError"""
         # Create task with COMPLETED status
         task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
         task.actual_end = "2025-10-12 15:00:00"
@@ -182,11 +183,12 @@ class TestCompleteTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         input_dto = CompleteTaskInput(task_id=task.id)
-        result = self.use_case.execute(input_dto)
 
-        # Should return the task as-is without error
-        self.assertEqual(result.status, TaskStatus.COMPLETED)
-        self.assertEqual(result.actual_end, "2025-10-12 15:00:00")
+        with self.assertRaises(TaskAlreadyFinishedError) as context:
+            self.use_case.execute(input_dto)
+
+        self.assertEqual(context.exception.task_id, task.id)
+        self.assertEqual(context.exception.status, "COMPLETED")
 
 
 if __name__ == "__main__":

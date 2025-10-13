@@ -38,16 +38,13 @@ class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
 
         Raises:
             TaskNotFoundException: If task doesn't exist
+            TaskAlreadyFinishedError: If task is already finished
             TaskNotStartedError: If task is PENDING (not started yet)
             IncompleteChildrenError: If task has incomplete children
-
-        Note:
-            Idempotent: Completing an already-finished task returns the task unchanged.
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
         # Validate status transition using validator registry (Clean Architecture)
-        # Note: Validator handles idempotency (returns early if already finished)
         self.validator_registry.validate_field("status", TaskStatus.COMPLETED, task)
 
         # Change status with time tracking

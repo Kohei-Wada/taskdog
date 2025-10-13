@@ -55,22 +55,22 @@ class StatusValidator(FieldValidator):
             children: Child tasks of the task
 
         Raises:
-            TaskWithChildrenError: If task has child tasks
             TaskAlreadyFinishedError: If task is already finished
+            TaskWithChildrenError: If task has child tasks
 
         Business Rules:
-            - Cannot start if task has children (must start leaf tasks instead)
             - Cannot start if task is already finished (COMPLETED/FAILED)
+            - Cannot start if task has children (must start leaf tasks instead)
         """
         assert task.id is not None
+
+        # Early check: Cannot restart finished tasks
+        if task.is_finished:
+            raise TaskAlreadyFinishedError(task.id, task.status.value)
 
         # Cannot start if task has children
         if len(children) > 0:
             raise TaskWithChildrenError(task.id, children)
-
-        # Cannot start if task is already finished
-        if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)
 
     def _validate_can_be_completed(self, task: Task, children: list[Task]) -> None:
         """Validate task can be completed.
@@ -80,21 +80,21 @@ class StatusValidator(FieldValidator):
             children: Child tasks of the task
 
         Raises:
+            TaskAlreadyFinishedError: If task is already finished
             TaskNotStartedError: If task is PENDING (not started yet)
             IncompleteChildrenError: If task has incomplete children
 
         Business Rules:
+            - Cannot complete if task is already finished (COMPLETED/FAILED)
             - Cannot complete if task is PENDING (must be started first)
             - Cannot complete if task has incomplete children
             - All children must be COMPLETED before parent can be completed
-            - Idempotent: Completing an already-finished task is allowed (early return)
         """
         assert task.id is not None
 
-        # Idempotency: Skip validation if task is already finished
-        # (completing an already-completed task is not an error)
+        # Early check: Cannot re-complete finished tasks
         if task.is_finished:
-            return
+            raise TaskAlreadyFinishedError(task.id, task.status.value)
 
         # Cannot complete PENDING tasks (must start first)
         if task.status == TaskStatus.PENDING:

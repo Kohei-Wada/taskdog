@@ -5,7 +5,11 @@ import click
 from application.dto.complete_task_input import CompleteTaskInput
 from application.use_cases.complete_task import CompleteTaskUseCase
 from domain.entities.task import TaskStatus
-from domain.exceptions.task_exceptions import IncompleteChildrenError, TaskNotStartedError
+from domain.exceptions.task_exceptions import (
+    IncompleteChildrenError,
+    TaskAlreadyFinishedError,
+    TaskNotStartedError,
+)
 from presentation.cli.batch_executor import BatchCommandExecutor
 from presentation.cli.context import CliContext
 from utils.console_messages import print_success
@@ -24,29 +28,12 @@ def done_command(ctx, task_ids):  # noqa: C901
 
     # Define processing function
     def process_task(task_id: int):
-        # Check current status before completing
-        task_before = repository.get_by_id(task_id)
-        was_already_completed = task_before and task_before.status == TaskStatus.COMPLETED
-
         input_dto = CompleteTaskInput(task_id=task_id)
-        result = complete_task_use_case.execute(input_dto)
-
-        # Add marker to result for warning message
-        result._was_already_completed = was_already_completed
-        return result
+        return complete_task_use_case.execute(input_dto)
 
     # Define success callback
     def on_success(task):
         print_success(console, "Completed", task)
-
-        # Show warning if already completed
-        if hasattr(task, "_was_already_completed") and task._was_already_completed:
-            console.print(
-                f"  [yellow]⚠[/yellow] Task was already COMPLETED (completed at [blue]{
-                    task.actual_end
-                }[/blue])"
-            )
-            return
 
         # Show completion time and duration if available
         if task.actual_end:
@@ -71,11 +58,19 @@ def done_command(ctx, task_ids):  # noqa: C901
                 else:
                     console.print("  [green]✓[/green] Finished exactly on estimate!")
 
+    # Define error handler for TaskAlreadyFinishedError
+    def handle_already_finished(e: TaskAlreadyFinishedError):
+        console.print(f"[red]✗[/red] Cannot complete task {e.task_id}")
+        console.print(f"  [yellow]⚠[/yellow] Task is already {e.status}")
+        console.print("  [dim]Task has already been completed.[/dim]")
+
     # Define error handler for TaskNotStartedError
     def handle_not_started(e: TaskNotStartedError):
         console.print(f"[red]✗[/red] Cannot complete task {e.task_id}")
         console.print(
-            f"  [yellow]⚠[/yellow] Task is still PENDING. Start the task first with [blue]taskdog start {e.task_id}[/blue]"
+            f"  [yellow]⚠[/yellow] Task is still PENDING. Start the task first with [blue]taskdog start {
+                e.task_id
+            }[/blue]"
         )
 
     # Define error handler for IncompleteChildrenError
@@ -99,6 +94,7 @@ def done_command(ctx, task_ids):  # noqa: C901
         operation_name="completing task",
         success_callback=on_success,
         error_handlers={
+            TaskAlreadyFinishedError: handle_already_finished,
             TaskNotStartedError: handle_not_started,
             IncompleteChildrenError: handle_incomplete_children,
         },
