@@ -39,8 +39,8 @@ class TaskFilter:
         Returns:
             True if task should be scheduled
         """
-        # Skip completed tasks
-        if task.status == TaskStatus.COMPLETED:
+        # Skip completed and archived tasks
+        if task.status in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED):
             return False
 
         # Skip IN_PROGRESS tasks (don't reschedule tasks already being worked on)

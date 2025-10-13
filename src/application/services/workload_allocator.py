@@ -47,8 +47,8 @@ class WorkloadAllocator:
             if task.id in parent_ids:
                 continue
 
-            # Skip completed tasks
-            if task.status == TaskStatus.COMPLETED:
+            # Skip completed and archived tasks
+            if task.status in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED):
                 continue
 
             # Skip tasks without schedules

@@ -51,6 +51,10 @@ class HierarchyManager:
             if not parent_task:
                 continue
 
+            # Skip archived parent tasks - they should not be updated
+            if parent_task.status == TaskStatus.ARCHIVED:
+                continue
+
             # Get all children from repository
             children_from_repo = self.repository.get_children(parent_id)
             if not children_from_repo:
@@ -135,8 +139,8 @@ class HierarchyManager:
             if task.id in parent_ids:
                 continue
 
-            # Skip completed tasks
-            if task.status == TaskStatus.COMPLETED:
+            # Skip completed and archived tasks
+            if task.status in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED):
                 continue
 
             # Skip IN_PROGRESS tasks (they keep their schedules)

@@ -45,6 +45,8 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, int]):
             task = self.repository.get_by_id(task_id)
             if task is not None:  # Skip if task was deleted
                 task.status = TaskStatus.ARCHIVED
+                # Clear schedule data as archived tasks are no longer in active planning
+                task.daily_allocations = {}
                 self.repository.save(task)
 
         # Execute using hierarchy service
