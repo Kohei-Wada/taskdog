@@ -30,7 +30,7 @@ Use --force to override existing schedules, --dry-run to preview changes.
 @click.option(
     "--max-hours-per-day",
     "-m",
-    type=float,
+    type=click.FloatRange(min=0, min_open=True, max=24.0),
     default=6.0,
     help="Max work hours per day (default: 6.0)",
 )
@@ -43,6 +43,7 @@ Use --force to override existing schedules, --dry-run to preview changes.
 )
 @click.option("--force", "-f", is_flag=True, help="Override existing schedules")
 @click.option("--dry-run", "-d", is_flag=True, help="Preview without saving")
+@click.pass_context
 @handle_command_errors("optimizing schedules")
 def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_run):
     """Auto-generate optimal schedules for tasks."""
@@ -52,11 +53,6 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
 
     # Parse start_date or use next weekday
     start_dt = datetime.strptime(start_date, DATETIME_FORMAT) if start_date else get_next_weekday()
-
-    # Validate max_hours_per_day
-    if max_hours_per_day <= 0:
-        console.print("[red]Error:[/red] max-hours-per-day must be positive")
-        return
 
     # Get all tasks before optimization to track changes
     all_tasks_before = repository.get_all()
