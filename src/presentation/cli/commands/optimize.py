@@ -10,6 +10,7 @@ from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
+from presentation.formatters.rich_gantt_formatter import RichGanttFormatter
 from presentation.formatters.rich_optimization_formatter import RichOptimizationFormatter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 from shared.utils.date_utils import get_next_weekday
@@ -41,7 +42,7 @@ Use --force to override existing schedules, --dry-run to preview changes.
     "-a",
     type=str,
     default="greedy",
-    help="Optimization algorithm to use (default: greedy)",
+    help="Optimization algorithm: greedy (front-load), balanced (even distribution), backward (JIT from deadline)",
 )
 @click.option("--force", "-f", is_flag=True, help="Override existing schedules")
 @click.option("--dry-run", "-d", is_flag=True, help="Preview without saving")
@@ -96,9 +97,13 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
     else:
         console.print(f"[green]✓[/green] Optimized schedules for {len(modified_tasks)} task(s)\n")
 
-    # Format and print table
+    # Format and print Gantt chart
+    gantt_formatter = RichGanttFormatter()
+    gantt_output = gantt_formatter.format_tasks(modified_tasks, repository)
+    print(gantt_output)
+
+    # Create optimization formatter for summary and warnings
     formatter = RichOptimizationFormatter(console)
-    formatter.format_table(modified_tasks, task_states_before)
 
     # Show summary section
     formatter.format_summary(summary)

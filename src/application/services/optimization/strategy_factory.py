@@ -2,6 +2,12 @@
 
 from typing import ClassVar
 
+from application.services.optimization.backward_optimization_strategy import (
+    BackwardOptimizationStrategy,
+)
+from application.services.optimization.balanced_optimization_strategy import (
+    BalancedOptimizationStrategy,
+)
 from application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
 )
@@ -18,6 +24,8 @@ class StrategyFactory:
     # Registry of available strategies
     _strategies: ClassVar[dict[str, type[OptimizationStrategy]]] = {
         "greedy": GreedyOptimizationStrategy,
+        "balanced": BalancedOptimizationStrategy,
+        "backward": BackwardOptimizationStrategy,
         # Future algorithms can be added here:
         # "genetic": GeneticOptimizationStrategy,
         # "dp": DynamicProgrammingStrategy,
