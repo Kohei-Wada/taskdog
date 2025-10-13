@@ -40,7 +40,9 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
 
         Raises:
             TaskNotFoundException: If task doesn't exist
-            ValueError: If parent validation fails (circular reference or non-existent parent)
+            CircularReferenceError: If circular parent reference detected
+            ParentTaskNotFoundError: If parent doesn't exist
+            CannotSetEstimateForParentTaskError: If trying to set estimated_duration for parent task
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
@@ -77,6 +79,12 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
             self.time_tracker.record_time_on_status_change(task, input_dto.status)
             task.status = input_dto.status
             updated_fields.append("status")
+
+        # Validate estimated_duration before updating (cannot set for parent tasks)
+        if input_dto.estimated_duration is not None:
+            # Task from repository always has ID
+            assert task.id is not None
+            self.validator.validate_can_set_estimated_duration(task.id, self.repository)
 
         # Update remaining fields using dictionary mapping
         field_mapping = {

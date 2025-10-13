@@ -71,7 +71,16 @@ The application follows **Clean Architecture** with distinct layers:
 - `services/`: Domain services (TimeTracker, TaskEligibilityChecker, WorkloadCalculator)
   - `TaskEligibilityChecker`: Centralized logic for determining if tasks can be updated, rescheduled, or included in hierarchy operations
   - `WorkloadCalculator`: Computes daily hours from task allocations or evenly distributes estimated duration
-- `exceptions/`: Domain-specific exceptions (TaskNotFoundException)
+- `exceptions/`: Domain-specific exceptions
+  - `TaskNotFoundException`: Task with given ID not found
+  - `TaskValidationError`: Base exception for validation failures
+  - `CircularReferenceError`: Circular parent reference detected
+  - `ParentTaskNotFoundError`: Specified parent task doesn't exist
+  - `CannotSetEstimateForParentTaskError`: Trying to set estimated_duration for parent task
+  - `IncompleteChildrenError`: Trying to complete task with incomplete children
+  - `TaskWithChildrenError`: Trying to start task that has children
+  - `TaskAlreadyFinishedError`: Trying to start already finished task
+  - `TaskNotStartedError`: Trying to complete task that hasn't been started
 - No dependencies on other layers; defines core business logic
 
 **Application Layer** (`src/application/`)
@@ -79,7 +88,10 @@ The application follows **Clean Architecture** with distinct layers:
   - Each use case inherits from `UseCase[TInput, TOutput]` base class
   - Use cases are stateless and dependency-injected
 - `services/`: Application services that coordinate complex operations
-  - `TaskValidator`: Validation logic requiring repository access
+  - `TaskValidator`: Unified validation logic requiring repository access
+    - `validate_parent()`: Validates parent exists and no circular reference (raises `CircularReferenceError`, `ParentTaskNotFoundError`)
+    - `validate_can_set_estimated_duration()`: Validates task has no children (raises `CannotSetEstimateForParentTaskError`)
+    - Uses custom domain exceptions instead of generic `ValueError`
   - `WorkloadAllocator`: Distributes task hours across weekdays respecting max hours/day
   - `HierarchyManager`: Manages parent-child relationships, propagates schedule changes, and auto-calculates parent task estimated_duration from children
   - `TaskPrioritizer`: Sorts tasks by urgency (deadline proximity) and priority
@@ -275,6 +287,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `rename`: Rename task with positional args: `taskdog rename <ID> <NAME>` (uses UpdateTaskUseCase)
 - `estimate`: Set estimated duration with positional args: `taskdog estimate <ID> <HOURS>` (uses UpdateTaskUseCase)
   - **Cannot be used on parent tasks** (tasks with children); parent estimated_duration is auto-calculated from children
+  - Validation is performed by `TaskValidator.validate_can_set_estimated_duration()` in UpdateTaskUseCase (Clean Architecture compliant)
 - `schedule`: Set planned schedule with positional args: `taskdog schedule <ID> <START> [END]` (uses UpdateTaskUseCase)
 - `parent`: Set or clear parent with positional args: `taskdog parent <ID> <PARENT_ID>` or `taskdog parent <ID> --clear` (uses UpdateTaskUseCase)
 - `update`: Multi-field update command: `taskdog update <ID> [--priority] [--status] [--parent] [--clear-parent] [--planned-start] [--planned-end] [--deadline] [--estimated-duration]` (uses UpdateTaskUseCase)
@@ -324,6 +337,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 14. **Task eligibility checks** - Centralized logic in TaskEligibilityChecker for determining which tasks can be updated, rescheduled, or included in hierarchy operations
 15. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
 16. **Automatic parent task estimated_duration calculation** - Parent tasks' `estimated_duration` is automatically calculated as the sum of children's estimates; recursively updates ancestors when child tasks are created, modified, or removed
+17. **Unified validation with domain exceptions** - TaskValidator consolidates all validation logic, using custom domain exceptions (`CircularReferenceError`, `ParentTaskNotFoundError`, `CannotSetEstimateForParentTaskError`) instead of generic `ValueError` for consistent error handling across the application
 
 ### Console Messaging Guidelines
 

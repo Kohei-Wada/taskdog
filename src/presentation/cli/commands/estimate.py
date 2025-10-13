@@ -6,7 +6,7 @@ from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
-from utils.console_messages import print_update_success, print_validation_error
+from utils.console_messages import print_update_success
 
 
 @click.command(name="estimate", help="Set estimated duration for a task.")
@@ -29,16 +29,6 @@ def estimate_command(ctx, task_id, hours):
         Parent task's estimated_duration is automatically calculated from children.
     """
     ctx_obj: CliContext = ctx.obj
-
-    # Check if task is a parent task (has children)
-    children = ctx_obj.repository.get_children(task_id)
-    if children:
-        print_validation_error(
-            ctx_obj.console,
-            f"Cannot set estimated duration for parent task (task {task_id} has {len(children)} child tasks). "
-            "Parent task's estimated duration is automatically calculated from children.",
-        )
-        return
 
     update_task_use_case = UpdateTaskUseCase(ctx_obj.repository, ctx_obj.time_tracker)
 

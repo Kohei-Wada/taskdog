@@ -5,7 +5,12 @@ import unittest
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task, TaskStatus
-from domain.exceptions.task_exceptions import TaskNotFoundException
+from domain.exceptions.task_exceptions import (
+    CannotSetEstimateForParentTaskError,
+    CircularReferenceError,
+    ParentTaskNotFoundError,
+    TaskNotFoundException,
+)
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
@@ -135,7 +140,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         input_dto = UpdateTaskInput(task_id=task.id)
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        _result_task, updated_fields = self.use_case.execute(input_dto)
 
         self.assertEqual(len(updated_fields), 0)
         # Verify no save was called by checking the task remains unchanged
@@ -275,7 +280,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         # Try to set task1's parent to task2 (would create circular reference)
         input_dto = UpdateTaskInput(task_id=task1.id, parent_id=task2.id)
 
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(CircularReferenceError) as context:
             self.use_case.execute(input_dto)
 
         self.assertIn("Circular parent reference", str(context.exception))
@@ -288,7 +293,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
         input_dto = UpdateTaskInput(task_id=task.id, parent_id=task.id)
 
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(CircularReferenceError) as context:
             self.use_case.execute(input_dto)
 
         self.assertIn("Circular parent reference", str(context.exception))
@@ -301,10 +306,42 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
         input_dto = UpdateTaskInput(task_id=task.id, parent_id=999)
 
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(ParentTaskNotFoundError) as context:
             self.use_case.execute(input_dto)
 
+        self.assertEqual(context.exception.parent_id, 999)
         self.assertIn("does not exist", str(context.exception))
+
+    def test_execute_update_estimated_duration_validates_no_children(self):
+        """Test that estimated_duration cannot be set for parent tasks"""
+        parent_task = Task(name="Parent Task", priority=1)
+        parent_task.id = self.repository.generate_next_id()
+        self.repository.save(parent_task)
+
+        child_task = Task(name="Child Task", priority=1, parent_id=parent_task.id)
+        child_task.id = self.repository.generate_next_id()
+        self.repository.save(child_task)
+
+        input_dto = UpdateTaskInput(task_id=parent_task.id, estimated_duration=5.0)
+
+        with self.assertRaises(CannotSetEstimateForParentTaskError) as context:
+            self.use_case.execute(input_dto)
+
+        self.assertEqual(context.exception.task_id, parent_task.id)
+        self.assertEqual(context.exception.child_count, 1)
+        self.assertIn("has 1 child tasks", str(context.exception))
+
+    def test_execute_update_estimated_duration_succeeds_for_leaf_task(self):
+        """Test that estimated_duration can be set for leaf tasks (no children)"""
+        task = Task(name="Leaf Task", priority=1)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        input_dto = UpdateTaskInput(task_id=task.id, estimated_duration=3.5)
+        result_task, updated_fields = self.use_case.execute(input_dto)
+
+        self.assertEqual(result_task.estimated_duration, 3.5)
+        self.assertIn("estimated_duration", updated_fields)
 
 
 if __name__ == "__main__":

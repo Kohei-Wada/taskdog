@@ -69,3 +69,24 @@ class TaskNotStartedError(TaskValidationError):
         super().__init__(
             f"Cannot complete task {task_id}: task is PENDING. Start the task first with 'taskdog start {task_id}'"
         )
+
+
+class ParentTaskNotFoundError(TaskValidationError):
+    """Raised when specified parent task doesn't exist."""
+
+    def __init__(self, parent_id: int):
+        self.parent_id = parent_id
+        super().__init__(f"Parent task with ID {parent_id} does not exist")
+
+
+class CannotSetEstimateForParentTaskError(TaskValidationError):
+    """Raised when trying to set estimated_duration for a parent task."""
+
+    def __init__(self, task_id: int, child_count: int):
+        self.task_id = task_id
+        self.child_count = child_count
+        super().__init__(
+            f"Cannot set estimated duration for parent task {task_id} "
+            f"(has {child_count} child tasks). "
+            "Parent task's estimated duration is automatically calculated from children."
+        )
