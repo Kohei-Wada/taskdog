@@ -34,11 +34,18 @@ Use --force to override existing schedules, --dry-run to preview changes.
     default=6.0,
     help="Max work hours per day (default: 6.0)",
 )
+@click.option(
+    "--algorithm",
+    "-a",
+    type=str,
+    default="greedy",
+    help="Optimization algorithm to use (default: greedy)",
+)
 @click.option("--force", "-f", is_flag=True, help="Override existing schedules")
 @click.option("--dry-run", is_flag=True, help="Preview without saving")
 @click.pass_context
 @handle_command_errors("optimizing schedules")
-def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
+def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_run):
     """Auto-generate optimal schedules for tasks."""
     ctx_obj: CliContext = ctx.obj
     console = ctx_obj.console
@@ -62,6 +69,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
         max_hours_per_day=max_hours_per_day,
         force_override=force,
         dry_run=dry_run,
+        algorithm_name=algorithm,
     )
 
     # Execute optimization
@@ -103,6 +111,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, force, dry_run):
 
     # Show configuration
     console.print("\n[bold]Configuration:[/bold]")
+    console.print(f"  Algorithm: {algorithm}")
     console.print(f"  Start date: {start_dt.strftime(DATETIME_FORMAT)}")
     console.print(f"  Max hours/day: {max_hours_per_day}h")
     console.print(f"  Force override: {force}")
