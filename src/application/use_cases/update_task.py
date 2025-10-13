@@ -2,8 +2,8 @@
 
 from application.dto.update_task_input import UpdateTaskInput
 from application.services.hierarchy_manager import HierarchyManager
-from application.services.task_validator import TaskValidator
 from application.use_cases.base import UseCase
+from application.validators.validator_registry import TaskFieldValidatorRegistry
 from domain.entities.task import Task
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
@@ -26,7 +26,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
         """
         self.repository = repository
         self.time_tracker = time_tracker
-        self.validator = TaskValidator()
+        self.validator_registry = TaskFieldValidatorRegistry(repository)
         self.hierarchy_manager = HierarchyManager(repository)
 
     def _update_parent_id(
@@ -56,11 +56,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
         if input_dto.parent_id is not None and not isinstance(input_dto.parent_id, _Unset):
             # Type narrowing: parent_id is int here
             parent_id_int: int = input_dto.parent_id
-            self.validator.validate_parent(
-                parent_id=parent_id_int,
-                repository=self.repository,
-                task_id=input_dto.task_id,
-            )
+            self.validator_registry.validate_field("parent_id", parent_id_int, task)
 
         # Update parent_id (int | None)
         if not isinstance(input_dto.parent_id, _Unset):
@@ -85,6 +81,9 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
             updated_fields: List to append field name to
         """
         if input_dto.status is not None:
+            # Validate status transition
+            self.validator_registry.validate_field("status", input_dto.status, task)
+
             self.time_tracker.record_time_on_status_change(task, input_dto.status)
             task.status = input_dto.status
             updated_fields.append("status")
@@ -100,9 +99,10 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
             CannotSetEstimateForParentTaskError: If task has children
         """
         if input_dto.estimated_duration is not None:
-            # Task from repository always has ID
-            assert task.id is not None
-            self.validator.validate_can_set_estimated_duration(task.id, self.repository)
+            # Validate estimated_duration can be set
+            self.validator_registry.validate_field(
+                "estimated_duration", input_dto.estimated_duration, task
+            )
 
     def _update_standard_fields(
         self,
@@ -133,6 +133,9 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
 
         for field_name, value in field_mapping.items():
             if value is not None:
+                # Validate field if validator exists
+                self.validator_registry.validate_field(field_name, value, task)
+
                 # Track if estimated_duration changed
                 if field_name == "estimated_duration":
                     estimated_duration_changed = True

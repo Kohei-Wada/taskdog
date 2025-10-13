@@ -77,6 +77,7 @@ The application follows **Clean Architecture** with distinct layers:
   - `CircularReferenceError`: Circular parent reference detected
   - `ParentTaskNotFoundError`: Specified parent task doesn't exist
   - `CannotSetEstimateForParentTaskError`: Trying to set estimated_duration for parent task
+  - `DeadlineAfterParentError`: Child task deadline is after parent task deadline
   - `IncompleteChildrenError`: Trying to complete task with incomplete children
   - `TaskWithChildrenError`: Trying to start task that has children
   - `TaskAlreadyFinishedError`: Trying to start already finished task
@@ -87,11 +88,21 @@ The application follows **Clean Architecture** with distinct layers:
 - `use_cases/`: Business logic orchestration (CreateTaskUseCase, StartTaskUseCase, OptimizeScheduleUseCase, ArchiveTaskUseCase, etc.)
   - Each use case inherits from `UseCase[TInput, TOutput]` base class
   - Use cases are stateless and dependency-injected
+- `validators/`: Field-specific validation logic using Strategy Pattern + Registry
+  - `FieldValidator`: Abstract base class for all field validators
+    - Defines uniform interface: `validate(value, task, repository)`
+  - `TaskFieldValidatorRegistry`: Central registry managing field validators
+    - Auto-registers validators on initialization
+    - Validates fields by name: `validate_field(field_name, value, task)`
+    - Extensible design: adding new validators requires 3 steps (create validator class, register in registry, done)
+  - **Field Validators**:
+    - `ParentIdValidator`: Validates parent exists, no self-reference, no circular reference (raises `CircularReferenceError`, `ParentTaskNotFoundError`)
+    - `EstimatedDurationValidator`: Validates task has no children; parent estimates are auto-calculated (raises `CannotSetEstimateForParentTaskError`)
+    - `StatusValidator`: Validates status transitions using TaskEligibilityChecker (raises `TaskNotStartedError`, `IncompleteChildrenError`, etc.)
+    - `DeadlineValidator`: Validates child deadline ≤ parent deadline (raises `DeadlineAfterParentError`)
+  - Used by UpdateTaskUseCase to validate field updates before applying changes
+  - All validators use custom domain exceptions for consistent error handling
 - `services/`: Application services that coordinate complex operations
-  - `TaskValidator`: Unified validation logic requiring repository access
-    - `validate_parent()`: Validates parent exists and no circular reference (raises `CircularReferenceError`, `ParentTaskNotFoundError`)
-    - `validate_can_set_estimated_duration()`: Validates task has no children (raises `CannotSetEstimateForParentTaskError`)
-    - Uses custom domain exceptions instead of generic `ValueError`
   - `WorkloadAllocator`: Distributes task hours across weekdays respecting max hours/day
   - `HierarchyManager`: Manages parent-child relationships, propagates schedule changes, and auto-calculates parent task estimated_duration from children
   - `TaskPrioritizer`: Sorts tasks by urgency (deadline proximity) and priority
@@ -287,7 +298,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `rename`: Rename task with positional args: `taskdog rename <ID> <NAME>` (uses UpdateTaskUseCase)
 - `estimate`: Set estimated duration with positional args: `taskdog estimate <ID> <HOURS>` (uses UpdateTaskUseCase)
   - **Cannot be used on parent tasks** (tasks with children); parent estimated_duration is auto-calculated from children
-  - Validation is performed by `TaskValidator.validate_can_set_estimated_duration()` in UpdateTaskUseCase (Clean Architecture compliant)
+  - Validation is performed by `EstimatedDurationValidator` via TaskFieldValidatorRegistry in UpdateTaskUseCase (Clean Architecture compliant)
 - `schedule`: Set planned schedule with positional args: `taskdog schedule <ID> <START> [END]` (uses UpdateTaskUseCase)
 - `parent`: Set or clear parent with positional args: `taskdog parent <ID> <PARENT_ID>` or `taskdog parent <ID> --clear` (uses UpdateTaskUseCase)
 - `update`: Multi-field update command: `taskdog update <ID> [--priority] [--status] [--parent] [--clear-parent] [--planned-start] [--planned-end] [--deadline] [--estimated-duration]` (uses UpdateTaskUseCase)
@@ -337,7 +348,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 14. **Task eligibility checks** - Centralized logic in TaskEligibilityChecker for determining which tasks can be updated, rescheduled, or included in hierarchy operations
 15. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
 16. **Automatic parent task estimated_duration calculation** - Parent tasks' `estimated_duration` is automatically calculated as the sum of children's estimates; recursively updates ancestors when child tasks are created, modified, or removed
-17. **Unified validation with domain exceptions** - TaskValidator consolidates all validation logic, using custom domain exceptions (`CircularReferenceError`, `ParentTaskNotFoundError`, `CannotSetEstimateForParentTaskError`) instead of generic `ValueError` for consistent error handling across the application
+17. **Field-specific validation with Strategy Pattern + Registry** - TaskFieldValidatorRegistry manages field-specific validators (ParentIdValidator, EstimatedDurationValidator, StatusValidator, DeadlineValidator), using custom domain exceptions (`CircularReferenceError`, `ParentTaskNotFoundError`, `CannotSetEstimateForParentTaskError`, `DeadlineAfterParentError`) for consistent error handling; extensible design makes adding new validators simple
 
 ### Console Messaging Guidelines
 

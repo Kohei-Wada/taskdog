@@ -90,3 +90,17 @@ class CannotSetEstimateForParentTaskError(TaskValidationError):
             f"(has {child_count} child tasks). "
             "Parent task's estimated duration is automatically calculated from children."
         )
+
+
+class DeadlineAfterParentError(TaskValidationError):
+    """Raised when child task deadline is after parent task deadline."""
+
+    def __init__(self, task_id: int, parent_id: int, task_deadline: str, parent_deadline: str):
+        self.task_id = task_id
+        self.parent_id = parent_id
+        self.task_deadline = task_deadline
+        self.parent_deadline = parent_deadline
+        super().__init__(
+            f"Cannot set deadline for task {task_id} to {task_deadline}: "
+            f"parent task {parent_id} has earlier deadline {parent_deadline}"
+        )
