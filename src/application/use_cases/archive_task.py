@@ -1,6 +1,7 @@
 """Use case for archiving a task."""
 
 from application.dto.archive_task_input import ArchiveTaskInput
+from application.services.hierarchy_operation_service import HierarchyOperationService
 from application.use_cases.base import UseCase
 from domain.entities.task import TaskStatus
 from infrastructure.persistence.task_repository import TaskRepository
@@ -23,6 +24,7 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, int]):
             repository: Task repository for data access
         """
         self.repository = repository
+        self.hierarchy_service = HierarchyOperationService()
 
     def execute(self, input_dto: ArchiveTaskInput) -> int:
         """Execute task archiving.
@@ -38,58 +40,19 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, int]):
         """
         self._get_task_or_raise(self.repository, input_dto.task_id)
 
+        # Define the archive operation
+        def archive_operation(task_id: int) -> None:
+            task = self.repository.get_by_id(task_id)
+            if task is not None:  # Skip if task was deleted
+                task.status = TaskStatus.ARCHIVED
+                self.repository.save(task)
+
+        # Execute using hierarchy service
         if input_dto.cascade:
-            return self._archive_cascade(input_dto.task_id)
+            return self.hierarchy_service.execute_cascade(
+                input_dto.task_id, self.repository, archive_operation
+            )
         else:
-            return self._archive_orphan(input_dto.task_id)
-
-    def _archive_cascade(self, task_id: int) -> int:
-        """Recursively archive task and all its children.
-
-        Args:
-            task_id: ID of the task to archive
-
-        Returns:
-            Number of tasks archived
-        """
-        archived_count = 0
-
-        # Recursively archive all children first
-        children = self.repository.get_children(task_id)
-        for child in children:
-            assert child.id is not None  # Children from repository always have IDs
-            archived_count += self._archive_cascade(child.id)
-
-        # Archive the task itself
-        task = self.repository.get_by_id(task_id)
-        if task is None:
-            return archived_count  # Task was deleted, skip
-        task.status = TaskStatus.ARCHIVED
-        self.repository.save(task)
-        archived_count += 1
-
-        return archived_count
-
-    def _archive_orphan(self, task_id: int) -> int:
-        """Archive task and orphan its children.
-
-        Args:
-            task_id: ID of the task to archive
-
-        Returns:
-            Number of tasks archived (always 1)
-        """
-        # Orphan children (set their parent_id to None)
-        children = self.repository.get_children(task_id)
-        for child in children:
-            child.parent_id = None
-            self.repository.save(child)
-
-        # Archive the task itself
-        task = self.repository.get_by_id(task_id)
-        if task is None:
-            return 0  # Task was deleted, skip
-        task.status = TaskStatus.ARCHIVED
-        self.repository.save(task)
-
-        return 1
+            return self.hierarchy_service.execute_orphan(
+                input_dto.task_id, self.repository, archive_operation
+            )

@@ -1,6 +1,7 @@
 """Use case for removing a task."""
 
 from application.dto.remove_task_input import RemoveTaskInput
+from application.services.hierarchy_operation_service import HierarchyOperationService
 from application.use_cases.base import UseCase
 from infrastructure.persistence.task_repository import TaskRepository
 
@@ -22,6 +23,7 @@ class RemoveTaskUseCase(UseCase[RemoveTaskInput, int]):
             repository: Task repository for data access
         """
         self.repository = repository
+        self.hierarchy_service = HierarchyOperationService()
 
     def execute(self, input_dto: RemoveTaskInput) -> int:
         """Execute task removal.
@@ -37,49 +39,16 @@ class RemoveTaskUseCase(UseCase[RemoveTaskInput, int]):
         """
         self._get_task_or_raise(self.repository, input_dto.task_id)
 
+        # Define the delete operation
+        def delete_operation(task_id: int) -> None:
+            self.repository.delete(task_id)
+
+        # Execute using hierarchy service
         if input_dto.cascade:
-            return self._remove_cascade(input_dto.task_id)
+            return self.hierarchy_service.execute_cascade(
+                input_dto.task_id, self.repository, delete_operation
+            )
         else:
-            return self._remove_orphan(input_dto.task_id)
-
-    def _remove_cascade(self, task_id: int) -> int:
-        """Recursively remove task and all its children.
-
-        Args:
-            task_id: ID of the task to remove
-
-        Returns:
-            Number of tasks removed
-        """
-        removed_count = 0
-
-        # Recursively remove all children first
-        children = self.repository.get_children(task_id)
-        for child in children:
-            assert child.id is not None  # Children from repository always have IDs
-            removed_count += self._remove_cascade(child.id)
-
-        # Remove the task itself
-        self.repository.delete(task_id)
-        removed_count += 1
-
-        return removed_count
-
-    def _remove_orphan(self, task_id: int) -> int:
-        """Remove task and orphan its children.
-
-        Args:
-            task_id: ID of the task to remove
-
-        Returns:
-            Number of tasks removed (always 1)
-        """
-        # Orphan children (set their parent_id to None)
-        children = self.repository.get_children(task_id)
-        for child in children:
-            child.parent_id = None
-            self.repository.save(child)
-
-        # Remove the task itself
-        self.repository.delete(task_id)
-        return 1
+            return self.hierarchy_service.execute_orphan(
+                input_dto.task_id, self.repository, delete_operation
+            )
