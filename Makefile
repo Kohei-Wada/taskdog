@@ -2,7 +2,7 @@
 
 
 test:
-	PYTHONPATH=src uv run python -m unittest discover tests/
+	 uv run python -m unittest discover tests/
 
 install:
 	uv tool uninstall taskdog
