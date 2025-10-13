@@ -27,3 +27,6 @@ typecheck:
 
 # Run all checks (lint + typecheck)
 check: lint typecheck
+
+completions: install
+	_TASKDOG_COMPLETE=bash_source taskdog

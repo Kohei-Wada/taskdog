@@ -27,6 +27,21 @@ PYTHONPATH=src uv run python -m unittest tests/test_create_task_use_case.py
 PYTHONPATH=src uv run python -m unittest tests.test_create_task_use_case.CreateTaskUseCaseTest.test_execute_success
 ```
 
+### Code Quality
+```bash
+# Lint code with ruff
+make lint
+
+# Format code with ruff
+make format
+
+# Type check with mypy
+make typecheck
+
+# Run both lint and typecheck
+make check
+```
+
 ### Installation
 ```bash
 # Install as a CLI tool
@@ -58,10 +73,16 @@ The application follows **Clean Architecture** with distinct layers:
 - No dependencies on other layers; defines core business logic
 
 **Application Layer** (`src/application/`)
-- `use_cases/`: Business logic orchestration (CreateTaskUseCase, StartTaskUseCase, etc.)
+- `use_cases/`: Business logic orchestration (CreateTaskUseCase, StartTaskUseCase, OptimizeScheduleUseCase, ArchiveTaskUseCase, etc.)
   - Each use case inherits from `UseCase[TInput, TOutput]` base class
   - Use cases are stateless and dependency-injected
-- `services/`: Application services (TaskValidator - validation logic requiring repository access)
+- `services/`: Application services that coordinate complex operations
+  - `TaskValidator`: Validation logic requiring repository access
+  - `ScheduleOptimizer`: Auto-generates optimal task schedules based on priorities, deadlines, and constraints
+  - `WorkloadAllocator`: Distributes task hours across weekdays respecting max hours/day
+  - `HierarchyManager`: Manages parent-child relationships and propagates schedule changes
+  - `TaskPrioritizer`: Sorts tasks by urgency (deadline proximity) and priority
+  - `OptimizationSummaryBuilder`: Builds summary reports for schedule optimization
 - `queries/`: Read-optimized operations (TaskQueryService with filters and sorters)
 - `dto/`: Data Transfer Objects for use case inputs (CreateTaskInput, StartTaskInput, UpdateTaskInput, etc.)
   - `UpdateTaskInput` uses Sentinel pattern (UNSET value) to distinguish "not provided" from "explicitly None" for parent_id field
@@ -73,8 +94,11 @@ The application follows **Clean Architecture** with distinct layers:
 - Handles external concerns (file I/O, data persistence)
 
 **Presentation Layer** (`src/presentation/`)
-- `cli/commands/`: Click command implementations (add, tree, table, gantt, start, done, etc.)
-- `formatters/`: Rich-based output formatting (RichTreeFormatter, RichTableFormatter, RichGanttFormatter)
+- `cli/commands/`: Click command implementations (add, tree, table, gantt, start, done, optimize, archive, etc.)
+- `cli/context.py`: CliContext dataclass for dependency injection (console, repository, time_tracker)
+- `cli/batch_executor.py`: BatchCommandExecutor for consistent multi-task operations
+- `cli/error_handler.py`: Decorators for consistent error handling
+- `formatters/`: Rich-based output formatting (RichTreeFormatter, RichTableFormatter, RichGanttFormatter, RichOptimizationFormatter)
 - Depends on application layer use cases and queries
 
 **Shared Layer** (`src/shared/`)
@@ -83,25 +107,31 @@ The application follows **Clean Architecture** with distinct layers:
 
 ### Dependency Injection Pattern
 
-Dependencies are partially managed through Click's context object (`ctx.obj`):
+Dependencies are managed through Click's context object using the `CliContext` dataclass:
 
-**Shared dependencies in `ctx.obj`** (initialized in `cli.py:36-41`):
-- `repository`: JsonTaskRepository instance
-- `console`: Rich Console instance
+**CliContext** (`src/presentation/cli/context.py`):
+- Dataclass containing shared dependencies: `console`, `repository`, `time_tracker`
+- Initialized in `cli.py` and passed to all commands via `ctx.obj`
+- Commands access via `ctx.obj: CliContext` type annotation
 
 **Local instantiation in commands**:
-- Use cases are created locally in each command function (e.g., `CreateTaskUseCase(repository)` in add.py:75)
-- `TimeTracker` is instantiated locally in commands that need time tracking (start.py:18, done.py:18, update.py:73)
-- `TaskQueryService` is instantiated locally in query commands (tree.py:24, table.py:23, today.py:36, gantt.py:41)
-- Formatters are instantiated locally per command (e.g., `RichTreeFormatter()` in tree.py:34, `RichTableFormatter()` in table.py:33)
+- Use cases are created locally in each command function (e.g., `CreateTaskUseCase(repository)`)
+- `TaskQueryService` is instantiated locally in query commands
+- Formatters are instantiated locally per command
+- Application services (ScheduleOptimizer, HierarchyManager, etc.) instantiated as needed
 
-Commands access shared dependencies via `@click.pass_context` and `ctx.obj["dependency_name"]`.
+**BatchCommandExecutor Pattern**:
+- Unified pattern for processing multiple task IDs (used in `start`, `done`, `rm`, `archive` commands)
+- Constructor: `BatchCommandExecutor(console)`
+- Method: `execute_batch(task_ids, process_func, operation_name, success_callback, error_handlers, show_summary)`
+- Handles per-task error handling, progress tracking, spacing, and summary reporting
+- Returns: `(success_count, error_count, results_list)`
 
 ### Core Components
 
 **Use Cases** (`src/application/use_cases/`)
 - Generic base class: `UseCase[TInput, TOutput]` with abstract `execute(input_dto)` method
-- Concrete implementations: CreateTaskUseCase, StartTaskUseCase, CompleteTaskUseCase, UpdateTaskUseCase, RemoveTaskUseCase
+- Concrete implementations: CreateTaskUseCase, StartTaskUseCase, CompleteTaskUseCase, UpdateTaskUseCase, RemoveTaskUseCase, ArchiveTaskUseCase, OptimizeScheduleUseCase
 - Each use case encapsulates a single business operation
 - Use cases validate inputs, orchestrate domain logic, and coordinate with repository/services
 
@@ -172,16 +202,17 @@ Two decorators for consistent error handling across CLI commands:
    - Usage: `@handle_command_errors("displaying tasks")`
    - Used in: tree, table, gantt, today commands
 
-Not used in: start, done, rm commands (these handle errors per-task in loops for multiple task processing)
+Not used in: start, done, rm, archive commands (these use BatchCommandExecutor pattern instead)
 
-**Batch Operation Pattern** (used in `start`, `done`, `rm` commands)
-Commands that support multiple task IDs follow this pattern:
+**Batch Operation Pattern** (used in `start`, `done`, `rm`, `archive` commands)
+Commands that support multiple task IDs use `BatchCommandExecutor` for consistent processing:
 - Accept multiple task IDs via `@click.argument("task_ids", nargs=-1, type=int, required=True)`
-- Loop through each task ID with individual try-catch blocks
-- Track `success_count` and `error_count` for summary
-- Print spacing between tasks when processing multiple IDs (`if len(task_ids) > 1`)
-- Show summary message after processing all tasks
-- Handle specific exceptions (e.g., `TaskNotFoundException`, `IncompleteChildrenError`) per task
+- Create `BatchCommandExecutor(console)` instance
+- Define `process_func` that processes a single task ID and returns result
+- Define optional `success_callback` to handle successful results
+- Define optional `error_handlers` dict for custom exception handling
+- Call `executor.execute_batch(task_ids, process_func, operation_name, ...)`
+- Executor handles per-task error catching, progress tracking, spacing, and summary reporting
 
 ### Task Model
 **Task** (`src/domain/entities/task.py`)
@@ -235,6 +266,19 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 
 **Task Management:**
 - `rm`: Remove task(s) with cascade/orphan options - supports multiple task IDs (uses RemoveTaskUseCase)
+- `archive`: Archive task(s) for data retention (hidden from views) - supports multiple task IDs (uses ArchiveTaskUseCase)
+  - `--cascade`: Archive all child tasks recursively
+
+**Schedule Optimization:**
+- `optimize`: Auto-generate optimal task schedules based on priorities, deadlines, and workload constraints (uses OptimizeScheduleUseCase)
+  - `--start-date DATE`: Start date for scheduling (default: next weekday)
+  - `--max-hours-per-day FLOAT`: Maximum work hours per day (default: 6.0)
+  - `--force`: Override existing schedules for all tasks
+  - `--dry-run`: Preview changes without saving
+  - Analyzes all tasks with `estimated_duration` set
+  - Uses `ScheduleOptimizer` to distribute workload across weekdays
+  - Respects task hierarchy (children scheduled before parents)
+  - Shows optimization summary with before/after schedules and workload distribution
 
 **Visualization & Export:**
 - `gantt`: Display Gantt chart timeline with workload summary and sorting options (uses TaskQueryService)
@@ -252,8 +296,10 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 4. **DTO pattern** - Input data transferred via dataclass DTOs (CreateTaskInput, StartTaskInput, etc.)
 5. **CQRS-like separation** - Use cases handle writes, QueryService handles reads
 6. **Repository manages ID generation** - `create()` method auto-assigns IDs, use cases are stateless
-7. **Context-based DI** - Dependencies injected via Click's `ctx.obj` dict, accessed with `@click.pass_context`
-8. **Command registration** - Commands imported and registered in `cli.py` via `cli.add_command()`
-9. **Package list in pyproject.toml** - All modules must be explicitly listed in `packages` array for installation
-10. **Rich for all output** - Console output uses Rich library for colors, tables, trees, and formatting
-11. **Atomic saves with backup** - JsonTaskRepository uses atomic writes (temp file + rename) and maintains `.json.bak` backup for data integrity
+7. **Context-based DI** - Dependencies injected via `CliContext` dataclass in `ctx.obj`, accessed with `@click.pass_context`
+8. **BatchCommandExecutor pattern** - Multi-task operations use centralized executor for consistent error handling, progress tracking, and summary reporting
+9. **Command registration** - Commands imported and registered in `cli.py` via `cli.add_command()`
+10. **Package list in pyproject.toml** - All modules must be explicitly listed in `packages` array for installation
+11. **Rich for all output** - Console output uses Rich library for colors, tables, trees, and formatting
+12. **Atomic saves with backup** - JsonTaskRepository uses atomic writes (temp file + rename) and maintains `.json.bak` backup for data integrity
+13. **Schedule optimization** - Complex scheduling logic separated into application services (ScheduleOptimizer, WorkloadAllocator, TaskPrioritizer, HierarchyManager)
