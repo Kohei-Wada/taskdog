@@ -1,6 +1,7 @@
 """Use case for starting a task."""
 
 from application.dto.start_task_input import StartTaskInput
+from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
 from domain.entities.task import Task, TaskStatus
 from domain.services.time_tracker import TimeTracker
@@ -22,6 +23,7 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
         """
         self.repository = repository
         self.time_tracker = time_tracker
+        self.status_service = TaskStatusService()
 
     def execute(self, input_dto: StartTaskInput) -> Task:
         """Execute task start.
@@ -37,18 +39,17 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
-        # Record time based on status change
-        self.time_tracker.record_time_on_status_change(task, TaskStatus.IN_PROGRESS)
-
-        task.status = TaskStatus.IN_PROGRESS
-        self.repository.save(task)
+        # Change status with time tracking
+        task = self.status_service.change_status_with_tracking(
+            task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
+        )
 
         # Auto-start parent task if it's still pending
         if task.parent_id is not None:
             parent = self.repository.get_by_id(task.parent_id)
             if parent and parent.status == TaskStatus.PENDING:
-                self.time_tracker.record_time_on_status_change(parent, TaskStatus.IN_PROGRESS)
-                parent.status = TaskStatus.IN_PROGRESS
-                self.repository.save(parent)
+                self.status_service.change_status_with_tracking(
+                    parent, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
+                )
 
         return task

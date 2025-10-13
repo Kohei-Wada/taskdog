@@ -1,6 +1,7 @@
 """Use case for completing a task."""
 
 from application.dto.complete_task_input import CompleteTaskInput
+from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import IncompleteChildrenError
@@ -23,6 +24,7 @@ class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
         """
         self.repository = repository
         self.time_tracker = time_tracker
+        self.status_service = TaskStatusService()
 
     def execute(self, input_dto: CompleteTaskInput) -> Task:
         """Execute task completion.
@@ -49,10 +51,7 @@ class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
         if incomplete_children:
             raise IncompleteChildrenError(task.id, incomplete_children)
 
-        # Record time based on status change
-        self.time_tracker.record_time_on_status_change(task, TaskStatus.COMPLETED)
-
-        task.status = TaskStatus.COMPLETED
-        self.repository.save(task)
-
-        return task
+        # Change status with time tracking
+        return self.status_service.change_status_with_tracking(
+            task, TaskStatus.COMPLETED, self.time_tracker, self.repository
+        )
