@@ -298,7 +298,7 @@ class RichGanttFormatter(RichFormatterBase):
     def _calculate_task_daily_hours(self, task: Task, start_date: date, end_date: date) -> dict:
         """Calculate daily hours allocation for a single task.
 
-        Uses task.daily_allocations if available (from ScheduleOptimizer),
+        Uses task.daily_allocations if available (from optimization),
         otherwise distributes estimated_duration equally across weekdays
         in the planned period.
 
@@ -317,7 +317,7 @@ class RichGanttFormatter(RichFormatterBase):
         if not task.estimated_duration:
             return daily_hours
 
-        # Use daily_allocations if available (from ScheduleOptimizer)
+        # Use daily_allocations if available (from optimization)
         if task.daily_allocations:
             for date_str, hours in task.daily_allocations.items():
                 try:

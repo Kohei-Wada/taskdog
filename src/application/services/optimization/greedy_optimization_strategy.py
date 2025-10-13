@@ -2,8 +2,11 @@
 
 from datetime import datetime
 
+from application.services.hierarchy_manager import HierarchyManager
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.schedule_optimizer import ScheduleOptimizer
+from application.services.task_filter import TaskFilter
+from application.services.task_prioritizer import TaskPrioritizer
+from application.services.workload_allocator import WorkloadAllocator
 from domain.entities.task import Task
 
 
@@ -11,11 +14,11 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
     """Greedy algorithm for task scheduling optimization.
 
     This strategy uses a greedy approach to schedule tasks:
-    1. Sort tasks by priority (deadline urgency, priority field, hierarchy)
-    2. Allocate time blocks sequentially in priority order
-    3. Fill available time slots from start_date onwards
-
-    This is a wrapper around the existing ScheduleOptimizer implementation.
+    1. Filter schedulable tasks (has estimated_duration, not completed/in_progress)
+    2. Sort tasks by priority (deadline urgency, priority field, hierarchy)
+    3. Allocate time blocks sequentially in priority order
+    4. Fill available time slots from start_date onwards
+    5. Update parent task periods based on children
     """
 
     def optimize_tasks(
@@ -40,15 +43,37 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
             - modified_tasks: List of tasks with updated schedules
             - daily_allocations: Dict mapping date strings to allocated hours
         """
-        # Use the existing ScheduleOptimizer implementation
-        optimizer = ScheduleOptimizer(
-            start_date=start_date,
-            max_hours_per_day=max_hours_per_day,
-            force_override=force_override,
-        )
+        # Initialize service instances
+        allocator = WorkloadAllocator(max_hours_per_day, start_date)
+        task_filter = TaskFilter()
+        prioritizer = TaskPrioritizer(start_date, repository)
+        hierarchy_manager = HierarchyManager(repository)
 
-        # Run optimization
-        modified_tasks = optimizer.optimize_tasks(tasks, repository)
+        # Initialize daily_allocations with existing scheduled tasks
+        # This ensures we account for tasks that won't be rescheduled
+        allocator.initialize_allocations(tasks, force_override)
+
+        # Filter tasks that need scheduling
+        schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
+
+        # Sort by priority
+        sorted_tasks = prioritizer.sort_by_priority(schedulable_tasks)
+
+        # Allocate time blocks for each task
+        updated_tasks = []
+        for task in sorted_tasks:
+            updated_task = allocator.allocate_timeblock(task)
+            if updated_task:
+                updated_tasks.append(updated_task)
+
+        # Update parent task periods based on children
+        all_tasks_with_updates = hierarchy_manager.update_parent_periods(tasks, updated_tasks)
+
+        # If force_override, clear schedules for tasks that couldn't be scheduled
+        if force_override:
+            all_tasks_with_updates = hierarchy_manager.clear_unscheduled_tasks(
+                tasks, all_tasks_with_updates
+            )
 
         # Return modified tasks and daily allocations
-        return modified_tasks, optimizer.allocator.daily_allocations
+        return all_tasks_with_updates, allocator.daily_allocations

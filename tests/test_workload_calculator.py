@@ -248,8 +248,8 @@ class WorkloadCalculatorTest(unittest.TestCase):
         self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday (task2 excluded)
 
     def test_calculate_daily_workload_with_daily_allocations(self):
-        """Test workload calculation using daily_allocations from ScheduleOptimizer."""
-        # Task with daily_allocations (from ScheduleOptimizer)
+        """Test workload calculation using daily_allocations from optimization."""
+        # Task with daily_allocations (from optimization)
         # Monday: 5h, Tuesday: 1h
         task = Task(
             id=1,

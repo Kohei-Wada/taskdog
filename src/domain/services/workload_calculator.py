@@ -14,7 +14,7 @@ class WorkloadCalculator:
     ) -> dict[date, float]:
         """Calculate daily workload from tasks, excluding weekends and completed tasks.
 
-        This method uses the daily_allocations field if available (set by ScheduleOptimizer),
+        This method uses the daily_allocations field if available (set by optimization),
         otherwise falls back to equal distribution across weekdays in the planned period.
 
         Args:
@@ -52,7 +52,7 @@ class WorkloadCalculator:
             if not (task.planned_start and task.planned_end):
                 continue
 
-            # Use daily_allocations if available (from ScheduleOptimizer)
+            # Use daily_allocations if available (from optimization)
             # Note: Parent tasks don't have daily_allocations, so they will be skipped here
             # and fall through to the else block, which will distribute their estimated_duration
             if task.daily_allocations:
