@@ -2,7 +2,12 @@
 
 from application.validators.field_validator import FieldValidator
 from domain.entities.task import Task, TaskStatus
-from domain.services.task_eligibility_checker import TaskEligibilityChecker
+from domain.exceptions.task_exceptions import (
+    IncompleteChildrenError,
+    TaskAlreadyFinishedError,
+    TaskNotStartedError,
+    TaskWithChildrenError,
+)
 from infrastructure.persistence.task_repository import TaskRepository
 
 
@@ -38,13 +43,64 @@ class StatusValidator(FieldValidator):
 
         # Validate based on target status
         if value == TaskStatus.IN_PROGRESS:
-            # Use existing business rule from TaskEligibilityChecker
-            TaskEligibilityChecker.validate_can_be_started(task, children)
+            self._validate_can_be_started(task, children)
         elif value == TaskStatus.COMPLETED:
-            # Idempotency: Skip validation if task is already finished
-            # (completing an already-completed task is not an error)
-            if task.is_finished:
-                return
+            self._validate_can_be_completed(task, children)
 
-            # Use existing business rule from TaskEligibilityChecker
-            TaskEligibilityChecker.validate_can_be_completed(task, children)
+    def _validate_can_be_started(self, task: Task, children: list[Task]) -> None:
+        """Validate task can be started.
+
+        Args:
+            task: Task to validate
+            children: Child tasks of the task
+
+        Raises:
+            TaskWithChildrenError: If task has child tasks
+            TaskAlreadyFinishedError: If task is already finished
+
+        Business Rules:
+            - Cannot start if task has children (must start leaf tasks instead)
+            - Cannot start if task is already finished (COMPLETED/FAILED)
+        """
+        assert task.id is not None
+
+        # Cannot start if task has children
+        if len(children) > 0:
+            raise TaskWithChildrenError(task.id, children)
+
+        # Cannot start if task is already finished
+        if task.is_finished:
+            raise TaskAlreadyFinishedError(task.id, task.status.value)
+
+    def _validate_can_be_completed(self, task: Task, children: list[Task]) -> None:
+        """Validate task can be completed.
+
+        Args:
+            task: Task to validate
+            children: Child tasks of the task
+
+        Raises:
+            TaskNotStartedError: If task is PENDING (not started yet)
+            IncompleteChildrenError: If task has incomplete children
+
+        Business Rules:
+            - Cannot complete if task is PENDING (must be started first)
+            - Cannot complete if task has incomplete children
+            - All children must be COMPLETED before parent can be completed
+            - Idempotent: Completing an already-finished task is allowed (early return)
+        """
+        assert task.id is not None
+
+        # Idempotency: Skip validation if task is already finished
+        # (completing an already-completed task is not an error)
+        if task.is_finished:
+            return
+
+        # Cannot complete PENDING tasks (must start first)
+        if task.status == TaskStatus.PENDING:
+            raise TaskNotStartedError(task.id)
+
+        # Cannot complete if task has incomplete children
+        incomplete_children = [c for c in children if c.status != TaskStatus.COMPLETED]
+        if len(incomplete_children) > 0:
+            raise IncompleteChildrenError(task.id, incomplete_children)

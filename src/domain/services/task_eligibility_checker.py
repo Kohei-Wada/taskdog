@@ -3,15 +3,12 @@
 This service centralizes the business rules for determining whether a task
 should be included in various operations like scheduling, workload calculation,
 and hierarchy updates.
+
+This service only provides boolean checks (eligibility queries).
+For validation that raises exceptions, see StatusValidator in the application layer.
 """
 
 from domain.entities.task import Task, TaskStatus
-from domain.exceptions.task_exceptions import (
-    IncompleteChildrenError,
-    TaskAlreadyFinishedError,
-    TaskNotStartedError,
-    TaskWithChildrenError,
-)
 
 
 class TaskEligibilityChecker:
@@ -150,62 +147,3 @@ class TaskEligibilityChecker:
         # Cannot complete if task has incomplete children
         incomplete_children = [c for c in children if c.status != TaskStatus.COMPLETED]
         return len(incomplete_children) == 0
-
-    @staticmethod
-    def validate_can_be_started(task: Task, children: list[Task]) -> None:
-        """Validate task can be started, raise exception if not.
-
-        Args:
-            task: The task to check
-            children: Child tasks of the task
-
-        Raises:
-            TaskWithChildrenError: If task has child tasks
-            TaskAlreadyFinishedError: If task is already finished
-
-        Business Rules:
-            - Cannot start if task has children (must start leaf tasks instead)
-            - Cannot start if task is already finished (COMPLETED/FAILED)
-        """
-        # Task from repository always has ID
-        assert task.id is not None
-
-        # Cannot start if task has children
-        if len(children) > 0:
-            raise TaskWithChildrenError(task.id, children)
-
-        # Cannot start if task is already finished
-        if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)
-
-    @staticmethod
-    def validate_can_be_completed(task: Task, children: list[Task]) -> None:
-        """Validate task can be completed, raise exception if not.
-
-        Note: This assumes task.is_finished has already been checked by caller,
-        as that case requires special handling (early return, not an error).
-
-        Args:
-            task: The task to check
-            children: Child tasks of the task
-
-        Raises:
-            TaskNotStartedError: If task is PENDING (not started yet)
-            IncompleteChildrenError: If task has incomplete children
-
-        Business Rules:
-            - Cannot complete if task is PENDING (must be started first)
-            - Cannot complete if task has incomplete children
-            - All children must be COMPLETED before parent can be completed
-        """
-        # Task from repository always has ID
-        assert task.id is not None
-
-        # Cannot complete PENDING tasks (must start first)
-        if task.status == TaskStatus.PENDING:
-            raise TaskNotStartedError(task.id)
-
-        # Cannot complete if task has incomplete children
-        incomplete_children = [c for c in children if c.status != TaskStatus.COMPLETED]
-        if len(incomplete_children) > 0:
-            raise IncompleteChildrenError(task.id, incomplete_children)
