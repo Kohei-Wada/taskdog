@@ -4,7 +4,7 @@ from application.dto.complete_task_input import CompleteTaskInput
 from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
 from domain.entities.task import Task, TaskStatus
-from domain.exceptions.task_exceptions import IncompleteChildrenError
+from domain.exceptions.task_exceptions import IncompleteChildrenError, TaskNotStartedError
 from domain.services.task_eligibility_checker import TaskEligibilityChecker
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
@@ -38,12 +38,22 @@ class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
 
         Raises:
             TaskNotFoundException: If task doesn't exist
+            TaskNotStartedError: If task is PENDING (not started yet)
             IncompleteChildrenError: If task has incomplete children
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
         # Task from repository always has ID
         assert task.id is not None
+
+        # Check if task is started (cannot complete PENDING tasks)
+        if task.status == TaskStatus.PENDING:
+            raise TaskNotStartedError(task.id)
+
+        # Check if task is already finished
+        if task.is_finished:
+            # No error needed - task is already finished, just return as-is
+            return task
 
         # Check if task can be completed (business rule in domain layer)
         children = self.repository.get_children(task.id)

@@ -59,3 +59,13 @@ class TaskAlreadyFinishedError(TaskValidationError):
         self.task_id = task_id
         self.status = status
         super().__init__(f"Cannot start task {task_id}: task is already {status}")
+
+
+class TaskNotStartedError(TaskValidationError):
+    """Raised when trying to complete a task that hasn't been started yet."""
+
+    def __init__(self, task_id: int):
+        self.task_id = task_id
+        super().__init__(
+            f"Cannot complete task {task_id}: task is PENDING. Start the task first with 'taskdog start {task_id}'"
+        )

@@ -5,7 +5,7 @@ import click
 from application.dto.complete_task_input import CompleteTaskInput
 from application.use_cases.complete_task import CompleteTaskUseCase
 from domain.entities.task import TaskStatus
-from domain.exceptions.task_exceptions import IncompleteChildrenError
+from domain.exceptions.task_exceptions import IncompleteChildrenError, TaskNotStartedError
 from presentation.cli.batch_executor import BatchCommandExecutor
 from presentation.cli.context import CliContext
 from utils.console_messages import print_success
@@ -71,6 +71,13 @@ def done_command(ctx, task_ids):  # noqa: C901
                 else:
                     console.print("  [green]✓[/green] Finished exactly on estimate!")
 
+    # Define error handler for TaskNotStartedError
+    def handle_not_started(e: TaskNotStartedError):
+        console.print(f"[red]✗[/red] Cannot complete task {e.task_id}")
+        console.print(
+            f"  [yellow]⚠[/yellow] Task is still PENDING. Start the task first with [blue]taskdog start {e.task_id}[/blue]"
+        )
+
     # Define error handler for IncompleteChildrenError
     def handle_incomplete_children(e: IncompleteChildrenError):
         console.print(f"[red]✗[/red] Cannot complete task {e.task_id}")
@@ -91,5 +98,8 @@ def done_command(ctx, task_ids):  # noqa: C901
         process_func=process_task,
         operation_name="completing task",
         success_callback=on_success,
-        error_handlers={IncompleteChildrenError: handle_incomplete_children},
+        error_handlers={
+            TaskNotStartedError: handle_not_started,
+            IncompleteChildrenError: handle_incomplete_children,
+        },
     )

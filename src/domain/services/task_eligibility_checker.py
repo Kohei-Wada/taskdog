@@ -128,8 +128,19 @@ class TaskEligibilityChecker:
             True if task can be completed
 
         Business Rules:
+            - Cannot complete if task is PENDING (must be started first)
+            - Cannot complete if task is already finished (COMPLETED/FAILED)
             - Cannot complete if task has incomplete children
             - All children must be COMPLETED before parent can be completed
         """
+        # Cannot complete PENDING tasks (must start first)
+        if task.status == TaskStatus.PENDING:
+            return False
+
+        # Cannot complete already finished tasks
+        if task.is_finished:
+            return False
+
+        # Cannot complete if task has incomplete children
         incomplete_children = [c for c in children if c.status != TaskStatus.COMPLETED]
         return len(incomplete_children) == 0
