@@ -6,6 +6,7 @@ import click
 
 from application.queries.task_query_service import TaskQueryService
 from presentation.cli.context import CliContext
+from utils.console_messages import print_error
 
 
 @click.command(name="export", help="Export tasks to various formats (currently JSON only).")
@@ -58,5 +59,5 @@ def export_command(ctx, format, output):
             print(tasks_data)
 
     except Exception as e:
-        console.print(f"[red]Error exporting tasks:[/red] {e}")
+        print_error(console, "exporting tasks", e)
         raise click.Abort() from e

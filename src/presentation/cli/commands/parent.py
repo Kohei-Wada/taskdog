@@ -6,6 +6,7 @@ from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from utils.console_messages import print_validation_error
 
 
 @click.command(name="parent", help="Set or clear task parent.")
@@ -35,11 +36,11 @@ def parent_command(ctx, task_id, parent_id, clear):
 
     # Validate arguments
     if clear and parent_id is not None:
-        ctx_obj.console.print("[red]Error:[/red] Cannot specify both parent ID and --clear flag")
+        print_validation_error(ctx_obj.console, "Cannot specify both parent ID and --clear flag")
         return
 
     if not clear and parent_id is None:
-        ctx_obj.console.print("[red]Error:[/red] Must specify either parent ID or --clear flag")
+        print_validation_error(ctx_obj.console, "Must specify either parent ID or --clear flag")
         return
 
     # Determine the parent value to set

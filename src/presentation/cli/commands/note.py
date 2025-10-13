@@ -8,7 +8,7 @@ import click
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from presentation.utils.notes_template import generate_notes_template
-from utils.console_messages import print_error
+from utils.console_messages import print_error, print_warning
 
 
 def get_editor():
@@ -89,4 +89,5 @@ def note_command(ctx, task_id):
     except subprocess.CalledProcessError as e:
         print_error(console, "running editor", e)
     except KeyboardInterrupt:
-        console.print("\n[yellow]Editor interrupted[/yellow]")
+        print("\n")  # Add newline after ^C
+        print_warning(console, "Editor interrupted")

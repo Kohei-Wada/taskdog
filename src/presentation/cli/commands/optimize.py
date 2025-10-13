@@ -12,6 +12,7 @@ from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_optimization_formatter import RichOptimizationFormatter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 from shared.utils.date_utils import get_next_weekday
+from utils.console_messages import print_info, print_warning
 
 
 @click.command(
@@ -73,7 +74,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
 
     # Display results
     if not modified_tasks:
-        console.print("[yellow]No tasks were optimized.[/yellow]")
+        print_warning(console, "No tasks were optimized.")
         console.print("\nPossible reasons:")
         console.print("  - All tasks already have schedules (use --force to override)")
         console.print("  - No tasks have estimated_duration set")
@@ -112,4 +113,5 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
     console.print(f"  Force override: {force}")
 
     if dry_run:
-        console.print("\n[yellow]Note:[/yellow] Changes not saved. Remove --dry-run to apply.")
+        print("\n")  # Add spacing
+        print_info(console, "Changes not saved. Remove --dry-run to apply.")

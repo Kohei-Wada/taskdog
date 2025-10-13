@@ -5,6 +5,18 @@ from typing import Any
 
 from domain.entities.task import Task
 
+# Message icons
+ICON_SUCCESS = "✓"
+ICON_ERROR = "✗"
+ICON_WARNING = "⚠"
+ICON_INFO = "ℹ"  # noqa: RUF001
+
+# Message styles (colors)
+STYLE_SUCCESS = "green"
+STYLE_ERROR = "red"
+STYLE_WARNING = "yellow"
+STYLE_INFO = "cyan"
+
 
 def print_success(console, action: str, task: Task) -> None:
     """Print success message with task info.
@@ -15,7 +27,7 @@ def print_success(console, action: str, task: Task) -> None:
         task: Task object
     """
     console.print(
-        f"[green]✓[/green] {action} task: [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan])"
+        f"[{STYLE_SUCCESS}]{ICON_SUCCESS}[/{STYLE_SUCCESS}] {action} task: [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan])"
     )
 
 
@@ -28,7 +40,10 @@ def print_task_not_found_error(console, task_id: int, is_parent: bool = False) -
         is_parent: Whether this is a parent task error
     """
     prefix = "Parent task" if is_parent else "Task"
-    console.print(f"[red]✗[/red] Error: {prefix} {task_id} not found", style="red")
+    console.print(
+        f"[{STYLE_ERROR}]{ICON_ERROR}[/{STYLE_ERROR}] Error: {prefix} {task_id} not found",
+        style="red",
+    )
 
 
 def print_error(console, action: str, error: Exception) -> None:
@@ -39,7 +54,9 @@ def print_error(console, action: str, error: Exception) -> None:
         action: Action being performed (e.g., "adding task", "starting task")
         error: Exception object
     """
-    console.print(f"[red]✗[/red] Error {action}: {error}", style="red")
+    console.print(
+        f"[{STYLE_ERROR}]{ICON_ERROR}[/{STYLE_ERROR}] Error {action}: {error}", style="red"
+    )
 
 
 def print_update_success(
@@ -60,6 +77,36 @@ def print_update_success(
     """
     formatted_value = format_func(value) if format_func else str(value)
     console.print(
-        f"[green]✓[/green] Set {field_name} for [bold]{task.name}[/bold] "
+        f"[{STYLE_SUCCESS}]{ICON_SUCCESS}[/{STYLE_SUCCESS}] Set {field_name} for [bold]{task.name}[/bold] "
         f"(ID: [cyan]{task.id}[/cyan]): [magenta]{formatted_value}[/magenta]"
     )
+
+
+def print_info(console, message: str) -> None:
+    """Print informational message.
+
+    Args:
+        console: Rich Console instance
+        message: Information message to display
+    """
+    console.print(f"[{STYLE_INFO}]{ICON_INFO}[/{STYLE_INFO}] {message}")
+
+
+def print_warning(console, message: str) -> None:
+    """Print warning message.
+
+    Args:
+        console: Rich Console instance
+        message: Warning message to display
+    """
+    console.print(f"[{STYLE_WARNING}]{ICON_WARNING}[/{STYLE_WARNING}] {message}")
+
+
+def print_validation_error(console, message: str) -> None:
+    """Print validation error message.
+
+    Args:
+        console: Rich Console instance
+        message: Error message to display
+    """
+    console.print(f"[{STYLE_ERROR}]{ICON_ERROR}[/{STYLE_ERROR}] Error: {message}")

@@ -9,6 +9,7 @@ from domain.entities.task import TaskStatus
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from shared.click_types.datetime_with_default import DateTimeWithDefault
+from utils.console_messages import print_validation_error
 
 
 @click.command(
@@ -110,7 +111,7 @@ def update_command(
 
     # Validate parent options
     if parent is not None and clear_parent:
-        console.print("[red]Error:[/red] Cannot specify both --parent and --clear-parent")
+        print_validation_error(console, "Cannot specify both --parent and --clear-parent")
         return
 
     # Convert status string to Enum if provided

@@ -303,3 +303,53 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 11. **Rich for all output** - Console output uses Rich library for colors, tables, trees, and formatting
 12. **Atomic saves with backup** - JsonTaskRepository uses atomic writes (temp file + rename) and maintains `.json.bak` backup for data integrity
 13. **Schedule optimization** - Complex scheduling logic separated into application services (ScheduleOptimizer, WorkloadAllocator, TaskPrioritizer, HierarchyManager)
+14. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
+
+### Console Messaging Guidelines
+
+All CLI commands must use the unified messaging utilities from `utils/console_messages.py` for consistent user experience.
+
+**Message Types and Icons:**
+```python
+from utils.console_messages import (
+    print_success,        # [green]✓[/green] Task operations
+    print_error,          # [red]✗[/red] General errors
+    print_validation_error,  # [red]✗[/red] Error: Validation errors
+    print_warning,        # [yellow]⚠[/yellow] Warnings
+    print_info,           # [cyan]ℹ[/cyan] Informational messages
+)
+```
+
+**Usage Rules:**
+1. **Success messages**: Use `print_success(console, action, task)` for task operations
+   - Example: `print_success(console, "Added", task)`
+   - Format: `✓ Added task: Task name (ID: 123)`
+
+2. **Validation errors**: Use `print_validation_error(console, message)` for input validation
+   - Example: `print_validation_error(console, "Cannot specify both --parent and --clear-parent")`
+   - Format: `✗ Error: {message}`
+
+3. **General errors**: Use `print_error(console, action, exception)` for runtime errors
+   - Example: `print_error(console, "exporting tasks", e)`
+   - Format: `✗ Error {action}: {exception}`
+
+4. **Warnings**: Use `print_warning(console, message)` for non-critical issues
+   - Example: `print_warning(console, "No tasks were optimized.")`
+   - Format: `⚠ {message}`
+
+5. **Info messages**: Use `print_info(console, message)` for helpful information
+   - Example: `print_info(console, "Changes not saved. Remove --dry-run to apply.")`
+   - Format: `ℹ {message}`
+
+**Constants Available:**
+```python
+from utils.console_messages import (
+    ICON_SUCCESS, ICON_ERROR, ICON_WARNING, ICON_INFO,
+    STYLE_SUCCESS, STYLE_ERROR, STYLE_WARNING, STYLE_INFO,
+)
+```
+
+**When Creating New Commands:**
+- Always import and use messaging utilities from `utils/console_messages.py`
+- Never hardcode message icons or colors directly in command files
+- Follow existing patterns in commands like `add.py`, `parent.py`, `optimize.py`
