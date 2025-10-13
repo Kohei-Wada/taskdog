@@ -9,7 +9,8 @@
       "Bash(mypy --version)",
       "Bash(uv run ruff:*)",
       "Bash(PYTHONPATH=src uv run mypy:*)",
-      "Bash(taskdog add:*)"
+      "Bash(taskdog add:*)",
+      "Bash(taskdog optimize:*)"
     ],
     "deny": [],
     "ask": []

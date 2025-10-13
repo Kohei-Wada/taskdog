@@ -68,7 +68,9 @@ The application follows **Clean Architecture** with distinct layers:
 
 **Domain Layer** (`src/domain/`)
 - `entities/`: Core business entities (Task, TaskStatus)
-- `services/`: Domain services (TimeTracker)
+- `services/`: Domain services (TimeTracker, TaskEligibilityChecker, WorkloadCalculator)
+  - `TaskEligibilityChecker`: Centralized logic for determining if tasks can be updated, rescheduled, or included in hierarchy operations
+  - `WorkloadCalculator`: Computes daily hours from task allocations or evenly distributes estimated duration
 - `exceptions/`: Domain-specific exceptions (TaskNotFoundException)
 - No dependencies on other layers; defines core business logic
 
@@ -78,11 +80,21 @@ The application follows **Clean Architecture** with distinct layers:
   - Use cases are stateless and dependency-injected
 - `services/`: Application services that coordinate complex operations
   - `TaskValidator`: Validation logic requiring repository access
-  - `ScheduleOptimizer`: Auto-generates optimal task schedules based on priorities, deadlines, and constraints
   - `WorkloadAllocator`: Distributes task hours across weekdays respecting max hours/day
   - `HierarchyManager`: Manages parent-child relationships and propagates schedule changes
   - `TaskPrioritizer`: Sorts tasks by urgency (deadline proximity) and priority
   - `OptimizationSummaryBuilder`: Builds summary reports for schedule optimization
+  - `optimization/`: Multiple scheduling algorithms implementing the Strategy pattern
+    - `GreedyOptimizationStrategy`: Front-loads tasks (default)
+    - `BalancedOptimizationStrategy`: Even workload distribution
+    - `BackwardOptimizationStrategy`: Just-in-time scheduling from deadlines
+    - `PriorityFirstOptimizationStrategy`: Priority-based scheduling only
+    - `EarliestDeadlineOptimizationStrategy`: Earliest Deadline First (EDF)
+    - `RoundRobinOptimizationStrategy`: Parallel progress on multiple tasks
+    - `DependencyAwareOptimizationStrategy`: Critical Path Method (CPM)
+    - `GeneticOptimizationStrategy`: Evolutionary algorithm
+    - `MonteCarloOptimizationStrategy`: Random sampling approach
+    - `StrategyFactory`: Factory for creating strategy instances
 - `queries/`: Read-optimized operations (TaskQueryService with filters and sorters)
 - `dto/`: Data Transfer Objects for use case inputs (CreateTaskInput, StartTaskInput, UpdateTaskInput, etc.)
   - `UpdateTaskInput` uses Sentinel pattern (UNSET value) to distinguish "not provided" from "explicitly None" for parent_id field
@@ -273,12 +285,14 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `optimize`: Auto-generate optimal task schedules based on priorities, deadlines, and workload constraints (uses OptimizeScheduleUseCase)
   - `--start-date DATE`: Start date for scheduling (default: next weekday)
   - `--max-hours-per-day FLOAT`: Maximum work hours per day (default: 6.0)
-  - `--force`: Override existing schedules for all tasks
-  - `--dry-run`: Preview changes without saving
+  - `--algorithm, -a NAME`: Choose optimization algorithm (default: greedy)
+    - Available: greedy, balanced, backward, priority_first, earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo
+  - `--force, -f`: Override existing schedules for all tasks
+  - `--dry-run, -d`: Preview changes without saving
   - Analyzes all tasks with `estimated_duration` set
-  - Uses `ScheduleOptimizer` to distribute workload across weekdays
+  - Uses pluggable optimization strategies to distribute workload across weekdays
   - Respects task hierarchy (children scheduled before parents)
-  - Shows optimization summary with before/after schedules and workload distribution
+  - Shows Gantt chart, optimization summary, warnings, and configuration
 
 **Visualization & Export:**
 - `gantt`: Display Gantt chart timeline with workload summary and sorting options (uses TaskQueryService)
@@ -302,8 +316,9 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 10. **Package list in pyproject.toml** - All modules must be explicitly listed in `packages` array for installation
 11. **Rich for all output** - Console output uses Rich library for colors, tables, trees, and formatting
 12. **Atomic saves with backup** - JsonTaskRepository uses atomic writes (temp file + rename) and maintains `.json.bak` backup for data integrity
-13. **Schedule optimization** - Complex scheduling logic separated into application services (ScheduleOptimizer, WorkloadAllocator, TaskPrioritizer, HierarchyManager)
-14. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
+13. **Schedule optimization with Strategy pattern** - Multiple scheduling algorithms (9 strategies) implementing Strategy pattern, managed by StrategyFactory
+14. **Task eligibility checks** - Centralized logic in TaskEligibilityChecker for determining which tasks can be updated, rescheduled, or included in hierarchy operations
+15. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
 
 ### Console Messaging Guidelines
 
