@@ -54,32 +54,6 @@ class TestJsonTaskRepository(unittest.TestCase):
         found = self.repository.get_by_id(999)
         self.assertIsNone(found)
 
-    def test_get_children(self):
-        """Test retrieving child tasks"""
-        parent = Task(name="Parent", priority=1, id=1)
-        child1 = Task(name="Child 1", priority=1, id=2, parent_id=1)
-        child2 = Task(name="Child 2", priority=1, id=3, parent_id=1)
-        other = Task(name="Other", priority=1, id=4)
-
-        self.repository.save(parent)
-        self.repository.save(child1)
-        self.repository.save(child2)
-        self.repository.save(other)
-
-        children = self.repository.get_children(1)
-        self.assertEqual(len(children), 2)
-        child_names = [c.name for c in children]
-        self.assertIn("Child 1", child_names)
-        self.assertIn("Child 2", child_names)
-
-    def test_get_children_empty(self):
-        """Test get_children() returns empty list when no children"""
-        parent = Task(name="Parent", priority=1, id=1)
-        self.repository.save(parent)
-
-        children = self.repository.get_children(1)
-        self.assertEqual(children, [])
-
     def test_save_update_existing(self):
         """Test that save() updates an existing task"""
         task = Task(name="Original", priority=1, id=1)
@@ -148,7 +122,6 @@ class TestJsonTaskRepository(unittest.TestCase):
             priority=3,
             id=1,
             status=TaskStatus.IN_PROGRESS,
-            parent_id=None,
             planned_start="2025-01-01 09:00:00",
             planned_end="2025-01-01 17:00:00",
             deadline="2025-01-02 12:00:00",

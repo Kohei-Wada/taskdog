@@ -4,7 +4,6 @@ import unittest
 
 from application.dto.create_task_input import CreateTaskInput
 from application.use_cases.create_task import CreateTaskUseCase
-from domain.exceptions.task_exceptions import TaskNotFoundException
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
@@ -60,28 +59,6 @@ class TestCreateTaskUseCase(unittest.TestCase):
         self.assertEqual(retrieved.name, "Persistent Task")
         self.assertEqual(retrieved.priority, 2)
 
-    def test_execute_with_parent(self):
-        """Test execute creates task with parent"""
-        parent_input = CreateTaskInput(name="Parent", priority=1)
-        parent = self.use_case.execute(parent_input)
-
-        child_input = CreateTaskInput(name="Child", priority=1, parent_id=parent.id)
-        child = self.use_case.execute(child_input)
-
-        self.assertEqual(child.parent_id, parent.id)
-        children = self.repository.get_children(parent.id)
-        self.assertEqual(len(children), 1)
-        self.assertEqual(children[0].name, "Child")
-
-    def test_execute_with_invalid_parent_raises_error(self):
-        """Test execute with non-existent parent raises TaskNotFoundException"""
-        input_dto = CreateTaskInput(name="Orphan", priority=1, parent_id=999)
-
-        with self.assertRaises(TaskNotFoundException) as context:
-            self.use_case.execute(input_dto)
-
-        self.assertEqual(context.exception.task_id, 999)
-
     def test_execute_with_all_optional_fields(self):
         """Test execute with all optional fields"""
         input_dto = CreateTaskInput(
@@ -107,7 +84,6 @@ class TestCreateTaskUseCase(unittest.TestCase):
         input_dto = CreateTaskInput(
             name="Minimal Task",
             priority=1,
-            parent_id=None,
             planned_start=None,
             planned_end=None,
             deadline=None,
@@ -118,61 +94,10 @@ class TestCreateTaskUseCase(unittest.TestCase):
 
         self.assertEqual(task.name, "Minimal Task")
         self.assertEqual(task.priority, 1)
-        self.assertIsNone(task.parent_id)
         self.assertIsNone(task.planned_start)
         self.assertIsNone(task.planned_end)
         self.assertIsNone(task.deadline)
         self.assertIsNone(task.estimated_duration)
-
-    def test_execute_updates_parent_estimated_duration(self):
-        """Test execute updates parent's estimated_duration when child is created"""
-        # Create parent task
-        parent_input = CreateTaskInput(name="Parent", priority=1)
-        parent = self.use_case.execute(parent_input)
-
-        # Create first child with estimated_duration
-        child1_input = CreateTaskInput(
-            name="Child 1", priority=1, parent_id=parent.id, estimated_duration=5.0
-        )
-        self.use_case.execute(child1_input)
-
-        # Verify parent's estimated_duration is updated
-        parent_after_child1 = self.repository.get_by_id(parent.id)
-        self.assertEqual(parent_after_child1.estimated_duration, 5.0)
-
-        # Create second child with estimated_duration
-        child2_input = CreateTaskInput(
-            name="Child 2", priority=1, parent_id=parent.id, estimated_duration=3.0
-        )
-        self.use_case.execute(child2_input)
-
-        # Verify parent's estimated_duration is sum of children
-        parent_after_child2 = self.repository.get_by_id(parent.id)
-        self.assertEqual(parent_after_child2.estimated_duration, 8.0)
-
-    def test_execute_updates_grandparent_estimated_duration(self):
-        """Test execute updates grandparent's estimated_duration recursively"""
-        # Create grandparent
-        grandparent_input = CreateTaskInput(name="Grandparent", priority=1)
-        grandparent = self.use_case.execute(grandparent_input)
-
-        # Create parent as child of grandparent
-        parent_input = CreateTaskInput(name="Parent", priority=1, parent_id=grandparent.id)
-        parent = self.use_case.execute(parent_input)
-
-        # Create child with estimated_duration
-        child_input = CreateTaskInput(
-            name="Child", priority=1, parent_id=parent.id, estimated_duration=10.0
-        )
-        self.use_case.execute(child_input)
-
-        # Verify parent's estimated_duration
-        parent_updated = self.repository.get_by_id(parent.id)
-        self.assertEqual(parent_updated.estimated_duration, 10.0)
-
-        # Verify grandparent's estimated_duration is also updated
-        grandparent_updated = self.repository.get_by_id(grandparent.id)
-        self.assertEqual(grandparent_updated.estimated_duration, 10.0)
 
 
 if __name__ == "__main__":

@@ -9,12 +9,11 @@ from domain.entities.task import TaskStatus
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from shared.click_types.datetime_with_default import DateTimeWithDefault
-from utils.console_messages import print_validation_error
 
 
 @click.command(
     name="update",
-    help="Update multiple task properties at once. For single-field updates, prefer specialized commands (deadline, priority, rename, estimate, schedule, parent).",
+    help="Update multiple task properties at once. For single-field updates, prefer specialized commands (deadline, priority, rename, estimate, schedule).",
 )
 @click.argument("task_id", type=int)
 @click.option(
@@ -28,17 +27,6 @@ from utils.console_messages import print_validation_error
     type=click.Choice([e.value for e in TaskStatus]),
     default=None,
     help="New status",
-)
-@click.option(
-    "--parent",
-    type=int,
-    default=None,
-    help="New parent task ID",
-)
-@click.option(
-    "--clear-parent",
-    is_flag=True,
-    help="Clear parent (make task a root task)",
 )
 @click.option(
     "--planned-start",
@@ -71,8 +59,6 @@ def update_command(
     task_id,
     priority,
     status,
-    parent,
-    clear_parent,
     planned_start,
     planned_end,
     deadline,
@@ -90,16 +76,12 @@ def update_command(
         # Update status and record time
         taskdog update 10 --status IN_PROGRESS
 
-        # Set parent and deadline
-        taskdog update 7 --parent 3 --deadline 2025-10-20
-
-        # Clear parent
-        taskdog update 7 --clear-parent
+        # Update deadline and estimated duration
+        taskdog update 7 --deadline 2025-10-20 --estimated-duration 4.0
 
     For single-field updates, prefer specialized commands:
         taskdog deadline <ID> <DATE>
         taskdog priority <ID> <PRIORITY>
-        taskdog parent <ID> <PARENT_ID>
         taskdog estimate <ID> <HOURS>
         taskdog schedule <ID> <START> [END]
     """
@@ -109,30 +91,14 @@ def update_command(
     time_tracker = ctx_obj.time_tracker
     update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
 
-    # Validate parent options
-    if parent is not None and clear_parent:
-        print_validation_error(console, "Cannot specify both --parent and --clear-parent")
-        return
-
     # Convert status string to Enum if provided
     status_enum = TaskStatus(status) if status else None
-
-    # Determine parent_id value (UNSET, None, or int)
-    from application.dto.update_task_input import UNSET
-
-    if clear_parent:
-        parent_id_value = None
-    elif parent is not None:
-        parent_id_value = parent
-    else:
-        parent_id_value = UNSET
 
     # Build input DTO
     input_dto = UpdateTaskInput(
         task_id=task_id,
         priority=priority,
         status=status_enum,
-        parent_id=parent_id_value,
         planned_start=planned_start,
         planned_end=planned_end,
         deadline=deadline,
@@ -144,7 +110,7 @@ def update_command(
 
     if not updated_fields:
         console.print(
-            "[yellow]No fields to update.[/yellow] Use --priority, --status, --parent, --clear-parent, --planned-start, --planned-end, --deadline, or --estimated-duration"
+            "[yellow]No fields to update.[/yellow] Use --priority, --status, --planned-start, --planned-end, --deadline, or --estimated-duration"
         )
         return
 
@@ -156,11 +122,5 @@ def update_command(
         value = getattr(task, field)
         if field == "estimated_duration":
             console.print(f"  • {field}: [cyan]{value}h[/cyan]")
-        elif field == "parent_id":
-            if value is None:
-                console.print(f"  • {field}: [cyan]None (root task)[/cyan]")
-            else:
-                parent_task = repository.get_by_id(value)
-                console.print(f"  • {field}: [cyan]{value}[/cyan] ({parent_task.name})")
         else:
             console.print(f"  • {field}: [cyan]{value}[/cyan]")

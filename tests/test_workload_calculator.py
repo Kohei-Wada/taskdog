@@ -23,7 +23,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start="2025-01-06 09:00:00",  # Monday
             planned_end="2025-01-10 18:00:00",  # Friday
@@ -51,7 +50,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start="2025-01-10 09:00:00",  # Friday
             planned_end="2025-01-14 18:00:00",  # Tuesday (next week)
@@ -80,7 +78,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Task 1",
             priority=1,
             status=TaskStatus.PENDING,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start="2025-01-06 09:00:00",  # Monday
             planned_end="2025-01-08 18:00:00",  # Wednesday
@@ -93,7 +90,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Task 2",
             priority=1,
             status=TaskStatus.PENDING,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start="2025-01-08 09:00:00",  # Wednesday
             planned_end="2025-01-10 18:00:00",  # Friday
@@ -121,7 +117,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start="2025-01-06 09:00:00",
             planned_end="2025-01-10 18:00:00",
@@ -145,7 +140,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start=None,
             planned_end=None,
@@ -170,7 +164,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start="2025-02-01 09:00:00",
             planned_end="2025-02-05 18:00:00",
@@ -214,7 +207,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Pending Task",
             priority=1,
             status=TaskStatus.PENDING,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start="2025-01-06 09:00:00",  # Monday
             planned_end="2025-01-08 18:00:00",  # Wednesday
@@ -227,7 +219,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Completed Task",
             priority=1,
             status=TaskStatus.COMPLETED,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start="2025-01-08 09:00:00",  # Wednesday
             planned_end="2025-01-10 18:00:00",  # Friday
@@ -256,7 +247,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Optimized Task",
             priority=1,
             status=TaskStatus.PENDING,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start="2025-01-06 09:00:00",  # Monday
             planned_end="2025-01-07 18:00:00",  # Tuesday
@@ -287,7 +277,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Legacy Task",
             priority=1,
             status=TaskStatus.PENDING,
-            parent_id=None,
             timestamp="2025-01-01 00:00:00",
             planned_start="2025-01-06 09:00:00",  # Monday
             planned_end="2025-01-08 18:00:00",  # Wednesday

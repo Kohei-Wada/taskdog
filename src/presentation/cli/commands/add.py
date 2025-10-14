@@ -18,22 +18,15 @@ from utils.console_messages import print_success
     default=100,
     help="Task priority (default: 100, higher value = higher priority)",
 )
-@click.option(
-    "--parent",
-    type=int,
-    default=None,
-    help="Parent task ID (for creating subtasks)",
-)
 @click.pass_context
 @handle_task_errors("adding task", is_parent=True)
-def add_command(ctx, name, priority, parent):
+def add_command(ctx, name, priority):
     """Add a new task.
 
     Usage:
         taskdog add "Task name"
         taskdog add "Task name" --priority 3
-        taskdog add "Task name" --parent 5
-        taskdog add "Task name" -p 2 --parent 5
+        taskdog add "Task name" -p 2
 
     To set deadline, estimate, or schedule, use dedicated commands after creation:
         taskdog deadline <ID> <DATE>
@@ -43,7 +36,7 @@ def add_command(ctx, name, priority, parent):
     Examples:
         taskdog add "Implement authentication"
         taskdog add "Fix login bug" -p 5
-        taskdog add "Add unit tests" --parent 10
+        taskdog add "Add unit tests"
     """
     ctx_obj: CliContext = ctx.obj
     console = ctx_obj.console
@@ -54,7 +47,6 @@ def add_command(ctx, name, priority, parent):
     input_dto = CreateTaskInput(
         name=name,
         priority=priority,
-        parent_id=parent,
     )
 
     # Execute use case

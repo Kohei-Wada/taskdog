@@ -4,7 +4,6 @@ import copy
 from datetime import datetime, timedelta
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.schedule_propagator import SchedulePropagator
 from application.services.task_filter import TaskFilter
 from application.services.task_prioritizer import TaskPrioritizer
 from application.services.workload_allocator import WorkloadAllocator
@@ -55,7 +54,6 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
         task_filter = TaskFilter()
         prioritizer = TaskPrioritizer(start_date, repository)
-        schedule_propagator = SchedulePropagator(repository)
 
         # Initialize daily_allocations with existing scheduled tasks
         allocator.initialize_allocations(tasks, force_override)
@@ -76,16 +74,10 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
                 updated_tasks.append(updated_task)
 
         # Update parent task periods based on children
-        all_tasks_with_updates = schedule_propagator.propagate_periods(tasks, updated_tasks)
-
-        # If force_override, clear schedules for tasks that couldn't be scheduled
-        if force_override:
-            all_tasks_with_updates = schedule_propagator.clear_unscheduled_tasks(
-                tasks, all_tasks_with_updates
-            )
+        # Schedule propagation removed (no parent-child hierarchy)
 
         # Return modified tasks and daily allocations
-        return all_tasks_with_updates, allocator.daily_allocations
+        return updated_tasks, allocator.daily_allocations
 
     def _allocate_balanced_timeblock(  # noqa: C901
         self,

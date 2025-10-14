@@ -161,25 +161,6 @@ class TaskStatusServiceTest(unittest.TestCase):
         # Should return the same object
         self.assertEqual(id(updated), original_id)
 
-    def test_change_status_with_parent_task(self):
-        """Test that status change works correctly for tasks with parents."""
-        # Create parent and child
-        parent = self.repository.create(name="Parent", priority=1)
-        child = self.repository.create(name="Child", priority=1, parent_id=parent.id)
-
-        # Change child status
-        updated_child = self.service.change_status_with_tracking(
-            child, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
-        )
-
-        # Verify child status changed
-        self.assertEqual(updated_child.status, TaskStatus.IN_PROGRESS)
-        self.assertEqual(updated_child.parent_id, parent.id)
-
-        # Verify parent unaffected
-        parent_from_db = self.repository.get_by_id(parent.id)
-        self.assertEqual(parent_from_db.status, TaskStatus.PENDING)
-
 
 if __name__ == "__main__":
     unittest.main()

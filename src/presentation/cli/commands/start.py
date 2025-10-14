@@ -5,7 +5,7 @@ import click
 from application.dto.start_task_input import StartTaskInput
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import TaskStatus
-from domain.exceptions.task_exceptions import TaskAlreadyFinishedError, TaskWithChildrenError
+from domain.exceptions.task_exceptions import TaskAlreadyFinishedError
 from presentation.cli.batch_executor import BatchCommandExecutor
 from presentation.cli.context import CliContext
 from utils.console_messages import print_success
@@ -47,14 +47,6 @@ def start_command(ctx, task_ids):
         elif task.actual_start:
             console.print(f"  Started at: [blue]{task.actual_start}[/blue]")
 
-    # Define error handler for TaskWithChildrenError
-    def handle_task_with_children(e: TaskWithChildrenError):
-        console.print(f"[red]✗[/red] Cannot start task {e.task_id}")
-        console.print("  [yellow]⚠[/yellow] This task has child tasks:")
-        for child in e.children:
-            console.print(f"    - Task {child.id}: {child.name}")
-        console.print("  [dim]Start child tasks instead. Parent will auto-start.[/dim]")
-
     # Define error handler for TaskAlreadyFinishedError
     def handle_already_finished(e: TaskAlreadyFinishedError):
         console.print(f"[red]✗[/red] Cannot start task {e.task_id}")
@@ -69,7 +61,6 @@ def start_command(ctx, task_ids):
         operation_name="starting task",
         success_callback=on_success,
         error_handlers={
-            TaskWithChildrenError: handle_task_with_children,
             TaskAlreadyFinishedError: handle_already_finished,
         },
     )

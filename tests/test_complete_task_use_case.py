@@ -6,7 +6,6 @@ from application.dto.complete_task_input import CompleteTaskInput
 from application.use_cases.complete_task import CompleteTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import (
-    IncompleteChildrenError,
     TaskAlreadyFinishedError,
     TaskNotFoundException,
     TaskNotStartedError,
@@ -89,76 +88,6 @@ class TestCompleteTaskUseCase(unittest.TestCase):
 
         # actual_start should remain unchanged
         self.assertEqual(result.actual_start, "2025-10-12 10:00:00")
-
-    def test_execute_with_incomplete_children_raises_error(self):
-        """Test execute with incomplete children raises IncompleteChildrenError"""
-        # Create parent task
-        parent = Task(name="Parent Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        parent.id = self.repository.generate_next_id()
-        self.repository.save(parent)
-
-        # Create child task with IN_PROGRESS status
-        child = Task(
-            name="Child Task", priority=1, status=TaskStatus.IN_PROGRESS, parent_id=parent.id
-        )
-        child.id = self.repository.generate_next_id()
-        self.repository.save(child)
-
-        input_dto = CompleteTaskInput(task_id=parent.id)
-
-        with self.assertRaises(IncompleteChildrenError) as context:
-            self.use_case.execute(input_dto)
-
-        self.assertEqual(context.exception.task_id, parent.id)
-        self.assertEqual(len(context.exception.incomplete_children), 1)
-        self.assertEqual(context.exception.incomplete_children[0].id, child.id)
-
-    def test_execute_with_all_children_completed_succeeds(self):
-        """Test execute succeeds when all children are completed"""
-        # Create parent task
-        parent = Task(name="Parent Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        parent.id = self.repository.generate_next_id()
-        self.repository.save(parent)
-
-        # Create child task with COMPLETED status
-        child = Task(
-            name="Child Task", priority=1, status=TaskStatus.COMPLETED, parent_id=parent.id
-        )
-        child.id = self.repository.generate_next_id()
-        self.repository.save(child)
-
-        input_dto = CompleteTaskInput(task_id=parent.id)
-        result = self.use_case.execute(input_dto)
-
-        self.assertEqual(result.status, TaskStatus.COMPLETED)
-
-    def test_execute_with_multiple_incomplete_children_raises_error(self):
-        """Test execute with multiple incomplete children lists all of them"""
-        # Create parent task
-        parent = Task(name="Parent Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        parent.id = self.repository.generate_next_id()
-        self.repository.save(parent)
-
-        # Create two incomplete child tasks
-        child1 = Task(
-            name="Child Task 1", priority=1, status=TaskStatus.PENDING, parent_id=parent.id
-        )
-        child1.id = self.repository.generate_next_id()
-        self.repository.save(child1)
-
-        child2 = Task(
-            name="Child Task 2", priority=1, status=TaskStatus.IN_PROGRESS, parent_id=parent.id
-        )
-        child2.id = self.repository.generate_next_id()
-        self.repository.save(child2)
-
-        input_dto = CompleteTaskInput(task_id=parent.id)
-
-        with self.assertRaises(IncompleteChildrenError) as context:
-            self.use_case.execute(input_dto)
-
-        self.assertEqual(context.exception.task_id, parent.id)
-        self.assertEqual(len(context.exception.incomplete_children), 2)
 
     def test_execute_with_pending_task_raises_error(self):
         """Test execute with PENDING task raises TaskNotStartedError"""

@@ -16,27 +16,6 @@ class TestTaskEligibilityChecker(unittest.TestCase):
 
         self.assertTrue(result)
 
-    def test_can_be_started_with_children_returns_false(self):
-        """Test can_be_started returns False when task has children"""
-        task = Task(name="Parent Task", priority=1)
-        child1 = Task(name="Child 1", priority=2, parent_id=1)
-        child2 = Task(name="Child 2", priority=3, parent_id=1)
-        children = [child1, child2]
-
-        result = TaskEligibilityChecker.can_be_started(task, children)
-
-        self.assertFalse(result)
-
-    def test_can_be_started_with_one_child_returns_false(self):
-        """Test can_be_started returns False when task has one child"""
-        task = Task(name="Parent Task", priority=1)
-        child = Task(name="Child", priority=2, parent_id=1)
-        children = [child]
-
-        result = TaskEligibilityChecker.can_be_started(task, children)
-
-        self.assertFalse(result)
-
     def test_can_be_started_with_completed_task_returns_false(self):
         """Test can_be_started returns False when task is COMPLETED"""
         task = Task(name="Completed Task", priority=1, status=TaskStatus.COMPLETED)

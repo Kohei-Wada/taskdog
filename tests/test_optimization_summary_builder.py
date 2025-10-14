@@ -199,38 +199,6 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
 
         self.assertEqual(len(summary.unscheduled_tasks), 0)
 
-    def test_build_ignores_parent_tasks(self):
-        """Test build ignores parent tasks when checking unscheduled."""
-        # Create parent task
-        parent = Task(
-            id=1, name="Parent", priority=1, status=TaskStatus.PENDING, estimated_duration=8.0
-        )
-        # Create child task
-        child = Task(
-            id=2,
-            name="Child",
-            priority=1,
-            status=TaskStatus.PENDING,
-            parent_id=1,
-            planned_start="2025-10-14 09:00:00",
-            planned_end="2025-10-14 17:00:00",
-            estimated_duration=8.0,
-        )
-        self.repository.save(parent)
-        self.repository.save(child)
-
-        modified_tasks = [child]
-        task_states_before = {2: None}
-        daily_allocations = {"2025-10-14": 8.0}
-        max_hours_per_day = 8.0
-
-        summary = self.builder.build(
-            modified_tasks, task_states_before, daily_allocations, max_hours_per_day
-        )
-
-        # Parent should be ignored even though it has no schedule
-        self.assertEqual(len(summary.unscheduled_tasks), 0)
-
 
 if __name__ == "__main__":
     unittest.main()

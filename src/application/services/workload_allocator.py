@@ -40,17 +40,7 @@ class WorkloadAllocator:
             tasks: All tasks in the system
             force_override: Whether existing schedules will be overridden
         """
-        # Build parent-child map to identify parent tasks
-        parent_ids = set()
         for task in tasks:
-            if task.parent_id:
-                parent_ids.add(task.parent_id)
-
-        for task in tasks:
-            # Skip parent tasks (they don't have actual work, only children do)
-            if task.id in parent_ids:
-                continue
-
             # Skip finished tasks (completed/archived) - they don't contribute to future workload
             if not TaskEligibilityChecker.should_count_in_workload(task):
                 continue

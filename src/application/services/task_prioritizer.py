@@ -11,7 +11,7 @@ class TaskPrioritizer:
     """Service for sorting tasks by scheduling priority.
 
     Determines the optimal order for scheduling tasks based on
-    deadline urgency, priority field, hierarchy, and task ID.
+    deadline urgency, priority field, and task ID.
     """
 
     def __init__(self, start_date: datetime, repository):
@@ -19,7 +19,7 @@ class TaskPrioritizer:
 
         Args:
             start_date: Starting date for deadline calculations
-            repository: Task repository for hierarchy queries
+            repository: Task repository (unused, kept for compatibility)
         """
         self.start_date = start_date
         self.repository = repository
@@ -30,8 +30,7 @@ class TaskPrioritizer:
         Priority order:
         1. Deadline urgency (closer deadline = higher priority)
         2. Task priority field
-        3. Leaf tasks before parents (schedule children first)
-        4. Task ID (for stable sort)
+        3. Task ID (for stable sort)
 
         Args:
             tasks: Tasks to sort
@@ -41,11 +40,7 @@ class TaskPrioritizer:
         """
 
         def priority_key(task: Task) -> tuple:
-            # Check if task is a parent (has children)
-            children = self.repository.get_children(task.id)
-            is_parent = len(children) > 0
-
-            # Get effective deadline considering parent task deadlines
+            # Get task's deadline
             effective_deadline = DeadlineCalculator.get_effective_deadline(task, self.repository)
 
             # Deadline score: None = infinity, otherwise days until deadline
@@ -58,9 +53,9 @@ class TaskPrioritizer:
             # Handle priority=None (treat as 0)
             priority_value = task.priority if task.priority is not None else 0
 
-            # Return tuple for sorting: (deadline, -priority, is_parent, id)
+            # Return tuple for sorting: (deadline, -priority, id)
             # Higher priority value means higher priority (200 > 100 > 50)
             # Negative priority so higher values come first
-            return (days_until, -priority_value, is_parent, task.id)
+            return (days_until, -priority_value, task.id)
 
         return sorted(tasks, key=priority_key)

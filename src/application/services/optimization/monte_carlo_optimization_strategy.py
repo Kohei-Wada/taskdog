@@ -4,7 +4,6 @@ import random
 from datetime import datetime
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.schedule_propagator import SchedulePropagator
 from application.services.task_filter import TaskFilter
 from application.services.workload_allocator import WorkloadAllocator
 from domain.constants import DATETIME_FORMAT
@@ -51,7 +50,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         """
         # Initialize service instances
         task_filter = TaskFilter()
-        schedule_propagator = SchedulePropagator(repository)
 
         # Filter tasks that need scheduling
         schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
@@ -75,16 +73,10 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
                 updated_tasks.append(updated_task)
 
         # Update parent task periods based on children
-        all_tasks_with_updates = schedule_propagator.propagate_periods(tasks, updated_tasks)
-
-        # If force_override, clear schedules for tasks that couldn't be scheduled
-        if force_override:
-            all_tasks_with_updates = schedule_propagator.clear_unscheduled_tasks(
-                tasks, all_tasks_with_updates
-            )
+        # Schedule propagation removed (no parent-child hierarchy)
 
         # Return modified tasks and daily allocations
-        return all_tasks_with_updates, allocator.daily_allocations
+        return updated_tasks, allocator.daily_allocations
 
     def _monte_carlo_simulation(
         self,

@@ -119,54 +119,6 @@ class TestTodayFilter(unittest.TestCase):
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].name, "Completed Today")
 
-    def test_filter_preserves_hierarchy(self):
-        """Test filter includes parent tasks when children match"""
-        # Create parent task not matching today's criteria
-        parent = Task(name="Parent", priority=1, deadline=self.tomorrow_str)
-        parent.id = self.repository.generate_next_id()
-        self.repository.save(parent)
-
-        # Create child task matching today's criteria
-        child = Task(name="Child", priority=1, deadline=self.today_str, parent_id=parent.id)
-        child.id = self.repository.generate_next_id()
-        self.repository.save(child)
-
-        tasks = self.repository.get_all()
-        filtered = self.filter.filter(tasks, include_completed=False)
-
-        # Both parent and child should be included
-        self.assertEqual(len(filtered), 2)
-        filtered_names = {t.name for t in filtered}
-        self.assertIn("Parent", filtered_names)
-        self.assertIn("Child", filtered_names)
-
-    def test_filter_deep_hierarchy(self):
-        """Test filter preserves deep hierarchy (grandparent-parent-child)"""
-        # Grandparent
-        grandparent = Task(name="Grandparent", priority=1)
-        grandparent.id = self.repository.generate_next_id()
-        self.repository.save(grandparent)
-
-        # Parent
-        parent = Task(name="Parent", priority=1, parent_id=grandparent.id)
-        parent.id = self.repository.generate_next_id()
-        self.repository.save(parent)
-
-        # Child matching today's criteria
-        child = Task(name="Child", priority=1, deadline=self.today_str, parent_id=parent.id)
-        child.id = self.repository.generate_next_id()
-        self.repository.save(child)
-
-        tasks = self.repository.get_all()
-        filtered = self.filter.filter(tasks, include_completed=False)
-
-        # All three should be included
-        self.assertEqual(len(filtered), 3)
-        filtered_names = {t.name for t in filtered}
-        self.assertIn("Grandparent", filtered_names)
-        self.assertIn("Parent", filtered_names)
-        self.assertIn("Child", filtered_names)
-
 
 if __name__ == "__main__":
     unittest.main()

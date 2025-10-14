@@ -45,10 +45,6 @@ class RichDetailFormatter:
         status_style = STATUS_STYLES.get(task.status, "white")
         table.add_row("Status", f"[{status_style}]{task.status.value}[/{status_style}]")
 
-        # Parent info
-        if task.parent_id:
-            table.add_row("Parent ID", str(task.parent_id))
-
         # Timestamps
         table.add_row("Created", task.created_at_str)
 

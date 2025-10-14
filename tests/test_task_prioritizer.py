@@ -68,20 +68,6 @@ class TestTaskPrioritizer(unittest.TestCase):
         self.assertEqual(result[1].id, 1)  # 14 days away
         self.assertEqual(result[2].id, 3)  # No deadline (infinity)
 
-    def test_sort_by_hierarchy_leaf_before_parent(self):
-        """Test that leaf tasks are prioritized before parent tasks."""
-        tasks = [
-            Task(id=1, name="Parent task", priority=100, status=TaskStatus.PENDING),
-            Task(
-                id=2,
-                name="Child task",
-                priority=100,
-                status=TaskStatus.PENDING,
-                parent_id=1,
-            ),
-        ]
-
-        # Mock repository to return children for task 1
         def get_children_side_effect(task_id):
             if task_id == 1:
                 return [tasks[1]]  # Task 1 has children

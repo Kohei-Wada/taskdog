@@ -4,9 +4,7 @@ import click
 
 from application.dto.complete_task_input import CompleteTaskInput
 from application.use_cases.complete_task import CompleteTaskUseCase
-from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import (
-    IncompleteChildrenError,
     TaskAlreadyFinishedError,
     TaskNotStartedError,
 )
@@ -18,7 +16,7 @@ from utils.console_messages import print_success
 @click.command(name="done", help="Mark task(s) as completed.")
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.pass_context
-def done_command(ctx, task_ids):  # noqa: C901
+def done_command(ctx, task_ids):
     """Mark task(s) as completed."""
     ctx_obj: CliContext = ctx.obj
     console = ctx_obj.console
@@ -73,19 +71,6 @@ def done_command(ctx, task_ids):  # noqa: C901
             }[/blue]"
         )
 
-    # Define error handler for IncompleteChildrenError
-    def handle_incomplete_children(e: IncompleteChildrenError):
-        console.print(f"[red]✗[/red] Cannot complete task {e.task_id}")
-        console.print("  [yellow]⚠[/yellow] The following child tasks are not completed:")
-        for child in e.incomplete_children:
-            status_color = "blue" if child.status == TaskStatus.IN_PROGRESS else "yellow"
-            console.print(
-                f"    - Task {child.id}: {child.name} ([{status_color}]{child.status.value}[/{
-                    status_color
-                }])"
-            )
-        console.print("  [dim]Complete all child tasks first, then try again.[/dim]")
-
     # Execute batch operation
     executor = BatchCommandExecutor(console)
     executor.execute_batch(
@@ -96,6 +81,5 @@ def done_command(ctx, task_ids):  # noqa: C901
         error_handlers={
             TaskAlreadyFinishedError: handle_already_finished,
             TaskNotStartedError: handle_not_started,
-            IncompleteChildrenError: handle_incomplete_children,
         },
     )

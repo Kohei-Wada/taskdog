@@ -2,10 +2,7 @@
 
 from typing import Any
 
-from application.validators.deadline_validator import DeadlineValidator
-from application.validators.estimated_duration_validator import EstimatedDurationValidator
 from application.validators.field_validator import FieldValidator
-from application.validators.parent_id_validator import ParentIdValidator
 from application.validators.status_validator import StatusValidator
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
@@ -30,10 +27,7 @@ class TaskFieldValidatorRegistry:
 
     def _register_validators(self) -> None:
         """Register all field validators."""
-        self._validators["parent_id"] = ParentIdValidator()
-        self._validators["estimated_duration"] = EstimatedDurationValidator()
         self._validators["status"] = StatusValidator()
-        self._validators["deadline"] = DeadlineValidator()
 
     def validate_field(self, field_name: str, value: Any, task: Task) -> None:
         """Validate a field value if a validator exists for that field.

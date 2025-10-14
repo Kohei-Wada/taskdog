@@ -14,15 +14,13 @@ class TodayFilter:
     - Deadline is today
     - Planned period includes today (planned_start <= today <= planned_end)
     - Status is IN_PROGRESS
-
-    Also includes ancestor tasks to preserve hierarchy.
     """
 
     def __init__(self, repository: TaskRepository):
         """Initialize filter with repository.
 
         Args:
-            repository: Task repository for accessing task relationships
+            repository: Task repository (unused, kept for compatibility)
         """
         self.repository = repository
 
@@ -38,8 +36,7 @@ class TodayFilter:
         """
         today = datetime.now().date()
 
-        # First, identify tasks matching today's criteria
-        matching_task_ids = set()
+        matching_tasks = []
 
         for task in tasks:
             # Always skip archived tasks (historical records, not relevant to today)
@@ -52,23 +49,9 @@ class TodayFilter:
 
             # Check if task matches today's criteria
             if self._is_today_task(task, today):
-                matching_task_ids.add(task.id)
+                matching_tasks.append(task)
 
-        # Include ancestor tasks to preserve hierarchy
-        ancestor_ids = set()
-        for task in tasks:
-            if task.id in matching_task_ids:
-                # Add all ancestors
-                current = task
-                while current.parent_id:
-                    ancestor_ids.add(current.parent_id)
-                    current = self.repository.get_by_id(current.parent_id)
-                    if not current:
-                        break
-
-        # Combine matching tasks and their ancestors
-        included_ids = matching_task_ids | ancestor_ids
-        return [t for t in tasks if t.id in included_ids]
+        return matching_tasks
 
     def _is_today_task(self, task: Task, today) -> bool:
         """Check if a task is relevant for today.

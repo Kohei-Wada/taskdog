@@ -28,18 +28,6 @@ class TaskRepository(ABC):
         pass
 
     @abstractmethod
-    def get_children(self, task_id: int) -> list[Task]:
-        """Retrieve all child tasks of a given task.
-
-        Args:
-            task_id: The ID of the parent task
-
-        Returns:
-            List of child tasks
-        """
-        pass
-
-    @abstractmethod
     def save(self, task: Task) -> None:
         """Save a task (create new or update existing).
 

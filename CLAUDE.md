@@ -79,7 +79,6 @@ The application follows **Clean Architecture** with distinct layers:
   - `CannotSetEstimateForParentTaskError`: Trying to set estimated_duration for parent task
   - `DeadlineAfterParentError`: Child task deadline is after parent task deadline
   - `IncompleteChildrenError`: Trying to complete task with incomplete children
-  - `TaskWithChildrenError`: Trying to start task that has children
   - `TaskAlreadyFinishedError`: Trying to start already finished task
   - `TaskNotStartedError`: Trying to complete task that hasn't been started
 - No dependencies on other layers; defines core business logic

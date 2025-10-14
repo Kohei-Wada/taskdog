@@ -92,10 +92,6 @@ class OptimizationSummaryBuilder:
             # Skip archived and completed tasks
             if task.status in [TaskStatus.ARCHIVED, TaskStatus.COMPLETED]:
                 continue
-            # Skip parent tasks (they don't have allocations)
-            children = self.repository.get_children(task.id)
-            if len(children) > 0:
-                continue
             # Skip tasks without estimated duration
             if not task.estimated_duration:
                 continue

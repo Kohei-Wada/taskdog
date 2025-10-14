@@ -34,7 +34,6 @@ class RichTableFormatter(RichFormatterBase):
         table.add_column("Name", style="white")
         table.add_column("Priority", justify="center", style="yellow", no_wrap=True)
         table.add_column("Status", justify="center")
-        table.add_column("Parent", justify="center", style="dim", no_wrap=True)
         table.add_column("Plan Start", style="green", no_wrap=True)
         table.add_column("Plan End", style="green", no_wrap=True)
         table.add_column("Actual Start", style="blue", no_wrap=True)
@@ -44,8 +43,6 @@ class RichTableFormatter(RichFormatterBase):
 
         # Add rows
         for task in tasks:
-            parent_str = str(task.parent_id) if task.parent_id else "-"
-
             # Status with color
             status_style = self._get_status_style(task.status)
 
@@ -68,7 +65,6 @@ class RichTableFormatter(RichFormatterBase):
                 task.name,
                 str(task.priority),
                 f"[{status_style}]{task.status.value}[/{status_style}]",
-                parent_str,
                 planned_start_str,
                 planned_end_str,
                 actual_start_str,

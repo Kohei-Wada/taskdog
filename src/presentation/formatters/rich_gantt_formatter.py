@@ -77,18 +77,9 @@ class RichGanttFormatter(RichFormatterBase):
         date_header = self._build_date_header(start_date, end_date)
         table.add_row("", "[dim]Date[/dim]", "", date_header)
 
-        # Build set of parent task IDs (tasks with children)
-        parent_ids = set()
+        # Display all tasks in sort order
         for task in tasks:
-            if task.parent_id:
-                parent_ids.add(task.parent_id)
-
-        # Filter out parent tasks and display only leaf tasks in sort order
-        # This ensures the sort order specified by the user is respected
-        for task in tasks:
-            if task.id not in parent_ids:
-                # This is a leaf task - add it to the gantt
-                self._add_leaf_task_to_gantt(task, table, repository, start_date, end_date)
+            self._add_leaf_task_to_gantt(task, table, repository, start_date, end_date)
 
         # Add section divider before workload summary
         table.add_section()
@@ -237,33 +228,23 @@ class RichGanttFormatter(RichFormatterBase):
         table.add_column("Task", style="white")
         table.add_column("Status", justify="center")
 
-        root_tasks = [t for t in tasks if t.parent_id is None]
-        for task in root_tasks:
-            self._add_simple_task(task, table, repository, depth=0)
+        for task in tasks:
+            self._add_simple_task(task, table, repository)
 
         return self._render_to_string(table)
 
-    def _add_simple_task(self, task: Task, table: Table, repository, depth: int):
+    def _add_simple_task(self, task: Task, table: Table, repository):
         """Add task to simple table (no dates).
 
         Args:
             task: Task to add
             table: Rich Table object
             repository: Repository instance
-            depth: Indentation depth
         """
-        indent = "  " * depth
-        task_name = f"{indent}{task.name}"
-
         status_style = self._get_status_style(task.status)
         status_text = f"[{status_style}]{task.status.value}[/{status_style}]"
 
-        table.add_row(str(task.id), task_name, status_text)
-
-        # Add children recursively
-        children = repository.get_children(task.id)
-        for child in children:
-            self._add_simple_task(child, table, repository, depth + 1)
+        table.add_row(str(task.id), task.name, status_text)
 
     def _add_leaf_task_to_gantt(
         self,
@@ -273,13 +254,10 @@ class RichGanttFormatter(RichFormatterBase):
         start_date: date,
         end_date: date,
     ):
-        """Add a leaf task to Gantt chart table.
-
-        This method displays only leaf tasks (tasks without children) in the order
-        they appear in the tasks list, preserving any sorting applied.
+        """Add a task to Gantt chart table.
 
         Args:
-            task: Leaf task to add
+            task: Task to add
             table: Rich Table object
             repository: Repository instance
             start_date: Start date of the chart
@@ -308,25 +286,17 @@ class RichGanttFormatter(RichFormatterBase):
         otherwise distributes estimated_duration equally across weekdays
         in the planned period.
 
-        Parent tasks (tasks with children) always return zero allocations
-        since their estimated_duration is automatically calculated from children.
-
         Args:
             task: Task to calculate daily hours for
             start_date: Start date of the chart
             end_date: End date of the chart
-            repository: Repository instance for checking task relationships
+            repository: Repository instance (unused, kept for compatibility)
 
         Returns:
             Dictionary mapping date to hours {date: float}
         """
         days = (end_date - start_date).days + 1
         daily_hours = {start_date + timedelta(days=i): 0.0 for i in range(days)}
-
-        # Skip parent tasks (tasks with children) - they don't have their own work hours
-        children = repository.get_children(task.id)
-        if children:
-            return daily_hours
 
         # Skip tasks without estimated duration
         if not task.estimated_duration:

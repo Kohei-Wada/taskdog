@@ -51,15 +51,4 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
             task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
         )
 
-        # Auto-start all ancestor tasks if they're still pending
-        current_parent_id = task.parent_id
-        while current_parent_id is not None:
-            parent = self.repository.get_by_id(current_parent_id)
-            if parent and parent.status == TaskStatus.PENDING:
-                self.status_service.change_status_with_tracking(
-                    parent, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
-                )
-            # Move to next ancestor
-            current_parent_id = parent.parent_id if parent else None
-
         return task

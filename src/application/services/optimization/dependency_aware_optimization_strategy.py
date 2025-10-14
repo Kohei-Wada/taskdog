@@ -3,7 +3,6 @@
 from datetime import datetime
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.schedule_propagator import SchedulePropagator
 from application.services.task_filter import TaskFilter
 from application.services.workload_allocator import WorkloadAllocator
 from domain.entities.task import Task
@@ -46,7 +45,6 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
         # Initialize service instances
         allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
         task_filter = TaskFilter()
-        schedule_propagator = SchedulePropagator(repository)
 
         # Initialize daily_allocations with existing scheduled tasks
         allocator.initialize_allocations(tasks, force_override)
@@ -79,58 +77,22 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
                 updated_tasks.append(updated_task)
 
         # Update parent task periods based on children
-        all_tasks_with_updates = schedule_propagator.propagate_periods(tasks, updated_tasks)
-
-        # If force_override, clear schedules for tasks that couldn't be scheduled
-        if force_override:
-            all_tasks_with_updates = schedule_propagator.clear_unscheduled_tasks(
-                tasks, all_tasks_with_updates
-            )
+        # Schedule propagation removed (no parent-child hierarchy)
 
         # Return modified tasks and daily allocations
-        return all_tasks_with_updates, allocator.daily_allocations
+        return updated_tasks, allocator.daily_allocations
 
     def _calculate_dependency_depths(self, tasks: list[Task], repository) -> dict[int, int]:
         """Calculate dependency depth for each task.
 
-        Leaf tasks (no children) have depth 0.
-        Parent tasks have depth = max(child depths) + 1.
+        Since parent-child relationships have been removed, all tasks have depth 0.
 
         Args:
             tasks: List of tasks to analyze
-            repository: Task repository for hierarchy queries
+            repository: Task repository (unused, kept for compatibility)
 
         Returns:
-            Dict mapping task_id to dependency depth
+            Dict mapping task_id to dependency depth (always 0)
         """
-        task_map = {task.id: task for task in tasks}
-        depths: dict[int, int] = {}
-
-        def calculate_depth(task_id: int) -> int:
-            """Recursively calculate depth for a task."""
-            if task_id in depths:
-                return depths[task_id]
-
-            # Get children for this task
-            children = repository.get_children(task_id)
-            # Filter children to only those in schedulable_tasks
-            schedulable_children = [c for c in children if c.id in task_map]
-
-            if not schedulable_children:
-                # Leaf task
-                depths[task_id] = 0
-                return 0
-
-            # Parent task: depth = max(child depths) + 1
-            child_depths = [
-                calculate_depth(child.id) for child in schedulable_children if child.id is not None
-            ]
-            depths[task_id] = max(child_depths) + 1 if child_depths else 0
-            return depths[task_id]
-
-        # Calculate depth for all tasks
-        for task in tasks:
-            if task.id is not None:
-                calculate_depth(task.id)
-
-        return depths
+        # All tasks have depth 0 now (no hierarchy)
+        return {task.id: 0 for task in tasks if task.id is not None}

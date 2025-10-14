@@ -6,16 +6,15 @@ from application.queries.task_query_service import TaskQueryService
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.formatters.rich_table_formatter import RichTableFormatter
-from presentation.formatters.rich_tree_formatter import RichTreeFormatter
 
 
 @click.command(name="today", help="Display tasks for today (deadline, planned, or in-progress).")
 @click.option(
     "-f",
     "--format",
-    type=click.Choice(["tree", "table"]),
-    default="tree",
-    help="Display format (default: tree)",
+    type=click.Choice(["table"]),
+    default="table",
+    help="Display format (default: table)",
 )
 @click.option(
     "--all",
@@ -47,7 +46,6 @@ def today_command(ctx, format, all, sort, reverse):
     - Status is IN_PROGRESS
 
     By default, completed tasks are excluded unless --all is specified.
-    Parent tasks are included if they have children matching today's criteria.
     """
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
@@ -59,7 +57,7 @@ def today_command(ctx, format, all, sort, reverse):
     )
 
     # Format and display
-    formatter = RichTreeFormatter() if format == "tree" else RichTableFormatter()
+    formatter = RichTableFormatter()
 
     output = formatter.format_tasks(today_tasks, repository)
     print(output)

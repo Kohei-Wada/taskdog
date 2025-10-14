@@ -1,6 +1,6 @@
 """DTO for updating a task."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from domain.entities.task import TaskStatus
 
@@ -24,7 +24,6 @@ class UpdateTaskInput:
         name: New name (optional)
         priority: New priority (optional)
         status: New status (optional)
-        parent_id: New parent task ID (UNSET=don't update, None=clear parent, int=set parent)
         planned_start: New planned start (optional)
         planned_end: New planned end (optional)
         deadline: New deadline (optional)
@@ -35,7 +34,6 @@ class UpdateTaskInput:
     name: str | None = None
     priority: int | None = None
     status: TaskStatus | None = None
-    parent_id: int | None | _Unset = field(default=UNSET)
     planned_start: str | None = None
     planned_end: str | None = None
     deadline: str | None = None

@@ -15,25 +15,16 @@ class TaskFilter:
         """Get tasks that can be scheduled.
 
         Filters out completed tasks and optionally tasks with existing schedules.
-        Also filters out parent tasks (tasks with children) - only leaf tasks
-        should be directly scheduled. Parent periods are auto-updated based on children.
 
         Args:
             tasks: All tasks
             force_override: Whether to include tasks with existing schedules
 
         Returns:
-            List of schedulable tasks (leaf tasks only)
+            List of schedulable tasks
         """
-        # Build set of task IDs that have children (parent tasks)
-        parent_task_ids = {task.parent_id for task in tasks if task.parent_id}
-
         schedulable = []
         for task in tasks:
-            # Skip parent tasks - they shouldn't be directly scheduled
-            if task.id in parent_task_ids:
-                continue
-
             if self.should_schedule_task(task, force_override):
                 schedulable.append(task)
 

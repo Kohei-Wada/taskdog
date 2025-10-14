@@ -133,7 +133,9 @@ class BatchCommandExecutor:
             )
         elif success_count > 0 and error_count > 0:
             self.console.print(
-                f"[yellow]⚠[/yellow] {past_tense.capitalize()} {success_count} task(s), {error_count} error(s)"
+                f"[yellow]⚠[/yellow] {past_tense.capitalize()} {success_count} task(s), {
+                    error_count
+                } error(s)"
             )
         elif error_count > 0:
             self.console.print(f"[red]✗[/red] Failed to {operation_name} {error_count} task(s)")

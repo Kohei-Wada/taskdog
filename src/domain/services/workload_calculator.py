@@ -29,19 +29,8 @@ class WorkloadCalculator:
         days = (end_date - start_date).days + 1
         daily_workload = {start_date + timedelta(days=i): 0.0 for i in range(days)}
 
-        # Build parent-child map to identify parent tasks
-        parent_ids = set()
-        for task in tasks:
-            if task.parent_id:
-                parent_ids.add(task.parent_id)
-
         # Filter schedulable tasks
         for task in tasks:
-            # Skip parent tasks (tasks that have children)
-            # Parent tasks are summary tasks and their work is done by children
-            if task.id in parent_ids:
-                continue
-
             # Skip finished tasks (completed/archived) - they don't contribute to future workload
             if not TaskEligibilityChecker.should_count_in_workload(task):
                 continue

@@ -267,46 +267,6 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         saved_task = self.repository.get_by_id(task.id)
         self.assertIsNone(saved_task.planned_start)
 
-    def test_optimize_parent_child_hierarchy(self):
-        """Test that parent periods encompass children."""
-        # Create parent task
-        parent_input = CreateTaskInput(name="Parent", priority=100, estimated_duration=None)
-        parent = self.create_use_case.execute(parent_input)
-
-        # Create child tasks
-        child1_input = CreateTaskInput(
-            name="Child 1", priority=100, parent_id=parent.id, estimated_duration=3.0
-        )
-        child2_input = CreateTaskInput(
-            name="Child 2", priority=100, parent_id=parent.id, estimated_duration=5.0
-        )
-        self.create_use_case.execute(child1_input)
-        self.create_use_case.execute(child2_input)
-
-        # Optimize
-        start_date = datetime(2025, 10, 15, 18, 0, 0)
-        optimize_input = OptimizeScheduleInput(start_date=start_date, max_hours_per_day=6.0)
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
-
-        # Parent should be in modified list with period encompassing children
-        parent_task = [t for t in modified_tasks if t.id == parent.id][0]
-        child_tasks = [t for t in modified_tasks if t.parent_id == parent.id]
-
-        self.assertIsNotNone(parent_task.planned_start)
-        self.assertIsNotNone(parent_task.planned_end)
-
-        # Parent start should be earliest child start
-        child_starts = [
-            datetime.strptime(c.planned_start, "%Y-%m-%d %H:%M:%S") for c in child_tasks
-        ]
-        parent_start = datetime.strptime(parent_task.planned_start, "%Y-%m-%d %H:%M:%S")
-        self.assertEqual(parent_start, min(child_starts))
-
-        # Parent end should be latest child end
-        child_ends = [datetime.strptime(c.planned_end, "%Y-%m-%d %H:%M:%S") for c in child_tasks]
-        parent_end = datetime.strptime(parent_task.planned_end, "%Y-%m-%d %H:%M:%S")
-        self.assertEqual(parent_end, max(child_ends))
-
 
 if __name__ == "__main__":
     unittest.main()

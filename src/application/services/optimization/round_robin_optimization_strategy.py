@@ -4,7 +4,6 @@ import copy
 from datetime import datetime, timedelta
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.schedule_propagator import SchedulePropagator
 from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR, DEFAULT_START_HOUR
 from domain.entities.task import Task
@@ -46,7 +45,6 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         """
         # Initialize service instances
         task_filter = TaskFilter()
-        schedule_propagator = SchedulePropagator(repository)
 
         # Filter tasks that need scheduling
         schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
@@ -102,16 +100,10 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         )
 
         # Update parent task periods based on children
-        all_tasks_with_updates = schedule_propagator.propagate_periods(tasks, updated_tasks)
-
-        # If force_override, clear schedules for tasks that couldn't be scheduled
-        if force_override:
-            all_tasks_with_updates = schedule_propagator.clear_unscheduled_tasks(
-                tasks, all_tasks_with_updates
-            )
+        # Schedule propagation removed (no parent-child hierarchy)
 
         # Return modified tasks and daily allocations
-        return all_tasks_with_updates, daily_allocations
+        return updated_tasks, daily_allocations
 
     def _allocate_round_robin(
         self,

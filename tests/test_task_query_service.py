@@ -147,26 +147,6 @@ class TestTaskQueryService(unittest.TestCase):
         self.assertEqual(len(today_tasks), 1)
         self.assertEqual(today_tasks[0].name, "Completed Today")
 
-    def test_get_today_tasks_preserves_hierarchy(self):
-        """Test get_today_tasks preserves task hierarchy"""
-        # Create parent task not matching today's criteria
-        parent = Task(name="Parent", priority=1, deadline=self.tomorrow_str)
-        parent.id = self.repository.generate_next_id()
-        self.repository.save(parent)
-
-        # Create child task matching today's criteria
-        child = Task(name="Child", priority=1, deadline=self.today_str, parent_id=parent.id)
-        child.id = self.repository.generate_next_id()
-        self.repository.save(child)
-
-        today_tasks = self.query_service.get_today_tasks(include_completed=False)
-
-        # Both parent and child should be included
-        self.assertEqual(len(today_tasks), 2)
-        task_names = {t.name for t in today_tasks}
-        self.assertIn("Parent", task_names)
-        self.assertIn("Child", task_names)
-
 
 if __name__ == "__main__":
     unittest.main()

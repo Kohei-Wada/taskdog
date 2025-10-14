@@ -239,6 +239,34 @@ Tasks are stored in JSON format following the XDG Base Directory specification:
 
 The directory is created automatically on first run.
 
+## Design Philosophy
+
+Taskdog is built around a core principle: **break large tasks into small, manageable subtasks that can be completed quickly**.
+
+### Why Break Down Tasks?
+
+- **Clarity**: Small tasks have clear, actionable goals
+- **Progress Tracking**: Frequent completions provide a sense of accomplishment
+- **Realistic Estimation**: Easier to estimate duration for small, focused tasks
+- **Reduced Procrastination**: Low barrier to entry for starting work
+- **Better Time Management**: Small tasks fit naturally into available time slots
+
+### Task Hierarchy Workflow
+
+1. **Parent tasks represent goals**: They organize high-level goals or project phases
+2. **Both parent and leaf tasks can be worked on**: Parent tasks can represent their own work (review, integration, planning) while leaf tasks handle specific implementation steps
+3. **Explicit status management**: Parent and child task statuses are managed independently
+   - Starting a child task does NOT automatically start the parent
+   - Completing all children does NOT automatically complete the parent
+   - You control when each task starts and completes based on actual work progress
+
+### Best Practices
+
+- **Keep leaf tasks under 4 hours**: If a task takes longer, consider splitting it further
+- **Use the hierarchy**: Don't hesitate to create 2-3 levels of subtasks for complex projects
+- **Track everything**: Even small tasks benefit from being tracked for visibility and motivation
+- **Review regularly**: Use `taskdog today` and `taskdog gantt` to stay on track
+
 ## Development
 
 ### Requirements

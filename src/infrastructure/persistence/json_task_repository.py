@@ -21,7 +21,6 @@ class JsonTaskRepository(TaskRepository):
         self.filename = filename
         self.tasks = self._load_tasks()
         self._task_index: dict[int, Task] = self._build_index()
-        self._children_index: dict[int, list[Task]] = self._build_children_index()
 
     def _build_index(self) -> dict[int, Task]:
         """Build task ID to task object index.
@@ -31,24 +30,9 @@ class JsonTaskRepository(TaskRepository):
         """
         return {task.id: task for task in self.tasks if task.id is not None}
 
-    def _build_children_index(self) -> dict[int, list[Task]]:
-        """Build parent ID to children list index.
-
-        Returns:
-            Dictionary mapping parent task IDs to lists of child tasks
-        """
-        children_index: dict[int, list[Task]] = {}
-        for task in self.tasks:
-            if task.parent_id is not None:
-                if task.parent_id not in children_index:
-                    children_index[task.parent_id] = []
-                children_index[task.parent_id].append(task)
-        return children_index
-
     def _rebuild_index(self) -> None:
         """Rebuild the task index after modifications."""
         self._task_index = self._build_index()
-        self._children_index = self._build_children_index()
 
     def get_all(self) -> list[Task]:
         """Retrieve all tasks.
@@ -69,17 +53,6 @@ class JsonTaskRepository(TaskRepository):
         """
         return self._task_index.get(task_id)
 
-    def get_children(self, task_id: int) -> list[Task]:
-        """Retrieve all child tasks of a given task in O(1) time.
-
-        Args:
-            task_id: The ID of the parent task
-
-        Returns:
-            List of child tasks (empty list if no children)
-        """
-        return self._children_index.get(task_id, [])
-
     def save(self, task: Task) -> None:
         """Save a task (create new or update existing).
 
@@ -97,12 +70,6 @@ class JsonTaskRepository(TaskRepository):
             # New task - add to list and index
             self.tasks.append(task)
             self._task_index[task.id] = task
-
-            # Update children index if this task has a parent
-            if task.parent_id is not None:
-                if task.parent_id not in self._children_index:
-                    self._children_index[task.parent_id] = []
-                self._children_index[task.parent_id].append(task)
         else:
             # Task exists - update the existing task in place
             # Find the task in self.tasks list and replace it
@@ -113,19 +80,6 @@ class JsonTaskRepository(TaskRepository):
 
             # Update index to point to new object
             self._task_index[task.id] = task
-
-            # Check if parent_id changed
-            if existing.parent_id != task.parent_id:
-                # Parent changed - rebuild children index
-                self._children_index = self._build_children_index()
-            # Update children index if task has a parent and is in the index
-            elif task.parent_id is not None and task.parent_id in self._children_index:
-                # Replace the child in the list
-                children = self._children_index[task.parent_id]
-                for i, child in enumerate(children):
-                    if child.id == task.id:
-                        children[i] = task
-                        break
 
         # Save to file
         self._save_to_file()
@@ -146,7 +100,7 @@ class JsonTaskRepository(TaskRepository):
         Args:
             name: Task name
             priority: Task priority
-            **kwargs: Additional task fields (parent_id, deadline, etc.)
+            **kwargs: Additional task fields (deadline, estimated_duration, etc.)
 
         Returns:
             Created task with ID assigned
