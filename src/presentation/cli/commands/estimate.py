@@ -9,7 +9,7 @@ from presentation.cli.error_handler import handle_task_errors
 from utils.console_messages import print_update_success
 
 
-@click.command(name="estimate", help="Set estimated duration for a task.")
+@click.command(name="est", help="Set estimated duration for a task.")
 @click.argument("task_id", type=int)
 @click.argument("hours", type=float)
 @click.pass_context
