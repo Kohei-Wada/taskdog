@@ -9,7 +9,7 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 test: ## Run all tests
-	 uv run python -m unittest discover tests/
+	uv run python -m unittest discover tests/
 
 install: ## Install taskdog CLI tool
 	uv tool uninstall taskdog
@@ -29,7 +29,7 @@ format: ## Format code with ruff and apply fixes
 	uv run ruff check --fix src/ tests/
 
 typecheck: ## Run mypy type checker
-	PYTHONPATH=src uv run mypy src/
+	uv run mypy src/
 
 check: lint typecheck ## Run all code quality checks (lint + typecheck)
 

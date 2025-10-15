@@ -15,16 +15,25 @@ Tasks are stored in `tasks.json` following the XDG Base Directory specification:
 
 ## Development Commands
 
+### Setup
+```bash
+# Install package in editable mode (required for development)
+uv pip install -e .
+
+# Or install with development dependencies
+uv pip install -e ".[dev]"
+```
+
 ### Testing
 ```bash
 # Run all tests
 make test
 
 # Run a single test file
-PYTHONPATH=src uv run python -m unittest tests/test_create_task_use_case.py
+uv run python -m unittest tests/test_create_task_use_case.py
 
 # Run a specific test case
-PYTHONPATH=src uv run python -m unittest tests.test_create_task_use_case.CreateTaskUseCaseTest.test_execute_success
+uv run python -m unittest tests.test_create_task_use_case.CreateTaskUseCaseTest.test_execute_success
 ```
 
 ### Code Quality
@@ -305,7 +314,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `note`: Edit task notes in markdown using $EDITOR (direct repository access)
 
 ### Key Design Decisions
-1. **All tests require `PYTHONPATH=src`** - Source modules are not installed during test runs
+1. **Development installation required** - Install package in editable mode with `uv pip install -e .` for development and testing
 2. **Clean Architecture layers** - Strict dependency rules: Presentation → Application → Domain ← Infrastructure
 3. **Use case pattern** - Each business operation is a separate use case class with `execute()` method
 4. **DTO pattern** - Input data transferred via dataclass DTOs (CreateTaskInput, StartTaskInput, etc.)

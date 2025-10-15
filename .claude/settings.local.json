@@ -28,7 +28,10 @@
       "Bash(echo:*)",
       "Bash(done)",
       "Bash(XDG_DATA_HOME=/tmp/test_taskdog_optimize PYTHONPATH=src uv run python -m taskdog.cli:*)",
-      "Bash(do sed -i '/parent_id=/d' \"$file\")"
+      "Bash(do sed -i '/parent_id=/d' \"$file\")",
+      "Bash(uv pip install:*)",
+      "Bash(make typecheck:*)",
+      "Bash(uv run python:*)"
     ],
     "deny": [],
     "ask": []
