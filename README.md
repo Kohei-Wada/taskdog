@@ -1,22 +1,23 @@
 # Taskdog
 
-A personal hierarchical task management CLI tool with time tracking, beautiful terminal output, and Gantt chart visualization.
+A personal task management CLI tool with time tracking, schedule optimization, beautiful terminal output, and Gantt chart visualization.
 
 **Note**: Taskdog is designed for individual use. It stores tasks locally and is not intended for team collaboration or multi-user scenarios.
 
 ## Features
 
-- **Hierarchical Task Management**: Create parent-child task relationships to organize complex projects
 - **Time Tracking**: Automatic time tracking with planned vs actual duration comparison
-- **Multiple Task States**: PENDING, IN_PROGRESS, COMPLETED, FAILED
-- **Beautiful Terminal Output**: Rich formatting with colors, tables, and tree views
-- **Gantt Chart Visualization**: Visual timeline with planned periods, actual progress, and deadlines
-- **Flexible Display Options**: Tree, table, and Gantt chart formats
+- **Schedule Optimization**: Multiple scheduling algorithms to auto-generate optimal task schedules
+- **Multiple Task States**: PENDING, IN_PROGRESS, COMPLETED, FAILED, ARCHIVED
+- **Beautiful Terminal Output**: Rich formatting with colors and tables
+- **Gantt Chart Visualization**: Visual timeline with planned periods, actual progress, deadlines, and workload analysis
+- **Flexible Display Options**: Table, Gantt chart, and today view formats
 - **Today View**: Quick view of tasks scheduled for today
 - **Priority Management**: Set and update task priorities
 - **Deadline Support**: Track deadlines with visual indicators
 - **Markdown Notes**: Add detailed notes to tasks with editor integration and Rich markdown rendering
-- **Batch Operations**: Start or complete multiple tasks at once
+- **Batch Operations**: Start, complete, or archive multiple tasks at once
+- **Specialized Commands**: Dedicated commands for common updates (deadline, priority, rename, estimate, schedule)
 
 ## Installation
 
@@ -32,17 +33,19 @@ make install
 ## Quick Start
 
 ```bash
-# Add a root task
-taskdog add --name "Project Alpha" --priority 1
+# Add tasks
+taskdog add "Project Alpha" --priority 200
+taskdog add "Design phase" --priority 150
+taskdog add "Implementation" --priority 100
 
-# Add a subtask (assuming parent task ID is 1)
-taskdog add 1 --name "Design phase" --planned-start 2025-10-15 --planned-end 2025-10-20
+# Set deadlines and estimates
+taskdog deadline 2 2025-10-20
+taskdog deadline 3 2025-10-25
+taskdog est 2 16
+taskdog est 3 40
 
-# Add another subtask with deadline
-taskdog add 1 --name "Implementation" --deadline 2025-10-25 --estimated-duration 40
-
-# View tasks in tree format
-taskdog tree
+# Auto-generate optimal schedule
+taskdog optimize
 
 # View tasks in table format
 taskdog table
@@ -68,7 +71,7 @@ taskdog note 2
 # View task details with notes
 taskdog show 2
 
-# View Gantt chart
+# View Gantt chart with workload analysis
 taskdog gantt
 ```
 
@@ -77,40 +80,26 @@ taskdog gantt
 ### `add` - Add a new task
 
 ```bash
-taskdog add [PARENT_ID] --name "Task name" [OPTIONS]
+taskdog add "Task name" [OPTIONS]
 ```
 
 Options:
-- `--name TEXT`: Task name (required)
-- `--priority INTEGER`: Task priority (default: 0)
-- `--planned-start DATETIME`: Planned start time (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)
-- `--planned-end DATETIME`: Planned end time (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)
-- `--deadline DATETIME`: Task deadline (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)
-- `--estimated-duration FLOAT`: Estimated duration in hours
+- `-p, --priority INTEGER`: Task priority (default: 100, higher value = higher priority)
 
-**Note**: When you provide a date without time (e.g., `2025-10-15`), it defaults to 18:00:00.
+Creates a new task with minimal information. Use dedicated commands (`deadline`, `est`, `schedule`) to set additional properties after creation.
 
-### `tree` - Display tasks in hierarchical tree format
-
-```bash
-taskdog tree [OPTIONS]
-```
-
-Options:
-- `-a, --all`: Show all tasks including completed ones (default: hide completed tasks)
-
-Displays tasks in a hierarchical tree with colored status indicators and task details.
-
-### `table` - Display tasks in flat table format
+### `table` - Display tasks in table format
 
 ```bash
 taskdog table [OPTIONS]
 ```
 
 Options:
-- `-a, --all`: Show all tasks including completed ones (default: hide completed tasks)
+- `-a, --all`: Show all tasks including completed and archived ones (default: hide completed/archived tasks)
+- `-s, --sort [id|priority|deadline|name|status|planned_start]`: Sort tasks by specified field (default: id)
+- `-r, --reverse`: Reverse sort order
 
-Displays all tasks in a table with columns: ID, Name, Priority, Status, Parent, Plan Start, Plan End, Actual Start, Actual End, Deadline, Duration.
+Displays all tasks in a table with columns: ID, Name, Priority, Status, Plan Start, Plan End, Actual Start, Actual End, Deadline, Duration.
 
 ### `today` - Display tasks for today
 
@@ -154,7 +143,79 @@ taskdog done <TASK_ID> [TASK_ID ...]
 
 Sets task status to COMPLETED and records actual end time. Supports multiple task IDs to complete several tasks at once. Shows duration comparison with estimates if available.
 
-### `update` - Update task properties
+### `deadline` - Set task deadline
+
+```bash
+taskdog deadline <TASK_ID> <DATE>
+```
+
+Sets the task deadline. Date format: `YYYY-MM-DD` (defaults to 18:00:00) or `YYYY-MM-DD HH:MM:SS`.
+
+### `priority` - Set task priority
+
+```bash
+taskdog priority <TASK_ID> <PRIORITY>
+```
+
+Sets the task priority (higher value = higher priority).
+
+### `rename` - Rename a task
+
+```bash
+taskdog rename <TASK_ID> <NAME>
+```
+
+Updates the task name.
+
+### `est` - Set estimated duration
+
+```bash
+taskdog est <TASK_ID> <HOURS>
+```
+
+Sets the estimated duration in hours. Used by the optimize command for schedule generation.
+
+### `schedule` - Set planned schedule
+
+```bash
+taskdog schedule <TASK_ID> <START> [END]
+```
+
+Sets the planned start and optional end time. Date format: `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`.
+
+### `optimize` - Auto-generate optimal schedules
+
+```bash
+taskdog optimize [OPTIONS]
+```
+
+Options:
+- `--start-date DATE`: Start date for scheduling (default: next weekday)
+- `--max-hours-per-day FLOAT`: Maximum work hours per day (default: 6.0)
+- `-a, --algorithm NAME`: Optimization algorithm (default: greedy)
+  - Available: greedy, balanced, backward, priority_first, earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo
+- `-f, --force`: Override existing schedules for all tasks
+- `-d, --dry-run`: Preview changes without saving
+
+Auto-generates optimal task schedules based on priorities, deadlines, and workload constraints. Analyzes all tasks with estimated duration and distributes workload across weekdays.
+
+### `archive` - Archive task(s)
+
+```bash
+taskdog archive <TASK_ID> [TASK_ID ...]
+```
+
+Archives task(s) for data retention. Archived tasks are hidden from default views but preserved in the database. Supports multiple task IDs.
+
+### `rm` - Remove task(s)
+
+```bash
+taskdog rm <TASK_ID> [TASK_ID ...]
+```
+
+Removes task(s) permanently. Use `archive` instead if you want to preserve task data. Supports multiple task IDs.
+
+### `update` - Update multiple task properties
 
 ```bash
 taskdog update <TASK_ID> [OPTIONS]
@@ -169,16 +230,7 @@ Options:
 - `--deadline DATETIME`: Update deadline
 - `--estimated-duration FLOAT`: Update estimated duration
 
-### `remove` - Remove a task
-
-```bash
-taskdog remove <TASK_ID> [OPTIONS]
-```
-
-Options:
-- `--cascade`: Delete task and all its children recursively
-
-Default behavior: orphan children (set their parent_id to None).
+Updates multiple task properties at once. For single-field updates, prefer specialized commands (`deadline`, `priority`, `rename`, `est`, `schedule`).
 
 ### `note` - Edit task notes
 
@@ -230,6 +282,7 @@ taskdog export --format json -o backup.json
 - **IN_PROGRESS**: Task is being worked on (blue)
 - **COMPLETED**: Task successfully finished (green)
 - **FAILED**: Task failed or cancelled (red)
+- **ARCHIVED**: Task archived for data retention (hidden from default views)
 
 ## Data Storage
 
@@ -241,31 +294,21 @@ The directory is created automatically on first run.
 
 ## Design Philosophy
 
-Taskdog is built around a core principle: **break large tasks into small, manageable subtasks that can be completed quickly**.
+Taskdog focuses on **smart task management with automated scheduling**:
 
-### Why Break Down Tasks?
-
-- **Clarity**: Small tasks have clear, actionable goals
-- **Progress Tracking**: Frequent completions provide a sense of accomplishment
-- **Realistic Estimation**: Easier to estimate duration for small, focused tasks
-- **Reduced Procrastination**: Low barrier to entry for starting work
-- **Better Time Management**: Small tasks fit naturally into available time slots
-
-### Task Hierarchy Workflow
-
-1. **Parent tasks represent goals**: They organize high-level goals or project phases
-2. **Both parent and leaf tasks can be worked on**: Parent tasks can represent their own work (review, integration, planning) while leaf tasks handle specific implementation steps
-3. **Explicit status management**: Parent and child task statuses are managed independently
-   - Starting a child task does NOT automatically start the parent
-   - Completing all children does NOT automatically complete the parent
-   - You control when each task starts and completes based on actual work progress
+- **Estimate durations**: Set realistic time estimates for tasks
+- **Set priorities and deadlines**: Help the optimizer make smart decisions
+- **Let the optimizer work**: Use `taskdog optimize` to auto-generate optimal schedules
+- **Track progress**: Monitor actual vs planned time to improve future estimates
+- **Review regularly**: Use `taskdog today` and `taskdog gantt` to stay on track
 
 ### Best Practices
 
-- **Keep leaf tasks under 4 hours**: If a task takes longer, consider splitting it further
-- **Use the hierarchy**: Don't hesitate to create 2-3 levels of subtasks for complex projects
-- **Track everything**: Even small tasks benefit from being tracked for visibility and motivation
-- **Review regularly**: Use `taskdog today` and `taskdog gantt` to stay on track
+- **Keep tasks focused**: Break large tasks into smaller, manageable pieces (under 4-8 hours)
+- **Estimate accurately**: Use past actual durations to improve future estimates
+- **Set realistic deadlines**: Allow buffer time for unexpected issues
+- **Use priorities**: Higher priority tasks get scheduled earlier
+- **Review and adjust**: Re-run `optimize` when priorities or deadlines change
 
 ## Development
 
