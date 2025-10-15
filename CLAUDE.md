@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Taskdog is a hierarchical task management CLI tool built with Python, Click, and Rich. It supports parent-child task relationships, time tracking, and multiple task states (PENDING, IN_PROGRESS, COMPLETED, FAILED) with beautiful terminal output. The codebase follows Clean Architecture principles with clear separation between layers.
+Taskdog is a task management CLI tool built with Python, Click, and Rich. It supports time tracking, multiple task states (PENDING, IN_PROGRESS, COMPLETED, FAILED, ARCHIVED), and schedule optimization with beautiful terminal output. The codebase follows Clean Architecture principles with clear separation between layers.
 
 ### Data Storage
 
@@ -68,24 +68,19 @@ The application follows **Clean Architecture** with distinct layers:
 
 **Domain Layer** (`src/domain/`)
 - `entities/`: Core business entities (Task, TaskStatus)
-- `services/`: Domain services (TimeTracker, TaskEligibilityChecker, WorkloadCalculator)
-  - `TaskEligibilityChecker`: Centralized logic for determining if tasks can be updated, rescheduled, or included in hierarchy operations
+- `services/`: Domain services (TimeTracker, WorkloadCalculator)
+  - `TimeTracker`: Records actual_start and actual_end timestamps during status transitions
   - `WorkloadCalculator`: Computes daily hours from task allocations or evenly distributes estimated duration
 - `exceptions/`: Domain-specific exceptions
   - `TaskNotFoundException`: Task with given ID not found
   - `TaskValidationError`: Base exception for validation failures
-  - `CircularReferenceError`: Circular parent reference detected
-  - `ParentTaskNotFoundError`: Specified parent task doesn't exist
-  - `CannotSetEstimateForParentTaskError`: Trying to set estimated_duration for parent task
-  - `DeadlineAfterParentError`: Child task deadline is after parent task deadline
-  - `IncompleteChildrenError`: Trying to complete task with incomplete children
   - `TaskAlreadyFinishedError`: Trying to start already finished task
   - `TaskNotStartedError`: Trying to complete task that hasn't been started
 - No dependencies on other layers; defines core business logic
 
 **Application Layer** (`src/application/`)
 - `use_cases/`: Business logic orchestration (CreateTaskUseCase, StartTaskUseCase, OptimizeScheduleUseCase, ArchiveTaskUseCase, etc.)
-  - Each use case inherits from `UseCase[TInput, TOutput]` base class
+  - Each use case inherits from base class with `execute(input_dto)` method
   - Use cases are stateless and dependency-injected
 - `validators/`: Field-specific validation logic using Strategy Pattern + Registry
   - `FieldValidator`: Abstract base class for all field validators
@@ -95,16 +90,11 @@ The application follows **Clean Architecture** with distinct layers:
     - Validates fields by name: `validate_field(field_name, value, task)`
     - Extensible design: adding new validators requires 3 steps (create validator class, register in registry, done)
   - **Field Validators**:
-    - `ParentIdValidator`: Validates parent exists, no self-reference, no circular reference (raises `CircularReferenceError`, `ParentTaskNotFoundError`)
-    - `EstimatedDurationValidator`: Validates task has no children; parent estimates are auto-calculated (raises `CannotSetEstimateForParentTaskError`)
-    - `StatusValidator`: Validates status transitions using TaskEligibilityChecker (raises `TaskNotStartedError`, `IncompleteChildrenError`, etc.)
-    - `DeadlineValidator`: Validates child deadline ≤ parent deadline (raises `DeadlineAfterParentError`)
+    - `StatusValidator`: Validates status transitions (raises `TaskNotStartedError`, `TaskAlreadyFinishedError`, etc.)
   - Used by UpdateTaskUseCase to validate field updates before applying changes
   - All validators use custom domain exceptions for consistent error handling
 - `services/`: Application services that coordinate complex operations
   - `WorkloadAllocator`: Distributes task hours across weekdays respecting max hours/day
-  - `EstimatedDurationPropagator`: Auto-calculates parent task `estimated_duration` as sum of children's estimates; recursively updates ancestors when child tasks are created, modified, or removed
-  - `SchedulePropagator`: Propagates schedule changes to parent tasks; updates parent periods to encompass children and clears unscheduled tasks during force-override operations
   - `TaskPrioritizer`: Sorts tasks by urgency (deadline proximity) and priority
   - `OptimizationSummaryBuilder`: Builds summary reports for schedule optimization
   - `optimization/`: Multiple scheduling algorithms implementing the Strategy pattern
@@ -120,7 +110,6 @@ The application follows **Clean Architecture** with distinct layers:
     - `StrategyFactory`: Factory for creating strategy instances
 - `queries/`: Read-optimized operations (TaskQueryService with filters and sorters)
 - `dto/`: Data Transfer Objects for use case inputs (CreateTaskInput, StartTaskInput, UpdateTaskInput, etc.)
-  - `UpdateTaskInput` uses Sentinel pattern (UNSET value) to distinguish "not provided" from "explicitly None" for parent_id field
 - Depends on domain layer; defines application-specific logic
 
 **Infrastructure Layer** (`src/infrastructure/`)
@@ -172,7 +161,7 @@ Dependencies are managed through Click's context object using the `CliContext` d
 
 **Query Service** (`src/application/queries/task_query_service.py`)
 - Read-only operations optimized for data retrieval
-- Methods: `get_today_tasks()`, `get_all_tasks()`, `get_incomplete_tasks_with_hierarchy()`, `get_incomplete_tasks()`
+- Methods: `get_today_tasks()`, `get_all_tasks()`, `get_incomplete_tasks()`
   - All methods support `sort_by` and `reverse` parameters for flexible sorting
   - Sort keys: `id`, `priority`, `deadline`, `name`, `status`, `planned_start`
 - Uses filters (TodayFilter) and sorters (TaskSorter) for query composition
@@ -195,7 +184,7 @@ Dependencies are managed through Click's context object using the `CliContext` d
   - Automatic backup: creates `.json.bak` file before each save
   - Automatic recovery: falls back to backup if main file is corrupted
   - Index optimization: maintains in-memory `_task_index` dict for O(1) lookups by ID
-- Key methods: `get_all()`, `get_by_id()`, `get_children()`, `save()`, `delete()`, `generate_next_id()`, `create()`
+- Key methods: `get_all()`, `get_by_id()`, `save()`, `delete()`, `generate_next_id()`, `create()`
 - Repository is responsible for ID generation and task persistence
 
 **TimeTracker** (`src/domain/services/time_tracker.py`)
@@ -205,8 +194,7 @@ Dependencies are managed through Click's context object using the `CliContext` d
 - Invoked by use cases during status updates
 
 **Rich Formatters** (`src/presentation/formatters/`)
-- `RichTreeFormatter`: Renders hierarchical task tree with colored status and indentation
-- `RichTableFormatter`: Renders tasks as a table (columns: ID, Name, Priority, Status, Parent, Plan Start/End, Actual Start/End, Deadline, Duration)
+- `RichTableFormatter`: Renders tasks as a table (columns: ID, Name, Priority, Status, Plan Start/End, Actual Start/End, Deadline, Duration)
 - `RichGanttFormatter`: Renders timeline visualization with daily hours and status symbols
   - **Planned period**: Displays daily allocated hours as numbers (e.g., `4`, `2.5`) with background shading
   - **Actual period (IN_PROGRESS)**: Shows `◆` symbol in blue from actual_start to today
@@ -225,10 +213,10 @@ Dependencies are managed through Click's context object using the `CliContext` d
 **Error Handlers** (`src/presentation/cli/error_handler.py`)
 Two decorators for consistent error handling across CLI commands:
 
-1. `handle_task_errors(action_name, is_parent=False)`: For single task operations
+1. `handle_task_errors(action_name)`: For single task operations
    - Catches `TaskNotFoundException` and general `Exception`
    - Use for commands operating on a single task ID
-   - Usage: `@handle_task_errors("adding task", is_parent=True)`
+   - Usage: `@handle_task_errors("adding task")`
    - Used in: add, update commands
 
 2. `handle_command_errors(action_name)`: For general query operations
@@ -251,14 +239,15 @@ Commands that support multiple task IDs use `BatchCommandExecutor` for consisten
 
 ### Task Model
 **Task** (`src/domain/entities/task.py`)
-- Core fields: id, name, priority, status, parent_id, timestamp
+- Core fields: id, name, priority, status, timestamp
 - Time fields: planned_start/end, deadline, actual_start/end, estimated_duration
-  - **Parent task `estimated_duration` is auto-calculated**: Sum of all children's `estimated_duration`
-  - Only leaf tasks (tasks without children) can have manually set `estimated_duration`
-  - Updated automatically when child tasks are created, modified, or removed
 - Scheduling field: `daily_allocations` (dict mapping date strings to hours, set by ScheduleOptimizer)
-- Property: `actual_duration_hours` auto-calculated from actual_start/end timestamps
-- Property: `notes_path` returns Path to markdown notes at `$XDG_DATA_HOME/taskdog/notes/{id}.md`
+- Properties:
+  - `actual_duration_hours`: Auto-calculated from actual_start/end timestamps
+  - `notes_path`: Returns Path to markdown notes at `$XDG_DATA_HOME/taskdog/notes/{id}.md`
+  - `is_active`: True if status is PENDING or IN_PROGRESS
+  - `is_finished`: True if status is COMPLETED, FAILED, or ARCHIVED
+  - `can_be_modified`: True if status is not ARCHIVED
 - Methods: `to_dict()`, `from_dict()` for serialization
 - Datetime format: `YYYY-MM-DD HH:MM:SS`
 
@@ -275,18 +264,17 @@ Commands that support multiple task IDs use `BatchCommandExecutor` for consisten
 All commands live in `src/presentation/cli/commands/` and are registered in `cli.py`:
 
 **Task Creation & Viewing:**
-- `add`: Add new task with minimal interface: `taskdog add "Task name" [--priority N] [--parent ID]` (uses CreateTaskUseCase)
+- `add`: Add new task with minimal interface: `taskdog add "Task name" [--priority N]` (uses CreateTaskUseCase)
   - Detailed fields (deadline, estimate, schedule) should be set using dedicated commands after creation
-- `tree`: Display hierarchical tree view with sorting options (uses TaskQueryService)
-  - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: id)
-  - `--reverse`: Reverse sort order
 - `table`: Display flat table view with sorting options (uses TaskQueryService)
   - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: id)
   - `--reverse`: Reverse sort order
+  - `--all, -a`: Show all tasks including completed/archived (default: hide completed/archived)
 - `today`: Show today's tasks with sorting options (uses TaskQueryService.get_today_tasks())
   - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: deadline)
   - `--reverse`: Reverse sort order
 - `show`: Display task details and notes with Rich formatting (direct repository access)
+  - `--raw`: Show raw markdown instead of rendered
 
 **Task Status Management:**
 - `start`: Start task(s) - supports multiple task IDs (uses StartTaskUseCase)
@@ -297,17 +285,13 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `priority`: Set priority with positional args: `taskdog priority <ID> <PRIORITY>` (uses UpdateTaskUseCase)
 - `rename`: Rename task with positional args: `taskdog rename <ID> <NAME>` (uses UpdateTaskUseCase)
 - `estimate`: Set estimated duration with positional args: `taskdog estimate <ID> <HOURS>` (uses UpdateTaskUseCase)
-  - **Cannot be used on parent tasks** (tasks with children); parent estimated_duration is auto-calculated from children
-  - Validation is performed by `EstimatedDurationValidator` via TaskFieldValidatorRegistry in UpdateTaskUseCase (Clean Architecture compliant)
 - `schedule`: Set planned schedule with positional args: `taskdog schedule <ID> <START> [END]` (uses UpdateTaskUseCase)
-- `parent`: Set or clear parent with positional args: `taskdog parent <ID> <PARENT_ID>` or `taskdog parent <ID> --clear` (uses UpdateTaskUseCase)
-- `update`: Multi-field update command: `taskdog update <ID> [--priority] [--status] [--parent] [--clear-parent] [--planned-start] [--planned-end] [--deadline] [--estimated-duration]` (uses UpdateTaskUseCase)
+- `update`: Multi-field update command: `taskdog update <ID> [--priority] [--status] [--planned-start] [--planned-end] [--deadline] [--estimated-duration]` (uses UpdateTaskUseCase)
   - Use for updating multiple fields at once; prefer specialized commands for single-field updates
 
 **Task Management:**
-- `rm`: Remove task(s) with cascade/orphan options - supports multiple task IDs (uses RemoveTaskUseCase)
+- `rm`: Remove task(s) - supports multiple task IDs (uses RemoveTaskUseCase)
 - `archive`: Archive task(s) for data retention (hidden from views) - supports multiple task IDs (uses ArchiveTaskUseCase)
-  - `--cascade`: Archive all child tasks recursively
 
 **Schedule Optimization:**
 - `optimize`: Auto-generate optimal task schedules based on priorities, deadlines, and workload constraints (uses OptimizeScheduleUseCase)
@@ -319,7 +303,6 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
   - `--dry-run, -d`: Preview changes without saving
   - Analyzes all tasks with `estimated_duration` set
   - Uses pluggable optimization strategies to distribute workload across weekdays
-  - Respects task hierarchy (children scheduled before parents)
   - Shows Gantt chart, optimization summary, warnings, and configuration
 
 **Visualization & Export:**
@@ -342,13 +325,11 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 8. **BatchCommandExecutor pattern** - Multi-task operations use centralized executor for consistent error handling, progress tracking, and summary reporting
 9. **Command registration** - Commands imported and registered in `cli.py` via `cli.add_command()`
 10. **Package list in pyproject.toml** - All modules must be explicitly listed in `packages` array for installation
-11. **Rich for all output** - Console output uses Rich library for colors, tables, trees, and formatting
+11. **Rich for all output** - Console output uses Rich library for colors, tables, and formatting
 12. **Atomic saves with backup** - JsonTaskRepository uses atomic writes (temp file + rename) and maintains `.json.bak` backup for data integrity
 13. **Schedule optimization with Strategy pattern** - Multiple scheduling algorithms (9 strategies) implementing Strategy pattern, managed by StrategyFactory
-14. **Task eligibility checks** - Centralized logic in TaskEligibilityChecker for determining which tasks can be updated, rescheduled, or included in hierarchy operations
-15. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
-16. **Automatic parent task estimated_duration calculation** - Parent tasks' `estimated_duration` is automatically calculated as the sum of children's estimates; recursively updates ancestors when child tasks are created, modified, or removed
-17. **Field-specific validation with Strategy Pattern + Registry** - TaskFieldValidatorRegistry manages field-specific validators (ParentIdValidator, EstimatedDurationValidator, StatusValidator, DeadlineValidator), using custom domain exceptions (`CircularReferenceError`, `ParentTaskNotFoundError`, `CannotSetEstimateForParentTaskError`, `DeadlineAfterParentError`) for consistent error handling; extensible design makes adding new validators simple
+14. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
+15. **Field-specific validation with Strategy Pattern + Registry** - TaskFieldValidatorRegistry manages field-specific validators (currently StatusValidator), using custom domain exceptions for consistent error handling; extensible design makes adding new validators simple
 
 ### Console Messaging Guidelines
 
@@ -371,7 +352,7 @@ from utils.console_messages import (
    - Format: `✓ Added task: Task name (ID: 123)`
 
 2. **Validation errors**: Use `print_validation_error(console, message)` for input validation
-   - Example: `print_validation_error(console, "Cannot specify both --parent and --clear-parent")`
+   - Example: `print_validation_error(console, "Cannot complete task that hasn't been started")`
    - Format: `✗ Error: {message}`
 
 3. **General errors**: Use `print_error(console, action, exception)` for runtime errors
@@ -397,4 +378,4 @@ from utils.console_messages import (
 **When Creating New Commands:**
 - Always import and use messaging utilities from `utils/console_messages.py`
 - Never hardcode message icons or colors directly in command files
-- Follow existing patterns in commands like `add.py`, `parent.py`, `optimize.py`
+- Follow existing patterns in commands like `add.py`, `deadline.py`, `optimize.py`
