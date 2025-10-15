@@ -120,7 +120,6 @@ The application follows **Clean Architecture** with distinct layers:
 **Presentation Layer** (`src/presentation/`)
 - `cli/commands/`: Click command implementations (add, tree, table, gantt, start, done, optimize, archive, etc.)
 - `cli/context.py`: CliContext dataclass for dependency injection (console, repository, time_tracker)
-- `cli/batch_executor.py`: BatchCommandExecutor for consistent multi-task operations
 - `cli/error_handler.py`: Decorators for consistent error handling
 - `formatters/`: Rich-based output formatting (RichTreeFormatter, RichTableFormatter, RichGanttFormatter, RichOptimizationFormatter)
 - Depends on application layer use cases and queries
@@ -143,13 +142,6 @@ Dependencies are managed through Click's context object using the `CliContext` d
 - `TaskQueryService` is instantiated locally in query commands
 - Formatters are instantiated locally per command
 - Application services (EstimatedDurationPropagator, SchedulePropagator, etc.) instantiated as needed
-
-**BatchCommandExecutor Pattern**:
-- Unified pattern for processing multiple task IDs (used in `start`, `done`, `rm`, `archive` commands)
-- Constructor: `BatchCommandExecutor(console)`
-- Method: `execute_batch(task_ids, process_func, operation_name, success_callback, error_handlers, show_summary)`
-- Handles per-task error handling, progress tracking, spacing, and summary reporting
-- Returns: `(success_count, error_count, results_list)`
 
 ### Core Components
 
@@ -225,17 +217,15 @@ Two decorators for consistent error handling across CLI commands:
    - Usage: `@handle_command_errors("displaying tasks")`
    - Used in: tree, table, gantt, today commands
 
-Not used in: start, done, rm, archive commands (these use BatchCommandExecutor pattern instead)
+Not used in: start, done, rm, archive commands (these use simple for loops with inline error handling)
 
 **Batch Operation Pattern** (used in `start`, `done`, `rm`, `archive` commands)
-Commands that support multiple task IDs use `BatchCommandExecutor` for consistent processing:
+Commands that support multiple task IDs use simple for loops with per-task error handling:
 - Accept multiple task IDs via `@click.argument("task_ids", nargs=-1, type=int, required=True)`
-- Create `BatchCommandExecutor(console)` instance
-- Define `process_func` that processes a single task ID and returns result
-- Define optional `success_callback` to handle successful results
-- Define optional `error_handlers` dict for custom exception handling
-- Call `executor.execute_batch(task_ids, process_func, operation_name, ...)`
-- Executor handles per-task error catching, progress tracking, spacing, and summary reporting
+- Loop through task IDs with `for task_id in task_ids:`
+- Handle errors per task with try/except blocks
+- Add spacing between tasks when processing multiple IDs with `if len(task_ids) > 1: console.print()`
+- Consistent error handling for `TaskNotFoundException` and domain-specific exceptions
 
 ### Task Model
 **Task** (`src/domain/entities/task.py`)
@@ -322,14 +312,13 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 5. **CQRS-like separation** - Use cases handle writes, QueryService handles reads
 6. **Repository manages ID generation** - `create()` method auto-assigns IDs, use cases are stateless
 7. **Context-based DI** - Dependencies injected via `CliContext` dataclass in `ctx.obj`, accessed with `@click.pass_context`
-8. **BatchCommandExecutor pattern** - Multi-task operations use centralized executor for consistent error handling, progress tracking, and summary reporting
-9. **Command registration** - Commands imported and registered in `cli.py` via `cli.add_command()`
-10. **Package list in pyproject.toml** - All modules must be explicitly listed in `packages` array for installation
-11. **Rich for all output** - Console output uses Rich library for colors, tables, and formatting
-12. **Atomic saves with backup** - JsonTaskRepository uses atomic writes (temp file + rename) and maintains `.json.bak` backup for data integrity
-13. **Schedule optimization with Strategy pattern** - Multiple scheduling algorithms (9 strategies) implementing Strategy pattern, managed by StrategyFactory
-14. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
-15. **Field-specific validation with Strategy Pattern + Registry** - TaskFieldValidatorRegistry manages field-specific validators (currently StatusValidator), using custom domain exceptions for consistent error handling; extensible design makes adding new validators simple
+8. **Command registration** - Commands imported and registered in `cli.py` via `cli.add_command()`
+9. **Package list in pyproject.toml** - All modules must be explicitly listed in `packages` array for installation
+10. **Rich for all output** - Console output uses Rich library for colors, tables, and formatting
+11. **Atomic saves with backup** - JsonTaskRepository uses atomic writes (temp file + rename) and maintains `.json.bak` backup for data integrity
+12. **Schedule optimization with Strategy pattern** - Multiple scheduling algorithms (9 strategies) implementing Strategy pattern, managed by StrategyFactory
+13. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
+14. **Field-specific validation with Strategy Pattern + Registry** - TaskFieldValidatorRegistry manages field-specific validators (currently StatusValidator), using custom domain exceptions for consistent error handling; extensible design makes adding new validators simple
 
 ### Console Messaging Guidelines
 

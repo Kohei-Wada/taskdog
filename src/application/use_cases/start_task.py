@@ -38,7 +38,6 @@ class StartTaskUseCase(UseCase[StartTaskInput, Task]):
 
         Raises:
             TaskNotFoundException: If task doesn't exist
-            TaskWithChildrenError: If task has child tasks
             TaskAlreadyFinishedError: If task is already finished
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)

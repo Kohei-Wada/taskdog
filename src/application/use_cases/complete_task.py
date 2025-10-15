@@ -40,7 +40,6 @@ class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
             TaskNotFoundException: If task doesn't exist
             TaskAlreadyFinishedError: If task is already finished
             TaskNotStartedError: If task is PENDING (not started yet)
-            IncompleteChildrenError: If task has incomplete children
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 

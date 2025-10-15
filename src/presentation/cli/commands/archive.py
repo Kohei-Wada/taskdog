@@ -4,8 +4,9 @@ import click
 
 from application.dto.archive_task_input import ArchiveTaskInput
 from application.use_cases.archive_task import ArchiveTaskUseCase
-from presentation.cli.batch_executor import BatchCommandExecutor
+from domain.exceptions.task_exceptions import TaskNotFoundException
 from presentation.cli.context import CliContext
+from utils.console_messages import print_error, print_task_not_found_error
 
 
 @click.command(
@@ -20,22 +21,23 @@ def archive_command(ctx, task_ids):
     repository = ctx_obj.repository
     archive_task_use_case = ArchiveTaskUseCase(repository)
 
-    # Define processing function
-    def process_task(task_id: int):
-        input_dto = ArchiveTaskInput(task_id=task_id)
-        archive_task_use_case.execute(input_dto)
-        return task_id
+    for task_id in task_ids:
+        try:
+            input_dto = ArchiveTaskInput(task_id=task_id)
+            archive_task_use_case.execute(input_dto)
 
-    # Define success callback
-    def on_success(result):
-        task_id = result
-        console.print(f"[green]✓[/green] Archived task with ID: [cyan]{task_id}[/cyan]")
+            console.print(f"[green]✓[/green] Archived task with ID: [cyan]{task_id}[/cyan]")
 
-    # Execute batch operation
-    executor = BatchCommandExecutor(console)
-    executor.execute_batch(
-        task_ids=task_ids,
-        process_func=process_task,
-        operation_name="archiving task",
-        success_callback=on_success,
-    )
+            # Add spacing between tasks if processing multiple
+            if len(task_ids) > 1:
+                console.print()
+
+        except TaskNotFoundException as e:
+            print_task_not_found_error(console, e.task_id)
+            if len(task_ids) > 1:
+                console.print()
+
+        except Exception as e:
+            print_error(console, "archiving task", e)
+            if len(task_ids) > 1:
+                console.print()
