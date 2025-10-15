@@ -29,10 +29,10 @@ from presentation.cli.commands.update import update_command
 from presentation.cli.context import CliContext
 
 
-@click.group()
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.pass_context
 def cli(ctx):
-    """Taskdog: Hierarchical task management CLI tool."""
+    """Taskdog: Task management CLI tool with time tracking and optimization."""
 
     # Follow XDG Base Directory specification
     xdg_data_home = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
