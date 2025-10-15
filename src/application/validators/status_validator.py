@@ -18,18 +18,6 @@ class StatusValidator(FieldValidator):
     """
 
     def validate(self, value: TaskStatus, task: Task, repository: TaskRepository) -> None:
-        """Validate status update.
-
-        Args:
-            value: New status (TaskStatus enum)
-            task: Task being updated
-            repository: Repository for data access
-
-        Raises:
-            TaskAlreadyFinishedError: If trying to start already finished task
-            TaskNotStartedError: If PENDING → COMPLETED transition attempted
-        """
-        # Ensure task has ID (from repository)
         assert task.id is not None
 
         # Validate based on target status
@@ -39,17 +27,6 @@ class StatusValidator(FieldValidator):
             self._validate_can_be_completed(task)
 
     def _validate_can_be_started(self, task: Task) -> None:
-        """Validate task can be started.
-
-        Args:
-            task: Task to validate
-
-        Raises:
-            TaskAlreadyFinishedError: If task is already finished
-
-        Business Rules:
-            - Cannot start if task is already finished (COMPLETED/FAILED)
-        """
         assert task.id is not None
 
         # Early check: Cannot restart finished tasks
@@ -57,19 +34,6 @@ class StatusValidator(FieldValidator):
             raise TaskAlreadyFinishedError(task.id, task.status.value)
 
     def _validate_can_be_completed(self, task: Task) -> None:
-        """Validate task can be completed.
-
-        Args:
-            task: Task to validate
-
-        Raises:
-            TaskAlreadyFinishedError: If task is already finished
-            TaskNotStartedError: If task is PENDING (not started yet)
-
-        Business Rules:
-            - Cannot complete if task is already finished (COMPLETED/FAILED)
-            - Cannot complete if task is PENDING (must be started first)
-        """
         assert task.id is not None
 
         # Early check: Cannot re-complete finished tasks
