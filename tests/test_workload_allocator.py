@@ -271,6 +271,83 @@ class TestWorkloadAllocator(unittest.TestCase):
         effective_deadline = DeadlineCalculator.get_effective_deadline(task, mock_repo)
         self.assertEqual(effective_deadline, "2025-01-10 18:00:00")
 
+    def test_allocate_multiple_tasks_with_same_tight_deadline(self):
+        """Test that multiple tasks with same tight deadline respect max_hours_per_day constraint.
+
+        This test reproduces issue #53: When multiple tasks have the same tight deadline,
+        the allocator should fail to schedule tasks that would exceed the max hours constraint,
+        rather than violating the constraint.
+        """
+        # Start on Thursday 10/16, deadline on Friday 10/17
+        # Max 5 hours per day, so 2 days = 10 hours max capacity
+        thursday = datetime(2025, 10, 16, 9, 0, 0)
+        allocator = WorkloadAllocator(max_hours_per_day=5.0, start_date=thursday)
+
+        # Create 6 tasks with same deadline, totaling 11 hours (exceeds 10h capacity)
+        tasks = [
+            Task(id=7, name="Task 7", priority=100, status=TaskStatus.PENDING,
+                 estimated_duration=3.0, deadline="2025-10-17 18:00:00"),
+            Task(id=10, name="Task 10", priority=100, status=TaskStatus.PENDING,
+                 estimated_duration=1.0, deadline="2025-10-17 18:00:00"),
+            Task(id=11, name="Task 11", priority=100, status=TaskStatus.PENDING,
+                 estimated_duration=1.0, deadline="2025-10-17 18:00:00"),
+            Task(id=17, name="Task 17", priority=100, status=TaskStatus.PENDING,
+                 estimated_duration=3.0, deadline="2025-10-17 18:00:00"),
+            Task(id=22, name="Task 22", priority=100, status=TaskStatus.PENDING,
+                 estimated_duration=1.0, deadline="2025-10-17 18:00:00"),
+            Task(id=26, name="Task 26", priority=100, status=TaskStatus.PENDING,
+                 estimated_duration=2.0, deadline="2025-10-17 18:00:00"),
+        ]
+
+        # Schedule tasks sequentially
+        scheduled_tasks = []
+        failed_tasks = []
+
+        for task in tasks:
+            result = allocator.allocate_timeblock(task)
+            if result:
+                scheduled_tasks.append(result)
+            else:
+                failed_tasks.append(task)
+
+        # Calculate hours from successfully scheduled tasks
+        actual_daily_hours = {}
+        for task in scheduled_tasks:
+            if task.daily_allocations:
+                for date_str, hours in task.daily_allocations.items():
+                    actual_daily_hours[date_str] = actual_daily_hours.get(date_str, 0.0) + hours
+
+        # Check for phantom allocations: allocator.daily_allocations should match actual task allocations
+        for date_str in allocator.daily_allocations:
+            allocator_hours = allocator.daily_allocations[date_str]
+            actual_hours = actual_daily_hours.get(date_str, 0.0)
+            self.assertAlmostEqual(
+                allocator_hours, actual_hours,
+                places=5,
+                msg=f"Phantom allocation detected on {date_str}: allocator has {allocator_hours}h "
+                    f"but actual tasks only have {actual_hours}h"
+            )
+
+        # Verify that max_hours_per_day is never exceeded
+        for date_str, hours in allocator.daily_allocations.items():
+            self.assertLessEqual(
+                hours, 5.0,
+                f"Day {date_str} has {hours}h scheduled, exceeding max 5.0h"
+            )
+
+        # Verify that some tasks failed to schedule (can't fit 11h in 10h capacity)
+        self.assertGreater(
+            len(failed_tasks), 0,
+            "Expected some tasks to fail scheduling when capacity exceeded"
+        )
+
+        # Calculate total scheduled hours
+        total_scheduled = sum(t.estimated_duration for t in scheduled_tasks)
+        self.assertLessEqual(
+            total_scheduled, 10.0,
+            f"Total scheduled {total_scheduled}h exceeds capacity 10.0h"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -82,6 +82,9 @@ class WorkloadAllocator:
         # Create a deep copy to avoid modifying the original task
         task_copy = copy.deepcopy(task)
 
+        # Save original state to revert if allocation fails
+        original_daily_allocations = copy.deepcopy(self.daily_allocations)
+
         # Calculate effective deadline considering parent task deadlines
         effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy, self.repository)
 
@@ -107,7 +110,8 @@ class WorkloadAllocator:
             if effective_deadline:
                 deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
                 if current_date > deadline_dt:
-                    # Cannot schedule before deadline
+                    # Cannot schedule before deadline - revert allocations
+                    self.daily_allocations = original_daily_allocations
                     return None
 
             # Get current allocation for this day
@@ -144,4 +148,6 @@ class WorkloadAllocator:
             task_copy.daily_allocations = task_daily_allocations
             return task_copy
 
+        # Failed to allocate - revert allocations
+        self.daily_allocations = original_daily_allocations
         return None
