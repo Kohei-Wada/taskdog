@@ -1,4 +1,4 @@
-"""Base class for Rich-based task formatters."""
+"""Base class for Rich-based task renderers."""
 
 from io import StringIO
 
@@ -7,14 +7,14 @@ from rich.table import Table
 from rich.text import Text
 
 from domain.entities.task import TaskStatus
-from presentation.formatters.constants import STATUS_COLORS_BOLD, STATUS_STYLES
-from presentation.formatters.task_formatter import TaskFormatter
+from presentation.renderers.constants import STATUS_COLORS_BOLD, STATUS_STYLES
+from presentation.renderers.task_renderer import TaskRenderer
 
 
-class RichFormatterBase(TaskFormatter):
-    """Base class for formatters using Rich library.
+class RichRendererBase(TaskRenderer):
+    """Base class for renderers using Rich library.
 
-    Provides common utility methods for Rich-based formatting,
+    Provides common utility methods for Rich-based rendering,
     including status styling and table rendering.
     """
 

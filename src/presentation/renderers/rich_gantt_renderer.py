@@ -6,13 +6,13 @@ from rich.text import Text
 from domain.entities.task import Task, TaskStatus
 from domain.services.workload_calculator import WorkloadCalculator
 from presentation.console.console_writer import ConsoleWriter
-from presentation.formatters.constants import DATETIME_FORMAT
-from presentation.formatters.rich_formatter_base import RichFormatterBase
+from presentation.renderers.constants import DATETIME_FORMAT
+from presentation.renderers.rich_renderer_base import RichRendererBase
 from shared.utils.date_utils import DateTimeParser
 
 
-class RichGanttFormatter(RichFormatterBase):
-    """Formats tasks as a Gantt chart using Rich."""
+class RichGanttRenderer(RichRendererBase):
+    """Renders tasks as a Gantt chart using Rich."""
 
     # Visual constants for Gantt chart symbols
     SYMBOL_PLANNED = "░"
@@ -27,7 +27,7 @@ class RichGanttFormatter(RichFormatterBase):
     BACKGROUND_COLOR_DEADLINE = "rgb(200,100,0)"  # Deadline (orange)
 
     def __init__(self, console_writer: ConsoleWriter):
-        """Initialize the formatter.
+        """Initialize the renderer.
 
         Args:
             console_writer: Console writer for output
@@ -35,14 +35,14 @@ class RichGanttFormatter(RichFormatterBase):
         self.console_writer = console_writer
         self.workload_calculator = WorkloadCalculator()
 
-    def format_tasks(
+    def render(
         self,
         tasks: list[Task],
         repository,
         start_date: date | None = None,
         end_date: date | None = None,
     ) -> None:
-        """Format and print tasks as a Gantt chart with Rich.
+        """Render and print tasks as a Gantt chart with Rich.
 
         Args:
             tasks: List of all tasks

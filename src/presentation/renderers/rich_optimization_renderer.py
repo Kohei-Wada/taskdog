@@ -1,4 +1,4 @@
-"""Formatter for optimization results using Rich."""
+"""Renderer for optimization results using Rich."""
 
 from rich.table import Table
 
@@ -7,17 +7,17 @@ from domain.entities.task import Task, TaskStatus
 from presentation.console.console_writer import ConsoleWriter
 
 
-class RichOptimizationFormatter:
-    """Formats optimization results with Rich tables and styled output.
+class RichOptimizationRenderer:
+    """Renders optimization results with Rich tables and styled output.
 
-    This formatter is responsible for displaying:
+    This renderer is responsible for displaying:
     - Task optimization table (modified tasks)
     - Summary statistics (new/rescheduled counts, workload, conflicts)
     - Warnings (unscheduled tasks, overloaded days)
     """
 
     def __init__(self, console_writer: ConsoleWriter):
-        """Initialize the formatter.
+        """Initialize the renderer.
 
         Args:
             console_writer: Console writer for output

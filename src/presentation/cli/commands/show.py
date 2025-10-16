@@ -8,7 +8,7 @@ from application.use_cases.get_task_detail import (
 )
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
-from presentation.formatters.rich_detail_formatter import RichDetailFormatter
+from presentation.renderers.rich_detail_renderer import RichDetailRenderer
 
 
 @click.command(name="show", help="Show task details and notes with markdown rendering.")
@@ -27,6 +27,6 @@ def show_command(ctx, task_id, raw):
     input_dto = GetTaskDetailInput(task_id)
     detail = use_case.execute(input_dto)
 
-    # Format and display using formatter
-    formatter = RichDetailFormatter(console_writer)
-    formatter.format(detail, raw=raw)
+    # Render and display using renderer
+    renderer = RichDetailRenderer(console_writer)
+    renderer.render(detail, raw=raw)

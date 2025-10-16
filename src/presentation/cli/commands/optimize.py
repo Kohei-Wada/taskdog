@@ -10,8 +10,8 @@ from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.formatters.rich_gantt_formatter import RichGanttFormatter
-from presentation.formatters.rich_optimization_formatter import RichOptimizationFormatter
+from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
+from presentation.renderers.rich_optimization_renderer import RichOptimizationRenderer
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 from shared.utils.date_utils import get_next_weekday
 
@@ -102,18 +102,18 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
     # Show summary header
     console_writer.optimization_result(len(modified_tasks), dry_run)
 
-    # Format and print Gantt chart
-    gantt_formatter = RichGanttFormatter(console_writer)
-    gantt_formatter.format_tasks(modified_tasks, repository)
+    # Render and print Gantt chart
+    gantt_renderer = RichGanttRenderer(console_writer)
+    gantt_renderer.render(modified_tasks, repository)
 
-    # Create optimization formatter for summary and warnings
-    formatter = RichOptimizationFormatter(console_writer)
+    # Create optimization renderer for summary and warnings
+    renderer = RichOptimizationRenderer(console_writer)
 
     # Show summary section
-    formatter.format_summary(summary)
+    renderer.format_summary(summary)
 
     # Show warnings
-    formatter.format_warnings(summary, max_hours_per_day)
+    renderer.format_warnings(summary, max_hours_per_day)
 
     # Show configuration
     console_writer.print("\n[bold]Configuration:[/bold]")

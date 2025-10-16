@@ -9,7 +9,7 @@ from domain.constants import DATETIME_FORMAT
 from domain.entities.task import TaskStatus
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.formatters.rich_gantt_formatter import RichGanttFormatter
+from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
@@ -123,7 +123,7 @@ def gantt_command(ctx, start_date, end_date, hide_completed, show_all, sort, rev
 
     # Get console writer
     console_writer = ctx_obj.console_writer
-    formatter = RichGanttFormatter(console_writer)
+    renderer = RichGanttRenderer(console_writer)
 
     # Convert datetime strings to date objects if provided
     # Default to previous Monday if start_date not provided
@@ -136,4 +136,4 @@ def gantt_command(ctx, start_date, end_date, hide_completed, show_all, sort, rev
     if end_date:
         end_date_obj = datetime.strptime(end_date, DATETIME_FORMAT).date()
 
-    formatter.format_tasks(tasks, repository, start_date_obj, end_date_obj)
+    renderer.render(tasks, repository, start_date_obj, end_date_obj)

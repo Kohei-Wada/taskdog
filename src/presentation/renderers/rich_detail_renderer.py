@@ -6,17 +6,17 @@ from rich.table import Table
 
 from application.dto.task_detail_dto import TaskDetailDTO
 from presentation.console.console_writer import ConsoleWriter
-from presentation.formatters.constants import STATUS_STYLES
+from presentation.renderers.constants import STATUS_STYLES
 
 
-class RichDetailFormatter:
-    """Formatter for displaying task details with Rich.
+class RichDetailRenderer:
+    """Renderer for displaying task details with Rich.
 
     Handles rendering of task information and notes in a formatted panel.
     """
 
     def __init__(self, console_writer: ConsoleWriter):
-        """Initialize formatter.
+        """Initialize renderer.
 
         Args:
             console_writer: Console writer for output
@@ -66,8 +66,8 @@ class RichDetailFormatter:
 
         return table
 
-    def format(self, dto: TaskDetailDTO, raw: bool = False) -> None:
-        """Format and display task detail.
+    def render(self, dto: TaskDetailDTO, raw: bool = False) -> None:
+        """Render and display task detail.
 
         Args:
             dto: Task detail DTO containing task and notes

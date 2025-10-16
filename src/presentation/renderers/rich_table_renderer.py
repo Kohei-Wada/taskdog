@@ -2,22 +2,22 @@ from rich.table import Table
 
 from domain.entities.task import Task
 from presentation.console.console_writer import ConsoleWriter
-from presentation.formatters.rich_formatter_base import RichFormatterBase
+from presentation.renderers.rich_renderer_base import RichRendererBase
 
 
-class RichTableFormatter(RichFormatterBase):
-    """Formats tasks as a table using Rich."""
+class RichTableRenderer(RichRendererBase):
+    """Renders tasks as a table using Rich."""
 
     def __init__(self, console_writer: ConsoleWriter):
-        """Initialize the formatter.
+        """Initialize the renderer.
 
         Args:
             console_writer: Console writer for output
         """
         self.console_writer = console_writer
 
-    def format_tasks(self, tasks: list[Task], repository) -> None:
-        """Format and print tasks as a table with Rich.
+    def render(self, tasks: list[Task], repository) -> None:
+        """Render and print tasks as a table with Rich.
 
         Args:
             tasks: List of all tasks

@@ -12,7 +12,6 @@ test: ## Run all tests
 	uv run python -m unittest discover tests/
 
 install: ## Install taskdog CLI tool
-	uv tool uninstall taskdog
 	uv cache clean
 	uv build
 	uv tool install .

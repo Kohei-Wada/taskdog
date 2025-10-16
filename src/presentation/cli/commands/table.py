@@ -5,7 +5,7 @@ import click
 from application.queries.task_query_service import TaskQueryService
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.formatters.rich_table_formatter import RichTableFormatter
+from presentation.renderers.rich_table_renderer import RichTableRenderer
 
 
 @click.command(
@@ -48,7 +48,7 @@ def table_command(ctx, all, sort, reverse):
     else:
         tasks = task_query_service.get_incomplete_tasks(sort_by=sort, reverse=reverse)
 
-    # Format and display
+    # Render and display
     console_writer = ctx_obj.console_writer
-    formatter = RichTableFormatter(console_writer)
-    formatter.format_tasks(tasks, repository)
+    renderer = RichTableRenderer(console_writer)
+    renderer.render(tasks, repository)

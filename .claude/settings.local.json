@@ -33,7 +33,12 @@
       "Bash(make typecheck:*)",
       "Bash(uv run python:*)",
       "Bash(XDG_DATA_HOME=/tmp/test_taskdog PYTHONPATH=src uv run python:*)",
-      "Bash(taskdog rm:*)"
+      "Bash(taskdog rm:*)",
+      "Bash(do sed -i 's/TaskFormatter/TaskRenderer/g' \"$file\")",
+      "Bash(do sed -i 's/RichOptimizationFormatter/RichOptimizationRenderer/g' \"$file\")",
+      "Bash(do sed -i 's/from presentation\\.formatters\\./from presentation.renderers./g' \"$file\")",
+      "Bash(taskdog:*)",
+      "Bash(make install:*)"
     ],
     "deny": [],
     "ask": []

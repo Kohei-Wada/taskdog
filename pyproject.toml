@@ -43,7 +43,7 @@ packages = [
   "presentation.cli",
   "presentation.cli.commands",
   "presentation.console",
-  "presentation.formatters",
+  "presentation.renderers",
   "presentation.utils",
   "shared",
   "shared.click_types",
@@ -82,7 +82,7 @@ ignore = [
 "src/domain/services/workload_calculator.py" = ["C901"]
 "src/infrastructure/persistence/json_task_repository.py" = ["C901"]
 "src/presentation/cli/batch_executor.py" = ["C901"]
-"src/presentation/formatters/rich_gantt_formatter.py" = ["C901"]
+"src/presentation/renderers/rich_gantt_renderer.py" = ["C901"]
 "src/domain/exceptions/task_exceptions.py" = ["N818"]  # TaskNotFoundException is widely used
 "tests/**/*.py" = ["SIM115", "RUF015"]  # Test code patterns are acceptable
 
@@ -128,9 +128,9 @@ module = [
     "application.queries.filters.today_filter",
     "application.queries.task_query_service",
     "application.services.task_validator",
-    "presentation.formatters.rich_formatter_base",
-    "presentation.formatters.rich_table_formatter",
-    "presentation.formatters.rich_gantt_formatter",
+    "presentation.renderers.rich_renderer_base",
+    "presentation.renderers.rich_table_renderer",
+    "presentation.renderers.rich_gantt_renderer",
     "presentation.cli.commands.*",
 ]
 ignore_errors = true

@@ -5,7 +5,7 @@ import click
 from application.queries.task_query_service import TaskQueryService
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.formatters.rich_table_formatter import RichTableFormatter
+from presentation.renderers.rich_table_renderer import RichTableRenderer
 
 
 @click.command(name="today", help="Display tasks for today (deadline, planned, or in-progress).")
@@ -56,7 +56,7 @@ def today_command(ctx, format, all, sort, reverse):
         include_completed=all, sort_by=sort, reverse=reverse
     )
 
-    # Format and display
+    # Render and display
     console_writer = ctx_obj.console_writer
-    formatter = RichTableFormatter(console_writer)
-    formatter.format_tasks(today_tasks, repository)
+    renderer = RichTableRenderer(console_writer)
+    renderer.render(today_tasks, repository)
