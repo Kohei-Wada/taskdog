@@ -223,11 +223,11 @@ Task Details:
                 days_until_monday = (7 - today.weekday()) % 7
                 start_date = today + timedelta(days=days_until_monday)
 
-            # Create optimization input with default settings
+            # Create optimization input with force override enabled
             optimize_input = OptimizeScheduleInput(
                 start_date=start_date,
                 max_hours_per_day=6.0,
-                force_override=False,
+                force_override=True,
                 dry_run=False,
                 algorithm_name="greedy",
             )
