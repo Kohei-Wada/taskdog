@@ -38,7 +38,9 @@
       "Bash(do sed -i 's/RichOptimizationFormatter/RichOptimizationRenderer/g' \"$file\")",
       "Bash(do sed -i 's/from presentation\\.formatters\\./from presentation.renderers./g' \"$file\")",
       "Bash(taskdog:*)",
-      "Bash(make install:*)"
+      "Bash(make install:*)",
+      "Bash(mkdir:*)",
+      "Bash(uv pip uninstall:*)"
     ],
     "deny": [],
     "ask": []
