@@ -18,7 +18,8 @@ def archive_command(ctx, task_ids):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
-    archive_task_use_case = ArchiveTaskUseCase(repository)
+    time_tracker = ctx_obj.time_tracker
+    archive_task_use_case = ArchiveTaskUseCase(repository, time_tracker)
 
     for task_id in task_ids:
         try:

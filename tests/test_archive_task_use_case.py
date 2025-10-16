@@ -7,6 +7,7 @@ from application.dto.archive_task_input import ArchiveTaskInput
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
+from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
@@ -20,7 +21,8 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         self.temp_file.close()
 
         self.repository = JsonTaskRepository(self.temp_file.name)
-        self.use_case = ArchiveTaskUseCase(self.repository)
+        self.time_tracker = TimeTracker()
+        self.use_case = ArchiveTaskUseCase(self.repository, self.time_tracker)
 
     def test_archive_task(self):
         """Test archiving a task."""
