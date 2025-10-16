@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta
 
+from application.queries.filters.today_filter import TodayFilter
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task, TaskStatus
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -49,7 +50,8 @@ class TestTaskQueryService(unittest.TestCase):
         self.repository.save(task3)
 
         # Query
-        today_tasks = self.query_service.get_today_tasks(include_completed=False)
+        today_filter = TodayFilter(include_completed=False)
+        today_tasks = self.query_service.get_filtered_tasks(today_filter)
 
         # Verify
         self.assertEqual(len(today_tasks), 2)
@@ -82,7 +84,8 @@ class TestTaskQueryService(unittest.TestCase):
         self.repository.save(task3)
 
         # Query
-        today_tasks = self.query_service.get_today_tasks(include_completed=False)
+        today_filter = TodayFilter(include_completed=False)
+        today_tasks = self.query_service.get_filtered_tasks(today_filter, sort_by="deadline")
 
         # Verify sorted by deadline
         self.assertEqual(len(today_tasks), 3)
@@ -106,9 +109,8 @@ class TestTaskQueryService(unittest.TestCase):
         self.repository.save(task3)
 
         # Query with priority sorting
-        today_tasks = self.query_service.get_today_tasks(
-            include_completed=False, sort_by="priority"
-        )
+        today_filter = TodayFilter(include_completed=False)
+        today_tasks = self.query_service.get_filtered_tasks(today_filter, sort_by="priority")
 
         # Verify sorted by priority (descending by default)
         self.assertEqual(len(today_tasks), 3)
@@ -127,7 +129,8 @@ class TestTaskQueryService(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        today_tasks = self.query_service.get_today_tasks(include_completed=False)
+        today_filter = TodayFilter(include_completed=False)
+        today_tasks = self.query_service.get_filtered_tasks(today_filter)
 
         self.assertEqual(len(today_tasks), 0)
 
@@ -142,7 +145,8 @@ class TestTaskQueryService(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        today_tasks = self.query_service.get_today_tasks(include_completed=True)
+        today_filter = TodayFilter(include_completed=True)
+        today_tasks = self.query_service.get_filtered_tasks(today_filter)
 
         self.assertEqual(len(today_tasks), 1)
         self.assertEqual(today_tasks[0].name, "Completed Today")

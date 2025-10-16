@@ -12,12 +12,11 @@ class TestTodayFilter(unittest.TestCase):
     """Test cases for TodayFilter"""
 
     def setUp(self):
-        """Create temporary file and initialize filter for each test"""
+        """Create temporary file and initialize repository for each test"""
         self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
-        self.filter = TodayFilter(self.repository)
 
         # Calculate date strings for testing
         self.today = datetime.now().date()
@@ -41,7 +40,8 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filtered = self.filter.filter(tasks, include_completed=False)
+        filter_obj = TodayFilter(include_completed=False)
+        filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].name, "Deadline Today")
@@ -53,7 +53,8 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filtered = self.filter.filter(tasks, include_completed=False)
+        filter_obj = TodayFilter(include_completed=False)
+        filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 0)
 
@@ -64,7 +65,8 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filtered = self.filter.filter(tasks, include_completed=False)
+        filter_obj = TodayFilter(include_completed=False)
+        filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].name, "In Progress")
@@ -81,7 +83,8 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filtered = self.filter.filter(tasks, include_completed=False)
+        filter_obj = TodayFilter(include_completed=False)
+        filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].name, "Planned Today")
@@ -98,7 +101,8 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filtered = self.filter.filter(tasks, include_completed=False)
+        filter_obj = TodayFilter(include_completed=False)
+        filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 0)
 
@@ -114,7 +118,8 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filtered = self.filter.filter(tasks, include_completed=True)
+        filter_obj = TodayFilter(include_completed=True)
+        filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].name, "Completed Today")
