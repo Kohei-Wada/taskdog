@@ -4,8 +4,8 @@ from datetime import datetime
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.services.task_filter import TaskFilter
-from application.services.task_prioritizer import TaskPrioritizer
 from application.services.workload_allocator import WorkloadAllocator
+from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task
 
 
@@ -45,7 +45,7 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
         # Initialize service instances
         allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
         task_filter = TaskFilter()
-        prioritizer = TaskPrioritizer(start_date, repository)
+        sorter = OptimizationTaskSorter(start_date, repository)
 
         # Initialize daily_allocations with existing scheduled tasks
         # This ensures we account for tasks that won't be rescheduled
@@ -55,7 +55,7 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
         schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
 
         # Sort by priority
-        sorted_tasks = prioritizer.sort_by_priority(schedulable_tasks)
+        sorted_tasks = sorter.sort_by_priority(schedulable_tasks)
 
         # Allocate time blocks for each task
         updated_tasks = []

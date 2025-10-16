@@ -1,4 +1,4 @@
-"""Task prioritizer service for scheduling."""
+"""Optimization task sorter for scheduling."""
 
 from datetime import datetime
 
@@ -7,7 +7,7 @@ from domain.entities.task import Task
 from domain.services.deadline_calculator import DeadlineCalculator
 
 
-class TaskPrioritizer:
+class OptimizationTaskSorter:
     """Service for sorting tasks by scheduling priority.
 
     Determines the optimal order for scheduling tasks based on
@@ -15,7 +15,7 @@ class TaskPrioritizer:
     """
 
     def __init__(self, start_date: datetime, repository):
-        """Initialize prioritizer.
+        """Initialize sorter.
 
         Args:
             start_date: Starting date for deadline calculations
@@ -44,6 +44,7 @@ class TaskPrioritizer:
             effective_deadline = DeadlineCalculator.get_effective_deadline(task, self.repository)
 
             # Deadline score: None = infinity, otherwise days until deadline
+            days_until: int | float
             if effective_deadline:
                 deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
                 days_until = (deadline_dt - self.start_date).days

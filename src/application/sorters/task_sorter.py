@@ -93,5 +93,7 @@ class TaskSorter:
             return datetime(9999, 12, 31)
 
         parsed_date = DateTimeParser.parse_date(date_str)
+        if parsed_date is None:
+            return datetime(9999, 12, 31)
         # Convert date to datetime for consistent comparison
         return datetime.combine(parsed_date, datetime.min.time())

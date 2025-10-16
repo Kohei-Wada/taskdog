@@ -104,7 +104,6 @@ The application follows **Clean Architecture** with distinct layers:
   - All validators use custom domain exceptions for consistent error handling
 - `services/`: Application services that coordinate complex operations
   - `WorkloadAllocator`: Distributes task hours across weekdays respecting max hours/day
-  - `TaskPrioritizer`: Sorts tasks by urgency (deadline proximity) and priority
   - `OptimizationSummaryBuilder`: Builds summary reports for schedule optimization
   - `optimization/`: Multiple scheduling algorithms implementing the Strategy pattern
     - `GreedyOptimizationStrategy`: Front-loads tasks (default)
@@ -117,6 +116,9 @@ The application follows **Clean Architecture** with distinct layers:
     - `GeneticOptimizationStrategy`: Evolutionary algorithm
     - `MonteCarloOptimizationStrategy`: Random sampling approach
     - `StrategyFactory`: Factory for creating strategy instances
+- `sorters/`: Task sorting components
+  - `TaskSorter`: General-purpose sorter for user-facing queries (supports sorting by id, priority, deadline, name, status, planned_start)
+  - `OptimizationTaskSorter`: Specialized sorter for schedule optimization (sorts by deadline urgency, priority field, and task ID)
 - `queries/`: Read-optimized operations (TaskQueryService with filters and sorters)
 - `dto/`: Data Transfer Objects for use case inputs (CreateTaskInput, StartTaskInput, UpdateTaskInput, etc.)
 - Depends on domain layer; defines application-specific logic
@@ -168,15 +170,24 @@ Dependencies are managed through Click's context object using the `CliContext` d
 - Uses filters (TodayFilter) and sorters (TaskSorter) for query composition
 - Separates reads from writes (CQRS-like pattern)
 
-**TaskSorter** (`src/application/queries/filters/task_sorter.py`)
-- Provides sorting functionality for task lists
+**Task Sorters** (`src/application/sorters/`)
+Two specialized sorters with distinct responsibilities:
+
+**TaskSorter** - General-purpose sorting for user-facing queries
+- Provides flexible sorting functionality for task lists
 - Supports multiple sort keys: `id`, `priority`, `deadline`, `name`, `status`, `planned_start`
 - Default behaviors:
   - `priority`: Descending by default (higher priority first)
   - Other keys: Ascending by default
   - None values: Sorted last for date/time fields
 - `reverse` parameter inverts sort order
-- Used by TaskQueryService to sort query results
+- Used by TaskQueryService for table, gantt, and today commands
+
+**OptimizationTaskSorter** - Specialized sorting for schedule optimization
+- Determines optimal scheduling order based on multiple criteria
+- Sort priority: (1) Deadline urgency (closer deadline = higher priority), (2) Priority field value, (3) Task ID (stable sort)
+- Used by optimization strategies (GreedyOptimizationStrategy, BalancedOptimizationStrategy)
+- Considers effective deadlines via DeadlineCalculator
 
 **Repository Pattern** (`src/infrastructure/persistence/`)
 - Abstract interface `TaskRepository` defines contract

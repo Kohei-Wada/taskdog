@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta
 
-from application.queries.filters.task_sorter import TaskSorter
+from application.sorters.task_sorter import TaskSorter
 from domain.entities.task import Task, TaskStatus
 
 

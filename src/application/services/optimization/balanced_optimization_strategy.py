@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.services.task_filter import TaskFilter
-from application.services.task_prioritizer import TaskPrioritizer
 from application.services.workload_allocator import WorkloadAllocator
+from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
 from domain.entities.task import Task
 from domain.services.deadline_calculator import DeadlineCalculator
@@ -53,7 +53,7 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         # Initialize service instances
         allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
         task_filter = TaskFilter()
-        prioritizer = TaskPrioritizer(start_date, repository)
+        sorter = OptimizationTaskSorter(start_date, repository)
 
         # Initialize daily_allocations with existing scheduled tasks
         allocator.initialize_allocations(tasks, force_override)
@@ -62,7 +62,7 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
 
         # Sort by priority
-        sorted_tasks = prioritizer.sort_by_priority(schedulable_tasks)
+        sorted_tasks = sorter.sort_by_priority(schedulable_tasks)
 
         # Allocate time blocks for each task with balanced distribution
         updated_tasks = []

@@ -1,21 +1,21 @@
-"""Unit tests for TaskPrioritizer service."""
+"""Unit tests for OptimizationTaskSorter service."""
 
 import unittest
 from datetime import datetime
 from unittest.mock import Mock
 
-from application.services.task_prioritizer import TaskPrioritizer
+from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task, TaskStatus
 
 
-class TestTaskPrioritizer(unittest.TestCase):
-    """Test cases for TaskPrioritizer."""
+class TestOptimizationTaskSorter(unittest.TestCase):
+    """Test cases for OptimizationTaskSorter."""
 
     def setUp(self):
         """Set up test fixtures."""
         self.start_date = datetime(2025, 1, 6, 9, 0, 0)  # Monday 9:00 AM
         self.mock_repository = Mock()
-        self.prioritizer = TaskPrioritizer(self.start_date, self.mock_repository)
+        self.sorter = OptimizationTaskSorter(self.start_date, self.mock_repository)
 
     def test_sort_by_priority_field(self):
         """Test that tasks are sorted by priority field."""
@@ -27,7 +27,7 @@ class TestTaskPrioritizer(unittest.TestCase):
         # Mock repository to return no children for all tasks
         self.mock_repository.get_children.return_value = []
 
-        result = self.prioritizer.sort_by_priority(tasks)
+        result = self.sorter.sort_by_priority(tasks)
 
         # Higher priority should come first
         self.assertEqual(result[0].id, 2)  # Priority 200
@@ -61,7 +61,7 @@ class TestTaskPrioritizer(unittest.TestCase):
         ]
         self.mock_repository.get_children.return_value = []
 
-        result = self.prioritizer.sort_by_priority(tasks)
+        result = self.sorter.sort_by_priority(tasks)
 
         # Closer deadline should come first
         self.assertEqual(result[0].id, 2)  # 2 days away
@@ -77,7 +77,7 @@ class TestTaskPrioritizer(unittest.TestCase):
         # Mock get_by_id to return the parent task
         self.mock_repository.get_by_id.return_value = tasks[0]
 
-        result = self.prioritizer.sort_by_priority(tasks)
+        result = self.sorter.sort_by_priority(tasks)
 
         # Child (leaf) should come before parent
         self.assertEqual(result[0].id, 2)  # Child
@@ -110,7 +110,7 @@ class TestTaskPrioritizer(unittest.TestCase):
         ]
         self.mock_repository.get_children.return_value = []
 
-        result = self.prioritizer.sort_by_priority(tasks)
+        result = self.sorter.sort_by_priority(tasks)
 
         # Deadline first, then priority
         self.assertEqual(result[0].id, 2)  # Close deadline (2 days)
@@ -126,7 +126,7 @@ class TestTaskPrioritizer(unittest.TestCase):
         ]
         self.mock_repository.get_children.return_value = []
 
-        result = self.prioritizer.sort_by_priority(tasks)
+        result = self.sorter.sort_by_priority(tasks)
 
         # Should be sorted by ID
         self.assertEqual(result[0].id, 1)
@@ -135,7 +135,7 @@ class TestTaskPrioritizer(unittest.TestCase):
 
     def test_sort_empty_list(self):
         """Test sorting empty list returns empty list."""
-        result = self.prioritizer.sort_by_priority([])
+        result = self.sorter.sort_by_priority([])
         self.assertEqual(result, [])
 
     def test_sort_single_task(self):
@@ -143,7 +143,7 @@ class TestTaskPrioritizer(unittest.TestCase):
         tasks = [Task(id=1, name="Single task", priority=100, status=TaskStatus.PENDING)]
         self.mock_repository.get_children.return_value = []
 
-        result = self.prioritizer.sort_by_priority(tasks)
+        result = self.sorter.sort_by_priority(tasks)
 
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0].id, 1)

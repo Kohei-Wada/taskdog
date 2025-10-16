@@ -2,7 +2,7 @@
 
 from application.queries.base import QueryService
 from application.queries.filters.task_filter import TaskFilter
-from application.queries.filters.task_sorter import TaskSorter
+from application.sorters.task_sorter import TaskSorter
 from domain.entities.task import Task
 
 
