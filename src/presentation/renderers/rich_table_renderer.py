@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from rich.table import Table
 
 from domain.entities.task import Task
@@ -8,6 +10,80 @@ from presentation.renderers.rich_renderer_base import RichRendererBase
 class RichTableRenderer(RichRendererBase):
     """Renders tasks as a table using Rich."""
 
+    # Field definitions: field_name -> column configuration
+    FIELD_DEFINITIONS: ClassVar[dict[str, dict[str, str | bool]]] = {
+        "id": {
+            "header": "ID",
+            "justify": "right",
+            "style": "cyan",
+            "no_wrap": True,
+        },
+        "name": {
+            "header": "Name",
+            "style": "white",
+        },
+        "priority": {
+            "header": "Priority",
+            "justify": "center",
+            "style": "yellow",
+            "no_wrap": True,
+        },
+        "status": {
+            "header": "Status",
+            "justify": "center",
+        },
+        "planned_start": {
+            "header": "Plan Start",
+            "style": "green",
+            "no_wrap": True,
+        },
+        "planned_end": {
+            "header": "Plan End",
+            "style": "green",
+            "no_wrap": True,
+        },
+        "actual_start": {
+            "header": "Actual Start",
+            "style": "blue",
+            "no_wrap": True,
+        },
+        "actual_end": {
+            "header": "Actual End",
+            "style": "blue",
+            "no_wrap": True,
+        },
+        "deadline": {
+            "header": "Deadline",
+            "style": "magenta",
+            "no_wrap": True,
+        },
+        "duration": {
+            "header": "Duration",
+            "justify": "right",
+            "style": "cyan",
+            "no_wrap": True,
+        },
+        "created_at": {
+            "header": "Created At",
+            "style": "dim",
+            "no_wrap": True,
+        },
+    }
+
+    # Default fields to display when none specified
+    DEFAULT_FIELDS: ClassVar[list[str]] = [
+        "id",
+        "name",
+        "priority",
+        "status",
+        "planned_start",
+        "planned_end",
+        "actual_start",
+        "actual_end",
+        "deadline",
+        "duration",
+    ]
+
     def __init__(self, console_writer: ConsoleWriter):
         """Initialize the renderer.
 
@@ -16,15 +92,32 @@ class RichTableRenderer(RichRendererBase):
         """
         self.console_writer = console_writer
 
-    def render(self, tasks: list[Task]) -> None:
+    def render(self, tasks: list[Task], fields: list[str] | None = None) -> None:
         """Render and print tasks as a table with Rich.
 
         Args:
             tasks: List of all tasks
+            fields: List of field names to display (None = all default fields)
+
+        Raises:
+            ValueError: If an invalid field name is provided
         """
         if not tasks:
             self.console_writer.warning("No tasks found.")
             return
+
+        # Use default fields if none specified
+        if fields is None:
+            fields = self.DEFAULT_FIELDS
+
+        # Validate field names
+        invalid_fields = [f for f in fields if f not in self.FIELD_DEFINITIONS]
+        if invalid_fields:
+            valid_fields = ", ".join(self.FIELD_DEFINITIONS.keys())
+            raise ValueError(
+                f"Invalid field(s): {', '.join(invalid_fields)}. "
+                f"Valid fields are: {valid_fields}"
+            )
 
         # Create Rich table
         table = Table(
@@ -34,52 +127,63 @@ class RichTableRenderer(RichRendererBase):
             border_style="bright_blue",
         )
 
-        # Add columns
-        table.add_column("ID", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Name", style="white")
-        table.add_column("Priority", justify="center", style="yellow", no_wrap=True)
-        table.add_column("Status", justify="center")
-        table.add_column("Plan Start", style="green", no_wrap=True)
-        table.add_column("Plan End", style="green", no_wrap=True)
-        table.add_column("Actual Start", style="blue", no_wrap=True)
-        table.add_column("Actual End", style="blue", no_wrap=True)
-        table.add_column("Deadline", style="magenta", no_wrap=True)
-        table.add_column("Duration", justify="right", style="cyan", no_wrap=True)
+        # Add columns dynamically based on selected fields
+        for field_name in fields:
+            field_config = self.FIELD_DEFINITIONS[field_name]
+            table.add_column(
+                field_config["header"],
+                justify=field_config.get("justify"),
+                style=field_config.get("style"),
+                no_wrap=field_config.get("no_wrap", False),
+            )
 
         # Add rows
         for task in tasks:
-            # Status with color
-            status_style = self._get_status_style(task.status)
-
-            # Planned times
-            planned_start_str = self._format_datetime(task.planned_start)
-            planned_end_str = self._format_datetime(task.planned_end)
-
-            # Actual times
-            actual_start_str = self._format_datetime(task.actual_start)
-            actual_end_str = self._format_datetime(task.actual_end)
-
-            # Deadline
-            deadline_str = self._format_datetime(task.deadline)
-
-            # Duration info
-            duration_str = self._format_duration_info(task)
-
-            table.add_row(
-                str(task.id),
-                task.name,
-                str(task.priority),
-                f"[{status_style}]{task.status.value}[/{status_style}]",
-                planned_start_str,
-                planned_end_str,
-                actual_start_str,
-                actual_end_str,
-                deadline_str,
-                duration_str,
-            )
+            row_values = [self._get_field_value(task, field_name) for field_name in fields]
+            table.add_row(*row_values)
 
         # Print table using console writer
         self.console_writer.print(table)
+
+    def _get_field_value(self, task: Task, field_name: str) -> str:
+        """Get the formatted value for a specific field.
+
+        Args:
+            task: Task to extract value from
+            field_name: Name of the field
+
+        Returns:
+            Formatted string value for display
+        """
+        # Field value extractors mapping
+        field_extractors = {
+            "id": lambda t: str(t.id),
+            "name": lambda t: t.name,
+            "priority": lambda t: str(t.priority),
+            "status": lambda t: self._format_status(t),
+            "planned_start": lambda t: self._format_datetime(t.planned_start),
+            "planned_end": lambda t: self._format_datetime(t.planned_end),
+            "actual_start": lambda t: self._format_datetime(t.actual_start),
+            "actual_end": lambda t: self._format_datetime(t.actual_end),
+            "deadline": lambda t: self._format_datetime(t.deadline),
+            "duration": lambda t: self._format_duration_info(t),
+            "created_at": lambda t: self._format_datetime(t.created_at_str),
+        }
+
+        extractor = field_extractors.get(field_name)
+        return extractor(task) if extractor else "-"
+
+    def _format_status(self, task: Task) -> str:
+        """Format status with color styling.
+
+        Args:
+            task: Task to extract status from
+
+        Returns:
+            Formatted status string with Rich markup
+        """
+        status_style = self._get_status_style(task.status)
+        return f"[{status_style}]{task.status.value}[/{status_style}]"
 
     def _format_datetime(self, datetime_str: str) -> str:
         """Format datetime string for display.

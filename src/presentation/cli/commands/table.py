@@ -30,17 +30,36 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
     is_flag=True,
     help="Reverse sort order",
 )
+@click.option(
+    "--fields",
+    "-f",
+    type=str,
+    help="Comma-separated list of fields to display (e.g., 'id,name,priority,status'). "
+    "Available: id, name, priority, status, planned_start, planned_end, "
+    "actual_start, actual_end, deadline, duration, created_at",
+)
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def table_command(ctx, all, sort, reverse):
+def table_command(ctx, all, sort, reverse, fields):
     """Display tasks as a flat table.
 
     By default, only shows incomplete tasks (PENDING, IN_PROGRESS, FAILED).
     Use --all to include completed tasks.
+
+    Examples:
+        taskdog table                              # Show all default fields
+        taskdog table --fields id,name,priority    # Show only specific fields
+        taskdog table -f status,deadline,name      # Short form
     """
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
     task_query_service = TaskQueryService(repository)
+
+    # Parse fields option
+    field_list = None
+    if fields:
+        # Split by comma and strip whitespace
+        field_list = [f.strip() for f in fields.split(",")]
 
     # Get tasks using query service
     if all:
@@ -51,4 +70,4 @@ def table_command(ctx, all, sort, reverse):
     # Render and display
     console_writer = ctx_obj.console_writer
     renderer = RichTableRenderer(console_writer)
-    renderer.render(tasks)
+    renderer.render(tasks, fields=field_list)
