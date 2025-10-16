@@ -63,5 +63,6 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
             updated_task = allocator.allocate_timeblock(task)
             if updated_task:
                 updated_tasks.append(updated_task)
+
         # Return modified tasks and daily allocations
         return updated_tasks, allocator.daily_allocations

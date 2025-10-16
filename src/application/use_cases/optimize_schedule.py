@@ -53,7 +53,25 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, tuple[list[Task], d
 
         # Save changes unless dry_run
         if not input_dto.dry_run:
+            # Save successfully scheduled tasks
             for task in modified_tasks:
                 self.repository.save(task)
+
+            # Clear schedules for tasks that couldn't be scheduled
+            # (when force_override is True, schedulable tasks that failed to schedule
+            # should have their old schedules cleared to avoid phantom allocations)
+            if input_dto.force_override:
+                from application.services.task_filter import TaskFilter
+                task_filter = TaskFilter()
+                schedulable_tasks = task_filter.get_schedulable_tasks(all_tasks, input_dto.force_override)
+                scheduled_task_ids = {t.id for t in modified_tasks}
+
+                for task in schedulable_tasks:
+                    if task.id not in scheduled_task_ids and task.planned_start:
+                        # This task was schedulable but failed to schedule - clear its old schedule
+                        task.planned_start = None
+                        task.planned_end = None
+                        task.daily_allocations = None
+                        self.repository.save(task)
 
         return modified_tasks, daily_allocations
