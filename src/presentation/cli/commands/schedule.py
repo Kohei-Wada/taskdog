@@ -45,10 +45,10 @@ def schedule_command(ctx, task_id, start, end):
     task, _updated_fields = update_task_use_case.execute(input_dto)
 
     # Print success
-    ctx_obj.console.print(
+    ctx_obj.console_writer.print(
         f"[green]✓[/green] Set schedule for [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan]):"
     )
     if start:
-        ctx_obj.console.print(f"  Start: [green]{start}[/green]")
+        ctx_obj.console_writer.print(f"  Start: [green]{start}[/green]")
     if end:
-        ctx_obj.console.print(f"  End: [green]{end}[/green]")
+        ctx_obj.console_writer.print(f"  End: [green]{end}[/green]")

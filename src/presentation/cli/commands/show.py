@@ -19,7 +19,7 @@ from presentation.formatters.rich_detail_formatter import RichDetailFormatter
 def show_command(ctx, task_id, raw):
     """Show task details and notes with rich formatting."""
     ctx_obj: CliContext = ctx.obj
-    console = ctx_obj.console
+    console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
 
     # Execute use case to get task detail
@@ -28,5 +28,5 @@ def show_command(ctx, task_id, raw):
     detail = use_case.execute(input_dto)
 
     # Format and display using formatter
-    formatter = RichDetailFormatter(console)
+    formatter = RichDetailFormatter(console_writer)
     formatter.format(detail, raw=raw)

@@ -71,7 +71,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, tuple[list[Task], d
                         # This task was schedulable but failed to schedule - clear its old schedule
                         task.planned_start = None
                         task.planned_end = None
-                        task.daily_allocations = None
+                        task.daily_allocations = {}
                         self.repository.save(task)
 
         return modified_tasks, daily_allocations

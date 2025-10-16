@@ -1,11 +1,11 @@
 """Rich formatter for task detail view."""
 
-from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
 
 from application.dto.task_detail_dto import TaskDetailDTO
+from presentation.console.console_writer import ConsoleWriter
 from presentation.formatters.constants import STATUS_STYLES
 
 
@@ -15,13 +15,13 @@ class RichDetailFormatter:
     Handles rendering of task information and notes in a formatted panel.
     """
 
-    def __init__(self, console: Console):
+    def __init__(self, console_writer: ConsoleWriter):
         """Initialize formatter.
 
         Args:
-            console: Rich Console instance for output
+            console_writer: Console writer for output
         """
-        self.console = console
+        self.console_writer = console_writer
 
     def format_task_info(self, task) -> Table:
         """Format task basic information as a Rich table.
@@ -76,7 +76,7 @@ class RichDetailFormatter:
         task = dto.task
 
         # Calculate appropriate width (max 100, but fit to console if smaller)
-        max_width = min(100, self.console.width)
+        max_width = min(100, self.console_writer.get_width())
 
         # Display task basic info
         task_info = self.format_task_info(task)
@@ -87,18 +87,18 @@ class RichDetailFormatter:
             width=max_width,
             expand=False,
         )
-        self.console.print(panel)
-        self.console.print()
+        self.console_writer.print(panel)
+        self.console_writer.print_empty_line()
 
         # Display notes if they exist
         if dto.has_notes and dto.notes_content:
             if raw:
                 # Show raw markdown
-                self.console.print("[bold cyan]Notes (raw):[/bold cyan]")
-                self.console.print(dto.notes_content)
+                self.console_writer.print("[bold cyan]Notes (raw):[/bold cyan]")
+                self.console_writer.print(dto.notes_content)
             else:
                 # Render markdown with Rich
-                self.console.print("[bold cyan]Notes:[/bold cyan]")
+                self.console_writer.print("[bold cyan]Notes:[/bold cyan]")
                 markdown = Markdown(dto.notes_content)
                 notes_panel = Panel(
                     markdown,
@@ -106,8 +106,8 @@ class RichDetailFormatter:
                     width=max_width,
                     expand=False,
                 )
-                self.console.print(notes_panel)
+                self.console_writer.print(notes_panel)
         else:
-            self.console.print(
+            self.console_writer.print(
                 f"[yellow]No notes found. Use 'taskdog note {task.id}' to create notes.[/yellow]"
             )

@@ -6,7 +6,6 @@ from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
-from utils.console_messages import print_update_success
 
 
 @click.command(name="est", help="Set estimated duration for a task.")
@@ -39,4 +38,4 @@ def estimate_command(ctx, task_id, hours):
     task, _ = update_task_use_case.execute(input_dto)
 
     # Print success
-    print_update_success(ctx_obj.console, task, "estimated duration", hours, lambda h: f"{h}h")
+    ctx_obj.console_writer.print_update_success(task, "estimated duration", hours, lambda h: f"{h}h")

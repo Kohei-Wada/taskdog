@@ -31,7 +31,9 @@
       "Bash(do sed -i '/parent_id=/d' \"$file\")",
       "Bash(uv pip install:*)",
       "Bash(make typecheck:*)",
-      "Bash(uv run python:*)"
+      "Bash(uv run python:*)",
+      "Bash(XDG_DATA_HOME=/tmp/test_taskdog PYTHONPATH=src uv run python:*)",
+      "Bash(taskdog rm:*)"
     ],
     "deny": [],
     "ask": []

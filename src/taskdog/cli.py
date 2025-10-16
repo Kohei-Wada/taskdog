@@ -27,6 +27,7 @@ from presentation.cli.commands.table import table_command
 from presentation.cli.commands.today import today_command
 from presentation.cli.commands.update import update_command
 from presentation.cli.context import CliContext
+from presentation.console.rich_console_writer import RichConsoleWriter
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
@@ -42,13 +43,14 @@ def cli(ctx):
 
     # Initialize shared dependencies
     console = Console()
+    console_writer = RichConsoleWriter(console)
     repository = JsonTaskRepository(tasksfile)
     time_tracker = TimeTracker()
 
     # Store in CliContext for type-safe access
     ctx.ensure_object(dict)
     ctx.obj = CliContext(
-        console=console,
+        console_writer=console_writer,
         repository=repository,
         time_tracker=time_tracker,
     )

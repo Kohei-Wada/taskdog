@@ -6,7 +6,6 @@ import click
 
 from application.queries.task_query_service import TaskQueryService
 from presentation.cli.context import CliContext
-from utils.console_messages import print_error
 
 
 @click.command(name="export", help="Export tasks to various formats (currently JSON only).")
@@ -36,7 +35,7 @@ def export_command(ctx, format, output):
     """
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
-    console = ctx_obj.console
+    console_writer = ctx_obj.console_writer
     task_query_service = TaskQueryService(repository)
 
     try:
@@ -54,10 +53,10 @@ def export_command(ctx, format, output):
         if output:
             with open(output, "w", encoding="utf-8") as f:
                 f.write(tasks_data)
-            console.print(f"[green]✓[/green] Exported {len(tasks)} tasks to [cyan]{output}[/cyan]")
+            console_writer.print(f"[green]✓[/green] Exported {len(tasks)} tasks to [cyan]{output}[/cyan]")
         else:
             print(tasks_data)
 
     except Exception as e:
-        print_error(console, "exporting tasks", e)
+        console_writer.print_error("exporting tasks", e)
         raise click.Abort() from e

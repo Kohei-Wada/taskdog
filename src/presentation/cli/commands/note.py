@@ -8,7 +8,6 @@ import click
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from presentation.utils.notes_template import generate_notes_template
-from utils.console_messages import print_error, print_warning
 
 
 def get_editor():
@@ -52,7 +51,7 @@ def get_editor():
 def note_command(ctx, task_id):
     """Edit task notes in markdown."""
     ctx_obj: CliContext = ctx.obj
-    console = ctx_obj.console
+    console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
 
     # Get task from repository
@@ -72,22 +71,22 @@ def note_command(ctx, task_id):
     if not notes_path.exists():
         template = generate_notes_template(task)
         notes_path.write_text(template, encoding="utf-8")
-        console.print(f"[green]✓[/green] Created notes file: {notes_path}")
+        console_writer.print(f"[green]✓[/green] Created notes file: {notes_path}")
 
     # Get editor
     try:
         editor = get_editor()
     except RuntimeError as e:
-        print_error(console, "finding editor", e)
+        console_writer.print_error("finding editor", e)
         return
 
     # Open editor
-    console.print(f"[blue]Opening {editor}...[/blue]")
+    console_writer.print(f"[blue]Opening {editor}...[/blue]")
     try:
         subprocess.run([editor, str(notes_path)], check=True)
-        console.print(f"[green]✓[/green] Notes saved for task #{task_id}")
+        console_writer.print(f"[green]✓[/green] Notes saved for task #{task_id}")
     except subprocess.CalledProcessError as e:
-        print_error(console, "running editor", e)
+        console_writer.print_error("running editor", e)
     except KeyboardInterrupt:
         print("\n")  # Add newline after ^C
-        print_warning(console, "Editor interrupted")
+        console_writer.print_warning("Editor interrupted")

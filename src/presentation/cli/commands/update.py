@@ -86,7 +86,7 @@ def update_command(
         taskdog schedule <ID> <START> [END]
     """
     ctx_obj: CliContext = ctx.obj
-    console = ctx_obj.console
+    console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
     time_tracker = ctx_obj.time_tracker
     update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
@@ -109,18 +109,18 @@ def update_command(
     task, updated_fields = update_task_use_case.execute(input_dto)
 
     if not updated_fields:
-        console.print(
+        console_writer.print(
             "[yellow]No fields to update.[/yellow] Use --priority, --status, --planned-start, --planned-end, --deadline, or --estimated-duration"
         )
         return
 
     # Print updates
-    console.print(
+    console_writer.print(
         f"[green]✓[/green] Updated task [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan]):"
     )
     for field in updated_fields:
         value = getattr(task, field)
         if field == "estimated_duration":
-            console.print(f"  • {field}: [cyan]{value}h[/cyan]")
+            console_writer.print(f"  • {field}: [cyan]{value}h[/cyan]")
         else:
-            console.print(f"  • {field}: [cyan]{value}[/cyan]")
+            console_writer.print(f"  • {field}: [cyan]{value}[/cyan]")

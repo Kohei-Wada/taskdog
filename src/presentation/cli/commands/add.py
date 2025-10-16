@@ -6,7 +6,6 @@ from application.dto.create_task_input import CreateTaskInput
 from application.use_cases.create_task import CreateTaskUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
-from utils.console_messages import print_success
 
 
 @click.command(name="add", help="Add a new task.")
@@ -39,7 +38,7 @@ def add_command(ctx, name, priority):
         taskdog add "Add unit tests"
     """
     ctx_obj: CliContext = ctx.obj
-    console = ctx_obj.console
+    console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
     create_task_use_case = CreateTaskUseCase(repository)
 
@@ -52,4 +51,4 @@ def add_command(ctx, name, priority):
     # Execute use case
     task = create_task_use_case.execute(input_dto)
 
-    print_success(console, "Added", task)
+    console_writer.print_success("Added", task)

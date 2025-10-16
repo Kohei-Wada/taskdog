@@ -1,10 +1,10 @@
 """Formatter for optimization results using Rich."""
 
-from rich.console import Console
 from rich.table import Table
 
 from application.dto.optimization_summary import OptimizationSummary
 from domain.entities.task import Task, TaskStatus
+from presentation.console.console_writer import ConsoleWriter
 
 
 class RichOptimizationFormatter:
@@ -16,13 +16,13 @@ class RichOptimizationFormatter:
     - Warnings (unscheduled tasks, overloaded days)
     """
 
-    def __init__(self, console: Console):
+    def __init__(self, console_writer: ConsoleWriter):
         """Initialize the formatter.
 
         Args:
-            console: Rich Console instance for output
+            console_writer: Console writer for output
         """
-        self.console = console
+        self.console_writer = console_writer
 
     def format_table(
         self,
@@ -77,7 +77,7 @@ class RichOptimizationFormatter:
                 deadline_str,
             )
 
-        self.console.print(table)
+        self.console_writer.print(table)
 
     def format_summary(
         self,
@@ -88,17 +88,17 @@ class RichOptimizationFormatter:
         Args:
             summary: Optimization summary data
         """
-        self.console.print("\n[bold]Summary:[/bold]")
-        self.console.print(f"  • {summary.new_count} task(s) newly scheduled")
+        self.console_writer.print("\n[bold]Summary:[/bold]")
+        self.console_writer.print(f"  • {summary.new_count} task(s) newly scheduled")
         if summary.rescheduled_count > 0:
-            self.console.print(f"  • {summary.rescheduled_count} task(s) rescheduled (--force)")
-        self.console.print(
+            self.console_writer.print(f"  • {summary.rescheduled_count} task(s) rescheduled (--force)")
+        self.console_writer.print(
             f"  • Total workload: {summary.total_hours}h across {summary.days_span} days"
         )
         if summary.deadline_conflicts > 0:
-            self.console.print(f"  • [red]⚠[/red] Deadline conflicts: {summary.deadline_conflicts}")
+            self.console_writer.print(f"  • [red]⚠[/red] Deadline conflicts: {summary.deadline_conflicts}")
         else:
-            self.console.print("  • Deadline conflicts: 0")
+            self.console_writer.print("  • Deadline conflicts: 0")
 
     def _get_unscheduled_reason(self, task: Task) -> str:
         """Determine why a task could not be scheduled.
@@ -133,29 +133,29 @@ class RichOptimizationFormatter:
         """
         # Unscheduled tasks warning
         if summary.unscheduled_tasks:
-            self.console.print(
+            self.console_writer.print(
                 f"\n  [yellow]⚠[/yellow] {len(summary.unscheduled_tasks)} task(s) could not be scheduled:"
             )
             for task in summary.unscheduled_tasks[:5]:  # Show first 5
                 reason = self._get_unscheduled_reason(task)
-                self.console.print(f"    • #{task.id} {task.name} - {reason}")
+                self.console_writer.print(f"    • #{task.id} {task.name} - {reason}")
             if len(summary.unscheduled_tasks) > 5:
-                self.console.print(f"    ... and {len(summary.unscheduled_tasks) - 5} more")
-            self.console.print(
+                self.console_writer.print(f"    ... and {len(summary.unscheduled_tasks) - 5} more")
+            self.console_writer.print(
                 "\n  [dim]Tip: Try increasing --max-hours-per-day or adjusting task deadlines[/dim]"
             )
 
         # Workload validation
-        self.console.print("\n[bold]Workload Validation:[/bold]")
+        self.console_writer.print("\n[bold]Workload Validation:[/bold]")
         if summary.overloaded_days:
-            self.console.print(
+            self.console_writer.print(
                 f"  [red]⚠[/red] {len(summary.overloaded_days)} day(s) exceed max hours:"
             )
             for date_str, hours in summary.overloaded_days[:5]:  # Show first 5
-                self.console.print(f"    • {date_str}: {hours}h (max: {max_hours_per_day}h)")
+                self.console_writer.print(f"    • {date_str}: {hours}h (max: {max_hours_per_day}h)")
             if len(summary.overloaded_days) > 5:
-                self.console.print(f"    ... and {len(summary.overloaded_days) - 5} more")
+                self.console_writer.print(f"    ... and {len(summary.overloaded_days) - 5} more")
         else:
-            self.console.print(
+            self.console_writer.print(
                 f"  [green]✓[/green] All days within max hours ({max_hours_per_day}h/day)"
             )

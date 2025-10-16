@@ -7,7 +7,6 @@ from application.use_cases.update_task import UpdateTaskUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from shared.click_types.datetime_with_default import DateTimeWithDefault
-from utils.console_messages import print_update_success
 
 
 @click.command(name="deadline", help="Set task deadline.")
@@ -38,4 +37,4 @@ def deadline_command(ctx, task_id, deadline):
     task, _ = update_task_use_case.execute(input_dto)
 
     # Print success
-    print_update_success(ctx_obj.console, task, "deadline", deadline)
+    ctx_obj.console_writer.print_update_success(task, "deadline", deadline)

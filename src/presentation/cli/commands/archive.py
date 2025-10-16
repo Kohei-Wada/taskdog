@@ -6,7 +6,6 @@ from application.dto.archive_task_input import ArchiveTaskInput
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from presentation.cli.context import CliContext
-from utils.console_messages import print_error, print_task_not_found_error
 
 
 @click.command(
@@ -17,7 +16,7 @@ from utils.console_messages import print_error, print_task_not_found_error
 def archive_command(ctx, task_ids):
     """Archive task(s)."""
     ctx_obj: CliContext = ctx.obj
-    console = ctx_obj.console
+    console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
     archive_task_use_case = ArchiveTaskUseCase(repository)
 
@@ -26,18 +25,18 @@ def archive_command(ctx, task_ids):
             input_dto = ArchiveTaskInput(task_id=task_id)
             archive_task_use_case.execute(input_dto)
 
-            console.print(f"[green]✓[/green] Archived task with ID: [cyan]{task_id}[/cyan]")
+            console_writer.print(f"[green]✓[/green] Archived task with ID: [cyan]{task_id}[/cyan]")
 
             # Add spacing between tasks if processing multiple
             if len(task_ids) > 1:
-                console.print()
+                console_writer.print_empty_line()
 
         except TaskNotFoundException as e:
-            print_task_not_found_error(console, e.task_id)
+            console_writer.print_task_not_found_error(e.task_id)
             if len(task_ids) > 1:
-                console.print()
+                console_writer.print_empty_line()
 
         except Exception as e:
-            print_error(console, "archiving task", e)
+            console_writer.print_error("archiving task", e)
             if len(task_ids) > 1:
-                console.print()
+                console_writer.print_empty_line()

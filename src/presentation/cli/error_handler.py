@@ -6,7 +6,6 @@ import click
 
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from presentation.cli.context import CliContext
-from utils.console_messages import print_error, print_task_not_found_error
 
 
 def handle_task_errors(action_name: str, is_parent: bool = False):
@@ -31,17 +30,17 @@ def handle_task_errors(action_name: str, is_parent: bool = False):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Extract console from context
+            # Extract console_writer from context
             ctx = click.get_current_context()
             ctx_obj: CliContext = ctx.obj
-            console = ctx_obj.console
+            console_writer = ctx_obj.console_writer
 
             try:
                 return func(*args, **kwargs)
             except TaskNotFoundException as e:
-                print_task_not_found_error(console, e.task_id, is_parent=is_parent)
+                console_writer.print_task_not_found_error(e.task_id, is_parent=is_parent)
             except Exception as e:
-                print_error(console, action_name, e)
+                console_writer.print_error(action_name, e)
 
         return wrapper
 
@@ -69,15 +68,15 @@ def handle_command_errors(action_name: str):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Extract console from context
+            # Extract console_writer from context
             ctx = click.get_current_context()
             ctx_obj: CliContext = ctx.obj
-            console = ctx_obj.console
+            console_writer = ctx_obj.console_writer
 
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                print_error(console, action_name, e)
+                console_writer.print_error(action_name, e)
 
         return wrapper
 
