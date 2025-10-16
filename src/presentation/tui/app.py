@@ -20,6 +20,7 @@ from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
+from presentation.tui.screens.algorithm_selection_screen import AlgorithmSelectionScreen
 from presentation.tui.screens.main_screen import MainScreen
 
 
@@ -68,6 +69,42 @@ class TaskdogTUI(App):
 
     MainScreen {
         background: $surface;
+    }
+
+    /* Algorithm selection dialog */
+    AlgorithmSelectionScreen {
+        align: center middle;
+    }
+
+    #algorithm-dialog {
+        width: 80;
+        height: auto;
+        max-height: 30;
+        background: $surface;
+        border: thick $primary;
+        padding: 1;
+    }
+
+    #dialog-title {
+        text-align: center;
+        padding: 1;
+        background: $boost;
+    }
+
+    #algorithm-list {
+        height: auto;
+        max-height: 15;
+        margin: 1 0;
+        border: solid $accent;
+    }
+
+    #button-container {
+        height: auto;
+        align: center middle;
+    }
+
+    #button-container Button {
+        margin: 0 1;
     }
     """
 
@@ -211,42 +248,54 @@ Task Details:
         self.notify(details)
 
     def action_optimize(self) -> None:
-        """Optimize task schedules."""
-        try:
-            # Calculate start date (next weekday or today)
-            today = datetime.now()
-            # If today is a weekday, use today; otherwise use next Monday
-            if today.weekday() < 5:  # Monday=0, Friday=4
-                start_date = today
-            else:
-                # Move to next Monday
-                days_until_monday = (7 - today.weekday()) % 7
-                start_date = today + timedelta(days=days_until_monday)
+        """Optimize task schedules - shows algorithm selection dialog."""
 
-            # Create optimization input with force override enabled
-            optimize_input = OptimizeScheduleInput(
-                start_date=start_date,
-                max_hours_per_day=6.0,
-                force_override=True,
-                dry_run=False,
-                algorithm_name="greedy",
-            )
+        def handle_algorithm_selection(algorithm: str | None) -> None:
+            """Handle the selected algorithm."""
+            if algorithm is None:
+                return  # User cancelled
 
-            # Execute optimization
-            use_case = OptimizeScheduleUseCase(self.repository)
-            optimized_tasks, _ = use_case.execute(optimize_input)
+            try:
+                # Calculate start date (next weekday or today)
+                today = datetime.now()
+                # If today is a weekday, use today; otherwise use next Monday
+                if today.weekday() < 5:  # Monday=0, Friday=4
+                    start_date = today
+                else:
+                    # Move to next Monday
+                    days_until_monday = (7 - today.weekday()) % 7
+                    start_date = today + timedelta(days=days_until_monday)
 
-            # Reload tasks to show updated schedules
-            self._load_tasks()
-
-            # Show result notification
-            if optimized_tasks:
-                task_count = len(optimized_tasks)
-                self.notify(
-                    f"Optimized {task_count} task(s). Check gantt chart for updated schedules."
+                # Create optimization input with selected algorithm
+                optimize_input = OptimizeScheduleInput(
+                    start_date=start_date,
+                    max_hours_per_day=6.0,
+                    force_override=True,
+                    dry_run=False,
+                    algorithm_name=algorithm,
                 )
-            else:
-                self.notify("No tasks were optimized. Check task requirements.", severity="warning")
 
-        except Exception as e:
-            self.notify(f"Error optimizing schedules: {e}", severity="error")
+                # Execute optimization
+                use_case = OptimizeScheduleUseCase(self.repository)
+                optimized_tasks, _ = use_case.execute(optimize_input)
+
+                # Reload tasks to show updated schedules
+                self._load_tasks()
+
+                # Show result notification
+                if optimized_tasks:
+                    task_count = len(optimized_tasks)
+                    self.notify(
+                        f"Optimized {task_count} task(s) using '{algorithm}'. "
+                        f"Check gantt chart for updated schedules."
+                    )
+                else:
+                    self.notify(
+                        "No tasks were optimized. Check task requirements.", severity="warning"
+                    )
+
+            except Exception as e:
+                self.notify(f"Error optimizing schedules: {e}", severity="error")
+
+        # Show algorithm selection screen
+        self.push_screen(AlgorithmSelectionScreen(), handle_algorithm_selection)
