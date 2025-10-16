@@ -46,8 +46,14 @@ class GanttWidget(Static):
         from presentation.console.rich_console_writer import RichConsoleWriter
         from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
 
-        # Create a minimal console for the renderer (width doesn't matter for TUI)
-        console = Console()
+        # Get widget width for proper rendering
+        # Use content region width to account for borders and padding
+        widget_width = self.size.width if self.size else 120
+        # Subtract border width (2 for left and right borders)
+        console_width = max(widget_width - 2, 80)
+
+        # Create console with widget width
+        console = Console(width=console_width, force_terminal=True)
         console_writer = RichConsoleWriter(console)
         renderer = RichGanttRenderer(console_writer)
 

@@ -47,11 +47,13 @@ class TaskdogTUI(App):
     }
 
     #gantt-widget {
+        width: 100%;
         height: auto;
         max-height: 50;
         border: solid $primary;
         margin-bottom: 1;
         overflow-y: auto;
+        overflow-x: auto;
     }
 
     #task-table {
