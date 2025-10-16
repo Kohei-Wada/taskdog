@@ -1,17 +1,20 @@
 """Taskdog TUI application."""
 
+from datetime import datetime, timedelta
 from typing import ClassVar
 
 from textual.app import App
 
 from application.dto.complete_task_input import CompleteTaskInput
 from application.dto.create_task_input import CreateTaskInput
+from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.dto.remove_task_input import RemoveTaskInput
 from application.dto.start_task_input import StartTaskInput
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.task_query_service import TaskQueryService
 from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
+from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from application.use_cases.remove_task import RemoveTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
@@ -28,6 +31,7 @@ class TaskdogTUI(App):
         ("a", "add_task", "Add"),
         ("s", "start_task", "Start"),
         ("d", "done_task", "Done"),
+        ("o", "optimize", "Optimize"),
         ("delete", "delete_task", "Delete"),
         ("r", "refresh", "Refresh"),
         ("enter", "show_details", "Details"),
@@ -205,3 +209,44 @@ Task Details:
   Estimated: {task.estimated_duration or 'Not set'}h
         """.strip()
         self.notify(details)
+
+    def action_optimize(self) -> None:
+        """Optimize task schedules."""
+        try:
+            # Calculate start date (next weekday or today)
+            today = datetime.now()
+            # If today is a weekday, use today; otherwise use next Monday
+            if today.weekday() < 5:  # Monday=0, Friday=4
+                start_date = today
+            else:
+                # Move to next Monday
+                days_until_monday = (7 - today.weekday()) % 7
+                start_date = today + timedelta(days=days_until_monday)
+
+            # Create optimization input with default settings
+            optimize_input = OptimizeScheduleInput(
+                start_date=start_date,
+                max_hours_per_day=6.0,
+                force_override=False,
+                dry_run=False,
+                algorithm_name="greedy",
+            )
+
+            # Execute optimization
+            use_case = OptimizeScheduleUseCase(self.repository)
+            optimized_tasks, _ = use_case.execute(optimize_input)
+
+            # Reload tasks to show updated schedules
+            self._load_tasks()
+
+            # Show result notification
+            if optimized_tasks:
+                task_count = len(optimized_tasks)
+                self.notify(
+                    f"Optimized {task_count} task(s). Check gantt chart for updated schedules."
+                )
+            else:
+                self.notify("No tasks were optimized. Check task requirements.", severity="warning")
+
+        except Exception as e:
+            self.notify(f"Error optimizing schedules: {e}", severity="error")
