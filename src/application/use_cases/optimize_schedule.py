@@ -2,6 +2,8 @@
 
 from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.services.optimization.strategy_factory import StrategyFactory
+from application.services.schedule_clearer import ScheduleClearer
+from application.services.task_filter import TaskFilter
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
@@ -21,6 +23,8 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, tuple[list[Task], d
             repository: Task repository for data access
         """
         self.repository = repository
+        self.schedule_clearer = ScheduleClearer(repository)
+        self.task_filter = TaskFilter()
 
     def execute(self, input_dto: OptimizeScheduleInput) -> tuple[list[Task], dict[str, float]]:
         """Execute schedule optimization.
@@ -61,17 +65,20 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, tuple[list[Task], d
             # (when force_override is True, schedulable tasks that failed to schedule
             # should have their old schedules cleared to avoid phantom allocations)
             if input_dto.force_override:
-                from application.services.task_filter import TaskFilter
-                task_filter = TaskFilter()
-                schedulable_tasks = task_filter.get_schedulable_tasks(all_tasks, input_dto.force_override)
+                schedulable_tasks = self.task_filter.get_schedulable_tasks(
+                    all_tasks, input_dto.force_override
+                )
                 scheduled_task_ids = {t.id for t in modified_tasks}
 
-                for task in schedulable_tasks:
-                    if task.id not in scheduled_task_ids and task.planned_start:
-                        # This task was schedulable but failed to schedule - clear its old schedule
-                        task.planned_start = None
-                        task.planned_end = None
-                        task.daily_allocations = {}
-                        self.repository.save(task)
+                # Find tasks that were schedulable but failed to schedule
+                tasks_to_clear = [
+                    task
+                    for task in schedulable_tasks
+                    if task.id not in scheduled_task_ids and task.planned_start
+                ]
+
+                # Clear schedules using ScheduleClearer service
+                if tasks_to_clear:
+                    self.schedule_clearer.clear_schedules(tasks_to_clear)
 
         return modified_tasks, daily_allocations
