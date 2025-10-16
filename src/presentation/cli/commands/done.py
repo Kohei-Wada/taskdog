@@ -46,7 +46,7 @@ def done_command(ctx, task_ids):  # noqa: C901
                 console_writer.print_empty_line()
 
         except TaskNotFoundException as e:
-            console_writer.print_task_not_found_error(e.task_id)
+            console_writer.print_validation_error(str(e))
             if len(task_ids) > 1:
                 console_writer.print_empty_line()
 

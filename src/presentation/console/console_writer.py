@@ -62,16 +62,6 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print_task_not_found_error(self, task_id: int, is_parent: bool = False) -> None:
-        """Print task not found error.
-
-        Args:
-            task_id: ID of the task that was not found
-            is_parent: Whether this is a parent task error
-        """
-        pass
-
-    @abstractmethod
     def print_update_success(
         self,
         task: Task,

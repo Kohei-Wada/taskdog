@@ -58,18 +58,6 @@ class RichConsoleWriterTest(unittest.TestCase):
         output = self.string_io.getvalue()
         self.assertIn("This is information", output)
 
-    def test_print_task_not_found_error(self):
-        """Test print_task_not_found_error method."""
-        self.writer.print_task_not_found_error(123)
-        output = self.string_io.getvalue()
-        self.assertIn("Task 123 not found", output)
-
-    def test_print_task_not_found_error_parent(self):
-        """Test print_task_not_found_error with parent flag."""
-        self.writer.print_task_not_found_error(456, is_parent=True)
-        output = self.string_io.getvalue()
-        self.assertIn("Parent task 456 not found", output)
-
     def test_print_update_success(self):
         """Test print_update_success method."""
         self.writer.print_update_success(self.test_task, "priority", 3)

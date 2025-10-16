@@ -88,19 +88,6 @@ class RichConsoleWriter(ConsoleWriter):
         """
         self._console.print(f"[{STYLE_INFO}]{ICON_INFO}[/{STYLE_INFO}] {message}")
 
-    def print_task_not_found_error(self, task_id: int, is_parent: bool = False) -> None:
-        """Print task not found error.
-
-        Args:
-            task_id: ID of the task that was not found
-            is_parent: Whether this is a parent task error
-        """
-        prefix = "Parent task" if is_parent else "Task"
-        self._console.print(
-            f"[{STYLE_ERROR}]{ICON_ERROR}[/{STYLE_ERROR}] Error: {prefix} {task_id} not found",
-            style="red",
-        )
-
     def print_update_success(
         self,
         task: Task,

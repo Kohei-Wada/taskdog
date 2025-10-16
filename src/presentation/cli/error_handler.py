@@ -38,7 +38,7 @@ def handle_task_errors(action_name: str, is_parent: bool = False):
             try:
                 return func(*args, **kwargs)
             except TaskNotFoundException as e:
-                console_writer.print_task_not_found_error(e.task_id, is_parent=is_parent)
+                console_writer.print_validation_error(str(e))
             except Exception as e:
                 console_writer.print_error(action_name, e)
 
