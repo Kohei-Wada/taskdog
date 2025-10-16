@@ -10,6 +10,14 @@ from domain.entities.task import Task, TaskStatus
 class TaskTable(DataTable):
     """A data table widget for displaying tasks with keyboard navigation."""
 
+    # Vi-style key bindings for navigation
+    BINDINGS: ClassVar = [
+        ("j", "cursor_down", "Down"),
+        ("k", "cursor_up", "Up"),
+        ("g", "scroll_home", "Top"),
+        ("G", "scroll_end", "Bottom"),
+    ]
+
     # Status color mapping
     STATUS_COLORS: ClassVar = {
         TaskStatus.PENDING: "yellow",
