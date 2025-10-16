@@ -136,4 +136,4 @@ def gantt_command(ctx, start_date, end_date, hide_completed, show_all, sort, rev
     if end_date:
         end_date_obj = datetime.strptime(end_date, DATETIME_FORMAT).date()
 
-    renderer.render(tasks, repository, start_date_obj, end_date_obj)
+    renderer.render(tasks, start_date_obj, end_date_obj)

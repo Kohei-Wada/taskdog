@@ -16,12 +16,11 @@ class RichTableRenderer(RichRendererBase):
         """
         self.console_writer = console_writer
 
-    def render(self, tasks: list[Task], repository) -> None:
+    def render(self, tasks: list[Task]) -> None:
         """Render and print tasks as a table with Rich.
 
         Args:
             tasks: List of all tasks
-            repository: Repository instance (not used for table format)
         """
         if not tasks:
             self.console_writer.warning("No tasks found.")

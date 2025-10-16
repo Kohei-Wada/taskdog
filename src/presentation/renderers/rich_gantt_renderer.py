@@ -39,7 +39,6 @@ class RichGanttRenderer(RichRendererBase):
     def render(
         self,
         tasks: list[Task],
-        repository,
         start_date: date | None = None,
         end_date: date | None = None,
     ) -> None:
@@ -47,7 +46,6 @@ class RichGanttRenderer(RichRendererBase):
 
         Args:
             tasks: List of all tasks
-            repository: Repository instance for accessing task relationships
             start_date: Optional start date for the chart (overrides auto-calculation)
             end_date: Optional end date for the chart (overrides auto-calculation)
         """
@@ -60,7 +58,7 @@ class RichGanttRenderer(RichRendererBase):
 
         if date_range is None:
             # No tasks with dates - just show task names
-            return self._format_tasks_without_dates(tasks, repository)
+            return self._format_tasks_without_dates(tasks)
 
         start_date, end_date = date_range
 
@@ -85,7 +83,7 @@ class RichGanttRenderer(RichRendererBase):
 
         # Display all tasks in sort order
         for task in tasks:
-            self._add_leaf_task_to_gantt(task, table, repository, start_date, end_date)
+            self._add_leaf_task_to_gantt(task, table, start_date, end_date)
 
         # Add section divider before workload summary
         table.add_section()
@@ -214,12 +212,11 @@ class RichGanttRenderer(RichRendererBase):
 
         return final_start, final_end
 
-    def _format_tasks_without_dates(self, tasks: list[Task], repository) -> str:
+    def _format_tasks_without_dates(self, tasks: list[Task]) -> str:
         """Format tasks when no date information is available.
 
         Args:
             tasks: List of tasks
-            repository: Repository instance
 
         Returns:
             Formatted string
@@ -237,17 +234,16 @@ class RichGanttRenderer(RichRendererBase):
         table.add_column("Status", justify="center")
 
         for task in tasks:
-            self._add_simple_task(task, table, repository)
+            self._add_simple_task(task, table)
 
         self.console_writer.print(table)
 
-    def _add_simple_task(self, task: Task, table: Table, repository):
+    def _add_simple_task(self, task: Task, table: Table):
         """Add task to simple table (no dates).
 
         Args:
             task: Task to add
             table: Rich Table object
-            repository: Repository instance
         """
         status_style = self._get_status_style(task.status)
         status_text = f"[{status_style}]{task.status.value}[/{status_style}]"
@@ -258,7 +254,6 @@ class RichGanttRenderer(RichRendererBase):
         self,
         task: Task,
         table: Table,
-        repository,
         start_date: date,
         end_date: date,
     ):
@@ -267,7 +262,6 @@ class RichGanttRenderer(RichRendererBase):
         Args:
             task: Task to add
             table: Rich Table object
-            repository: Repository instance
             start_date: Start date of the chart
             end_date: End date of the chart
         """
@@ -281,12 +275,12 @@ class RichGanttRenderer(RichRendererBase):
         estimated_hours = self._format_estimated_hours(task.estimated_duration)
 
         # Build timeline
-        timeline = self._build_timeline(task, start_date, end_date, repository)
+        timeline = self._build_timeline(task, start_date, end_date)
 
         table.add_row(str(task.id), task_name, estimated_hours, timeline)
 
     def _calculate_task_daily_hours(
-        self, task: Task, start_date: date, end_date: date, repository
+        self, task: Task, start_date: date, end_date: date
     ) -> dict:
         """Calculate daily hours allocation for a single task.
 
@@ -298,7 +292,6 @@ class RichGanttRenderer(RichRendererBase):
             task: Task to calculate daily hours for
             start_date: Start date of the chart
             end_date: End date of the chart
-            repository: Repository instance (unused, kept for compatibility)
 
         Returns:
             Dictionary mapping date to hours {date: float}
@@ -370,14 +363,13 @@ class RichGanttRenderer(RichRendererBase):
             current_date += timedelta(days=1)
         return weekday_count
 
-    def _build_timeline(self, task: Task, start_date: date, end_date: date, repository) -> Text:
+    def _build_timeline(self, task: Task, start_date: date, end_date: date) -> Text:
         """Build timeline visualization for a task using layered approach.
 
         Args:
             task: Task to build timeline for
             start_date: Start date of the chart
             end_date: End date of the chart
-            repository: Repository instance for checking task relationships
 
         Returns:
             Rich Text object with timeline visualization
@@ -392,7 +384,7 @@ class RichGanttRenderer(RichRendererBase):
             return Text("(no dates)", style="dim")
 
         # Calculate daily hours for this task
-        daily_hours = self._calculate_task_daily_hours(task, start_date, end_date, repository)
+        daily_hours = self._calculate_task_daily_hours(task, start_date, end_date)
 
         # Build timeline with daily hours displayed in each cell
         timeline = Text()

@@ -59,4 +59,4 @@ def today_command(ctx, format, all, sort, reverse):
     # Render and display
     console_writer = ctx_obj.console_writer
     renderer = RichTableRenderer(console_writer)
-    renderer.render(today_tasks, repository)
+    renderer.render(today_tasks)

@@ -104,7 +104,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
 
     # Render and print Gantt chart
     gantt_renderer = RichGanttRenderer(console_writer)
-    gantt_renderer.render(modified_tasks, repository)
+    gantt_renderer.render(modified_tasks)
 
     # Create optimization renderer for summary and warnings
     renderer = RichOptimizationRenderer(console_writer)

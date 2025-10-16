@@ -51,4 +51,4 @@ def table_command(ctx, all, sort, reverse):
     # Render and display
     console_writer = ctx_obj.console_writer
     renderer = RichTableRenderer(console_writer)
-    renderer.render(tasks, repository)
+    renderer.render(tasks)
