@@ -61,23 +61,6 @@ class TaskQueryService(QueryService):
         tasks = self.repository.get_all()
         return self.sorter.sort(tasks, sort_by, reverse)
 
-    def get_incomplete_tasks_with_hierarchy(
-        self, sort_by: str = "id", reverse: bool = False
-    ) -> list[Task]:
-        """Get incomplete tasks.
-
-        Returns tasks with status PENDING, IN_PROGRESS, or FAILED.
-        Excludes COMPLETED and ARCHIVED tasks.
-
-        Args:
-            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
-            reverse: Reverse sort order (default: False)
-
-        Returns:
-            Sorted list of incomplete tasks
-        """
-        return self.get_incomplete_tasks(sort_by, reverse)
-
     def get_incomplete_tasks(self, sort_by: str = "id", reverse: bool = False) -> list[Task]:
         """Get only incomplete tasks without hierarchy preservation.
 
