@@ -121,7 +121,9 @@ def gantt_command(ctx, start_date, end_date, hide_completed, show_all, sort, rev
     if hide_completed:
         tasks = [task for task in tasks if task.status != TaskStatus.COMPLETED]
 
-    formatter = RichGanttFormatter()
+    # Get console writer
+    console_writer = ctx_obj.console_writer
+    formatter = RichGanttFormatter(console_writer)
 
     # Convert datetime strings to date objects if provided
     # Default to previous Monday if start_date not provided
@@ -134,5 +136,4 @@ def gantt_command(ctx, start_date, end_date, hide_completed, show_all, sort, rev
     if end_date:
         end_date_obj = datetime.strptime(end_date, DATETIME_FORMAT).date()
 
-    output = formatter.format_tasks(tasks, repository, start_date_obj, end_date_obj)
-    print(output)
+    formatter.format_tasks(tasks, repository, start_date_obj, end_date_obj)

@@ -57,7 +57,6 @@ def today_command(ctx, format, all, sort, reverse):
     )
 
     # Format and display
-    formatter = RichTableFormatter()
-
-    output = formatter.format_tasks(today_tasks, repository)
-    print(output)
+    console_writer = ctx_obj.console_writer
+    formatter = RichTableFormatter(console_writer)
+    formatter.format_tasks(today_tasks, repository)

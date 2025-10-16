@@ -49,6 +49,6 @@ def table_command(ctx, all, sort, reverse):
         tasks = task_query_service.get_incomplete_tasks(sort_by=sort, reverse=reverse)
 
     # Format and display
-    formatter = RichTableFormatter()
-    output = formatter.format_tasks(tasks, repository)
-    print(output)
+    console_writer = ctx_obj.console_writer
+    formatter = RichTableFormatter(console_writer)
+    formatter.format_tasks(tasks, repository)

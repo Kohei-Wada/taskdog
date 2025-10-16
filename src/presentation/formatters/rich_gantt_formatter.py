@@ -5,6 +5,7 @@ from rich.text import Text
 
 from domain.entities.task import Task, TaskStatus
 from domain.services.workload_calculator import WorkloadCalculator
+from presentation.console.console_writer import ConsoleWriter
 from presentation.formatters.constants import DATETIME_FORMAT
 from presentation.formatters.rich_formatter_base import RichFormatterBase
 from shared.utils.date_utils import DateTimeParser
@@ -25,7 +26,13 @@ class RichGanttFormatter(RichFormatterBase):
     BACKGROUND_COLOR_SUNDAY = "rgb(150,100,100)"  # Sunday (reddish)
     BACKGROUND_COLOR_DEADLINE = "rgb(200,100,0)"  # Deadline (orange)
 
-    def __init__(self):
+    def __init__(self, console_writer: ConsoleWriter):
+        """Initialize the formatter.
+
+        Args:
+            console_writer: Console writer for output
+        """
+        self.console_writer = console_writer
         self.workload_calculator = WorkloadCalculator()
 
     def format_tasks(
@@ -34,20 +41,18 @@ class RichGanttFormatter(RichFormatterBase):
         repository,
         start_date: date | None = None,
         end_date: date | None = None,
-    ) -> str:
-        """Format tasks into a Gantt chart with Rich.
+    ) -> None:
+        """Format and print tasks as a Gantt chart with Rich.
 
         Args:
             tasks: List of all tasks
             repository: Repository instance for accessing task relationships
             start_date: Optional start date for the chart (overrides auto-calculation)
             end_date: Optional end date for the chart (overrides auto-calculation)
-
-        Returns:
-            Formatted string with Gantt chart
         """
         if not tasks:
-            return "No tasks found."
+            self.console_writer.warning("No tasks found.")
+            return
 
         # Calculate date range for the chart
         date_range = self._calculate_date_range(tasks, start_date, end_date)
@@ -88,9 +93,11 @@ class RichGanttFormatter(RichFormatterBase):
         workload_timeline = self._build_workload_summary_row(tasks, start_date, end_date)
         table.add_row("", "[bold yellow]Workload\\[h][/bold yellow]", "", workload_timeline)
 
-        # Render to string with legend at bottom
+        # Print table and legend
+        self.console_writer.print(table)
+        self.console_writer.empty_line()
         legend_text = self._build_legend()
-        return self._render_to_string(table, legend_text)
+        self.console_writer.print(legend_text)
 
     def _build_date_header(self, start_date: date, end_date: date) -> Text:
         """Build date header row for the timeline.
@@ -231,7 +238,7 @@ class RichGanttFormatter(RichFormatterBase):
         for task in tasks:
             self._add_simple_task(task, table, repository)
 
-        return self._render_to_string(table)
+        self.console_writer.print(table)
 
     def _add_simple_task(self, task: Task, table: Table, repository):
         """Add task to simple table (no dates).

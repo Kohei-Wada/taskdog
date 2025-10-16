@@ -103,9 +103,8 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
     console_writer.optimization_result(len(modified_tasks), dry_run)
 
     # Format and print Gantt chart
-    gantt_formatter = RichGanttFormatter()
-    gantt_output = gantt_formatter.format_tasks(modified_tasks, repository)
-    print(gantt_output)
+    gantt_formatter = RichGanttFormatter(console_writer)
+    gantt_formatter.format_tasks(modified_tasks, repository)
 
     # Create optimization formatter for summary and warnings
     formatter = RichOptimizationFormatter(console_writer)

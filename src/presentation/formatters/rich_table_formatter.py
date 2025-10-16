@@ -1,25 +1,31 @@
-from rich.console import Console
 from rich.table import Table
 
 from domain.entities.task import Task
+from presentation.console.console_writer import ConsoleWriter
 from presentation.formatters.rich_formatter_base import RichFormatterBase
 
 
 class RichTableFormatter(RichFormatterBase):
     """Formats tasks as a table using Rich."""
 
-    def format_tasks(self, tasks: list[Task], repository) -> str:
-        """Format tasks into a table with Rich.
+    def __init__(self, console_writer: ConsoleWriter):
+        """Initialize the formatter.
+
+        Args:
+            console_writer: Console writer for output
+        """
+        self.console_writer = console_writer
+
+    def format_tasks(self, tasks: list[Task], repository) -> None:
+        """Format and print tasks as a table with Rich.
 
         Args:
             tasks: List of all tasks
             repository: Repository instance (not used for table format)
-
-        Returns:
-            Formatted string with table structure
         """
         if not tasks:
-            return "No tasks found."
+            self.console_writer.warning("No tasks found.")
+            return
 
         # Create Rich table
         table = Table(
@@ -73,13 +79,8 @@ class RichTableFormatter(RichFormatterBase):
                 duration_str,
             )
 
-        # Render to string
-        from io import StringIO
-
-        string_io = StringIO()
-        console = Console(file=string_io, force_terminal=True)
-        console.print(table)
-        return string_io.getvalue().rstrip()
+        # Print table using console writer
+        self.console_writer.print(table)
 
     def _format_datetime(self, datetime_str: str) -> str:
         """Format datetime string for display.
