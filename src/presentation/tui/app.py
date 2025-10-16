@@ -1,5 +1,7 @@
 """Taskdog TUI application."""
 
+from typing import ClassVar
+
 from textual.app import App
 
 from application.dto.complete_task_input import CompleteTaskInput
@@ -20,6 +22,16 @@ from presentation.tui.screens.main_screen import MainScreen
 
 class TaskdogTUI(App):
     """Taskdog TUI application."""
+
+    BINDINGS: ClassVar = [
+        ("q", "quit", "Quit"),
+        ("a", "add_task", "Add"),
+        ("s", "start_task", "Start"),
+        ("d", "done_task", "Done"),
+        ("delete", "delete_task", "Delete"),
+        ("r", "refresh", "Refresh"),
+        ("enter", "show_details", "Details"),
+    ]
 
     CSS = """
     #title {

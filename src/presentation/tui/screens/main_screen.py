@@ -1,7 +1,5 @@
 """Main screen for the TUI."""
 
-from typing import ClassVar
-
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import Screen
@@ -13,16 +11,6 @@ from presentation.tui.widgets.task_table import TaskTable
 
 class MainScreen(Screen):
     """Main screen showing gantt chart and task list."""
-
-    BINDINGS: ClassVar = [
-        ("q", "quit", "Quit"),
-        ("a", "add_task", "Add"),
-        ("s", "start_task", "Start"),
-        ("d", "done_task", "Done"),
-        ("delete", "delete_task", "Delete"),
-        ("r", "refresh", "Refresh"),
-        ("enter", "show_details", "Details"),
-    ]
 
     def __init__(self, *args, **kwargs):
         """Initialize the main screen."""
