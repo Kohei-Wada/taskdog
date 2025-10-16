@@ -44,11 +44,10 @@ def schedule_command(ctx, task_id, start, end):
     # Execute use case
     task, _updated_fields = update_task_use_case.execute(input_dto)
 
-    # Print success
-    ctx_obj.console_writer.print(
-        f"[green]✓[/green] Set schedule for [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan]):"
-    )
-    if start:
-        ctx_obj.console_writer.print(f"  Start: [green]{start}[/green]")
-    if end:
-        ctx_obj.console_writer.print(f"  End: [green]{end}[/green]")
+    # Print success - format schedule as "start → end"
+    def format_schedule(value):
+        start_str = task.planned_start if task.planned_start else "N/A"
+        end_str = task.planned_end if task.planned_end else "N/A"
+        return f"{start_str} → {end_str}"
+
+    ctx_obj.console_writer.update_success(task, "schedule", task, format_schedule)

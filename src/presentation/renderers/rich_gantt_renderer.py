@@ -1,3 +1,4 @@
+import math
 from datetime import date, datetime, timedelta
 
 from rich.table import Table
@@ -582,7 +583,6 @@ class RichGanttRenderer(RichRendererBase):
 
             # Format hours display (3 characters for consistency)
             # Ceil to round up (e.g., 4.3 -> 5, 4.0 -> 4)
-            import math
 
             hours_ceiled = math.ceil(hours)
 
