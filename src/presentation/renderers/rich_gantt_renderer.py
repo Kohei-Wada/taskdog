@@ -36,29 +36,31 @@ class RichGanttRenderer(RichRendererBase):
         self.console_writer = console_writer
         self.workload_calculator = WorkloadCalculator()
 
-    def render(
+    def build_table(
         self,
         tasks: list[Task],
         start_date: date | None = None,
         end_date: date | None = None,
-    ) -> None:
-        """Render and print tasks as a Gantt chart with Rich.
+    ) -> Table | None:
+        """Build and return a Gantt chart Table object.
 
         Args:
             tasks: List of all tasks
             start_date: Optional start date for the chart (overrides auto-calculation)
             end_date: Optional end date for the chart (overrides auto-calculation)
+
+        Returns:
+            Rich Table object or None if no tasks or no dates
         """
         if not tasks:
-            self.console_writer.warning("No tasks found.")
-            return
+            return None
 
         # Calculate date range for the chart
         date_range = self._calculate_date_range(tasks, start_date, end_date)
 
         if date_range is None:
-            # No tasks with dates - just show task names
-            return self._format_tasks_without_dates(tasks)
+            # No tasks with dates - return simple table
+            return self._build_simple_table(tasks)
 
         start_date, end_date = date_range
 
@@ -91,6 +93,31 @@ class RichGanttRenderer(RichRendererBase):
         # Add workload summary row
         workload_timeline = self._build_workload_summary_row(tasks, start_date, end_date)
         table.add_row("", "[bold yellow]Workload\\[h][/bold yellow]", "", workload_timeline)
+
+        return table
+
+    def render(
+        self,
+        tasks: list[Task],
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> None:
+        """Render and print tasks as a Gantt chart with Rich.
+
+        Args:
+            tasks: List of all tasks
+            start_date: Optional start date for the chart (overrides auto-calculation)
+            end_date: Optional end date for the chart (overrides auto-calculation)
+        """
+        if not tasks:
+            self.console_writer.warning("No tasks found.")
+            return
+
+        table = self.build_table(tasks, start_date, end_date)
+
+        if table is None:
+            self.console_writer.warning("No tasks found.")
+            return
 
         # Print table and legend
         self.console_writer.print(table)
@@ -212,14 +239,14 @@ class RichGanttRenderer(RichRendererBase):
 
         return final_start, final_end
 
-    def _format_tasks_without_dates(self, tasks: list[Task]) -> str:
-        """Format tasks when no date information is available.
+    def _build_simple_table(self, tasks: list[Task]) -> Table:
+        """Build simple table when no date information is available.
 
         Args:
             tasks: List of tasks
 
         Returns:
-            Formatted string
+            Rich Table object
         """
         # Create simple table with just task names
         table = Table(
@@ -236,7 +263,7 @@ class RichGanttRenderer(RichRendererBase):
         for task in tasks:
             self._add_simple_task(task, table)
 
-        self.console_writer.print(table)
+        return table
 
     def _add_simple_task(self, task: Task, table: Table):
         """Add task to simple table (no dates).
@@ -279,9 +306,7 @@ class RichGanttRenderer(RichRendererBase):
 
         table.add_row(str(task.id), task_name, estimated_hours, timeline)
 
-    def _calculate_task_daily_hours(
-        self, task: Task, start_date: date, end_date: date
-    ) -> dict:
+    def _calculate_task_daily_hours(self, task: Task, start_date: date, end_date: date) -> dict:
         """Calculate daily hours allocation for a single task.
 
         Uses task.daily_allocations if available (from optimization),

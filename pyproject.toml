@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
   "click>=8.3.0",
   "rich>=14.2.0",
+  "textual>=0.88.0",
 ]
 
 [project.optional-dependencies]
@@ -47,6 +48,9 @@ packages = [
   "presentation.exporters",
   "presentation.renderers",
   "presentation.utils",
+  "presentation.tui",
+  "presentation.tui.widgets",
+  "presentation.tui.screens",
   "shared",
   "shared.click_types",
   "shared.utils",
@@ -117,6 +121,11 @@ warn_no_return = false
 module = "tests.*"
 disallow_untyped_defs = false
 check_untyped_defs = false
+
+# Ignore third-party library without type stubs
+[[tool.mypy.overrides]]
+module = "textual.*"
+ignore_missing_imports = true
 
 # Temporarily ignore complex modules with many type issues for Phase 2
 # These will be fixed in Phase 3

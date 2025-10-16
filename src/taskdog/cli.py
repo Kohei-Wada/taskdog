@@ -22,6 +22,7 @@ from presentation.cli.commands.table import table_command
 
 # Commands
 from presentation.cli.commands.today import today_command
+from presentation.cli.commands.tui_command import tui_command
 from presentation.cli.commands.update import update_command
 from presentation.cli.context import CliContext
 from presentation.console.rich_console_writer import RichConsoleWriter
@@ -69,6 +70,7 @@ cli.add_command(rename_command)
 cli.add_command(estimate_command)
 cli.add_command(schedule_command)
 cli.add_command(optimize_command)
+cli.add_command(tui_command)
 
 if __name__ == "__main__":
     cli()
