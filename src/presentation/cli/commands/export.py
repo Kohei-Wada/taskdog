@@ -64,7 +64,8 @@ def export_command(ctx, format, output, fields):
     task_query_service = TaskQueryService(repository)
 
     try:
-        tasks = task_query_service.get_all_tasks()
+        # Get all tasks (no filter)
+        tasks = task_query_service.get_filtered_tasks(None)
 
         # Parse fields option
         field_list = None

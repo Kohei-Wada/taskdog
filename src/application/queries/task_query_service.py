@@ -1,9 +1,9 @@
 """Task query service for read-optimized operations."""
 
 from application.queries.base import QueryService
+from application.queries.filters.task_filter import TaskFilter
 from application.queries.filters.task_sorter import TaskSorter
-from application.queries.filters.today_filter import TodayFilter
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
 
 
 class TaskQueryService(QueryService):
@@ -20,63 +20,29 @@ class TaskQueryService(QueryService):
             repository: Task repository for data access
         """
         super().__init__(repository)
-        self.today_filter = TodayFilter(repository)
         self.sorter = TaskSorter()
 
-    def get_today_tasks(
-        self, include_completed: bool = False, sort_by: str = "deadline", reverse: bool = False
+    def get_filtered_tasks(
+        self,
+        filter_obj: TaskFilter | None = None,
+        sort_by: str = "id",
+        reverse: bool = False,
     ) -> list[Task]:
-        """Get tasks relevant for today.
-
-        Returns tasks that meet any of these criteria:
-        - Deadline is today
-        - Planned period includes today
-        - Status is IN_PROGRESS
-
-        Ancestor tasks are included to preserve hierarchy.
+        """Get tasks with optional filtering and sorting.
 
         Args:
-            include_completed: Whether to include completed tasks
+            filter_obj: Optional filter object to apply. If None, returns all tasks.
             sort_by: Sort key (id, priority, deadline, name, status, planned_start)
             reverse: Reverse sort order (default: False)
 
         Returns:
-            Filtered and sorted list of today's tasks
+            Filtered and sorted list of tasks
         """
         tasks = self.repository.get_all()
-        filtered_tasks = self.today_filter.filter(tasks, include_completed)
-        sorted_tasks = self.sorter.sort(filtered_tasks, sort_by, reverse)
-        return sorted_tasks
 
-    def get_all_tasks(self, sort_by: str = "id", reverse: bool = False) -> list[Task]:
-        """Get all tasks without filtering.
+        # Apply filter if provided
+        if filter_obj:
+            tasks = filter_obj.filter(tasks)
 
-        Args:
-            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
-            reverse: Reverse sort order (default: False)
-
-        Returns:
-            Sorted list of all tasks
-        """
-        tasks = self.repository.get_all()
+        # Sort tasks
         return self.sorter.sort(tasks, sort_by, reverse)
-
-    def get_incomplete_tasks(self, sort_by: str = "id", reverse: bool = False) -> list[Task]:
-        """Get only incomplete tasks without hierarchy preservation.
-
-        Returns tasks with status PENDING, IN_PROGRESS, or FAILED.
-        Excludes COMPLETED and ARCHIVED tasks.
-        Used by flat views like table.
-
-        Args:
-            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
-            reverse: Reverse sort order (default: False)
-
-        Returns:
-            Sorted list of incomplete tasks
-        """
-        tasks = self.repository.get_all()
-        filtered_tasks = [
-            t for t in tasks if t.status not in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED)
-        ]
-        return self.sorter.sort(filtered_tasks, sort_by, reverse)

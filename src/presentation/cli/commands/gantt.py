@@ -111,7 +111,8 @@ def gantt_command(ctx, start_date, end_date, hide_completed, show_all, sort, rev
     repository = ctx_obj.repository
     task_query_service = TaskQueryService(repository)
 
-    tasks = task_query_service.get_all_tasks(sort_by=sort, reverse=reverse)
+    # Get all tasks (no filter)
+    tasks = task_query_service.get_filtered_tasks(None, sort_by=sort, reverse=reverse)
 
     # Filter out archived tasks by default (unless --all is specified)
     if not show_all:

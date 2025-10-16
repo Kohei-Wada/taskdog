@@ -2,6 +2,7 @@
 
 import click
 
+from application.queries.filters.today_filter import TodayFilter
 from application.queries.task_query_service import TaskQueryService
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
@@ -51,12 +52,9 @@ def today_command(ctx, format, all, sort, reverse):
     repository = ctx_obj.repository
     query_service = TaskQueryService(repository)
 
-    # Get today's tasks (filtered and sorted)
-    today_tasks = query_service.get_today_tasks(
-        include_completed=all, sort_by=sort, reverse=reverse
-    )
+    # Create filter and get today's tasks
+    today_filter = TodayFilter(include_completed=all)
+    today_tasks = query_service.get_filtered_tasks(today_filter, sort_by=sort, reverse=reverse)
 
-    # Render and display
-    console_writer = ctx_obj.console_writer
-    renderer = RichTableRenderer(console_writer)
+    renderer = RichTableRenderer(ctx_obj.console_writer)
     renderer.render(today_tasks)
