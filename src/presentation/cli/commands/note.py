@@ -71,7 +71,7 @@ def note_command(ctx, task_id):
     if not notes_path.exists():
         template = generate_notes_template(task)
         notes_path.write_text(template, encoding="utf-8")
-        console_writer.print(f"[green]✓[/green] Created notes file: {notes_path}")
+        console_writer.print_notes_file_created(notes_path)
 
     # Get editor
     try:
@@ -81,10 +81,10 @@ def note_command(ctx, task_id):
         return
 
     # Open editor
-    console_writer.print(f"[blue]Opening {editor}...[/blue]")
+    console_writer.print_opening_editor(editor)
     try:
         subprocess.run([editor, str(notes_path)], check=True)
-        console_writer.print(f"[green]✓[/green] Notes saved for task #{task_id}")
+        console_writer.print_notes_saved(task_id)
     except subprocess.CalledProcessError as e:
         console_writer.print_error("running editor", e)
     except KeyboardInterrupt:

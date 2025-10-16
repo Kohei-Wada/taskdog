@@ -25,7 +25,7 @@ def archive_command(ctx, task_ids):
             input_dto = ArchiveTaskInput(task_id=task_id)
             archive_task_use_case.execute(input_dto)
 
-            console_writer.print(f"[green]✓[/green] Archived task with ID: [cyan]{task_id}[/cyan]")
+            console_writer.print_task_archived(task_id)
 
             # Add spacing between tasks if processing multiple
             if len(task_ids) > 1:

@@ -15,7 +15,7 @@ from presentation.cli.context import CliContext
 @click.command(name="start", help="Start working on task(s) (sets status to IN_PROGRESS).")
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.pass_context
-def start_command(ctx, task_ids):  # noqa: C901
+def start_command(ctx, task_ids):
     """Start working on tasks (set status to IN_PROGRESS)."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
@@ -34,15 +34,7 @@ def start_command(ctx, task_ids):  # noqa: C901
 
             # Print success message
             console_writer.print_success("Started", task)
-
-            if was_already_in_progress:
-                console_writer.print(
-                    f"  [yellow]⚠[/yellow] Task was already IN_PROGRESS (started at [blue]{
-                        task.actual_start
-                    }[/blue])"
-                )
-            elif task.actual_start:
-                console_writer.print(f"  Started at: [blue]{task.actual_start}[/blue]")
+            console_writer.print_task_start_time(task, was_already_in_progress)
 
             # Add spacing between tasks if processing multiple
             if len(task_ids) > 1:
@@ -54,9 +46,7 @@ def start_command(ctx, task_ids):  # noqa: C901
                 console_writer.print_empty_line()
 
         except TaskAlreadyFinishedError as e:
-            console_writer.print(f"[red]✗[/red] Cannot start task {e.task_id}")
-            console_writer.print(f"  [yellow]⚠[/yellow] Task is already {e.status}")
-            console_writer.print("  [dim]Finished tasks cannot be restarted.[/dim]")
+            console_writer.print_cannot_start_finished_task_error(e.task_id, str(e.status))
             if len(task_ids) > 1:
                 console_writer.print_empty_line()
 

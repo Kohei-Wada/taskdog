@@ -23,7 +23,7 @@ def rm_command(ctx, task_ids):
             input_dto = RemoveTaskInput(task_id=task_id)
             remove_task_use_case.execute(input_dto)
 
-            console_writer.print(f"[green]✓[/green] Removed task with ID: [cyan]{task_id}[/cyan]")
+            console_writer.print_task_removed(task_id)
 
             # Add spacing between tasks if processing multiple
             if len(task_ids) > 1:

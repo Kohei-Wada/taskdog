@@ -109,18 +109,8 @@ def update_command(
     task, updated_fields = update_task_use_case.execute(input_dto)
 
     if not updated_fields:
-        console_writer.print(
-            "[yellow]No fields to update.[/yellow] Use --priority, --status, --planned-start, --planned-end, --deadline, or --estimated-duration"
-        )
+        console_writer.print_no_fields_to_update_warning()
         return
 
     # Print updates
-    console_writer.print(
-        f"[green]✓[/green] Updated task [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan]):"
-    )
-    for field in updated_fields:
-        value = getattr(task, field)
-        if field == "estimated_duration":
-            console_writer.print(f"  • {field}: [cyan]{value}h[/cyan]")
-        else:
-            console_writer.print(f"  • {field}: [cyan]{value}[/cyan]")
+    console_writer.print_task_fields_updated(task, updated_fields)

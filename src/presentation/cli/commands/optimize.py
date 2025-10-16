@@ -100,12 +100,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
     )
 
     # Show summary header
-    if dry_run:
-        console_writer.print(
-            f"[cyan]DRY RUN:[/cyan] Preview of {len(modified_tasks)} task(s) to be optimized\n"
-        )
-    else:
-        console_writer.print(f"[green]✓[/green] Optimized schedules for {len(modified_tasks)} task(s)\n")
+    console_writer.print_optimization_result(len(modified_tasks), dry_run)
 
     # Format and print Gantt chart
     gantt_formatter = RichGanttFormatter()
@@ -122,7 +117,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
     formatter.format_warnings(summary, max_hours_per_day)
 
     # Show configuration
-    console_writer.print("\n[bold]Configuration:[/bold]")
+    console_writer.print_optimization_heading()
     console_writer.print(f"  Algorithm: {algorithm}")
     console_writer.print(f"  Start date: {start_dt.strftime(DATETIME_FORMAT)}")
     console_writer.print(f"  Max hours/day: {max_hours_per_day}h")

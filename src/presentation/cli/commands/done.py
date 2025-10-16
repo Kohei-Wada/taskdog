@@ -32,29 +32,14 @@ def done_command(ctx, task_ids):  # noqa: C901
             console_writer.print_success("Completed", task)
 
             # Show completion time and duration if available
-            if task.actual_end:
-                console_writer.print(f"  Completed at: [blue]{task.actual_end}[/blue]")
+            console_writer.print_task_completion_time(task)
+            console_writer.print_task_duration(task)
 
-            if task.actual_duration_hours:
-                console_writer.print(f"  Duration: [cyan]{task.actual_duration_hours}h[/cyan]")
-
-                # Show comparison with estimate if available
-                if task.estimated_duration:
-                    diff = task.actual_duration_hours - task.estimated_duration
-                    if diff > 0:
-                        console_writer.print(
-                            f"  [yellow]⚠[/yellow] Took [yellow]{
-                                diff
-                            }h longer[/yellow] than estimated"
-                        )
-                    elif diff < 0:
-                        console_writer.print(
-                            f"  [green]✓[/green] Finished [green]{
-                                abs(diff)
-                            }h faster[/green] than estimated"
-                        )
-                    else:
-                        console_writer.print("  [green]✓[/green] Finished exactly on estimate!")
+            # Show comparison with estimate if available
+            if task.actual_duration_hours and task.estimated_duration:
+                console_writer.print_duration_comparison(
+                    task.actual_duration_hours, task.estimated_duration
+                )
 
             # Add spacing between tasks if processing multiple
             if len(task_ids) > 1:
@@ -66,19 +51,12 @@ def done_command(ctx, task_ids):  # noqa: C901
                 console_writer.print_empty_line()
 
         except TaskAlreadyFinishedError as e:
-            console_writer.print(f"[red]✗[/red] Cannot complete task {e.task_id}")
-            console_writer.print(f"  [yellow]⚠[/yellow] Task is already {e.status}")
-            console_writer.print("  [dim]Task has already been completed.[/dim]")
+            console_writer.print_cannot_complete_finished_task_error(e.task_id, str(e.status))
             if len(task_ids) > 1:
                 console_writer.print_empty_line()
 
         except TaskNotStartedError as e:
-            console_writer.print(f"[red]✗[/red] Cannot complete task {e.task_id}")
-            console_writer.print(
-                f"  [yellow]⚠[/yellow] Task is still PENDING. Start the task first with [blue]taskdog start {
-                    e.task_id
-                }[/blue]"
-            )
+            console_writer.print_cannot_complete_pending_task_error(e.task_id)
             if len(task_ids) > 1:
                 console_writer.print_empty_line()
 
