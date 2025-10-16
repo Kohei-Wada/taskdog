@@ -1,6 +1,3 @@
-import os
-from pathlib import Path
-
 import click
 from rich.console import Console
 
@@ -28,6 +25,7 @@ from presentation.cli.commands.today import today_command
 from presentation.cli.commands.update import update_command
 from presentation.cli.context import CliContext
 from presentation.console.rich_console_writer import RichConsoleWriter
+from shared.xdg_utils import XDGDirectories
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
@@ -36,10 +34,7 @@ def cli(ctx):
     """Taskdog: Task management CLI tool with time tracking and optimization."""
 
     # Follow XDG Base Directory specification
-    xdg_data_home = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-    data_dir = Path(xdg_data_home) / "taskdog"
-    data_dir.mkdir(parents=True, exist_ok=True)
-    tasksfile = str(data_dir / "tasks.json")
+    tasksfile = str(XDGDirectories.get_tasks_file())
 
     # Initialize shared dependencies
     console = Console()

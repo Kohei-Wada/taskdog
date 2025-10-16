@@ -1,4 +1,3 @@
-import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -6,6 +5,7 @@ from enum import Enum
 from pathlib import Path
 
 from domain.constants import DATETIME_FORMAT
+from shared.xdg_utils import XDGDirectories
 
 
 class TaskStatus(Enum):
@@ -71,9 +71,7 @@ class Task:
         Returns:
             Path to notes file at $XDG_DATA_HOME/taskdog/notes/{id}.md
         """
-        data_dir = os.getenv("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-        notes_dir = Path(data_dir) / "taskdog" / "notes"
-        return notes_dir / f"{self.id}.md"
+        return XDGDirectories.get_note_file(self.id)
 
     @property
     def is_active(self) -> bool:
