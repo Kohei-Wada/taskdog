@@ -109,8 +109,10 @@ def update_command(
     task, updated_fields = update_task_use_case.execute(input_dto)
 
     if not updated_fields:
-        console_writer.print_no_fields_to_update_warning()
+        console_writer.warning(
+            "No fields to update. Use --priority, --status, --planned-start, --planned-end, --deadline, or --estimated-duration"
+        )
         return
 
     # Print updates
-    console_writer.print_task_fields_updated(task, updated_fields)
+    console_writer.task_fields_updated(task, updated_fields)

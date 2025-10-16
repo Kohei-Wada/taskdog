@@ -38,9 +38,9 @@ def handle_task_errors(action_name: str, is_parent: bool = False):
             try:
                 return func(*args, **kwargs)
             except TaskNotFoundException as e:
-                console_writer.print_validation_error(str(e))
+                console_writer.validation_error(str(e))
             except Exception as e:
-                console_writer.print_error(action_name, e)
+                console_writer.error(action_name, e)
 
         return wrapper
 
@@ -76,7 +76,7 @@ def handle_command_errors(action_name: str):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                console_writer.print_error(action_name, e)
+                console_writer.error(action_name, e)
 
         return wrapper
 

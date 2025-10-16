@@ -23,18 +23,18 @@ def rm_command(ctx, task_ids):
             input_dto = RemoveTaskInput(task_id=task_id)
             remove_task_use_case.execute(input_dto)
 
-            console_writer.print_task_removed(task_id)
+            console_writer.print(f"[green]✓[/green] Removed task with ID: [cyan]{task_id}[/cyan]")
 
             # Add spacing between tasks if processing multiple
             if len(task_ids) > 1:
-                console_writer.print_empty_line()
+                console_writer.empty_line()
 
         except TaskNotFoundException as e:
-            console_writer.print_validation_error(str(e))
+            console_writer.validation_error(str(e))
             if len(task_ids) > 1:
-                console_writer.print_empty_line()
+                console_writer.empty_line()
 
         except Exception as e:
-            console_writer.print_error("removing task", e)
+            console_writer.error("removing task", e)
             if len(task_ids) > 1:
-                console_writer.print_empty_line()
+                console_writer.empty_line()

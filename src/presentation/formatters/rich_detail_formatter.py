@@ -88,7 +88,7 @@ class RichDetailFormatter:
             expand=False,
         )
         self.console_writer.print(panel)
-        self.console_writer.print_empty_line()
+        self.console_writer.empty_line()
 
         # Display notes if they exist
         if dto.has_notes and dto.notes_content:

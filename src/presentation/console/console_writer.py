@@ -15,7 +15,7 @@ class ConsoleWriter(ABC):
     """
 
     @abstractmethod
-    def print_success(self, action: str, task: Task) -> None:
+    def success(self, action: str, task: Task) -> None:
         """Print success message with task info.
 
         Args:
@@ -25,7 +25,7 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print_error(self, action: str, error: Exception) -> None:
+    def error(self, action: str, error: Exception) -> None:
         """Print general error message.
 
         Args:
@@ -35,7 +35,7 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print_validation_error(self, message: str) -> None:
+    def validation_error(self, message: str) -> None:
         """Print validation error message.
 
         Args:
@@ -44,7 +44,7 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print_warning(self, message: str) -> None:
+    def warning(self, message: str) -> None:
         """Print warning message.
 
         Args:
@@ -53,7 +53,7 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print_info(self, message: str) -> None:
+    def info(self, message: str) -> None:
         """Print informational message.
 
         Args:
@@ -62,7 +62,7 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print_update_success(
+    def update_success(
         self,
         task: Task,
         field_name: str,
@@ -93,7 +93,7 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print_empty_line(self) -> None:
+    def empty_line(self) -> None:
         """Print an empty line."""
         pass
 
@@ -107,7 +107,7 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print_task_start_time(self, task: Task, was_already_in_progress: bool) -> None:
+    def task_start_time(self, task: Task, was_already_in_progress: bool) -> None:
         """Print task start time information.
 
         Args:
@@ -117,84 +117,19 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print_cannot_start_finished_task_error(self, task_id: int, status: str) -> None:
-        """Print error when trying to start a finished task.
+    def task_completion_details(self, task: Task) -> None:
+        """Print task completion details (time, duration, comparison with estimate).
+
+        This consolidates print_task_completion_time, print_task_duration,
+        and print_duration_comparison into a single method.
 
         Args:
-            task_id: ID of the task
-            status: Current status of the task
+            task: Completed task with actual_end and duration information
         """
         pass
 
     @abstractmethod
-    def print_task_completion_time(self, task: Task) -> None:
-        """Print task completion time.
-
-        Args:
-            task: Completed task
-        """
-        pass
-
-    @abstractmethod
-    def print_task_duration(self, task: Task) -> None:
-        """Print task duration.
-
-        Args:
-            task: Completed task with duration information
-        """
-        pass
-
-    @abstractmethod
-    def print_duration_comparison(self, actual_hours: float, estimated_hours: float) -> None:
-        """Print comparison between actual and estimated duration.
-
-        Args:
-            actual_hours: Actual duration in hours
-            estimated_hours: Estimated duration in hours
-        """
-        pass
-
-    @abstractmethod
-    def print_cannot_complete_finished_task_error(
-        self, task_id: int, status: str
-    ) -> None:
-        """Print error when trying to complete an already finished task.
-
-        Args:
-            task_id: ID of the task
-            status: Current status of the task
-        """
-        pass
-
-    @abstractmethod
-    def print_cannot_complete_pending_task_error(self, task_id: int) -> None:
-        """Print error when trying to complete a pending task.
-
-        Args:
-            task_id: ID of the task
-        """
-        pass
-
-    @abstractmethod
-    def print_schedule_updated(
-        self, task: Task, start: str | None, end: str | None
-    ) -> None:
-        """Print schedule update success message.
-
-        Args:
-            task: Task whose schedule was updated
-            start: New start datetime string
-            end: New end datetime string
-        """
-        pass
-
-    @abstractmethod
-    def print_no_fields_to_update_warning(self) -> None:
-        """Print warning when no fields were specified for update."""
-        pass
-
-    @abstractmethod
-    def print_task_fields_updated(self, task: Task, updated_fields: list[str]) -> None:
+    def task_fields_updated(self, task: Task, updated_fields: list[str]) -> None:
         """Print task fields update success message.
 
         Args:
@@ -204,71 +139,11 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print_notes_file_created(self, notes_path: Any) -> None:
-        """Print notes file creation message.
-
-        Args:
-            notes_path: Path to the created notes file
-        """
-        pass
-
-    @abstractmethod
-    def print_opening_editor(self, editor: str) -> None:
-        """Print editor opening message.
-
-        Args:
-            editor: Name of the editor being opened
-        """
-        pass
-
-    @abstractmethod
-    def print_notes_saved(self, task_id: int) -> None:
-        """Print notes saved message.
-
-        Args:
-            task_id: ID of the task
-        """
-        pass
-
-    @abstractmethod
-    def print_task_removed(self, task_id: int) -> None:
-        """Print task removed message.
-
-        Args:
-            task_id: ID of the removed task
-        """
-        pass
-
-    @abstractmethod
-    def print_task_archived(self, task_id: int) -> None:
-        """Print task archived message.
-
-        Args:
-            task_id: ID of the archived task
-        """
-        pass
-
-    @abstractmethod
-    def print_optimization_result(self, task_count: int, is_dry_run: bool) -> None:
+    def optimization_result(self, task_count: int, is_dry_run: bool) -> None:
         """Print optimization result message.
 
         Args:
             task_count: Number of tasks optimized
             is_dry_run: Whether this was a dry run
-        """
-        pass
-
-    @abstractmethod
-    def print_optimization_heading(self) -> None:
-        """Print optimization configuration heading."""
-        pass
-
-    @abstractmethod
-    def print_export_success(self, task_count: int, output_path: str) -> None:
-        """Print export success message.
-
-        Args:
-            task_count: Number of tasks exported
-            output_path: Path where tasks were exported
         """
         pass

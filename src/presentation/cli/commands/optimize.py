@@ -86,7 +86,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
 
     # Display results
     if not modified_tasks:
-        console_writer.print_warning("No tasks were optimized.")
+        console_writer.warning("No tasks were optimized.")
         console_writer.print("\nPossible reasons:")
         console_writer.print("  - All tasks already have schedules (use --force to override)")
         console_writer.print("  - No tasks have estimated_duration set")
@@ -100,7 +100,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
     )
 
     # Show summary header
-    console_writer.print_optimization_result(len(modified_tasks), dry_run)
+    console_writer.optimization_result(len(modified_tasks), dry_run)
 
     # Format and print Gantt chart
     gantt_formatter = RichGanttFormatter()
@@ -117,7 +117,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
     formatter.format_warnings(summary, max_hours_per_day)
 
     # Show configuration
-    console_writer.print_optimization_heading()
+    console_writer.print("\n[bold]Configuration:[/bold]")
     console_writer.print(f"  Algorithm: {algorithm}")
     console_writer.print(f"  Start date: {start_dt.strftime(DATETIME_FORMAT)}")
     console_writer.print(f"  Max hours/day: {max_hours_per_day}h")
@@ -125,4 +125,4 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_r
 
     if dry_run:
         print("\n")  # Add spacing
-        console_writer.print_info("Changes not saved. Remove --dry-run to apply.")
+        console_writer.info("Changes not saved. Remove --dry-run to apply.")

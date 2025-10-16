@@ -51,4 +51,4 @@ def add_command(ctx, name, priority):
     # Execute use case
     task = create_task_use_case.execute(input_dto)
 
-    console_writer.print_success("Added", task)
+    console_writer.success("Added", task)

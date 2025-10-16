@@ -33,4 +33,4 @@ def priority_command(ctx, task_id, priority):
     task, _ = update_task_use_case.execute(input_dto)
 
     # Print success
-    ctx_obj.console_writer.print_update_success(task, "priority", priority)
+    ctx_obj.console_writer.update_success(task, "priority", priority)

@@ -33,4 +33,4 @@ def rename_command(ctx, task_id, name):
     task, _ = update_task_use_case.execute(input_dto)
 
     # Print success
-    ctx_obj.console_writer.print_update_success(task, "name", name)
+    ctx_obj.console_writer.update_success(task, "name", name)

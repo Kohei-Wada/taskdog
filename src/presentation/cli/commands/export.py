@@ -53,10 +53,10 @@ def export_command(ctx, format, output):
         if output:
             with open(output, "w", encoding="utf-8") as f:
                 f.write(tasks_data)
-            console_writer.print_export_success(len(tasks), output)
+            console_writer.print(f"[green]✓[/green] Exported {len(tasks)} tasks to [cyan]{output}[/cyan]")
         else:
             print(tasks_data)
 
     except Exception as e:
-        console_writer.print_error("exporting tasks", e)
+        console_writer.error("exporting tasks", e)
         raise click.Abort() from e

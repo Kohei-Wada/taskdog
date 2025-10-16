@@ -38,4 +38,4 @@ def estimate_command(ctx, task_id, hours):
     task, _ = update_task_use_case.execute(input_dto)
 
     # Print success
-    ctx_obj.console_writer.print_update_success(task, "estimated duration", hours, lambda h: f"{h}h")
+    ctx_obj.console_writer.update_success(task, "estimated duration", hours, lambda h: f"{h}h")
