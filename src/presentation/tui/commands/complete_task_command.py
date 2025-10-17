@@ -2,8 +2,10 @@
 
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
+from presentation.tui.commands.registry import command_registry
 
 
+@command_registry.register("done_task")
 class CompleteTaskCommand(TUICommandBase):
     """Command to complete the selected task."""
 

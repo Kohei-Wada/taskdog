@@ -4,10 +4,12 @@ from application.dto.create_task_input import CreateTaskInput
 from application.use_cases.create_task import CreateTaskUseCase
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
+from presentation.tui.commands.registry import command_registry
 from presentation.tui.forms.task_form_fields import TaskFormData
 from presentation.tui.screens.task_form_dialog import TaskFormDialog
 
 
+@command_registry.register("add_task")
 class AddTaskCommand(TUICommandBase):
     """Command to add a new task with input dialog."""
 

@@ -4,9 +4,11 @@ from datetime import datetime
 
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
+from presentation.tui.commands.registry import command_registry
 from presentation.tui.screens.algorithm_selection_screen import AlgorithmSelectionScreen
 
 
+@command_registry.register("optimize")
 class OptimizeCommand(TUICommandBase):
     """Command to optimize task schedules.
 

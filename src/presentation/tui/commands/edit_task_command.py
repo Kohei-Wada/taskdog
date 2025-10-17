@@ -4,10 +4,12 @@ from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
+from presentation.tui.commands.registry import command_registry
 from presentation.tui.forms.task_form_fields import TaskFormData
 from presentation.tui.screens.task_form_dialog import TaskFormDialog
 
 
+@command_registry.register("edit_task")
 class EditTaskCommand(TUICommandBase):
     """Command to edit a task with input dialog."""
 

@@ -2,9 +2,11 @@
 
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
+from presentation.tui.commands.registry import command_registry
 from presentation.tui.screens.confirmation_dialog import ConfirmationDialog
 
 
+@command_registry.register("delete_task")
 class DeleteTaskCommand(TUICommandBase):
     """Command to delete the selected task with confirmation."""
 

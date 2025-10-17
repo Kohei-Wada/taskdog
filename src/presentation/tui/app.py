@@ -11,14 +11,8 @@ from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
-from presentation.tui.commands.add_task_command import AddTaskCommand
-from presentation.tui.commands.complete_task_command import CompleteTaskCommand
-from presentation.tui.commands.delete_task_command import DeleteTaskCommand
-from presentation.tui.commands.edit_task_command import EditTaskCommand
-from presentation.tui.commands.optimize_command import OptimizeCommand
-from presentation.tui.commands.refresh_command import RefreshCommand
-from presentation.tui.commands.show_details_command import ShowDetailsCommand
-from presentation.tui.commands.start_task_command import StartTaskCommand
+from presentation.tui.commands import *  # noqa: F403  # Import all commands for registration
+from presentation.tui.commands.factory import CommandFactory
 from presentation.tui.config import TUI_CONFIG, TUIConfig
 from presentation.tui.context import TUIContext
 from presentation.tui.screens.main_screen import MainScreen
@@ -106,6 +100,9 @@ class TaskdogTUI(App):
         )
         self.task_service = TaskService(repository, time_tracker, self.query_service, config)
 
+        # Initialize CommandFactory for command execution
+        self.command_factory = CommandFactory(self, self.context, self.task_service)
+
     def on_mount(self) -> None:
         """Called when app is mounted."""
         self.main_screen = MainScreen()
@@ -138,36 +135,36 @@ class TaskdogTUI(App):
 
     def action_refresh(self) -> None:
         """Refresh the task list."""
-        RefreshCommand(self, self.context, self.task_service).execute()
+        self.command_factory.execute("refresh")
 
     def action_add_task(self) -> None:
         """Add a new task."""
-        AddTaskCommand(self, self.context, self.task_service).execute()
+        self.command_factory.execute("add_task")
 
     def action_start_task(self) -> None:
         """Start the selected task."""
-        StartTaskCommand(self, self.context, self.task_service).execute()
+        self.command_factory.execute("start_task")
 
     def action_done_task(self) -> None:
         """Complete the selected task."""
-        CompleteTaskCommand(self, self.context, self.task_service).execute()
+        self.command_factory.execute("done_task")
 
     def action_delete_task(self) -> None:
         """Delete the selected task."""
-        DeleteTaskCommand(self, self.context, self.task_service).execute()
+        self.command_factory.execute("delete_task")
 
     def action_show_details(self) -> None:
         """Show details of the selected task."""
-        ShowDetailsCommand(self, self.context, self.task_service).execute()
+        self.command_factory.execute("show_details")
 
     def action_edit_task(self) -> None:
         """Edit the selected task."""
-        EditTaskCommand(self, self.context, self.task_service).execute()
+        self.command_factory.execute("edit_task")
 
     def action_optimize(self) -> None:
         """Optimize task schedules without force override."""
-        OptimizeCommand(self, self.context, self.task_service, force_override=False).execute()
+        self.command_factory.execute("optimize", force_override=False)
 
     def action_optimize_force(self) -> None:
         """Optimize task schedules with force override."""
-        OptimizeCommand(self, self.context, self.task_service, force_override=True).execute()
+        self.command_factory.execute("optimize", force_override=True)
