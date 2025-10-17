@@ -119,7 +119,7 @@ class TaskdogTUI(App):
         """
         # Get incomplete tasks (PENDING, IN_PROGRESS, FAILED)
         incomplete_filter = IncompleteFilter()
-        tasks = self.query_service.get_filtered_tasks(incomplete_filter, sort_by="id")
+        tasks = self.query_service.get_filtered_tasks(incomplete_filter, sort_by="planned_start")
 
         # Update gantt chart and table
         if self.main_screen:
