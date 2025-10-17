@@ -7,7 +7,7 @@ from rich.table import Table
 from rich.text import Text
 
 from domain.entities.task import TaskStatus
-from presentation.renderers.constants import STATUS_COLORS_BOLD, STATUS_STYLES
+from presentation.constants.colors import STATUS_COLORS_BOLD, STATUS_STYLES
 from presentation.renderers.task_renderer import TaskRenderer
 
 

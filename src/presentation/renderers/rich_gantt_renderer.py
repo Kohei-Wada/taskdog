@@ -7,25 +7,21 @@ from rich.text import Text
 from domain.entities.task import Task, TaskStatus
 from domain.services.workload_calculator import WorkloadCalculator
 from presentation.console.console_writer import ConsoleWriter
+from presentation.constants.symbols import (
+    BACKGROUND_COLOR,
+    BACKGROUND_COLOR_DEADLINE,
+    BACKGROUND_COLOR_SATURDAY,
+    BACKGROUND_COLOR_SUNDAY,
+    SYMBOL_ACTUAL,
+    SYMBOL_EMPTY,
+)
 from presentation.renderers.constants import DATETIME_FORMAT
 from presentation.renderers.rich_renderer_base import RichRendererBase
-from shared.utils.date_utils import DateTimeParser
+from shared.utils.date_utils import DateTimeParser, count_weekdays
 
 
 class RichGanttRenderer(RichRendererBase):
     """Renders tasks as a Gantt chart using Rich."""
-
-    # Visual constants for Gantt chart symbols
-    SYMBOL_PLANNED = "░"
-    SYMBOL_ACTUAL = "◆"
-    SYMBOL_EMPTY = " · "
-    SYMBOL_EMPTY_SPACE = "   "  # 3 spaces for planned background
-
-    # Background colors
-    BACKGROUND_COLOR = "rgb(100,100,100)"  # Weekday
-    BACKGROUND_COLOR_SATURDAY = "rgb(100,100,150)"  # Saturday (blueish)
-    BACKGROUND_COLOR_SUNDAY = "rgb(150,100,100)"  # Sunday (reddish)
-    BACKGROUND_COLOR_DEADLINE = "rgb(200,100,0)"  # Deadline (orange)
 
     def __init__(self, console_writer: ConsoleWriter):
         """Initialize the renderer.
@@ -351,7 +347,7 @@ class RichGanttRenderer(RichRendererBase):
             return daily_hours
 
         # Count weekdays in the task's planned period
-        weekday_count = self._count_weekdays(planned_start, planned_end)
+        weekday_count = count_weekdays(planned_start, planned_end)
 
         if weekday_count == 0:
             return daily_hours
@@ -368,25 +364,6 @@ class RichGanttRenderer(RichRendererBase):
             current_date += timedelta(days=1)
 
         return daily_hours
-
-    def _count_weekdays(self, start: date, end: date) -> int:
-        """Count weekdays (Monday-Friday) in a date range.
-
-        Args:
-            start: Start date (inclusive)
-            end: End date (inclusive)
-
-        Returns:
-            Number of weekdays in the range
-        """
-        weekday_count = 0
-        current_date = start
-        while current_date <= end:
-            # Skip weekends (Saturday=5, Sunday=6)
-            if current_date.weekday() < 5:
-                weekday_count += 1
-            current_date += timedelta(days=1)
-        return weekday_count
 
     def _build_timeline(self, task: Task, start_date: date, end_date: date) -> Text:
         """Build timeline visualization for a task using layered approach.
@@ -464,7 +441,7 @@ class RichGanttRenderer(RichRendererBase):
 
         # Determine background color (deadline gets orange background)
         if is_deadline:
-            bg_color = self.BACKGROUND_COLOR_DEADLINE
+            bg_color = BACKGROUND_COLOR_DEADLINE
         elif is_planned:
             bg_color = self._get_background_color(current_date)
         else:
@@ -472,7 +449,7 @@ class RichGanttRenderer(RichRendererBase):
 
         # Layer 2: Actual period (highest priority for display) - use symbol
         if is_actual:
-            display = f" {self.SYMBOL_ACTUAL} "
+            display = f" {SYMBOL_ACTUAL} "
             status_color = self._get_status_color(status)
             style = f"{status_color} on {bg_color}" if bg_color else status_color
             return display, style
@@ -482,7 +459,7 @@ class RichGanttRenderer(RichRendererBase):
             # Format: "4  " or "2.5" (right-aligned, 3 chars)
             display = f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
         else:
-            display = self.SYMBOL_EMPTY  # No hours allocated: " · "
+            display = SYMBOL_EMPTY  # No hours allocated: " · "
 
         # Apply background color
         style = f"on {bg_color}" if bg_color else "dim"
@@ -532,11 +509,11 @@ class RichGanttRenderer(RichRendererBase):
         """
         weekday = current_date.weekday()
         if weekday == 5:  # Saturday
-            return self.BACKGROUND_COLOR_SATURDAY
+            return BACKGROUND_COLOR_SATURDAY
         elif weekday == 6:  # Sunday
-            return self.BACKGROUND_COLOR_SUNDAY
+            return BACKGROUND_COLOR_SUNDAY
         else:
-            return self.BACKGROUND_COLOR
+            return BACKGROUND_COLOR
 
     def _format_estimated_hours(self, estimated_duration: float | None) -> str:
         """Format estimated duration for display.
@@ -559,19 +536,19 @@ class RichGanttRenderer(RichRendererBase):
         """
         legend = Text()
         legend.append("Legend: ", style="bold yellow")
-        legend.append("   ", style=f"on {self.BACKGROUND_COLOR}")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR}")
         legend.append(" Planned  ", style="dim")
-        legend.append(self.SYMBOL_ACTUAL, style="bold blue")
+        legend.append(SYMBOL_ACTUAL, style="bold blue")
         legend.append(" Actual (IN_PROGRESS)  ", style="dim")
-        legend.append(self.SYMBOL_ACTUAL, style="bold green")
+        legend.append(SYMBOL_ACTUAL, style="bold green")
         legend.append(" Actual (COMPLETED)  ", style="dim")
-        legend.append("   ", style=f"on {self.BACKGROUND_COLOR_DEADLINE}")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_DEADLINE}")
         legend.append(" Deadline  ", style="dim")
         legend.append("●", style="bold yellow")
         legend.append(" Today  ", style="dim")
-        legend.append("   ", style=f"on {self.BACKGROUND_COLOR_SATURDAY}")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_SATURDAY}")
         legend.append(" Saturday  ", style="dim")
-        legend.append("   ", style=f"on {self.BACKGROUND_COLOR_SUNDAY}")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_SUNDAY}")
         legend.append(" Sunday", style="dim")
         return legend
 

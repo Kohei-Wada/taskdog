@@ -45,6 +45,7 @@ packages = [
   "presentation.cli",
   "presentation.cli.commands",
   "presentation.console",
+  "presentation.constants",
   "presentation.exporters",
   "presentation.renderers",
   "presentation.utils",

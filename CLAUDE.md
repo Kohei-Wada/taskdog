@@ -36,6 +36,13 @@ uv run python -m unittest tests/test_create_task_use_case.py
 uv run python -m unittest tests.test_create_task_use_case.CreateTaskUseCaseTest.test_execute_success
 ```
 
+**Testing Approach:**
+- Uses Python's built-in `unittest` framework
+- Tests are organized in `tests/` directory mirroring the source structure
+- Focus on testing use cases, repositories, domain services, and application services
+- Each test file typically has one test class per component being tested
+- Use `unittest.mock` for mocking dependencies (e.g., repository in use case tests)
+
 ### Code Quality
 ```bash
 # Lint code with ruff
@@ -94,7 +101,7 @@ The application follows **Clean Architecture** with distinct layers:
 - `validators/`: Field-specific validation logic using Strategy Pattern + Registry
   - `FieldValidator`: Abstract base class for all field validators
     - Defines uniform interface: `validate(value, task, repository)`
-  - `TaskFieldValidatorRegistry`: Central registry managing field validators
+  - `TaskFieldValidatorRegistry` (`validator_registry.py`): Central registry managing field validators
     - Auto-registers validators on initialization
     - Validates fields by name: `validate_field(field_name, value, task)`
     - Extensible design: adding new validators requires 3 steps (create validator class, register in registry, done)
@@ -129,17 +136,24 @@ The application follows **Clean Architecture** with distinct layers:
 - Handles external concerns (file I/O, data persistence)
 
 **Presentation Layer** (`src/presentation/`)
-- `cli/commands/`: Click command implementations (add, tree, table, gantt, start, done, optimize, archive, etc.)
+- `cli/commands/`: Click command implementations (add, table, gantt, start, done, optimize, archive, tui, etc.)
 - `cli/context.py`: CliContext dataclass for dependency injection (console_writer, repository, time_tracker)
 - `cli/error_handler.py`: Decorators for consistent error handling
 - `console/`: ConsoleWriter abstraction for output formatting
   - `console_writer.py`: Abstract interface defining output methods (success, error, warning, info, etc.)
   - `rich_console_writer.py`: Concrete implementation using Rich library
 - `renderers/`: Rich-based output formatting (RichTableRenderer, RichGanttRenderer, RichOptimizationRenderer)
+- `tui/`: Text User Interface components using Textual library
+  - `app.py`: Main TUI application (TaskdogTUI)
+  - `screens/`: Full-screen UI screens
+  - `widgets/`: Reusable TUI widgets
 - Depends on application layer use cases and queries
 
 **Shared Layer** (`src/shared/`)
 - `click_types/`: Custom Click parameter types (DateTimeWithDefault)
+- `xdg_utils.py`: XDG Base Directory utilities (XDGDirectories class)
+  - Handles platform-independent data file paths
+  - Methods: `get_tasks_file()`, `get_note_file(task_id)`, `get_data_dir()`
 - Cross-cutting utilities used across layers
 
 ### Dependency Injection Pattern
@@ -326,6 +340,12 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 
 **Notes:**
 - `note`: Edit task notes in markdown using $EDITOR (direct repository access)
+
+**Interactive Interface:**
+- `tui`: Launch Text User Interface for interactive task management (uses Textual library)
+  - Full-screen terminal interface with keyboard shortcuts
+  - Navigation: ↑/↓ arrows
+  - Actions: s (start), d (done), a (add), Delete (remove), Enter (details), r (refresh), q (quit)
 
 ### Key Design Decisions
 1. **Development installation required** - Install package in editable mode with `uv pip install -e .` for development and testing

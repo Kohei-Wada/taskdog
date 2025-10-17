@@ -5,6 +5,7 @@ from datetime import date, timedelta
 
 from domain.entities.task import Task, TaskStatus
 from domain.services.workload_calculator import WorkloadCalculator
+from shared.utils.date_utils import count_weekdays
 
 
 class WorkloadCalculatorTest(unittest.TestCase):
@@ -183,20 +184,20 @@ class WorkloadCalculatorTest(unittest.TestCase):
     def test_count_weekdays(self):
         """Test weekday counting helper method."""
         # Monday to Friday (5 weekdays)
-        count = self.calculator._count_weekdays(date(2025, 1, 6), date(2025, 1, 10))
-        self.assertEqual(count, 5)
+        count_result = count_weekdays(date(2025, 1, 6), date(2025, 1, 10))
+        self.assertEqual(count_result, 5)
 
         # Friday to Tuesday (3 weekdays: Fri, Mon, Tue)
-        count = self.calculator._count_weekdays(date(2025, 1, 10), date(2025, 1, 14))
-        self.assertEqual(count, 3)
+        count_result = count_weekdays(date(2025, 1, 10), date(2025, 1, 14))
+        self.assertEqual(count_result, 3)
 
         # Saturday to Sunday (0 weekdays)
-        count = self.calculator._count_weekdays(date(2025, 1, 11), date(2025, 1, 12))
-        self.assertEqual(count, 0)
+        count_result = count_weekdays(date(2025, 1, 11), date(2025, 1, 12))
+        self.assertEqual(count_result, 0)
 
         # Full week Monday to Sunday (5 weekdays)
-        count = self.calculator._count_weekdays(date(2025, 1, 6), date(2025, 1, 12))
-        self.assertEqual(count, 5)
+        count_result = count_weekdays(date(2025, 1, 6), date(2025, 1, 12))
+        self.assertEqual(count_result, 5)
 
     def test_calculate_daily_workload_excludes_completed_tasks(self):
         """Test that completed tasks are excluded from workload calculation."""

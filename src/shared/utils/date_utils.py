@@ -44,6 +44,26 @@ class DateTimeParser:
             return None
 
 
+def count_weekdays(start: date, end: date) -> int:
+    """Count weekdays (Monday-Friday) in a date range.
+
+    Args:
+        start: Start date (inclusive)
+        end: End date (inclusive)
+
+    Returns:
+        Number of weekdays in the range
+    """
+    weekday_count = 0
+    current_date = start
+    while current_date <= end:
+        # Skip weekends (Saturday=5, Sunday=6)
+        if current_date.weekday() < 5:
+            weekday_count += 1
+        current_date += timedelta(days=1)
+    return weekday_count
+
+
 def get_next_weekday() -> datetime:
     """Get the next weekday (skip weekends).
 

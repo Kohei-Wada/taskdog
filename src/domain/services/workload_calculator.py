@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 
 from domain.entities.task import Task
 from domain.services.task_eligibility_checker import TaskEligibilityChecker
-from shared.utils.date_utils import DateTimeParser
+from shared.utils.date_utils import DateTimeParser, count_weekdays
 
 
 class WorkloadCalculator:
@@ -64,7 +64,7 @@ class WorkloadCalculator:
                     continue
 
                 # Count weekdays in the task's planned period
-                weekday_count = self._count_weekdays(planned_start, planned_end)
+                weekday_count = count_weekdays(planned_start, planned_end)
 
                 if weekday_count == 0:
                     continue
@@ -83,22 +83,3 @@ class WorkloadCalculator:
                     current_date += timedelta(days=1)
 
         return daily_workload
-
-    def _count_weekdays(self, start: date, end: date) -> int:
-        """Count weekdays (Monday-Friday) in a date range.
-
-        Args:
-            start: Start date (inclusive)
-            end: End date (inclusive)
-
-        Returns:
-            Number of weekdays in the range
-        """
-        weekday_count = 0
-        current_date = start
-        while current_date <= end:
-            # Skip weekends (Saturday=5, Sunday=6)
-            if current_date.weekday() < 5:
-                weekday_count += 1
-            current_date += timedelta(days=1)
-        return weekday_count

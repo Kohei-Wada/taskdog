@@ -7,18 +7,8 @@ from rich.console import Console
 
 from domain.entities.task import Task
 from presentation.console.console_writer import ConsoleWriter
-
-# Message icons
-ICON_SUCCESS = "✓"
-ICON_ERROR = "✗"
-ICON_WARNING = "⚠"
-ICON_INFO = "ℹ"  # noqa: RUF001
-
-# Message styles (colors)
-STYLE_SUCCESS = "green"
-STYLE_ERROR = "red"
-STYLE_WARNING = "yellow"
-STYLE_INFO = "cyan"
+from presentation.constants.colors import STYLE_ERROR, STYLE_INFO, STYLE_SUCCESS, STYLE_WARNING
+from presentation.constants.icons import ICON_ERROR, ICON_INFO, ICON_SUCCESS, ICON_WARNING
 
 
 class RichConsoleWriter(ConsoleWriter):
@@ -66,9 +56,7 @@ class RichConsoleWriter(ConsoleWriter):
         Args:
             message: Error message to display
         """
-        self._console.print(
-            f"[{STYLE_ERROR}]{ICON_ERROR}[/{STYLE_ERROR}] Error: {message}"
-        )
+        self._console.print(f"[{STYLE_ERROR}]{ICON_ERROR}[/{STYLE_ERROR}] Error: {message}")
 
     def warning(self, message: str) -> None:
         """Print warning message.
@@ -76,9 +64,7 @@ class RichConsoleWriter(ConsoleWriter):
         Args:
             message: Warning message to display
         """
-        self._console.print(
-            f"[{STYLE_WARNING}]{ICON_WARNING}[/{STYLE_WARNING}] {message}"
-        )
+        self._console.print(f"[{STYLE_WARNING}]{ICON_WARNING}[/{STYLE_WARNING}] {message}")
 
     def info(self, message: str) -> None:
         """Print informational message.

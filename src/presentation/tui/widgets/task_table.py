@@ -4,7 +4,8 @@ from typing import ClassVar
 
 from textual.widgets import DataTable
 
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
+from presentation.constants.colors import STATUS_STYLES
 
 
 class TaskTable(DataTable):
@@ -17,15 +18,6 @@ class TaskTable(DataTable):
         ("g", "scroll_home", "Top"),
         ("G", "scroll_end", "Bottom"),
     ]
-
-    # Status color mapping
-    STATUS_COLORS: ClassVar = {
-        TaskStatus.PENDING: "yellow",
-        TaskStatus.IN_PROGRESS: "blue",
-        TaskStatus.COMPLETED: "green",
-        TaskStatus.FAILED: "red",
-        TaskStatus.ARCHIVED: "dim",
-    }
 
     def __init__(self, *args, **kwargs):
         """Initialize the task table."""
@@ -54,7 +46,7 @@ class TaskTable(DataTable):
         for idx, task in enumerate(tasks):
             # Format status with color
             status_text = task.status.value
-            status_color = self.STATUS_COLORS.get(task.status, "white")
+            status_color = STATUS_STYLES.get(task.status, "white")
             status_styled = f"[{status_color}]{status_text}[/{status_color}]"
 
             # Format deadline
