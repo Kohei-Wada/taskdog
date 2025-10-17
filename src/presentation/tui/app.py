@@ -101,6 +101,52 @@ class TaskdogTUI(App):
     #button-container Button {
         margin: 0 1;
     }
+
+    /* Confirmation dialog */
+    ConfirmationDialog {
+        align: center middle;
+    }
+
+    #confirmation-dialog {
+        width: 60;
+        height: auto;
+        background: $surface;
+        border: thick $error;
+        padding: 1;
+    }
+
+    #dialog-message {
+        text-align: center;
+        padding: 1 2;
+        margin: 1 0;
+    }
+
+    /* Add task dialog */
+    AddTaskDialog {
+        align: center middle;
+    }
+
+    #add-task-dialog {
+        width: 70;
+        height: auto;
+        background: $surface;
+        border: thick $primary;
+        padding: 1;
+    }
+
+    #form-container {
+        padding: 1 0;
+        margin: 1 0;
+    }
+
+    .field-label {
+        padding: 1 0 0 0;
+        color: $text-muted;
+    }
+
+    Input {
+        margin: 0 0 1 0;
+    }
     """
 
     def __init__(self, repository: TaskRepository, time_tracker: TimeTracker, *args, **kwargs):
