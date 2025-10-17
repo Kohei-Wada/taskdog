@@ -1,0 +1,96 @@
+/* Dialog Styles */
+
+/* Algorithm Selection Dialog */
+AlgorithmSelectionScreen {
+    align: center middle;
+}
+
+#algorithm-dialog {
+    width: 80;
+    height: auto;
+    max-height: 30;
+    background: $surface;
+    border: thick $primary;
+    padding: 1;
+}
+
+#algorithm-list {
+    height: auto;
+    max-height: 15;
+    margin: 1 0;
+    border: solid $accent;
+}
+
+/* Confirmation Dialog */
+ConfirmationDialog {
+    align: center middle;
+}
+
+#confirmation-dialog {
+    width: 60;
+    height: auto;
+    background: $surface;
+    border: thick $error;
+    padding: 1;
+}
+
+#dialog-message {
+    text-align: center;
+    padding: 1 2;
+    margin: 1 0;
+}
+
+/* Add Task Dialog */
+AddTaskDialog {
+    align: center middle;
+}
+
+#add-task-dialog {
+    width: 70;
+    height: auto;
+    background: $surface;
+    border: thick $primary;
+    padding: 1;
+}
+
+#form-container {
+    padding: 1 0;
+    margin: 1 0;
+}
+
+.field-label {
+    padding: 1 0 0 0;
+    color: $text-muted;
+}
+
+/* Task Detail Screen */
+TaskDetailScreen {
+    align: center middle;
+}
+
+#detail-screen {
+    width: 90;
+    height: auto;
+    max-height: 40;
+    background: $surface;
+    border: thick $primary;
+    padding: 1;
+}
+
+#detail-content {
+    padding: 1;
+    margin: 1 0;
+    overflow-y: auto;
+}
+
+.detail-row {
+    padding: 0 0 1 0;
+}
+
+.detail-label {
+    color: $text-muted;
+}
+
+.detail-value {
+    color: $text;
+}

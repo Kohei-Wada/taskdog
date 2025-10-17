@@ -3,20 +3,23 @@
 from typing import ClassVar
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Vertical
-from textual.screen import ModalScreen
 from textual.widgets import Button, Label, OptionList
 from textual.widgets.option_list import Option
+
+from presentation.tui.screens.base_dialog import BaseModalDialog
 
 
 class ViOptionList(OptionList):
     """OptionList with Vi-style key bindings."""
 
+    # Add Vi-style bindings
     BINDINGS: ClassVar = [
-        ("j", "cursor_down", "Down"),
-        ("k", "cursor_up", "Up"),
-        ("g", "scroll_home", "Top"),
-        ("G", "scroll_end", "Bottom"),
+        Binding("j", "cursor_down", "Down", show=False),
+        Binding("k", "cursor_up", "Up", show=False),
+        Binding("g", "scroll_home", "Top", show=False),
+        Binding("G", "scroll_end", "Bottom", show=False),
     ]
 
     def action_cursor_down(self) -> None:
@@ -40,7 +43,7 @@ class ViOptionList(OptionList):
         self.highlighted = len(self._options) - 1
 
 
-class AlgorithmSelectionScreen(ModalScreen[str | None]):
+class AlgorithmSelectionScreen(BaseModalDialog[str | None]):
     """Modal screen for selecting optimization algorithm."""
 
     ALGORITHMS: ClassVar = [
@@ -53,10 +56,6 @@ class AlgorithmSelectionScreen(ModalScreen[str | None]):
         ("dependency_aware", "Dependency Aware", "Critical Path Method"),
         ("genetic", "Genetic", "Evolutionary algorithm"),
         ("monte_carlo", "Monte Carlo", "Random sampling approach"),
-    ]
-
-    BINDINGS: ClassVar = [
-        ("escape", "cancel", "Cancel"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -97,7 +96,3 @@ class AlgorithmSelectionScreen(ModalScreen[str | None]):
         if option_list.highlighted is not None:
             selected = self.ALGORITHMS[option_list.highlighted][0]
             self.dismiss(selected)
-
-    def action_cancel(self) -> None:
-        """Cancel and close the dialog."""
-        self.dismiss(None)

@@ -4,12 +4,13 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal
-from textual.screen import ModalScreen
 from textual.widgets import Button, Label
 
+from presentation.tui.screens.base_dialog import BaseModalDialog
 
-class ConfirmationDialog(ModalScreen[bool]):
-    """Modal dialog for confirming actions with Vi-style navigation."""
+
+class ConfirmationDialog(BaseModalDialog[bool]):
+    """Modal dialog for confirming actions with keyboard shortcuts."""
 
     BINDINGS: ClassVar = [
         ("escape", "cancel", "Cancel"),
@@ -57,4 +58,4 @@ class ConfirmationDialog(ModalScreen[bool]):
 
     def action_cancel(self) -> None:
         """Cancel action (n or escape key)."""
-        self.dismiss(False)
+        self.dismiss(False)  # Override to return False instead of None

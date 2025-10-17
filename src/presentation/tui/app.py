@@ -1,5 +1,7 @@
 """Taskdog TUI application."""
 
+from importlib.resources import files
+from pathlib import Path
 from typing import ClassVar
 
 from textual.app import App
@@ -19,6 +21,34 @@ from presentation.tui.commands.start_task_command import StartTaskCommand
 from presentation.tui.screens.main_screen import MainScreen
 
 
+def _get_css_paths() -> list[Path]:
+    """Get CSS file paths using importlib.resources.
+
+    This ensures CSS files are found regardless of how the package is installed.
+
+    Returns:
+        List of CSS file paths
+    """
+    try:
+        # Use importlib.resources to locate the styles directory
+        styles_dir = files("presentation.tui") / "styles"
+        return [
+            Path(str(styles_dir / "theme.tcss")),
+            Path(str(styles_dir / "components.tcss")),
+            Path(str(styles_dir / "main.tcss")),
+            Path(str(styles_dir / "dialogs.tcss")),
+        ]
+    except Exception:
+        # Fallback to __file__ for development
+        styles_dir = Path(__file__).parent / "styles"
+        return [
+            styles_dir / "theme.tcss",
+            styles_dir / "components.tcss",
+            styles_dir / "main.tcss",
+            styles_dir / "dialogs.tcss",
+        ]
+
+
 class TaskdogTUI(App):
     """Taskdog TUI application."""
 
@@ -33,121 +63,8 @@ class TaskdogTUI(App):
         ("enter", "show_details", "Details"),
     ]
 
-    CSS = """
-    #title {
-        padding: 1;
-        background: $boost;
-        text-align: center;
-    }
-
-    #gantt-title, #table-title {
-        padding: 1 0;
-        text-align: left;
-        background: $panel;
-    }
-
-    #gantt-widget {
-        width: 100%;
-        height: auto;
-        max-height: 50;
-        border: solid $primary;
-        margin-bottom: 1;
-        overflow-y: auto;
-        overflow-x: auto;
-    }
-
-    #task-table {
-        height: auto;
-        min-height: 10;
-        border: solid $primary;
-    }
-
-    MainScreen {
-        background: $surface;
-    }
-
-    /* Algorithm selection dialog */
-    AlgorithmSelectionScreen {
-        align: center middle;
-    }
-
-    #algorithm-dialog {
-        width: 80;
-        height: auto;
-        max-height: 30;
-        background: $surface;
-        border: thick $primary;
-        padding: 1;
-    }
-
-    #dialog-title {
-        text-align: center;
-        padding: 1;
-        background: $boost;
-    }
-
-    #algorithm-list {
-        height: auto;
-        max-height: 15;
-        margin: 1 0;
-        border: solid $accent;
-    }
-
-    #button-container {
-        height: auto;
-        align: center middle;
-    }
-
-    #button-container Button {
-        margin: 0 1;
-    }
-
-    /* Confirmation dialog */
-    ConfirmationDialog {
-        align: center middle;
-    }
-
-    #confirmation-dialog {
-        width: 60;
-        height: auto;
-        background: $surface;
-        border: thick $error;
-        padding: 1;
-    }
-
-    #dialog-message {
-        text-align: center;
-        padding: 1 2;
-        margin: 1 0;
-    }
-
-    /* Add task dialog */
-    AddTaskDialog {
-        align: center middle;
-    }
-
-    #add-task-dialog {
-        width: 70;
-        height: auto;
-        background: $surface;
-        border: thick $primary;
-        padding: 1;
-    }
-
-    #form-container {
-        padding: 1 0;
-        margin: 1 0;
-    }
-
-    .field-label {
-        padding: 1 0 0 0;
-        color: $text-muted;
-    }
-
-    Input {
-        margin: 0 0 1 0;
-    }
-    """
+    # Load CSS from external files
+    CSS_PATH: ClassVar = _get_css_paths()
 
     def __init__(self, repository: TaskRepository, time_tracker: TimeTracker, *args, **kwargs):
         """Initialize the TUI application.

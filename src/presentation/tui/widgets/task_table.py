@@ -2,6 +2,7 @@
 
 from typing import ClassVar
 
+from textual.binding import Binding
 from textual.widgets import DataTable
 
 from domain.entities.task import Task
@@ -9,14 +10,14 @@ from presentation.constants.colors import STATUS_STYLES
 
 
 class TaskTable(DataTable):
-    """A data table widget for displaying tasks with keyboard navigation."""
+    """A data table widget for displaying tasks with Vi-style keyboard navigation."""
 
-    # Vi-style key bindings for navigation
+    # Add Vi-style bindings in addition to DataTable's default bindings
     BINDINGS: ClassVar = [
-        ("j", "cursor_down", "Down"),
-        ("k", "cursor_up", "Up"),
-        ("g", "scroll_home", "Top"),
-        ("G", "scroll_end", "Bottom"),
+        Binding("j", "cursor_down", "Down", show=False),
+        Binding("k", "cursor_up", "Up", show=False),
+        Binding("g", "scroll_home", "Top", show=False),
+        Binding("G", "scroll_end", "Bottom", show=False),
     ]
 
     def __init__(self, *args, **kwargs):

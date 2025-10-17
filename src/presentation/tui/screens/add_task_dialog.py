@@ -4,12 +4,13 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
-from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label
 
+from presentation.tui.screens.base_dialog import BaseModalDialog
 
-class AddTaskDialog(ModalScreen[tuple[str, int] | None]):
-    """Modal dialog for adding a new task with Vi-style navigation."""
+
+class AddTaskDialog(BaseModalDialog[tuple[str, int] | None]):
+    """Modal dialog for adding a new task with keyboard shortcuts."""
 
     BINDINGS: ClassVar = [
         ("escape", "cancel", "Cancel"),
@@ -52,10 +53,6 @@ class AddTaskDialog(ModalScreen[tuple[str, int] | None]):
     def action_submit(self) -> None:
         """Submit the form (Ctrl+S)."""
         self._submit_form()
-
-    def action_cancel(self) -> None:
-        """Cancel and close the dialog (Escape)."""
-        self.dismiss(None)
 
     def _submit_form(self) -> None:
         """Validate and submit the form data."""

@@ -51,13 +51,18 @@ packages = [
   "presentation.utils",
   "presentation.tui",
   "presentation.tui.commands",
-  "presentation.tui.widgets",
+  "presentation.tui.mixins",
   "presentation.tui.screens",
+  "presentation.tui.services",
+  "presentation.tui.widgets",
   "shared",
   "shared.click_types",
   "shared.utils",
 ]
 package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+"presentation.tui" = ["styles/*.tcss"]
 
 # Ruff configuration
 [tool.ruff]
@@ -145,5 +150,7 @@ module = [
     "presentation.renderers.rich_table_renderer",
     "presentation.renderers.rich_gantt_renderer",
     "presentation.cli.commands.*",
+    "presentation.tui.widgets.*",
+    "presentation.tui.screens.algorithm_selection_screen",
 ]
 ignore_errors = true

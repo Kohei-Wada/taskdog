@@ -1,0 +1,22 @@
+/* Shared Component Styles */
+
+/* Dialog Components */
+#dialog-title {
+    text-align: center;
+    padding: 1;
+    background: $boost;
+}
+
+#button-container {
+    height: auto;
+    align: center middle;
+}
+
+#button-container Button {
+    margin: 0 1;
+}
+
+/* Form Components */
+Input {
+    margin: 0 0 1 0;
+}

@@ -1,0 +1,33 @@
+/* Main Screen Styles */
+
+MainScreen {
+    background: $surface;
+}
+
+#title {
+    padding: 1;
+    background: $boost;
+    text-align: center;
+}
+
+#gantt-title, #table-title {
+    padding: 1 0;
+    text-align: left;
+    background: $panel;
+}
+
+#gantt-widget {
+    width: 100%;
+    height: auto;
+    max-height: 50;
+    border: solid $primary;
+    margin-bottom: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+#task-table {
+    height: auto;
+    min-height: 10;
+    border: solid $primary;
+}
