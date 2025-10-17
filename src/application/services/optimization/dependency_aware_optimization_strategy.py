@@ -3,7 +3,6 @@
 from datetime import datetime
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.task_filter import TaskFilter
 from application.services.workload_allocator import WorkloadAllocator
 from domain.entities.task import Task
 
@@ -12,52 +11,39 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
     """Dependency-aware algorithm using Critical Path Method (CPM).
 
     This strategy schedules tasks while respecting parent-child dependencies:
-    1. Filter schedulable tasks (has estimated_duration, not completed/in_progress)
-    2. Calculate dependency depth for each task (children are scheduled before parents)
-    3. Sort by dependency depth (leaf tasks first, then their parents)
-    4. Within same depth, use priority and deadline as secondary sort
-    5. Allocate time blocks respecting the dependency order
-    6. Update parent task periods based on children automatically
+    1. Calculate dependency depth for each task (children are scheduled before parents)
+    2. Sort by dependency depth (leaf tasks first, then their parents)
+    3. Within same depth, use priority and deadline as secondary sort
+    4. Allocate time blocks respecting the dependency order
+
+    This class inherits common workflow from OptimizationStrategy
+    and only implements strategy-specific sorting and allocation logic.
     """
 
-    def optimize_tasks(
-        self,
-        tasks: list[Task],
-        repository,
-        start_date: datetime,
-        max_hours_per_day: float,
-        force_override: bool,
-    ) -> tuple[list[Task], dict[str, float]]:
-        """Optimize task schedules using dependency-aware algorithm.
+    def _sort_schedulable_tasks(
+        self, tasks: list[Task], start_date: datetime, repository
+    ) -> list[Task]:
+        """Sort tasks by dependency depth, then by priority/deadline.
+
+        Calculate dependency depth for each task and sort with multiple criteria:
+        - Primary: Dependency depth (lower depth = scheduled first)
+        - Secondary: Deadline (earlier deadline = scheduled first)
+        - Tertiary: Priority (higher priority = scheduled first)
 
         Args:
-            tasks: List of all tasks to consider for optimization
-            repository: Task repository for hierarchy queries
+            tasks: Filtered schedulable tasks
             start_date: Starting date for schedule optimization
-            max_hours_per_day: Maximum work hours per day
-            force_override: Whether to override existing schedules
+            repository: Task repository for hierarchy queries
 
         Returns:
-            Tuple of (modified_tasks, daily_allocations)
-            - modified_tasks: List of tasks with updated schedules
-            - daily_allocations: Dict mapping date strings to allocated hours
+            Tasks sorted by dependency depth, deadline, and priority
         """
-        # Initialize service instances
-        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
-        task_filter = TaskFilter()
-
-        # Initialize daily_allocations with existing scheduled tasks
-        allocator.initialize_allocations(tasks, force_override)
-
-        # Filter tasks that need scheduling
-        schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
-
         # Calculate dependency depth for each task
-        task_depths = self._calculate_dependency_depths(schedulable_tasks, repository)
+        task_depths = self._calculate_dependency_depths(tasks, repository)
 
         # Sort by dependency depth (leaf tasks first), then by priority/deadline
-        sorted_tasks = sorted(
-            schedulable_tasks,
+        return sorted(
+            tasks,
             key=lambda t: (
                 task_depths.get(
                     t.id if t.id is not None else 0, 0
@@ -69,18 +55,28 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
             ),
         )
 
-        # Allocate time blocks for each task
-        updated_tasks = []
-        for task in sorted_tasks:
-            updated_task = allocator.allocate_timeblock(task)
-            if updated_task:
-                updated_tasks.append(updated_task)
+    def _allocate_task(
+        self,
+        task: Task,
+        allocator: WorkloadAllocator,
+        start_date: datetime,
+        max_hours_per_day: float,
+    ) -> Task | None:
+        """Allocate time block using greedy forward allocation.
 
-        # Update parent task periods based on children
-        # Schedule propagation removed (no parent-child hierarchy)
+        Uses WorkloadAllocator's standard greedy allocation which
+        fills time slots from start_date onwards.
 
-        # Return modified tasks and daily allocations
-        return updated_tasks, allocator.daily_allocations
+        Args:
+            task: Task to schedule
+            allocator: Workload allocator (for tracking daily_allocations)
+            start_date: Starting date for allocation
+            max_hours_per_day: Maximum hours per day
+
+        Returns:
+            Copy of task with updated schedule, or None if allocation fails
+        """
+        return allocator.allocate_timeblock(task)
 
     def _calculate_dependency_depths(self, tasks: list[Task], repository) -> dict[int, int]:
         """Calculate dependency depth for each task.

@@ -4,7 +4,6 @@ import copy
 from datetime import datetime, timedelta
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.task_filter import TaskFilter
 from application.services.workload_allocator import WorkloadAllocator
 from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
@@ -16,70 +15,41 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
     """Balanced algorithm for task scheduling optimization.
 
     This strategy distributes workload evenly across the available time period:
-    1. Filter schedulable tasks (has estimated_duration, not completed/in_progress)
-    2. Sort tasks by priority (deadline urgency, priority field, hierarchy)
-    3. For each task, distribute hours evenly from start_date to deadline
-    4. Respect max_hours_per_day constraint and weekday-only rule
-    5. Update parent task periods based on children
+    1. Sort tasks by priority (deadline urgency, priority field, task ID)
+    2. For each task, distribute hours evenly from start_date to deadline
+    3. Respect max_hours_per_day constraint and weekday-only rule
 
     Benefits:
     - More realistic workload distribution
     - Prevents burnout by avoiding front-heavy scheduling
     - Better work-life balance
+
+    This class inherits common workflow from OptimizationStrategy
+    and only implements strategy-specific sorting and allocation logic.
     """
 
-    def optimize_tasks(
-        self,
-        tasks: list[Task],
-        repository,
-        start_date: datetime,
-        max_hours_per_day: float,
-        force_override: bool,
-    ) -> tuple[list[Task], dict[str, float]]:
-        """Optimize task schedules using balanced algorithm.
+    def _sort_schedulable_tasks(
+        self, tasks: list[Task], start_date: datetime, repository
+    ) -> list[Task]:
+        """Sort tasks by priority (balanced approach).
+
+        Uses OptimizationTaskSorter which considers:
+        - Deadline urgency (closer deadline = higher priority)
+        - Priority field value
+        - Task ID (for stable sorting)
 
         Args:
-            tasks: List of all tasks to consider for optimization
-            repository: Task repository for hierarchy queries
+            tasks: Filtered schedulable tasks
             start_date: Starting date for schedule optimization
-            max_hours_per_day: Maximum work hours per day
-            force_override: Whether to override existing schedules
+            repository: Task repository for hierarchy queries
 
         Returns:
-            Tuple of (modified_tasks, daily_allocations)
-            - modified_tasks: List of tasks with updated schedules
-            - daily_allocations: Dict mapping date strings to allocated hours
+            Tasks sorted by priority (highest priority first)
         """
-        # Initialize service instances
-        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
-        task_filter = TaskFilter()
         sorter = OptimizationTaskSorter(start_date, repository)
+        return sorter.sort_by_priority(tasks)
 
-        # Initialize daily_allocations with existing scheduled tasks
-        allocator.initialize_allocations(tasks, force_override)
-
-        # Filter tasks that need scheduling
-        schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
-
-        # Sort by priority
-        sorted_tasks = sorter.sort_by_priority(schedulable_tasks)
-
-        # Allocate time blocks for each task with balanced distribution
-        updated_tasks = []
-        for task in sorted_tasks:
-            updated_task = self._allocate_balanced_timeblock(
-                task, allocator, start_date, max_hours_per_day
-            )
-            if updated_task:
-                updated_tasks.append(updated_task)
-
-        # Update parent task periods based on children
-        # Schedule propagation removed (no parent-child hierarchy)
-
-        # Return modified tasks and daily allocations
-        return updated_tasks, allocator.daily_allocations
-
-    def _allocate_balanced_timeblock(  # noqa: C901
+    def _allocate_task(  # noqa: C901
         self,
         task: Task,
         allocator: WorkloadAllocator,

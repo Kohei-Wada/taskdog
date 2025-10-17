@@ -4,7 +4,6 @@ import copy
 from datetime import datetime, timedelta
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.task_filter import TaskFilter
 from application.services.workload_allocator import WorkloadAllocator
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
 from domain.entities.task import Task
@@ -15,70 +14,23 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
     """Backward (Just-In-Time) algorithm for task scheduling optimization.
 
     This strategy schedules tasks as late as possible while meeting deadlines:
-    1. Filter schedulable tasks (has estimated_duration, not completed/in_progress)
-    2. Sort tasks by deadline (furthest deadline first)
-    3. For each task, allocate time blocks backward from deadline
-    4. Fill time slots from deadline backwards
-    5. Update parent task periods based on children
+    1. Sort tasks by deadline (furthest deadline first)
+    2. For each task, allocate time blocks backward from deadline
+    3. Fill time slots from deadline backwards
 
     Benefits:
     - Maximum flexibility for requirement changes
     - Prevents early resource commitment
     - Just-In-Time delivery approach
     - Keeps options open longer
+
+    This class inherits common workflow from OptimizationStrategy
+    and only implements strategy-specific sorting and allocation logic.
     """
 
-    def optimize_tasks(
-        self,
-        tasks: list[Task],
-        repository,
-        start_date: datetime,
-        max_hours_per_day: float,
-        force_override: bool,
-    ) -> tuple[list[Task], dict[str, float]]:
-        """Optimize task schedules using backward algorithm.
-
-        Args:
-            tasks: List of all tasks to consider for optimization
-            repository: Task repository for hierarchy queries
-            start_date: Starting date for schedule optimization
-            max_hours_per_day: Maximum work hours per day
-            force_override: Whether to override existing schedules
-
-        Returns:
-            Tuple of (modified_tasks, daily_allocations)
-            - modified_tasks: List of tasks with updated schedules
-            - daily_allocations: Dict mapping date strings to allocated hours
-        """
-        # Initialize service instances
-        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
-        task_filter = TaskFilter()
-
-        # Initialize daily_allocations with existing scheduled tasks
-        allocator.initialize_allocations(tasks, force_override)
-
-        # Filter tasks that need scheduling
-        schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
-
-        # Sort by deadline (furthest first) for backward allocation
-        sorted_tasks = self._sort_by_deadline_desc(schedulable_tasks, start_date)
-
-        # Allocate time blocks for each task backward from deadline
-        updated_tasks = []
-        for task in sorted_tasks:
-            updated_task = self._allocate_backward_timeblock(
-                task, allocator, start_date, max_hours_per_day
-            )
-            if updated_task:
-                updated_tasks.append(updated_task)
-
-        # Update parent task periods based on children
-        # Schedule propagation removed (no parent-child hierarchy)
-
-        # Return modified tasks and daily allocations
-        return updated_tasks, allocator.daily_allocations
-
-    def _sort_by_deadline_desc(self, tasks: list[Task], start_date: datetime) -> list[Task]:
+    def _sort_schedulable_tasks(
+        self, tasks: list[Task], start_date: datetime, repository
+    ) -> list[Task]:
         """Sort tasks by deadline (furthest first).
 
         Tasks without deadlines are placed at the beginning
@@ -104,14 +56,14 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
 
         return sorted(tasks, key=deadline_key)
 
-    def _allocate_backward_timeblock(
+    def _allocate_task(
         self,
         task: Task,
         allocator: WorkloadAllocator,
         start_date: datetime,
         max_hours_per_day: float,
     ) -> Task | None:
-        """Allocate time block backward from deadline.
+        """Allocate time block backward from deadline (backward approach).
 
         Args:
             task: Task to schedule

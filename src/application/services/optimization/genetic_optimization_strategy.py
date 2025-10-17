@@ -272,3 +272,19 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         idx1, idx2 = random.sample(range(len(mutated)), 2)
         mutated[idx1], mutated[idx2] = mutated[idx2], mutated[idx1]
         return mutated
+
+    def _sort_schedulable_tasks(
+        self, tasks: list[Task], start_date: datetime, repository
+    ) -> list[Task]:
+        """Not used by genetic strategy (overrides optimize_tasks)."""
+        raise NotImplementedError("GeneticOptimizationStrategy overrides optimize_tasks directly")
+
+    def _allocate_task(
+        self,
+        task: Task,
+        allocator,
+        start_date: datetime,
+        max_hours_per_day: float,
+    ) -> Task | None:
+        """Not used by genetic strategy (overrides optimize_tasks)."""
+        raise NotImplementedError("GeneticOptimizationStrategy overrides optimize_tasks directly")

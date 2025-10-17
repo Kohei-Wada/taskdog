@@ -218,3 +218,23 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 updated_tasks.append(task)
 
         return updated_tasks
+
+    def _sort_schedulable_tasks(
+        self, tasks: list[Task], start_date: datetime, repository
+    ) -> list[Task]:
+        """Not used by round-robin strategy (overrides optimize_tasks)."""
+        raise NotImplementedError(
+            "RoundRobinOptimizationStrategy overrides optimize_tasks directly"
+        )
+
+    def _allocate_task(
+        self,
+        task: Task,
+        allocator,
+        start_date: datetime,
+        max_hours_per_day: float,
+    ) -> Task | None:
+        """Not used by round-robin strategy (overrides optimize_tasks)."""
+        raise NotImplementedError(
+            "RoundRobinOptimizationStrategy overrides optimize_tasks directly"
+        )
