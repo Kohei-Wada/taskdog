@@ -26,60 +26,106 @@ class WorkloadCalculator:
         Returns:
             Dictionary mapping date to total estimated hours {date: hours}
         """
+        empty_workload = self._initialize_daily_workload(start_date, end_date)
+        schedulable_tasks = filter(self._is_schedulable_task, tasks)
+        task_allocations = map(self._task_to_daily_hours, schedulable_tasks)
+        return self._merge_allocations(empty_workload, task_allocations)
+
+    def _initialize_daily_workload(self, start_date: date, end_date: date) -> dict[date, float]:
+        """Initialize daily workload dictionary with zeros for the date range."""
         days = (end_date - start_date).days + 1
-        daily_workload = {start_date + timedelta(days=i): 0.0 for i in range(days)}
+        return {start_date + timedelta(days=i): 0.0 for i in range(days)}
 
-        # Filter schedulable tasks
-        for task in tasks:
-            # Skip finished tasks (completed/archived) - they don't contribute to future workload
-            if not TaskEligibilityChecker.should_count_in_workload(task):
-                continue
+    def _is_schedulable_task(self, task: Task) -> bool:
+        """Check if a task should be included in workload calculation.
 
-            # Skip tasks without estimated duration
-            if not task.estimated_duration:
-                continue
+        Returns:
+            True if task should be counted in workload, False otherwise
+        """
+        return (
+            TaskEligibilityChecker.should_count_in_workload(task)
+            and task.estimated_duration is not None
+            and task.planned_start is not None
+            and task.planned_end is not None
+        )
 
-            # Use planned dates if available, otherwise skip
-            if not (task.planned_start and task.planned_end):
-                continue
+    def _task_to_daily_hours(self, task: Task) -> dict[date, float]:
+        """Convert a task to daily hour allocations.
 
-            # Use daily_allocations if available (from optimization)
-            # Note: Parent tasks don't have daily_allocations, so they will be skipped here
-            # and fall through to the else block, which will distribute their estimated_duration
-            if task.daily_allocations:
-                for date_str, hours in task.daily_allocations.items():
-                    try:
-                        task_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-                        if task_date in daily_workload:
-                            daily_workload[task_date] += hours
-                    except ValueError:
-                        # Skip invalid date strings
-                        pass
-            else:
-                # Fallback: distribute equally across weekdays (for backward compatibility)
-                planned_start = DateTimeParser.parse_date(task.planned_start)
-                planned_end = DateTimeParser.parse_date(task.planned_end)
+        Uses daily_allocations if available, otherwise distributes evenly across weekdays.
 
-                if not (planned_start and planned_end):
-                    continue
+        Args:
+            task: Task to convert
 
-                # Count weekdays in the task's planned period
-                weekday_count = count_weekdays(planned_start, planned_end)
+        Returns:
+            Dictionary mapping date to hours {date: hours}
+        """
+        if task.daily_allocations:
+            return self._compute_from_allocations(task)
+        return self._compute_from_planned_period(task)
 
-                if weekday_count == 0:
-                    continue
+    def _compute_from_allocations(self, task: Task) -> dict[date, float]:
+        """Compute daily hours from task's daily_allocations field.
 
-                # Distribute hours equally across weekdays
-                hours_per_day = task.estimated_duration / weekday_count
+        Args:
+            task: Task with daily_allocations
 
-                # Add to each weekday in the period
-                current_date = planned_start
-                while current_date <= planned_end:
-                    # Skip weekends and add hours to weekdays in range
-                    if (
-                        current_date.weekday() < 5 and current_date in daily_workload
-                    ):  # Monday=0, Friday=4
-                        daily_workload[current_date] += hours_per_day
-                    current_date += timedelta(days=1)
+        Returns:
+            Dictionary mapping date to hours {date: hours}
+        """
+        result: dict[date, float] = {}
+        for date_str, hours in task.daily_allocations.items():
+            try:
+                task_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                result[task_date] = hours
+            except ValueError:
+                # Skip invalid date strings
+                pass
+        return result
 
-        return daily_workload
+    def _compute_from_planned_period(self, task: Task) -> dict[date, float]:
+        """Compute daily hours by distributing evenly across weekdays in planned period.
+
+        Args:
+            task: Task with planned_start, planned_end, and estimated_duration
+
+        Returns:
+            Dictionary mapping date to hours {date: hours}
+        """
+        planned_start = DateTimeParser.parse_date(task.planned_start)
+        planned_end = DateTimeParser.parse_date(task.planned_end)
+
+        if not (planned_start and planned_end and task.estimated_duration):
+            return {}
+
+        weekday_count = count_weekdays(planned_start, planned_end)
+        if weekday_count == 0:
+            return {}
+
+        hours_per_day = task.estimated_duration / weekday_count
+
+        result: dict[date, float] = {}
+        current_date = planned_start
+        while current_date <= planned_end:
+            if current_date.weekday() < 5:  # Monday=0, Friday=4
+                result[current_date] = hours_per_day
+            current_date += timedelta(days=1)
+
+        return result
+
+    def _merge_allocations(self, base: dict[date, float], allocations: map) -> dict[date, float]:
+        """Merge multiple daily allocations into base workload.
+
+        Args:
+            base: Base workload dictionary (will not be modified)
+            allocations: Iterator of allocation dictionaries to merge
+
+        Returns:
+            New dictionary with merged allocations
+        """
+        result = base.copy()
+        for allocation in allocations:
+            for task_date, hours in allocation.items():
+                if task_date in result:
+                    result[task_date] += hours
+        return result
