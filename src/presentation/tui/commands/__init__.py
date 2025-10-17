@@ -8,6 +8,7 @@ with the command registry through the @command_registry.register decorator.
 from presentation.tui.commands.add_task_command import AddTaskCommand
 from presentation.tui.commands.complete_task_command import CompleteTaskCommand
 from presentation.tui.commands.delete_task_command import DeleteTaskCommand
+from presentation.tui.commands.edit_note_command import EditNoteCommand
 from presentation.tui.commands.edit_task_command import EditTaskCommand
 from presentation.tui.commands.optimize_command import OptimizeCommand
 from presentation.tui.commands.pause_task_command import PauseTaskCommand
@@ -19,6 +20,7 @@ __all__ = [
     "AddTaskCommand",
     "CompleteTaskCommand",
     "DeleteTaskCommand",
+    "EditNoteCommand",
     "EditTaskCommand",
     "OptimizeCommand",
     "PauseTaskCommand",

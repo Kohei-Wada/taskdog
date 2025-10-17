@@ -62,6 +62,7 @@ class TaskdogTUI(App):
         ("r", "refresh", "Refresh"),
         ("i", "show_details", "Info"),
         ("e", "edit_task", "Edit"),
+        ("E", "edit_note", "Edit Note"),
     ]
 
     # Load CSS from external files
@@ -173,3 +174,7 @@ class TaskdogTUI(App):
     def action_optimize_force(self) -> None:
         """Optimize task schedules with force override."""
         self.command_factory.execute("optimize", force_override=True)
+
+    def action_edit_note(self) -> None:
+        """Edit the selected task's note."""
+        self.command_factory.execute("edit_note")

@@ -1,47 +1,13 @@
 """Note command - Edit task notes in markdown."""
 
-import os
 import subprocess
 
 import click
 
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from presentation.utils.editor import get_editor
 from presentation.utils.notes_template import generate_notes_template
-
-
-def get_editor():
-    """Get editor command from environment or fallback to defaults.
-
-    Returns:
-        str: Editor command (e.g., 'vim', 'nano', 'vi')
-
-    Raises:
-        RuntimeError: If no editor is found
-    """
-    # Try $EDITOR first
-    editor = os.getenv("EDITOR")
-    if editor:
-        return editor
-
-    # Fallback to common editors
-    for fallback in ["vim", "nano", "vi"]:
-        # Check if editor exists in PATH
-        try:
-            subprocess.run(
-                ["which", fallback],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            return fallback
-        except subprocess.CalledProcessError:
-            continue
-
-    # No editor found
-    raise RuntimeError(
-        "No editor found. Please set $EDITOR environment variable or install vim, nano, or vi."
-    )
 
 
 @click.command(name="note", help="Edit task notes in markdown ($EDITOR).")
