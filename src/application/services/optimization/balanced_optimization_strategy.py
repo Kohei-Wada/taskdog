@@ -147,21 +147,3 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
             return task_copy
 
         return None
-
-    def _count_weekdays(self, start_date: datetime, end_date: datetime) -> int:
-        """Count weekdays between start and end date (inclusive).
-
-        Args:
-            start_date: Start date
-            end_date: End date
-
-        Returns:
-            Number of weekdays
-        """
-        count = 0
-        current = start_date
-        while current <= end_date:
-            if current.weekday() < 5:  # Monday=0 to Friday=4
-                count += 1
-            current += timedelta(days=1)
-        return count
