@@ -67,3 +67,12 @@ class TaskRepository(ABC):
             Created task with ID assigned
         """
         pass
+
+    @abstractmethod
+    def reload(self) -> None:
+        """Reload tasks from the data source.
+
+        This method refreshes the in-memory cache from the underlying data source,
+        allowing detection of changes made by external processes.
+        """
+        pass

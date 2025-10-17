@@ -50,7 +50,8 @@
       "Bash(make lint:*)",
       "Bash(PYTHONPATH=src XDG_DATA_HOME=/tmp/test_tui_refactor uv run python:*)",
       "Bash(PYTHONPATH=src XDG_DATA_HOME=/tmp/test_pause_command uv run python:*)",
-      "Bash(PYTHONPATH=src XDG_DATA_HOME=/tmp/test_tui_pause uv run python:*)"
+      "Bash(PYTHONPATH=src XDG_DATA_HOME=/tmp/test_tui_pause uv run python:*)",
+      "Read(//tmp/test_reload/taskdog/**)"
     ],
     "deny": [],
     "ask": []

@@ -117,6 +117,9 @@ class TaskdogTUI(App):
         Returns:
             List of loaded tasks
         """
+        # Reload tasks from file to detect external changes
+        self.repository.reload()
+
         # Get incomplete tasks (PENDING, IN_PROGRESS, FAILED)
         incomplete_filter = IncompleteFilter()
         tasks = self.query_service.get_filtered_tasks(incomplete_filter, sort_by="planned_start")
@@ -127,7 +130,7 @@ class TaskdogTUI(App):
                 self.main_screen.gantt_widget.update_gantt(tasks)
 
             if self.main_screen.task_table:
-                self.main_screen.task_table.load_tasks(tasks)
+                self.main_screen.task_table.refresh_tasks(tasks)
 
         return tasks
 

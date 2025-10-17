@@ -164,6 +164,15 @@ class JsonTaskRepository(TaskRepository):
         task_ids = [task.id for task in self.tasks if task.id is not None]
         return max(task_ids) + 1 if task_ids else 1
 
+    def reload(self) -> None:
+        """Reload tasks from JSON file.
+
+        This method refreshes the in-memory cache from the JSON file,
+        allowing detection of changes made by external processes.
+        """
+        self.tasks = self._load_tasks()
+        self._rebuild_index()
+
     def _save_to_file(self) -> None:
         """Save all tasks to JSON file with atomic write and backup.
 
