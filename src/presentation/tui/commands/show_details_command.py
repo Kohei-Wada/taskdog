@@ -1,5 +1,9 @@
 """Show details command for TUI."""
 
+from application.use_cases.get_task_detail import (
+    GetTaskDetailInput,
+    GetTaskDetailUseCase,
+)
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
@@ -14,10 +18,15 @@ class ShowDetailsCommand(TUICommandBase):
     def execute(self) -> None:
         """Execute the show details command."""
         task = self.get_selected_task()
-        if not task:
+        if not task or task.id is None:
             self.notify_warning("No task selected")
             return
 
-        # Show task detail screen
-        detail_screen = TaskDetailScreen(task)
+        # Get task detail with notes using use case
+        use_case = GetTaskDetailUseCase(self.context.repository)
+        input_dto = GetTaskDetailInput(task.id)
+        detail = use_case.execute(input_dto)
+
+        # Show task detail screen with notes
+        detail_screen = TaskDetailScreen(detail)
         self.app.push_screen(detail_screen)

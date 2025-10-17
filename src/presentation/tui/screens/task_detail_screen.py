@@ -2,8 +2,9 @@
 
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, VerticalScroll
-from textual.widgets import Button, Label, Static
+from textual.widgets import Button, Label, Markdown, Static
 
+from application.dto.task_detail_dto import TaskDetailDTO
 from domain.entities.task import Task
 from presentation.constants.colors import STATUS_COLORS_BOLD
 from presentation.tui.screens.base_dialog import BaseModalDialog
@@ -16,82 +17,115 @@ class TaskDetailScreen(BaseModalDialog[None]):
     - Basic info (ID, name, priority, status)
     - Schedule (planned start/end, deadline, estimated duration)
     - Actual tracking (actual start/end, actual duration)
+    - Notes (if available)
     """
 
-    def __init__(self, task: Task, *args, **kwargs):
+    def __init__(self, detail: TaskDetailDTO | Task, *args, **kwargs):
         """Initialize the detail screen.
 
         Args:
-            task: The task to display
+            detail: TaskDetailDTO with task and notes, or Task object for backwards compatibility
         """
         super().__init__(*args, **kwargs)
-        self.task_data = task
+        # Support both TaskDetailDTO and Task for backwards compatibility
+        if isinstance(detail, TaskDetailDTO):
+            self.task_data = detail.task
+            self.notes_content = detail.notes_content
+            self.has_notes = detail.has_notes
+        else:
+            self.task_data = detail
+            self.notes_content = None
+            self.has_notes = False
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
         with Container(id="detail-screen"):
-            yield Label("[bold cyan]Task Details[/bold cyan]", id="dialog-title")
+            yield Label(
+                f"[bold cyan]Task #{self.task_data.id}: {self.task_data.name}[/bold cyan]",
+                id="dialog-title",
+            )
 
             with VerticalScroll(id="detail-content"):
-                # Basic Information
-                yield Label("[bold yellow]Basic Information[/bold yellow]")
-                yield self._create_detail_row("ID", str(self.task_data.id))
-                yield self._create_detail_row("Name", self.task_data.name)
-                yield self._create_detail_row("Priority", str(self.task_data.priority))
+                # Notes Section (at the top if notes exist)
+                if self.has_notes and self.notes_content:
+                    yield from self._compose_notes_section()
 
-                # Format status with color
-                status_text = self.task_data.status.value
-                status_color = STATUS_COLORS_BOLD.get(self.task_data.status, "white")
-                status_styled = f"[{status_color}]{status_text}[/{status_color}]"
-                yield Static(
-                    f"[dim]Status:[/dim] {status_styled}",
-                    classes="detail-row",
-                )
+                # Basic Information (compact)
+                yield from self._compose_basic_info_section()
 
-                # Schedule Information
-                yield Static("", classes="detail-row")  # Empty row for spacing
-                yield Label("[bold yellow]Schedule[/bold yellow]")
-                yield self._create_detail_row(
-                    "Planned Start", self.task_data.planned_start or "Not set"
-                )
-                yield self._create_detail_row(
-                    "Planned End", self.task_data.planned_end or "Not set"
-                )
-                yield self._create_detail_row("Deadline", self.task_data.deadline or "Not set")
-                yield self._create_detail_row(
-                    "Estimated Duration",
-                    f"{self.task_data.estimated_duration}h"
-                    if self.task_data.estimated_duration
-                    else "Not set",
-                )
+                # Schedule Information (compact)
+                yield from self._compose_schedule_section()
 
-                # Actual Tracking
-                yield Static("", classes="detail-row")  # Empty row for spacing
-                yield Label("[bold yellow]Actual Tracking[/bold yellow]")
-                yield self._create_detail_row(
-                    "Actual Start", self.task_data.actual_start or "Not started"
-                )
-                yield self._create_detail_row(
-                    "Actual End", self.task_data.actual_end or "Not finished"
-                )
-                yield self._create_detail_row(
-                    "Actual Duration",
-                    f"{self.task_data.actual_duration_hours:.2f}h"
-                    if self.task_data.actual_duration_hours
-                    else "N/A",
-                )
-
-                # Additional Info
-                yield Static("", classes="detail-row")  # Empty row for spacing
-                yield Label("[bold yellow]Additional Info[/bold yellow]")
-                yield self._create_detail_row("Created", str(self.task_data.timestamp))
-                yield self._create_detail_row(
-                    "Notes",
-                    f"{self.task_data.notes_path}" if self.task_data.notes_path else "No notes",
-                )
+                # Actual Tracking (compact)
+                yield from self._compose_tracking_section()
 
             with Horizontal(id="button-container"):
                 yield Button("Close (Esc)", variant="default", id="close-button")
+
+    def _compose_notes_section(self) -> ComposeResult:
+        """Compose the notes section."""
+        yield Label("[bold yellow]Notes[/bold yellow]")
+        yield Markdown(self.notes_content or "", classes="notes-content")
+        yield Static("", classes="detail-row")  # Empty row for spacing
+
+    def _compose_basic_info_section(self) -> ComposeResult:
+        """Compose the basic task information section."""
+        yield Label("[bold yellow]Task Information[/bold yellow]")
+        yield self._create_detail_row("ID", str(self.task_data.id))
+        yield self._create_detail_row("Priority", str(self.task_data.priority))
+
+        # Format status with color
+        status_text = self.task_data.status.value
+        status_color = STATUS_COLORS_BOLD.get(self.task_data.status, "white")
+        status_styled = f"[{status_color}]{status_text}[/{status_color}]"
+        yield Static(
+            f"[dim]Status:[/dim] {status_styled}",
+            classes="detail-row",
+        )
+        yield self._create_detail_row("Created", str(self.task_data.timestamp))
+
+    def _compose_schedule_section(self) -> ComposeResult:
+        """Compose the schedule information section."""
+        if any(
+            [
+                self.task_data.planned_start,
+                self.task_data.planned_end,
+                self.task_data.deadline,
+                self.task_data.estimated_duration,
+            ]
+        ):
+            yield Static("", classes="detail-row")  # Empty row for spacing
+            yield Label("[bold yellow]Schedule[/bold yellow]")
+            if self.task_data.planned_start:
+                yield self._create_detail_row("Planned Start", self.task_data.planned_start)
+            if self.task_data.planned_end:
+                yield self._create_detail_row("Planned End", self.task_data.planned_end)
+            if self.task_data.deadline:
+                yield self._create_detail_row("Deadline", self.task_data.deadline)
+            if self.task_data.estimated_duration:
+                yield self._create_detail_row(
+                    "Estimated Duration", f"{self.task_data.estimated_duration}h"
+                )
+
+    def _compose_tracking_section(self) -> ComposeResult:
+        """Compose the actual tracking section."""
+        if any(
+            [
+                self.task_data.actual_start,
+                self.task_data.actual_end,
+                self.task_data.actual_duration_hours,
+            ]
+        ):
+            yield Static("", classes="detail-row")  # Empty row for spacing
+            yield Label("[bold yellow]Actual Tracking[/bold yellow]")
+            if self.task_data.actual_start:
+                yield self._create_detail_row("Actual Start", self.task_data.actual_start)
+            if self.task_data.actual_end:
+                yield self._create_detail_row("Actual End", self.task_data.actual_end)
+            if self.task_data.actual_duration_hours:
+                yield self._create_detail_row(
+                    "Actual Duration", f"{self.task_data.actual_duration_hours:.2f}h"
+                )
 
     def _create_detail_row(self, label: str, value: str) -> Static:
         """Create a detail row with label and value.
