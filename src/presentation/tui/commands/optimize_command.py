@@ -1,6 +1,6 @@
 """Optimize command for TUI."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
@@ -15,26 +15,36 @@ class OptimizeCommand(TUICommandBase):
     with the selected algorithm.
     """
 
+    def __init__(self, app, force_override: bool = False):
+        """Initialize the command.
+
+        Args:
+            app: The TaskdogTUI application instance
+            force_override: Whether to force override existing schedules
+        """
+        super().__init__(app)
+        self.force_override = force_override
+
     def execute(self) -> None:
         """Execute the optimize command."""
 
-        def handle_algorithm_selection(algorithm: str | None) -> None:
-            """Handle the selected algorithm.
+        def handle_optimization_settings(settings: tuple[str, float, datetime] | None) -> None:
+            """Handle the optimization settings from the dialog.
 
             Args:
-                algorithm: The selected algorithm name, or None if cancelled
+                settings: Tuple of (algorithm_name, max_hours_per_day, start_date), or None if cancelled
             """
-            if algorithm is None:
+            if settings is None:
                 return  # User cancelled
 
-            try:
-                start_date = self._calculate_start_date()
+            algorithm, max_hours, start_date = settings
 
-                # Create optimization input with selected algorithm
+            try:
+                # Create optimization input with selected settings
                 optimize_input = OptimizeScheduleInput(
                     start_date=start_date,
-                    max_hours_per_day=6.0,
-                    force_override=True,
+                    max_hours_per_day=max_hours,
+                    force_override=self.force_override,
                     dry_run=False,
                     algorithm_name=algorithm,
                 )
@@ -50,8 +60,8 @@ class OptimizeCommand(TUICommandBase):
                 if optimized_tasks:
                     task_count = len(optimized_tasks)
                     self.notify_success(
-                        f"Optimized {task_count} task(s) using '{algorithm}'. "
-                        f"Check gantt chart for updated schedules."
+                        f"Optimized {task_count} task(s) using '{algorithm}' "
+                        f"(max {max_hours}h/day). Check gantt chart."
                     )
                 else:
                     self.notify_warning("No tasks were optimized. Check task requirements.")
@@ -59,19 +69,5 @@ class OptimizeCommand(TUICommandBase):
             except Exception as e:
                 self.notify_error("Error optimizing schedules", e)
 
-        # Show algorithm selection screen
-        self.app.push_screen(AlgorithmSelectionScreen(), handle_algorithm_selection)
-
-    def _calculate_start_date(self) -> datetime:
-        """Calculate the start date for optimization.
-
-        Returns:
-            Today if it's a weekday, otherwise next Monday
-        """
-        today = datetime.now()
-        # If today is a weekday, use today; otherwise use next Monday
-        if today.weekday() < 5:  # Monday=0, Friday=4
-            return today
-        # Move to next Monday
-        days_until_monday = (7 - today.weekday()) % 7
-        return today + timedelta(days=days_until_monday)
+        # Show optimization settings screen
+        self.app.push_screen(AlgorithmSelectionScreen(), handle_optimization_settings)

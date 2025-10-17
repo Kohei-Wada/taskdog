@@ -14,6 +14,7 @@ from infrastructure.persistence.task_repository import TaskRepository
 from presentation.tui.commands.add_task_command import AddTaskCommand
 from presentation.tui.commands.complete_task_command import CompleteTaskCommand
 from presentation.tui.commands.delete_task_command import DeleteTaskCommand
+from presentation.tui.commands.edit_task_command import EditTaskCommand
 from presentation.tui.commands.optimize_command import OptimizeCommand
 from presentation.tui.commands.refresh_command import RefreshCommand
 from presentation.tui.commands.show_details_command import ShowDetailsCommand
@@ -58,10 +59,11 @@ class TaskdogTUI(App):
         ("s", "start_task", "Start"),
         ("d", "done_task", "Done"),
         ("o", "optimize", "Optimize"),
+        ("O", "optimize_force", "Force Optimize"),
         ("x", "delete_task", "Delete"),
         ("r", "refresh", "Refresh"),
         ("i", "show_details", "Info"),
-        ("enter", "show_details", "Details"),
+        ("e", "edit_task", "Edit"),
     ]
 
     # Load CSS from external files
@@ -134,6 +136,14 @@ class TaskdogTUI(App):
         """Show details of the selected task."""
         ShowDetailsCommand(self).execute()
 
+    def action_edit_task(self) -> None:
+        """Edit the selected task."""
+        EditTaskCommand(self).execute()
+
     def action_optimize(self) -> None:
-        """Optimize task schedules."""
-        OptimizeCommand(self).execute()
+        """Optimize task schedules without force override."""
+        OptimizeCommand(self, force_override=False).execute()
+
+    def action_optimize_force(self) -> None:
+        """Optimize task schedules with force override."""
+        OptimizeCommand(self, force_override=True).execute()
