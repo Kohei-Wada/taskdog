@@ -127,7 +127,10 @@ The application follows **Clean Architecture** with distinct layers:
   - `TaskSorter`: General-purpose sorter for user-facing queries (supports sorting by id, priority, deadline, name, status, planned_start)
   - `OptimizationTaskSorter`: Specialized sorter for schedule optimization (sorts by deadline urgency, priority field, and task ID)
 - `queries/`: Read-optimized operations (TaskQueryService with filters and sorters)
-- `dto/`: Data Transfer Objects for use case inputs (CreateTaskInput, StartTaskInput, UpdateTaskInput, etc.)
+- `dto/`: Data Transfer Objects for use case inputs and outputs
+  - Input DTOs: CreateTaskInput, StartTaskInput, UpdateTaskInput, OptimizeScheduleInput, etc.
+  - Output DTOs: OptimizationResult (encapsulates successful tasks, failed tasks with reasons, summary, and state changes)
+  - `SchedulingFailure`: Captures individual task scheduling failures with task and reason
 - Depends on domain layer; defines application-specific logic
 
 **Infrastructure Layer** (`src/infrastructure/`)
@@ -142,7 +145,7 @@ The application follows **Clean Architecture** with distinct layers:
 - `console/`: ConsoleWriter abstraction for output formatting
   - `console_writer.py`: Abstract interface defining output methods (success, error, warning, info, etc.)
   - `rich_console_writer.py`: Concrete implementation using Rich library
-- `renderers/`: Rich-based output formatting (RichTableRenderer, RichGanttRenderer, RichOptimizationRenderer)
+- `renderers/`: Rich-based output formatting (RichTableRenderer, RichGanttRenderer)
 - `tui/`: Text User Interface components using Textual library
   - `app.py`: Main TUI application (TaskdogTUI)
   - `screens/`: Full-screen UI screens
@@ -178,6 +181,17 @@ Dependencies are managed through Click's context object using the `CliContext` d
 - Concrete implementations: CreateTaskUseCase, StartTaskUseCase, CompleteTaskUseCase, UpdateTaskUseCase, RemoveTaskUseCase, ArchiveTaskUseCase, OptimizeScheduleUseCase
 - Each use case encapsulates a single business operation
 - Use cases validate inputs, orchestrate domain logic, and coordinate with repository/services
+
+**OptimizeScheduleUseCase** - Special use case that returns structured results
+- Returns `OptimizationResult` containing:
+  - `successful_tasks`: Tasks that were successfully scheduled
+  - `failed_tasks`: List of `SchedulingFailure` objects (task + reason for failure)
+  - `daily_allocations`: Dict mapping dates to total allocated hours
+  - `summary`: OptimizationSummary with statistics
+  - `task_states_before`: Backup of task states before optimization for comparison
+- Handles backup of task states internally (presentation layer doesn't need to)
+- Integrates OptimizationSummaryBuilder to generate summary
+- Supports partial success (some tasks scheduled, others not)
 
 **Query Service** (`src/application/queries/task_query_service.py`)
 - Read-only operations optimized for data retrieval
@@ -327,10 +341,11 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
   - `--algorithm, -a NAME`: Choose optimization algorithm (default: greedy)
     - Available: greedy, balanced, backward, priority_first, earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo
   - `--force, -f`: Override existing schedules for all tasks
-  - `--dry-run, -d`: Preview changes without saving
   - Analyzes all tasks with `estimated_duration` set
   - Uses pluggable optimization strategies to distribute workload across weekdays
-  - Shows Gantt chart, optimization summary, warnings, and configuration
+  - Shows minimal output: summary of optimized tasks, warnings for partial/full failures
+  - Returns `OptimizationResult` with structured success/failure information
+  - Note: Primary interface is TUI; CLI optimize command is for quick scheduling without visualization
 
 **Visualization & Export:**
 - `gantt`: Display Gantt chart timeline with workload summary and sorting options (uses TaskQueryService)
@@ -373,7 +388,8 @@ All CLI commands use the `ConsoleWriter` abstraction for consistent user experie
 
 **Core Output Methods:**
 ```python
-console_writer.success(action, task)           # ✓ Task operations
+console_writer.success(action, task)           # ✓ Task operations (requires Task object)
+console_writer.print_success(message)          # ✓ Generic success messages (no Task object)
 console_writer.error(action, exception)        # ✗ General errors
 console_writer.validation_error(message)       # ✗ Error: Validation errors
 console_writer.warning(message)                # ⚠ Warnings
@@ -387,20 +403,24 @@ console_writer.empty_line()                    # Empty line separator
    - Example: `console_writer.success("Added", task)`
    - Format: `✓ Added task: Task name (ID: 123)`
 
-2. **Validation errors**: Use `validation_error(message)` for input validation
+2. **Generic success messages**: Use `print_success(message)` when no Task object available
+   - Example: `console_writer.print_success(f"Optimized {count} task(s) using '{algorithm}'")`
+   - Format: `✓ {message}`
+
+3. **Validation errors**: Use `validation_error(message)` for input validation
    - Example: `console_writer.validation_error("Cannot complete task that hasn't been started")`
    - Format: `✗ Error: {message}`
 
-3. **General errors**: Use `error(action, exception)` for runtime errors
+4. **General errors**: Use `error(action, exception)` for runtime errors
    - Example: `console_writer.error("exporting tasks", e)`
    - Format: `✗ Error {action}: {exception}`
 
-4. **Warnings**: Use `warning(message)` for non-critical issues
+5. **Warnings**: Use `warning(message)` for non-critical issues
    - Example: `console_writer.warning("No tasks were optimized.")`
    - Format: `⚠ {message}`
 
-5. **Info messages**: Use `info(message)` for helpful information
-   - Example: `console_writer.info("Changes not saved. Remove --dry-run to apply.")`
+6. **Info messages**: Use `info(message)` for helpful information
+   - Example: `console_writer.info("Use gantt command to view the schedule.")`
    - Format: `ℹ {message}`
 
 **When Creating New Commands:**
