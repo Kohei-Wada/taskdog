@@ -57,6 +57,9 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         # Filter out tasks without ID (should not happen, but for type safety)
         schedulable_tasks = [t for t in schedulable_tasks if t.id is not None]
 
+        # Initialize failed tasks list
+        failed_tasks: list[SchedulingFailure] = []
+
         # Calculate effective deadlines for all tasks
         task_effective_deadlines: dict[int, str | None] = {
             task.id: DeadlineCalculator.get_effective_deadline(task, repository)
@@ -101,11 +104,31 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             task_map, task_start_dates, task_end_dates, task_daily_allocations
         )
 
+        # Record tasks that couldn't be fully scheduled
+        for task_id, remaining_hours in task_remaining.items():
+            if remaining_hours > 0.001:  # Task not fully scheduled
+                task = task_map[task_id]
+                if task_id in task_start_dates:
+                    # Partially scheduled but ran out of time
+                    failed_tasks.append(
+                        SchedulingFailure(
+                            task=task,
+                            reason=f"Could not complete scheduling before deadline ({remaining_hours:.1f}h remaining)",
+                        )
+                    )
+                else:
+                    # Never scheduled at all
+                    failed_tasks.append(
+                        SchedulingFailure(
+                            task=task, reason="Deadline too close or no time available"
+                        )
+                    )
+
         # Update parent task periods based on children
         # Schedule propagation removed (no parent-child hierarchy)
 
-        # Return modified tasks, daily allocations, and empty failed list
-        return updated_tasks, daily_allocations, []
+        # Return modified tasks, daily allocations, and failed tasks
+        return updated_tasks, daily_allocations, failed_tasks
 
     def _allocate_round_robin(
         self,

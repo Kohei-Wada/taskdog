@@ -62,6 +62,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self.start_date = start_date
         self.max_hours_per_day = max_hours_per_day
         self.daily_allocations: dict[str, float] = {}
+        self.failed_tasks: list[SchedulingFailure] = []
         self._initialize_allocations(tasks, force_override)
 
         # Run Monte Carlo simulation
@@ -77,9 +78,12 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             )
             if updated_task:
                 updated_tasks.append(updated_task)
+            else:
+                # Record failure with reason
+                self._record_failure(task, "Could not find available time slot before deadline")
 
-        # Return modified tasks and daily allocations
-        return updated_tasks, self.daily_allocations, []
+        # Return modified tasks, daily allocations, and failed tasks
+        return updated_tasks, self.daily_allocations, self.failed_tasks
 
     def _monte_carlo_simulation(
         self,
