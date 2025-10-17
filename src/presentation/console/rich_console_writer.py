@@ -193,17 +193,3 @@ class RichConsoleWriter(ConsoleWriter):
                 self._console.print(f"  • {field}: [cyan]{value}h[/cyan]")
             else:
                 self._console.print(f"  • {field}: [cyan]{value}[/cyan]")
-
-    def optimization_result(self, task_count: int, is_dry_run: bool) -> None:
-        """Print optimization result message.
-
-        Args:
-            task_count: Number of tasks optimized
-            is_dry_run: Whether this was a dry run
-        """
-        if is_dry_run:
-            self._console.print(
-                f"[cyan]DRY RUN:[/cyan] Preview of {task_count} task(s) to be optimized\n"
-            )
-        else:
-            self._console.print(f"[green]✓[/green] Optimized schedules for {task_count} task(s)\n")

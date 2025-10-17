@@ -146,13 +146,3 @@ class ConsoleWriter(ABC):
             updated_fields: List of field names that were updated
         """
         pass
-
-    @abstractmethod
-    def optimization_result(self, task_count: int, is_dry_run: bool) -> None:
-        """Print optimization result message.
-
-        Args:
-            task_count: Number of tasks optimized
-            is_dry_run: Whether this was a dry run
-        """
-        pass
