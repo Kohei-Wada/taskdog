@@ -1,7 +1,7 @@
 """Abstract base class for optimization strategies using Template Method Pattern."""
 
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from application.dto.optimization_result import SchedulingFailure
 from application.services.task_filter import TaskFilter
@@ -116,35 +116,6 @@ class OptimizationStrategy(ABC):
                     else:
                         self.daily_allocations[date_str] = hours
 
-    def _count_weekdays(self, start_date: datetime, end_date: datetime) -> int:
-        """Count weekdays between start and end date (inclusive).
-
-        Args:
-            start_date: Start date
-            end_date: End date
-
-        Returns:
-            Number of weekdays (Monday-Friday)
-        """
-        count = 0
-        current = start_date
-        while current <= end_date:
-            if current.weekday() < 5:  # Monday=0 to Friday=4
-                count += 1
-            current += timedelta(days=1)
-        return count
-
-    def _is_weekend(self, date: datetime) -> bool:
-        """Check if a date is a weekend.
-
-        Args:
-            date: Date to check
-
-        Returns:
-            True if Saturday or Sunday, False otherwise
-        """
-        return date.weekday() >= 5  # Saturday=5, Sunday=6
-
     def _record_failure(self, task: Task, reason: str) -> None:
         """Record a task scheduling failure with a reason.
 
@@ -176,95 +147,6 @@ class OptimizationStrategy(ABC):
         # Only record if allocation failed and not already recorded
         if not updated_task and not any(f.task.id == task.id for f in self.failed_tasks):
             self._record_failure(task, default_reason)
-
-    def _allocate_greedy(  # noqa: C901
-        self,
-        task: Task,
-        daily_allocations: dict[str, float],
-        start_date: datetime,
-        max_hours_per_day: float,
-        repository,
-    ) -> Task | None:
-        """Allocate task using greedy forward allocation (helper method).
-
-        This is a helper method that can be used by strategies that need
-        greedy allocation without using self.daily_allocations.
-
-        Args:
-            task: Task to schedule
-            daily_allocations: Daily allocations dict to update
-            start_date: Starting date for allocation
-            max_hours_per_day: Maximum hours per day
-            repository: Task repository for deadline calculation
-
-        Returns:
-            Copy of task with updated schedule, or None if allocation fails
-        """
-        import copy
-        from datetime import timedelta
-
-        from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
-        from domain.services.deadline_calculator import DeadlineCalculator
-
-        if not task.estimated_duration:
-            return None
-
-        task_copy = copy.deepcopy(task)
-
-        # Type narrowing: estimated_duration is guaranteed to be float at this point
-        assert task_copy.estimated_duration is not None
-
-        original_daily_allocations = copy.deepcopy(daily_allocations)
-        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy, repository)
-
-        current_date = start_date
-        remaining_hours = task_copy.estimated_duration
-        schedule_start = None
-        schedule_end = None
-        first_allocation = True
-        task_daily_allocations = {}
-
-        while remaining_hours > 0:
-            if self._is_weekend(current_date):
-                current_date += timedelta(days=1)
-                continue
-
-            if effective_deadline:
-                deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
-                if current_date > deadline_dt:
-                    # Revert allocations
-                    for key in list(daily_allocations.keys()):
-                        daily_allocations[key] = original_daily_allocations.get(key, 0.0)
-                    return None
-
-            date_str = current_date.strftime("%Y-%m-%d")
-            current_allocation = daily_allocations.get(date_str, 0.0)
-            available_hours = max_hours_per_day - current_allocation
-
-            if available_hours > 0:
-                if first_allocation:
-                    schedule_start = current_date
-                    first_allocation = False
-
-                allocated = min(remaining_hours, available_hours)
-                daily_allocations[date_str] = current_allocation + allocated
-                task_daily_allocations[date_str] = allocated
-                remaining_hours -= allocated
-                schedule_end = current_date
-
-            current_date += timedelta(days=1)
-
-        if schedule_start and schedule_end:
-            task_copy.planned_start = schedule_start.strftime(DATETIME_FORMAT)
-            end_date_with_time = schedule_end.replace(hour=DEFAULT_END_HOUR, minute=0, second=0)
-            task_copy.planned_end = end_date_with_time.strftime(DATETIME_FORMAT)
-            task_copy.daily_allocations = task_daily_allocations
-            return task_copy
-
-        # Revert allocations
-        for key in list(daily_allocations.keys()):
-            daily_allocations[key] = original_daily_allocations.get(key, 0.0)
-        return None
 
     @abstractmethod
     def _sort_schedulable_tasks(

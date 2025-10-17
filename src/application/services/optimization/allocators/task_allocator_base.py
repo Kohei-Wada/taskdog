@@ -40,34 +40,3 @@ class TaskAllocatorBase(ABC):
             daily_allocations), or None if allocation fails
         """
         pass
-
-    def _is_weekend(self, date: datetime) -> bool:
-        """Check if a date is a weekend.
-
-        Args:
-            date: Date to check
-
-        Returns:
-            True if Saturday or Sunday, False otherwise
-        """
-        return date.weekday() >= 5  # Saturday=5, Sunday=6
-
-    def _count_weekdays(self, start_date: datetime, end_date: datetime) -> int:
-        """Count weekdays between start and end date (inclusive).
-
-        Args:
-            start_date: Start date
-            end_date: End date
-
-        Returns:
-            Number of weekdays (Monday-Friday)
-        """
-        from datetime import timedelta
-
-        count = 0
-        current = start_date
-        while current <= end_date:
-            if current.weekday() < 5:  # Monday=0 to Friday=4
-                count += 1
-            current += timedelta(days=1)
-        return count

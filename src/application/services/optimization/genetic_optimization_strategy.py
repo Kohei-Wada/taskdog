@@ -5,6 +5,9 @@ import random
 from datetime import datetime
 
 from application.dto.optimization_result import SchedulingFailure
+from application.services.optimization.allocators.greedy_forward_allocator import (
+    GreedyForwardAllocator,
+)
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT
@@ -72,16 +75,19 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         self.failed_tasks: list[SchedulingFailure] = []
         self._initialize_allocations(tasks, force_override)
 
+        # Create allocator instance
+        allocator = GreedyForwardAllocator()
+
         # Run genetic algorithm
         best_order = self._genetic_algorithm(
-            schedulable_tasks, start_date, max_hours_per_day, repository
+            schedulable_tasks, start_date, max_hours_per_day, repository, allocator
         )
 
         # Schedule tasks according to best order using greedy allocation
         updated_tasks = []
         for task in best_order:
-            updated_task = self._allocate_greedy(
-                task, self.daily_allocations, start_date, max_hours_per_day, repository
+            updated_task = allocator.allocate(
+                task, start_date, max_hours_per_day, self.daily_allocations, repository
             )
             if updated_task:
                 updated_tasks.append(updated_task)
@@ -93,7 +99,12 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         return updated_tasks, self.daily_allocations, self.failed_tasks
 
     def _genetic_algorithm(
-        self, tasks: list[Task], start_date: datetime, max_hours_per_day: float, repository=None
+        self,
+        tasks: list[Task],
+        start_date: datetime,
+        max_hours_per_day: float,
+        repository,
+        allocator: GreedyForwardAllocator,
     ) -> list[Task]:
         """Run genetic algorithm to find optimal task ordering.
 
@@ -112,7 +123,9 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         for _generation in range(self.GENERATIONS):
             # Evaluate fitness for each individual
             fitness_scores = [
-                self._evaluate_fitness(individual, start_date, max_hours_per_day, repository)
+                self._evaluate_fitness(
+                    individual, start_date, max_hours_per_day, repository, allocator
+                )
                 for individual in population
             ]
 
@@ -147,7 +160,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         # Return best individual from final generation
         final_fitness = [
-            self._evaluate_fitness(individual, start_date, max_hours_per_day, repository)
+            self._evaluate_fitness(individual, start_date, max_hours_per_day, repository, allocator)
             for individual in population
         ]
         best_idx = final_fitness.index(max(final_fitness))
@@ -158,7 +171,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         task_order: list[Task],
         start_date: datetime,
         max_hours_per_day: float,
-        repository=None,
+        repository,
+        allocator: GreedyForwardAllocator,
     ) -> float:
         """Evaluate fitness of a task ordering.
 
@@ -177,8 +191,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         scheduled_tasks = []
 
         for task in task_order:
-            updated_task = self._allocate_greedy(
-                task, temp_daily_allocations, start_date, max_hours_per_day, repository
+            updated_task = allocator.allocate(
+                task, start_date, max_hours_per_day, temp_daily_allocations, repository
             )
             if updated_task:
                 scheduled_tasks.append(updated_task)

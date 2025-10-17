@@ -7,6 +7,7 @@ from application.services.optimization.allocators.task_allocator_base import Tas
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
 from domain.entities.task import Task
 from domain.services.deadline_calculator import DeadlineCalculator
+from shared.workday_utils import WorkdayUtils
 
 
 class GreedyForwardAllocator(TaskAllocatorBase):
@@ -73,7 +74,7 @@ class GreedyForwardAllocator(TaskAllocatorBase):
 
         while remaining_hours > 0:
             # Skip weekends
-            if self._is_weekend(current_date):
+            if WorkdayUtils.is_weekend(current_date):
                 current_date += timedelta(days=1)
                 continue
 

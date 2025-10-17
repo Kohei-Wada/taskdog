@@ -9,6 +9,7 @@ from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR, DEFAULT_START_HOUR
 from domain.entities.task import Task
 from domain.services.deadline_calculator import DeadlineCalculator
+from shared.workday_utils import WorkdayUtils
 
 
 class RoundRobinOptimizationStrategy(OptimizationStrategy):
@@ -170,7 +171,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 break
 
             # Skip weekends
-            if current_date.weekday() >= 5:  # Saturday=5, Sunday=6
+            if WorkdayUtils.is_weekend(current_date):
                 current_date += timedelta(days=1)
                 continue
 

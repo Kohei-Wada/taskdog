@@ -4,6 +4,9 @@ import random
 from datetime import datetime
 
 from application.dto.optimization_result import SchedulingFailure
+from application.services.optimization.allocators.greedy_forward_allocator import (
+    GreedyForwardAllocator,
+)
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT
@@ -65,16 +68,25 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self.failed_tasks: list[SchedulingFailure] = []
         self._initialize_allocations(tasks, force_override)
 
+        # Create allocator instance
+        allocator = GreedyForwardAllocator()
+
         # Run Monte Carlo simulation
         best_order = self._monte_carlo_simulation(
-            schedulable_tasks, tasks, start_date, max_hours_per_day, force_override, repository
+            schedulable_tasks,
+            tasks,
+            start_date,
+            max_hours_per_day,
+            force_override,
+            repository,
+            allocator,
         )
 
         # Schedule tasks according to best order using greedy allocation
         updated_tasks = []
         for task in best_order:
-            updated_task = self._allocate_greedy(
-                task, self.daily_allocations, start_date, max_hours_per_day, repository
+            updated_task = allocator.allocate(
+                task, start_date, max_hours_per_day, self.daily_allocations, repository
             )
             if updated_task:
                 updated_tasks.append(updated_task)
@@ -92,7 +104,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-        repository=None,
+        repository,
+        allocator: GreedyForwardAllocator,
     ) -> list[Task]:
         """Run Monte Carlo simulation to find optimal task ordering.
 
@@ -115,7 +128,13 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
             # Evaluate this ordering
             score = self._evaluate_ordering(
-                random_order, all_tasks, start_date, max_hours_per_day, force_override, repository
+                random_order,
+                all_tasks,
+                start_date,
+                max_hours_per_day,
+                force_override,
+                repository,
+                allocator,
             )
 
             # Track best ordering
@@ -132,7 +151,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-        repository=None,
+        repository,
+        allocator: GreedyForwardAllocator,
     ) -> float:
         """Evaluate a task ordering by simulating scheduling.
 
@@ -153,8 +173,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         scheduled_tasks = []
 
         for task in task_order:
-            updated_task = self._allocate_greedy(
-                task, temp_daily_allocations, start_date, max_hours_per_day, repository
+            updated_task = allocator.allocate(
+                task, start_date, max_hours_per_day, temp_daily_allocations, repository
             )
             if updated_task:
                 scheduled_tasks.append(updated_task)
