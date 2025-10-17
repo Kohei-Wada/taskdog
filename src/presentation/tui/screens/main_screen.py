@@ -3,7 +3,7 @@
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Static
+from textual.widgets import Footer, Header
 
 from presentation.tui.widgets.gantt_widget import GanttWidget
 from presentation.tui.widgets.task_table import TaskTable
@@ -27,18 +27,11 @@ class MainScreen(Screen):
         yield Header(show_clock=True)
 
         with VerticalScroll():
-            yield Static(
-                "[bold cyan]Taskdog TUI[/bold cyan] - Task Management Interface",
-                id="title",
-            )
-
             # Gantt chart section (main display)
-            yield Static("[bold yellow]Gantt Chart[/bold yellow]", id="gantt-title")
             self.gantt_widget = GanttWidget(id="gantt-widget")
             yield self.gantt_widget
 
             # Task table section
-            yield Static("[bold yellow]Task List[/bold yellow]", id="table-title")
             self.task_table = TaskTable(id="task-table")
             self.task_table.setup_columns()
             yield self.task_table
