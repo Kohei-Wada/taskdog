@@ -40,7 +40,8 @@
       "Bash(taskdog:*)",
       "Bash(make install:*)",
       "Bash(mkdir:*)",
-      "Bash(uv pip uninstall:*)"
+      "Bash(uv pip uninstall:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

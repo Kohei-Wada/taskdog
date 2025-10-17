@@ -1,52 +1,23 @@
 """Use case for completing a task."""
 
 from application.dto.complete_task_input import CompleteTaskInput
-from application.services.task_status_service import TaskStatusService
-from application.use_cases.base import UseCase
-from application.validators.validator_registry import TaskFieldValidatorRegistry
-from domain.entities.task import Task, TaskStatus
-from domain.services.time_tracker import TimeTracker
-from infrastructure.persistence.task_repository import TaskRepository
+from application.use_cases.status_change_use_case import StatusChangeUseCase
+from domain.entities.task import TaskStatus
 
 
-class CompleteTaskUseCase(UseCase[CompleteTaskInput, Task]):
+class CompleteTaskUseCase(StatusChangeUseCase[CompleteTaskInput]):
     """Use case for completing a task.
 
     Sets task status to COMPLETED and records actual end time.
+
+    This use case inherits common status change logic from StatusChangeUseCase
+    and only specifies the target status.
     """
 
-    def __init__(self, repository: TaskRepository, time_tracker: TimeTracker):
-        """Initialize use case.
-
-        Args:
-            repository: Task repository for data access
-            time_tracker: Time tracker for recording timestamps
-        """
-        self.repository = repository
-        self.time_tracker = time_tracker
-        self.validator_registry = TaskFieldValidatorRegistry(repository)
-        self.status_service = TaskStatusService()
-
-    def execute(self, input_dto: CompleteTaskInput) -> Task:
-        """Execute task completion.
-
-        Args:
-            input_dto: Task completion input data
+    def _get_target_status(self) -> TaskStatus:
+        """Return COMPLETED as the target status.
 
         Returns:
-            Updated task with COMPLETED status
-
-        Raises:
-            TaskNotFoundException: If task doesn't exist
-            TaskAlreadyFinishedError: If task is already finished
-            TaskNotStartedError: If task is PENDING (not started yet)
+            TaskStatus.COMPLETED
         """
-        task = self._get_task_or_raise(self.repository, input_dto.task_id)
-
-        # Validate status transition using validator registry (Clean Architecture)
-        self.validator_registry.validate_field("status", TaskStatus.COMPLETED, task)
-
-        # Change status with time tracking
-        return self.status_service.change_status_with_tracking(
-            task, TaskStatus.COMPLETED, self.time_tracker, self.repository
-        )
+        return TaskStatus.COMPLETED

@@ -130,9 +130,12 @@ The application follows **Clean Architecture** with distinct layers:
 
 **Presentation Layer** (`src/presentation/`)
 - `cli/commands/`: Click command implementations (add, tree, table, gantt, start, done, optimize, archive, etc.)
-- `cli/context.py`: CliContext dataclass for dependency injection (console, repository, time_tracker)
+- `cli/context.py`: CliContext dataclass for dependency injection (console_writer, repository, time_tracker)
 - `cli/error_handler.py`: Decorators for consistent error handling
-- `formatters/`: Rich-based output formatting (RichTreeFormatter, RichTableFormatter, RichGanttFormatter, RichOptimizationFormatter)
+- `console/`: ConsoleWriter abstraction for output formatting
+  - `console_writer.py`: Abstract interface defining output methods (success, error, warning, info, etc.)
+  - `rich_console_writer.py`: Concrete implementation using Rich library
+- `renderers/`: Rich-based output formatting (RichTableRenderer, RichGanttRenderer, RichOptimizationRenderer)
 - Depends on application layer use cases and queries
 
 **Shared Layer** (`src/shared/`)
@@ -144,14 +147,14 @@ The application follows **Clean Architecture** with distinct layers:
 Dependencies are managed through Click's context object using the `CliContext` dataclass:
 
 **CliContext** (`src/presentation/cli/context.py`):
-- Dataclass containing shared dependencies: `console`, `repository`, `time_tracker`
+- Dataclass containing shared dependencies: `console_writer`, `repository`, `time_tracker`
 - Initialized in `cli.py` and passed to all commands via `ctx.obj`
 - Commands access via `ctx.obj: CliContext` type annotation
 
 **Local instantiation in commands**:
 - Use cases are created locally in each command function (e.g., `CreateTaskUseCase(repository)`)
 - `TaskQueryService` is instantiated locally in query commands
-- Formatters are instantiated locally per command
+- Renderers are instantiated locally per command
 - Application services (EstimatedDurationPropagator, SchedulePropagator, etc.) instantiated as needed
 
 ### Core Components
@@ -205,9 +208,9 @@ Two specialized sorters with distinct responsibilities:
 - Records `actual_end` when status → COMPLETED/FAILED
 - Invoked by use cases during status updates
 
-**Rich Formatters** (`src/presentation/formatters/`)
-- `RichTableFormatter`: Renders tasks as a table (columns: ID, Name, Priority, Status, Plan Start/End, Actual Start/End, Deadline, Duration)
-- `RichGanttFormatter`: Renders timeline visualization with daily hours and status symbols
+**Rich Renderers** (`src/presentation/renderers/`)
+- `RichTableRenderer`: Renders tasks as a table (columns: ID, Name, Priority, Status, Plan Start/End, Actual Start/End, Deadline, Duration)
+- `RichGanttRenderer`: Renders timeline visualization with daily hours and status symbols
   - **Planned period**: Displays daily allocated hours as numbers (e.g., `4`, `2.5`) with background shading
   - **Actual period (IN_PROGRESS)**: Shows `◆` symbol in blue from actual_start to today
   - **Actual period (COMPLETED)**: Shows `◆` symbol in green from actual_start to actual_end
@@ -216,7 +219,7 @@ Two specialized sorters with distinct responsibilities:
   - Weekend coloring: Saturday (blueish), Sunday (reddish), weekdays (gray)
   - Workload summary row: displays daily total hours (excluding weekends) with color-coded warnings (green ≤6h, yellow ≤8h, red >8h)
   - Uses `WorkloadCalculator` to compute daily hours from `task.daily_allocations` (if set by optimizer) or evenly distributes `estimated_duration` across planned weekdays
-- Shared constants in `formatters/constants.py`: STATUS_STYLES, STATUS_COLORS_BOLD, DATETIME_FORMAT
+- Shared constants in `renderers/constants.py`: STATUS_STYLES, STATUS_COLORS_BOLD, DATETIME_FORMAT
 
 **Custom Click Types** (`src/shared/click_types/datetime_with_default.py`)
 - `DateTimeWithDefault`: Extends Click's DateTime to add default time (18:00:00) when only date provided
@@ -244,7 +247,7 @@ Commands that support multiple task IDs use simple for loops with per-task error
 - Accept multiple task IDs via `@click.argument("task_ids", nargs=-1, type=int, required=True)`
 - Loop through task IDs with `for task_id in task_ids:`
 - Handle errors per task with try/except blocks
-- Add spacing between tasks when processing multiple IDs with `if len(task_ids) > 1: console.print()`
+- Add spacing between tasks when processing multiple IDs with `if len(task_ids) > 1: console_writer.empty_line()`
 - Consistent error handling for `TaskNotFoundException` and domain-specific exceptions
 
 ### Task Model
@@ -337,54 +340,51 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 10. **Rich for all output** - Console output uses Rich library for colors, tables, and formatting
 11. **Atomic saves with backup** - JsonTaskRepository uses atomic writes (temp file + rename) and maintains `.json.bak` backup for data integrity
 12. **Schedule optimization with Strategy pattern** - Multiple scheduling algorithms (9 strategies) implementing Strategy pattern, managed by StrategyFactory
-13. **Unified message formatting** - All user-facing messages use `utils/console_messages.py` utilities for consistency
+13. **ConsoleWriter abstraction** - All output goes through ConsoleWriter interface for consistency and testability
 14. **Field-specific validation with Strategy Pattern + Registry** - TaskFieldValidatorRegistry manages field-specific validators (currently StatusValidator), using custom domain exceptions for consistent error handling; extensible design makes adding new validators simple
 
-### Console Messaging Guidelines
+### Console Output Guidelines
 
-All CLI commands must use the unified messaging utilities from `utils/console_messages.py` for consistent user experience.
+All CLI commands use the `ConsoleWriter` abstraction for consistent user experience.
 
-**Message Types and Icons:**
+**ConsoleWriter Interface** (`src/presentation/console/console_writer.py`):
+- Abstract interface defining all output methods
+- Concrete implementation: `RichConsoleWriter` (uses Rich library)
+
+**Core Output Methods:**
 ```python
-from utils.console_messages import (
-    print_success,        # [green]✓[/green] Task operations
-    print_error,          # [red]✗[/red] General errors
-    print_validation_error,  # [red]✗[/red] Error: Validation errors
-    print_warning,        # [yellow]⚠[/yellow] Warnings
-    print_info,           # [cyan]ℹ[/cyan] Informational messages
-)
+console_writer.success(action, task)           # ✓ Task operations
+console_writer.error(action, exception)        # ✗ General errors
+console_writer.validation_error(message)       # ✗ Error: Validation errors
+console_writer.warning(message)                # ⚠ Warnings
+console_writer.info(message)                   # ℹ Informational messages
+console_writer.print(message)                  # Raw output (for Rich objects)
+console_writer.empty_line()                    # Empty line separator
 ```
 
 **Usage Rules:**
-1. **Success messages**: Use `print_success(console, action, task)` for task operations
-   - Example: `print_success(console, "Added", task)`
+1. **Success messages**: Use `success(action, task)` for task operations
+   - Example: `console_writer.success("Added", task)`
    - Format: `✓ Added task: Task name (ID: 123)`
 
-2. **Validation errors**: Use `print_validation_error(console, message)` for input validation
-   - Example: `print_validation_error(console, "Cannot complete task that hasn't been started")`
+2. **Validation errors**: Use `validation_error(message)` for input validation
+   - Example: `console_writer.validation_error("Cannot complete task that hasn't been started")`
    - Format: `✗ Error: {message}`
 
-3. **General errors**: Use `print_error(console, action, exception)` for runtime errors
-   - Example: `print_error(console, "exporting tasks", e)`
+3. **General errors**: Use `error(action, exception)` for runtime errors
+   - Example: `console_writer.error("exporting tasks", e)`
    - Format: `✗ Error {action}: {exception}`
 
-4. **Warnings**: Use `print_warning(console, message)` for non-critical issues
-   - Example: `print_warning(console, "No tasks were optimized.")`
+4. **Warnings**: Use `warning(message)` for non-critical issues
+   - Example: `console_writer.warning("No tasks were optimized.")`
    - Format: `⚠ {message}`
 
-5. **Info messages**: Use `print_info(console, message)` for helpful information
-   - Example: `print_info(console, "Changes not saved. Remove --dry-run to apply.")`
+5. **Info messages**: Use `info(message)` for helpful information
+   - Example: `console_writer.info("Changes not saved. Remove --dry-run to apply.")`
    - Format: `ℹ {message}`
 
-**Constants Available:**
-```python
-from utils.console_messages import (
-    ICON_SUCCESS, ICON_ERROR, ICON_WARNING, ICON_INFO,
-    STYLE_SUCCESS, STYLE_ERROR, STYLE_WARNING, STYLE_INFO,
-)
-```
-
 **When Creating New Commands:**
-- Always import and use messaging utilities from `utils/console_messages.py`
+- Always access `console_writer` from `CliContext`: `ctx.obj.console_writer`
+- Use the appropriate ConsoleWriter method for the message type
 - Never hardcode message icons or colors directly in command files
 - Follow existing patterns in commands like `add.py`, `deadline.py`, `optimize.py`
