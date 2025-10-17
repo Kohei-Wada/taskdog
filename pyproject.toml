@@ -50,6 +50,7 @@ packages = [
   "presentation.renderers",
   "presentation.utils",
   "presentation.tui",
+  "presentation.tui.commands",
   "presentation.tui.widgets",
   "presentation.tui.screens",
   "shared",
