@@ -5,7 +5,6 @@ from datetime import datetime
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.services.task_filter import TaskFilter
-from application.services.workload_allocator import WorkloadAllocator
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 
@@ -57,26 +56,29 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         if not schedulable_tasks:
             return [], {}
 
+        # Initialize context for allocation
+        self.repository = repository
+        self.start_date = start_date
+        self.max_hours_per_day = max_hours_per_day
+        self.daily_allocations: dict[str, float] = {}
+        self._initialize_allocations(tasks, force_override)
+
         # Run Monte Carlo simulation
         best_order = self._monte_carlo_simulation(
             schedulable_tasks, tasks, start_date, max_hours_per_day, force_override, repository
         )
 
-        # Schedule tasks according to best order
-        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
-        allocator.initialize_allocations(tasks, force_override)
-
+        # Schedule tasks according to best order using greedy allocation
         updated_tasks = []
         for task in best_order:
-            updated_task = allocator.allocate_timeblock(task)
+            updated_task = self._allocate_greedy(
+                task, self.daily_allocations, start_date, max_hours_per_day, repository
+            )
             if updated_task:
                 updated_tasks.append(updated_task)
 
-        # Update parent task periods based on children
-        # Schedule propagation removed (no parent-child hierarchy)
-
         # Return modified tasks and daily allocations
-        return updated_tasks, allocator.daily_allocations
+        return updated_tasks, self.daily_allocations
 
     def _monte_carlo_simulation(
         self,
@@ -142,12 +144,13 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             Score (higher is better)
         """
         # Simulate scheduling with this order
-        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
-        allocator.initialize_allocations(all_tasks, force_override)
-
+        temp_daily_allocations: dict[str, float] = {}
         scheduled_tasks = []
+
         for task in task_order:
-            updated_task = allocator.allocate_timeblock(task)
+            updated_task = self._allocate_greedy(
+                task, temp_daily_allocations, start_date, max_hours_per_day, repository
+            )
             if updated_task:
                 scheduled_tasks.append(updated_task)
 
@@ -169,8 +172,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
                     deadline_penalty += days_late * 100  # Heavy penalty
 
         # Workload variance penalty (prefer even distribution)
-        if allocator.daily_allocations:
-            daily_hours = list(allocator.daily_allocations.values())
+        if temp_daily_allocations:
+            daily_hours = list(temp_daily_allocations.values())
             avg_hours = sum(daily_hours) / len(daily_hours)
             variance = sum((h - avg_hours) ** 2 for h in daily_hours) / len(daily_hours)
             workload_penalty = variance * 10
@@ -195,7 +198,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
     def _allocate_task(
         self,
         task: Task,
-        allocator,
         start_date: datetime,
         max_hours_per_day: float,
     ) -> Task | None:

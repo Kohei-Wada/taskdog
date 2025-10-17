@@ -230,7 +230,6 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
     def _allocate_task(
         self,
         task: Task,
-        allocator,
         start_date: datetime,
         max_hours_per_day: float,
     ) -> Task | None:

@@ -1,11 +1,11 @@
 """Abstract base class for optimization strategies using Template Method Pattern."""
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from application.services.task_filter import TaskFilter
-from application.services.workload_allocator import WorkloadAllocator
-from domain.entities.task import Task
+from domain.entities.task import Task, TaskStatus
+from domain.services.task_eligibility_checker import TaskEligibilityChecker
 
 
 class OptimizationStrategy(ABC):
@@ -15,14 +15,15 @@ class OptimizationStrategy(ABC):
     across optimization strategies.
 
     The template method `optimize_tasks()` defines the common workflow:
-    1. Initialize services (allocator, filter)
-    2. Initialize existing allocations
+    1. Initialize context (repository, constraints, daily_allocations)
+    2. Initialize existing allocations from scheduled tasks
     3. Filter schedulable tasks
     4. Sort tasks by priority (strategy-specific)
     5. Allocate tasks (strategy-specific)
     6. Return results
 
-    Subclasses only need to implement sorting and allocation logic.
+    Subclasses implement sorting and allocation logic specific to their algorithm.
+    Each strategy has full control over its allocation algorithm.
     """
 
     def optimize_tasks(
@@ -50,14 +51,17 @@ class OptimizationStrategy(ABC):
             - modified_tasks: List of tasks with updated schedules
             - daily_allocations: Dict mapping date strings to allocated hours
         """
-        # 1. Initialize service instances (common for all strategies)
-        allocator = WorkloadAllocator(max_hours_per_day, start_date, repository)
-        task_filter = TaskFilter()
+        # 1. Initialize context (instance variables for use by subclasses)
+        self.repository = repository
+        self.start_date = start_date
+        self.max_hours_per_day = max_hours_per_day
+        self.daily_allocations: dict[str, float] = {}
 
         # 2. Initialize daily_allocations with existing scheduled tasks
-        allocator.initialize_allocations(tasks, force_override)
+        self._initialize_allocations(tasks, force_override)
 
         # 3. Filter tasks that need scheduling
+        task_filter = TaskFilter()
         schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
 
         # 4. Sort tasks by strategy-specific priority
@@ -66,12 +70,163 @@ class OptimizationStrategy(ABC):
         # 5. Allocate time blocks for each task (strategy-specific)
         updated_tasks = []
         for task in sorted_tasks:
-            updated_task = self._allocate_task(task, allocator, start_date, max_hours_per_day)
+            updated_task = self._allocate_task(task, start_date, max_hours_per_day)
             if updated_task:
                 updated_tasks.append(updated_task)
 
         # 6. Return modified tasks and daily allocations
-        return updated_tasks, allocator.daily_allocations
+        return updated_tasks, self.daily_allocations
+
+    def _initialize_allocations(self, tasks: list[Task], force_override: bool) -> None:
+        """Initialize daily_allocations with existing scheduled tasks.
+
+        This method pre-populates daily_allocations with hours from tasks
+        that already have schedules. This ensures that when we optimize new tasks,
+        we account for existing workload commitments.
+
+        Args:
+            tasks: All tasks in the system
+            force_override: Whether existing schedules will be overridden
+        """
+        for task in tasks:
+            # Skip finished tasks (completed/archived) - they don't contribute to future workload
+            if not TaskEligibilityChecker.should_count_in_workload(task):
+                continue
+
+            # Skip tasks without schedules
+            if not (task.planned_start and task.estimated_duration):
+                continue
+
+            # If force_override, we'll reschedule PENDING tasks, so don't count their old allocation
+            # But IN_PROGRESS tasks should NOT be rescheduled, so count their allocation
+            if force_override and task.status != TaskStatus.IN_PROGRESS:
+                continue
+
+            # Use daily_allocations if available
+            if task.daily_allocations:
+                for date_str, hours in task.daily_allocations.items():
+                    if date_str in self.daily_allocations:
+                        self.daily_allocations[date_str] += hours
+                    else:
+                        self.daily_allocations[date_str] = hours
+
+    def _count_weekdays(self, start_date: datetime, end_date: datetime) -> int:
+        """Count weekdays between start and end date (inclusive).
+
+        Args:
+            start_date: Start date
+            end_date: End date
+
+        Returns:
+            Number of weekdays (Monday-Friday)
+        """
+        count = 0
+        current = start_date
+        while current <= end_date:
+            if current.weekday() < 5:  # Monday=0 to Friday=4
+                count += 1
+            current += timedelta(days=1)
+        return count
+
+    def _is_weekend(self, date: datetime) -> bool:
+        """Check if a date is a weekend.
+
+        Args:
+            date: Date to check
+
+        Returns:
+            True if Saturday or Sunday, False otherwise
+        """
+        return date.weekday() >= 5  # Saturday=5, Sunday=6
+
+    def _allocate_greedy(  # noqa: C901
+        self,
+        task: Task,
+        daily_allocations: dict[str, float],
+        start_date: datetime,
+        max_hours_per_day: float,
+        repository,
+    ) -> Task | None:
+        """Allocate task using greedy forward allocation (helper method).
+
+        This is a helper method that can be used by strategies that need
+        greedy allocation without using self.daily_allocations.
+
+        Args:
+            task: Task to schedule
+            daily_allocations: Daily allocations dict to update
+            start_date: Starting date for allocation
+            max_hours_per_day: Maximum hours per day
+            repository: Task repository for deadline calculation
+
+        Returns:
+            Copy of task with updated schedule, or None if allocation fails
+        """
+        import copy
+        from datetime import timedelta
+
+        from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
+        from domain.services.deadline_calculator import DeadlineCalculator
+
+        if not task.estimated_duration:
+            return None
+
+        task_copy = copy.deepcopy(task)
+
+        # Type narrowing: estimated_duration is guaranteed to be float at this point
+        assert task_copy.estimated_duration is not None
+
+        original_daily_allocations = copy.deepcopy(daily_allocations)
+        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy, repository)
+
+        current_date = start_date
+        remaining_hours = task_copy.estimated_duration
+        schedule_start = None
+        schedule_end = None
+        first_allocation = True
+        task_daily_allocations = {}
+
+        while remaining_hours > 0:
+            if self._is_weekend(current_date):
+                current_date += timedelta(days=1)
+                continue
+
+            if effective_deadline:
+                deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
+                if current_date > deadline_dt:
+                    # Revert allocations
+                    for key in list(daily_allocations.keys()):
+                        daily_allocations[key] = original_daily_allocations.get(key, 0.0)
+                    return None
+
+            date_str = current_date.strftime("%Y-%m-%d")
+            current_allocation = daily_allocations.get(date_str, 0.0)
+            available_hours = max_hours_per_day - current_allocation
+
+            if available_hours > 0:
+                if first_allocation:
+                    schedule_start = current_date
+                    first_allocation = False
+
+                allocated = min(remaining_hours, available_hours)
+                daily_allocations[date_str] = current_allocation + allocated
+                task_daily_allocations[date_str] = allocated
+                remaining_hours -= allocated
+                schedule_end = current_date
+
+            current_date += timedelta(days=1)
+
+        if schedule_start and schedule_end:
+            task_copy.planned_start = schedule_start.strftime(DATETIME_FORMAT)
+            end_date_with_time = schedule_end.replace(hour=DEFAULT_END_HOUR, minute=0, second=0)
+            task_copy.planned_end = end_date_with_time.strftime(DATETIME_FORMAT)
+            task_copy.daily_allocations = task_daily_allocations
+            return task_copy
+
+        # Revert allocations
+        for key in list(daily_allocations.keys()):
+            daily_allocations[key] = original_daily_allocations.get(key, 0.0)
+        return None
 
     @abstractmethod
     def _sort_schedulable_tasks(
@@ -95,17 +250,20 @@ class OptimizationStrategy(ABC):
     def _allocate_task(
         self,
         task: Task,
-        allocator: WorkloadAllocator,
         start_date: datetime,
         max_hours_per_day: float,
     ) -> Task | None:
         """Allocate time block for a single task.
 
         Subclasses must implement this to define their allocation logic.
+        The strategy has access to:
+        - self.daily_allocations: Current daily allocation state
+        - self.repository: Task repository for hierarchy queries
+        - self.start_date: Starting date for allocation
+        - self.max_hours_per_day: Maximum hours per day constraint
 
         Args:
             task: Task to schedule
-            allocator: Workload allocator (for tracking daily_allocations)
             start_date: Starting date for allocation
             max_hours_per_day: Maximum hours per day
 

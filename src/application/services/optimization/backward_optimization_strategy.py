@@ -4,7 +4,6 @@ import copy
 from datetime import datetime, timedelta
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.workload_allocator import WorkloadAllocator
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
 from domain.entities.task import Task
 from domain.services.deadline_calculator import DeadlineCalculator
@@ -59,7 +58,6 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
     def _allocate_task(
         self,
         task: Task,
-        allocator: WorkloadAllocator,
         start_date: datetime,
         max_hours_per_day: float,
     ) -> Task | None:
@@ -67,7 +65,6 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
 
         Args:
             task: Task to schedule
-            allocator: Workload allocator (for tracking daily_allocations)
             start_date: Earliest allowed start date
             max_hours_per_day: Maximum hours per day
 
@@ -84,9 +81,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         assert task_copy.estimated_duration is not None
 
         # Calculate effective deadline considering parent task deadlines
-        effective_deadline = DeadlineCalculator.get_effective_deadline(
-            task_copy, allocator.repository
-        )
+        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy, self.repository)
 
         # Determine the target end date
         if effective_deadline:
@@ -117,7 +112,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
                 return None
 
             date_str = current_date.strftime("%Y-%m-%d")
-            current_allocation = allocator.daily_allocations.get(date_str, 0.0)
+            current_allocation = self.daily_allocations.get(date_str, 0.0)
 
             # Calculate available hours for this day
             available_hours = max_hours_per_day - current_allocation
@@ -132,9 +127,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
 
         # Apply allocations (we collected them in reverse, so apply in correct order)
         for date_str, hours, date_obj in reversed(temp_allocations):
-            allocator.daily_allocations[date_str] = (
-                allocator.daily_allocations.get(date_str, 0.0) + hours
-            )
+            self.daily_allocations[date_str] = self.daily_allocations.get(date_str, 0.0) + hours
             task_daily_allocations[date_str] = hours
 
             # Track start and end

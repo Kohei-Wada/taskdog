@@ -4,7 +4,6 @@ import copy
 from datetime import datetime, timedelta
 
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.workload_allocator import WorkloadAllocator
 from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
 from domain.entities.task import Task
@@ -52,7 +51,6 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
     def _allocate_task(  # noqa: C901
         self,
         task: Task,
-        allocator: WorkloadAllocator,
         start_date: datetime,
         max_hours_per_day: float,
     ) -> Task | None:
@@ -60,7 +58,6 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
 
         Args:
             task: Task to schedule
-            allocator: Workload allocator (for tracking daily_allocations)
             start_date: Starting date for allocation
             max_hours_per_day: Maximum hours per day
 
@@ -77,9 +74,7 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         assert task_copy.estimated_duration is not None
 
         # Calculate effective deadline considering parent task deadlines
-        effective_deadline = DeadlineCalculator.get_effective_deadline(
-            task_copy, allocator.repository
-        )
+        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy, self.repository)
 
         # Calculate end date for distribution
         if effective_deadline:
@@ -112,7 +107,7 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
                 continue
 
             date_str = current_date.strftime("%Y-%m-%d")
-            current_allocation = allocator.daily_allocations.get(date_str, 0.0)
+            current_allocation = self.daily_allocations.get(date_str, 0.0)
 
             # Calculate how much we want to allocate today (balanced approach)
             desired_allocation = min(target_hours_per_day, remaining_hours)
@@ -127,7 +122,7 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
 
                 # Allocate as much as possible (up to desired amount)
                 allocated = min(desired_allocation, available_hours)
-                allocator.daily_allocations[date_str] = current_allocation + allocated
+                self.daily_allocations[date_str] = current_allocation + allocated
                 task_daily_allocations[date_str] = allocated
                 remaining_hours -= allocated
 
@@ -140,7 +135,7 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         if remaining_hours > 0:
             # Rollback allocations and return None
             for date_str, hours in task_daily_allocations.items():
-                allocator.daily_allocations[date_str] -= hours
+                self.daily_allocations[date_str] -= hours
             return None
 
         # Set planned times
