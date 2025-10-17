@@ -51,7 +51,15 @@
       "Bash(PYTHONPATH=src XDG_DATA_HOME=/tmp/test_tui_refactor uv run python:*)",
       "Bash(PYTHONPATH=src XDG_DATA_HOME=/tmp/test_pause_command uv run python:*)",
       "Bash(PYTHONPATH=src XDG_DATA_HOME=/tmp/test_tui_pause uv run python:*)",
-      "Read(//tmp/test_reload/taskdog/**)"
+      "Read(//tmp/test_reload/taskdog/**)",
+      "Bash(__NEW_LINE__ Strategies can override this method for custom sorting logic.)",
+      "Bash(__NEW_LINE__ Args:)",
+      "Bash(start_date: Reference date for deadline calculations)",
+      "Bash(repository: Reserved for future dependency-aware sorting.)",
+      "Bash(Currently unused but kept for backward compatibility)",
+      "Bash(with existing optimization strategies.)",
+      "Bash(repository: Deprecated. Will be removed in v2.0.)",
+      "Bash(__NEW_LINE__ Aliases: est)"
     ],
     "deny": [],
     "ask": []

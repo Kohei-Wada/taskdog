@@ -45,6 +45,8 @@ class GanttWidget(Static):
         # Import here to avoid circular imports
         from datetime import timedelta
 
+        from rich.console import Group
+
         from presentation.console.rich_console_writer import RichConsoleWriter
         from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
 
@@ -90,12 +92,16 @@ class GanttWidget(Static):
         console_writer = RichConsoleWriter(console)
         renderer = RichGanttRenderer(console_writer)
 
-        # Build the table and update widget directly
-        # Textual's Static widget can render Rich Table objects directly
+        # Build the table and legend, then combine them
+        # Textual's Static widget can render Rich Table and Text objects directly
         try:
             table = renderer.build_table(self._tasks, start_date, end_date)
             if table:
-                self.update(table)
+                # Build legend using the same method as CLI gantt command
+                legend = renderer._build_legend()
+                # Combine table and legend using Rich's Group
+                content = Group(table, "", legend)  # Empty string adds spacing
+                self.update(content)
             else:
                 self.update("No tasks to display")
         except Exception as e:
