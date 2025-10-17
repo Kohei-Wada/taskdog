@@ -99,12 +99,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             task_effective_deadlines,
         )
 
-        # Build updated tasks with schedules
-        updated_tasks = self._build_updated_tasks(
-            task_map, task_start_dates, task_end_dates, task_daily_allocations
-        )
-
-        # Record tasks that couldn't be fully scheduled
+        # Identify tasks that couldn't be fully scheduled
+        fully_scheduled_task_ids = set()
         for task_id, remaining_hours in task_remaining.items():
             if remaining_hours > 0.001:  # Task not fully scheduled
                 task = task_map[task_id]
@@ -123,6 +119,18 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                             task=task, reason="Deadline too close or no time available"
                         )
                     )
+            else:
+                # Fully scheduled
+                fully_scheduled_task_ids.add(task_id)
+
+        # Build updated tasks with schedules (only fully scheduled tasks)
+        updated_tasks = self._build_updated_tasks(
+            task_map,
+            task_start_dates,
+            task_end_dates,
+            task_daily_allocations,
+            fully_scheduled_task_ids,
+        )
 
         # Update parent task periods based on children
         # Schedule propagation removed (no parent-child hierarchy)
@@ -213,6 +221,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         task_start_dates: dict[int, datetime],
         task_end_dates: dict[int, datetime],
         task_daily_allocations: dict[int, dict[str, float]],
+        fully_scheduled_task_ids: set[int],
     ) -> list[Task]:
         """Build updated tasks with schedules.
 
@@ -221,13 +230,15 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             task_start_dates: Dict of task start dates
             task_end_dates: Dict of task end dates
             task_daily_allocations: Dict of daily allocations per task
+            fully_scheduled_task_ids: Set of task IDs that were fully scheduled
 
         Returns:
-            List of updated tasks with schedules
+            List of updated tasks with schedules (only fully scheduled tasks)
         """
         updated_tasks = []
         for task_id, task in task_map.items():
-            if task_id in task_start_dates:
+            # Only include fully scheduled tasks
+            if task_id in fully_scheduled_task_ids and task_id in task_start_dates:
                 start_dt = task_start_dates[task_id]
                 end_dt = task_end_dates[task_id]
 
