@@ -77,9 +77,8 @@ class OptimizationStrategy(ABC):
             if updated_task:
                 updated_tasks.append(updated_task)
             else:
-                # If allocation failed and no specific reason was recorded, use default
-                if not any(f.task.id == task.id for f in self.failed_tasks):
-                    self._record_failure(task, "Could not find available time slot before deadline")
+                # Record allocation failure with default reason
+                self._record_allocation_failure(task, updated_task)
 
         # 6. Return modified tasks, daily allocations, and failed tasks
         return updated_tasks, self.daily_allocations, self.failed_tasks
@@ -157,6 +156,26 @@ class OptimizationStrategy(ABC):
             reason: Human-readable reason for the failure
         """
         self.failed_tasks.append(SchedulingFailure(task=task, reason=reason))
+
+    def _record_allocation_failure(
+        self,
+        task: Task,
+        updated_task: Task | None,
+        default_reason: str = "Could not find available time slot before deadline",
+    ) -> None:
+        """Record allocation failure if task wasn't successfully scheduled.
+
+        This is a convenience method that checks if allocation succeeded and
+        records a failure if it didn't, avoiding duplicate failure records.
+
+        Args:
+            task: Original task
+            updated_task: Result from allocation (None if failed)
+            default_reason: Default failure reason if none recorded
+        """
+        # Only record if allocation failed and not already recorded
+        if not updated_task and not any(f.task.id == task.id for f in self.failed_tasks):
+            self._record_failure(task, default_reason)
 
     def _allocate_greedy(  # noqa: C901
         self,

@@ -86,8 +86,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             if updated_task:
                 updated_tasks.append(updated_task)
             else:
-                # Record failure with reason
-                self._record_failure(task, "Could not find available time slot before deadline")
+                # Record allocation failure
+                self._record_allocation_failure(task, updated_task)
 
         # Return modified tasks, daily allocations, and failed tasks
         return updated_tasks, self.daily_allocations, self.failed_tasks
