@@ -3,6 +3,7 @@
 import random
 from datetime import datetime
 
+from application.dto.optimization_result import SchedulingFailure
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT
@@ -32,7 +33,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-    ) -> tuple[list[Task], dict[str, float]]:
+    ) -> tuple[list[Task], dict[str, float], list[SchedulingFailure]]:
         """Optimize task schedules using Monte Carlo simulation.
 
         Args:
@@ -54,7 +55,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
 
         if not schedulable_tasks:
-            return [], {}
+            return [], {}, []
 
         # Initialize context for allocation
         self.repository = repository
@@ -78,7 +79,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
                 updated_tasks.append(updated_task)
 
         # Return modified tasks and daily allocations
-        return updated_tasks, self.daily_allocations
+        return updated_tasks, self.daily_allocations, []
 
     def _monte_carlo_simulation(
         self,

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from application.dto.complete_task_input import CompleteTaskInput
 from application.dto.create_task_input import CreateTaskInput
+from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.dto.pause_task_input import PauseTaskInput
 from application.dto.remove_task_input import RemoveTaskInput
@@ -118,8 +119,7 @@ class TaskService:
         start_date: datetime | None = None,
         max_hours_per_day: float | None = None,
         force_override: bool | None = None,
-        dry_run: bool = False,
-    ) -> tuple[list[Task], dict[str, float]]:
+    ) -> OptimizationResult:
         """Optimize task schedules.
 
         Args:
@@ -127,10 +127,9 @@ class TaskService:
             start_date: Start date (default: calculated)
             max_hours_per_day: Max hours per day (default: from config)
             force_override: Force override existing schedules (default: from config)
-            dry_run: Preview without saving
 
         Returns:
-            Tuple of (optimized tasks, summary)
+            OptimizationResult containing successful/failed tasks and summary
         """
         if start_date is None:
             start_date = self._calculate_start_date()
@@ -141,7 +140,6 @@ class TaskService:
             force_override=(
                 force_override if force_override is not None else self.config.default_force_override
             ),
-            dry_run=dry_run,
             algorithm_name=algorithm,
         )
 

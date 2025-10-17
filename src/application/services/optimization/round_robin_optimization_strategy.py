@@ -3,6 +3,7 @@
 import copy
 from datetime import datetime, timedelta
 
+from application.dto.optimization_result import SchedulingFailure
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR, DEFAULT_START_HOUR
@@ -28,7 +29,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-    ) -> tuple[list[Task], dict[str, float]]:
+    ) -> tuple[list[Task], dict[str, float], list[SchedulingFailure]]:
         """Optimize task schedules using round-robin algorithm.
 
         Args:
@@ -39,9 +40,10 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             force_override: Whether to override existing schedules
 
         Returns:
-            Tuple of (modified_tasks, daily_allocations)
+            Tuple of (modified_tasks, daily_allocations, failed_tasks)
             - modified_tasks: List of tasks with updated schedules
             - daily_allocations: Dict mapping date strings to allocated hours
+            - failed_tasks: List of tasks that could not be scheduled (empty for round-robin)
         """
         # Initialize service instances
         task_filter = TaskFilter()
@@ -50,7 +52,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
 
         if not schedulable_tasks:
-            return [], {}
+            return [], {}, []
 
         # Filter out tasks without ID (should not happen, but for type safety)
         schedulable_tasks = [t for t in schedulable_tasks if t.id is not None]
@@ -102,8 +104,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         # Update parent task periods based on children
         # Schedule propagation removed (no parent-child hierarchy)
 
-        # Return modified tasks and daily allocations
-        return updated_tasks, daily_allocations
+        # Return modified tasks, daily allocations, and empty failed list
+        return updated_tasks, daily_allocations, []
 
     def _allocate_round_robin(
         self,

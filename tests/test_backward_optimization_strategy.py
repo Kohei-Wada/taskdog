@@ -46,11 +46,11 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Verify
-        self.assertEqual(len(modified_tasks), 1)
-        task = modified_tasks[0]
+        self.assertEqual(len(result.successful_tasks), 1)
+        task = result.successful_tasks[0]
 
         # Should be scheduled on Friday (closest to deadline)
         self.assertEqual(task.planned_start, "2025-10-24 09:00:00")
@@ -76,11 +76,11 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Verify
-        self.assertEqual(len(modified_tasks), 1)
-        task = modified_tasks[0]
+        self.assertEqual(len(result.successful_tasks), 1)
+        task = result.successful_tasks[0]
 
         # Should start on Thursday
         self.assertEqual(task.planned_start, "2025-10-23 09:00:00")
@@ -102,11 +102,11 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Verify
-        self.assertEqual(len(modified_tasks), 1)
-        task = modified_tasks[0]
+        self.assertEqual(len(result.successful_tasks), 1)
+        task = result.successful_tasks[0]
 
         # Should be scheduled (using default 1-week period)
         self.assertIsNotNone(task.planned_start)
@@ -134,11 +134,11 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Verify
-        self.assertEqual(len(modified_tasks), 1)
-        task = modified_tasks[0]
+        self.assertEqual(len(result.successful_tasks), 1)
+        task = result.successful_tasks[0]
 
         # Should respect max_hours_per_day
         for _date_str, hours in task.daily_allocations.items():
@@ -174,17 +174,17 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Both tasks should be scheduled
-        self.assertEqual(len(modified_tasks), 2)
+        self.assertEqual(len(result.successful_tasks), 2)
 
         # Task 1 (further deadline) is processed first, scheduled on Friday
-        task1 = [t for t in modified_tasks if t.deadline == "2025-10-24 18:00:00"][0]
+        task1 = [t for t in result.successful_tasks if t.deadline == "2025-10-24 18:00:00"][0]
         self.assertEqual(task1.planned_start, "2025-10-24 09:00:00")
 
         # Task 2 (closer deadline) is processed second, scheduled on Wednesday
-        task2 = [t for t in modified_tasks if t.deadline == "2025-10-22 18:00:00"][0]
+        task2 = [t for t in result.successful_tasks if t.deadline == "2025-10-22 18:00:00"][0]
         self.assertEqual(task2.planned_start, "2025-10-22 09:00:00")
 
     def test_backward_fails_when_deadline_before_start(self):
@@ -203,10 +203,10 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Task should not be scheduled
-        self.assertEqual(len(modified_tasks), 0)
+        self.assertEqual(len(result.successful_tasks), 0)
 
     def test_backward_skips_weekends(self):
         """Test that backward strategy skips weekends when allocating."""
@@ -225,11 +225,11 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Verify
-        self.assertEqual(len(modified_tasks), 1)
-        task = modified_tasks[0]
+        self.assertEqual(len(result.successful_tasks), 1)
+        task = result.successful_tasks[0]
 
         # Should be scheduled on Monday (deadline day)
         self.assertEqual(task.planned_start, "2025-10-27 09:00:00")

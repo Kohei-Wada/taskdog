@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 
+from application.dto.optimization_result import SchedulingFailure
 from application.services.task_filter import TaskFilter
 from domain.entities.task import Task, TaskStatus
 from domain.services.task_eligibility_checker import TaskEligibilityChecker
@@ -33,7 +34,7 @@ class OptimizationStrategy(ABC):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-    ) -> tuple[list[Task], dict[str, float]]:
+    ) -> tuple[list[Task], dict[str, float], list[SchedulingFailure]]:
         """Optimize task schedules using template method pattern.
 
         This method defines the common workflow for all optimization strategies.
@@ -47,15 +48,17 @@ class OptimizationStrategy(ABC):
             force_override: Whether to override existing schedules
 
         Returns:
-            Tuple of (modified_tasks, daily_allocations)
+            Tuple of (modified_tasks, daily_allocations, failed_tasks)
             - modified_tasks: List of tasks with updated schedules
             - daily_allocations: Dict mapping date strings to allocated hours
+            - failed_tasks: List of tasks that could not be scheduled with reasons
         """
         # 1. Initialize context (instance variables for use by subclasses)
         self.repository = repository
         self.start_date = start_date
         self.max_hours_per_day = max_hours_per_day
         self.daily_allocations: dict[str, float] = {}
+        self.failed_tasks: list[SchedulingFailure] = []
 
         # 2. Initialize daily_allocations with existing scheduled tasks
         self._initialize_allocations(tasks, force_override)
@@ -73,9 +76,13 @@ class OptimizationStrategy(ABC):
             updated_task = self._allocate_task(task, start_date, max_hours_per_day)
             if updated_task:
                 updated_tasks.append(updated_task)
+            else:
+                # If allocation failed and no specific reason was recorded, use default
+                if not any(f.task.id == task.id for f in self.failed_tasks):
+                    self._record_failure(task, "Could not find available time slot before deadline")
 
-        # 6. Return modified tasks and daily allocations
-        return updated_tasks, self.daily_allocations
+        # 6. Return modified tasks, daily allocations, and failed tasks
+        return updated_tasks, self.daily_allocations, self.failed_tasks
 
     def _initialize_allocations(self, tasks: list[Task], force_override: bool) -> None:
         """Initialize daily_allocations with existing scheduled tasks.
@@ -138,6 +145,18 @@ class OptimizationStrategy(ABC):
             True if Saturday or Sunday, False otherwise
         """
         return date.weekday() >= 5  # Saturday=5, Sunday=6
+
+    def _record_failure(self, task: Task, reason: str) -> None:
+        """Record a task scheduling failure with a reason.
+
+        Subclasses can call this method to record specific failure reasons
+        for tasks that could not be scheduled.
+
+        Args:
+            task: The task that failed to be scheduled
+            reason: Human-readable reason for the failure
+        """
+        self.failed_tasks.append(SchedulingFailure(task=task, reason=reason))
 
     def _allocate_greedy(  # noqa: C901
         self,

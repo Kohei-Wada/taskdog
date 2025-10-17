@@ -4,16 +4,41 @@ from datetime import datetime
 
 import click
 
+from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_input import OptimizeScheduleInput
-from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
-from presentation.renderers.rich_optimization_renderer import RichOptimizationRenderer
+from presentation.console.console_writer import ConsoleWriter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 from shared.utils.date_utils import get_next_weekday
+
+
+def _show_failed_tasks(console_writer: ConsoleWriter, result: OptimizationResult) -> None:
+    """Show details of failed tasks.
+
+    Args:
+        console_writer: Console writer for output
+        result: Optimization result containing failed tasks
+    """
+    console_writer.empty_line()
+    for failure in result.failed_tasks:
+        console_writer.print(f"  Task {failure.task.id}: {failure.task.name}")
+        console_writer.print(f"  → {failure.reason}")
+
+
+def _show_no_tasks_message(console_writer: ConsoleWriter) -> None:
+    """Show message when no tasks were optimized.
+
+    Args:
+        console_writer: Console writer for output
+    """
+    console_writer.warning("No tasks were optimized.")
+    console_writer.print("\nPossible reasons:")
+    console_writer.print("  - All tasks already have schedules (use --force to override)")
+    console_writer.print("  - No tasks have estimated_duration set")
+    console_writer.print("  - All tasks are completed")
 
 
 @click.command(
@@ -21,7 +46,7 @@ from shared.utils.date_utils import get_next_weekday
     help="""Auto-generate optimal schedules for tasks based on priority, deadlines, and workload.
 
 Schedules tasks with estimated_duration across weekdays, respecting max hours/day.
-Use --force to override existing schedules, --dry-run to preview changes.
+Use --force to override existing schedules.
 """,
 )
 @click.option(
@@ -55,73 +80,50 @@ Use --force to override existing schedules, --dry-run to preview changes.
     ),
 )
 @click.option("--force", "-f", is_flag=True, help="Override existing schedules")
-@click.option("--dry-run", "-d", is_flag=True, help="Preview without saving")
 @click.pass_context
 @handle_command_errors("optimizing schedules")
-def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force, dry_run):
+def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
     """Auto-generate optimal schedules for tasks."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
 
     # Parse start_date or use next weekday
-    start_dt = datetime.strptime(start_date, DATETIME_FORMAT) if start_date else get_next_weekday()
-
-    # Get all tasks before optimization to track changes
-    all_tasks_before = repository.get_all()
-    task_states_before = {t.id: t.planned_start for t in all_tasks_before}
-
-    # Create input DTO
-    input_dto = OptimizeScheduleInput(
-        start_date=start_dt,
-        max_hours_per_day=max_hours_per_day,
-        force_override=force,
-        dry_run=dry_run,
-        algorithm_name=algorithm,
+    start_date = (
+        datetime.strptime(start_date, DATETIME_FORMAT) if start_date else get_next_weekday()
     )
 
     # Execute optimization
     use_case = OptimizeScheduleUseCase(repository)
-    modified_tasks, daily_allocations = use_case.execute(input_dto)
-
-    # Display results
-    if not modified_tasks:
-        console_writer.warning("No tasks were optimized.")
-        console_writer.print("\nPossible reasons:")
-        console_writer.print("  - All tasks already have schedules (use --force to override)")
-        console_writer.print("  - No tasks have estimated_duration set")
-        console_writer.print("  - All tasks are completed")
-        return
-
-    # Calculate summary
-    summary_builder = OptimizationSummaryBuilder(repository)
-    summary = summary_builder.build(
-        modified_tasks, task_states_before, daily_allocations, max_hours_per_day
+    result = use_case.execute(
+        OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=max_hours_per_day,
+            force_override=force,
+            algorithm_name=algorithm,
+        )
     )
 
-    # Show summary header
-    console_writer.optimization_result(len(modified_tasks), dry_run)
+    # Handle empty result (no tasks to optimize)
+    if result.all_failed():
+        console_writer.warning("All tasks failed to be scheduled.")
+        _show_failed_tasks(console_writer, result)
+        return
 
-    # Render and print Gantt chart
-    gantt_renderer = RichGanttRenderer(console_writer)
-    gantt_renderer.render(modified_tasks)
+    if len(result.successful_tasks) == 0:
+        _show_no_tasks_message(console_writer)
+        return
 
-    # Create optimization renderer for summary and warnings
-    renderer = RichOptimizationRenderer(console_writer)
-
-    # Show summary section
-    renderer.format_summary(summary)
-
-    # Show warnings
-    renderer.format_warnings(summary, max_hours_per_day)
-
-    # Show configuration
-    console_writer.print("\n[bold]Configuration:[/bold]")
-    console_writer.print(f"  Algorithm: {algorithm}")
-    console_writer.print(f"  Start date: {start_dt.strftime(DATETIME_FORMAT)}")
-    console_writer.print(f"  Max hours/day: {max_hours_per_day}h")
-    console_writer.print(f"  Force override: {force}")
-
-    if dry_run:
-        print("\n")  # Add spacing
-        console_writer.info("Changes not saved. Remove --dry-run to apply.")
+    # Show success/partial success summary
+    success_count = len(result.successful_tasks)
+    if result.has_failures():
+        failed_count = len(result.failed_tasks)
+        console_writer.warning(
+            f"Optimized {success_count} task(s) using '{algorithm}' "
+            f"({failed_count} could not be scheduled)"
+        )
+        _show_failed_tasks(console_writer, result)
+    else:
+        console_writer.print_success(
+            f"Optimized {success_count} task(s) using '{algorithm}' (all tasks scheduled)"
+        )

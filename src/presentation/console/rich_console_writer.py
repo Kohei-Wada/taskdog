@@ -74,6 +74,14 @@ class RichConsoleWriter(ConsoleWriter):
         """
         self._console.print(f"[{STYLE_INFO}]{ICON_INFO}[/{STYLE_INFO}] {message}")
 
+    def print_success(self, message: str) -> None:
+        """Print generic success message without task object.
+
+        Args:
+            message: Success message to display
+        """
+        self._console.print(f"[{STYLE_SUCCESS}]{ICON_SUCCESS}[/{STYLE_SUCCESS}] {message}")
+
     def update_success(
         self,
         task: Task,

@@ -62,6 +62,15 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
+    def print_success(self, message: str) -> None:
+        """Print generic success message without task object.
+
+        Args:
+            message: Success message to display
+        """
+        pass
+
+    @abstractmethod
     def update_success(
         self,
         task: Task,

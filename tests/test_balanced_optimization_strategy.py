@@ -46,11 +46,11 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="balanced"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Verify balanced distribution
-        self.assertEqual(len(modified_tasks), 1)
-        task = modified_tasks[0]
+        self.assertEqual(len(result.successful_tasks), 1)
+        task = result.successful_tasks[0]
 
         # Should start on Monday
         self.assertEqual(task.planned_start, "2025-10-20 09:00:00")
@@ -74,11 +74,11 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="balanced"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Verify
-        self.assertEqual(len(modified_tasks), 1)
-        task = modified_tasks[0]
+        self.assertEqual(len(result.successful_tasks), 1)
+        task = result.successful_tasks[0]
 
         # Should be scheduled (using default 2-week period)
         self.assertIsNotNone(task.planned_start)
@@ -106,11 +106,11 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="balanced"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Verify
-        self.assertEqual(len(modified_tasks), 1)
-        task = modified_tasks[0]
+        self.assertEqual(len(result.successful_tasks), 1)
+        task = result.successful_tasks[0]
 
         # Should respect max_hours_per_day
         for _date_str, hours in task.daily_allocations.items():
@@ -143,13 +143,13 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="balanced"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Both tasks should be scheduled
-        self.assertEqual(len(modified_tasks), 2)
+        self.assertEqual(len(result.successful_tasks), 2)
 
         # Each task should have daily allocations
-        for task in modified_tasks:
+        for task in result.successful_tasks:
             self.assertIsNotNone(task.daily_allocations)
             total = sum(task.daily_allocations.values())
             self.assertAlmostEqual(total, 6.0, places=5)
@@ -171,10 +171,10 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         optimize_input = OptimizeScheduleInput(
             start_date=start_date, max_hours_per_day=6.0, algorithm_name="balanced"
         )
-        modified_tasks, _ = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_use_case.execute(optimize_input)
 
         # Task should not be scheduled
-        self.assertEqual(len(modified_tasks), 0)
+        self.assertEqual(len(result.successful_tasks), 0)
 
 
 if __name__ == "__main__":
