@@ -30,10 +30,11 @@ class TaskTable(DataTable):
     def setup_columns(self):
         """Set up table columns."""
         self.add_column("ID", width=6)
-        self.add_column("Name", width=40)
-        self.add_column("Priority", width=10)
-        self.add_column("Status", width=15)
-        self.add_column("Deadline", width=20)
+        self.add_column("Name", width=30)
+        self.add_column("Pri", width=5)
+        self.add_column("Status", width=12)
+        self.add_column("Duration", width=14)
+        self.add_column("Deadline", width=18)
 
     def load_tasks(self, tasks: list[Task]):
         """Load tasks into the table.
@@ -50,15 +51,19 @@ class TaskTable(DataTable):
             status_color = STATUS_STYLES.get(task.status, "white")
             status_styled = f"[{status_color}]{status_text}[/{status_color}]"
 
+            # Format duration
+            duration = self._format_duration(task)
+
             # Format deadline
-            deadline = task.deadline if task.deadline else "-"
+            deadline = self._format_deadline(task.deadline)
 
             # Add row
             self.add_row(
                 str(task.id),
-                task.name[:38] + "..." if len(task.name) > 38 else task.name,
+                task.name[:28] + "..." if len(task.name) > 28 else task.name,
                 str(task.priority),
                 status_styled,
+                duration,
                 deadline,
             )
             self._task_map[idx] = task
@@ -94,3 +99,39 @@ class TaskTable(DataTable):
         """Move cursor to bottom (G key)."""
         if self.row_count > 0:
             self.move_cursor(row=self.row_count - 1)
+
+    def _format_duration(self, task: Task) -> str:
+        """Format duration information for display.
+
+        Args:
+            task: Task to format duration for
+
+        Returns:
+            Formatted duration string
+        """
+        if not task.estimated_duration and not task.actual_duration_hours:
+            return "-"
+
+        parts = []
+        if task.estimated_duration:
+            parts.append(f"E:{task.estimated_duration}h")
+        if task.actual_duration_hours:
+            parts.append(f"A:{task.actual_duration_hours}h")
+
+        return " ".join(parts)
+
+    def _format_deadline(self, deadline: str | None) -> str:
+        """Format deadline for display.
+
+        Args:
+            deadline: Deadline string or None
+
+        Returns:
+            Formatted deadline string
+        """
+        if not deadline:
+            return "-"
+        # Show only date and time (YYYY-MM-DD HH:MM)
+        if len(deadline) >= 16:
+            return deadline[:16]
+        return deadline

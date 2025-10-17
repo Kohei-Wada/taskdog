@@ -69,9 +69,7 @@ class RichConsoleWriterTest(unittest.TestCase):
 
     def test_update_success_with_formatter(self):
         """Test update_success with custom formatter."""
-        self.writer.update_success(
-            self.test_task, "duration", 2.5, lambda x: f"{x}h"
-        )
+        self.writer.update_success(self.test_task, "duration", 2.5, lambda x: f"{x}h")
         output = self.string_io.getvalue()
         self.assertIn("Set duration for", output)
         self.assertIn("2.5h", output)

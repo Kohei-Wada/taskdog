@@ -1,8 +1,7 @@
 """Delete task command for TUI."""
 
-from application.dto.remove_task_input import RemoveTaskInput
-from application.use_cases.remove_task import RemoveTaskUseCase
 from presentation.tui.commands.base import TUICommandBase
+from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.screens.confirmation_dialog import ConfirmationDialog
 
 
@@ -20,6 +19,7 @@ class DeleteTaskCommand(TUICommandBase):
         task_id = task.id
         task_name = task.name
 
+        @handle_tui_errors("deleting task")
         def handle_confirmation(confirmed: bool | None) -> None:
             """Handle the confirmation response.
 
@@ -29,14 +29,10 @@ class DeleteTaskCommand(TUICommandBase):
             if not confirmed:
                 return  # User cancelled
 
-            try:
-                use_case = RemoveTaskUseCase(self.repository)
-                remove_input = RemoveTaskInput(task_id=task_id)
-                use_case.execute(remove_input)
-                self.reload_tasks()
-                self.notify_success(f"Deleted task: {task_name} (ID: {task_id})")
-            except Exception as e:
-                self.notify_error("Error deleting task", e)
+            # Use TaskService to remove the task
+            self.task_service.remove_task(task_id)
+            self.reload_tasks()
+            self.notify_success(f"Deleted task: {task_name} (ID: {task_id})")
 
         # Show confirmation dialog
         dialog = ConfirmationDialog(

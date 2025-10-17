@@ -19,7 +19,10 @@ from presentation.tui.commands.optimize_command import OptimizeCommand
 from presentation.tui.commands.refresh_command import RefreshCommand
 from presentation.tui.commands.show_details_command import ShowDetailsCommand
 from presentation.tui.commands.start_task_command import StartTaskCommand
+from presentation.tui.config import TUI_CONFIG, TUIConfig
+from presentation.tui.context import TUIContext
 from presentation.tui.screens.main_screen import MainScreen
+from presentation.tui.services.task_service import TaskService
 
 
 def _get_css_paths() -> list[str | Path]:
@@ -72,18 +75,36 @@ class TaskdogTUI(App):
     # Disable mouse support
     ENABLE_MOUSE: ClassVar[bool] = False
 
-    def __init__(self, repository: TaskRepository, time_tracker: TimeTracker, *args, **kwargs):
+    def __init__(
+        self,
+        repository: TaskRepository,
+        time_tracker: TimeTracker,
+        config: TUIConfig = TUI_CONFIG,
+        *args,
+        **kwargs,
+    ):
         """Initialize the TUI application.
 
         Args:
             repository: Task repository for data access
             time_tracker: Time tracker service
+            config: TUI configuration (optional, uses global config by default)
         """
         super().__init__(*args, **kwargs)
         self.repository = repository
         self.time_tracker = time_tracker
         self.query_service = TaskQueryService(repository)
+        self.config = config
         self.main_screen: MainScreen | None = None
+
+        # Initialize TUIContext and TaskService
+        self.context = TUIContext(
+            repository=repository,
+            time_tracker=time_tracker,
+            query_service=self.query_service,
+            config=config,
+        )
+        self.task_service = TaskService(repository, time_tracker, self.query_service, config)
 
     def on_mount(self) -> None:
         """Called when app is mounted."""
@@ -102,8 +123,11 @@ class TaskdogTUI(App):
         incomplete_filter = IncompleteFilter()
         tasks = self.query_service.get_filtered_tasks(incomplete_filter, sort_by="id")
 
-        # Update both gantt chart and table
+        # Update dashboard, gantt chart, and table
         if self.main_screen:
+            if self.main_screen.dashboard_widget:
+                self.main_screen.dashboard_widget.update_dashboard(tasks)
+
             if self.main_screen.gantt_widget:
                 self.main_screen.gantt_widget.update_gantt(tasks)
 
@@ -114,36 +138,36 @@ class TaskdogTUI(App):
 
     def action_refresh(self) -> None:
         """Refresh the task list."""
-        RefreshCommand(self).execute()
+        RefreshCommand(self, self.context, self.task_service).execute()
 
     def action_add_task(self) -> None:
         """Add a new task."""
-        AddTaskCommand(self).execute()
+        AddTaskCommand(self, self.context, self.task_service).execute()
 
     def action_start_task(self) -> None:
         """Start the selected task."""
-        StartTaskCommand(self).execute()
+        StartTaskCommand(self, self.context, self.task_service).execute()
 
     def action_done_task(self) -> None:
         """Complete the selected task."""
-        CompleteTaskCommand(self).execute()
+        CompleteTaskCommand(self, self.context, self.task_service).execute()
 
     def action_delete_task(self) -> None:
         """Delete the selected task."""
-        DeleteTaskCommand(self).execute()
+        DeleteTaskCommand(self, self.context, self.task_service).execute()
 
     def action_show_details(self) -> None:
         """Show details of the selected task."""
-        ShowDetailsCommand(self).execute()
+        ShowDetailsCommand(self, self.context, self.task_service).execute()
 
     def action_edit_task(self) -> None:
         """Edit the selected task."""
-        EditTaskCommand(self).execute()
+        EditTaskCommand(self, self.context, self.task_service).execute()
 
     def action_optimize(self) -> None:
         """Optimize task schedules without force override."""
-        OptimizeCommand(self, force_override=False).execute()
+        OptimizeCommand(self, self.context, self.task_service, force_override=False).execute()
 
     def action_optimize_force(self) -> None:
         """Optimize task schedules with force override."""
-        OptimizeCommand(self, force_override=True).execute()
+        OptimizeCommand(self, self.context, self.task_service, force_override=True).execute()

@@ -46,24 +46,12 @@ ConfirmationDialog {
     margin: 1 0;
 }
 
-/* Add Task Dialog */
-AddTaskDialog {
+/* Task Form Dialog (Add/Edit) */
+TaskFormDialog {
     align: center middle;
 }
 
-#add-task-dialog {
-    width: 80;
-    height: auto;
-    background: $surface;
-    border: thick $primary;
-    padding: 1;
-}
-
-/* Edit Task Dialog */
-EditTaskDialog {
-    align: center middle;
-}
-
+#add-task-dialog,
 #edit-task-dialog {
     width: 80;
     height: auto;

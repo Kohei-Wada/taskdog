@@ -53,6 +53,7 @@ packages = [
   "presentation.utils",
   "presentation.tui",
   "presentation.tui.commands",
+  "presentation.tui.forms",
   "presentation.tui.mixins",
   "presentation.tui.screens",
   "presentation.tui.services",
@@ -159,6 +160,5 @@ module = [
     "presentation.tui.app",
     "presentation.tui.widgets.*",
     "presentation.tui.screens.algorithm_selection_screen",
-    "presentation.tui.screens.add_task_dialog",
 ]
 ignore_errors = true

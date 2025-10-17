@@ -115,8 +115,7 @@ class RichTableRenderer(RichRendererBase):
         if invalid_fields:
             valid_fields = ", ".join(self.FIELD_DEFINITIONS.keys())
             raise ValueError(
-                f"Invalid field(s): {', '.join(invalid_fields)}. "
-                f"Valid fields are: {valid_fields}"
+                f"Invalid field(s): {', '.join(invalid_fields)}. Valid fields are: {valid_fields}"
             )
 
         # Create Rich table

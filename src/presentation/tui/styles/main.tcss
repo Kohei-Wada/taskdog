@@ -10,24 +10,55 @@ MainScreen {
     text-align: center;
 }
 
-#gantt-title, #table-title {
+#dashboard-title, #gantt-title, #table-title {
     padding: 1 0;
     text-align: left;
     background: transparent;
 }
 
+/* Gantt chart - main display area */
 #gantt-widget {
     width: 100%;
     height: auto;
-    max-height: 50;
+    max-height: 40;
     border: solid $primary;
     margin-bottom: 1;
     overflow-y: auto;
     overflow-x: auto;
 }
 
+/* Horizontal layout for dashboard and table */
+#bottom-section {
+    width: 100%;
+    height: auto;
+}
+
+/* Table container - left side */
+#table-container {
+    width: 60%;
+    height: auto;
+}
+
 #task-table {
     height: auto;
     min-height: 10;
+    max-height: 30;
     border: solid $primary;
+    margin-right: 1;
+    overflow-y: auto;
+}
+
+/* Dashboard container - right side */
+#dashboard-container {
+    width: 40%;
+    height: auto;
+}
+
+#dashboard-widget {
+    width: 100%;
+    height: auto;
+    min-height: 10;
+    border: solid $accent;
+    padding: 1;
+    background: $surface;
 }

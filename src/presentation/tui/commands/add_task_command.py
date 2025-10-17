@@ -3,7 +3,9 @@
 from application.dto.create_task_input import CreateTaskInput
 from application.use_cases.create_task import CreateTaskUseCase
 from presentation.tui.commands.base import TUICommandBase
-from presentation.tui.screens.add_task_dialog import AddTaskDialog
+from presentation.tui.commands.decorators import handle_tui_errors
+from presentation.tui.forms.task_form_fields import TaskFormData
+from presentation.tui.screens.task_form_dialog import TaskFormDialog
 
 
 class AddTaskCommand(TUICommandBase):
@@ -12,26 +14,28 @@ class AddTaskCommand(TUICommandBase):
     def execute(self) -> None:
         """Execute the add task command."""
 
-        def handle_task_data(data: tuple[str, int, str | None] | None) -> None:
+        @handle_tui_errors("adding task")
+        def handle_task_data(form_data: TaskFormData | None) -> None:
             """Handle the task data from the dialog.
 
             Args:
-                data: Tuple of (task_name, priority, deadline) or None if cancelled
+                form_data: Form data or None if cancelled
             """
-            if data is None:
+            if form_data is None:
                 return  # User cancelled
 
-            task_name, priority, deadline = data
+            # Use UseCase directly for create (TaskService doesn't support all params)
+            use_case = CreateTaskUseCase(self.context.repository)
+            task_input = CreateTaskInput(
+                name=form_data.name,
+                priority=form_data.priority,
+                deadline=form_data.deadline,
+                estimated_duration=form_data.estimated_duration,
+            )
+            task = use_case.execute(task_input)
+            self.reload_tasks()
+            self.notify_success(f"Added task: {task.name} (ID: {task.id})")
 
-            try:
-                use_case = CreateTaskUseCase(self.repository)
-                task_input = CreateTaskInput(name=task_name, priority=priority, deadline=deadline)
-                task = use_case.execute(task_input)
-                self.reload_tasks()
-                self.notify_success(f"Added task: {task.name} (ID: {task.id})")
-            except Exception as e:
-                self.notify_error("Error adding task", e)
-
-        # Show add task dialog
-        dialog = AddTaskDialog()
+        # Show task form dialog in add mode (no task parameter)
+        dialog = TaskFormDialog()
         self.app.push_screen(dialog, handle_task_data)

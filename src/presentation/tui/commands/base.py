@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from domain.entities.task import Task
+from presentation.tui.context import TUIContext
+from presentation.tui.services.task_service import TaskService
 
 if TYPE_CHECKING:
     from presentation.tui.app import TaskdogTUI
@@ -13,20 +15,21 @@ class TUICommandBase(ABC):
     """Base class for TUI commands.
 
     Provides common functionality for command execution including:
-    - Access to app dependencies (repository, time_tracker, query_service)
+    - Access to TUIContext and TaskService
     - Helper methods for task selection, reloading, and notifications
     """
 
-    def __init__(self, app: "TaskdogTUI"):
+    def __init__(self, app: "TaskdogTUI", context: TUIContext, task_service: TaskService):
         """Initialize the command.
 
         Args:
-            app: The TaskdogTUI application instance
+            app: The TaskdogTUI application instance (for UI operations)
+            context: TUI context with dependencies
+            task_service: Task service facade for use case operations
         """
         self.app = app
-        self.repository = app.repository
-        self.time_tracker = app.time_tracker
-        self.query_service = app.query_service
+        self.context = context
+        self.task_service = task_service
 
     @abstractmethod
     def execute(self) -> None:

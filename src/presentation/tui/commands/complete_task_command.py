@@ -1,13 +1,13 @@
 """Complete task command for TUI."""
 
-from application.dto.complete_task_input import CompleteTaskInput
-from application.use_cases.complete_task import CompleteTaskUseCase
 from presentation.tui.commands.base import TUICommandBase
+from presentation.tui.commands.decorators import handle_tui_errors
 
 
 class CompleteTaskCommand(TUICommandBase):
     """Command to complete the selected task."""
 
+    @handle_tui_errors("completing task")
     def execute(self) -> None:
         """Execute the complete task command."""
         task = self.get_selected_task()
@@ -15,11 +15,7 @@ class CompleteTaskCommand(TUICommandBase):
             self.notify_warning("No task selected")
             return
 
-        try:
-            use_case = CompleteTaskUseCase(self.repository, self.time_tracker)
-            complete_input = CompleteTaskInput(task_id=task.id)
-            use_case.execute(complete_input)
-            self.reload_tasks()
-            self.notify_success(f"Completed task: {task.name} (ID: {task.id})")
-        except Exception as e:
-            self.notify_error("Error completing task", e)
+        # Use TaskService to complete the task
+        updated_task = self.task_service.complete_task(task.id)
+        self.reload_tasks()
+        self.notify_success(f"Completed task: {updated_task.name} (ID: {updated_task.id})")

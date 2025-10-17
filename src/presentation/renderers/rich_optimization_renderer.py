@@ -91,12 +91,16 @@ class RichOptimizationRenderer:
         self.console_writer.print("\n[bold]Summary:[/bold]")
         self.console_writer.print(f"  • {summary.new_count} task(s) newly scheduled")
         if summary.rescheduled_count > 0:
-            self.console_writer.print(f"  • {summary.rescheduled_count} task(s) rescheduled (--force)")
+            self.console_writer.print(
+                f"  • {summary.rescheduled_count} task(s) rescheduled (--force)"
+            )
         self.console_writer.print(
             f"  • Total workload: {summary.total_hours}h across {summary.days_span} days"
         )
         if summary.deadline_conflicts > 0:
-            self.console_writer.print(f"  • [red]⚠[/red] Deadline conflicts: {summary.deadline_conflicts}")
+            self.console_writer.print(
+                f"  • [red]⚠[/red] Deadline conflicts: {summary.deadline_conflicts}"
+            )
         else:
             self.console_writer.print("  • Deadline conflicts: 0")
 
