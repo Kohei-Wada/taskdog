@@ -37,6 +37,7 @@ packages = [
   "application.validators",
   "application.services",
   "application.services.optimization",
+  "application.services.optimization.allocators",
   "application.sorters",
   "application.queries",
   "application.queries.filters",
