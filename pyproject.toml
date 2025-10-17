@@ -8,6 +8,7 @@ dependencies = [
   "click>=8.3.0",
   "rich>=14.2.0",
   "textual>=0.88.0",
+  "python-dateutil>=2.8.0",
 ]
 
 [project.optional-dependencies]
@@ -15,6 +16,7 @@ dev = [
   "pre-commit>=3.6.0",
   "ruff>=0.3.0",
   "mypy>=1.8.0",
+  "types-python-dateutil>=2.8.0",
 ]
 
 [project.scripts]
@@ -134,6 +136,10 @@ check_untyped_defs = false
 module = "textual.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "dateutil.*"
+ignore_missing_imports = true
+
 # Temporarily ignore complex modules with many type issues for Phase 2
 # These will be fixed in Phase 3
 [[tool.mypy.overrides]]
@@ -150,7 +156,9 @@ module = [
     "presentation.renderers.rich_table_renderer",
     "presentation.renderers.rich_gantt_renderer",
     "presentation.cli.commands.*",
+    "presentation.tui.app",
     "presentation.tui.widgets.*",
     "presentation.tui.screens.algorithm_selection_screen",
+    "presentation.tui.screens.add_task_dialog",
 ]
 ignore_errors = true

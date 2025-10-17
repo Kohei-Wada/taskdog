@@ -14,6 +14,12 @@ AlgorithmSelectionScreen {
     padding: 1;
 }
 
+#dialog-hint {
+    text-align: center;
+    padding: 0 0 1 0;
+    color: $text-muted;
+}
+
 #algorithm-list {
     height: auto;
     max-height: 15;
@@ -46,7 +52,7 @@ AddTaskDialog {
 }
 
 #add-task-dialog {
-    width: 70;
+    width: 80;
     height: auto;
     background: $surface;
     border: thick $primary;

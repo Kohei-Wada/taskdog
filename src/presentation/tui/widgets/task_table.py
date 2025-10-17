@@ -84,3 +84,13 @@ class TaskTable(DataTable):
         # Restore cursor position if still valid
         if 0 <= current_row < len(self._task_map):
             self.move_cursor(row=current_row)
+
+    def action_scroll_home(self) -> None:
+        """Move cursor to top (g key)."""
+        if self.row_count > 0:
+            self.move_cursor(row=0)
+
+    def action_scroll_end(self) -> None:
+        """Move cursor to bottom (G key)."""
+        if self.row_count > 0:
+            self.move_cursor(row=self.row_count - 1)

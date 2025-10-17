@@ -1,19 +1,19 @@
 /* Main Screen Styles */
 
 MainScreen {
-    background: $surface;
+    background: transparent;
 }
 
 #title {
     padding: 1;
-    background: $boost;
+    background: transparent;
     text-align: center;
 }
 
 #gantt-title, #table-title {
     padding: 1 0;
     text-align: left;
-    background: $panel;
+    background: transparent;
 }
 
 #gantt-widget {

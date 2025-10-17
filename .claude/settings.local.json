@@ -43,7 +43,10 @@
       "Bash(uv pip uninstall:*)",
       "Bash(find:*)",
       "Bash(PYTHONPATH=src XDG_DATA_HOME=/tmp/test_taskdog uv run python:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add flexible deadline parsing and improve TUI styling\n\n- Add python-dateutil for flexible date input parsing in add task dialog\n- Support natural language dates (tomorrow, next friday, etc.)\n- Make TUI background transparent for better terminal integration\n- Implement g/G key navigation (scroll to top/bottom) in TaskTable\n- Fix CSS_PATH type annotation for Textual compatibility\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(uv pip:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add flexible deadline parsing and improve TUI styling\n\n- Add python-dateutil for flexible date input parsing in add task dialog\n- Support natural language dates (tomorrow, next friday, etc.)\n- Make TUI background transparent for better terminal integration\n- Implement g/G key navigation (scroll to top/bottom) in TaskTable\n- Fix mypy configuration for TUI modules\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

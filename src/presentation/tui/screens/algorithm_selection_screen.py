@@ -4,8 +4,8 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Vertical
-from textual.widgets import Button, Label, OptionList
+from textual.containers import Container
+from textual.widgets import Label, OptionList
 from textual.widgets.option_list import Option
 
 from presentation.tui.screens.base_dialog import BaseModalDialog
@@ -62,33 +62,19 @@ class AlgorithmSelectionScreen(BaseModalDialog[str | None]):
         """Compose the screen layout."""
         with Container(id="algorithm-dialog"):
             yield Label("[bold cyan]Select Optimization Algorithm[/bold cyan]", id="dialog-title")
+            yield Label("[dim]Press Enter to select, Esc to cancel[/dim]", id="dialog-hint")
 
             options = [
                 Option(f"{name}: {desc}", id=algo_id) for algo_id, name, desc in self.ALGORITHMS
             ]
             yield ViOptionList(*options, id="algorithm-list")
 
-            with Vertical(id="button-container"):
-                yield Button("Select", variant="primary", id="select-button")
-                yield Button("Cancel", variant="default", id="cancel-button")
-
     def on_mount(self) -> None:
         """Called when screen is mounted."""
         # Highlight first option by default
         option_list = self.query_one("#algorithm-list", ViOptionList)
         option_list.highlighted = 0
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button press."""
-        if event.button.id == "select-button":
-            option_list = self.query_one("#algorithm-list", ViOptionList)
-            if option_list.highlighted is not None:
-                selected = self.ALGORITHMS[option_list.highlighted][0]
-                self.dismiss(selected)
-            else:
-                self.dismiss(None)
-        elif event.button.id == "cancel-button":
-            self.dismiss(None)
+        option_list.focus()
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         """Handle option selection (Enter key or double-click)."""

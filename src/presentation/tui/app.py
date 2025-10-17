@@ -21,7 +21,7 @@ from presentation.tui.commands.start_task_command import StartTaskCommand
 from presentation.tui.screens.main_screen import MainScreen
 
 
-def _get_css_paths() -> list[Path]:
+def _get_css_paths() -> list[str | Path]:
     """Get CSS file paths using importlib.resources.
 
     This ensures CSS files are found regardless of how the package is installed.
@@ -33,10 +33,10 @@ def _get_css_paths() -> list[Path]:
         # Use importlib.resources to locate the styles directory
         styles_dir = files("presentation.tui") / "styles"
         return [
-            Path(str(styles_dir / "theme.tcss")),
-            Path(str(styles_dir / "components.tcss")),
-            Path(str(styles_dir / "main.tcss")),
-            Path(str(styles_dir / "dialogs.tcss")),
+            str(styles_dir / "theme.tcss"),
+            str(styles_dir / "components.tcss"),
+            str(styles_dir / "main.tcss"),
+            str(styles_dir / "dialogs.tcss"),
         ]
     except Exception:
         # Fallback to __file__ for development
@@ -64,7 +64,10 @@ class TaskdogTUI(App):
     ]
 
     # Load CSS from external files
-    CSS_PATH: ClassVar = _get_css_paths()
+    CSS_PATH: ClassVar[list[str | Path]] = _get_css_paths()
+
+    # Disable mouse support
+    ENABLE_MOUSE: ClassVar[bool] = False
 
     def __init__(self, repository: TaskRepository, time_tracker: TimeTracker, *args, **kwargs):
         """Initialize the TUI application.

@@ -12,20 +12,20 @@ class AddTaskCommand(TUICommandBase):
     def execute(self) -> None:
         """Execute the add task command."""
 
-        def handle_task_data(data: tuple[str, int] | None) -> None:
+        def handle_task_data(data: tuple[str, int, str | None] | None) -> None:
             """Handle the task data from the dialog.
 
             Args:
-                data: Tuple of (task_name, priority) or None if cancelled
+                data: Tuple of (task_name, priority, deadline) or None if cancelled
             """
             if data is None:
                 return  # User cancelled
 
-            task_name, priority = data
+            task_name, priority, deadline = data
 
             try:
                 use_case = CreateTaskUseCase(self.repository)
-                task_input = CreateTaskInput(name=task_name, priority=priority)
+                task_input = CreateTaskInput(name=task_name, priority=priority, deadline=deadline)
                 task = use_case.execute(task_input)
                 self.reload_tasks()
                 self.notify_success(f"Added task: {task.name} (ID: {task.id})")
