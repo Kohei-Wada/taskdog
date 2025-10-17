@@ -6,7 +6,7 @@ from rich.table import Table
 
 from application.dto.task_detail_dto import TaskDetailDTO
 from presentation.console.console_writer import ConsoleWriter
-from presentation.renderers.constants import STATUS_STYLES
+from presentation.constants.colors import STATUS_STYLES
 
 
 class RichDetailRenderer:

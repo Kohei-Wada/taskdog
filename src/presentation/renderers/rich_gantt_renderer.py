@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from rich.table import Table
 from rich.text import Text
 
+from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task, TaskStatus
 from domain.services.workload_calculator import WorkloadCalculator
 from presentation.console.console_writer import ConsoleWriter
@@ -15,7 +16,6 @@ from presentation.constants.symbols import (
     SYMBOL_ACTUAL,
     SYMBOL_EMPTY,
 )
-from presentation.renderers.constants import DATETIME_FORMAT
 from presentation.renderers.rich_renderer_base import RichRendererBase
 from shared.utils.date_utils import DateTimeParser, count_weekdays
 
