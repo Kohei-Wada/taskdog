@@ -114,19 +114,20 @@ section-order = ["future", "standard-library", "third-party", "first-party", "lo
 [tool.mypy]
 python_version = "3.13"
 mypy_path = "src"
-# Progressive type checking - Phase 2: Enabled with permissive settings
+# Progressive type checking - Phase 3: Moderate strictness
 warn_unused_configs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
-# Phase 2: Basic checks only, stricter checks disabled for gradual migration
-check_untyped_defs = false
+# Phase 3: Moderate checks enabled
+check_untyped_defs = true
+strict_equality = true
+warn_return_any = true
+warn_no_return = true
+# Phase 3: Stricter checks still disabled for gradual migration
 disallow_untyped_defs = false
 disallow_any_generics = false
-warn_return_any = false
-strict_equality = false
 disallow_untyped_calls = false
 show_error_context = true
-warn_no_return = false
 
 [[tool.mypy.overrides]]
 module = "tests.*"

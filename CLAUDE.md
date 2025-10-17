@@ -58,6 +58,19 @@ make typecheck
 make check
 ```
 
+**Type Checking (mypy):**
+- Progressive type checking approach: Currently at Phase 3 (moderate strictness)
+- Phase 3 enabled checks:
+  - `check_untyped_defs = true` - Check function bodies even without type annotations
+  - `strict_equality = true` - Strict type checking for equality operations
+  - `warn_return_any = true` - Warn when returning Any type
+  - `warn_no_return = true` - Warn about functions missing return statements
+- Still disabled (reserved for Phase 4):
+  - `disallow_untyped_defs` - Would require type annotations on all functions
+  - `disallow_any_generics` - Would require explicit type parameters for generics
+  - `disallow_untyped_calls` - Would disallow calling untyped functions
+- Pre-commit hook runs mypy automatically before each commit
+
 ### Installation
 ```bash
 # Install as a CLI tool
