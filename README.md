@@ -8,6 +8,7 @@ A personal task management CLI tool with time tracking, schedule optimization, b
 
 - **Time Tracking**: Automatic time tracking with planned vs actual duration comparison
 - **Schedule Optimization**: Multiple scheduling algorithms to auto-generate optimal task schedules
+- **Interactive TUI**: Full-screen Text User Interface with keyboard shortcuts and real-time updates
 - **Multiple Task States**: PENDING, IN_PROGRESS, COMPLETED, FAILED, ARCHIVED
 - **Beautiful Terminal Output**: Rich formatting with colors and tables
 - **Gantt Chart Visualization**: Visual timeline with planned periods, actual progress, deadlines, and workload analysis
@@ -16,7 +17,7 @@ A personal task management CLI tool with time tracking, schedule optimization, b
 - **Priority Management**: Set and update task priorities
 - **Deadline Support**: Track deadlines with visual indicators
 - **Markdown Notes**: Add detailed notes to tasks with editor integration and Rich markdown rendering
-- **Batch Operations**: Start, complete, or archive multiple tasks at once
+- **Batch Operations**: Start, complete, pause, or archive multiple tasks at once
 - **Specialized Commands**: Dedicated commands for common updates (deadline, priority, rename, estimate, schedule)
 
 ## Installation
@@ -73,6 +74,9 @@ taskdog show 2
 
 # View Gantt chart with workload analysis
 taskdog gantt
+
+# Launch interactive TUI for visual task management
+taskdog tui
 ```
 
 ## Commands
@@ -134,6 +138,14 @@ taskdog start <TASK_ID> [TASK_ID ...]
 ```
 
 Sets task status to IN_PROGRESS and records actual start time. Supports multiple task IDs to start several tasks at once.
+
+### `pause` - Pause task(s)
+
+```bash
+taskdog pause <TASK_ID> [TASK_ID ...]
+```
+
+Pauses task(s) and resets time tracking by setting status back to PENDING. Useful when you need to stop working on a task temporarily. Supports multiple task IDs.
 
 ### `done` - Mark task(s) as completed
 
@@ -275,6 +287,29 @@ taskdog export -o tasks.json
 taskdog export --format json -o backup.json
 ```
 
+### `tui` - Launch Text User Interface
+
+```bash
+taskdog tui
+```
+
+Launches an interactive Text User Interface (TUI) for task management with keyboard shortcuts:
+- **Navigation**: ↑/↓ arrow keys or j/k (vim-style)
+- **Actions**:
+  - `a` - Add new task
+  - `s` - Start selected task
+  - `p` - Pause selected task
+  - `d` - Mark task as done
+  - `x` - Delete task
+  - `i` - Show task details
+  - `e` - Edit task
+  - `o` - Optimize schedules
+  - `O` - Force optimize schedules
+  - `r` - Refresh task list
+  - `q` - Quit
+
+The TUI provides a full-screen terminal interface with real-time updates and Gantt chart visualization.
+
 
 ## Task States
 
@@ -353,9 +388,10 @@ taskdog/
          dto/                       # Data Transfer Objects
       infrastructure/               # Infrastructure layer (persistence)
          persistence/               # Repository implementations
-      presentation/                 # Presentation layer (CLI, formatters)
+      presentation/                 # Presentation layer (CLI, renderers, TUI)
          cli/commands/              # Click command implementations
-         formatters/                # Rich-based output formatting
+         renderers/                 # Rich-based output formatting
+         tui/                       # Text User Interface (Textual)
       shared/                       # Shared utilities
          click_types/               # Custom Click parameter types
       utils/                        # Utility functions
@@ -373,7 +409,7 @@ Taskdog follows **Clean Architecture** principles with clear separation of conce
 - **Domain Layer** (`domain/`): Core business entities (Task), domain services (TimeTracker), and exceptions
 - **Application Layer** (`application/`): Use cases for business operations, query services for reads, and DTOs for data transfer
 - **Infrastructure Layer** (`infrastructure/`): Repository implementations for data persistence
-- **Presentation Layer** (`presentation/`): CLI commands and Rich-based formatters for terminal output
+- **Presentation Layer** (`presentation/`): CLI commands, Rich-based renderers for terminal output, and Textual-based TUI
 - **Shared Layer** (`shared/`): Cross-cutting utilities like custom Click types
 
 **Key Patterns:**
