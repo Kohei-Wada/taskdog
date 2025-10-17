@@ -35,3 +35,13 @@ repos:
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: detect-private-key
+
+  # Local hooks
+  - repo: local
+    hooks:
+      - id: unittest
+        name: Run unit tests
+        entry: uv run python -m unittest discover tests/
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
