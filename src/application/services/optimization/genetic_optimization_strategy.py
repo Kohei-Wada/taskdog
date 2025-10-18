@@ -271,6 +271,11 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             Child task ordering
         """
         size = len(parent1)
+
+        # Handle edge case: single task or empty
+        if size < 2:
+            return list(parent1)
+
         # Select two random crossover points
         start, end = sorted(random.sample(range(size), 2))
 
@@ -299,6 +304,10 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         Returns:
             Mutated task ordering
         """
+        # Handle edge case: single task or empty
+        if len(individual) < 2:
+            return list(individual)
+
         mutated = copy.copy(individual)
         # Swap two random positions
         idx1, idx2 = random.sample(range(len(mutated)), 2)
