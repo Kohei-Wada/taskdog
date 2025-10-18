@@ -24,6 +24,9 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
     5. Update parent task periods based on children
     """
 
+    DISPLAY_NAME = "Round Robin"
+    DESCRIPTION = "Parallel progress on tasks"
+
     def __init__(self, config: Config):
         """Initialize strategy with configuration.
 

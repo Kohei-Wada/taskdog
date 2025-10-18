@@ -27,6 +27,9 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
     and only implements strategy-specific allocation logic.
     """
 
+    DISPLAY_NAME = "Balanced"
+    DESCRIPTION = "Even workload distribution"
+
     def __init__(self, config: Config):
         """Initialize strategy with balanced allocator.
 

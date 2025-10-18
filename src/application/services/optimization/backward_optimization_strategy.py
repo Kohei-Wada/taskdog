@@ -29,6 +29,9 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
     and only implements strategy-specific sorting and allocation logic.
     """
 
+    DISPLAY_NAME = "Backward"
+    DESCRIPTION = "Just-in-time from deadlines"
+
     def __init__(self, config: Config):
         """Initialize strategy with backward allocator.
 

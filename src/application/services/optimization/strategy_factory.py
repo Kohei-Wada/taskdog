@@ -90,3 +90,23 @@ class StrategyFactory:
             List of algorithm names that can be used with create()
         """
         return list(cls._strategies.keys())
+
+    @classmethod
+    def get_algorithm_metadata(cls) -> list[tuple[str, str, str]]:
+        """Get metadata for all available algorithms.
+
+        Returns:
+            List of tuples (algorithm_id, display_name, description)
+            for all registered optimization algorithms.
+
+        Example:
+            >>> metadata = StrategyFactory.get_algorithm_metadata()
+            >>> metadata[0]
+            ('greedy', 'Greedy', 'Front-loads tasks (default)')
+        """
+        metadata = []
+        for algo_id, strategy_class in cls._strategies.items():
+            display_name = getattr(strategy_class, "DISPLAY_NAME", algo_id.title())
+            description = getattr(strategy_class, "DESCRIPTION", "")
+            metadata.append((algo_id, display_name, description))
+        return metadata

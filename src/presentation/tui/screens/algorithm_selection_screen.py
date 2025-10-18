@@ -10,6 +10,7 @@ from textual.containers import Container, Vertical
 from textual.widgets import Input, Label, OptionList, Static
 from textual.widgets.option_list import Option
 
+from application.services.optimization.strategy_factory import StrategyFactory
 from presentation.tui.screens.base_dialog import BaseModalDialog
 from shared.config_manager import Config
 
@@ -49,18 +50,6 @@ class ViOptionList(OptionList):
 class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | None]):
     """Modal screen for selecting optimization algorithm, max hours, and start date."""
 
-    ALGORITHMS: ClassVar = [
-        ("greedy", "Greedy", "Front-loads tasks (default)"),
-        ("balanced", "Balanced", "Even workload distribution"),
-        ("backward", "Backward", "Just-in-time from deadlines"),
-        ("priority_first", "Priority First", "Priority-based scheduling"),
-        ("earliest_deadline", "Earliest Deadline", "EDF algorithm"),
-        ("round_robin", "Round Robin", "Parallel progress on tasks"),
-        ("dependency_aware", "Dependency Aware", "Critical Path Method"),
-        ("genetic", "Genetic", "Evolutionary algorithm"),
-        ("monte_carlo", "Monte Carlo", "Random sampling approach"),
-    ]
-
     BINDINGS: ClassVar = [
         ("ctrl+s", "submit", "Submit"),
     ]
@@ -73,6 +62,8 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         """
         super().__init__(*args, **kwargs)
         self.config = config
+        # Get algorithm metadata dynamically from StrategyFactory
+        self.algorithms = StrategyFactory.get_algorithm_metadata()
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
@@ -88,7 +79,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
             with Vertical(id="form-container"):
                 yield Label("Algorithm:", classes="field-label")
                 options = [
-                    Option(f"{name}: {desc}", id=algo_id) for algo_id, name, desc in self.ALGORITHMS
+                    Option(f"{name}: {desc}", id=algo_id) for algo_id, name, desc in self.algorithms
                 ]
                 yield ViOptionList(*options, id="algorithm-list")
 
@@ -146,7 +137,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
             option_list.focus()
             return
 
-        selected_algo = self.ALGORITHMS[option_list.highlighted][0]
+        selected_algo = self.algorithms[option_list.highlighted][0]
 
         # Validate and parse max hours
         max_hours_str = max_hours_input.value.strip()

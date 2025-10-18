@@ -32,6 +32,9 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     - Mutation rate: 0.2
     """
 
+    DISPLAY_NAME = "Genetic"
+    DESCRIPTION = "Evolutionary algorithm"
+
     POPULATION_SIZE = 20
     GENERATIONS = 50
     CROSSOVER_RATE = 0.8

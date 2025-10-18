@@ -22,6 +22,9 @@ class PriorityFirstOptimizationStrategy(OptimizationStrategy):
     capacity before moving to the next day.
     """
 
+    DISPLAY_NAME = "Priority First"
+    DESCRIPTION = "Priority-based scheduling"
+
     def __init__(self, config: Config):
         """Initialize strategy with greedy forward allocator.
 

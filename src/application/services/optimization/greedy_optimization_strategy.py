@@ -22,6 +22,9 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
     moving to the next day, prioritizing early completion.
     """
 
+    DISPLAY_NAME = "Greedy"
+    DESCRIPTION = "Front-loads tasks (default)"
+
     def __init__(self, config: Config):
         """Initialize strategy with greedy forward allocator.
 

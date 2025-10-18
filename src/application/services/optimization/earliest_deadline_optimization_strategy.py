@@ -23,6 +23,9 @@ class EarliestDeadlineOptimizationStrategy(OptimizationStrategy):
     capacity before moving to the next day.
     """
 
+    DISPLAY_NAME = "Earliest Deadline"
+    DESCRIPTION = "EDF algorithm"
+
     def __init__(self, config: Config):
         """Initialize strategy with greedy forward allocator.
 

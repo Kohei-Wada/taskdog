@@ -28,6 +28,9 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
     - Number of simulations: 100
     """
 
+    DISPLAY_NAME = "Monte Carlo"
+    DESCRIPTION = "Random sampling approach"
+
     NUM_SIMULATIONS = 100
 
     def __init__(self, config: Config):
