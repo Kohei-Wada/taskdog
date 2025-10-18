@@ -62,7 +62,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
     ]
 
     BINDINGS: ClassVar = [
-        ("enter", "submit", "Submit"),
+        ("ctrl+s", "submit", "Submit"),
     ]
 
     def __init__(self, config: Config, *args, **kwargs):
@@ -79,7 +79,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         with Container(id="algorithm-dialog"):
             yield Label("[bold cyan]Optimize Schedule Settings[/bold cyan]", id="dialog-title")
             yield Label(
-                "[dim]Tab to switch, Enter to submit, Esc to cancel[/dim]", id="dialog-hint"
+                "[dim]Tab to switch, Ctrl+S to submit, Esc to cancel[/dim]", id="dialog-hint"
             )
 
             # Error message area
@@ -112,16 +112,6 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         option_list = self.query_one("#algorithm-list", ViOptionList)
         option_list.highlighted = 0
         option_list.focus()
-
-    def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
-        """Handle option selection (Enter key when focused on list)."""
-        # When option list has enter, submit the form
-        self.action_submit()
-
-    def on_input_submitted(self, event: Input.Submitted) -> None:
-        """Handle Enter key in input fields."""
-        # When Enter is pressed in any input field, submit the form
-        self.action_submit()
 
     def _get_default_start_date(self) -> str:
         """Calculate default start date (today if weekday, otherwise next Monday).
