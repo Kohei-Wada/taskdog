@@ -55,7 +55,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             )
 
             # Compose form fields using the common helper
-            yield from TaskFormFields.compose_form_fields(self.task_to_edit)
+            yield from TaskFormFields.compose_form_fields(self.task_to_edit, self.config)
 
     def on_mount(self) -> None:
         """Called when dialog is mounted."""

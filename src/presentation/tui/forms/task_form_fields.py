@@ -7,6 +7,7 @@ from textual.containers import Vertical
 from textual.widgets import Input, Label, Static
 
 from domain.entities.task import Task
+from shared.config_manager import Config
 
 
 @dataclass
@@ -34,17 +35,23 @@ class TaskFormFields:
     """
 
     @staticmethod
-    def compose_form_fields(task: Task | None = None) -> ComposeResult:
+    def compose_form_fields(
+        task: Task | None = None, config: Config | None = None
+    ) -> ComposeResult:
         """Compose task form fields.
 
         Args:
             task: Existing task for editing (None for new task)
+            config: Application configuration (uses default if None)
 
         Yields:
             Form field widgets
         """
         # Error message area (hidden by default)
         yield Static("", id="error-message")
+
+        # Get default priority from config
+        default_priority = config.task.default_priority if config else 5
 
         with Vertical(id="form-container"):
             # Task name field
@@ -58,7 +65,7 @@ class TaskFormFields:
             # Priority field
             yield Label("Priority (1-10):", classes="field-label")
             yield Input(
-                placeholder="Enter priority (default: 5)",
+                placeholder=f"Enter priority (default: {default_priority})",
                 id="priority-input",
                 type="integer",
                 value=str(task.priority) if task else "",
