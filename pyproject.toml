@@ -26,7 +26,6 @@ taskdog = "taskdog.cli:cli"
 packages = [
   # Core CLI
   "taskdog",
-  "utils",
   # Clean Architecture packages
   "domain",
   "domain.entities",
@@ -107,7 +106,7 @@ ignore = [
 max-complexity = 10
 
 [tool.ruff.lint.isort]
-known-first-party = ["taskdog", "domain", "application", "infrastructure", "presentation", "shared", "utils"]
+known-first-party = ["taskdog", "domain", "application", "infrastructure", "presentation", "shared"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 # mypy configuration
