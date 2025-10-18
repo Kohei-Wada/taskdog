@@ -148,6 +148,10 @@ The application follows **Clean Architecture** with distinct layers:
 - `use_cases/`: Business logic orchestration (CreateTaskUseCase, StartTaskUseCase, OptimizeScheduleUseCase, ArchiveTaskUseCase, etc.)
   - Each use case inherits from base class with `execute(input_dto)` method
   - Use cases are stateless and dependency-injected
+  - `StatusChangeUseCase`: Template Method pattern base class for status change operations
+    - Defines common workflow: get task → pre-process → validate → change status → post-process
+    - Subclasses (StartTaskUseCase, CompleteTaskUseCase, PauseTaskUseCase, ArchiveTaskUseCase) only implement `_get_target_status()` and optional hooks
+    - Eliminates code duplication across status change operations
 - `validators/`: Field-specific validation logic using Strategy Pattern + Registry
   - `FieldValidator`: Abstract base class for all field validators
     - Defines uniform interface: `validate(value, task, repository)`
@@ -162,6 +166,7 @@ The application follows **Clean Architecture** with distinct layers:
 - `services/`: Application services that coordinate complex operations
   - `WorkloadAllocator`: Distributes task hours across weekdays respecting max hours/day
   - `OptimizationSummaryBuilder`: Builds summary reports for schedule optimization
+  - `TaskStatusService`: Applies status changes with time tracking
   - `optimization/`: Multiple scheduling algorithms implementing the Strategy pattern
     - `GreedyOptimizationStrategy`: Front-loads tasks (default)
     - `BalancedOptimizationStrategy`: Even workload distribution
@@ -189,8 +194,8 @@ The application follows **Clean Architecture** with distinct layers:
 - Handles external concerns (file I/O, data persistence)
 
 **Presentation Layer** (`src/presentation/`)
-- `cli/commands/`: Click command implementations (add, table, gantt, start, done, optimize, archive, tui, etc.)
-- `cli/context.py`: CliContext dataclass for dependency injection (console_writer, repository, time_tracker)
+- `cli/commands/`: Click command implementations (add, table, gantt, start, done, pause, optimize, archive, tui, etc.)
+- `cli/context.py`: CliContext dataclass for dependency injection (console_writer, repository, time_tracker, config)
 - `cli/error_handler.py`: Decorators for consistent error handling
 - `console/`: ConsoleWriter abstraction for output formatting
   - `console_writer.py`: Abstract interface defining output methods (success, error, warning, info, etc.)
@@ -199,6 +204,11 @@ The application follows **Clean Architecture** with distinct layers:
 - `tui/`: Text User Interface components using Textual library
   - `app.py`: Main TUI application (TaskdogTUI)
   - `context.py`: TUIContext dataclass for dependency injection (repository, time_tracker, query_service, config)
+  - `commands/`: TUI command implementations using Command Pattern
+    - `base.py`: TUICommandBase abstract class defining command interface
+    - `registry.py`: CommandRegistry for automatic command registration
+    - `factory.py`: CommandFactory for creating command instances with DI
+    - Individual commands: AddTaskCommand, StartTaskCommand, CompleteTaskCommand, PauseTaskCommand, etc.
   - `screens/`: Full-screen UI screens
   - `widgets/`: Reusable TUI widgets
   - `services/task_service.py`: TaskService facade for TUI operations (uses shared Config, not TUIConfig)
@@ -235,9 +245,19 @@ Dependencies are managed through Click's context object using the `CliContext` d
 
 **Use Cases** (`src/application/use_cases/`)
 - Generic base class: `UseCase[TInput, TOutput]` with abstract `execute(input_dto)` method
-- Concrete implementations: CreateTaskUseCase, StartTaskUseCase, CompleteTaskUseCase, UpdateTaskUseCase, RemoveTaskUseCase, ArchiveTaskUseCase, OptimizeScheduleUseCase
+- Concrete implementations: CreateTaskUseCase, StartTaskUseCase, CompleteTaskUseCase, PauseTaskUseCase, UpdateTaskUseCase, RemoveTaskUseCase, ArchiveTaskUseCase, OptimizeScheduleUseCase
 - Each use case encapsulates a single business operation
 - Use cases validate inputs, orchestrate domain logic, and coordinate with repository/services
+
+**StatusChangeUseCase** - Template Method pattern for status changes
+- Base class implementing common workflow for status change operations
+- Template method `execute()`: get task → pre-process → get target status → validate → apply change → post-process
+- Subclasses implement `_get_target_status()` and optional hooks:
+  - `_before_status_change(task)`: Pre-processing (e.g., clear time tracking on pause)
+  - `_after_status_change(task)`: Post-processing (if needed)
+  - `_should_validate()`: Control validation behavior
+- Eliminates ~20 lines of duplication per status change use case
+- Used by: StartTaskUseCase, CompleteTaskUseCase, PauseTaskUseCase, ArchiveTaskUseCase
 
 **OptimizeScheduleUseCase** - Special use case that returns structured results
 - Returns `OptimizationResult` containing:
@@ -291,6 +311,7 @@ Two specialized sorters with distinct responsibilities:
 - Domain service that automatically records timestamps
 - Records `actual_start` when status → IN_PROGRESS
 - Records `actual_end` when status → COMPLETED/FAILED
+- Clears timestamps when status → PENDING (pause operation)
 - Invoked by use cases during status updates
 
 **Rich Renderers** (`src/presentation/renderers/`)
@@ -325,7 +346,7 @@ Two decorators for consistent error handling across CLI commands:
    - Usage: `@handle_command_errors("displaying tasks")`
    - Used in: tree, table, gantt, today commands
 
-Not used in: start, done, rm, archive commands (these use simple for loops with inline error handling)
+Not used in: start, done, pause, rm, archive commands (these use simple for loops with inline error handling)
 
 **Update Helper Pattern** (`src/presentation/cli/commands/update_helpers.py`)
 Specialized single-field update commands use a shared helper to reduce code duplication:
@@ -342,13 +363,49 @@ ctx_obj.console_writer.update_success(task, "display name", field_value)
 - Reduces ~10 lines of boilerplate per command to 2 lines
 - Multi-field commands like `schedule` and `update` still use inline UpdateTaskUseCase
 
-**Batch Operation Pattern** (used in `start`, `done`, `rm`, `archive` commands)
+**Batch Operation Pattern** (used in `start`, `done`, `pause`, `rm`, `archive` commands)
 Commands that support multiple task IDs use simple for loops with per-task error handling:
 - Accept multiple task IDs via `@click.argument("task_ids", nargs=-1, type=int, required=True)`
 - Loop through task IDs with `for task_id in task_ids:`
 - Handle errors per task with try/except blocks
 - Add spacing between tasks when processing multiple IDs with `if len(task_ids) > 1: console_writer.empty_line()`
 - Consistent error handling for `TaskNotFoundException` and domain-specific exceptions
+
+**TUI Command Pattern** (`src/presentation/tui/commands/`)
+The TUI uses a sophisticated Command Pattern with automatic registration:
+
+**Command Components:**
+1. `TUICommandBase` (`base.py`): Abstract base class for all TUI commands
+   - Defines `execute()` method that subclasses implement
+   - Provides helper methods: `get_selected_task()`, `reload_tasks()`, `notify_success()`, `notify_error()`, `notify_warning()`
+   - Injected with app, context, and task_service dependencies
+
+2. `CommandRegistry` (`registry.py`): Central registry for managing command classes
+   - Provides `@command_registry.register("name")` decorator for automatic registration
+   - Methods: `get(name)`, `has(name)`, `list_commands()`
+   - Global singleton instance: `command_registry`
+
+3. `CommandFactory` (`factory.py`): Factory for creating command instances with DI
+   - Creates commands with injected dependencies (app, context, task_service)
+   - Methods: `create(command_name, **kwargs)`, `execute(command_name, **kwargs)`
+
+**Usage Pattern:**
+```python
+# 1. Define command with automatic registration
+@command_registry.register("add_task")
+class AddTaskCommand(TUICommandBase):
+    def execute(self) -> None:
+        # Implementation with access to self.app, self.context, self.task_service
+        pass
+
+# 2. Import command in __init__.py to trigger registration
+from presentation.tui.commands.add_task_command import AddTaskCommand
+
+# 3. Execute via factory in main app
+self.command_factory.execute("add_task")
+```
+
+This pattern eliminates coupling between main app and individual commands, making it easy to add new commands without modifying app code.
 
 ### Task Model
 **Task** (`src/domain/entities/task.py`)
@@ -392,6 +449,9 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 **Task Status Management:**
 - `start`: Start task(s) - supports multiple task IDs (uses StartTaskUseCase)
 - `done`: Complete task(s) - supports multiple task IDs (uses CompleteTaskUseCase)
+- `pause`: Pause task(s) and reset time tracking - supports multiple task IDs (uses PauseTaskUseCase)
+  - Sets status back to PENDING and clears actual_start/actual_end timestamps
+  - Useful for resetting accidentally started tasks
 
 **Task Property Updates (Specialized Commands):**
 - `deadline`: Set deadline with positional args: `taskdog deadline <ID> <DATE>` (uses UpdateTaskUseCase)
@@ -431,8 +491,8 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 **Interactive Interface:**
 - `tui`: Launch Text User Interface for interactive task management (uses Textual library)
   - Full-screen terminal interface with keyboard shortcuts
-  - Navigation: ↑/↓ arrows
-  - Actions: s (start), d (done), a (add), Delete (remove), Enter (details), r (refresh), q (quit)
+  - Navigation: ↑/↓ arrows or j/k (vim-style)
+  - Actions: a (add), s (start), p (pause), d (done), x (delete), i (details), e (edit), o (optimize), r (refresh), q (quit)
 
 ### Key Design Decisions
 1. **Development installation required** - Install package in editable mode with `uv pip install -e .` for development and testing
@@ -451,6 +511,8 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 14. **Field-specific validation with Strategy Pattern + Registry** - TaskFieldValidatorRegistry manages field-specific validators (currently StatusValidator), using custom domain exceptions for consistent error handling; extensible design makes adding new validators simple
 15. **Optional configuration with TOML** - ConfigManager loads optional TOML config with graceful fallback to defaults; uses Python 3.11+ `tomllib` (no external dependencies); priority: CLI args > config file > hardcoded defaults
 16. **Unified config across CLI and TUI** - Both CLI and TUI use shared `Config` from `config_manager.py`; TUIConfig was removed to eliminate duplication; TUI validators accept config values as parameters
+17. **Template Method for status changes** - StatusChangeUseCase base class eliminates duplication across start/complete/pause/archive operations using Template Method pattern
+18. **TUI Command Pattern with Registry** - TUI commands use Command Pattern with automatic registration via decorator, CommandFactory for DI, and CommandRegistry for decoupled execution
 
 ### Console Output Guidelines
 
@@ -501,4 +563,4 @@ console_writer.empty_line()                    # Empty line separator
 - Always access `console_writer` from `CliContext`: `ctx.obj.console_writer`
 - Use the appropriate ConsoleWriter method for the message type
 - Never hardcode message icons or colors directly in command files
-- Follow existing patterns in commands like `add.py`, `deadline.py`, `optimize.py`
+- Follow existing patterns in commands like `add.py`, `deadline.py`, `optimize.py`, `pause.py`
