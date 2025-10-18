@@ -327,6 +327,21 @@ Two decorators for consistent error handling across CLI commands:
 
 Not used in: start, done, rm, archive commands (these use simple for loops with inline error handling)
 
+**Update Helper Pattern** (`src/presentation/cli/commands/update_helpers.py`)
+Specialized single-field update commands use a shared helper to reduce code duplication:
+
+```python
+from presentation.cli.commands.update_helpers import execute_single_field_update
+
+task = execute_single_field_update(ctx, task_id, "field_name", field_value)
+ctx_obj.console_writer.update_success(task, "display name", field_value)
+```
+
+- Helper encapsulates: context extraction, use case creation, DTO building, execution
+- Used by: `deadline`, `priority`, `estimate`, `rename` commands
+- Reduces ~10 lines of boilerplate per command to 2 lines
+- Multi-field commands like `schedule` and `update` still use inline UpdateTaskUseCase
+
 **Batch Operation Pattern** (used in `start`, `done`, `rm`, `archive` commands)
 Commands that support multiple task IDs use simple for loops with per-task error handling:
 - Accept multiple task IDs via `@click.argument("task_ids", nargs=-1, type=int, required=True)`

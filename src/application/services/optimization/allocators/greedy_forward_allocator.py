@@ -61,8 +61,8 @@ class GreedyForwardAllocator(TaskAllocatorBase):
         # Save original state to revert if allocation fails
         original_daily_allocations = copy.deepcopy(daily_allocations)
 
-        # Calculate effective deadline considering parent task deadlines
-        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy, repository)
+        # Calculate effective deadline
+        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy)
 
         # Find earliest available start date
         current_date = start_date

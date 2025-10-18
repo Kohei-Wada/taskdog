@@ -72,7 +72,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
         # Calculate effective deadlines for all tasks
         task_effective_deadlines: dict[int, str | None] = {
-            task.id: DeadlineCalculator.get_effective_deadline(task, repository)
+            task.id: DeadlineCalculator.get_effective_deadline(task)
             for task in schedulable_tasks
             if task.id is not None
         }

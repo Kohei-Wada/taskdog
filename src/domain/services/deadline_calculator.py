@@ -10,12 +10,11 @@ class DeadlineCalculator:
     """
 
     @staticmethod
-    def get_effective_deadline(task: Task, repository) -> str | None:
+    def get_effective_deadline(task: Task) -> str | None:
         """Get task's deadline.
 
         Args:
             task: Task to get deadline for
-            repository: Task repository (unused, kept for compatibility)
 
         Returns:
             Task's deadline string (YYYY-MM-DD HH:MM:SS) or None if no deadline exists

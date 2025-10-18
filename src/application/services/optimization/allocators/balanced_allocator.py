@@ -57,8 +57,8 @@ class BalancedAllocator(TaskAllocatorBase):
         # Type narrowing: estimated_duration is guaranteed to be float at this point
         assert task_copy.estimated_duration is not None
 
-        # Calculate effective deadline considering parent task deadlines
-        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy, repository)
+        # Calculate effective deadline
+        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy)
 
         # Calculate end date for distribution
         if effective_deadline:

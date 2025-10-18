@@ -2,7 +2,6 @@
 
 import unittest
 from datetime import datetime
-from unittest.mock import Mock
 
 from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task, TaskStatus
@@ -14,8 +13,7 @@ class TestOptimizationTaskSorter(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.start_date = datetime(2025, 1, 6, 9, 0, 0)  # Monday 9:00 AM
-        self.mock_repository = Mock()
-        self.sorter = OptimizationTaskSorter(self.start_date, self.mock_repository)
+        self.sorter = OptimizationTaskSorter(self.start_date)
 
     def test_sort_by_priority_field(self):
         """Test that tasks are sorted by priority field."""
@@ -24,8 +22,6 @@ class TestOptimizationTaskSorter(unittest.TestCase):
             Task(id=2, name="High priority", priority=200, status=TaskStatus.PENDING),
             Task(id=3, name="Medium priority", priority=100, status=TaskStatus.PENDING),
         ]
-        # Mock repository to return no children for all tasks
-        self.mock_repository.get_children.return_value = []
 
         result = self.sorter.sort_by_priority(tasks)
 
@@ -59,7 +55,6 @@ class TestOptimizationTaskSorter(unittest.TestCase):
                 deadline=None,
             ),
         ]
-        self.mock_repository.get_children.return_value = []
 
         result = self.sorter.sort_by_priority(tasks)
 
@@ -67,21 +62,6 @@ class TestOptimizationTaskSorter(unittest.TestCase):
         self.assertEqual(result[0].id, 2)  # 2 days away
         self.assertEqual(result[1].id, 1)  # 14 days away
         self.assertEqual(result[2].id, 3)  # No deadline (infinity)
-
-        def get_children_side_effect(task_id):
-            if task_id == 1:
-                return [tasks[1]]  # Task 1 has children
-            return []
-
-        self.mock_repository.get_children.side_effect = get_children_side_effect
-        # Mock get_by_id to return the parent task
-        self.mock_repository.get_by_id.return_value = tasks[0]
-
-        result = self.sorter.sort_by_priority(tasks)
-
-        # Child (leaf) should come before parent
-        self.assertEqual(result[0].id, 2)  # Child
-        self.assertEqual(result[1].id, 1)  # Parent
 
     def test_sort_by_combined_criteria(self):
         """Test sorting with multiple criteria combined."""
@@ -108,7 +88,6 @@ class TestOptimizationTaskSorter(unittest.TestCase):
                 deadline="2025-01-15 18:00:00",
             ),
         ]
-        self.mock_repository.get_children.return_value = []
 
         result = self.sorter.sort_by_priority(tasks)
 
@@ -124,7 +103,6 @@ class TestOptimizationTaskSorter(unittest.TestCase):
             Task(id=1, name="Task 1", priority=100, status=TaskStatus.PENDING),
             Task(id=2, name="Task 2", priority=100, status=TaskStatus.PENDING),
         ]
-        self.mock_repository.get_children.return_value = []
 
         result = self.sorter.sort_by_priority(tasks)
 
@@ -141,7 +119,6 @@ class TestOptimizationTaskSorter(unittest.TestCase):
     def test_sort_single_task(self):
         """Test sorting single task returns same task."""
         tasks = [Task(id=1, name="Single task", priority=100, status=TaskStatus.PENDING)]
-        self.mock_repository.get_children.return_value = []
 
         result = self.sorter.sort_by_priority(tasks)
 

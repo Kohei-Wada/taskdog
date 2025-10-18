@@ -45,12 +45,14 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
         Args:
             tasks: Filtered schedulable tasks
             start_date: Starting date for schedule optimization
-            repository: Task repository for hierarchy queries
+            repository: Deprecated. Will be removed in v2.0.
+                       Currently unused but kept for backward compatibility
+                       with existing optimization strategies.
 
         Returns:
             Tasks sorted by priority (highest priority first)
         """
-        sorter = OptimizationTaskSorter(start_date, repository)
+        sorter = OptimizationTaskSorter(start_date)
         return sorter.sort_by_priority(tasks)
 
     def _allocate_task(

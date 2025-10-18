@@ -14,15 +14,13 @@ class OptimizationTaskSorter:
     deadline urgency, priority field, and task ID.
     """
 
-    def __init__(self, start_date: datetime, repository):
+    def __init__(self, start_date: datetime):
         """Initialize sorter.
 
         Args:
             start_date: Starting date for deadline calculations
-            repository: Task repository (unused, kept for compatibility)
         """
         self.start_date = start_date
-        self.repository = repository
 
     def sort_by_priority(self, tasks: list[Task]) -> list[Task]:
         """Sort tasks by scheduling priority.
@@ -41,7 +39,7 @@ class OptimizationTaskSorter:
 
         def priority_key(task: Task) -> tuple:
             # Get task's deadline
-            effective_deadline = DeadlineCalculator.get_effective_deadline(task, self.repository)
+            effective_deadline = DeadlineCalculator.get_effective_deadline(task)
 
             # Deadline score: None = infinity, otherwise days until deadline
             days_until: int | float

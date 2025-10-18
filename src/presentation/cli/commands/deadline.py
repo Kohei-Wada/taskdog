@@ -2,8 +2,7 @@
 
 import click
 
-from application.dto.update_task_input import UpdateTaskInput
-from application.use_cases.update_task import UpdateTaskUseCase
+from presentation.cli.commands.update_helpers import execute_single_field_update
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 from shared.click_types.datetime_with_default import DateTimeWithDefault
@@ -27,14 +26,6 @@ def deadline_command(ctx, task_id, deadline):
         taskdog deadline 5 2025-10-10
         taskdog deadline 5 "2025-10-10 18:00:00"
     """
+    task = execute_single_field_update(ctx, task_id, "deadline", deadline)
     ctx_obj: CliContext = ctx.obj
-    update_task_use_case = UpdateTaskUseCase(ctx_obj.repository, ctx_obj.time_tracker)
-
-    # Build input DTO
-    input_dto = UpdateTaskInput(task_id=task_id, deadline=deadline)
-
-    # Execute use case
-    task, _ = update_task_use_case.execute(input_dto)
-
-    # Print success
     ctx_obj.console_writer.update_success(task, "deadline", deadline)
