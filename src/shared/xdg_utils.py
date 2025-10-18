@@ -98,3 +98,12 @@ class XDGDirectories:
             Path to note markdown file
         """
         return cls.get_notes_dir() / f"{task_id}.md"
+
+    @classmethod
+    def get_config_file(cls) -> Path:
+        """Get path to config.toml file.
+
+        Returns:
+            Path to config.toml in config directory
+        """
+        return cls.get_config_home() / "config.toml"

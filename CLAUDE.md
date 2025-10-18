@@ -13,6 +13,30 @@ Tasks are stored in `tasks.json` following the XDG Base Directory specification:
 - Fallback (if `$XDG_DATA_HOME` not set): `~/.local/share/taskdog/tasks.json`
 - The directory is automatically created on first run
 
+### Configuration
+
+Taskdog supports optional configuration via TOML file following the XDG Base Directory specification:
+- Default location: `$XDG_CONFIG_HOME/taskdog/config.toml`
+- Fallback (if `$XDG_CONFIG_HOME` not set): `~/.config/taskdog/config.toml`
+- Configuration is optional - defaults are used if file doesn't exist
+
+**Configuration Options:**
+```toml
+[optimization]
+max_hours_per_day = 6.0        # Default: 6.0 - Maximum work hours per day for schedule optimization
+default_algorithm = "greedy"   # Default: "greedy" - Default optimization algorithm
+
+[task]
+default_priority = 5           # Default: 5 - Default priority for new tasks
+
+[display]
+datetime_format = "%Y-%m-%d %H:%M:%S"  # Default: "%Y-%m-%d %H:%M:%S" - Datetime display format
+```
+
+**Priority:** CLI arguments > Config file > Hardcoded defaults
+
+Example: If config file sets `max_hours_per_day = 8.0`, the optimize command will use 8.0 by default, but `taskdog optimize --max-hours-per-day 10.0` will override it with 10.0.
+
 ## Development Commands
 
 ### Setup
@@ -169,7 +193,12 @@ The application follows **Clean Architecture** with distinct layers:
 - `click_types/`: Custom Click parameter types (DateTimeWithDefault)
 - `xdg_utils.py`: XDG Base Directory utilities (XDGDirectories class)
   - Handles platform-independent data file paths
-  - Methods: `get_tasks_file()`, `get_note_file(task_id)`, `get_data_dir()`
+  - Methods: `get_tasks_file()`, `get_note_file(task_id)`, `get_data_dir()`, `get_config_file()`
+- `config_manager.py`: Configuration management (ConfigManager class)
+  - Loads configuration from TOML file with fallback to defaults
+  - `ConfigManager.load(config_path)`: Loads config from file or returns defaults
+  - `Config` dataclass: Immutable configuration object with optimization, task, and display settings
+  - Uses Python 3.11+ `tomllib` (no external dependencies)
 - Cross-cutting utilities used across layers
 
 ### Dependency Injection Pattern
@@ -177,7 +206,7 @@ The application follows **Clean Architecture** with distinct layers:
 Dependencies are managed through Click's context object using the `CliContext` dataclass:
 
 **CliContext** (`src/presentation/cli/context.py`):
-- Dataclass containing shared dependencies: `console_writer`, `repository`, `time_tracker`
+- Dataclass containing shared dependencies: `console_writer`, `repository`, `time_tracker`, `config`
 - Initialized in `cli.py` and passed to all commands via `ctx.obj`
 - Commands access via `ctx.obj: CliContext` type annotation
 
@@ -350,8 +379,8 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 **Schedule Optimization:**
 - `optimize`: Auto-generate optimal task schedules based on priorities, deadlines, and workload constraints (uses OptimizeScheduleUseCase)
   - `--start-date DATE`: Start date for scheduling (default: next weekday)
-  - `--max-hours-per-day FLOAT`: Maximum work hours per day (default: 6.0)
-  - `--algorithm, -a NAME`: Choose optimization algorithm (default: greedy)
+  - `--max-hours-per-day FLOAT`: Maximum work hours per day (default: from config or 6.0)
+  - `--algorithm, -a NAME`: Choose optimization algorithm (default: from config or greedy)
     - Available: greedy, balanced, backward, priority_first, earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo
   - `--force, -f`: Override existing schedules for all tasks
   - Analyzes all tasks with `estimated_duration` set
@@ -390,6 +419,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 12. **Schedule optimization with Strategy pattern** - Multiple scheduling algorithms (9 strategies) implementing Strategy pattern, managed by StrategyFactory
 13. **ConsoleWriter abstraction** - All output goes through ConsoleWriter interface for consistency and testability
 14. **Field-specific validation with Strategy Pattern + Registry** - TaskFieldValidatorRegistry manages field-specific validators (currently StatusValidator), using custom domain exceptions for consistent error handling; extensible design makes adding new validators simple
+15. **Optional configuration with TOML** - ConfigManager loads optional TOML config with graceful fallback to defaults; uses Python 3.11+ `tomllib` (no external dependencies); priority: CLI args > config file > hardcoded defaults
 
 ### Console Output Guidelines
 

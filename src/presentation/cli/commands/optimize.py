@@ -58,16 +58,16 @@ Use --force to override existing schedules.
     "--max-hours-per-day",
     "-m",
     type=click.FloatRange(min=0, min_open=True, max=24.0),
-    default=6.0,
-    help="Max work hours per day (default: 6.0)",
+    default=None,
+    help="Max work hours per day (default: from config or 6.0)",
 )
 @click.option(
     "--algorithm",
     "-a",
     type=str,
-    default="greedy",
+    default=None,
     help=(
-        "Optimization algorithm: "
+        "Optimization algorithm (default: from config or greedy): "
         "greedy (front-load), "
         "balanced (even distribution), "
         "backward (JIT from deadline), "
@@ -87,11 +87,18 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    config = ctx_obj.config
 
     # Parse start_date or use next weekday
     start_date = (
         datetime.strptime(start_date, DATETIME_FORMAT) if start_date else get_next_weekday()
     )
+
+    # Use config defaults if not provided via CLI
+    if max_hours_per_day is None:
+        max_hours_per_day = config.optimization.max_hours_per_day
+    if algorithm is None:
+        algorithm = config.optimization.default_algorithm
 
     # Execute optimization
     use_case = OptimizeScheduleUseCase(repository)

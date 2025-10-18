@@ -27,6 +27,7 @@ from presentation.cli.commands.tui_command import tui_command
 from presentation.cli.commands.update import update_command
 from presentation.cli.context import CliContext
 from presentation.console.rich_console_writer import RichConsoleWriter
+from shared.config_manager import ConfigManager
 from shared.xdg_utils import XDGDirectories
 
 
@@ -43,6 +44,7 @@ def cli(ctx):
     console_writer = RichConsoleWriter(console)
     repository = JsonTaskRepository(tasksfile)
     time_tracker = TimeTracker()
+    config = ConfigManager.load()
 
     # Store in CliContext for type-safe access
     ctx.ensure_object(dict)
@@ -50,6 +52,7 @@ def cli(ctx):
         console_writer=console_writer,
         repository=repository,
         time_tracker=time_tracker,
+        config=config,
     )
 
 
