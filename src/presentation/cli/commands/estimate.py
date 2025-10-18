@@ -8,7 +8,7 @@ from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
 
 
-@click.command(name="est", help="Set estimated duration for a task.")
+@click.command(name="estimate", help="Set estimated duration for a task.")
 @click.argument("task_id", type=int)
 @click.argument("hours", type=float)
 @click.pass_context
