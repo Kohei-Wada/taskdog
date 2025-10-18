@@ -62,7 +62,7 @@ class TaskdogTUI(App):
         ("r", "refresh", "Refresh"),
         ("i", "show_details", "Info"),
         ("e", "edit_task", "Edit"),
-        ("E", "edit_note", "Edit Note"),
+        ("v", "edit_note", "Edit Note"),
     ]
 
     # Load CSS from external files

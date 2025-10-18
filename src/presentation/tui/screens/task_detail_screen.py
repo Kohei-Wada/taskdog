@@ -1,5 +1,7 @@
 """Task detail screen for TUI."""
 
+from typing import ClassVar
+
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, VerticalScroll
 from textual.widgets import Button, Label, Markdown, Static
@@ -19,6 +21,11 @@ class TaskDetailScreen(BaseModalDialog[None]):
     - Actual tracking (actual start/end, actual duration)
     - Notes (if available)
     """
+
+    BINDINGS: ClassVar = [
+        ("ctrl+d", "scroll_down", "Scroll Down"),
+        ("ctrl+u", "scroll_up", "Scroll Up"),
+    ]
 
     def __init__(self, detail: TaskDetailDTO | Task, *args, **kwargs):
         """Initialize the detail screen.
@@ -146,3 +153,13 @@ class TaskDetailScreen(BaseModalDialog[None]):
         """Handle button press."""
         if event.button.id == "close-button":
             self.dismiss(None)
+
+    def action_scroll_down(self) -> None:
+        """Scroll down (Ctrl+D)."""
+        scroll_widget = self.query_one("#detail-content", VerticalScroll)
+        scroll_widget.scroll_relative(y=scroll_widget.size.height // 2, animate=False)
+
+    def action_scroll_up(self) -> None:
+        """Scroll up (Ctrl+U)."""
+        scroll_widget = self.query_one("#detail-content", VerticalScroll)
+        scroll_widget.scroll_relative(y=-(scroll_widget.size.height // 2), animate=False)
