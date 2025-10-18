@@ -21,6 +21,7 @@ MainScreen {
     width: 100%;
     height: auto;
     max-height: 40;
+    background: transparent;
     border: solid $primary;
     margin-bottom: 1;
     overflow-y: auto;
@@ -34,6 +35,7 @@ MainScreen {
     height: auto;
     min-height: 10;
     max-height: 30;
+    background: transparent;
     border: solid $primary;
     overflow-y: auto;
 }
