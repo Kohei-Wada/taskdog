@@ -91,6 +91,11 @@ class RichGanttRenderer(RichRendererBase):
         workload_timeline = self._build_workload_summary_row(tasks, start_date, end_date)
         table.add_row("", "[bold yellow]Workload\\[h][/bold yellow]", "", workload_timeline)
 
+        # Add legend as caption (centered by default)
+        legend_text = self._build_legend()
+        table.caption = legend_text
+        table.caption_justify = "center"
+
         return table
 
     def render(
@@ -116,11 +121,8 @@ class RichGanttRenderer(RichRendererBase):
             self.console_writer.warning("No tasks found.")
             return
 
-        # Print table and legend
+        # Print table (with caption as legend)
         self.console_writer.print(table)
-        self.console_writer.empty_line()
-        legend_text = self._build_legend()
-        self.console_writer.print(legend_text)
 
     def _build_date_header(self, start_date: date, end_date: date) -> Text:
         """Build date header row for the timeline.
