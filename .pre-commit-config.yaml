@@ -41,7 +41,7 @@ repos:
     hooks:
       - id: unittest
         name: Run unit tests
-        entry: uv run python -m unittest discover tests/
+        entry: uv run python -m unittest discover -s tests/ -t .
         language: system
         pass_filenames: false
         stages: [pre-commit]
