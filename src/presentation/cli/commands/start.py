@@ -33,7 +33,7 @@ def start_command(ctx, task_ids):
             task = start_task_use_case.execute(input_dto)
 
             # Print success message
-            console_writer.success("Started", task)
+            console_writer.task_success("Started", task)
             console_writer.task_start_time(task, was_already_in_progress)
 
             # Add spacing between tasks if processing multiple
@@ -46,9 +46,10 @@ def start_command(ctx, task_ids):
                 console_writer.empty_line()
 
         except TaskAlreadyFinishedError as e:
-            console_writer.print(f"[red]✗[/red] Cannot start task {e.task_id}")
-            console_writer.print(f"  [yellow]⚠[/yellow] Task is already {e.status}")
-            console_writer.print("  [dim]Finished tasks cannot be restarted.[/dim]")
+            console_writer.validation_error(
+                f"Cannot start task {e.task_id}: Task is already {e.status}. "
+                "Finished tasks cannot be restarted."
+            )
             if len(task_ids) > 1:
                 console_writer.empty_line()
 

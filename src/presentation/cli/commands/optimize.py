@@ -131,6 +131,6 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
         )
         _show_failed_tasks(console_writer, result)
     else:
-        console_writer.print_success(
+        console_writer.success(
             f"Optimized {success_count} task(s) using '{algorithm}' (all tasks scheduled)"
         )

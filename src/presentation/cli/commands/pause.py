@@ -40,7 +40,7 @@ def pause_command(ctx, task_ids):
             if was_already_pending:
                 console_writer.info(f"Task {task_id} was already PENDING")
             else:
-                console_writer.success("Paused", task)
+                console_writer.task_success("Paused", task)
                 console_writer.info("Time tracking has been reset")
 
             # Add spacing between tasks if processing multiple
@@ -53,9 +53,10 @@ def pause_command(ctx, task_ids):
                 console_writer.empty_line()
 
         except TaskAlreadyFinishedError as e:
-            console_writer.print(f"[red]✗[/red] Cannot pause task {e.task_id}")
-            console_writer.print(f"  [yellow]⚠[/yellow] Task is already {e.status}")
-            console_writer.print("  [dim]Finished tasks cannot be paused.[/dim]")
+            console_writer.validation_error(
+                f"Cannot pause task {e.task_id}: Task is already {e.status}. "
+                "Finished tasks cannot be paused."
+            )
             if len(task_ids) > 1:
                 console_writer.empty_line()
 

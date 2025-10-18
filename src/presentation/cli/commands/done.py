@@ -29,7 +29,7 @@ def done_command(ctx, task_ids):  # noqa: C901
             task = complete_task_use_case.execute(input_dto)
 
             # Print success message
-            console_writer.success("Completed", task)
+            console_writer.task_success("Completed", task)
 
             # Show completion details (time, duration, comparison with estimate)
             console_writer.task_completion_details(task)
@@ -44,16 +44,17 @@ def done_command(ctx, task_ids):  # noqa: C901
                 console_writer.empty_line()
 
         except TaskAlreadyFinishedError as e:
-            console_writer.print(f"[red]✗[/red] Cannot complete task {e.task_id}")
-            console_writer.print(f"  [yellow]⚠[/yellow] Task is already {e.status}")
-            console_writer.print("  [dim]Task has already been completed.[/dim]")
+            console_writer.validation_error(
+                f"Cannot complete task {e.task_id}: Task is already {e.status}. "
+                "Task has already been completed."
+            )
             if len(task_ids) > 1:
                 console_writer.empty_line()
 
         except TaskNotStartedError as e:
-            console_writer.print(f"[red]✗[/red] Cannot complete task {e.task_id}")
-            console_writer.print(
-                f"  [yellow]⚠[/yellow] Task is still PENDING. Start the task first with [blue]taskdog start {e.task_id}[/blue]"
+            console_writer.validation_error(
+                f"Cannot complete task {e.task_id}: Task is still PENDING. "
+                f"Start the task first with: taskdog start {e.task_id}"
             )
             if len(task_ids) > 1:
                 console_writer.empty_line()

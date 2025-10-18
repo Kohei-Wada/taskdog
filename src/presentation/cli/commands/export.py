@@ -97,9 +97,7 @@ def export_command(ctx, format, output, fields):
         if output:
             with open(output, "w", encoding="utf-8") as f:
                 f.write(tasks_data)
-            console_writer.print(
-                f"[green]✓[/green] Exported {len(tasks)} tasks to [cyan]{output}[/cyan]"
-            )
+            console_writer.success(f"Exported {len(tasks)} tasks to {output}")
         else:
             print(tasks_data)
 
