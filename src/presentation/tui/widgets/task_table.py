@@ -18,6 +18,8 @@ class TaskTable(DataTable):
         Binding("k", "cursor_up", "Up", show=False),
         Binding("g", "scroll_home", "Top", show=False),
         Binding("G", "scroll_end", "Bottom", show=False),
+        Binding("ctrl+d", "page_down", "Page Down", show=False),
+        Binding("ctrl+u", "page_up", "Page Up", show=False),
     ]
 
     def __init__(self, *args, **kwargs):
@@ -104,6 +106,20 @@ class TaskTable(DataTable):
         """Move cursor to bottom (G key)."""
         if self.row_count > 0:
             self.move_cursor(row=self.row_count - 1)
+
+    def action_page_down(self) -> None:
+        """Move cursor down by half page (Ctrl+d)."""
+        if self.row_count > 0:
+            page_size = 10  # Half page scroll size
+            new_row = min(self.cursor_row + page_size, self.row_count - 1)
+            self.move_cursor(row=new_row)
+
+    def action_page_up(self) -> None:
+        """Move cursor up by half page (Ctrl+u)."""
+        if self.row_count > 0:
+            page_size = 10  # Half page scroll size
+            new_row = max(self.cursor_row - page_size, 0)
+            self.move_cursor(row=new_row)
 
     def _format_duration(self, task: Task) -> str:
         """Format duration information for display.
