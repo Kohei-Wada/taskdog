@@ -295,7 +295,6 @@ Two specialized sorters with distinct responsibilities:
 - Determines optimal scheduling order based on multiple criteria
 - Sort priority: (1) Deadline urgency (closer deadline = higher priority), (2) Priority field value, (3) Task ID (stable sort)
 - Used by optimization strategies (GreedyOptimizationStrategy, BalancedOptimizationStrategy)
-- Considers effective deadlines via DeadlineCalculator
 
 **Repository Pattern** (`src/infrastructure/persistence/`)
 - Abstract interface `TaskRepository` defines contract

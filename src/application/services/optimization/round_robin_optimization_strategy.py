@@ -8,7 +8,6 @@ from application.services.optimization.optimization_strategy import Optimization
 from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
-from domain.services.deadline_calculator import DeadlineCalculator
 from shared.config_manager import Config
 from shared.workday_utils import WorkdayUtils
 
@@ -75,9 +74,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
         # Calculate effective deadlines for all tasks
         task_effective_deadlines: dict[int, str | None] = {
-            task.id: DeadlineCalculator.get_effective_deadline(task)
-            for task in schedulable_tasks
-            if task.id is not None
+            task.id: task.deadline for task in schedulable_tasks if task.id is not None
         }
 
         # Track remaining hours for each task

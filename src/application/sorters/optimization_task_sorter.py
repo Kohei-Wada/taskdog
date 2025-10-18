@@ -4,7 +4,6 @@ from datetime import datetime
 
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
-from domain.services.deadline_calculator import DeadlineCalculator
 
 
 class OptimizationTaskSorter:
@@ -39,12 +38,12 @@ class OptimizationTaskSorter:
 
         def priority_key(task: Task) -> tuple:
             # Get task's deadline
-            effective_deadline = DeadlineCalculator.get_effective_deadline(task)
+            deadline = task.deadline
 
             # Deadline score: None = infinity, otherwise days until deadline
             days_until: int | float
-            if effective_deadline:
-                deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
+            if deadline:
+                deadline_dt = datetime.strptime(deadline, DATETIME_FORMAT)
                 days_until = (deadline_dt - self.start_date).days
             else:
                 days_until = float("inf")

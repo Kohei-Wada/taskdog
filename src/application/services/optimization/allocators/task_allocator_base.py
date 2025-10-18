@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
-from domain.services.deadline_calculator import DeadlineCalculator
 from shared.config_manager import Config
 from shared.workday_utils import WorkdayUtils
 
@@ -90,7 +89,7 @@ class TaskAllocatorBase(ABC):
         Returns:
             Effective deadline string, or None if no deadline
         """
-        return DeadlineCalculator.get_effective_deadline(task)
+        return task.deadline
 
     def _get_date_str(self, date: datetime) -> str:
         """Convert datetime to date string format.
