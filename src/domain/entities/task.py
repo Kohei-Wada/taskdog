@@ -102,6 +102,15 @@ class Task:
         """
         return self.status != TaskStatus.ARCHIVED
 
+    @property
+    def has_note(self) -> bool:
+        """Check if task has an associated note file.
+
+        Returns:
+            True if notes file exists and has content
+        """
+        return self.notes_path.exists() and self.notes_path.stat().st_size > 0
+
     def to_dict(self) -> dict:
         """Serialize task to dictionary for persistence.
 

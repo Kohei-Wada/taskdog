@@ -35,6 +35,7 @@ class TaskTable(DataTable):
         self.add_column("Status", width=12)
         self.add_column("Duration", width=14)
         self.add_column("Deadline", width=18)
+        self.add_column("Note", width=6)
 
     def load_tasks(self, tasks: list[Task]):
         """Load tasks into the table.
@@ -57,6 +58,9 @@ class TaskTable(DataTable):
             # Format deadline
             deadline = self._format_deadline(task.deadline)
 
+            # Check if task has notes
+            note_indicator = "📝" if task.has_note else ""
+
             # Add row
             self.add_row(
                 str(task.id),
@@ -65,6 +69,7 @@ class TaskTable(DataTable):
                 status_styled,
                 duration,
                 deadline,
+                note_indicator,
             )
             self._task_map[idx] = task
 
