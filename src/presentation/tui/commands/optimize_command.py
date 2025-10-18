@@ -77,5 +77,6 @@ class OptimizeCommand(TUICommandBase):
 
         # Show optimization settings screen
         self.app.push_screen(
-            AlgorithmSelectionScreen(self.context.config), handle_optimization_settings
+            AlgorithmSelectionScreen(self.context.config, force_override=self.force_override),
+            handle_optimization_settings,
         )

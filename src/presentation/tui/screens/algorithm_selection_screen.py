@@ -54,21 +54,29 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         ("ctrl+s", "submit", "Submit"),
     ]
 
-    def __init__(self, config: Config, *args, **kwargs):
+    def __init__(self, config: Config, force_override: bool = False, *args, **kwargs):
         """Initialize the screen.
 
         Args:
             config: Application configuration
+            force_override: Whether this is a force override optimization
         """
         super().__init__(*args, **kwargs)
         self.config = config
+        self.force_override = force_override
         # Get algorithm metadata dynamically from StrategyFactory
         self.algorithms = StrategyFactory.get_algorithm_metadata()
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
         with Container(id="algorithm-dialog"):
-            yield Label("[bold cyan]Optimize Schedule Settings[/bold cyan]", id="dialog-title")
+            # Dynamic title based on force_override mode
+            title = (
+                "[bold cyan]Force Optimize Schedule Settings[/bold cyan]"
+                if self.force_override
+                else "[bold cyan]Optimize Schedule Settings[/bold cyan]"
+            )
+            yield Label(title, id="dialog-title")
             yield Label(
                 "[dim]Tab to switch, Ctrl+S to submit, Esc to cancel[/dim]", id="dialog-hint"
             )
