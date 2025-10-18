@@ -6,7 +6,7 @@ from typing import ClassVar
 
 from textual.app import App
 
-from application.queries.filters.incomplete_filter import IncompleteFilter
+from application.queries.filters.non_archived_filter import NonArchivedFilter
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
 from domain.services.time_tracker import TimeTracker
@@ -59,6 +59,7 @@ class TaskdogTUI(App):
         ("o", "optimize", "Optimize"),
         ("O", "optimize_force", "Force Optimize"),
         ("x", "delete_task", "Delete"),
+        ("A", "archive_task", "Archive"),
         ("r", "refresh", "Refresh"),
         ("i", "show_details", "Info"),
         ("e", "edit_task", "Edit"),
@@ -121,9 +122,10 @@ class TaskdogTUI(App):
         # Reload tasks from file to detect external changes
         self.repository.reload()
 
-        # Get incomplete tasks (PENDING, IN_PROGRESS, FAILED)
-        incomplete_filter = IncompleteFilter()
-        tasks = self.query_service.get_filtered_tasks(incomplete_filter, sort_by="planned_start")
+        # Get all non-archived tasks (PENDING, IN_PROGRESS, FAILED, COMPLETED)
+        # ARCHIVED tasks are excluded from display
+        non_archived_filter = NonArchivedFilter()
+        tasks = self.query_service.get_filtered_tasks(non_archived_filter, sort_by="planned_start")
 
         # Update gantt chart and table
         if self.main_screen:
@@ -158,6 +160,10 @@ class TaskdogTUI(App):
     def action_delete_task(self) -> None:
         """Delete the selected task."""
         self.command_factory.execute("delete_task")
+
+    def action_archive_task(self) -> None:
+        """Archive the selected task."""
+        self.command_factory.execute("archive_task")
 
     def action_show_details(self) -> None:
         """Show details of the selected task."""
