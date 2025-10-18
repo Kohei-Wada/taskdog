@@ -5,6 +5,7 @@ from datetime import datetime
 
 from application.dto.optimization_result import SchedulingFailure
 from application.services.task_filter import TaskFilter
+from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task, TaskStatus
 from domain.services.task_eligibility_checker import TaskEligibilityChecker
 
@@ -148,23 +149,26 @@ class OptimizationStrategy(ABC):
         if not updated_task and not any(f.task.id == task.id for f in self.failed_tasks):
             self._record_failure(task, default_reason)
 
-    @abstractmethod
     def _sort_schedulable_tasks(
         self, tasks: list[Task], start_date: datetime, repository
     ) -> list[Task]:
         """Sort tasks by strategy-specific priority.
 
-        Subclasses must implement this to define their sorting logic.
+        Default implementation sorts by deadline urgency, priority field, and task ID.
+        Strategies can override this method for custom sorting logic.
 
         Args:
             tasks: Filtered schedulable tasks
             start_date: Starting date for schedule optimization
-            repository: Task repository for hierarchy queries
+            repository: Deprecated. Will be removed in v2.0.
+                       Currently unused but kept for backward compatibility
+                       with existing optimization strategies.
 
         Returns:
-            Sorted task list
+            Sorted task list (highest priority first)
         """
-        pass
+        sorter = OptimizationTaskSorter(start_date)
+        return sorter.sort_by_priority(tasks)
 
     @abstractmethod
     def _allocate_task(

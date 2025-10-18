@@ -6,7 +6,6 @@ from application.services.optimization.allocators.greedy_forward_allocator impor
     GreedyForwardAllocator,
 )
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task
 from shared.config_manager import Config
 
@@ -15,7 +14,7 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
     """Greedy algorithm for task scheduling optimization.
 
     This strategy uses a greedy approach to schedule tasks:
-    1. Sort tasks by priority (deadline urgency, priority field, task ID)
+    1. Sort tasks by priority (deadline urgency, priority field, task ID) - uses default sorting
     2. Allocate time blocks sequentially in priority order
     3. Fill available time slots from start_date onwards (greedy forward allocation)
 
@@ -31,29 +30,6 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
         """
         self.config = config
         self.allocator = GreedyForwardAllocator(config)
-
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository
-    ) -> list[Task]:
-        """Sort tasks by priority (greedy approach).
-
-        Uses OptimizationTaskSorter which considers:
-        - Deadline urgency (closer deadline = higher priority)
-        - Priority field value
-        - Task ID (for stable sorting)
-
-        Args:
-            tasks: Filtered schedulable tasks
-            start_date: Starting date for schedule optimization
-            repository: Deprecated. Will be removed in v2.0.
-                       Currently unused but kept for backward compatibility
-                       with existing optimization strategies.
-
-        Returns:
-            Tasks sorted by priority (highest priority first)
-        """
-        sorter = OptimizationTaskSorter(start_date)
-        return sorter.sort_by_priority(tasks)
 
     def _allocate_task(
         self,
