@@ -118,6 +118,11 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         # When option list has enter, submit the form
         self.action_submit()
 
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle Enter key in input fields."""
+        # When Enter is pressed in any input field, submit the form
+        self.action_submit()
+
     def _get_default_start_date(self) -> str:
         """Calculate default start date (today if weekday, otherwise next Monday).
 
