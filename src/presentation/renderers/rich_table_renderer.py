@@ -22,6 +22,11 @@ class RichTableRenderer(RichRendererBase):
             "header": "Name",
             "style": "white",
         },
+        "note": {
+            "header": "Note",
+            "justify": "center",
+            "no_wrap": True,
+        },
         "priority": {
             "header": "Priority",
             "justify": "center",
@@ -74,6 +79,7 @@ class RichTableRenderer(RichRendererBase):
     DEFAULT_FIELDS: ClassVar[list[str]] = [
         "id",
         "name",
+        "note",
         "priority",
         "status",
         "planned_start",
@@ -158,6 +164,7 @@ class RichTableRenderer(RichRendererBase):
         field_extractors = {
             "id": lambda t: str(t.id),
             "name": lambda t: t.name,
+            "note": lambda t: "📝" if t.has_note else "",
             "priority": lambda t: str(t.priority),
             "status": lambda t: self._format_status(t),
             "planned_start": lambda t: self._format_datetime(t.planned_start),

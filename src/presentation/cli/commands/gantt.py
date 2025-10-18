@@ -4,9 +4,10 @@ from datetime import datetime, timedelta
 
 import click
 
+from application.queries.filters.active_filter import ActiveFilter
+from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.task_query_service import TaskQueryService
 from domain.constants import DATETIME_FORMAT
-from domain.entities.task import TaskStatus
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
@@ -32,6 +33,9 @@ def get_previous_monday(from_date=None):
     name="gantt",
     help="""Display tasks in Gantt chart format with workload analysis.
 
+By default, shows incomplete tasks only (PENDING, IN_PROGRESS).
+Use -a/--all to include completed and failed tasks. Archived tasks are never shown.
+
 \b
 WORKLOAD CALCULATION:
   The chart displays a "Workload[h]" row at the bottom showing daily workload:
@@ -55,9 +59,9 @@ TIMELINE SYMBOLS:
 
 \b
 EXAMPLE:
+  taskdog gantt                                  # Show incomplete tasks
+  taskdog gantt -a                              # Include completed/failed tasks
   taskdog gantt --start-date 2025-10-01 --end-date 2025-10-31
-
-  Shows all tasks with daily workload summary for October 2025.
 """,
 )
 @click.option(
@@ -73,19 +77,12 @@ EXAMPLE:
     help="End date for the chart (YYYY-MM-DD, MM-DD, or MM/DD). Defaults to last task date.",
 )
 @click.option(
-    "--hide-completed",
-    "-c",
-    is_flag=True,
-    default=False,
-    help="Hide completed tasks from the chart.",
-)
-@click.option(
     "--all",
     "-a",
     "show_all",
     is_flag=True,
     default=False,
-    help="Show all tasks including archived ones",
+    help="Show all active tasks including completed and failed (archived tasks are never shown)",
 )
 @click.option(
     "--sort",
@@ -101,8 +98,12 @@ EXAMPLE:
 )
 @click.pass_context
 @handle_command_errors("displaying Gantt chart")
-def gantt_command(ctx, start_date, end_date, hide_completed, show_all, sort, reverse):
-    """Display all tasks as a Gantt chart with workload analysis.
+def gantt_command(ctx, start_date, end_date, show_all, sort, reverse):
+    """Display tasks as a Gantt chart with workload analysis.
+
+    By default, shows incomplete tasks (PENDING, IN_PROGRESS).
+    Use -a/--all to include completed and failed tasks.
+    Archived tasks are never shown.
 
     The Gantt chart visualizes task timelines and provides daily workload
     analysis to help identify scheduling conflicts and overallocated days.
@@ -111,16 +112,12 @@ def gantt_command(ctx, start_date, end_date, hide_completed, show_all, sort, rev
     repository = ctx_obj.repository
     task_query_service = TaskQueryService(repository)
 
-    # Get all tasks (no filter)
-    tasks = task_query_service.get_filtered_tasks(None, sort_by=sort, reverse=reverse)
+    # Apply appropriate filter based on --all flag
+    # Show all active tasks (exclude archived only) if --all, otherwise show incomplete only
+    filter_obj = ActiveFilter() if show_all else IncompleteFilter()
 
-    # Filter out archived tasks by default (unless --all is specified)
-    if not show_all:
-        tasks = [task for task in tasks if task.status != TaskStatus.ARCHIVED]
-
-    # Filter out completed tasks if requested
-    if hide_completed:
-        tasks = [task for task in tasks if task.status != TaskStatus.COMPLETED]
+    # Get filtered and sorted tasks
+    tasks = task_query_service.get_filtered_tasks(filter_obj, sort_by=sort, reverse=reverse)
 
     # Get console writer
     console_writer = ctx_obj.console_writer

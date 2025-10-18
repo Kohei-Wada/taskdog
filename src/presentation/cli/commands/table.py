@@ -2,6 +2,7 @@
 
 import click
 
+from application.queries.filters.active_filter import ActiveFilter
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.this_week_filter import ThisWeekFilter
 from application.queries.filters.today_filter import TodayFilter
@@ -18,7 +19,7 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
     "--all",
     "-a",
     is_flag=True,
-    help="Show all tasks including completed and archived ones (same as --filter all)",
+    help="Show all active tasks including completed and failed (archived tasks are never shown)",
 )
 @click.option(
     "--filter",
@@ -44,8 +45,8 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
     "--fields",
     "-f",
     type=str,
-    help="Comma-separated list of fields to display (e.g., 'id,name,priority,status'). "
-    "Available: id, name, priority, status, planned_start, planned_end, "
+    help="Comma-separated list of fields to display (e.g., 'id,name,note,priority,status'). "
+    "Available: id, name, note, priority, status, planned_start, planned_end, "
     "actual_start, actual_end, deadline, duration, created_at",
 )
 @click.pass_context
@@ -53,15 +54,16 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
 def table_command(ctx, all, filter, sort, reverse, fields):
     """Display tasks as a flat table.
 
-    By default, only shows incomplete tasks (PENDING, IN_PROGRESS, FAILED).
+    By default, only shows incomplete tasks (PENDING, IN_PROGRESS).
     Use --filter to apply different filtering criteria.
+    Archived tasks are never shown.
 
     Examples:
         taskdog table                              # Show incomplete tasks
+        taskdog table -a                           # Include completed/failed tasks
         taskdog table --filter today               # Show today's tasks
         taskdog table --filter week                # Show this week's tasks
-        taskdog table --filter all                 # Show all tasks
-        taskdog table --all                        # Same as --filter all
+        taskdog table --filter all                 # Show all active tasks (same as -a)
         taskdog table --filter week --fields id,name,deadline  # Combine options
     """
     ctx_obj: CliContext = ctx.obj
@@ -84,7 +86,8 @@ def table_command(ctx, all, filter, sort, reverse, fields):
 
     # Create appropriate filter object
     if filter_type == "all":
-        filter_obj = None  # No filter, show all tasks
+        # Show all active tasks (exclude archived only)
+        filter_obj = ActiveFilter()
     elif filter_type == "incomplete":
         filter_obj = IncompleteFilter()
     elif filter_type == "today":
