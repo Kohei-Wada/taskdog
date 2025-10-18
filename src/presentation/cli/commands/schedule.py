@@ -44,7 +44,7 @@ def schedule_command(ctx, task_id, start, end):
     task, _updated_fields = update_task_use_case.execute(input_dto)
 
     # Print success - format schedule as "start → end"
-    def format_schedule(value):
+    def format_schedule(value) -> str:
         start_str = task.planned_start if task.planned_start else "N/A"
         end_str = task.planned_end if task.planned_end else "N/A"
         return f"{start_str} → {end_str}"

@@ -262,7 +262,7 @@ class RichGanttRenderer(RichRendererBase):
 
         return table
 
-    def _add_simple_task(self, task: Task, table: Table):
+    def _add_simple_task(self, task: Task, table: Table) -> None:
         """Add task to simple table (no dates).
 
         Args:

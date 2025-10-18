@@ -49,12 +49,12 @@ class Task:
     daily_allocations: dict[str, float] = field(default_factory=dict)
 
     @property
-    def created_at_str(self):
+    def created_at_str(self) -> str:
         """Return human-readable creation timestamp"""
         return datetime.fromtimestamp(self.timestamp).strftime(DATETIME_FORMAT)
 
     @property
-    def actual_duration_hours(self):
+    def actual_duration_hours(self) -> float | None:
         """Calculate actual duration in hours from actual_start and actual_end"""
         if not self.actual_start or not self.actual_end:
             return None

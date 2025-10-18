@@ -1,6 +1,8 @@
 """Sorter for tasks."""
 
+from collections.abc import Callable
 from datetime import datetime
+from typing import Any
 
 from domain.entities.task import Task
 from shared.constants import SORT_SENTINEL_FUTURE
@@ -54,7 +56,7 @@ class TaskSorter:
         else:
             return sorted(tasks, key=key_func, reverse=reverse)
 
-    def _get_sort_key_function(self, sort_by: str):
+    def _get_sort_key_function(self, sort_by: str) -> Callable[[Task], Any]:
         """Get the sort key function for the specified sort key.
 
         Args:
