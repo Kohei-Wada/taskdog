@@ -11,6 +11,7 @@ from textual.widgets import Input, Label, OptionList, Static
 from textual.widgets.option_list import Option
 
 from presentation.tui.screens.base_dialog import BaseModalDialog
+from shared.config_manager import Config
 
 
 class ViOptionList(OptionList):
@@ -64,6 +65,15 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         ("enter", "submit", "Submit"),
     ]
 
+    def __init__(self, config: Config, *args, **kwargs):
+        """Initialize the screen.
+
+        Args:
+            config: Application configuration
+        """
+        super().__init__(*args, **kwargs)
+        self.config = config
+
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
         with Container(id="algorithm-dialog"):
@@ -86,7 +96,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
                 yield Input(
                     placeholder="Enter max hours per day",
                     id="max-hours-input",
-                    value="6.0",
+                    value=str(self.config.optimization.max_hours_per_day),
                 )
 
                 yield Label("Start Date:", classes="field-label")

@@ -48,12 +48,12 @@ class PriorityValidator:
     MAX_PRIORITY = 10
 
     @staticmethod
-    def validate(value: str, default_priority: int = 5) -> ValidationResult:
+    def validate(value: str, default_priority: int) -> ValidationResult:
         """Validate a task priority.
 
         Args:
             value: Priority value to validate (can be empty for default)
-            default_priority: Default priority to use if value is empty (default: 5)
+            default_priority: Default priority to use if value is empty
 
         Returns:
             ValidationResult with validation status, error message, and parsed priority

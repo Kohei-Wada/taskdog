@@ -42,7 +42,7 @@ class TaskFormFields:
 
         Args:
             task: Existing task for editing (None for new task)
-            config: Application configuration (uses default if None)
+            config: Application configuration
 
         Yields:
             Form field widgets

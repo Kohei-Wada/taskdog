@@ -35,7 +35,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
 
         Args:
             task: Existing task for editing, or None for adding new task
-            config: Application configuration (optional, uses default if None)
+            config: Application configuration
         """
         super().__init__(*args, **kwargs)
         self.task_to_edit = task

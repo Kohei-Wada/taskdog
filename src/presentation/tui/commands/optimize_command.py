@@ -76,4 +76,6 @@ class OptimizeCommand(TUICommandBase):
                 self.notify_warning("No tasks were optimized. Check task requirements.")
 
         # Show optimization settings screen
-        self.app.push_screen(AlgorithmSelectionScreen(), handle_optimization_settings)
+        self.app.push_screen(
+            AlgorithmSelectionScreen(self.context.config), handle_optimization_settings
+        )
