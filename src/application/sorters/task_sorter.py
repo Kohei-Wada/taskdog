@@ -3,6 +3,7 @@
 from datetime import datetime
 
 from domain.entities.task import Task
+from shared.constants import SORT_SENTINEL_FUTURE
 from shared.utils.date_utils import DateTimeParser
 
 
@@ -90,10 +91,10 @@ class TaskSorter:
             datetime object (far future date if None)
         """
         if not date_str:
-            return datetime(9999, 12, 31)
+            return SORT_SENTINEL_FUTURE
 
         parsed_date = DateTimeParser.parse_date(date_str)
         if parsed_date is None:
-            return datetime(9999, 12, 31)
+            return SORT_SENTINEL_FUTURE
         # Convert date to datetime for consistent comparison
         return datetime.combine(parsed_date, datetime.min.time())

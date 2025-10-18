@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 
 from domain.constants import DATETIME_FORMAT
 from shared.config_manager import ConfigManager
+from shared.constants import WEEKDAY_THRESHOLD
 
 
 class DateTimeParser:
@@ -58,8 +59,8 @@ def count_weekdays(start: date, end: date) -> int:
     weekday_count = 0
     current_date = start
     while current_date <= end:
-        # Skip weekends (Saturday=5, Sunday=6)
-        if current_date.weekday() < 5:
+        # Skip weekends (Saturday and Sunday)
+        if current_date.weekday() < WEEKDAY_THRESHOLD:
             weekday_count += 1
         current_date += timedelta(days=1)
     return weekday_count
@@ -75,8 +76,8 @@ def get_next_weekday() -> datetime:
     today = datetime.now()
     next_day = today + timedelta(days=1)
 
-    # If next day is Saturday (5) or Sunday (6), move to Monday
-    while next_day.weekday() >= 5:
+    # If next day is Saturday or Sunday, move to Monday
+    while next_day.weekday() >= WEEKDAY_THRESHOLD:
         next_day += timedelta(days=1)
 
     # Set time to default_start_hour from config (default: 9:00) for schedule start times

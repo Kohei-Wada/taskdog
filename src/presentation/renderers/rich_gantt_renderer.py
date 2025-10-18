@@ -17,6 +17,7 @@ from presentation.constants.symbols import (
     SYMBOL_EMPTY,
 )
 from presentation.renderers.rich_renderer_base import RichRendererBase
+from shared.constants import SATURDAY, SUNDAY, WORKLOAD_COMFORTABLE_HOURS, WORKLOAD_MODERATE_HOURS
 from shared.utils.date_utils import DateTimeParser
 
 
@@ -166,9 +167,9 @@ class RichGanttRenderer(RichRendererBase):
 
             # Line 3: Show day number with color based on weekday
             day_str = f"{day:2d} "  # Right-aligned, 2 digits + space
-            if weekday == 5:  # Saturday
+            if weekday == SATURDAY:
                 day_style = "blue"
-            elif weekday == 6:  # Sunday
+            elif weekday == SUNDAY:
                 day_style = "red"
             else:  # Weekday
                 day_style = "cyan"
@@ -445,9 +446,9 @@ class RichGanttRenderer(RichRendererBase):
             Background color string (RGB)
         """
         weekday = current_date.weekday()
-        if weekday == 5:  # Saturday
+        if weekday == SATURDAY:
             return BACKGROUND_COLOR_SATURDAY
-        elif weekday == 6:  # Sunday
+        elif weekday == SUNDAY:
             return BACKGROUND_COLOR_SUNDAY
         else:
             return BACKGROUND_COLOR
@@ -523,9 +524,9 @@ class RichGanttRenderer(RichRendererBase):
             # Color based on workload level (use original hours for threshold)
             if hours == 0:
                 style = "dim"
-            elif hours <= 6.0:
+            elif hours <= WORKLOAD_COMFORTABLE_HOURS:
                 style = "bold green"
-            elif hours <= 8.0:
+            elif hours <= WORKLOAD_MODERATE_HOURS:
                 style = "bold yellow"
             else:
                 style = "bold red"

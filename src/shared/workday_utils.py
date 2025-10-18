@@ -2,6 +2,8 @@
 
 from datetime import datetime, timedelta
 
+from shared.constants import WEEKDAY_THRESHOLD
+
 
 class WorkdayUtils:
     """Utility class for workday-related calculations.
@@ -20,7 +22,7 @@ class WorkdayUtils:
         Returns:
             True if Saturday or Sunday, False otherwise
         """
-        return date.weekday() >= 5  # Saturday=5, Sunday=6
+        return date.weekday() >= WEEKDAY_THRESHOLD  # Friday is last weekday (Mon=0, Fri=4)
 
     @staticmethod
     def count_weekdays(start_date: datetime, end_date: datetime) -> int:
@@ -36,7 +38,7 @@ class WorkdayUtils:
         count = 0
         current = start_date
         while current <= end_date:
-            if current.weekday() < 5:  # Monday=0 to Friday=4
+            if current.weekday() < WEEKDAY_THRESHOLD:  # Monday=0 to Friday=4
                 count += 1
             current += timedelta(days=1)
         return count

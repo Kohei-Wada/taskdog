@@ -7,6 +7,7 @@ from application.services.optimization.allocators.task_allocator_base import Tas
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from domain.services.deadline_calculator import DeadlineCalculator
+from shared.constants import DEFAULT_SCHEDULE_DAYS
 from shared.workday_utils import WorkdayUtils
 
 
@@ -64,8 +65,8 @@ class BalancedAllocator(TaskAllocatorBase):
             end_date = datetime.strptime(effective_deadline, DATETIME_FORMAT)
         else:
             # If no deadline, use a reasonable period (2 weeks = 10 weekdays)
-            # 13 days from start gives us 2 weeks of weekdays
-            end_date = start_date + timedelta(days=13)
+            # DEFAULT_SCHEDULE_DAYS (13) days from start gives us ~2 weeks of weekdays
+            end_date = start_date + timedelta(days=DEFAULT_SCHEDULE_DAYS)
 
         # Calculate available weekdays in the period
         available_weekdays = WorkdayUtils.count_weekdays(start_date, end_date)
