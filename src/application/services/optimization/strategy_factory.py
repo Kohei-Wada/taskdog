@@ -30,6 +30,7 @@ from application.services.optimization.priority_first_optimization_strategy impo
 from application.services.optimization.round_robin_optimization_strategy import (
     RoundRobinOptimizationStrategy,
 )
+from shared.config_manager import Config
 
 
 class StrategyFactory:
@@ -53,17 +54,20 @@ class StrategyFactory:
     }
 
     @classmethod
-    def create(cls, algorithm_name: str = "greedy") -> OptimizationStrategy:
+    def create(
+        cls, algorithm_name: str = "greedy", config: Config | None = None
+    ) -> OptimizationStrategy:
         """Create an optimization strategy instance.
 
         Args:
             algorithm_name: Name of the algorithm to use (default: "greedy")
+            config: Application configuration (required for strategy initialization)
 
         Returns:
             Instance of the requested optimization strategy
 
         Raises:
-            ValueError: If algorithm_name is not recognized
+            ValueError: If algorithm_name is not recognized or config is None
         """
         if algorithm_name not in cls._strategies:
             available = ", ".join(cls._strategies.keys())
@@ -72,8 +76,11 @@ class StrategyFactory:
                 f"Available algorithms: {available}"
             )
 
+        if config is None:
+            raise ValueError("Config is required for strategy creation")
+
         strategy_class = cls._strategies[algorithm_name]
-        return strategy_class()
+        return strategy_class(config)  # type: ignore[call-arg]
 
     @classmethod
     def list_available(cls) -> list[str]:

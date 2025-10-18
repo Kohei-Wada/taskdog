@@ -4,7 +4,8 @@ from datetime import datetime, time
 
 import click
 
-from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
+from domain.constants import DATETIME_FORMAT
+from shared.config_manager import ConfigManager
 
 
 class DateTimeWithDefault(click.DateTime):
@@ -17,18 +18,30 @@ class DateTimeWithDefault(click.DateTime):
     - YYYY-MM-DD HH:MM:SS (uses provided time)
 
     Args:
-        default_hour: Default hour to use when only date is provided (default: 18 for end times)
+        default_hour: Default hour to use when only date is provided.
+                     If None, uses config.time.default_end_hour
+                     If "start", uses config.time.default_start_hour
+                     If int, uses that specific hour
     """
 
-    def __init__(self, default_hour=DEFAULT_END_HOUR):
+    def __init__(self, default_hour: int | str | None = None):
         """Initialize with supported datetime formats and default hour.
 
         Args:
-            default_hour: Hour to use as default when only date provided (0-23)
-                         Defaults to DEFAULT_END_HOUR (18) for end times/deadlines
+            default_hour: Hour to use as default when only date provided
+                         - None: loads from config (default_end_hour = 18)
+                         - "start": loads from config (default_start_hour = 9)
+                         - int (0-23): uses specific hour
         """
         super().__init__(formats=[DATETIME_FORMAT, "%Y-%m-%d", "%m-%d", "%m/%d"])
-        self.default_hour = default_hour
+        config = ConfigManager.load()
+
+        if default_hour is None:
+            self.default_hour = config.time.default_end_hour
+        elif default_hour == "start":
+            self.default_hour = config.time.default_start_hour
+        else:
+            self.default_hour = int(default_hour)
 
     def convert(self, value, param, ctx):
         """Convert date string to datetime, adding default time if needed.

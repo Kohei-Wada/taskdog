@@ -1,0 +1,93 @@
+# Taskdog Configuration Template
+# Copy this file to ~/.config/taskdog/config.toml (or $XDG_CONFIG_HOME/taskdog/config.toml)
+# All settings are optional - defaults will be used if not specified
+
+# ============================================================================
+# Optimization Settings
+# ============================================================================
+[optimization]
+# Maximum work hours per day for schedule optimization
+# Default: 6.0
+# Range: 0.0 - 24.0
+max_hours_per_day = 6.0
+
+# Default optimization algorithm to use
+# Default: "greedy"
+# Available algorithms:
+#   - greedy: Front-loads work (completes tasks as soon as possible)
+#   - balanced: Distributes workload evenly across available time
+#   - backward: Just-in-time scheduling from deadlines
+#   - priority_first: Schedules by priority only
+#   - earliest_deadline: Earliest Deadline First (EDF) algorithm
+#   - round_robin: Parallel progress on multiple tasks
+#   - dependency_aware: Critical Path Method (CPM)
+#   - genetic: Evolutionary algorithm for optimal schedules
+#   - monte_carlo: Random sampling approach
+default_algorithm = "greedy"
+
+# ============================================================================
+# Task Settings
+# ============================================================================
+[task]
+# Default priority for new tasks
+# Default: 5
+# Range: 1 (lowest) - 10 (highest)
+default_priority = 5
+
+# ============================================================================
+# Time Settings
+# ============================================================================
+[time]
+# Default hour for task start times (business day start)
+# Default: 9
+# Range: 0 - 23
+# Used when only a date is provided for schedule start times
+default_start_hour = 9
+
+# Default hour for task end times and deadlines (business day end)
+# Default: 18
+# Range: 0 - 23
+# Used when only a date is provided for deadlines and schedule end times
+default_end_hour = 18
+
+# ============================================================================
+# Display Settings
+# ============================================================================
+[display]
+# DateTime format string for display
+# Default: "%Y-%m-%d %H:%M:%S"
+# Format: Python strftime format
+# Examples:
+#   - "%Y-%m-%d %H:%M:%S"  → 2025-10-18 09:00:00
+#   - "%Y/%m/%d %H:%M"     → 2025/10/18 09:00
+#   - "%d %b %Y, %I:%M %p" → 18 Oct 2025, 09:00 AM
+datetime_format = "%Y-%m-%d %H:%M:%S"
+
+# ============================================================================
+# Example Configurations
+# ============================================================================
+
+# Example 1: Early bird schedule (7 AM - 3 PM)
+# [time]
+# default_start_hour = 7
+# default_end_hour = 15
+
+# Example 2: Night owl schedule (1 PM - 9 PM)
+# [time]
+# default_start_hour = 13
+# default_end_hour = 21
+
+# Example 3: Flexible schedule with high capacity
+# [optimization]
+# max_hours_per_day = 10.0
+# default_algorithm = "balanced"
+# [time]
+# default_start_hour = 8
+# default_end_hour = 18
+
+# Example 4: Conservative schedule with just-in-time delivery
+# [optimization]
+# max_hours_per_day = 4.0
+# default_algorithm = "backward"
+# [task]
+# default_priority = 3

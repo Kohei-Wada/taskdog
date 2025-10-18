@@ -46,6 +46,19 @@ class DisplayConfig:
 
 
 @dataclass(frozen=True)
+class TimeConfig:
+    """Time-related configuration.
+
+    Attributes:
+        default_start_hour: Default hour for task start times (business day start)
+        default_end_hour: Default hour for task end times and deadlines (business day end)
+    """
+
+    default_start_hour: int = 9
+    default_end_hour: int = 18
+
+
+@dataclass(frozen=True)
 class Config:
     """Taskdog configuration.
 
@@ -53,11 +66,13 @@ class Config:
         optimization: Optimization-related settings
         task: Task-related settings
         display: Display-related settings
+        time: Time-related settings
     """
 
     optimization: OptimizationConfig
     task: TaskConfig
     display: DisplayConfig
+    time: TimeConfig
 
 
 class ConfigManager:
@@ -92,6 +107,7 @@ class ConfigManager:
         optimization_data = data.get("optimization", {})
         task_data = data.get("task", {})
         display_data = data.get("display", {})
+        time_data = data.get("time", {})
 
         return Config(
             optimization=OptimizationConfig(
@@ -103,6 +119,10 @@ class ConfigManager:
             ),
             display=DisplayConfig(
                 datetime_format=display_data.get("datetime_format", "%Y-%m-%d %H:%M:%S"),
+            ),
+            time=TimeConfig(
+                default_start_hour=time_data.get("default_start_hour", 9),
+                default_end_hour=time_data.get("default_end_hour", 18),
             ),
         )
 
@@ -117,4 +137,5 @@ class ConfigManager:
             optimization=OptimizationConfig(),
             task=TaskConfig(),
             display=DisplayConfig(),
+            time=TimeConfig(),
         )

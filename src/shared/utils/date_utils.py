@@ -2,7 +2,8 @@
 
 from datetime import date, datetime, timedelta
 
-from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
+from domain.constants import DATETIME_FORMAT
+from shared.config_manager import ConfigManager
 
 
 class DateTimeParser:
@@ -68,8 +69,9 @@ def get_next_weekday() -> datetime:
     """Get the next weekday (skip weekends).
 
     Returns:
-        datetime object representing the next weekday at DEFAULT_START_HOUR
+        datetime object representing the next weekday at default_start_hour from config
     """
+    config = ConfigManager.load()
     today = datetime.now()
     next_day = today + timedelta(days=1)
 
@@ -77,5 +79,5 @@ def get_next_weekday() -> datetime:
     while next_day.weekday() >= 5:
         next_day += timedelta(days=1)
 
-    # Set time to DEFAULT_START_HOUR (9:00) for schedule start times
-    return next_day.replace(hour=DEFAULT_START_HOUR, minute=0, second=0, microsecond=0)
+    # Set time to default_start_hour from config (default: 9:00) for schedule start times
+    return next_day.replace(hour=config.time.default_start_hour, minute=0, second=0, microsecond=0)

@@ -10,6 +10,7 @@ from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from shared.config_manager import ConfigManager
 
 
 class TestBackwardOptimizationStrategy(unittest.TestCase):
@@ -22,7 +23,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
         self.create_use_case = CreateTaskUseCase(self.repository)
-        self.optimize_use_case = OptimizeScheduleUseCase(self.repository)
+        self.optimize_use_case = OptimizeScheduleUseCase(self.repository, ConfigManager.load())
 
     def tearDown(self):
         """Clean up temporary file after each test."""

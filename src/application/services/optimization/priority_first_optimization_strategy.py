@@ -7,6 +7,7 @@ from application.services.optimization.allocators.greedy_forward_allocator impor
 )
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
+from shared.config_manager import Config
 
 
 class PriorityFirstOptimizationStrategy(OptimizationStrategy):
@@ -21,9 +22,14 @@ class PriorityFirstOptimizationStrategy(OptimizationStrategy):
     capacity before moving to the next day.
     """
 
-    def __init__(self):
-        """Initialize strategy with greedy forward allocator."""
-        self.allocator = GreedyForwardAllocator()
+    def __init__(self, config: Config):
+        """Initialize strategy with greedy forward allocator.
+
+        Args:
+            config: Application configuration
+        """
+        self.config = config
+        self.allocator = GreedyForwardAllocator(config)
 
     def _sort_schedulable_tasks(
         self, tasks: list[Task], start_date: datetime, repository

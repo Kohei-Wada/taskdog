@@ -8,6 +8,7 @@ from application.services.optimization.allocators.backward_allocator import (
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
+from shared.config_manager import Config
 
 
 class BackwardOptimizationStrategy(OptimizationStrategy):
@@ -28,9 +29,14 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
     and only implements strategy-specific sorting and allocation logic.
     """
 
-    def __init__(self):
-        """Initialize strategy with backward allocator."""
-        self.allocator = BackwardAllocator()
+    def __init__(self, config: Config):
+        """Initialize strategy with backward allocator.
+
+        Args:
+            config: Application configuration
+        """
+        self.config = config
+        self.allocator = BackwardAllocator(config)
 
     def _sort_schedulable_tasks(
         self, tasks: list[Task], start_date: datetime, repository

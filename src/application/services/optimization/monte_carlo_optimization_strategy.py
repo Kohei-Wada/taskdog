@@ -11,6 +11,7 @@ from application.services.optimization.optimization_strategy import Optimization
 from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
+from shared.config_manager import Config
 
 
 class MonteCarloOptimizationStrategy(OptimizationStrategy):
@@ -28,6 +29,14 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
     """
 
     NUM_SIMULATIONS = 100
+
+    def __init__(self, config: Config):
+        """Initialize strategy with configuration.
+
+        Args:
+            config: Application configuration
+        """
+        self.config = config
 
     def optimize_tasks(
         self,
@@ -69,7 +78,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self._initialize_allocations(tasks, force_override)
 
         # Create allocator instance
-        allocator = GreedyForwardAllocator()
+        allocator = GreedyForwardAllocator(self.config)
 
         # Run Monte Carlo simulation
         best_order = self._monte_carlo_simulation(

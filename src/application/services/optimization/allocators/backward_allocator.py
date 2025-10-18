@@ -4,7 +4,7 @@ import copy
 from datetime import datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
-from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR
+from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from domain.services.deadline_calculator import DeadlineCalculator
 from shared.workday_utils import WorkdayUtils
@@ -120,8 +120,10 @@ class BackwardAllocator(TaskAllocatorBase):
             )
             task_copy.planned_start = start_with_time.strftime(DATETIME_FORMAT)
 
-            # Use DEFAULT_END_HOUR for schedule_end
-            end_date_with_time = schedule_end.replace(hour=DEFAULT_END_HOUR, minute=0, second=0)
+            # Use default_end_hour from config for schedule_end
+            end_date_with_time = schedule_end.replace(
+                hour=self.config.time.default_end_hour, minute=0, second=0
+            )
             task_copy.planned_end = end_date_with_time.strftime(DATETIME_FORMAT)
             task_copy.daily_allocations = task_daily_allocations
             return task_copy

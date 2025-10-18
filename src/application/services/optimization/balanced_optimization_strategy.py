@@ -8,6 +8,7 @@ from application.services.optimization.allocators.balanced_allocator import (
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task
+from shared.config_manager import Config
 
 
 class BalancedOptimizationStrategy(OptimizationStrategy):
@@ -27,9 +28,14 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
     and only implements strategy-specific sorting and allocation logic.
     """
 
-    def __init__(self):
-        """Initialize strategy with balanced allocator."""
-        self.allocator = BalancedAllocator()
+    def __init__(self, config: Config):
+        """Initialize strategy with balanced allocator.
+
+        Args:
+            config: Application configuration
+        """
+        self.config = config
+        self.allocator = BalancedAllocator(config)
 
     def _sort_schedulable_tasks(
         self, tasks: list[Task], start_date: datetime, repository

@@ -12,6 +12,7 @@ from application.services.optimization.optimization_strategy import Optimization
 from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
+from shared.config_manager import Config
 
 
 class GeneticOptimizationStrategy(OptimizationStrategy):
@@ -35,6 +36,14 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     GENERATIONS = 50
     CROSSOVER_RATE = 0.8
     MUTATION_RATE = 0.2
+
+    def __init__(self, config: Config):
+        """Initialize strategy with configuration.
+
+        Args:
+            config: Application configuration
+        """
+        self.config = config
 
     def optimize_tasks(
         self,
@@ -76,7 +85,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         self._initialize_allocations(tasks, force_override)
 
         # Create allocator instance
-        allocator = GreedyForwardAllocator()
+        allocator = GreedyForwardAllocator(self.config)
 
         # Run genetic algorithm
         best_order = self._genetic_algorithm(

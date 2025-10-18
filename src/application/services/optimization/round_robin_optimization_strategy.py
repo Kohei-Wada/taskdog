@@ -6,9 +6,10 @@ from datetime import datetime, timedelta
 from application.dto.optimization_result import SchedulingFailure
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.services.task_filter import TaskFilter
-from domain.constants import DATETIME_FORMAT, DEFAULT_END_HOUR, DEFAULT_START_HOUR
+from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from domain.services.deadline_calculator import DeadlineCalculator
+from shared.config_manager import Config
 from shared.workday_utils import WorkdayUtils
 
 
@@ -22,6 +23,14 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
     4. Ideal for parallel progress on multiple projects
     5. Update parent task periods based on children
     """
+
+    def __init__(self, config: Config):
+        """Initialize strategy with configuration.
+
+        Args:
+            config: Application configuration
+        """
+        self.config = config
 
     def optimize_tasks(
         self,
@@ -243,10 +252,14 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 start_dt = task_start_dates[task_id]
                 end_dt = task_end_dates[task_id]
 
-                # Set start time to DEFAULT_START_HOUR (9:00)
-                start_with_time = start_dt.replace(hour=DEFAULT_START_HOUR, minute=0, second=0)
-                # Set end time to DEFAULT_END_HOUR (18:00)
-                end_with_time = end_dt.replace(hour=DEFAULT_END_HOUR, minute=0, second=0)
+                # Set start time to config.time.default_start_hour (default: 9:00)
+                start_with_time = start_dt.replace(
+                    hour=self.config.time.default_start_hour, minute=0, second=0
+                )
+                # Set end time to config.time.default_end_hour (default: 18:00)
+                end_with_time = end_dt.replace(
+                    hour=self.config.time.default_end_hour, minute=0, second=0
+                )
 
                 task.planned_start = start_with_time.strftime(DATETIME_FORMAT)
                 task.planned_end = end_with_time.strftime(DATETIME_FORMAT)

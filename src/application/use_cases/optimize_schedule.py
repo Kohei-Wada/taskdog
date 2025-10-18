@@ -8,6 +8,7 @@ from application.services.schedule_clearer import ScheduleClearer
 from application.services.task_filter import TaskFilter
 from application.use_cases.base import UseCase
 from infrastructure.persistence.task_repository import TaskRepository
+from shared.config_manager import Config
 
 
 class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationResult]):
@@ -17,13 +18,15 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationResult]
     priorities, deadlines, and workload constraints.
     """
 
-    def __init__(self, repository: TaskRepository):
+    def __init__(self, repository: TaskRepository, config: Config):
         """Initialize use case.
 
         Args:
             repository: Task repository for data access
+            config: Application configuration
         """
         self.repository = repository
+        self.config = config
         self.schedule_clearer = ScheduleClearer(repository)
         self.task_filter = TaskFilter()
         self.summary_builder = OptimizationSummaryBuilder(repository)
@@ -48,7 +51,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationResult]
         }
 
         # Get optimization strategy
-        strategy = StrategyFactory.create(input_dto.algorithm_name)
+        strategy = StrategyFactory.create(input_dto.algorithm_name, self.config)
 
         # Run optimization
         modified_tasks, daily_allocations, failed_tasks = strategy.optimize_tasks(

@@ -17,6 +17,7 @@ from presentation.tui.config import TUI_CONFIG, TUIConfig
 from presentation.tui.context import TUIContext
 from presentation.tui.screens.main_screen import MainScreen
 from presentation.tui.services.task_service import TaskService
+from shared.config_manager import ConfigManager
 
 
 def _get_css_paths() -> list[str | Path]:
@@ -100,7 +101,11 @@ class TaskdogTUI(App):
             query_service=self.query_service,
             config=config,
         )
-        self.task_service = TaskService(repository, time_tracker, self.query_service, config)
+        # Load application config for TaskService
+        app_config = ConfigManager.load()
+        self.task_service = TaskService(
+            repository, time_tracker, self.query_service, config, app_config
+        )
 
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context, self.task_service)

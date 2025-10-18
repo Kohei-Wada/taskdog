@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from domain.entities.task import Task
+from shared.config_manager import Config
 
 
 class TaskAllocatorBase(ABC):
@@ -16,6 +17,14 @@ class TaskAllocatorBase(ABC):
     balanced, backward, etc.) while the sorting of tasks is handled
     separately by the optimization strategy.
     """
+
+    def __init__(self, config: Config):
+        """Initialize allocator with configuration.
+
+        Args:
+            config: Application configuration
+        """
+        self.config = config
 
     @abstractmethod
     def allocate(

@@ -7,7 +7,7 @@ import click
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
-from domain.constants import DATETIME_FORMAT, DEFAULT_START_HOUR
+from domain.constants import DATETIME_FORMAT
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.console.console_writer import ConsoleWriter
@@ -51,7 +51,7 @@ Use --force to override existing schedules.
 )
 @click.option(
     "--start-date",
-    type=DateTimeWithDefault(default_hour=DEFAULT_START_HOUR),
+    type=DateTimeWithDefault("start"),
     help="Start date for scheduling (default: next weekday at 09:00)",
 )
 @click.option(
@@ -101,7 +101,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
         algorithm = config.optimization.default_algorithm
 
     # Execute optimization
-    use_case = OptimizeScheduleUseCase(repository)
+    use_case = OptimizeScheduleUseCase(repository, config)
     result = use_case.execute(
         OptimizeScheduleInput(
             start_date=start_date,
