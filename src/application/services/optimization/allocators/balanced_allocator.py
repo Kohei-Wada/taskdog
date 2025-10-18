@@ -1,12 +1,10 @@
 """Balanced allocation strategy implementation."""
 
-import copy
 from datetime import datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
-from domain.services.deadline_calculator import DeadlineCalculator
 from shared.constants import DEFAULT_SCHEDULE_DAYS
 from shared.workday_utils import WorkdayUtils
 
@@ -25,7 +23,7 @@ class BalancedAllocator(TaskAllocatorBase):
     - Defaults to 2-week period if no deadline
     """
 
-    def allocate(  # noqa: C901
+    def allocate(
         self,
         task: Task,
         start_date: datetime,
@@ -48,17 +46,12 @@ class BalancedAllocator(TaskAllocatorBase):
         Returns:
             Copy of task with updated schedule, or None if allocation fails
         """
-        if not task.estimated_duration:
+        # Validate and prepare task
+        if not self._validate_task(task):
             return None
 
-        # Create a deep copy to avoid modifying the original task
-        task_copy = copy.deepcopy(task)
-
-        # Type narrowing: estimated_duration is guaranteed to be float at this point
-        assert task_copy.estimated_duration is not None
-
-        # Calculate effective deadline
-        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy)
+        task_copy = self._create_task_copy(task)
+        effective_deadline = self._get_effective_deadline(task_copy)
 
         # Calculate end date for distribution
         if effective_deadline:
@@ -74,15 +67,19 @@ class BalancedAllocator(TaskAllocatorBase):
         if available_weekdays == 0:
             return None
 
+        # Type narrowing for estimated_duration
+        estimated_duration = task_copy.estimated_duration
+        assert estimated_duration is not None  # For mypy
+
         # Calculate target hours per day (even distribution)
-        target_hours_per_day = task_copy.estimated_duration / available_weekdays
+        target_hours_per_day = estimated_duration / available_weekdays
 
         # Try to allocate with balanced distribution
         current_date = start_date
-        remaining_hours = task_copy.estimated_duration
+        remaining_hours = estimated_duration
         schedule_start = None
         schedule_end = None
-        task_daily_allocations = {}
+        task_daily_allocations: dict[str, float] = {}
 
         while remaining_hours > 0 and current_date <= end_date:
             # Skip weekends
@@ -90,14 +87,15 @@ class BalancedAllocator(TaskAllocatorBase):
                 current_date += timedelta(days=1)
                 continue
 
-            date_str = current_date.strftime("%Y-%m-%d")
-            current_allocation = daily_allocations.get(date_str, 0.0)
+            date_str = self._get_date_str(current_date)
 
             # Calculate how much we want to allocate today (balanced approach)
             desired_allocation = min(target_hours_per_day, remaining_hours)
 
             # Check available hours considering max_hours_per_day constraint
-            available_hours = max_hours_per_day - current_allocation
+            available_hours = self._calculate_available_hours(
+                daily_allocations, date_str, max_hours_per_day
+            )
 
             if available_hours > 0:
                 # Record start date on first allocation
@@ -106,6 +104,7 @@ class BalancedAllocator(TaskAllocatorBase):
 
                 # Allocate as much as possible (up to desired amount)
                 allocated = min(desired_allocation, available_hours)
+                current_allocation = self._get_current_allocation(daily_allocations, date_str)
                 daily_allocations[date_str] = current_allocation + allocated
                 task_daily_allocations[date_str] = allocated
                 remaining_hours -= allocated
@@ -118,18 +117,12 @@ class BalancedAllocator(TaskAllocatorBase):
         # Check if we couldn't allocate all hours
         if remaining_hours > 0:
             # Rollback allocations and return None
-            for date_str, hours in task_daily_allocations.items():
-                daily_allocations[date_str] -= hours
+            self._rollback_allocations(daily_allocations, task_daily_allocations)
             return None
 
         # Set planned times
         if schedule_start and schedule_end:
-            task_copy.planned_start = schedule_start.strftime(DATETIME_FORMAT)
-            end_date_with_time = schedule_end.replace(
-                hour=self.config.time.default_end_hour, minute=0, second=0
-            )
-            task_copy.planned_end = end_date_with_time.strftime(DATETIME_FORMAT)
-            task_copy.daily_allocations = task_daily_allocations
+            self._set_planned_times(task_copy, schedule_start, schedule_end, task_daily_allocations)
             return task_copy
 
         return None

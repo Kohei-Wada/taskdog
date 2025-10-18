@@ -1,12 +1,9 @@
 """Backward (Just-In-Time) allocation strategy implementation."""
 
-import copy
 from datetime import datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
-from domain.services.deadline_calculator import DeadlineCalculator
 from shared.workday_utils import WorkdayUtils
 
 
@@ -48,34 +45,33 @@ class BackwardAllocator(TaskAllocatorBase):
         Returns:
             Copy of task with updated schedule, or None if allocation fails
         """
-        if not task.estimated_duration:
+        # Validate and prepare task
+        if not self._validate_task(task):
             return None
 
-        # Create a deep copy to avoid modifying the original task
-        task_copy = copy.deepcopy(task)
-
-        # Type narrowing: estimated_duration is guaranteed to be float at this point
-        assert task_copy.estimated_duration is not None
-
-        # Calculate effective deadline
-        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy)
+        task_copy = self._create_task_copy(task)
+        effective_deadline = self._get_effective_deadline(task_copy)
 
         # Determine the target end date
         if effective_deadline:
+            from domain.constants import DATETIME_FORMAT
+
             target_end = datetime.strptime(effective_deadline, DATETIME_FORMAT)
         else:
             # If no deadline, schedule in near future (e.g., 1 week from start)
             target_end = start_date + timedelta(days=7)
 
+        # Type narrowing for estimated_duration
+        remaining_hours = task_copy.estimated_duration
+        assert remaining_hours is not None  # For mypy
+
         # Allocate backward from target_end
         current_date = target_end
-        remaining_hours = task_copy.estimated_duration
         schedule_start = None
         schedule_end = None
-        task_daily_allocations = {}
 
         # Collect allocations in reverse order
-        temp_allocations = []
+        temp_allocations: list[tuple[str, float, datetime]] = []
 
         while remaining_hours > 0:
             # Skip weekends
@@ -88,11 +84,12 @@ class BackwardAllocator(TaskAllocatorBase):
                 # Cannot schedule - insufficient time before deadline
                 return None
 
-            date_str = current_date.strftime("%Y-%m-%d")
-            current_allocation = daily_allocations.get(date_str, 0.0)
+            date_str = self._get_date_str(current_date)
 
             # Calculate available hours for this day
-            available_hours = max_hours_per_day - current_allocation
+            available_hours = self._calculate_available_hours(
+                daily_allocations, date_str, max_hours_per_day
+            )
 
             if available_hours > 0:
                 # Allocate as much as possible for this day
@@ -103,8 +100,10 @@ class BackwardAllocator(TaskAllocatorBase):
             current_date -= timedelta(days=1)
 
         # Apply allocations (we collected them in reverse, so apply in correct order)
+        task_daily_allocations = {}
         for date_str, hours, date_obj in reversed(temp_allocations):
-            daily_allocations[date_str] = daily_allocations.get(date_str, 0.0) + hours
+            current_allocation = self._get_current_allocation(daily_allocations, date_str)
+            daily_allocations[date_str] = current_allocation + hours
             task_daily_allocations[date_str] = hours
 
             # Track start and end
@@ -118,14 +117,9 @@ class BackwardAllocator(TaskAllocatorBase):
             start_with_time = schedule_start.replace(
                 hour=start_date.hour, minute=start_date.minute, second=start_date.second
             )
-            task_copy.planned_start = start_with_time.strftime(DATETIME_FORMAT)
-
-            # Use default_end_hour from config for schedule_end
-            end_date_with_time = schedule_end.replace(
-                hour=self.config.time.default_end_hour, minute=0, second=0
+            self._set_planned_times(
+                task_copy, start_with_time, schedule_end, task_daily_allocations
             )
-            task_copy.planned_end = end_date_with_time.strftime(DATETIME_FORMAT)
-            task_copy.daily_allocations = task_daily_allocations
             return task_copy
 
         return None

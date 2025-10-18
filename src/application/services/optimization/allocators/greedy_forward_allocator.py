@@ -1,12 +1,10 @@
 """Greedy forward allocation strategy implementation."""
 
-import copy
 from datetime import datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
-from domain.services.deadline_calculator import DeadlineCalculator
 from shared.workday_utils import WorkdayUtils
 
 
@@ -23,7 +21,7 @@ class GreedyForwardAllocator(TaskAllocatorBase):
     - Skips weekends
     """
 
-    def allocate(  # noqa: C901
+    def allocate(
         self,
         task: Task,
         start_date: datetime,
@@ -50,27 +48,20 @@ class GreedyForwardAllocator(TaskAllocatorBase):
         Returns:
             Copy of task with updated schedule, or None if allocation fails
         """
-        if not task.estimated_duration:
+        # Validate and prepare task
+        if not self._validate_task(task):
             return None
 
-        task_copy = copy.deepcopy(task)
-
-        # Type narrowing: estimated_duration is guaranteed to be float at this point
-        assert task_copy.estimated_duration is not None
-
-        # Save original state to revert if allocation fails
-        original_daily_allocations = copy.deepcopy(daily_allocations)
-
-        # Calculate effective deadline
-        effective_deadline = DeadlineCalculator.get_effective_deadline(task_copy)
+        task_copy = self._create_task_copy(task)
+        effective_deadline = self._get_effective_deadline(task_copy)
 
         # Find earliest available start date
         current_date = start_date
-        remaining_hours = task_copy.estimated_duration
+        remaining_hours = task_copy.estimated_duration  # Type narrowed by _create_task_copy
+        assert remaining_hours is not None  # For mypy
         schedule_start = None
         schedule_end = None
-        first_allocation = True
-        task_daily_allocations = {}
+        task_daily_allocations: dict[str, float] = {}
 
         while remaining_hours > 0:
             # Skip weekends
@@ -78,30 +69,28 @@ class GreedyForwardAllocator(TaskAllocatorBase):
                 current_date += timedelta(days=1)
                 continue
 
-            # Check deadline constraint using effective deadline
+            # Check deadline constraint
             if effective_deadline:
                 deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
                 if current_date > deadline_dt:
-                    # Cannot schedule before deadline - revert allocations
-                    for key in list(daily_allocations.keys()):
-                        daily_allocations[key] = original_daily_allocations.get(key, 0.0)
+                    # Cannot schedule before deadline - rollback
+                    self._rollback_allocations(daily_allocations, task_daily_allocations)
                     return None
 
-            # Get current allocation for this day
-            date_str = current_date.strftime("%Y-%m-%d")
-            current_allocation = daily_allocations.get(date_str, 0.0)
-
-            # Calculate available hours for this day
-            available_hours = max_hours_per_day - current_allocation
+            # Get available hours for this day
+            date_str = self._get_date_str(current_date)
+            available_hours = self._calculate_available_hours(
+                daily_allocations, date_str, max_hours_per_day
+            )
 
             if available_hours > 0:
                 # Record start date on first allocation
-                if first_allocation:
+                if schedule_start is None:
                     schedule_start = current_date
-                    first_allocation = False
 
                 # Allocate as much as possible for this day (greedy approach)
                 allocated = min(remaining_hours, available_hours)
+                current_allocation = self._get_current_allocation(daily_allocations, date_str)
                 daily_allocations[date_str] = current_allocation + allocated
                 task_daily_allocations[date_str] = allocated
                 remaining_hours -= allocated
@@ -111,19 +100,11 @@ class GreedyForwardAllocator(TaskAllocatorBase):
 
             current_date += timedelta(days=1)
 
-        # Set planned times with appropriate default hours
+        # Set planned times
         if schedule_start and schedule_end:
-            # Start date keeps its time (from start_date, typically 9:00)
-            task_copy.planned_start = schedule_start.strftime(DATETIME_FORMAT)
-            # End date should be end of work day (default: 18:00)
-            end_date_with_time = schedule_end.replace(
-                hour=self.config.time.default_end_hour, minute=0, second=0
-            )
-            task_copy.planned_end = end_date_with_time.strftime(DATETIME_FORMAT)
-            task_copy.daily_allocations = task_daily_allocations
+            self._set_planned_times(task_copy, schedule_start, schedule_end, task_daily_allocations)
             return task_copy
 
-        # Failed to allocate - revert allocations
-        for key in list(daily_allocations.keys()):
-            daily_allocations[key] = original_daily_allocations.get(key, 0.0)
+        # Failed to allocate - rollback
+        self._rollback_allocations(daily_allocations, task_daily_allocations)
         return None
