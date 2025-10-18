@@ -78,7 +78,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
             )
             yield Label(title, id="dialog-title")
             yield Label(
-                "[dim]Tab to switch, Ctrl+S to submit, Esc to cancel[/dim]", id="dialog-hint"
+                "[dim]Ctrl+S to submit, Esc to cancel, Tab to switch[/dim]", id="dialog-hint"
             )
 
             # Error message area

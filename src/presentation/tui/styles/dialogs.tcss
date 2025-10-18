@@ -16,7 +16,7 @@ AlgorithmSelectionScreen {
 
 #dialog-hint {
     text-align: center;
-    padding: 0 0 1 0;
+    padding-bottom: 1;
     color: $text-muted;
 }
 
@@ -24,7 +24,7 @@ AlgorithmSelectionScreen {
     height: auto;
     max-height: 12;
     margin: 0 0 1 0;
-    border: solid $accent;
+    border: solid $primary;
 }
 
 /* Confirmation Dialog */
@@ -63,12 +63,11 @@ TaskFormDialog {
 }
 
 #form-container {
-    padding: 0 0;
-    margin: 0 0;
+    padding: 0;
+    margin: 0;
 }
 
 .field-label {
-    padding: 0 0 0 0;
     color: $text-muted;
 }
 
@@ -88,12 +87,12 @@ TaskDetailScreen {
 
 #detail-content {
     padding: 1;
-    margin: 0 0;
+    margin: 0;
     overflow-y: auto;
 }
 
 .detail-row {
-    padding: 0 0 0 0;
+    padding: 0;
 }
 
 .detail-label {

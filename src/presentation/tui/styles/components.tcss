@@ -4,12 +4,13 @@
 #dialog-title {
     text-align: center;
     padding: 0;
-    background: $boost;
+    background: transparent;
 }
 
 #button-container {
     height: auto;
     align: center middle;
+    margin-top: 1;
 }
 
 #button-container Button {
@@ -18,5 +19,5 @@
 
 /* Form Components */
 Input {
-    margin: 0 0 0 0;
+    margin: 0;
 }
