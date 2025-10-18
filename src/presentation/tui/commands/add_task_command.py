@@ -39,5 +39,5 @@ class AddTaskCommand(TUICommandBase):
             self.notify_success(f"Added task: {task.name} (ID: {task.id})")
 
         # Show task form dialog in add mode (no task parameter)
-        dialog = TaskFormDialog()
+        dialog = TaskFormDialog(config=self.context.config)
         self.app.push_screen(dialog, handle_task_data)

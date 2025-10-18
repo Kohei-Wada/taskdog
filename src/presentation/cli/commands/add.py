@@ -14,8 +14,8 @@ from presentation.cli.error_handler import handle_task_errors
     "--priority",
     "-p",
     type=int,
-    default=100,
-    help="Task priority (default: 100, higher value = higher priority)",
+    default=None,
+    help="Task priority (default: from config or 5, higher value = higher priority)",
 )
 @click.pass_context
 @handle_task_errors("adding task", is_parent=True)
@@ -40,12 +40,16 @@ def add_command(ctx, name, priority):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    config = ctx_obj.config
     create_task_use_case = CreateTaskUseCase(repository)
+
+    # Use config default if priority not specified
+    effective_priority = priority if priority is not None else config.task.default_priority
 
     # Build input DTO (only basic fields)
     input_dto = CreateTaskInput(
         name=name,
-        priority=priority,
+        priority=effective_priority,
     )
 
     # Execute use case

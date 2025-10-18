@@ -13,11 +13,10 @@ from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
 from presentation.tui.commands import *  # noqa: F403  # Import all commands for registration
 from presentation.tui.commands.factory import CommandFactory
-from presentation.tui.config import TUI_CONFIG, TUIConfig
 from presentation.tui.context import TUIContext
 from presentation.tui.screens.main_screen import MainScreen
 from presentation.tui.services.task_service import TaskService
-from shared.config_manager import ConfigManager
+from shared.config_manager import Config, ConfigManager
 
 
 def _get_css_paths() -> list[str | Path]:
@@ -76,7 +75,7 @@ class TaskdogTUI(App):
         self,
         repository: TaskRepository,
         time_tracker: TimeTracker,
-        config: TUIConfig = TUI_CONFIG,
+        config: Config | None = None,
         *args,
         **kwargs,
     ):
@@ -85,13 +84,13 @@ class TaskdogTUI(App):
         Args:
             repository: Task repository for data access
             time_tracker: Time tracker service
-            config: TUI configuration (optional, uses global config by default)
+            config: Application configuration (optional, loads from file by default)
         """
         super().__init__(*args, **kwargs)
         self.repository = repository
         self.time_tracker = time_tracker
         self.query_service = TaskQueryService(repository)
-        self.config = config
+        self.config = config if config is not None else ConfigManager.load()
         self.main_screen: MainScreen | None = None
 
         # Initialize TUIContext and TaskService
@@ -99,13 +98,9 @@ class TaskdogTUI(App):
             repository=repository,
             time_tracker=time_tracker,
             query_service=self.query_service,
-            config=config,
+            config=self.config,
         )
-        # Load application config for TaskService
-        app_config = ConfigManager.load()
-        self.task_service = TaskService(
-            repository, time_tracker, self.query_service, config, app_config
-        )
+        self.task_service = TaskService(repository, time_tracker, self.query_service, self.config)
 
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context, self.task_service)

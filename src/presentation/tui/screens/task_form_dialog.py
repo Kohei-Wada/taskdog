@@ -15,6 +15,7 @@ from presentation.tui.forms.validators import (
     TaskNameValidator,
 )
 from presentation.tui.screens.base_dialog import BaseModalDialog
+from shared.config_manager import Config
 
 
 class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
@@ -29,15 +30,17 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         ("ctrl+s", "submit", "Submit"),
     ]
 
-    def __init__(self, task: Task | None = None, *args, **kwargs):
+    def __init__(self, task: Task | None = None, config: Config | None = None, *args, **kwargs):
         """Initialize the dialog.
 
         Args:
             task: Existing task for editing, or None for adding new task
+            config: Application configuration (optional, uses default if None)
         """
         super().__init__(*args, **kwargs)
         self.task_to_edit = task
         self.is_edit_mode = task is not None
+        self.config = config
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""
@@ -83,7 +86,8 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             return
 
         # Validate priority
-        priority_result = PriorityValidator.validate(priority_input.value)
+        default_priority = self.config.task.default_priority if self.config else 5
+        priority_result = PriorityValidator.validate(priority_input.value, default_priority)
         if not priority_result.is_valid:
             error_message.update(f"[red]Error: {priority_result.error_message}[/red]")
             priority_input.focus()

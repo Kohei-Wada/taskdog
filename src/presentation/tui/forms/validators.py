@@ -44,16 +44,16 @@ class TaskNameValidator:
 class PriorityValidator:
     """Validator for task priority."""
 
-    DEFAULT_PRIORITY = 5
     MIN_PRIORITY = 1
     MAX_PRIORITY = 10
 
     @staticmethod
-    def validate(value: str) -> ValidationResult:
+    def validate(value: str, default_priority: int = 5) -> ValidationResult:
         """Validate a task priority.
 
         Args:
             value: Priority value to validate (can be empty for default)
+            default_priority: Default priority to use if value is empty (default: 5)
 
         Returns:
             ValidationResult with validation status, error message, and parsed priority
@@ -65,7 +65,7 @@ class PriorityValidator:
             return ValidationResult(
                 is_valid=True,
                 error_message="",
-                value=PriorityValidator.DEFAULT_PRIORITY,
+                value=default_priority,
             )
 
         # Try to parse as integer

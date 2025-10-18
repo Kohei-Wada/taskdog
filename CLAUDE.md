@@ -31,11 +31,21 @@ default_priority = 5           # Default: 5 - Default priority for new tasks
 
 [display]
 datetime_format = "%Y-%m-%d %H:%M:%S"  # Default: "%Y-%m-%d %H:%M:%S" - Datetime display format
+
+[time]
+default_start_hour = 9         # Default: 9 - Default hour for task start times (business day start)
+default_end_hour = 18          # Default: 18 - Default hour for task end times and deadlines (business day end)
 ```
 
 **Priority:** CLI arguments > Config file > Hardcoded defaults
 
 Example: If config file sets `max_hours_per_day = 8.0`, the optimize command will use 8.0 by default, but `taskdog optimize --max-hours-per-day 10.0` will override it with 10.0.
+
+**Configuration Usage:**
+- All CLI commands access config via `ctx.obj.config` (from `CliContext`)
+- TUI components access config via `context.config` (from `TUIContext`)
+- Default priority for `add` command is now `config.task.default_priority` instead of hardcoded 100
+- TUI validators accept config values as parameters (e.g., `PriorityValidator.validate(value, default_priority)`)
 
 ## Development Commands
 
@@ -129,6 +139,9 @@ The application follows **Clean Architecture** with distinct layers:
   - `TaskValidationError`: Base exception for validation failures
   - `TaskAlreadyFinishedError`: Trying to start already finished task
   - `TaskNotStartedError`: Trying to complete task that hasn't been started
+- `constants.py`: Domain-wide constants (currently only `DATETIME_FORMAT`)
+  - Note: Time-related constants (DEFAULT_START_HOUR, DEFAULT_END_HOUR) were removed and migrated to `config.time`
+  - DATETIME_FORMAT is kept for backward compatibility; consider using `config.display.datetime_format` for future configurability
 - No dependencies on other layers; defines core business logic
 
 **Application Layer** (`src/application/`)
@@ -185,8 +198,10 @@ The application follows **Clean Architecture** with distinct layers:
 - `renderers/`: Rich-based output formatting (RichTableRenderer, RichGanttRenderer)
 - `tui/`: Text User Interface components using Textual library
   - `app.py`: Main TUI application (TaskdogTUI)
+  - `context.py`: TUIContext dataclass for dependency injection (repository, time_tracker, query_service, config)
   - `screens/`: Full-screen UI screens
   - `widgets/`: Reusable TUI widgets
+  - `services/task_service.py`: TaskService facade for TUI operations (uses shared Config, not TUIConfig)
 - Depends on application layer use cases and queries
 
 **Shared Layer** (`src/shared/`)
@@ -420,6 +435,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 13. **ConsoleWriter abstraction** - All output goes through ConsoleWriter interface for consistency and testability
 14. **Field-specific validation with Strategy Pattern + Registry** - TaskFieldValidatorRegistry manages field-specific validators (currently StatusValidator), using custom domain exceptions for consistent error handling; extensible design makes adding new validators simple
 15. **Optional configuration with TOML** - ConfigManager loads optional TOML config with graceful fallback to defaults; uses Python 3.11+ `tomllib` (no external dependencies); priority: CLI args > config file > hardcoded defaults
+16. **Unified config across CLI and TUI** - Both CLI and TUI use shared `Config` from `config_manager.py`; TUIConfig was removed to eliminate duplication; TUI validators accept config values as parameters
 
 ### Console Output Guidelines
 

@@ -20,7 +20,6 @@ from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
-from presentation.tui.config import TUIConfig
 from shared.config_manager import Config
 
 
@@ -36,8 +35,7 @@ class TaskService:
         repository: TaskRepository,
         time_tracker: TimeTracker,
         query_service: TaskQueryService,
-        tui_config: TUIConfig,
-        app_config: Config,
+        config: Config,
     ):
         """Initialize the task service.
 
@@ -45,14 +43,12 @@ class TaskService:
             repository: Task repository
             time_tracker: Time tracker service
             query_service: Query service for read operations
-            tui_config: TUI configuration
-            app_config: Application configuration
+            config: Application configuration
         """
         self.repository = repository
         self.time_tracker = time_tracker
         self.query_service = query_service
-        self.tui_config = tui_config
-        self.app_config = app_config
+        self.config = config
 
     def create_task(self, name: str, priority: int | None = None) -> Task:
         """Create a new task.
@@ -66,7 +62,7 @@ class TaskService:
         """
         use_case = CreateTaskUseCase(self.repository)
         task_input = CreateTaskInput(
-            name=name, priority=priority or self.tui_config.default_priority
+            name=name, priority=priority or self.config.task.default_priority
         )
         return use_case.execute(task_input)
 
@@ -124,7 +120,7 @@ class TaskService:
         algorithm: str,
         start_date: datetime | None = None,
         max_hours_per_day: float | None = None,
-        force_override: bool | None = None,
+        force_override: bool = True,
     ) -> OptimizationResult:
         """Optimize task schedules.
 
@@ -132,7 +128,7 @@ class TaskService:
             algorithm: Optimization algorithm name
             start_date: Start date (default: calculated)
             max_hours_per_day: Max hours per day (default: from config)
-            force_override: Force override existing schedules (default: from config)
+            force_override: Force override existing schedules (default: True for TUI)
 
         Returns:
             OptimizationResult containing successful/failed tasks and summary
@@ -142,16 +138,12 @@ class TaskService:
 
         optimize_input = OptimizeScheduleInput(
             start_date=start_date,
-            max_hours_per_day=max_hours_per_day or self.tui_config.default_max_hours_per_day,
-            force_override=(
-                force_override
-                if force_override is not None
-                else self.tui_config.default_force_override
-            ),
+            max_hours_per_day=max_hours_per_day or self.config.optimization.max_hours_per_day,
+            force_override=force_override,
             algorithm_name=algorithm,
         )
 
-        use_case = OptimizeScheduleUseCase(self.repository, self.app_config)
+        use_case = OptimizeScheduleUseCase(self.repository, self.config)
         return use_case.execute(optimize_input)
 
     def get_incomplete_tasks(self, sort_by: str = "id") -> list[Task]:

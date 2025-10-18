@@ -8,8 +8,8 @@ from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task, TaskStatus
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
-from presentation.tui.config import TUIConfig
 from presentation.tui.services.task_service import TaskService
+from shared.config_manager import ConfigManager
 
 
 class TestTaskService(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestTaskService(unittest.TestCase):
         self.repository = MagicMock(spec=TaskRepository)
         self.time_tracker = MagicMock(spec=TimeTracker)
         self.query_service = MagicMock(spec=TaskQueryService)
-        self.config = TUIConfig()
+        self.config = ConfigManager._default_config()
         self.service = TaskService(
             self.repository, self.time_tracker, self.query_service, self.config
         )

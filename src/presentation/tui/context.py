@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from application.queries.task_query_service import TaskQueryService
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
-from presentation.tui.config import TUIConfig
+from shared.config_manager import Config
 
 
 @dataclass
@@ -19,10 +19,10 @@ class TUIContext:
         repository: Task repository for data access
         time_tracker: Time tracker service for recording timestamps
         query_service: Query service for read-only operations
-        config: TUI configuration
+        config: Application configuration
     """
 
     repository: TaskRepository
     time_tracker: TimeTracker
     query_service: TaskQueryService
-    config: TUIConfig
+    config: Config

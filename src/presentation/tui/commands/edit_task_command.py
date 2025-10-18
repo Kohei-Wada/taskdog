@@ -74,5 +74,5 @@ class EditTaskCommand(TUICommandBase):
                 self.notify_warning("No changes made")
 
         # Show task form dialog in edit mode (with task parameter)
-        dialog = TaskFormDialog(task)
+        dialog = TaskFormDialog(task=task, config=self.context.config)
         self.app.push_screen(dialog, handle_task_data)
