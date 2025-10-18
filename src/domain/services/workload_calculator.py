@@ -49,6 +49,20 @@ class WorkloadCalculator:
             and task.planned_end is not None
         )
 
+    def get_task_daily_hours(self, task: Task) -> dict[date, float]:
+        """Get daily hour allocations for a single task.
+
+        Public method for external use. Uses daily_allocations if available,
+        otherwise distributes evenly across weekdays in the planned period.
+
+        Args:
+            task: Task to get daily hours for
+
+        Returns:
+            Dictionary mapping date to hours {date: hours}
+        """
+        return self._task_to_daily_hours(task)
+
     def _task_to_daily_hours(self, task: Task) -> dict[date, float]:
         """Convert a task to daily hour allocations.
 

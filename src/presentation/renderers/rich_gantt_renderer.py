@@ -17,7 +17,7 @@ from presentation.constants.symbols import (
     SYMBOL_EMPTY,
 )
 from presentation.renderers.rich_renderer_base import RichRendererBase
-from shared.utils.date_utils import DateTimeParser, count_weekdays
+from shared.utils.date_utils import DateTimeParser
 
 
 class RichGanttRenderer(RichRendererBase):
@@ -302,69 +302,6 @@ class RichGanttRenderer(RichRendererBase):
 
         table.add_row(str(task.id), task_name, estimated_hours, timeline)
 
-    def _calculate_task_daily_hours(self, task: Task, start_date: date, end_date: date) -> dict:
-        """Calculate daily hours allocation for a single task.
-
-        Uses task.daily_allocations if available (from optimization),
-        otherwise distributes estimated_duration equally across weekdays
-        in the planned period.
-
-        Args:
-            task: Task to calculate daily hours for
-            start_date: Start date of the chart
-            end_date: End date of the chart
-
-        Returns:
-            Dictionary mapping date to hours {date: float}
-        """
-        days = (end_date - start_date).days + 1
-        daily_hours = {start_date + timedelta(days=i): 0.0 for i in range(days)}
-
-        # Skip tasks without estimated duration
-        if not task.estimated_duration:
-            return daily_hours
-
-        # Use daily_allocations if available (from optimization)
-        if task.daily_allocations:
-            for date_str, hours in task.daily_allocations.items():
-                try:
-                    task_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-                    if task_date in daily_hours:
-                        daily_hours[task_date] = hours
-                except ValueError:
-                    # Skip invalid date strings
-                    pass
-            return daily_hours
-
-        # Fallback: distribute equally across weekdays in planned period
-        if not (task.planned_start and task.planned_end):
-            return daily_hours
-
-        planned_start = DateTimeParser.parse_date(task.planned_start)
-        planned_end = DateTimeParser.parse_date(task.planned_end)
-
-        if not (planned_start and planned_end):
-            return daily_hours
-
-        # Count weekdays in the task's planned period
-        weekday_count = count_weekdays(planned_start, planned_end)
-
-        if weekday_count == 0:
-            return daily_hours
-
-        # Distribute hours equally across weekdays
-        hours_per_day = task.estimated_duration / weekday_count
-
-        # Add to each weekday in the period
-        current_date = planned_start
-        while current_date <= planned_end:
-            # Skip weekends and add hours to weekdays in range
-            if current_date.weekday() < 5 and current_date in daily_hours:  # Monday=0, Friday=4
-                daily_hours[current_date] = hours_per_day
-            current_date += timedelta(days=1)
-
-        return daily_hours
-
     def _build_timeline(self, task: Task, start_date: date, end_date: date) -> Text:
         """Build timeline visualization for a task using layered approach.
 
@@ -385,14 +322,14 @@ class RichGanttRenderer(RichRendererBase):
         if not any(parsed_dates.values()):
             return Text("(no dates)", style="dim")
 
-        # Calculate daily hours for this task
-        daily_hours = self._calculate_task_daily_hours(task, start_date, end_date)
+        # Calculate daily hours for this task using WorkloadCalculator
+        task_daily_hours = self.workload_calculator.get_task_daily_hours(task)
 
         # Build timeline with daily hours displayed in each cell
         timeline = Text()
         for day_offset in range(days):
             current_date = start_date + timedelta(days=day_offset)
-            hours = daily_hours.get(current_date, 0.0)
+            hours = task_daily_hours.get(current_date, 0.0)
 
             # Determine cell display and styling
             display, style = self._format_timeline_cell(
