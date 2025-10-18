@@ -1,14 +1,6 @@
 """DTO for archiving a task."""
 
-from dataclasses import dataclass
+from application.dto.base import SingleTaskInput
 
-
-@dataclass
-class ArchiveTaskInput:
-    """Input data for archiving a task.
-
-    Attributes:
-        task_id: ID of the task to archive
-    """
-
-    task_id: int
+# Type alias for semantic clarity
+ArchiveTaskInput = SingleTaskInput

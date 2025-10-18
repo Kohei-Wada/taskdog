@@ -1,14 +1,6 @@
 """DTO for completing a task."""
 
-from dataclasses import dataclass
+from application.dto.base import SingleTaskInput
 
-
-@dataclass
-class CompleteTaskInput:
-    """Input data for completing a task.
-
-    Attributes:
-        task_id: ID of the task to complete
-    """
-
-    task_id: int
+# Type alias for semantic clarity
+CompleteTaskInput = SingleTaskInput

@@ -1,14 +1,6 @@
 """DTO for removing a task."""
 
-from dataclasses import dataclass
+from application.dto.base import SingleTaskInput
 
-
-@dataclass
-class RemoveTaskInput:
-    """Input data for removing a task.
-
-    Attributes:
-        task_id: ID of the task to remove
-    """
-
-    task_id: int
+# Type alias for semantic clarity
+RemoveTaskInput = SingleTaskInput
