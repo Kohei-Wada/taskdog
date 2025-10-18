@@ -12,7 +12,7 @@ from presentation.constants.colors import STATUS_COLORS_BOLD
 from presentation.tui.screens.base_dialog import BaseModalDialog
 
 
-class TaskDetailScreen(BaseModalDialog[None]):
+class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
     """Modal screen for displaying task details.
 
     Shows comprehensive information about a task including:
@@ -25,6 +25,7 @@ class TaskDetailScreen(BaseModalDialog[None]):
     BINDINGS: ClassVar = [
         ("ctrl+d", "scroll_down", "Scroll Down"),
         ("ctrl+u", "scroll_up", "Scroll Up"),
+        ("v", "edit_note", "Edit Note"),
     ]
 
     def __init__(self, detail: TaskDetailDTO | Task, *args, **kwargs):
@@ -163,3 +164,9 @@ class TaskDetailScreen(BaseModalDialog[None]):
         """Scroll up (Ctrl+U)."""
         scroll_widget = self.query_one("#detail-content", VerticalScroll)
         scroll_widget.scroll_relative(y=-(scroll_widget.size.height // 2), animate=False)
+
+    def action_edit_note(self) -> None:
+        """Edit note (v key) - dismiss and return task ID to trigger note editing."""
+        if self.task_data.id is None:
+            return
+        self.dismiss(("edit_note", self.task_data.id))
