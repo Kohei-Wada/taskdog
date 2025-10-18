@@ -72,13 +72,13 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
 
     def _compose_notes_section(self) -> ComposeResult:
         """Compose the notes section."""
-        yield Label("[bold yellow]Notes[/bold yellow]")
+        yield Label("[bold cyan]Notes[/bold cyan]")
         yield Markdown(self.notes_content or "", classes="notes-content")
         yield Static("", classes="detail-row")  # Empty row for spacing
 
     def _compose_basic_info_section(self) -> ComposeResult:
         """Compose the basic task information section."""
-        yield Label("[bold yellow]Task Information[/bold yellow]")
+        yield Label("[bold cyan]Task Information[/bold cyan]")
         yield self._create_detail_row("ID", str(self.task_data.id))
         yield self._create_detail_row("Priority", str(self.task_data.priority))
 
@@ -103,7 +103,7 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
             ]
         ):
             yield Static("", classes="detail-row")  # Empty row for spacing
-            yield Label("[bold yellow]Schedule[/bold yellow]")
+            yield Label("[bold cyan]Schedule[/bold cyan]")
             if self.task_data.planned_start:
                 yield self._create_detail_row("Planned Start", self.task_data.planned_start)
             if self.task_data.planned_end:
@@ -125,7 +125,7 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
             ]
         ):
             yield Static("", classes="detail-row")  # Empty row for spacing
-            yield Label("[bold yellow]Actual Tracking[/bold yellow]")
+            yield Label("[bold cyan]Actual Tracking[/bold cyan]")
             if self.task_data.actual_start:
                 yield self._create_detail_row("Actual Start", self.task_data.actual_start)
             if self.task_data.actual_end:

@@ -1,22 +1,12 @@
 /* Dialog Styles */
 
-/* Base Dialog Container - Shared by all dialogs */
-.dialog-container {
-    width: 70;
-    height: auto;
-    max-height: 35;
-    background: $surface;
-    border: thick $primary;
-    padding: 1;
-}
-
 /* Algorithm Selection Dialog */
 AlgorithmSelectionScreen {
     align: center middle;
 }
 
 #algorithm-dialog {
-    width: 70;
+    width: 70;  /* Standard width for form-based dialogs */
     height: auto;
     max-height: 35;
     background: $surface;
@@ -43,7 +33,7 @@ ConfirmationDialog {
 }
 
 #confirmation-dialog {
-    width: 55;
+    width: 55;  /* Compact width for simple yes/no confirmations */
     height: auto;
     max-height: 15;
     background: $surface;
@@ -64,7 +54,7 @@ TaskFormDialog {
 
 #add-task-dialog,
 #edit-task-dialog {
-    width: 70;
+    width: 70;  /* Standard width for form-based dialogs */
     height: auto;
     max-height: 35;
     background: $surface;
@@ -88,7 +78,7 @@ TaskDetailScreen {
 }
 
 #detail-screen {
-    width: 80;
+    width: 80;  /* Wide width for detailed information display */
     height: auto;
     max-height: 35;
     background: $surface;
