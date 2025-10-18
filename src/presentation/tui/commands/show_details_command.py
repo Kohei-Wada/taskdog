@@ -1,7 +1,5 @@
 """Show details command for TUI."""
 
-import subprocess
-
 from application.use_cases.get_task_detail import (
     GetTaskDetailInput,
     GetTaskDetailUseCase,
@@ -10,8 +8,7 @@ from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.screens.task_detail_screen import TaskDetailScreen
-from presentation.utils.editor import get_editor
-from presentation.utils.notes_template import generate_notes_template
+from presentation.utils.note_editor import edit_task_note
 
 
 @command_registry.register("show_details")
@@ -51,7 +48,7 @@ class ShowDetailsCommand(TUICommandBase):
                 self._edit_note(task_id)
 
     def _edit_note(self, task_id: int) -> None:
-        """Open editor for the task's note.
+        """Open editor for the task's note and re-display detail screen.
 
         Args:
             task_id: ID of the task to edit notes for
@@ -62,30 +59,21 @@ class ShowDetailsCommand(TUICommandBase):
             self.notify_warning(f"Task #{task_id} not found")
             return
 
-        # Get notes path
-        notes_path = task.notes_path
+        # Edit note using shared helper
+        edit_task_note(
+            task=task,
+            app=self.app,
+            on_success=lambda name, id_: self._on_edit_success(name, id_),
+            on_error=self.notify_error,
+        )
 
-        # Create notes directory if it doesn't exist
-        notes_path.parent.mkdir(parents=True, exist_ok=True)
+    def _on_edit_success(self, task_name: str, task_id: int) -> None:
+        """Handle successful note edit.
 
-        # Generate template if notes file doesn't exist
-        if not notes_path.exists():
-            template = generate_notes_template(task)
-            notes_path.write_text(template, encoding="utf-8")
-
-        # Get editor
-        try:
-            editor = get_editor()
-        except RuntimeError as e:
-            self.notify_error("finding editor", e)
-            return
-
-        # Suspend the app and open editor
-        try:
-            with self.app.suspend():
-                subprocess.run([editor, str(notes_path)], check=True)
-            self.notify_success(f"Note saved for task: {task.name} (ID: {task.id})")
-        except subprocess.CalledProcessError as e:
-            self.notify_error("running editor", e)
-        except KeyboardInterrupt:
-            self.notify_warning("Editor interrupted")
+        Args:
+            task_name: Name of the task
+            task_id: ID of the task
+        """
+        self.notify_success(f"Note saved for task: {task_name} (ID: {task_id})")
+        # Re-display detail screen with updated notes
+        self.execute()
