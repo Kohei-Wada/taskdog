@@ -25,6 +25,7 @@ MainScreen {
     margin-bottom: 1;
     overflow-y: auto;
     overflow-x: auto;
+    content-align: center middle;
 }
 
 /* Task table - full width */

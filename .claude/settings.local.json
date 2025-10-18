@@ -59,7 +59,8 @@
       "Bash(Currently unused but kept for backward compatibility)",
       "Bash(with existing optimization strategies.)",
       "Bash(repository: Deprecated. Will be removed in v2.0.)",
-      "Bash(__NEW_LINE__ Aliases: est)"
+      "Bash(__NEW_LINE__ Aliases: est)",
+      "WebFetch(domain:textual.textualize.io)"
     ],
     "deny": [],
     "ask": []
