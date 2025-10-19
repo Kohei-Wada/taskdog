@@ -413,9 +413,10 @@ class RichGanttRenderer(RichRendererBase):
         is_deadline = parsed_dates["deadline"] and current_date == parsed_dates["deadline"]
 
         # Determine background color (deadline gets orange background)
+        # COMPLETED tasks: hide planned period background (only show actual and deadline)
         if is_deadline:
             bg_color = BACKGROUND_COLOR_DEADLINE
-        elif is_planned:
+        elif is_planned and status != TaskStatus.COMPLETED:
             bg_color = self._get_background_color(current_date)
         else:
             bg_color = None
@@ -428,7 +429,8 @@ class RichGanttRenderer(RichRendererBase):
             return display, style
 
         # Layer 1: Show hours (for planned or deadline without actual)
-        if hours > 0:
+        # COMPLETED tasks: hide planned hours (only show actual period and deadline)
+        if hours > 0 and status != TaskStatus.COMPLETED:
             # Format: "4  " or "2.5" (right-aligned, 3 chars)
             display = f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
         else:
