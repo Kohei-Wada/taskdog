@@ -38,3 +38,43 @@ class TaskNotStartedError(TaskValidationError):
         super().__init__(
             f"Cannot complete task {task_id}: task is PENDING. Start the task first with 'taskdog start {task_id}'"
         )
+
+
+class CorruptedDataError(TaskError):
+    """Raised when tasks.json contains invalid data that violates entity invariants."""
+
+    def __init__(self, corrupted_tasks: list[dict]) -> None:
+        """Initialize with list of corrupted task data.
+
+        Args:
+            corrupted_tasks: List of dicts with 'data' and 'error' keys
+        """
+        self.corrupted_tasks = corrupted_tasks
+        task_count = len(corrupted_tasks)
+
+        # Build detailed error message
+        error_lines = [
+            f"Found {task_count} corrupted task(s) in tasks.json:",
+            "",
+        ]
+
+        for item in corrupted_tasks:
+            task_data = item["data"]
+            error_msg = item["error"]
+            task_id = task_data.get("id", "unknown")
+            task_name = task_data.get("name", "")
+            error_lines.append(f"  - Task ID {task_id} ('{task_name}'): {error_msg}")
+
+        error_lines.extend(
+            [
+                "",
+                "To fix this issue:",
+                "  1. Manually edit tasks.json to fix the invalid data",
+                "     - Empty names: Set to a non-empty string",
+                "     - Invalid priority (≤0): Set to a positive integer (e.g., 5)",
+                "     - Invalid duration (≤0): Set to null or a positive number",
+                "  2. Delete tasks.json to start fresh (WARNING: this will lose all tasks)",
+            ]
+        )
+
+        super().__init__("\n".join(error_lines))

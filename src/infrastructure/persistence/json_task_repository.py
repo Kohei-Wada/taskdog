@@ -121,6 +121,7 @@ class JsonTaskRepository(TaskRepository):
 
         Raises:
             IOError: If both main file and backup are corrupted
+            CorruptedDataError: If tasks contain invalid data that violates entity invariants
         """
         # Try loading from main file
         try:
@@ -130,7 +131,7 @@ class JsonTaskRepository(TaskRepository):
                 if not content:
                     return []
                 tasks_data = json.loads(content)
-                return [Task.from_dict(data) for data in tasks_data]
+                return self._parse_tasks(tasks_data)
         except FileNotFoundError:
             # File doesn't exist yet, return empty list
             return []
@@ -146,12 +147,43 @@ class JsonTaskRepository(TaskRepository):
                         tasks_data = json.loads(content)
                         # Restore from backup
                         shutil.copy2(backup_path, self.filename)
-                        return [Task.from_dict(data) for data in tasks_data]
+                        return self._parse_tasks(tasks_data)
                 except (OSError, json.JSONDecodeError):
                     pass
 
             # Both main and backup failed
             raise OSError(f"Failed to load tasks: corrupted data file ({e})") from e
+
+    def _parse_tasks(self, tasks_data: list[dict]) -> list[Task]:
+        """Parse task data and validate entity invariants.
+
+        Args:
+            tasks_data: List of task dictionaries from JSON
+
+        Returns:
+            List of valid Task instances
+
+        Raises:
+            CorruptedDataError: If any task contains invalid data
+        """
+        from domain.exceptions.task_exceptions import CorruptedDataError, TaskValidationError
+
+        tasks = []
+        corrupted_tasks = []
+
+        for data in tasks_data:
+            try:
+                task = Task.from_dict(data)
+                tasks.append(task)
+            except TaskValidationError as e:
+                # Collect corrupted task info
+                corrupted_tasks.append({"data": data, "error": str(e)})
+
+        # If any tasks are corrupted, raise error with details
+        if corrupted_tasks:
+            raise CorruptedDataError(corrupted_tasks)
+
+        return tasks
 
     def generate_next_id(self) -> int:
         """Generate the next available task ID.

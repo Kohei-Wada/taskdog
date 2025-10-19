@@ -35,6 +35,7 @@ from shared.xdg_utils import XDGDirectories
 @click.pass_context
 def cli(ctx):
     """Taskdog: Task management CLI tool with time tracking and optimization."""
+    from domain.exceptions.task_exceptions import CorruptedDataError
 
     # Follow XDG Base Directory specification
     tasksfile = str(XDGDirectories.get_tasks_file())
@@ -42,9 +43,16 @@ def cli(ctx):
     # Initialize shared dependencies
     console = Console()
     console_writer = RichConsoleWriter(console)
-    repository = JsonTaskRepository(tasksfile)
     time_tracker = TimeTracker()
     config = ConfigManager.load()
+
+    # Initialize repository with error handling for corrupted data
+    try:
+        repository = JsonTaskRepository(tasksfile)
+    except CorruptedDataError as e:
+        # Display detailed error message
+        console_writer.error("loading tasks", e)
+        ctx.exit(1)
 
     # Store in CliContext for type-safe access
     ctx.ensure_object(dict)

@@ -411,6 +411,12 @@ This pattern eliminates coupling between main app and individual commands, makin
 - Core fields: id, name, priority, status, timestamp
 - Time fields: planned_start/end, deadline, actual_start/end, estimated_duration
 - Scheduling field: `daily_allocations` (dict mapping date strings to hours, set by ScheduleOptimizer)
+- **Always-Valid Entity**: Implements invariant validation in `__post_init__` following DDD best practices
+  - `name`: Must not be empty or whitespace-only (raises TaskValidationError)
+  - `priority`: Must be greater than 0 (raises TaskValidationError)
+  - `estimated_duration`: If provided (not None), must be greater than 0 (raises TaskValidationError)
+  - Validation applies to both direct instantiation and `from_dict()` deserialization
+  - No auto-correction: all invalid values are rejected with exceptions
 - Properties:
   - `actual_duration_hours`: Auto-calculated from actual_start/end timestamps
   - `notes_path`: Returns Path to markdown notes at `$XDG_DATA_HOME/taskdog/notes/{id}.md`
@@ -428,6 +434,41 @@ This pattern eliminates coupling between main app and individual commands, makin
   - `--raw` flag: Shows raw markdown instead of rendered
 - Template auto-generated on first edit with task metadata
 - Notes directory created automatically when needed
+
+### Data Integrity and Validation
+
+**Entity Invariant Validation** (`src/domain/entities/task.py`)
+- Task entity implements Always-Valid Entity pattern from DDD
+- `__post_init__` validates invariants after every Task instantiation:
+  - `name`: Must not be empty or whitespace-only
+  - `priority`: Must be greater than 0
+  - `estimated_duration`: If provided (not None), must be greater than 0
+- Raises `TaskValidationError` for any violation
+- No auto-correction: all invalid values are rejected immediately
+- Applies to both direct instantiation and `from_dict()` deserialization
+
+**Corrupted Data Handling** (`src/infrastructure/persistence/json_task_repository.py`)
+- `_parse_tasks()` validates all tasks during JSON load
+- Collects all validation errors and raises `CorruptedDataError` if any task is invalid
+- `CorruptedDataError` provides:
+  - List of corrupted tasks with specific error messages
+  - Task ID and name for each corrupted task
+  - Detailed instructions for manual correction
+- CLI catches `CorruptedDataError` at startup (in `cli.py`)
+- Application fails gracefully with helpful error message
+- User must manually fix tasks.json to restore valid state
+- Ensures data integrity: invalid data never enters the system
+
+**Error Flow:**
+1. User runs any taskdog command
+2. CLI initializes JsonTaskRepository
+3. Repository loads tasks.json and calls `_parse_tasks()`
+4. `_parse_tasks()` attempts to create Task instances via `from_dict()`
+5. If any Task violates invariants, `TaskValidationError` is caught
+6. All validation errors are collected
+7. `CorruptedDataError` is raised with detailed diagnostics
+8. CLI catches error, displays message, and exits with code 1
+9. User fixes tasks.json manually or deletes it to start fresh
 
 ### Commands
 All commands live in `src/presentation/cli/commands/` and are registered in `cli.py`:
@@ -512,6 +553,8 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 16. **Unified config across CLI and TUI** - Both CLI and TUI use shared `Config` from `config_manager.py`; TUIConfig was removed to eliminate duplication; TUI validators accept config values as parameters
 17. **Template Method for status changes** - StatusChangeUseCase base class eliminates duplication across start/complete/pause/archive operations using Template Method pattern
 18. **TUI Command Pattern with Registry** - TUI commands use Command Pattern with automatic registration via decorator, CommandFactory for DI, and CommandRegistry for decoupled execution
+19. **Always-Valid Entity Pattern** - Task entity implements invariant validation in `__post_init__` following DDD best practices; validates name (non-empty), priority (> 0), and estimated_duration (> 0 if provided); raises TaskValidationError for violations; no auto-correction to maintain data integrity
+20. **Corrupted Data Detection** - JsonTaskRepository validates all tasks during load; if any task violates entity invariants, raises CorruptedDataError with detailed error messages; application startup fails gracefully prompting manual data correction; ensures data integrity at the persistence layer
 
 ### Console Output Guidelines
 

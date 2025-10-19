@@ -189,14 +189,14 @@ class TestGreedyForwardAllocator(unittest.TestCase):
 
         self.assertIsNone(result)
 
-    def test_allocate_fails_with_zero_duration(self):
-        """Test that allocator returns None for tasks with zero duration."""
+    def test_allocate_fails_with_none_duration(self):
+        """Test that allocator returns None for tasks with None duration."""
         task = Task(
             id=1,
-            name="Zero Duration",
+            name="No Duration",
             priority=100,
             status=TaskStatus.PENDING,
-            estimated_duration=0.0,
+            estimated_duration=None,
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)

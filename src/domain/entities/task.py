@@ -5,6 +5,7 @@ from enum import Enum
 from pathlib import Path
 
 from domain.constants import DATETIME_FORMAT
+from domain.exceptions.task_exceptions import TaskValidationError
 from shared.constants.time import MIN_FILE_SIZE_FOR_CONTENT, SECONDS_PER_HOUR
 from shared.xdg_utils import XDGDirectories
 
@@ -48,6 +49,29 @@ class Task:
     actual_end: str | None = None
     estimated_duration: float | None = None
     daily_allocations: dict[str, float] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        """Validate entity invariants after initialization.
+
+        Ensures that the Task entity always maintains a valid state by checking:
+        - Task name is not empty or whitespace-only
+        - Priority is a positive integer
+        - Estimated duration (if provided) is a positive number
+
+        Raises:
+            TaskValidationError: If any invariant is violated
+        """
+        # Validate name (required and non-empty)
+        if not self.name or not self.name.strip():
+            raise TaskValidationError("Task name cannot be empty")
+
+        # Validate priority (must be positive)
+        if self.priority <= 0:
+            raise TaskValidationError("Priority must be greater than 0")
+
+        # Validate estimated_duration (if provided, must be positive)
+        if self.estimated_duration is not None and self.estimated_duration <= 0:
+            raise TaskValidationError("Estimated duration must be greater than 0")
 
     @property
     def created_at_str(self) -> str:
