@@ -16,7 +16,6 @@ from application.services.optimization.allocators.greedy_forward_allocator impor
     GreedyForwardAllocator,
 )
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.config_manager import Config
@@ -77,11 +76,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             - modified_tasks: List of tasks with updated schedules
             - daily_allocations: Dict mapping date strings to allocated hours
         """
-        # Initialize service instances
-        task_filter = TaskFilter()
-
         # Filter tasks that need scheduling
-        schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
+        schedulable_tasks = [task for task in tasks if task.is_schedulable(force_override)]
 
         if not schedulable_tasks:
             return [], {}, []

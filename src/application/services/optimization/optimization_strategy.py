@@ -4,10 +4,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from application.dto.optimization_result import SchedulingFailure
-from application.services.task_filter import TaskFilter
 from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task, TaskStatus
-from domain.services.task_eligibility_checker import TaskEligibilityChecker
 
 
 class OptimizationStrategy(ABC):
@@ -65,8 +63,7 @@ class OptimizationStrategy(ABC):
         self._initialize_allocations(tasks, force_override)
 
         # 3. Filter tasks that need scheduling
-        task_filter = TaskFilter()
-        schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
+        schedulable_tasks = [task for task in tasks if task.is_schedulable(force_override)]
 
         # 4. Sort tasks by strategy-specific priority
         sorted_tasks = self._sort_schedulable_tasks(schedulable_tasks, start_date, repository)
@@ -97,7 +94,7 @@ class OptimizationStrategy(ABC):
         """
         for task in tasks:
             # Skip finished tasks (completed/archived) - they don't contribute to future workload
-            if not TaskEligibilityChecker.should_count_in_workload(task):
+            if not task.should_count_in_workload():
                 continue
 
             # Skip tasks without schedules

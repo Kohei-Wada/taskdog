@@ -138,6 +138,49 @@ class Task:
             self.notes_path.exists() and self.notes_path.stat().st_size > MIN_FILE_SIZE_FOR_CONTENT
         )
 
+    def is_schedulable(self, force_override: bool = False) -> bool:
+        """Check if task can be scheduled.
+
+        Args:
+            force_override: Whether to allow rescheduling of already-scheduled tasks
+
+        Returns:
+            True if task can be scheduled
+
+        Business Rules:
+            - Must have estimated_duration set
+            - Must be PENDING or FAILED status (not IN_PROGRESS, COMPLETED, or ARCHIVED)
+            - FAILED tasks can be rescheduled (allows retry)
+            - If force_override is False, must not have existing schedule
+        """
+        # Skip completed and archived tasks
+        if self.status in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED):
+            return False
+
+        # Skip IN_PROGRESS tasks (don't reschedule tasks already being worked on)
+        if self.status == TaskStatus.IN_PROGRESS:
+            return False
+
+        # Skip tasks without estimated duration
+        if not self.estimated_duration:
+            return False
+
+        # Skip tasks with existing schedule unless force_override
+        return not (self.planned_start and not force_override)
+
+    def should_count_in_workload(self) -> bool:
+        """Check if task should be counted in workload calculations.
+
+        Returns:
+            True if task should be included in workload
+
+        Business Rules:
+            - Exclude COMPLETED tasks (work already done)
+            - Exclude ARCHIVED tasks (historical records)
+            - Include PENDING and IN_PROGRESS tasks
+        """
+        return not self.is_finished
+
     def to_dict(self) -> dict:
         """Serialize task to dictionary for persistence.
 

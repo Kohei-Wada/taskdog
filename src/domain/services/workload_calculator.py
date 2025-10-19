@@ -3,7 +3,6 @@
 from datetime import date, datetime, timedelta
 
 from domain.entities.task import Task
-from domain.services.task_eligibility_checker import TaskEligibilityChecker
 from shared.utils.date_utils import DateTimeParser, count_weekdays
 
 
@@ -43,7 +42,7 @@ class WorkloadCalculator:
             True if task should be counted in workload, False otherwise
         """
         return (
-            TaskEligibilityChecker.should_count_in_workload(task)
+            task.should_count_in_workload()
             and task.estimated_duration is not None
             and task.planned_start is not None
             and task.planned_end is not None

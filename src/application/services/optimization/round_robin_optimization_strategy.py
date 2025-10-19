@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from application.constants.optimization import ROUND_ROBIN_MAX_ITERATIONS
 from application.dto.optimization_result import SchedulingFailure
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from application.services.task_filter import TaskFilter
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.config_manager import Config
@@ -58,11 +57,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             - daily_allocations: Dict mapping date strings to allocated hours
             - failed_tasks: List of tasks that could not be scheduled (empty for round-robin)
         """
-        # Initialize service instances
-        task_filter = TaskFilter()
-
         # Filter tasks that need scheduling
-        schedulable_tasks = task_filter.get_schedulable_tasks(tasks, force_override)
+        schedulable_tasks = [task for task in tasks if task.is_schedulable(force_override)]
 
         if not schedulable_tasks:
             return [], {}, []

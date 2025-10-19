@@ -5,7 +5,6 @@ from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.services.optimization.strategy_factory import StrategyFactory
 from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from application.services.schedule_clearer import ScheduleClearer
-from application.services.task_filter import TaskFilter
 from application.use_cases.base import UseCase
 from infrastructure.persistence.task_repository import TaskRepository
 from shared.config_manager import Config
@@ -28,7 +27,6 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationResult]
         self.repository = repository
         self.config = config
         self.schedule_clearer = ScheduleClearer(repository)
-        self.task_filter = TaskFilter()
         self.summary_builder = OptimizationSummaryBuilder(repository)
 
     def execute(self, input_dto: OptimizeScheduleInput) -> OptimizationResult:
@@ -70,9 +68,9 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationResult]
         # (when force_override is True, schedulable tasks that failed to schedule
         # should have their old schedules cleared to avoid phantom allocations)
         if input_dto.force_override:
-            schedulable_tasks = self.task_filter.get_schedulable_tasks(
-                all_tasks, input_dto.force_override
-            )
+            schedulable_tasks = [
+                task for task in all_tasks if task.is_schedulable(input_dto.force_override)
+            ]
             scheduled_task_ids = {t.id for t in modified_tasks}
 
             # Find tasks that were schedulable but failed to schedule
