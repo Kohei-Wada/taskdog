@@ -45,7 +45,10 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         # Start on Monday
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday 9:00
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="balanced"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="balanced",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -73,7 +76,10 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="balanced"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="balanced",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -105,7 +111,10 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         # Optimize with 6h/day max
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="balanced"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="balanced",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -142,7 +151,10 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="balanced"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="balanced",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -170,7 +182,10 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="balanced"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="balanced",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 

@@ -38,7 +38,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)  # Wednesday
-        optimize_input = OptimizeScheduleInput(start_date=start_date)
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+        )
         result = self.optimize_use_case.execute(optimize_input)
 
         # Verify
@@ -63,7 +68,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Optimize with 6h/day limit
         start_date = datetime(2025, 10, 15, 18, 0, 0)
-        optimize_input = OptimizeScheduleInput(start_date=start_date, max_hours_per_day=6.0)
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+        )
         result = self.optimize_use_case.execute(optimize_input)
 
         # All 3 tasks (6h total) should fit in one day
@@ -91,7 +101,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)  # Wednesday
-        optimize_input = OptimizeScheduleInput(start_date=start_date, max_hours_per_day=6.0)
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+        )
         result = self.optimize_use_case.execute(optimize_input)
 
         # Tasks should span multiple days
@@ -120,7 +135,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Start on Friday
         start_date = datetime(2025, 10, 17, 18, 0, 0)  # Friday
-        optimize_input = OptimizeScheduleInput(start_date=start_date)
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+        )
         result = self.optimize_use_case.execute(optimize_input)
 
         # Task should start on Friday
@@ -139,7 +159,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
-        optimize_input = OptimizeScheduleInput(start_date=start_date)
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+        )
         result = self.optimize_use_case.execute(optimize_input)
 
         # Both tasks should be scheduled on same day (6h total)
@@ -167,7 +192,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
-        optimize_input = OptimizeScheduleInput(start_date=start_date)
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+        )
         result = self.optimize_use_case.execute(optimize_input)
 
         # Both should be scheduled
@@ -186,7 +216,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
-        optimize_input = OptimizeScheduleInput(start_date=start_date)
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+        )
         result = self.optimize_use_case.execute(optimize_input)
 
         # No tasks should be scheduled
@@ -200,7 +235,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
-        optimize_input = OptimizeScheduleInput(start_date=start_date)
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+        )
         result = self.optimize_use_case.execute(optimize_input)
 
         # No tasks should be scheduled
@@ -220,7 +260,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Optimize without force
         start_date = datetime(2025, 10, 15, 18, 0, 0)
-        optimize_input = OptimizeScheduleInput(start_date=start_date, force_override=False)
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+        )
         result = self.optimize_use_case.execute(optimize_input)
 
         # No tasks should be modified
@@ -241,7 +286,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Optimize with force
         start_date = datetime(2025, 10, 15, 18, 0, 0)
-        optimize_input = OptimizeScheduleInput(start_date=start_date, force_override=True)
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=True,
+            algorithm_name="greedy",
+        )
         result = self.optimize_use_case.execute(optimize_input)
 
         # Task should be rescheduled

@@ -51,7 +51,10 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="dependency_aware"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="dependency_aware",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -87,7 +90,10 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="dependency_aware"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="dependency_aware",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -123,7 +129,10 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="dependency_aware"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="dependency_aware",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -151,7 +160,10 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="dependency_aware"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="dependency_aware",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -176,7 +188,10 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="dependency_aware"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="dependency_aware",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -213,7 +228,10 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="dependency_aware"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="dependency_aware",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 

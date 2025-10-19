@@ -48,7 +48,10 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="monte_carlo"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="monte_carlo",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -79,7 +82,10 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="monte_carlo"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="monte_carlo",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -117,7 +123,10 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="monte_carlo"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="monte_carlo",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -140,7 +149,10 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="monte_carlo"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="monte_carlo",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -167,7 +179,10 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="monte_carlo"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="monte_carlo",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -189,7 +204,10 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
         # Start on Friday
         start_date = datetime(2025, 10, 24, 9, 0, 0)  # Friday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="monte_carlo"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="monte_carlo",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -213,7 +231,10 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="monte_carlo"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="monte_carlo",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -231,7 +252,10 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
         """Test that Monte Carlo handles empty task list gracefully."""
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="monte_carlo"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="monte_carlo",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -268,7 +292,10 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="monte_carlo"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="monte_carlo",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 

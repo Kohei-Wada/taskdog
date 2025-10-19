@@ -12,10 +12,10 @@ class OptimizeScheduleInput:
         start_date: Starting date for optimization (datetime object)
         max_hours_per_day: Maximum work hours per day
         force_override: Whether to override existing schedules
-        algorithm_name: Name of optimization algorithm to use (default: "greedy")
+        algorithm_name: Name of optimization algorithm to use
     """
 
     start_date: datetime
-    max_hours_per_day: float = 6.0
-    force_override: bool = False
-    algorithm_name: str = "greedy"
+    max_hours_per_day: float
+    force_override: bool
+    algorithm_name: str

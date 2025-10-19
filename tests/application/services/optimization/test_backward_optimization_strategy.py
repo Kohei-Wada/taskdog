@@ -45,7 +45,10 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         # Start on Monday
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="backward",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -75,7 +78,10 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         # Start on Monday
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="backward",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -101,7 +107,10 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="backward",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -133,7 +142,10 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="backward",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -173,7 +185,10 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="backward",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -202,7 +217,10 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="backward",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
@@ -224,7 +242,10 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         # Start on Monday (week before)
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
         optimize_input = OptimizeScheduleInput(
-            start_date=start_date, max_hours_per_day=6.0, algorithm_name="backward"
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="backward",
+            force_override=False,
         )
         result = self.optimize_use_case.execute(optimize_input)
 
