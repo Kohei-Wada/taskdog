@@ -7,6 +7,13 @@ from rich.table import Table
 from application.dto.task_detail_dto import TaskDetailDTO
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.colors import STATUS_STYLES
+from presentation.constants.table_styles import (
+    COLUMN_FIELD_LABEL_STYLE,
+    PANEL_BORDER_STYLE_PRIMARY,
+    PANEL_BORDER_STYLE_SECONDARY,
+    TABLE_PADDING,
+    format_table_title,
+)
 
 
 class RichDetailRenderer:
@@ -32,8 +39,8 @@ class RichDetailRenderer:
         Returns:
             Rich Table with task information
         """
-        table = Table(show_header=False, box=None, padding=(0, 1))
-        table.add_column("Field", style="cyan", no_wrap=True)
+        table = Table(show_header=False, box=None, padding=TABLE_PADDING)
+        table.add_column("Field", style=COLUMN_FIELD_LABEL_STYLE, no_wrap=True)
         table.add_column("Value")
 
         # Basic info
@@ -82,8 +89,8 @@ class RichDetailRenderer:
         task_info = self.format_task_info(task)
         panel = Panel(
             task_info,
-            title=f"[bold cyan]Task #{task.id}[/bold cyan]",
-            border_style="cyan",
+            title=format_table_title(f"Task #{task.id}"),
+            border_style=PANEL_BORDER_STYLE_PRIMARY,
             width=max_width,
             expand=False,
         )
@@ -94,15 +101,15 @@ class RichDetailRenderer:
         if dto.has_notes and dto.notes_content:
             if raw:
                 # Show raw markdown
-                self.console_writer.print("[bold cyan]Notes (raw):[/bold cyan]")
+                self.console_writer.print(format_table_title("Notes (raw):"))
                 self.console_writer.print(dto.notes_content)
             else:
                 # Render markdown with Rich
-                self.console_writer.print("[bold cyan]Notes:[/bold cyan]")
+                self.console_writer.print(format_table_title("Notes:"))
                 markdown = Markdown(dto.notes_content)
                 notes_panel = Panel(
                     markdown,
-                    border_style="dim",
+                    border_style=PANEL_BORDER_STYLE_SECONDARY,
                     width=max_width,
                     expand=False,
                 )

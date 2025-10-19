@@ -13,8 +13,6 @@ from presentation.constants.colors import (
     DAY_STYLE_SUNDAY,
     DAY_STYLE_WEEKDAY,
     GANTT_COLUMN_EST_HOURS_COLOR,
-    GANTT_COLUMN_ID_COLOR,
-    GANTT_COLUMN_TASK_COLOR,
 )
 from presentation.constants.symbols import (
     BACKGROUND_COLOR,
@@ -29,6 +27,14 @@ from presentation.constants.table_dimensions import (
     GANTT_TABLE_EST_HOURS_WIDTH,
     GANTT_TABLE_ID_WIDTH,
     GANTT_TABLE_TASK_MIN_WIDTH,
+)
+from presentation.constants.table_styles import (
+    COLUMN_ID_STYLE,
+    COLUMN_NAME_STYLE,
+    TABLE_BORDER_STYLE,
+    TABLE_HEADER_STYLE,
+    TABLE_PADDING,
+    format_table_title,
 )
 from presentation.renderers.rich_renderer_base import RichRendererBase
 from shared.constants import SATURDAY, SUNDAY, WORKLOAD_COMFORTABLE_HOURS, WORKLOAD_MODERATE_HOURS
@@ -77,24 +83,22 @@ class RichGanttRenderer(RichRendererBase):
 
         # Create Rich table
         table = Table(
-            title=f"[bold cyan]Gantt Chart[/bold cyan] ({start_date} to {end_date})",
+            title=format_table_title(f"Gantt Chart ({start_date} to {end_date})"),
             show_header=True,
-            header_style="bold magenta",
-            border_style="bright_blue",
-            padding=(0, 1),
+            header_style=TABLE_HEADER_STYLE,
+            border_style=TABLE_BORDER_STYLE,
+            padding=TABLE_PADDING,
         )
 
         # Add columns
         table.add_column(
             "ID",
             justify="right",
-            style=GANTT_COLUMN_ID_COLOR,
+            style=COLUMN_ID_STYLE,
             no_wrap=True,
             width=GANTT_TABLE_ID_WIDTH,
         )
-        table.add_column(
-            "Task", style=GANTT_COLUMN_TASK_COLOR, min_width=GANTT_TABLE_TASK_MIN_WIDTH
-        )
+        table.add_column("Task", style=COLUMN_NAME_STYLE, min_width=GANTT_TABLE_TASK_MIN_WIDTH)
         table.add_column(
             "Est.\\[h]",
             justify="right",
@@ -102,7 +106,7 @@ class RichGanttRenderer(RichRendererBase):
             no_wrap=True,
             width=GANTT_TABLE_EST_HOURS_WIDTH,
         )
-        table.add_column("Timeline", style=GANTT_COLUMN_TASK_COLOR)
+        table.add_column("Timeline", style=COLUMN_NAME_STYLE)
 
         # Add date header row
         date_header = self._build_date_header(start_date, end_date)
@@ -277,14 +281,15 @@ class RichGanttRenderer(RichRendererBase):
         """
         # Create simple table with just task names
         table = Table(
-            title="[bold cyan]Tasks (No dates available)[/bold cyan]",
+            title=format_table_title("Tasks (No dates available)"),
             show_header=True,
-            header_style="bold magenta",
-            border_style="bright_blue",
+            header_style=TABLE_HEADER_STYLE,
+            border_style=TABLE_BORDER_STYLE,
+            padding=TABLE_PADDING,
         )
 
-        table.add_column("ID", justify="right", style="cyan", no_wrap=True)
-        table.add_column("Task", style="white")
+        table.add_column("ID", justify="right", style=COLUMN_ID_STYLE, no_wrap=True)
+        table.add_column("Task", style=COLUMN_NAME_STYLE)
         table.add_column("Status", justify="center")
 
         for task in tasks:

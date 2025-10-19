@@ -26,9 +26,7 @@ STATUS_COLORS_BOLD = {
     TaskStatus.ARCHIVED: "dim white",
 }
 
-# Gantt Chart Column Header Colors
-GANTT_COLUMN_ID_COLOR = "cyan"
-GANTT_COLUMN_TASK_COLOR = "white"
+# Gantt Chart Column Header Colors (Gantt-specific)
 GANTT_COLUMN_EST_HOURS_COLOR = "yellow"
 
 # Gantt Chart Day Header Colors

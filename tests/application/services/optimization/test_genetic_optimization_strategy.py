@@ -70,7 +70,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         # Create multiple tasks
         for i in range(3):
             input_dto = CreateTaskInput(
-                name=f"Task {i+1}",
+                name=f"Task {i + 1}",
                 priority=100 - (i * 10),
                 estimated_duration=6.0,
                 deadline="2025-10-31 18:00:00",
@@ -204,7 +204,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         # Create multiple tasks with different priorities
         for i in range(5):
             input_dto = CreateTaskInput(
-                name=f"Task {i+1}",
+                name=f"Task {i + 1}",
                 priority=100 - (i * 20),
                 estimated_duration=6.0,
                 deadline="2025-10-31 18:00:00",

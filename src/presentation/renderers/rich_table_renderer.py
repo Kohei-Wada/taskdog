@@ -4,6 +4,21 @@ from rich.table import Table
 
 from domain.entities.task import Task
 from presentation.console.console_writer import ConsoleWriter
+from presentation.constants.table_styles import (
+    COLUMN_DATETIME_NO_WRAP,
+    COLUMN_DATETIME_STYLE,
+    COLUMN_DEADLINE_STYLE,
+    COLUMN_DURATION_STYLE,
+    COLUMN_ID_STYLE,
+    COLUMN_NAME_STYLE,
+    COLUMN_NOTE_JUSTIFY,
+    COLUMN_PRIORITY_STYLE,
+    COLUMN_STATUS_JUSTIFY,
+    TABLE_BORDER_STYLE,
+    TABLE_HEADER_STYLE,
+    TABLE_PADDING,
+    format_table_title,
+)
 from presentation.renderers.rich_renderer_base import RichRendererBase
 
 
@@ -15,63 +30,63 @@ class RichTableRenderer(RichRendererBase):
         "id": {
             "header": "ID",
             "justify": "right",
-            "style": "cyan",
+            "style": COLUMN_ID_STYLE,
             "no_wrap": True,
         },
         "name": {
             "header": "Name",
-            "style": "white",
+            "style": COLUMN_NAME_STYLE,
         },
         "note": {
             "header": "Note",
-            "justify": "center",
+            "justify": COLUMN_NOTE_JUSTIFY,
             "no_wrap": True,
         },
         "priority": {
             "header": "Priority",
             "justify": "center",
-            "style": "yellow",
+            "style": COLUMN_PRIORITY_STYLE,
             "no_wrap": True,
         },
         "status": {
             "header": "Status",
-            "justify": "center",
+            "justify": COLUMN_STATUS_JUSTIFY,
         },
         "planned_start": {
             "header": "Plan Start",
-            "style": "green",
-            "no_wrap": True,
+            "style": COLUMN_DATETIME_STYLE,
+            "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "planned_end": {
             "header": "Plan End",
-            "style": "green",
-            "no_wrap": True,
+            "style": COLUMN_DATETIME_STYLE,
+            "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "actual_start": {
             "header": "Actual Start",
-            "style": "blue",
-            "no_wrap": True,
+            "style": COLUMN_DATETIME_STYLE,
+            "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "actual_end": {
             "header": "Actual End",
-            "style": "blue",
-            "no_wrap": True,
+            "style": COLUMN_DATETIME_STYLE,
+            "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "deadline": {
             "header": "Deadline",
-            "style": "magenta",
-            "no_wrap": True,
+            "style": COLUMN_DEADLINE_STYLE,
+            "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "duration": {
             "header": "Duration",
             "justify": "right",
-            "style": "cyan",
+            "style": COLUMN_DURATION_STYLE,
             "no_wrap": True,
         },
         "created_at": {
             "header": "Created At",
             "style": "dim",
-            "no_wrap": True,
+            "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
     }
 
@@ -126,10 +141,11 @@ class RichTableRenderer(RichRendererBase):
 
         # Create Rich table
         table = Table(
-            title="[bold cyan]Tasks[/bold cyan]",
+            title=format_table_title("Tasks"),
             show_header=True,
-            header_style="bold magenta",
-            border_style="bright_blue",
+            header_style=TABLE_HEADER_STYLE,
+            border_style=TABLE_BORDER_STYLE,
+            padding=TABLE_PADDING,
         )
 
         # Add columns dynamically based on selected fields
