@@ -31,7 +31,8 @@ default_algorithm = "greedy"
 [task]
 # Default priority for new tasks
 # Default: 5
-# Range: 1 (lowest) - 10 (highest)
+# Range: Any positive integer (higher value = higher priority)
+# Common values: 1-10, but you can use any positive integer
 default_priority = 5
 
 # ============================================================================
