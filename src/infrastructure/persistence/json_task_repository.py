@@ -7,6 +7,7 @@ from pathlib import Path
 
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
+from shared.constants.file_management import BACKUP_FILE_SUFFIX
 
 
 class JsonTaskRepository(TaskRepository):
@@ -135,7 +136,7 @@ class JsonTaskRepository(TaskRepository):
             return []
         except json.JSONDecodeError as e:
             # Corrupted file, try backup
-            backup_path = Path(self.filename).with_suffix(".json.bak")
+            backup_path = Path(self.filename).with_suffix(BACKUP_FILE_SUFFIX)
             if backup_path.exists():
                 try:
                     with open(backup_path, encoding="utf-8") as f:
@@ -202,7 +203,7 @@ class JsonTaskRepository(TaskRepository):
 
             # Create backup if original file exists
             if file_path.exists():
-                backup_path = file_path.with_suffix(".json.bak")
+                backup_path = file_path.with_suffix(BACKUP_FILE_SUFFIX)
                 shutil.copy2(self.filename, backup_path)
 
             # Atomic rename (on Unix) or best-effort on Windows

@@ -3,6 +3,10 @@
 import random
 from datetime import datetime
 
+from application.constants.optimization import (
+    DEADLINE_PENALTY_MULTIPLIER,
+    MONTE_CARLO_NUM_SIMULATIONS,
+)
 from application.dto.optimization_result import SchedulingFailure
 from application.services.optimization.allocators.greedy_forward_allocator import (
     GreedyForwardAllocator,
@@ -31,7 +35,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
     DISPLAY_NAME = "Monte Carlo"
     DESCRIPTION = "Random sampling approach"
 
-    NUM_SIMULATIONS = 100
+    NUM_SIMULATIONS = MONTE_CARLO_NUM_SIMULATIONS
 
     def __init__(self, config: Config):
         """Initialize strategy with configuration.
@@ -206,7 +210,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
                 end_dt = datetime.strptime(task.planned_end, DATETIME_FORMAT)
                 if end_dt > deadline_dt:
                     days_late = (end_dt - deadline_dt).days
-                    deadline_penalty += days_late * 100  # Heavy penalty
+                    deadline_penalty += days_late * DEADLINE_PENALTY_MULTIPLIER
 
         # Workload variance penalty (prefer even distribution)
         if temp_daily_allocations:

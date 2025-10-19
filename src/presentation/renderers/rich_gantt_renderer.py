@@ -8,6 +8,14 @@ from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task, TaskStatus
 from domain.services.workload_calculator import WorkloadCalculator
 from presentation.console.console_writer import ConsoleWriter
+from presentation.constants.colors import (
+    DAY_STYLE_SATURDAY,
+    DAY_STYLE_SUNDAY,
+    DAY_STYLE_WEEKDAY,
+    GANTT_COLUMN_EST_HOURS_COLOR,
+    GANTT_COLUMN_ID_COLOR,
+    GANTT_COLUMN_TASK_COLOR,
+)
 from presentation.constants.symbols import (
     BACKGROUND_COLOR,
     BACKGROUND_COLOR_DEADLINE,
@@ -15,6 +23,12 @@ from presentation.constants.symbols import (
     BACKGROUND_COLOR_SUNDAY,
     SYMBOL_ACTUAL,
     SYMBOL_EMPTY,
+    SYMBOL_TODAY,
+)
+from presentation.constants.table_dimensions import (
+    GANTT_TABLE_EST_HOURS_WIDTH,
+    GANTT_TABLE_ID_WIDTH,
+    GANTT_TABLE_TASK_MIN_WIDTH,
 )
 from presentation.renderers.rich_renderer_base import RichRendererBase
 from shared.constants import SATURDAY, SUNDAY, WORKLOAD_COMFORTABLE_HOURS, WORKLOAD_MODERATE_HOURS
@@ -71,10 +85,24 @@ class RichGanttRenderer(RichRendererBase):
         )
 
         # Add columns
-        table.add_column("ID", justify="right", style="cyan", no_wrap=True, width=4)
-        table.add_column("Task", style="white", min_width=20)
-        table.add_column("Est.\\[h]", justify="right", style="yellow", no_wrap=True, width=7)
-        table.add_column("Timeline", style="white")
+        table.add_column(
+            "ID",
+            justify="right",
+            style=GANTT_COLUMN_ID_COLOR,
+            no_wrap=True,
+            width=GANTT_TABLE_ID_WIDTH,
+        )
+        table.add_column(
+            "Task", style=GANTT_COLUMN_TASK_COLOR, min_width=GANTT_TABLE_TASK_MIN_WIDTH
+        )
+        table.add_column(
+            "Est.\\[h]",
+            justify="right",
+            style=GANTT_COLUMN_EST_HOURS_COLOR,
+            no_wrap=True,
+            width=GANTT_TABLE_EST_HOURS_WIDTH,
+        )
+        table.add_column("Timeline", style=GANTT_COLUMN_TASK_COLOR)
 
         # Add date header row
         date_header = self._build_date_header(start_date, end_date)
@@ -163,18 +191,18 @@ class RichGanttRenderer(RichRendererBase):
 
             # Line 2: Show yellow circle marker for today
             if is_today:
-                line2.append(" ● ", style="bold yellow")
+                line2.append(f" {SYMBOL_TODAY} ", style="bold yellow")
             else:
                 line2.append("   ", style="dim")
 
             # Line 3: Show day number with color based on weekday
             day_str = f"{day:2d} "  # Right-aligned, 2 digits + space
             if weekday == SATURDAY:
-                day_style = "blue"
+                day_style = DAY_STYLE_SATURDAY
             elif weekday == SUNDAY:
-                day_style = "red"
+                day_style = DAY_STYLE_SUNDAY
             else:  # Weekday
-                day_style = "cyan"
+                day_style = DAY_STYLE_WEEKDAY
             line3.append(day_str, style=day_style)
 
         # Combine all three lines
@@ -484,7 +512,7 @@ class RichGanttRenderer(RichRendererBase):
         legend.append(" Actual (COMPLETED)  ", style="dim")
         legend.append("   ", style=f"on {BACKGROUND_COLOR_DEADLINE}")
         legend.append(" Deadline  ", style="dim")
-        legend.append("●", style="bold yellow")
+        legend.append(SYMBOL_TODAY, style="bold yellow")
         legend.append(" Today  ", style="dim")
         legend.append("   ", style=f"on {BACKGROUND_COLOR_SATURDAY}")
         legend.append(" Saturday  ", style="dim")

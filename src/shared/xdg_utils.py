@@ -7,6 +7,13 @@ https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
 import os
 from pathlib import Path
 
+from shared.constants.file_management import (
+    CONFIG_FILE_NAME,
+    NOTE_FILE_EXTENSION,
+    NOTES_DIR_NAME,
+    TASKS_FILE_NAME,
+)
+
 
 class XDGDirectories:
     """XDG Base Directory helper for taskdog."""
@@ -74,7 +81,7 @@ class XDGDirectories:
         Returns:
             Path to tasks.json in data directory
         """
-        return cls.get_data_home() / "tasks.json"
+        return cls.get_data_home() / TASKS_FILE_NAME
 
     @classmethod
     def get_notes_dir(cls) -> Path:
@@ -83,7 +90,7 @@ class XDGDirectories:
         Returns:
             Path to notes directory in data directory
         """
-        notes_dir = cls.get_data_home() / "notes"
+        notes_dir = cls.get_data_home() / NOTES_DIR_NAME
         notes_dir.mkdir(parents=True, exist_ok=True)
         return notes_dir
 
@@ -97,7 +104,7 @@ class XDGDirectories:
         Returns:
             Path to note markdown file
         """
-        return cls.get_notes_dir() / f"{task_id}.md"
+        return cls.get_notes_dir() / f"{task_id}{NOTE_FILE_EXTENSION}"
 
     @classmethod
     def get_config_file(cls) -> Path:
@@ -106,4 +113,4 @@ class XDGDirectories:
         Returns:
             Path to config.toml in config directory
         """
-        return cls.get_config_home() / "config.toml"
+        return cls.get_config_home() / CONFIG_FILE_NAME

@@ -3,6 +3,7 @@
 import copy
 from datetime import datetime, timedelta
 
+from application.constants.optimization import ROUND_ROBIN_MAX_ITERATIONS
 from application.dto.optimization_result import SchedulingFailure
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.services.task_filter import TaskFilter
@@ -171,7 +172,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             max_hours_per_day: Maximum hours per day
         """
         current_date = start_date
-        max_iterations = 10000  # Safety limit to prevent infinite loops
+        max_iterations = ROUND_ROBIN_MAX_ITERATIONS  # Safety limit to prevent infinite loops
 
         iteration = 0
         while any(hours > 0.001 for hours in task_remaining.values()):

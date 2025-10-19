@@ -5,6 +5,10 @@ SYMBOL_PLANNED = "░"
 SYMBOL_ACTUAL = "◆"
 SYMBOL_EMPTY = " · "
 SYMBOL_EMPTY_SPACE = "   "  # 3 spaces for planned background
+SYMBOL_TODAY = "●"  # Today marker in date header
+
+# UI Emojis
+EMOJI_NOTE = "📝"  # Note indicator in task table
 
 # Background colors for Gantt chart
 BACKGROUND_COLOR = "rgb(100,100,100)"  # Weekday

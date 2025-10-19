@@ -6,6 +6,16 @@ from rich.console import Console
 from textual.widgets import Static
 
 from domain.entities.task import Task
+from presentation.constants.table_dimensions import (
+    BORDER_WIDTH,
+    CHARS_PER_DAY,
+    DEFAULT_GANTT_WIDGET_WIDTH,
+    DISPLAY_HALF_WIDTH_DIVISOR,
+    GANTT_TABLE_FIXED_WIDTH,
+    MIN_CONSOLE_WIDTH,
+    MIN_TIMELINE_WIDTH,
+)
+from shared.constants.time import DAYS_PER_WEEK
 
 
 class GanttWidget(Static):
@@ -50,21 +60,22 @@ class GanttWidget(Static):
 
         # Get widget width for proper rendering
         # Use content region width to account for borders and padding
-        widget_width = self.size.width if self.size else 120
-        # Subtract border width (2 for left and right borders)
-        console_width = max(widget_width - 2, 80)
+        widget_width = self.size.width if self.size else DEFAULT_GANTT_WIDGET_WIDTH
+        # Subtract border width (for left and right borders)
+        console_width = max(widget_width - BORDER_WIDTH, MIN_CONSOLE_WIDTH)
 
         # Calculate optimal date range based on available width
-        # Table columns: ID(4) + Task(20) + Est(7) + borders/padding(~16) = ~47 chars
         # Timeline column gets the rest
-        timeline_width = max(console_width - 47, 30)  # Minimum 30 chars for timeline
-        # Each day takes 3 characters (e.g., "16 ")
-        max_days = timeline_width // 3
+        timeline_width = max(
+            console_width - GANTT_TABLE_FIXED_WIDTH, MIN_TIMELINE_WIDTH
+        )  # Minimum timeline width
+        # Each day takes CHARS_PER_DAY characters (e.g., "16 ")
+        max_days = timeline_width // CHARS_PER_DAY
 
-        # Round to nearest week (7 days) for cleaner display
+        # Round to nearest week for cleaner display
         # e.g., 25 days → 21 days (3 weeks), 18 days → 14 days (2 weeks)
-        weeks = max(max_days // 7, 1)  # At least 1 week
-        display_days = weeks * 7
+        weeks = max(max_days // DAYS_PER_WEEK, 1)  # At least 1 week
+        display_days = weeks * DAYS_PER_WEEK
 
         # Calculate date range
         start_date = self._start_date
@@ -81,7 +92,7 @@ class GanttWidget(Static):
             if date_range_days > display_days:
                 # Range too large, clip to display_days centered around today
                 today = date.today()
-                half_days = display_days // 2
+                half_days = display_days // DISPLAY_HALF_WIDTH_DIVISOR
                 start_date = today - timedelta(days=half_days)
                 end_date = start_date + timedelta(days=display_days - 1)
 

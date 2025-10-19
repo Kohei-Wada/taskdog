@@ -7,6 +7,19 @@ from textual.widgets import DataTable
 
 from domain.entities.task import Task
 from presentation.constants.colors import STATUS_STYLES
+from presentation.constants.symbols import EMOJI_NOTE
+from presentation.constants.table_dimensions import (
+    DEADLINE_DISPLAY_LENGTH,
+    PAGE_SCROLL_SIZE,
+    TASK_NAME_MAX_DISPLAY_LENGTH,
+    TASK_TABLE_DEADLINE_WIDTH,
+    TASK_TABLE_DURATION_WIDTH,
+    TASK_TABLE_ID_WIDTH,
+    TASK_TABLE_NAME_WIDTH,
+    TASK_TABLE_NOTE_WIDTH,
+    TASK_TABLE_PRIORITY_WIDTH,
+    TASK_TABLE_STATUS_WIDTH,
+)
 
 
 class TaskTable(DataTable):
@@ -31,13 +44,13 @@ class TaskTable(DataTable):
 
     def setup_columns(self):
         """Set up table columns."""
-        self.add_column("ID", width=6)
-        self.add_column("Name", width=30)
-        self.add_column("Pri", width=5)
-        self.add_column("Status", width=12)
-        self.add_column("Duration", width=14)
-        self.add_column("Deadline", width=18)
-        self.add_column("Note", width=6)
+        self.add_column("ID", width=TASK_TABLE_ID_WIDTH)
+        self.add_column("Name", width=TASK_TABLE_NAME_WIDTH)
+        self.add_column("Pri", width=TASK_TABLE_PRIORITY_WIDTH)
+        self.add_column("Status", width=TASK_TABLE_STATUS_WIDTH)
+        self.add_column("Duration", width=TASK_TABLE_DURATION_WIDTH)
+        self.add_column("Deadline", width=TASK_TABLE_DEADLINE_WIDTH)
+        self.add_column("Note", width=TASK_TABLE_NOTE_WIDTH)
 
     def load_tasks(self, tasks: list[Task]):
         """Load tasks into the table.
@@ -61,12 +74,16 @@ class TaskTable(DataTable):
             deadline = self._format_deadline(task.deadline)
 
             # Check if task has notes
-            note_indicator = "📝" if task.has_note else ""
+            note_indicator = EMOJI_NOTE if task.has_note else ""
 
             # Add row
             self.add_row(
                 str(task.id),
-                task.name[:28] + "..." if len(task.name) > 28 else task.name,
+                (
+                    task.name[:TASK_NAME_MAX_DISPLAY_LENGTH] + "..."
+                    if len(task.name) > TASK_NAME_MAX_DISPLAY_LENGTH
+                    else task.name
+                ),
                 str(task.priority),
                 status_styled,
                 duration,
@@ -110,15 +127,13 @@ class TaskTable(DataTable):
     def action_page_down(self) -> None:
         """Move cursor down by half page (Ctrl+d)."""
         if self.row_count > 0:
-            page_size = 10  # Half page scroll size
-            new_row = min(self.cursor_row + page_size, self.row_count - 1)
+            new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
             self.move_cursor(row=new_row)
 
     def action_page_up(self) -> None:
         """Move cursor up by half page (Ctrl+u)."""
         if self.row_count > 0:
-            page_size = 10  # Half page scroll size
-            new_row = max(self.cursor_row - page_size, 0)
+            new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
             self.move_cursor(row=new_row)
 
     def _format_duration(self, task: Task) -> str:
@@ -153,6 +168,6 @@ class TaskTable(DataTable):
         if not deadline:
             return "-"
         # Show only date and time (YYYY-MM-DD HH:MM)
-        if len(deadline) >= 16:
-            return deadline[:16]
+        if len(deadline) >= DEADLINE_DISPLAY_LENGTH:
+            return deadline[:DEADLINE_DISPLAY_LENGTH]
         return deadline

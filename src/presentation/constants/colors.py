@@ -25,3 +25,13 @@ STATUS_COLORS_BOLD = {
     TaskStatus.FAILED: "bold red",
     TaskStatus.ARCHIVED: "dim white",
 }
+
+# Gantt Chart Column Header Colors
+GANTT_COLUMN_ID_COLOR = "cyan"
+GANTT_COLUMN_TASK_COLOR = "white"
+GANTT_COLUMN_EST_HOURS_COLOR = "yellow"
+
+# Gantt Chart Day Header Colors
+DAY_STYLE_SATURDAY = "blue"
+DAY_STYLE_SUNDAY = "red"
+DAY_STYLE_WEEKDAY = "cyan"

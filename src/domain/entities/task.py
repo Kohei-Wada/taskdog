@@ -5,6 +5,7 @@ from enum import Enum
 from pathlib import Path
 
 from domain.constants import DATETIME_FORMAT
+from shared.constants.time import MIN_FILE_SIZE_FOR_CONTENT, SECONDS_PER_HOUR
 from shared.xdg_utils import XDGDirectories
 
 
@@ -61,7 +62,7 @@ class Task:
 
         start = datetime.strptime(self.actual_start, DATETIME_FORMAT)
         end = datetime.strptime(self.actual_end, DATETIME_FORMAT)
-        duration = (end - start).total_seconds() / 3600
+        duration = (end - start).total_seconds() / SECONDS_PER_HOUR
         return round(duration, 1)
 
     @property
@@ -109,7 +110,9 @@ class Task:
         Returns:
             True if notes file exists and has content
         """
-        return self.notes_path.exists() and self.notes_path.stat().st_size > 0
+        return (
+            self.notes_path.exists() and self.notes_path.stat().st_size > MIN_FILE_SIZE_FOR_CONTENT
+        )
 
     def to_dict(self) -> dict:
         """Serialize task to dictionary for persistence.

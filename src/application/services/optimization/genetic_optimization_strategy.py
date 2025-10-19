@@ -4,6 +4,13 @@ import copy
 import random
 from datetime import datetime
 
+from application.constants.optimization import (
+    DEADLINE_PENALTY_MULTIPLIER,
+    GENETIC_CROSSOVER_RATE,
+    GENETIC_GENERATIONS,
+    GENETIC_MUTATION_RATE,
+    GENETIC_POPULATION_SIZE,
+)
 from application.dto.optimization_result import SchedulingFailure
 from application.services.optimization.allocators.greedy_forward_allocator import (
     GreedyForwardAllocator,
@@ -35,10 +42,10 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     DISPLAY_NAME = "Genetic"
     DESCRIPTION = "Evolutionary algorithm"
 
-    POPULATION_SIZE = 20
-    GENERATIONS = 50
-    CROSSOVER_RATE = 0.8
-    MUTATION_RATE = 0.2
+    POPULATION_SIZE = GENETIC_POPULATION_SIZE
+    GENERATIONS = GENETIC_GENERATIONS
+    CROSSOVER_RATE = GENETIC_CROSSOVER_RATE
+    MUTATION_RATE = GENETIC_MUTATION_RATE
 
     def __init__(self, config: Config):
         """Initialize strategy with configuration.
@@ -224,7 +231,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
                 end_dt = datetime.strptime(task.planned_end, DATETIME_FORMAT)
                 if end_dt > deadline_dt:
                     days_late = (end_dt - deadline_dt).days
-                    deadline_penalty += days_late * 100  # Heavy penalty
+                    deadline_penalty += days_late * DEADLINE_PENALTY_MULTIPLIER
 
         # Workload variance penalty (prefer even distribution)
         if temp_daily_allocations:

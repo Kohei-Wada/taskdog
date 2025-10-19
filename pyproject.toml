@@ -32,6 +32,7 @@ packages = [
   "domain.services",
   "domain.exceptions",
   "application",
+  "application.constants",
   "application.use_cases",
   "application.validators",
   "application.services",
@@ -60,6 +61,7 @@ packages = [
   "presentation.tui.widgets",
   "shared",
   "shared.click_types",
+  "shared.constants",
   "shared.utils",
 ]
 package-dir = { "" = "src" }
