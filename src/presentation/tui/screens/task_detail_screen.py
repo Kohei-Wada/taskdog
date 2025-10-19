@@ -3,8 +3,8 @@
 from typing import ClassVar
 
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, VerticalScroll
-from textual.widgets import Button, Label, Markdown, Static
+from textual.containers import Container, VerticalScroll
+from textual.widgets import Label, Markdown, Static
 
 from application.dto.task_detail_dto import TaskDetailDTO
 from domain.entities.task import Task
@@ -66,9 +66,6 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
 
                 # Actual Tracking (compact)
                 yield from self._compose_tracking_section()
-
-            with Horizontal(id="button-container"):
-                yield Button("Close (Esc)", variant="default", id="close-button")
 
     def _compose_notes_section(self) -> ComposeResult:
         """Compose the notes section."""
@@ -149,11 +146,6 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
             f"[dim]{label}:[/dim] {value}",
             classes="detail-row",
         )
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button press."""
-        if event.button.id == "close-button":
-            self.dismiss(None)
 
     def action_scroll_down(self) -> None:
         """Scroll down (Ctrl+D)."""
