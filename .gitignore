@@ -214,3 +214,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Claude Code
+# Local settings are developer-specific (auto-approved commands, etc.)
+.claude/*.local.json
