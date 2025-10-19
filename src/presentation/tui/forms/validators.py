@@ -44,9 +44,6 @@ class TaskNameValidator:
 class PriorityValidator:
     """Validator for task priority."""
 
-    MIN_PRIORITY = 1
-    MAX_PRIORITY = 10
-
     @staticmethod
     def validate(value: str, default_priority: int) -> ValidationResult:
         """Validate a task priority.
@@ -76,11 +73,11 @@ class PriorityValidator:
                 is_valid=False, error_message="Priority must be a number", value=None
             )
 
-        # Check range
-        if priority < PriorityValidator.MIN_PRIORITY or priority > PriorityValidator.MAX_PRIORITY:
+        # Check that priority is positive
+        if priority <= 0:
             return ValidationResult(
                 is_valid=False,
-                error_message=f"Priority must be between {PriorityValidator.MIN_PRIORITY} and {PriorityValidator.MAX_PRIORITY}",
+                error_message="Priority must be greater than 0",
                 value=None,
             )
 

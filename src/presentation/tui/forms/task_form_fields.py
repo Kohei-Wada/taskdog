@@ -63,9 +63,9 @@ class TaskFormFields:
             )
 
             # Priority field
-            yield Label("Priority (1-10):", classes="field-label")
+            yield Label("Priority:", classes="field-label")
             yield Input(
-                placeholder=f"Enter priority (default: {default_priority})",
+                placeholder=f"Enter priority (default: {default_priority}, higher = more important)",
                 id="priority-input",
                 type="integer",
                 value=str(task.priority) if task else "",
