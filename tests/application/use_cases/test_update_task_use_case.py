@@ -230,13 +230,13 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskInput(task_id=task.id, priority=5, deadline="2025-10-20 18:00:00")
+        input_dto = UpdateTaskInput(task_id=task.id, priority=5, deadline="2026-10-20 18:00:00")
         self.use_case.execute(input_dto)
 
         # Reload from repository to verify persistence
         persisted_task = self.repository.get_by_id(task.id)
         self.assertEqual(persisted_task.priority, 5)
-        self.assertEqual(persisted_task.deadline, "2025-10-20 18:00:00")
+        self.assertEqual(persisted_task.deadline, "2026-10-20 18:00:00")
 
     def test_execute_update_estimated_duration_succeeds_for_leaf_task(self):
         """Test that estimated_duration can be set for leaf tasks (no children)"""
