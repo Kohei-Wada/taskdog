@@ -585,7 +585,15 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
   - Full-screen terminal interface with keyboard shortcuts
   - Navigation: ↑/↓ arrows or j/k (vim-style)
   - Actions: a (add), s (start), p (pause), d (done), c (cancel), R (reopen), x (delete), i (details), e (edit), o (optimize), r (refresh), q (quit)
-  - Add/Edit dialogs include checkbox for is_fixed field
+  - Add/Edit dialogs support:
+    - Task name, priority, deadline, estimated duration
+    - **Dependencies**: Comma-separated task IDs (e.g., "1,2,3")
+    - Fixed checkbox (prevents rescheduling by optimizer)
+  - Dependency management:
+    - Add dependencies when creating tasks
+    - Modify dependencies when editing tasks (automatic sync: add/remove)
+    - View dependencies in task details screen
+    - Validation with clear error messages (invalid IDs, circular dependencies)
   - Delete performs soft delete (can be restored with restore command)
 
 ### Key Design Decisions

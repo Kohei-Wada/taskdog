@@ -10,6 +10,7 @@ from domain.entities.task import Task
 from presentation.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from presentation.tui.forms.validators import (
     DeadlineValidator,
+    DependenciesValidator,
     DurationValidator,
     PriorityValidator,
     TaskNameValidator,
@@ -73,6 +74,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         priority_input = self.query_one("#priority-input", Input)
         deadline_input = self.query_one("#deadline-input", Input)
         duration_input = self.query_one("#duration-input", Input)
+        dependencies_input = self.query_one("#dependencies-input", Input)
         fixed_checkbox = self.query_one("#fixed-checkbox", Checkbox)
         error_message = self.query_one("#error-message", Static)
 
@@ -108,6 +110,13 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             duration_input.focus()
             return
 
+        # Validate dependencies
+        dependencies_result = DependenciesValidator.validate(dependencies_input.value)
+        if not dependencies_result.is_valid:
+            error_message.update(f"[red]Error: {dependencies_result.error_message}[/red]")
+            dependencies_input.focus()
+            return
+
         # All validations passed - create form data
         form_data = TaskFormData(
             name=name_result.value,  # type: ignore
@@ -115,6 +124,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             deadline=deadline_result.value,  # type: ignore
             estimated_duration=duration_result.value,  # type: ignore
             is_fixed=fixed_checkbox.value,
+            depends_on=dependencies_result.value,  # type: ignore
         )
 
         # Submit the form data

@@ -161,3 +161,54 @@ class DurationValidator:
             )
 
         return ValidationResult(is_valid=True, error_message="", value=duration)
+
+
+class DependenciesValidator:
+    """Validator for task dependencies (comma-separated task IDs)."""
+
+    @staticmethod
+    def validate(value: str) -> ValidationResult:
+        """Validate comma-separated task IDs.
+
+        Args:
+            value: Comma-separated task IDs (e.g., "1,2,3")
+
+        Returns:
+            ValidationResult with validation status, error message, and list of task IDs
+        """
+        dependencies_str = value.strip()
+
+        # Empty string means no dependencies
+        if not dependencies_str:
+            return ValidationResult(is_valid=True, error_message="", value=[])
+
+        # Split by comma and parse each ID
+        parts = [p.strip() for p in dependencies_str.split(",")]
+        task_ids = []
+
+        for part in parts:
+            if not part:  # Skip empty parts
+                continue
+
+            try:
+                task_id = int(part)
+            except ValueError:
+                return ValidationResult(
+                    is_valid=False,
+                    error_message=f"Invalid task ID: '{part}'. Must be a number.",
+                    value=None,
+                )
+
+            if task_id <= 0:
+                return ValidationResult(
+                    is_valid=False,
+                    error_message=f"Task ID must be positive: {task_id}",
+                    value=None,
+                )
+
+            task_ids.append(task_id)
+
+        # Remove duplicates while preserving order
+        unique_ids = list(dict.fromkeys(task_ids))
+
+        return ValidationResult(is_valid=True, error_message="", value=unique_ids)

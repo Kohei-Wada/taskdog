@@ -20,6 +20,7 @@ class TaskFormData:
         deadline: Optional deadline in format YYYY-MM-DD HH:MM:SS
         estimated_duration: Optional estimated duration in hours
         is_fixed: Whether task schedule is fixed (won't be rescheduled by optimizer)
+        depends_on: List of task IDs this task depends on
     """
 
     name: str
@@ -27,6 +28,7 @@ class TaskFormData:
     deadline: str | None = None
     estimated_duration: float | None = None
     is_fixed: bool = False
+    depends_on: list[int] | None = None
 
 
 class TaskFormFields:
@@ -87,6 +89,18 @@ class TaskFormFields:
                 placeholder="Optional: 4, 2.5, 8",
                 id="duration-input",
                 value=str(task.estimated_duration) if task and task.estimated_duration else "",
+            )
+
+            # Dependencies field
+            yield Label("Dependencies:", classes="field-label")
+            # Format current dependencies as comma-separated string
+            depends_on_str = ""
+            if task and task.depends_on:
+                depends_on_str = ",".join(str(dep_id) for dep_id in task.depends_on)
+            yield Input(
+                placeholder="Optional: 1,2,3 (comma-separated task IDs)",
+                id="dependencies-input",
+                value=depends_on_str,
             )
 
             # Fixed field (checkbox)

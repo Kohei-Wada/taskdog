@@ -89,6 +89,13 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
         )
         yield self._create_detail_row("Created", str(self.task_data.timestamp))
 
+        # Dependencies
+        if self.task_data.depends_on:
+            deps_str = ", ".join(str(dep_id) for dep_id in self.task_data.depends_on)
+            yield self._create_detail_row("Dependencies", deps_str)
+        else:
+            yield self._create_detail_row("Dependencies", "-")
+
     def _compose_schedule_section(self) -> ComposeResult:
         """Compose the schedule information section."""
         if any(
