@@ -46,7 +46,7 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
     "-f",
     type=str,
     help="Comma-separated list of fields to display (e.g., 'id,name,note,priority,status'). "
-    "Available: id, name, note, priority, status, planned_start, planned_end, "
+    "Available: id, name, note, priority, status, depends_on, planned_start, planned_end, "
     "actual_start, actual_end, deadline, duration, created_at",
 )
 @click.pass_context

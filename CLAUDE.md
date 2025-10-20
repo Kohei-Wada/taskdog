@@ -494,6 +494,8 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
   - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: id)
   - `--reverse`: Reverse sort order
   - `--all, -a`: Show all tasks including completed/archived (default: hide completed/archived)
+  - `--fields`: Comma-separated list of fields to display (default: id, name, note, priority, status, depends_on, planned_start, planned_end, actual_start, actual_end, deadline, duration)
+  - New column: Dependencies - Shows task IDs that this task depends on (e.g., "1,2,3" or "-")
 - `today`: Show today's tasks with sorting options (uses TaskQueryService.get_today_tasks())
   - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: deadline)
   - `--reverse`: Reverse sort order

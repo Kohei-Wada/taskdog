@@ -88,6 +88,12 @@ class RichTableRenderer(RichRendererBase):
             "style": "dim",
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
+        "depends_on": {
+            "header": "Dependencies",
+            "justify": "center",
+            "style": "cyan",
+            "no_wrap": True,
+        },
     }
 
     # Default fields to display when none specified
@@ -97,6 +103,7 @@ class RichTableRenderer(RichRendererBase):
         "note",
         "priority",
         "status",
+        "depends_on",
         "planned_start",
         "planned_end",
         "actual_start",
@@ -183,6 +190,7 @@ class RichTableRenderer(RichRendererBase):
             "note": lambda t: "📝" if t.has_note else "",
             "priority": lambda t: str(t.priority),
             "status": lambda t: self._format_status(t),
+            "depends_on": lambda t: self._format_dependencies(t),
             "planned_start": lambda t: self._format_datetime(t.planned_start),
             "planned_end": lambda t: self._format_datetime(t.planned_end),
             "actual_start": lambda t: self._format_datetime(t.actual_start),
@@ -223,6 +231,19 @@ class RichTableRenderer(RichRendererBase):
         if len(datetime_str) >= 16:
             return datetime_str[:16]
         return datetime_str
+
+    def _format_dependencies(self, task: Task) -> str:
+        """Format task dependencies for display.
+
+        Args:
+            task: Task to extract dependencies from
+
+        Returns:
+            Formatted dependencies string (e.g., "1,2,3" or "-")
+        """
+        if not task.depends_on:
+            return "-"
+        return ",".join(str(dep_id) for dep_id in task.depends_on)
 
     def _format_duration_info(self, task: Task) -> str:
         """Format duration information for a task.
