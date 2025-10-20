@@ -137,22 +137,38 @@ class JsonTaskRepository(TaskRepository):
             return []
         except json.JSONDecodeError as e:
             # Corrupted file, try backup
-            backup_path = Path(self.filename).with_suffix(BACKUP_FILE_SUFFIX)
-            if backup_path.exists():
-                try:
-                    with open(backup_path, encoding="utf-8") as f:
-                        content = f.read().strip()
-                        if not content:
-                            return []
-                        tasks_data = json.loads(content)
-                        # Restore from backup
-                        shutil.copy2(backup_path, self.filename)
-                        return self._parse_tasks(tasks_data)
-                except (OSError, json.JSONDecodeError):
-                    pass
+            return self._load_from_backup(e)
 
-            # Both main and backup failed
-            raise OSError(f"Failed to load tasks: corrupted data file ({e})") from e
+    def _load_from_backup(self, original_error: json.JSONDecodeError) -> list[Task]:
+        """Load tasks from backup file and restore main file.
+
+        Args:
+            original_error: The JSONDecodeError from the main file
+
+        Returns:
+            List of tasks loaded from backup
+
+        Raises:
+            OSError: If both main file and backup are corrupted
+        """
+        backup_path = Path(self.filename).with_suffix(BACKUP_FILE_SUFFIX)
+        if backup_path.exists():
+            try:
+                with open(backup_path, encoding="utf-8") as f:
+                    content = f.read().strip()
+                    if not content:
+                        return []
+                    tasks_data = json.loads(content)
+                    # Restore from backup
+                    shutil.copy2(backup_path, self.filename)
+                    return self._parse_tasks(tasks_data)
+            except (OSError, json.JSONDecodeError):
+                pass
+
+        # Both main and backup failed
+        raise OSError(
+            f"Failed to load tasks: corrupted data file ({original_error})"
+        ) from original_error
 
     def _parse_tasks(self, tasks_data: list[dict]) -> list[Task]:
         """Parse task data and validate entity invariants.

@@ -6,6 +6,7 @@ from application.dto.cancel_task_input import CancelTaskInput
 from application.use_cases.cancel_task import CancelTaskUseCase
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
+from shared.constants import StatusVerbs
 
 
 @click.command(name="cancel", help="Mark task(s) as canceled.")
@@ -24,6 +25,6 @@ def cancel_command(ctx, task_ids):
         task = cancel_task_use_case.execute(input_dto)
 
         # Print success message
-        console_writer.task_success("Canceled", task)
+        console_writer.task_success(StatusVerbs.CANCELED, task)
 
     execute_batch_operation(task_ids, cancel_single_task, console_writer, "cancel")

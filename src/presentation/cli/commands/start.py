@@ -7,6 +7,7 @@ from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import TaskStatus
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
+from shared.constants import StatusVerbs
 
 
 @click.command(name="start", help="Start working on task(s) (sets status to IN_PROGRESS).")
@@ -29,7 +30,7 @@ def start_command(ctx, task_ids):
         task = start_task_use_case.execute(input_dto)
 
         # Print success message
-        console_writer.task_success("Started", task)
+        console_writer.task_success(StatusVerbs.STARTED, task)
         console_writer.task_start_time(task, was_already_in_progress)
 
     execute_batch_operation(task_ids, start_single_task, console_writer, "start")

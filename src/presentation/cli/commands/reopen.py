@@ -4,20 +4,9 @@ import click
 
 from application.dto.reopen_task_input import ReopenTaskInput
 from application.use_cases.reopen_task import ReopenTaskUseCase
-from domain.exceptions.task_exceptions import (
-    DependencyNotMetError,
-    TaskNotFoundException,
-    TaskValidationError,
-)
+from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
-
-
-def _reopen_single_task(ctx_obj: CliContext, task_id: int) -> None:
-    """Reopen a single task."""
-    input_dto = ReopenTaskInput(task_id=task_id)
-    use_case = ReopenTaskUseCase(ctx_obj.repository, ctx_obj.time_tracker)
-    task = use_case.execute(input_dto)
-    ctx_obj.console_writer.task_success("Reopened", task)
+from shared.constants import StatusVerbs
 
 
 @click.command(name="reopen", help="Reopen completed or canceled task(s).")
@@ -38,17 +27,13 @@ def reopen_command(ctx, task_ids):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
+    repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
 
-    for task_id in task_ids:
-        try:
-            _reopen_single_task(ctx_obj, task_id)
-        except TaskNotFoundException as e:
-            console_writer.validation_error(str(e))
-        except (TaskValidationError, DependencyNotMetError) as e:
-            console_writer.validation_error(str(e))
-        except Exception as e:
-            console_writer.error("reopening task", e)
+    def reopen_single_task(task_id: int) -> None:
+        input_dto = ReopenTaskInput(task_id=task_id)
+        use_case = ReopenTaskUseCase(repository, time_tracker)
+        task = use_case.execute(input_dto)
+        console_writer.task_success(StatusVerbs.REOPENED, task)
 
-        # Add spacing between tasks if processing multiple
-        if len(task_ids) > 1:
-            console_writer.empty_line()
+    execute_batch_operation(task_ids, reopen_single_task, console_writer, "reopening task")

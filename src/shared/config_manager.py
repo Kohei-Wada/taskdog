@@ -7,6 +7,14 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
+from shared.constants.config_defaults import (
+    DEFAULT_ALGORITHM,
+    DEFAULT_DATETIME_FORMAT,
+    DEFAULT_END_HOUR,
+    DEFAULT_MAX_HOURS_PER_DAY,
+    DEFAULT_PRIORITY,
+    DEFAULT_START_HOUR,
+)
 from shared.xdg_utils import XDGDirectories
 
 
@@ -19,8 +27,8 @@ class OptimizationConfig:
         default_algorithm: Default optimization algorithm to use
     """
 
-    max_hours_per_day: float = 6.0
-    default_algorithm: str = "greedy"
+    max_hours_per_day: float = DEFAULT_MAX_HOURS_PER_DAY
+    default_algorithm: str = DEFAULT_ALGORITHM
 
 
 @dataclass(frozen=True)
@@ -31,7 +39,7 @@ class TaskConfig:
         default_priority: Default priority for new tasks
     """
 
-    default_priority: int = 5
+    default_priority: int = DEFAULT_PRIORITY
 
 
 @dataclass(frozen=True)
@@ -42,7 +50,7 @@ class DisplayConfig:
         datetime_format: Format string for datetime display
     """
 
-    datetime_format: str = "%Y-%m-%d %H:%M:%S"
+    datetime_format: str = DEFAULT_DATETIME_FORMAT
 
 
 @dataclass(frozen=True)
@@ -54,8 +62,8 @@ class TimeConfig:
         default_end_hour: Default hour for task end times and deadlines (business day end)
     """
 
-    default_start_hour: int = 9
-    default_end_hour: int = 18
+    default_start_hour: int = DEFAULT_START_HOUR
+    default_end_hour: int = DEFAULT_END_HOUR
 
 
 @dataclass(frozen=True)

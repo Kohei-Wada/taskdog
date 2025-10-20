@@ -6,6 +6,7 @@ from application.dto.complete_task_input import CompleteTaskInput
 from application.use_cases.complete_task import CompleteTaskUseCase
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
+from shared.constants import StatusVerbs
 
 
 @click.command(name="done", help="Mark task(s) as completed.")
@@ -24,7 +25,7 @@ def done_command(ctx, task_ids):
         task = complete_task_use_case.execute(input_dto)
 
         # Print success message
-        console_writer.task_success("Completed", task)
+        console_writer.task_success(StatusVerbs.COMPLETED, task)
 
         # Show completion details (time, duration, comparison with estimate)
         console_writer.task_completion_details(task)

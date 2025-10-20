@@ -183,7 +183,7 @@ class Task:
         if self.is_fixed:
             return False
 
-        # Skip tasks with existing schedule unless force_override
+        # Allow scheduling if no existing schedule OR if force_override is True
         return not (self.planned_start and not force_override)
 
     def should_count_in_workload(self) -> bool:

@@ -6,8 +6,9 @@ from application.dto.archive_task_input import ArchiveTaskInput
 from application.dto.remove_task_input import RemoveTaskInput
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.remove_task import RemoveTaskUseCase
-from domain.exceptions.task_exceptions import TaskNotFoundException
+from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
+from shared.constants import StatusVerbs
 
 
 @click.command(name="rm", help="Remove task(s) (soft delete by default, --hard for permanent).")
@@ -28,32 +29,19 @@ def rm_command(ctx, task_ids, hard):
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
 
-    for task_id in task_ids:
-        try:
-            if hard:
-                # Hard delete: permanently remove from database
-                input_dto = RemoveTaskInput(task_id=task_id)
-                use_case = RemoveTaskUseCase(repository)
-                use_case.execute(input_dto)
-                console_writer.success(f"Permanently deleted task with ID: {task_id}")
-            else:
-                # Soft delete: archive (set is_deleted=True)
-                input_dto = ArchiveTaskInput(task_id=task_id)
-                use_case = ArchiveTaskUseCase(repository)
-                task = use_case.execute(input_dto)
-                console_writer.task_success("Archived", task)
-                console_writer.info(f"Use 'taskdog restore {task_id}' to restore this task.")
+    def remove_single_task(task_id: int) -> None:
+        if hard:
+            # Hard delete: permanently remove from database
+            input_dto = RemoveTaskInput(task_id=task_id)
+            use_case = RemoveTaskUseCase(repository)
+            use_case.execute(input_dto)
+            console_writer.success(f"Permanently deleted task with ID: {task_id}")
+        else:
+            # Soft delete: archive (set is_deleted=True)
+            input_dto = ArchiveTaskInput(task_id=task_id)
+            use_case = ArchiveTaskUseCase(repository)
+            task = use_case.execute(input_dto)
+            console_writer.task_success(StatusVerbs.ARCHIVED, task)
+            console_writer.info(f"Use 'taskdog restore {task_id}' to restore this task.")
 
-            # Add spacing between tasks if processing multiple
-            if len(task_ids) > 1:
-                console_writer.empty_line()
-
-        except TaskNotFoundException as e:
-            console_writer.validation_error(str(e))
-            if len(task_ids) > 1:
-                console_writer.empty_line()
-
-        except Exception as e:
-            console_writer.error("removing task", e)
-            if len(task_ids) > 1:
-                console_writer.empty_line()
+    execute_batch_operation(task_ids, remove_single_task, console_writer, "removing task")

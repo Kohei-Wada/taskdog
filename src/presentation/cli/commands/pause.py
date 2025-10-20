@@ -7,6 +7,7 @@ from application.use_cases.pause_task import PauseTaskUseCase
 from domain.entities.task import TaskStatus
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
+from shared.constants import StatusVerbs
 
 
 @click.command(name="pause", help="Pause task(s) and reset time tracking (sets status to PENDING).")
@@ -36,7 +37,7 @@ def pause_command(ctx, task_ids):
         if was_already_pending:
             console_writer.info(f"Task {task_id} was already PENDING")
         else:
-            console_writer.task_success("Paused", task)
+            console_writer.task_success(StatusVerbs.PAUSED, task)
             console_writer.info("Time tracking has been reset")
 
     execute_batch_operation(task_ids, pause_single_task, console_writer, "pause")
