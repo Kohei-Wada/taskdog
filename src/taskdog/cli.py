@@ -11,6 +11,7 @@ from presentation.cli.commands.done import done_command
 from presentation.cli.commands.estimate import estimate_command
 from presentation.cli.commands.export import export_command
 from presentation.cli.commands.gantt import gantt_command
+from presentation.cli.commands.log_hours import log_hours_command
 from presentation.cli.commands.note import note_command
 from presentation.cli.commands.optimize import optimize_command
 from presentation.cli.commands.pause import pause_command
@@ -79,6 +80,7 @@ cli.add_command(pause_command)
 cli.add_command(done_command)
 cli.add_command(cancel_command)
 cli.add_command(gantt_command)
+cli.add_command(log_hours_command)
 cli.add_command(today_command)
 cli.add_command(note_command)
 cli.add_command(show_command)
