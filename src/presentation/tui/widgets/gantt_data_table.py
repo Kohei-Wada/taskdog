@@ -139,7 +139,7 @@ class GanttDataTable(DataTable):
                 gantt_result.date_range.start_date,
                 gantt_result.date_range.end_date,
             )
-            self._task_map[idx + 1] = task  # +1 because of 1 header row
+            self._task_map[idx + 3] = task  # +3 because of 3 header rows
 
         # Add workload summary row
         self._add_workload_row(
@@ -149,7 +149,7 @@ class GanttDataTable(DataTable):
         )
 
     def _add_date_header_rows(self, start_date: date, end_date: date):
-        """Add date header rows (Month, Today marker, Day) as a single multi-line row.
+        """Add date header rows (Month, Today marker, Day) as separate rows.
 
         Args:
             start_date: Start date of the chart
@@ -157,10 +157,7 @@ class GanttDataTable(DataTable):
         """
         days = (end_date - start_date).days + 1
 
-        # Build multi-line cells for each column
-        fixed_columns = ["", "[dim]Date[/dim]", ""]
-
-        # Build each line as Rich Text objects for proper width calculation
+        # Build each line as Rich Text for proper width calculation
         month_line = Text()
         today_line = Text()
         day_line = Text()
@@ -200,17 +197,10 @@ class GanttDataTable(DataTable):
                 day_style = DAY_STYLE_WEEKDAY
             day_line.append(day_str, style=day_style)
 
-        # Combine all three lines with newlines
-        timeline_text = Text()
-        timeline_text.append_text(month_line)
-        timeline_text.append("\n")
-        timeline_text.append_text(today_line)
-        timeline_text.append("\n")
-        timeline_text.append_text(day_line)
-
-        # Add single row with multi-line timeline cell
-        row_data = fixed_columns + [timeline_text]
-        self.add_row(*row_data)
+        # Add three separate rows for month, today marker, and day
+        self.add_row("", "[dim]Date[/dim]", "", month_line)
+        self.add_row("", "", "", today_line)
+        self.add_row("", "", "", day_line)
 
     def _add_task_row(
         self,
@@ -458,31 +448,31 @@ class GanttDataTable(DataTable):
         Returns:
             The selected Task, or None if no task is selected
         """
-        if self.cursor_row < 0 or self.cursor_row >= len(self._task_map) + 1:
+        if self.cursor_row < 0 or self.cursor_row >= len(self._task_map) + 3:
             return None
         return self._task_map.get(self.cursor_row)
 
     def action_scroll_home(self) -> None:
         """Move cursor to top (g key)."""
-        if self.row_count > 1:  # Skip header row
-            self.move_cursor(row=1)
+        if self.row_count > 3:  # Skip 3 header rows
+            self.move_cursor(row=3)
 
     def action_scroll_end(self) -> None:
         """Move cursor to bottom (G key)."""
-        if self.row_count > 1:
+        if self.row_count > 3:
             # Move to last task row (before workload row)
             self.move_cursor(row=self.row_count - 2)
 
     def action_page_down(self) -> None:
         """Move cursor down by half page (Ctrl+d)."""
-        if self.row_count > 1:
+        if self.row_count > 3:
             new_row = min(self.cursor_row + 10, self.row_count - 2)
             self.move_cursor(row=new_row)
 
     def action_page_up(self) -> None:
         """Move cursor up by half page (Ctrl+u)."""
-        if self.row_count > 1:
-            new_row = max(self.cursor_row - 10, 1)
+        if self.row_count > 3:
+            new_row = max(self.cursor_row - 10, 3)
             self.move_cursor(row=new_row)
 
     def get_legend_text(self) -> str:
