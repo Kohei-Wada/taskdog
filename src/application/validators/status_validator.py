@@ -3,6 +3,7 @@
 from application.validators.field_validator import FieldValidator
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import (
+    DependencyNotMetError,
     TaskAlreadyFinishedError,
     TaskNotStartedError,
 )
@@ -14,6 +15,7 @@ class StatusValidator(FieldValidator):
 
     Business Rules:
     - Cannot start task if it's already finished
+    - Cannot start task if dependencies are not met (all dependencies must be COMPLETED)
     - PENDING → COMPLETED transition not allowed (must start first)
     - Can pause IN_PROGRESS task back to PENDING
     - Can cancel PENDING or IN_PROGRESS tasks
@@ -23,7 +25,7 @@ class StatusValidator(FieldValidator):
     def validate(self, value: TaskStatus, task: Task, repository: TaskRepository) -> None:
         # Validate based on target status
         if value == TaskStatus.IN_PROGRESS:
-            self._validate_can_be_started(task)
+            self._validate_can_be_started(task, repository)
         elif value == TaskStatus.COMPLETED:
             self._validate_can_be_completed(task)
         elif value == TaskStatus.CANCELED:
@@ -31,7 +33,7 @@ class StatusValidator(FieldValidator):
         elif value == TaskStatus.PENDING:
             self._validate_can_be_paused(task)
 
-    def _validate_can_be_started(self, task: Task) -> None:
+    def _validate_can_be_started(self, task: Task, repository: TaskRepository) -> None:
         # task.id is guaranteed non-None as validator is only called after
         # successful repository.get_by_id() in use cases
         assert task.id is not None
@@ -39,6 +41,20 @@ class StatusValidator(FieldValidator):
         # Early check: Cannot restart finished tasks
         if task.is_finished:
             raise TaskAlreadyFinishedError(task.id, task.status.value)
+
+        # Check dependencies: all dependencies must be COMPLETED
+        if task.depends_on:
+            unmet_dependency_ids = []
+            for dep_id in task.depends_on:
+                dep_task = repository.get_by_id(dep_id)
+                if dep_task is None or dep_task.status != TaskStatus.COMPLETED:
+                    unmet_dependency_ids.append(dep_id)
+
+            if unmet_dependency_ids:
+                raise DependencyNotMetError(
+                    task_id=task.id,
+                    unmet_dependencies=unmet_dependency_ids,
+                )
 
     def _validate_can_be_completed(self, task: Task) -> None:
         # task.id is guaranteed non-None as validator is only called after
