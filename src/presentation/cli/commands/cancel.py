@@ -4,10 +4,7 @@ import click
 
 from application.dto.cancel_task_input import CancelTaskInput
 from application.use_cases.cancel_task import CancelTaskUseCase
-from domain.exceptions.task_exceptions import (
-    TaskAlreadyFinishedError,
-    TaskNotFoundException,
-)
+from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
 
 
@@ -22,32 +19,11 @@ def cancel_command(ctx, task_ids):
     time_tracker = ctx_obj.time_tracker
     cancel_task_use_case = CancelTaskUseCase(repository, time_tracker)
 
-    for task_id in task_ids:
-        try:
-            input_dto = CancelTaskInput(task_id=task_id)
-            task = cancel_task_use_case.execute(input_dto)
+    def cancel_single_task(task_id: int) -> None:
+        input_dto = CancelTaskInput(task_id=task_id)
+        task = cancel_task_use_case.execute(input_dto)
 
-            # Print success message
-            console_writer.task_success("Canceled", task)
+        # Print success message
+        console_writer.task_success("Canceled", task)
 
-            # Add spacing between tasks if processing multiple
-            if len(task_ids) > 1:
-                console_writer.empty_line()
-
-        except TaskNotFoundException as e:
-            console_writer.validation_error(str(e))
-            if len(task_ids) > 1:
-                console_writer.empty_line()
-
-        except TaskAlreadyFinishedError as e:
-            console_writer.validation_error(
-                f"Cannot cancel task {e.task_id}: Task is already {e.status}. "
-                "Task has already finished."
-            )
-            if len(task_ids) > 1:
-                console_writer.empty_line()
-
-        except Exception as e:
-            console_writer.error("canceling task", e)
-            if len(task_ids) > 1:
-                console_writer.empty_line()
+    execute_batch_operation(task_ids, cancel_single_task, console_writer, "cancel")

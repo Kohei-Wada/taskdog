@@ -5,10 +5,7 @@ import click
 from application.dto.start_task_input import StartTaskInput
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import TaskStatus
-from domain.exceptions.task_exceptions import (
-    TaskAlreadyFinishedError,
-    TaskNotFoundException,
-)
+from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
 
 
@@ -23,37 +20,16 @@ def start_command(ctx, task_ids):
     time_tracker = ctx_obj.time_tracker
     start_task_use_case = StartTaskUseCase(repository, time_tracker)
 
-    for task_id in task_ids:
-        try:
-            # Check current status before starting
-            task_before = repository.get_by_id(task_id)
-            was_already_in_progress = task_before and task_before.status == TaskStatus.IN_PROGRESS
+    def start_single_task(task_id: int) -> None:
+        # Check current status before starting
+        task_before = repository.get_by_id(task_id)
+        was_already_in_progress = task_before and task_before.status == TaskStatus.IN_PROGRESS
 
-            input_dto = StartTaskInput(task_id=task_id)
-            task = start_task_use_case.execute(input_dto)
+        input_dto = StartTaskInput(task_id=task_id)
+        task = start_task_use_case.execute(input_dto)
 
-            # Print success message
-            console_writer.task_success("Started", task)
-            console_writer.task_start_time(task, was_already_in_progress)
+        # Print success message
+        console_writer.task_success("Started", task)
+        console_writer.task_start_time(task, was_already_in_progress)
 
-            # Add spacing between tasks if processing multiple
-            if len(task_ids) > 1:
-                console_writer.empty_line()
-
-        except TaskNotFoundException as e:
-            console_writer.validation_error(str(e))
-            if len(task_ids) > 1:
-                console_writer.empty_line()
-
-        except TaskAlreadyFinishedError as e:
-            console_writer.validation_error(
-                f"Cannot start task {e.task_id}: Task is already {e.status}. "
-                "Finished tasks cannot be restarted."
-            )
-            if len(task_ids) > 1:
-                console_writer.empty_line()
-
-        except Exception as e:
-            console_writer.error("starting task", e)
-            if len(task_ids) > 1:
-                console_writer.empty_line()
+    execute_batch_operation(task_ids, start_single_task, console_writer, "start")

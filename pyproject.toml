@@ -94,12 +94,9 @@ ignore = [
 
 # Per-file ignores for complex functions that need refactoring
 [tool.ruff.lint.per-file-ignores]
-"src/application/services/hierarchy_manager.py" = ["C901"]
 "src/application/services/optimization_summary_builder.py" = ["C901"]
-"src/application/services/workload_allocator.py" = ["C901"]
 "src/domain/services/workload_calculator.py" = ["C901"]
 "src/infrastructure/persistence/json_task_repository.py" = ["C901"]
-"src/presentation/cli/batch_executor.py" = ["C901"]
 "src/presentation/renderers/rich_gantt_renderer.py" = ["C901"]
 "src/domain/exceptions/task_exceptions.py" = ["N818"]  # TaskNotFoundException is widely used
 "tests/**/*.py" = ["SIM115", "RUF015"]  # Test code patterns are acceptable
