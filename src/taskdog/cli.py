@@ -4,7 +4,6 @@ from rich.console import Console
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.cli.commands.add import add_command
-from presentation.cli.commands.archive import archive_command
 from presentation.cli.commands.cancel import cancel_command
 from presentation.cli.commands.deadline import deadline_command
 from presentation.cli.commands.done import done_command
@@ -16,6 +15,7 @@ from presentation.cli.commands.optimize import optimize_command
 from presentation.cli.commands.pause import pause_command
 from presentation.cli.commands.priority import priority_command
 from presentation.cli.commands.rename import rename_command
+from presentation.cli.commands.restore import restore_command
 from presentation.cli.commands.rm import rm_command
 from presentation.cli.commands.schedule import schedule_command
 from presentation.cli.commands.show import show_command
@@ -70,7 +70,6 @@ cli.add_command(add_command)
 cli.add_command(table_command)
 cli.add_command(export_command)
 cli.add_command(rm_command)
-cli.add_command(archive_command)
 cli.add_command(update_command)
 cli.add_command(start_command)
 cli.add_command(pause_command)
@@ -83,6 +82,7 @@ cli.add_command(show_command)
 cli.add_command(deadline_command)
 cli.add_command(priority_command)
 cli.add_command(rename_command)
+cli.add_command(restore_command)
 cli.add_command(estimate_command)
 cli.add_command(schedule_command)
 cli.add_command(optimize_command)
