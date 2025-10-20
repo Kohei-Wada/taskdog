@@ -1,23 +1,28 @@
 """Complete task command for TUI."""
 
-from presentation.tui.commands.base import TUICommandBase
+from domain.entities.task import Task
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
+from presentation.tui.commands.status_change_base import StatusChangeCommandBase
 
 
 @command_registry.register("done_task")
-class CompleteTaskCommand(TUICommandBase):
+class CompleteTaskCommand(StatusChangeCommandBase):
     """Command to complete the selected task."""
+
+    def get_action_name(self) -> str:
+        """Return action name for error handling."""
+        return "completing task"
 
     @handle_tui_errors("completing task")
     def execute(self) -> None:
         """Execute the complete task command."""
-        task = self.get_selected_task()
-        if not task or task.id is None:
-            self.notify_warning("No task selected")
-            return
+        super().execute()
 
-        # Use TaskService to complete the task
-        updated_task = self.task_service.complete_task(task.id)
-        self.reload_tasks()
-        self.notify_success(f"Completed task: {updated_task.name} (ID: {updated_task.id})")
+    def execute_status_change(self, task_id: int) -> Task:
+        """Complete the task via TaskService."""
+        return self.task_service.complete_task(task_id)
+
+    def get_success_verb(self) -> str:
+        """Return success message verb."""
+        return "Completed"

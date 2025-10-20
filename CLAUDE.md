@@ -384,12 +384,22 @@ The TUI uses a sophisticated Command Pattern with automatic registration:
    - Provides helper methods: `get_selected_task()`, `reload_tasks()`, `notify_success()`, `notify_error()`, `notify_warning()`
    - Injected with app, context, and task_service dependencies
 
-2. `CommandRegistry` (`registry.py`): Central registry for managing command classes
+2. `StatusChangeCommandBase` (`status_change_base.py`): Template Method base class for status change commands
+   - Extends `TUICommandBase` for start/complete/pause/cancel operations
+   - Eliminates code duplication using Template Method pattern
+   - Subclasses implement 3 abstract methods:
+     - `get_action_name()`: Returns action name for error handling (e.g., "starting task")
+     - `execute_status_change(task_id)`: Calls appropriate TaskService method
+     - `get_success_verb()`: Returns past tense verb for success message (e.g., "Started")
+   - Reduces each status change command from 24 lines to ~10 lines
+   - Used by: `StartTaskCommand`, `CompleteTaskCommand`, `PauseTaskCommand`, `CancelTaskCommand`
+
+3. `CommandRegistry` (`registry.py`): Central registry for managing command classes
    - Provides `@command_registry.register("name")` decorator for automatic registration
    - Methods: `get(name)`, `has(name)`, `list_commands()`
    - Global singleton instance: `command_registry`
 
-3. `CommandFactory` (`factory.py`): Factory for creating command instances with DI
+4. `CommandFactory` (`factory.py`): Factory for creating command instances with DI
    - Creates commands with injected dependencies (app, context, task_service)
    - Methods: `create(command_name, **kwargs)`, `execute(command_name, **kwargs)`
 
@@ -402,10 +412,26 @@ class AddTaskCommand(TUICommandBase):
         # Implementation with access to self.app, self.context, self.task_service
         pass
 
-# 2. Import command in __init__.py to trigger registration
+# 2. For status change commands, inherit from StatusChangeCommandBase
+@command_registry.register("start_task")
+class StartTaskCommand(StatusChangeCommandBase):
+    def get_action_name(self) -> str:
+        return "starting task"
+
+    @handle_tui_errors("starting task")
+    def execute(self) -> None:
+        super().execute()
+
+    def execute_status_change(self, task_id: int) -> Task:
+        return self.task_service.start_task(task_id)
+
+    def get_success_verb(self) -> str:
+        return "Started"
+
+# 3. Import command in __init__.py to trigger registration
 from presentation.tui.commands.add_task_command import AddTaskCommand
 
-# 3. Execute via factory in main app
+# 4. Execute via factory in main app
 self.command_factory.execute("add_task")
 ```
 
