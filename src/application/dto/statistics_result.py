@@ -147,7 +147,7 @@ class StatisticsResult:
 
 
 @dataclass
-class CalculateStatisticsInput:
+class CalculateStatisticsRequest:
     """Input for calculate statistics use case.
 
     Attributes:

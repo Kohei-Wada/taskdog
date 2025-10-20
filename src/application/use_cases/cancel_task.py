@@ -1,11 +1,11 @@
 """Use case for canceling a task."""
 
-from application.dto.cancel_task_input import CancelTaskInput
+from application.dto.cancel_task_request import CancelTaskRequest
 from application.use_cases.status_change_use_case import StatusChangeUseCase
 from domain.entities.task import TaskStatus
 
 
-class CancelTaskUseCase(StatusChangeUseCase[CancelTaskInput]):
+class CancelTaskUseCase(StatusChangeUseCase[CancelTaskRequest]):
     """Use case for canceling a task.
 
     Sets task status to CANCELED and records actual end time.

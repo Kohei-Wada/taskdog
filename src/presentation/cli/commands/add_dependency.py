@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.manage_dependencies_input import AddDependencyInput
+from application.dto.manage_dependencies_request import AddDependencyRequest
 from application.use_cases.add_dependency import AddDependencyUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
@@ -26,7 +26,7 @@ def add_dependency_command(ctx, task_id, depends_on_id):
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
 
-    input_dto = AddDependencyInput(task_id=task_id, depends_on_id=depends_on_id)
+    input_dto = AddDependencyRequest(task_id=task_id, depends_on_id=depends_on_id)
     use_case = AddDependencyUseCase(repository)
     task = use_case.execute(input_dto)
 

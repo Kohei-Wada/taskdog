@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from datetime import datetime
 
-from application.dto.create_task_input import CreateTaskInput
-from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.create_task_request import CreateTaskRequest
+from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -34,7 +34,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         """Test that EDF schedules tasks by deadline, not priority."""
         # Create two tasks with opposite priority/deadline relationship
         # Task 1: Low priority, early deadline (should be scheduled first)
-        input_dto1 = CreateTaskInput(
+        input_dto1 = CreateTaskRequest(
             name="Early Deadline Task",
             priority=50,
             estimated_duration=6.0,
@@ -43,7 +43,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto1)
 
         # Task 2: High priority, late deadline (should be scheduled second)
-        input_dto2 = CreateTaskInput(
+        input_dto2 = CreateTaskRequest(
             name="Late Deadline Task",
             priority=100,
             estimated_duration=6.0,
@@ -53,7 +53,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
 
         # Start on Monday
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="earliest_deadline",
@@ -74,7 +74,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
     def test_earliest_deadline_handles_no_deadline(self):
         """Test that EDF schedules tasks without deadlines last."""
         # Task 1: Has deadline (should be scheduled first)
-        input_dto1 = CreateTaskInput(
+        input_dto1 = CreateTaskRequest(
             name="With Deadline",
             priority=50,
             estimated_duration=6.0,
@@ -83,7 +83,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto1)
 
         # Task 2: No deadline (should be scheduled last)
-        input_dto2 = CreateTaskInput(
+        input_dto2 = CreateTaskRequest(
             name="No Deadline",
             priority=100,  # Higher priority, but no deadline
             estimated_duration=6.0,
@@ -92,7 +92,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto2)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="earliest_deadline",
@@ -113,7 +113,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
     def test_earliest_deadline_respects_deadline_constraints(self):
         """Test that EDF fails tasks that cannot meet their deadlines."""
         # Create task with impossible deadline
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Impossible Deadline",
             priority=100,
             estimated_duration=30.0,  # 30 hours
@@ -122,7 +122,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="earliest_deadline",
@@ -138,7 +138,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         """Test that EDF ignores priority field when scheduling."""
         # Create three tasks with different priorities and deadlines
         # Priority should have NO effect on scheduling order
-        input_dto1 = CreateTaskInput(
+        input_dto1 = CreateTaskRequest(
             name="Highest Priority, Latest Deadline",
             priority=100,
             estimated_duration=6.0,
@@ -146,7 +146,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         )
         self.create_use_case.execute(input_dto1)
 
-        input_dto2 = CreateTaskInput(
+        input_dto2 = CreateTaskRequest(
             name="Medium Priority, Middle Deadline",
             priority=50,
             estimated_duration=6.0,
@@ -154,7 +154,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         )
         self.create_use_case.execute(input_dto2)
 
-        input_dto3 = CreateTaskInput(
+        input_dto3 = CreateTaskRequest(
             name="Lowest Priority, Earliest Deadline",
             priority=10,
             estimated_duration=6.0,
@@ -163,7 +163,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto3)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="earliest_deadline",
@@ -191,7 +191,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
     def test_earliest_deadline_uses_greedy_allocation(self):
         """Test that EDF uses greedy forward allocation strategy."""
         # Create task that requires multiple days
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Multi-day Task",
             priority=100,
             estimated_duration=15.0,
@@ -200,7 +200,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="earliest_deadline",

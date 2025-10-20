@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.complete_task_input import CompleteTaskInput
+from application.dto.complete_task_request import CompleteTaskRequest
 from application.use_cases.complete_task import CompleteTaskUseCase
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
@@ -21,7 +21,7 @@ def done_command(ctx, task_ids):
     complete_task_use_case = CompleteTaskUseCase(repository, time_tracker)
 
     def complete_single_task(task_id: int) -> None:
-        input_dto = CompleteTaskInput(task_id=task_id)
+        input_dto = CompleteTaskRequest(task_id=task_id)
         task = complete_task_use_case.execute(input_dto)
 
         # Print success message

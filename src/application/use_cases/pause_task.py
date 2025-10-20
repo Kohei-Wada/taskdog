@@ -1,11 +1,11 @@
 """Use case for pausing a task."""
 
-from application.dto.pause_task_input import PauseTaskInput
+from application.dto.pause_task_request import PauseTaskRequest
 from application.use_cases.status_change_use_case import StatusChangeUseCase
 from domain.entities.task import Task, TaskStatus
 
 
-class PauseTaskUseCase(StatusChangeUseCase[PauseTaskInput]):
+class PauseTaskUseCase(StatusChangeUseCase[PauseTaskRequest]):
     """Use case for pausing a task.
 
     Sets task status to PENDING and clears actual start/end timestamps.

@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 
 @dataclass
-class SingleTaskInput:
-    """Input data for single-task operations.
+class SingleTaskRequest:
+    """Request data for single-task operations.
 
     This base class is used for operations that only require a task ID,
     such as starting, completing, pausing, removing, or archiving a task.

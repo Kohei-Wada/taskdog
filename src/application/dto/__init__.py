@@ -1,7 +1,7 @@
 """Data Transfer Objects."""
 
 from application.dto.statistics_result import (
-    CalculateStatisticsInput,
+    CalculateStatisticsRequest,
     DeadlineComplianceStatistics,
     EstimationAccuracyStatistics,
     PriorityDistributionStatistics,
@@ -10,15 +10,15 @@ from application.dto.statistics_result import (
     TimeStatistics,
     TrendStatistics,
 )
-from application.dto.task_detail_dto import TaskDetailDTO
+from application.dto.task_detail_result import GetTaskDetailResult
 
 __all__ = [
-    "CalculateStatisticsInput",
+    "CalculateStatisticsRequest",
     "DeadlineComplianceStatistics",
     "EstimationAccuracyStatistics",
+    "GetTaskDetailResult",
     "PriorityDistributionStatistics",
     "StatisticsResult",
-    "TaskDetailDTO",
     "TaskStatistics",
     "TimeStatistics",
     "TrendStatistics",

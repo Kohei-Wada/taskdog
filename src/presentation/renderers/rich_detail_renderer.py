@@ -4,7 +4,7 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
 
-from application.dto.task_detail_dto import TaskDetailDTO
+from application.dto.task_detail_result import GetTaskDetailResult
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.colors import STATUS_STYLES
 from presentation.constants.table_styles import (
@@ -98,11 +98,11 @@ class RichDetailRenderer:
 
         return table
 
-    def render(self, dto: TaskDetailDTO, raw: bool = False) -> None:
+    def render(self, dto: GetTaskDetailResult, raw: bool = False) -> None:
         """Render and display task detail.
 
         Args:
-            dto: Task detail DTO containing task and notes
+            dto: Task detail result containing task and notes
             raw: Whether to show raw markdown (default: False)
         """
         task = dto.task

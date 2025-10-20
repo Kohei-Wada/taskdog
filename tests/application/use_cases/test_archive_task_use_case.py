@@ -3,7 +3,7 @@
 import tempfile
 import unittest
 
-from application.dto.archive_task_input import ArchiveTaskInput
+from application.dto.archive_task_request import ArchiveTaskRequest
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
@@ -29,7 +29,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         self.assertFalse(task.is_deleted)
 
         # Archive task
-        input_dto = ArchiveTaskInput(task_id=task.id)
+        input_dto = ArchiveTaskRequest(task_id=task.id)
         self.use_case.execute(input_dto)
 
         # Verify task archived (is_deleted = True)
@@ -46,7 +46,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         self.repository.save(task)
 
         # Archive task
-        input_dto = ArchiveTaskInput(task_id=task.id)
+        input_dto = ArchiveTaskRequest(task_id=task.id)
         self.use_case.execute(input_dto)
 
         # Verify allocations cleared and is_deleted set
@@ -56,7 +56,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
 
     def test_archive_nonexistent_task(self):
         """Test archiving a task that doesn't exist."""
-        input_dto = ArchiveTaskInput(task_id=999)
+        input_dto = ArchiveTaskRequest(task_id=999)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)
@@ -71,7 +71,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         self.repository.save(task)
 
         # Archive task
-        input_dto = ArchiveTaskInput(task_id=task.id)
+        input_dto = ArchiveTaskRequest(task_id=task.id)
         self.use_case.execute(input_dto)
 
         # Verify task archived (is_deleted set, status unchanged)
@@ -87,7 +87,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         self.repository.save(task)
 
         # Archive task
-        input_dto = ArchiveTaskInput(task_id=task.id)
+        input_dto = ArchiveTaskRequest(task_id=task.id)
         self.use_case.execute(input_dto)
 
         # Verify task archived (is_deleted set, status unchanged)

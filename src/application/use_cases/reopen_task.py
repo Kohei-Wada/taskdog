@@ -1,12 +1,12 @@
 """Use case for reopening a completed or canceled task."""
 
-from application.dto.reopen_task_input import ReopenTaskInput
+from application.dto.reopen_task_request import ReopenTaskRequest
 from application.use_cases.status_change_use_case import StatusChangeUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskValidationError
 
 
-class ReopenTaskUseCase(StatusChangeUseCase[ReopenTaskInput]):
+class ReopenTaskUseCase(StatusChangeUseCase[ReopenTaskRequest]):
     """Use case for reopening a completed or canceled task.
 
     Reopening transitions a task from COMPLETED or CANCELED back to PENDING.

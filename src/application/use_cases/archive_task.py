@@ -1,12 +1,12 @@
 """Use case for archiving (soft deleting) a task."""
 
-from application.dto.archive_task_input import ArchiveTaskInput
+from application.dto.archive_task_request import ArchiveTaskRequest
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
 
 
-class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, Task]):
+class ArchiveTaskUseCase(UseCase[ArchiveTaskRequest, Task]):
     """Use case for archiving (soft deleting) tasks.
 
     Archives a task for data retention while removing it from active views.
@@ -19,11 +19,11 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, Task]):
     def __init__(self, repository: TaskRepository) -> None:
         self.repository = repository
 
-    def execute(self, input_dto: ArchiveTaskInput) -> Task:
+    def execute(self, input_dto: ArchiveTaskRequest) -> Task:
         """Archive (soft delete) a task.
 
         Args:
-            input_dto: ArchiveTaskInput containing task_id
+            input_dto: ArchiveTaskRequest containing task_id
 
         Returns:
             The archived task

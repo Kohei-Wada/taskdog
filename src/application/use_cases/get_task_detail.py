@@ -1,6 +1,6 @@
 """Use case for getting task detail with notes."""
 
-from application.dto.task_detail_dto import TaskDetailDTO
+from application.dto.task_detail_result import GetTaskDetailResult
 from application.use_cases.base import UseCase
 from infrastructure.persistence.task_repository import TaskRepository
 
@@ -21,7 +21,7 @@ class GetTaskDetailInput:
         self.task_id = task_id
 
 
-class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, TaskDetailDTO]):
+class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailResult]):
     """Use case for retrieving task details with notes.
 
     This use case fetches a task by ID and its associated notes file
@@ -36,14 +36,14 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, TaskDetailDTO]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: GetTaskDetailInput) -> TaskDetailDTO:
+    def execute(self, input_dto: GetTaskDetailInput) -> GetTaskDetailResult:
         """Execute task detail retrieval.
 
         Args:
             input_dto: Input data containing task ID
 
         Returns:
-            TaskDetailDTO with task and notes information
+            GetTaskDetailResult with task and notes information
 
         Raises:
             TaskNotFoundException: If task doesn't exist
@@ -65,4 +65,4 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, TaskDetailDTO]):
                 # In production, consider logging the error for debugging.
                 pass
 
-        return TaskDetailDTO(task=task, notes_content=notes_content, has_notes=has_notes)
+        return GetTaskDetailResult(task=task, notes_content=notes_content, has_notes=has_notes)

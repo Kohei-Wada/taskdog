@@ -4,7 +4,7 @@ import os
 import tempfile
 import unittest
 
-from application.dto.manage_dependencies_input import AddDependencyInput
+from application.dto.manage_dependencies_request import AddDependencyRequest
 from application.use_cases.add_dependency import AddDependencyUseCase
 from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -32,7 +32,7 @@ class TestAddDependencyUseCase(unittest.TestCase):
         task1 = self.repository.create(name="Task 1", priority=1)
         task2 = self.repository.create(name="Task 2", priority=1)
 
-        input_dto = AddDependencyInput(task_id=task2.id, depends_on_id=task1.id)
+        input_dto = AddDependencyRequest(task_id=task2.id, depends_on_id=task1.id)
         result = self.use_case.execute(input_dto)
 
         self.assertIn(task1.id, result.depends_on)
@@ -43,7 +43,7 @@ class TestAddDependencyUseCase(unittest.TestCase):
         task1 = self.repository.create(name="Task 1", priority=1)
         task2 = self.repository.create(name="Task 2", priority=1)
 
-        input_dto = AddDependencyInput(task_id=task2.id, depends_on_id=task1.id)
+        input_dto = AddDependencyRequest(task_id=task2.id, depends_on_id=task1.id)
         self.use_case.execute(input_dto)
 
         # Verify persistence
@@ -54,7 +54,7 @@ class TestAddDependencyUseCase(unittest.TestCase):
         """Test execute with non-existent task raises TaskNotFoundException."""
         task1 = self.repository.create(name="Task 1", priority=1)
 
-        input_dto = AddDependencyInput(task_id=999, depends_on_id=task1.id)
+        input_dto = AddDependencyRequest(task_id=999, depends_on_id=task1.id)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)
@@ -65,7 +65,7 @@ class TestAddDependencyUseCase(unittest.TestCase):
         """Test execute with non-existent dependency raises TaskNotFoundException."""
         task1 = self.repository.create(name="Task 1", priority=1)
 
-        input_dto = AddDependencyInput(task_id=task1.id, depends_on_id=999)
+        input_dto = AddDependencyRequest(task_id=task1.id, depends_on_id=999)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)
@@ -76,7 +76,7 @@ class TestAddDependencyUseCase(unittest.TestCase):
         """Test execute prevents task from depending on itself."""
         task1 = self.repository.create(name="Task 1", priority=1)
 
-        input_dto = AddDependencyInput(task_id=task1.id, depends_on_id=task1.id)
+        input_dto = AddDependencyRequest(task_id=task1.id, depends_on_id=task1.id)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto)
@@ -89,7 +89,7 @@ class TestAddDependencyUseCase(unittest.TestCase):
         task2 = self.repository.create(name="Task 2", priority=1)
 
         # Add dependency first time
-        input_dto = AddDependencyInput(task_id=task2.id, depends_on_id=task1.id)
+        input_dto = AddDependencyRequest(task_id=task2.id, depends_on_id=task1.id)
         self.use_case.execute(input_dto)
 
         # Try to add again
@@ -104,11 +104,11 @@ class TestAddDependencyUseCase(unittest.TestCase):
         task2 = self.repository.create(name="Task 2", priority=1)
 
         # task1 depends on task2
-        input_dto1 = AddDependencyInput(task_id=task1.id, depends_on_id=task2.id)
+        input_dto1 = AddDependencyRequest(task_id=task1.id, depends_on_id=task2.id)
         self.use_case.execute(input_dto1)
 
         # Try to make task2 depend on task1 (would create 2→1→2)
-        input_dto2 = AddDependencyInput(task_id=task2.id, depends_on_id=task1.id)
+        input_dto2 = AddDependencyRequest(task_id=task2.id, depends_on_id=task1.id)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto2)
@@ -124,14 +124,14 @@ class TestAddDependencyUseCase(unittest.TestCase):
         task3 = self.repository.create(name="Task 3", priority=1)
 
         # Create chain: 1→2→3
-        input_dto1 = AddDependencyInput(task_id=task1.id, depends_on_id=task2.id)
+        input_dto1 = AddDependencyRequest(task_id=task1.id, depends_on_id=task2.id)
         self.use_case.execute(input_dto1)
 
-        input_dto2 = AddDependencyInput(task_id=task2.id, depends_on_id=task3.id)
+        input_dto2 = AddDependencyRequest(task_id=task2.id, depends_on_id=task3.id)
         self.use_case.execute(input_dto2)
 
         # Try to make task3 depend on task1 (would create 3→1→2→3)
-        input_dto3 = AddDependencyInput(task_id=task3.id, depends_on_id=task1.id)
+        input_dto3 = AddDependencyRequest(task_id=task3.id, depends_on_id=task1.id)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto3)
@@ -148,17 +148,17 @@ class TestAddDependencyUseCase(unittest.TestCase):
         task4 = self.repository.create(name="Task 4", priority=1)
 
         # Create chain: 1→2→3→4
-        input_dto1 = AddDependencyInput(task_id=task1.id, depends_on_id=task2.id)
+        input_dto1 = AddDependencyRequest(task_id=task1.id, depends_on_id=task2.id)
         self.use_case.execute(input_dto1)
 
-        input_dto2 = AddDependencyInput(task_id=task2.id, depends_on_id=task3.id)
+        input_dto2 = AddDependencyRequest(task_id=task2.id, depends_on_id=task3.id)
         self.use_case.execute(input_dto2)
 
-        input_dto3 = AddDependencyInput(task_id=task3.id, depends_on_id=task4.id)
+        input_dto3 = AddDependencyRequest(task_id=task3.id, depends_on_id=task4.id)
         self.use_case.execute(input_dto3)
 
         # Try to make task4 depend on task1 (would create 4→1→2→3→4)
-        input_dto4 = AddDependencyInput(task_id=task4.id, depends_on_id=task1.id)
+        input_dto4 = AddDependencyRequest(task_id=task4.id, depends_on_id=task1.id)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto4)
@@ -174,14 +174,14 @@ class TestAddDependencyUseCase(unittest.TestCase):
         task3 = self.repository.create(name="Task 3", priority=1)
 
         # Create chain: 1→2→3
-        input_dto1 = AddDependencyInput(task_id=task1.id, depends_on_id=task2.id)
+        input_dto1 = AddDependencyRequest(task_id=task1.id, depends_on_id=task2.id)
         self.use_case.execute(input_dto1)
 
-        input_dto2 = AddDependencyInput(task_id=task2.id, depends_on_id=task3.id)
+        input_dto2 = AddDependencyRequest(task_id=task2.id, depends_on_id=task3.id)
         self.use_case.execute(input_dto2)
 
         # Try to make task3 depend on task2 (would create 3→2→3)
-        input_dto3 = AddDependencyInput(task_id=task3.id, depends_on_id=task2.id)
+        input_dto3 = AddDependencyRequest(task_id=task3.id, depends_on_id=task2.id)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto3)
@@ -199,16 +199,16 @@ class TestAddDependencyUseCase(unittest.TestCase):
         task5 = self.repository.create(name="Task 5", priority=1)
 
         # Create chain: 1→2→3→4→5 (no cycle)
-        input_dto1 = AddDependencyInput(task_id=task1.id, depends_on_id=task2.id)
+        input_dto1 = AddDependencyRequest(task_id=task1.id, depends_on_id=task2.id)
         self.use_case.execute(input_dto1)
 
-        input_dto2 = AddDependencyInput(task_id=task2.id, depends_on_id=task3.id)
+        input_dto2 = AddDependencyRequest(task_id=task2.id, depends_on_id=task3.id)
         self.use_case.execute(input_dto2)
 
-        input_dto3 = AddDependencyInput(task_id=task3.id, depends_on_id=task4.id)
+        input_dto3 = AddDependencyRequest(task_id=task3.id, depends_on_id=task4.id)
         self.use_case.execute(input_dto3)
 
-        input_dto4 = AddDependencyInput(task_id=task4.id, depends_on_id=task5.id)
+        input_dto4 = AddDependencyRequest(task_id=task4.id, depends_on_id=task5.id)
         result = self.use_case.execute(input_dto4)
 
         # Should succeed
@@ -222,16 +222,16 @@ class TestAddDependencyUseCase(unittest.TestCase):
         task4 = self.repository.create(name="Task 4", priority=1)
 
         # Create diamond: 1→2, 1→3, 2→4, 3→4
-        input_dto1 = AddDependencyInput(task_id=task1.id, depends_on_id=task2.id)
+        input_dto1 = AddDependencyRequest(task_id=task1.id, depends_on_id=task2.id)
         self.use_case.execute(input_dto1)
 
-        input_dto2 = AddDependencyInput(task_id=task1.id, depends_on_id=task3.id)
+        input_dto2 = AddDependencyRequest(task_id=task1.id, depends_on_id=task3.id)
         self.use_case.execute(input_dto2)
 
-        input_dto3 = AddDependencyInput(task_id=task2.id, depends_on_id=task4.id)
+        input_dto3 = AddDependencyRequest(task_id=task2.id, depends_on_id=task4.id)
         self.use_case.execute(input_dto3)
 
-        input_dto4 = AddDependencyInput(task_id=task3.id, depends_on_id=task4.id)
+        input_dto4 = AddDependencyRequest(task_id=task3.id, depends_on_id=task4.id)
         result = self.use_case.execute(input_dto4)
 
         # Should succeed - this is valid (no cycle)
@@ -244,10 +244,10 @@ class TestAddDependencyUseCase(unittest.TestCase):
         task3 = self.repository.create(name="Task 3", priority=1)
 
         # task3 depends on both task1 and task2
-        input_dto1 = AddDependencyInput(task_id=task3.id, depends_on_id=task1.id)
+        input_dto1 = AddDependencyRequest(task_id=task3.id, depends_on_id=task1.id)
         self.use_case.execute(input_dto1)
 
-        input_dto2 = AddDependencyInput(task_id=task3.id, depends_on_id=task2.id)
+        input_dto2 = AddDependencyRequest(task_id=task3.id, depends_on_id=task2.id)
         result = self.use_case.execute(input_dto2)
 
         self.assertIn(task1.id, result.depends_on)

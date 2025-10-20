@@ -1,11 +1,11 @@
 """Use case for starting a task."""
 
-from application.dto.start_task_input import StartTaskInput
+from application.dto.start_task_request import StartTaskRequest
 from application.use_cases.status_change_use_case import StatusChangeUseCase
 from domain.entities.task import TaskStatus
 
 
-class StartTaskUseCase(StatusChangeUseCase[StartTaskInput]):
+class StartTaskUseCase(StatusChangeUseCase[StartTaskRequest]):
     """Use case for starting a task.
 
     Sets task status to IN_PROGRESS and records actual start time.

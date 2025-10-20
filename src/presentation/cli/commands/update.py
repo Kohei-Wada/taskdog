@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.update_task_input import UpdateTaskInput
+from application.dto.update_task_request import UpdateTaskRequest
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import TaskStatus
 from presentation.cli.context import CliContext
@@ -94,7 +94,7 @@ def update_command(
     status_enum = TaskStatus(status) if status else None
 
     # Build input DTO
-    input_dto = UpdateTaskInput(
+    input_dto = UpdateTaskRequest(
         task_id=task_id,
         priority=priority,
         status=status_enum,

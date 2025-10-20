@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from datetime import datetime
 
-from application.dto.create_task_input import CreateTaskInput
-from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.create_task_request import CreateTaskRequest
+from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -34,7 +34,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         """Test that greedy strategy front-loads a single task."""
         # Create task with 12h duration
         # Should fill 2 days with 6h each
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Greedy Task",
             priority=100,
             estimated_duration=12.0,
@@ -44,7 +44,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
 
         # Start on Monday
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday 9:00
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="greedy",
@@ -71,7 +71,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         """Test that greedy strategy handles partial day allocation."""
         # Create task with 10h duration
         # Should fill: 6h (day 1) + 4h (day 2)
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Partial Day Task",
             priority=100,
             estimated_duration=10.0,
@@ -80,7 +80,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="greedy",
@@ -97,7 +97,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
     def test_greedy_skips_weekends(self):
         """Test that greedy strategy skips weekends."""
         # Create task that spans Friday to Monday
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Weekend Task",
             priority=100,
             estimated_duration=12.0,
@@ -107,7 +107,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
 
         # Start on Friday
         start_date = datetime(2025, 10, 24, 9, 0, 0)  # Friday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="greedy",
@@ -129,7 +129,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
     def test_greedy_respects_deadline(self):
         """Test that greedy strategy respects task deadlines."""
         # Create task with tight deadline
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Tight Deadline",
             priority=100,
             estimated_duration=30.0,  # Too much work
@@ -138,7 +138,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="greedy",
@@ -153,7 +153,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
     def test_greedy_respects_fixed_tasks_in_daily_limit(self):
         """Test that greedy strategy accounts for fixed tasks when calculating available hours."""
         # Create a fixed task with 4h/day allocation for 3 days (Mon-Wed)
-        fixed_task_input = CreateTaskInput(
+        fixed_task_input = CreateTaskRequest(
             name="Fixed Meeting",
             priority=100,
             estimated_duration=12.0,
@@ -173,7 +173,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         self.repository.save(fixed_task)
 
         # Create a regular task that needs 6h
-        regular_task_input = CreateTaskInput(
+        regular_task_input = CreateTaskRequest(
             name="Regular Task",
             priority=100,
             estimated_duration=6.0,
@@ -185,7 +185,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         # Available hours per day: 6.0 - 4.0 (fixed) = 2.0h
         # So 6h task should take 3 days (2h * 3 = 6h)
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="greedy",

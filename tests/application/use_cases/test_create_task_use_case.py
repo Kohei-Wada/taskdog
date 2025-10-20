@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from application.dto.create_task_input import CreateTaskInput
+from application.dto.create_task_request import CreateTaskRequest
 from application.use_cases.create_task import CreateTaskUseCase
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
@@ -25,7 +25,7 @@ class TestCreateTaskUseCase(unittest.TestCase):
 
     def test_execute_creates_task_with_id(self):
         """Test execute creates task with auto-generated ID"""
-        input_dto = CreateTaskInput(name="Test Task", priority=1)
+        input_dto = CreateTaskRequest(name="Test Task", priority=1)
 
         task = self.use_case.execute(input_dto)
 
@@ -36,9 +36,9 @@ class TestCreateTaskUseCase(unittest.TestCase):
 
     def test_execute_assigns_sequential_ids(self):
         """Test execute assigns sequential IDs"""
-        input1 = CreateTaskInput(name="Task 1", priority=1)
-        input2 = CreateTaskInput(name="Task 2", priority=2)
-        input3 = CreateTaskInput(name="Task 3", priority=3)
+        input1 = CreateTaskRequest(name="Task 1", priority=1)
+        input2 = CreateTaskRequest(name="Task 2", priority=2)
+        input3 = CreateTaskRequest(name="Task 3", priority=3)
 
         task1 = self.use_case.execute(input1)
         task2 = self.use_case.execute(input2)
@@ -50,7 +50,7 @@ class TestCreateTaskUseCase(unittest.TestCase):
 
     def test_execute_persists_to_repository(self):
         """Test execute saves task to repository"""
-        input_dto = CreateTaskInput(name="Persistent Task", priority=2)
+        input_dto = CreateTaskRequest(name="Persistent Task", priority=2)
 
         task = self.use_case.execute(input_dto)
 
@@ -61,7 +61,7 @@ class TestCreateTaskUseCase(unittest.TestCase):
 
     def test_execute_with_all_optional_fields(self):
         """Test execute with all optional fields"""
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Full Task",
             priority=3,
             planned_start="2025-01-01 09:00:00",
@@ -81,7 +81,7 @@ class TestCreateTaskUseCase(unittest.TestCase):
 
     def test_execute_with_none_optional_fields(self):
         """Test execute with None optional fields"""
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Minimal Task",
             priority=1,
             planned_start=None,

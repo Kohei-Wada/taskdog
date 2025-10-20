@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 
 @dataclass
-class CreateTaskInput:
-    """Input data for creating a task.
+class CreateTaskRequest:
+    """Request data for creating a task.
 
     Attributes:
         name: Task name

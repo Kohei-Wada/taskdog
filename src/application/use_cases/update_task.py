@@ -1,6 +1,6 @@
 """Use case for updating a task."""
 
-from application.dto.update_task_input import UpdateTaskInput
+from application.dto.update_task_request import UpdateTaskRequest
 from application.use_cases.base import UseCase
 from application.validators.validator_registry import TaskFieldValidatorRegistry
 from domain.entities.task import Task
@@ -8,7 +8,7 @@ from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
 
 
-class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
+class UpdateTaskUseCase(UseCase[UpdateTaskRequest, tuple[Task, list[str]]]):
     """Use case for updating task properties.
 
     Supports updating multiple fields and handles time tracking for status changes.
@@ -29,7 +29,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
     def _update_status(
         self,
         task: Task,
-        input_dto: UpdateTaskInput,
+        input_dto: UpdateTaskRequest,
         updated_fields: list[str],
     ) -> None:
         """Update task status with time tracking.
@@ -50,7 +50,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
     def _update_standard_fields(
         self,
         task: Task,
-        input_dto: UpdateTaskInput,
+        input_dto: UpdateTaskRequest,
         updated_fields: list[str],
     ) -> None:
         """Update standard fields (name, priority, planned times, deadline, estimated_duration, is_fixed).
@@ -77,7 +77,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
                 setattr(task, field_name, value)
                 updated_fields.append(field_name)
 
-    def execute(self, input_dto: UpdateTaskInput) -> tuple[Task, list[str]]:
+    def execute(self, input_dto: UpdateTaskRequest) -> tuple[Task, list[str]]:
         """Execute task update.
 
         Args:

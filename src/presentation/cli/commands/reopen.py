@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.reopen_task_input import ReopenTaskInput
+from application.dto.reopen_task_request import ReopenTaskRequest
 from application.use_cases.reopen_task import ReopenTaskUseCase
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
@@ -31,7 +31,7 @@ def reopen_command(ctx, task_ids):
     time_tracker = ctx_obj.time_tracker
 
     def reopen_single_task(task_id: int) -> None:
-        input_dto = ReopenTaskInput(task_id=task_id)
+        input_dto = ReopenTaskRequest(task_id=task_id)
         use_case = ReopenTaskUseCase(repository, time_tracker)
         task = use_case.execute(input_dto)
         console_writer.task_success(StatusVerbs.REOPENED, task)

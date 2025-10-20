@@ -1,12 +1,12 @@
 """Calculate statistics use case."""
 
-from application.dto.statistics_result import CalculateStatisticsInput, StatisticsResult
+from application.dto.statistics_result import CalculateStatisticsRequest, StatisticsResult
 from application.services.task_statistics_calculator import TaskStatisticsCalculator
 from application.use_cases.base import UseCase
 from infrastructure.persistence.task_repository import TaskRepository
 
 
-class CalculateStatisticsUseCase(UseCase[CalculateStatisticsInput, StatisticsResult]):
+class CalculateStatisticsUseCase(UseCase[CalculateStatisticsRequest, StatisticsResult]):
     """Use case for calculating task statistics.
 
     This use case retrieves all tasks from the repository and calculates
@@ -24,7 +24,7 @@ class CalculateStatisticsUseCase(UseCase[CalculateStatisticsInput, StatisticsRes
         self.repository = repository
         self.calculator = TaskStatisticsCalculator()
 
-    def execute(self, input_dto: CalculateStatisticsInput) -> StatisticsResult:
+    def execute(self, input_dto: CalculateStatisticsRequest) -> StatisticsResult:
         """Execute the statistics calculation.
 
         Args:

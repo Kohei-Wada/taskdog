@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.log_hours_input import LogHoursInput
+from application.dto.log_hours_request import LogHoursRequest
 from application.use_cases.log_hours import LogHoursUseCase
 from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
 from presentation.cli.context import CliContext
@@ -41,7 +41,7 @@ def log_hours_command(ctx, task_id, hours, date):
         date = datetime.now().strftime("%Y-%m-%d")
 
     try:
-        input_dto = LogHoursInput(task_id=task_id, date=date, hours=hours)
+        input_dto = LogHoursRequest(task_id=task_id, date=date, hours=hours)
         use_case = LogHoursUseCase(repository)
         task = use_case.execute(input_dto)
 

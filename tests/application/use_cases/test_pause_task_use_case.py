@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from application.dto.pause_task_input import PauseTaskInput
+from application.dto.pause_task_request import PauseTaskRequest
 from application.use_cases.pause_task import PauseTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import (
@@ -37,7 +37,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
         task.actual_start = "2024-01-01 10:00:00"
         self.repository.save(task)
 
-        input_dto = PauseTaskInput(task_id=task.id)
+        input_dto = PauseTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.PENDING)
@@ -49,7 +49,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
         task.actual_start = "2024-01-01 10:00:00"
         self.repository.save(task)
 
-        input_dto = PauseTaskInput(task_id=task.id)
+        input_dto = PauseTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertIsNone(result.actual_start)
@@ -62,7 +62,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
         task.actual_end = "2024-01-01 12:00:00"  # Shouldn't normally exist for IN_PROGRESS
         self.repository.save(task)
 
-        input_dto = PauseTaskInput(task_id=task.id)
+        input_dto = PauseTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertIsNone(result.actual_end)
@@ -74,7 +74,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
         task.actual_start = "2024-01-01 10:00:00"
         self.repository.save(task)
 
-        input_dto = PauseTaskInput(task_id=task.id)
+        input_dto = PauseTaskRequest(task_id=task.id)
         self.use_case.execute(input_dto)
 
         retrieved = self.repository.get_by_id(task.id)
@@ -84,7 +84,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
 
     def test_execute_with_invalid_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException"""
-        input_dto = PauseTaskInput(task_id=999)
+        input_dto = PauseTaskRequest(task_id=999)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)
@@ -97,7 +97,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = PauseTaskInput(task_id=task.id)
+        input_dto = PauseTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.PENDING)
@@ -112,7 +112,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
         task.actual_end = "2024-01-01 12:00:00"
         self.repository.save(task)
 
-        input_dto = PauseTaskInput(task_id=task.id)
+        input_dto = PauseTaskRequest(task_id=task.id)
 
         with self.assertRaises(TaskAlreadyFinishedError) as context:
             self.use_case.execute(input_dto)
@@ -128,7 +128,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
         task.actual_end = "2024-01-01 11:00:00"
         self.repository.save(task)
 
-        input_dto = PauseTaskInput(task_id=task.id)
+        input_dto = PauseTaskRequest(task_id=task.id)
 
         with self.assertRaises(TaskAlreadyFinishedError) as context:
             self.use_case.execute(input_dto)

@@ -3,7 +3,7 @@ import os
 import tempfile
 import unittest
 
-from application.dto.start_task_input import StartTaskInput
+from application.dto.start_task_request import StartTaskRequest
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import (
@@ -37,7 +37,7 @@ class TestStartTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = StartTaskInput(task_id=task.id)
+        input_dto = StartTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.IN_PROGRESS)
@@ -48,7 +48,7 @@ class TestStartTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = StartTaskInput(task_id=task.id)
+        input_dto = StartTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertIsNotNone(result.actual_start)
@@ -59,7 +59,7 @@ class TestStartTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = StartTaskInput(task_id=task.id)
+        input_dto = StartTaskRequest(task_id=task.id)
         self.use_case.execute(input_dto)
 
         retrieved = self.repository.get_by_id(task.id)
@@ -68,7 +68,7 @@ class TestStartTaskUseCase(unittest.TestCase):
 
     def test_execute_with_invalid_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException"""
-        input_dto = StartTaskInput(task_id=999)
+        input_dto = StartTaskRequest(task_id=999)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)
@@ -81,7 +81,7 @@ class TestStartTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = StartTaskInput(task_id=task.id)
+        input_dto = StartTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertIsNone(result.actual_end)
@@ -92,7 +92,7 @@ class TestStartTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = StartTaskInput(task_id=task.id)
+        input_dto = StartTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.IN_PROGRESS)
@@ -108,7 +108,7 @@ class TestStartTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         # Try to start the completed task - should raise error
-        input_dto = StartTaskInput(task_id=task.id)
+        input_dto = StartTaskRequest(task_id=task.id)
 
         with self.assertRaises(TaskAlreadyFinishedError) as context:
             self.use_case.execute(input_dto)
@@ -127,7 +127,7 @@ class TestStartTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         # Try to start the canceled task - should raise error
-        input_dto = StartTaskInput(task_id=task.id)
+        input_dto = StartTaskRequest(task_id=task.id)
 
         with self.assertRaises(TaskAlreadyFinishedError) as context:
             self.use_case.execute(input_dto)
@@ -146,7 +146,7 @@ class TestStartTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         # Try to start the completed task
-        input_dto = StartTaskInput(task_id=task.id)
+        input_dto = StartTaskRequest(task_id=task.id)
 
         with contextlib.suppress(TaskAlreadyFinishedError):
             self.use_case.execute(input_dto)

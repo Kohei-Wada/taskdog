@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.restore_task_input import RestoreTaskInput
+from application.dto.restore_task_request import RestoreTaskRequest
 from application.use_cases.restore_task import RestoreTaskUseCase
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
@@ -19,7 +19,7 @@ def restore_command(ctx, task_ids):
     repository = ctx_obj.repository
 
     def restore_single_task(task_id: int) -> None:
-        input_dto = RestoreTaskInput(task_id=task_id)
+        input_dto = RestoreTaskRequest(task_id=task_id)
         use_case = RestoreTaskUseCase(repository)
         task = use_case.execute(input_dto)
         console_writer.task_success(StatusVerbs.RESTORED, task)

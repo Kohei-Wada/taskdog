@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from datetime import datetime
 
-from application.dto.create_task_input import CreateTaskInput
-from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.create_task_request import CreateTaskRequest
+from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -38,7 +38,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
 
     def test_genetic_schedules_single_task(self):
         """Test that genetic algorithm can schedule a single task."""
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Single Task",
             priority=100,
             estimated_duration=12.0,
@@ -47,7 +47,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="genetic",
@@ -72,7 +72,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         """Test that genetic algorithm can schedule multiple tasks."""
         # Create multiple tasks
         for i in range(3):
-            input_dto = CreateTaskInput(
+            input_dto = CreateTaskRequest(
                 name=f"Task {i + 1}",
                 priority=100 - (i * 10),
                 estimated_duration=6.0,
@@ -81,7 +81,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
             self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="genetic",
@@ -105,7 +105,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
     def test_genetic_respects_max_hours_per_day(self):
         """Test that genetic algorithm respects maximum hours per day."""
         # Create two tasks
-        input_dto1 = CreateTaskInput(
+        input_dto1 = CreateTaskRequest(
             name="Task 1",
             priority=100,
             estimated_duration=6.0,
@@ -113,7 +113,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         )
         self.create_use_case.execute(input_dto1)
 
-        input_dto2 = CreateTaskInput(
+        input_dto2 = CreateTaskRequest(
             name="Task 2",
             priority=90,
             estimated_duration=6.0,
@@ -122,7 +122,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto2)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="genetic",
@@ -139,7 +139,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
     def test_genetic_respects_deadlines(self):
         """Test that genetic algorithm respects task deadlines."""
         # Create task with tight but achievable deadline
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Tight Deadline",
             priority=100,
             estimated_duration=12.0,
@@ -148,7 +148,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="genetic",
@@ -169,7 +169,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
     def test_genetic_fails_impossible_deadlines(self):
         """Test that genetic algorithm fails tasks with impossible deadlines."""
         # Create task with impossible deadline
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Impossible Deadline",
             priority=100,
             estimated_duration=30.0,
@@ -178,7 +178,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="genetic",
@@ -193,7 +193,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
     def test_genetic_skips_weekends(self):
         """Test that genetic algorithm skips weekends."""
         # Create task that spans over a weekend
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Weekend Task",
             priority=100,
             estimated_duration=12.0,
@@ -203,7 +203,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
 
         # Start on Friday
         start_date = datetime(2025, 10, 24, 9, 0, 0)  # Friday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="genetic",
@@ -221,7 +221,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         """Test that genetic algorithm produces valid results."""
         # Create multiple tasks with different priorities
         for i in range(5):
-            input_dto = CreateTaskInput(
+            input_dto = CreateTaskRequest(
                 name=f"Task {i + 1}",
                 priority=100 - (i * 20),
                 estimated_duration=6.0,
@@ -230,7 +230,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
             self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="genetic",
@@ -251,7 +251,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
     def test_genetic_handles_empty_task_list(self):
         """Test that genetic algorithm handles empty task list gracefully."""
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="genetic",

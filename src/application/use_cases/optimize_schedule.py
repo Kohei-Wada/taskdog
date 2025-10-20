@@ -1,7 +1,7 @@
 """Use case for optimizing task schedules."""
 
 from application.dto.optimization_result import OptimizationResult
-from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.services.optimization.strategy_factory import StrategyFactory
 from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from application.services.schedule_clearer import ScheduleClearer
@@ -10,7 +10,7 @@ from infrastructure.persistence.task_repository import TaskRepository
 from shared.config_manager import Config
 
 
-class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationResult]):
+class OptimizeScheduleUseCase(UseCase[OptimizeScheduleRequest, OptimizationResult]):
     """Use case for optimizing task schedules.
 
     Analyzes all tasks and generates optimal schedules based on
@@ -29,7 +29,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationResult]
         self.schedule_clearer = ScheduleClearer(repository)
         self.summary_builder = OptimizationSummaryBuilder(repository)
 
-    def execute(self, input_dto: OptimizeScheduleInput) -> OptimizationResult:
+    def execute(self, input_dto: OptimizeScheduleRequest) -> OptimizationResult:
         """Execute schedule optimization.
 
         Args:

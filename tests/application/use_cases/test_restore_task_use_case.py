@@ -4,7 +4,7 @@ import os
 import tempfile
 import unittest
 
-from application.dto.restore_task_input import RestoreTaskInput
+from application.dto.restore_task_request import RestoreTaskRequest
 from application.use_cases.restore_task import RestoreTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
@@ -35,7 +35,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         self.repository.save(task)
         self.assertTrue(task.is_deleted)
 
-        input_dto = RestoreTaskInput(task_id=task.id)
+        input_dto = RestoreTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertFalse(result.is_deleted)
@@ -47,7 +47,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = RestoreTaskInput(task_id=task.id)
+        input_dto = RestoreTaskRequest(task_id=task.id)
         self.use_case.execute(input_dto)
 
         # Verify persistence
@@ -56,7 +56,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
 
     def test_execute_with_invalid_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException"""
-        input_dto = RestoreTaskInput(task_id=999)
+        input_dto = RestoreTaskRequest(task_id=999)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)
@@ -77,7 +77,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = RestoreTaskInput(task_id=task.id)
+        input_dto = RestoreTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Status should remain COMPLETED
@@ -102,7 +102,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = RestoreTaskInput(task_id=task.id)
+        input_dto = RestoreTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify all fields preserved except is_deleted
@@ -124,7 +124,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = RestoreTaskInput(task_id=task.id)
+        input_dto = RestoreTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Should remain not deleted

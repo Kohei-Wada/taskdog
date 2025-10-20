@@ -5,8 +5,8 @@ from datetime import datetime
 
 
 @dataclass
-class OptimizeScheduleInput:
-    """Input data for schedule optimization.
+class OptimizeScheduleRequest:
+    """Request data for schedule optimization.
 
     Attributes:
         start_date: Starting date for optimization (datetime object)

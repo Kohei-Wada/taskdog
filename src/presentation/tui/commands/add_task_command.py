@@ -1,14 +1,12 @@
 """Add task command for TUI."""
 
-from application.dto.create_task_input import CreateTaskInput
-from application.dto.manage_dependencies_input import AddDependencyInput
-from application.use_cases.add_dependency import AddDependencyUseCase
+from application.dto.create_task_request import CreateTaskRequest
 from application.use_cases.create_task import CreateTaskUseCase
-from domain.exceptions.task_exceptions import TaskValidationError
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.forms.task_form_fields import TaskFormData
+from presentation.tui.helpers.dependency_helpers import add_dependencies
 from presentation.tui.screens.task_form_dialog import TaskFormDialog
 
 
@@ -31,7 +29,7 @@ class AddTaskCommand(TUICommandBase):
 
             # Use UseCase directly for create (TaskService doesn't support all params)
             use_case = CreateTaskUseCase(self.context.repository)
-            task_input = CreateTaskInput(
+            task_input = CreateTaskRequest(
                 name=form_data.name,
                 priority=form_data.priority,
                 deadline=form_data.deadline,
@@ -44,18 +42,9 @@ class AddTaskCommand(TUICommandBase):
 
             # Add dependencies if specified
             if form_data.depends_on and task.id is not None:
-                dependency_use_case = AddDependencyUseCase(self.context.repository)
-                failed_dependencies = []
-
-                for dep_id in form_data.depends_on:
-                    try:
-                        dependency_input = AddDependencyInput(
-                            task_id=task.id,
-                            depends_on_id=dep_id,
-                        )
-                        dependency_use_case.execute(dependency_input)
-                    except TaskValidationError as e:
-                        failed_dependencies.append((dep_id, str(e)))
+                failed_dependencies = add_dependencies(
+                    task.id, form_data.depends_on, self.context.repository
+                )
 
                 # Show warnings for failed dependencies
                 if failed_dependencies:

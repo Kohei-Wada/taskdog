@@ -1,6 +1,6 @@
 """Reopen task command for TUI."""
 
-from application.dto.reopen_task_input import ReopenTaskInput
+from application.dto.reopen_task_request import ReopenTaskRequest
 from application.use_cases.reopen_task import ReopenTaskUseCase
 from domain.exceptions.task_exceptions import (
     DependencyNotMetError,
@@ -41,7 +41,7 @@ class ReopenTaskCommand(TUICommandBase):
             # Reopen the task
             try:
                 use_case = ReopenTaskUseCase(self.context.repository, self.context.time_tracker)
-                input_dto = ReopenTaskInput(task_id=task_id)
+                input_dto = ReopenTaskRequest(task_id=task_id)
                 use_case.execute(input_dto)
 
                 # Reload tasks and notify

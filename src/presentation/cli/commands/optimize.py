@@ -5,7 +5,7 @@ from datetime import datetime
 import click
 
 from application.dto.optimization_result import OptimizationResult
-from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.constants import DATETIME_FORMAT
 from presentation.cli.context import CliContext
@@ -103,7 +103,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
     # Execute optimization
     use_case = OptimizeScheduleUseCase(repository, config)
     result = use_case.execute(
-        OptimizeScheduleInput(
+        OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
             force_override=force,

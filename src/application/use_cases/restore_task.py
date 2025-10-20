@@ -1,12 +1,12 @@
 """Use case for restoring (undeleting) a task."""
 
-from application.dto.restore_task_input import RestoreTaskInput
+from application.dto.restore_task_request import RestoreTaskRequest
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
 
 
-class RestoreTaskUseCase(UseCase[RestoreTaskInput, Task]):
+class RestoreTaskUseCase(UseCase[RestoreTaskRequest, Task]):
     """Use case for restoring archived (soft deleted) tasks.
 
     This use case:
@@ -18,11 +18,11 @@ class RestoreTaskUseCase(UseCase[RestoreTaskInput, Task]):
     def __init__(self, repository: TaskRepository) -> None:
         self.repository = repository
 
-    def execute(self, input_dto: RestoreTaskInput) -> Task:
+    def execute(self, input_dto: RestoreTaskRequest) -> Task:
         """Restore (undelete) a task.
 
         Args:
-            input_dto: RestoreTaskInput containing task_id
+            input_dto: RestoreTaskRequest containing task_id
 
         Returns:
             The restored task

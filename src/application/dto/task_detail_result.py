@@ -6,8 +6,8 @@ from domain.entities.task import Task
 
 
 @dataclass
-class TaskDetailDTO:
-    """Data transfer object for task detail with notes.
+class GetTaskDetailResult:
+    """Result DTO for task detail with notes.
 
     Attributes:
         task: Task entity

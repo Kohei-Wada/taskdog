@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.manage_dependencies_input import RemoveDependencyInput
+from application.dto.manage_dependencies_request import RemoveDependencyRequest
 from application.use_cases.remove_dependency import RemoveDependencyUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
@@ -26,7 +26,7 @@ def remove_dependency_command(ctx, task_id, depends_on_id):
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
 
-    input_dto = RemoveDependencyInput(task_id=task_id, depends_on_id=depends_on_id)
+    input_dto = RemoveDependencyRequest(task_id=task_id, depends_on_id=depends_on_id)
     use_case = RemoveDependencyUseCase(repository)
     task = use_case.execute(input_dto)
 

@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from datetime import datetime
 
-from application.dto.create_task_input import CreateTaskInput
-from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.create_task_request import CreateTaskRequest
+from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -33,7 +33,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
     def test_dependency_aware_sorts_by_deadline_then_priority(self):
         """Test that dependency-aware strategy sorts by deadline, then priority."""
         # Create tasks with different deadlines and priorities
-        input_dto1 = CreateTaskInput(
+        input_dto1 = CreateTaskRequest(
             name="High Priority, Late Deadline",
             priority=100,
             estimated_duration=6.0,
@@ -41,7 +41,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         )
         self.create_use_case.execute(input_dto1)
 
-        input_dto2 = CreateTaskInput(
+        input_dto2 = CreateTaskRequest(
             name="Low Priority, Early Deadline",
             priority=50,
             estimated_duration=6.0,
@@ -50,7 +50,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto2)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="dependency_aware",
@@ -72,7 +72,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
     def test_dependency_aware_uses_priority_as_tiebreaker(self):
         """Test that priority is used when deadlines are equal."""
         # Create tasks with same deadline but different priorities
-        input_dto1 = CreateTaskInput(
+        input_dto1 = CreateTaskRequest(
             name="Low Priority",
             priority=50,
             estimated_duration=6.0,
@@ -80,7 +80,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         )
         self.create_use_case.execute(input_dto1)
 
-        input_dto2 = CreateTaskInput(
+        input_dto2 = CreateTaskRequest(
             name="High Priority",
             priority=100,
             estimated_duration=6.0,
@@ -89,7 +89,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto2)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="dependency_aware",
@@ -111,7 +111,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
     def test_dependency_aware_schedules_no_deadline_tasks_last(self):
         """Test that tasks without deadlines are scheduled last."""
         # Create tasks with and without deadlines
-        input_dto1 = CreateTaskInput(
+        input_dto1 = CreateTaskRequest(
             name="With Deadline",
             priority=50,
             estimated_duration=6.0,
@@ -119,7 +119,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         )
         self.create_use_case.execute(input_dto1)
 
-        input_dto2 = CreateTaskInput(
+        input_dto2 = CreateTaskRequest(
             name="No Deadline",
             priority=100,  # Higher priority but no deadline
             estimated_duration=6.0,
@@ -128,7 +128,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto2)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="dependency_aware",
@@ -150,7 +150,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
     def test_dependency_aware_uses_greedy_allocation(self):
         """Test that dependency-aware strategy uses greedy allocation."""
         # Create task that requires multiple days
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Multi-day Task",
             priority=100,
             estimated_duration=15.0,
@@ -159,7 +159,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="dependency_aware",
@@ -178,7 +178,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
     def test_dependency_aware_respects_deadlines(self):
         """Test that dependency-aware strategy respects deadlines."""
         # Create task with impossible deadline
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Impossible Deadline",
             priority=100,
             estimated_duration=30.0,
@@ -187,7 +187,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="dependency_aware",
@@ -202,7 +202,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
     def test_dependency_aware_handles_multiple_tasks(self):
         """Test that dependency-aware strategy handles multiple tasks correctly."""
         # Create multiple tasks with different characteristics
-        input_dto1 = CreateTaskInput(
+        input_dto1 = CreateTaskRequest(
             name="Urgent Low Priority",
             priority=30,
             estimated_duration=6.0,
@@ -210,7 +210,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         )
         self.create_use_case.execute(input_dto1)
 
-        input_dto2 = CreateTaskInput(
+        input_dto2 = CreateTaskRequest(
             name="Medium Priority Medium Deadline",
             priority=60,
             estimated_duration=6.0,
@@ -218,7 +218,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         )
         self.create_use_case.execute(input_dto2)
 
-        input_dto3 = CreateTaskInput(
+        input_dto3 = CreateTaskRequest(
             name="High Priority Late Deadline",
             priority=100,
             estimated_duration=6.0,
@@ -227,7 +227,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         self.create_use_case.execute(input_dto3)
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="dependency_aware",

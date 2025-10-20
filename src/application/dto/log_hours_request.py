@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 
 @dataclass
-class LogHoursInput:
-    """Input data for logging actual hours worked.
+class LogHoursRequest:
+    """Request data for logging actual hours worked.
 
     Attributes:
         task_id: ID of the task

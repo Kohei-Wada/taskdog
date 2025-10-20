@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from datetime import datetime
 
-from application.dto.create_task_input import CreateTaskInput
-from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.create_task_request import CreateTaskRequest
+from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -34,7 +34,7 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         """Test that balanced strategy distributes hours evenly across available period."""
         # Create task with 10h duration and deadline 5 weekdays away
         # Monday to Friday = 5 weekdays, should allocate 2h/day
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Balanced Task",
             priority=100,
             estimated_duration=10.0,
@@ -44,7 +44,7 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
 
         # Start on Monday
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday 9:00
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="balanced",
@@ -70,12 +70,14 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
     def test_balanced_without_deadline_uses_default_period(self):
         """Test that tasks without deadline use a default period (2 weeks)."""
         # Create task without deadline
-        input_dto = CreateTaskInput(name="No Deadline Task", priority=100, estimated_duration=20.0)
+        input_dto = CreateTaskRequest(
+            name="No Deadline Task", priority=100, estimated_duration=20.0
+        )
         self.create_use_case.execute(input_dto)
 
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="balanced",
@@ -100,7 +102,7 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         """Test that balanced strategy respects max_hours_per_day constraint."""
         # Create task that would need more days due to max_hours_per_day
         # 12h over 5 weekdays = 2.4h/day, but we set max to 6h/day (plenty)
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Constrained Task",
             priority=100,
             estimated_duration=12.0,
@@ -110,7 +112,7 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
 
         # Optimize with 6h/day max
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="balanced",
@@ -133,13 +135,13 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
     def test_balanced_handles_multiple_tasks(self):
         """Test balanced strategy with multiple tasks."""
         # Create two tasks with deadlines
-        input1 = CreateTaskInput(
+        input1 = CreateTaskRequest(
             name="Task 1",
             priority=200,
             estimated_duration=6.0,
             deadline="2025-10-22 18:00:00",  # Wednesday
         )
-        input2 = CreateTaskInput(
+        input2 = CreateTaskRequest(
             name="Task 2",
             priority=100,
             estimated_duration=6.0,
@@ -150,7 +152,7 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="balanced",
@@ -171,7 +173,7 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         """Test that balanced strategy returns None when deadline cannot be met."""
         # Create task with 10h duration but only 1 weekday until deadline
         # Even with 6h/day max, cannot fit 10h in 1 day
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Impossible Task",
             priority=100,
             estimated_duration=10.0,
@@ -181,7 +183,7 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="balanced",

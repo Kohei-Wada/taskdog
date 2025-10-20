@@ -2,8 +2,8 @@
 
 import click
 
-from application.dto.archive_task_input import ArchiveTaskInput
-from application.dto.remove_task_input import RemoveTaskInput
+from application.dto.archive_task_request import ArchiveTaskRequest
+from application.dto.remove_task_request import RemoveTaskRequest
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.remove_task import RemoveTaskUseCase
 from presentation.cli.commands.batch_helpers import execute_batch_operation
@@ -32,13 +32,13 @@ def rm_command(ctx, task_ids, hard):
     def remove_single_task(task_id: int) -> None:
         if hard:
             # Hard delete: permanently remove from database
-            input_dto = RemoveTaskInput(task_id=task_id)
+            input_dto = RemoveTaskRequest(task_id=task_id)
             use_case = RemoveTaskUseCase(repository)
             use_case.execute(input_dto)
             console_writer.success(f"Permanently deleted task with ID: {task_id}")
         else:
             # Soft delete: archive (set is_deleted=True)
-            input_dto = ArchiveTaskInput(task_id=task_id)
+            input_dto = ArchiveTaskRequest(task_id=task_id)
             use_case = ArchiveTaskUseCase(repository)
             task = use_case.execute(input_dto)
             console_writer.task_success(StatusVerbs.ARCHIVED, task)

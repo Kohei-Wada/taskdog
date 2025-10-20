@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 
 @dataclass
-class AddDependencyInput:
-    """Input data for adding a task dependency.
+class AddDependencyRequest:
+    """Request data for adding a task dependency.
 
     Attributes:
         task_id: ID of the task that depends on another
@@ -17,8 +17,8 @@ class AddDependencyInput:
 
 
 @dataclass
-class RemoveDependencyInput:
-    """Input data for removing a task dependency.
+class RemoveDependencyRequest:
+    """Request data for removing a task dependency.
 
     Attributes:
         task_id: ID of the task

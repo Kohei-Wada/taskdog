@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from datetime import datetime
 
-from application.dto.create_task_input import CreateTaskInput
-from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.create_task_request import CreateTaskRequest
+from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -33,19 +33,19 @@ class TestPriorityFirstOptimizationStrategy(unittest.TestCase):
     def test_priority_first_schedules_by_priority_order(self):
         """Test that priority_first strategy schedules high priority tasks first."""
         # Create tasks with different priorities
-        high_priority = CreateTaskInput(
+        high_priority = CreateTaskRequest(
             name="High Priority",
             priority=100,
             estimated_duration=6.0,
             deadline="2025-10-31 18:00:00",
         )
-        medium_priority = CreateTaskInput(
+        medium_priority = CreateTaskRequest(
             name="Medium Priority",
             priority=50,
             estimated_duration=6.0,
             deadline="2025-10-31 18:00:00",
         )
-        low_priority = CreateTaskInput(
+        low_priority = CreateTaskRequest(
             name="Low Priority", priority=10, estimated_duration=6.0, deadline="2025-10-31 18:00:00"
         )
 
@@ -55,7 +55,7 @@ class TestPriorityFirstOptimizationStrategy(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="priority_first",
@@ -83,14 +83,14 @@ class TestPriorityFirstOptimizationStrategy(unittest.TestCase):
     def test_priority_first_ignores_deadlines(self):
         """Test that priority_first ignores deadlines and focuses only on priority."""
         # Create task with high priority but far deadline
-        high_priority_far_deadline = CreateTaskInput(
+        high_priority_far_deadline = CreateTaskRequest(
             name="High Priority Far",
             priority=100,
             estimated_duration=6.0,
             deadline="2025-12-31 18:00:00",
         )
         # Create task with lower priority but urgent deadline
-        low_priority_urgent = CreateTaskInput(
+        low_priority_urgent = CreateTaskRequest(
             name="Low Priority Urgent",
             priority=10,
             estimated_duration=6.0,
@@ -102,7 +102,7 @@ class TestPriorityFirstOptimizationStrategy(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="priority_first",

@@ -2,8 +2,8 @@
 
 import click
 
-from application.dto.create_task_input import CreateTaskInput
-from application.dto.manage_dependencies_input import AddDependencyInput
+from application.dto.create_task_request import CreateTaskRequest
+from application.dto.manage_dependencies_request import AddDependencyRequest
 from application.use_cases.add_dependency import AddDependencyUseCase
 from application.use_cases.create_task import CreateTaskUseCase
 from domain.exceptions.task_exceptions import TaskValidationError
@@ -63,7 +63,7 @@ def add_command(ctx, name, priority, fixed, depends_on):
     effective_priority = priority if priority is not None else config.task.default_priority
 
     # Build input DTO (only basic fields)
-    input_dto = CreateTaskInput(
+    input_dto = CreateTaskRequest(
         name=name,
         priority=effective_priority,
         is_fixed=fixed,
@@ -77,7 +77,7 @@ def add_command(ctx, name, priority, fixed, depends_on):
         add_dep_use_case = AddDependencyUseCase(repository)
         for dep_id in depends_on:
             try:
-                dep_input = AddDependencyInput(task_id=task.id, depends_on_id=dep_id)
+                dep_input = AddDependencyRequest(task_id=task.id, depends_on_id=dep_id)
                 task = add_dep_use_case.execute(dep_input)
             except TaskValidationError as e:
                 console_writer.validation_error(str(e))

@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from datetime import datetime
 
-from application.dto.create_task_input import CreateTaskInput
-from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.create_task_request import CreateTaskRequest
+from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -34,7 +34,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         """Test that backward strategy schedules tasks close to deadline."""
         # Create task with 6h duration and deadline on Friday
         # Should be scheduled on Friday (as late as possible)
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="JIT Task",
             priority=100,
             estimated_duration=6.0,
@@ -44,7 +44,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
 
         # Start on Monday
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="backward",
@@ -67,7 +67,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         """Test that backward strategy fills backwards when task doesn't fit in one day."""
         # Create task with 12h duration and deadline on Friday
         # With 6h/day max, needs 2 days: Thursday and Friday
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Multi-day JIT",
             priority=100,
             estimated_duration=12.0,
@@ -77,7 +77,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
 
         # Start on Monday
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="backward",
@@ -101,12 +101,12 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
     def test_backward_without_deadline_schedules_near_future(self):
         """Test that tasks without deadline are scheduled in near future (1 week)."""
         # Create task without deadline
-        input_dto = CreateTaskInput(name="No Deadline Task", priority=100, estimated_duration=6.0)
+        input_dto = CreateTaskRequest(name="No Deadline Task", priority=100, estimated_duration=6.0)
         self.create_use_case.execute(input_dto)
 
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="backward",
@@ -131,7 +131,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         """Test that backward strategy respects max_hours_per_day constraint."""
         # Create task with 18h duration and deadline 3 weekdays away
         # With 6h/day max, should use all 3 days
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Max Hours Task",
             priority=100,
             estimated_duration=18.0,
@@ -141,7 +141,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="backward",
@@ -167,13 +167,13 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
     def test_backward_handles_multiple_tasks(self):
         """Test backward strategy with multiple tasks (furthest deadline first)."""
         # Create two tasks with different deadlines
-        input1 = CreateTaskInput(
+        input1 = CreateTaskRequest(
             name="Task 1",
             priority=100,
             estimated_duration=6.0,
             deadline="2025-10-24 18:00:00",  # Friday (further)
         )
-        input2 = CreateTaskInput(
+        input2 = CreateTaskRequest(
             name="Task 2",
             priority=100,
             estimated_duration=6.0,
@@ -184,7 +184,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="backward",
@@ -206,7 +206,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
     def test_backward_fails_when_deadline_before_start(self):
         """Test that backward strategy fails when deadline is before start date."""
         # Create task with deadline before start date
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Past Deadline",
             priority=100,
             estimated_duration=6.0,
@@ -216,7 +216,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
 
         # Optimize
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="backward",
@@ -231,7 +231,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         """Test that backward strategy skips weekends when allocating."""
         # Create task with 6h duration and deadline on Monday
         # Should skip weekend and allocate on Friday
-        input_dto = CreateTaskInput(
+        input_dto = CreateTaskRequest(
             name="Weekend Skip",
             priority=100,
             estimated_duration=6.0,
@@ -241,7 +241,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
 
         # Start on Monday (week before)
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        optimize_input = OptimizeScheduleInput(
+        optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
             max_hours_per_day=6.0,
             algorithm_name="backward",

@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.start_task_input import StartTaskInput
+from application.dto.start_task_request import StartTaskRequest
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import TaskStatus
 from presentation.cli.commands.batch_helpers import execute_batch_operation
@@ -26,7 +26,7 @@ def start_command(ctx, task_ids):
         task_before = repository.get_by_id(task_id)
         was_already_in_progress = task_before and task_before.status == TaskStatus.IN_PROGRESS
 
-        input_dto = StartTaskInput(task_id=task_id)
+        input_dto = StartTaskRequest(task_id=task_id)
         task = start_task_use_case.execute(input_dto)
 
         # Print success message

@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.pause_task_input import PauseTaskInput
+from application.dto.pause_task_request import PauseTaskRequest
 from application.use_cases.pause_task import PauseTaskUseCase
 from domain.entities.task import TaskStatus
 from presentation.cli.commands.batch_helpers import execute_batch_operation
@@ -30,7 +30,7 @@ def pause_command(ctx, task_ids):
         task_before = repository.get_by_id(task_id)
         was_already_pending = task_before and task_before.status == TaskStatus.PENDING
 
-        input_dto = PauseTaskInput(task_id=task_id)
+        input_dto = PauseTaskRequest(task_id=task_id)
         task = pause_task_use_case.execute(input_dto)
 
         # Print success message

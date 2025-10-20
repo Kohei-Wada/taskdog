@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.cancel_task_input import CancelTaskInput
+from application.dto.cancel_task_request import CancelTaskRequest
 from application.use_cases.cancel_task import CancelTaskUseCase
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
@@ -21,7 +21,7 @@ def cancel_command(ctx, task_ids):
     cancel_task_use_case = CancelTaskUseCase(repository, time_tracker)
 
     def cancel_single_task(task_id: int) -> None:
-        input_dto = CancelTaskInput(task_id=task_id)
+        input_dto = CancelTaskRequest(task_id=task_id)
         task = cancel_task_use_case.execute(input_dto)
 
         # Print success message

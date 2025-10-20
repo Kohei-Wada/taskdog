@@ -5,7 +5,7 @@ import os
 import tempfile
 import unittest
 
-from application.dto.cancel_task_input import CancelTaskInput
+from application.dto.cancel_task_request import CancelTaskRequest
 from application.use_cases.cancel_task import CancelTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import (
@@ -39,7 +39,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = CancelTaskInput(task_id=task.id)
+        input_dto = CancelTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.CANCELED)
@@ -50,7 +50,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = CancelTaskInput(task_id=task.id)
+        input_dto = CancelTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertIsNotNone(result.actual_end)
@@ -61,7 +61,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = CancelTaskInput(task_id=task.id)
+        input_dto = CancelTaskRequest(task_id=task.id)
         self.use_case.execute(input_dto)
 
         retrieved = self.repository.get_by_id(task.id)
@@ -70,7 +70,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
 
     def test_execute_with_invalid_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException"""
-        input_dto = CancelTaskInput(task_id=999)
+        input_dto = CancelTaskRequest(task_id=999)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)
@@ -83,7 +83,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = CancelTaskInput(task_id=task.id)
+        input_dto = CancelTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.CANCELED)
@@ -97,7 +97,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
         task.actual_start = "2024-01-01 10:00:00"
         self.repository.save(task)
 
-        input_dto = CancelTaskInput(task_id=task.id)
+        input_dto = CancelTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.CANCELED)
@@ -114,7 +114,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         # Try to cancel the completed task - should raise error
-        input_dto = CancelTaskInput(task_id=task.id)
+        input_dto = CancelTaskRequest(task_id=task.id)
 
         with self.assertRaises(TaskAlreadyFinishedError) as context:
             self.use_case.execute(input_dto)
@@ -132,7 +132,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         # Try to cancel the already canceled task - should raise error
-        input_dto = CancelTaskInput(task_id=task.id)
+        input_dto = CancelTaskRequest(task_id=task.id)
 
         with self.assertRaises(TaskAlreadyFinishedError) as context:
             self.use_case.execute(input_dto)
@@ -151,7 +151,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         # Try to cancel the completed task
-        input_dto = CancelTaskInput(task_id=task.id)
+        input_dto = CancelTaskRequest(task_id=task.id)
 
         with contextlib.suppress(TaskAlreadyFinishedError):
             self.use_case.execute(input_dto)

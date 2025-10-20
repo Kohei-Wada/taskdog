@@ -2,7 +2,7 @@
 
 import click
 
-from application.dto.statistics_result import CalculateStatisticsInput
+from application.dto.statistics_result import CalculateStatisticsRequest
 from application.use_cases.calculate_statistics import CalculateStatisticsUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
@@ -46,7 +46,7 @@ def stats_command(ctx, period, focus):
 
     # Execute use case
     use_case = CalculateStatisticsUseCase(repository)
-    result = use_case.execute(CalculateStatisticsInput(period=period))
+    result = use_case.execute(CalculateStatisticsRequest(period=period))
 
     # Check if we have any tasks
     if result.task_stats.total_tasks == 0:

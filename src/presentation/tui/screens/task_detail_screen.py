@@ -6,7 +6,7 @@ from textual.app import ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Label, Markdown, Static
 
-from application.dto.task_detail_dto import TaskDetailDTO
+from application.dto.task_detail_result import GetTaskDetailResult
 from domain.entities.task import Task
 from presentation.constants.colors import STATUS_COLORS_BOLD
 from presentation.tui.screens.base_dialog import BaseModalDialog
@@ -28,15 +28,15 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
         ("v", "edit_note", "Edit Note"),
     ]
 
-    def __init__(self, detail: TaskDetailDTO | Task, *args, **kwargs):
+    def __init__(self, detail: GetTaskDetailResult | Task, *args, **kwargs):
         """Initialize the detail screen.
 
         Args:
-            detail: TaskDetailDTO with task and notes, or Task object for backwards compatibility
+            detail: GetTaskDetailResult with task and notes, or Task object for backwards compatibility
         """
         super().__init__(*args, **kwargs)
-        # Support both TaskDetailDTO and Task for backwards compatibility
-        if isinstance(detail, TaskDetailDTO):
+        # Support both GetTaskDetailResult and Task for backwards compatibility
+        if isinstance(detail, GetTaskDetailResult):
             self.task_data = detail.task
             self.notes_content = detail.notes_content
             self.has_notes = detail.has_notes

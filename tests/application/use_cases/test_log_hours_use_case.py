@@ -4,7 +4,7 @@ import os
 import tempfile
 import unittest
 
-from application.dto.log_hours_input import LogHoursInput
+from application.dto.log_hours_request import LogHoursRequest
 from application.use_cases.log_hours import LogHoursUseCase
 from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -30,7 +30,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         """Test execute logs hours for a date."""
         task = self.repository.create(name="Test Task", priority=1)
 
-        input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=4.5)
+        input_dto = LogHoursRequest(task_id=task.id, date="2025-01-15", hours=4.5)
         result = self.use_case.execute(input_dto)
 
         self.assertIn("2025-01-15", result.actual_daily_hours)
@@ -40,7 +40,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         """Test execute saves hours to repository."""
         task = self.repository.create(name="Test Task", priority=1)
 
-        input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=3.0)
+        input_dto = LogHoursRequest(task_id=task.id, date="2025-01-15", hours=3.0)
         self.use_case.execute(input_dto)
 
         # Verify persistence
@@ -50,7 +50,7 @@ class TestLogHoursUseCase(unittest.TestCase):
 
     def test_execute_with_nonexistent_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException."""
-        input_dto = LogHoursInput(task_id=999, date="2025-01-15", hours=4.0)
+        input_dto = LogHoursRequest(task_id=999, date="2025-01-15", hours=4.0)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)
@@ -65,7 +65,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         invalid_dates = ["2025/01/15", "15-01-2025", "invalid", "2025-13-01"]
 
         for invalid_date in invalid_dates:
-            input_dto = LogHoursInput(task_id=task.id, date=invalid_date, hours=4.0)
+            input_dto = LogHoursRequest(task_id=task.id, date=invalid_date, hours=4.0)
 
             with self.assertRaises(TaskValidationError) as context:
                 self.use_case.execute(input_dto)
@@ -76,7 +76,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         """Test execute with zero hours raises TaskValidationError."""
         task = self.repository.create(name="Test Task", priority=1)
 
-        input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=0.0)
+        input_dto = LogHoursRequest(task_id=task.id, date="2025-01-15", hours=0.0)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto)
@@ -87,7 +87,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         """Test execute with negative hours raises TaskValidationError."""
         task = self.repository.create(name="Test Task", priority=1)
 
-        input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=-2.5)
+        input_dto = LogHoursRequest(task_id=task.id, date="2025-01-15", hours=-2.5)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto)
@@ -99,11 +99,11 @@ class TestLogHoursUseCase(unittest.TestCase):
         task = self.repository.create(name="Test Task", priority=1)
 
         # Log hours first time
-        input_dto1 = LogHoursInput(task_id=task.id, date="2025-01-15", hours=3.0)
+        input_dto1 = LogHoursRequest(task_id=task.id, date="2025-01-15", hours=3.0)
         self.use_case.execute(input_dto1)
 
         # Log hours again for same date
-        input_dto2 = LogHoursInput(task_id=task.id, date="2025-01-15", hours=5.0)
+        input_dto2 = LogHoursRequest(task_id=task.id, date="2025-01-15", hours=5.0)
         result = self.use_case.execute(input_dto2)
 
         # Should have new value, not sum
@@ -121,7 +121,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         ]
 
         for date, hours in dates_hours:
-            input_dto = LogHoursInput(task_id=task.id, date=date, hours=hours)
+            input_dto = LogHoursRequest(task_id=task.id, date=date, hours=hours)
             self.use_case.execute(input_dto)
 
         # Verify all dates logged
@@ -134,7 +134,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         """Test execute accepts decimal hours."""
         task = self.repository.create(name="Test Task", priority=1)
 
-        input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=2.75)
+        input_dto = LogHoursRequest(task_id=task.id, date="2025-01-15", hours=2.75)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.actual_daily_hours["2025-01-15"], 2.75)
