@@ -157,6 +157,10 @@ class TaskdogTUI(App):
         """Complete the selected task."""
         self.command_factory.execute("done_task")
 
+    def action_cancel_task(self) -> None:
+        """Cancel the selected task."""
+        self.command_factory.execute("cancel_task")
+
     def action_delete_task(self) -> None:
         """Delete the selected task."""
         self.command_factory.execute("delete_task")

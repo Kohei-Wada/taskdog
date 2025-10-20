@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 
+from application.dto.cancel_task_input import CancelTaskInput
 from application.dto.complete_task_input import CompleteTaskInput
 from application.dto.create_task_input import CreateTaskInput
 from application.dto.optimization_result import OptimizationResult
@@ -11,6 +12,7 @@ from application.dto.remove_task_input import RemoveTaskInput
 from application.dto.start_task_input import StartTaskInput
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.task_query_service import TaskQueryService
+from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
@@ -104,6 +106,19 @@ class TaskService:
         use_case = CompleteTaskUseCase(self.repository, self.time_tracker)
         complete_input = CompleteTaskInput(task_id=task_id)
         return use_case.execute(complete_input)
+
+    def cancel_task(self, task_id: int) -> Task:
+        """Cancel a task.
+
+        Args:
+            task_id: Task ID
+
+        Returns:
+            The updated task
+        """
+        use_case = CancelTaskUseCase(self.repository, self.time_tracker)
+        cancel_input = CancelTaskInput(task_id=task_id)
+        return use_case.execute(cancel_input)
 
     def remove_task(self, task_id: int) -> None:
         """Remove a task.
