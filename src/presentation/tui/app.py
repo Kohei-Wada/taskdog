@@ -56,6 +56,7 @@ class TaskdogTUI(App):
         ("s", "start_task", "Start"),
         ("p", "pause_task", "Pause"),
         ("d", "done_task", "Done"),
+        ("c", "cancel_task", "Cancel"),
         ("o", "optimize", "Optimize"),
         ("O", "optimize_force", "Force Optimize"),
         ("x", "delete_task", "Delete"),
