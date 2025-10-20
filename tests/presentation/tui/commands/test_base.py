@@ -21,18 +21,16 @@ class TestTUICommandBase(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.app = MagicMock()
-        self.app.repository = MagicMock()
-        self.app.time_tracker = MagicMock()
-        self.app.query_service = MagicMock()
         self.app.main_screen = MagicMock()
-        self.command = ConcreteCommand(self.app)
+        self.context = MagicMock()
+        self.task_service = MagicMock()
+        self.command = ConcreteCommand(self.app, self.context, self.task_service)
 
     def test_initialization(self):
         """Test command initialization."""
         self.assertEqual(self.command.app, self.app)
-        self.assertEqual(self.command.repository, self.app.repository)
-        self.assertEqual(self.command.time_tracker, self.app.time_tracker)
-        self.assertEqual(self.command.query_service, self.app.query_service)
+        self.assertEqual(self.command.context, self.context)
+        self.assertEqual(self.command.task_service, self.task_service)
 
     def test_get_selected_task_success(self):
         """Test getting selected task successfully."""
