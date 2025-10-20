@@ -22,8 +22,12 @@ class TestTaskIsFixedScheduling(unittest.TestCase):
 
         self.assertFalse(result)
 
-    def test_is_schedulable_with_fixed_task_when_forced(self):
-        """Test that fixed task is schedulable with force_override."""
+    def test_is_not_schedulable_with_fixed_task_even_when_forced(self):
+        """Test that fixed task is NOT schedulable even with force_override.
+
+        Fixed tasks are always protected to prevent accidental rescheduling
+        of immovable constraints (meetings, deadlines, etc.).
+        """
         task = Task(
             name="Fixed task",
             priority=100,
@@ -34,7 +38,7 @@ class TestTaskIsFixedScheduling(unittest.TestCase):
 
         result = task.is_schedulable(force_override=True)
 
-        self.assertTrue(result)
+        self.assertFalse(result)
 
     def test_is_schedulable_with_non_fixed_task(self):
         """Test that non-fixed task is schedulable normally."""
@@ -66,8 +70,11 @@ class TestTaskIsFixedScheduling(unittest.TestCase):
         # Both is_fixed and planned_start prevent scheduling
         self.assertFalse(result)
 
-    def test_fixed_task_with_existing_schedule_schedulable_when_forced(self):
-        """Test that fixed task with schedule is schedulable with force_override."""
+    def test_fixed_task_with_existing_schedule_not_schedulable_even_when_forced(self):
+        """Test that fixed task with schedule is NOT schedulable even with force_override.
+
+        Fixed tasks are always protected, regardless of force_override flag.
+        """
         task = Task(
             name="Fixed scheduled task",
             priority=100,
@@ -79,8 +86,8 @@ class TestTaskIsFixedScheduling(unittest.TestCase):
 
         result = task.is_schedulable(force_override=True)
 
-        # force_override bypasses both is_fixed and existing schedule checks
-        self.assertTrue(result)
+        # is_fixed always prevents scheduling, even with force_override
+        self.assertFalse(result)
 
 
 if __name__ == "__main__":

@@ -159,7 +159,7 @@ class Task:
             - Must have estimated_duration set
             - Must be PENDING status (not IN_PROGRESS, COMPLETED, or CANCELED)
             - Must not be deleted
-            - Must not be fixed (unless force_override)
+            - Must not be fixed (always protected, even with force_override)
             - If force_override is False, must not have existing schedule
         """
         # Skip deleted tasks
@@ -178,8 +178,9 @@ class Task:
         if not self.estimated_duration:
             return False
 
-        # Skip fixed tasks unless force_override
-        if self.is_fixed and not force_override:
+        # Skip fixed tasks (always, even with force_override)
+        # Fixed tasks represent immovable constraints (meetings, deadlines, etc.)
+        if self.is_fixed:
             return False
 
         # Skip tasks with existing schedule unless force_override
