@@ -120,9 +120,9 @@ class TestPauseTaskUseCase(unittest.TestCase):
         self.assertEqual(context.exception.task_id, task.id)
         self.assertEqual(context.exception.status, TaskStatus.COMPLETED.value)
 
-    def test_execute_raises_error_when_pausing_failed_task(self):
-        """Test execute raises TaskAlreadyFinishedError when pausing FAILED task"""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.FAILED)
+    def test_execute_raises_error_when_pausing_canceled_task(self):
+        """Test execute raises TaskAlreadyFinishedError when pausing CANCELED task"""
+        task = Task(name="Test Task", priority=1, status=TaskStatus.CANCELED)
         task.id = self.repository.generate_next_id()
         task.actual_start = "2024-01-01 10:00:00"
         task.actual_end = "2024-01-01 11:00:00"
@@ -134,21 +134,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
             self.use_case.execute(input_dto)
 
         self.assertEqual(context.exception.task_id, task.id)
-        self.assertEqual(context.exception.status, TaskStatus.FAILED.value)
-
-    def test_execute_raises_error_when_pausing_archived_task(self):
-        """Test execute raises TaskAlreadyFinishedError when pausing ARCHIVED task"""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.ARCHIVED)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
-
-        input_dto = PauseTaskInput(task_id=task.id)
-
-        with self.assertRaises(TaskAlreadyFinishedError) as context:
-            self.use_case.execute(input_dto)
-
-        self.assertEqual(context.exception.task_id, task.id)
-        self.assertEqual(context.exception.status, TaskStatus.ARCHIVED.value)
+        self.assertEqual(context.exception.status, TaskStatus.CANCELED.value)
 
 
 if __name__ == "__main__":

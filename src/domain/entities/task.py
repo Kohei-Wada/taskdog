@@ -14,8 +14,7 @@ class TaskStatus(Enum):
     PENDING = "PENDING"
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    ARCHIVED = "ARCHIVED"
+    CANCELED = "CANCELED"
 
 
 @dataclass
@@ -32,9 +31,13 @@ class Task:
         planned_end: Planned end datetime string
         deadline: Deadline datetime string
         actual_start: Actual start datetime string (set when status → IN_PROGRESS)
-        actual_end: Actual end datetime string (set when status → COMPLETED/FAILED)
+        actual_end: Actual end datetime string (set when status → COMPLETED/CANCELED)
         estimated_duration: Estimated duration in hours
         daily_allocations: Daily work hours allocation (date_str → hours)
+        depends_on: List of task IDs that must be completed before this task can start
+        is_fixed: Whether this task is fixed (cannot be moved by optimizer)
+        actual_daily_hours: Actual work hours per day (date_str → hours)
+        is_deleted: Whether this task is logically deleted (soft delete)
     """
 
     name: str
@@ -49,6 +52,11 @@ class Task:
     actual_end: str | None = None
     estimated_duration: float | None = None
     daily_allocations: dict[str, float] = field(default_factory=dict)
+    # New fields (Phase 1: Schema extension)
+    depends_on: list[int] = field(default_factory=list)
+    is_fixed: bool = False
+    actual_daily_hours: dict[str, float] = field(default_factory=dict)
+    is_deleted: bool = False
 
     def __post_init__(self) -> None:
         """Validate entity invariants after initialization.
@@ -109,23 +117,23 @@ class Task:
 
     @property
     def is_finished(self) -> bool:
-        """Check if task is in finished state (completed, failed, or archived).
+        """Check if task is in finished state (completed or canceled).
 
         Returns:
-            True if task status is COMPLETED, FAILED, or ARCHIVED
+            True if task status is COMPLETED or CANCELED
         """
-        return self.status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.ARCHIVED)
+        return self.status in (TaskStatus.COMPLETED, TaskStatus.CANCELED)
 
     @property
     def can_be_modified(self) -> bool:
-        """Check if task can be modified (not archived).
+        """Check if task can be modified (not deleted).
 
-        Archived tasks should not be updated as they are historical records.
+        Deleted tasks should not be updated.
 
         Returns:
-            True if task status is not ARCHIVED
+            True if task is not deleted
         """
-        return self.status != TaskStatus.ARCHIVED
+        return not self.is_deleted
 
     @property
     def has_note(self) -> bool:
@@ -149,12 +157,17 @@ class Task:
 
         Business Rules:
             - Must have estimated_duration set
-            - Must be PENDING or FAILED status (not IN_PROGRESS, COMPLETED, or ARCHIVED)
-            - FAILED tasks can be rescheduled (allows retry)
+            - Must be PENDING status (not IN_PROGRESS, COMPLETED, or CANCELED)
+            - Must not be deleted
+            - Must not be fixed (unless force_override)
             - If force_override is False, must not have existing schedule
         """
-        # Skip completed and archived tasks
-        if self.status in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED):
+        # Skip deleted tasks
+        if self.is_deleted:
+            return False
+
+        # Skip finished tasks
+        if self.is_finished:
             return False
 
         # Skip IN_PROGRESS tasks (don't reschedule tasks already being worked on)
@@ -163,6 +176,10 @@ class Task:
 
         # Skip tasks without estimated duration
         if not self.estimated_duration:
+            return False
+
+        # Skip fixed tasks unless force_override
+        if self.is_fixed and not force_override:
             return False
 
         # Skip tasks with existing schedule unless force_override
@@ -175,8 +192,7 @@ class Task:
             True if task should be included in workload
 
         Business Rules:
-            - Exclude COMPLETED tasks (work already done)
-            - Exclude ARCHIVED tasks (historical records)
+            - Exclude finished tasks (COMPLETED, CANCELED)
             - Include PENDING and IN_PROGRESS tasks
         """
         return not self.is_finished
@@ -200,6 +216,10 @@ class Task:
             "actual_end": self.actual_end,
             "estimated_duration": self.estimated_duration,
             "daily_allocations": self.daily_allocations,
+            "depends_on": self.depends_on,
+            "is_fixed": self.is_fixed,
+            "actual_daily_hours": self.actual_daily_hours,
+            "is_deleted": self.is_deleted,
         }
 
     @classmethod

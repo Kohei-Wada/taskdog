@@ -30,20 +30,8 @@ class RichDetailRenderer:
         """
         self.console_writer = console_writer
 
-    def format_task_info(self, task) -> Table:
-        """Format task basic information as a Rich table.
-
-        Args:
-            task: Task entity to format
-
-        Returns:
-            Rich Table with task information
-        """
-        table = Table(show_header=False, box=None, padding=TABLE_PADDING)
-        table.add_column("Field", style=COLUMN_FIELD_LABEL_STYLE, no_wrap=True)
-        table.add_column("Value")
-
-        # Basic info
+    def _add_basic_info(self, table: Table, task) -> None:
+        """Add basic task information to table."""
         table.add_row("ID", str(task.id))
         table.add_row("Name", task.name)
         table.add_row("Priority", str(task.priority))
@@ -52,10 +40,19 @@ class RichDetailRenderer:
         status_style = STATUS_STYLES.get(task.status, "white")
         table.add_row("Status", f"[{status_style}]{task.status.value}[/{status_style}]")
 
-        # Timestamps
+        # Fixed flag
+        if task.is_fixed:
+            table.add_row("Fixed", "[yellow]Yes (won't be rescheduled)[/yellow]")
+
+        # Dependencies
+        if task.depends_on:
+            deps_str = ", ".join(str(dep_id) for dep_id in task.depends_on)
+            table.add_row("Depends On", f"[cyan]{deps_str}[/cyan]")
+
+    def _add_time_fields(self, table: Table, task) -> None:
+        """Add time-related fields to table."""
         table.add_row("Created", task.created_at_str)
 
-        # Time management fields
         if task.planned_start:
             table.add_row("Planned Start", task.planned_start)
         if task.planned_end:
@@ -70,6 +67,34 @@ class RichDetailRenderer:
             table.add_row("Estimated Duration", f"{task.estimated_duration}h")
         if task.actual_duration_hours:
             table.add_row("Actual Duration", f"{task.actual_duration_hours}h")
+
+    def _add_logged_hours(self, table: Table, task) -> None:
+        """Add logged daily hours to table."""
+        if task.actual_daily_hours:
+            total_logged = sum(task.actual_daily_hours.values())
+            table.add_row("Total Logged Hours", f"[green]{total_logged}h[/green]")
+            # Show daily breakdown
+            daily_str = ", ".join(
+                f"{date}: {hours}h" for date, hours in sorted(task.actual_daily_hours.items())
+            )
+            table.add_row("Daily Hours", f"[dim]{daily_str}[/dim]")
+
+    def format_task_info(self, task) -> Table:
+        """Format task basic information as a Rich table.
+
+        Args:
+            task: Task entity to format
+
+        Returns:
+            Rich Table with task information
+        """
+        table = Table(show_header=False, box=None, padding=TABLE_PADDING)
+        table.add_column("Field", style=COLUMN_FIELD_LABEL_STYLE, no_wrap=True)
+        table.add_column("Value")
+
+        self._add_basic_info(table, task)
+        self._add_time_fields(table, task)
+        self._add_logged_hours(table, task)
 
         return table
 

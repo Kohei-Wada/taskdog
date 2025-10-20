@@ -4,7 +4,7 @@ from typing import ClassVar
 
 from textual.app import ComposeResult
 from textual.containers import Container
-from textual.widgets import Input, Label, Static
+from textual.widgets import Checkbox, Input, Label, Static
 
 from domain.entities.task import Task
 from presentation.tui.forms.task_form_fields import TaskFormData, TaskFormFields
@@ -73,6 +73,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         priority_input = self.query_one("#priority-input", Input)
         deadline_input = self.query_one("#deadline-input", Input)
         duration_input = self.query_one("#duration-input", Input)
+        fixed_checkbox = self.query_one("#fixed-checkbox", Checkbox)
         error_message = self.query_one("#error-message", Static)
 
         # Clear previous error
@@ -113,6 +114,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             priority=priority_result.value,  # type: ignore
             deadline=deadline_result.value,  # type: ignore
             estimated_duration=duration_result.value,  # type: ignore
+            is_fixed=fixed_checkbox.value,
         )
 
         # Submit the form data

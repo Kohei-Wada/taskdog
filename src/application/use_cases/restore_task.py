@@ -1,0 +1,45 @@
+"""Use case for restoring (undeleting) a task."""
+
+from application.dto.restore_task_input import RestoreTaskInput
+from application.use_cases.base import UseCase
+from domain.entities.task import Task
+from domain.exceptions.task_exceptions import TaskNotFoundException
+from infrastructure.persistence.task_repository import TaskRepository
+
+
+class RestoreTaskUseCase(UseCase[RestoreTaskInput, Task]):
+    """Use case for restoring archived (soft deleted) tasks.
+
+    This use case:
+    - Sets is_deleted flag to False
+    - Makes the task visible in active views again
+    - Does not modify task status or other fields
+    """
+
+    def __init__(self, repository: TaskRepository) -> None:
+        self.repository = repository
+
+    def execute(self, input_dto: RestoreTaskInput) -> Task:
+        """Restore (undelete) a task.
+
+        Args:
+            input_dto: RestoreTaskInput containing task_id
+
+        Returns:
+            The restored task
+
+        Raises:
+            TaskNotFoundException: If task with given ID not found
+        """
+        # Get task (including deleted ones)
+        task = self.repository.get_by_id(input_dto.task_id)
+        if task is None:
+            raise TaskNotFoundException(input_dto.task_id)
+
+        # Clear deleted flag
+        task.is_deleted = False
+
+        # Save changes
+        self.repository.save(task)
+
+        return task

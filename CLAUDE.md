@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Taskdog is a task management CLI tool built with Python, Click, and Rich. It supports time tracking, multiple task states (PENDING, IN_PROGRESS, COMPLETED, FAILED, ARCHIVED), and schedule optimization with beautiful terminal output. The codebase follows Clean Architecture principles with clear separation between layers.
+Taskdog is a task management CLI tool built with Python, Click, and Rich. It supports time tracking, task dependencies, multiple task states (PENDING, IN_PROGRESS, COMPLETED, CANCELED), soft deletion, and schedule optimization with beautiful terminal output. The codebase follows Clean Architecture principles with clear separation between layers.
 
 ### Data Storage
 
@@ -410,7 +410,18 @@ This pattern eliminates coupling between main app and individual commands, makin
 **Task** (`src/domain/entities/task.py`)
 - Core fields: id, name, priority, status, timestamp
 - Time fields: planned_start/end, deadline, actual_start/end, estimated_duration
-- Scheduling field: `daily_allocations` (dict mapping date strings to hours, set by ScheduleOptimizer)
+- Scheduling fields:
+  - `daily_allocations`: dict mapping date strings to hours (set by ScheduleOptimizer)
+  - `is_fixed`: bool flag indicating task schedule shouldn't be changed by optimizer (default: False)
+- Dependency field: `depends_on`: list[int] of task IDs this task depends on (default: [])
+- Time tracking field: `actual_daily_hours`: dict mapping date strings (YYYY-MM-DD) to actual hours worked (default: {})
+- Soft delete field: `is_deleted`: bool flag for soft deletion (default: False)
+- **Supported Status Values**:
+  - `PENDING`: Task not started yet
+  - `IN_PROGRESS`: Task currently being worked on
+  - `COMPLETED`: Task finished successfully
+  - `CANCELED`: Task won't be done (new in Phase 1)
+  - Note: FAILED and ARCHIVED statuses were removed in Phase 1
 - **Always-Valid Entity**: Implements invariant validation in `__post_init__` following DDD best practices
   - `name`: Must not be empty or whitespace-only (raises TaskValidationError)
   - `priority`: Must be greater than 0 (raises TaskValidationError)
@@ -421,8 +432,9 @@ This pattern eliminates coupling between main app and individual commands, makin
   - `actual_duration_hours`: Auto-calculated from actual_start/end timestamps
   - `notes_path`: Returns Path to markdown notes at `$XDG_DATA_HOME/taskdog/notes/{id}.md`
   - `is_active`: True if status is PENDING or IN_PROGRESS
-  - `is_finished`: True if status is COMPLETED, FAILED, or ARCHIVED
-  - `can_be_modified`: True if status is not ARCHIVED
+  - `is_finished`: True if status is COMPLETED or CANCELED (updated in Phase 1)
+  - `can_be_modified`: True if not soft-deleted (is_deleted=False)
+  - `is_schedulable(force_override)`: Returns False if is_fixed=True or is_deleted=True (unless force_override=True)
 - Methods: `to_dict()`, `from_dict()` for serialization
 - Datetime format: `YYYY-MM-DD HH:MM:SS`
 
@@ -474,7 +486,9 @@ This pattern eliminates coupling between main app and individual commands, makin
 All commands live in `src/presentation/cli/commands/` and are registered in `cli.py`:
 
 **Task Creation & Viewing:**
-- `add`: Add new task with minimal interface: `taskdog add "Task name" [--priority N]` (uses CreateTaskUseCase)
+- `add`: Add new task with minimal interface: `taskdog add "Task name" [--priority N] [--fixed] [--depends-on ID]` (uses CreateTaskUseCase)
+  - `--fixed, -f`: Mark task as fixed (won't be rescheduled by optimizer)
+  - `--depends-on, -d ID`: Add dependency (can be specified multiple times)
   - Detailed fields (deadline, estimate, schedule) should be set using dedicated commands after creation
 - `table`: Display flat table view with sorting options (uses TaskQueryService)
   - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: id)
@@ -485,6 +499,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
   - `--reverse`: Reverse sort order
 - `show`: Display task details and notes with Rich formatting (direct repository access)
   - `--raw`: Show raw markdown instead of rendered
+  - Displays: dependencies, is_fixed flag, logged daily hours
 
 **Task Status Management:**
 - `start`: Start task(s) - supports multiple task IDs (uses StartTaskUseCase)
@@ -492,6 +507,9 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `pause`: Pause task(s) and reset time tracking - supports multiple task IDs (uses PauseTaskUseCase)
   - Sets status back to PENDING and clears actual_start/actual_end timestamps
   - Useful for resetting accidentally started tasks
+- `cancel`: Cancel task(s) - supports multiple task IDs (uses CancelTaskUseCase)
+  - Sets status to CANCELED for tasks that won't be done
+  - Records actual_end timestamp
 
 **Task Property Updates (Specialized Commands):**
 - `deadline`: Set deadline with positional args: `taskdog deadline <ID> <DATE>` (uses UpdateTaskUseCase)
@@ -503,8 +521,23 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
   - Use for updating multiple fields at once; prefer specialized commands for single-field updates
 
 **Task Management:**
-- `rm`: Remove task(s) - supports multiple task IDs (uses RemoveTaskUseCase)
-- `archive`: Archive task(s) for data retention (hidden from views) - supports multiple task IDs (uses ArchiveTaskUseCase)
+- `rm`: Remove task(s) - supports multiple task IDs (default: soft delete)
+  - Default behavior: soft delete using ArchiveTaskUseCase (sets is_deleted=True)
+  - `--hard`: Permanent deletion using RemoveTaskUseCase
+  - Soft-deleted tasks can be restored with `restore` command
+- `restore`: Restore soft-deleted task(s) - supports multiple task IDs (uses RestoreTaskUseCase)
+  - Clears is_deleted flag
+
+**Dependency Management:**
+- `add-dependency`: Add a task dependency: `taskdog add-dependency <TASK_ID> <DEPENDS_ON_ID>` (uses AddDependencyUseCase)
+  - Validates both tasks exist, prevents self-dependency, circular dependencies, and duplicates
+- `remove-dependency`: Remove a task dependency: `taskdog remove-dependency <TASK_ID> <DEPENDS_ON_ID>` (uses RemoveDependencyUseCase)
+
+**Time Tracking:**
+- `log-hours`: Log actual hours worked: `taskdog log-hours <TASK_ID> <HOURS> [--date YYYY-MM-DD]` (uses LogHoursUseCase)
+  - Defaults to today if no date specified
+  - Stores in task.actual_daily_hours dict
+  - Shows total logged hours after logging
 
 **Schedule Optimization:**
 - `optimize`: Auto-generate optimal task schedules based on priorities, deadlines, and workload constraints (uses OptimizeScheduleUseCase)
@@ -524,6 +557,10 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
   - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: id)
   - `--reverse`: Reverse sort order
 - `export`: Export tasks to various formats with `--format` and `--output` options (uses TaskQueryService)
+- `stats`: Display comprehensive task statistics and analytics (uses CalculateStatisticsUseCase)
+  - `--period, -p [all|7d|30d]`: Time period for filtering tasks (default: all)
+  - `--focus, -f [all|basic|time|estimation|deadline|priority|trends]`: Focus on specific statistics section (default: all)
+  - Shows basic counts, time tracking, estimation accuracy, deadline compliance, priority distribution, and trends
 
 **Notes:**
 - `note`: Edit task notes in markdown using $EDITOR (direct repository access)
@@ -532,7 +569,9 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `tui`: Launch Text User Interface for interactive task management (uses Textual library)
   - Full-screen terminal interface with keyboard shortcuts
   - Navigation: ↑/↓ arrows or j/k (vim-style)
-  - Actions: a (add), s (start), p (pause), d (done), x (delete), i (details), e (edit), o (optimize), r (refresh), q (quit)
+  - Actions: a (add), s (start), p (pause), d (done), c (cancel), x (delete), i (details), e (edit), o (optimize), r (refresh), q (quit)
+  - Add/Edit dialogs include checkbox for is_fixed field
+  - Delete performs soft delete (can be restored with restore command)
 
 ### Key Design Decisions
 1. **Development installation required** - Install package in editable mode with `uv pip install -e .` for development and testing

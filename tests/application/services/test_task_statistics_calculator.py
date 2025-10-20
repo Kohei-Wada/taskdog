@@ -30,8 +30,8 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
             Task(name="Task 1", priority=10, id=1, status=TaskStatus.PENDING),
             Task(name="Task 2", priority=20, id=2, status=TaskStatus.IN_PROGRESS),
             Task(name="Task 3", priority=30, id=3, status=TaskStatus.COMPLETED),
-            Task(name="Task 4", priority=40, id=4, status=TaskStatus.FAILED),
-            Task(name="Task 5", priority=50, id=5, status=TaskStatus.ARCHIVED),
+            Task(name="Task 4", priority=40, id=4, status=TaskStatus.CANCELED),
+            Task(name="Task 5", priority=50, id=5, status=TaskStatus.COMPLETED),
         ]
 
         result = self.calculator.calculate_all(tasks)
@@ -39,10 +39,9 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
         self.assertEqual(result.task_stats.total_tasks, 5)
         self.assertEqual(result.task_stats.pending_count, 1)
         self.assertEqual(result.task_stats.in_progress_count, 1)
-        self.assertEqual(result.task_stats.completed_count, 1)
-        self.assertEqual(result.task_stats.failed_count, 1)
-        self.assertEqual(result.task_stats.archived_count, 1)
-        self.assertEqual(result.task_stats.completion_rate, 0.5)  # 1 completed / 2 finished
+        self.assertEqual(result.task_stats.completed_count, 2)
+        self.assertEqual(result.task_stats.canceled_count, 1)
+        self.assertEqual(result.task_stats.completion_rate, 2.0 / 3.0)  # 2 completed / 3 finished
 
     def test_calculate_time_statistics(self):
         """Test time tracking statistics."""

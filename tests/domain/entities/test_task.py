@@ -34,13 +34,14 @@ class TestTaskIsSchedulable(unittest.TestCase):
 
         self.assertFalse(result)
 
-    def test_is_not_schedulable_with_archived_task(self):
-        """Test that ARCHIVED tasks are not schedulable."""
+    def test_is_not_schedulable_with_deleted_task(self):
+        """Test that deleted tasks are not schedulable."""
         task = Task(
-            name="Archived task",
+            name="Deleted task",
             priority=100,
-            status=TaskStatus.ARCHIVED,
+            status=TaskStatus.PENDING,
             estimated_duration=4.0,
+            is_deleted=True,
         )
 
         result = task.is_schedulable(force_override=False)
@@ -101,18 +102,18 @@ class TestTaskIsSchedulable(unittest.TestCase):
 
         self.assertTrue(result)
 
-    def test_is_schedulable_with_failed_status(self):
-        """Test that FAILED tasks are schedulable (allows retry)."""
+    def test_is_not_schedulable_with_canceled_status(self):
+        """Test that CANCELED tasks are not schedulable."""
         task = Task(
-            name="Failed task",
+            name="Canceled task",
             priority=100,
-            status=TaskStatus.FAILED,
+            status=TaskStatus.CANCELED,
             estimated_duration=4.0,
         )
 
         result = task.is_schedulable(force_override=False)
 
-        self.assertTrue(result)
+        self.assertFalse(result)
 
 
 class TestTaskShouldCountInWorkload(unittest.TestCase):
@@ -154,24 +155,12 @@ class TestTaskShouldCountInWorkload(unittest.TestCase):
 
         self.assertFalse(result)
 
-    def test_failed_task_does_not_count_in_workload(self):
-        """Test that FAILED tasks do not count in workload."""
+    def test_canceled_task_does_not_count_in_workload(self):
+        """Test that CANCELED tasks do not count in workload."""
         task = Task(
-            name="Failed task",
+            name="Canceled task",
             priority=100,
-            status=TaskStatus.FAILED,
-        )
-
-        result = task.should_count_in_workload()
-
-        self.assertFalse(result)
-
-    def test_archived_task_does_not_count_in_workload(self):
-        """Test that ARCHIVED tasks do not count in workload."""
-        task = Task(
-            name="Archived task",
-            priority=100,
-            status=TaskStatus.ARCHIVED,
+            status=TaskStatus.CANCELED,
         )
 
         result = task.should_count_in_workload()

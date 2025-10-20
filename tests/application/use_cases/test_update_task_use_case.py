@@ -200,17 +200,17 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.assertIsNotNone(result_task.actual_end)
         self.assertIn("status", updated_fields)
 
-    def test_execute_status_change_to_failed_records_end_time(self):
-        """Test that changing status to FAILED records actual_end timestamp"""
+    def test_execute_status_change_to_canceled_records_end_time(self):
+        """Test that changing status to CANCELED records actual_end timestamp"""
         task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
         task.actual_start = "2025-10-12 09:00:00"
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskInput(task_id=task.id, status=TaskStatus.FAILED)
+        input_dto = UpdateTaskInput(task_id=task.id, status=TaskStatus.CANCELED)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
-        self.assertEqual(result_task.status, TaskStatus.FAILED)
+        self.assertEqual(result_task.status, TaskStatus.CANCELED)
         self.assertIsNotNone(result_task.actual_end)
         self.assertIn("status", updated_fields)
 
