@@ -9,7 +9,6 @@ from datetime import date, timedelta
 from typing import ClassVar
 
 from rich.text import Text
-from textual.binding import Binding
 from textual.widgets import DataTable
 
 from application.dto.gantt_result import GanttResult
@@ -45,28 +44,21 @@ from shared.utils.date_utils import DateTimeParser
 class GanttDataTable(DataTable):
     """A Textual DataTable widget for displaying Gantt charts.
 
-    This widget provides an interactive Gantt chart with:
-    - Vi-style keyboard navigation
-    - Task selection and detail viewing
+    This widget provides a read-only Gantt chart display with:
     - Dynamic date range adjustment
     - Workload visualization
+    - Status-based coloring
     """
 
-    # Vi-style bindings similar to TaskTable
-    BINDINGS: ClassVar = [
-        Binding("j", "cursor_down", "Down", show=False),
-        Binding("k", "cursor_up", "Up", show=False),
-        Binding("g", "scroll_home", "Top", show=False),
-        Binding("G", "scroll_end", "Bottom", show=False),
-        Binding("ctrl+d", "page_down", "Page Down", show=False),
-        Binding("ctrl+u", "page_up", "Page Up", show=False),
-    ]
+    # No bindings - read-only display
+    BINDINGS: ClassVar = []
 
     def __init__(self, *args, **kwargs):
         """Initialize the Gantt data table."""
         super().__init__(*args, **kwargs)
-        self.cursor_type = "row"
+        self.cursor_type = "none"
         self.zebra_stripes = True
+        self.can_focus = False
 
         # Remove cell padding to match CLI spacing (no extra spaces between dates)
         self.styles.padding = (0, 0)
@@ -226,10 +218,7 @@ class GanttDataTable(DataTable):
             task_name = f"[strike]{task_name}[/strike]"
 
         # Estimated hours
-        if task.estimated_duration:
-            est_hours = f"{task.estimated_duration:.1f}"
-        else:
-            est_hours = "-"
+        est_hours = f"{task.estimated_duration:.1f}" if task.estimated_duration else "-"
 
         # Build timeline as Rich Text object
         days = (end_date - start_date).days + 1
@@ -356,10 +345,7 @@ class GanttDataTable(DataTable):
         # COMPLETED tasks: hide planned hours
         if hours > 0 and status != TaskStatus.COMPLETED:
             # Format as 3 characters, right-aligned (e.g., "  3", "2.5")
-            if hours == int(hours):
-                display = f"{int(hours):2d} "
-            else:
-                display = f"{hours:3.1f}"
+            display = f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
         else:
             # Use SYMBOL_EMPTY which is already " · " (3 chars)
             display = SYMBOL_EMPTY
@@ -441,39 +427,6 @@ class GanttDataTable(DataTable):
             return "dim"
         else:  # PENDING
             return "white"
-
-    def get_selected_task(self) -> Task | None:
-        """Get the currently selected task.
-
-        Returns:
-            The selected Task, or None if no task is selected
-        """
-        if self.cursor_row < 0 or self.cursor_row >= len(self._task_map) + 3:
-            return None
-        return self._task_map.get(self.cursor_row)
-
-    def action_scroll_home(self) -> None:
-        """Move cursor to top (g key)."""
-        if self.row_count > 3:  # Skip 3 header rows
-            self.move_cursor(row=3)
-
-    def action_scroll_end(self) -> None:
-        """Move cursor to bottom (G key)."""
-        if self.row_count > 3:
-            # Move to last task row (before workload row)
-            self.move_cursor(row=self.row_count - 2)
-
-    def action_page_down(self) -> None:
-        """Move cursor down by half page (Ctrl+d)."""
-        if self.row_count > 3:
-            new_row = min(self.cursor_row + 10, self.row_count - 2)
-            self.move_cursor(row=new_row)
-
-    def action_page_up(self) -> None:
-        """Move cursor up by half page (Ctrl+u)."""
-        if self.row_count > 3:
-            new_row = max(self.cursor_row - 10, 3)
-            self.move_cursor(row=new_row)
 
     def get_legend_text(self) -> str:
         """Build legend text for the Gantt chart.

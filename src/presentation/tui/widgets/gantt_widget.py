@@ -7,6 +7,7 @@ like date range management and automatic resizing.
 from datetime import date, timedelta
 
 from textual.app import ComposeResult
+from textual.containers import Center
 from textual.widgets import Static
 
 from application.queries.filters.task_filter import TaskFilter
@@ -50,10 +51,17 @@ class GanttWidget(Static):
             Iterable of widgets to display
         """
         self._gantt_table = GanttDataTable()
-        yield self._gantt_table
+        self._gantt_table.styles.border = ("solid", "ansi_bright_blue")
+        self._gantt_table.styles.width = "auto"
+
+        # Wrap table in Center container for horizontal centering
+        with Center():
+            yield self._gantt_table
 
         # Legend below the table
         self._legend_widget = Static("")
+        self._legend_widget.styles.text_align = "center"
+        self._legend_widget.styles.margin = (1, 0, 0, 0)  # Top margin
         yield self._legend_widget
 
     def update_gantt(
@@ -80,54 +88,73 @@ class GanttWidget(Static):
             return
 
         if not self._tasks:
-            # Show empty message using a single-row table
-            self._gantt_table.clear(columns=True)
-            self._gantt_table.add_column("Message")
-            self._gantt_table.add_row("[dim]No tasks to display[/dim]")
+            self._show_empty_message()
             return
 
-        # Get widget width for proper rendering
+        display_days = self._calculate_display_days()
+        start_date, end_date = self._calculate_date_range(display_days)
+        self._load_gantt_data(start_date, end_date)
+
+    def _show_empty_message(self):
+        """Show empty message when no tasks are available."""
+        self._gantt_table.clear(columns=True)
+        self._gantt_table.add_column("Message")
+        self._gantt_table.add_row("[dim]No tasks to display[/dim]")
+
+    def _calculate_display_days(self) -> int:
+        """Calculate optimal number of days to display.
+
+        Returns:
+            Number of days to display (rounded to weeks)
+        """
         widget_width = self.size.width if self.size else DEFAULT_GANTT_WIDGET_WIDTH
         console_width = max(widget_width - BORDER_WIDTH, MIN_CONSOLE_WIDTH)
-
-        # Calculate optimal date range based on available width
         timeline_width = max(console_width - GANTT_TABLE_FIXED_WIDTH, MIN_TIMELINE_WIDTH)
         max_days = timeline_width // CHARS_PER_DAY
-
-        # Round to nearest week for cleaner display
         weeks = max(max_days // DAYS_PER_WEEK, 1)
-        display_days = weeks * DAYS_PER_WEEK
+        return weeks * DAYS_PER_WEEK
 
-        # Calculate date range
+    def _calculate_date_range(self, display_days: int) -> tuple[date, date]:
+        """Calculate start and end dates for the chart.
+
+        Args:
+            display_days: Number of days to display
+
+        Returns:
+            Tuple of (start_date, end_date)
+        """
         start_date = self._start_date
         end_date = self._end_date
 
         if not start_date and not end_date:
-            # Auto-calculate range: show today + rounded weeks
             today = date.today()
             start_date = today
             end_date = today + timedelta(days=display_days - 1)
         elif start_date and end_date:
-            # Both dates provided - check if they fit in screen width
             date_range_days = (end_date - start_date).days + 1
             if date_range_days > display_days:
-                # Range too large, clip to display_days centered around today
                 today = date.today()
                 half_days = display_days // DISPLAY_HALF_WIDTH_DIVISOR
                 start_date = today - timedelta(days=half_days)
                 end_date = start_date + timedelta(days=display_days - 1)
 
-        # Get Gantt data from Application layer
+        return start_date, end_date
+
+    def _load_gantt_data(self, start_date: date, end_date: date):
+        """Load and display gantt data.
+
+        Args:
+            start_date: Start date for the chart
+            end_date: End date for the chart
+        """
         repository = JsonTaskRepository(XDGDirectories.get_tasks_file())
         task_query_service = TaskQueryService(repository)
 
-        # Create a filter that returns the current tasks
         class TaskListFilter(TaskFilter):
             def __init__(self, tasks):
                 self.tasks = tasks
 
             def filter(self, tasks):
-                # Return only tasks that match our task IDs
                 task_ids = {t.id for t in self.tasks}
                 return [t for t in tasks if t.id in task_ids]
 
@@ -140,23 +167,25 @@ class GanttWidget(Static):
             end_date=end_date,
         )
 
-        # Load data into the GanttDataTable
         try:
             self._gantt_table.load_gantt(gantt_result)
-
-            # Update legend
             if self._legend_widget:
                 legend_text = self._gantt_table.get_legend_text()
                 self._legend_widget.update(legend_text)
         except Exception as e:
-            # Show error message
-            self._gantt_table.clear(columns=True)
-            self._gantt_table.add_column("Error")
-            self._gantt_table.add_row(f"[red]Error rendering gantt: {e!s}[/red]")
+            self._show_error_message(e)
 
-            # Clear legend on error
-            if self._legend_widget:
-                self._legend_widget.update("")
+    def _show_error_message(self, error: Exception):
+        """Show error message when rendering fails.
+
+        Args:
+            error: The exception that occurred
+        """
+        self._gantt_table.clear(columns=True)
+        self._gantt_table.add_column("Error")
+        self._gantt_table.add_row(f"[red]Error rendering gantt: {error!s}[/red]")
+        if self._legend_widget:
+            self._legend_widget.update("")
 
     def on_resize(self):
         """Handle resize events."""
