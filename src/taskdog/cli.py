@@ -26,8 +26,6 @@ from presentation.cli.commands.show import show_command
 from presentation.cli.commands.start import start_command
 from presentation.cli.commands.stats import stats_command
 from presentation.cli.commands.table import table_command
-
-# Commands
 from presentation.cli.commands.today import today_command
 from presentation.cli.commands.tui_command import tui_command
 from presentation.cli.commands.update import update_command
