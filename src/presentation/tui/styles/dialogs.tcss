@@ -35,7 +35,7 @@ ConfirmationDialog {
 #confirmation-dialog {
     width: 55;  /* Compact width for simple yes/no confirmations */
     height: auto;
-    max-height: 15;
+    max-height: 20;  /* Increased to ensure buttons are visible */
     background: $surface;
     border: thick $error;
     padding: 1;
