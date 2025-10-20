@@ -161,6 +161,11 @@ The application follows **Clean Architecture** with distinct layers:
     - Extensible design: adding new validators requires 3 steps (create validator class, register in registry, done)
   - **Field Validators**:
     - `StatusValidator`: Validates status transitions (raises `TaskNotStartedError`, `TaskAlreadyFinishedError`, etc.)
+      - Uses `DependencyValidator` to check dependencies when starting tasks
+  - **Standalone Validators**:
+    - `DependencyValidator`: Shared dependency validation logic (used by StatusValidator and StartTaskUseCase)
+      - Static method `validate_dependencies_met()` checks all dependencies are COMPLETED
+      - Raises `DependencyNotMetError` with list of unmet dependencies
   - Used by UpdateTaskUseCase to validate field updates before applying changes
   - All validators use custom domain exceptions for consistent error handling
 - `services/`: Application services that coordinate complex operations
@@ -538,6 +543,9 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 **Dependency Management:**
 - `add-dependency`: Add a task dependency: `taskdog add-dependency <TASK_ID> <DEPENDS_ON_ID>` (uses AddDependencyUseCase)
   - Validates both tasks exist, prevents self-dependency, circular dependencies, and duplicates
+  - **Cycle Detection**: Uses DFS algorithm to detect both direct (A→B, B→A) and indirect (A→B→C, C→A) circular dependencies
+  - Provides clear error messages showing the complete cycle path (e.g., "3 → 1 → 2 → 3")
+  - Safer than Asana (which only detects 2-task cycles), better UX than Jira (clearer error messages)
 - `remove-dependency`: Remove a task dependency: `taskdog remove-dependency <TASK_ID> <DEPENDS_ON_ID>` (uses RemoveDependencyUseCase)
 
 **Time Tracking:**
