@@ -2,7 +2,10 @@
 
 from application.dto.reopen_task_input import ReopenTaskInput
 from application.use_cases.reopen_task import ReopenTaskUseCase
-from domain.exceptions.task_exceptions import DependencyNotMetError
+from domain.exceptions.task_exceptions import (
+    DependencyNotMetError,
+    TaskValidationError,
+)
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
@@ -45,8 +48,8 @@ class ReopenTaskCommand(TUICommandBase):
                 self.reload_tasks()
                 self.notify_success(f"Reopened task: {task_name}")
 
-            except DependencyNotMetError as e:
-                # Show detailed dependency error
+            except (TaskValidationError, DependencyNotMetError) as e:
+                # Show validation or dependency error
                 self.notify_error("reopening task", e)
 
         # Show confirmation dialog
