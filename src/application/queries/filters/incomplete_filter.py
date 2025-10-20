@@ -8,7 +8,7 @@ class IncompleteFilter(TaskFilter):
     """Filter tasks that are not yet completed.
 
     Returns tasks with status PENDING or IN_PROGRESS.
-    Excludes COMPLETED and CANCELED tasks.
+    Excludes COMPLETED, CANCELED, and deleted tasks.
     """
 
     def filter(self, tasks: list[Task]) -> list[Task]:
@@ -18,6 +18,6 @@ class IncompleteFilter(TaskFilter):
             tasks: List of all tasks
 
         Returns:
-            List of tasks that are not completed or archived
+            List of tasks that are not completed, canceled, or deleted
         """
-        return [task for task in tasks if not task.is_finished]
+        return [task for task in tasks if not task.is_finished and not task.is_deleted]

@@ -194,9 +194,10 @@ class Task:
 
         Business Rules:
             - Exclude finished tasks (COMPLETED, CANCELED)
+            - Exclude deleted tasks
             - Include PENDING and IN_PROGRESS tasks
         """
-        return not self.is_finished
+        return not self.is_finished and not self.is_deleted
 
     def to_dict(self) -> dict:
         """Serialize task to dictionary for persistence.
