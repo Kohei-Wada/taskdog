@@ -58,7 +58,7 @@ class GanttWidget(Static):
         yield self._title_widget
 
         self._gantt_table = GanttDataTable()
-        self._gantt_table.styles.border = ("solid", "ansi_bright_blue")
+        self._gantt_table.styles.border = ("solid", "white")
         self._gantt_table.styles.width = "auto"
 
         # Wrap table in Center container for horizontal centering
