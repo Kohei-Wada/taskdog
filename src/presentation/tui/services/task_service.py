@@ -2,22 +2,22 @@
 
 from datetime import datetime, timedelta
 
+from application.dto.archive_task_input import ArchiveTaskInput
 from application.dto.cancel_task_input import CancelTaskInput
 from application.dto.complete_task_input import CompleteTaskInput
 from application.dto.create_task_input import CreateTaskInput
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.dto.pause_task_input import PauseTaskInput
-from application.dto.remove_task_input import RemoveTaskInput
 from application.dto.start_task_input import StartTaskInput
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.task_query_service import TaskQueryService
+from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from application.use_cases.pause_task import PauseTaskUseCase
-from application.use_cases.remove_task import RemoveTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
 from domain.services.time_tracker import TimeTracker
@@ -120,15 +120,18 @@ class TaskService:
         cancel_input = CancelTaskInput(task_id=task_id)
         return use_case.execute(cancel_input)
 
-    def remove_task(self, task_id: int) -> None:
-        """Remove a task.
+    def remove_task(self, task_id: int) -> Task:
+        """Remove a task (soft delete).
 
         Args:
             task_id: Task ID
+
+        Returns:
+            The archived task
         """
-        use_case = RemoveTaskUseCase(self.repository)
-        remove_input = RemoveTaskInput(task_id=task_id)
-        use_case.execute(remove_input)
+        use_case = ArchiveTaskUseCase(self.repository)
+        archive_input = ArchiveTaskInput(task_id=task_id)
+        return use_case.execute(archive_input)
 
     def optimize_schedule(
         self,

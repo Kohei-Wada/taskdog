@@ -6,7 +6,6 @@ with the command registry through the @command_registry.register decorator.
 
 # Import all commands to trigger registration
 from presentation.tui.commands.add_task_command import AddTaskCommand
-from presentation.tui.commands.archive_task_command import ArchiveTaskCommand
 from presentation.tui.commands.cancel_task_command import CancelTaskCommand
 from presentation.tui.commands.complete_task_command import CompleteTaskCommand
 from presentation.tui.commands.delete_task_command import DeleteTaskCommand
@@ -20,7 +19,6 @@ from presentation.tui.commands.start_task_command import StartTaskCommand
 
 __all__ = [
     "AddTaskCommand",
-    "ArchiveTaskCommand",
     "CancelTaskCommand",
     "CompleteTaskCommand",
     "DeleteTaskCommand",

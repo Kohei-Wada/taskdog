@@ -8,10 +8,10 @@ from presentation.tui.screens.confirmation_dialog import ConfirmationDialog
 
 @command_registry.register("delete_task")
 class DeleteTaskCommand(TUICommandBase):
-    """Command to delete the selected task with confirmation."""
+    """Command to delete the selected task with confirmation (soft delete)."""
 
     def execute(self) -> None:
-        """Execute the delete task command."""
+        """Execute the delete task command (soft delete)."""
         task = self.get_selected_task()
         if not task or task.id is None:
             self.notify_warning("No task selected")
@@ -31,14 +31,14 @@ class DeleteTaskCommand(TUICommandBase):
             if not confirmed:
                 return  # User cancelled
 
-            # Use TaskService to remove the task
+            # Use TaskService to remove the task (soft delete)
             self.task_service.remove_task(task_id)
             self.reload_tasks()
-            self.notify_success(f"Deleted task: {task_name} (ID: {task_id})")
+            self.notify_success(f"Archived task: {task_name} (ID: {task_id})")
 
         # Show confirmation dialog
         dialog = ConfirmationDialog(
             title="Confirm Deletion",
-            message=f"Are you sure you want to delete task '{task_name}' (ID: {task_id})?",
+            message=f"Are you sure you want to delete task '{task_name}' (ID: {task_id})?\n(Soft delete - can be restored)",
         )
         self.app.push_screen(dialog, handle_confirmation)
