@@ -42,6 +42,7 @@ class GanttWidget(Static):
         self._start_date: date | None = None
         self._end_date: date | None = None
         self._gantt_table: GanttDataTable | None = None
+        self._title_widget: Static | None = None
         self._legend_widget: Static | None = None
 
     def compose(self) -> ComposeResult:
@@ -50,6 +51,12 @@ class GanttWidget(Static):
         Returns:
             Iterable of widgets to display
         """
+        # Title above the table
+        self._title_widget = Static("")
+        self._title_widget.styles.text_align = "center"
+        self._title_widget.styles.margin = (0, 0, 1, 0)  # Bottom margin
+        yield self._title_widget
+
         self._gantt_table = GanttDataTable()
         self._gantt_table.styles.border = ("solid", "ansi_bright_blue")
         self._gantt_table.styles.width = "auto"
@@ -169,6 +176,13 @@ class GanttWidget(Static):
 
         try:
             self._gantt_table.load_gantt(gantt_result)
+
+            # Update title with date range
+            if self._title_widget:
+                title_text = f"[bold yellow]Gantt Chart[/bold yellow] [dim]({start_date} to {end_date})[/dim]"
+                self._title_widget.update(title_text)
+
+            # Update legend
             if self._legend_widget:
                 legend_text = self._gantt_table.get_legend_text()
                 self._legend_widget.update(legend_text)
@@ -184,6 +198,8 @@ class GanttWidget(Static):
         self._gantt_table.clear(columns=True)
         self._gantt_table.add_column("Error")
         self._gantt_table.add_row(f"[red]Error rendering gantt: {error!s}[/red]")
+        if self._title_widget:
+            self._title_widget.update("")
         if self._legend_widget:
             self._legend_widget.update("")
 
