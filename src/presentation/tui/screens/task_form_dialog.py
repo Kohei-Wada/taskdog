@@ -12,6 +12,8 @@ from presentation.tui.forms.validators import (
     DeadlineValidator,
     DependenciesValidator,
     DurationValidator,
+    PlannedEndValidator,
+    PlannedStartValidator,
     PriorityValidator,
     TaskNameValidator,
 )
@@ -74,6 +76,8 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         priority_input = self.query_one("#priority-input", Input)
         deadline_input = self.query_one("#deadline-input", Input)
         duration_input = self.query_one("#duration-input", Input)
+        planned_start_input = self.query_one("#planned-start-input", Input)
+        planned_end_input = self.query_one("#planned-end-input", Input)
         dependencies_input = self.query_one("#dependencies-input", Input)
         fixed_checkbox = self.query_one("#fixed-checkbox", Checkbox)
         error_message = self.query_one("#error-message", Static)
@@ -110,6 +114,20 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             duration_input.focus()
             return
 
+        # Validate planned start
+        planned_start_result = PlannedStartValidator.validate(planned_start_input.value)
+        if not planned_start_result.is_valid:
+            error_message.update(f"[red]Error: {planned_start_result.error_message}[/red]")
+            planned_start_input.focus()
+            return
+
+        # Validate planned end
+        planned_end_result = PlannedEndValidator.validate(planned_end_input.value)
+        if not planned_end_result.is_valid:
+            error_message.update(f"[red]Error: {planned_end_result.error_message}[/red]")
+            planned_end_input.focus()
+            return
+
         # Validate dependencies
         dependencies_result = DependenciesValidator.validate(dependencies_input.value)
         if not dependencies_result.is_valid:
@@ -123,6 +141,8 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             priority=priority_result.value,  # type: ignore
             deadline=deadline_result.value,  # type: ignore
             estimated_duration=duration_result.value,  # type: ignore
+            planned_start=planned_start_result.value,  # type: ignore
+            planned_end=planned_end_result.value,  # type: ignore
             is_fixed=fixed_checkbox.value,
             depends_on=dependencies_result.value,  # type: ignore
         )

@@ -15,6 +15,7 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_DEADLINE_WIDTH,
     TASK_TABLE_DEPENDS_ON_WIDTH,
     TASK_TABLE_DURATION_WIDTH,
+    TASK_TABLE_FIXED_WIDTH,
     TASK_TABLE_ID_WIDTH,
     TASK_TABLE_NAME_WIDTH,
     TASK_TABLE_NOTE_WIDTH,
@@ -49,6 +50,7 @@ class TaskTable(DataTable):
         self.add_column("Name", width=TASK_TABLE_NAME_WIDTH)
         self.add_column("Pri", width=TASK_TABLE_PRIORITY_WIDTH)
         self.add_column("Status", width=TASK_TABLE_STATUS_WIDTH)
+        self.add_column("Fixed", width=TASK_TABLE_FIXED_WIDTH)
         self.add_column("Deps", width=TASK_TABLE_DEPENDS_ON_WIDTH)
         self.add_column("Duration", width=TASK_TABLE_DURATION_WIDTH)
         self.add_column("Deadline", width=TASK_TABLE_DEADLINE_WIDTH)
@@ -81,6 +83,9 @@ class TaskTable(DataTable):
             # Check if task has notes
             note_indicator = EMOJI_NOTE if task.has_note else ""
 
+            # Check if task is fixed
+            fixed_indicator = "📌" if task.is_fixed else ""
+
             # Add row
             self.add_row(
                 str(task.id),
@@ -91,6 +96,7 @@ class TaskTable(DataTable):
                 ),
                 str(task.priority),
                 status_styled,
+                fixed_indicator,
                 dependencies,
                 duration,
                 deadline,

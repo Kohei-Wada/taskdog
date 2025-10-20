@@ -56,7 +56,7 @@ TaskFormDialog {
 #edit-task-dialog {
     width: 70;  /* Standard width for form-based dialogs */
     height: auto;
-    max-height: 35;
+    max-height: 45;  /* Increased to accommodate planned_start/planned_end fields */
     background: $surface;
     border: thick $primary;
     padding: 1;

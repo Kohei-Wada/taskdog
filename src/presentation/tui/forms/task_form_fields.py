@@ -19,6 +19,8 @@ class TaskFormData:
         priority: Task priority (1-10)
         deadline: Optional deadline in format YYYY-MM-DD HH:MM:SS
         estimated_duration: Optional estimated duration in hours
+        planned_start: Optional planned start date in format YYYY-MM-DD HH:MM:SS
+        planned_end: Optional planned end date in format YYYY-MM-DD HH:MM:SS
         is_fixed: Whether task schedule is fixed (won't be rescheduled by optimizer)
         depends_on: List of task IDs this task depends on
     """
@@ -27,6 +29,8 @@ class TaskFormData:
     priority: int
     deadline: str | None = None
     estimated_duration: float | None = None
+    planned_start: str | None = None
+    planned_end: str | None = None
     is_fixed: bool = False
     depends_on: list[int] | None = None
 
@@ -91,6 +95,22 @@ class TaskFormFields:
                 value=str(task.estimated_duration) if task and task.estimated_duration else "",
             )
 
+            # Planned Start field
+            yield Label("Planned Start:", classes="field-label")
+            yield Input(
+                placeholder="Optional: 2025-11-01, tomorrow 9am, next monday",
+                id="planned-start-input",
+                value=task.planned_start if task and task.planned_start else "",
+            )
+
+            # Planned End field
+            yield Label("Planned End:", classes="field-label")
+            yield Input(
+                placeholder="Optional: 2025-11-15, in 2 weeks, friday 5pm",
+                id="planned-end-input",
+                value=task.planned_end if task and task.planned_end else "",
+            )
+
             # Dependencies field
             yield Label("Dependencies:", classes="field-label")
             # Format current dependencies as comma-separated string
@@ -104,8 +124,8 @@ class TaskFormFields:
             )
 
             # Fixed field (checkbox)
+            yield Label("Fixed (won't be rescheduled by optimizer):", classes="field-label")
             yield Checkbox(
-                "Fixed (won't be rescheduled by optimizer)",
                 id="fixed-checkbox",
                 value=task.is_fixed if task else False,
             )

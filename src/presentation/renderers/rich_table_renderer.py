@@ -94,6 +94,12 @@ class RichTableRenderer(RichRendererBase):
             "style": "cyan",
             "no_wrap": True,
         },
+        "is_fixed": {
+            "header": "Fixed",
+            "justify": "center",
+            "style": "yellow",
+            "no_wrap": True,
+        },
     }
 
     # Default fields to display when none specified
@@ -103,6 +109,7 @@ class RichTableRenderer(RichRendererBase):
         "note",
         "priority",
         "status",
+        "is_fixed",
         "depends_on",
         "planned_start",
         "planned_end",
@@ -190,6 +197,7 @@ class RichTableRenderer(RichRendererBase):
             "note": lambda t: "📝" if t.has_note else "",
             "priority": lambda t: str(t.priority),
             "status": lambda t: self._format_status(t),
+            "is_fixed": lambda t: "📌" if t.is_fixed else "",
             "depends_on": lambda t: self._format_dependencies(t),
             "planned_start": lambda t: self._format_datetime(t.planned_start),
             "planned_end": lambda t: self._format_datetime(t.planned_end),

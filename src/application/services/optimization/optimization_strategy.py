@@ -88,6 +88,10 @@ class OptimizationStrategy(ABC):
         that already have schedules. This ensures that when we optimize new tasks,
         we account for existing workload commitments.
 
+        Fixed tasks are ALWAYS included in daily_allocations, regardless of force_override,
+        because they represent immovable time constraints (meetings, deadlines, etc.) that
+        must be respected when scheduling other tasks.
+
         Args:
             tasks: All tasks in the system
             force_override: Whether existing schedules will be overridden
@@ -101,18 +105,34 @@ class OptimizationStrategy(ABC):
             if not (task.planned_start and task.estimated_duration):
                 continue
 
-            # If force_override, we'll reschedule PENDING tasks, so don't count their old allocation
-            # But IN_PROGRESS tasks should NOT be rescheduled, so count their allocation
-            if force_override and task.status != TaskStatus.IN_PROGRESS:
+            # ALWAYS include fixed tasks in daily_allocations (they cannot be rescheduled)
+            # Also include IN_PROGRESS tasks (they should not be rescheduled)
+            # If force_override, skip PENDING non-fixed tasks (they will be rescheduled)
+            if force_override and not task.is_fixed and task.status != TaskStatus.IN_PROGRESS:
                 continue
 
-            # Use daily_allocations if available
+            # Get daily allocations for this task
+            # Use task.daily_allocations if available, otherwise calculate from WorkloadCalculator
             if task.daily_allocations:
-                for date_str, hours in task.daily_allocations.items():
-                    if date_str in self.daily_allocations:
-                        self.daily_allocations[date_str] += hours
-                    else:
-                        self.daily_allocations[date_str] = hours
+                task_daily_hours = task.daily_allocations
+            else:
+                # Calculate daily hours using WorkloadCalculator
+                from domain.services.workload_calculator import WorkloadCalculator
+
+                calculator = WorkloadCalculator()
+                task_daily_hours_by_date = calculator.get_task_daily_hours(task)
+                # Convert date objects to date strings
+                task_daily_hours = {
+                    date_obj.strftime("%Y-%m-%d"): hours
+                    for date_obj, hours in task_daily_hours_by_date.items()
+                }
+
+            # Add to global daily_allocations
+            for date_str, hours in task_daily_hours.items():
+                if date_str in self.daily_allocations:
+                    self.daily_allocations[date_str] += hours
+                else:
+                    self.daily_allocations[date_str] = hours
 
     def _record_failure(self, task: Task, reason: str) -> None:
         """Record a task scheduling failure with a reason.

@@ -150,6 +150,66 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         self.assertEqual(len(result.successful_tasks), 0)
         self.assertEqual(len(result.failed_tasks), 1)
 
+    def test_greedy_respects_fixed_tasks_in_daily_limit(self):
+        """Test that greedy strategy accounts for fixed tasks when calculating available hours."""
+        # Create a fixed task with 4h/day allocation for 3 days (Mon-Wed)
+        fixed_task_input = CreateTaskInput(
+            name="Fixed Meeting",
+            priority=100,
+            estimated_duration=12.0,
+            deadline="2025-10-25 18:00:00",
+            is_fixed=True,
+        )
+        fixed_task = self.create_use_case.execute(fixed_task_input)
+
+        # Manually schedule the fixed task with specific daily allocations
+        fixed_task.planned_start = "2025-10-20 09:00:00"
+        fixed_task.planned_end = "2025-10-22 18:00:00"
+        fixed_task.daily_allocations = {
+            "2025-10-20": 4.0,  # Monday: 4h
+            "2025-10-21": 4.0,  # Tuesday: 4h
+            "2025-10-22": 4.0,  # Wednesday: 4h
+        }
+        self.repository.save(fixed_task)
+
+        # Create a regular task that needs 6h
+        regular_task_input = CreateTaskInput(
+            name="Regular Task",
+            priority=100,
+            estimated_duration=6.0,
+            deadline="2025-10-31 18:00:00",
+        )
+        self.create_use_case.execute(regular_task_input)
+
+        # Optimize with max_hours_per_day=6.0
+        # Available hours per day: 6.0 - 4.0 (fixed) = 2.0h
+        # So 6h task should take 3 days (2h * 3 = 6h)
+        start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            algorithm_name="greedy",
+            force_override=True,  # Force to reschedule regular task
+        )
+        result = self.optimize_use_case.execute(optimize_input)
+
+        # Verify regular task was scheduled
+        self.assertEqual(len(result.successful_tasks), 1)
+        regular_task = result.successful_tasks[0]
+
+        # Verify daily allocations respect fixed task hours
+        # Each day should have max 2h for regular task (6.0 - 4.0 fixed)
+        self.assertIsNotNone(regular_task.daily_allocations)
+        self.assertAlmostEqual(regular_task.daily_allocations.get("2025-10-20", 0.0), 2.0, places=5)
+        self.assertAlmostEqual(regular_task.daily_allocations.get("2025-10-21", 0.0), 2.0, places=5)
+        self.assertAlmostEqual(regular_task.daily_allocations.get("2025-10-22", 0.0), 2.0, places=5)
+
+        # Verify total daily allocations don't exceed max_hours_per_day
+        for date_str, hours in result.daily_allocations.items():
+            self.assertLessEqual(
+                hours, 6.0, f"Total hours on {date_str} ({hours}h) exceeds max_hours_per_day (6.0h)"
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -35,6 +35,8 @@ class EditTaskCommand(TUICommandBase):
         original_priority = task.priority
         original_deadline = task.deadline
         original_estimated_duration = task.estimated_duration
+        original_planned_start = task.planned_start
+        original_planned_end = task.planned_end
         original_is_fixed = task.is_fixed
         original_depends_on = set(task.depends_on) if task.depends_on else set()
 
@@ -58,6 +60,8 @@ class EditTaskCommand(TUICommandBase):
                     and form_data.priority == original_priority
                     and form_data.deadline == original_deadline
                     and form_data.estimated_duration == original_estimated_duration
+                    and form_data.planned_start == original_planned_start
+                    and form_data.planned_end == original_planned_end
                     and form_data.is_fixed == original_is_fixed
                     and not dependencies_changed
                 ):
@@ -77,6 +81,12 @@ class EditTaskCommand(TUICommandBase):
                     else None,
                     estimated_duration=form_data.estimated_duration
                     if form_data.estimated_duration != original_estimated_duration
+                    else None,
+                    planned_start=form_data.planned_start
+                    if form_data.planned_start != original_planned_start
+                    else None,
+                    planned_end=form_data.planned_end
+                    if form_data.planned_end != original_planned_end
                     else None,
                     is_fixed=form_data.is_fixed
                     if form_data.is_fixed != original_is_fixed

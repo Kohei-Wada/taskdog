@@ -84,6 +84,40 @@ class PriorityValidator:
         return ValidationResult(is_valid=True, error_message="", value=priority)
 
 
+class DateTimeValidatorTUI:
+    """Generic validator for date/time fields in TUI."""
+
+    @staticmethod
+    def validate(value: str, field_name: str = "date") -> ValidationResult:
+        """Validate a date/time string.
+
+        Args:
+            value: Date/time string to validate (can be empty for no value)
+            field_name: Name of the field for error messages
+
+        Returns:
+            ValidationResult with validation status, error message, and formatted date/time
+        """
+        datetime_str = value.strip()
+
+        # Empty string means no value
+        if not datetime_str:
+            return ValidationResult(is_valid=True, error_message="", value=None)
+
+        # Try to parse using dateutil
+        try:
+            parsed_date = dateutil_parser.parse(datetime_str, fuzzy=True)
+            # Convert to the standard format YYYY-MM-DD HH:MM:SS
+            formatted_datetime = parsed_date.strftime("%Y-%m-%d %H:%M:%S")
+            return ValidationResult(is_valid=True, error_message="", value=formatted_datetime)
+        except (ValueError, TypeError, OverflowError):
+            return ValidationResult(
+                is_valid=False,
+                error_message=f"Invalid {field_name} format. Examples: 2025-12-31, tomorrow 6pm",
+                value=None,
+            )
+
+
 class DeadlineValidator:
     """Validator for task deadlines."""
 
@@ -97,24 +131,39 @@ class DeadlineValidator:
         Returns:
             ValidationResult with validation status, error message, and formatted deadline
         """
-        deadline_str = value.strip()
+        return DateTimeValidatorTUI.validate(value, "deadline")
 
-        # Empty string means no deadline
-        if not deadline_str:
-            return ValidationResult(is_valid=True, error_message="", value=None)
 
-        # Try to parse using dateutil
-        try:
-            parsed_date = dateutil_parser.parse(deadline_str, fuzzy=True)
-            # Convert to the standard format YYYY-MM-DD HH:MM:SS
-            formatted_deadline = parsed_date.strftime("%Y-%m-%d %H:%M:%S")
-            return ValidationResult(is_valid=True, error_message="", value=formatted_deadline)
-        except (ValueError, TypeError, OverflowError):
-            return ValidationResult(
-                is_valid=False,
-                error_message="Invalid deadline format. Examples: 2025-12-31, tomorrow 6pm",
-                value=None,
-            )
+class PlannedStartValidator:
+    """Validator for planned start date."""
+
+    @staticmethod
+    def validate(value: str) -> ValidationResult:
+        """Validate a planned start date.
+
+        Args:
+            value: Planned start string to validate (can be empty)
+
+        Returns:
+            ValidationResult with validation status, error message, and formatted date
+        """
+        return DateTimeValidatorTUI.validate(value, "planned start")
+
+
+class PlannedEndValidator:
+    """Validator for planned end date."""
+
+    @staticmethod
+    def validate(value: str) -> ValidationResult:
+        """Validate a planned end date.
+
+        Args:
+            value: Planned end string to validate (can be empty)
+
+        Returns:
+            ValidationResult with validation status, error message, and formatted date
+        """
+        return DateTimeValidatorTUI.validate(value, "planned end")
 
 
 class DurationValidator:
