@@ -24,8 +24,8 @@ class TimeTracker:
         if new_status == TaskStatus.IN_PROGRESS and not task.actual_start:
             task.actual_start = now
 
-        # Record actual end when moving to COMPLETED or FAILED
-        if new_status in [TaskStatus.COMPLETED, TaskStatus.FAILED] and not task.actual_end:
+        # Record actual end when moving to COMPLETED or CANCELED
+        if new_status in [TaskStatus.COMPLETED, TaskStatus.CANCELED] and not task.actual_end:
             task.actual_end = now
 
     def clear_time_on_pause(self, task: Task) -> None:

@@ -34,7 +34,7 @@ class ArchiveTaskCommand(TUICommandBase):
                 return  # User cancelled
 
             # Archive the task
-            use_case = ArchiveTaskUseCase(self.context.repository, self.context.time_tracker)
+            use_case = ArchiveTaskUseCase(self.context.repository)
             input_dto = ArchiveTaskInput(task_id=task_id)
             use_case.execute(input_dto)
 

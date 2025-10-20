@@ -40,6 +40,19 @@ class TaskNotStartedError(TaskValidationError):
         )
 
 
+class DependencyNotMetError(TaskValidationError):
+    """Raised when trying to start a task with unmet dependencies."""
+
+    def __init__(self, task_id: int, unmet_dependencies: list[int]) -> None:
+        self.task_id = task_id
+        self.unmet_dependencies = unmet_dependencies
+        dep_ids = ", ".join(str(dep_id) for dep_id in unmet_dependencies)
+        super().__init__(
+            f"Cannot start task {task_id}: dependencies not met. "
+            f"Complete task(s) {dep_ids} first."
+        )
+
+
 class CorruptedDataError(TaskError):
     """Raised when tasks.json contains invalid data that violates entity invariants."""
 

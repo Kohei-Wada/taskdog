@@ -79,8 +79,7 @@ class RichStatisticsRenderer:
         table.add_row("Pending", f"[yellow]{stats.pending_count}[/yellow]")
         table.add_row("In Progress", f"[blue]{stats.in_progress_count}[/blue]")
         table.add_row("Completed", f"[green]{stats.completed_count}[/green]")
-        table.add_row("Failed", f"[red]{stats.failed_count}[/red]")
-        table.add_row("Archived", f"[dim]{stats.archived_count}[/dim]")
+        table.add_row("Canceled", f"[red]{stats.canceled_count}[/red]")
 
         # Completion rate with color coding
         rate_color = self._get_rate_color(stats.completion_rate)

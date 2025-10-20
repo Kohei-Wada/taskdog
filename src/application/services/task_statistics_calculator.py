@@ -100,11 +100,10 @@ class TaskStatisticsCalculator:
         pending = sum(1 for t in tasks if t.status == TaskStatus.PENDING)
         in_progress = sum(1 for t in tasks if t.status == TaskStatus.IN_PROGRESS)
         completed = sum(1 for t in tasks if t.status == TaskStatus.COMPLETED)
-        failed = sum(1 for t in tasks if t.status == TaskStatus.FAILED)
-        archived = sum(1 for t in tasks if t.status == TaskStatus.ARCHIVED)
+        canceled = sum(1 for t in tasks if t.status == TaskStatus.CANCELED)
 
         # Calculate completion rate
-        finished_tasks = completed + failed
+        finished_tasks = completed + canceled
         completion_rate = (completed / finished_tasks) if finished_tasks > 0 else 0.0
 
         return TaskStatistics(
@@ -112,8 +111,7 @@ class TaskStatisticsCalculator:
             pending_count=pending,
             in_progress_count=in_progress,
             completed_count=completed,
-            failed_count=failed,
-            archived_count=archived,
+            canceled_count=canceled,
             completion_rate=completion_rate,
         )
 
@@ -251,9 +249,7 @@ class TaskStatisticsCalculator:
         tasks_with_deadline = [
             t
             for t in tasks
-            if t.deadline is not None
-            and t.actual_end is not None
-            and t.status in [TaskStatus.COMPLETED, TaskStatus.FAILED]
+            if t.deadline is not None and t.actual_end is not None and t.is_finished
         ]
 
         if not tasks_with_deadline:
@@ -354,7 +350,7 @@ class TaskStatisticsCalculator:
         monthly_trend: dict[str, int] = defaultdict(int)
 
         for task in tasks:
-            if task.actual_end and task.status in [TaskStatus.COMPLETED, TaskStatus.FAILED]:
+            if task.actual_end and task.is_finished:
                 end_dt = datetime.strptime(task.actual_end, DATETIME_FORMAT)
 
                 # Count for last N days

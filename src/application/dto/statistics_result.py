@@ -14,17 +14,15 @@ class TaskStatistics:
         pending_count: Number of pending tasks
         in_progress_count: Number of in-progress tasks
         completed_count: Number of completed tasks
-        failed_count: Number of failed tasks
-        archived_count: Number of archived tasks
-        completion_rate: Completion rate (completed / (completed + failed))
+        canceled_count: Number of canceled tasks
+        completion_rate: Completion rate (completed / (completed + canceled))
     """
 
     total_tasks: int
     pending_count: int
     in_progress_count: int
     completed_count: int
-    failed_count: int
-    archived_count: int
+    canceled_count: int
     completion_rate: float
 
 

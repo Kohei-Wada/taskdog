@@ -524,6 +524,10 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
   - `--sort`: Sort by id/priority/deadline/name/status/planned_start (default: id)
   - `--reverse`: Reverse sort order
 - `export`: Export tasks to various formats with `--format` and `--output` options (uses TaskQueryService)
+- `stats`: Display comprehensive task statistics and analytics (uses CalculateStatisticsUseCase)
+  - `--period, -p [all|7d|30d]`: Time period for filtering tasks (default: all)
+  - `--focus, -f [all|basic|time|estimation|deadline|priority|trends]`: Focus on specific statistics section (default: all)
+  - Shows basic counts, time tracking, estimation accuracy, deadline compliance, priority distribution, and trends
 
 **Notes:**
 - `note`: Edit task notes in markdown using $EDITOR (direct repository access)

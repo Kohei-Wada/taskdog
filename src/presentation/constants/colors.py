@@ -13,8 +13,7 @@ STATUS_STYLES = {
     TaskStatus.PENDING: "yellow",
     TaskStatus.IN_PROGRESS: "blue",
     TaskStatus.COMPLETED: "green",
-    TaskStatus.FAILED: "red",
-    TaskStatus.ARCHIVED: "dim white",
+    TaskStatus.CANCELED: "red",
 }
 
 # Status colors (bold) for special rendering
@@ -22,8 +21,7 @@ STATUS_COLORS_BOLD = {
     TaskStatus.PENDING: "yellow",
     TaskStatus.IN_PROGRESS: "bold blue",
     TaskStatus.COMPLETED: "bold green",
-    TaskStatus.FAILED: "bold red",
-    TaskStatus.ARCHIVED: "dim white",
+    TaskStatus.CANCELED: "bold red",
 }
 
 # Gantt Chart Column Header Colors (Gantt-specific)

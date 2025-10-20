@@ -1,14 +1,14 @@
 """Filter for incomplete tasks."""
 
 from application.queries.filters.task_filter import TaskFilter
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
 
 
 class IncompleteFilter(TaskFilter):
     """Filter tasks that are not yet completed.
 
-    Returns tasks with status PENDING, IN_PROGRESS, or FAILED.
-    Excludes COMPLETED and ARCHIVED tasks.
+    Returns tasks with status PENDING or IN_PROGRESS.
+    Excludes COMPLETED and CANCELED tasks.
     """
 
     def filter(self, tasks: list[Task]) -> list[Task]:
@@ -20,6 +20,4 @@ class IncompleteFilter(TaskFilter):
         Returns:
             List of tasks that are not completed or archived
         """
-        return [
-            task for task in tasks if task.status not in (TaskStatus.COMPLETED, TaskStatus.ARCHIVED)
-        ]
+        return [task for task in tasks if not task.is_finished]
