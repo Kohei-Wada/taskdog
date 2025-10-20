@@ -32,6 +32,7 @@ class EditTaskCommand(TUICommandBase):
         original_priority = task.priority
         original_deadline = task.deadline
         original_estimated_duration = task.estimated_duration
+        original_is_fixed = task.is_fixed
 
         @handle_tui_errors("editing task")
         def handle_task_data(form_data: TaskFormData | None) -> None:
@@ -49,6 +50,7 @@ class EditTaskCommand(TUICommandBase):
                 and form_data.priority == original_priority
                 and form_data.deadline == original_deadline
                 and form_data.estimated_duration == original_estimated_duration
+                and form_data.is_fixed == original_is_fixed
             ):
                 self.notify_warning("No changes made")
                 return
@@ -63,6 +65,7 @@ class EditTaskCommand(TUICommandBase):
                 estimated_duration=form_data.estimated_duration
                 if form_data.estimated_duration != original_estimated_duration
                 else None,
+                is_fixed=form_data.is_fixed if form_data.is_fixed != original_is_fixed else None,
             )
             updated_task, updated_fields = use_case.execute(task_input)
             self.reload_tasks()

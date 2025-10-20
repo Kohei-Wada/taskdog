@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
-from textual.widgets import Input, Label, Static
+from textual.widgets import Checkbox, Input, Label, Static
 
 from domain.entities.task import Task
 from shared.config_manager import Config
@@ -19,12 +19,14 @@ class TaskFormData:
         priority: Task priority (1-10)
         deadline: Optional deadline in format YYYY-MM-DD HH:MM:SS
         estimated_duration: Optional estimated duration in hours
+        is_fixed: Whether task schedule is fixed (won't be rescheduled by optimizer)
     """
 
     name: str
     priority: int
     deadline: str | None = None
     estimated_duration: float | None = None
+    is_fixed: bool = False
 
 
 class TaskFormFields:
@@ -85,4 +87,11 @@ class TaskFormFields:
                 placeholder="Optional: 4, 2.5, 8",
                 id="duration-input",
                 value=str(task.estimated_duration) if task and task.estimated_duration else "",
+            )
+
+            # Fixed field (checkbox)
+            yield Checkbox(
+                "Fixed (won't be rescheduled by optimizer)",
+                id="fixed-checkbox",
+                value=task.is_fixed if task else False,
             )

@@ -33,6 +33,7 @@ class AddTaskCommand(TUICommandBase):
                 priority=form_data.priority,
                 deadline=form_data.deadline,
                 estimated_duration=form_data.estimated_duration,
+                is_fixed=form_data.is_fixed,
             )
             task = use_case.execute(task_input)
             self.reload_tasks()

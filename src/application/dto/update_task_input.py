@@ -28,6 +28,7 @@ class UpdateTaskInput:
         planned_end: New planned end (optional)
         deadline: New deadline (optional)
         estimated_duration: New estimated duration (optional)
+        is_fixed: Whether task is fixed (optional)
     """
 
     task_id: int
@@ -38,3 +39,4 @@ class UpdateTaskInput:
     planned_end: str | None = None
     deadline: str | None = None
     estimated_duration: float | None = None
+    is_fixed: bool | None = None
