@@ -17,9 +17,15 @@ from presentation.cli.error_handler import handle_task_errors
     default=None,
     help="Task priority (default: from config or 5, higher value = higher priority)",
 )
+@click.option(
+    "--fixed",
+    "-f",
+    is_flag=True,
+    help="Mark task as fixed (won't be rescheduled by optimizer)",
+)
 @click.pass_context
 @handle_task_errors("adding task", is_parent=True)
-def add_command(ctx, name, priority):
+def add_command(ctx, name, priority, fixed):
     """Add a new task.
 
     Usage:
@@ -50,6 +56,7 @@ def add_command(ctx, name, priority):
     input_dto = CreateTaskInput(
         name=name,
         priority=effective_priority,
+        is_fixed=fixed,
     )
 
     # Execute use case
