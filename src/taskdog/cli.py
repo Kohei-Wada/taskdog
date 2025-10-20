@@ -5,6 +5,7 @@ from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.cli.commands.add import add_command
 from presentation.cli.commands.archive import archive_command
+from presentation.cli.commands.cancel import cancel_command
 from presentation.cli.commands.deadline import deadline_command
 from presentation.cli.commands.done import done_command
 from presentation.cli.commands.estimate import estimate_command
@@ -74,6 +75,7 @@ cli.add_command(update_command)
 cli.add_command(start_command)
 cli.add_command(pause_command)
 cli.add_command(done_command)
+cli.add_command(cancel_command)
 cli.add_command(gantt_command)
 cli.add_command(today_command)
 cli.add_command(note_command)
