@@ -2,7 +2,6 @@
 
 from application.dto.reopen_task_input import ReopenTaskInput
 from application.use_cases.base import UseCase
-from application.validators.dependency_validator import DependencyValidator
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import (
     TaskNotFoundException,
@@ -16,7 +15,10 @@ class ReopenTaskUseCase(UseCase[ReopenTaskInput, Task]):
     """Use case for reopening a completed or canceled task.
 
     Reopening transitions a task from COMPLETED or CANCELED back to PENDING.
-    This validates that all dependencies are still met before reopening.
+
+    Note: Dependencies are NOT validated during reopen. This allows flexible
+    restoration of task states. Dependency validation will occur when the task
+    is started again via StartTaskUseCase.
     """
 
     def __init__(self, repository: TaskRepository, time_tracker: TimeTracker):
@@ -49,17 +51,6 @@ class ReopenTaskUseCase(UseCase[ReopenTaskInput, Task]):
                 "Cannot reopen deleted task. Restore the task first with 'restore' command."
             )
 
-    def _validate_dependencies(self, task: Task) -> None:
-        """Validate that all dependencies are met.
-
-        Args:
-            task: Task to validate
-
-        Raises:
-            DependencyNotMetError: If any dependency is not completed
-        """
-        DependencyValidator.validate_dependencies_met(task, self.repository)
-
     def execute(self, input_dto: ReopenTaskInput) -> Task:
         """Execute task reopening.
 
@@ -72,7 +63,11 @@ class ReopenTaskUseCase(UseCase[ReopenTaskInput, Task]):
         Raises:
             TaskNotFoundException: If task doesn't exist
             TaskValidationError: If task cannot be reopened
-            DependencyNotMetError: If dependencies are not met
+
+        Note:
+            Dependencies are NOT validated. This allows reopening tasks even when
+            their dependencies are not completed. Dependency validation will occur
+            when attempting to start the task.
         """
         # Get task
         task = self.repository.get_by_id(input_dto.task_id)
@@ -81,9 +76,6 @@ class ReopenTaskUseCase(UseCase[ReopenTaskInput, Task]):
 
         # Validate can reopen
         self._validate_can_reopen(task)
-
-        # Validate dependencies
-        self._validate_dependencies(task)
 
         # Clear time tracking (reset timestamps)
         task.actual_start = None

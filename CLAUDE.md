@@ -514,7 +514,8 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
   - Records actual_end timestamp
 - `reopen`: Reopen completed or canceled task(s) - supports multiple task IDs (uses ReopenTaskUseCase)
   - Sets status back to PENDING and clears actual_start/actual_end timestamps
-  - Validates all dependencies are still met (all must be COMPLETED)
+  - Dependencies are NOT validated (allows flexible restoration of task states)
+  - Dependency validation will occur when attempting to start the task
   - Cannot reopen deleted tasks (use `restore` first)
 
 **Task Property Updates (Specialized Commands):**

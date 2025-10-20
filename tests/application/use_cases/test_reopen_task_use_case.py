@@ -8,7 +8,6 @@ from application.dto.reopen_task_input import ReopenTaskInput
 from application.use_cases.reopen_task import ReopenTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import (
-    DependencyNotMetError,
     TaskNotFoundException,
     TaskValidationError,
 )
@@ -128,27 +127,13 @@ class TestReopenTaskUseCase(unittest.TestCase):
 
         self.assertIn("Cannot reopen deleted task", str(context.exception))
 
-    def test_execute_with_met_dependencies_succeeds(self):
-        """Test execute with completed dependencies succeeds."""
-        # Create dependency tasks (completed)
-        dep1 = self.repository.create(name="Dep 1", priority=1, status=TaskStatus.COMPLETED)
-        dep2 = self.repository.create(name="Dep 2", priority=1, status=TaskStatus.COMPLETED)
+    def test_execute_with_dependencies_always_succeeds(self):
+        """Test that reopen succeeds regardless of dependency states.
 
-        # Create completed task with dependencies
-        task = self.repository.create(
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.COMPLETED,
-            depends_on=[dep1.id, dep2.id],
-        )
-
-        input_dto = ReopenTaskInput(task_id=task.id)
-        result = self.use_case.execute(input_dto)
-
-        self.assertEqual(result.status, TaskStatus.PENDING)
-
-    def test_execute_with_unmet_dependencies_raises_error(self):
-        """Test execute with unmet dependencies raises DependencyNotMetError."""
+        Dependencies are NOT validated during reopen. This allows flexible
+        restoration of task states. Dependency validation will occur when
+        attempting to start the task.
+        """
         # Create dependency (not completed)
         dep = self.repository.create(name="Dependency", priority=1, status=TaskStatus.PENDING)
 
@@ -161,15 +146,13 @@ class TestReopenTaskUseCase(unittest.TestCase):
         )
 
         input_dto = ReopenTaskInput(task_id=task.id)
+        result = self.use_case.execute(input_dto)
 
-        with self.assertRaises(DependencyNotMetError) as context:
-            self.use_case.execute(input_dto)
+        # Should succeed even though dependency is not completed
+        self.assertEqual(result.status, TaskStatus.PENDING)
 
-        self.assertIn("dependencies not met", str(context.exception))
-        self.assertIn(str(dep.id), str(context.exception))
-
-    def test_execute_with_missing_dependency_raises_error(self):
-        """Test execute with missing dependency raises DependencyNotMetError."""
+    def test_execute_with_missing_dependency_succeeds(self):
+        """Test that reopen succeeds even with missing dependencies."""
         # Create completed task with non-existent dependency
         task = self.repository.create(
             name="Test Task",
@@ -179,34 +162,10 @@ class TestReopenTaskUseCase(unittest.TestCase):
         )
 
         input_dto = ReopenTaskInput(task_id=task.id)
+        result = self.use_case.execute(input_dto)
 
-        with self.assertRaises(DependencyNotMetError) as context:
-            self.use_case.execute(input_dto)
-
-        self.assertIn("dependencies not met", str(context.exception))
-        self.assertIn("999", str(context.exception))
-
-    def test_execute_with_mixed_dependencies_raises_error(self):
-        """Test execute with mix of met and unmet dependencies raises error."""
-        # Create one completed and one pending dependency
-        dep1 = self.repository.create(name="Dep 1", priority=1, status=TaskStatus.COMPLETED)
-        dep2 = self.repository.create(name="Dep 2", priority=1, status=TaskStatus.PENDING)
-
-        # Create completed task
-        task = self.repository.create(
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.COMPLETED,
-            depends_on=[dep1.id, dep2.id],
-        )
-
-        input_dto = ReopenTaskInput(task_id=task.id)
-
-        with self.assertRaises(DependencyNotMetError) as context:
-            self.use_case.execute(input_dto)
-
-        # Should mention the unmet dependency
-        self.assertIn(str(dep2.id), str(context.exception))
+        # Should succeed even though dependency doesn't exist
+        self.assertEqual(result.status, TaskStatus.PENDING)
 
     def test_execute_with_no_dependencies_succeeds(self):
         """Test execute with no dependencies succeeds."""
