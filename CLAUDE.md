@@ -245,7 +245,7 @@ Dependencies are managed through Click's context object using the `CliContext` d
 
 **Use Cases** (`src/application/use_cases/`)
 - Generic base class: `UseCase[TInput, TOutput]` with abstract `execute(input_dto)` method
-- Concrete implementations: CreateTaskUseCase, StartTaskUseCase, CompleteTaskUseCase, PauseTaskUseCase, UpdateTaskUseCase, RemoveTaskUseCase, ArchiveTaskUseCase, OptimizeScheduleUseCase
+- Concrete implementations: CreateTaskUseCase, StartTaskUseCase, CompleteTaskUseCase, PauseTaskUseCase, CancelTaskUseCase, ReopenTaskUseCase, UpdateTaskUseCase, RemoveTaskUseCase, ArchiveTaskUseCase, RestoreTaskUseCase, OptimizeScheduleUseCase, and more
 - Each use case encapsulates a single business operation
 - Use cases validate inputs, orchestrate domain logic, and coordinate with repository/services
 
@@ -510,6 +510,10 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `cancel`: Cancel task(s) - supports multiple task IDs (uses CancelTaskUseCase)
   - Sets status to CANCELED for tasks that won't be done
   - Records actual_end timestamp
+- `reopen`: Reopen completed or canceled task(s) - supports multiple task IDs (uses ReopenTaskUseCase)
+  - Sets status back to PENDING and clears actual_start/actual_end timestamps
+  - Validates all dependencies are still met (all must be COMPLETED)
+  - Cannot reopen deleted tasks (use `restore` first)
 
 **Task Property Updates (Specialized Commands):**
 - `deadline`: Set deadline with positional args: `taskdog deadline <ID> <DATE>` (uses UpdateTaskUseCase)
@@ -569,7 +573,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 - `tui`: Launch Text User Interface for interactive task management (uses Textual library)
   - Full-screen terminal interface with keyboard shortcuts
   - Navigation: ↑/↓ arrows or j/k (vim-style)
-  - Actions: a (add), s (start), p (pause), d (done), c (cancel), x (delete), i (details), e (edit), o (optimize), r (refresh), q (quit)
+  - Actions: a (add), s (start), p (pause), d (done), c (cancel), R (reopen), x (delete), i (details), e (edit), o (optimize), r (refresh), q (quit)
   - Add/Edit dialogs include checkbox for is_fixed field
   - Delete performs soft delete (can be restored with restore command)
 

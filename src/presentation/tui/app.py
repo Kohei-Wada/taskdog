@@ -57,6 +57,7 @@ class TaskdogTUI(App):
         ("p", "pause_task", "Pause"),
         ("d", "done_task", "Done"),
         ("c", "cancel_task", "Cancel"),
+        ("R", "reopen_task", "Reopen"),
         ("o", "optimize", "Optimize"),
         ("O", "optimize_force", "Force Optimize"),
         ("x", "delete_task", "Delete"),
@@ -160,6 +161,10 @@ class TaskdogTUI(App):
     def action_cancel_task(self) -> None:
         """Cancel the selected task."""
         self.command_factory.execute("cancel_task")
+
+    def action_reopen_task(self) -> None:
+        """Reopen a completed or canceled task."""
+        self.command_factory.execute("reopen_task")
 
     def action_delete_task(self) -> None:
         """Delete the selected task."""

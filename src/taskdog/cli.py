@@ -18,6 +18,7 @@ from presentation.cli.commands.pause import pause_command
 from presentation.cli.commands.priority import priority_command
 from presentation.cli.commands.remove_dependency import remove_dependency_command
 from presentation.cli.commands.rename import rename_command
+from presentation.cli.commands.reopen import reopen_command
 from presentation.cli.commands.restore import restore_command
 from presentation.cli.commands.rm import rm_command
 from presentation.cli.commands.schedule import schedule_command
@@ -88,6 +89,7 @@ cli.add_command(deadline_command)
 cli.add_command(priority_command)
 cli.add_command(remove_dependency_command)
 cli.add_command(rename_command)
+cli.add_command(reopen_command)
 cli.add_command(restore_command)
 cli.add_command(estimate_command)
 cli.add_command(schedule_command)

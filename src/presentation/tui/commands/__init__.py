@@ -14,6 +14,7 @@ from presentation.tui.commands.edit_task_command import EditTaskCommand
 from presentation.tui.commands.optimize_command import OptimizeCommand
 from presentation.tui.commands.pause_task_command import PauseTaskCommand
 from presentation.tui.commands.refresh_command import RefreshCommand
+from presentation.tui.commands.reopen_task_command import ReopenTaskCommand
 from presentation.tui.commands.show_details_command import ShowDetailsCommand
 from presentation.tui.commands.start_task_command import StartTaskCommand
 
@@ -27,6 +28,7 @@ __all__ = [
     "OptimizeCommand",
     "PauseTaskCommand",
     "RefreshCommand",
+    "ReopenTaskCommand",
     "ShowDetailsCommand",
     "StartTaskCommand",
 ]
