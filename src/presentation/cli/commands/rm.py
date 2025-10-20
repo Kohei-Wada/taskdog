@@ -35,7 +35,7 @@ def rm_command(ctx, task_ids, hard):
                 input_dto = RemoveTaskInput(task_id=task_id)
                 use_case = RemoveTaskUseCase(repository)
                 use_case.execute(input_dto)
-                console_writer.print_success(f"Permanently deleted task with ID: {task_id}")
+                console_writer.success(f"Permanently deleted task with ID: {task_id}")
             else:
                 # Soft delete: archive (set is_deleted=True)
                 input_dto = ArchiveTaskInput(task_id=task_id)

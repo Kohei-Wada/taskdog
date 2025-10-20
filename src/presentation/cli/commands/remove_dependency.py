@@ -30,7 +30,7 @@ def remove_dependency_command(ctx, task_id, depends_on_id):
         use_case = RemoveDependencyUseCase(repository)
         task = use_case.execute(input_dto)
 
-        console_writer.print_success(
+        console_writer.success(
             f"Removed dependency: Task {task_id} no longer depends on task {depends_on_id}"
         )
         console_writer.info(f"Task {task_id} dependencies: {task.depends_on}")

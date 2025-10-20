@@ -45,7 +45,7 @@ def log_hours_command(ctx, task_id, hours, date):
         use_case = LogHoursUseCase(repository)
         task = use_case.execute(input_dto)
 
-        console_writer.print_success(f"Logged {hours}h for task {task_id} on {date}")
+        console_writer.success(f"Logged {hours}h for task {task_id} on {date}")
 
         # Show total logged hours for this task
         total_hours = sum(task.actual_daily_hours.values())
