@@ -1,5 +1,6 @@
 """Data Transfer Objects."""
 
+from application.dto.gantt_result import GanttDateRange, GanttResult
 from application.dto.statistics_result import (
     CalculateStatisticsRequest,
     DeadlineComplianceStatistics,
@@ -16,6 +17,8 @@ __all__ = [
     "CalculateStatisticsRequest",
     "DeadlineComplianceStatistics",
     "EstimationAccuracyStatistics",
+    "GanttDateRange",
+    "GanttResult",
     "GetTaskDetailResult",
     "PriorityDistributionStatistics",
     "StatisticsResult",

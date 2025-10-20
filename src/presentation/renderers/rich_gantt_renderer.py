@@ -1,12 +1,11 @@
 import math
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from rich.table import Table
 from rich.text import Text
 
-from domain.constants import DATETIME_FORMAT
+from application.dto.gantt_result import GanttResult
 from domain.entities.task import Task, TaskStatus
-from domain.services.workload_calculator import WorkloadCalculator
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.colors import (
     DAY_STYLE_SATURDAY,
@@ -42,7 +41,16 @@ from shared.utils.date_utils import DateTimeParser
 
 
 class RichGanttRenderer(RichRendererBase):
-    """Renders tasks as a Gantt chart using Rich."""
+    """Renders GanttResult as a Rich table.
+
+    This renderer is responsible solely for presentation logic:
+    - Mapping GanttResult data to Rich Table format
+    - Applying colors, styles, and visual formatting
+    - Building the final table with legend
+
+    All business logic (date calculations, workload aggregation) is handled
+    by the Application layer (TaskQueryService.get_gantt_data()).
+    """
 
     def __init__(self, console_writer: ConsoleWriter):
         """Initialize the renderer.
@@ -51,35 +59,21 @@ class RichGanttRenderer(RichRendererBase):
             console_writer: Console writer for output
         """
         self.console_writer = console_writer
-        self.workload_calculator = WorkloadCalculator()
 
-    def build_table(
-        self,
-        tasks: list[Task],
-        start_date: date | None = None,
-        end_date: date | None = None,
-    ) -> Table | None:
-        """Build and return a Gantt chart Table object.
+    def build_table(self, gantt_result: GanttResult) -> Table | None:
+        """Build and return a Gantt chart Table object from GanttResult.
 
         Args:
-            tasks: List of all tasks
-            start_date: Optional start date for the chart (overrides auto-calculation)
-            end_date: Optional end date for the chart (overrides auto-calculation)
+            gantt_result: Pre-computed Gantt data from Application layer
 
         Returns:
-            Rich Table object or None if no tasks or no dates
+            Rich Table object or None if no tasks
         """
-        if not tasks:
+        if gantt_result.is_empty():
             return None
 
-        # Calculate date range for the chart
-        date_range = self._calculate_date_range(tasks, start_date, end_date)
-
-        if date_range is None:
-            # No tasks with dates - return simple table
-            return self._build_simple_table(tasks)
-
-        start_date, end_date = date_range
+        start_date = gantt_result.date_range.start_date
+        end_date = gantt_result.date_range.end_date
 
         # Create Rich table
         table = Table(
@@ -113,14 +107,17 @@ class RichGanttRenderer(RichRendererBase):
         table.add_row("", "[dim]Date[/dim]", "", date_header)
 
         # Display all tasks in sort order
-        for task in tasks:
-            self._add_leaf_task_to_gantt(task, table, start_date, end_date)
+        for task in gantt_result.tasks:
+            task_daily_hours = gantt_result.task_daily_hours.get(task.id, {})
+            self._add_task_to_gantt(task, task_daily_hours, table, start_date, end_date)
 
         # Add section divider before workload summary
         table.add_section()
 
         # Add workload summary row
-        workload_timeline = self._build_workload_summary_row(tasks, start_date, end_date)
+        workload_timeline = self._build_workload_summary_row(
+            gantt_result.daily_workload, start_date, end_date
+        )
         table.add_row("", "[bold yellow]Workload\\[h][/bold yellow]", "", workload_timeline)
 
         # Add legend as caption (centered by default)
@@ -130,24 +127,17 @@ class RichGanttRenderer(RichRendererBase):
 
         return table
 
-    def render(
-        self,
-        tasks: list[Task],
-        start_date: date | None = None,
-        end_date: date | None = None,
-    ) -> None:
-        """Render and print tasks as a Gantt chart with Rich.
+    def render(self, gantt_result: GanttResult) -> None:
+        """Render and print Gantt chart from GanttResult.
 
         Args:
-            tasks: List of all tasks
-            start_date: Optional start date for the chart (overrides auto-calculation)
-            end_date: Optional end date for the chart (overrides auto-calculation)
+            gantt_result: Pre-computed Gantt data from Application layer
         """
-        if not tasks:
+        if gantt_result.is_empty():
             self.console_writer.warning("No tasks found.")
             return
 
-        table = self.build_table(tasks, start_date, end_date)
+        table = self.build_table(gantt_result)
 
         if table is None:
             self.console_writer.warning("No tasks found.")
@@ -219,99 +209,10 @@ class RichGanttRenderer(RichRendererBase):
 
         return header
 
-    def _calculate_date_range(
-        self,
-        tasks: list[Task],
-        start_date: date | None = None,
-        end_date: date | None = None,
-    ) -> tuple[date, date] | None:
-        """Calculate the date range for the Gantt chart.
-
-        Args:
-            tasks: List of tasks
-            start_date: Optional start date to override auto-calculation
-            end_date: Optional end date to override auto-calculation
-
-        Returns:
-            Tuple of (start_date, end_date) or None if no dates found
-        """
-        # If both dates are provided, use them directly
-        if start_date and end_date:
-            return start_date, end_date
-
-        # Collect dates from tasks
-        dates = []
-        for task in tasks:
-            # Collect all date fields
-            for date_str in [
-                task.planned_start,
-                task.planned_end,
-                task.actual_start,
-                task.actual_end,
-                task.deadline,
-            ]:
-                if date_str:
-                    try:
-                        dt = datetime.strptime(date_str, DATETIME_FORMAT)
-                        dates.append(dt.date())
-                    except ValueError:
-                        pass
-
-        if not dates:
-            return None
-
-        # Calculate min/max from tasks
-        auto_start = min(dates)
-        auto_end = max(dates)
-
-        # Use provided dates if available, otherwise use auto-calculated
-        final_start = start_date if start_date else auto_start
-        final_end = end_date if end_date else auto_end
-
-        return final_start, final_end
-
-    def _build_simple_table(self, tasks: list[Task]) -> Table:
-        """Build simple table when no date information is available.
-
-        Args:
-            tasks: List of tasks
-
-        Returns:
-            Rich Table object
-        """
-        # Create simple table with just task names
-        table = Table(
-            title=format_table_title("Tasks (No dates available)"),
-            show_header=True,
-            header_style=TABLE_HEADER_STYLE,
-            border_style=TABLE_BORDER_STYLE,
-            padding=TABLE_PADDING,
-        )
-
-        table.add_column("ID", justify="right", style=COLUMN_ID_STYLE, no_wrap=True)
-        table.add_column("Task", style=COLUMN_NAME_STYLE)
-        table.add_column("Status", justify="center")
-
-        for task in tasks:
-            self._add_simple_task(task, table)
-
-        return table
-
-    def _add_simple_task(self, task: Task, table: Table) -> None:
-        """Add task to simple table (no dates).
-
-        Args:
-            task: Task to add
-            table: Rich Table object
-        """
-        status_style = self._get_status_style(task.status)
-        status_text = f"[{status_style}]{task.status.value}[/{status_style}]"
-
-        table.add_row(str(task.id), task.name, status_text)
-
-    def _add_leaf_task_to_gantt(
+    def _add_task_to_gantt(
         self,
         task: Task,
+        task_daily_hours: dict[date, float],
         table: Table,
         start_date: date,
         end_date: date,
@@ -320,6 +221,7 @@ class RichGanttRenderer(RichRendererBase):
 
         Args:
             task: Task to add
+            task_daily_hours: Daily hours allocation for this task
             table: Rich Table object
             start_date: Start date of the chart
             end_date: End date of the chart
@@ -334,15 +236,22 @@ class RichGanttRenderer(RichRendererBase):
         estimated_hours = self._format_estimated_hours(task.estimated_duration)
 
         # Build timeline
-        timeline = self._build_timeline(task, start_date, end_date)
+        timeline = self._build_timeline(task, task_daily_hours, start_date, end_date)
 
         table.add_row(str(task.id), task_name, estimated_hours, timeline)
 
-    def _build_timeline(self, task: Task, start_date: date, end_date: date) -> Text:
+    def _build_timeline(
+        self,
+        task: Task,
+        task_daily_hours: dict[date, float],
+        start_date: date,
+        end_date: date,
+    ) -> Text:
         """Build timeline visualization for a task using layered approach.
 
         Args:
             task: Task to build timeline for
+            task_daily_hours: Daily hours allocation for this task
             start_date: Start date of the chart
             end_date: End date of the chart
 
@@ -357,9 +266,6 @@ class RichGanttRenderer(RichRendererBase):
         # If no dates at all, show message
         if not any(parsed_dates.values()):
             return Text("(no dates)", style="dim")
-
-        # Calculate daily hours for this task using WorkloadCalculator
-        task_daily_hours = self.workload_calculator.get_task_daily_hours(task)
 
         # Build timeline with daily hours displayed in each cell
         timeline = Text()
@@ -528,21 +434,18 @@ class RichGanttRenderer(RichRendererBase):
         return legend
 
     def _build_workload_summary_row(
-        self, tasks: list[Task], start_date: date, end_date: date
+        self, daily_workload: dict[date, float], start_date: date, end_date: date
     ) -> Text:
         """Build workload summary timeline showing daily total hours.
 
         Args:
-            tasks: List of all tasks
+            daily_workload: Pre-computed daily workload totals
             start_date: Start date of the chart
             end_date: End date of the chart
 
         Returns:
             Rich Text object with workload summary
         """
-        daily_workload = self.workload_calculator.calculate_daily_workload(
-            tasks, start_date, end_date
-        )
         days = (end_date - start_date).days + 1
 
         timeline = Text()
@@ -552,7 +455,6 @@ class RichGanttRenderer(RichRendererBase):
 
             # Format hours display (3 characters for consistency)
             # Ceil to round up (e.g., 4.3 -> 5, 4.0 -> 4)
-
             hours_ceiled = math.ceil(hours)
 
             # Format with consistent width (3 characters, right-aligned)

@@ -55,6 +55,8 @@ class GanttWidget(Static):
         # Import here to avoid circular imports
         from datetime import timedelta
 
+        from application.queries.task_query_service import TaskQueryService
+        from infrastructure.persistence.json_task_repository import JsonTaskRepository
         from presentation.console.rich_console_writer import RichConsoleWriter
         from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
 
@@ -96,6 +98,36 @@ class GanttWidget(Static):
                 start_date = today - timedelta(days=half_days)
                 end_date = start_date + timedelta(days=display_days - 1)
 
+        # Get Gantt data from Application layer
+        # Note: TUI already has filtered tasks, but we need to use TaskQueryService
+        # to get the full GanttResult with workload calculations
+        from shared.xdg_utils import XDGDirectories
+
+        repository = JsonTaskRepository(XDGDirectories.get_tasks_file())
+        task_query_service = TaskQueryService(repository)
+
+        # Create a simple filter that returns the current tasks
+        # This is a workaround since we already have the filtered tasks
+        from application.queries.filters.task_filter import TaskFilter
+
+        class TaskListFilter(TaskFilter):
+            def __init__(self, tasks):
+                self.tasks = tasks
+
+            def filter(self, tasks):
+                # Return only tasks that match our task IDs
+                task_ids = {t.id for t in self.tasks}
+                return [t for t in tasks if t.id in task_ids]
+
+        filter_obj = TaskListFilter(self._tasks)
+        gantt_result = task_query_service.get_gantt_data(
+            filter_obj=filter_obj,
+            sort_by="planned_start",
+            reverse=False,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
         # Create console with widget width
         console = Console(width=console_width, force_terminal=True)
         console_writer = RichConsoleWriter(console)
@@ -104,7 +136,7 @@ class GanttWidget(Static):
         # Build the table with legend as caption
         # Textual's Static widget can render Rich Table objects directly
         try:
-            table = renderer.build_table(self._tasks, start_date, end_date)
+            table = renderer.build_table(gantt_result)
             if table:
                 # Table already includes legend as caption
                 self.update(table)

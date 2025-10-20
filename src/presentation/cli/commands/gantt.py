@@ -116,13 +116,6 @@ def gantt_command(ctx, start_date, end_date, show_all, sort, reverse):
     # Show all active tasks (exclude archived only) if --all, otherwise show incomplete only
     filter_obj = ActiveFilter() if show_all else IncompleteFilter()
 
-    # Get filtered and sorted tasks
-    tasks = task_query_service.get_filtered_tasks(filter_obj, sort_by=sort, reverse=reverse)
-
-    # Get console writer
-    console_writer = ctx_obj.console_writer
-    renderer = RichGanttRenderer(console_writer)
-
     # Convert datetime strings to date objects if provided
     # Default to previous Monday if start_date not provided
     if start_date:
@@ -134,4 +127,16 @@ def gantt_command(ctx, start_date, end_date, show_all, sort, reverse):
     if end_date:
         end_date_obj = datetime.strptime(end_date, DATETIME_FORMAT).date()
 
-    renderer.render(tasks, start_date_obj, end_date_obj)
+    # Get Gantt data from Application layer (business logic)
+    gantt_result = task_query_service.get_gantt_data(
+        filter_obj=filter_obj,
+        sort_by=sort,
+        reverse=reverse,
+        start_date=start_date_obj,
+        end_date=end_date_obj,
+    )
+
+    # Render using Presentation layer (display logic)
+    console_writer = ctx_obj.console_writer
+    renderer = RichGanttRenderer(console_writer)
+    renderer.render(gantt_result)
