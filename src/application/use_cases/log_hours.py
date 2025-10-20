@@ -5,7 +5,7 @@ from datetime import datetime
 from application.dto.log_hours_input import LogHoursInput
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
-from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
+from domain.exceptions.task_exceptions import TaskValidationError
 from infrastructure.persistence.task_repository import TaskRepository
 
 
@@ -34,9 +34,7 @@ class LogHoursUseCase(UseCase[LogHoursInput, Task]):
             TaskValidationError: If date format invalid or hours <= 0
         """
         # Get task
-        task = self.repository.get_by_id(input_dto.task_id)
-        if task is None:
-            raise TaskNotFoundException(input_dto.task_id)
+        task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
         # Validate date format (YYYY-MM-DD)
         try:

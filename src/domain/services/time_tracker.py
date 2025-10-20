@@ -39,3 +39,15 @@ class TimeTracker:
         """
         task.actual_start = None
         task.actual_end = None
+
+    def clear_time_on_reopen(self, task: Task) -> None:
+        """Clear time tracking fields when task is reopened.
+
+        Args:
+            task: The task being reopened
+
+        Side effects:
+            Clears task.actual_start and task.actual_end
+        """
+        task.actual_start = None
+        task.actual_end = None

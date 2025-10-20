@@ -1,17 +1,12 @@
 """Use case for reopening a completed or canceled task."""
 
 from application.dto.reopen_task_input import ReopenTaskInput
-from application.use_cases.base import UseCase
+from application.use_cases.status_change_use_case import StatusChangeUseCase
 from domain.entities.task import Task, TaskStatus
-from domain.exceptions.task_exceptions import (
-    TaskNotFoundException,
-    TaskValidationError,
-)
-from domain.services.time_tracker import TimeTracker
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.exceptions.task_exceptions import TaskValidationError
 
 
-class ReopenTaskUseCase(UseCase[ReopenTaskInput, Task]):
+class ReopenTaskUseCase(StatusChangeUseCase[ReopenTaskInput]):
     """Use case for reopening a completed or canceled task.
 
     Reopening transitions a task from COMPLETED or CANCELED back to PENDING.
@@ -19,72 +14,53 @@ class ReopenTaskUseCase(UseCase[ReopenTaskInput, Task]):
     Note: Dependencies are NOT validated during reopen. This allows flexible
     restoration of task states. Dependency validation will occur when the task
     is started again via StartTaskUseCase.
+
+    This use case inherits common status change logic from StatusChangeUseCase
+    and uses the _before_status_change hook to validate reopening and clear
+    time tracking data.
     """
 
-    def __init__(self, repository: TaskRepository, time_tracker: TimeTracker):
-        """Initialize use case.
+    def _get_target_status(self) -> TaskStatus:
+        """Return PENDING as the target status.
 
-        Args:
-            repository: Task repository for data access
-            time_tracker: Time tracker (unused, kept for interface consistency)
+        Returns:
+            TaskStatus.PENDING
         """
-        self.repository = repository
-        self.time_tracker = time_tracker
+        return TaskStatus.PENDING
 
-    def _validate_can_reopen(self, task: Task) -> None:
-        """Validate that task can be reopened.
+    def _should_validate(self) -> bool:
+        """Skip standard status validation.
+
+        We use custom validation in _before_status_change instead, because
+        reopening has unique validation requirements (only from COMPLETED
+        or CANCELED, and must not be deleted).
+
+        Returns:
+            False to skip standard validation
+        """
+        return False
+
+    def _before_status_change(self, task: Task) -> None:
+        """Validate task can be reopened and clear time tracking.
 
         Args:
-            task: Task to validate
+            task: Task that will be reopened
 
         Raises:
-            TaskValidationError: If task is not in a reopenable state
+            TaskValidationError: If task cannot be reopened
         """
+        # Validate: can only reopen COMPLETED or CANCELED tasks
         if task.status not in (TaskStatus.COMPLETED, TaskStatus.CANCELED):
             raise TaskValidationError(
                 f"Cannot reopen task with status {task.status.value}. "
                 "Only COMPLETED or CANCELED tasks can be reopened."
             )
 
+        # Validate: cannot reopen deleted tasks
         if task.is_deleted:
             raise TaskValidationError(
                 "Cannot reopen deleted task. Restore the task first with 'restore' command."
             )
 
-    def execute(self, input_dto: ReopenTaskInput) -> Task:
-        """Execute task reopening.
-
-        Args:
-            input_dto: Reopen task input data
-
-        Returns:
-            Updated task with PENDING status
-
-        Raises:
-            TaskNotFoundException: If task doesn't exist
-            TaskValidationError: If task cannot be reopened
-
-        Note:
-            Dependencies are NOT validated. This allows reopening tasks even when
-            their dependencies are not completed. Dependency validation will occur
-            when attempting to start the task.
-        """
-        # Get task
-        task = self.repository.get_by_id(input_dto.task_id)
-        if task is None:
-            raise TaskNotFoundException(input_dto.task_id)
-
-        # Validate can reopen
-        self._validate_can_reopen(task)
-
         # Clear time tracking (reset timestamps)
-        task.actual_start = None
-        task.actual_end = None
-
-        # Set status to PENDING
-        task.status = TaskStatus.PENDING
-
-        # Save changes
-        self.repository.save(task)
-
-        return task
+        self.time_tracker.clear_time_on_reopen(task)

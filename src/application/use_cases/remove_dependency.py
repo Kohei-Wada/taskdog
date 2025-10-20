@@ -3,7 +3,7 @@
 from application.dto.manage_dependencies_input import RemoveDependencyInput
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
-from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
+from domain.exceptions.task_exceptions import TaskValidationError
 from infrastructure.persistence.task_repository import TaskRepository
 
 
@@ -32,9 +32,7 @@ class RemoveDependencyUseCase(UseCase[RemoveDependencyInput, Task]):
             TaskValidationError: If dependency doesn't exist on task
         """
         # Get task
-        task = self.repository.get_by_id(input_dto.task_id)
-        if task is None:
-            raise TaskNotFoundException(input_dto.task_id)
+        task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
         # Validate: dependency exists
         if input_dto.depends_on_id not in task.depends_on:

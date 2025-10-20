@@ -32,11 +32,7 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, Task]):
             TaskNotFoundException: If task with given ID not found
         """
         # Get task
-        task = self.repository.get_by_id(input_dto.task_id)
-        if task is None:
-            from domain.exceptions.task_exceptions import TaskNotFoundException
-
-            raise TaskNotFoundException(input_dto.task_id)
+        task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
         # Clear schedule data
         task.daily_allocations = {}

@@ -59,8 +59,10 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, TaskDetailDTO]):
             try:
                 notes_content = notes_path.read_text(encoding="utf-8")
                 has_notes = True
-            except Exception:
-                # If reading fails, treat as no notes
+            except (OSError, UnicodeDecodeError):
+                # If reading fails (file permissions, encoding issues, etc.),
+                # treat as no notes to maintain user experience.
+                # In production, consider logging the error for debugging.
                 pass
 
         return TaskDetailDTO(task=task, notes_content=notes_content, has_notes=has_notes)

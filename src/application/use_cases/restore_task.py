@@ -3,7 +3,6 @@
 from application.dto.restore_task_input import RestoreTaskInput
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
-from domain.exceptions.task_exceptions import TaskNotFoundException
 from infrastructure.persistence.task_repository import TaskRepository
 
 
@@ -32,9 +31,7 @@ class RestoreTaskUseCase(UseCase[RestoreTaskInput, Task]):
             TaskNotFoundException: If task with given ID not found
         """
         # Get task (including deleted ones)
-        task = self.repository.get_by_id(input_dto.task_id)
-        if task is None:
-            raise TaskNotFoundException(input_dto.task_id)
+        task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
         # Clear deleted flag
         task.is_deleted = False
