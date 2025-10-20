@@ -17,6 +17,7 @@ from presentation.constants.colors import (
     DAY_STYLE_SATURDAY,
     DAY_STYLE_SUNDAY,
     DAY_STYLE_WEEKDAY,
+    STATUS_COLORS_BOLD,
 )
 from presentation.constants.symbols import (
     BACKGROUND_COLOR,
@@ -419,29 +420,41 @@ class GanttDataTable(DataTable):
         Returns:
             Color string
         """
-        if status == TaskStatus.COMPLETED:
-            return "bold green"
-        elif status == TaskStatus.IN_PROGRESS:
-            return "bold blue"
-        elif status == TaskStatus.CANCELED:
-            return "dim"
-        else:  # PENDING
-            return "white"
+        return STATUS_COLORS_BOLD.get(status, "white")
 
-    def get_legend_text(self) -> str:
+    def get_legend_text(self) -> Text:
         """Build legend text for the Gantt chart.
 
         Returns:
-            Rich-formatted legend text
+            Rich Text object with legend
         """
-        legend_parts = [
-            "[bold yellow]Legend:[/bold yellow]",
-            f"[on {BACKGROUND_COLOR}]   [/on {BACKGROUND_COLOR}] Planned",
-            f"[bold blue]{SYMBOL_ACTUAL}[/bold blue] Actual (IN_PROGRESS)",
-            f"[bold green]{SYMBOL_ACTUAL}[/bold green] Actual (COMPLETED)",
-            f"[on {BACKGROUND_COLOR_DEADLINE}]   [/on {BACKGROUND_COLOR_DEADLINE}] Deadline",
-            f"[bold yellow]{SYMBOL_TODAY}[/bold yellow] Today",
-            f"[on {BACKGROUND_COLOR_SATURDAY}]   [/on {BACKGROUND_COLOR_SATURDAY}] Saturday",
-            f"[on {BACKGROUND_COLOR_SUNDAY}]   [/on {BACKGROUND_COLOR_SUNDAY}] Sunday",
-        ]
-        return "  ".join(legend_parts)
+        # Get colors from STATUS_COLORS_BOLD for consistency with actual rendering
+        in_progress_color = STATUS_COLORS_BOLD.get(TaskStatus.IN_PROGRESS, "bold blue")
+        completed_color = STATUS_COLORS_BOLD.get(TaskStatus.COMPLETED, "bold green")
+
+        # Build as Text object to match actual rendering method
+        legend = Text()
+        legend.append("Legend:", style="bold yellow")
+        legend.append("  ")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR}")
+        legend.append(" Planned")
+        legend.append("  ")
+        legend.append(f" {SYMBOL_ACTUAL} ", style=in_progress_color)
+        legend.append("Actual (IN_PROGRESS)")
+        legend.append("  ")
+        legend.append(f" {SYMBOL_ACTUAL} ", style=completed_color)
+        legend.append("Actual (COMPLETED)")
+        legend.append("  ")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_DEADLINE}")
+        legend.append(" Deadline")
+        legend.append("  ")
+        legend.append(f" {SYMBOL_TODAY} ", style="bold yellow")
+        legend.append("Today")
+        legend.append("  ")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_SATURDAY}")
+        legend.append(" Saturday")
+        legend.append("  ")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_SUNDAY}")
+        legend.append(" Sunday")
+
+        return legend
