@@ -1,7 +1,7 @@
 """Delete task command for TUI."""
 
 from presentation.tui.commands.base import TUICommandBase
-from presentation.tui.commands.decorators import handle_tui_errors
+from presentation.tui.commands.decorators import handle_tui_errors, require_selected_task
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.screens.confirmation_dialog import ConfirmationDialog
 
@@ -10,12 +10,12 @@ from presentation.tui.screens.confirmation_dialog import ConfirmationDialog
 class DeleteTaskCommand(TUICommandBase):
     """Command to delete the selected task with confirmation (soft delete)."""
 
+    @require_selected_task
     def execute(self) -> None:
         """Execute the delete task command (soft delete)."""
         task = self.get_selected_task()
-        if not task or task.id is None:
-            self.notify_warning("No task selected")
-            return
+        # Task is guaranteed to be non-None by @require_selected_task decorator
+        assert task and task.id is not None
 
         # Capture task ID and name for use in callback
         task_id = task.id

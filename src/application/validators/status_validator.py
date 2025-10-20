@@ -23,6 +23,9 @@ class StatusValidator(FieldValidator):
     """
 
     def validate(self, value: TaskStatus, task: Task, repository: TaskRepository) -> None:
+        # Ensure task.id is non-None (guaranteed after successful repository.get_by_id())
+        self._assert_task_has_id(task)
+
         # Validate based on target status
         if value == TaskStatus.IN_PROGRESS:
             self._validate_can_be_started(task, repository)
@@ -33,45 +36,45 @@ class StatusValidator(FieldValidator):
         elif value == TaskStatus.PENDING:
             self._validate_can_be_paused(task)
 
-    def _validate_can_be_started(self, task: Task, repository: TaskRepository) -> None:
-        # task.id is guaranteed non-None as validator is only called after
-        # successful repository.get_by_id() in use cases
-        assert task.id is not None
+    @staticmethod
+    def _assert_task_has_id(task: Task) -> None:
+        """Assert that task has a valid ID.
 
+        This is guaranteed to be true as the validator is only called after
+        successful repository.get_by_id() in use cases, but we assert it
+        for type safety and early error detection.
+
+        Args:
+            task: Task to validate
+
+        Raises:
+            AssertionError: If task.id is None
+        """
+        assert task.id is not None, "Task ID must not be None for status validation"
+
+    def _validate_can_be_started(self, task: Task, repository: TaskRepository) -> None:
         # Early check: Cannot restart finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)
+            raise TaskAlreadyFinishedError(task.id, task.status.value)  # type: ignore
 
         # Check dependencies: all dependencies must be COMPLETED
         DependencyValidator.validate_dependencies_met(task, repository)
 
     def _validate_can_be_completed(self, task: Task) -> None:
-        # task.id is guaranteed non-None as validator is only called after
-        # successful repository.get_by_id() in use cases
-        assert task.id is not None
-
         # Early check: Cannot re-complete finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)
+            raise TaskAlreadyFinishedError(task.id, task.status.value)  # type: ignore
 
         # Cannot complete PENDING tasks (must start first)
         if task.status == TaskStatus.PENDING:
-            raise TaskNotStartedError(task.id)
+            raise TaskNotStartedError(task.id)  # type: ignore
 
     def _validate_can_be_canceled(self, task: Task) -> None:
-        # task.id is guaranteed non-None as validator is only called after
-        # successful repository.get_by_id() in use cases
-        assert task.id is not None
-
         # Cannot cancel already finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)
+            raise TaskAlreadyFinishedError(task.id, task.status.value)  # type: ignore
 
     def _validate_can_be_paused(self, task: Task) -> None:
-        # task.id is guaranteed non-None as validator is only called after
-        # successful repository.get_by_id() in use cases
-        assert task.id is not None
-
         # Cannot pause finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)
+            raise TaskAlreadyFinishedError(task.id, task.status.value)  # type: ignore

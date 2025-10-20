@@ -8,6 +8,7 @@ from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task, TaskStatus
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.task_repository import TaskRepository
+from presentation.tui.context import TUIContext
 from presentation.tui.services.task_service import TaskService
 from shared.config_manager import ConfigManager
 
@@ -21,9 +22,17 @@ class TestTaskService(unittest.TestCase):
         self.time_tracker = MagicMock(spec=TimeTracker)
         self.query_service = MagicMock(spec=TaskQueryService)
         self.config = ConfigManager._default_config()
-        self.service = TaskService(
-            self.repository, self.time_tracker, self.query_service, self.config
+
+        # Create TUIContext
+        self.context = TUIContext(
+            repository=self.repository,
+            time_tracker=self.time_tracker,
+            query_service=self.query_service,
+            config=self.config,
         )
+
+        # Initialize TaskService with context
+        self.service = TaskService(self.context)
 
     def test_create_task_with_default_priority(self):
         """Test creating a task with default priority."""
@@ -113,26 +122,6 @@ class TestTaskService(unittest.TestCase):
 
             self.assertEqual(result, expected_task)
             mock_use_case.execute.assert_called_once()
-
-    def test_calculate_start_date_weekday(self):
-        """Test start date calculation for weekdays."""
-        # Mock datetime.now() to return a Monday
-        with patch("presentation.tui.services.task_service.datetime") as mock_datetime:
-            mock_datetime.now.return_value = datetime(2025, 1, 6)  # Monday
-            start_date = self.service._calculate_start_date()
-            self.assertEqual(start_date.weekday(), 0)  # Monday
-
-    def test_calculate_start_date_weekend(self):
-        """Test start date calculation for weekends."""
-        # Mock datetime.now() to return a Saturday
-        with patch("presentation.tui.services.task_service.datetime") as mock_datetime:
-            saturday = datetime(2025, 1, 4)  # Saturday
-            mock_datetime.now.return_value = saturday
-            mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
-
-            start_date = self.service._calculate_start_date()
-            # Should return next Monday
-            self.assertEqual(start_date.weekday(), 0)  # Monday
 
 
 if __name__ == "__main__":

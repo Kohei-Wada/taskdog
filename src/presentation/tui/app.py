@@ -67,6 +67,24 @@ class TaskdogTUI(App):
         ("v", "edit_note", "Edit Note"),
     ]
 
+    # Mapping of action names to command names and kwargs
+    # Format: {action_name: (command_name, kwargs)}
+    _ACTION_TO_COMMAND: ClassVar[dict[str, tuple[str, dict]]] = {
+        "refresh": ("refresh", {}),
+        "add_task": ("add_task", {}),
+        "start_task": ("start_task", {}),
+        "pause_task": ("pause_task", {}),
+        "done_task": ("done_task", {}),
+        "cancel_task": ("cancel_task", {}),
+        "reopen_task": ("reopen_task", {}),
+        "delete_task": ("delete_task", {}),
+        "show_details": ("show_details", {}),
+        "edit_task": ("edit_task", {}),
+        "optimize": ("optimize", {"force_override": False}),
+        "optimize_force": ("optimize", {"force_override": True}),
+        "edit_note": ("edit_note", {}),
+    }
+
     # Load CSS from external files
     CSS_PATH: ClassVar[list[str | Path]] = _get_css_paths()
 
@@ -95,17 +113,48 @@ class TaskdogTUI(App):
         self.config = config if config is not None else ConfigManager.load()
         self.main_screen: MainScreen | None = None
 
-        # Initialize TUIContext and TaskService
+        # Initialize TUIContext
         self.context = TUIContext(
             repository=repository,
             time_tracker=time_tracker,
             query_service=self.query_service,
             config=self.config,
         )
-        self.task_service = TaskService(repository, time_tracker, self.query_service, self.config)
+
+        # Initialize TaskService with context
+        self.task_service = TaskService(self.context)
 
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context, self.task_service)
+
+    def __getattribute__(self, name: str):
+        """Dynamically create action_* methods based on _ACTION_TO_COMMAND mapping.
+
+        This allows us to avoid writing boilerplate action_* methods for each command.
+        When Textual calls action_foo(), this method intercepts it and executes
+        the corresponding command via command_factory.
+        """
+        # First try to get the attribute normally
+        try:
+            return object.__getattribute__(self, name)
+        except AttributeError:
+            # Check if it's an action_ method that should be generated
+            if name.startswith("action_"):
+                action_name = name[7:]  # Remove "action_" prefix
+                action_to_command = object.__getattribute__(self, "_ACTION_TO_COMMAND")
+
+                if action_name in action_to_command:
+                    command_name, kwargs = action_to_command[action_name]
+                    command_factory = object.__getattribute__(self, "command_factory")
+
+                    # Return a method that executes the command
+                    def action_method() -> None:
+                        command_factory.execute(command_name, **kwargs)
+
+                    return action_method
+
+            # Re-raise the AttributeError if we can't handle it
+            raise
 
     def on_mount(self) -> None:
         """Called when app is mounted."""
@@ -137,55 +186,3 @@ class TaskdogTUI(App):
                 self.main_screen.task_table.refresh_tasks(tasks)
 
         return tasks
-
-    def action_refresh(self) -> None:
-        """Refresh the task list."""
-        self.command_factory.execute("refresh")
-
-    def action_add_task(self) -> None:
-        """Add a new task."""
-        self.command_factory.execute("add_task")
-
-    def action_start_task(self) -> None:
-        """Start the selected task."""
-        self.command_factory.execute("start_task")
-
-    def action_pause_task(self) -> None:
-        """Pause the selected task."""
-        self.command_factory.execute("pause_task")
-
-    def action_done_task(self) -> None:
-        """Complete the selected task."""
-        self.command_factory.execute("done_task")
-
-    def action_cancel_task(self) -> None:
-        """Cancel the selected task."""
-        self.command_factory.execute("cancel_task")
-
-    def action_reopen_task(self) -> None:
-        """Reopen a completed or canceled task."""
-        self.command_factory.execute("reopen_task")
-
-    def action_delete_task(self) -> None:
-        """Delete the selected task."""
-        self.command_factory.execute("delete_task")
-
-    def action_show_details(self) -> None:
-        """Show details of the selected task."""
-        self.command_factory.execute("show_details")
-
-    def action_edit_task(self) -> None:
-        """Edit the selected task."""
-        self.command_factory.execute("edit_task")
-
-    def action_optimize(self) -> None:
-        """Optimize task schedules without force override."""
-        self.command_factory.execute("optimize", force_override=False)
-
-    def action_optimize_force(self) -> None:
-        """Optimize task schedules with force override."""
-        self.command_factory.execute("optimize", force_override=True)
-
-    def action_edit_note(self) -> None:
-        """Edit the selected task's note."""
-        self.command_factory.execute("edit_note")

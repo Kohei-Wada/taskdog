@@ -68,25 +68,31 @@ class StatusChangeCommandBase(TUICommandBase):
     def execute(self) -> None:
         """Execute the status change command (Template Method).
 
-        This method implements the common workflow:
+        This method implements the common workflow with error handling:
         1. Get selected task
         2. Validate task selection
         3. Execute status change via TaskService
         4. Reload task list
         5. Show success notification
 
-        Error handling is provided by @handle_tui_errors decorator in subclasses.
+        Error handling is provided by @handle_tui_errors decorator.
         """
-        # Get selected task
-        task = self.get_selected_task()
-        if not task or task.id is None:
-            self.notify_warning("No task selected")
-            return
+        # Execute with error handling
+        action_name = self.get_action_name()
 
-        # Execute status change (delegated to subclass)
-        updated_task = self.execute_status_change(task.id)
+        try:
+            # Get selected task
+            task = self.get_selected_task()
+            if not task or task.id is None:
+                self.notify_warning("No task selected")
+                return
 
-        # Reload UI and notify success
-        self.reload_tasks()
-        success_verb = self.get_success_verb()
-        self.notify_success(f"{success_verb} task: {updated_task.name} (ID: {updated_task.id})")
+            # Execute status change (delegated to subclass)
+            updated_task = self.execute_status_change(task.id)
+
+            # Reload UI and notify success
+            self.reload_tasks()
+            success_verb = self.get_success_verb()
+            self.notify_success(f"{success_verb} task: {updated_task.name} (ID: {updated_task.id})")
+        except Exception as e:
+            self.notify_error(f"Error {action_name}", e)

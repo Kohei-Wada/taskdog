@@ -39,3 +39,33 @@ def handle_tui_errors(action_name: str) -> Callable[[F], F]:
         return wrapper  # type: ignore
 
     return decorator
+
+
+def require_selected_task(func: F) -> F:
+    """Decorator to ensure a task is selected before executing the command.
+
+    This decorator checks if a task is selected and shows a warning if not.
+    It should be used on execute() methods of commands that require a selected task.
+
+    Args:
+        func: The function to decorate (should be an execute method)
+
+    Returns:
+        Decorated function with task selection check
+
+    Example:
+        @require_selected_task
+        def execute(self) -> None:
+            task = self.get_selected_task()  # Guaranteed to be non-None
+            # ... command logic ...
+    """
+
+    @wraps(func)
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
+        task = self.get_selected_task()
+        if not task or task.id is None:
+            self.notify_warning("No task selected")
+            return None
+        return func(self, *args, **kwargs)
+
+    return wrapper  # type: ignore

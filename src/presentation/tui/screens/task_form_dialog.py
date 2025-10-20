@@ -1,6 +1,6 @@
 """Unified task form dialog for adding and editing tasks."""
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from textual.app import ComposeResult
 from textual.containers import Container
@@ -72,79 +72,54 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
 
     def _submit_form(self) -> None:
         """Validate and submit the form data."""
-        task_name_input = self.query_one("#task-name-input", Input)
-        priority_input = self.query_one("#priority-input", Input)
-        deadline_input = self.query_one("#deadline-input", Input)
-        duration_input = self.query_one("#duration-input", Input)
-        planned_start_input = self.query_one("#planned-start-input", Input)
-        planned_end_input = self.query_one("#planned-end-input", Input)
-        dependencies_input = self.query_one("#dependencies-input", Input)
+        # Get all form inputs
+        inputs = {
+            "task_name": self.query_one("#task-name-input", Input),
+            "priority": self.query_one("#priority-input", Input),
+            "deadline": self.query_one("#deadline-input", Input),
+            "duration": self.query_one("#duration-input", Input),
+            "planned_start": self.query_one("#planned-start-input", Input),
+            "planned_end": self.query_one("#planned-end-input", Input),
+            "dependencies": self.query_one("#dependencies-input", Input),
+        }
         fixed_checkbox = self.query_one("#fixed-checkbox", Checkbox)
         error_message = self.query_one("#error-message", Static)
 
         # Clear previous error
         error_message.update("")
 
-        # Validate task name
-        name_result = TaskNameValidator.validate(task_name_input.value)
-        if not name_result.is_valid:
-            error_message.update(f"[red]Error: {name_result.error_message}[/red]")
-            task_name_input.focus()
-            return
-
-        # Validate priority
+        # Define validation chain with (field_name, input_widget, validator, validator_args)
         default_priority = self.config.task.default_priority if self.config else 5
-        priority_result = PriorityValidator.validate(priority_input.value, default_priority)
-        if not priority_result.is_valid:
-            error_message.update(f"[red]Error: {priority_result.error_message}[/red]")
-            priority_input.focus()
-            return
+        validations: list[tuple[str, Input, Any, list[Any]]] = [
+            ("task_name", inputs["task_name"], TaskNameValidator, []),
+            ("priority", inputs["priority"], PriorityValidator, [default_priority]),
+            ("deadline", inputs["deadline"], DeadlineValidator, []),
+            ("duration", inputs["duration"], DurationValidator, []),
+            ("planned_start", inputs["planned_start"], PlannedStartValidator, []),
+            ("planned_end", inputs["planned_end"], PlannedEndValidator, []),
+            ("dependencies", inputs["dependencies"], DependenciesValidator, []),
+        ]
 
-        # Validate deadline
-        deadline_result = DeadlineValidator.validate(deadline_input.value)
-        if not deadline_result.is_valid:
-            error_message.update(f"[red]Error: {deadline_result.error_message}[/red]")
-            deadline_input.focus()
-            return
-
-        # Validate duration
-        duration_result = DurationValidator.validate(duration_input.value)
-        if not duration_result.is_valid:
-            error_message.update(f"[red]Error: {duration_result.error_message}[/red]")
-            duration_input.focus()
-            return
-
-        # Validate planned start
-        planned_start_result = PlannedStartValidator.validate(planned_start_input.value)
-        if not planned_start_result.is_valid:
-            error_message.update(f"[red]Error: {planned_start_result.error_message}[/red]")
-            planned_start_input.focus()
-            return
-
-        # Validate planned end
-        planned_end_result = PlannedEndValidator.validate(planned_end_input.value)
-        if not planned_end_result.is_valid:
-            error_message.update(f"[red]Error: {planned_end_result.error_message}[/red]")
-            planned_end_input.focus()
-            return
-
-        # Validate dependencies
-        dependencies_result = DependenciesValidator.validate(dependencies_input.value)
-        if not dependencies_result.is_valid:
-            error_message.update(f"[red]Error: {dependencies_result.error_message}[/red]")
-            dependencies_input.focus()
-            return
+        # Run validations
+        results: dict[str, Any] = {}
+        for field_name, input_widget, validator, args in validations:
+            result = validator.validate(input_widget.value, *args)
+            if not result.is_valid:
+                error_message.update(f"[red]Error: {result.error_message}[/red]")
+                input_widget.focus()
+                return
+            results[field_name] = result.value
 
         # All validations passed - create form data
         form_data = TaskFormData(
-            name=name_result.value,  # type: ignore
-            priority=priority_result.value,  # type: ignore
-            deadline=deadline_result.value,  # type: ignore
-            estimated_duration=duration_result.value,  # type: ignore
-            planned_start=planned_start_result.value,  # type: ignore
-            planned_end=planned_end_result.value,  # type: ignore
+            name=results["task_name"],
+            priority=results["priority"],
+            deadline=results["deadline"],
+            estimated_duration=results["duration"],
+            planned_start=results["planned_start"],
+            planned_end=results["planned_end"],
             is_fixed=fixed_checkbox.value,
-            depends_on=dependencies_result.value,  # type: ignore
+            depends_on=results["dependencies"],
         )
 
         # Submit the form data

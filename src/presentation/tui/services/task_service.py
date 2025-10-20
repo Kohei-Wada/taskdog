@@ -1,6 +1,6 @@
 """Task service facade for TUI operations."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from application.dto.archive_task_request import ArchiveTaskRequest
 from application.dto.cancel_task_request import CancelTaskRequest
@@ -11,7 +11,6 @@ from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.dto.pause_task_request import PauseTaskRequest
 from application.dto.start_task_request import StartTaskRequest
 from application.queries.filters.incomplete_filter import IncompleteFilter
-from application.queries.task_query_service import TaskQueryService
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
@@ -20,9 +19,8 @@ from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from application.use_cases.pause_task import PauseTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
-from domain.services.time_tracker import TimeTracker
-from infrastructure.persistence.task_repository import TaskRepository
-from shared.config_manager import Config
+from presentation.tui.context import TUIContext
+from shared.date_utils import calculate_next_workday
 
 
 class TaskService:
@@ -32,25 +30,16 @@ class TaskService:
     reducing boilerplate in command classes.
     """
 
-    def __init__(
-        self,
-        repository: TaskRepository,
-        time_tracker: TimeTracker,
-        query_service: TaskQueryService,
-        config: Config,
-    ):
+    def __init__(self, context: TUIContext):
         """Initialize the task service.
 
         Args:
-            repository: Task repository
-            time_tracker: Time tracker service
-            query_service: Query service for read operations
-            config: Application configuration
+            context: TUI context with all required dependencies
         """
-        self.repository = repository
-        self.time_tracker = time_tracker
-        self.query_service = query_service
-        self.config = config
+        self.repository = context.repository
+        self.time_tracker = context.time_tracker
+        self.query_service = context.query_service
+        self.config = context.config
 
     def create_task(self, name: str, priority: int | None = None) -> Task:
         """Create a new task.
@@ -152,7 +141,7 @@ class TaskService:
             OptimizationResult containing successful/failed tasks and summary
         """
         if start_date is None:
-            start_date = self._calculate_start_date()
+            start_date = calculate_next_workday()
 
         optimize_input = OptimizeScheduleRequest(
             start_date=start_date,
@@ -175,17 +164,3 @@ class TaskService:
         """
         incomplete_filter = IncompleteFilter()
         return self.query_service.get_filtered_tasks(incomplete_filter, sort_by=sort_by)
-
-    def _calculate_start_date(self) -> datetime:
-        """Calculate the start date for optimization.
-
-        Returns:
-            Today if it's a weekday, otherwise next Monday
-        """
-        today = datetime.now()
-        # If today is a weekday, use today; otherwise use next Monday
-        if today.weekday() < 5:  # Monday=0, Friday=4
-            return today
-        # Move to next Monday
-        days_until_monday = (7 - today.weekday()) % 7
-        return today + timedelta(days=days_until_monday)

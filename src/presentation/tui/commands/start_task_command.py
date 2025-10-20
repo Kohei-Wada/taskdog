@@ -1,7 +1,6 @@
 """Start task command for TUI."""
 
 from domain.entities.task import Task
-from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.commands.status_change_base import StatusChangeCommandBase
 
@@ -13,11 +12,6 @@ class StartTaskCommand(StatusChangeCommandBase):
     def get_action_name(self) -> str:
         """Return action name for error handling."""
         return "starting task"
-
-    @handle_tui_errors("starting task")
-    def execute(self) -> None:
-        """Execute the start task command."""
-        super().execute()
 
     def execute_status_change(self, task_id: int) -> Task:
         """Start the task via TaskService."""
