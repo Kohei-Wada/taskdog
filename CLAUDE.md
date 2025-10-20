@@ -585,15 +585,23 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
   - Full-screen terminal interface with keyboard shortcuts
   - Navigation: ↑/↓ arrows or j/k (vim-style)
   - Actions: a (add), s (start), p (pause), d (done), c (cancel), R (reopen), x (delete), i (details), e (edit), o (optimize), r (refresh), q (quit)
-  - Add/Edit dialogs support:
+  - Add/Edit dialogs support **all task fields**:
     - Task name, priority, deadline, estimated duration
+    - **Planned start/end dates**: Can set planned schedule directly in TUI (flexible date parsing: "2025-12-31", "tomorrow 9am", "next monday")
     - **Dependencies**: Comma-separated task IDs (e.g., "1,2,3")
-    - Fixed checkbox (prevents rescheduling by optimizer)
+    - **Fixed checkbox**: Mark task as fixed (prevents rescheduling by optimizer)
   - Dependency management:
     - Add dependencies when creating tasks
     - Modify dependencies when editing tasks (automatic sync: add/remove)
     - View dependencies in task details screen
     - Validation with clear error messages (invalid IDs, circular dependencies)
+  - Task table displays:
+    - Fixed indicator (📌 icon in Fixed column)
+    - Dependencies column showing dependent task IDs
+  - Form design:
+    - Unified design for all fields (consistent label + input layout)
+    - Dialog height increased to accommodate all fields (max-height: 45)
+    - Flexible date/time parsing with helpful examples in placeholders
   - Delete performs soft delete (can be restored with restore command)
 
 ### Key Design Decisions
@@ -617,6 +625,7 @@ All commands live in `src/presentation/cli/commands/` and are registered in `cli
 18. **TUI Command Pattern with Registry** - TUI commands use Command Pattern with automatic registration via decorator, CommandFactory for DI, and CommandRegistry for decoupled execution
 19. **Always-Valid Entity Pattern** - Task entity implements invariant validation in `__post_init__` following DDD best practices; validates name (non-empty), priority (> 0), and estimated_duration (> 0 if provided); raises TaskValidationError for violations; no auto-correction to maintain data integrity
 20. **Corrupted Data Detection** - JsonTaskRepository validates all tasks during load; if any task violates entity invariants, raises CorruptedDataError with detailed error messages; application startup fails gracefully prompting manual data correction; ensures data integrity at the persistence layer
+21. **Fixed Tasks and Optimizer Integration** - Fixed tasks (is_fixed=True) are never rescheduled by optimizer; their hours are always counted toward max_hours_per_day limit; when calculating available hours, optimizer uses WorkloadCalculator.get_task_daily_hours() to compute fixed task allocations from planned_start/planned_end if daily_allocations is not set; ensures meetings and appointments are properly respected in schedule optimization
 
 ### Console Output Guidelines
 

@@ -8,8 +8,14 @@ A personal task management CLI tool with time tracking, schedule optimization, b
 
 - **Time Tracking**: Automatic time tracking with planned vs actual duration comparison
 - **Schedule Optimization**: Multiple scheduling algorithms to auto-generate optimal task schedules
+  - Respects fixed tasks (meetings, appointments) when calculating available hours per day
+  - 9 different strategies: greedy, balanced, backward, priority-first, earliest deadline, round robin, dependency-aware, genetic, monte carlo
+- **Fixed Tasks**: Mark tasks as fixed to prevent rescheduling by optimizer (e.g., meetings, appointments)
+- **Task Dependencies**: Define task dependencies with circular dependency detection
 - **Interactive TUI**: Full-screen Text User Interface with keyboard shortcuts and real-time updates
-- **Multiple Task States**: PENDING, IN_PROGRESS, COMPLETED, FAILED, ARCHIVED
+  - Set all task properties including planned start/end dates, dependencies, and fixed flag
+  - Visual task table with fixed task indicators
+- **Multiple Task States**: PENDING, IN_PROGRESS, COMPLETED, CANCELED
 - **Beautiful Terminal Output**: Rich formatting with colors and tables
 - **Gantt Chart Visualization**: Visual timeline with planned periods, actual progress, deadlines, and workload analysis
 - **Flexible Display Options**: Table, Gantt chart, and today view formats
@@ -17,8 +23,9 @@ A personal task management CLI tool with time tracking, schedule optimization, b
 - **Priority Management**: Set and update task priorities
 - **Deadline Support**: Track deadlines with visual indicators
 - **Markdown Notes**: Add detailed notes to tasks with editor integration and Rich markdown rendering
-- **Batch Operations**: Start, complete, pause, or archive multiple tasks at once
+- **Batch Operations**: Start, complete, pause, cancel, or remove multiple tasks at once
 - **Specialized Commands**: Dedicated commands for common updates (deadline, priority, rename, estimate, schedule)
+- **Soft Delete**: Removed tasks can be restored
 
 ## Installation
 
@@ -39,13 +46,23 @@ taskdog add "Project Alpha" --priority 200
 taskdog add "Design phase" --priority 150
 taskdog add "Implementation" --priority 100
 
+# Add a fixed task (won't be rescheduled by optimizer)
+taskdog add "Weekly team meeting" --fixed --priority 50
+
+# Add dependencies (task 3 depends on task 2)
+taskdog add-dependency 3 2
+
 # Set deadlines and estimates
 taskdog deadline 2 2025-10-20
 taskdog deadline 3 2025-10-25
 taskdog est 2 16
 taskdog est 3 40
 
-# Auto-generate optimal schedule
+# Schedule a fixed task manually
+taskdog schedule 4 "2025-10-22 10:00" "2025-10-22 11:00"
+taskdog est 4 1
+
+# Auto-generate optimal schedule (respects fixed tasks and dependencies)
 taskdog optimize
 
 # View tasks in table format
@@ -88,9 +105,23 @@ taskdog add "Task name" [OPTIONS]
 ```
 
 Options:
-- `-p, --priority INTEGER`: Task priority (default: 100, higher value = higher priority)
+- `-p, --priority INTEGER`: Task priority (default: from config or 5, higher value = higher priority)
+- `-f, --fixed`: Mark task as fixed (won't be rescheduled by optimizer)
+- `-d, --depends-on INTEGER`: Add dependency (task ID). Can be specified multiple times.
 
 Creates a new task with minimal information. Use dedicated commands (`deadline`, `est`, `schedule`) to set additional properties after creation.
+
+Examples:
+```bash
+# Add a regular task
+taskdog add "Write documentation" -p 10
+
+# Add a fixed task (e.g., meeting)
+taskdog add "Team standup" --fixed
+
+# Add a task with dependencies
+taskdog add "Deploy to production" -d 5 -d 6  # Depends on tasks 5 and 6
+```
 
 ### `table` - Display tasks in table format
 
@@ -203,13 +234,28 @@ taskdog optimize [OPTIONS]
 
 Options:
 - `--start-date DATE`: Start date for scheduling (default: next weekday)
-- `--max-hours-per-day FLOAT`: Maximum work hours per day (default: 6.0)
-- `-a, --algorithm NAME`: Optimization algorithm (default: greedy)
+- `--max-hours-per-day FLOAT`: Maximum work hours per day (default: from config or 6.0)
+- `-a, --algorithm NAME`: Optimization algorithm (default: from config or greedy)
   - Available: greedy, balanced, backward, priority_first, earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo
-- `-f, --force`: Override existing schedules for all tasks
-- `-d, --dry-run`: Preview changes without saving
+- `-f, --force`: Override existing schedules for all non-fixed tasks
 
-Auto-generates optimal task schedules based on priorities, deadlines, and workload constraints. Analyzes all tasks with estimated duration and distributes workload across weekdays.
+Auto-generates optimal task schedules based on priorities, deadlines, dependencies, and workload constraints.
+
+**Fixed Task Handling:**
+- Fixed tasks (marked with `--fixed` flag) are **never rescheduled** by the optimizer
+- Fixed tasks' hours are **always counted** toward `max_hours_per_day` limit
+- Other tasks are scheduled around fixed tasks (e.g., meetings, appointments)
+- Example: If a fixed task uses 3h on Monday and `max-hours-per-day=5`, only 2h remain for other tasks
+
+**Dependency Handling:**
+- Tasks with dependencies are only scheduled after all dependencies are completed
+- Circular dependencies are detected and prevented
+
+**Behavior:**
+- Skips tasks without estimated duration
+- Respects task deadlines
+- Distributes workload across weekdays (skips weekends)
+- Analyzes all PENDING tasks and optionally IN_PROGRESS tasks (with `--force`)
 
 ### `archive` - Archive task(s)
 
@@ -225,7 +271,51 @@ Archives task(s) for data retention. Archived tasks are hidden from default view
 taskdog rm <TASK_ID> [TASK_ID ...]
 ```
 
-Removes task(s) permanently. Use `archive` instead if you want to preserve task data. Supports multiple task IDs.
+Options:
+- `--hard`: Permanently delete (default: soft delete)
+
+Removes task(s). By default performs soft delete (sets `is_deleted=True`), allowing restore with `restore` command. Use `--hard` for permanent deletion. Supports multiple task IDs.
+
+### `restore` - Restore soft-deleted task(s)
+
+```bash
+taskdog restore <TASK_ID> [TASK_ID ...]
+```
+
+Restores soft-deleted tasks (clears `is_deleted` flag). Supports multiple task IDs.
+
+### `add-dependency` - Add task dependency
+
+```bash
+taskdog add-dependency <TASK_ID> <DEPENDS_ON_ID>
+```
+
+Adds a dependency relationship. The task with `TASK_ID` will depend on the task with `DEPENDS_ON_ID`.
+
+**Validation:**
+- Both tasks must exist
+- Prevents self-dependency (task depending on itself)
+- Prevents duplicate dependencies
+- Detects circular dependencies (both direct and indirect cycles)
+- Shows complete cycle path in error messages (e.g., "3 → 1 → 2 → 3")
+
+Examples:
+```bash
+# Task 3 depends on task 2
+taskdog add-dependency 3 2
+
+# Task 5 depends on tasks 3 and 4
+taskdog add-dependency 5 3
+taskdog add-dependency 5 4
+```
+
+### `remove-dependency` - Remove task dependency
+
+```bash
+taskdog remove-dependency <TASK_ID> <DEPENDS_ON_ID>
+```
+
+Removes a dependency relationship between two tasks.
 
 ### `update` - Update multiple task properties
 
@@ -296,19 +386,26 @@ taskdog tui
 Launches an interactive Text User Interface (TUI) for task management with keyboard shortcuts:
 - **Navigation**: ↑/↓ arrow keys or j/k (vim-style)
 - **Actions**:
-  - `a` - Add new task
+  - `a` - Add new task (supports all fields: name, priority, deadline, duration, planned start/end, dependencies, fixed flag)
   - `s` - Start selected task
   - `p` - Pause selected task
   - `d` - Mark task as done
-  - `x` - Delete task
-  - `i` - Show task details
-  - `e` - Edit task
-  - `o` - Optimize schedules
-  - `O` - Force optimize schedules
+  - `c` - Cancel selected task
+  - `R` - Reopen completed/canceled task
+  - `x` - Delete task (soft delete, can be restored)
+  - `i` - Show task details (shows dependencies, fixed flag, logged hours)
+  - `e` - Edit task (modify all fields including dependencies and fixed flag)
+  - `o` - Optimize schedules (respects fixed tasks and dependencies)
   - `r` - Refresh task list
   - `q` - Quit
 
-The TUI provides a full-screen terminal interface with real-time updates and Gantt chart visualization.
+**TUI Features:**
+- Visual indicators for fixed tasks (📌 icon in Fixed column)
+- Dependency display in task details
+- Comprehensive task editing with all properties
+- Gantt chart visualization with workload analysis
+
+The TUI provides a full-screen terminal interface with real-time updates and keyboard-driven workflow.
 
 
 ## Task States
@@ -316,8 +413,7 @@ The TUI provides a full-screen terminal interface with real-time updates and Gan
 - **PENDING**: Task not yet started (yellow)
 - **IN_PROGRESS**: Task is being worked on (blue)
 - **COMPLETED**: Task successfully finished (green)
-- **FAILED**: Task failed or cancelled (red)
-- **ARCHIVED**: Task archived for data retention (hidden from default views)
+- **CANCELED**: Task won't be done (red)
 
 ## Data Storage
 
