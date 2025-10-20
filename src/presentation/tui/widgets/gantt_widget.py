@@ -1,11 +1,18 @@
-"""Gantt chart widget for TUI."""
+"""Gantt chart widget for TUI.
 
-from datetime import date
+This widget wraps the GanttDataTable and provides additional functionality
+like date range management and automatic resizing.
+"""
 
-from rich.console import Console
+from datetime import date, timedelta
+
+from textual.app import ComposeResult
 from textual.widgets import Static
 
+from application.queries.filters.task_filter import TaskFilter
+from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.constants.table_dimensions import (
     BORDER_WIDTH,
     CHARS_PER_DAY,
@@ -15,11 +22,17 @@ from presentation.constants.table_dimensions import (
     MIN_CONSOLE_WIDTH,
     MIN_TIMELINE_WIDTH,
 )
+from presentation.tui.widgets.gantt_data_table import GanttDataTable
 from shared.constants.time import DAYS_PER_WEEK
+from shared.xdg_utils import XDGDirectories
 
 
 class GanttWidget(Static):
-    """A widget for displaying gantt chart."""
+    """A widget for displaying gantt chart using GanttDataTable.
+
+    This widget manages the GanttDataTable and handles date range calculations
+    based on available screen width.
+    """
 
     def __init__(self, *args, **kwargs):
         """Initialize the gantt widget."""
@@ -27,6 +40,16 @@ class GanttWidget(Static):
         self._tasks: list[Task] = []
         self._start_date: date | None = None
         self._end_date: date | None = None
+        self._gantt_table: GanttDataTable | None = None
+
+    def compose(self) -> ComposeResult:
+        """Compose the widget layout.
+
+        Returns:
+            Iterable of widgets to display
+        """
+        self._gantt_table = GanttDataTable()
+        yield self._gantt_table
 
     def update_gantt(
         self,
@@ -48,35 +71,26 @@ class GanttWidget(Static):
 
     def _render_gantt(self):
         """Render the gantt chart."""
-        if not self._tasks:
-            self.update("No tasks to display")
+        if not self._gantt_table:
             return
 
-        # Import here to avoid circular imports
-        from datetime import timedelta
-
-        from application.queries.task_query_service import TaskQueryService
-        from infrastructure.persistence.json_task_repository import JsonTaskRepository
-        from presentation.console.rich_console_writer import RichConsoleWriter
-        from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
+        if not self._tasks:
+            # Show empty message using a single-row table
+            self._gantt_table.clear(columns=True)
+            self._gantt_table.add_column("Message")
+            self._gantt_table.add_row("[dim]No tasks to display[/dim]")
+            return
 
         # Get widget width for proper rendering
-        # Use content region width to account for borders and padding
         widget_width = self.size.width if self.size else DEFAULT_GANTT_WIDGET_WIDTH
-        # Subtract border width (for left and right borders)
         console_width = max(widget_width - BORDER_WIDTH, MIN_CONSOLE_WIDTH)
 
         # Calculate optimal date range based on available width
-        # Timeline column gets the rest
-        timeline_width = max(
-            console_width - GANTT_TABLE_FIXED_WIDTH, MIN_TIMELINE_WIDTH
-        )  # Minimum timeline width
-        # Each day takes CHARS_PER_DAY characters (e.g., "16 ")
+        timeline_width = max(console_width - GANTT_TABLE_FIXED_WIDTH, MIN_TIMELINE_WIDTH)
         max_days = timeline_width // CHARS_PER_DAY
 
         # Round to nearest week for cleaner display
-        # e.g., 25 days → 21 days (3 weeks), 18 days → 14 days (2 weeks)
-        weeks = max(max_days // DAYS_PER_WEEK, 1)  # At least 1 week
+        weeks = max(max_days // DAYS_PER_WEEK, 1)
         display_days = weeks * DAYS_PER_WEEK
 
         # Calculate date range
@@ -99,17 +113,10 @@ class GanttWidget(Static):
                 end_date = start_date + timedelta(days=display_days - 1)
 
         # Get Gantt data from Application layer
-        # Note: TUI already has filtered tasks, but we need to use TaskQueryService
-        # to get the full GanttResult with workload calculations
-        from shared.xdg_utils import XDGDirectories
-
         repository = JsonTaskRepository(XDGDirectories.get_tasks_file())
         task_query_service = TaskQueryService(repository)
 
-        # Create a simple filter that returns the current tasks
-        # This is a workaround since we already have the filtered tasks
-        from application.queries.filters.task_filter import TaskFilter
-
+        # Create a filter that returns the current tasks
         class TaskListFilter(TaskFilter):
             def __init__(self, tasks):
                 self.tasks = tasks
@@ -128,22 +135,14 @@ class GanttWidget(Static):
             end_date=end_date,
         )
 
-        # Create console with widget width
-        console = Console(width=console_width, force_terminal=True)
-        console_writer = RichConsoleWriter(console)
-        renderer = RichGanttRenderer(console_writer)
-
-        # Build the table with legend as caption
-        # Textual's Static widget can render Rich Table objects directly
+        # Load data into the GanttDataTable
         try:
-            table = renderer.build_table(gantt_result)
-            if table:
-                # Table already includes legend as caption
-                self.update(table)
-            else:
-                self.update("No tasks to display")
+            self._gantt_table.load_gantt(gantt_result)
         except Exception as e:
-            self.update(f"Error rendering gantt: {e!s}")
+            # Show error message
+            self._gantt_table.clear(columns=True)
+            self._gantt_table.add_column("Error")
+            self._gantt_table.add_row(f"[red]Error rendering gantt: {e!s}[/red]")
 
     def on_resize(self):
         """Handle resize events."""
