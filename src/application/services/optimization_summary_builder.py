@@ -4,7 +4,7 @@ from datetime import datetime
 
 from application.dto.optimization_summary import OptimizationSummary
 from domain.constants import DATETIME_FORMAT
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
 
 
@@ -89,8 +89,8 @@ class OptimizationSummaryBuilder:
         unscheduled_tasks = []
 
         for task in all_tasks_after:
-            # Skip archived and completed tasks
-            if task.status in [TaskStatus.ARCHIVED, TaskStatus.COMPLETED]:
+            # Skip deleted and finished tasks
+            if task.is_deleted or task.is_finished:
                 continue
             # Skip tasks without estimated duration
             if not task.estimated_duration:

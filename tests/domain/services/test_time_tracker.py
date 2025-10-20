@@ -35,12 +35,12 @@ class TestTimeTracker(unittest.TestCase):
         # Verify format: YYYY-MM-DD HH:MM:SS
         datetime.strptime(task.actual_end, DATETIME_FORMAT)
 
-    def test_record_time_to_failed(self):
-        """Test that actual_end is recorded when status changes to FAILED"""
+    def test_record_time_to_canceled(self):
+        """Test that actual_end is recorded when status changes to CANCELED"""
         task = Task(name="Test Task", priority=1, id=1)
         self.assertIsNone(task.actual_end)
 
-        self.tracker.record_time_on_status_change(task, TaskStatus.FAILED)
+        self.tracker.record_time_on_status_change(task, TaskStatus.CANCELED)
 
         self.assertIsNotNone(task.actual_end)
         # Verify format: YYYY-MM-DD HH:MM:SS

@@ -117,16 +117,16 @@ class TestStartTaskUseCase(unittest.TestCase):
         self.assertEqual(context.exception.task_id, task.id)
         self.assertEqual(context.exception.status, TaskStatus.COMPLETED.value)
 
-    def test_execute_raises_error_when_starting_failed_task(self):
-        """Test execute raises TaskAlreadyFinishedError when starting FAILED task"""
-        # Create a failed task
-        task = Task(name="Test Task", priority=1, status=TaskStatus.FAILED)
+    def test_execute_raises_error_when_starting_canceled_task(self):
+        """Test execute raises TaskAlreadyFinishedError when starting CANCELED task"""
+        # Create a canceled task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.CANCELED)
         task.id = self.repository.generate_next_id()
         task.actual_start = "2024-01-01 10:00:00"
         task.actual_end = "2024-01-01 11:00:00"
         self.repository.save(task)
 
-        # Try to start the failed task - should raise error
+        # Try to start the canceled task - should raise error
         input_dto = StartTaskInput(task_id=task.id)
 
         with self.assertRaises(TaskAlreadyFinishedError) as context:
@@ -134,7 +134,7 @@ class TestStartTaskUseCase(unittest.TestCase):
 
         # Verify error details
         self.assertEqual(context.exception.task_id, task.id)
-        self.assertEqual(context.exception.status, TaskStatus.FAILED.value)
+        self.assertEqual(context.exception.status, TaskStatus.CANCELED.value)
 
     def test_execute_does_not_modify_completed_task_state(self):
         """Test execute does not modify state when attempted on COMPLETED task"""

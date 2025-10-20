@@ -16,7 +16,7 @@ class StatusValidator(FieldValidator):
     - Cannot start task if it's already finished
     - PENDING → COMPLETED transition not allowed (must start first)
     - Can pause IN_PROGRESS task back to PENDING
-    - Cannot resume finished tasks (COMPLETED, FAILED, ARCHIVED)
+    - Cannot resume finished tasks (COMPLETED, CANCELED)
     """
 
     def validate(self, value: TaskStatus, task: Task, repository: TaskRepository) -> None:

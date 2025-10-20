@@ -16,7 +16,7 @@ class TimeTracker:
 
         Side effects:
             Modifies task.actual_start when status becomes IN_PROGRESS
-            Modifies task.actual_end when status becomes COMPLETED or FAILED
+            Modifies task.actual_end when status becomes COMPLETED or CANCELED
         """
         now = datetime.now().strftime(DATETIME_FORMAT)
 

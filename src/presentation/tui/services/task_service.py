@@ -147,7 +147,7 @@ class TaskService:
         return use_case.execute(optimize_input)
 
     def get_incomplete_tasks(self, sort_by: str = "id") -> list[Task]:
-        """Get incomplete tasks (PENDING, IN_PROGRESS, FAILED).
+        """Get incomplete tasks (PENDING, IN_PROGRESS).
 
         Args:
             sort_by: Sort field

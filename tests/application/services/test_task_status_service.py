@@ -69,27 +69,27 @@ class TaskStatusServiceTest(unittest.TestCase):
         self.assertEqual(from_db.status, TaskStatus.COMPLETED)
         self.assertIsNotNone(from_db.actual_end)
 
-    def test_change_status_to_failed(self):
-        """Test changing status to FAILED records actual_end."""
+    def test_change_status_to_canceled(self):
+        """Test changing status to CANCELED records actual_end."""
         # Create a task and start it
         task = self.repository.create(name="Test Task", priority=1)
         task = self.service.change_status_with_tracking(
             task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
         )
 
-        # Fail the task
+        # Cancel the task
         updated = self.service.change_status_with_tracking(
-            task, TaskStatus.FAILED, self.time_tracker, self.repository
+            task, TaskStatus.CANCELED, self.time_tracker, self.repository
         )
 
         # Verify status changed and actual_end recorded
-        self.assertEqual(updated.status, TaskStatus.FAILED)
+        self.assertEqual(updated.status, TaskStatus.CANCELED)
         self.assertIsNotNone(updated.actual_start)
         self.assertIsNotNone(updated.actual_end)
 
         # Verify persisted
         from_db = self.repository.get_by_id(task.id)
-        self.assertEqual(from_db.status, TaskStatus.FAILED)
+        self.assertEqual(from_db.status, TaskStatus.CANCELED)
         self.assertIsNotNone(from_db.actual_end)
 
     def test_change_status_multiple_times(self):

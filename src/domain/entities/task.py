@@ -31,7 +31,7 @@ class Task:
         planned_end: Planned end datetime string
         deadline: Deadline datetime string
         actual_start: Actual start datetime string (set when status → IN_PROGRESS)
-        actual_end: Actual end datetime string (set when status → COMPLETED/FAILED)
+        actual_end: Actual end datetime string (set when status → COMPLETED/CANCELED)
         estimated_duration: Estimated duration in hours
         daily_allocations: Daily work hours allocation (date_str → hours)
         depends_on: List of task IDs that must be completed before this task can start
@@ -192,8 +192,7 @@ class Task:
             True if task should be included in workload
 
         Business Rules:
-            - Exclude COMPLETED tasks (work already done)
-            - Exclude ARCHIVED tasks (historical records)
+            - Exclude finished tasks (COMPLETED, CANCELED)
             - Include PENDING and IN_PROGRESS tasks
         """
         return not self.is_finished

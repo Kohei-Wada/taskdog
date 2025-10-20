@@ -122,8 +122,8 @@ class TaskdogTUI(App):
         # Reload tasks from file to detect external changes
         self.repository.reload()
 
-        # Get all non-archived tasks (PENDING, IN_PROGRESS, FAILED, COMPLETED)
-        # ARCHIVED tasks are excluded from display
+        # Get all non-deleted tasks (PENDING, IN_PROGRESS, COMPLETED, CANCELED)
+        # Deleted tasks are excluded from display
         non_archived_filter = NonArchivedFilter()
         tasks = self.query_service.get_filtered_tasks(non_archived_filter, sort_by="planned_start")
 

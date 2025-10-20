@@ -7,7 +7,6 @@ from application.dto.archive_task_input import ArchiveTaskInput
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
-from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
@@ -21,22 +20,22 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         self.temp_file.close()
 
         self.repository = JsonTaskRepository(self.temp_file.name)
-        self.time_tracker = TimeTracker()
-        self.use_case = ArchiveTaskUseCase(self.repository, self.time_tracker)
+        self.use_case = ArchiveTaskUseCase(self.repository)
 
     def test_archive_task(self):
-        """Test archiving a task."""
+        """Test archiving a task sets is_deleted flag."""
         # Create task
         task = self.repository.create(name="Test Task", priority=1)
+        self.assertFalse(task.is_deleted)
 
         # Archive task
         input_dto = ArchiveTaskInput(task_id=task.id)
         self.use_case.execute(input_dto)
 
-        # Verify task archived
+        # Verify task archived (is_deleted = True)
         archived_task = self.repository.get_by_id(task.id)
         self.assertIsNotNone(archived_task)
-        self.assertEqual(archived_task.status, TaskStatus.ARCHIVED)
+        self.assertTrue(archived_task.is_deleted)
         self.assertEqual(archived_task.daily_allocations, {})
 
     def test_archive_task_with_allocations(self):
@@ -50,9 +49,9 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         input_dto = ArchiveTaskInput(task_id=task.id)
         self.use_case.execute(input_dto)
 
-        # Verify allocations cleared
+        # Verify allocations cleared and is_deleted set
         archived_task = self.repository.get_by_id(task.id)
-        self.assertEqual(archived_task.status, TaskStatus.ARCHIVED)
+        self.assertTrue(archived_task.is_deleted)
         self.assertEqual(archived_task.daily_allocations, {})
 
     def test_archive_nonexistent_task(self):
@@ -75,9 +74,10 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         input_dto = ArchiveTaskInput(task_id=task.id)
         self.use_case.execute(input_dto)
 
-        # Verify task archived
+        # Verify task archived (is_deleted set, status unchanged)
         archived_task = self.repository.get_by_id(task.id)
-        self.assertEqual(archived_task.status, TaskStatus.ARCHIVED)
+        self.assertTrue(archived_task.is_deleted)
+        self.assertEqual(archived_task.status, TaskStatus.COMPLETED)
 
     def test_archive_in_progress_task(self):
         """Test archiving an in-progress task."""
@@ -90,9 +90,10 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         input_dto = ArchiveTaskInput(task_id=task.id)
         self.use_case.execute(input_dto)
 
-        # Verify task archived
+        # Verify task archived (is_deleted set, status unchanged)
         archived_task = self.repository.get_by_id(task.id)
-        self.assertEqual(archived_task.status, TaskStatus.ARCHIVED)
+        self.assertTrue(archived_task.is_deleted)
+        self.assertEqual(archived_task.status, TaskStatus.IN_PROGRESS)
 
 
 if __name__ == "__main__":

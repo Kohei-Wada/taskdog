@@ -93,7 +93,7 @@ class StatusChangeUseCase[TInput: StatusChangeInput](UseCase[TInput, Task], ABC)
         Subclasses must implement this to specify which status to transition to.
 
         Returns:
-            The target TaskStatus (e.g., IN_PROGRESS, COMPLETED, ARCHIVED)
+            The target TaskStatus (e.g., IN_PROGRESS, COMPLETED, CANCELED)
         """
         pass
 

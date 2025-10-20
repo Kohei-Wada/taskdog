@@ -59,25 +59,15 @@ class TestStatusValidator(unittest.TestCase):
         self.assertEqual(context.exception.task_id, 1)
         self.assertEqual(context.exception.status, "COMPLETED")
 
-    def test_validate_failed_to_in_progress_raises_error(self):
-        """Test that FAILED task cannot be restarted."""
-        task = Task(id=1, name="Test", status=TaskStatus.FAILED, priority=1)
+    def test_validate_canceled_to_in_progress_raises_error(self):
+        """Test that CANCELED task cannot be restarted."""
+        task = Task(id=1, name="Test", status=TaskStatus.CANCELED, priority=1)
 
         with self.assertRaises(TaskAlreadyFinishedError) as context:
             self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)
 
         self.assertEqual(context.exception.task_id, 1)
-        self.assertEqual(context.exception.status, "FAILED")
-
-    def test_validate_archived_to_in_progress_raises_error(self):
-        """Test that ARCHIVED task cannot be restarted."""
-        task = Task(id=1, name="Test", status=TaskStatus.ARCHIVED, priority=1)
-
-        with self.assertRaises(TaskAlreadyFinishedError) as context:
-            self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)
-
-        self.assertEqual(context.exception.task_id, 1)
-        self.assertEqual(context.exception.status, "ARCHIVED")
+        self.assertEqual(context.exception.status, "CANCELED")
 
     def test_validate_completed_to_pending_raises_error(self):
         """Test that COMPLETED task cannot be paused."""
@@ -89,25 +79,15 @@ class TestStatusValidator(unittest.TestCase):
         self.assertEqual(context.exception.task_id, 1)
         self.assertEqual(context.exception.status, "COMPLETED")
 
-    def test_validate_failed_to_completed_raises_error(self):
-        """Test that FAILED task cannot transition to COMPLETED."""
-        task = Task(id=1, name="Test", status=TaskStatus.FAILED, priority=1)
+    def test_validate_canceled_to_completed_raises_error(self):
+        """Test that CANCELED task cannot transition to COMPLETED."""
+        task = Task(id=1, name="Test", status=TaskStatus.CANCELED, priority=1)
 
         with self.assertRaises(TaskAlreadyFinishedError) as context:
             self.validator.validate(TaskStatus.COMPLETED, task, self.mock_repository)
 
         self.assertEqual(context.exception.task_id, 1)
-        self.assertEqual(context.exception.status, "FAILED")
-
-    def test_validate_archived_to_completed_raises_error(self):
-        """Test that ARCHIVED task cannot transition to COMPLETED."""
-        task = Task(id=1, name="Test", status=TaskStatus.ARCHIVED, priority=1)
-
-        with self.assertRaises(TaskAlreadyFinishedError) as context:
-            self.validator.validate(TaskStatus.COMPLETED, task, self.mock_repository)
-
-        self.assertEqual(context.exception.task_id, 1)
-        self.assertEqual(context.exception.status, "ARCHIVED")
+        self.assertEqual(context.exception.status, "CANCELED")
 
 
 if __name__ == "__main__":
