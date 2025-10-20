@@ -13,6 +13,7 @@ from presentation.constants.table_dimensions import (
     PAGE_SCROLL_SIZE,
     TASK_NAME_MAX_DISPLAY_LENGTH,
     TASK_TABLE_DEADLINE_WIDTH,
+    TASK_TABLE_DEPENDS_ON_WIDTH,
     TASK_TABLE_DURATION_WIDTH,
     TASK_TABLE_ID_WIDTH,
     TASK_TABLE_NAME_WIDTH,
@@ -48,6 +49,7 @@ class TaskTable(DataTable):
         self.add_column("Name", width=TASK_TABLE_NAME_WIDTH)
         self.add_column("Pri", width=TASK_TABLE_PRIORITY_WIDTH)
         self.add_column("Status", width=TASK_TABLE_STATUS_WIDTH)
+        self.add_column("Deps", width=TASK_TABLE_DEPENDS_ON_WIDTH)
         self.add_column("Duration", width=TASK_TABLE_DURATION_WIDTH)
         self.add_column("Deadline", width=TASK_TABLE_DEADLINE_WIDTH)
         self.add_column("Note", width=TASK_TABLE_NOTE_WIDTH)
@@ -73,6 +75,9 @@ class TaskTable(DataTable):
             # Format deadline
             deadline = self._format_deadline(task.deadline)
 
+            # Format dependencies
+            dependencies = self._format_dependencies(task)
+
             # Check if task has notes
             note_indicator = EMOJI_NOTE if task.has_note else ""
 
@@ -86,6 +91,7 @@ class TaskTable(DataTable):
                 ),
                 str(task.priority),
                 status_styled,
+                dependencies,
                 duration,
                 deadline,
                 note_indicator,
@@ -155,6 +161,19 @@ class TaskTable(DataTable):
             parts.append(f"A:{task.actual_duration_hours}h")
 
         return " ".join(parts)
+
+    def _format_dependencies(self, task: Task) -> str:
+        """Format task dependencies for display.
+
+        Args:
+            task: Task to extract dependencies from
+
+        Returns:
+            Formatted dependencies string (e.g., "1,2,3" or "-")
+        """
+        if not task.depends_on:
+            return "-"
+        return ",".join(str(dep_id) for dep_id in task.depends_on)
 
     def _format_deadline(self, deadline: str | None) -> str:
         """Format deadline for display.
