@@ -8,6 +8,7 @@ like task selection, date range adjustment, and filtering.
 from datetime import date, timedelta
 from typing import ClassVar
 
+from rich.text import Text
 from textual.binding import Binding
 from textual.widgets import DataTable
 
@@ -32,7 +33,12 @@ from presentation.constants.table_dimensions import (
     GANTT_TABLE_ID_WIDTH,
     GANTT_TABLE_TASK_MIN_WIDTH,
 )
-from shared.constants import SATURDAY, SUNDAY
+from shared.constants import (
+    SATURDAY,
+    SUNDAY,
+    WORKLOAD_COMFORTABLE_HOURS,
+    WORKLOAD_MODERATE_HOURS,
+)
 from shared.utils.date_utils import DateTimeParser
 
 
@@ -62,6 +68,9 @@ class GanttDataTable(DataTable):
         self.cursor_type = "row"
         self.zebra_stripes = True
 
+        # Remove cell padding to match CLI spacing (no extra spaces between dates)
+        self.styles.padding = (0, 0)
+
         # Internal state
         self._task_map: dict[int, Task] = {}  # Maps row index to Task
         self._gantt_result: GanttResult | None = None
@@ -72,7 +81,7 @@ class GanttDataTable(DataTable):
         start_date: date,
         end_date: date,
     ):
-        """Set up table columns including dynamic date columns.
+        """Set up table columns including Timeline column.
 
         Args:
             start_date: Start date of the chart
@@ -87,15 +96,15 @@ class GanttDataTable(DataTable):
         self.add_column("Task", width=GANTT_TABLE_TASK_MIN_WIDTH)
         self.add_column("Est[h]", width=GANTT_TABLE_EST_HOURS_WIDTH)
 
-        # Add date columns (3 characters per day: "16 ")
+        # Add single Timeline column (contains all dates)
+        # Store date range for later use
         days = (end_date - start_date).days + 1
         for day_offset in range(days):
             current_date = start_date + timedelta(days=day_offset)
             self._date_columns.append(current_date)
 
-            # Column header shows day number
-            day_str = f"{current_date.day}"
-            self.add_column(day_str, width=3)
+        # Single Timeline column
+        self.add_column("Timeline")
 
     def load_gantt(self, gantt_result: GanttResult):
         """Load Gantt data into the table.
@@ -130,7 +139,7 @@ class GanttDataTable(DataTable):
                 gantt_result.date_range.start_date,
                 gantt_result.date_range.end_date,
             )
-            self._task_map[idx + 3] = task  # +3 because of header rows
+            self._task_map[idx + 1] = task  # +1 because of 1 header row
 
         # Add workload summary row
         self._add_workload_row(
@@ -140,7 +149,7 @@ class GanttDataTable(DataTable):
         )
 
     def _add_date_header_rows(self, start_date: date, end_date: date):
-        """Add date header rows (Month, Today marker, Day).
+        """Add date header rows (Month, Today marker, Day) as a single multi-line row.
 
         Args:
             start_date: Start date of the chart
@@ -148,14 +157,18 @@ class GanttDataTable(DataTable):
         """
         days = (end_date - start_date).days + 1
 
-        # Build three header rows
-        month_row = ["", "[dim]Month[/dim]", ""]
-        today_row = ["", "[dim]Today[/dim]", ""]
-        day_row = ["", "[dim]Day[/dim]", ""]
+        # Build multi-line cells for each column
+        fixed_columns = ["", "[dim]Date[/dim]", ""]
+
+        # Build each line as Rich Text objects for proper width calculation
+        month_line = Text()
+        today_line = Text()
+        day_line = Text()
 
         current_month = None
         today = date.today()
 
+        # Build each line separately
         for day_offset in range(days):
             current_date = start_date + timedelta(days=day_offset)
             month = current_date.month
@@ -163,34 +176,41 @@ class GanttDataTable(DataTable):
             weekday = current_date.weekday()
             is_today = current_date == today
 
-            # Month row: show month abbreviation when it changes
+            # Month line: show month abbreviation when it changes
             if month != current_month:
                 month_str = current_date.strftime("%b")
-                month_row.append(f"[bold yellow]{month_str}[/bold yellow]")
+                month_line.append(month_str, style="bold yellow")
                 current_month = month
             else:
-                month_row.append("[dim]   [/dim]")
+                month_line.append("   ", style="dim")
 
-            # Today marker row
+            # Today marker line
             if is_today:
-                today_row.append(f"[bold yellow]{SYMBOL_TODAY}[/bold yellow]")
+                today_line.append(f" {SYMBOL_TODAY} ", style="bold yellow")
             else:
-                today_row.append("[dim] [/dim]")
+                today_line.append("   ", style="dim")
 
-            # Day row with weekday coloring
-            day_str = f"{day:2d}"
+            # Day line with consistent spacing
+            day_str = f"{day:2d} "
             if weekday == SATURDAY:
                 day_style = DAY_STYLE_SATURDAY
             elif weekday == SUNDAY:
                 day_style = DAY_STYLE_SUNDAY
             else:
                 day_style = DAY_STYLE_WEEKDAY
-            day_row.append(f"[{day_style}]{day_str}[/{day_style}]")
+            day_line.append(day_str, style=day_style)
 
-        # Add rows to table
-        self.add_row(*month_row)
-        self.add_row(*today_row)
-        self.add_row(*day_row)
+        # Combine all three lines with newlines
+        timeline_text = Text()
+        timeline_text.append_text(month_line)
+        timeline_text.append("\n")
+        timeline_text.append_text(today_line)
+        timeline_text.append("\n")
+        timeline_text.append_text(day_line)
+
+        # Add single row with multi-line timeline cell
+        row_data = fixed_columns + [timeline_text]
+        self.add_row(*row_data)
 
     def _add_task_row(
         self,
@@ -207,42 +227,39 @@ class GanttDataTable(DataTable):
             start_date: Start date of the chart
             end_date: End date of the chart
         """
-        # Build row data
-        row_data = []
-
         # Fixed columns
-        row_data.append(str(task.id))
+        task_id = str(task.id)
 
         # Task name with strikethrough for completed tasks
         task_name = task.name
         if task.status == TaskStatus.COMPLETED:
             task_name = f"[strike]{task_name}[/strike]"
-        row_data.append(task_name)
 
         # Estimated hours
         if task.estimated_duration:
-            row_data.append(f"{task.estimated_duration:.1f}")
+            est_hours = f"{task.estimated_duration:.1f}"
         else:
-            row_data.append("-")
+            est_hours = "-"
 
-        # Timeline cells
+        # Build timeline as Rich Text object
         days = (end_date - start_date).days + 1
         parsed_dates = self._parse_task_dates(task)
+        timeline = Text()
 
         for day_offset in range(days):
             current_date = start_date + timedelta(days=day_offset)
             hours = task_daily_hours.get(current_date, 0.0)
 
-            # Format cell
-            cell_text = self._format_timeline_cell(
+            # Add formatted cell to timeline Text object
+            self._append_timeline_cell(
+                timeline,
                 current_date,
                 hours,
                 parsed_dates,
                 task.status,
             )
-            row_data.append(cell_text)
 
-        self.add_row(*row_data)
+        self.add_row(task_id, task_name, est_hours, timeline)
 
     def _add_workload_row(
         self,
@@ -257,54 +274,52 @@ class GanttDataTable(DataTable):
             start_date: Start date of the chart
             end_date: End date of the chart
         """
-        row_data = []
+        import math
 
         # Fixed columns
-        row_data.append("")
-        row_data.append("[bold yellow]Workload[h][/bold yellow]")
-        row_data.append("")
+        workload_id = ""
+        workload_label = "[bold yellow]Workload[h][/bold yellow]"
+        workload_est = ""
 
-        # Workload cells
+        # Build workload timeline as Rich Text object
         days = (end_date - start_date).days + 1
+        workload_timeline = Text()
+
         for day_offset in range(days):
             current_date = start_date + timedelta(days=day_offset)
             hours = daily_workload.get(current_date, 0.0)
-
-            # Format with color based on workload level
-            import math
-
             hours_ceiled = math.ceil(hours)
 
+            # Format as 3-character right-aligned string (e.g., "  0", "  3")
+            cell_text = f"{hours_ceiled:2d} "
+
             if hours == 0:
-                cell_text = "[dim]-[/dim]"
-            elif hours <= 6:  # Comfortable
-                cell_text = f"[bold green]{hours_ceiled}[/bold green]"
-            elif hours <= 8:  # Moderate
-                cell_text = f"[bold yellow]{hours_ceiled}[/bold yellow]"
-            else:  # Heavy
-                cell_text = f"[bold red]{hours_ceiled}[/bold red]"
+                workload_timeline.append(cell_text)
+            elif hours <= WORKLOAD_COMFORTABLE_HOURS:  # Comfortable (6.0)
+                workload_timeline.append(cell_text, style="bold green")
+            elif hours <= WORKLOAD_MODERATE_HOURS:  # Moderate (8.0)
+                workload_timeline.append(cell_text, style="bold yellow")
+            else:  # Heavy (>8.0)
+                workload_timeline.append(cell_text, style="bold red")
 
-            row_data.append(cell_text)
+        self.add_row(workload_id, workload_label, workload_est, workload_timeline)
 
-        self.add_row(*row_data)
-
-    def _format_timeline_cell(
+    def _append_timeline_cell(
         self,
+        timeline: Text,
         current_date: date,
         hours: float,
         parsed_dates: dict,
         status: str,
-    ) -> str:
-        """Format a single timeline cell with styling.
+    ):
+        """Append a single timeline cell to the Text object.
 
         Args:
+            timeline: Text object to append to
             current_date: Date of the cell
             hours: Allocated hours for this date
             parsed_dates: Dictionary of parsed task dates
             status: Task status
-
-        Returns:
-            Formatted cell text with Rich markup
         """
         # Check if date is in special periods
         is_planned = self._is_in_date_range(
@@ -339,27 +354,31 @@ class GanttDataTable(DataTable):
         if is_actual:
             symbol = SYMBOL_ACTUAL
             status_color = self._get_status_color(status)
+            # Append with proper styling: " ◆ " (3 display chars)
+            display = f" {symbol} "
             if bg_color:
-                return f"[{status_color} on {bg_color}]{symbol}[/{status_color} on {bg_color}]"
+                timeline.append(display, style=f"{status_color} on {bg_color}")
             else:
-                return f"[{status_color}]{symbol}[/{status_color}]"
+                timeline.append(display, style=status_color)
+            return
 
         # Layer 1: Show hours (for planned or deadline without actual)
         # COMPLETED tasks: hide planned hours
         if hours > 0 and status != TaskStatus.COMPLETED:
-            # Format: "4 " or "2.5"
+            # Format as 3 characters, right-aligned (e.g., "  3", "2.5")
             if hours == int(hours):
-                display = f"{int(hours):2d}"
+                display = f"{int(hours):2d} "
             else:
                 display = f"{hours:3.1f}"
         else:
-            display = SYMBOL_EMPTY  # "·"
+            # Use SYMBOL_EMPTY which is already " · " (3 chars)
+            display = SYMBOL_EMPTY
 
         # Apply background color
         if bg_color:
-            return f"[on {bg_color}]{display}[/on {bg_color}]"
+            timeline.append(display, style=f"on {bg_color}")
         else:
-            return f"[dim]{display}[/dim]"
+            timeline.append(display, style="dim")
 
     def _parse_task_dates(self, task: Task) -> dict:
         """Parse all task dates into a dictionary.
@@ -439,29 +458,47 @@ class GanttDataTable(DataTable):
         Returns:
             The selected Task, or None if no task is selected
         """
-        if self.cursor_row < 0 or self.cursor_row >= len(self._task_map) + 3:
+        if self.cursor_row < 0 or self.cursor_row >= len(self._task_map) + 1:
             return None
         return self._task_map.get(self.cursor_row)
 
     def action_scroll_home(self) -> None:
         """Move cursor to top (g key)."""
-        if self.row_count > 3:  # Skip header rows
-            self.move_cursor(row=3)
+        if self.row_count > 1:  # Skip header row
+            self.move_cursor(row=1)
 
     def action_scroll_end(self) -> None:
         """Move cursor to bottom (G key)."""
-        if self.row_count > 3:
+        if self.row_count > 1:
             # Move to last task row (before workload row)
             self.move_cursor(row=self.row_count - 2)
 
     def action_page_down(self) -> None:
         """Move cursor down by half page (Ctrl+d)."""
-        if self.row_count > 3:
+        if self.row_count > 1:
             new_row = min(self.cursor_row + 10, self.row_count - 2)
             self.move_cursor(row=new_row)
 
     def action_page_up(self) -> None:
         """Move cursor up by half page (Ctrl+u)."""
-        if self.row_count > 3:
-            new_row = max(self.cursor_row - 10, 3)
+        if self.row_count > 1:
+            new_row = max(self.cursor_row - 10, 1)
             self.move_cursor(row=new_row)
+
+    def get_legend_text(self) -> str:
+        """Build legend text for the Gantt chart.
+
+        Returns:
+            Rich-formatted legend text
+        """
+        legend_parts = [
+            "[bold yellow]Legend:[/bold yellow]",
+            f"[on {BACKGROUND_COLOR}]   [/on {BACKGROUND_COLOR}] Planned",
+            f"[bold blue]{SYMBOL_ACTUAL}[/bold blue] Actual (IN_PROGRESS)",
+            f"[bold green]{SYMBOL_ACTUAL}[/bold green] Actual (COMPLETED)",
+            f"[on {BACKGROUND_COLOR_DEADLINE}]   [/on {BACKGROUND_COLOR_DEADLINE}] Deadline",
+            f"[bold yellow]{SYMBOL_TODAY}[/bold yellow] Today",
+            f"[on {BACKGROUND_COLOR_SATURDAY}]   [/on {BACKGROUND_COLOR_SATURDAY}] Saturday",
+            f"[on {BACKGROUND_COLOR_SUNDAY}]   [/on {BACKGROUND_COLOR_SUNDAY}] Sunday",
+        ]
+        return "  ".join(legend_parts)

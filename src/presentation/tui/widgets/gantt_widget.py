@@ -41,6 +41,7 @@ class GanttWidget(Static):
         self._start_date: date | None = None
         self._end_date: date | None = None
         self._gantt_table: GanttDataTable | None = None
+        self._legend_widget: Static | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the widget layout.
@@ -50,6 +51,10 @@ class GanttWidget(Static):
         """
         self._gantt_table = GanttDataTable()
         yield self._gantt_table
+
+        # Legend below the table
+        self._legend_widget = Static("")
+        yield self._legend_widget
 
     def update_gantt(
         self,
@@ -138,11 +143,20 @@ class GanttWidget(Static):
         # Load data into the GanttDataTable
         try:
             self._gantt_table.load_gantt(gantt_result)
+
+            # Update legend
+            if self._legend_widget:
+                legend_text = self._gantt_table.get_legend_text()
+                self._legend_widget.update(legend_text)
         except Exception as e:
             # Show error message
             self._gantt_table.clear(columns=True)
             self._gantt_table.add_column("Error")
             self._gantt_table.add_row(f"[red]Error rendering gantt: {e!s}[/red]")
+
+            # Clear legend on error
+            if self._legend_widget:
+                self._legend_widget.update("")
 
     def on_resize(self):
         """Handle resize events."""
