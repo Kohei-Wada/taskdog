@@ -164,6 +164,7 @@ packages = [
   "presentation.tui",
   "presentation.tui.commands",
   "presentation.tui.forms",
+  "presentation.tui.helpers",
   "presentation.tui.mixins",
   "presentation.tui.screens",
   "presentation.tui.services",
