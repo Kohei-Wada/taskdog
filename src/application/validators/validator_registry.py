@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from application.validators.datetime_validator import DateTimeValidator
 from application.validators.field_validator import FieldValidator
 from application.validators.status_validator import StatusValidator
 from domain.entities.task import Task
@@ -28,6 +29,9 @@ class TaskFieldValidatorRegistry:
     def _register_validators(self) -> None:
         """Register all field validators."""
         self._validators["status"] = StatusValidator()
+        self._validators["deadline"] = DateTimeValidator("deadline")
+        self._validators["planned_start"] = DateTimeValidator("planned_start")
+        self._validators["planned_end"] = DateTimeValidator("planned_end")
 
     def validate_field(self, field_name: str, value: Any, task: Task) -> None:
         """Validate a field value if a validator exists for that field.

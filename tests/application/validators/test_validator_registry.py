@@ -20,6 +20,12 @@ class TestTaskFieldValidatorRegistry(unittest.TestCase):
         """Test that status validator is registered on initialization."""
         self.assertTrue(self.registry.has_validator("status"))
 
+    def test_init_registers_datetime_validators(self):
+        """Test that datetime validators are registered on initialization."""
+        self.assertTrue(self.registry.has_validator("deadline"))
+        self.assertTrue(self.registry.has_validator("planned_start"))
+        self.assertTrue(self.registry.has_validator("planned_end"))
+
     def test_has_validator_returns_true_for_registered_field(self):
         """Test has_validator returns True for registered field."""
         self.assertTrue(self.registry.has_validator("status"))
@@ -28,7 +34,7 @@ class TestTaskFieldValidatorRegistry(unittest.TestCase):
         """Test has_validator returns False for unregistered field."""
         self.assertFalse(self.registry.has_validator("name"))
         self.assertFalse(self.registry.has_validator("priority"))
-        self.assertFalse(self.registry.has_validator("deadline"))
+        self.assertFalse(self.registry.has_validator("estimated_duration"))
 
     def test_validate_field_calls_status_validator(self):
         """Test validate_field calls status validator for status field."""

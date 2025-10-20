@@ -1,9 +1,11 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime, timedelta
 
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
+from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from domain.services.time_tracker import TimeTracker
@@ -60,10 +62,12 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskInput(task_id=task.id, planned_start="2025-10-12 09:00:00")
+        # Use future date
+        future_date = (datetime.now() + timedelta(days=7)).strftime(DATETIME_FORMAT)
+        input_dto = UpdateTaskInput(task_id=task.id, planned_start=future_date)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
-        self.assertEqual(result_task.planned_start, "2025-10-12 09:00:00")
+        self.assertEqual(result_task.planned_start, future_date)
         self.assertIn("planned_start", updated_fields)
         self.assertEqual(len(updated_fields), 1)
 
@@ -73,10 +77,12 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskInput(task_id=task.id, planned_end="2025-10-12 18:00:00")
+        # Use future date
+        future_date = (datetime.now() + timedelta(days=14)).strftime(DATETIME_FORMAT)
+        input_dto = UpdateTaskInput(task_id=task.id, planned_end=future_date)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
-        self.assertEqual(result_task.planned_end, "2025-10-12 18:00:00")
+        self.assertEqual(result_task.planned_end, future_date)
         self.assertIn("planned_end", updated_fields)
         self.assertEqual(len(updated_fields), 1)
 
@@ -86,10 +92,12 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskInput(task_id=task.id, deadline="2025-10-15 18:00:00")
+        # Use future date
+        future_date = (datetime.now() + timedelta(days=30)).strftime(DATETIME_FORMAT)
+        input_dto = UpdateTaskInput(task_id=task.id, deadline=future_date)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
-        self.assertEqual(result_task.deadline, "2025-10-15 18:00:00")
+        self.assertEqual(result_task.deadline, future_date)
         self.assertIn("deadline", updated_fields)
         self.assertEqual(len(updated_fields), 1)
 
@@ -112,16 +120,18 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
+        # Use future date
+        future_date = (datetime.now() + timedelta(days=7)).strftime(DATETIME_FORMAT)
         input_dto = UpdateTaskInput(
             task_id=task.id,
             priority=2,
-            planned_start="2025-10-12 10:00:00",
+            planned_start=future_date,
             estimated_duration=3.0,
         )
         result_task, updated_fields = self.use_case.execute(input_dto)
 
         self.assertEqual(result_task.priority, 2)
-        self.assertEqual(result_task.planned_start, "2025-10-12 10:00:00")
+        self.assertEqual(result_task.planned_start, future_date)
         self.assertEqual(result_task.estimated_duration, 3.0)
         self.assertEqual(len(updated_fields), 3)
         self.assertIn("priority", updated_fields)

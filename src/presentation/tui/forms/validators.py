@@ -109,7 +109,7 @@ class DeadlineValidator:
             # Convert to the standard format YYYY-MM-DD HH:MM:SS
             formatted_deadline = parsed_date.strftime("%Y-%m-%d %H:%M:%S")
             return ValidationResult(is_valid=True, error_message="", value=formatted_deadline)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, OverflowError):
             return ValidationResult(
                 is_valid=False,
                 error_message="Invalid deadline format. Examples: 2025-12-31, tomorrow 6pm",
