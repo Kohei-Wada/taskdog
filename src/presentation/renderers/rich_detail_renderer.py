@@ -52,6 +52,15 @@ class RichDetailRenderer:
         status_style = STATUS_STYLES.get(task.status, "white")
         table.add_row("Status", f"[{status_style}]{task.status.value}[/{status_style}]")
 
+        # Fixed flag
+        if task.is_fixed:
+            table.add_row("Fixed", "[yellow]Yes (won't be rescheduled)[/yellow]")
+
+        # Dependencies
+        if task.depends_on:
+            deps_str = ", ".join(str(dep_id) for dep_id in task.depends_on)
+            table.add_row("Depends On", f"[cyan]{deps_str}[/cyan]")
+
         # Timestamps
         table.add_row("Created", task.created_at_str)
 

@@ -4,6 +4,7 @@ from rich.console import Console
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.cli.commands.add import add_command
+from presentation.cli.commands.add_dependency import add_dependency_command
 from presentation.cli.commands.cancel import cancel_command
 from presentation.cli.commands.deadline import deadline_command
 from presentation.cli.commands.done import done_command
@@ -14,6 +15,7 @@ from presentation.cli.commands.note import note_command
 from presentation.cli.commands.optimize import optimize_command
 from presentation.cli.commands.pause import pause_command
 from presentation.cli.commands.priority import priority_command
+from presentation.cli.commands.remove_dependency import remove_dependency_command
 from presentation.cli.commands.rename import rename_command
 from presentation.cli.commands.restore import restore_command
 from presentation.cli.commands.rm import rm_command
@@ -67,6 +69,7 @@ def cli(ctx):
 
 
 cli.add_command(add_command)
+cli.add_command(add_dependency_command)
 cli.add_command(table_command)
 cli.add_command(export_command)
 cli.add_command(rm_command)
@@ -81,6 +84,7 @@ cli.add_command(note_command)
 cli.add_command(show_command)
 cli.add_command(deadline_command)
 cli.add_command(priority_command)
+cli.add_command(remove_dependency_command)
 cli.add_command(rename_command)
 cli.add_command(restore_command)
 cli.add_command(estimate_command)
