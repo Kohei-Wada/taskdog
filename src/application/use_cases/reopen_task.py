@@ -2,9 +2,9 @@
 
 from application.dto.reopen_task_input import ReopenTaskInput
 from application.use_cases.base import UseCase
+from application.validators.dependency_validator import DependencyValidator
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import (
-    DependencyNotMetError,
     TaskNotFoundException,
     TaskValidationError,
 )
@@ -58,23 +58,7 @@ class ReopenTaskUseCase(UseCase[ReopenTaskInput, Task]):
         Raises:
             DependencyNotMetError: If any dependency is not completed
         """
-        if not task.depends_on:
-            return  # No dependencies to check
-
-        unmet_dependency_ids = []
-        for dep_id in task.depends_on:
-            dep_task = self.repository.get_by_id(dep_id)
-            if dep_task is None or dep_task.status != TaskStatus.COMPLETED:
-                # Dependency doesn't exist or is not completed
-                unmet_dependency_ids.append(dep_id)
-
-        if unmet_dependency_ids:
-            # task.id should always be set at this point, but mypy needs the assertion
-            assert task.id is not None
-            raise DependencyNotMetError(
-                task_id=task.id,
-                unmet_dependencies=unmet_dependency_ids,
-            )
+        DependencyValidator.validate_dependencies_met(task, self.repository)
 
     def execute(self, input_dto: ReopenTaskInput) -> Task:
         """Execute task reopening.

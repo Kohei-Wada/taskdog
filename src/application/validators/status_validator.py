@@ -1,9 +1,9 @@
 """Validator for status field."""
 
+from application.validators.dependency_validator import DependencyValidator
 from application.validators.field_validator import FieldValidator
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import (
-    DependencyNotMetError,
     TaskAlreadyFinishedError,
     TaskNotStartedError,
 )
@@ -43,18 +43,7 @@ class StatusValidator(FieldValidator):
             raise TaskAlreadyFinishedError(task.id, task.status.value)
 
         # Check dependencies: all dependencies must be COMPLETED
-        if task.depends_on:
-            unmet_dependency_ids = []
-            for dep_id in task.depends_on:
-                dep_task = repository.get_by_id(dep_id)
-                if dep_task is None or dep_task.status != TaskStatus.COMPLETED:
-                    unmet_dependency_ids.append(dep_id)
-
-            if unmet_dependency_ids:
-                raise DependencyNotMetError(
-                    task_id=task.id,
-                    unmet_dependencies=unmet_dependency_ids,
-                )
+        DependencyValidator.validate_dependencies_met(task, repository)
 
     def _validate_can_be_completed(self, task: Task) -> None:
         # task.id is guaranteed non-None as validator is only called after
