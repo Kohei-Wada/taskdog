@@ -206,4 +206,5 @@ class GanttWidget(Static):
     def on_resize(self):
         """Handle resize events."""
         if self._tasks:
-            self._render_gantt()
+            # Schedule re-render after the resize completes
+            self.call_after_refresh(self._render_gantt)
