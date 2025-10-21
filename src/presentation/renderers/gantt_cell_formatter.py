@@ -1,0 +1,293 @@
+"""Common formatting logic for Gantt chart rendering.
+
+This module provides shared formatting utilities used by both CLI and TUI
+Gantt chart implementations, eliminating code duplication and ensuring
+consistent visualization across different interfaces.
+"""
+
+import math
+from datetime import date, timedelta
+
+from rich.text import Text
+
+from domain.entities.task import Task, TaskStatus
+from presentation.constants.colors import (
+    DAY_STYLE_SATURDAY,
+    DAY_STYLE_SUNDAY,
+    DAY_STYLE_WEEKDAY,
+    STATUS_COLORS_BOLD,
+)
+from presentation.constants.symbols import (
+    BACKGROUND_COLOR,
+    BACKGROUND_COLOR_DEADLINE,
+    BACKGROUND_COLOR_SATURDAY,
+    BACKGROUND_COLOR_SUNDAY,
+    SYMBOL_ACTUAL,
+    SYMBOL_EMPTY,
+    SYMBOL_TODAY,
+)
+from shared.constants import (
+    SATURDAY,
+    SUNDAY,
+    WORKLOAD_COMFORTABLE_HOURS,
+    WORKLOAD_MODERATE_HOURS,
+)
+from shared.utils.date_utils import DateTimeParser
+
+
+class GanttCellFormatter:
+    """Formatter for Gantt chart cells and headers.
+
+    This class provides static methods for formatting Gantt chart components
+    that are shared between CLI (Rich Table) and TUI (Textual DataTable).
+    All methods are stateless and return Rich Text objects or tuples.
+    """
+
+    @staticmethod
+    def format_timeline_cell(
+        current_date: date,
+        hours: float,
+        parsed_dates: dict,
+        status: TaskStatus,
+    ) -> tuple[str, str]:
+        """Format a single timeline cell with daily hours and styling.
+
+        Args:
+            current_date: Date of the cell
+            hours: Allocated hours for this date
+            parsed_dates: Dictionary of parsed task dates (from parse_task_dates)
+            status: Task status
+
+        Returns:
+            Tuple of (display_text, style_string)
+        """
+        # Check if date is in special periods
+        is_planned = GanttCellFormatter._is_in_date_range(
+            current_date, parsed_dates["planned_start"], parsed_dates["planned_end"]
+        )
+
+        # For actual period: if actual_end is None (IN_PROGRESS),
+        # treat actual_start to today as actual period
+        if parsed_dates["actual_start"] and not parsed_dates["actual_end"]:
+            today = date.today()
+            is_actual = parsed_dates["actual_start"] <= current_date <= today
+        else:
+            is_actual = GanttCellFormatter._is_in_date_range(
+                current_date, parsed_dates["actual_start"], parsed_dates["actual_end"]
+            )
+
+        is_deadline = parsed_dates["deadline"] and current_date == parsed_dates["deadline"]
+
+        # Determine background color
+        if is_deadline:
+            bg_color = BACKGROUND_COLOR_DEADLINE
+        elif is_planned and status != TaskStatus.COMPLETED:
+            bg_color = GanttCellFormatter._get_background_color(current_date)
+        else:
+            bg_color = None
+
+        # Layer 2: Actual period (highest priority) - use symbol
+        if is_actual:
+            display = f" {SYMBOL_ACTUAL} "
+            status_color = GanttCellFormatter.get_status_color(status)
+            style = f"{status_color} on {bg_color}" if bg_color else status_color
+            return display, style
+
+        # Layer 1: Show hours (for planned or deadline without actual)
+        # COMPLETED tasks: hide planned hours
+        if hours > 0 and status != TaskStatus.COMPLETED:
+            # Format: "4  " or "2.5" (right-aligned, 3 chars)
+            display = f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
+        else:
+            display = SYMBOL_EMPTY  # No hours allocated: " · "
+
+        # Apply background color
+        style = f"on {bg_color}" if bg_color else "dim"
+
+        return display, style
+
+    @staticmethod
+    def build_date_header_lines(start_date: date, end_date: date) -> tuple[Text, Text, Text]:
+        """Build date header lines (Month, Today marker, Day) for the timeline.
+
+        Args:
+            start_date: Start date of the chart
+            end_date: End date of the chart
+
+        Returns:
+            Tuple of three Rich Text objects (month_line, today_line, day_line)
+        """
+        days = (end_date - start_date).days + 1
+
+        # Build each line as Rich Text
+        month_line = Text()
+        today_line = Text()
+        day_line = Text()
+
+        current_month = None
+        today = date.today()
+
+        for day_offset in range(days):
+            current_date = start_date + timedelta(days=day_offset)
+            month = current_date.month
+            day = current_date.day
+            weekday = current_date.weekday()
+            is_today = current_date == today
+
+            # Line 1: Show month when it changes
+            if month != current_month:
+                month_str = current_date.strftime("%b")  # e.g., "Oct", "Nov"
+                month_line.append(month_str, style="bold yellow")
+                current_month = month
+            else:
+                month_line.append("   ", style="dim")
+
+            # Line 2: Show yellow circle marker for today
+            if is_today:
+                today_line.append(f" {SYMBOL_TODAY} ", style="bold yellow")
+            else:
+                today_line.append("   ", style="dim")
+
+            # Line 3: Show day number with color based on weekday
+            day_str = f"{day:2d} "  # Right-aligned, 2 digits + space
+            if weekday == SATURDAY:
+                day_style = DAY_STYLE_SATURDAY
+            elif weekday == SUNDAY:
+                day_style = DAY_STYLE_SUNDAY
+            else:  # Weekday
+                day_style = DAY_STYLE_WEEKDAY
+            day_line.append(day_str, style=day_style)
+
+        return month_line, today_line, day_line
+
+    @staticmethod
+    def build_workload_timeline(
+        daily_workload: dict[date, float], start_date: date, end_date: date
+    ) -> Text:
+        """Build workload summary timeline showing daily total hours.
+
+        Args:
+            daily_workload: Pre-computed daily workload totals
+            start_date: Start date of the chart
+            end_date: End date of the chart
+
+        Returns:
+            Rich Text object with workload summary
+        """
+        days = (end_date - start_date).days + 1
+
+        timeline = Text()
+        for day_offset in range(days):
+            current_date = start_date + timedelta(days=day_offset)
+            hours = daily_workload.get(current_date, 0.0)
+
+            # Ceil to round up (e.g., 4.3 -> 5, 4.0 -> 4)
+            hours_ceiled = math.ceil(hours)
+
+            # Format with consistent width (3 characters, right-aligned)
+            display = f"{hours_ceiled:2d} "
+
+            # Color based on workload level (use original hours for threshold)
+            if hours == 0:
+                style = "dim"
+            elif hours <= WORKLOAD_COMFORTABLE_HOURS:
+                style = "bold green"
+            elif hours <= WORKLOAD_MODERATE_HOURS:
+                style = "bold yellow"
+            else:
+                style = "bold red"
+
+            timeline.append(display, style=style)
+
+        return timeline
+
+    @staticmethod
+    def build_legend() -> Text:
+        """Build the legend text for the Gantt chart.
+
+        Returns:
+            Rich Text object with legend
+        """
+        legend = Text()
+        legend.append("Legend: ", style="bold yellow")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR}")
+        legend.append(" Planned  ", style="dim")
+        legend.append(SYMBOL_ACTUAL, style="bold blue")
+        legend.append(" Actual (IN_PROGRESS)  ", style="dim")
+        legend.append(SYMBOL_ACTUAL, style="bold green")
+        legend.append(" Actual (COMPLETED)  ", style="dim")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_DEADLINE}")
+        legend.append(" Deadline  ", style="dim")
+        legend.append(SYMBOL_TODAY, style="bold yellow")
+        legend.append(" Today  ", style="dim")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_SATURDAY}")
+        legend.append(" Saturday  ", style="dim")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_SUNDAY}")
+        legend.append(" Sunday", style="dim")
+        return legend
+
+    @staticmethod
+    def parse_task_dates(task: Task) -> dict:
+        """Parse all task dates into a dictionary.
+
+        Args:
+            task: Task to parse dates from
+
+        Returns:
+            Dictionary with parsed dates (planned_start, planned_end, actual_start,
+            actual_end, deadline)
+        """
+        return {
+            "planned_start": DateTimeParser.parse_date(task.planned_start),
+            "planned_end": DateTimeParser.parse_date(task.planned_end),
+            "actual_start": DateTimeParser.parse_date(task.actual_start),
+            "actual_end": DateTimeParser.parse_date(task.actual_end),
+            "deadline": DateTimeParser.parse_date(task.deadline),
+        }
+
+    @staticmethod
+    def get_status_color(status: TaskStatus) -> str:
+        """Get color for task status.
+
+        Args:
+            status: Task status
+
+        Returns:
+            Color string with bold modifier
+        """
+        # Use str(status) to handle both TaskStatus enum and string values
+        return STATUS_COLORS_BOLD.get(status, "white")
+
+    @staticmethod
+    def _is_in_date_range(current_date: date, start: date | None, end: date | None) -> bool:
+        """Check if a date is within a range.
+
+        Args:
+            current_date: Date to check
+            start: Start of range (inclusive)
+            end: End of range (inclusive)
+
+        Returns:
+            True if current_date is within range
+        """
+        if start and end:
+            return start <= current_date <= end
+        return False
+
+    @staticmethod
+    def _get_background_color(current_date: date) -> str:
+        """Get background color based on day of week.
+
+        Args:
+            current_date: Date to check
+
+        Returns:
+            Background color string (RGB)
+        """
+        weekday = current_date.weekday()
+        if weekday == SATURDAY:
+            return BACKGROUND_COLOR_SATURDAY
+        elif weekday == SUNDAY:
+            return BACKGROUND_COLOR_SUNDAY
+        else:
+            return BACKGROUND_COLOR
