@@ -1,6 +1,6 @@
 """Gantt command - Display tasks in Gantt chart format."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import click
 
@@ -12,21 +12,7 @@ from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
 from shared.click_types.datetime_with_default import DateTimeWithDefault
-
-
-def get_previous_monday(from_date=None):
-    """Get the previous Monday (or today if today is Monday).
-
-    Args:
-        from_date: Optional date to calculate from (defaults to today)
-
-    Returns:
-        date object representing the previous Monday
-    """
-    target_date = from_date or datetime.now().date()
-    # weekday(): Monday=0, Sunday=6
-    days_since_monday = target_date.weekday()
-    return target_date - timedelta(days=days_since_monday)
+from shared.utils.date_utils import get_previous_monday
 
 
 @click.command(

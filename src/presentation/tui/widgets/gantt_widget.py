@@ -25,6 +25,7 @@ from presentation.constants.table_dimensions import (
 )
 from presentation.tui.widgets.gantt_data_table import GanttDataTable
 from shared.constants.time import DAYS_PER_WEEK
+from shared.utils.date_utils import get_previous_monday
 from shared.xdg_utils import XDGDirectories
 
 
@@ -134,9 +135,8 @@ class GanttWidget(Static):
         end_date = self._end_date
 
         if not start_date and not end_date:
-            today = date.today()
-            start_date = today
-            end_date = today + timedelta(days=display_days - 1)
+            start_date = get_previous_monday()
+            end_date = start_date + timedelta(days=display_days - 1)
         elif start_date and end_date:
             date_range_days = (end_date - start_date).days + 1
             if date_range_days > display_days:

@@ -66,6 +66,21 @@ def count_weekdays(start: date, end: date) -> int:
     return weekday_count
 
 
+def get_previous_monday(from_date: date | None = None) -> date:
+    """Get the previous Monday (or today if today is Monday).
+
+    Args:
+        from_date: Optional date to calculate from (defaults to today)
+
+    Returns:
+        date object representing the previous Monday
+    """
+    target_date = from_date or date.today()
+    # weekday(): Monday=0, Sunday=6
+    days_since_monday = target_date.weekday()
+    return target_date - timedelta(days=days_since_monday)
+
+
 def get_next_weekday() -> datetime:
     """Get the next weekday (skip weekends).
 
