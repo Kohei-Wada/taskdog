@@ -1,4 +1,16 @@
-"""Utilities for parsing datetime strings."""
+"""Date and time utility functions for task scheduling.
+
+This module provides utilities for:
+- Parsing datetime strings (parse_date, parse_datetime)
+- Weekday/weekend detection (is_weekday, is_weekend)
+- Workday calculations (count_weekdays, get_previous_monday, calculate_next_workday, get_next_weekday)
+
+Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
+
+Future extension:
+- Holiday checking will be implemented as a separate HolidayChecker class
+  that depends on country configuration (e.g., Japanese holidays, US holidays).
+"""
 
 from datetime import date, datetime, timedelta
 
@@ -7,60 +19,83 @@ from shared.config_manager import ConfigManager
 from shared.constants import WEEKDAY_THRESHOLD
 
 
-class DateTimeParser:
-    """Utilities for parsing datetime strings."""
+def parse_date(date_str: str | None) -> date | None:
+    """Parse date string to date object.
 
-    @staticmethod
-    def parse_date(date_str: str | None) -> date | None:
-        """Parse date string to date object.
+    Args:
+        date_str: Date string in format YYYY-MM-DD HH:MM:SS
 
-        Args:
-            date_str: Date string in format YYYY-MM-DD HH:MM:SS
-
-        Returns:
-            date object or None if parsing fails or input is None
-        """
-        if not date_str:
-            return None
-        try:
-            dt = datetime.strptime(date_str, DATETIME_FORMAT)
-            return dt.date()
-        except ValueError:
-            return None
-
-    @staticmethod
-    def parse_datetime(date_str: str | None) -> datetime | None:
-        """Parse date string to datetime object.
-
-        Args:
-            date_str: Date string in format YYYY-MM-DD HH:MM:SS
-
-        Returns:
-            datetime object or None if parsing fails or input is None
-        """
-        if not date_str:
-            return None
-        try:
-            return datetime.strptime(date_str, DATETIME_FORMAT)
-        except ValueError:
-            return None
+    Returns:
+        date object or None if parsing fails or input is None
+    """
+    if not date_str:
+        return None
+    try:
+        dt = datetime.strptime(date_str, DATETIME_FORMAT)
+        return dt.date()
+    except ValueError:
+        return None
 
 
-def count_weekdays(start: date, end: date) -> int:
+def parse_datetime(date_str: str | None) -> datetime | None:
+    """Parse date string to datetime object.
+
+    Args:
+        date_str: Date string in format YYYY-MM-DD HH:MM:SS
+
+    Returns:
+        datetime object or None if parsing fails or input is None
+    """
+    if not date_str:
+        return None
+    try:
+        return datetime.strptime(date_str, DATETIME_FORMAT)
+    except ValueError:
+        return None
+
+
+def is_weekday(dt: datetime | date) -> bool:
+    """Check if a date is a weekday (Monday-Friday).
+
+    Args:
+        dt: Date or datetime to check
+
+    Returns:
+        True if Monday-Friday, False if Saturday-Sunday
+    """
+    return dt.weekday() < WEEKDAY_THRESHOLD
+
+
+def is_weekend(dt: datetime | date) -> bool:
+    """Check if a date is a weekend (Saturday-Sunday).
+
+    Args:
+        dt: Date or datetime to check
+
+    Returns:
+        True if Saturday-Sunday, False if Monday-Friday
+    """
+    return dt.weekday() >= WEEKDAY_THRESHOLD
+
+
+def count_weekdays(start: datetime | date, end: datetime | date) -> int:
     """Count weekdays (Monday-Friday) in a date range.
 
     Args:
-        start: Start date (inclusive)
-        end: End date (inclusive)
+        start: Start date (inclusive) - can be date or datetime
+        end: End date (inclusive) - can be date or datetime
 
     Returns:
         Number of weekdays in the range
     """
+    # Convert datetime to date for comparison
+    start_date = start.date() if isinstance(start, datetime) else start
+    end_date = end.date() if isinstance(end, datetime) else end
+
     weekday_count = 0
-    current_date = start
-    while current_date <= end:
-        # Skip weekends (Saturday and Sunday)
-        if current_date.weekday() < WEEKDAY_THRESHOLD:
+    current_date = start_date
+    while current_date <= end_date:
+        if is_weekday(current_date):
             weekday_count += 1
         current_date += timedelta(days=1)
     return weekday_count
@@ -95,8 +130,8 @@ def calculate_next_workday(start_date: datetime | None = None) -> datetime:
     """
     today = start_date if start_date else datetime.now()
 
-    # If today is a weekday (Monday=0, Friday=4), use today
-    if today.weekday() < 5:
+    # If today is a weekday, use today
+    if is_weekday(today):
         return today
 
     # Otherwise, move to next Monday
@@ -116,8 +151,8 @@ def get_next_weekday() -> datetime:
     today = datetime.now()
     next_day = today + timedelta(days=1)
 
-    # If next day is Saturday or Sunday, move to Monday
-    while next_day.weekday() >= WEEKDAY_THRESHOLD:
+    # Skip weekends - move to next Monday if needed
+    while is_weekend(next_day):
         next_day += timedelta(days=1)
 
     # Set time to default_start_hour from config (default: 9:00) for schedule start times

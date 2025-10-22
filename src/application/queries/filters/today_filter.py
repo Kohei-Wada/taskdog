@@ -4,7 +4,7 @@ from datetime import datetime
 
 from application.queries.filters.task_filter import TaskFilter
 from domain.entities.task import Task, TaskStatus
-from shared.utils.date_utils import DateTimeParser
+from shared.utils.date_utils import parse_date
 
 
 class TodayFilter(TaskFilter):
@@ -64,14 +64,14 @@ class TodayFilter(TaskFilter):
         """
         # Criterion A: Deadline is today
         if task.deadline:
-            deadline_date = DateTimeParser.parse_date(task.deadline)
+            deadline_date = parse_date(task.deadline)
             if deadline_date == today:
                 return True
 
         # Criterion B: Planned period includes today
         if task.planned_start and task.planned_end:
-            planned_start_date = DateTimeParser.parse_date(task.planned_start)
-            planned_end_date = DateTimeParser.parse_date(task.planned_end)
+            planned_start_date = parse_date(task.planned_start)
+            planned_end_date = parse_date(task.planned_end)
             if planned_start_date <= today <= planned_end_date:
                 return True
 

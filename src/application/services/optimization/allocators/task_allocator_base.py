@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.workday_utils import WorkdayUtils
+from shared.utils.date_utils import is_weekend
 
 
 class TaskAllocatorBase(ABC):
@@ -113,7 +113,7 @@ class TaskAllocatorBase(ABC):
             Next workday in specified direction
         """
         next_date = current_date + timedelta(days=direction)
-        while WorkdayUtils.is_weekend(next_date):
+        while is_weekend(next_date):
             next_date += timedelta(days=direction)
         return next_date
 

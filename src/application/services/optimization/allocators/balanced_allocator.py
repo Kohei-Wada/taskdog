@@ -6,7 +6,7 @@ from application.services.optimization.allocators.task_allocator_base import Tas
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.constants import DEFAULT_SCHEDULE_DAYS
-from shared.workday_utils import WorkdayUtils
+from shared.utils.date_utils import count_weekdays, is_weekend
 
 
 class BalancedAllocator(TaskAllocatorBase):
@@ -62,7 +62,7 @@ class BalancedAllocator(TaskAllocatorBase):
             end_date = start_date + timedelta(days=DEFAULT_SCHEDULE_DAYS)
 
         # Calculate available weekdays in the period
-        available_weekdays = WorkdayUtils.count_weekdays(start_date, end_date)
+        available_weekdays = count_weekdays(start_date, end_date)
 
         if available_weekdays == 0:
             return None
@@ -83,7 +83,7 @@ class BalancedAllocator(TaskAllocatorBase):
 
         while remaining_hours > 0 and current_date <= end_date:
             # Skip weekends
-            if WorkdayUtils.is_weekend(current_date):
+            if is_weekend(current_date):
                 current_date += timedelta(days=1)
                 continue
 

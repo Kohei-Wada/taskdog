@@ -9,7 +9,7 @@ from application.services.optimization.optimization_strategy import Optimization
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.workday_utils import WorkdayUtils
+from shared.utils.date_utils import is_weekend
 
 
 class RoundRobinOptimizationStrategy(OptimizationStrategy):
@@ -177,7 +177,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 break
 
             # Skip weekends
-            if WorkdayUtils.is_weekend(current_date):
+            if is_weekend(current_date):
                 current_date += timedelta(days=1)
                 continue
 

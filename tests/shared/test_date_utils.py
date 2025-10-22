@@ -3,7 +3,12 @@
 import unittest
 from datetime import date, datetime
 
-from shared.utils.date_utils import calculate_next_workday, get_previous_monday
+from shared.utils.date_utils import (
+    calculate_next_workday,
+    get_previous_monday,
+    is_weekday,
+    is_weekend,
+)
 
 
 class TestDateUtils(unittest.TestCase):
@@ -84,6 +89,44 @@ class TestGetPreviousMonday(unittest.TestCase):
         self.assertEqual(result.weekday(), 0)
         # Should be <= today
         self.assertLessEqual(result, date.today())
+
+
+class TestWeekdayHelpers(unittest.TestCase):
+    """Test cases for is_weekday and is_weekend helper functions."""
+
+    def test_is_weekday_monday(self):
+        """Test that Monday is a weekday."""
+        monday = date(2025, 1, 6)  # Monday
+        self.assertTrue(is_weekday(monday))
+        self.assertFalse(is_weekend(monday))
+
+    def test_is_weekday_friday(self):
+        """Test that Friday is a weekday."""
+        friday = date(2025, 1, 10)  # Friday
+        self.assertTrue(is_weekday(friday))
+        self.assertFalse(is_weekend(friday))
+
+    def test_is_weekend_saturday(self):
+        """Test that Saturday is a weekend."""
+        saturday = date(2025, 1, 4)  # Saturday
+        self.assertFalse(is_weekday(saturday))
+        self.assertTrue(is_weekend(saturday))
+
+    def test_is_weekend_sunday(self):
+        """Test that Sunday is a weekend."""
+        sunday = date(2025, 1, 5)  # Sunday
+        self.assertFalse(is_weekday(sunday))
+        self.assertTrue(is_weekend(sunday))
+
+    def test_is_weekday_with_datetime(self):
+        """Test that helper functions work with datetime objects."""
+        monday_dt = datetime(2025, 1, 6, 10, 30)  # Monday 10:30
+        saturday_dt = datetime(2025, 1, 4, 15, 45)  # Saturday 15:45
+
+        self.assertTrue(is_weekday(monday_dt))
+        self.assertFalse(is_weekend(monday_dt))
+        self.assertFalse(is_weekday(saturday_dt))
+        self.assertTrue(is_weekend(saturday_dt))
 
 
 if __name__ == "__main__":
