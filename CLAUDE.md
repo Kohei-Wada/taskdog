@@ -156,13 +156,14 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 - `optimize [--start-date] [--max-hours-per-day] [--algorithm] [--force]`: Auto-schedule (9 strategies available)
 
 **Visualization**
-- `gantt [--sort] [--reverse]`: Gantt chart with workload summary
+- `gantt [--sort] [--reverse]`: Gantt chart with workload summary (default sort: deadline)
 - `export [--format] [--output]`: Export tasks
 - `stats [--period] [--focus]`: Analytics
 
 **Interactive**
 - `note ID`: Edit markdown notes ($EDITOR)
-- `tui`: Full-screen TUI (Textual) with keyboard shortcuts (a/s/p/d/c/R/x/i/e/o/r/q)
+- `tui`: Full-screen TUI (Textual) with keyboard shortcuts (a/s/p/d/c/R/x/i/e/o/r/S/q)
+  - `S`: Show sort selection dialog (deadline/planned_start/priority/id)
 
 ### Design Principles
 
