@@ -3,8 +3,7 @@
 import unittest
 from datetime import date, datetime
 
-from shared.date_utils import calculate_next_workday
-from shared.utils.date_utils import get_previous_monday
+from shared.utils.date_utils import calculate_next_workday, get_previous_monday
 
 
 class TestDateUtils(unittest.TestCase):
