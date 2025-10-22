@@ -65,7 +65,7 @@ class TaskdogTUI(App):
         ("i", "show_details", "Info"),
         ("e", "edit_task", "Edit"),
         ("v", "edit_note", "Edit Note"),
-        ("S", "cycle_gantt_sort", "Sort Gantt"),
+        ("S", "cycle_gantt_sort", "Sort"),
     ]
 
     # Mapping of action names to command names and kwargs
@@ -192,12 +192,22 @@ class TaskdogTUI(App):
         return tasks
 
     def action_cycle_gantt_sort(self) -> None:
-        """Cycle through gantt sort options (deadline ↔ planned_start)."""
-        # Toggle between deadline and planned_start
-        if self._gantt_sort_by == "deadline":
-            self._gantt_sort_by = "planned_start"
-        else:
-            self._gantt_sort_by = "deadline"
+        """Show sort selection dialog."""
 
-        # Reload tasks to apply new sort
-        self._load_tasks()
+        def handle_sort_selection(sort_by: str | None) -> None:
+            """Handle the sort selection from the dialog.
+
+            Args:
+                sort_by: Selected sort order, or None if cancelled
+            """
+            if sort_by is None:
+                return  # User cancelled
+
+            self._gantt_sort_by = sort_by
+            self._load_tasks()
+
+        # Import here to avoid circular dependency
+        from presentation.tui.screens.sort_selection_screen import SortSelectionScreen
+
+        # Show sort selection screen
+        self.push_screen(SortSelectionScreen(self._gantt_sort_by), handle_sort_selection)
