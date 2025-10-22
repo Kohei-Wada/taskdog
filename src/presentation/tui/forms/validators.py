@@ -88,12 +88,13 @@ class DateTimeValidatorTUI:
     """Generic validator for date/time fields in TUI."""
 
     @staticmethod
-    def validate(value: str, field_name: str = "date") -> ValidationResult:
+    def validate(value: str, field_name: str, default_hour: int) -> ValidationResult:
         """Validate a date/time string.
 
         Args:
             value: Date/time string to validate (can be empty for no value)
             field_name: Name of the field for error messages
+            default_hour: Default hour to use when only date is provided (from config)
 
         Returns:
             ValidationResult with validation status, error message, and formatted date/time
@@ -104,9 +105,17 @@ class DateTimeValidatorTUI:
         if not datetime_str:
             return ValidationResult(is_valid=True, error_message="", value=None)
 
+        # Check if input contains time component (look for colon)
+        has_time = ":" in datetime_str
+
         # Try to parse using dateutil
         try:
             parsed_date = dateutil_parser.parse(datetime_str, fuzzy=True)
+
+            # If no time was provided and parsed time is midnight, apply default hour
+            if not has_time and parsed_date.hour == 0 and parsed_date.minute == 0:
+                parsed_date = parsed_date.replace(hour=default_hour, minute=0, second=0)
+
             # Convert to the standard format YYYY-MM-DD HH:MM:SS
             formatted_datetime = parsed_date.strftime("%Y-%m-%d %H:%M:%S")
             return ValidationResult(is_valid=True, error_message="", value=formatted_datetime)
@@ -122,48 +131,51 @@ class DeadlineValidator:
     """Validator for task deadlines."""
 
     @staticmethod
-    def validate(value: str) -> ValidationResult:
+    def validate(value: str, default_hour: int) -> ValidationResult:
         """Validate a task deadline.
 
         Args:
             value: Deadline string to validate (can be empty for no deadline)
+            default_hour: Default hour to use when only date is provided (from config)
 
         Returns:
             ValidationResult with validation status, error message, and formatted deadline
         """
-        return DateTimeValidatorTUI.validate(value, "deadline")
+        return DateTimeValidatorTUI.validate(value, "deadline", default_hour=default_hour)
 
 
 class PlannedStartValidator:
     """Validator for planned start date."""
 
     @staticmethod
-    def validate(value: str) -> ValidationResult:
+    def validate(value: str, default_hour: int) -> ValidationResult:
         """Validate a planned start date.
 
         Args:
             value: Planned start string to validate (can be empty)
+            default_hour: Default hour to use when only date is provided (from config)
 
         Returns:
             ValidationResult with validation status, error message, and formatted date
         """
-        return DateTimeValidatorTUI.validate(value, "planned start")
+        return DateTimeValidatorTUI.validate(value, "planned start", default_hour=default_hour)
 
 
 class PlannedEndValidator:
     """Validator for planned end date."""
 
     @staticmethod
-    def validate(value: str) -> ValidationResult:
+    def validate(value: str, default_hour: int) -> ValidationResult:
         """Validate a planned end date.
 
         Args:
             value: Planned end string to validate (can be empty)
+            default_hour: Default hour to use when only date is provided (from config)
 
         Returns:
             ValidationResult with validation status, error message, and formatted date
         """
-        return DateTimeValidatorTUI.validate(value, "planned end")
+        return DateTimeValidatorTUI.validate(value, "planned end", default_hour=default_hour)
 
 
 class DurationValidator:

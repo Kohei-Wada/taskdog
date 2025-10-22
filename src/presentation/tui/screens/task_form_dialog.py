@@ -90,13 +90,15 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
 
         # Define validation chain with (field_name, input_widget, validator, validator_args)
         default_priority = self.config.task.default_priority if self.config else 5
+        default_start_hour = self.config.time.default_start_hour if self.config else 9
+        default_end_hour = self.config.time.default_end_hour if self.config else 18
         validations: list[tuple[str, Input, Any, list[Any]]] = [
             ("task_name", inputs["task_name"], TaskNameValidator, []),
             ("priority", inputs["priority"], PriorityValidator, [default_priority]),
-            ("deadline", inputs["deadline"], DeadlineValidator, []),
+            ("deadline", inputs["deadline"], DeadlineValidator, [default_end_hour]),
             ("duration", inputs["duration"], DurationValidator, []),
-            ("planned_start", inputs["planned_start"], PlannedStartValidator, []),
-            ("planned_end", inputs["planned_end"], PlannedEndValidator, []),
+            ("planned_start", inputs["planned_start"], PlannedStartValidator, [default_start_hour]),
+            ("planned_end", inputs["planned_end"], PlannedEndValidator, [default_end_hour]),
             ("dependencies", inputs["dependencies"], DependenciesValidator, []),
         ]
 
