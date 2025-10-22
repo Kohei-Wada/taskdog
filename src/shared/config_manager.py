@@ -119,18 +119,20 @@ class ConfigManager:
 
         return Config(
             optimization=OptimizationConfig(
-                max_hours_per_day=optimization_data.get("max_hours_per_day", 6.0),
-                default_algorithm=optimization_data.get("default_algorithm", "greedy"),
+                max_hours_per_day=optimization_data.get(
+                    "max_hours_per_day", DEFAULT_MAX_HOURS_PER_DAY
+                ),
+                default_algorithm=optimization_data.get("default_algorithm", DEFAULT_ALGORITHM),
             ),
             task=TaskConfig(
-                default_priority=task_data.get("default_priority", 5),
+                default_priority=task_data.get("default_priority", DEFAULT_PRIORITY),
             ),
             display=DisplayConfig(
-                datetime_format=display_data.get("datetime_format", "%Y-%m-%d %H:%M:%S"),
+                datetime_format=display_data.get("datetime_format", DEFAULT_DATETIME_FORMAT),
             ),
             time=TimeConfig(
-                default_start_hour=time_data.get("default_start_hour", 9),
-                default_end_hour=time_data.get("default_end_hour", 18),
+                default_start_hour=time_data.get("default_start_hour", DEFAULT_START_HOUR),
+                default_end_hour=time_data.get("default_end_hour", DEFAULT_END_HOUR),
             ),
         )
 

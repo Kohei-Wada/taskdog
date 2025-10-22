@@ -160,7 +160,13 @@ class TaskAllocatorBase(ABC):
             schedule_end: End datetime
             task_daily_allocations: Daily allocation hours
         """
-        task.planned_start = schedule_start.strftime(DATETIME_FORMAT)
+        # Set start time to config.time.default_start_hour (default: 9:00)
+        start_date_with_time = schedule_start.replace(
+            hour=self.config.time.default_start_hour, minute=0, second=0
+        )
+        task.planned_start = start_date_with_time.strftime(DATETIME_FORMAT)
+
+        # Set end time to config.time.default_end_hour (default: 18:00)
         end_date_with_time = schedule_end.replace(
             hour=self.config.time.default_end_hour, minute=0, second=0
         )

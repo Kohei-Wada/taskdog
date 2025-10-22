@@ -18,7 +18,7 @@ from presentation.tui.forms.validators import (
     TaskNameValidator,
 )
 from presentation.tui.screens.base_dialog import BaseModalDialog
-from shared.config_manager import Config
+from shared.config_manager import Config, ConfigManager
 
 
 class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
@@ -38,12 +38,12 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
 
         Args:
             task: Existing task for editing, or None for adding new task
-            config: Application configuration
+            config: Application configuration (loads default if None)
         """
         super().__init__(*args, **kwargs)
         self.task_to_edit = task
         self.is_edit_mode = task is not None
-        self.config = config
+        self.config = config if config is not None else ConfigManager.load()
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""
@@ -89,9 +89,10 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         error_message.update("")
 
         # Define validation chain with (field_name, input_widget, validator, validator_args)
-        default_priority = self.config.task.default_priority if self.config else 5
-        default_start_hour = self.config.time.default_start_hour if self.config else 9
-        default_end_hour = self.config.time.default_end_hour if self.config else 18
+        # Config is always available (loaded in __init__ if None)
+        default_priority = self.config.task.default_priority
+        default_start_hour = self.config.time.default_start_hour
+        default_end_hour = self.config.time.default_end_hour
         validations: list[tuple[str, Input, Any, list[Any]]] = [
             ("task_name", inputs["task_name"], TaskNameValidator, []),
             ("priority", inputs["priority"], PriorityValidator, [default_priority]),

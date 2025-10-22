@@ -7,7 +7,7 @@ from textual.containers import Vertical
 from textual.widgets import Checkbox, Input, Label, Static
 
 from domain.entities.task import Task
-from shared.config_manager import Config
+from shared.config_manager import Config, ConfigManager
 
 
 @dataclass
@@ -50,7 +50,7 @@ class TaskFormFields:
 
         Args:
             task: Existing task for editing (None for new task)
-            config: Application configuration
+            config: Application configuration (loads default if None)
 
         Yields:
             Form field widgets
@@ -58,8 +58,12 @@ class TaskFormFields:
         # Error message area (hidden by default)
         yield Static("", id="error-message")
 
+        # Load config if not provided
+        if config is None:
+            config = ConfigManager.load()
+
         # Get default priority from config
-        default_priority = config.task.default_priority if config else 5
+        default_priority = config.task.default_priority
 
         with Vertical(id="form-container"):
             # Task name field
@@ -73,7 +77,9 @@ class TaskFormFields:
             # Priority field
             yield Label("Priority:", classes="field-label")
             yield Input(
-                placeholder=f"Enter priority (default: {default_priority}, higher = more important)",
+                placeholder=f"Enter priority (default: {
+                    default_priority
+                }, higher = more important)",
                 id="priority-input",
                 type="integer",
                 value=str(task.priority) if task else "",
