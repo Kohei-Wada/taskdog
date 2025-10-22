@@ -73,8 +73,8 @@ EXAMPLE:
 @click.option(
     "--sort",
     type=click.Choice(["id", "priority", "deadline", "name", "status", "planned_start"]),
-    default="id",
-    help="Sort tasks by specified field (default: id)",
+    default="deadline",
+    help="Sort tasks by specified field (default: deadline)",
 )
 @click.option(
     "--reverse",

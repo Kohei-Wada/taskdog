@@ -191,7 +191,7 @@ class GanttWidget(Static):
         filter_obj = TaskListFilter(self._tasks)
         gantt_result = task_query_service.get_gantt_data(
             filter_obj=filter_obj,
-            sort_by="planned_start",
+            sort_by="deadline",
             reverse=False,
             start_date=start_date,
             end_date=end_date,
