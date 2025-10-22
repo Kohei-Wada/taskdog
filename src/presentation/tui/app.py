@@ -65,6 +65,7 @@ class TaskdogTUI(App):
         ("i", "show_details", "Info"),
         ("e", "edit_task", "Edit"),
         ("v", "edit_note", "Edit Note"),
+        ("S", "cycle_gantt_sort", "Sort Gantt"),
     ]
 
     # Mapping of action names to command names and kwargs
@@ -112,6 +113,7 @@ class TaskdogTUI(App):
         self.query_service = TaskQueryService(repository)
         self.config = config if config is not None else ConfigManager.load()
         self.main_screen: MainScreen | None = None
+        self._gantt_sort_by: str = "deadline"  # Default gantt sort order
 
         # Initialize TUIContext
         self.context = TUIContext(
@@ -180,9 +182,20 @@ class TaskdogTUI(App):
         # Update gantt chart and table
         if self.main_screen:
             if self.main_screen.gantt_widget:
-                self.main_screen.gantt_widget.update_gantt(tasks)
+                self.main_screen.gantt_widget.update_gantt(tasks, sort_by=self._gantt_sort_by)
 
             if self.main_screen.task_table:
                 self.main_screen.task_table.refresh_tasks(tasks)
 
         return tasks
+
+    def action_cycle_gantt_sort(self) -> None:
+        """Cycle through gantt sort options (deadline ↔ planned_start)."""
+        # Toggle between deadline and planned_start
+        if self._gantt_sort_by == "deadline":
+            self._gantt_sort_by = "planned_start"
+        else:
+            self._gantt_sort_by = "deadline"
+
+        # Reload tasks to apply new sort
+        self._load_tasks()

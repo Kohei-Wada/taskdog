@@ -45,6 +45,7 @@ class GanttWidget(Static):
         self._tasks: list[Task] = []
         self._start_date: date | None = None
         self._end_date: date | None = None
+        self._sort_by: str = "deadline"  # Default sort order
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
         self._legend_widget: Static | None = None
@@ -100,6 +101,7 @@ class GanttWidget(Static):
         tasks: list[Task],
         start_date: date | None = None,
         end_date: date | None = None,
+        sort_by: str = "deadline",
     ):
         """Update the gantt chart with new tasks.
 
@@ -107,10 +109,12 @@ class GanttWidget(Static):
             tasks: List of tasks to display
             start_date: Optional start date for the chart
             end_date: Optional end date for the chart
+            sort_by: Sort order for tasks (default: "deadline")
         """
         self._tasks = tasks
         self._start_date = start_date
         self._end_date = end_date
+        self._sort_by = sort_by
         self._render_gantt()
 
     def _render_gantt(self):
@@ -191,7 +195,7 @@ class GanttWidget(Static):
         filter_obj = TaskListFilter(self._tasks)
         gantt_result = task_query_service.get_gantt_data(
             filter_obj=filter_obj,
-            sort_by="deadline",
+            sort_by=self._sort_by,
             reverse=False,
             start_date=start_date,
             end_date=end_date,
@@ -200,9 +204,13 @@ class GanttWidget(Static):
         try:
             self._gantt_table.load_gantt(gantt_result)
 
-            # Update title with date range
+            # Update title with date range and sort order
             if self._title_widget:
-                title_text = f"[bold yellow]Gantt Chart[/bold yellow] [dim]({start_date} to {end_date})[/dim]"
+                title_text = (
+                    f"[bold yellow]Gantt Chart[/bold yellow] "
+                    f"[dim]({start_date} to {end_date})[/dim] "
+                    f"[dim]- sorted by: {self._sort_by}[/dim]"
+                )
                 self._title_widget.update(title_text)
 
             # Update legend
