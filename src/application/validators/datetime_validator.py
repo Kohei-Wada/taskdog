@@ -4,10 +4,10 @@ from datetime import datetime
 from typing import Any
 
 from application.validators.field_validator import FieldValidator
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
 from infrastructure.persistence.task_repository import TaskRepository
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class DateTimeValidator(FieldValidator):

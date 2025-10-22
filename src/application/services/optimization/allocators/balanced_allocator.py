@@ -3,9 +3,9 @@
 from datetime import datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.constants import DEFAULT_SCHEDULE_DAYS
+from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import count_weekdays, is_workday
 
 

@@ -4,8 +4,8 @@ from datetime import datetime, time
 
 import click
 
-from domain.constants import DATETIME_FORMAT
 from shared.config_manager import ConfigManager
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class DateTimeWithDefault(click.DateTime):

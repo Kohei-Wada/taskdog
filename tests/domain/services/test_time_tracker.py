@@ -1,9 +1,9 @@
 import unittest
 from datetime import datetime
 
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task, TaskStatus
 from domain.services.time_tracker import TimeTracker
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class TestTimeTracker(unittest.TestCase):

@@ -5,9 +5,9 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock
 
 from application.validators.datetime_validator import DateTimeValidator
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskValidationError
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class TestDateTimeValidator(unittest.TestCase):

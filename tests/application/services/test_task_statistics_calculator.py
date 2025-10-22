@@ -4,8 +4,8 @@ import unittest
 from datetime import datetime, timedelta
 
 from application.services.task_statistics_calculator import TaskStatisticsCalculator
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task, TaskStatus
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class TestTaskStatisticsCalculator(unittest.TestCase):

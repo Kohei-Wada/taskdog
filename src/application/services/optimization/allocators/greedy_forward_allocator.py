@@ -3,8 +3,8 @@
 from datetime import datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
+from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import is_workday
 
 

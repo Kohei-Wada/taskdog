@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 from application.constants.optimization import ROUND_ROBIN_MAX_ITERATIONS
 from application.dto.optimization_result import SchedulingFailure
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.config_manager import Config
+from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
@@ -208,7 +208,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 # Check effective deadline constraint
                 effective_deadline = task_effective_deadlines.get(task_id)
                 if effective_deadline:
-                    from domain.constants import DATETIME_FORMAT
+                    from shared.constants.formats import DATETIME_FORMAT
 
                     deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
                     if current_date > deadline_dt:

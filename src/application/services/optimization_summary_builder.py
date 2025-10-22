@@ -3,9 +3,9 @@
 from datetime import datetime
 
 from application.dto.optimization_summary import OptimizationSummary
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class OptimizationSummaryBuilder:

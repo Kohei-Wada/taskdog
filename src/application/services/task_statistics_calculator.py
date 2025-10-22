@@ -12,8 +12,8 @@ from application.dto.statistics_result import (
     TimeStatistics,
     TrendStatistics,
 )
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task, TaskStatus
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class TaskStatisticsCalculator:

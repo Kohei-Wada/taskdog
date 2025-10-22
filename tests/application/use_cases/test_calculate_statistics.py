@@ -6,8 +6,8 @@ from unittest.mock import Mock
 
 from application.dto.statistics_result import CalculateStatisticsRequest
 from application.use_cases.calculate_statistics import CalculateStatisticsUseCase
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task, TaskStatus
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class TestCalculateStatisticsUseCase(unittest.TestCase):

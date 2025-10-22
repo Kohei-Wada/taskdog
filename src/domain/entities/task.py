@@ -4,8 +4,8 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
-from domain.constants import DATETIME_FORMAT
 from domain.exceptions.task_exceptions import TaskValidationError
+from shared.constants.formats import DATETIME_FORMAT
 from shared.constants.time import MIN_FILE_SIZE_FOR_CONTENT, SECONDS_PER_HOUR
 from shared.xdg_utils import XDGDirectories
 

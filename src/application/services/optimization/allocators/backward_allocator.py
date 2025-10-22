@@ -54,7 +54,7 @@ class BackwardAllocator(TaskAllocatorBase):
 
         # Determine the target end date
         if effective_deadline:
-            from domain.constants import DATETIME_FORMAT
+            from shared.constants.formats import DATETIME_FORMAT
 
             target_end = datetime.strptime(effective_deadline, DATETIME_FORMAT)
         else:

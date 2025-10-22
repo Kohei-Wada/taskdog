@@ -7,11 +7,11 @@ import click
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
-from domain.constants import DATETIME_FORMAT
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.console.console_writer import ConsoleWriter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
+from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import get_next_weekday
 
 

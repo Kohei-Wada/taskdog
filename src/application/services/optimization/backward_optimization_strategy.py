@@ -6,9 +6,9 @@ from application.services.optimization.allocators.backward_allocator import (
     BackwardAllocator,
 )
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.config_manager import Config
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class BackwardOptimizationStrategy(OptimizationStrategy):

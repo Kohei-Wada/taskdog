@@ -2,8 +2,8 @@
 
 from datetime import datetime
 
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
+from shared.constants.formats import DATETIME_FORMAT
 
 
 def generate_notes_template(task: Task) -> str:

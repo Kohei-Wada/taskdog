@@ -5,11 +5,11 @@ from datetime import datetime, timedelta
 
 from application.dto.update_task_request import UpdateTaskRequest
 from application.use_cases.update_task import UpdateTaskUseCase
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class TestUpdateTaskUseCase(unittest.TestCase):

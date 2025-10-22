@@ -7,11 +7,11 @@ import click
 from application.queries.filters.active_filter import ActiveFilter
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.task_query_service import TaskQueryService
-from domain.constants import DATETIME_FORMAT
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
 from shared.click_types.datetime_with_default import DateTimeWithDefault
+from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import get_previous_monday
 
 

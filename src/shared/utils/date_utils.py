@@ -15,9 +15,9 @@ Holiday checking:
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING
 
-from domain.constants import DATETIME_FORMAT
 from shared.config_manager import ConfigManager
 from shared.constants import WEEKDAY_THRESHOLD
+from shared.constants.formats import DATETIME_FORMAT
 
 if TYPE_CHECKING:
     from shared.utils.holiday_checker import HolidayChecker

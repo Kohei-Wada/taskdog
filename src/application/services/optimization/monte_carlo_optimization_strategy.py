@@ -13,9 +13,9 @@ from application.services.optimization.allocators.greedy_forward_allocator impor
     GreedyForwardAllocator,
 )
 from application.services.optimization.optimization_strategy import OptimizationStrategy
-from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.config_manager import Config
+from shared.constants.formats import DATETIME_FORMAT
 
 if TYPE_CHECKING:
     from shared.utils.holiday_checker import HolidayChecker
