@@ -4,10 +4,14 @@ This module provides functionality to check if a given date is a public holiday
 in a specific country. Holiday checking is optional and depends on configuration.
 """
 
-from datetime import date
+# mypy: disable-error-code="unused-ignore"
 
+from datetime import date
+from typing import Any
+
+holidays: Any
 try:
-    import holidays
+    import holidays  # type: ignore[no-redef]
 except ImportError:
     holidays = None
 
@@ -52,6 +56,7 @@ class HolidayChecker:
         self._holidays = None
 
         if country:
+            assert holidays is not None  # Guaranteed by the check above
             try:
                 self._holidays = holidays.country_holidays(country)
             except NotImplementedError as e:
