@@ -27,6 +27,27 @@ AlgorithmSelectionScreen {
     border: solid $primary;
 }
 
+/* Sort Selection Dialog */
+SortSelectionScreen {
+    align: center middle;
+}
+
+#sort-dialog {
+    width: 70;  /* Standard width for form-based dialogs */
+    height: auto;
+    max-height: 25;  /* Smaller than algorithm dialog (no input fields) */
+    background: $surface;
+    border: thick $primary;
+    padding: 1;
+}
+
+#sort-list {
+    height: auto;
+    max-height: 12;
+    margin: 0 0 1 0;
+    border: solid $primary;
+}
+
 /* Confirmation Dialog */
 ConfirmationDialog {
     align: center middle;

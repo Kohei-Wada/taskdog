@@ -91,14 +91,15 @@ taskdog tui                         # Interactive TUI
 
 **Visualization**
 - `table [-a] [-s FIELD] [-r]` - Table view (sort by id/priority/deadline/name/status/planned_start)
-- `gantt [-s FIELD] [-r]` - Gantt chart with workload analysis
+- `gantt [-s FIELD] [-r]` - Gantt chart with workload analysis (default sort: deadline)
 - `today` - Today's tasks
 - `show ID [--raw]` - Task details + notes
 - `export [--format json] [-o FILE]` - Export tasks
 
 **Notes & TUI**
 - `note ID` - Edit markdown notes ($EDITOR)
-- `tui` - Interactive TUI (keys: a/s/p/d/c/R/x/i/e/o/r/q)
+- `tui` - Interactive TUI (keys: a/s/p/d/c/R/x/i/e/o/r/S/q)
+  - **S**: Sort selection dialog (deadline/planned_start/priority/id)
 
 
 ## Task States

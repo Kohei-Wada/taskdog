@@ -3,11 +3,15 @@
 import copy
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.workday_utils import WorkdayUtils
+from shared.utils.date_utils import is_workday
+
+if TYPE_CHECKING:
+    from shared.utils.holiday_checker import HolidayChecker
 
 
 class TaskAllocatorBase(ABC):
@@ -21,13 +25,15 @@ class TaskAllocatorBase(ABC):
     separately by the optimization strategy.
     """
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, holiday_checker: "HolidayChecker | None" = None):
         """Initialize allocator with configuration.
 
         Args:
             config: Application configuration
+            holiday_checker: Optional HolidayChecker for holiday detection
         """
         self.config = config
+        self.holiday_checker = holiday_checker
 
     @abstractmethod
     def allocate(
@@ -103,7 +109,7 @@ class TaskAllocatorBase(ABC):
         return date.strftime("%Y-%m-%d")
 
     def _get_next_workday(self, current_date: datetime, direction: int = 1) -> datetime:
-        """Get next workday, skipping weekends.
+        """Get next workday, skipping weekends and holidays.
 
         Args:
             current_date: Starting date
@@ -113,7 +119,7 @@ class TaskAllocatorBase(ABC):
             Next workday in specified direction
         """
         next_date = current_date + timedelta(days=direction)
-        while WorkdayUtils.is_weekend(next_date):
+        while not is_workday(next_date, self.holiday_checker):
             next_date += timedelta(days=direction)
         return next_date
 

@@ -3,7 +3,7 @@
 from datetime import date, datetime, timedelta
 
 from domain.entities.task import Task
-from shared.utils.date_utils import DateTimeParser, count_weekdays
+from shared.utils.date_utils import count_weekdays, parse_date
 
 
 class WorkloadCalculator:
@@ -105,8 +105,8 @@ class WorkloadCalculator:
         Returns:
             Dictionary mapping date to hours {date: hours}
         """
-        planned_start = DateTimeParser.parse_date(task.planned_start)
-        planned_end = DateTimeParser.parse_date(task.planned_end)
+        planned_start = parse_date(task.planned_start)
+        planned_end = parse_date(task.planned_end)
 
         if not (planned_start and planned_end and task.estimated_duration):
             return {}

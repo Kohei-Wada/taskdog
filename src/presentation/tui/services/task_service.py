@@ -20,7 +20,7 @@ from application.use_cases.pause_task import PauseTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
 from presentation.tui.context import TUIContext
-from shared.date_utils import calculate_next_workday
+from shared.utils.date_utils import calculate_next_workday
 
 
 class TaskService:

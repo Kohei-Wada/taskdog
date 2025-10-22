@@ -7,10 +7,14 @@ consistent visualization across different interfaces.
 
 import math
 from datetime import date, timedelta
+from typing import TYPE_CHECKING
 
 from rich.text import Text
 
 from domain.entities.task import Task, TaskStatus
+
+if TYPE_CHECKING:
+    from shared.utils.holiday_checker import HolidayChecker
 from presentation.constants.colors import (
     DAY_STYLE_SATURDAY,
     DAY_STYLE_SUNDAY,
@@ -20,6 +24,7 @@ from presentation.constants.colors import (
 from presentation.constants.symbols import (
     BACKGROUND_COLOR,
     BACKGROUND_COLOR_DEADLINE,
+    BACKGROUND_COLOR_HOLIDAY,
     BACKGROUND_COLOR_SATURDAY,
     BACKGROUND_COLOR_SUNDAY,
     SYMBOL_ACTUAL,
@@ -32,7 +37,7 @@ from shared.constants import (
     WORKLOAD_COMFORTABLE_HOURS,
     WORKLOAD_MODERATE_HOURS,
 )
-from shared.utils.date_utils import DateTimeParser
+from shared.utils.date_utils import parse_date
 
 
 class GanttCellFormatter:
@@ -49,6 +54,7 @@ class GanttCellFormatter:
         hours: float,
         parsed_dates: dict,
         status: TaskStatus,
+        holiday_checker: "HolidayChecker | None" = None,
     ) -> tuple[str, str]:
         """Format a single timeline cell with daily hours and styling.
 
@@ -91,7 +97,7 @@ class GanttCellFormatter:
         if is_deadline:
             bg_color = BACKGROUND_COLOR_DEADLINE
         elif is_planned and status not in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
-            bg_color = GanttCellFormatter._get_background_color(current_date)
+            bg_color = GanttCellFormatter._get_background_color(current_date, holiday_checker)
         else:
             bg_color = None
 
@@ -116,12 +122,17 @@ class GanttCellFormatter:
         return display, style
 
     @staticmethod
-    def build_date_header_lines(start_date: date, end_date: date) -> tuple[Text, Text, Text]:
+    def build_date_header_lines(
+        start_date: date,
+        end_date: date,
+        holiday_checker: "HolidayChecker | None" = None,
+    ) -> tuple[Text, Text, Text]:
         """Build date header lines (Month, Today marker, Day) for the timeline.
 
         Args:
             start_date: Start date of the chart
             end_date: End date of the chart
+            holiday_checker: Optional HolidayChecker for holiday detection
 
         Returns:
             Tuple of three Rich Text objects (month_line, today_line, day_line)
@@ -157,9 +168,13 @@ class GanttCellFormatter:
             else:
                 today_line.append("   ", style="dim")
 
-            # Line 3: Show day number with color based on weekday
+            # Line 3: Show day number with color based on weekday/holiday
             day_str = f"{day:2d} "  # Right-aligned, 2 digits + space
-            if weekday == SATURDAY:
+
+            # Check if holiday (highest priority)
+            if holiday_checker and holiday_checker.is_holiday(current_date):
+                day_style = "bold yellow"  # Orange-ish color for holidays
+            elif weekday == SATURDAY:
                 day_style = DAY_STYLE_SATURDAY
             elif weekday == SUNDAY:
                 day_style = DAY_STYLE_SUNDAY
@@ -231,6 +246,8 @@ class GanttCellFormatter:
         legend.append(" Deadline  ", style="dim")
         legend.append(SYMBOL_TODAY, style="bold yellow")
         legend.append(" Today  ", style="dim")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_HOLIDAY}")
+        legend.append(" Holiday  ", style="dim")
         legend.append("   ", style=f"on {BACKGROUND_COLOR_SATURDAY}")
         legend.append(" Saturday  ", style="dim")
         legend.append("   ", style=f"on {BACKGROUND_COLOR_SUNDAY}")
@@ -249,11 +266,11 @@ class GanttCellFormatter:
             actual_end, deadline)
         """
         return {
-            "planned_start": DateTimeParser.parse_date(task.planned_start),
-            "planned_end": DateTimeParser.parse_date(task.planned_end),
-            "actual_start": DateTimeParser.parse_date(task.actual_start),
-            "actual_end": DateTimeParser.parse_date(task.actual_end),
-            "deadline": DateTimeParser.parse_date(task.deadline),
+            "planned_start": parse_date(task.planned_start),
+            "planned_end": parse_date(task.planned_end),
+            "actual_start": parse_date(task.actual_start),
+            "actual_end": parse_date(task.actual_end),
+            "deadline": parse_date(task.deadline),
         }
 
     @staticmethod
@@ -286,15 +303,26 @@ class GanttCellFormatter:
         return False
 
     @staticmethod
-    def _get_background_color(current_date: date) -> str:
-        """Get background color based on day of week.
+    def _get_background_color(
+        current_date: date,
+        holiday_checker: "HolidayChecker | None" = None,
+    ) -> str:
+        """Get background color based on day of week and holidays.
+
+        Priority: Holiday > Sunday > Saturday > Weekday
 
         Args:
             current_date: Date to check
+            holiday_checker: Optional HolidayChecker for holiday detection
 
         Returns:
             Background color string (RGB)
         """
+        # Check holiday first (highest priority after deadline)
+        if holiday_checker and holiday_checker.is_holiday(current_date):
+            return BACKGROUND_COLOR_HOLIDAY
+
+        # Then check weekends
         weekday = current_date.weekday()
         if weekday == SATURDAY:
             return BACKGROUND_COLOR_SATURDAY

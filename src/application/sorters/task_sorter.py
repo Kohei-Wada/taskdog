@@ -6,7 +6,7 @@ from typing import Any
 
 from domain.entities.task import Task
 from shared.constants import SORT_SENTINEL_FUTURE
-from shared.utils.date_utils import DateTimeParser
+from shared.utils.date_utils import parse_date
 
 
 class TaskSorter:
@@ -95,7 +95,7 @@ class TaskSorter:
         if not date_str:
             return SORT_SENTINEL_FUTURE
 
-        parsed_date = DateTimeParser.parse_date(date_str)
+        parsed_date = parse_date(date_str)
         if parsed_date is None:
             return SORT_SENTINEL_FUTURE
         # Convert date to datetime for consistent comparison

@@ -65,6 +65,7 @@ class TaskdogTUI(App):
         ("i", "show_details", "Info"),
         ("e", "edit_task", "Edit"),
         ("v", "edit_note", "Edit Note"),
+        ("S", "cycle_gantt_sort", "Sort"),
     ]
 
     # Mapping of action names to command names and kwargs
@@ -112,6 +113,7 @@ class TaskdogTUI(App):
         self.query_service = TaskQueryService(repository)
         self.config = config if config is not None else ConfigManager.load()
         self.main_screen: MainScreen | None = None
+        self._gantt_sort_by: str = "deadline"  # Default gantt sort order
 
         # Initialize TUIContext
         self.context = TUIContext(
@@ -175,14 +177,37 @@ class TaskdogTUI(App):
         # Get all non-deleted tasks (PENDING, IN_PROGRESS, COMPLETED, CANCELED)
         # Deleted tasks are excluded from display
         non_archived_filter = NonArchivedFilter()
-        tasks = self.query_service.get_filtered_tasks(non_archived_filter, sort_by="planned_start")
+        tasks = self.query_service.get_filtered_tasks(
+            non_archived_filter, sort_by=self._gantt_sort_by
+        )
 
         # Update gantt chart and table
         if self.main_screen:
             if self.main_screen.gantt_widget:
-                self.main_screen.gantt_widget.update_gantt(tasks)
+                self.main_screen.gantt_widget.update_gantt(tasks, sort_by=self._gantt_sort_by)
 
             if self.main_screen.task_table:
                 self.main_screen.task_table.refresh_tasks(tasks)
 
         return tasks
+
+    def action_cycle_gantt_sort(self) -> None:
+        """Show sort selection dialog."""
+
+        def handle_sort_selection(sort_by: str | None) -> None:
+            """Handle the sort selection from the dialog.
+
+            Args:
+                sort_by: Selected sort order, or None if cancelled
+            """
+            if sort_by is None:
+                return  # User cancelled
+
+            self._gantt_sort_by = sort_by
+            self._load_tasks()
+
+        # Import here to avoid circular dependency
+        from presentation.tui.screens.sort_selection_screen import SortSelectionScreen
+
+        # Show sort selection screen
+        self.push_screen(SortSelectionScreen(self._gantt_sort_by), handle_sort_selection)

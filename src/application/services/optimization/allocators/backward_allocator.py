@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.entities.task import Task
-from shared.workday_utils import WorkdayUtils
+from shared.utils.date_utils import is_workday
 
 
 class BackwardAllocator(TaskAllocatorBase):
@@ -74,8 +74,8 @@ class BackwardAllocator(TaskAllocatorBase):
         temp_allocations: list[tuple[str, float, datetime]] = []
 
         while remaining_hours > 0:
-            # Skip weekends
-            if WorkdayUtils.is_weekend(current_date):
+            # Skip weekends and holidays
+            if not is_workday(current_date, self.holiday_checker):
                 current_date -= timedelta(days=1)
                 continue
 

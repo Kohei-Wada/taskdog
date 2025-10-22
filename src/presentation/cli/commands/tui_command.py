@@ -24,7 +24,8 @@ def tui_command(ctx):
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
     time_tracker = ctx_obj.time_tracker
+    config = ctx_obj.config
 
     # Launch the TUI application
-    app = TaskdogTUI(repository=repository, time_tracker=time_tracker)
+    app = TaskdogTUI(repository=repository, time_tracker=time_tracker, config=config)
     app.run()

@@ -1,5 +1,7 @@
 """Use case for optimizing task schedules."""
 
+from contextlib import suppress
+
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.services.optimization.strategy_factory import StrategyFactory
@@ -8,6 +10,7 @@ from application.services.schedule_clearer import ScheduleClearer
 from application.use_cases.base import UseCase
 from infrastructure.persistence.task_repository import TaskRepository
 from shared.config_manager import Config
+from shared.utils.holiday_checker import HolidayChecker
 
 
 class OptimizeScheduleUseCase(UseCase[OptimizeScheduleRequest, OptimizationResult]):
@@ -28,6 +31,12 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleRequest, OptimizationResul
         self.config = config
         self.schedule_clearer = ScheduleClearer(repository)
         self.summary_builder = OptimizationSummaryBuilder(repository)
+
+        # Create HolidayChecker if country is configured
+        self.holiday_checker: HolidayChecker | None = None
+        if config.region.country:
+            with suppress(ImportError, NotImplementedError):
+                self.holiday_checker = HolidayChecker(config.region.country)
 
     def execute(self, input_dto: OptimizeScheduleRequest) -> OptimizationResult:
         """Execute schedule optimization.
@@ -58,6 +67,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleRequest, OptimizationResul
             start_date=input_dto.start_date,
             max_hours_per_day=input_dto.max_hours_per_day,
             force_override=input_dto.force_override,
+            holiday_checker=self.holiday_checker,
         )
 
         # Save successfully scheduled tasks

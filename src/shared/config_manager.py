@@ -4,7 +4,7 @@ Loads configuration from TOML file with fallback to default values.
 """
 
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from shared.constants.config_defaults import (
@@ -67,6 +67,18 @@ class TimeConfig:
 
 
 @dataclass(frozen=True)
+class RegionConfig:
+    """Region-related configuration.
+
+    Attributes:
+        country: ISO 3166-1 alpha-2 country code (e.g., "JP", "US")
+                 None means no holiday checking
+    """
+
+    country: str | None = None
+
+
+@dataclass(frozen=True)
 class Config:
     """Taskdog configuration.
 
@@ -75,12 +87,14 @@ class Config:
         task: Task-related settings
         display: Display-related settings
         time: Time-related settings
+        region: Region-related settings (holidays, etc.)
     """
 
     optimization: OptimizationConfig
     task: TaskConfig
     display: DisplayConfig
     time: TimeConfig
+    region: RegionConfig = field(default_factory=RegionConfig)
 
 
 class ConfigManager:
@@ -116,6 +130,7 @@ class ConfigManager:
         task_data = data.get("task", {})
         display_data = data.get("display", {})
         time_data = data.get("time", {})
+        region_data = data.get("region", {})
 
         return Config(
             optimization=OptimizationConfig(
@@ -134,6 +149,9 @@ class ConfigManager:
                 default_start_hour=time_data.get("default_start_hour", DEFAULT_START_HOUR),
                 default_end_hour=time_data.get("default_end_hour", DEFAULT_END_HOUR),
             ),
+            region=RegionConfig(
+                country=region_data.get("country"),
+            ),
         )
 
     @classmethod
@@ -148,4 +166,5 @@ class ConfigManager:
             task=TaskConfig(),
             display=DisplayConfig(),
             time=TimeConfig(),
+            region=RegionConfig(),
         )

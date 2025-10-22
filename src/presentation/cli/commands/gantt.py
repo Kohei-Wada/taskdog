@@ -73,8 +73,8 @@ EXAMPLE:
 @click.option(
     "--sort",
     type=click.Choice(["id", "priority", "deadline", "name", "status", "planned_start"]),
-    default="id",
-    help="Sort tasks by specified field (default: id)",
+    default="deadline",
+    help="Sort tasks by specified field (default: deadline)",
 )
 @click.option(
     "--reverse",
@@ -124,5 +124,6 @@ def gantt_command(ctx, start_date, end_date, show_all, sort, reverse):
 
     # Render using Presentation layer (display logic)
     console_writer = ctx_obj.console_writer
-    renderer = RichGanttRenderer(console_writer)
+    config = ctx_obj.config
+    renderer = RichGanttRenderer(console_writer, config)
     renderer.render(gantt_result)

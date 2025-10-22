@@ -2,10 +2,14 @@
 
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from application.dto.optimization_result import SchedulingFailure
 from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task, TaskStatus
+
+if TYPE_CHECKING:
+    from shared.utils.holiday_checker import HolidayChecker
 
 
 class OptimizationStrategy(ABC):
@@ -33,6 +37,7 @@ class OptimizationStrategy(ABC):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
+        holiday_checker: "HolidayChecker | None" = None,
     ) -> tuple[list[Task], dict[str, float], list[SchedulingFailure]]:
         """Optimize task schedules using template method pattern.
 
@@ -45,6 +50,7 @@ class OptimizationStrategy(ABC):
             start_date: Starting date for schedule optimization
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
+            holiday_checker: Optional HolidayChecker for holiday detection
 
         Returns:
             Tuple of (modified_tasks, daily_allocations, failed_tasks)
@@ -56,6 +62,7 @@ class OptimizationStrategy(ABC):
         self.repository = repository
         self.start_date = start_date
         self.max_hours_per_day = max_hours_per_day
+        self.holiday_checker = holiday_checker
         self.daily_allocations: dict[str, float] = {}
         self.failed_tasks: list[SchedulingFailure] = []
 

@@ -33,13 +33,12 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
     DESCRIPTION = "Just-in-time from deadlines"
 
     def __init__(self, config: Config):
-        """Initialize strategy with backward allocator.
+        """Initialize strategy with configuration.
 
         Args:
             config: Application configuration
         """
         self.config = config
-        self.allocator = BackwardAllocator(config)
 
     def _sort_schedulable_tasks(
         self, tasks: list[Task], start_date: datetime, repository
@@ -85,6 +84,8 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         Returns:
             Copy of task with updated schedule, or None if allocation fails
         """
-        return self.allocator.allocate(
+        # Create allocator with holiday_checker (available after optimize_tasks sets it)
+        allocator = BackwardAllocator(self.config, self.holiday_checker)
+        return allocator.allocate(
             task, start_date, max_hours_per_day, self.daily_allocations, self.repository
         )

@@ -41,7 +41,7 @@ def handle_tui_errors(action_name: str) -> Callable[[F], F]:
     return decorator
 
 
-def require_selected_task(func: F) -> F:
+def require_selected_task[F: Callable[..., Any]](func: F) -> F:
     """Decorator to ensure a task is selected before executing the command.
 
     This decorator checks if a task is selected and shows a warning if not.
