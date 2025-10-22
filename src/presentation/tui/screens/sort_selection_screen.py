@@ -5,7 +5,7 @@ from typing import ClassVar
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
-from textual.widgets import Label, OptionList
+from textual.widgets import Label, OptionList, Static
 from textual.widgets.option_list import Option
 
 from presentation.tui.screens.base_dialog import BaseModalDialog
@@ -77,7 +77,11 @@ class SortSelectionScreen(BaseModalDialog[str | None]):
                 id="dialog-hint",
             )
 
+            # Error message area (kept for consistency with algorithm dialog)
+            yield Static("", id="error-message")
+
             with Vertical(id="form-container"):
+                yield Label("Sort By:", classes="field-label")
                 options = [
                     Option(f"{name}: {desc}", id=sort_id)
                     for sort_id, name, desc in self.SORT_OPTIONS
