@@ -66,22 +66,31 @@ class GanttCellFormatter:
             current_date, parsed_dates["planned_start"], parsed_dates["planned_end"]
         )
 
-        # For actual period: if actual_end is None (IN_PROGRESS),
-        # treat actual_start to today as actual period
+        # For actual period: handle three cases
+        # 1. IN_PROGRESS (actual_start exists, actual_end is None): show from actual_start to today
+        # 2. COMPLETED/CANCELED (both actual_start and actual_end exist): show the range
+        # 3. CANCELED without actual_start (only actual_end exists): show only actual_end date
         if parsed_dates["actual_start"] and not parsed_dates["actual_end"]:
+            # Case 1: IN_PROGRESS
             today = date.today()
             is_actual = parsed_dates["actual_start"] <= current_date <= today
-        else:
+        elif parsed_dates["actual_start"] and parsed_dates["actual_end"]:
+            # Case 2: Both dates exist
             is_actual = GanttCellFormatter._is_in_date_range(
                 current_date, parsed_dates["actual_start"], parsed_dates["actual_end"]
             )
+        elif parsed_dates["actual_end"] and not parsed_dates["actual_start"]:
+            # Case 3: Only actual_end (CANCELED without starting)
+            is_actual = current_date == parsed_dates["actual_end"]
+        else:
+            is_actual = False
 
         is_deadline = parsed_dates["deadline"] and current_date == parsed_dates["deadline"]
 
         # Determine background color
         if is_deadline:
             bg_color = BACKGROUND_COLOR_DEADLINE
-        elif is_planned and status != TaskStatus.COMPLETED:
+        elif is_planned and status not in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
             bg_color = GanttCellFormatter._get_background_color(current_date)
         else:
             bg_color = None
@@ -94,8 +103,8 @@ class GanttCellFormatter:
             return display, style
 
         # Layer 1: Show hours (for planned or deadline without actual)
-        # COMPLETED tasks: hide planned hours
-        if hours > 0 and status != TaskStatus.COMPLETED:
+        # COMPLETED/CANCELED tasks: hide planned hours
+        if hours > 0 and status not in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
             # Format: "4  " or "2.5" (right-aligned, 3 chars)
             display = f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
         else:
@@ -213,9 +222,11 @@ class GanttCellFormatter:
         legend.append("   ", style=f"on {BACKGROUND_COLOR}")
         legend.append(" Planned  ", style="dim")
         legend.append(SYMBOL_ACTUAL, style="bold blue")
-        legend.append(" Actual (IN_PROGRESS)  ", style="dim")
+        legend.append(" IN_PROGRESS  ", style="dim")
         legend.append(SYMBOL_ACTUAL, style="bold green")
-        legend.append(" Actual (COMPLETED)  ", style="dim")
+        legend.append(" COMPLETED  ", style="dim")
+        legend.append(SYMBOL_ACTUAL, style="bold red")
+        legend.append(" CANCELED  ", style="dim")
         legend.append("   ", style=f"on {BACKGROUND_COLOR_DEADLINE}")
         legend.append(" Deadline  ", style="dim")
         legend.append(SYMBOL_TODAY, style="bold yellow")

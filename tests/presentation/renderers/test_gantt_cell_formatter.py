@@ -153,6 +153,57 @@ class TestGanttCellFormatter(unittest.TestCase):
         # Should show empty symbol instead of hours for completed tasks
         self.assertEqual(display, SYMBOL_EMPTY)
 
+    def test_format_timeline_cell_canceled_hides_planned_hours(self):
+        """Test that canceled tasks don't show planned hours."""
+        parsed_dates = {
+            "planned_start": date(2025, 10, 1),
+            "planned_end": date(2025, 10, 5),
+            "actual_start": date(2025, 10, 1),
+            "actual_end": date(2025, 10, 3),
+            "deadline": None,
+        }
+
+        display, _style = GanttCellFormatter.format_timeline_cell(
+            current_date=date(2025, 10, 4),  # After actual_end, in planned period
+            hours=4.0,
+            parsed_dates=parsed_dates,
+            status=TaskStatus.CANCELED,
+        )
+
+        # Should show empty symbol instead of hours for canceled tasks
+        self.assertEqual(display, SYMBOL_EMPTY)
+
+    def test_format_timeline_cell_canceled_without_actual_start(self):
+        """Test that canceled tasks without actual_start show mark on actual_end date."""
+        parsed_dates = {
+            "planned_start": date(2025, 10, 1),
+            "planned_end": date(2025, 10, 5),
+            "actual_start": None,  # CANCELED without starting
+            "actual_end": date(2025, 10, 3),
+            "deadline": None,
+        }
+
+        # Test on actual_end date - should show the mark
+        display, style = GanttCellFormatter.format_timeline_cell(
+            current_date=date(2025, 10, 3),
+            hours=4.0,
+            parsed_dates=parsed_dates,
+            status=TaskStatus.CANCELED,
+        )
+
+        self.assertEqual(display, f" {SYMBOL_ACTUAL} ")
+        self.assertIn("bold red", style)  # CANCELED color
+
+        # Test on different date - should not show the mark
+        display, _style = GanttCellFormatter.format_timeline_cell(
+            current_date=date(2025, 10, 2),
+            hours=4.0,
+            parsed_dates=parsed_dates,
+            status=TaskStatus.CANCELED,
+        )
+
+        self.assertEqual(display, SYMBOL_EMPTY)  # Not showing hours for CANCELED
+
     def test_build_date_header_lines(self):
         """Test building date header lines."""
         start_date = date(2025, 10, 1)
@@ -223,7 +274,9 @@ class TestGanttCellFormatter(unittest.TestCase):
         legend_text = legend.plain
         self.assertIn("Legend:", legend_text)
         self.assertIn("Planned", legend_text)
-        self.assertIn("Actual", legend_text)
+        self.assertIn("IN_PROGRESS", legend_text)
+        self.assertIn("COMPLETED", legend_text)
+        self.assertIn("CANCELED", legend_text)
         self.assertIn("Deadline", legend_text)
         self.assertIn("Today", legend_text)
         self.assertIn("Saturday", legend_text)

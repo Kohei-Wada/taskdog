@@ -174,8 +174,8 @@ class RichGanttRenderer(RichRendererBase):
         """
         task_name = task.name
 
-        # Add strikethrough for completed tasks
-        if task.status == TaskStatus.COMPLETED:
+        # Add strikethrough for completed and canceled tasks
+        if task.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
             task_name = f"[strike]{task_name}[/strike]"
 
         # Format estimated duration
