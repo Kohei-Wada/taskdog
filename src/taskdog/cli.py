@@ -35,11 +35,41 @@ from shared.config_manager import ConfigManager
 from shared.xdg_utils import XDGDirectories
 
 
-@click.group(context_settings={"help_option_names": ["-h", "--help"]})
+class TaskdogGroup(click.Group):
+    """Custom Click Group that displays ASCII art before help."""
+
+    def format_help(self, ctx, formatter):
+        """Override format_help to add ASCII art before help text."""
+        from presentation.constants.ascii_art import (
+            TASKDOG_ASCII_ART,
+            TASKDOG_DESCRIPTION,
+            TASKDOG_TAGLINE,
+        )
+
+        console = Console()
+        console.print(TASKDOG_ASCII_ART, style="cyan")
+        console.print(f"  {TASKDOG_TAGLINE}", style="bold yellow")
+        console.print(f"  {TASKDOG_DESCRIPTION}", style="dim")
+        console.print()
+
+        # Call the original format_help
+        super().format_help(ctx, formatter)
+
+
+@click.group(
+    cls=TaskdogGroup,
+    context_settings={"help_option_names": ["-h", "--help"]},
+    invoke_without_command=True,
+)
 @click.pass_context
 def cli(ctx):
     """Taskdog: Task management CLI tool with time tracking and optimization."""
     from domain.exceptions.task_exceptions import CorruptedDataError
+
+    # Display help when no subcommand is provided
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help())
+        ctx.exit()
 
     # Follow XDG Base Directory specification
     tasksfile = str(XDGDirectories.get_tasks_file())
