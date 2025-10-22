@@ -2,6 +2,7 @@
 
 import copy
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
 from application.constants.optimization import ROUND_ROBIN_MAX_ITERATIONS
 from application.dto.optimization_result import SchedulingFailure
@@ -9,7 +10,10 @@ from application.services.optimization.optimization_strategy import Optimization
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.utils.date_utils import is_weekend
+from shared.utils.date_utils import is_workday
+
+if TYPE_CHECKING:
+    from shared.utils.holiday_checker import HolidayChecker
 
 
 class RoundRobinOptimizationStrategy(OptimizationStrategy):
@@ -41,6 +45,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
+        holiday_checker: "HolidayChecker | None" = None,
     ) -> tuple[list[Task], dict[str, float], list[SchedulingFailure]]:
         """Optimize task schedules using round-robin algorithm.
 
@@ -50,6 +55,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             start_date: Starting date for schedule optimization
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
+            holiday_checker: Optional HolidayChecker for holiday detection
 
         Returns:
             Tuple of (modified_tasks, daily_allocations, failed_tasks)
@@ -65,6 +71,9 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
         # Filter out tasks without ID (should not happen, but for type safety)
         schedulable_tasks = [t for t in schedulable_tasks if t.id is not None]
+
+        # Store holiday_checker for use in allocation
+        self.holiday_checker = holiday_checker
 
         # Initialize failed tasks list
         failed_tasks: list[SchedulingFailure] = []
@@ -104,6 +113,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             start_date,
             max_hours_per_day,
             task_effective_deadlines,
+            holiday_checker,
         )
 
         # Identify tasks that couldn't be fully scheduled
@@ -155,6 +165,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         task_effective_deadlines: dict[int, str | None],
+        holiday_checker: "HolidayChecker | None" = None,
     ) -> None:
         """Allocate time in round-robin fashion across tasks.
 
@@ -176,8 +187,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             if iteration > max_iterations:
                 break
 
-            # Skip weekends
-            if is_weekend(current_date):
+            # Skip weekends and holidays
+            if not is_workday(current_date, holiday_checker):
                 current_date += timedelta(days=1)
                 continue
 

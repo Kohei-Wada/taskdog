@@ -1,3 +1,4 @@
+from contextlib import suppress
 from datetime import date, timedelta
 
 from rich.table import Table
@@ -22,6 +23,8 @@ from presentation.constants.table_styles import (
 )
 from presentation.renderers.gantt_cell_formatter import GanttCellFormatter
 from presentation.renderers.rich_renderer_base import RichRendererBase
+from shared.config_manager import Config
+from shared.utils.holiday_checker import HolidayChecker
 
 
 class RichGanttRenderer(RichRendererBase):
@@ -36,13 +39,21 @@ class RichGanttRenderer(RichRendererBase):
     by the Application layer (TaskQueryService.get_gantt_data()).
     """
 
-    def __init__(self, console_writer: ConsoleWriter):
+    def __init__(self, console_writer: ConsoleWriter, config: Config):
         """Initialize the renderer.
 
         Args:
             console_writer: Console writer for output
+            config: Configuration object for holiday checking
         """
         self.console_writer = console_writer
+        self.config = config
+
+        # Create HolidayChecker if country is configured
+        self.holiday_checker: HolidayChecker | None = None
+        if config.region.country:
+            with suppress(ImportError, NotImplementedError):
+                self.holiday_checker = HolidayChecker(config.region.country)
 
     def build_table(self, gantt_result: GanttResult) -> Table | None:
         """Build and return a Gantt chart Table object from GanttResult.
@@ -142,7 +153,7 @@ class RichGanttRenderer(RichRendererBase):
         """
         # Get the three header lines from the formatter
         month_line, today_line, day_line = GanttCellFormatter.build_date_header_lines(
-            start_date, end_date
+            start_date, end_date, self.holiday_checker
         )
 
         # Combine all three lines
@@ -221,7 +232,7 @@ class RichGanttRenderer(RichRendererBase):
 
             # Determine cell display and styling using the formatter
             display, style = GanttCellFormatter.format_timeline_cell(
-                current_date, hours, parsed_dates, task.status
+                current_date, hours, parsed_dates, task.status, self.holiday_checker
             )
 
             timeline.append(display, style=style)

@@ -4,6 +4,7 @@ This widget wraps the GanttDataTable and provides additional functionality
 like date range management and automatic resizing.
 """
 
+from contextlib import suppress
 from datetime import date, timedelta
 
 from textual.app import ComposeResult
@@ -24,8 +25,10 @@ from presentation.constants.table_dimensions import (
     MIN_TIMELINE_WIDTH,
 )
 from presentation.tui.widgets.gantt_data_table import GanttDataTable
+from shared.config_manager import Config
 from shared.constants.time import DAYS_PER_WEEK
 from shared.utils.date_utils import get_previous_monday
+from shared.utils.holiday_checker import HolidayChecker
 from shared.xdg_utils import XDGDirectories
 
 
@@ -58,7 +61,9 @@ class GanttWidget(Static):
         self._title_widget.styles.margin = (0, 0, 1, 0)  # Bottom margin
         yield self._title_widget
 
-        self._gantt_table = GanttDataTable()
+        # Create HolidayChecker from app config
+        holiday_checker = self._create_holiday_checker()
+        self._gantt_table = GanttDataTable(holiday_checker=holiday_checker)
         self._gantt_table.styles.border = ("solid", "white")
         self._gantt_table.styles.width = "auto"
 
@@ -71,6 +76,24 @@ class GanttWidget(Static):
         self._legend_widget.styles.text_align = "center"
         self._legend_widget.styles.margin = (1, 0, 0, 0)  # Top margin
         yield self._legend_widget
+
+    def _create_holiday_checker(self) -> HolidayChecker | None:
+        """Create HolidayChecker from app config.
+
+        Returns:
+            HolidayChecker instance if country is configured, None otherwise
+        """
+        # Access app config via self.app
+        with suppress(AttributeError):
+            # Type hint: app is TaskdogTUI which has config attribute
+            app = self.app  # type: ignore[attr-defined]
+            config: Config = app.config
+
+            if config.region.country:
+                with suppress(ImportError, NotImplementedError):
+                    return HolidayChecker(config.region.country)
+
+        return None
 
     def update_gantt(
         self,

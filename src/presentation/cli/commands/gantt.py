@@ -124,5 +124,6 @@ def gantt_command(ctx, start_date, end_date, show_all, sort, reverse):
 
     # Render using Presentation layer (display logic)
     console_writer = ctx_obj.console_writer
-    renderer = RichGanttRenderer(console_writer)
+    config = ctx_obj.config
+    renderer = RichGanttRenderer(console_writer, config)
     renderer.render(gantt_result)

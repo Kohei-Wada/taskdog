@@ -6,7 +6,7 @@ like task selection, date range adjustment, and filtering.
 """
 
 from datetime import date, timedelta
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from rich.text import Text
 from textual.widgets import DataTable
@@ -19,6 +19,9 @@ from presentation.constants.table_dimensions import (
     GANTT_TABLE_TASK_MIN_WIDTH,
 )
 from presentation.renderers.gantt_cell_formatter import GanttCellFormatter
+
+if TYPE_CHECKING:
+    from shared.utils.holiday_checker import HolidayChecker
 
 
 class GanttDataTable(DataTable):
@@ -33,8 +36,12 @@ class GanttDataTable(DataTable):
     # No bindings - read-only display
     BINDINGS: ClassVar = []
 
-    def __init__(self, *args, **kwargs):
-        """Initialize the Gantt data table."""
+    def __init__(self, holiday_checker: "HolidayChecker | None" = None, *args, **kwargs):
+        """Initialize the Gantt data table.
+
+        Args:
+            holiday_checker: Optional HolidayChecker for holiday detection
+        """
         super().__init__(*args, **kwargs)
         self.cursor_type = "none"
         self.zebra_stripes = True
@@ -47,6 +54,7 @@ class GanttDataTable(DataTable):
         self._task_map: dict[int, Task] = {}  # Maps row index to Task
         self._gantt_result: GanttResult | None = None
         self._date_columns: list[date] = []  # Columns representing dates
+        self._holiday_checker = holiday_checker
 
     def setup_columns(
         self,
@@ -129,7 +137,7 @@ class GanttDataTable(DataTable):
         """
         # Get the three header lines from the formatter
         month_line, today_line, day_line = GanttCellFormatter.build_date_header_lines(
-            start_date, end_date
+            start_date, end_date, self._holiday_checker
         )
 
         # Add three separate rows for month, today marker, and day
@@ -178,6 +186,7 @@ class GanttDataTable(DataTable):
                 hours,
                 parsed_dates,
                 task.status,
+                self._holiday_checker,
             )
             timeline.append(display, style=style)
 

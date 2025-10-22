@@ -27,13 +27,12 @@ class EarliestDeadlineOptimizationStrategy(OptimizationStrategy):
     DESCRIPTION = "EDF algorithm"
 
     def __init__(self, config: Config):
-        """Initialize strategy with greedy forward allocator.
+        """Initialize strategy with configuration.
 
         Args:
             config: Application configuration
         """
         self.config = config
-        self.allocator = GreedyForwardAllocator(config)
 
     def _sort_schedulable_tasks(
         self, tasks: list[Task], start_date: datetime, repository
@@ -73,6 +72,8 @@ class EarliestDeadlineOptimizationStrategy(OptimizationStrategy):
         Returns:
             Copy of task with updated schedule, or None if allocation fails
         """
-        return self.allocator.allocate(
+        # Create allocator with holiday_checker (available after optimize_tasks sets it)
+        allocator = GreedyForwardAllocator(self.config, self.holiday_checker)
+        return allocator.allocate(
             task, start_date, max_hours_per_day, self.daily_allocations, self.repository
         )

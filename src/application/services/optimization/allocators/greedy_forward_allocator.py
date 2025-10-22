@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
-from shared.utils.date_utils import is_weekend
+from shared.utils.date_utils import is_workday
 
 
 class GreedyForwardAllocator(TaskAllocatorBase):
@@ -64,8 +64,8 @@ class GreedyForwardAllocator(TaskAllocatorBase):
         task_daily_allocations: dict[str, float] = {}
 
         while remaining_hours > 0:
-            # Skip weekends
-            if is_weekend(current_date):
+            # Skip weekends and holidays
+            if not is_workday(current_date, self.holiday_checker):
                 current_date += timedelta(days=1)
                 continue
 

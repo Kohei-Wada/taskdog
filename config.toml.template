@@ -65,6 +65,20 @@ default_end_hour = 18
 datetime_format = "%Y-%m-%d %H:%M:%S"
 
 # ============================================================================
+# Region Settings
+# ============================================================================
+[region]
+# ISO 3166-1 alpha-2 country code for holiday checking
+# Default: None (no holiday checking)
+# Examples: "JP" (Japan), "US" (United States), "GB" (United Kingdom), "DE" (Germany)
+# When specified, the system can identify public holidays and treat them as non-workdays
+# For a full list of supported countries, see:
+# https://github.com/vacanza/holidays#available-countries
+#
+# Note: Requires the 'holidays' package (included in taskdog dependencies)
+country = "JP"
+
+# ============================================================================
 # Example Configurations
 # ============================================================================
 

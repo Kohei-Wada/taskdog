@@ -3,6 +3,7 @@
 import copy
 import random
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from application.constants.optimization import (
     DEADLINE_PENALTY_MULTIPLIER,
@@ -19,6 +20,9 @@ from application.services.optimization.optimization_strategy import Optimization
 from domain.constants import DATETIME_FORMAT
 from domain.entities.task import Task
 from shared.config_manager import Config
+
+if TYPE_CHECKING:
+    from shared.utils.holiday_checker import HolidayChecker
 
 
 class GeneticOptimizationStrategy(OptimizationStrategy):
@@ -61,6 +65,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
+        holiday_checker: "HolidayChecker | None" = None,
     ) -> tuple[list[Task], dict[str, float], list[SchedulingFailure]]:
         """Optimize task schedules using genetic algorithm.
 
@@ -70,11 +75,13 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             start_date: Starting date for schedule optimization
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
+            holiday_checker: Optional HolidayChecker for holiday detection
 
         Returns:
-            Tuple of (modified_tasks, daily_allocations)
+            Tuple of (modified_tasks, daily_allocations, failed_tasks)
             - modified_tasks: List of tasks with updated schedules
             - daily_allocations: Dict mapping date strings to allocated hours
+            - failed_tasks: List of tasks that could not be scheduled with reasons
         """
         # Filter tasks that need scheduling
         schedulable_tasks = [task for task in tasks if task.is_schedulable(force_override)]
@@ -86,12 +93,13 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         self.repository = repository
         self.start_date = start_date
         self.max_hours_per_day = max_hours_per_day
+        self.holiday_checker = holiday_checker
         self.daily_allocations: dict[str, float] = {}
         self.failed_tasks: list[SchedulingFailure] = []
         self._initialize_allocations(tasks, force_override)
 
         # Create allocator instance
-        allocator = GreedyForwardAllocator(self.config)
+        allocator = GreedyForwardAllocator(self.config, self.holiday_checker)
 
         # Run genetic algorithm
         best_order = self._genetic_algorithm(

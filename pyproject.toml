@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
   "click>=8.3.0",
+  "holidays>=0.60.0",
   "python-dateutil>=2.8.0",
   "rich>=14.2.0",
   "textual>=0.88.0",
@@ -53,6 +54,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "dateutil.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "holidays.*"
 ignore_missing_imports = true
 
 # Temporarily ignore complex modules with many type issues for Phase 2

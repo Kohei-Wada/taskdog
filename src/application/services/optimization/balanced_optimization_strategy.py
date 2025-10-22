@@ -31,13 +31,12 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
     DESCRIPTION = "Even workload distribution"
 
     def __init__(self, config: Config):
-        """Initialize strategy with balanced allocator.
+        """Initialize strategy with configuration.
 
         Args:
             config: Application configuration
         """
         self.config = config
-        self.allocator = BalancedAllocator(config)
 
     def _allocate_task(
         self,
@@ -55,6 +54,8 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         Returns:
             Copy of task with updated schedule, or None if allocation fails
         """
-        return self.allocator.allocate(
+        # Create allocator with holiday_checker (available after optimize_tasks sets it)
+        allocator = BalancedAllocator(self.config, self.holiday_checker)
+        return allocator.allocate(
             task, start_date, max_hours_per_day, self.daily_allocations, self.repository
         )
