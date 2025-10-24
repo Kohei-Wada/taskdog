@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
@@ -170,13 +169,13 @@ class TaskAllocatorBase(ABC):
         start_date_with_time = schedule_start.replace(
             hour=self.config.time.default_start_hour, minute=0, second=0
         )
-        task.planned_start = start_date_with_time.strftime(DATETIME_FORMAT)
+        task.planned_start = start_date_with_time
 
         # Set end time to config.time.default_end_hour (default: 18:00)
         end_date_with_time = schedule_end.replace(
             hour=self.config.time.default_end_hour, minute=0, second=0
         )
-        task.planned_end = end_date_with_time.strftime(DATETIME_FORMAT)
+        task.planned_end = end_date_with_time
         task.daily_allocations = task_daily_allocations
 
     def _rollback_allocations(

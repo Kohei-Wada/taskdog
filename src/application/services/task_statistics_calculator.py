@@ -13,7 +13,6 @@ from application.dto.statistics_result import (
     TrendStatistics,
 )
 from domain.entities.task import Task, TaskStatus
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class TaskStatisticsCalculator:
@@ -79,7 +78,7 @@ class TaskStatisticsCalculator:
         for task in tasks:
             # Include tasks that were completed within the period
             if task.actual_end:
-                end_dt = datetime.strptime(task.actual_end, DATETIME_FORMAT)
+                end_dt = task.actual_end
                 if end_dt >= cutoff:
                     filtered.append(task)
             # Also include active tasks (PENDING, IN_PROGRESS)
@@ -264,8 +263,8 @@ class TaskStatisticsCalculator:
             if task.deadline is None or task.actual_end is None:
                 continue
 
-            deadline_dt = datetime.strptime(task.deadline, DATETIME_FORMAT)
-            actual_end_dt = datetime.strptime(task.actual_end, DATETIME_FORMAT)
+            deadline_dt = task.deadline
+            actual_end_dt = task.actual_end
 
             if actual_end_dt <= deadline_dt:
                 met_count += 1
@@ -351,7 +350,7 @@ class TaskStatisticsCalculator:
 
         for task in tasks:
             if task.actual_end and task.is_finished:
-                end_dt = datetime.strptime(task.actual_end, DATETIME_FORMAT)
+                end_dt = task.actual_end
 
                 # Count for last N days
                 if end_dt >= last_7_days:

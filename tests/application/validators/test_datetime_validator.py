@@ -7,7 +7,6 @@ from unittest.mock import Mock
 from application.validators.datetime_validator import DateTimeValidator
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskValidationError
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class TestDateTimeValidator(unittest.TestCase):
@@ -23,7 +22,7 @@ class TestDateTimeValidator(unittest.TestCase):
     def test_validate_future_date_success(self):
         """Test that future dates are accepted for new tasks."""
         task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
-        future_date = (datetime.now() + timedelta(days=7)).strftime(DATETIME_FORMAT)
+        future_date = datetime.now() + timedelta(days=7)
 
         # Should not raise for all validators
         self.deadline_validator.validate(future_date, task, self.mock_repository)
@@ -33,7 +32,7 @@ class TestDateTimeValidator(unittest.TestCase):
     def test_validate_past_date_for_new_task_raises_error(self):
         """Test that past dates are rejected for tasks that haven't started."""
         task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
-        past_date = (datetime.now() - timedelta(days=7)).strftime(DATETIME_FORMAT)
+        past_date = datetime.now() - timedelta(days=7)
 
         # Test deadline
         with self.assertRaises(TaskValidationError) as context:
@@ -53,7 +52,7 @@ class TestDateTimeValidator(unittest.TestCase):
 
     def test_validate_past_date_for_started_task_success(self):
         """Test that past dates are allowed for tasks that have started."""
-        actual_start = (datetime.now() - timedelta(days=14)).strftime(DATETIME_FORMAT)
+        actual_start = datetime.now() - timedelta(days=14)
         task = Task(
             id=1,
             name="Test",
@@ -61,7 +60,7 @@ class TestDateTimeValidator(unittest.TestCase):
             priority=1,
             actual_start=actual_start,
         )
-        past_date = (datetime.now() - timedelta(days=7)).strftime(DATETIME_FORMAT)
+        past_date = datetime.now() - timedelta(days=7)
 
         # Should not raise - task has already started
         self.deadline_validator.validate(past_date, task, self.mock_repository)
@@ -77,28 +76,28 @@ class TestDateTimeValidator(unittest.TestCase):
         self.planned_start_validator.validate(None, task, self.mock_repository)
         self.planned_end_validator.validate(None, task, self.mock_repository)
 
-    def test_validate_invalid_format_raises_error(self):
-        """Test that invalid datetime formats are rejected."""
+    def test_validate_invalid_type_raises_error(self):
+        """Test that invalid types are rejected (expects datetime objects)."""
         task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
-        invalid_date = "2025-13-45"  # Invalid month/day
+        invalid_value = "2025-01-15 10:00:00"  # String instead of datetime object
 
         with self.assertRaises(TaskValidationError) as context:
-            self.deadline_validator.validate(invalid_date, task, self.mock_repository)
-        self.assertIn("Invalid datetime format", str(context.exception))
+            self.deadline_validator.validate(invalid_value, task, self.mock_repository)
+        self.assertIn("Invalid datetime type", str(context.exception))
         self.assertIn("deadline", str(context.exception))
 
-    def test_validate_wrong_format_string_raises_error(self):
-        """Test that wrong format strings are rejected."""
+    def test_validate_wrong_type_raises_error(self):
+        """Test that wrong types (int, None when checking type, etc.) are rejected."""
         task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
-        wrong_format = "10/20/2025"  # MM/DD/YYYY instead of YYYY-MM-DD HH:MM:SS
+        wrong_type = 123456  # int instead of datetime
 
         with self.assertRaises(TaskValidationError) as context:
-            self.deadline_validator.validate(wrong_format, task, self.mock_repository)
-        self.assertIn("Invalid datetime format", str(context.exception))
+            self.deadline_validator.validate(wrong_type, task, self.mock_repository)
+        self.assertIn("Invalid datetime type", str(context.exception))
 
     def test_validate_completed_task_with_actual_start_allows_past_dates(self):
         """Test that completed tasks with actual_start can have past dates."""
-        actual_start = (datetime.now() - timedelta(days=30)).strftime(DATETIME_FORMAT)
+        actual_start = datetime.now() - timedelta(days=30)
         task = Task(
             id=1,
             name="Test",
@@ -106,7 +105,7 @@ class TestDateTimeValidator(unittest.TestCase):
             priority=1,
             actual_start=actual_start,
         )
-        past_date = (datetime.now() - timedelta(days=7)).strftime(DATETIME_FORMAT)
+        past_date = datetime.now() - timedelta(days=7)
 
         # Should not raise - task has actual_start
         self.deadline_validator.validate(past_date, task, self.mock_repository)
@@ -117,7 +116,7 @@ class TestDateTimeValidator(unittest.TestCase):
         """Test that today's date (current time) is allowed."""
         task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
         # Use a time slightly in the future to avoid race conditions
-        today_plus_1min = (datetime.now() + timedelta(minutes=1)).strftime(DATETIME_FORMAT)
+        today_plus_1min = datetime.now() + timedelta(minutes=1)
 
         # Should not raise
         self.deadline_validator.validate(today_plus_1min, task, self.mock_repository)
