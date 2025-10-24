@@ -3,7 +3,6 @@ from datetime import datetime
 
 from domain.entities.task import Task, TaskStatus
 from domain.services.time_tracker import TimeTracker
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class TestTimeTracker(unittest.TestCase):
@@ -21,8 +20,8 @@ class TestTimeTracker(unittest.TestCase):
         self.tracker.record_time_on_status_change(task, TaskStatus.IN_PROGRESS)
 
         self.assertIsNotNone(task.actual_start)
-        # Verify format: YYYY-MM-DD HH:MM:SS
-        datetime.strptime(task.actual_start, DATETIME_FORMAT)
+        # Verify it's a datetime object
+        self.assertIsInstance(task.actual_start, datetime)
 
     def test_record_time_to_completed(self):
         """Test that actual_end is recorded when status changes to COMPLETED"""
@@ -32,8 +31,8 @@ class TestTimeTracker(unittest.TestCase):
         self.tracker.record_time_on_status_change(task, TaskStatus.COMPLETED)
 
         self.assertIsNotNone(task.actual_end)
-        # Verify format: YYYY-MM-DD HH:MM:SS
-        datetime.strptime(task.actual_end, DATETIME_FORMAT)
+        # Verify it's a datetime object
+        self.assertIsInstance(task.actual_end, datetime)
 
     def test_record_time_to_canceled(self):
         """Test that actual_end is recorded when status changes to CANCELED"""
@@ -43,8 +42,8 @@ class TestTimeTracker(unittest.TestCase):
         self.tracker.record_time_on_status_change(task, TaskStatus.CANCELED)
 
         self.assertIsNotNone(task.actual_end)
-        # Verify format: YYYY-MM-DD HH:MM:SS
-        datetime.strptime(task.actual_end, DATETIME_FORMAT)
+        # Verify it's a datetime object
+        self.assertIsInstance(task.actual_end, datetime)
 
     def test_no_record_for_pending(self):
         """Test that no timestamps are recorded for PENDING status"""
@@ -57,8 +56,8 @@ class TestTimeTracker(unittest.TestCase):
 
     def test_do_not_overwrite_existing_actual_start(self):
         """Test that existing actual_start is not overwritten"""
-        task = Task(name="Test Task", priority=1, id=1, actual_start="2025-01-01 10:00:00")
-        original_start = task.actual_start
+        original_start = datetime(2025, 1, 1, 10, 0, 0)
+        task = Task(name="Test Task", priority=1, id=1, actual_start=original_start)
 
         self.tracker.record_time_on_status_change(task, TaskStatus.IN_PROGRESS)
 
@@ -66,8 +65,8 @@ class TestTimeTracker(unittest.TestCase):
 
     def test_do_not_overwrite_existing_actual_end(self):
         """Test that existing actual_end is not overwritten"""
-        task = Task(name="Test Task", priority=1, id=1, actual_end="2025-01-01 18:00:00")
-        original_end = task.actual_end
+        original_end = datetime(2025, 1, 1, 18, 0, 0)
+        task = Task(name="Test Task", priority=1, id=1, actual_end=original_end)
 
         self.tracker.record_time_on_status_change(task, TaskStatus.COMPLETED)
 
@@ -97,15 +96,14 @@ class TestTimeTracker(unittest.TestCase):
         self.assertIsNone(task.actual_start)
         self.assertIsNotNone(task.actual_end)
 
-    def test_timestamp_format(self):
-        """Test that timestamps have correct format"""
+    def test_timestamp_is_datetime_object(self):
+        """Test that timestamps are datetime objects"""
         task = Task(name="Test Task", priority=1, id=1)
 
         self.tracker.record_time_on_status_change(task, TaskStatus.IN_PROGRESS)
 
-        # Should be able to parse the timestamp
-        parsed = datetime.strptime(task.actual_start, DATETIME_FORMAT)
-        self.assertIsInstance(parsed, datetime)
+        # Should be a datetime object
+        self.assertIsInstance(task.actual_start, datetime)
 
     def test_multiple_status_changes(self):
         """Test multiple status changes don't overwrite original timestamps"""
