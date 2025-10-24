@@ -4,6 +4,7 @@ import contextlib
 import os
 import tempfile
 import unittest
+from datetime import datetime
 
 from application.dto.cancel_task_request import CancelTaskRequest
 from application.use_cases.cancel_task import CancelTaskUseCase
@@ -94,7 +95,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
         """Test execute can cancel IN_PROGRESS task"""
         task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
         self.repository.save(task)
 
         input_dto = CancelTaskRequest(task_id=task.id)
@@ -109,8 +110,8 @@ class TestCancelTaskUseCase(unittest.TestCase):
         # Create and complete a task
         task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
-        task.actual_end = "2024-01-01 12:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
+        task.actual_end = datetime(2024, 1, 1, 12, 0, 0)
         self.repository.save(task)
 
         # Try to cancel the completed task - should raise error
@@ -128,7 +129,7 @@ class TestCancelTaskUseCase(unittest.TestCase):
         # Create a canceled task
         task = Task(name="Test Task", priority=1, status=TaskStatus.CANCELED)
         task.id = self.repository.generate_next_id()
-        task.actual_end = "2024-01-01 11:00:00"
+        task.actual_end = datetime(2024, 1, 1, 11, 0, 0)
         self.repository.save(task)
 
         # Try to cancel the already canceled task - should raise error
@@ -146,8 +147,8 @@ class TestCancelTaskUseCase(unittest.TestCase):
         # Create and complete a task
         task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
-        task.actual_end = "2024-01-01 12:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
+        task.actual_end = datetime(2024, 1, 1, 12, 0, 0)
         self.repository.save(task)
 
         # Try to cancel the completed task
@@ -159,8 +160,8 @@ class TestCancelTaskUseCase(unittest.TestCase):
         # Verify task state remains unchanged
         retrieved = self.repository.get_by_id(task.id)
         self.assertEqual(retrieved.status, TaskStatus.COMPLETED)
-        self.assertEqual(retrieved.actual_start, "2024-01-01 10:00:00")
-        self.assertEqual(retrieved.actual_end, "2024-01-01 12:00:00")
+        self.assertEqual(retrieved.actual_start, datetime(2024, 1, 1, 10, 0, 0))
+        self.assertEqual(retrieved.actual_end, datetime(2024, 1, 1, 12, 0, 0))
 
 
 if __name__ == "__main__":

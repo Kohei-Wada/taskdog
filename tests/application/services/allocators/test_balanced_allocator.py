@@ -32,7 +32,7 @@ class TestBalancedAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=10.0,
-            deadline="2025-10-24 18:00:00",  # Friday (5 weekdays from Monday)
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday (5 weekdays from Monday)
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
@@ -45,8 +45,8 @@ class TestBalancedAllocator(unittest.TestCase):
 
         # Verify allocation succeeded
         self.assertIsNotNone(result)
-        self.assertEqual(result.planned_start, "2025-10-20 09:00:00")
-        self.assertEqual(result.planned_end, "2025-10-24 18:00:00")
+        self.assertEqual(result.planned_start, datetime(2025, 10, 20, 9, 0, 0))
+        self.assertEqual(result.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # Verify balanced distribution: 10h / 5 days = 2h per day
         self.assertIsNotNone(result.daily_allocations)
@@ -90,7 +90,7 @@ class TestBalancedAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=10.0,
-            deadline="2025-10-27 18:00:00",  # Mon 10/20 to Mon 10/27
+            deadline=datetime(2025, 10, 27, 18, 0, 0),  # Mon 10/20 to Mon 10/27
         )
 
         start_date = datetime(2025, 10, 24, 9, 0, 0)  # Friday
@@ -115,7 +115,7 @@ class TestBalancedAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=10.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -140,7 +140,7 @@ class TestBalancedAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=10.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -168,7 +168,7 @@ class TestBalancedAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=30.0,
-            deadline="2025-10-22 18:00:00",  # Only 3 days (18h max)
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Only 3 days (18h max)
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -210,7 +210,7 @@ class TestBalancedAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=25.0,
-            deadline="2025-10-22 18:00:00",  # Cannot fit 25h in 3 days
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Cannot fit 25h in 3 days
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -234,7 +234,7 @@ class TestBalancedAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=12.0,
-            deadline="2025-10-27 18:00:00",  # 5 weekdays available
+            deadline=datetime(2025, 10, 27, 18, 0, 0),  # 5 weekdays available
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)

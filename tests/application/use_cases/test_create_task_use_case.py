@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime
 
 from application.dto.create_task_request import CreateTaskRequest
 from application.use_cases.create_task import CreateTaskUseCase
@@ -64,9 +65,9 @@ class TestCreateTaskUseCase(unittest.TestCase):
         input_dto = CreateTaskRequest(
             name="Full Task",
             priority=3,
-            planned_start="2025-01-01 09:00:00",
-            planned_end="2025-01-31 17:00:00",
-            deadline="2025-02-01 18:00:00",
+            planned_start=datetime(2025, 1, 1, 9, 0, 0),
+            planned_end=datetime(2025, 1, 31, 17, 0, 0),
+            deadline=datetime(2025, 2, 1, 18, 0, 0),
             estimated_duration=10.5,
         )
 
@@ -74,9 +75,9 @@ class TestCreateTaskUseCase(unittest.TestCase):
 
         self.assertEqual(task.name, "Full Task")
         self.assertEqual(task.priority, 3)
-        self.assertEqual(task.planned_start, "2025-01-01 09:00:00")
-        self.assertEqual(task.planned_end, "2025-01-31 17:00:00")
-        self.assertEqual(task.deadline, "2025-02-01 18:00:00")
+        self.assertEqual(task.planned_start, datetime(2025, 1, 1, 9, 0, 0))
+        self.assertEqual(task.planned_end, datetime(2025, 1, 31, 17, 0, 0))
+        self.assertEqual(task.deadline, datetime(2025, 2, 1, 18, 0, 0))
         self.assertEqual(task.estimated_duration, 10.5)
 
     def test_execute_with_none_optional_fields(self):

@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime
 
 from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from domain.entities.task import Task, TaskStatus
@@ -33,8 +34,8 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             name="Task 1",
             priority=1,
             status=TaskStatus.PENDING,
-            planned_start="2025-10-14 09:00:00",
-            planned_end="2025-10-14 17:00:00",
+            planned_start=datetime(2025, 10, 14, 9, 0, 0),
+            planned_end=datetime(2025, 10, 14, 17, 0, 0),
             estimated_duration=8.0,
         )
         task2 = Task(
@@ -42,8 +43,8 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             name="Task 2",
             priority=1,
             status=TaskStatus.PENDING,
-            planned_start="2025-10-15 09:00:00",
-            planned_end="2025-10-15 17:00:00",
+            planned_start=datetime(2025, 10, 15, 9, 0, 0),
+            planned_end=datetime(2025, 10, 15, 17, 0, 0),
             estimated_duration=8.0,
         )
         self.repository.save(task1)
@@ -71,8 +72,8 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             name="Task 1",
             priority=1,
             status=TaskStatus.PENDING,
-            planned_start="2025-10-15 09:00:00",
-            planned_end="2025-10-15 17:00:00",
+            planned_start=datetime(2025, 10, 15, 9, 0, 0),
+            planned_end=datetime(2025, 10, 15, 17, 0, 0),
             estimated_duration=8.0,
         )
         self.repository.save(task)
@@ -96,9 +97,9 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             name="Task 1",
             priority=1,
             status=TaskStatus.PENDING,
-            planned_start="2025-10-14 09:00:00",
-            planned_end="2025-10-16 17:00:00",  # Ends after deadline
-            deadline="2025-10-15 18:00:00",
+            planned_start=datetime(2025, 10, 14, 9, 0, 0),
+            planned_end=datetime(2025, 10, 16, 17, 0, 0),  # Ends after deadline
+            deadline=datetime(2025, 10, 15, 18, 0, 0),
             estimated_duration=16.0,
         )
         self.repository.save(task)
@@ -121,8 +122,8 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             name="Task 1",
             priority=1,
             status=TaskStatus.PENDING,
-            planned_start="2025-10-14 09:00:00",
-            planned_end="2025-10-14 17:00:00",
+            planned_start=datetime(2025, 10, 14, 9, 0, 0),
+            planned_end=datetime(2025, 10, 14, 17, 0, 0),
             estimated_duration=10.0,
         )
         self.repository.save(task)
@@ -147,8 +148,8 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             name="Scheduled",
             priority=1,
             status=TaskStatus.PENDING,
-            planned_start="2025-10-14 09:00:00",
-            planned_end="2025-10-14 17:00:00",
+            planned_start=datetime(2025, 10, 14, 9, 0, 0),
+            planned_end=datetime(2025, 10, 14, 17, 0, 0),
             estimated_duration=8.0,
         )
         # Create unscheduled task

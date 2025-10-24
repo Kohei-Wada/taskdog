@@ -38,7 +38,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
             name="Greedy Task",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto)
 
@@ -57,9 +57,9 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Should start on Monday
-        self.assertEqual(task.planned_start, "2025-10-20 09:00:00")
+        self.assertEqual(task.planned_start, datetime(2025, 10, 20, 9, 0, 0))
         # Should end on Tuesday (12h / 6h per day = 2 days)
-        self.assertEqual(task.planned_end, "2025-10-21 18:00:00")
+        self.assertEqual(task.planned_end, datetime(2025, 10, 21, 18, 0, 0))
 
         # Check daily allocations: greedy fills each day to max
         self.assertIsNotNone(task.daily_allocations)
@@ -75,7 +75,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
             name="Partial Day Task",
             priority=100,
             estimated_duration=10.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto)
 
@@ -101,7 +101,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
             name="Weekend Task",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto)
 
@@ -118,9 +118,9 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Should start Friday
-        self.assertEqual(task.planned_start, "2025-10-24 09:00:00")
+        self.assertEqual(task.planned_start, datetime(2025, 10, 24, 9, 0, 0))
         # Should end Monday (skipping Saturday/Sunday)
-        self.assertEqual(task.planned_end, "2025-10-27 18:00:00")
+        self.assertEqual(task.planned_end, datetime(2025, 10, 27, 18, 0, 0))
 
         # Verify no weekend allocations
         self.assertIsNone(task.daily_allocations.get("2025-10-25"))  # Saturday
@@ -133,7 +133,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
             name="Tight Deadline",
             priority=100,
             estimated_duration=30.0,  # Too much work
-            deadline="2025-10-22 18:00:00",  # Only 3 days available
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Only 3 days available
         )
         self.create_use_case.execute(input_dto)
 
@@ -157,14 +157,14 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
             name="Fixed Meeting",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-25 18:00:00",
+            deadline=datetime(2025, 10, 25, 18, 0, 0),
             is_fixed=True,
         )
         fixed_task = self.create_use_case.execute(fixed_task_input)
 
         # Manually schedule the fixed task with specific daily allocations
-        fixed_task.planned_start = "2025-10-20 09:00:00"
-        fixed_task.planned_end = "2025-10-22 18:00:00"
+        fixed_task.planned_start = datetime(2025, 10, 20, 9, 0, 0)
+        fixed_task.planned_end = datetime(2025, 10, 22, 18, 0, 0)
         fixed_task.daily_allocations = {
             "2025-10-20": 4.0,  # Monday: 4h
             "2025-10-21": 4.0,  # Tuesday: 4h
@@ -177,7 +177,7 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
             name="Regular Task",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(regular_task_input)
 

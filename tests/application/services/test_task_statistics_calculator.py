@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 
 from application.services.task_statistics_calculator import TaskStatisticsCalculator
 from domain.entities.task import Task, TaskStatus
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class TestTaskStatisticsCalculator(unittest.TestCase):
@@ -51,15 +50,15 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
                 name="Task 1",
                 priority=10,
                 id=1,
-                actual_start=(now - timedelta(hours=5)).strftime(DATETIME_FORMAT),
-                actual_end=(now - timedelta(hours=3)).strftime(DATETIME_FORMAT),
+                actual_start=(now - timedelta(hours=5)),
+                actual_end=(now - timedelta(hours=3)),
             ),
             Task(
                 name="Task 2",
                 priority=20,
                 id=2,
-                actual_start=(now - timedelta(hours=10)).strftime(DATETIME_FORMAT),
-                actual_end=(now - timedelta(hours=6)).strftime(DATETIME_FORMAT),
+                actual_start=(now - timedelta(hours=10)),
+                actual_end=(now - timedelta(hours=6)),
             ),
         ]
 
@@ -83,8 +82,8 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
                 priority=10,
                 id=1,
                 estimated_duration=10.0,
-                actual_start=(now - timedelta(hours=5)).strftime(DATETIME_FORMAT),
-                actual_end=now.strftime(DATETIME_FORMAT),
+                actual_start=(now - timedelta(hours=5)),
+                actual_end=now,
             ),
             # Under-estimated (took longer)
             Task(
@@ -92,8 +91,8 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
                 priority=20,
                 id=2,
                 estimated_duration=2.0,
-                actual_start=(now - timedelta(hours=5)).strftime(DATETIME_FORMAT),
-                actual_end=now.strftime(DATETIME_FORMAT),
+                actual_start=(now - timedelta(hours=5)),
+                actual_end=now,
             ),
         ]
 
@@ -113,8 +112,8 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
                 name="Task 1",
                 priority=10,
                 id=1,
-                deadline=(now + timedelta(days=1)).strftime(DATETIME_FORMAT),
-                actual_end=now.strftime(DATETIME_FORMAT),
+                deadline=(now + timedelta(days=1)),
+                actual_end=now,
                 status=TaskStatus.COMPLETED,
             ),
             # Missed deadline
@@ -122,8 +121,8 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
                 name="Task 2",
                 priority=20,
                 id=2,
-                deadline=(now - timedelta(days=2)).strftime(DATETIME_FORMAT),
-                actual_end=now.strftime(DATETIME_FORMAT),
+                deadline=(now - timedelta(days=2)),
+                actual_end=now,
                 status=TaskStatus.COMPLETED,
             ),
         ]
@@ -161,7 +160,7 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
                 name="Task 1",
                 priority=10,
                 id=1,
-                actual_end=(now - timedelta(days=5)).strftime(DATETIME_FORMAT),
+                actual_end=(now - timedelta(days=5)),
                 status=TaskStatus.COMPLETED,
             ),
             # Completed 20 days ago
@@ -169,7 +168,7 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
                 name="Task 2",
                 priority=20,
                 id=2,
-                actual_end=(now - timedelta(days=20)).strftime(DATETIME_FORMAT),
+                actual_end=(now - timedelta(days=20)),
                 status=TaskStatus.COMPLETED,
             ),
         ]
@@ -189,7 +188,7 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
                 name="Task 1",
                 priority=10,
                 id=1,
-                actual_end=(now - timedelta(days=5)).strftime(DATETIME_FORMAT),
+                actual_end=(now - timedelta(days=5)),
                 status=TaskStatus.COMPLETED,
             ),
             # Completed 10 days ago (should be excluded)
@@ -197,7 +196,7 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
                 name="Task 2",
                 priority=20,
                 id=2,
-                actual_end=(now - timedelta(days=10)).strftime(DATETIME_FORMAT),
+                actual_end=(now - timedelta(days=10)),
                 status=TaskStatus.COMPLETED,
             ),
         ]

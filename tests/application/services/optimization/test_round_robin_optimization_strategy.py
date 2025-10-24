@@ -37,7 +37,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Task 1",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto1)
 
@@ -45,7 +45,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Task 2",
             priority=50,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto2)
 
@@ -76,7 +76,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Short Task",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto1)
 
@@ -84,7 +84,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Medium Task",
             priority=50,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto2)
 
@@ -92,7 +92,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Long Task",
             priority=25,
             estimated_duration=18.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto3)
 
@@ -110,7 +110,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
 
         # All tasks should start on the same day (parallel progress)
         for task in result.successful_tasks:
-            self.assertEqual(task.planned_start, "2025-10-20 09:00:00")
+            self.assertEqual(task.planned_start, datetime(2025, 10, 20, 9, 0, 0))
 
     def test_round_robin_stops_allocating_after_task_completion(self):
         """Test that round-robin stops allocating to completed tasks."""
@@ -119,7 +119,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Short Task",
             priority=100,
             estimated_duration=6.0,  # Completes after 3 days
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto1)
 
@@ -127,7 +127,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Long Task",
             priority=50,
             estimated_duration=18.0,  # Takes longer
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto2)
 
@@ -159,7 +159,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Impossible Deadline",
             priority=100,
             estimated_duration=30.0,  # 30 hours
-            deadline="2025-10-22 18:00:00",  # Only 3 days (18h max with round-robin)
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Only 3 days (18h max with round-robin)
         )
         self.create_use_case.execute(input_dto)
 
@@ -183,7 +183,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Weekend Task",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto)
 
@@ -210,7 +210,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Single Task",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto)
 
@@ -236,7 +236,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Quick Task",
             priority=100,
             estimated_duration=4.0,  # Completes in 2 days
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto1)
 
@@ -244,7 +244,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Medium Task",
             priority=50,
             estimated_duration=8.0,  # Completes in 4-5 days
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto2)
 
@@ -252,7 +252,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
             name="Long Task",
             priority=25,
             estimated_duration=12.0,  # Takes longest
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto3)
 

@@ -18,15 +18,16 @@ class TestTodayFilter(unittest.TestCase):
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
 
-        # Calculate date strings for testing
-        self.today = datetime.now().date()
+        # Calculate datetime objects for testing
+        now = datetime.now()
+        self.today = now.date()
         self.yesterday = self.today - timedelta(days=1)
         self.tomorrow = self.today + timedelta(days=1)
 
-        # Helper methods to create datetime strings
-        self.today_str = self.today.strftime("%Y-%m-%d 18:00:00")
-        self.yesterday_str = self.yesterday.strftime("%Y-%m-%d 18:00:00")
-        self.tomorrow_str = self.tomorrow.strftime("%Y-%m-%d 18:00:00")
+        # Create datetime objects (not strings)
+        self.today_dt = datetime.combine(self.today, datetime.min.time()).replace(hour=18)
+        self.yesterday_dt = datetime.combine(self.yesterday, datetime.min.time()).replace(hour=18)
+        self.tomorrow_dt = datetime.combine(self.tomorrow, datetime.min.time()).replace(hour=18)
 
     def tearDown(self):
         """Clean up temporary file after each test"""
@@ -35,7 +36,7 @@ class TestTodayFilter(unittest.TestCase):
 
     def test_filter_includes_deadline_today(self):
         """Test filter includes task with deadline today"""
-        task = Task(name="Deadline Today", priority=1, deadline=self.today_str)
+        task = Task(name="Deadline Today", priority=1, deadline=self.today_dt)
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
@@ -48,7 +49,7 @@ class TestTodayFilter(unittest.TestCase):
 
     def test_filter_excludes_deadline_tomorrow(self):
         """Test filter excludes task with deadline tomorrow"""
-        task = Task(name="Deadline Tomorrow", priority=1, deadline=self.tomorrow_str)
+        task = Task(name="Deadline Tomorrow", priority=1, deadline=self.tomorrow_dt)
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
@@ -76,8 +77,8 @@ class TestTodayFilter(unittest.TestCase):
         task = Task(
             name="Planned Today",
             priority=1,
-            planned_start=self.yesterday_str,
-            planned_end=self.tomorrow_str,
+            planned_start=self.yesterday_dt,
+            planned_end=self.tomorrow_dt,
         )
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
@@ -94,7 +95,7 @@ class TestTodayFilter(unittest.TestCase):
         task = Task(
             name="Completed Today",
             priority=1,
-            deadline=self.today_str,
+            deadline=self.today_dt,
             status=TaskStatus.COMPLETED,
         )
         task.id = self.repository.generate_next_id()
@@ -111,7 +112,7 @@ class TestTodayFilter(unittest.TestCase):
         task = Task(
             name="Completed Today",
             priority=1,
-            deadline=self.today_str,
+            deadline=self.today_dt,
             status=TaskStatus.COMPLETED,
         )
         task.id = self.repository.generate_next_id()

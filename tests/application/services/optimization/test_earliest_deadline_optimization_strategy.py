@@ -38,7 +38,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
             name="Early Deadline Task",
             priority=50,
             estimated_duration=6.0,
-            deadline="2025-10-22 18:00:00",  # 2 days away
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # 2 days away
         )
         self.create_use_case.execute(input_dto1)
 
@@ -47,7 +47,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
             name="Late Deadline Task",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-25 18:00:00",  # 5 days away
+            deadline=datetime(2025, 10, 25, 18, 0, 0),  # 5 days away
         )
         self.create_use_case.execute(input_dto2)
 
@@ -68,8 +68,8 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         task1 = next(t for t in result.successful_tasks if t.name == "Early Deadline Task")
         task2 = next(t for t in result.successful_tasks if t.name == "Late Deadline Task")
 
-        self.assertEqual(task1.planned_start, "2025-10-20 09:00:00")  # Monday
-        self.assertEqual(task2.planned_start, "2025-10-21 09:00:00")  # Tuesday
+        self.assertEqual(task1.planned_start, datetime(2025, 10, 20, 9, 0, 0))  # Monday
+        self.assertEqual(task2.planned_start, datetime(2025, 10, 21, 9, 0, 0))  # Tuesday
 
     def test_earliest_deadline_handles_no_deadline(self):
         """Test that EDF schedules tasks without deadlines last."""
@@ -78,7 +78,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
             name="With Deadline",
             priority=50,
             estimated_duration=6.0,
-            deadline="2025-10-25 18:00:00",
+            deadline=datetime(2025, 10, 25, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto1)
 
@@ -107,8 +107,8 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         task1 = next(t for t in result.successful_tasks if t.name == "With Deadline")
         task2 = next(t for t in result.successful_tasks if t.name == "No Deadline")
 
-        self.assertEqual(task1.planned_start, "2025-10-20 09:00:00")  # Monday
-        self.assertEqual(task2.planned_start, "2025-10-21 09:00:00")  # Tuesday
+        self.assertEqual(task1.planned_start, datetime(2025, 10, 20, 9, 0, 0))  # Monday
+        self.assertEqual(task2.planned_start, datetime(2025, 10, 21, 9, 0, 0))  # Tuesday
 
     def test_earliest_deadline_respects_deadline_constraints(self):
         """Test that EDF fails tasks that cannot meet their deadlines."""
@@ -117,7 +117,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
             name="Impossible Deadline",
             priority=100,
             estimated_duration=30.0,  # 30 hours
-            deadline="2025-10-22 18:00:00",  # Only 3 days (18 hours max)
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Only 3 days (18 hours max)
         )
         self.create_use_case.execute(input_dto)
 
@@ -142,7 +142,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
             name="Highest Priority, Latest Deadline",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-24 18:00:00",  # Day 5
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Day 5
         )
         self.create_use_case.execute(input_dto1)
 
@@ -150,7 +150,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
             name="Medium Priority, Middle Deadline",
             priority=50,
             estimated_duration=6.0,
-            deadline="2025-10-22 18:00:00",  # Day 3
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Day 3
         )
         self.create_use_case.execute(input_dto2)
 
@@ -158,7 +158,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
             name="Lowest Priority, Earliest Deadline",
             priority=10,
             estimated_duration=6.0,
-            deadline="2025-10-21 18:00:00",  # Day 2
+            deadline=datetime(2025, 10, 21, 18, 0, 0),  # Day 2
         )
         self.create_use_case.execute(input_dto3)
 
@@ -182,11 +182,11 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
         highest_prio = tasks_by_name["Highest Priority, Latest Deadline"]
 
         # Earliest deadline should be scheduled first
-        self.assertEqual(lowest_prio.planned_start, "2025-10-20 09:00:00")
+        self.assertEqual(lowest_prio.planned_start, datetime(2025, 10, 20, 9, 0, 0))
         # Middle deadline should be scheduled second
-        self.assertEqual(medium_prio.planned_start, "2025-10-21 09:00:00")
+        self.assertEqual(medium_prio.planned_start, datetime(2025, 10, 21, 9, 0, 0))
         # Latest deadline should be scheduled last
-        self.assertEqual(highest_prio.planned_start, "2025-10-22 09:00:00")
+        self.assertEqual(highest_prio.planned_start, datetime(2025, 10, 22, 9, 0, 0))
 
     def test_earliest_deadline_uses_greedy_allocation(self):
         """Test that EDF uses greedy forward allocation strategy."""
@@ -195,7 +195,7 @@ class TestEarliestDeadlineOptimizationStrategy(unittest.TestCase):
             name="Multi-day Task",
             priority=100,
             estimated_duration=15.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto)
 

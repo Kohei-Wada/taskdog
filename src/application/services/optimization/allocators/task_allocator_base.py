@@ -85,14 +85,14 @@ class TaskAllocatorBase(ABC):
         assert task_copy.estimated_duration is not None
         return task_copy
 
-    def _get_effective_deadline(self, task: Task) -> str | None:
+    def _get_effective_deadline(self, task: Task) -> datetime | None:
         """Get effective deadline for task scheduling.
 
         Args:
             task: Task to get deadline for
 
         Returns:
-            Effective deadline string, or None if no deadline
+            Effective deadline datetime, or None if no deadline
         """
         return task.deadline
 

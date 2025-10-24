@@ -42,7 +42,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
             name="Single Task",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto)
 
@@ -76,7 +76,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
                 name=f"Task {i + 1}",
                 priority=100 - (i * 10),
                 estimated_duration=6.0,
-                deadline="2025-10-31 18:00:00",
+                deadline=datetime(2025, 10, 31, 18, 0, 0),
             )
             self.create_use_case.execute(input_dto)
 
@@ -109,7 +109,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
             name="Task 1",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto1)
 
@@ -117,7 +117,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
             name="Task 2",
             priority=90,
             estimated_duration=6.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto2)
 
@@ -143,7 +143,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
             name="Tight Deadline",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-22 18:00:00",  # 3 days = 18h available
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # 3 days = 18h available
         )
         self.create_use_case.execute(input_dto)
 
@@ -162,8 +162,8 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Verify end date is before or on deadline
-        end_dt = datetime.strptime(task.planned_end, "%Y-%m-%d %H:%M:%S")
-        deadline_dt = datetime.strptime(task.deadline, "%Y-%m-%d %H:%M:%S")
+        end_dt = task.planned_end
+        deadline_dt = task.deadline
         self.assertLessEqual(end_dt, deadline_dt)
 
     def test_genetic_fails_impossible_deadlines(self):
@@ -173,7 +173,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
             name="Impossible Deadline",
             priority=100,
             estimated_duration=30.0,
-            deadline="2025-10-22 18:00:00",  # Only 18h available
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Only 18h available
         )
         self.create_use_case.execute(input_dto)
 
@@ -197,7 +197,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
             name="Weekend Task",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto)
 
@@ -225,7 +225,7 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
                 name=f"Task {i + 1}",
                 priority=100 - (i * 20),
                 estimated_duration=6.0,
-                deadline="2025-10-31 18:00:00",
+                deadline=datetime(2025, 10, 31, 18, 0, 0),
             )
             self.create_use_case.execute(input_dto)
 

@@ -38,7 +38,7 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
             name="Balanced Task",
             priority=100,
             estimated_duration=10.0,
-            deadline="2025-10-24 18:00:00",  # Friday (5 weekdays from Monday start)
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday (5 weekdays from Monday start)
         )
         self.create_use_case.execute(input_dto)
 
@@ -57,9 +57,9 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Should start on Monday
-        self.assertEqual(task.planned_start, "2025-10-20 09:00:00")
+        self.assertEqual(task.planned_start, datetime(2025, 10, 20, 9, 0, 0))
         # Should end on Friday
-        self.assertEqual(task.planned_end, "2025-10-24 18:00:00")
+        self.assertEqual(task.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # Check daily allocations: 10h / 5 days = 2h/day
         self.assertIsNotNone(task.daily_allocations)
@@ -106,7 +106,7 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
             name="Constrained Task",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-24 18:00:00",  # Friday (5 weekdays from Monday)
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday (5 weekdays from Monday)
         )
         self.create_use_case.execute(input_dto)
 
@@ -139,13 +139,13 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
             name="Task 1",
             priority=200,
             estimated_duration=6.0,
-            deadline="2025-10-22 18:00:00",  # Wednesday
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Wednesday
         )
         input2 = CreateTaskRequest(
             name="Task 2",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
         self.create_use_case.execute(input1)
         self.create_use_case.execute(input2)
@@ -177,7 +177,7 @@ class TestBalancedOptimizationStrategy(unittest.TestCase):
             name="Impossible Task",
             priority=100,
             estimated_duration=10.0,
-            deadline="2025-10-20 18:00:00",  # Same day as start
+            deadline=datetime(2025, 10, 20, 18, 0, 0),  # Same day as start
         )
         self.create_use_case.execute(input_dto)
 

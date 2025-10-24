@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime
 
 from application.dto.restore_task_request import RestoreTaskRequest
 from application.use_cases.restore_task import RestoreTaskUseCase
@@ -71,8 +72,8 @@ class TestRestoreTaskUseCase(unittest.TestCase):
             priority=1,
             status=TaskStatus.COMPLETED,
             is_deleted=True,
-            actual_start="2024-01-01 10:00:00",
-            actual_end="2024-01-01 12:00:00",
+            actual_start=datetime(2024, 1, 1, 10, 0, 0),
+            actual_end=datetime(2024, 1, 1, 12, 0, 0),
         )
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
@@ -92,12 +93,12 @@ class TestRestoreTaskUseCase(unittest.TestCase):
             priority=5,
             status=TaskStatus.CANCELED,
             is_deleted=True,
-            planned_start="2025-01-01 09:00:00",
-            planned_end="2025-01-01 18:00:00",
-            deadline="2025-01-02 18:00:00",
+            planned_start=datetime(2025, 1, 1, 9, 0, 0),
+            planned_end=datetime(2025, 1, 1, 18, 0, 0),
+            deadline=datetime(2025, 1, 2, 18, 0, 0),
             estimated_duration=8.0,
-            actual_start="2025-01-01 09:00:00",
-            actual_end="2025-01-01 12:00:00",
+            actual_start=datetime(2025, 1, 1, 9, 0, 0),
+            actual_end=datetime(2025, 1, 1, 12, 0, 0),
         )
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
@@ -110,12 +111,12 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         self.assertEqual(result.name, "Test Task")
         self.assertEqual(result.priority, 5)
         self.assertEqual(result.status, TaskStatus.CANCELED)
-        self.assertEqual(result.planned_start, "2025-01-01 09:00:00")
-        self.assertEqual(result.planned_end, "2025-01-01 18:00:00")
-        self.assertEqual(result.deadline, "2025-01-02 18:00:00")
+        self.assertEqual(result.planned_start, datetime(2025, 1, 1, 9, 0, 0))
+        self.assertEqual(result.planned_end, datetime(2025, 1, 1, 18, 0, 0))
+        self.assertEqual(result.deadline, datetime(2025, 1, 2, 18, 0, 0))
         self.assertEqual(result.estimated_duration, 8.0)
-        self.assertEqual(result.actual_start, "2025-01-01 09:00:00")
-        self.assertEqual(result.actual_end, "2025-01-01 12:00:00")
+        self.assertEqual(result.actual_start, datetime(2025, 1, 1, 9, 0, 0))
+        self.assertEqual(result.actual_end, datetime(2025, 1, 1, 12, 0, 0))
 
     def test_execute_can_restore_already_active_task(self):
         """Test execute works on non-deleted tasks (idempotent)"""

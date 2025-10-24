@@ -208,9 +208,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 # Check effective deadline constraint
                 effective_deadline = task_effective_deadlines.get(task_id)
                 if effective_deadline:
-                    from shared.constants.formats import DATETIME_FORMAT
-
-                    deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
+                    deadline_dt = effective_deadline
                     if current_date > deadline_dt:
                         # Skip this task - deadline exceeded
                         continue

@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 from application.use_cases.get_task_detail import (
@@ -102,9 +103,9 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
         task = Task(
             name="Complex Task",
             priority=2,
-            planned_start="2024-01-01 10:00:00",
-            planned_end="2024-01-01 12:00:00",
-            deadline="2024-01-01 18:00:00",
+            planned_start=datetime(2024, 1, 1, 10, 0, 0),
+            planned_end=datetime(2024, 1, 1, 12, 0, 0),
+            deadline=datetime(2024, 1, 1, 18, 0, 0),
             estimated_duration=2.5,
         )
         task.id = self.repository.generate_next_id()
@@ -115,9 +116,9 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
 
         self.assertEqual(result.task.name, "Complex Task")
         self.assertEqual(result.task.priority, 2)
-        self.assertEqual(result.task.planned_start, "2024-01-01 10:00:00")
-        self.assertEqual(result.task.planned_end, "2024-01-01 12:00:00")
-        self.assertEqual(result.task.deadline, "2024-01-01 18:00:00")
+        self.assertEqual(result.task.planned_start, datetime(2024, 1, 1, 10, 0, 0))
+        self.assertEqual(result.task.planned_end, datetime(2024, 1, 1, 12, 0, 0))
+        self.assertEqual(result.task.deadline, datetime(2024, 1, 1, 18, 0, 0))
         self.assertEqual(result.task.estimated_duration, 2.5)
 
     def test_execute_handles_corrupt_notes_file(self):

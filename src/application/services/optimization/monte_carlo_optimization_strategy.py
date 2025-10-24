@@ -15,7 +15,6 @@ from application.services.optimization.allocators.greedy_forward_allocator impor
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.constants.formats import DATETIME_FORMAT
 
 if TYPE_CHECKING:
     from shared.utils.holiday_checker import HolidayChecker
@@ -210,8 +209,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
             # Deadline penalty (tasks finishing after deadline get penalty)
             if task.deadline and task.planned_end:
-                deadline_dt = datetime.strptime(task.deadline, DATETIME_FORMAT)
-                end_dt = datetime.strptime(task.planned_end, DATETIME_FORMAT)
+                deadline_dt = task.deadline
+                end_dt = task.planned_end
                 if end_dt > deadline_dt:
                     days_late = (end_dt - deadline_dt).days
                     deadline_penalty += days_late * DEADLINE_PENALTY_MULTIPLIER

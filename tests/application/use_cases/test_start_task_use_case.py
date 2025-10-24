@@ -2,6 +2,7 @@ import contextlib
 import os
 import tempfile
 import unittest
+from datetime import datetime
 
 from application.dto.start_task_request import StartTaskRequest
 from application.use_cases.start_task import StartTaskUseCase
@@ -103,8 +104,8 @@ class TestStartTaskUseCase(unittest.TestCase):
         # Create and complete a task
         task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
-        task.actual_end = "2024-01-01 12:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
+        task.actual_end = datetime(2024, 1, 1, 12, 0, 0)
         self.repository.save(task)
 
         # Try to start the completed task - should raise error
@@ -122,8 +123,8 @@ class TestStartTaskUseCase(unittest.TestCase):
         # Create a canceled task
         task = Task(name="Test Task", priority=1, status=TaskStatus.CANCELED)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
-        task.actual_end = "2024-01-01 11:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
+        task.actual_end = datetime(2024, 1, 1, 11, 0, 0)
         self.repository.save(task)
 
         # Try to start the canceled task - should raise error
@@ -141,8 +142,8 @@ class TestStartTaskUseCase(unittest.TestCase):
         # Create and complete a task
         task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
-        task.actual_end = "2024-01-01 12:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
+        task.actual_end = datetime(2024, 1, 1, 12, 0, 0)
         self.repository.save(task)
 
         # Try to start the completed task
@@ -154,8 +155,8 @@ class TestStartTaskUseCase(unittest.TestCase):
         # Verify task state remains unchanged
         retrieved = self.repository.get_by_id(task.id)
         self.assertEqual(retrieved.status, TaskStatus.COMPLETED)
-        self.assertEqual(retrieved.actual_start, "2024-01-01 10:00:00")
-        self.assertEqual(retrieved.actual_end, "2024-01-01 12:00:00")
+        self.assertEqual(retrieved.actual_start, datetime(2024, 1, 1, 10, 0, 0))
+        self.assertEqual(retrieved.actual_end, datetime(2024, 1, 1, 12, 0, 0))
 
 
 if __name__ == "__main__":

@@ -12,14 +12,14 @@ class TestTaskSorter(unittest.TestCase):
         """Initialize sorter for each test"""
         self.sorter = TaskSorter()
 
-        # Calculate date strings for testing
+        # Calculate datetimes for testing
         today = datetime.now().date()
         yesterday = today - timedelta(days=1)
         tomorrow = today + timedelta(days=1)
 
-        self.today_str = today.strftime("%Y-%m-%d 18:00:00")
-        self.yesterday_str = yesterday.strftime("%Y-%m-%d 18:00:00")
-        self.tomorrow_str = tomorrow.strftime("%Y-%m-%d 18:00:00")
+        self.today_str = datetime.combine(today, datetime.min.time()).replace(hour=18)
+        self.yesterday_str = datetime.combine(yesterday, datetime.min.time()).replace(hour=18)
+        self.tomorrow_str = datetime.combine(tomorrow, datetime.min.time()).replace(hour=18)
 
     def test_sort_by_id_ascending(self):
         """Test sorting by ID in ascending order"""

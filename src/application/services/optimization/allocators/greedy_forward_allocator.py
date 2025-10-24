@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.entities.task import Task
-from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import is_workday
 
 
@@ -71,7 +70,7 @@ class GreedyForwardAllocator(TaskAllocatorBase):
 
             # Check deadline constraint
             if effective_deadline:
-                deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
+                deadline_dt = effective_deadline
                 if current_date > deadline_dt:
                     # Cannot schedule before deadline - rollback
                     self._rollback_allocations(daily_allocations, task_daily_allocations)

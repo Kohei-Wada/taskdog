@@ -38,7 +38,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
             name="JIT Task",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
         self.create_use_case.execute(input_dto)
 
@@ -57,8 +57,8 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Should be scheduled on Friday (closest to deadline)
-        self.assertEqual(task.planned_start, "2025-10-24 09:00:00")
-        self.assertEqual(task.planned_end, "2025-10-24 18:00:00")
+        self.assertEqual(task.planned_start, datetime(2025, 10, 24, 9, 0, 0))
+        self.assertEqual(task.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # All 6h allocated on Friday
         self.assertEqual(task.daily_allocations["2025-10-24"], 6.0)
@@ -71,7 +71,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
             name="Multi-day JIT",
             priority=100,
             estimated_duration=12.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
         self.create_use_case.execute(input_dto)
 
@@ -90,9 +90,9 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Should start on Thursday
-        self.assertEqual(task.planned_start, "2025-10-23 09:00:00")
+        self.assertEqual(task.planned_start, datetime(2025, 10, 23, 9, 0, 0))
         # Should end on Friday
-        self.assertEqual(task.planned_end, "2025-10-24 18:00:00")
+        self.assertEqual(task.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # 6h on Thursday, 6h on Friday
         self.assertEqual(task.daily_allocations["2025-10-23"], 6.0)
@@ -135,7 +135,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
             name="Max Hours Task",
             priority=100,
             estimated_duration=18.0,
-            deadline="2025-10-22 18:00:00",  # Wednesday
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Wednesday
         )
         self.create_use_case.execute(input_dto)
 
@@ -171,13 +171,13 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
             name="Task 1",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-24 18:00:00",  # Friday (further)
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday (further)
         )
         input2 = CreateTaskRequest(
             name="Task 2",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-22 18:00:00",  # Wednesday (closer)
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Wednesday (closer)
         )
         self.create_use_case.execute(input1)
         self.create_use_case.execute(input2)
@@ -196,12 +196,16 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         self.assertEqual(len(result.successful_tasks), 2)
 
         # Task 1 (further deadline) is processed first, scheduled on Friday
-        task1 = [t for t in result.successful_tasks if t.deadline == "2025-10-24 18:00:00"][0]
-        self.assertEqual(task1.planned_start, "2025-10-24 09:00:00")
+        task1 = [
+            t for t in result.successful_tasks if t.deadline == datetime(2025, 10, 24, 18, 0, 0)
+        ][0]
+        self.assertEqual(task1.planned_start, datetime(2025, 10, 24, 9, 0, 0))
 
         # Task 2 (closer deadline) is processed second, scheduled on Wednesday
-        task2 = [t for t in result.successful_tasks if t.deadline == "2025-10-22 18:00:00"][0]
-        self.assertEqual(task2.planned_start, "2025-10-22 09:00:00")
+        task2 = [
+            t for t in result.successful_tasks if t.deadline == datetime(2025, 10, 22, 18, 0, 0)
+        ][0]
+        self.assertEqual(task2.planned_start, datetime(2025, 10, 22, 9, 0, 0))
 
     def test_backward_fails_when_deadline_before_start(self):
         """Test that backward strategy fails when deadline is before start date."""
@@ -210,7 +214,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
             name="Past Deadline",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-19 18:00:00",  # Sunday (before Monday start)
+            deadline=datetime(2025, 10, 19, 18, 0, 0),  # Sunday (before Monday start)
         )
         self.create_use_case.execute(input_dto)
 
@@ -235,7 +239,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
             name="Weekend Skip",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-27 18:00:00",  # Monday
+            deadline=datetime(2025, 10, 27, 18, 0, 0),  # Monday
         )
         self.create_use_case.execute(input_dto)
 
@@ -254,8 +258,8 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Should be scheduled on Monday (deadline day)
-        self.assertEqual(task.planned_start, "2025-10-27 09:00:00")
-        self.assertEqual(task.planned_end, "2025-10-27 18:00:00")
+        self.assertEqual(task.planned_start, datetime(2025, 10, 27, 9, 0, 0))
+        self.assertEqual(task.planned_end, datetime(2025, 10, 27, 18, 0, 0))
 
         # Only Monday in allocations (no weekend days)
         self.assertEqual(len(task.daily_allocations), 1)

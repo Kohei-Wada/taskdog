@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime
 
 from application.dto.pause_task_request import PauseTaskRequest
 from application.use_cases.pause_task import PauseTaskUseCase
@@ -34,7 +35,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
         """Test execute sets task status to PENDING"""
         task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
         self.repository.save(task)
 
         input_dto = PauseTaskRequest(task_id=task.id)
@@ -46,7 +47,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
         """Test execute clears actual start timestamp"""
         task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
         self.repository.save(task)
 
         input_dto = PauseTaskRequest(task_id=task.id)
@@ -58,8 +59,8 @@ class TestPauseTaskUseCase(unittest.TestCase):
         """Test execute clears actual end timestamp if present"""
         task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
-        task.actual_end = "2024-01-01 12:00:00"  # Shouldn't normally exist for IN_PROGRESS
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
+        task.actual_end = datetime(2024, 1, 1, 12, 0, 0)  # Shouldn't normally exist for IN_PROGRESS
         self.repository.save(task)
 
         input_dto = PauseTaskRequest(task_id=task.id)
@@ -71,7 +72,7 @@ class TestPauseTaskUseCase(unittest.TestCase):
         """Test execute saves changes to repository"""
         task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
         self.repository.save(task)
 
         input_dto = PauseTaskRequest(task_id=task.id)
@@ -108,8 +109,8 @@ class TestPauseTaskUseCase(unittest.TestCase):
         """Test execute raises TaskAlreadyFinishedError when pausing COMPLETED task"""
         task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
-        task.actual_end = "2024-01-01 12:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
+        task.actual_end = datetime(2024, 1, 1, 12, 0, 0)
         self.repository.save(task)
 
         input_dto = PauseTaskRequest(task_id=task.id)
@@ -124,8 +125,8 @@ class TestPauseTaskUseCase(unittest.TestCase):
         """Test execute raises TaskAlreadyFinishedError when pausing CANCELED task"""
         task = Task(name="Test Task", priority=1, status=TaskStatus.CANCELED)
         task.id = self.repository.generate_next_id()
-        task.actual_start = "2024-01-01 10:00:00"
-        task.actual_end = "2024-01-01 11:00:00"
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
+        task.actual_end = datetime(2024, 1, 1, 11, 0, 0)
         self.repository.save(task)
 
         input_dto = PauseTaskRequest(task_id=task.id)

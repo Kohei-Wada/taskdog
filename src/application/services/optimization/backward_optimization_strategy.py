@@ -8,7 +8,6 @@ from application.services.optimization.allocators.backward_allocator import (
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class BackwardOptimizationStrategy(OptimizationStrategy):
@@ -58,7 +57,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
 
         def deadline_key(task: Task) -> tuple:
             if task.deadline:
-                deadline_dt = datetime.strptime(task.deadline, DATETIME_FORMAT)
+                deadline_dt = task.deadline
                 days_until = (deadline_dt - start_date).days
                 # Negative to get furthest first
                 return (0, -days_until, task.id)

@@ -2,6 +2,7 @@
 
 import tempfile
 import unittest
+from datetime import datetime
 
 from application.services.task_status_service import TaskStatusService
 from domain.entities.task import TaskStatus
@@ -130,9 +131,9 @@ class TaskStatusServiceTest(unittest.TestCase):
         task = self.repository.create(
             name="Test Task",
             priority=5,
-            planned_start="2025-10-20 09:00:00",
-            planned_end="2025-10-21 18:00:00",
-            deadline="2025-10-22 18:00:00",
+            planned_start=datetime(2025, 10, 20, 9, 0, 0),
+            planned_end=datetime(2025, 10, 21, 18, 0, 0),
+            deadline=datetime(2025, 10, 22, 18, 0, 0),
             estimated_duration=8.0,
         )
 
@@ -144,9 +145,9 @@ class TaskStatusServiceTest(unittest.TestCase):
         # Verify other fields preserved
         self.assertEqual(updated.name, "Test Task")
         self.assertEqual(updated.priority, 5)
-        self.assertEqual(updated.planned_start, "2025-10-20 09:00:00")
-        self.assertEqual(updated.planned_end, "2025-10-21 18:00:00")
-        self.assertEqual(updated.deadline, "2025-10-22 18:00:00")
+        self.assertEqual(updated.planned_start, datetime(2025, 10, 20, 9, 0, 0))
+        self.assertEqual(updated.planned_end, datetime(2025, 10, 21, 18, 0, 0))
+        self.assertEqual(updated.deadline, datetime(2025, 10, 22, 18, 0, 0))
         self.assertEqual(updated.estimated_duration, 8.0)
 
     def test_change_status_returns_same_task_object(self):

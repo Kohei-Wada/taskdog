@@ -6,7 +6,6 @@ from typing import Any
 
 from domain.entities.task import Task
 from shared.constants import SORT_SENTINEL_FUTURE
-from shared.utils.date_utils import parse_date
 
 
 class TaskSorter:
@@ -83,20 +82,15 @@ class TaskSorter:
         elif sort_by == "planned_start":
             return lambda task: self._parse_date_for_sort(task.planned_start)
 
-    def _parse_date_for_sort(self, date_str: str | None) -> datetime:
-        """Parse a date string for sorting, with None values sorted last.
+    def _parse_date_for_sort(self, dt: datetime | None) -> datetime:
+        """Prepare datetime for sorting, with None values sorted last.
 
         Args:
-            date_str: Date string to parse (or None)
+            dt: Datetime object to prepare for sorting (or None)
 
         Returns:
             datetime object (far future date if None)
         """
-        if not date_str:
+        if dt is None:
             return SORT_SENTINEL_FUTURE
-
-        parsed_date = parse_date(date_str)
-        if parsed_date is None:
-            return SORT_SENTINEL_FUTURE
-        # Convert date to datetime for consistent comparison
-        return datetime.combine(parsed_date, datetime.min.time())
+        return dt

@@ -25,9 +25,9 @@ class TestTaskQueryService(unittest.TestCase):
         self.yesterday = self.today - timedelta(days=1)
         self.tomorrow = self.today + timedelta(days=1)
 
-        self.today_str = self.today.strftime("%Y-%m-%d 18:00:00")
-        self.yesterday_str = self.yesterday.strftime("%Y-%m-%d 18:00:00")
-        self.tomorrow_str = self.tomorrow.strftime("%Y-%m-%d 18:00:00")
+        self.today_dt = datetime.combine(self.today, datetime.min.time()).replace(hour=18)
+        self.yesterday_dt = datetime.combine(self.yesterday, datetime.min.time()).replace(hour=18)
+        self.tomorrow_dt = datetime.combine(self.tomorrow, datetime.min.time()).replace(hour=18)
 
     def tearDown(self):
         """Clean up temporary file after each test"""
@@ -37,7 +37,7 @@ class TestTaskQueryService(unittest.TestCase):
     def test_get_today_tasks_returns_matching_tasks(self):
         """Test get_today_tasks returns tasks matching today's criteria"""
         # Create tasks
-        task1 = Task(name="Deadline Today", priority=1, deadline=self.today_str)
+        task1 = Task(name="Deadline Today", priority=1, deadline=self.today_dt)
         task1.id = self.repository.generate_next_id()
         self.repository.save(task1)
 
@@ -45,7 +45,7 @@ class TestTaskQueryService(unittest.TestCase):
         task2.id = self.repository.generate_next_id()
         self.repository.save(task2)
 
-        task3 = Task(name="Not Today", priority=1, deadline=self.tomorrow_str)
+        task3 = Task(name="Not Today", priority=1, deadline=self.tomorrow_dt)
         task3.id = self.repository.generate_next_id()
         self.repository.save(task3)
 
@@ -63,15 +63,15 @@ class TestTaskQueryService(unittest.TestCase):
     def test_get_today_tasks_sorts_by_deadline(self):
         """Test get_today_tasks sorts tasks by deadline"""
         # Create tasks with different deadlines
-        task1 = Task(name="Later", priority=1, id=1, deadline=self.tomorrow_str)
+        task1 = Task(name="Later", priority=1, id=1, deadline=self.tomorrow_dt)
         task1.id = self.repository.generate_next_id()
         self.repository.save(task1)
 
-        task2 = Task(name="Earlier", priority=1, id=2, deadline=self.yesterday_str)
+        task2 = Task(name="Earlier", priority=1, id=2, deadline=self.yesterday_dt)
         task2.id = self.repository.generate_next_id()
         self.repository.save(task2)
 
-        task3 = Task(name="Today", priority=1, id=3, deadline=self.today_str)
+        task3 = Task(name="Today", priority=1, id=3, deadline=self.today_dt)
         task3.id = self.repository.generate_next_id()
         self.repository.save(task3)
 
@@ -96,15 +96,15 @@ class TestTaskQueryService(unittest.TestCase):
     def test_get_today_tasks_sorts_by_priority_when_specified(self):
         """Test get_today_tasks can sort by priority when specified"""
         # Create tasks with same deadline, different priorities
-        task1 = Task(name="Low Priority", priority=1, id=1, deadline=self.today_str)
+        task1 = Task(name="Low Priority", priority=1, id=1, deadline=self.today_dt)
         task1.id = self.repository.generate_next_id()
         self.repository.save(task1)
 
-        task2 = Task(name="High Priority", priority=5, id=2, deadline=self.today_str)
+        task2 = Task(name="High Priority", priority=5, id=2, deadline=self.today_dt)
         task2.id = self.repository.generate_next_id()
         self.repository.save(task2)
 
-        task3 = Task(name="Mid Priority", priority=3, id=3, deadline=self.today_str)
+        task3 = Task(name="Mid Priority", priority=3, id=3, deadline=self.today_dt)
         task3.id = self.repository.generate_next_id()
         self.repository.save(task3)
 
@@ -123,7 +123,7 @@ class TestTaskQueryService(unittest.TestCase):
         task = Task(
             name="Completed Today",
             priority=1,
-            deadline=self.today_str,
+            deadline=self.today_dt,
             status=TaskStatus.COMPLETED,
         )
         task.id = self.repository.generate_next_id()
@@ -139,7 +139,7 @@ class TestTaskQueryService(unittest.TestCase):
         task = Task(
             name="Completed Today",
             priority=1,
-            deadline=self.today_str,
+            deadline=self.today_dt,
             status=TaskStatus.COMPLETED,
         )
         task.id = self.repository.generate_next_id()
