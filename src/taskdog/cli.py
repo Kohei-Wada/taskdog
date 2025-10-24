@@ -3,6 +3,7 @@ from rich.console import Console
 
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.cli.commands.add import add_command
 from presentation.cli.commands.add_dependency import add_dependency_command
 from presentation.cli.commands.cancel import cancel_command
@@ -79,6 +80,7 @@ def cli(ctx):
     console_writer = RichConsoleWriter(console)
     time_tracker = TimeTracker()
     config = ConfigManager.load()
+    notes_repository = NotesRepository()
 
     # Initialize repository with error handling for corrupted data
     try:
@@ -95,6 +97,7 @@ def cli(ctx):
         repository=repository,
         time_tracker=time_tracker,
         config=config,
+        notes_repository=notes_repository,
     )
 
 

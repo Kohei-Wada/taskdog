@@ -2,12 +2,10 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from pathlib import Path
 
 from domain.exceptions.task_exceptions import TaskValidationError
 from shared.constants.formats import DATETIME_FORMAT
-from shared.constants.time import MIN_FILE_SIZE_FOR_CONTENT, SECONDS_PER_HOUR
-from shared.xdg_utils import XDGDirectories
+from shared.constants.time import SECONDS_PER_HOUR
 
 
 class TaskStatus(Enum):
@@ -98,15 +96,6 @@ class Task:
         return round(duration, 1)
 
     @property
-    def notes_path(self) -> Path:
-        """Return path to task's markdown notes file.
-
-        Returns:
-            Path to notes file at $XDG_DATA_HOME/taskdog/notes/{id}.md
-        """
-        return XDGDirectories.get_note_file(self.id)
-
-    @property
     def is_active(self) -> bool:
         """Check if task is in active state (work in progress or pending).
 
@@ -134,17 +123,6 @@ class Task:
             True if task is not deleted
         """
         return not self.is_deleted
-
-    @property
-    def has_note(self) -> bool:
-        """Check if task has an associated note file.
-
-        Returns:
-            True if notes file exists and has content
-        """
-        return (
-            self.notes_path.exists() and self.notes_path.stat().st_size > MIN_FILE_SIZE_FOR_CONTENT
-        )
 
     def is_schedulable(self, force_override: bool = False) -> bool:
         """Check if task can be scheduled.

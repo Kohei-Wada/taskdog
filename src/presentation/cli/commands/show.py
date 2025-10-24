@@ -21,9 +21,10 @@ def show_command(ctx, task_id, raw):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    notes_repository = ctx_obj.notes_repository
 
     # Execute use case to get task detail
-    use_case = GetTaskDetailUseCase(repository)
+    use_case = GetTaskDetailUseCase(repository, notes_repository)
     input_dto = GetTaskDetailInput(task_id)
     detail = use_case.execute(input_dto)
 

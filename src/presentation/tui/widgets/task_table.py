@@ -6,6 +6,7 @@ from textual.binding import Binding
 from textual.widgets import DataTable
 
 from domain.entities.task import Task
+from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.constants.colors import STATUS_STYLES
 from presentation.constants.symbols import EMOJI_NOTE
 from presentation.constants.table_dimensions import (
@@ -37,12 +38,17 @@ class TaskTable(DataTable):
         Binding("ctrl+u", "page_up", "Page Up", show=False),
     ]
 
-    def __init__(self, *args, **kwargs):
-        """Initialize the task table."""
+    def __init__(self, notes_repository: NotesRepository, *args, **kwargs):
+        """Initialize the task table.
+
+        Args:
+            notes_repository: Notes repository for checking note existence
+        """
         super().__init__(*args, **kwargs)
         self.cursor_type = "row"
         self.zebra_stripes = True
         self._task_map: dict[int, Task] = {}  # Maps row index to Task
+        self.notes_repository = notes_repository
 
     def setup_columns(self):
         """Set up table columns."""
@@ -80,8 +86,8 @@ class TaskTable(DataTable):
             # Format dependencies
             dependencies = self._format_dependencies(task)
 
-            # Check if task has notes
-            note_indicator = EMOJI_NOTE if task.has_note else ""
+            # Check if task has notes using NotesRepository
+            note_indicator = EMOJI_NOTE if self.notes_repository.has_notes(task.id) else ""
 
             # Check if task is fixed
             fixed_indicator = "📌" if task.is_fixed else ""

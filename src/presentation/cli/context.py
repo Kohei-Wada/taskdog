@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from domain.services.time_tracker import TimeTracker
+from infrastructure.persistence.notes_repository import NotesRepository
 from infrastructure.persistence.task_repository import TaskRepository
 from presentation.console.console_writer import ConsoleWriter
 from shared.config_manager import Config
@@ -17,9 +18,11 @@ class CliContext:
         repository: Task repository for data access
         time_tracker: Time tracker for recording timestamps
         config: Application configuration
+        notes_repository: Notes repository for notes file operations
     """
 
     console_writer: ConsoleWriter
     repository: TaskRepository
     time_tracker: TimeTracker
     config: Config
+    notes_repository: NotesRepository

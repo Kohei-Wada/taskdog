@@ -2,6 +2,7 @@
 
 from application.dto.task_detail_result import GetTaskDetailResult
 from application.use_cases.base import UseCase
+from infrastructure.persistence.notes_repository import NotesRepository
 from infrastructure.persistence.task_repository import TaskRepository
 
 
@@ -28,13 +29,15 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailResult]):
     if it exists, returning them as a unified DTO.
     """
 
-    def __init__(self, repository: TaskRepository):
+    def __init__(self, repository: TaskRepository, notes_repository: NotesRepository):
         """Initialize use case.
 
         Args:
             repository: Task repository for data access
+            notes_repository: Notes repository for notes file access
         """
         self.repository = repository
+        self.notes_repository = notes_repository
 
     def execute(self, input_dto: GetTaskDetailInput) -> GetTaskDetailResult:
         """Execute task detail retrieval.
@@ -50,19 +53,8 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailResult]):
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
-        # Check if notes file exists and read content
-        notes_path = task.notes_path
-        notes_content: str | None = None
-        has_notes = False
-
-        if notes_path.exists():
-            try:
-                notes_content = notes_path.read_text(encoding="utf-8")
-                has_notes = True
-            except (OSError, UnicodeDecodeError):
-                # If reading fails (file permissions, encoding issues, etc.),
-                # treat as no notes to maintain user experience.
-                # In production, consider logging the error for debugging.
-                pass
+        # Use NotesRepository to check and read notes
+        has_notes = self.notes_repository.has_notes(input_dto.task_id)
+        notes_content = self.notes_repository.read_notes(input_dto.task_id) if has_notes else None
 
         return GetTaskDetailResult(task=task, notes_content=notes_content, has_notes=has_notes)

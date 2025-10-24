@@ -3,6 +3,7 @@ from typing import ClassVar
 from rich.table import Table
 
 from domain.entities.task import Task
+from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.table_styles import (
     COLUMN_DATETIME_NO_WRAP,
@@ -119,13 +120,15 @@ class RichTableRenderer(RichRendererBase):
         "duration",
     ]
 
-    def __init__(self, console_writer: ConsoleWriter):
+    def __init__(self, console_writer: ConsoleWriter, notes_repository: NotesRepository):
         """Initialize the renderer.
 
         Args:
             console_writer: Console writer for output
+            notes_repository: Notes repository for checking note existence
         """
         self.console_writer = console_writer
+        self.notes_repository = notes_repository
 
     def render(self, tasks: list[Task], fields: list[str] | None = None) -> None:
         """Render and print tasks as a table with Rich.
@@ -194,7 +197,7 @@ class RichTableRenderer(RichRendererBase):
         field_extractors = {
             "id": lambda t: str(t.id),
             "name": lambda t: t.name,
-            "note": lambda t: "📝" if t.has_note else "",
+            "note": lambda t: "📝" if self.notes_repository.has_notes(t.id) else "",
             "priority": lambda t: str(t.priority),
             "status": lambda t: self._format_status(t),
             "is_fixed": lambda t: "📌" if t.is_fixed else "",

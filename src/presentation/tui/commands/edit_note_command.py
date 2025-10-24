@@ -21,6 +21,7 @@ class EditNoteCommand(TUICommandBase):
         # Edit note using shared helper
         edit_task_note(
             task=task,
+            notes_repository=self.context.notes_repository,
             app=self.app,
             on_success=lambda name, id_: self.notify_success(
                 f"Note saved for task: {name} (ID: {id_})"

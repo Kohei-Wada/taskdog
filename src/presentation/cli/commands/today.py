@@ -56,5 +56,5 @@ def today_command(ctx, format, all, sort, reverse):
     today_filter = TodayFilter(include_completed=all)
     today_tasks = query_service.get_filtered_tasks(today_filter, sort_by=sort, reverse=reverse)
 
-    renderer = RichTableRenderer(ctx_obj.console_writer)
+    renderer = RichTableRenderer(ctx_obj.console_writer, ctx_obj.notes_repository)
     renderer.render(today_tasks)
