@@ -148,8 +148,8 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
         long_task = tasks_by_name["Long Task"]
 
         # Short task should complete earlier than long task
-        short_end = datetime.strptime(short_task.planned_end, "%Y-%m-%d %H:%M:%S")
-        long_end = datetime.strptime(long_task.planned_end, "%Y-%m-%d %H:%M:%S")
+        short_end = short_task.planned_end
+        long_end = long_task.planned_end
         self.assertLess(short_end, long_end)
 
     def test_round_robin_respects_deadlines(self):
@@ -271,11 +271,9 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
         tasks_by_name = {t.name: t for t in result.successful_tasks}
 
         # Verify that tasks complete at different times
-        quick_end = datetime.strptime(tasks_by_name["Quick Task"].planned_end, "%Y-%m-%d %H:%M:%S")
-        medium_end = datetime.strptime(
-            tasks_by_name["Medium Task"].planned_end, "%Y-%m-%d %H:%M:%S"
-        )
-        long_end = datetime.strptime(tasks_by_name["Long Task"].planned_end, "%Y-%m-%d %H:%M:%S")
+        quick_end = tasks_by_name["Quick Task"].planned_end
+        medium_end = tasks_by_name["Medium Task"].planned_end
+        long_end = tasks_by_name["Long Task"].planned_end
 
         self.assertLess(quick_end, medium_end)
         self.assertLess(medium_end, long_end)

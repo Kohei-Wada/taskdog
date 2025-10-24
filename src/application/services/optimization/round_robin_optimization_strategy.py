@@ -9,7 +9,6 @@ from application.dto.optimization_result import SchedulingFailure
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
@@ -192,7 +191,9 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 current_date += timedelta(days=1)
                 continue
 
-            date_str = current_date.strftime("%Y-%m-%d")
+            date_str = current_date.strftime(
+                "%Y-%m-%d"
+            )  # Keep as string for daily_allocations dict key
 
             # Get active tasks (with remaining hours)
             active_tasks = [tid for tid, remaining in task_remaining.items() if remaining > 0.001]
@@ -267,8 +268,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                     hour=self.config.time.default_end_hour, minute=0, second=0
                 )
 
-                task.planned_start = start_with_time.strftime(DATETIME_FORMAT)
-                task.planned_end = end_with_time.strftime(DATETIME_FORMAT)
+                task.planned_start = start_with_time
+                task.planned_end = end_with_time
                 task.daily_allocations = task_daily_allocations[task_id]
 
                 updated_tasks.append(task)
