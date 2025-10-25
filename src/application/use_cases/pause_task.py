@@ -29,4 +29,4 @@ class PauseTaskUseCase(StatusChangeUseCase[PauseTaskRequest]):
         Args:
             task: Task that will be paused
         """
-        self.time_tracker.clear_time_on_pause(task)
+        self.time_tracker.clear_time_tracking(task)

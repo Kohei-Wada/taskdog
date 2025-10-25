@@ -63,4 +63,4 @@ class ReopenTaskUseCase(StatusChangeUseCase[ReopenTaskRequest]):
             )
 
         # Clear time tracking (reset timestamps)
-        self.time_tracker.clear_time_on_reopen(task)
+        self.time_tracker.clear_time_tracking(task)

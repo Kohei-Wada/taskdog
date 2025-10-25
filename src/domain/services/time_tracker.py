@@ -27,23 +27,13 @@ class TimeTracker:
         if new_status in [TaskStatus.COMPLETED, TaskStatus.CANCELED] and not task.actual_end:
             task.actual_end = now
 
-    def clear_time_on_pause(self, task: Task) -> None:
-        """Clear time tracking fields when task is paused.
+    def clear_time_tracking(self, task: Task) -> None:
+        """Clear time tracking fields.
+
+        Used when task is paused or reopened to reset actual start/end timestamps.
 
         Args:
-            task: The task being paused
-
-        Side effects:
-            Clears task.actual_start and task.actual_end
-        """
-        task.actual_start = None
-        task.actual_end = None
-
-    def clear_time_on_reopen(self, task: Task) -> None:
-        """Clear time tracking fields when task is reopened.
-
-        Args:
-            task: The task being reopened
+            task: The task whose time tracking should be cleared
 
         Side effects:
             Clears task.actual_start and task.actual_end

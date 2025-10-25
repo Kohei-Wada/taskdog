@@ -6,6 +6,7 @@ from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotStartedError,
+    TaskValidationError,
 )
 from infrastructure.persistence.task_repository import TaskRepository
 
@@ -24,7 +25,7 @@ class StatusValidator(FieldValidator):
 
     def validate(self, value: TaskStatus, task: Task, repository: TaskRepository) -> None:
         # Ensure task.id is non-None (guaranteed after successful repository.get_by_id())
-        self._assert_task_has_id(task)
+        self._ensure_task_has_id(task)
 
         # Validate based on target status
         if value == TaskStatus.IN_PROGRESS:
@@ -37,20 +38,21 @@ class StatusValidator(FieldValidator):
             self._validate_can_be_paused(task)
 
     @staticmethod
-    def _assert_task_has_id(task: Task) -> None:
-        """Assert that task has a valid ID.
+    def _ensure_task_has_id(task: Task) -> None:
+        """Ensure that task has a valid ID.
 
         This is guaranteed to be true as the validator is only called after
-        successful repository.get_by_id() in use cases, but we assert it
+        successful repository.get_by_id() in use cases, but we verify it
         for type safety and early error detection.
 
         Args:
             task: Task to validate
 
         Raises:
-            AssertionError: If task.id is None
+            TaskValidationError: If task.id is None
         """
-        assert task.id is not None, "Task ID must not be None for status validation"
+        if task.id is None:
+            raise TaskValidationError("Task ID must not be None for status validation")
 
     def _validate_can_be_started(self, task: Task, repository: TaskRepository) -> None:
         # Early check: Cannot restart finished tasks

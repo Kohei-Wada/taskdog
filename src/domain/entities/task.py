@@ -168,6 +168,20 @@ class Task:
         """
         return not self.is_finished and not self.is_deleted
 
+    @staticmethod
+    def _serialize_datetime(dt: datetime | str | None) -> str | None:
+        """Serialize datetime to ISO 8601 string format.
+
+        Args:
+            dt: Datetime object, string, or None
+
+        Returns:
+            ISO 8601 string if datetime object, original value otherwise
+        """
+        if isinstance(dt, datetime):
+            return dt.isoformat()
+        return dt
+
     def to_dict(self) -> dict:
         """Serialize task to dictionary for persistence.
 
@@ -181,24 +195,12 @@ class Task:
             "name": self.name,
             "priority": self.priority,
             "status": self.status.value,
-            "created_at": self.created_at.isoformat()
-            if isinstance(self.created_at, datetime)
-            else self.created_at,
-            "planned_start": self.planned_start.isoformat()
-            if isinstance(self.planned_start, datetime)
-            else self.planned_start,
-            "planned_end": self.planned_end.isoformat()
-            if isinstance(self.planned_end, datetime)
-            else self.planned_end,
-            "deadline": self.deadline.isoformat()
-            if isinstance(self.deadline, datetime)
-            else self.deadline,
-            "actual_start": self.actual_start.isoformat()
-            if isinstance(self.actual_start, datetime)
-            else self.actual_start,
-            "actual_end": self.actual_end.isoformat()
-            if isinstance(self.actual_end, datetime)
-            else self.actual_end,
+            "created_at": self._serialize_datetime(self.created_at),
+            "planned_start": self._serialize_datetime(self.planned_start),
+            "planned_end": self._serialize_datetime(self.planned_end),
+            "deadline": self._serialize_datetime(self.deadline),
+            "actual_start": self._serialize_datetime(self.actual_start),
+            "actual_end": self._serialize_datetime(self.actual_end),
             "estimated_duration": self.estimated_duration,
             "daily_allocations": {k.isoformat(): v for k, v in self.daily_allocations.items()}
             if self.daily_allocations
