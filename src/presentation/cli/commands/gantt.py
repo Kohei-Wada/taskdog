@@ -2,7 +2,6 @@
 
 import click
 
-from application.queries.filters.active_filter import ActiveFilter
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.task_query_service import TaskQueryService
 from presentation.cli.context import CliContext
@@ -17,7 +16,7 @@ from shared.utils.date_utils import get_previous_monday
     help="""Display tasks in Gantt chart format with workload analysis.
 
 By default, shows incomplete tasks only (PENDING, IN_PROGRESS).
-Use -a/--all to include completed and failed tasks. Archived tasks are never shown.
+Use -a/--all to include completed, failed, and archived tasks.
 
 \b
 WORKLOAD CALCULATION:
@@ -43,7 +42,7 @@ TIMELINE SYMBOLS:
 \b
 EXAMPLE:
   taskdog gantt                                  # Show incomplete tasks
-  taskdog gantt -a                              # Include completed/failed tasks
+  taskdog gantt -a                              # Show all tasks (including archived)
   taskdog gantt --start-date 2025-10-01 --end-date 2025-10-31
 """,
 )
@@ -65,7 +64,7 @@ EXAMPLE:
     "show_all",
     is_flag=True,
     default=False,
-    help="Show all active tasks including completed and failed (archived tasks are never shown)",
+    help="Show all tasks including completed, failed, and archived",
 )
 @click.option(
     "--sort",
@@ -85,8 +84,7 @@ def gantt_command(ctx, start_date, end_date, show_all, sort, reverse):
     """Display tasks as a Gantt chart with workload analysis.
 
     By default, shows incomplete tasks (PENDING, IN_PROGRESS).
-    Use -a/--all to include completed and failed tasks.
-    Archived tasks are never shown.
+    Use -a/--all to include all tasks (including archived).
 
     The Gantt chart visualizes task timelines and provides daily workload
     analysis to help identify scheduling conflicts and overallocated days.
@@ -96,8 +94,8 @@ def gantt_command(ctx, start_date, end_date, show_all, sort, reverse):
     task_query_service = TaskQueryService(repository)
 
     # Apply appropriate filter based on --all flag
-    # Show all active tasks (exclude archived only) if --all, otherwise show incomplete only
-    filter_obj = ActiveFilter() if show_all else IncompleteFilter()
+    # Show all tasks (no filter) if --all, otherwise show incomplete only
+    filter_obj = None if show_all else IncompleteFilter()
 
     # Convert datetime to date objects if provided (DateTimeWithDefault returns datetime)
     # Default to previous Monday if start_date not provided

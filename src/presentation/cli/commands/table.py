@@ -2,7 +2,6 @@
 
 import click
 
-from application.queries.filters.active_filter import ActiveFilter
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.this_week_filter import ThisWeekFilter
 from application.queries.filters.today_filter import TodayFilter
@@ -19,7 +18,7 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
     "--all",
     "-a",
     is_flag=True,
-    help="Show all active tasks including completed and failed (archived tasks are never shown)",
+    help="Show all tasks including completed, failed, and archived",
 )
 @click.option(
     "--filter",
@@ -56,14 +55,13 @@ def table_command(ctx, all, filter, sort, reverse, fields):
 
     By default, only shows incomplete tasks (PENDING, IN_PROGRESS).
     Use --filter to apply different filtering criteria.
-    Archived tasks are never shown.
 
     Examples:
         taskdog table                              # Show incomplete tasks
-        taskdog table -a                           # Include completed/failed tasks
+        taskdog table -a                           # Show all tasks (including archived)
         taskdog table --filter today               # Show today's tasks
         taskdog table --filter week                # Show this week's tasks
-        taskdog table --filter all                 # Show all active tasks (same as -a)
+        taskdog table --filter all                 # Show all tasks (same as -a)
         taskdog table --filter week --fields id,name,deadline  # Combine options
     """
     ctx_obj: CliContext = ctx.obj
@@ -86,8 +84,8 @@ def table_command(ctx, all, filter, sort, reverse, fields):
 
     # Create appropriate filter object
     if filter_type == "all":
-        # Show all active tasks (exclude archived only)
-        filter_obj = ActiveFilter()
+        # Show all tasks (no filter - includes archived)
+        filter_obj = None
     elif filter_type == "incomplete":
         filter_obj = IncompleteFilter()
     elif filter_type == "today":
