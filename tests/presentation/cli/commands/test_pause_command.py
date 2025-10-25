@@ -1,32 +1,16 @@
 """Tests for pause command."""
 
 import unittest
-from unittest.mock import MagicMock, patch
-
-from click.testing import CliRunner
+from unittest.mock import patch
 
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskAlreadyFinishedError, TaskNotFoundException
 from presentation.cli.commands.pause import pause_command
+from tests.presentation.cli.commands.base_command_test import BaseBatchCommandTest
 
 
-class TestPauseCommand(unittest.TestCase):
+class TestPauseCommand(BaseBatchCommandTest):
     """Test cases for pause command."""
-
-    def setUp(self):
-        """Set up test fixtures."""
-        self.runner = CliRunner()
-        self.repository = MagicMock()
-        self.time_tracker = MagicMock()
-        self.console_writer = MagicMock()
-        self.config = MagicMock()
-
-        # Set up CLI context
-        self.cli_context = MagicMock()
-        self.cli_context.repository = self.repository
-        self.cli_context.time_tracker = self.time_tracker
-        self.cli_context.console_writer = self.console_writer
-        self.cli_context.config = self.config
 
     @patch("presentation.cli.commands.pause.PauseTaskUseCase")
     def test_pause_in_progress_task_success(self, mock_use_case_class):

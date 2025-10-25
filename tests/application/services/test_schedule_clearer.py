@@ -25,41 +25,31 @@ class TestScheduleClearer(unittest.TestCase):
         if os.path.exists(self.test_filename):
             os.unlink(self.test_filename)
 
-    def test_clear_schedules_clears_planned_start(self):
-        """Test clear_schedules clears planned_start field."""
-        task = self.repository.create(name="Task 1", priority=1)
-        task.planned_start = datetime(2025, 1, 10, 9, 0)
-        self.repository.save(task)
+    def test_clear_schedules_clears_all_schedule_fields(self):
+        """Test clear_schedules clears each schedule field."""
+        # Test data: (field_name, field_value, assertion_method)
+        test_cases = [
+            ("planned_start", datetime(2025, 1, 10, 9, 0), "assertIsNone"),
+            ("planned_end", datetime(2025, 1, 15, 18, 0), "assertIsNone"),
+            (
+                "daily_allocations",
+                {datetime(2025, 1, 10).date(): 4.0, datetime(2025, 1, 11).date(): 3.5},
+                "assertEqual",
+            ),
+        ]
 
-        tasks = [task]
-        result = self.clearer.clear_schedules(tasks)
+        for field_name, field_value, assertion_method in test_cases:
+            with self.subTest(field=field_name):
+                task = self.repository.create(name="Task 1", priority=1)
+                setattr(task, field_name, field_value)
+                self.repository.save(task)
 
-        self.assertIsNone(result[0].planned_start)
+                result = self.clearer.clear_schedules([task])
 
-    def test_clear_schedules_clears_planned_end(self):
-        """Test clear_schedules clears planned_end field."""
-        task = self.repository.create(name="Task 1", priority=1)
-        task.planned_end = datetime(2025, 1, 15, 18, 0)
-        self.repository.save(task)
-
-        tasks = [task]
-        result = self.clearer.clear_schedules(tasks)
-
-        self.assertIsNone(result[0].planned_end)
-
-    def test_clear_schedules_clears_daily_allocations(self):
-        """Test clear_schedules clears daily_allocations field."""
-        task = self.repository.create(name="Task 1", priority=1)
-        task.daily_allocations = {
-            datetime(2025, 1, 10).date(): 4.0,
-            datetime(2025, 1, 11).date(): 3.5,
-        }
-        self.repository.save(task)
-
-        tasks = [task]
-        result = self.clearer.clear_schedules(tasks)
-
-        self.assertEqual(result[0].daily_allocations, {})
+                if assertion_method == "assertIsNone":
+                    self.assertIsNone(getattr(result[0], field_name))
+                elif assertion_method == "assertEqual":
+                    self.assertEqual(getattr(result[0], field_name), {})
 
     def test_clear_schedules_persists_changes(self):
         """Test clear_schedules saves changes to repository."""
