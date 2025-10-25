@@ -1,5 +1,6 @@
 """Task table widget for TUI."""
 
+from datetime import datetime
 from typing import ClassVar
 
 from textual.binding import Binding
@@ -23,6 +24,7 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_PRIORITY_WIDTH,
     TASK_TABLE_STATUS_WIDTH,
 )
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class TaskTable(DataTable):
@@ -187,18 +189,19 @@ class TaskTable(DataTable):
             return "-"
         return ",".join(str(dep_id) for dep_id in task.depends_on)
 
-    def _format_deadline(self, deadline: str | None) -> str:
+    def _format_deadline(self, deadline: datetime | None) -> str:
         """Format deadline for display.
 
         Args:
-            deadline: Deadline string or None
+            deadline: Deadline datetime object or None
 
         Returns:
             Formatted deadline string
         """
         if not deadline:
             return "-"
-        # Show only date and time (YYYY-MM-DD HH:MM)
-        if len(deadline) >= DEADLINE_DISPLAY_LENGTH:
-            return deadline[:DEADLINE_DISPLAY_LENGTH]
-        return deadline
+        # Format datetime to string, then show only date and time (YYYY-MM-DD HH:MM)
+        deadline_str = deadline.strftime(DATETIME_FORMAT)
+        if len(deadline_str) >= DEADLINE_DISPLAY_LENGTH:
+            return deadline_str[:DEADLINE_DISPLAY_LENGTH]
+        return deadline_str

@@ -1,5 +1,7 @@
 """Service for building optimization summary from task data."""
 
+from datetime import datetime
+
 from application.dto.optimization_summary import OptimizationSummary
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
@@ -23,7 +25,7 @@ class OptimizationSummaryBuilder:
     def build(
         self,
         modified_tasks: list[Task],
-        task_states_before: dict[int, str | None],
+        task_states_before: dict[int, datetime | None],
         daily_allocations: dict[str, float],
         max_hours_per_day: float,
     ) -> OptimizationSummary:

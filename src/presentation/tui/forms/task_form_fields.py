@@ -8,6 +8,7 @@ from textual.widgets import Checkbox, Input, Label, Static
 
 from domain.entities.task import Task
 from shared.config_manager import Config, ConfigManager
+from shared.constants.formats import DATETIME_FORMAT
 
 
 @dataclass
@@ -90,7 +91,7 @@ class TaskFormFields:
             yield Input(
                 placeholder="Optional: 2025-12-31, tomorrow 6pm, next friday",
                 id="deadline-input",
-                value=task.deadline if task and task.deadline else "",
+                value=task.deadline.strftime(DATETIME_FORMAT) if task and task.deadline else "",
             )
 
             # Duration field
@@ -106,7 +107,9 @@ class TaskFormFields:
             yield Input(
                 placeholder="Optional: 2025-11-01, tomorrow 9am, next monday",
                 id="planned-start-input",
-                value=task.planned_start if task and task.planned_start else "",
+                value=task.planned_start.strftime(DATETIME_FORMAT)
+                if task and task.planned_start
+                else "",
             )
 
             # Planned End field
@@ -114,7 +117,9 @@ class TaskFormFields:
             yield Input(
                 placeholder="Optional: 2025-11-15, in 2 weeks, friday 5pm",
                 id="planned-end-input",
-                value=task.planned_end if task and task.planned_end else "",
+                value=task.planned_end.strftime(DATETIME_FORMAT)
+                if task and task.planned_end
+                else "",
             )
 
             # Dependencies field

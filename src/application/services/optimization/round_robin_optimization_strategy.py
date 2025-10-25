@@ -78,7 +78,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         failed_tasks: list[SchedulingFailure] = []
 
         # Calculate effective deadlines for all tasks
-        task_effective_deadlines: dict[int, str | None] = {
+        task_effective_deadlines: dict[int, datetime | None] = {
             task.id: task.deadline for task in schedulable_tasks if task.id is not None
         }
 
@@ -163,7 +163,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         task_end_dates: dict[int, datetime],
         start_date: datetime,
         max_hours_per_day: float,
-        task_effective_deadlines: dict[int, str | None],
+        task_effective_deadlines: dict[int, datetime | None],
         holiday_checker: "HolidayChecker | None" = None,
     ) -> None:
         """Allocate time in round-robin fashion across tasks.

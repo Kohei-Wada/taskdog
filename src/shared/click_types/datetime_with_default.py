@@ -52,7 +52,7 @@ class DateTimeWithDefault(click.DateTime):
             ctx: The Click context
 
         Returns:
-            Formatted datetime string (YYYY-MM-DD HH:MM:SS), or None if empty
+            datetime object, or None if empty
 
         Raises:
             click.BadParameter: If date format is invalid
@@ -91,5 +91,5 @@ class DateTimeWithDefault(click.DateTime):
             # Add default time using configured hour
             dt = datetime.combine(dt.date(), time(self.default_hour, 0, 0))
 
-        # Return formatted string
-        return dt.strftime(DATETIME_FORMAT)
+        # Return datetime object (not string)
+        return dt

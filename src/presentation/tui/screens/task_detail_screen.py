@@ -10,6 +10,7 @@ from application.dto.task_detail_result import GetTaskDetailResult
 from domain.entities.task import Task
 from presentation.constants.colors import STATUS_COLORS_BOLD
 from presentation.tui.screens.base_dialog import BaseModalDialog
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
@@ -109,11 +110,17 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
             yield Static("", classes="detail-row")  # Empty row for spacing
             yield Label("[bold cyan]Schedule[/bold cyan]")
             if self.task_data.planned_start:
-                yield self._create_detail_row("Planned Start", self.task_data.planned_start)
+                yield self._create_detail_row(
+                    "Planned Start", self.task_data.planned_start.strftime(DATETIME_FORMAT)
+                )
             if self.task_data.planned_end:
-                yield self._create_detail_row("Planned End", self.task_data.planned_end)
+                yield self._create_detail_row(
+                    "Planned End", self.task_data.planned_end.strftime(DATETIME_FORMAT)
+                )
             if self.task_data.deadline:
-                yield self._create_detail_row("Deadline", self.task_data.deadline)
+                yield self._create_detail_row(
+                    "Deadline", self.task_data.deadline.strftime(DATETIME_FORMAT)
+                )
             if self.task_data.estimated_duration:
                 yield self._create_detail_row(
                     "Estimated Duration", f"{self.task_data.estimated_duration}h"
@@ -131,9 +138,13 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
             yield Static("", classes="detail-row")  # Empty row for spacing
             yield Label("[bold cyan]Actual Tracking[/bold cyan]")
             if self.task_data.actual_start:
-                yield self._create_detail_row("Actual Start", self.task_data.actual_start)
+                yield self._create_detail_row(
+                    "Actual Start", self.task_data.actual_start.strftime(DATETIME_FORMAT)
+                )
             if self.task_data.actual_end:
-                yield self._create_detail_row("Actual End", self.task_data.actual_end)
+                yield self._create_detail_row(
+                    "Actual End", self.task_data.actual_end.strftime(DATETIME_FORMAT)
+                )
             if self.task_data.actual_duration_hours:
                 yield self._create_detail_row(
                     "Actual Duration", f"{self.task_data.actual_duration_hours:.2f}h"

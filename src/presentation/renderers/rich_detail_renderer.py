@@ -14,6 +14,7 @@ from presentation.constants.table_styles import (
     TABLE_PADDING,
     format_table_title,
 )
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class RichDetailRenderer:
@@ -51,18 +52,18 @@ class RichDetailRenderer:
 
     def _add_time_fields(self, table: Table, task) -> None:
         """Add time-related fields to table."""
-        table.add_row("Created", task.created_at_str)
+        table.add_row("Created", task.created_at.strftime(DATETIME_FORMAT))
 
         if task.planned_start:
-            table.add_row("Planned Start", task.planned_start)
+            table.add_row("Planned Start", task.planned_start.strftime(DATETIME_FORMAT))
         if task.planned_end:
-            table.add_row("Planned End", task.planned_end)
+            table.add_row("Planned End", task.planned_end.strftime(DATETIME_FORMAT))
         if task.deadline:
-            table.add_row("Deadline", task.deadline)
+            table.add_row("Deadline", task.deadline.strftime(DATETIME_FORMAT))
         if task.actual_start:
-            table.add_row("Actual Start", task.actual_start)
+            table.add_row("Actual Start", task.actual_start.strftime(DATETIME_FORMAT))
         if task.actual_end:
-            table.add_row("Actual End", task.actual_end)
+            table.add_row("Actual End", task.actual_end.strftime(DATETIME_FORMAT))
         if task.estimated_duration:
             table.add_row("Estimated Duration", f"{task.estimated_duration}h")
         if task.actual_duration_hours:

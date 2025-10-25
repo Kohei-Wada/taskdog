@@ -1,7 +1,5 @@
 """Gantt command - Display tasks in Gantt chart format."""
 
-from datetime import datetime
-
 import click
 
 from application.queries.filters.active_filter import ActiveFilter
@@ -11,7 +9,6 @@ from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
 from shared.click_types.datetime_with_default import DateTimeWithDefault
-from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import get_previous_monday
 
 
@@ -102,16 +99,11 @@ def gantt_command(ctx, start_date, end_date, show_all, sort, reverse):
     # Show all active tasks (exclude archived only) if --all, otherwise show incomplete only
     filter_obj = ActiveFilter() if show_all else IncompleteFilter()
 
-    # Convert datetime strings to date objects if provided
+    # Convert datetime to date objects if provided (DateTimeWithDefault returns datetime)
     # Default to previous Monday if start_date not provided
-    if start_date:
-        start_date_obj = datetime.strptime(start_date, DATETIME_FORMAT).date()
-    else:
-        start_date_obj = get_previous_monday()
+    start_date_obj = start_date.date() if start_date else get_previous_monday()
 
-    end_date_obj = None
-    if end_date:
-        end_date_obj = datetime.strptime(end_date, DATETIME_FORMAT).date()
+    end_date_obj = end_date.date() if end_date else None
 
     # Get Gantt data from Application layer (business logic)
     gantt_result = task_query_service.get_gantt_data(

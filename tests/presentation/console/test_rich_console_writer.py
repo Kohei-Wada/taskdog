@@ -1,6 +1,7 @@
 """Tests for RichConsoleWriter."""
 
 import unittest
+from datetime import datetime
 from io import StringIO
 
 from rich.console import Console
@@ -103,7 +104,7 @@ class RichConsoleWriterTest(unittest.TestCase):
             id=1,
             name="Test",
             priority=100,
-            actual_start="2025-10-16 10:00:00",
+            actual_start=datetime(2025, 10, 16, 10, 0, 0),
         )
         self.writer.task_start_time(task, was_already_in_progress=False)
         output = self.string_io.getvalue()
@@ -119,7 +120,7 @@ class RichConsoleWriterTest(unittest.TestCase):
             id=1,
             name="Test",
             priority=100,
-            actual_start="2025-10-16 09:00:00",
+            actual_start=datetime(2025, 10, 16, 9, 0, 0),
         )
         self.writer.task_start_time(task, was_already_in_progress=True)
         output = self.string_io.getvalue()
@@ -135,8 +136,8 @@ class RichConsoleWriterTest(unittest.TestCase):
             id=1,
             name="Test",
             priority=100,
-            actual_start="2025-10-16 10:00:00",
-            actual_end="2025-10-16 14:30:00",
+            actual_start=datetime(2025, 10, 16, 10, 0, 0),
+            actual_end=datetime(2025, 10, 16, 14, 30, 0),
             estimated_duration=4.0,
         )
         self.writer.task_completion_details(task)

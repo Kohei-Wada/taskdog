@@ -1,7 +1,5 @@
 """Optimize command - Auto-generate optimal task schedules."""
 
-from datetime import datetime
-
 import click
 
 from application.dto.optimization_result import OptimizationResult
@@ -11,7 +9,6 @@ from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.console.console_writer import ConsoleWriter
 from shared.click_types.datetime_with_default import DateTimeWithDefault
-from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import get_next_weekday
 
 
@@ -89,10 +86,8 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
     repository = ctx_obj.repository
     config = ctx_obj.config
 
-    # Parse start_date or use next weekday
-    start_date = (
-        datetime.strptime(start_date, DATETIME_FORMAT) if start_date else get_next_weekday()
-    )
+    # Use start_date or get next weekday (DateTimeWithDefault already returns datetime)
+    start_date = start_date if start_date else get_next_weekday()
 
     # Use config defaults if not provided via CLI
     if max_hours_per_day is None:
