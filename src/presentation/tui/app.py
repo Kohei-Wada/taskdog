@@ -12,7 +12,6 @@ from domain.entities.task import Task
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.notes_repository import NotesRepository
 from infrastructure.persistence.task_repository import TaskRepository
-from presentation.tui.commands import *  # noqa: F403  # Import all commands for registration
 from presentation.tui.commands.factory import CommandFactory
 from presentation.tui.context import TUIContext
 from presentation.tui.screens.main_screen import MainScreen

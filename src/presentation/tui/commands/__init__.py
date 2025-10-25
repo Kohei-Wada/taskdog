@@ -1,34 +1,32 @@
 """TUI command classes for action handling.
 
-This module imports all command classes to ensure their registration
-with the command registry through the @command_registry.register decorator.
+This module uses lazy registration to defer command imports until they are
+actually needed, significantly improving TUI startup performance.
 """
 
-# Import all commands to trigger registration
-from presentation.tui.commands.add_task_command import AddTaskCommand
-from presentation.tui.commands.cancel_task_command import CancelTaskCommand
-from presentation.tui.commands.complete_task_command import CompleteTaskCommand
-from presentation.tui.commands.delete_task_command import DeleteTaskCommand
-from presentation.tui.commands.edit_note_command import EditNoteCommand
-from presentation.tui.commands.edit_task_command import EditTaskCommand
-from presentation.tui.commands.optimize_command import OptimizeCommand
-from presentation.tui.commands.pause_task_command import PauseTaskCommand
-from presentation.tui.commands.refresh_command import RefreshCommand
-from presentation.tui.commands.reopen_task_command import ReopenTaskCommand
-from presentation.tui.commands.show_details_command import ShowDetailsCommand
-from presentation.tui.commands.start_task_command import StartTaskCommand
+from presentation.tui.commands.registry import command_registry
+
+# Lazy command registration - modules are imported only when commands are first used
+# Format: "command_name": "module.path:ClassName"
+_LAZY_COMMANDS = {
+    "add_task": "presentation.tui.commands.add_task_command:AddTaskCommand",
+    "cancel_task": "presentation.tui.commands.cancel_task_command:CancelTaskCommand",
+    "done_task": "presentation.tui.commands.complete_task_command:CompleteTaskCommand",
+    "delete_task": "presentation.tui.commands.delete_task_command:DeleteTaskCommand",
+    "edit_note": "presentation.tui.commands.edit_note_command:EditNoteCommand",
+    "edit_task": "presentation.tui.commands.edit_task_command:EditTaskCommand",
+    "optimize": "presentation.tui.commands.optimize_command:OptimizeCommand",
+    "pause_task": "presentation.tui.commands.pause_task_command:PauseTaskCommand",
+    "refresh": "presentation.tui.commands.refresh_command:RefreshCommand",
+    "reopen_task": "presentation.tui.commands.reopen_task_command:ReopenTaskCommand",
+    "show_details": "presentation.tui.commands.show_details_command:ShowDetailsCommand",
+    "start_task": "presentation.tui.commands.start_task_command:StartTaskCommand",
+}
+
+# Register all commands for lazy loading
+for command_name, module_path in _LAZY_COMMANDS.items():
+    command_registry.register_lazy(command_name, module_path)
 
 __all__ = [
-    "AddTaskCommand",
-    "CancelTaskCommand",
-    "CompleteTaskCommand",
-    "DeleteTaskCommand",
-    "EditNoteCommand",
-    "EditTaskCommand",
-    "OptimizeCommand",
-    "PauseTaskCommand",
-    "RefreshCommand",
-    "ReopenTaskCommand",
-    "ShowDetailsCommand",
-    "StartTaskCommand",
+    "command_registry",
 ]
