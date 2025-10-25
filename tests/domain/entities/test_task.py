@@ -201,6 +201,7 @@ class TestTaskSerialization(unittest.TestCase):
             priority=1,
             id=1,
             created_at=datetime(2025, 1, 1, 0, 0, 0),
+            updated_at=datetime(2025, 1, 2, 0, 0, 0),
             planned_start=datetime(2025, 1, 15, 10, 0, 0),
             planned_end=datetime(2025, 1, 15, 12, 0, 0),
             deadline=datetime(2025, 1, 20, 18, 0, 0),
@@ -211,6 +212,7 @@ class TestTaskSerialization(unittest.TestCase):
         result = task.to_dict()
 
         self.assertEqual(result["created_at"], "2025-01-01T00:00:00")
+        self.assertEqual(result["updated_at"], "2025-01-02T00:00:00")
         self.assertEqual(result["planned_start"], "2025-01-15T10:00:00")
         self.assertEqual(result["planned_end"], "2025-01-15T12:00:00")
         self.assertEqual(result["deadline"], "2025-01-20T18:00:00")
@@ -228,6 +230,41 @@ class TestTaskSerialization(unittest.TestCase):
         self.assertIsNone(result["deadline"])
         self.assertIsNone(result["actual_start"])
         self.assertIsNone(result["actual_end"])
+
+    def test_from_dict_backward_compatibility_without_updated_at(self):
+        """Test that from_dict uses created_at when updated_at is missing."""
+        created = datetime(2025, 1, 1, 0, 0, 0)
+        task_data = {
+            "id": 1,
+            "name": "Test Task",
+            "priority": 1,
+            "status": "PENDING",
+            "created_at": created.isoformat(),
+            # updated_at is missing (old data format)
+        }
+
+        task = Task.from_dict(task_data)
+
+        self.assertEqual(task.created_at, created)
+        self.assertEqual(task.updated_at, created)
+
+    def test_from_dict_with_updated_at(self):
+        """Test that from_dict correctly deserializes updated_at."""
+        created = datetime(2025, 1, 1, 0, 0, 0)
+        updated = datetime(2025, 1, 2, 10, 30, 0)
+        task_data = {
+            "id": 1,
+            "name": "Test Task",
+            "priority": 1,
+            "status": "PENDING",
+            "created_at": created.isoformat(),
+            "updated_at": updated.isoformat(),
+        }
+
+        task = Task.from_dict(task_data)
+
+        self.assertEqual(task.created_at, created)
+        self.assertEqual(task.updated_at, updated)
 
 
 if __name__ == "__main__":

@@ -89,6 +89,11 @@ class RichTableRenderer(RichRendererBase):
             "style": "dim",
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
+        "updated_at": {
+            "header": "Updated At",
+            "style": "dim",
+            "no_wrap": COLUMN_DATETIME_NO_WRAP,
+        },
         "depends_on": {
             "header": "Dependencies",
             "justify": "center",
@@ -209,6 +214,7 @@ class RichTableRenderer(RichRendererBase):
             "deadline": lambda t: self._format_datetime(t.deadline),
             "duration": lambda t: self._format_duration_info(t),
             "created_at": lambda t: self._format_datetime(t.created_at),
+            "updated_at": lambda t: self._format_datetime(t.updated_at),
         }
 
         extractor = field_extractors.get(field_name)

@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 from domain.entities.task import Task
@@ -73,6 +74,9 @@ class JsonTaskRepository(TaskRepository):
             self._task_index[task.id] = task
         else:
             # Task exists - update the existing task in place
+            # Automatically update the updated_at timestamp
+            task.updated_at = datetime.now()
+
             # Find the task in self.tasks list and replace it
             for i, t in enumerate(self.tasks):
                 if t.id == task.id:

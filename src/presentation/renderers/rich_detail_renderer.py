@@ -53,6 +53,7 @@ class RichDetailRenderer:
     def _add_time_fields(self, table: Table, task) -> None:
         """Add time-related fields to table."""
         table.add_row("Created", task.created_at.strftime(DATETIME_FORMAT))
+        table.add_row("Updated", task.updated_at.strftime(DATETIME_FORMAT))
 
         if task.planned_start:
             table.add_row("Planned Start", task.planned_start.strftime(DATETIME_FORMAT))

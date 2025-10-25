@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 import unittest
 from datetime import datetime
 
@@ -70,6 +71,35 @@ class TestJsonTaskRepository(unittest.TestCase):
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0].name, "Updated")
         self.assertEqual(tasks[0].priority, 5)
+
+    def test_save_updates_updated_at_on_existing_task(self):
+        """Test that save() automatically updates updated_at for existing tasks"""
+        # Create and save initial task
+        task = Task(name="Test Task", priority=1, id=1)
+        self.repository.save(task)
+        initial_updated_at = task.updated_at
+
+        # Wait a bit to ensure timestamp difference
+        time.sleep(0.01)
+
+        # Update the task
+        task.name = "Updated Task"
+        self.repository.save(task)
+
+        # Verify updated_at was changed
+        self.assertGreater(task.updated_at, initial_updated_at)
+
+    def test_save_does_not_update_updated_at_on_new_task(self):
+        """Test that save() does not modify updated_at for new tasks"""
+        # Create task with specific created_at and updated_at
+        created = datetime(2025, 1, 1, 0, 0, 0)
+        task = Task(name="New Task", priority=1, id=1, created_at=created, updated_at=created)
+
+        # Save new task (first save)
+        self.repository.save(task)
+
+        # Verify updated_at was not modified (remains equal to created_at for new tasks)
+        self.assertEqual(task.updated_at, created)
 
     def test_delete(self):
         """Test deleting a task"""
