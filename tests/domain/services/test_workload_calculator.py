@@ -23,7 +23,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
             planned_end=datetime(2025, 1, 10, 18, 0, 0),  # Friday
             estimated_duration=10.0,
@@ -50,7 +50,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=datetime(2025, 1, 10, 9, 0, 0),  # Friday
             planned_end=datetime(2025, 1, 14, 18, 0, 0),  # Tuesday (next week)
             estimated_duration=6.0,  # 3 weekdays: Fri, Mon, Tue
@@ -78,7 +78,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Task 1",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
             planned_end=datetime(2025, 1, 8, 18, 0, 0),  # Wednesday
             estimated_duration=6.0,
@@ -90,7 +90,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Task 2",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=datetime(2025, 1, 8, 9, 0, 0),  # Wednesday
             planned_end=datetime(2025, 1, 10, 18, 0, 0),  # Friday
             estimated_duration=9.0,
@@ -117,7 +117,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=datetime(2025, 1, 6, 9, 0, 0),
             planned_end=datetime(2025, 1, 10, 18, 0, 0),
             estimated_duration=None,  # No estimate
@@ -140,7 +140,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=None,
             planned_end=None,
             estimated_duration=10.0,
@@ -164,7 +164,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=datetime(2025, 2, 1, 9, 0, 0),
             planned_end=datetime(2025, 2, 5, 18, 0, 0),
             estimated_duration=10.0,
@@ -207,7 +207,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Pending Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
             planned_end=datetime(2025, 1, 8, 18, 0, 0),  # Wednesday
             estimated_duration=6.0,
@@ -219,7 +219,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Completed Task",
             priority=1,
             status=TaskStatus.COMPLETED,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=datetime(2025, 1, 8, 9, 0, 0),  # Wednesday
             planned_end=datetime(2025, 1, 10, 18, 0, 0),  # Friday
             estimated_duration=9.0,
@@ -247,7 +247,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Optimized Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
             planned_end=datetime(2025, 1, 7, 18, 0, 0),  # Tuesday
             estimated_duration=6.0,
@@ -277,7 +277,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Legacy Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp=1234567890.0,
+            created_at=1234567890.0,
             planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
             planned_end=datetime(2025, 1, 8, 18, 0, 0),  # Wednesday
             estimated_duration=6.0,

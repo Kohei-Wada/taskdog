@@ -54,7 +54,7 @@ class RichDetailRenderer:
         """Add time-related fields to table."""
         from datetime import datetime
 
-        created_dt = datetime.fromtimestamp(task.timestamp)
+        created_dt = datetime.fromtimestamp(task.created_at)
         table.add_row("Created", created_dt.strftime(DATETIME_FORMAT))
 
         if task.planned_start:

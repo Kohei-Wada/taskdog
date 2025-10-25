@@ -19,7 +19,7 @@ DEFAULT_CSV_FIELDS = [
     "estimated_duration",
     "actual_start",
     "actual_end",
-    "timestamp",
+    "created_at",
 ]
 
 

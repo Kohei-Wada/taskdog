@@ -88,7 +88,7 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
             f"[dim]Status:[/dim] {status_styled}",
             classes="detail-row",
         )
-        yield self._create_detail_row("Created", str(self.task_data.timestamp))
+        yield self._create_detail_row("Created", str(self.task_data.created_at))
 
         # Dependencies
         if self.task_data.depends_on:

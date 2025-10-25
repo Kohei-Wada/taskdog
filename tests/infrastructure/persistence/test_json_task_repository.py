@@ -279,7 +279,7 @@ class TestJsonTaskRepository(unittest.TestCase):
             "name": "Legacy Task",
             "priority": 1,
             "status": "PENDING",
-            "timestamp": 1234567890.0,
+            "created_at": 1234567890.0,
             "planned_start": "2025-01-15 09:00:00",  # Legacy format
             "planned_end": "2025-01-15 17:00:00",
             "deadline": "2025-01-20 18:00:00",

@@ -44,7 +44,7 @@ class TestTaskService(unittest.TestCase):
             name="Test Task",
             priority=5,
             status=TaskStatus.PENDING,
-            timestamp=datetime.now(),
+            created_at=datetime.now(),
         )
 
         with patch(
@@ -66,7 +66,7 @@ class TestTaskService(unittest.TestCase):
             name="Test Task",
             priority=8,
             status=TaskStatus.PENDING,
-            timestamp=datetime.now(),
+            created_at=datetime.now(),
         )
 
         with patch(
@@ -88,7 +88,7 @@ class TestTaskService(unittest.TestCase):
             name="Test Task",
             priority=5,
             status=TaskStatus.IN_PROGRESS,
-            timestamp=datetime.now(),
+            created_at=datetime.now(),
         )
 
         with patch(
@@ -111,7 +111,7 @@ class TestTaskService(unittest.TestCase):
             name="Test Task",
             priority=5,
             status=TaskStatus.COMPLETED,
-            timestamp=datetime.now(),
+            created_at=datetime.now(),
         )
 
         with patch(

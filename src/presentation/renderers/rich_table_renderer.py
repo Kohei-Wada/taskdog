@@ -208,7 +208,7 @@ class RichTableRenderer(RichRendererBase):
             "actual_end": lambda t: self._format_datetime(t.actual_end),
             "deadline": lambda t: self._format_datetime(t.deadline),
             "duration": lambda t: self._format_duration_info(t),
-            "created_at": lambda t: self._format_timestamp(t.timestamp),
+            "created_at": lambda t: self._format_timestamp(t.created_at),
         }
 
         extractor = field_extractors.get(field_name)

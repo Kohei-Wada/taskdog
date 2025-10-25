@@ -12,7 +12,7 @@ VALID_FIELDS = {
     "name",
     "priority",
     "status",
-    "timestamp",
+    "created_at",
     "planned_start",
     "planned_end",
     "deadline",
@@ -41,7 +41,7 @@ VALID_FIELDS = {
     "-f",
     type=str,
     help="Comma-separated list of fields to export (e.g., 'id,name,priority,status'). "
-    "Available: id, name, priority, status, timestamp, planned_start, planned_end, "
+    "Available: id, name, priority, status, created_at, planned_start, planned_end, "
     "deadline, actual_start, actual_end, estimated_duration, daily_allocations",
 )
 @click.pass_context
