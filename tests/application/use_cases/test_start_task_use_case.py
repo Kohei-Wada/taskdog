@@ -3,7 +3,7 @@ import unittest
 from application.dto.start_task_request import StartTaskRequest
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task, TaskStatus
-from tests.application.use_cases.base_status_change_test import (
+from tests.application.use_cases.status_change_test_base import (
     BaseStatusChangeUseCaseTest,
 )
 

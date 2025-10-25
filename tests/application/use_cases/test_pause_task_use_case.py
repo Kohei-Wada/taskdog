@@ -4,7 +4,7 @@ from datetime import datetime
 from application.dto.pause_task_request import PauseTaskRequest
 from application.use_cases.pause_task import PauseTaskUseCase
 from domain.entities.task import Task, TaskStatus
-from tests.application.use_cases.base_status_change_test import (
+from tests.application.use_cases.status_change_test_base import (
     BaseStatusChangeUseCaseTest,
 )
 

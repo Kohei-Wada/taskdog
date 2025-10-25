@@ -1,19 +1,14 @@
 """Tests for MonteCarloOptimizationStrategy."""
 
-import os
-import tempfile
 import unittest
 from datetime import date, datetime
 
-from application.dto.create_task_request import CreateTaskRequest
-from application.dto.optimize_schedule_request import OptimizeScheduleRequest
-from application.use_cases.create_task import CreateTaskUseCase
-from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
-from shared.config_manager import ConfigManager
+from tests.application.services.optimization.optimization_strategy_test_base import (
+    BaseOptimizationStrategyTest,
+)
 
 
-class TestMonteCarloOptimizationStrategy(unittest.TestCase):
+class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
     """Test cases for MonteCarloOptimizationStrategy.
 
     Note: Monte Carlo algorithm uses randomness, so tests focus on:
@@ -22,113 +17,64 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
     - Valid schedules are produced
     """
 
-    def setUp(self):
-        """Create temporary file and initialize use case for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = JsonTaskRepository(self.test_filename)
-        self.create_use_case = CreateTaskUseCase(self.repository)
-        self.optimize_use_case = OptimizeScheduleUseCase(self.repository, ConfigManager.load())
-
-    def tearDown(self):
-        """Clean up temporary file after each test."""
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
+    algorithm_name = "monte_carlo"
 
     def test_monte_carlo_schedules_single_task(self):
         """Test that Monte Carlo can schedule a single task."""
-        input_dto = CreateTaskRequest(
-            name="Single Task",
+        self.create_task(
+            "Single Task",
             priority=100,
             estimated_duration=12.0,
             deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
-        self.create_use_case.execute(input_dto)
 
-        start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleRequest(
-            start_date=start_date,
-            max_hours_per_day=6.0,
-            algorithm_name="monte_carlo",
-            force_override=False,
-        )
-        result = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should successfully schedule
         self.assertEqual(len(result.successful_tasks), 1)
         task = result.successful_tasks[0]
 
         # Verify basic properties
-        self.assertIsNotNone(task.planned_start)
-        self.assertIsNotNone(task.planned_end)
-        self.assertIsNotNone(task.daily_allocations)
+        self.assert_task_scheduled(task)
 
         # Verify total allocated hours equals estimated duration
-        total_hours = sum(task.daily_allocations.values())
-        self.assertAlmostEqual(total_hours, 12.0, places=5)
+        self.assert_total_allocated_hours(task, 12.0)
 
     def test_monte_carlo_schedules_multiple_tasks(self):
         """Test that Monte Carlo can schedule multiple tasks."""
         # Create multiple tasks
         for i in range(3):
-            input_dto = CreateTaskRequest(
-                name=f"Task {i + 1}",
+            self.create_task(
+                f"Task {i + 1}",
                 priority=100 - (i * 10),
                 estimated_duration=6.0,
                 deadline=datetime(2025, 10, 31, 18, 0, 0),
             )
-            self.create_use_case.execute(input_dto)
 
-        start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleRequest(
-            start_date=start_date,
-            max_hours_per_day=6.0,
-            algorithm_name="monte_carlo",
-            force_override=False,
-        )
-        result = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should successfully schedule all tasks
         self.assertEqual(len(result.successful_tasks), 3)
 
         # Verify all tasks have valid schedules
         for task in result.successful_tasks:
-            self.assertIsNotNone(task.planned_start)
-            self.assertIsNotNone(task.planned_end)
-            self.assertIsNotNone(task.daily_allocations)
-
-            # Verify total allocated hours
-            total_hours = sum(task.daily_allocations.values())
-            self.assertAlmostEqual(total_hours, 6.0, places=5)
+            self.assert_task_scheduled(task)
+            self.assert_total_allocated_hours(task, 6.0)
 
     def test_monte_carlo_respects_max_hours_per_day(self):
         """Test that Monte Carlo respects maximum hours per day."""
         # Create two tasks
-        input_dto1 = CreateTaskRequest(
-            name="Task 1",
+        self.create_task(
+            "Task 1",
             priority=100,
             estimated_duration=6.0,
             deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
-        self.create_use_case.execute(input_dto1)
-
-        input_dto2 = CreateTaskRequest(
-            name="Task 2",
-            priority=90,
-            estimated_duration=6.0,
-            deadline=datetime(2025, 10, 31, 18, 0, 0),
+        self.create_task(
+            "Task 2", priority=90, estimated_duration=6.0, deadline=datetime(2025, 10, 31, 18, 0, 0)
         )
-        self.create_use_case.execute(input_dto2)
 
-        start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleRequest(
-            start_date=start_date,
-            max_hours_per_day=6.0,
-            algorithm_name="monte_carlo",
-            force_override=False,
-        )
-        result = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Verify daily allocations don't exceed max
         for date_str, total_hours in result.daily_allocations.items():
@@ -139,22 +85,14 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
     def test_monte_carlo_respects_deadlines(self):
         """Test that Monte Carlo respects task deadlines."""
         # Create task with tight but achievable deadline
-        input_dto = CreateTaskRequest(
-            name="Tight Deadline",
+        self.create_task(
+            "Tight Deadline",
             priority=100,
             estimated_duration=12.0,
-            deadline=datetime(2025, 10, 22, 18, 0, 0),  # 3 days = 18h available
+            deadline=datetime(2025, 10, 22, 18, 0, 0),
         )
-        self.create_use_case.execute(input_dto)
 
-        start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleRequest(
-            start_date=start_date,
-            max_hours_per_day=6.0,
-            algorithm_name="monte_carlo",
-            force_override=False,
-        )
-        result = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should successfully schedule
         self.assertEqual(len(result.successful_tasks), 1)
@@ -162,29 +100,19 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Verify end date is before or on deadline
-        end_dt = task.planned_end
-        deadline_dt = task.deadline
-        self.assertLessEqual(end_dt, deadline_dt)
+        self.assertLessEqual(task.planned_end, task.deadline)
 
     def test_monte_carlo_fails_impossible_deadlines(self):
         """Test that Monte Carlo fails tasks with impossible deadlines."""
         # Create task with impossible deadline
-        input_dto = CreateTaskRequest(
-            name="Impossible Deadline",
+        self.create_task(
+            "Impossible Deadline",
             priority=100,
             estimated_duration=30.0,
-            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Only 18h available
+            deadline=datetime(2025, 10, 22, 18, 0, 0),
         )
-        self.create_use_case.execute(input_dto)
 
-        start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleRequest(
-            start_date=start_date,
-            max_hours_per_day=6.0,
-            algorithm_name="monte_carlo",
-            force_override=False,
-        )
-        result = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should fail to schedule
         self.assertEqual(len(result.successful_tasks), 0)
@@ -193,23 +121,15 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
     def test_monte_carlo_skips_weekends(self):
         """Test that Monte Carlo skips weekends."""
         # Create task that spans over a weekend
-        input_dto = CreateTaskRequest(
-            name="Weekend Task",
+        self.create_task(
+            "Weekend Task",
             priority=100,
             estimated_duration=12.0,
             deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
-        self.create_use_case.execute(input_dto)
 
         # Start on Friday
-        start_date = datetime(2025, 10, 24, 9, 0, 0)  # Friday
-        optimize_input = OptimizeScheduleRequest(
-            start_date=start_date,
-            max_hours_per_day=6.0,
-            algorithm_name="monte_carlo",
-            force_override=False,
-        )
-        result = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_schedule(start_date=datetime(2025, 10, 24, 9, 0, 0))
 
         task = result.successful_tasks[0]
 
@@ -221,22 +141,14 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
         """Test that Monte Carlo produces valid results with multiple simulations."""
         # Create multiple tasks with different priorities
         for i in range(5):
-            input_dto = CreateTaskRequest(
-                name=f"Task {i + 1}",
+            self.create_task(
+                f"Task {i + 1}",
                 priority=100 - (i * 20),
                 estimated_duration=6.0,
                 deadline=datetime(2025, 10, 31, 18, 0, 0),
             )
-            self.create_use_case.execute(input_dto)
 
-        start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleRequest(
-            start_date=start_date,
-            max_hours_per_day=6.0,
-            algorithm_name="monte_carlo",
-            force_override=False,
-        )
-        result = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should successfully schedule all tasks
         self.assertEqual(len(result.successful_tasks), 5)
@@ -250,14 +162,7 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
 
     def test_monte_carlo_handles_empty_task_list(self):
         """Test that Monte Carlo handles empty task list gracefully."""
-        start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleRequest(
-            start_date=start_date,
-            max_hours_per_day=6.0,
-            algorithm_name="monte_carlo",
-            force_override=False,
-        )
-        result = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should return empty results
         self.assertEqual(len(result.successful_tasks), 0)
@@ -266,38 +171,26 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
     def test_monte_carlo_finds_feasible_solution(self):
         """Test that Monte Carlo finds a feasible solution through multiple simulations."""
         # Create tasks with varying characteristics
-        input_dto1 = CreateTaskRequest(
-            name="High Priority",
+        self.create_task(
+            "High Priority",
             priority=100,
             estimated_duration=6.0,
             deadline=datetime(2025, 10, 25, 18, 0, 0),
         )
-        self.create_use_case.execute(input_dto1)
-
-        input_dto2 = CreateTaskRequest(
-            name="Medium Priority",
+        self.create_task(
+            "Medium Priority",
             priority=50,
             estimated_duration=9.0,
             deadline=datetime(2025, 10, 27, 18, 0, 0),
         )
-        self.create_use_case.execute(input_dto2)
-
-        input_dto3 = CreateTaskRequest(
-            name="Low Priority",
+        self.create_task(
+            "Low Priority",
             priority=25,
             estimated_duration=12.0,
             deadline=datetime(2025, 10, 30, 18, 0, 0),
         )
-        self.create_use_case.execute(input_dto3)
 
-        start_date = datetime(2025, 10, 20, 9, 0, 0)
-        optimize_input = OptimizeScheduleRequest(
-            start_date=start_date,
-            max_hours_per_day=6.0,
-            algorithm_name="monte_carlo",
-            force_override=False,
-        )
-        result = self.optimize_use_case.execute(optimize_input)
+        result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should successfully schedule all tasks
         self.assertEqual(len(result.successful_tasks), 3)
@@ -305,9 +198,9 @@ class TestMonteCarloOptimizationStrategy(unittest.TestCase):
         # Verify all tasks respect their deadlines
         for task in result.successful_tasks:
             if task.deadline:
-                end_dt = task.planned_end
-                deadline_dt = task.deadline
-                self.assertLessEqual(end_dt, deadline_dt, f"Task {task.name} exceeds deadline")
+                self.assertLessEqual(
+                    task.planned_end, task.deadline, f"Task {task.name} exceeds deadline"
+                )
 
 
 if __name__ == "__main__":

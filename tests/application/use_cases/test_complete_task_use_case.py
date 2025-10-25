@@ -5,7 +5,7 @@ from application.dto.complete_task_request import CompleteTaskRequest
 from application.use_cases.complete_task import CompleteTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskNotStartedError
-from tests.application.use_cases.base_status_change_test import (
+from tests.application.use_cases.status_change_test_base import (
     BaseStatusChangeUseCaseTest,
 )
 

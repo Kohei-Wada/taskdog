@@ -1,0 +1,139 @@
+"""Base test class for optimization strategy tests."""
+
+import os
+import tempfile
+import unittest
+from datetime import datetime
+
+from application.dto.create_task_request import CreateTaskRequest
+from application.dto.optimize_schedule_request import OptimizeScheduleRequest
+from application.use_cases.create_task import CreateTaskUseCase
+from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
+from domain.entities.task import Task
+from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from shared.config_manager import ConfigManager
+
+
+class BaseOptimizationStrategyTest(unittest.TestCase):
+    """Base test class for optimization strategy tests.
+
+    Provides common fixtures and helper methods for testing different
+    optimization strategies.
+
+    Subclasses must override:
+    - algorithm_name: The name of the algorithm to test (e.g., "greedy", "balanced")
+    """
+
+    # Override in subclasses
+    algorithm_name = None
+
+    @classmethod
+    def setUpClass(cls):
+        """Skip test execution for the base class itself."""
+        if cls is BaseOptimizationStrategyTest:
+            raise unittest.SkipTest("Skipping base test class")
+
+    def setUp(self):
+        """Create temporary file and initialize use cases for each test."""
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
+        self.test_file.close()
+        self.test_filename = self.test_file.name
+        self.repository = JsonTaskRepository(self.test_filename)
+        self.create_use_case = CreateTaskUseCase(self.repository)
+        self.optimize_use_case = OptimizeScheduleUseCase(self.repository, ConfigManager.load())
+
+    def tearDown(self):
+        """Clean up temporary file after each test."""
+        if os.path.exists(self.test_filename):
+            os.unlink(self.test_filename)
+
+    def create_task(
+        self,
+        name: str,
+        priority: int = 100,
+        estimated_duration: float = 10.0,
+        deadline: datetime | None = None,
+        is_fixed: bool = False,
+    ) -> Task:
+        """Helper to create a task and return the created task object.
+
+        Args:
+            name: Task name
+            priority: Task priority (default: 100)
+            estimated_duration: Duration in hours (default: 10.0)
+            deadline: Optional deadline
+            is_fixed: Whether the task is fixed (default: False)
+
+        Returns:
+            The created Task object
+        """
+        input_dto = CreateTaskRequest(
+            name=name,
+            priority=priority,
+            estimated_duration=estimated_duration,
+            deadline=deadline,
+            is_fixed=is_fixed,
+        )
+        return self.create_use_case.execute(input_dto)
+
+    def optimize_schedule(
+        self,
+        start_date: datetime,
+        max_hours_per_day: float = 6.0,
+        force_override: bool = False,
+    ):
+        """Helper to run optimization with the algorithm being tested.
+
+        Args:
+            start_date: Start date for optimization
+            max_hours_per_day: Maximum hours per day (default: 6.0)
+            force_override: Whether to force override existing schedules (default: False)
+
+        Returns:
+            OptimizationResult from the use case
+        """
+        optimize_input = OptimizeScheduleRequest(
+            start_date=start_date,
+            max_hours_per_day=max_hours_per_day,
+            algorithm_name=self.algorithm_name,
+            force_override=force_override,
+        )
+        return self.optimize_use_case.execute(optimize_input)
+
+    def assert_task_scheduled(
+        self,
+        task: Task,
+        expected_start: datetime | None = None,
+        expected_end: datetime | None = None,
+    ):
+        """Assert that a task has been scheduled.
+
+        Args:
+            task: The task to check
+            expected_start: Optional expected start date/time
+            expected_end: Optional expected end date/time
+        """
+        self.assertIsNotNone(task.planned_start, f"Task {task.name} should have planned_start")
+        self.assertIsNotNone(task.planned_end, f"Task {task.name} should have planned_end")
+        self.assertIsNotNone(
+            task.daily_allocations, f"Task {task.name} should have daily_allocations"
+        )
+
+        if expected_start:
+            self.assertEqual(task.planned_start, expected_start)
+        if expected_end:
+            self.assertEqual(task.planned_end, expected_end)
+
+    def assert_total_allocated_hours(self, task: Task, expected_hours: float, places: int = 5):
+        """Assert that the total allocated hours match expected.
+
+        Args:
+            task: The task to check
+            expected_hours: Expected total hours
+            places: Decimal places for comparison (default: 5)
+        """
+        self.assertIsNotNone(task.daily_allocations)
+        total = sum(task.daily_allocations.values())
+        self.assertAlmostEqual(
+            total, expected_hours, places=places, msg=f"Total allocated hours for {task.name}"
+        )
