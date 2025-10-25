@@ -37,7 +37,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
             name="High Priority, Late Deadline",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-25 18:00:00",
+            deadline=datetime(2025, 10, 25, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto1)
 
@@ -45,7 +45,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
             name="Low Priority, Early Deadline",
             priority=50,
             estimated_duration=6.0,
-            deadline="2025-10-22 18:00:00",
+            deadline=datetime(2025, 10, 22, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto2)
 
@@ -66,8 +66,8 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         early_deadline = tasks_by_name["Low Priority, Early Deadline"]
         late_deadline = tasks_by_name["High Priority, Late Deadline"]
 
-        self.assertEqual(early_deadline.planned_start, "2025-10-20 09:00:00")
-        self.assertEqual(late_deadline.planned_start, "2025-10-21 09:00:00")
+        self.assertEqual(early_deadline.planned_start, datetime(2025, 10, 20, 9, 0, 0))
+        self.assertEqual(late_deadline.planned_start, datetime(2025, 10, 21, 9, 0, 0))
 
     def test_dependency_aware_uses_priority_as_tiebreaker(self):
         """Test that priority is used when deadlines are equal."""
@@ -76,7 +76,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
             name="Low Priority",
             priority=50,
             estimated_duration=6.0,
-            deadline="2025-10-25 18:00:00",
+            deadline=datetime(2025, 10, 25, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto1)
 
@@ -84,7 +84,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
             name="High Priority",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-25 18:00:00",  # Same deadline
+            deadline=datetime(2025, 10, 25, 18, 0, 0),  # Same deadline
         )
         self.create_use_case.execute(input_dto2)
 
@@ -105,8 +105,8 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         low_priority = tasks_by_name["Low Priority"]
         high_priority = tasks_by_name["High Priority"]
 
-        self.assertEqual(high_priority.planned_start, "2025-10-20 09:00:00")
-        self.assertEqual(low_priority.planned_start, "2025-10-21 09:00:00")
+        self.assertEqual(high_priority.planned_start, datetime(2025, 10, 20, 9, 0, 0))
+        self.assertEqual(low_priority.planned_start, datetime(2025, 10, 21, 9, 0, 0))
 
     def test_dependency_aware_schedules_no_deadline_tasks_last(self):
         """Test that tasks without deadlines are scheduled last."""
@@ -115,7 +115,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
             name="With Deadline",
             priority=50,
             estimated_duration=6.0,
-            deadline="2025-10-25 18:00:00",
+            deadline=datetime(2025, 10, 25, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto1)
 
@@ -144,8 +144,8 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         with_deadline = tasks_by_name["With Deadline"]
         no_deadline = tasks_by_name["No Deadline"]
 
-        self.assertEqual(with_deadline.planned_start, "2025-10-20 09:00:00")
-        self.assertEqual(no_deadline.planned_start, "2025-10-21 09:00:00")
+        self.assertEqual(with_deadline.planned_start, datetime(2025, 10, 20, 9, 0, 0))
+        self.assertEqual(no_deadline.planned_start, datetime(2025, 10, 21, 9, 0, 0))
 
     def test_dependency_aware_uses_greedy_allocation(self):
         """Test that dependency-aware strategy uses greedy allocation."""
@@ -154,7 +154,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
             name="Multi-day Task",
             priority=100,
             estimated_duration=15.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto)
 
@@ -182,7 +182,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
             name="Impossible Deadline",
             priority=100,
             estimated_duration=30.0,
-            deadline="2025-10-22 18:00:00",  # Only 3 days available
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Only 3 days available
         )
         self.create_use_case.execute(input_dto)
 
@@ -206,7 +206,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
             name="Urgent Low Priority",
             priority=30,
             estimated_duration=6.0,
-            deadline="2025-10-21 18:00:00",
+            deadline=datetime(2025, 10, 21, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto1)
 
@@ -214,7 +214,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
             name="Medium Priority Medium Deadline",
             priority=60,
             estimated_duration=6.0,
-            deadline="2025-10-23 18:00:00",
+            deadline=datetime(2025, 10, 23, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto2)
 
@@ -222,7 +222,7 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
             name="High Priority Late Deadline",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-25 18:00:00",
+            deadline=datetime(2025, 10, 25, 18, 0, 0),
         )
         self.create_use_case.execute(input_dto3)
 
@@ -242,14 +242,18 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
         tasks_by_name = {t.name: t for t in result.successful_tasks}
 
         # Earliest deadline should be first
-        self.assertEqual(tasks_by_name["Urgent Low Priority"].planned_start, "2025-10-20 09:00:00")
+        self.assertEqual(
+            tasks_by_name["Urgent Low Priority"].planned_start, datetime(2025, 10, 20, 9, 0, 0)
+        )
         # Middle deadline should be second
         self.assertEqual(
-            tasks_by_name["Medium Priority Medium Deadline"].planned_start, "2025-10-21 09:00:00"
+            tasks_by_name["Medium Priority Medium Deadline"].planned_start,
+            datetime(2025, 10, 21, 9, 0, 0),
         )
         # Latest deadline should be last
         self.assertEqual(
-            tasks_by_name["High Priority Late Deadline"].planned_start, "2025-10-22 09:00:00"
+            tasks_by_name["High Priority Late Deadline"].planned_start,
+            datetime(2025, 10, 22, 9, 0, 0),
         )
 
 

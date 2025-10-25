@@ -1,6 +1,7 @@
 """DTOs for optimization results."""
 
 from dataclasses import dataclass
+from datetime import datetime
 
 from application.dto.optimization_summary import OptimizationSummary
 from domain.entities.task import Task
@@ -39,7 +40,7 @@ class OptimizationResult:
     failed_tasks: list[SchedulingFailure]
     daily_allocations: dict[str, float]
     summary: OptimizationSummary
-    task_states_before: dict[int, str | None]
+    task_states_before: dict[int, datetime | None]
 
     def has_failures(self) -> bool:
         """Check if any tasks failed to be scheduled.

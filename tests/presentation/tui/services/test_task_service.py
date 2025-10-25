@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task, TaskStatus
 from domain.services.time_tracker import TimeTracker
+from infrastructure.persistence.notes_repository import NotesRepository
 from infrastructure.persistence.task_repository import TaskRepository
 from presentation.tui.context import TUIContext
 from presentation.tui.services.task_service import TaskService
@@ -21,6 +22,7 @@ class TestTaskService(unittest.TestCase):
         self.repository = MagicMock(spec=TaskRepository)
         self.time_tracker = MagicMock(spec=TimeTracker)
         self.query_service = MagicMock(spec=TaskQueryService)
+        self.notes_repository = MagicMock(spec=NotesRepository)
         self.config = ConfigManager._default_config()
 
         # Create TUIContext
@@ -29,6 +31,7 @@ class TestTaskService(unittest.TestCase):
             time_tracker=self.time_tracker,
             query_service=self.query_service,
             config=self.config,
+            notes_repository=self.notes_repository,
         )
 
         # Initialize TaskService with context

@@ -102,5 +102,6 @@ def table_command(ctx, all, filter, sort, reverse, fields):
 
     # Render and display
     console_writer = ctx_obj.console_writer
-    renderer = RichTableRenderer(console_writer)
+    notes_repository = ctx_obj.notes_repository
+    renderer = RichTableRenderer(console_writer, notes_repository)
     renderer.render(tasks, fields=field_list)

@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 from application.use_cases.get_task_detail import (
@@ -10,6 +11,7 @@ from application.use_cases.get_task_detail import (
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.notes_repository import NotesRepository
 
 
 class TestGetTaskDetailUseCase(unittest.TestCase):
@@ -21,7 +23,8 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
-        self.use_case = GetTaskDetailUseCase(self.repository)
+        self.notes_repository = NotesRepository()
+        self.use_case = GetTaskDetailUseCase(self.repository, self.notes_repository)
 
         # Create temporary directory for notes
         self.notes_dir = tempfile.mkdtemp()
@@ -57,11 +60,11 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        # Create notes file
-        notes_path = task.notes_path
-        notes_path.parent.mkdir(parents=True, exist_ok=True)
+        # Create notes file using NotesRepository
+        notes_path = self.notes_repository.get_notes_path(task.id)
+        self.notes_repository.ensure_notes_dir()
         notes_content = "# Test Notes\n\nThis is a test note."
-        notes_path.write_text(notes_content, encoding="utf-8")
+        self.notes_repository.write_notes(task.id, notes_content)
 
         try:
             input_dto = GetTaskDetailInput(task.id)
@@ -100,9 +103,9 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
         task = Task(
             name="Complex Task",
             priority=2,
-            planned_start="2024-01-01 10:00:00",
-            planned_end="2024-01-01 12:00:00",
-            deadline="2024-01-01 18:00:00",
+            planned_start=datetime(2024, 1, 1, 10, 0, 0),
+            planned_end=datetime(2024, 1, 1, 12, 0, 0),
+            deadline=datetime(2024, 1, 1, 18, 0, 0),
             estimated_duration=2.5,
         )
         task.id = self.repository.generate_next_id()
@@ -113,9 +116,9 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
 
         self.assertEqual(result.task.name, "Complex Task")
         self.assertEqual(result.task.priority, 2)
-        self.assertEqual(result.task.planned_start, "2024-01-01 10:00:00")
-        self.assertEqual(result.task.planned_end, "2024-01-01 12:00:00")
-        self.assertEqual(result.task.deadline, "2024-01-01 18:00:00")
+        self.assertEqual(result.task.planned_start, datetime(2024, 1, 1, 10, 0, 0))
+        self.assertEqual(result.task.planned_end, datetime(2024, 1, 1, 12, 0, 0))
+        self.assertEqual(result.task.deadline, datetime(2024, 1, 1, 18, 0, 0))
         self.assertEqual(result.task.estimated_duration, 2.5)
 
     def test_execute_handles_corrupt_notes_file(self):
@@ -124,10 +127,10 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        # Create notes file with restricted permissions
-        notes_path = task.notes_path
-        notes_path.parent.mkdir(parents=True, exist_ok=True)
-        notes_path.write_text("Test content", encoding="utf-8")
+        # Create notes file with restricted permissions using NotesRepository
+        notes_path = self.notes_repository.get_notes_path(task.id)
+        self.notes_repository.ensure_notes_dir()
+        self.notes_repository.write_notes(task.id, "Test content")
 
         try:
             # Make file unreadable (Unix only)
@@ -137,8 +140,8 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
                 input_dto = GetTaskDetailInput(task.id)
                 result = self.use_case.execute(input_dto)
 
-                # Should treat as no notes when reading fails
-                self.assertFalse(result.has_notes)
+                # File exists so has_notes is True, but content should be None due to read error
+                self.assertTrue(result.has_notes)
                 self.assertIsNone(result.notes_content)
         finally:
             # Restore permissions and clean up

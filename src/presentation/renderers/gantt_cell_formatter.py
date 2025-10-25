@@ -37,7 +37,6 @@ from shared.constants import (
     WORKLOAD_COMFORTABLE_HOURS,
     WORKLOAD_MODERATE_HOURS,
 )
-from shared.utils.date_utils import parse_date
 
 
 class GanttCellFormatter:
@@ -266,11 +265,11 @@ class GanttCellFormatter:
             actual_end, deadline)
         """
         return {
-            "planned_start": parse_date(task.planned_start),
-            "planned_end": parse_date(task.planned_end),
-            "actual_start": parse_date(task.actual_start),
-            "actual_end": parse_date(task.actual_end),
-            "deadline": parse_date(task.deadline),
+            "planned_start": task.planned_start.date() if task.planned_start else None,
+            "planned_end": task.planned_end.date() if task.planned_end else None,
+            "actual_start": task.actual_start.date() if task.actual_start else None,
+            "actual_end": task.actual_end.date() if task.actual_end else None,
+            "deadline": task.deadline.date() if task.deadline else None,
         }
 
     @staticmethod

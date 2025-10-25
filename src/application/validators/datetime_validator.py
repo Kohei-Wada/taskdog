@@ -7,7 +7,6 @@ from application.validators.field_validator import FieldValidator
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
 from infrastructure.persistence.task_repository import TaskRepository
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class DateTimeValidator(FieldValidator):
@@ -32,7 +31,7 @@ class DateTimeValidator(FieldValidator):
         """Validate datetime field value.
 
         Args:
-            value: The datetime string to validate
+            value: The datetime object to validate
             task: The task being updated
             repository: Repository for data access (unused)
 
@@ -43,14 +42,12 @@ class DateTimeValidator(FieldValidator):
         if value is None:
             return
 
-        # Parse the datetime string
-        try:
-            dt = datetime.strptime(value, DATETIME_FORMAT)
-        except (ValueError, TypeError) as e:
+        # Validate that value is a datetime object
+        if not isinstance(value, datetime):
             raise TaskValidationError(
-                f"Invalid datetime format for {self.field_name}: {value}. "
-                f"Expected format: {DATETIME_FORMAT}"
-            ) from e
+                f"Invalid datetime type for {self.field_name}: {type(value).__name__}. "
+                f"Expected datetime object"
+            )
 
         # Get current time
         now = datetime.now()
@@ -60,8 +57,8 @@ class DateTimeValidator(FieldValidator):
             return
 
         # Reject past dates for tasks that haven't started
-        if dt < now:
+        if value < now:
             raise TaskValidationError(
-                f"Cannot set {self.field_name} to past date: {value}. "
+                f"Cannot set {self.field_name} to past date: {value.isoformat()}. "
                 f"Tasks that haven't started must have future dates."
             )

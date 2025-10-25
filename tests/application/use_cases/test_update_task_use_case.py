@@ -9,7 +9,6 @@ from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class TestUpdateTaskUseCase(unittest.TestCase):
@@ -63,7 +62,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         # Use future date
-        future_date = (datetime.now() + timedelta(days=7)).strftime(DATETIME_FORMAT)
+        future_date = datetime.now() + timedelta(days=7)
         input_dto = UpdateTaskRequest(task_id=task.id, planned_start=future_date)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
@@ -78,7 +77,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         # Use future date
-        future_date = (datetime.now() + timedelta(days=14)).strftime(DATETIME_FORMAT)
+        future_date = datetime.now() + timedelta(days=14)
         input_dto = UpdateTaskRequest(task_id=task.id, planned_end=future_date)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
@@ -93,7 +92,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         # Use future date
-        future_date = (datetime.now() + timedelta(days=30)).strftime(DATETIME_FORMAT)
+        future_date = datetime.now() + timedelta(days=30)
         input_dto = UpdateTaskRequest(task_id=task.id, deadline=future_date)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
@@ -121,7 +120,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         # Use future date
-        future_date = (datetime.now() + timedelta(days=7)).strftime(DATETIME_FORMAT)
+        future_date = datetime.now() + timedelta(days=7)
         input_dto = UpdateTaskRequest(
             task_id=task.id,
             priority=2,
@@ -171,9 +170,9 @@ class TestUpdateTaskUseCase(unittest.TestCase):
             task_id=task.id,
             status=TaskStatus.IN_PROGRESS,
             priority=3,
-            planned_start="2025-10-12 09:00:00",
-            planned_end="2025-10-12 18:00:00",
-            deadline="2025-10-15 18:00:00",
+            planned_start=datetime(2025, 10, 12, 9, 0, 0),
+            planned_end=datetime(2025, 10, 12, 18, 0, 0),
+            deadline=datetime(2025, 10, 15, 18, 0, 0),
             estimated_duration=8.0,
         )
         result_task, updated_fields = self.use_case.execute(input_dto)
@@ -181,9 +180,9 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         # Verify all fields were updated
         self.assertEqual(result_task.status, TaskStatus.IN_PROGRESS)
         self.assertEqual(result_task.priority, 3)
-        self.assertEqual(result_task.planned_start, "2025-10-12 09:00:00")
-        self.assertEqual(result_task.planned_end, "2025-10-12 18:00:00")
-        self.assertEqual(result_task.deadline, "2025-10-15 18:00:00")
+        self.assertEqual(result_task.planned_start, datetime(2025, 10, 12, 9, 0, 0))
+        self.assertEqual(result_task.planned_end, datetime(2025, 10, 12, 18, 0, 0))
+        self.assertEqual(result_task.deadline, datetime(2025, 10, 15, 18, 0, 0))
         self.assertEqual(result_task.estimated_duration, 8.0)
         self.assertIsNotNone(result_task.actual_start)
 
@@ -199,7 +198,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
     def test_execute_status_change_to_completed_records_end_time(self):
         """Test that changing status to COMPLETED records actual_end timestamp"""
         task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        task.actual_start = "2025-10-12 09:00:00"
+        task.actual_start = datetime(2025, 10, 12, 9, 0, 0)
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
@@ -213,7 +212,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
     def test_execute_status_change_to_canceled_records_end_time(self):
         """Test that changing status to CANCELED records actual_end timestamp"""
         task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        task.actual_start = "2025-10-12 09:00:00"
+        task.actual_start = datetime(2025, 10, 12, 9, 0, 0)
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
@@ -230,13 +229,15 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskRequest(task_id=task.id, priority=5, deadline="2026-10-20 18:00:00")
+        input_dto = UpdateTaskRequest(
+            task_id=task.id, priority=5, deadline=datetime(2026, 10, 20, 18, 0, 0)
+        )
         self.use_case.execute(input_dto)
 
         # Reload from repository to verify persistence
         persisted_task = self.repository.get_by_id(task.id)
         self.assertEqual(persisted_task.priority, 5)
-        self.assertEqual(persisted_task.deadline, "2026-10-20 18:00:00")
+        self.assertEqual(persisted_task.deadline, datetime(2026, 10, 20, 18, 0, 0))
 
     def test_execute_update_estimated_duration_succeeds_for_leaf_task(self):
         """Test that estimated_duration can be set for leaf tasks (no children)"""

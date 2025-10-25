@@ -53,13 +53,8 @@ class BackwardAllocator(TaskAllocatorBase):
         effective_deadline = self._get_effective_deadline(task_copy)
 
         # Determine the target end date
-        if effective_deadline:
-            from shared.constants.formats import DATETIME_FORMAT
-
-            target_end = datetime.strptime(effective_deadline, DATETIME_FORMAT)
-        else:
-            # If no deadline, schedule in near future (e.g., 1 week from start)
-            target_end = start_date + timedelta(days=7)
+        # If no deadline, schedule in near future (e.g., 1 week from start)
+        target_end = effective_deadline or start_date + timedelta(days=7)
 
         # Type narrowing for estimated_duration
         remaining_hours = task_copy.estimated_duration

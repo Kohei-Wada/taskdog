@@ -1,5 +1,7 @@
 """Add task command for TUI."""
 
+from datetime import datetime
+
 from application.dto.create_task_request import CreateTaskRequest
 from application.use_cases.create_task import CreateTaskUseCase
 from presentation.tui.commands.base import TUICommandBase
@@ -8,6 +10,7 @@ from presentation.tui.commands.registry import command_registry
 from presentation.tui.forms.task_form_fields import TaskFormData
 from presentation.tui.helpers.dependency_helpers import add_dependencies
 from presentation.tui.screens.task_form_dialog import TaskFormDialog
+from shared.constants.formats import DATETIME_FORMAT
 
 
 @command_registry.register("add_task")
@@ -29,13 +32,20 @@ class AddTaskCommand(TUICommandBase):
 
             # Use UseCase directly for create (TaskService doesn't support all params)
             use_case = CreateTaskUseCase(self.context.repository)
+            # Convert form data strings to datetime
             task_input = CreateTaskRequest(
                 name=form_data.name,
                 priority=form_data.priority,
-                deadline=form_data.deadline,
+                deadline=datetime.strptime(form_data.deadline, DATETIME_FORMAT)
+                if form_data.deadline
+                else None,
                 estimated_duration=form_data.estimated_duration,
-                planned_start=form_data.planned_start,
-                planned_end=form_data.planned_end,
+                planned_start=datetime.strptime(form_data.planned_start, DATETIME_FORMAT)
+                if form_data.planned_start
+                else None,
+                planned_end=datetime.strptime(form_data.planned_end, DATETIME_FORMAT)
+                if form_data.planned_end
+                else None,
                 is_fixed=form_data.is_fixed,
             )
             task = use_case.execute(task_input)

@@ -3,7 +3,6 @@
 from datetime import datetime
 
 from domain.entities.task import Task
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class OptimizationTaskSorter:
@@ -41,12 +40,9 @@ class OptimizationTaskSorter:
             deadline = task.deadline
 
             # Deadline score: None = infinity, otherwise days until deadline
-            days_until: int | float
-            if deadline:
-                deadline_dt = datetime.strptime(deadline, DATETIME_FORMAT)
-                days_until = (deadline_dt - self.start_date).days
-            else:
-                days_until = float("inf")
+            days_until: int | float = (
+                (deadline - self.start_date).days if deadline else float("inf")
+            )
 
             # Handle priority=None (treat as 0)
             priority_value = task.priority if task.priority is not None else 0

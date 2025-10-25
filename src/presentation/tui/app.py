@@ -10,6 +10,7 @@ from application.queries.filters.non_archived_filter import NonArchivedFilter
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
 from domain.services.time_tracker import TimeTracker
+from infrastructure.persistence.notes_repository import NotesRepository
 from infrastructure.persistence.task_repository import TaskRepository
 from presentation.tui.commands import *  # noqa: F403  # Import all commands for registration
 from presentation.tui.commands.factory import CommandFactory
@@ -116,11 +117,13 @@ class TaskdogTUI(App):
         self._gantt_sort_by: str = "deadline"  # Default gantt sort order
 
         # Initialize TUIContext
+        self.notes_repository = NotesRepository()
         self.context = TUIContext(
             repository=repository,
             time_tracker=time_tracker,
             query_service=self.query_service,
             config=self.config,
+            notes_repository=self.notes_repository,
         )
 
         # Initialize TaskService with context
@@ -160,7 +163,7 @@ class TaskdogTUI(App):
 
     def on_mount(self) -> None:
         """Called when app is mounted."""
-        self.main_screen = MainScreen()
+        self.main_screen = MainScreen(self.notes_repository)
         self.push_screen(self.main_screen)
         # Load tasks after screen is fully mounted
         self.call_after_refresh(self._load_tasks)

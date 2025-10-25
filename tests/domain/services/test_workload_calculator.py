@@ -1,11 +1,10 @@
 """Tests for WorkloadCalculator domain service."""
 
 import unittest
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from domain.entities.task import Task, TaskStatus
 from domain.services.workload_calculator import WorkloadCalculator
-from shared.utils.date_utils import count_weekdays
 
 
 class WorkloadCalculatorTest(unittest.TestCase):
@@ -24,9 +23,9 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp="2025-01-01 00:00:00",
-            planned_start="2025-01-06 09:00:00",  # Monday
-            planned_end="2025-01-10 18:00:00",  # Friday
+            timestamp=1234567890.0,
+            planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
+            planned_end=datetime(2025, 1, 10, 18, 0, 0),  # Friday
             estimated_duration=10.0,
         )
 
@@ -51,9 +50,9 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp="2025-01-01 00:00:00",
-            planned_start="2025-01-10 09:00:00",  # Friday
-            planned_end="2025-01-14 18:00:00",  # Tuesday (next week)
+            timestamp=1234567890.0,
+            planned_start=datetime(2025, 1, 10, 9, 0, 0),  # Friday
+            planned_end=datetime(2025, 1, 14, 18, 0, 0),  # Tuesday (next week)
             estimated_duration=6.0,  # 3 weekdays: Fri, Mon, Tue
         )
 
@@ -79,9 +78,9 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Task 1",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp="2025-01-01 00:00:00",
-            planned_start="2025-01-06 09:00:00",  # Monday
-            planned_end="2025-01-08 18:00:00",  # Wednesday
+            timestamp=1234567890.0,
+            planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
+            planned_end=datetime(2025, 1, 8, 18, 0, 0),  # Wednesday
             estimated_duration=6.0,
         )
 
@@ -91,9 +90,9 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Task 2",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp="2025-01-01 00:00:00",
-            planned_start="2025-01-08 09:00:00",  # Wednesday
-            planned_end="2025-01-10 18:00:00",  # Friday
+            timestamp=1234567890.0,
+            planned_start=datetime(2025, 1, 8, 9, 0, 0),  # Wednesday
+            planned_end=datetime(2025, 1, 10, 18, 0, 0),  # Friday
             estimated_duration=9.0,
         )
 
@@ -118,9 +117,9 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp="2025-01-01 00:00:00",
-            planned_start="2025-01-06 09:00:00",
-            planned_end="2025-01-10 18:00:00",
+            timestamp=1234567890.0,
+            planned_start=datetime(2025, 1, 6, 9, 0, 0),
+            planned_end=datetime(2025, 1, 10, 18, 0, 0),
             estimated_duration=None,  # No estimate
         )
 
@@ -141,7 +140,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp="2025-01-01 00:00:00",
+            timestamp=1234567890.0,
             planned_start=None,
             planned_end=None,
             estimated_duration=10.0,
@@ -165,9 +164,9 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp="2025-01-01 00:00:00",
-            planned_start="2025-02-01 09:00:00",
-            planned_end="2025-02-05 18:00:00",
+            timestamp=1234567890.0,
+            planned_start=datetime(2025, 2, 1, 9, 0, 0),
+            planned_end=datetime(2025, 2, 5, 18, 0, 0),
             estimated_duration=10.0,
         )
 
@@ -184,19 +183,19 @@ class WorkloadCalculatorTest(unittest.TestCase):
     def test_count_weekdays(self):
         """Test weekday counting helper method."""
         # Monday to Friday (5 weekdays)
-        count_result = count_weekdays(date(2025, 1, 6), date(2025, 1, 10))
+        count_result = self.calculator._count_weekdays(date(2025, 1, 6), date(2025, 1, 10))
         self.assertEqual(count_result, 5)
 
         # Friday to Tuesday (3 weekdays: Fri, Mon, Tue)
-        count_result = count_weekdays(date(2025, 1, 10), date(2025, 1, 14))
+        count_result = self.calculator._count_weekdays(date(2025, 1, 10), date(2025, 1, 14))
         self.assertEqual(count_result, 3)
 
         # Saturday to Sunday (0 weekdays)
-        count_result = count_weekdays(date(2025, 1, 11), date(2025, 1, 12))
+        count_result = self.calculator._count_weekdays(date(2025, 1, 11), date(2025, 1, 12))
         self.assertEqual(count_result, 0)
 
         # Full week Monday to Sunday (5 weekdays)
-        count_result = count_weekdays(date(2025, 1, 6), date(2025, 1, 12))
+        count_result = self.calculator._count_weekdays(date(2025, 1, 6), date(2025, 1, 12))
         self.assertEqual(count_result, 5)
 
     def test_calculate_daily_workload_excludes_completed_tasks(self):
@@ -208,9 +207,9 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Pending Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp="2025-01-01 00:00:00",
-            planned_start="2025-01-06 09:00:00",  # Monday
-            planned_end="2025-01-08 18:00:00",  # Wednesday
+            timestamp=1234567890.0,
+            planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
+            planned_end=datetime(2025, 1, 8, 18, 0, 0),  # Wednesday
             estimated_duration=6.0,
         )
 
@@ -220,9 +219,9 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Completed Task",
             priority=1,
             status=TaskStatus.COMPLETED,
-            timestamp="2025-01-01 00:00:00",
-            planned_start="2025-01-08 09:00:00",  # Wednesday
-            planned_end="2025-01-10 18:00:00",  # Friday
+            timestamp=1234567890.0,
+            planned_start=datetime(2025, 1, 8, 9, 0, 0),  # Wednesday
+            planned_end=datetime(2025, 1, 10, 18, 0, 0),  # Friday
             estimated_duration=9.0,
         )
 
@@ -248,9 +247,9 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Optimized Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp="2025-01-01 00:00:00",
-            planned_start="2025-01-06 09:00:00",  # Monday
-            planned_end="2025-01-07 18:00:00",  # Tuesday
+            timestamp=1234567890.0,
+            planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
+            planned_end=datetime(2025, 1, 7, 18, 0, 0),  # Tuesday
             estimated_duration=6.0,
             daily_allocations={
                 "2025-01-06": 5.0,  # Monday
@@ -278,9 +277,9 @@ class WorkloadCalculatorTest(unittest.TestCase):
             name="Legacy Task",
             priority=1,
             status=TaskStatus.PENDING,
-            timestamp="2025-01-01 00:00:00",
-            planned_start="2025-01-06 09:00:00",  # Monday
-            planned_end="2025-01-08 18:00:00",  # Wednesday
+            timestamp=1234567890.0,
+            planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
+            planned_end=datetime(2025, 1, 8, 18, 0, 0),  # Wednesday
             estimated_duration=6.0,
             daily_allocations={},  # Empty dict (no optimizer data)
         )

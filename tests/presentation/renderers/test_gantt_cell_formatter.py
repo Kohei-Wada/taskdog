@@ -1,7 +1,7 @@
 """Unit tests for GanttCellFormatter."""
 
 import unittest
-from datetime import date
+from datetime import date, datetime
 
 from rich.text import Text
 
@@ -20,10 +20,10 @@ class TestGanttCellFormatter(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.IN_PROGRESS,
-            planned_start="2025-10-01 09:00:00",
-            planned_end="2025-10-05 18:00:00",
-            deadline="2025-10-10 18:00:00",
-            actual_start="2025-10-01 09:00:00",
+            planned_start=datetime(2025, 10, 1, 9, 0, 0),
+            planned_end=datetime(2025, 10, 5, 18, 0, 0),
+            deadline=datetime(2025, 10, 10, 18, 0, 0),
+            actual_start=datetime(2025, 10, 1, 9, 0, 0),
             actual_end=None,
         )
 

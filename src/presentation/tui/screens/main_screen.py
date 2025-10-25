@@ -5,6 +5,7 @@ from textual.containers import VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Footer, Header
 
+from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.tui.widgets.gantt_widget import GanttWidget
 from presentation.tui.widgets.task_table import TaskTable
 
@@ -12,9 +13,14 @@ from presentation.tui.widgets.task_table import TaskTable
 class MainScreen(Screen):
     """Main screen showing gantt chart and task list."""
 
-    def __init__(self, *args, **kwargs):
-        """Initialize the main screen."""
+    def __init__(self, notes_repository: NotesRepository, *args, **kwargs):
+        """Initialize the main screen.
+
+        Args:
+            notes_repository: Notes repository for task notes operations
+        """
         super().__init__(*args, **kwargs)
+        self.notes_repository = notes_repository
         self.task_table: TaskTable | None = None
         self.gantt_widget: GanttWidget | None = None
 
@@ -32,7 +38,7 @@ class MainScreen(Screen):
             yield self.gantt_widget
 
             # Task table section
-            self.task_table = TaskTable(id="task-table")
+            self.task_table = TaskTable(self.notes_repository, id="task-table")
             self.task_table.setup_columns()
             yield self.task_table
 

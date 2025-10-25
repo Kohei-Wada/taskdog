@@ -7,7 +7,6 @@ from unittest.mock import Mock
 from application.dto.statistics_result import CalculateStatisticsRequest
 from application.use_cases.calculate_statistics import CalculateStatisticsUseCase
 from domain.entities.task import Task, TaskStatus
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class TestCalculateStatisticsUseCase(unittest.TestCase):
@@ -50,14 +49,14 @@ class TestCalculateStatisticsUseCase(unittest.TestCase):
                 name="Recent",
                 priority=10,
                 id=1,
-                actual_end=(now - timedelta(days=3)).strftime(DATETIME_FORMAT),
+                actual_end=(now - timedelta(days=3)),
                 status=TaskStatus.COMPLETED,
             ),
             Task(
                 name="Old",
                 priority=20,
                 id=2,
-                actual_end=(now - timedelta(days=10)).strftime(DATETIME_FORMAT),
+                actual_end=(now - timedelta(days=10)),
                 status=TaskStatus.COMPLETED,
             ),
         ]
@@ -80,9 +79,9 @@ class TestCalculateStatisticsUseCase(unittest.TestCase):
                 id=1,
                 status=TaskStatus.COMPLETED,
                 estimated_duration=5.0,
-                deadline=(now + timedelta(days=1)).strftime(DATETIME_FORMAT),
-                actual_start=(now - timedelta(hours=3)).strftime(DATETIME_FORMAT),
-                actual_end=now.strftime(DATETIME_FORMAT),
+                deadline=(now + timedelta(days=1)),
+                actual_start=(now - timedelta(hours=3)),
+                actual_end=now,
             ),
         ]
         self.repository.get_all.return_value = tasks

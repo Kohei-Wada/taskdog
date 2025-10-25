@@ -33,7 +33,7 @@ class TestBackwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=12.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday (start constraint)
@@ -47,8 +47,8 @@ class TestBackwardAllocator(unittest.TestCase):
         # Verify allocation succeeded
         self.assertIsNotNone(result)
         # Should start on Thursday (last 2 days before deadline)
-        self.assertEqual(result.planned_start, "2025-10-23 09:00:00")
-        self.assertEqual(result.planned_end, "2025-10-24 18:00:00")
+        self.assertEqual(result.planned_start, datetime(2025, 10, 23, 9, 0, 0))
+        self.assertEqual(result.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # Verify backward allocation: fills last days first
         self.assertIsNotNone(result.daily_allocations)
@@ -65,7 +65,7 @@ class TestBackwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=10.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -78,8 +78,8 @@ class TestBackwardAllocator(unittest.TestCase):
 
         self.assertIsNotNone(result)
         # Should start Thursday, end Friday
-        self.assertEqual(result.planned_start, "2025-10-23 09:00:00")
-        self.assertEqual(result.planned_end, "2025-10-24 18:00:00")
+        self.assertEqual(result.planned_start, datetime(2025, 10, 23, 9, 0, 0))
+        self.assertEqual(result.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # Verify backward allocation: 6h Friday, 4h Thursday
         self.assertAlmostEqual(result.daily_allocations["2025-10-24"], 6.0, places=5)
@@ -95,7 +95,7 @@ class TestBackwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=12.0,
-            deadline="2025-10-27 18:00:00",  # Monday
+            deadline=datetime(2025, 10, 27, 18, 0, 0),  # Monday
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday start
@@ -124,7 +124,7 @@ class TestBackwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=30.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
@@ -137,7 +137,7 @@ class TestBackwardAllocator(unittest.TestCase):
 
         # Should succeed (exactly fits: 5 days * 6h = 30h)
         self.assertIsNotNone(result)
-        self.assertEqual(result.planned_start, "2025-10-20 09:00:00")
+        self.assertEqual(result.planned_start, datetime(2025, 10, 20, 9, 0, 0))
 
     def test_allocate_fails_when_insufficient_time(self):
         """Test that allocator returns None when insufficient time before deadline."""
@@ -148,7 +148,7 @@ class TestBackwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=40.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
@@ -183,8 +183,8 @@ class TestBackwardAllocator(unittest.TestCase):
 
         self.assertIsNotNone(result)
         # Should schedule within 1 week from start
-        self.assertTrue(result.planned_start >= "2025-10-20 09:00:00")
-        self.assertTrue(result.planned_end <= "2025-10-27 18:00:00")
+        self.assertTrue(result.planned_start >= datetime(2025, 10, 20, 9, 0, 0))
+        self.assertTrue(result.planned_end <= datetime(2025, 10, 27, 18, 0, 0))
 
     def test_allocate_respects_existing_allocations(self):
         """Test that allocator respects existing daily allocations."""
@@ -196,7 +196,7 @@ class TestBackwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=12.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -243,7 +243,7 @@ class TestBackwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=18.0,
-            deadline="2025-10-24 18:00:00",  # Friday
+            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -256,8 +256,8 @@ class TestBackwardAllocator(unittest.TestCase):
 
         self.assertIsNotNone(result)
         # Should start Wednesday
-        self.assertEqual(result.planned_start, "2025-10-22 09:00:00")
-        self.assertEqual(result.planned_end, "2025-10-24 18:00:00")
+        self.assertEqual(result.planned_start, datetime(2025, 10, 22, 9, 0, 0))
+        self.assertEqual(result.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # Verify each day is filled to max
         self.assertAlmostEqual(result.daily_allocations["2025-10-22"], 6.0, places=5)  # Wed

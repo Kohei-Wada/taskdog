@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime
 
 from application.dto.complete_task_request import CompleteTaskRequest
 from application.use_cases.complete_task import CompleteTaskUseCase
@@ -80,14 +81,14 @@ class TestCompleteTaskUseCase(unittest.TestCase):
         task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
         task.id = self.repository.generate_next_id()
         # Set actual_start manually to simulate a started task
-        task.actual_start = "2025-10-12 10:00:00"
+        task.actual_start = datetime(2025, 10, 12, 10, 0, 0)
         self.repository.save(task)
 
         input_dto = CompleteTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # actual_start should remain unchanged
-        self.assertEqual(result.actual_start, "2025-10-12 10:00:00")
+        self.assertEqual(result.actual_start, datetime(2025, 10, 12, 10, 0, 0))
 
     def test_execute_with_pending_task_raises_error(self):
         """Test execute with PENDING task raises TaskNotStartedError"""
@@ -107,7 +108,7 @@ class TestCompleteTaskUseCase(unittest.TestCase):
         """Test execute with already COMPLETED task raises TaskAlreadyFinishedError"""
         # Create task with COMPLETED status
         task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
-        task.actual_end = "2025-10-12 15:00:00"
+        task.actual_end = datetime(2025, 10, 12, 15, 0, 0)
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 

@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime
 
 from domain.entities.task import Task, TaskStatus
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -122,10 +123,10 @@ class TestJsonTaskRepository(unittest.TestCase):
             priority=3,
             id=1,
             status=TaskStatus.IN_PROGRESS,
-            planned_start="2025-01-01 09:00:00",
-            planned_end="2025-01-01 17:00:00",
-            deadline="2025-01-02 12:00:00",
-            actual_start="2025-01-01 09:15:00",
+            planned_start=datetime(2025, 1, 1, 9, 0, 0),
+            planned_end=datetime(2025, 1, 1, 17, 0, 0),
+            deadline=datetime(2025, 1, 2, 12, 0, 0),
+            actual_start=datetime(2025, 1, 1, 9, 15, 0),
             estimated_duration=8.0,
         )
 
@@ -136,10 +137,10 @@ class TestJsonTaskRepository(unittest.TestCase):
         self.assertEqual(loaded.name, "Full Task")
         self.assertEqual(loaded.priority, 3)
         self.assertEqual(loaded.status, TaskStatus.IN_PROGRESS)
-        self.assertEqual(loaded.planned_start, "2025-01-01 09:00:00")
-        self.assertEqual(loaded.planned_end, "2025-01-01 17:00:00")
-        self.assertEqual(loaded.deadline, "2025-01-02 12:00:00")
-        self.assertEqual(loaded.actual_start, "2025-01-01 09:15:00")
+        self.assertEqual(loaded.planned_start, datetime(2025, 1, 1, 9, 0, 0))
+        self.assertEqual(loaded.planned_end, datetime(2025, 1, 1, 17, 0, 0))
+        self.assertEqual(loaded.deadline, datetime(2025, 1, 2, 12, 0, 0))
+        self.assertEqual(loaded.actual_start, datetime(2025, 1, 1, 9, 15, 0))
         self.assertEqual(loaded.estimated_duration, 8.0)
 
     def test_generate_next_id_empty(self):
@@ -244,6 +245,90 @@ class TestJsonTaskRepository(unittest.TestCase):
             JsonTaskRepository(self.test_filename)
 
         self.assertIn("Failed to load tasks", str(context.exception))
+
+    def test_datetime_serialization_iso8601(self):
+        """Test that datetime objects are serialized to ISO 8601 format"""
+        task = Task(
+            name="Datetime Task",
+            priority=1,
+            id=1,
+            planned_start=datetime(2025, 1, 15, 9, 0, 0),
+            planned_end=datetime(2025, 1, 15, 17, 0, 0),
+            deadline=datetime(2025, 1, 20, 18, 0, 0),
+        )
+
+        self.repository.save(task)
+
+        # Load and verify datetime objects are preserved
+        loaded = self.repository.get_by_id(1)
+        self.assertIsNotNone(loaded)
+        self.assertIsInstance(loaded.planned_start, datetime)
+        self.assertIsInstance(loaded.planned_end, datetime)
+        self.assertIsInstance(loaded.deadline, datetime)
+        self.assertEqual(loaded.planned_start, datetime(2025, 1, 15, 9, 0, 0))
+        self.assertEqual(loaded.planned_end, datetime(2025, 1, 15, 17, 0, 0))
+        self.assertEqual(loaded.deadline, datetime(2025, 1, 20, 18, 0, 0))
+
+    def test_backward_compatibility_legacy_format(self):
+        """Test that legacy string format 'YYYY-MM-DD HH:MM:SS' is still supported"""
+        import json
+
+        # Create task data with legacy format
+        task_data = {
+            "id": 1,
+            "name": "Legacy Task",
+            "priority": 1,
+            "status": "PENDING",
+            "timestamp": 1234567890.0,
+            "planned_start": "2025-01-15 09:00:00",  # Legacy format
+            "planned_end": "2025-01-15 17:00:00",
+            "deadline": "2025-01-20 18:00:00",
+            "actual_start": None,
+            "actual_end": None,
+            "estimated_duration": None,
+            "daily_allocations": {},
+            "depends_on": [],
+            "is_fixed": False,
+            "actual_daily_hours": {},
+            "is_deleted": False,
+        }
+
+        # Write legacy format to file
+        with open(self.test_filename, "w") as f:
+            json.dump([task_data], f)
+
+        # Load from repository
+        repo = JsonTaskRepository(self.test_filename)
+        loaded = repo.get_by_id(1)
+
+        # Verify datetime objects are created from legacy strings
+        self.assertIsNotNone(loaded)
+        self.assertIsInstance(loaded.planned_start, datetime)
+        self.assertIsInstance(loaded.planned_end, datetime)
+        self.assertIsInstance(loaded.deadline, datetime)
+        self.assertEqual(loaded.planned_start, datetime(2025, 1, 15, 9, 0, 0))
+        self.assertEqual(loaded.planned_end, datetime(2025, 1, 15, 17, 0, 0))
+        self.assertEqual(loaded.deadline, datetime(2025, 1, 20, 18, 0, 0))
+
+    def test_datetime_roundtrip_preservation(self):
+        """Test that datetime objects survive save/load roundtrip"""
+        original_dt = datetime(2025, 10, 25, 14, 30, 45)
+        task = Task(
+            name="Roundtrip Task",
+            priority=1,
+            id=1,
+            planned_start=original_dt,
+            actual_start=datetime(2025, 10, 25, 14, 35, 0),
+        )
+
+        # Save and reload
+        self.repository.save(task)
+        new_repo = JsonTaskRepository(self.test_filename)
+        loaded = new_repo.get_by_id(1)
+
+        # Verify exact datetime preservation
+        self.assertEqual(loaded.planned_start, original_dt)
+        self.assertEqual(loaded.actual_start, datetime(2025, 10, 25, 14, 35, 0))
 
 
 if __name__ == "__main__":

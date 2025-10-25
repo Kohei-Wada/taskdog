@@ -34,7 +34,7 @@ class TestGreedyForwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)  # Monday
@@ -47,8 +47,8 @@ class TestGreedyForwardAllocator(unittest.TestCase):
 
         # Verify allocation succeeded
         self.assertIsNotNone(result)
-        self.assertEqual(result.planned_start, "2025-10-20 09:00:00")
-        self.assertEqual(result.planned_end, "2025-10-21 18:00:00")
+        self.assertEqual(result.planned_start, datetime(2025, 10, 20, 9, 0, 0))
+        self.assertEqual(result.planned_end, datetime(2025, 10, 21, 18, 0, 0))
 
         # Verify greedy allocation: fills each day to max (6h each)
         self.assertIsNotNone(result.daily_allocations)
@@ -69,7 +69,7 @@ class TestGreedyForwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=10.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -93,7 +93,7 @@ class TestGreedyForwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=12.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
 
         start_date = datetime(2025, 10, 24, 9, 0, 0)  # Friday
@@ -105,8 +105,8 @@ class TestGreedyForwardAllocator(unittest.TestCase):
         )
 
         self.assertIsNotNone(result)
-        self.assertEqual(result.planned_start, "2025-10-24 09:00:00")
-        self.assertEqual(result.planned_end, "2025-10-27 18:00:00")  # Monday
+        self.assertEqual(result.planned_start, datetime(2025, 10, 24, 9, 0, 0))
+        self.assertEqual(result.planned_end, datetime(2025, 10, 27, 18, 0, 0))  # Monday
 
         # Verify no weekend allocations
         self.assertNotIn("2025-10-25", result.daily_allocations)  # Saturday
@@ -123,7 +123,7 @@ class TestGreedyForwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=8.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -152,7 +152,7 @@ class TestGreedyForwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=30.0,  # Too much work
-            deadline="2025-10-22 18:00:00",  # Only 3 days available (18h)
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Only 3 days available (18h)
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -217,7 +217,7 @@ class TestGreedyForwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=20.0,
-            deadline="2025-10-22 18:00:00",  # Cannot fit 20h in 3 days (18h max)
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Cannot fit 20h in 3 days (18h max)
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -242,7 +242,7 @@ class TestGreedyForwardAllocator(unittest.TestCase):
             priority=100,
             status=TaskStatus.PENDING,
             estimated_duration=6.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
@@ -255,7 +255,7 @@ class TestGreedyForwardAllocator(unittest.TestCase):
 
         self.assertIsNotNone(result)
         # Should use default_end_hour (18) from config
-        self.assertEqual(result.planned_end, "2025-10-20 18:00:00")
+        self.assertEqual(result.planned_end, datetime(2025, 10, 20, 18, 0, 0))
 
 
 if __name__ == "__main__":

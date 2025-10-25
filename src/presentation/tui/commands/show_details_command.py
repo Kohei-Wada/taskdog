@@ -24,7 +24,7 @@ class ShowDetailsCommand(TUICommandBase):
             return
 
         # Get task detail with notes using use case
-        use_case = GetTaskDetailUseCase(self.context.repository)
+        use_case = GetTaskDetailUseCase(self.context.repository, self.context.notes_repository)
         input_dto = GetTaskDetailInput(task.id)
         detail = use_case.execute(input_dto)
 
@@ -62,6 +62,7 @@ class ShowDetailsCommand(TUICommandBase):
         # Edit note using shared helper
         edit_task_note(
             task=task,
+            notes_repository=self.context.notes_repository,
             app=self.app,
             on_success=lambda name, id_: self._on_edit_success(name, id_),
             on_error=self.notify_error,

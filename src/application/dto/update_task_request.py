@@ -1,6 +1,7 @@
 """DTO for updating a task."""
 
 from dataclasses import dataclass
+from datetime import datetime
 
 from domain.entities.task import TaskStatus
 
@@ -35,8 +36,8 @@ class UpdateTaskRequest:
     name: str | None = None
     priority: int | None = None
     status: TaskStatus | None = None
-    planned_start: str | None = None
-    planned_end: str | None = None
-    deadline: str | None = None
+    planned_start: datetime | None = None
+    planned_end: datetime | None = None
+    deadline: datetime | None = None
     estimated_duration: float | None = None
     is_fixed: bool | None = None

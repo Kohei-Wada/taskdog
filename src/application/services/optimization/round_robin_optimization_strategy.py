@@ -9,7 +9,6 @@ from application.dto.optimization_result import SchedulingFailure
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.constants.formats import DATETIME_FORMAT
 from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
@@ -79,7 +78,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         failed_tasks: list[SchedulingFailure] = []
 
         # Calculate effective deadlines for all tasks
-        task_effective_deadlines: dict[int, str | None] = {
+        task_effective_deadlines: dict[int, datetime | None] = {
             task.id: task.deadline for task in schedulable_tasks if task.id is not None
         }
 
@@ -164,7 +163,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         task_end_dates: dict[int, datetime],
         start_date: datetime,
         max_hours_per_day: float,
-        task_effective_deadlines: dict[int, str | None],
+        task_effective_deadlines: dict[int, datetime | None],
         holiday_checker: "HolidayChecker | None" = None,
     ) -> None:
         """Allocate time in round-robin fashion across tasks.
@@ -192,7 +191,9 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 current_date += timedelta(days=1)
                 continue
 
-            date_str = current_date.strftime("%Y-%m-%d")
+            date_str = current_date.strftime(
+                "%Y-%m-%d"
+            )  # Keep as string for daily_allocations dict key
 
             # Get active tasks (with remaining hours)
             active_tasks = [tid for tid, remaining in task_remaining.items() if remaining > 0.001]
@@ -208,9 +209,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 # Check effective deadline constraint
                 effective_deadline = task_effective_deadlines.get(task_id)
                 if effective_deadline:
-                    from shared.constants.formats import DATETIME_FORMAT
-
-                    deadline_dt = datetime.strptime(effective_deadline, DATETIME_FORMAT)
+                    deadline_dt = effective_deadline
                     if current_date > deadline_dt:
                         # Skip this task - deadline exceeded
                         continue
@@ -269,8 +268,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                     hour=self.config.time.default_end_hour, minute=0, second=0
                 )
 
-                task.planned_start = start_with_time.strftime(DATETIME_FORMAT)
-                task.planned_end = end_with_time.strftime(DATETIME_FORMAT)
+                task.planned_start = start_with_time
+                task.planned_end = end_with_time
                 task.daily_allocations = task_daily_allocations[task_id]
 
                 updated_tasks.append(task)

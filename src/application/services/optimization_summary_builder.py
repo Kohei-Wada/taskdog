@@ -5,7 +5,6 @@ from datetime import datetime
 from application.dto.optimization_summary import OptimizationSummary
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class OptimizationSummaryBuilder:
@@ -26,7 +25,7 @@ class OptimizationSummaryBuilder:
     def build(
         self,
         modified_tasks: list[Task],
-        task_states_before: dict[int, str | None],
+        task_states_before: dict[int, datetime | None],
         daily_allocations: dict[str, float],
         max_hours_per_day: float,
     ) -> OptimizationSummary:
@@ -60,22 +59,14 @@ class OptimizationSummaryBuilder:
 
             # Check deadline conflicts
             if task.deadline and task.planned_end:
-                deadline_dt = datetime.strptime(task.deadline, DATETIME_FORMAT)
-                end_dt = datetime.strptime(task.planned_end, DATETIME_FORMAT)
+                deadline_dt = task.deadline
+                end_dt = task.planned_end
                 if end_dt > deadline_dt:
                     deadline_conflicts += 1
 
         # Calculate date range
-        start_dates = [
-            datetime.strptime(t.planned_start, DATETIME_FORMAT)
-            for t in modified_tasks
-            if t.planned_start
-        ]
-        end_dates = [
-            datetime.strptime(t.planned_end, DATETIME_FORMAT)
-            for t in modified_tasks
-            if t.planned_end
-        ]
+        start_dates = [t.planned_start for t in modified_tasks if t.planned_start]
+        end_dates = [t.planned_end for t in modified_tasks if t.planned_end]
 
         if start_dates and end_dates:
             min_date = min(start_dates).date()

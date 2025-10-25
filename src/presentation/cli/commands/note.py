@@ -19,6 +19,7 @@ def note_command(ctx, task_id):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    notes_repository = ctx_obj.notes_repository
 
     # Get task from repository
     task = repository.get_by_id(task_id)
@@ -27,16 +28,16 @@ def note_command(ctx, task_id):
 
         raise TaskNotFoundException(task_id)
 
-    # Get notes path
-    notes_path = task.notes_path
+    # Get notes path from NotesRepository
+    notes_path = notes_repository.get_notes_path(task_id)
 
     # Create notes directory if it doesn't exist
-    notes_path.parent.mkdir(parents=True, exist_ok=True)
+    notes_repository.ensure_notes_dir()
 
     # Generate template if notes file doesn't exist
     if not notes_path.exists():
         template = generate_notes_template(task)
-        notes_path.write_text(template, encoding="utf-8")
+        notes_repository.write_notes(task_id, template)
         console_writer.success(f"Created notes file: {notes_path}")
 
     # Get editor

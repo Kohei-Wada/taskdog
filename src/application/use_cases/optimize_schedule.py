@@ -1,6 +1,7 @@
 """Use case for optimizing task schedules."""
 
 from contextlib import suppress
+from datetime import datetime
 
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
@@ -53,7 +54,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleRequest, OptimizationResul
         """
         # Get all tasks and backup their states before optimization
         all_tasks = self.repository.get_all()
-        task_states_before: dict[int, str | None] = {
+        task_states_before: dict[int, datetime | None] = {
             t.id: t.planned_start for t in all_tasks if t.id is not None
         }
 

@@ -1,5 +1,7 @@
 """Edit task command for TUI."""
 
+from datetime import datetime
+
 from application.dto.update_task_request import UpdateTaskRequest
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task
@@ -10,6 +12,7 @@ from presentation.tui.commands.registry import command_registry
 from presentation.tui.forms.task_form_fields import TaskFormData
 from presentation.tui.helpers.dependency_helpers import sync_dependencies
 from presentation.tui.screens.task_form_dialog import TaskFormDialog
+from shared.constants.formats import DATETIME_FORMAT
 
 
 @command_registry.register("edit_task")
@@ -57,14 +60,29 @@ class EditTaskCommand(TUICommandBase):
         new_deps = set(form_data.depends_on) if form_data.depends_on else set()
         dependencies_changed = new_deps != original_deps
 
+        # Convert form data strings to datetime for comparison
+        form_deadline = (
+            datetime.strptime(form_data.deadline, DATETIME_FORMAT) if form_data.deadline else None
+        )
+        form_planned_start = (
+            datetime.strptime(form_data.planned_start, DATETIME_FORMAT)
+            if form_data.planned_start
+            else None
+        )
+        form_planned_end = (
+            datetime.strptime(form_data.planned_end, DATETIME_FORMAT)
+            if form_data.planned_end
+            else None
+        )
+
         # Check field changes
         fields_changed = (
             form_data.name != task.name
             or form_data.priority != task.priority
-            or form_data.deadline != task.deadline
+            or form_deadline != task.deadline
             or form_data.estimated_duration != task.estimated_duration
-            or form_data.planned_start != task.planned_start
-            or form_data.planned_end != task.planned_end
+            or form_planned_start != task.planned_start
+            or form_planned_end != task.planned_end
             or form_data.is_fixed != task.is_fixed
         )
 
@@ -80,20 +98,31 @@ class EditTaskCommand(TUICommandBase):
         Returns:
             UpdateTaskRequest with only changed fields set
         """
+        # Convert form data strings to datetime
+        form_deadline = (
+            datetime.strptime(form_data.deadline, DATETIME_FORMAT) if form_data.deadline else None
+        )
+        form_planned_start = (
+            datetime.strptime(form_data.planned_start, DATETIME_FORMAT)
+            if form_data.planned_start
+            else None
+        )
+        form_planned_end = (
+            datetime.strptime(form_data.planned_end, DATETIME_FORMAT)
+            if form_data.planned_end
+            else None
+        )
+
         return UpdateTaskRequest(
             task_id=task.id,  # type: ignore
             name=form_data.name if form_data.name != task.name else None,
             priority=form_data.priority if form_data.priority != task.priority else None,
-            deadline=form_data.deadline if form_data.deadline != task.deadline else None,
+            deadline=form_deadline if form_deadline != task.deadline else None,
             estimated_duration=form_data.estimated_duration
             if form_data.estimated_duration != task.estimated_duration
             else None,
-            planned_start=form_data.planned_start
-            if form_data.planned_start != task.planned_start
-            else None,
-            planned_end=form_data.planned_end
-            if form_data.planned_end != task.planned_end
-            else None,
+            planned_start=form_planned_start if form_planned_start != task.planned_start else None,
+            planned_end=form_planned_end if form_planned_end != task.planned_end else None,
             is_fixed=form_data.is_fixed if form_data.is_fixed != task.is_fixed else None,
         )
 

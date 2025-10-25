@@ -38,14 +38,14 @@ class TestOptimizationTaskSorter(unittest.TestCase):
                 name="Task with distant deadline",
                 priority=100,
                 status=TaskStatus.PENDING,
-                deadline="2025-01-20 18:00:00",  # 14 days away
+                deadline=datetime(2025, 1, 20, 18, 0, 0),  # 14 days away
             ),
             Task(
                 id=2,
                 name="Task with close deadline",
                 priority=100,
                 status=TaskStatus.PENDING,
-                deadline="2025-01-08 18:00:00",  # 2 days away
+                deadline=datetime(2025, 1, 8, 18, 0, 0),  # 2 days away
             ),
             Task(
                 id=3,
@@ -71,21 +71,21 @@ class TestOptimizationTaskSorter(unittest.TestCase):
                 name="Low priority, distant deadline",
                 priority=50,
                 status=TaskStatus.PENDING,
-                deadline="2025-01-20 18:00:00",
+                deadline=datetime(2025, 1, 20, 18, 0, 0),
             ),
             Task(
                 id=2,
                 name="High priority, close deadline",
                 priority=200,
                 status=TaskStatus.PENDING,
-                deadline="2025-01-08 18:00:00",
+                deadline=datetime(2025, 1, 8, 18, 0, 0),
             ),
             Task(
                 id=3,
                 name="Medium priority, medium deadline",
                 priority=100,
                 status=TaskStatus.PENDING,
-                deadline="2025-01-15 18:00:00",
+                deadline=datetime(2025, 1, 15, 18, 0, 0),
             ),
         ]
 

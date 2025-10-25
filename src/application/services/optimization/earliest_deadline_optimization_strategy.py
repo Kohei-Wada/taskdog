@@ -53,7 +53,9 @@ class EarliestDeadlineOptimizationStrategy(OptimizationStrategy):
         """
         return sorted(
             tasks,
-            key=lambda t: t.deadline if t.deadline is not None else "9999-12-31 23:59:59",
+            key=lambda t: t.deadline
+            if t.deadline is not None
+            else datetime(9999, 12, 31, 23, 59, 59),
         )
 
     def _allocate_task(

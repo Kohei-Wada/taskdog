@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime
 
 from application.dto.reopen_task_request import ReopenTaskRequest
 from application.use_cases.reopen_task import ReopenTaskUseCase
@@ -38,8 +39,8 @@ class TestReopenTaskUseCase(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.COMPLETED,
-            actual_start="2025-01-01 09:00:00",
-            actual_end="2025-01-01 12:00:00",
+            actual_start=datetime(2025, 1, 1, 9, 0, 0),
+            actual_end=datetime(2025, 1, 1, 12, 0, 0),
         )
 
         input_dto = ReopenTaskRequest(task_id=task.id)
@@ -55,7 +56,7 @@ class TestReopenTaskUseCase(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.CANCELED,
-            actual_end="2025-01-01 12:00:00",
+            actual_end=datetime(2025, 1, 1, 12, 0, 0),
         )
 
         input_dto = ReopenTaskRequest(task_id=task.id)
@@ -70,8 +71,8 @@ class TestReopenTaskUseCase(unittest.TestCase):
             name="Test Task",
             priority=1,
             status=TaskStatus.COMPLETED,
-            actual_start="2025-01-01 09:00:00",
-            actual_end="2025-01-01 12:00:00",
+            actual_start=datetime(2025, 1, 1, 9, 0, 0),
+            actual_end=datetime(2025, 1, 1, 12, 0, 0),
         )
 
         input_dto = ReopenTaskRequest(task_id=task.id)

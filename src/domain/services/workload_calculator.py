@@ -3,7 +3,6 @@
 from datetime import date, datetime, timedelta
 
 from domain.entities.task import Task
-from shared.utils.date_utils import count_weekdays, parse_date
 
 
 class WorkloadCalculator:
@@ -105,13 +104,13 @@ class WorkloadCalculator:
         Returns:
             Dictionary mapping date to hours {date: hours}
         """
-        planned_start = parse_date(task.planned_start)
-        planned_end = parse_date(task.planned_end)
-
-        if not (planned_start and planned_end and task.estimated_duration):
+        if not (task.planned_start and task.planned_end and task.estimated_duration):
             return {}
 
-        weekday_count = count_weekdays(planned_start, planned_end)
+        planned_start = task.planned_start.date()
+        planned_end = task.planned_end.date()
+
+        weekday_count = self._count_weekdays(planned_start, planned_end)
         if weekday_count == 0:
             return {}
 
@@ -125,6 +124,24 @@ class WorkloadCalculator:
             current_date += timedelta(days=1)
 
         return result
+
+    def _count_weekdays(self, start_date: date, end_date: date) -> int:
+        """Count weekdays (Monday-Friday) in a date range.
+
+        Args:
+            start_date: Start date (inclusive)
+            end_date: End date (inclusive)
+
+        Returns:
+            Number of weekdays in the range
+        """
+        weekday_count = 0
+        current_date = start_date
+        while current_date <= end_date:
+            if current_date.weekday() < 5:  # Monday=0, Friday=4
+                weekday_count += 1
+            current_date += timedelta(days=1)
+        return weekday_count
 
     def _merge_allocations(self, base: dict[date, float], allocations: map) -> dict[date, float]:
         """Merge multiple daily allocations into base workload.

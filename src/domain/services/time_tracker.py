@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from domain.entities.task import Task, TaskStatus
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class TimeTracker:
@@ -18,7 +17,7 @@ class TimeTracker:
             Modifies task.actual_start when status becomes IN_PROGRESS
             Modifies task.actual_end when status becomes COMPLETED or CANCELED
         """
-        now = datetime.now().strftime(DATETIME_FORMAT)
+        now = datetime.now()
 
         # Record actual start when moving to IN_PROGRESS
         if new_status == TaskStatus.IN_PROGRESS and not task.actual_start:

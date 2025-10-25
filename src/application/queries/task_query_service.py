@@ -1,6 +1,6 @@
 """Task query service for read-optimized operations."""
 
-from datetime import date, datetime
+from datetime import date
 
 from application.dto.gantt_result import GanttDateRange, GanttResult
 from application.queries.base import QueryService
@@ -8,7 +8,6 @@ from application.queries.filters.task_filter import TaskFilter
 from application.sorters.task_sorter import TaskSorter
 from domain.entities.task import Task
 from domain.services.workload_calculator import WorkloadCalculator
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class TaskQueryService(QueryService):
@@ -153,19 +152,15 @@ class TaskQueryService(QueryService):
         dates = []
         for task in tasks:
             # Collect all date fields
-            for date_str in [
+            for dt in [
                 task.planned_start,
                 task.planned_end,
                 task.actual_start,
                 task.actual_end,
                 task.deadline,
             ]:
-                if date_str:
-                    try:
-                        dt = datetime.strptime(date_str, DATETIME_FORMAT)
-                        dates.append(dt.date())
-                    except ValueError:
-                        pass
+                if dt:
+                    dates.append(dt.date())
 
         if not dates:
             return None

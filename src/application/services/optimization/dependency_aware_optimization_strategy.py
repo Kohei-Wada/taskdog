@@ -63,7 +63,7 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
                     t.id if t.id is not None else 0, 0
                 ),  # Lower depth = scheduled first
                 # Secondary sort: deadline urgency
-                (t.deadline if t.deadline else "9999-12-31 23:59:59"),
+                (t.deadline if t.deadline else datetime(9999, 12, 31, 23, 59, 59)),
                 # Tertiary sort: priority (higher = scheduled first, so negate)
                 -(t.priority if t.priority is not None else 0),
             ),

@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 from application.queries.filters.task_filter import TaskFilter
 from domain.entities.task import Task, TaskStatus
-from shared.utils.date_utils import parse_date
 
 
 class ThisWeekFilter(TaskFilter):
@@ -70,14 +69,14 @@ class ThisWeekFilter(TaskFilter):
         """
         # Criterion A: Deadline is within this week
         if task.deadline:
-            deadline_date = parse_date(task.deadline)
+            deadline_date = task.deadline.date()
             if week_start <= deadline_date <= week_end:
                 return True
 
         # Criterion B: Planned period overlaps with this week
         if task.planned_start and task.planned_end:
-            planned_start_date = parse_date(task.planned_start)
-            planned_end_date = parse_date(task.planned_end)
+            planned_start_date = task.planned_start.date()
+            planned_end_date = task.planned_end.date()
             # Check if ranges overlap
             if planned_start_date <= week_end and planned_end_date >= week_start:
                 return True

@@ -37,16 +37,19 @@ class TestPriorityFirstOptimizationStrategy(unittest.TestCase):
             name="High Priority",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         medium_priority = CreateTaskRequest(
             name="Medium Priority",
             priority=50,
             estimated_duration=6.0,
-            deadline="2025-10-31 18:00:00",
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
         low_priority = CreateTaskRequest(
-            name="Low Priority", priority=10, estimated_duration=6.0, deadline="2025-10-31 18:00:00"
+            name="Low Priority",
+            priority=10,
+            estimated_duration=6.0,
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
         )
 
         self.create_use_case.execute(low_priority)  # Create in reverse order
@@ -74,11 +77,11 @@ class TestPriorityFirstOptimizationStrategy(unittest.TestCase):
         low_start = tasks_by_name["Low Priority"].planned_start
 
         # High priority starts first (Monday)
-        self.assertEqual(high_start, "2025-10-20 09:00:00")
+        self.assertEqual(high_start, datetime(2025, 10, 20, 9, 0, 0))
         # Medium priority starts second (Tuesday)
-        self.assertEqual(medium_start, "2025-10-21 09:00:00")
+        self.assertEqual(medium_start, datetime(2025, 10, 21, 9, 0, 0))
         # Low priority starts last (Wednesday)
-        self.assertEqual(low_start, "2025-10-22 09:00:00")
+        self.assertEqual(low_start, datetime(2025, 10, 22, 9, 0, 0))
 
     def test_priority_first_ignores_deadlines(self):
         """Test that priority_first ignores deadlines and focuses only on priority."""
@@ -87,14 +90,14 @@ class TestPriorityFirstOptimizationStrategy(unittest.TestCase):
             name="High Priority Far",
             priority=100,
             estimated_duration=6.0,
-            deadline="2025-12-31 18:00:00",
+            deadline=datetime(2025, 12, 31, 18, 0, 0),
         )
         # Create task with lower priority but urgent deadline
         low_priority_urgent = CreateTaskRequest(
             name="Low Priority Urgent",
             priority=10,
             estimated_duration=6.0,
-            deadline="2025-10-21 18:00:00",
+            deadline=datetime(2025, 10, 21, 18, 0, 0),
         )
 
         self.create_use_case.execute(low_priority_urgent)
@@ -116,9 +119,13 @@ class TestPriorityFirstOptimizationStrategy(unittest.TestCase):
         tasks_by_name = {t.name: t for t in result.successful_tasks}
 
         # High priority task scheduled first despite far deadline
-        self.assertEqual(tasks_by_name["High Priority Far"].planned_start, "2025-10-20 09:00:00")
+        self.assertEqual(
+            tasks_by_name["High Priority Far"].planned_start, datetime(2025, 10, 20, 9, 0, 0)
+        )
         # Urgent task scheduled second despite earlier deadline
-        self.assertEqual(tasks_by_name["Low Priority Urgent"].planned_start, "2025-10-21 09:00:00")
+        self.assertEqual(
+            tasks_by_name["Low Priority Urgent"].planned_start, datetime(2025, 10, 21, 9, 0, 0)
+        )
 
 
 if __name__ == "__main__":

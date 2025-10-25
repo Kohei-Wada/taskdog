@@ -1,11 +1,13 @@
 """Task table widget for TUI."""
 
+from datetime import datetime
 from typing import ClassVar
 
 from textual.binding import Binding
 from textual.widgets import DataTable
 
 from domain.entities.task import Task
+from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.constants.colors import STATUS_STYLES
 from presentation.constants.symbols import EMOJI_NOTE
 from presentation.constants.table_dimensions import (
@@ -22,6 +24,7 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_PRIORITY_WIDTH,
     TASK_TABLE_STATUS_WIDTH,
 )
+from shared.constants.formats import DATETIME_FORMAT
 
 
 class TaskTable(DataTable):
@@ -37,12 +40,17 @@ class TaskTable(DataTable):
         Binding("ctrl+u", "page_up", "Page Up", show=False),
     ]
 
-    def __init__(self, *args, **kwargs):
-        """Initialize the task table."""
+    def __init__(self, notes_repository: NotesRepository, *args, **kwargs):
+        """Initialize the task table.
+
+        Args:
+            notes_repository: Notes repository for checking note existence
+        """
         super().__init__(*args, **kwargs)
         self.cursor_type = "row"
         self.zebra_stripes = True
         self._task_map: dict[int, Task] = {}  # Maps row index to Task
+        self.notes_repository = notes_repository
 
     def setup_columns(self):
         """Set up table columns."""
@@ -80,8 +88,8 @@ class TaskTable(DataTable):
             # Format dependencies
             dependencies = self._format_dependencies(task)
 
-            # Check if task has notes
-            note_indicator = EMOJI_NOTE if task.has_note else ""
+            # Check if task has notes using NotesRepository
+            note_indicator = EMOJI_NOTE if self.notes_repository.has_notes(task.id) else ""
 
             # Check if task is fixed
             fixed_indicator = "📌" if task.is_fixed else ""
@@ -181,18 +189,19 @@ class TaskTable(DataTable):
             return "-"
         return ",".join(str(dep_id) for dep_id in task.depends_on)
 
-    def _format_deadline(self, deadline: str | None) -> str:
+    def _format_deadline(self, deadline: datetime | None) -> str:
         """Format deadline for display.
 
         Args:
-            deadline: Deadline string or None
+            deadline: Deadline datetime object or None
 
         Returns:
             Formatted deadline string
         """
         if not deadline:
             return "-"
-        # Show only date and time (YYYY-MM-DD HH:MM)
-        if len(deadline) >= DEADLINE_DISPLAY_LENGTH:
-            return deadline[:DEADLINE_DISPLAY_LENGTH]
-        return deadline
+        # Format datetime to string, then show only date and time (YYYY-MM-DD HH:MM)
+        deadline_str = deadline.strftime(DATETIME_FORMAT)
+        if len(deadline_str) >= DEADLINE_DISPLAY_LENGTH:
+            return deadline_str[:DEADLINE_DISPLAY_LENGTH]
+        return deadline_str
