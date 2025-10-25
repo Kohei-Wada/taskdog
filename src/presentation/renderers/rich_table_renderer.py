@@ -208,7 +208,7 @@ class RichTableRenderer(RichRendererBase):
             "actual_end": lambda t: self._format_datetime(t.actual_end),
             "deadline": lambda t: self._format_datetime(t.deadline),
             "duration": lambda t: self._format_duration_info(t),
-            "created_at": lambda t: self._format_timestamp(t.created_at),
+            "created_at": lambda t: self._format_datetime(t.created_at),
         }
 
         extractor = field_extractors.get(field_name)
@@ -243,20 +243,6 @@ class RichTableRenderer(RichRendererBase):
             # Show only date and time (YYYY-MM-DD HH:MM)
             return dt.strftime("%Y-%m-%d %H:%M")
         return str(dt)
-
-    def _format_timestamp(self, timestamp: float) -> str:
-        """Format Unix timestamp for display.
-
-        Args:
-            timestamp: Unix timestamp (float)
-
-        Returns:
-            Formatted datetime string
-        """
-        from datetime import datetime
-
-        dt = datetime.fromtimestamp(timestamp)
-        return dt.strftime("%Y-%m-%d %H:%M")
 
     def _format_dependencies(self, task: Task) -> str:
         """Format task dependencies for display.
