@@ -3,12 +3,11 @@
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Input
+from textual.widgets import Footer, Header
 
 from infrastructure.persistence.notes_repository import NotesRepository
+from presentation.tui.widgets.filterable_task_table import FilterableTaskTable
 from presentation.tui.widgets.gantt_widget import GanttWidget
-from presentation.tui.widgets.search_input import SearchInput
-from presentation.tui.widgets.task_table import TaskTable
 
 
 class MainScreen(Screen):
@@ -22,9 +21,8 @@ class MainScreen(Screen):
         """
         super().__init__(*args, **kwargs)
         self.notes_repository = notes_repository
-        self.task_table: TaskTable | None = None
+        self.task_table: FilterableTaskTable | None = None
         self.gantt_widget: GanttWidget | None = None
-        self.search_input: SearchInput | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout.
@@ -39,13 +37,8 @@ class MainScreen(Screen):
             self.gantt_widget = GanttWidget(id="gantt-widget")
             yield self.gantt_widget
 
-            # Search input (always visible between gantt and table)
-            self.search_input = SearchInput()
-            yield self.search_input
-
-            # Task table section
-            self.task_table = TaskTable(self.notes_repository, id="task-table")
-            self.task_table.setup_columns()
+            # Filterable task table (search + table)
+            self.task_table = FilterableTaskTable(self.notes_repository, id="filterable-task-table")
             yield self.task_table
 
         yield Footer()
@@ -56,44 +49,16 @@ class MainScreen(Screen):
         if self.gantt_widget:
             self.gantt_widget.update("Loading gantt chart...")
 
-        # Focus on the table
+        # Focus on the task table
         if self.task_table:
-            self.task_table.focus()
-
-    def on_input_changed(self, event: Input.Changed) -> None:
-        """Handle search input changes.
-
-        Args:
-            event: Input changed event
-        """
-        # Only handle events from the search input
-        if event.input.id != "search-input":
-            return
-
-        # Filter tasks based on search query
-        if self.task_table:
-            self.task_table.filter_tasks(event.value)
-
-    def on_search_input_submitted(self, event: SearchInput.Submitted) -> None:
-        """Handle Enter key press in search input.
-
-        Args:
-            event: SearchInput submitted event
-        """
-        # Move focus to the task table
-        if self.task_table:
-            self.task_table.focus()
+            self.task_table.focus_table()
 
     def show_search(self) -> None:
         """Focus the search input."""
-        if self.search_input:
-            self.search_input.focus_input()
+        if self.task_table:
+            self.task_table.show_search()
 
     def hide_search(self) -> None:
         """Clear the search filter and return focus to table."""
-        if self.search_input:
-            self.search_input.clear()
-
         if self.task_table:
-            self.task_table.clear_filter()
-            self.task_table.focus()
+            self.task_table.hide_search()

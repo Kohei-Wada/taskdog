@@ -29,13 +29,12 @@ MainScreen {
     content-align: center middle;
 }
 
-/* Task table - full width */
+/* Task table - inside filterable container */
 #task-table {
     width: 100%;
     height: auto;
     min-height: 10;
     max-height: 30;
     background: transparent;
-    border: solid $primary;
     overflow-y: auto;
 }

@@ -187,6 +187,16 @@ class TaskTable(DataTable):
         """Get the current search query."""
         return self._current_query
 
+    @property
+    def match_count(self) -> int:
+        """Get the number of currently displayed (matched) tasks."""
+        return len(self._task_map)
+
+    @property
+    def total_count(self) -> int:
+        """Get the total number of tasks (unfiltered)."""
+        return len(self._all_tasks)
+
     def _filter_tasks(self, tasks: list[Task], query: str) -> list[Task]:
         """Filter tasks based on query using smart case matching.
 

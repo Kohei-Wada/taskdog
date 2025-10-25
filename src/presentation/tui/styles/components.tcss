@@ -22,14 +22,28 @@ Input {
     margin: 0;
 }
 
+/* Filterable Task Table */
+#filterable-task-table {
+    width: 100%;
+    height: auto;
+    background: transparent;
+    border: solid $primary;
+    margin-bottom: 1;
+    padding: 1 0;
+}
+
 /* Search Components */
 .search-container {
     height: auto;
     width: 100%;
     padding: 0 2;
     background: transparent;
-    border: solid $primary;
     margin-bottom: 1;
+}
+
+.search-input-row {
+    width: 100%;
+    height: auto;
 }
 
 .search-label {
@@ -42,4 +56,12 @@ Input {
 #search-input {
     width: 1fr;
     height: 3;
+}
+
+.search-result {
+    width: 100%;
+    height: auto;
+    padding: 0 0 0 2;
+    text-align: left;
+    color: $text-muted;
 }
