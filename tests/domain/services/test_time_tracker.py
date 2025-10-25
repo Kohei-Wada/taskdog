@@ -122,6 +122,45 @@ class TestTimeTracker(unittest.TestCase):
         # Original start time should be preserved
         self.assertEqual(task.actual_start, original_start)
 
+    def test_clear_time_tracking_clears_both_timestamps(self):
+        """Test that clear_time_tracking clears both actual_start and actual_end"""
+        task = Task(
+            name="Test Task",
+            priority=1,
+            id=1,
+            actual_start=datetime(2025, 1, 1, 10, 0, 0),
+            actual_end=datetime(2025, 1, 1, 18, 0, 0),
+        )
+
+        self.tracker.clear_time_tracking(task)
+
+        self.assertIsNone(task.actual_start)
+        self.assertIsNone(task.actual_end)
+
+    def test_clear_time_tracking_with_only_actual_start(self):
+        """Test that clear_time_tracking works when only actual_start is set"""
+        task = Task(
+            name="Test Task",
+            priority=1,
+            id=1,
+            actual_start=datetime(2025, 1, 1, 10, 0, 0),
+        )
+
+        self.tracker.clear_time_tracking(task)
+
+        self.assertIsNone(task.actual_start)
+        self.assertIsNone(task.actual_end)
+
+    def test_clear_time_tracking_with_no_timestamps(self):
+        """Test that clear_time_tracking is safe when no timestamps are set"""
+        task = Task(name="Test Task", priority=1, id=1)
+
+        # Should not raise
+        self.tracker.clear_time_tracking(task)
+
+        self.assertIsNone(task.actual_start)
+        self.assertIsNone(task.actual_end)
+
 
 if __name__ == "__main__":
     unittest.main()

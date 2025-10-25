@@ -1,6 +1,7 @@
 """Tests for Task entity business logic methods."""
 
 import unittest
+from datetime import datetime
 
 from domain.entities.task import Task, TaskStatus
 
@@ -166,6 +167,67 @@ class TestTaskShouldCountInWorkload(unittest.TestCase):
         result = task.should_count_in_workload()
 
         self.assertFalse(result)
+
+
+class TestTaskSerialization(unittest.TestCase):
+    """Test cases for Task serialization methods."""
+
+    def test_serialize_datetime_with_datetime_object(self):
+        """Test that _serialize_datetime converts datetime to ISO string."""
+        dt = datetime(2025, 1, 15, 10, 30, 0)
+
+        result = Task._serialize_datetime(dt)
+
+        self.assertEqual(result, "2025-01-15T10:30:00")
+
+    def test_serialize_datetime_with_none(self):
+        """Test that _serialize_datetime returns None for None input."""
+        result = Task._serialize_datetime(None)
+
+        self.assertIsNone(result)
+
+    def test_serialize_datetime_with_string(self):
+        """Test that _serialize_datetime returns string unchanged."""
+        dt_string = "2025-01-15T10:30:00"
+
+        result = Task._serialize_datetime(dt_string)
+
+        self.assertEqual(result, dt_string)
+
+    def test_to_dict_serializes_datetime_fields(self):
+        """Test that to_dict properly serializes datetime fields."""
+        task = Task(
+            name="Test Task",
+            priority=1,
+            id=1,
+            created_at=datetime(2025, 1, 1, 0, 0, 0),
+            planned_start=datetime(2025, 1, 15, 10, 0, 0),
+            planned_end=datetime(2025, 1, 15, 12, 0, 0),
+            deadline=datetime(2025, 1, 20, 18, 0, 0),
+            actual_start=datetime(2025, 1, 15, 10, 5, 0),
+            actual_end=datetime(2025, 1, 15, 11, 50, 0),
+        )
+
+        result = task.to_dict()
+
+        self.assertEqual(result["created_at"], "2025-01-01T00:00:00")
+        self.assertEqual(result["planned_start"], "2025-01-15T10:00:00")
+        self.assertEqual(result["planned_end"], "2025-01-15T12:00:00")
+        self.assertEqual(result["deadline"], "2025-01-20T18:00:00")
+        self.assertEqual(result["actual_start"], "2025-01-15T10:05:00")
+        self.assertEqual(result["actual_end"], "2025-01-15T11:50:00")
+
+    def test_to_dict_handles_none_datetime_fields(self):
+        """Test that to_dict handles None datetime fields correctly."""
+        task = Task(name="Test Task", priority=1, id=1)
+
+        result = task.to_dict()
+
+        self.assertIsNone(result["planned_start"])
+        self.assertIsNone(result["planned_end"])
+        self.assertIsNone(result["deadline"])
+        self.assertIsNone(result["actual_start"])
+        self.assertIsNone(result["actual_end"])
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ from domain.exceptions.task_exceptions import (
     DependencyNotMetError,
     TaskAlreadyFinishedError,
     TaskNotStartedError,
+    TaskValidationError,
 )
 
 
@@ -165,6 +166,40 @@ class TestStatusValidator(unittest.TestCase):
 
         # Should not raise
         self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)
+
+    def test_validate_task_without_id_raises_error(self):
+        """Test that task without ID raises TaskValidationError."""
+        # Create task without ID (id=None)
+        task = Task(name="Test", status=TaskStatus.PENDING, priority=1)
+
+        with self.assertRaises(TaskValidationError) as context:
+            self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)
+
+        self.assertIn("Task ID must not be None", str(context.exception))
+
+    def test_validate_cancel_pending_task_success(self):
+        """Test that PENDING task can be canceled."""
+        task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
+
+        # Should not raise
+        self.validator.validate(TaskStatus.CANCELED, task, self.mock_repository)
+
+    def test_validate_cancel_in_progress_task_success(self):
+        """Test that IN_PROGRESS task can be canceled."""
+        task = Task(id=1, name="Test", status=TaskStatus.IN_PROGRESS, priority=1)
+
+        # Should not raise
+        self.validator.validate(TaskStatus.CANCELED, task, self.mock_repository)
+
+    def test_validate_cancel_finished_task_raises_error(self):
+        """Test that already finished task cannot be canceled."""
+        task = Task(id=1, name="Test", status=TaskStatus.COMPLETED, priority=1)
+
+        with self.assertRaises(TaskAlreadyFinishedError) as context:
+            self.validator.validate(TaskStatus.CANCELED, task, self.mock_repository)
+
+        self.assertEqual(context.exception.task_id, 1)
+        self.assertEqual(context.exception.status, "COMPLETED")
 
 
 if __name__ == "__main__":
