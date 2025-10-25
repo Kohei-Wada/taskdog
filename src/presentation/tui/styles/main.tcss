@@ -22,11 +22,16 @@ MainScreen {
     height: auto;
     max-height: 40;
     background: transparent;
-    border: solid $primary;
+    border: round $primary;
     margin-bottom: 1;
     overflow-y: auto;
     overflow-x: auto;
     content-align: center middle;
+}
+
+/* Gantt data table - inside gantt widget */
+#gantt-table {
+    border: round $primary;
 }
 
 /* Task table - inside filterable container */

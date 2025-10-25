@@ -17,7 +17,7 @@ TaskDetailScreen {
 .dialog-base {
     height: auto;
     background: $surface;
-    border: solid $primary;
+    border: round $primary;
     padding: 1;
 }
 
@@ -60,7 +60,7 @@ TaskDetailScreen {
     height: auto;
     max-height: 12;
     margin: 0 0 1 0;
-    border: solid $primary;
+    border: round $primary;
 }
 
 /* Form container */
@@ -117,7 +117,7 @@ TaskDetailScreen {
 
 /* Confirmation Dialog */
 #confirmation-dialog {
-    border: solid $error;  /* Override primary color with error */
+    border: round $error;  /* Override primary color with error */
 }
 
 /* Task Form Dialog (Add/Edit) */

@@ -27,7 +27,7 @@ Input {
     width: 100%;
     height: auto;
     background: transparent;
-    border: solid $primary;
+    border: round $primary;
     margin-bottom: 1;
     padding: 1 0;
 }

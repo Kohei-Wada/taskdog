@@ -58,8 +58,7 @@ class GanttWidget(Static):
 
         # Create HolidayChecker from app config
         holiday_checker = self._create_holiday_checker()
-        self._gantt_table = GanttDataTable(holiday_checker=holiday_checker)
-        self._gantt_table.styles.border = ("solid", "white")
+        self._gantt_table = GanttDataTable(holiday_checker=holiday_checker, id="gantt-table")
         self._gantt_table.styles.width = "auto"
 
         # Wrap table in Center container for horizontal centering
