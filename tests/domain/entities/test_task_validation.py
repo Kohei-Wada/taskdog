@@ -20,41 +20,41 @@ class TaskValidationTest(unittest.TestCase):
         task = Task(name="Test Task", priority=5, estimated_duration=10.0)
         self.assertEqual(task.estimated_duration, 10.0)
 
-    def test_empty_name_raises_error(self):
-        """Test that empty task name raises TaskValidationError."""
-        with self.assertRaises(TaskValidationError) as context:
-            Task(name="", priority=5)
-        self.assertIn("Task name cannot be empty", str(context.exception))
+    def test_invalid_name_raises_error(self):
+        """Test that invalid task names raise TaskValidationError."""
+        test_cases = [
+            ("", "empty name"),
+            ("   ", "whitespace-only name"),
+        ]
+        for name, description in test_cases:
+            with self.subTest(description=description):
+                with self.assertRaises(TaskValidationError) as context:
+                    Task(name=name, priority=5)
+                self.assertIn("Task name cannot be empty", str(context.exception))
 
-    def test_whitespace_only_name_raises_error(self):
-        """Test that whitespace-only task name raises TaskValidationError."""
-        with self.assertRaises(TaskValidationError) as context:
-            Task(name="   ", priority=5)
-        self.assertIn("Task name cannot be empty", str(context.exception))
+    def test_invalid_priority_raises_error(self):
+        """Test that invalid priority values raise TaskValidationError."""
+        test_cases = [
+            (0, "zero priority"),
+            (-1, "negative priority"),
+        ]
+        for priority, description in test_cases:
+            with self.subTest(description=description):
+                with self.assertRaises(TaskValidationError) as context:
+                    Task(name="Test Task", priority=priority)
+                self.assertIn("Priority must be greater than 0", str(context.exception))
 
-    def test_zero_priority_raises_error(self):
-        """Test that priority = 0 raises TaskValidationError."""
-        with self.assertRaises(TaskValidationError) as context:
-            Task(name="Test Task", priority=0)
-        self.assertIn("Priority must be greater than 0", str(context.exception))
-
-    def test_negative_priority_raises_error(self):
-        """Test that negative priority raises TaskValidationError."""
-        with self.assertRaises(TaskValidationError) as context:
-            Task(name="Test Task", priority=-1)
-        self.assertIn("Priority must be greater than 0", str(context.exception))
-
-    def test_zero_estimated_duration_raises_error(self):
-        """Test that estimated_duration = 0 raises TaskValidationError."""
-        with self.assertRaises(TaskValidationError) as context:
-            Task(name="Test Task", priority=5, estimated_duration=0.0)
-        self.assertIn("Estimated duration must be greater than 0", str(context.exception))
-
-    def test_negative_estimated_duration_raises_error(self):
-        """Test that negative estimated_duration raises TaskValidationError."""
-        with self.assertRaises(TaskValidationError) as context:
-            Task(name="Test Task", priority=5, estimated_duration=-5.0)
-        self.assertIn("Estimated duration must be greater than 0", str(context.exception))
+    def test_invalid_estimated_duration_raises_error(self):
+        """Test that invalid estimated_duration values raise TaskValidationError."""
+        test_cases = [
+            (0.0, "zero duration"),
+            (-5.0, "negative duration"),
+        ]
+        for duration, description in test_cases:
+            with self.subTest(description=description):
+                with self.assertRaises(TaskValidationError) as context:
+                    Task(name="Test Task", priority=5, estimated_duration=duration)
+                self.assertIn("Estimated duration must be greater than 0", str(context.exception))
 
     def test_none_estimated_duration_is_valid(self):
         """Test that None estimated_duration is valid (optional field)."""
@@ -89,55 +89,47 @@ class TaskValidationTest(unittest.TestCase):
         self.assertEqual(task.status, TaskStatus.PENDING)
         self.assertEqual(task.estimated_duration, 10.0)
 
-    def test_from_dict_raises_error_for_zero_priority(self):
-        """Test that from_dict raises error for priority = 0."""
-        data = {
-            "id": 1,
-            "name": "Test Task",
-            "priority": 0,  # Invalid priority
-            "status": "PENDING",
-        }
-        with self.assertRaises(TaskValidationError) as context:
-            Task.from_dict(data)
-        self.assertIn("Priority must be greater than 0", str(context.exception))
-
-    def test_from_dict_raises_error_for_negative_priority(self):
-        """Test that from_dict raises error for negative priority."""
-        data = {
-            "id": 1,
-            "name": "Test Task",
-            "priority": -100,  # Invalid priority
-            "status": "PENDING",
-        }
-        with self.assertRaises(TaskValidationError) as context:
-            Task.from_dict(data)
-        self.assertIn("Priority must be greater than 0", str(context.exception))
-
-    def test_from_dict_raises_error_for_zero_estimated_duration(self):
-        """Test that from_dict raises error for estimated_duration = 0."""
-        data = {
-            "id": 1,
-            "name": "Test Task",
-            "priority": 5,
-            "status": "PENDING",
-            "estimated_duration": 0.0,  # Invalid duration
-        }
-        with self.assertRaises(TaskValidationError) as context:
-            Task.from_dict(data)
-        self.assertIn("Estimated duration must be greater than 0", str(context.exception))
-
-    def test_from_dict_raises_error_for_negative_estimated_duration(self):
-        """Test that from_dict raises error for negative estimated_duration."""
-        data = {
-            "id": 1,
-            "name": "Test Task",
-            "priority": 5,
-            "status": "PENDING",
-            "estimated_duration": -5.0,  # Invalid duration
-        }
-        with self.assertRaises(TaskValidationError) as context:
-            Task.from_dict(data)
-        self.assertIn("Estimated duration must be greater than 0", str(context.exception))
+    def test_from_dict_raises_validation_errors(self):
+        """Test that from_dict raises validation errors for various invalid fields."""
+        test_cases = [
+            (
+                {"id": 1, "name": "Test Task", "priority": 0, "status": "PENDING"},
+                "Priority must be greater than 0",
+                "zero priority",
+            ),
+            (
+                {"id": 1, "name": "Test Task", "priority": -100, "status": "PENDING"},
+                "Priority must be greater than 0",
+                "negative priority",
+            ),
+            (
+                {
+                    "id": 1,
+                    "name": "Test Task",
+                    "priority": 5,
+                    "status": "PENDING",
+                    "estimated_duration": 0.0,
+                },
+                "Estimated duration must be greater than 0",
+                "zero estimated_duration",
+            ),
+            (
+                {
+                    "id": 1,
+                    "name": "Test Task",
+                    "priority": 5,
+                    "status": "PENDING",
+                    "estimated_duration": -5.0,
+                },
+                "Estimated duration must be greater than 0",
+                "negative estimated_duration",
+            ),
+        ]
+        for data, expected_error, description in test_cases:
+            with self.subTest(description=description):
+                with self.assertRaises(TaskValidationError) as context:
+                    Task.from_dict(data)
+                self.assertIn(expected_error, str(context.exception))
 
 
 if __name__ == "__main__":

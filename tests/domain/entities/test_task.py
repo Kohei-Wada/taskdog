@@ -9,70 +9,26 @@ from domain.entities.task import Task, TaskStatus
 class TestTaskIsSchedulable(unittest.TestCase):
     """Test cases for Task.is_schedulable() method."""
 
-    def test_is_schedulable_with_pending_task_and_duration(self):
-        """Test that PENDING task with estimated_duration is schedulable."""
-        task = Task(
-            name="Test Task",
-            priority=100,
-            status=TaskStatus.PENDING,
-            estimated_duration=4.0,
-        )
-
-        result = task.is_schedulable(force_override=False)
-
-        self.assertTrue(result)
-
-    def test_is_not_schedulable_with_completed_task(self):
-        """Test that COMPLETED tasks are not schedulable."""
-        task = Task(
-            name="Completed task",
-            priority=100,
-            status=TaskStatus.COMPLETED,
-            estimated_duration=4.0,
-        )
-
-        result = task.is_schedulable(force_override=False)
-
-        self.assertFalse(result)
-
-    def test_is_not_schedulable_with_archived_task(self):
-        """Test that archived tasks are not schedulable."""
-        task = Task(
-            name="Archived task",
-            priority=100,
-            status=TaskStatus.ARCHIVED,
-            estimated_duration=4.0,
-        )
-
-        result = task.is_schedulable(force_override=False)
-
-        self.assertFalse(result)
-
-    def test_is_not_schedulable_with_in_progress_task(self):
-        """Test that IN_PROGRESS tasks are not reschedulable."""
-        task = Task(
-            name="In-progress task",
-            priority=100,
-            status=TaskStatus.IN_PROGRESS,
-            estimated_duration=4.0,
-        )
-
-        result = task.is_schedulable(force_override=False)
-
-        self.assertFalse(result)
-
-    def test_is_not_schedulable_without_duration(self):
-        """Test that tasks without estimated_duration are not schedulable."""
-        task = Task(
-            name="Task without duration",
-            priority=100,
-            status=TaskStatus.PENDING,
-            estimated_duration=None,
-        )
-
-        result = task.is_schedulable(force_override=False)
-
-        self.assertFalse(result)
+    def test_is_schedulable_by_status_and_duration(self):
+        """Test schedulability based on status and estimated_duration."""
+        test_cases = [
+            (TaskStatus.PENDING, 4.0, True, "PENDING with duration"),
+            (TaskStatus.COMPLETED, 4.0, False, "COMPLETED task"),
+            (TaskStatus.ARCHIVED, 4.0, False, "ARCHIVED task"),
+            (TaskStatus.IN_PROGRESS, 4.0, False, "IN_PROGRESS task"),
+            (TaskStatus.CANCELED, 4.0, False, "CANCELED task"),
+            (TaskStatus.PENDING, None, False, "PENDING without duration"),
+        ]
+        for status, duration, expected, description in test_cases:
+            with self.subTest(description=description):
+                task = Task(
+                    name="Test Task",
+                    priority=100,
+                    status=status,
+                    estimated_duration=duration,
+                )
+                result = task.is_schedulable(force_override=False)
+                self.assertEqual(result, expected)
 
     def test_is_not_schedulable_with_existing_schedule_by_default(self):
         """Test that tasks with existing schedules are not schedulable by default."""
@@ -102,96 +58,39 @@ class TestTaskIsSchedulable(unittest.TestCase):
 
         self.assertTrue(result)
 
-    def test_is_not_schedulable_with_canceled_status(self):
-        """Test that CANCELED tasks are not schedulable."""
-        task = Task(
-            name="Canceled task",
-            priority=100,
-            status=TaskStatus.CANCELED,
-            estimated_duration=4.0,
-        )
-
-        result = task.is_schedulable(force_override=False)
-
-        self.assertFalse(result)
-
 
 class TestTaskShouldCountInWorkload(unittest.TestCase):
     """Test cases for Task.should_count_in_workload() method."""
 
-    def test_pending_task_counts_in_workload(self):
-        """Test that PENDING tasks count in workload."""
-        task = Task(
-            name="Pending task",
-            priority=100,
-            status=TaskStatus.PENDING,
-        )
-
-        result = task.should_count_in_workload()
-
-        self.assertTrue(result)
-
-    def test_in_progress_task_counts_in_workload(self):
-        """Test that IN_PROGRESS tasks count in workload."""
-        task = Task(
-            name="In-progress task",
-            priority=100,
-            status=TaskStatus.IN_PROGRESS,
-        )
-
-        result = task.should_count_in_workload()
-
-        self.assertTrue(result)
-
-    def test_completed_task_does_not_count_in_workload(self):
-        """Test that COMPLETED tasks do not count in workload."""
-        task = Task(
-            name="Completed task",
-            priority=100,
-            status=TaskStatus.COMPLETED,
-        )
-
-        result = task.should_count_in_workload()
-
-        self.assertFalse(result)
-
-    def test_canceled_task_does_not_count_in_workload(self):
-        """Test that CANCELED tasks do not count in workload."""
-        task = Task(
-            name="Canceled task",
-            priority=100,
-            status=TaskStatus.CANCELED,
-        )
-
-        result = task.should_count_in_workload()
-
-        self.assertFalse(result)
+    def test_should_count_in_workload_by_status(self):
+        """Test workload counting based on task status."""
+        test_cases = [
+            (TaskStatus.PENDING, True, "PENDING task"),
+            (TaskStatus.IN_PROGRESS, True, "IN_PROGRESS task"),
+            (TaskStatus.COMPLETED, False, "COMPLETED task"),
+            (TaskStatus.CANCELED, False, "CANCELED task"),
+        ]
+        for status, expected, description in test_cases:
+            with self.subTest(description=description):
+                task = Task(name="Test task", priority=100, status=status)
+                result = task.should_count_in_workload()
+                self.assertEqual(result, expected)
 
 
 class TestTaskSerialization(unittest.TestCase):
     """Test cases for Task serialization methods."""
 
-    def test_serialize_datetime_with_datetime_object(self):
-        """Test that _serialize_datetime converts datetime to ISO string."""
-        dt = datetime(2025, 1, 15, 10, 30, 0)
-
-        result = Task._serialize_datetime(dt)
-
-        self.assertEqual(result, "2025-01-15T10:30:00")
-
-    def test_serialize_datetime_with_none(self):
-        """Test that _serialize_datetime returns None for None input."""
-        result = Task._serialize_datetime(None)
-
-        self.assertIsNone(result)
-
-    def test_serialize_datetime_with_string(self):
-        """Test that _serialize_datetime returns string unchanged."""
-        dt_string = "2025-01-15T10:30:00"
-
-        result = Task._serialize_datetime(dt_string)
-
-        self.assertEqual(result, dt_string)
+    def test_serialize_datetime(self):
+        """Test _serialize_datetime handles various input types."""
+        test_cases = [
+            (datetime(2025, 1, 15, 10, 30, 0), "2025-01-15T10:30:00", "datetime object"),
+            (None, None, "None input"),
+            ("2025-01-15T10:30:00", "2025-01-15T10:30:00", "string input"),
+        ]
+        for input_value, expected, description in test_cases:
+            with self.subTest(description=description):
+                result = Task._serialize_datetime(input_value)
+                self.assertEqual(result, expected)
 
     def test_to_dict_serializes_datetime_fields(self):
         """Test that to_dict properly serializes datetime fields."""

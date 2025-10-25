@@ -12,38 +12,22 @@ class TestTimeTracker(unittest.TestCase):
         """Create a TimeTracker instance for each test"""
         self.tracker = TimeTracker()
 
-    def test_record_time_to_in_progress(self):
-        """Test that actual_start is recorded when status changes to IN_PROGRESS"""
-        task = Task(name="Test Task", priority=1, id=1)
-        self.assertIsNone(task.actual_start)
+    def test_record_time_on_status_change_sets_timestamps(self):
+        """Test that appropriate timestamps are recorded for different status changes."""
+        test_cases = [
+            (TaskStatus.IN_PROGRESS, "actual_start", "IN_PROGRESS sets actual_start"),
+            (TaskStatus.COMPLETED, "actual_end", "COMPLETED sets actual_end"),
+            (TaskStatus.CANCELED, "actual_end", "CANCELED sets actual_end"),
+        ]
+        for new_status, field_name, description in test_cases:
+            with self.subTest(description=description):
+                task = Task(name="Test Task", priority=1, id=1)
+                self.assertIsNone(getattr(task, field_name))
 
-        self.tracker.record_time_on_status_change(task, TaskStatus.IN_PROGRESS)
+                self.tracker.record_time_on_status_change(task, new_status)
 
-        self.assertIsNotNone(task.actual_start)
-        # Verify it's a datetime object
-        self.assertIsInstance(task.actual_start, datetime)
-
-    def test_record_time_to_completed(self):
-        """Test that actual_end is recorded when status changes to COMPLETED"""
-        task = Task(name="Test Task", priority=1, id=1)
-        self.assertIsNone(task.actual_end)
-
-        self.tracker.record_time_on_status_change(task, TaskStatus.COMPLETED)
-
-        self.assertIsNotNone(task.actual_end)
-        # Verify it's a datetime object
-        self.assertIsInstance(task.actual_end, datetime)
-
-    def test_record_time_to_canceled(self):
-        """Test that actual_end is recorded when status changes to CANCELED"""
-        task = Task(name="Test Task", priority=1, id=1)
-        self.assertIsNone(task.actual_end)
-
-        self.tracker.record_time_on_status_change(task, TaskStatus.CANCELED)
-
-        self.assertIsNotNone(task.actual_end)
-        # Verify it's a datetime object
-        self.assertIsInstance(task.actual_end, datetime)
+                self.assertIsNotNone(getattr(task, field_name))
+                self.assertIsInstance(getattr(task, field_name), datetime)
 
     def test_no_record_for_pending(self):
         """Test that no timestamps are recorded for PENDING status"""
@@ -122,44 +106,31 @@ class TestTimeTracker(unittest.TestCase):
         # Original start time should be preserved
         self.assertEqual(task.actual_start, original_start)
 
-    def test_clear_time_tracking_clears_both_timestamps(self):
-        """Test that clear_time_tracking clears both actual_start and actual_end"""
-        task = Task(
-            name="Test Task",
-            priority=1,
-            id=1,
-            actual_start=datetime(2025, 1, 1, 10, 0, 0),
-            actual_end=datetime(2025, 1, 1, 18, 0, 0),
-        )
+    def test_clear_time_tracking_handles_all_scenarios(self):
+        """Test that clear_time_tracking clears timestamps in various scenarios."""
+        test_cases = [
+            (
+                datetime(2025, 1, 1, 10, 0, 0),
+                datetime(2025, 1, 1, 18, 0, 0),
+                "both timestamps set",
+            ),
+            (datetime(2025, 1, 1, 10, 0, 0), None, "only actual_start set"),
+            (None, None, "no timestamps set"),
+        ]
+        for actual_start, actual_end, description in test_cases:
+            with self.subTest(description=description):
+                task = Task(
+                    name="Test Task",
+                    priority=1,
+                    id=1,
+                    actual_start=actual_start,
+                    actual_end=actual_end,
+                )
 
-        self.tracker.clear_time_tracking(task)
+                self.tracker.clear_time_tracking(task)
 
-        self.assertIsNone(task.actual_start)
-        self.assertIsNone(task.actual_end)
-
-    def test_clear_time_tracking_with_only_actual_start(self):
-        """Test that clear_time_tracking works when only actual_start is set"""
-        task = Task(
-            name="Test Task",
-            priority=1,
-            id=1,
-            actual_start=datetime(2025, 1, 1, 10, 0, 0),
-        )
-
-        self.tracker.clear_time_tracking(task)
-
-        self.assertIsNone(task.actual_start)
-        self.assertIsNone(task.actual_end)
-
-    def test_clear_time_tracking_with_no_timestamps(self):
-        """Test that clear_time_tracking is safe when no timestamps are set"""
-        task = Task(name="Test Task", priority=1, id=1)
-
-        # Should not raise
-        self.tracker.clear_time_tracking(task)
-
-        self.assertIsNone(task.actual_start)
-        self.assertIsNone(task.actual_end)
+                self.assertIsNone(task.actual_start)
+                self.assertIsNone(task.actual_end)
 
 
 if __name__ == "__main__":
