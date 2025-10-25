@@ -1,46 +1,44 @@
-"""Use case for archiving (soft deleting) a task."""
+"""Use case for archiving a task."""
 
 from application.dto.archive_task_request import ArchiveTaskRequest
-from application.use_cases.base import UseCase
-from domain.entities.task import Task
-from infrastructure.persistence.task_repository import TaskRepository
+from application.use_cases.status_change_use_case import StatusChangeUseCase
+from domain.entities.task import Task, TaskStatus
 
 
-class ArchiveTaskUseCase(UseCase[ArchiveTaskRequest, Task]):
-    """Use case for archiving (soft deleting) tasks.
+class ArchiveTaskUseCase(StatusChangeUseCase[ArchiveTaskRequest]):
+    """Use case for archiving tasks.
 
     Archives a task for data retention while removing it from active views.
     This use case:
-    - Sets is_deleted flag to True
+    - Transitions task to ARCHIVED status from any current status
     - Clears schedule data (daily_allocations)
-    - Archiving is always allowed regardless of current status
+    - Acts as a soft delete mechanism
+
+    Archived tasks are read-only and excluded from default views.
+    Use RestoreTaskUseCase to restore an archived task.
     """
 
-    def __init__(self, repository: TaskRepository) -> None:
-        self.repository = repository
-
-    def execute(self, input_dto: ArchiveTaskRequest) -> Task:
-        """Archive (soft delete) a task.
-
-        Args:
-            input_dto: ArchiveTaskRequest containing task_id
+    def _get_target_status(self) -> TaskStatus:
+        """Return ARCHIVED as the target status.
 
         Returns:
-            The archived task
-
-        Raises:
-            TaskNotFoundException: If task with given ID not found
+            TaskStatus.ARCHIVED
         """
-        # Get task
-        task = self._get_task_or_raise(self.repository, input_dto.task_id)
+        return TaskStatus.ARCHIVED
 
+    def _should_validate(self) -> bool:
+        """Skip validation - archiving is allowed from any status.
+
+        Returns:
+            False to skip standard validation
+        """
+        return False
+
+    def _before_status_change(self, task: Task) -> None:
+        """Clear schedule data before archiving.
+
+        Args:
+            task: Task that will be archived
+        """
         # Clear schedule data
         task.daily_allocations = {}
-
-        # Set deleted flag
-        task.is_deleted = True
-
-        # Save changes
-        self.repository.save(task)
-
-        return task

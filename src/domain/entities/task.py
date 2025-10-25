@@ -11,6 +11,7 @@ class TaskStatus(Enum):
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
     CANCELED = "CANCELED"
+    ARCHIVED = "ARCHIVED"
 
 
 @dataclass
@@ -34,7 +35,6 @@ class Task:
         depends_on: List of task IDs that must be completed before this task can start
         is_fixed: Whether this task is fixed (cannot be moved by optimizer)
         actual_daily_hours: Actual work hours per day (date_str → hours)
-        is_deleted: Whether this task is logically deleted (soft delete)
     """
 
     name: str
@@ -54,7 +54,6 @@ class Task:
     depends_on: list[int] = field(default_factory=list)
     is_fixed: bool = False
     actual_daily_hours: dict[date, float] = field(default_factory=dict)
-    is_deleted: bool = False
 
     def __post_init__(self) -> None:
         """Validate entity invariants after initialization.
@@ -99,23 +98,23 @@ class Task:
 
     @property
     def is_finished(self) -> bool:
-        """Check if task is in finished state (completed or canceled).
+        """Check if task is in finished state (completed, canceled, or archived).
 
         Returns:
-            True if task status is COMPLETED or CANCELED
+            True if task status is COMPLETED, CANCELED, or ARCHIVED
         """
-        return self.status in (TaskStatus.COMPLETED, TaskStatus.CANCELED)
+        return self.status in (TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.ARCHIVED)
 
     @property
     def can_be_modified(self) -> bool:
-        """Check if task can be modified (not deleted).
+        """Check if task can be modified (not archived).
 
-        Deleted tasks should not be updated.
+        Archived tasks should not be updated.
 
         Returns:
-            True if task is not deleted
+            True if task is not archived
         """
-        return not self.is_deleted
+        return self.status != TaskStatus.ARCHIVED
 
     def is_schedulable(self, force_override: bool = False) -> bool:
         """Check if task can be scheduled.
@@ -128,16 +127,11 @@ class Task:
 
         Business Rules:
             - Must have estimated_duration set
-            - Must be PENDING status (not IN_PROGRESS, COMPLETED, or CANCELED)
-            - Must not be deleted
+            - Must be PENDING status (not IN_PROGRESS, COMPLETED, CANCELED, or ARCHIVED)
             - Must not be fixed (always protected, even with force_override)
             - If force_override is False, must not have existing schedule
         """
-        # Skip deleted tasks
-        if self.is_deleted:
-            return False
-
-        # Skip finished tasks
+        # Skip finished tasks (includes ARCHIVED)
         if self.is_finished:
             return False
 
@@ -164,11 +158,10 @@ class Task:
             True if task should be included in workload
 
         Business Rules:
-            - Exclude finished tasks (COMPLETED, CANCELED)
-            - Exclude deleted tasks
+            - Exclude finished tasks (COMPLETED, CANCELED, ARCHIVED)
             - Include PENDING and IN_PROGRESS tasks
         """
-        return not self.is_finished and not self.is_deleted
+        return not self.is_finished
 
     @staticmethod
     def _serialize_datetime(dt: datetime | str | None) -> str | None:
@@ -213,7 +206,6 @@ class Task:
             "actual_daily_hours": {k.isoformat(): v for k, v in self.actual_daily_hours.items()}
             if self.actual_daily_hours
             else {},
-            "is_deleted": self.is_deleted,
         }
 
     @classmethod
@@ -254,6 +246,13 @@ class Task:
         # Convert actual_daily_hours from dict[str, float] to dict[date, float]
         if "actual_daily_hours" in task_data and isinstance(task_data["actual_daily_hours"], dict):
             task_data["actual_daily_hours"] = cls._parse_date_dict(task_data["actual_daily_hours"])
+
+        # Backward compatibility: migrate is_deleted to ARCHIVED status
+        if "is_deleted" in task_data:
+            is_deleted = task_data.pop("is_deleted")
+            if is_deleted and "status" in task_data:
+                # If task was deleted, change status to ARCHIVED
+                task_data["status"] = TaskStatus.ARCHIVED
 
         return cls(**task_data)
 

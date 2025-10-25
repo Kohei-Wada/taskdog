@@ -80,8 +80,8 @@ class OptimizationSummaryBuilder:
         unscheduled_tasks = []
 
         for task in all_tasks_after:
-            # Skip deleted and finished tasks
-            if task.is_deleted or task.is_finished:
+            # Skip finished tasks (includes ARCHIVED)
+            if task.is_finished:
                 continue
             # Skip tasks without estimated duration
             if not task.estimated_duration:

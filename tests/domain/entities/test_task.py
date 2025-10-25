@@ -35,14 +35,13 @@ class TestTaskIsSchedulable(unittest.TestCase):
 
         self.assertFalse(result)
 
-    def test_is_not_schedulable_with_deleted_task(self):
-        """Test that deleted tasks are not schedulable."""
+    def test_is_not_schedulable_with_archived_task(self):
+        """Test that archived tasks are not schedulable."""
         task = Task(
-            name="Deleted task",
+            name="Archived task",
             priority=100,
-            status=TaskStatus.PENDING,
+            status=TaskStatus.ARCHIVED,
             estimated_duration=4.0,
-            is_deleted=True,
         )
 
         result = task.is_schedulable(force_override=False)

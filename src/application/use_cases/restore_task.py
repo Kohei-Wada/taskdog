@@ -1,42 +1,51 @@
-"""Use case for restoring (undeleting) a task."""
+"""Use case for restoring an archived task."""
 
 from application.dto.restore_task_request import RestoreTaskRequest
-from application.use_cases.base import UseCase
-from domain.entities.task import Task
-from infrastructure.persistence.task_repository import TaskRepository
+from application.use_cases.status_change_use_case import StatusChangeUseCase
+from domain.entities.task import Task, TaskStatus
+from domain.exceptions.task_exceptions import TaskValidationError
 
 
-class RestoreTaskUseCase(UseCase[RestoreTaskRequest, Task]):
-    """Use case for restoring archived (soft deleted) tasks.
+class RestoreTaskUseCase(StatusChangeUseCase[RestoreTaskRequest]):
+    """Use case for restoring archived tasks.
 
+    Restores an archived task back to PENDING status.
     This use case:
-    - Sets is_deleted flag to False
+    - Transitions task from ARCHIVED to PENDING
     - Makes the task visible in active views again
-    - Does not modify task status or other fields
+    - Does not modify other fields (schedule, timestamps, etc.)
+
+    This is primarily intended for recovering from accidental archiving.
     """
 
-    def __init__(self, repository: TaskRepository) -> None:
-        self.repository = repository
-
-    def execute(self, input_dto: RestoreTaskRequest) -> Task:
-        """Restore (undelete) a task.
-
-        Args:
-            input_dto: RestoreTaskRequest containing task_id
+    def _get_target_status(self) -> TaskStatus:
+        """Return PENDING as the target status.
 
         Returns:
-            The restored task
+            TaskStatus.PENDING
+        """
+        return TaskStatus.PENDING
+
+    def _should_validate(self) -> bool:
+        """Enable custom validation in _before_status_change.
+
+        Returns:
+            False to skip standard validation
+        """
+        return False
+
+    def _before_status_change(self, task: Task) -> None:
+        """Validate task can be restored.
+
+        Args:
+            task: Task that will be restored
 
         Raises:
-            TaskNotFoundException: If task with given ID not found
+            TaskValidationError: If task cannot be restored
         """
-        # Get task (including deleted ones)
-        task = self._get_task_or_raise(self.repository, input_dto.task_id)
-
-        # Clear deleted flag
-        task.is_deleted = False
-
-        # Save changes
-        self.repository.save(task)
-
-        return task
+        # Validate: can only restore ARCHIVED tasks
+        if task.status != TaskStatus.ARCHIVED:
+            raise TaskValidationError(
+                f"Cannot restore task with status {task.status.value}. "
+                "Only ARCHIVED tasks can be restored."
+            )

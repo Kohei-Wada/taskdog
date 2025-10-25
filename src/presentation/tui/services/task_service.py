@@ -110,7 +110,7 @@ class TaskService:
         return use_case.execute(cancel_input)
 
     def remove_task(self, task_id: int) -> Task:
-        """Remove a task (soft delete).
+        """Remove a task (archive).
 
         Args:
             task_id: Task ID
@@ -118,7 +118,7 @@ class TaskService:
         Returns:
             The archived task
         """
-        use_case = ArchiveTaskUseCase(self.repository)
+        use_case = ArchiveTaskUseCase(self.repository, self.time_tracker)
         archive_input = ArchiveTaskRequest(task_id=task_id)
         return use_case.execute(archive_input)
 

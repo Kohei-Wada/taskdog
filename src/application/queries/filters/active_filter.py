@@ -1,13 +1,13 @@
-"""Filter for active (non-deleted) tasks."""
+"""Filter for active (non-archived) tasks."""
 
 from application.queries.filters.task_filter import TaskFilter
-from domain.entities.task import Task
+from domain.entities.task import Task, TaskStatus
 
 
 class ActiveFilter(TaskFilter):
-    """Filter tasks that are not deleted.
+    """Filter tasks that are not archived.
 
-    Returns tasks with is_deleted=False.
+    Returns tasks with status != ARCHIVED.
     Used for showing all active tasks including completed ones.
     """
 
@@ -20,4 +20,4 @@ class ActiveFilter(TaskFilter):
         Returns:
             List of tasks that are not archived
         """
-        return [task for task in tasks if not task.is_deleted]
+        return [task for task in tasks if task.status != TaskStatus.ARCHIVED]

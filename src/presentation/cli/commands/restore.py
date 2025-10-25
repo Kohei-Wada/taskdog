@@ -20,7 +20,7 @@ def restore_command(ctx, task_ids):
 
     def restore_single_task(task_id: int) -> None:
         input_dto = RestoreTaskRequest(task_id=task_id)
-        use_case = RestoreTaskUseCase(repository)
+        use_case = RestoreTaskUseCase(repository, ctx_obj.time_tracker)
         task = use_case.execute(input_dto)
         console_writer.task_success(StatusVerbs.RESTORED, task)
 

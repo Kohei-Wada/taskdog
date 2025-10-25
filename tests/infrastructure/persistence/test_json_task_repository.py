@@ -320,7 +320,6 @@ class TestJsonTaskRepository(unittest.TestCase):
             "depends_on": [],
             "is_fixed": False,
             "actual_daily_hours": {},
-            "is_deleted": False,
         }
 
         # Write legacy format to file

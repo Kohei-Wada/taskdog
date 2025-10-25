@@ -50,16 +50,12 @@ class ReopenTaskUseCase(StatusChangeUseCase[ReopenTaskRequest]):
             TaskValidationError: If task cannot be reopened
         """
         # Validate: can only reopen COMPLETED or CANCELED tasks
+        # Note: ARCHIVED tasks should use 'restore' command instead
         if task.status not in (TaskStatus.COMPLETED, TaskStatus.CANCELED):
             raise TaskValidationError(
                 f"Cannot reopen task with status {task.status.value}. "
-                "Only COMPLETED or CANCELED tasks can be reopened."
-            )
-
-        # Validate: cannot reopen deleted tasks
-        if task.is_deleted:
-            raise TaskValidationError(
-                "Cannot reopen deleted task. Restore the task first with 'restore' command."
+                "Only COMPLETED or CANCELED tasks can be reopened. "
+                "Use 'restore' command for ARCHIVED tasks."
             )
 
         # Clear time tracking (reset timestamps)
