@@ -16,7 +16,6 @@ from presentation.constants.table_dimensions import (
     BORDER_WIDTH,
     CHARS_PER_DAY,
     DEFAULT_GANTT_WIDGET_WIDTH,
-    DISPLAY_HALF_WIDTH_DIVISOR,
     GANTT_TABLE_FIXED_WIDTH,
     MIN_CONSOLE_WIDTH,
     MIN_TIMELINE_WIDTH,
@@ -192,21 +191,11 @@ class GanttWidget(Static):
             end_date = start_date + timedelta(days=display_days - 1)
             return start_date, end_date
 
-        # Get the original date range from gantt result
-        original_start = self._gantt_result.date_range.start_date
-        original_end = self._gantt_result.date_range.end_date
-        date_range_days = (original_end - original_start).days + 1
-
-        if date_range_days <= display_days:
-            # Original range fits, use it as-is
-            return original_start, original_end
-        else:
-            # Original range is too wide, center around today
-            today = date.today()
-            half_days = display_days // DISPLAY_HALF_WIDTH_DIVISOR
-            start_date = today - timedelta(days=half_days)
-            end_date = start_date + timedelta(days=display_days - 1)
-            return start_date, end_date
+        # Always recalculate date range based on new display_days
+        # to properly handle screen width changes
+        start_date = get_previous_monday()
+        end_date = start_date + timedelta(days=display_days - 1)
+        return start_date, end_date
 
     def on_resize(self):
         """Handle resize events."""
