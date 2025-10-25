@@ -48,7 +48,7 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
-        with Container(id="detail-screen"):
+        with Container(id="detail-screen", classes="dialog-base dialog-wide"):
             yield Label(
                 f"[bold cyan]Task #{self.task_data.id}: {self.task_data.name}[/bold cyan]",
                 id="dialog-title",

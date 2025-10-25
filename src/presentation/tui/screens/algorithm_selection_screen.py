@@ -70,7 +70,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
-        with Container(id="algorithm-dialog"):
+        with Container(id="algorithm-dialog", classes="dialog-base dialog-standard"):
             # Dynamic title based on force_override mode
             title = (
                 "[bold cyan]Force Optimize Schedule Settings[/bold cyan]"
@@ -90,7 +90,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
                 options = [
                     Option(f"{name}: {desc}", id=algo_id) for algo_id, name, desc in self.algorithms
                 ]
-                yield ViOptionList(*options, id="algorithm-list")
+                yield ViOptionList(*options, id="algorithm-list", classes="dialog-list")
 
                 yield Label("Max Hours per Day:", classes="field-label")
                 yield Input(

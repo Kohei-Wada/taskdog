@@ -50,7 +50,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         dialog_id = "edit-task-dialog" if self.is_edit_mode else "add-task-dialog"
         dialog_title = "Edit Task" if self.is_edit_mode else "Add New Task"
 
-        with Container(id=dialog_id):
+        with Container(id=dialog_id, classes="dialog-base dialog-standard"):
             yield Label(f"[bold cyan]{dialog_title}[/bold cyan]", id="dialog-title")
             yield Label(
                 "[dim]Ctrl+S to submit, Esc to cancel, Tab to switch fields[/dim]",

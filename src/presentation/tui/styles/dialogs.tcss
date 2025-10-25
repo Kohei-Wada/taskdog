@@ -1,111 +1,78 @@
 /* Dialog Styles */
 
-/* Algorithm Selection Dialog */
-AlgorithmSelectionScreen {
+/* =============================================================================
+   Base Dialog Styles - Common patterns for all dialogs
+   ============================================================================= */
+
+/* All dialog screens use center alignment */
+AlgorithmSelectionScreen,
+SortSelectionScreen,
+ConfirmationDialog,
+TaskFormDialog,
+TaskDetailScreen {
     align: center middle;
 }
 
-#algorithm-dialog {
-    width: 70;  /* Standard width for form-based dialogs */
+/* Base dialog style - inherited by all dialogs */
+.dialog-base {
     height: auto;
-    max-height: 35;
     background: $surface;
-    border: thick $primary;
+    border: solid $primary;
     padding: 1;
 }
 
+/* Dialog size variants */
+.dialog-compact {
+    width: 55;  /* For simple yes/no confirmations */
+    max-height: 20;
+}
+
+.dialog-standard {
+    width: 70;  /* For form-based dialogs and lists */
+}
+
+.dialog-wide {
+    width: 80;  /* For detailed information display */
+}
+
+/* =============================================================================
+   Common Dialog Components
+   ============================================================================= */
+
+/* Hint text shown in dialogs */
 #dialog-hint {
     text-align: center;
     padding-bottom: 1;
     color: $text-muted;
 }
 
-#algorithm-list {
-    height: auto;
-    max-height: 12;
-    margin: 0 0 1 0;
-    border: solid $primary;
-}
-
-/* Sort Selection Dialog */
-SortSelectionScreen {
-    align: center middle;
-}
-
-#sort-dialog {
-    width: 70;  /* Standard width for form-based dialogs */
-    height: auto;
-    max-height: 25;  /* Smaller than algorithm dialog (no input fields) */
-    background: $surface;
-    border: thick $primary;
-    padding: 1;
-}
-
-#sort-list {
-    height: auto;
-    max-height: 12;
-    margin: 0 0 1 0;
-    border: solid $primary;
-}
-
-/* Confirmation Dialog */
-ConfirmationDialog {
-    align: center middle;
-}
-
-#confirmation-dialog {
-    width: 55;  /* Compact width for simple yes/no confirmations */
-    height: auto;
-    max-height: 20;  /* Increased to ensure buttons are visible */
-    background: $surface;
-    border: thick $error;
-    padding: 1;
-}
-
+/* Message text in confirmation dialogs */
 #dialog-message {
     text-align: center;
     padding: 1 2;
     margin: 1 0;
 }
 
-/* Task Form Dialog (Add/Edit) */
-TaskFormDialog {
-    align: center middle;
-}
-
-#add-task-dialog,
-#edit-task-dialog {
-    width: 70;  /* Standard width for form-based dialogs */
+/* List containers within dialogs */
+.dialog-list {
     height: auto;
-    max-height: 45;  /* Increased to accommodate planned_start/planned_end fields */
-    background: $surface;
-    border: thick $primary;
-    padding: 1;
+    max-height: 12;
+    margin: 0 0 1 0;
+    border: solid $primary;
 }
 
+/* Form container */
 #form-container {
     padding: 0;
     margin: 0;
 }
 
+/* Field labels in forms */
 .field-label {
     color: $text-muted;
 }
 
-/* Task Detail Screen */
-TaskDetailScreen {
-    align: center middle;
-}
-
-#detail-screen {
-    width: 80;  /* Wide width for detailed information display */
-    height: auto;
-    max-height: 35;
-    background: $surface;
-    border: thick $primary;
-    padding: 1;
-}
-
+/* Detail view components */
 #detail-content {
     padding: 1;
     margin: 0;
@@ -122,4 +89,42 @@ TaskDetailScreen {
 
 .detail-value {
     color: $text;
+}
+
+/* =============================================================================
+   Specific Dialog Configurations
+   ============================================================================= */
+
+/* Algorithm Selection Dialog */
+#algorithm-dialog {
+    max-height: 35;
+}
+
+#algorithm-list {
+    /* Uses .dialog-list styles */
+}
+
+/* Sort Selection Dialog */
+#sort-dialog {
+    max-height: 25;  /* Smaller than algorithm dialog (no input fields) */
+}
+
+#sort-list {
+    /* Uses .dialog-list styles */
+}
+
+/* Confirmation Dialog */
+#confirmation-dialog {
+    border: solid $error;  /* Override primary color with error */
+}
+
+/* Task Form Dialog (Add/Edit) */
+#add-task-dialog,
+#edit-task-dialog {
+    max-height: 45;  /* Accommodate planned_start/planned_end fields */
+}
+
+/* Task Detail Screen */
+#detail-screen {
+    max-height: 35;
 }

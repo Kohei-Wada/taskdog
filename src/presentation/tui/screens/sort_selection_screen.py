@@ -70,7 +70,7 @@ class SortSelectionScreen(BaseModalDialog[str | None]):
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
-        with Container(id="sort-dialog"):
+        with Container(id="sort-dialog", classes="dialog-base dialog-standard"):
             yield Label("[bold cyan]Select Sort Order[/bold cyan]", id="dialog-title")
             yield Label(
                 "[dim]Ctrl+S/Enter to submit, Esc to cancel, j/k to navigate[/dim]",
@@ -86,7 +86,7 @@ class SortSelectionScreen(BaseModalDialog[str | None]):
                     Option(f"{name}: {desc}", id=sort_id)
                     for sort_id, name, desc in self.SORT_OPTIONS
                 ]
-                yield ViOptionList(*options, id="sort-list")
+                yield ViOptionList(*options, id="sort-list", classes="dialog-list")
 
     def on_mount(self) -> None:
         """Called when screen is mounted."""
