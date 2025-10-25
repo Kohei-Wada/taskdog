@@ -57,6 +57,39 @@ taskdog today                       # Today's tasks
 taskdog tui                         # Interactive TUI
 ```
 
+## Interactive TUI
+
+Taskdog includes a full-screen terminal user interface (TUI) for managing tasks interactively.
+
+![TUI Screenshot](docs/images/TaskdogTUI_half.svg)
+
+**Features:**
+- Real-time task search and filtering
+- Keyboard shortcuts for quick operations
+- Sort by deadline, priority, planned start, or ID
+- Visual status indicators with colors
+- Task details panel with dependencies
+
+**Keyboard Shortcuts:**
+- `a` - Add new task
+- `s` - Start selected task
+- `p` - Pause selected task
+- `d` - Complete (done) selected task
+- `c` - Cancel selected task
+- `R` - Reopen task
+- `x` - Remove task
+- `i` - Show task details
+- `e` - Edit task
+- `o` - Run optimizer
+- `r` - Refresh task list
+- `S` - Sort selection dialog
+- `q` - Quit
+
+Launch the TUI with:
+```bash
+taskdog tui
+```
+
 ## Commands
 
 ### Core Commands
