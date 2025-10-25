@@ -27,8 +27,9 @@ Input {
     height: auto;
     width: 100%;
     padding: 1 2;
-    background: $panel;
+    background: transparent;
     border: solid $primary;
+    margin-bottom: 1;
 }
 
 .search-label {
