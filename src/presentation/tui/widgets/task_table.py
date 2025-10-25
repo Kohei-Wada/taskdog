@@ -51,6 +51,8 @@ class TaskTable(DataTable):
         self.zebra_stripes = True
         self._task_map: dict[int, Task] = {}  # Maps row index to Task
         self.notes_repository = notes_repository
+        self._all_tasks: list[Task] = []  # All tasks (unfiltered)
+        self._current_query: str = ""  # Current search query
 
     def setup_columns(self):
         """Set up table columns."""
@@ -69,6 +71,16 @@ class TaskTable(DataTable):
 
         Args:
             tasks: List of tasks to display
+        """
+        self._all_tasks = tasks
+        self._current_query = ""
+        self._render_tasks(tasks)
+
+    def _render_tasks(self, tasks: list[Task]):
+        """Render tasks to the table.
+
+        Args:
+            tasks: List of tasks to render
         """
         self.clear()
         self._task_map.clear()
@@ -129,10 +141,113 @@ class TaskTable(DataTable):
             tasks: List of tasks to display
         """
         current_row = self.cursor_row
-        self.load_tasks(tasks)
+        self._all_tasks = tasks
+        # Reapply current filter if active
+        if self._current_query:
+            filtered_tasks = self._filter_tasks(tasks, self._current_query)
+            self._render_tasks(filtered_tasks)
+        else:
+            self._render_tasks(tasks)
         # Restore cursor position if still valid
         if 0 <= current_row < len(self._task_map):
             self.move_cursor(row=current_row)
+
+    def filter_tasks(self, query: str):
+        """Filter tasks based on search query with smart case matching.
+
+        Args:
+            query: Search query string
+        """
+        self._current_query = query
+        if not query:
+            # No filter - show all tasks
+            self._render_tasks(self._all_tasks)
+        else:
+            filtered_tasks = self._filter_tasks(self._all_tasks, query)
+            self._render_tasks(filtered_tasks)
+
+    def clear_filter(self):
+        """Clear the current filter and show all tasks."""
+        self._current_query = ""
+        self._render_tasks(self._all_tasks)
+
+    @property
+    def is_filtered(self) -> bool:
+        """Check if a filter is currently active."""
+        return bool(self._current_query)
+
+    @property
+    def current_query(self) -> str:
+        """Get the current search query."""
+        return self._current_query
+
+    def _filter_tasks(self, tasks: list[Task], query: str) -> list[Task]:
+        """Filter tasks based on query using smart case matching.
+
+        Smart case: case-insensitive if query is all lowercase,
+        case-sensitive if query contains any uppercase.
+
+        Args:
+            tasks: List of tasks to filter
+            query: Search query string
+
+        Returns:
+            List of tasks matching the query
+        """
+        # Smart case: case-sensitive if query has uppercase
+        case_sensitive = any(c.isupper() for c in query)
+
+        filtered = []
+        for task in tasks:
+            if self._task_matches_query(task, query, case_sensitive):
+                filtered.append(task)
+
+        return filtered
+
+    def _task_matches_query(self, task: Task, query: str, case_sensitive: bool) -> bool:
+        """Check if a task matches the search query.
+
+        Searches across all visible fields: ID, name, status, priority,
+        dependencies, duration, deadline, and fixed status.
+
+        Args:
+            task: Task to check
+            query: Search query string
+            case_sensitive: Whether to use case-sensitive matching
+
+        Returns:
+            True if task matches query, False otherwise
+        """
+        # Prepare query for comparison
+        search_query = query if case_sensitive else query.lower()
+
+        # Helper function to check if text contains query
+        def matches(text: str) -> bool:
+            if not text:
+                return False
+            search_text = text if case_sensitive else text.lower()
+            return search_query in search_text
+
+        # Build searchable fields
+        searchable_fields = [
+            str(task.id),
+            task.name,
+            task.status.value,
+            str(task.priority),
+            self._format_duration(task),
+            self._format_deadline(task.deadline),
+        ]
+
+        # Add dependencies if present
+        if task.depends_on:
+            searchable_fields.append(",".join(str(dep_id) for dep_id in task.depends_on))
+
+        # Add fixed indicators if task is fixed
+        if task.is_fixed:
+            searchable_fields.extend(["fixed", "📌"])
+
+        # Check if query matches any field
+        return any(matches(field) for field in searchable_fields)
 
     def action_scroll_home(self) -> None:
         """Move cursor to top (g key)."""

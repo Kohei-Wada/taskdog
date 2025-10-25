@@ -66,6 +66,8 @@ class TaskdogTUI(App):
         ("e", "edit_task", "Edit"),
         ("v", "edit_note", "Edit Note"),
         ("S", "cycle_gantt_sort", "Sort"),
+        ("/", "show_search", "Search"),
+        ("escape", "hide_search", "Clear Search"),
     ]
 
     # Mapping of action names to command names and kwargs
@@ -242,3 +244,13 @@ class TaskdogTUI(App):
 
         # Show sort selection screen
         self.push_screen(SortSelectionScreen(self._gantt_sort_by), handle_sort_selection)
+
+    def action_show_search(self) -> None:
+        """Show the search input."""
+        if self.main_screen:
+            self.main_screen.show_search()
+
+    def action_hide_search(self) -> None:
+        """Hide the search input and clear the filter."""
+        if self.main_screen:
+            self.main_screen.hide_search()

@@ -21,3 +21,23 @@
 Input {
     margin: 0;
 }
+
+/* Search Components */
+.search-container {
+    height: auto;
+    width: 100%;
+    padding: 1 2;
+    background: $panel;
+    border: solid $primary;
+}
+
+.search-label {
+    width: auto;
+    height: auto;
+    padding: 0 1 0 0;
+    content-align: center middle;
+}
+
+#search-input {
+    width: 1fr;
+}
