@@ -2,8 +2,6 @@
 
 from datetime import datetime
 
-from application.dto.update_task_request import UpdateTaskRequest
-from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
 from presentation.tui.commands.base import TUICommandBase
@@ -88,15 +86,15 @@ class EditTaskCommand(TUICommandBase):
 
         return fields_changed, dependencies_changed
 
-    def _build_update_request(self, task: Task, form_data: TaskFormData) -> UpdateTaskRequest:
-        """Build UpdateTaskRequest with only changed fields.
+    def _update_task_fields(self, task: Task, form_data: TaskFormData) -> tuple[Task, list[str]]:
+        """Update task fields via TaskService.
 
         Args:
             task: Original task
             form_data: New form data
 
         Returns:
-            UpdateTaskRequest with only changed fields set
+            Tuple of (updated_task, list_of_updated_field_names)
         """
         # Convert form data strings to datetime
         form_deadline = (
@@ -113,7 +111,8 @@ class EditTaskCommand(TUICommandBase):
             else None
         )
 
-        return UpdateTaskRequest(
+        # Update task via TaskService with only changed fields
+        updated_task = self.task_service.update_task(
             task_id=task.id,  # type: ignore
             name=form_data.name if form_data.name != task.name else None,
             priority=form_data.priority if form_data.priority != task.priority else None,
@@ -125,6 +124,25 @@ class EditTaskCommand(TUICommandBase):
             planned_end=form_planned_end if form_planned_end != task.planned_end else None,
             is_fixed=form_data.is_fixed if form_data.is_fixed != task.is_fixed else None,
         )
+
+        # Build list of changed fields for notification
+        updated_fields = []
+        if form_data.name != task.name:
+            updated_fields.append("name")
+        if form_data.priority != task.priority:
+            updated_fields.append("priority")
+        if form_deadline != task.deadline:
+            updated_fields.append("deadline")
+        if form_data.estimated_duration != task.estimated_duration:
+            updated_fields.append("estimated_duration")
+        if form_planned_start != task.planned_start:
+            updated_fields.append("planned_start")
+        if form_planned_end != task.planned_end:
+            updated_fields.append("planned_end")
+        if form_data.is_fixed != task.is_fixed:
+            updated_fields.append("is_fixed")
+
+        return updated_task, updated_fields
 
     def _handle_task_update(self, task: Task, form_data: TaskFormData) -> None:
         """Handle the actual task update logic.
@@ -144,9 +162,7 @@ class EditTaskCommand(TUICommandBase):
         # Update task fields if changed
         updated_fields: list[str] = []
         if fields_changed:
-            use_case = UpdateTaskUseCase(self.context.repository, self.context.time_tracker)
-            task_input = self._build_update_request(task, form_data)
-            updated_task, updated_fields = use_case.execute(task_input)
+            updated_task, updated_fields = self._update_task_fields(task, form_data)
         else:
             updated_task = task
 

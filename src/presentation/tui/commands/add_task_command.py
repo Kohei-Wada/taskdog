@@ -2,8 +2,6 @@
 
 from datetime import datetime
 
-from application.dto.create_task_request import CreateTaskRequest
-from application.use_cases.create_task import CreateTaskUseCase
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
@@ -30,25 +28,33 @@ class AddTaskCommand(TUICommandBase):
             if form_data is None:
                 return  # User cancelled
 
-            # Use UseCase directly for create (TaskService doesn't support all params)
-            use_case = CreateTaskUseCase(self.context.repository)
             # Convert form data strings to datetime
-            task_input = CreateTaskRequest(
+            deadline = (
+                datetime.strptime(form_data.deadline, DATETIME_FORMAT)
+                if form_data.deadline
+                else None
+            )
+            planned_start = (
+                datetime.strptime(form_data.planned_start, DATETIME_FORMAT)
+                if form_data.planned_start
+                else None
+            )
+            planned_end = (
+                datetime.strptime(form_data.planned_end, DATETIME_FORMAT)
+                if form_data.planned_end
+                else None
+            )
+
+            # Create task via TaskService
+            task = self.task_service.create_task(
                 name=form_data.name,
                 priority=form_data.priority,
-                deadline=datetime.strptime(form_data.deadline, DATETIME_FORMAT)
-                if form_data.deadline
-                else None,
+                deadline=deadline,
                 estimated_duration=form_data.estimated_duration,
-                planned_start=datetime.strptime(form_data.planned_start, DATETIME_FORMAT)
-                if form_data.planned_start
-                else None,
-                planned_end=datetime.strptime(form_data.planned_end, DATETIME_FORMAT)
-                if form_data.planned_end
-                else None,
+                planned_start=planned_start,
+                planned_end=planned_end,
                 is_fixed=form_data.is_fixed,
             )
-            task = use_case.execute(task_input)
 
             # Add dependencies if specified
             if form_data.depends_on and task.id is not None:

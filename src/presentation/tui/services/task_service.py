@@ -10,6 +10,7 @@ from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.dto.pause_task_request import PauseTaskRequest
 from application.dto.start_task_request import StartTaskRequest
+from application.dto.update_task_request import UpdateTaskRequest
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.cancel_task import CancelTaskUseCase
@@ -18,7 +19,8 @@ from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from application.use_cases.pause_task import PauseTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
-from domain.entities.task import Task
+from application.use_cases.update_task import UpdateTaskUseCase
+from domain.entities.task import Task, TaskStatus
 from presentation.tui.context import TUIContext
 from shared.utils.date_utils import calculate_next_workday
 
@@ -41,19 +43,39 @@ class TaskService:
         self.query_service = context.query_service
         self.config = context.config
 
-    def create_task(self, name: str, priority: int | None = None) -> Task:
+    def create_task(
+        self,
+        name: str,
+        priority: int | None = None,
+        deadline: datetime | None = None,
+        estimated_duration: float | None = None,
+        planned_start: datetime | None = None,
+        planned_end: datetime | None = None,
+        is_fixed: bool = False,
+    ) -> Task:
         """Create a new task.
 
         Args:
             name: Task name
             priority: Task priority (default: from config)
+            deadline: Task deadline (optional)
+            estimated_duration: Estimated duration in hours (optional)
+            planned_start: Planned start datetime (optional)
+            planned_end: Planned end datetime (optional)
+            is_fixed: Whether the task schedule is fixed (default: False)
 
         Returns:
             The created task
         """
         use_case = CreateTaskUseCase(self.repository)
         task_input = CreateTaskRequest(
-            name=name, priority=priority or self.config.task.default_priority
+            name=name,
+            priority=priority or self.config.task.default_priority,
+            deadline=deadline,
+            estimated_duration=estimated_duration,
+            planned_start=planned_start,
+            planned_end=planned_end,
+            is_fixed=is_fixed,
         )
         return use_case.execute(task_input)
 
@@ -152,6 +174,49 @@ class TaskService:
 
         use_case = OptimizeScheduleUseCase(self.repository, self.config)
         return use_case.execute(optimize_input)
+
+    def update_task(
+        self,
+        task_id: int,
+        name: str | None = None,
+        priority: int | None = None,
+        status: TaskStatus | None = None,
+        planned_start: datetime | None = None,
+        planned_end: datetime | None = None,
+        deadline: datetime | None = None,
+        estimated_duration: float | None = None,
+        is_fixed: bool | None = None,
+    ) -> Task:
+        """Update a task.
+
+        Args:
+            task_id: ID of the task to update
+            name: New name (optional)
+            priority: New priority (optional)
+            status: New status (optional)
+            planned_start: New planned start (optional)
+            planned_end: New planned end (optional)
+            deadline: New deadline (optional)
+            estimated_duration: New estimated duration (optional)
+            is_fixed: Whether task is fixed (optional)
+
+        Returns:
+            The updated task
+        """
+        use_case = UpdateTaskUseCase(self.repository, self.time_tracker)
+        update_input = UpdateTaskRequest(
+            task_id=task_id,
+            name=name,
+            priority=priority,
+            status=status,
+            planned_start=planned_start,
+            planned_end=planned_end,
+            deadline=deadline,
+            estimated_duration=estimated_duration,
+            is_fixed=is_fixed,
+        )
+        updated_task, _updated_fields = use_case.execute(update_input)
+        return updated_task
 
     def get_incomplete_tasks(self, sort_by: str = "id") -> list[Task]:
         """Get incomplete tasks (PENDING, IN_PROGRESS).
