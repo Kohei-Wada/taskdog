@@ -46,6 +46,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             config: Application configuration
         """
         self.config = config
+        self._evaluation_cache: dict[tuple, float] = {}  # Cache for evaluation results
 
     def optimize_tasks(
         self,
@@ -89,6 +90,9 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         # Create allocator instance
         allocator = GreedyForwardAllocator(self.config, self.holiday_checker)
+
+        # Clear evaluation cache for new optimization run
+        self._evaluation_cache.clear()
 
         # Run Monte Carlo simulation
         best_order = self._monte_carlo_simulation(
@@ -145,8 +149,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             # Generate random ordering
             random_order = random.sample(schedulable_tasks, len(schedulable_tasks))
 
-            # Evaluate this ordering
-            score = self._evaluate_ordering(
+            # Evaluate this ordering (with caching)
+            score = self._evaluate_ordering_cached(
                 random_order,
                 all_tasks,
                 start_date,
@@ -162,6 +166,53 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
                 best_order = random_order
 
         return best_order if best_order else schedulable_tasks
+
+    def _evaluate_ordering_cached(
+        self,
+        task_order: list[Task],
+        all_tasks: list[Task],
+        start_date: datetime,
+        max_hours_per_day: float,
+        force_override: bool,
+        repository,
+        allocator: GreedyForwardAllocator,
+    ) -> float:
+        """Evaluate ordering with caching to avoid redundant calculations.
+
+        Args:
+            task_order: Ordering of tasks to evaluate
+            all_tasks: All tasks (for initializing allocations)
+            start_date: Starting date for scheduling
+            max_hours_per_day: Maximum work hours per day
+            force_override: Whether to override existing schedules
+            repository: Task repository
+            allocator: Allocator instance
+
+        Returns:
+            Score (higher is better)
+        """
+        # Create cache key from task IDs (tuple is hashable)
+        cache_key = tuple(task.id for task in task_order)
+
+        # Return cached result if available
+        if cache_key in self._evaluation_cache:
+            return self._evaluation_cache[cache_key]
+
+        # Calculate score
+        score = self._evaluate_ordering(
+            task_order,
+            all_tasks,
+            start_date,
+            max_hours_per_day,
+            force_override,
+            repository,
+            allocator,
+        )
+
+        # Cache the result
+        self._evaluation_cache[cache_key] = score
+
+        return score
 
     def _evaluate_ordering(
         self,

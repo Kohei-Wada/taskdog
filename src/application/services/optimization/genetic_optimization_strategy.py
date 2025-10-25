@@ -48,6 +48,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     GENERATIONS = GENETIC_GENERATIONS
     CROSSOVER_RATE = GENETIC_CROSSOVER_RATE
     MUTATION_RATE = GENETIC_MUTATION_RATE
+    EARLY_TERMINATION_GENERATIONS = 10  # Terminate if no improvement for N generations
 
     def __init__(self, config: Config):
         """Initialize strategy with configuration.
@@ -56,6 +57,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             config: Application configuration
         """
         self.config = config
+        self._fitness_cache: dict[tuple, float] = {}  # Cache for fitness evaluations
 
     def optimize_tasks(
         self,
@@ -100,6 +102,9 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         # Create allocator instance
         allocator = GreedyForwardAllocator(self.config, self.holiday_checker)
 
+        # Clear fitness cache for new optimization run
+        self._fitness_cache.clear()
+
         # Run genetic algorithm
         best_order = self._genetic_algorithm(
             schedulable_tasks, start_date, max_hours_per_day, repository, allocator
@@ -141,15 +146,31 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         # Generate initial population
         population = [random.sample(tasks, len(tasks)) for _ in range(self.POPULATION_SIZE)]
 
+        # Track best fitness for early termination
+        best_fitness_ever = float("-inf")
+        generations_without_improvement = 0
+
         # Evolve population
         for _generation in range(self.GENERATIONS):
             # Evaluate fitness for each individual
             fitness_scores = [
-                self._evaluate_fitness(
+                self._evaluate_fitness_cached(
                     individual, start_date, max_hours_per_day, repository, allocator
                 )
                 for individual in population
             ]
+
+            # Check for improvement (early termination)
+            current_best = max(fitness_scores)
+            if current_best > best_fitness_ever:
+                best_fitness_ever = current_best
+                generations_without_improvement = 0
+            else:
+                generations_without_improvement += 1
+
+            # Early termination if no improvement
+            if generations_without_improvement >= self.EARLY_TERMINATION_GENERATIONS:
+                break
 
             # Select parents (tournament selection)
             parents = self._select_parents(population, fitness_scores)
@@ -182,11 +203,50 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         # Return best individual from final generation
         final_fitness = [
-            self._evaluate_fitness(individual, start_date, max_hours_per_day, repository, allocator)
+            self._evaluate_fitness_cached(
+                individual, start_date, max_hours_per_day, repository, allocator
+            )
             for individual in population
         ]
         best_idx = final_fitness.index(max(final_fitness))
         return population[best_idx]
+
+    def _evaluate_fitness_cached(
+        self,
+        task_order: list[Task],
+        start_date: datetime,
+        max_hours_per_day: float,
+        repository,
+        allocator: GreedyForwardAllocator,
+    ) -> float:
+        """Evaluate fitness with caching to avoid redundant calculations.
+
+        Args:
+            task_order: Ordering of tasks to evaluate
+            start_date: Starting date for scheduling
+            max_hours_per_day: Maximum work hours per day
+            repository: Task repository
+            allocator: Allocator instance
+
+        Returns:
+            Fitness score (higher is better)
+        """
+        # Create cache key from task IDs (tuple is hashable)
+        cache_key = tuple(task.id for task in task_order)
+
+        # Return cached result if available
+        if cache_key in self._fitness_cache:
+            return self._fitness_cache[cache_key]
+
+        # Calculate fitness
+        fitness = self._evaluate_fitness(
+            task_order, start_date, max_hours_per_day, repository, allocator
+        )
+
+        # Cache the result
+        self._fitness_cache[cache_key] = fitness
+
+        return fitness
 
     def _evaluate_fitness(
         self,

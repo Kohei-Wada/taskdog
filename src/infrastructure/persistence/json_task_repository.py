@@ -23,6 +23,7 @@ class JsonTaskRepository(TaskRepository):
         self.filename = filename
         self.tasks = self._load_tasks()
         self._task_index: dict[int, Task] = self._build_index()
+        self._task_position: dict[int, int] = self._build_position_index()
 
     def _build_index(self) -> dict[int, Task]:
         """Build task ID to task object index.
@@ -32,9 +33,18 @@ class JsonTaskRepository(TaskRepository):
         """
         return {task.id: task for task in self.tasks if task.id is not None}
 
+    def _build_position_index(self) -> dict[int, int]:
+        """Build task ID to list position index for O(1) access.
+
+        Returns:
+            Dictionary mapping task IDs to their position in self.tasks
+        """
+        return {task.id: i for i, task in enumerate(self.tasks) if task.id is not None}
+
     def _rebuild_index(self) -> None:
         """Rebuild the task index after modifications."""
         self._task_index = self._build_index()
+        self._task_position = self._build_position_index()
 
     def get_all(self) -> list[Task]:
         """Retrieve all tasks.
@@ -69,21 +79,21 @@ class JsonTaskRepository(TaskRepository):
         # Check if task already exists
         existing = self._task_index.get(task.id)
         if not existing:
-            # New task - add to list and index
+            # New task - add to list and both indexes
+            position = len(self.tasks)
             self.tasks.append(task)
             self._task_index[task.id] = task
+            self._task_position[task.id] = position
         else:
             # Task exists - update the existing task in place
             # Automatically update the updated_at timestamp
             task.updated_at = datetime.now()
 
-            # Find the task in self.tasks list and replace it
-            for i, t in enumerate(self.tasks):
-                if t.id == task.id:
-                    self.tasks[i] = task
-                    break
+            # Use position index for O(1) access instead of O(n) search
+            position = self._task_position[task.id]
+            self.tasks[position] = task
 
-            # Update index to point to new object
+            # Update task index to point to new object
             self._task_index[task.id] = task
 
         # Save to file
@@ -95,9 +105,13 @@ class JsonTaskRepository(TaskRepository):
         Args:
             task_id: The ID of the task to delete
         """
-        self.tasks = [task for task in self.tasks if task.id != task_id]
-        self._rebuild_index()
-        self._save_to_file()
+        # Use position index for O(1) lookup instead of O(n) list comprehension
+        position = self._task_position.get(task_id)
+        if position is not None:
+            self.tasks.pop(position)
+            # Rebuild indexes as positions have shifted
+            self._rebuild_index()
+            self._save_to_file()
 
     def create(self, name: str, priority: int, **kwargs) -> Task:
         """Create a new task with auto-generated ID and save it.
