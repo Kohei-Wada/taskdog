@@ -41,18 +41,6 @@ Input {
     margin-bottom: 1;
 }
 
-.search-input-row {
-    width: 100%;
-    height: auto;
-}
-
-.search-label {
-    width: auto;
-    height: auto;
-    padding: 0 1 0 0;
-    content-align: center middle;
-}
-
 #search-input {
     width: 1fr;
     height: 3;
