@@ -1,7 +1,7 @@
 """DTOs for optimization results."""
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 
 from application.dto.optimization_summary import OptimizationSummary
 from domain.entities.task import Task
@@ -31,14 +31,14 @@ class OptimizationResult:
     Attributes:
         successful_tasks: Tasks that were successfully scheduled
         failed_tasks: Tasks that could not be scheduled with reasons
-        daily_allocations: Mapping of date strings to allocated hours
+        daily_allocations: Mapping of date objects to allocated hours
         summary: Optimization summary with metrics
         task_states_before: Mapping of task IDs to their planned_start before optimization
     """
 
     successful_tasks: list[Task]
     failed_tasks: list[SchedulingFailure]
-    daily_allocations: dict[str, float]
+    daily_allocations: dict[date, float]
     summary: OptimizationSummary
     task_states_before: dict[int, datetime | None]
 

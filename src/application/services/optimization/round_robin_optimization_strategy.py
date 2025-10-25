@@ -1,7 +1,7 @@
 """Round-robin optimization strategy implementation."""
 
 import copy
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from application.constants.optimization import ROUND_ROBIN_MAX_ITERATIONS
@@ -45,7 +45,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         force_override: bool,
         holiday_checker: "HolidayChecker | None" = None,
-    ) -> tuple[list[Task], dict[str, float], list[SchedulingFailure]]:
+    ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
         """Optimize task schedules using round-robin algorithm.
 
         Args:
@@ -59,7 +59,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         Returns:
             Tuple of (modified_tasks, daily_allocations, failed_tasks)
             - modified_tasks: List of tasks with updated schedules
-            - daily_allocations: Dict mapping date strings to allocated hours
+            - daily_allocations: Dict mapping date objects to allocated hours
             - failed_tasks: List of tasks that could not be scheduled (empty for round-robin)
         """
         # Filter tasks that need scheduling
@@ -93,10 +93,10 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         }
 
         # Track allocations per task and per day
-        task_daily_allocations: dict[int, dict[str, float]] = {
+        task_daily_allocations: dict[int, dict[date, float]] = {
             task.id: {} for task in schedulable_tasks if task.id is not None
         }
-        daily_allocations: dict[str, float] = {}
+        daily_allocations: dict[date, float] = {}
 
         # Track start and end dates for each task
         task_start_dates: dict[int, datetime] = {}
@@ -157,8 +157,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
     def _allocate_round_robin(
         self,
         task_remaining: dict[int, float],
-        task_daily_allocations: dict[int, dict[str, float]],
-        daily_allocations: dict[str, float],
+        task_daily_allocations: dict[int, dict[date, float]],
+        daily_allocations: dict[date, float],
         task_start_dates: dict[int, datetime],
         task_end_dates: dict[int, datetime],
         start_date: datetime,
@@ -191,9 +191,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 current_date += timedelta(days=1)
                 continue
 
-            date_str = current_date.strftime(
-                "%Y-%m-%d"
-            )  # Keep as string for daily_allocations dict key
+            date_obj = current_date.date()
 
             # Get active tasks (with remaining hours)
             active_tasks = [tid for tid, remaining in task_remaining.items() if remaining > 0.001]
@@ -219,7 +217,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 task_remaining[task_id] -= allocated
 
                 # Record allocation
-                task_daily_allocations[task_id][date_str] = allocated
+                task_daily_allocations[task_id][date_obj] = allocated
                 daily_total += allocated
 
                 # Track start and end dates
@@ -227,7 +225,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                     task_start_dates[task_id] = current_date
                 task_end_dates[task_id] = current_date
 
-            daily_allocations[date_str] = daily_total
+            daily_allocations[date_obj] = daily_total
 
             # Move to next day
             current_date += timedelta(days=1)
@@ -237,7 +235,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         task_map: dict[int, Task],
         task_start_dates: dict[int, datetime],
         task_end_dates: dict[int, datetime],
-        task_daily_allocations: dict[int, dict[str, float]],
+        task_daily_allocations: dict[int, dict[date, float]],
         fully_scheduled_task_ids: set[int],
     ) -> list[Task]:
         """Build updated tasks with schedules.

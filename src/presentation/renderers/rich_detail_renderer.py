@@ -52,7 +52,10 @@ class RichDetailRenderer:
 
     def _add_time_fields(self, table: Table, task) -> None:
         """Add time-related fields to table."""
-        table.add_row("Created", task.created_at.strftime(DATETIME_FORMAT))
+        from datetime import datetime
+
+        created_dt = datetime.fromtimestamp(task.timestamp)
+        table.add_row("Created", created_dt.strftime(DATETIME_FORMAT))
 
         if task.planned_start:
             table.add_row("Planned Start", task.planned_start.strftime(DATETIME_FORMAT))
@@ -76,7 +79,8 @@ class RichDetailRenderer:
             table.add_row("Total Logged Hours", f"[green]{total_logged}h[/green]")
             # Show daily breakdown
             daily_str = ", ".join(
-                f"{date}: {hours}h" for date, hours in sorted(task.actual_daily_hours.items())
+                f"{date_obj.isoformat()}: {hours}h"
+                for date_obj, hours in sorted(task.actual_daily_hours.items())
             )
             table.add_row("Daily Hours", f"[dim]{daily_str}[/dim]")
 

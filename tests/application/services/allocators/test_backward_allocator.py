@@ -1,7 +1,7 @@
 """Tests for BackwardAllocator."""
 
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 from unittest.mock import MagicMock
 
 from application.services.optimization.allocators.backward_allocator import BackwardAllocator
@@ -53,8 +53,12 @@ class TestBackwardAllocator(unittest.TestCase):
         # Verify backward allocation: fills last days first
         self.assertIsNotNone(result.daily_allocations)
         self.assertEqual(len(result.daily_allocations), 2)  # Thu-Fri
-        self.assertAlmostEqual(result.daily_allocations["2025-10-23"], 6.0, places=5)  # Thursday
-        self.assertAlmostEqual(result.daily_allocations["2025-10-24"], 6.0, places=5)  # Friday
+        self.assertAlmostEqual(
+            result.daily_allocations[date(2025, 10, 23)], 6.0, places=5
+        )  # Thursday
+        self.assertAlmostEqual(
+            result.daily_allocations[date(2025, 10, 24)], 6.0, places=5
+        )  # Friday
 
     def test_allocate_handles_partial_day(self):
         """Test that allocator handles partial day allocation correctly."""
@@ -82,8 +86,8 @@ class TestBackwardAllocator(unittest.TestCase):
         self.assertEqual(result.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # Verify backward allocation: 6h Friday, 4h Thursday
-        self.assertAlmostEqual(result.daily_allocations["2025-10-24"], 6.0, places=5)
-        self.assertAlmostEqual(result.daily_allocations["2025-10-23"], 4.0, places=5)
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 24)], 6.0, places=5)
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 23)], 4.0, places=5)
 
     def test_allocate_skips_weekends(self):
         """Test that allocator skips weekends when allocating backward."""
@@ -111,8 +115,8 @@ class TestBackwardAllocator(unittest.TestCase):
         self.assertNotIn("2025-10-25", result.daily_allocations)  # Saturday
         self.assertNotIn("2025-10-26", result.daily_allocations)  # Sunday
         # Should have allocations on Friday and Monday
-        self.assertIn("2025-10-24", result.daily_allocations)  # Friday
-        self.assertIn("2025-10-27", result.daily_allocations)  # Monday
+        self.assertIn(date(2025, 10, 24), result.daily_allocations)  # Friday
+        self.assertIn(date(2025, 10, 27), result.daily_allocations)  # Monday
 
     def test_allocate_respects_start_date_constraint(self):
         """Test that allocator doesn't schedule before start_date."""
@@ -202,7 +206,7 @@ class TestBackwardAllocator(unittest.TestCase):
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         max_hours_per_day = 6.0
         daily_allocations: dict[str, float] = {
-            "2025-10-24": 4.0,  # Friday has 2h available
+            date(2025, 10, 24): 4.0,  # Friday has 2h available
         }
 
         result = self.allocator.allocate(
@@ -211,7 +215,7 @@ class TestBackwardAllocator(unittest.TestCase):
 
         self.assertIsNotNone(result)
         # Should respect existing allocation
-        self.assertLessEqual(daily_allocations["2025-10-24"], 6.0)
+        self.assertLessEqual(daily_allocations[date(2025, 10, 24)], 6.0)
 
     def test_allocate_fails_without_estimated_duration(self):
         """Test that allocator returns None for tasks without estimated_duration."""
@@ -260,9 +264,9 @@ class TestBackwardAllocator(unittest.TestCase):
         self.assertEqual(result.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # Verify each day is filled to max
-        self.assertAlmostEqual(result.daily_allocations["2025-10-22"], 6.0, places=5)  # Wed
-        self.assertAlmostEqual(result.daily_allocations["2025-10-23"], 6.0, places=5)  # Thu
-        self.assertAlmostEqual(result.daily_allocations["2025-10-24"], 6.0, places=5)  # Fri
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 22)], 6.0, places=5)  # Wed
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 23)], 6.0, places=5)  # Thu
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 24)], 6.0, places=5)  # Fri
 
 
 if __name__ == "__main__":

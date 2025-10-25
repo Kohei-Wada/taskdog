@@ -2,6 +2,7 @@
 
 import tempfile
 import unittest
+from datetime import date
 
 from application.dto.archive_task_request import ArchiveTaskRequest
 from application.use_cases.archive_task import ArchiveTaskUseCase
@@ -42,7 +43,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         """Test archiving a task clears daily allocations."""
         # Create task with schedule
         task = self.repository.create(name="Test Task", priority=1)
-        task.daily_allocations = {"2025-10-16": 4.0, "2025-10-17": 3.0}
+        task.daily_allocations = {date(2025, 10, 16): 4.0, date(2025, 10, 17): 3.0}
         self.repository.save(task)
 
         # Archive task

@@ -1,6 +1,6 @@
 """Balanced allocation strategy implementation."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.entities.task import Task
@@ -27,7 +27,7 @@ class BalancedAllocator(TaskAllocatorBase):
         task: Task,
         start_date: datetime,
         max_hours_per_day: float,
-        daily_allocations: dict[str, float],
+        daily_allocations: dict[date, float],
         repository,
     ) -> Task | None:
         """Allocate task using balanced distribution.
@@ -75,7 +75,7 @@ class BalancedAllocator(TaskAllocatorBase):
         remaining_hours = estimated_duration
         schedule_start = None
         schedule_end = None
-        task_daily_allocations: dict[str, float] = {}
+        task_daily_allocations: dict[date, float] = {}
 
         while remaining_hours > 0 and current_date <= end_date:
             # Skip weekends and holidays
@@ -83,14 +83,14 @@ class BalancedAllocator(TaskAllocatorBase):
                 current_date += timedelta(days=1)
                 continue
 
-            date_str = self._get_date_str(current_date)
+            date_obj = current_date.date()
 
             # Calculate how much we want to allocate today (balanced approach)
             desired_allocation = min(target_hours_per_day, remaining_hours)
 
             # Check available hours considering max_hours_per_day constraint
             available_hours = self._calculate_available_hours(
-                daily_allocations, date_str, max_hours_per_day
+                daily_allocations, date_obj, max_hours_per_day
             )
 
             if available_hours > 0:
@@ -100,9 +100,9 @@ class BalancedAllocator(TaskAllocatorBase):
 
                 # Allocate as much as possible (up to desired amount)
                 allocated = min(desired_allocation, available_hours)
-                current_allocation = self._get_current_allocation(daily_allocations, date_str)
-                daily_allocations[date_str] = current_allocation + allocated
-                task_daily_allocations[date_str] = allocated
+                current_allocation = self._get_current_allocation(daily_allocations, date_obj)
+                daily_allocations[date_obj] = current_allocation + allocated
+                task_daily_allocations[date_obj] = allocated
                 remaining_hours -= allocated
 
                 # Update end date

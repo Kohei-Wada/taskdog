@@ -1,7 +1,7 @@
 """Tests for BalancedAllocator."""
 
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 from unittest.mock import MagicMock
 
 from application.services.optimization.allocators.balanced_allocator import BalancedAllocator
@@ -147,7 +147,7 @@ class TestBalancedAllocator(unittest.TestCase):
         max_hours_per_day = 6.0
         # Monday already has some allocation
         daily_allocations: dict[str, float] = {
-            "2025-10-20": 4.0,  # 2h available (wants to allocate 2h)
+            date(2025, 10, 20): 4.0,  # 2h available (wants to allocate 2h)
         }
 
         result = self.allocator.allocate(
@@ -156,9 +156,9 @@ class TestBalancedAllocator(unittest.TestCase):
 
         self.assertIsNotNone(result)
         # Verify allocations respect existing capacity
-        self.assertLessEqual(daily_allocations["2025-10-20"], 6.0)
+        self.assertLessEqual(daily_allocations[date(2025, 10, 20)], 6.0)
         # Should have allocated 2h on Monday
-        self.assertAlmostEqual(daily_allocations["2025-10-20"], 6.0, places=5)
+        self.assertAlmostEqual(daily_allocations[date(2025, 10, 20)], 6.0, places=5)
 
     def test_allocate_fails_when_insufficient_capacity(self):
         """Test that allocator returns None when insufficient capacity."""
@@ -215,7 +215,7 @@ class TestBalancedAllocator(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         max_hours_per_day = 6.0
-        daily_allocations: dict[str, float] = {"2025-10-19": 2.0}  # Pre-existing
+        daily_allocations: dict[str, float] = {date(2025, 10, 19): 2.0}  # Pre-existing
 
         result = self.allocator.allocate(
             task, start_date, max_hours_per_day, daily_allocations, self.repository
@@ -223,8 +223,8 @@ class TestBalancedAllocator(unittest.TestCase):
 
         self.assertIsNone(result)
         # Pre-existing allocations should remain
-        self.assertIn("2025-10-19", daily_allocations)
-        self.assertEqual(daily_allocations["2025-10-19"], 2.0)
+        self.assertIn(date(2025, 10, 19), daily_allocations)
+        self.assertEqual(daily_allocations[date(2025, 10, 19)], 2.0)
 
     def test_allocate_more_balanced_than_greedy(self):
         """Test that balanced allocator creates more even distribution than greedy."""

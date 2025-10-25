@@ -3,7 +3,7 @@
 import os
 import tempfile
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 
 from application.dto.create_task_request import CreateTaskRequest
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
@@ -214,8 +214,8 @@ class TestGeneticOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Verify no weekend allocations
-        self.assertIsNone(task.daily_allocations.get("2025-10-25"))  # Saturday
-        self.assertIsNone(task.daily_allocations.get("2025-10-26"))  # Sunday
+        self.assertIsNone(task.daily_allocations.get(date(2025, 10, 25)))  # Saturday
+        self.assertIsNone(task.daily_allocations.get(date(2025, 10, 26)))  # Sunday
 
     def test_genetic_produces_deterministic_results_with_seed(self):
         """Test that genetic algorithm produces valid results."""

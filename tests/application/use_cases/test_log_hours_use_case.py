@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+from datetime import date
 
 from application.dto.log_hours_request import LogHoursRequest
 from application.use_cases.log_hours import LogHoursUseCase
@@ -33,8 +34,8 @@ class TestLogHoursUseCase(unittest.TestCase):
         input_dto = LogHoursRequest(task_id=task.id, date="2025-01-15", hours=4.5)
         result = self.use_case.execute(input_dto)
 
-        self.assertIn("2025-01-15", result.actual_daily_hours)
-        self.assertEqual(result.actual_daily_hours["2025-01-15"], 4.5)
+        self.assertIn(date(2025, 1, 15), result.actual_daily_hours)
+        self.assertEqual(result.actual_daily_hours[date(2025, 1, 15)], 4.5)
 
     def test_execute_persists_changes(self):
         """Test execute saves hours to repository."""
@@ -45,8 +46,8 @@ class TestLogHoursUseCase(unittest.TestCase):
 
         # Verify persistence
         retrieved = self.repository.get_by_id(task.id)
-        self.assertIn("2025-01-15", retrieved.actual_daily_hours)
-        self.assertEqual(retrieved.actual_daily_hours["2025-01-15"], 3.0)
+        self.assertIn(date(2025, 1, 15), retrieved.actual_daily_hours)
+        self.assertEqual(retrieved.actual_daily_hours[date(2025, 1, 15)], 3.0)
 
     def test_execute_with_nonexistent_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException."""
@@ -107,7 +108,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         result = self.use_case.execute(input_dto2)
 
         # Should have new value, not sum
-        self.assertEqual(result.actual_daily_hours["2025-01-15"], 5.0)
+        self.assertEqual(result.actual_daily_hours[date(2025, 1, 15)], 5.0)
 
     def test_execute_allows_multiple_dates(self):
         """Test execute allows logging hours for multiple dates."""
@@ -120,15 +121,17 @@ class TestLogHoursUseCase(unittest.TestCase):
             ("2025-01-17", 2.0),
         ]
 
-        for date, hours in dates_hours:
-            input_dto = LogHoursRequest(task_id=task.id, date=date, hours=hours)
+        for date_str, hours in dates_hours:
+            input_dto = LogHoursRequest(task_id=task.id, date=date_str, hours=hours)
             self.use_case.execute(input_dto)
 
         # Verify all dates logged
         retrieved = self.repository.get_by_id(task.id)
         self.assertEqual(len(retrieved.actual_daily_hours), 3)
-        for date, hours in dates_hours:
-            self.assertEqual(retrieved.actual_daily_hours[date], hours)
+        for date_str, hours in dates_hours:
+            # Convert string to date object for lookup
+            date_obj = date.fromisoformat(date_str)
+            self.assertEqual(retrieved.actual_daily_hours[date_obj], hours)
 
     def test_execute_with_decimal_hours(self):
         """Test execute accepts decimal hours."""
@@ -137,7 +140,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         input_dto = LogHoursRequest(task_id=task.id, date="2025-01-15", hours=2.75)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.actual_daily_hours["2025-01-15"], 2.75)
+        self.assertEqual(result.actual_daily_hours[date(2025, 1, 15)], 2.75)
 
 
 if __name__ == "__main__":

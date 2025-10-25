@@ -3,7 +3,7 @@
 import os
 import tempfile
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 
 from application.dto.create_task_request import CreateTaskRequest
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
@@ -64,8 +64,8 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         # Check daily allocations: greedy fills each day to max
         self.assertIsNotNone(task.daily_allocations)
         self.assertEqual(len(task.daily_allocations), 2)  # Mon-Tue
-        self.assertAlmostEqual(task.daily_allocations.get("2025-10-20", 0.0), 6.0, places=5)
-        self.assertAlmostEqual(task.daily_allocations.get("2025-10-21", 0.0), 6.0, places=5)
+        self.assertAlmostEqual(task.daily_allocations.get(date(2025, 10, 20), 0.0), 6.0, places=5)
+        self.assertAlmostEqual(task.daily_allocations.get(date(2025, 10, 21), 0.0), 6.0, places=5)
 
     def test_greedy_handles_partial_day(self):
         """Test that greedy strategy handles partial day allocation."""
@@ -91,8 +91,8 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Check daily allocations
-        self.assertAlmostEqual(task.daily_allocations.get("2025-10-20", 0.0), 6.0, places=5)
-        self.assertAlmostEqual(task.daily_allocations.get("2025-10-21", 0.0), 4.0, places=5)
+        self.assertAlmostEqual(task.daily_allocations.get(date(2025, 10, 20), 0.0), 6.0, places=5)
+        self.assertAlmostEqual(task.daily_allocations.get(date(2025, 10, 21), 0.0), 4.0, places=5)
 
     def test_greedy_skips_weekends(self):
         """Test that greedy strategy skips weekends."""
@@ -123,8 +123,8 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         self.assertEqual(task.planned_end, datetime(2025, 10, 27, 18, 0, 0))
 
         # Verify no weekend allocations
-        self.assertIsNone(task.daily_allocations.get("2025-10-25"))  # Saturday
-        self.assertIsNone(task.daily_allocations.get("2025-10-26"))  # Sunday
+        self.assertIsNone(task.daily_allocations.get(date(2025, 10, 25)))  # Saturday
+        self.assertIsNone(task.daily_allocations.get(date(2025, 10, 26)))  # Sunday
 
     def test_greedy_respects_deadline(self):
         """Test that greedy strategy respects task deadlines."""
@@ -166,9 +166,9 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         fixed_task.planned_start = datetime(2025, 10, 20, 9, 0, 0)
         fixed_task.planned_end = datetime(2025, 10, 22, 18, 0, 0)
         fixed_task.daily_allocations = {
-            "2025-10-20": 4.0,  # Monday: 4h
-            "2025-10-21": 4.0,  # Tuesday: 4h
-            "2025-10-22": 4.0,  # Wednesday: 4h
+            date(2025, 10, 20): 4.0,  # Monday: 4h
+            date(2025, 10, 21): 4.0,  # Tuesday: 4h
+            date(2025, 10, 22): 4.0,  # Wednesday: 4h
         }
         self.repository.save(fixed_task)
 
@@ -200,9 +200,15 @@ class TestGreedyOptimizationStrategy(unittest.TestCase):
         # Verify daily allocations respect fixed task hours
         # Each day should have max 2h for regular task (6.0 - 4.0 fixed)
         self.assertIsNotNone(regular_task.daily_allocations)
-        self.assertAlmostEqual(regular_task.daily_allocations.get("2025-10-20", 0.0), 2.0, places=5)
-        self.assertAlmostEqual(regular_task.daily_allocations.get("2025-10-21", 0.0), 2.0, places=5)
-        self.assertAlmostEqual(regular_task.daily_allocations.get("2025-10-22", 0.0), 2.0, places=5)
+        self.assertAlmostEqual(
+            regular_task.daily_allocations.get(date(2025, 10, 20), 0.0), 2.0, places=5
+        )
+        self.assertAlmostEqual(
+            regular_task.daily_allocations.get(date(2025, 10, 21), 0.0), 2.0, places=5
+        )
+        self.assertAlmostEqual(
+            regular_task.daily_allocations.get(date(2025, 10, 22), 0.0), 2.0, places=5
+        )
 
         # Verify total daily allocations don't exceed max_hours_per_day
         for date_str, hours in result.daily_allocations.items():

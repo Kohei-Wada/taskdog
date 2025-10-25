@@ -3,7 +3,7 @@
 import os
 import tempfile
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 
 from application.dto.create_task_request import CreateTaskRequest
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
@@ -66,7 +66,7 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
         for task in result.successful_tasks:
             self.assertIsNotNone(task.daily_allocations)
             # Check first day allocation
-            first_day_allocation = task.daily_allocations.get("2025-10-20", 0.0)
+            first_day_allocation = task.daily_allocations.get(date(2025, 10, 20), 0.0)
             self.assertAlmostEqual(first_day_allocation, 3.0, places=5)
 
     def test_round_robin_makes_parallel_progress(self):
@@ -200,8 +200,8 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Verify no weekend allocations
-        self.assertIsNone(task.daily_allocations.get("2025-10-25"))  # Saturday
-        self.assertIsNone(task.daily_allocations.get("2025-10-26"))  # Sunday
+        self.assertIsNone(task.daily_allocations.get(date(2025, 10, 25)))  # Saturday
+        self.assertIsNone(task.daily_allocations.get(date(2025, 10, 26)))  # Sunday
 
     def test_round_robin_with_single_task(self):
         """Test that round-robin works correctly with a single task."""
@@ -226,8 +226,8 @@ class TestRoundRobinOptimizationStrategy(unittest.TestCase):
         task = result.successful_tasks[0]
 
         # Single task should get full 6h each day (not divided)
-        self.assertAlmostEqual(task.daily_allocations.get("2025-10-20", 0.0), 6.0, places=5)
-        self.assertAlmostEqual(task.daily_allocations.get("2025-10-21", 0.0), 6.0, places=5)
+        self.assertAlmostEqual(task.daily_allocations.get(date(2025, 10, 20), 0.0), 6.0, places=5)
+        self.assertAlmostEqual(task.daily_allocations.get(date(2025, 10, 21), 0.0), 6.0, places=5)
 
     def test_round_robin_adjusts_allocation_as_tasks_complete(self):
         """Test that round-robin adjusts allocation as tasks complete."""

@@ -1,6 +1,6 @@
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 
 from domain.constants import SECONDS_PER_HOUR
@@ -48,11 +48,11 @@ class Task:
     actual_start: datetime | None = None
     actual_end: datetime | None = None
     estimated_duration: float | None = None
-    daily_allocations: dict[str, float] = field(default_factory=dict)
+    daily_allocations: dict[date, float] = field(default_factory=dict)
     # New fields (Phase 1: Schema extension)
     depends_on: list[int] = field(default_factory=list)
     is_fixed: bool = False
-    actual_daily_hours: dict[str, float] = field(default_factory=dict)
+    actual_daily_hours: dict[date, float] = field(default_factory=dict)
     is_deleted: bool = False
 
     def __post_init__(self) -> None:
@@ -199,10 +199,14 @@ class Task:
             if isinstance(self.actual_end, datetime)
             else self.actual_end,
             "estimated_duration": self.estimated_duration,
-            "daily_allocations": self.daily_allocations,
+            "daily_allocations": {k.isoformat(): v for k, v in self.daily_allocations.items()}
+            if self.daily_allocations
+            else {},
             "depends_on": self.depends_on,
             "is_fixed": self.is_fixed,
-            "actual_daily_hours": self.actual_daily_hours,
+            "actual_daily_hours": {k.isoformat(): v for k, v in self.actual_daily_hours.items()}
+            if self.actual_daily_hours
+            else {},
             "is_deleted": self.is_deleted,
         }
 
@@ -232,6 +236,14 @@ class Task:
         for field_name in datetime_fields:
             if field_name in task_data and isinstance(task_data[field_name], str):
                 task_data[field_name] = cls._parse_datetime_string(task_data[field_name])
+
+        # Convert daily_allocations from dict[str, float] to dict[date, float]
+        if "daily_allocations" in task_data and isinstance(task_data["daily_allocations"], dict):
+            task_data["daily_allocations"] = cls._parse_date_dict(task_data["daily_allocations"])
+
+        # Convert actual_daily_hours from dict[str, float] to dict[date, float]
+        if "actual_daily_hours" in task_data and isinstance(task_data["actual_daily_hours"], dict):
+            task_data["actual_daily_hours"] = cls._parse_date_dict(task_data["actual_daily_hours"])
 
         return cls(**task_data)
 
@@ -265,3 +277,24 @@ class Task:
             return datetime.strptime(dt_str, DATETIME_FORMAT)
         except (ValueError, ImportError):
             return None
+
+    @staticmethod
+    def _parse_date_dict(date_dict: dict[str, float]) -> dict[date, float]:
+        """Parse dictionary with date string keys to date object keys.
+
+        Args:
+            date_dict: Dictionary with date strings as keys (YYYY-MM-DD format)
+
+        Returns:
+            Dictionary with date objects as keys
+        """
+        result: dict[date, float] = {}
+        for date_str, value in date_dict.items():
+            try:
+                # Parse ISO format date string
+                date_obj = date.fromisoformat(date_str)
+                result[date_obj] = value
+            except (ValueError, AttributeError):
+                # Skip invalid date strings
+                pass
+        return result

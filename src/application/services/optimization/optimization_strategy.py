@@ -1,7 +1,7 @@
 """Abstract base class for optimization strategies using Template Method Pattern."""
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
 from application.dto.optimization_result import SchedulingFailure
@@ -38,7 +38,7 @@ class OptimizationStrategy(ABC):
         max_hours_per_day: float,
         force_override: bool,
         holiday_checker: "HolidayChecker | None" = None,
-    ) -> tuple[list[Task], dict[str, float], list[SchedulingFailure]]:
+    ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
         """Optimize task schedules using template method pattern.
 
         This method defines the common workflow for all optimization strategies.
@@ -55,7 +55,7 @@ class OptimizationStrategy(ABC):
         Returns:
             Tuple of (modified_tasks, daily_allocations, failed_tasks)
             - modified_tasks: List of tasks with updated schedules
-            - daily_allocations: Dict mapping date strings to allocated hours
+            - daily_allocations: Dict mapping date objects to allocated hours
             - failed_tasks: List of tasks that could not be scheduled with reasons
         """
         # 1. Initialize context (instance variables for use by subclasses)
@@ -63,7 +63,7 @@ class OptimizationStrategy(ABC):
         self.start_date = start_date
         self.max_hours_per_day = max_hours_per_day
         self.holiday_checker = holiday_checker
-        self.daily_allocations: dict[str, float] = {}
+        self.daily_allocations: dict[date, float] = {}
         self.failed_tasks: list[SchedulingFailure] = []
 
         # 2. Initialize daily_allocations with existing scheduled tasks
@@ -127,19 +127,14 @@ class OptimizationStrategy(ABC):
                 from domain.services.workload_calculator import WorkloadCalculator
 
                 calculator = WorkloadCalculator()
-                task_daily_hours_by_date = calculator.get_task_daily_hours(task)
-                # Convert date objects to date strings
-                task_daily_hours = {
-                    date_obj.strftime("%Y-%m-%d"): hours
-                    for date_obj, hours in task_daily_hours_by_date.items()
-                }
+                task_daily_hours = calculator.get_task_daily_hours(task)
 
             # Add to global daily_allocations
-            for date_str, hours in task_daily_hours.items():
-                if date_str in self.daily_allocations:
-                    self.daily_allocations[date_str] += hours
+            for date_obj, hours in task_daily_hours.items():
+                if date_obj in self.daily_allocations:
+                    self.daily_allocations[date_obj] += hours
                 else:
-                    self.daily_allocations[date_str] = hours
+                    self.daily_allocations[date_obj] = hours
 
     def _record_failure(self, task: Task, reason: str) -> None:
         """Record a task scheduling failure with a reason.

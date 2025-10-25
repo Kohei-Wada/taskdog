@@ -3,7 +3,7 @@
 import os
 import tempfile
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 
 from application.dto.create_task_request import CreateTaskRequest
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
@@ -171,9 +171,9 @@ class TestDependencyAwareOptimizationStrategy(unittest.TestCase):
 
         # Verify greedy allocation: fills each day to maximum
         self.assertIsNotNone(task.daily_allocations)
-        self.assertAlmostEqual(task.daily_allocations.get("2025-10-20", 0.0), 6.0, places=5)
-        self.assertAlmostEqual(task.daily_allocations.get("2025-10-21", 0.0), 6.0, places=5)
-        self.assertAlmostEqual(task.daily_allocations.get("2025-10-22", 0.0), 3.0, places=5)
+        self.assertAlmostEqual(task.daily_allocations.get(date(2025, 10, 20), 0.0), 6.0, places=5)
+        self.assertAlmostEqual(task.daily_allocations.get(date(2025, 10, 21), 0.0), 6.0, places=5)
+        self.assertAlmostEqual(task.daily_allocations.get(date(2025, 10, 22), 0.0), 3.0, places=5)
 
     def test_dependency_aware_respects_deadlines(self):
         """Test that dependency-aware strategy respects deadlines."""

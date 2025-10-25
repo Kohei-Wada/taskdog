@@ -3,7 +3,7 @@
 import os
 import tempfile
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 
 from application.dto.create_task_request import CreateTaskRequest
 from application.use_cases.create_task import CreateTaskUseCase
@@ -57,7 +57,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Verify daily_allocations
         self.assertIsNotNone(result.successful_tasks[0].daily_allocations)
-        self.assertEqual(result.successful_tasks[0].daily_allocations["2025-10-15"], 4.0)
+        self.assertEqual(result.successful_tasks[0].daily_allocations[date(2025, 10, 15)], 4.0)
 
     def test_optimize_multiple_tasks_same_day(self):
         """Test optimizing multiple tasks that fit in one day."""
@@ -119,15 +119,15 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         self.assertEqual(task1.planned_start, datetime(2025, 10, 15, 9, 0, 0))
         self.assertEqual(task1.planned_end, datetime(2025, 10, 15, 18, 0, 0))
         # Verify daily_allocations for task1
-        self.assertEqual(task1.daily_allocations["2025-10-15"], 5.0)
+        self.assertEqual(task1.daily_allocations[date(2025, 10, 15)], 5.0)
 
         # Second task (priority 100, 5h) starts on same day (1h left) and spans to next day
         task2 = [t for t in result.successful_tasks if t.priority == 100][0]
         self.assertEqual(task2.planned_start, datetime(2025, 10, 15, 9, 0, 0))
         self.assertEqual(task2.planned_end, datetime(2025, 10, 16, 18, 0, 0))
         # Verify daily_allocations for task2: 1h on first day, 4h on second day
-        self.assertEqual(task2.daily_allocations["2025-10-15"], 1.0)
-        self.assertEqual(task2.daily_allocations["2025-10-16"], 4.0)
+        self.assertEqual(task2.daily_allocations[date(2025, 10, 15)], 1.0)
+        self.assertEqual(task2.daily_allocations[date(2025, 10, 16)], 4.0)
 
     def test_optimize_skips_weekends(self):
         """Test that optimization skips weekends."""

@@ -1,6 +1,6 @@
 """Use case for logging actual hours worked on a task."""
 
-from datetime import datetime
+from datetime import date
 
 from application.dto.log_hours_request import LogHoursRequest
 from application.use_cases.base import UseCase
@@ -36,9 +36,9 @@ class LogHoursUseCase(UseCase[LogHoursRequest, Task]):
         # Get task
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
-        # Validate date format (YYYY-MM-DD)
+        # Validate date format (YYYY-MM-DD) and convert to date object
         try:
-            datetime.strptime(input_dto.date, "%Y-%m-%d")
+            date_obj = date.fromisoformat(input_dto.date)
         except ValueError as e:
             raise TaskValidationError(
                 f"Invalid date format: {input_dto.date}. Expected YYYY-MM-DD"
@@ -49,7 +49,7 @@ class LogHoursUseCase(UseCase[LogHoursRequest, Task]):
             raise TaskValidationError(f"Hours must be greater than 0, got {input_dto.hours}")
 
         # Log hours in actual_daily_hours dict
-        task.actual_daily_hours[input_dto.date] = input_dto.hours
+        task.actual_daily_hours[date_obj] = input_dto.hours
 
         # Save changes
         self.repository.save(task)

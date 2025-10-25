@@ -1,6 +1,6 @@
 """Domain service for calculating workload from tasks."""
 
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from domain.entities.task import Task
 
@@ -85,15 +85,8 @@ class WorkloadCalculator:
         Returns:
             Dictionary mapping date to hours {date: hours}
         """
-        result: dict[date, float] = {}
-        for date_str, hours in task.daily_allocations.items():
-            try:
-                task_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-                result[task_date] = hours
-            except ValueError:
-                # Skip invalid date strings
-                pass
-        return result
+        # daily_allocations is already dict[date, float], just return it
+        return task.daily_allocations.copy()
 
     def _compute_from_planned_period(self, task: Task) -> dict[date, float]:
         """Compute daily hours by distributing evenly across weekdays in planned period.

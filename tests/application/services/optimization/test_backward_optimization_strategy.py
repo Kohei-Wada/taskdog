@@ -3,7 +3,7 @@
 import os
 import tempfile
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 
 from application.dto.create_task_request import CreateTaskRequest
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
@@ -61,7 +61,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         self.assertEqual(task.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # All 6h allocated on Friday
-        self.assertEqual(task.daily_allocations["2025-10-24"], 6.0)
+        self.assertEqual(task.daily_allocations[date(2025, 10, 24)], 6.0)
 
     def test_backward_spans_backward_from_deadline(self):
         """Test that backward strategy fills backwards when task doesn't fit in one day."""
@@ -95,8 +95,8 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
         self.assertEqual(task.planned_end, datetime(2025, 10, 24, 18, 0, 0))
 
         # 6h on Thursday, 6h on Friday
-        self.assertEqual(task.daily_allocations["2025-10-23"], 6.0)
-        self.assertEqual(task.daily_allocations["2025-10-24"], 6.0)
+        self.assertEqual(task.daily_allocations[date(2025, 10, 23)], 6.0)
+        self.assertEqual(task.daily_allocations[date(2025, 10, 24)], 6.0)
 
     def test_backward_without_deadline_schedules_near_future(self):
         """Test that tasks without deadline are scheduled in near future (1 week)."""
@@ -263,7 +263,7 @@ class TestBackwardOptimizationStrategy(unittest.TestCase):
 
         # Only Monday in allocations (no weekend days)
         self.assertEqual(len(task.daily_allocations), 1)
-        self.assertIn("2025-10-27", task.daily_allocations)
+        self.assertIn(date(2025, 10, 27), task.daily_allocations)
 
 
 if __name__ == "__main__":

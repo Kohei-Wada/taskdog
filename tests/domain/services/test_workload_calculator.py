@@ -252,8 +252,8 @@ class WorkloadCalculatorTest(unittest.TestCase):
             planned_end=datetime(2025, 1, 7, 18, 0, 0),  # Tuesday
             estimated_duration=6.0,
             daily_allocations={
-                "2025-01-06": 5.0,  # Monday
-                "2025-01-07": 1.0,  # Tuesday
+                date(2025, 1, 6): 5.0,  # Monday
+                date(2025, 1, 7): 1.0,  # Tuesday
             },
         )
 

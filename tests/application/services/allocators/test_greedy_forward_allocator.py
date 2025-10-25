@@ -1,7 +1,7 @@
 """Tests for GreedyForwardAllocator."""
 
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 from unittest.mock import MagicMock
 
 from application.services.optimization.allocators.greedy_forward_allocator import (
@@ -53,12 +53,12 @@ class TestGreedyForwardAllocator(unittest.TestCase):
         # Verify greedy allocation: fills each day to max (6h each)
         self.assertIsNotNone(result.daily_allocations)
         self.assertEqual(len(result.daily_allocations), 2)
-        self.assertAlmostEqual(result.daily_allocations["2025-10-20"], 6.0, places=5)
-        self.assertAlmostEqual(result.daily_allocations["2025-10-21"], 6.0, places=5)
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 20)], 6.0, places=5)
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 21)], 6.0, places=5)
 
         # Verify global daily_allocations updated
-        self.assertAlmostEqual(daily_allocations["2025-10-20"], 6.0, places=5)
-        self.assertAlmostEqual(daily_allocations["2025-10-21"], 6.0, places=5)
+        self.assertAlmostEqual(daily_allocations[date(2025, 10, 20)], 6.0, places=5)
+        self.assertAlmostEqual(daily_allocations[date(2025, 10, 21)], 6.0, places=5)
 
     def test_allocate_handles_partial_day(self):
         """Test that allocator handles partial day allocation correctly."""
@@ -81,8 +81,8 @@ class TestGreedyForwardAllocator(unittest.TestCase):
         )
 
         self.assertIsNotNone(result)
-        self.assertAlmostEqual(result.daily_allocations["2025-10-20"], 6.0, places=5)
-        self.assertAlmostEqual(result.daily_allocations["2025-10-21"], 4.0, places=5)
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 20)], 6.0, places=5)
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 21)], 4.0, places=5)
 
     def test_allocate_skips_weekends(self):
         """Test that allocator skips weekends."""
@@ -112,8 +112,8 @@ class TestGreedyForwardAllocator(unittest.TestCase):
         self.assertNotIn("2025-10-25", result.daily_allocations)  # Saturday
         self.assertNotIn("2025-10-26", result.daily_allocations)  # Sunday
         # Verify only weekday allocations
-        self.assertIn("2025-10-24", result.daily_allocations)  # Friday
-        self.assertIn("2025-10-27", result.daily_allocations)  # Monday
+        self.assertIn(date(2025, 10, 24), result.daily_allocations)  # Friday
+        self.assertIn(date(2025, 10, 27), result.daily_allocations)  # Monday
 
     def test_allocate_respects_existing_allocations(self):
         """Test that allocator respects existing daily allocations."""
@@ -129,7 +129,7 @@ class TestGreedyForwardAllocator(unittest.TestCase):
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         max_hours_per_day = 6.0
         # Monday already has 4h allocated
-        daily_allocations: dict[str, float] = {"2025-10-20": 4.0}
+        daily_allocations: dict[str, float] = {date(2025, 10, 20): 4.0}
 
         result = self.allocator.allocate(
             task, start_date, max_hours_per_day, daily_allocations, self.repository
@@ -137,12 +137,12 @@ class TestGreedyForwardAllocator(unittest.TestCase):
 
         self.assertIsNotNone(result)
         # Monday: 2h (6 - 4), Tuesday: 6h
-        self.assertAlmostEqual(result.daily_allocations["2025-10-20"], 2.0, places=5)
-        self.assertAlmostEqual(result.daily_allocations["2025-10-21"], 6.0, places=5)
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 20)], 2.0, places=5)
+        self.assertAlmostEqual(result.daily_allocations[date(2025, 10, 21)], 6.0, places=5)
 
         # Verify global allocations updated correctly
-        self.assertAlmostEqual(daily_allocations["2025-10-20"], 6.0, places=5)  # 4 + 2
-        self.assertAlmostEqual(daily_allocations["2025-10-21"], 6.0, places=5)
+        self.assertAlmostEqual(daily_allocations[date(2025, 10, 20)], 6.0, places=5)  # 4 + 2
+        self.assertAlmostEqual(daily_allocations[date(2025, 10, 21)], 6.0, places=5)
 
     def test_allocate_fails_when_deadline_exceeded(self):
         """Test that allocator returns None when deadline cannot be met."""
@@ -222,7 +222,7 @@ class TestGreedyForwardAllocator(unittest.TestCase):
 
         start_date = datetime(2025, 10, 20, 9, 0, 0)
         max_hours_per_day = 6.0
-        daily_allocations: dict[str, float] = {"2025-10-19": 2.0}  # Pre-existing allocation
+        daily_allocations: dict[str, float] = {date(2025, 10, 19): 2.0}  # Pre-existing allocation
 
         result = self.allocator.allocate(
             task, start_date, max_hours_per_day, daily_allocations, self.repository
@@ -231,8 +231,8 @@ class TestGreedyForwardAllocator(unittest.TestCase):
         self.assertIsNone(result)
         # Verify rollback: task's allocations were removed
         # Pre-existing allocations should remain
-        self.assertIn("2025-10-19", daily_allocations)
-        self.assertEqual(daily_allocations["2025-10-19"], 2.0)
+        self.assertIn(date(2025, 10, 19), daily_allocations)
+        self.assertEqual(daily_allocations[date(2025, 10, 19)], 2.0)
 
     def test_allocate_uses_config_default_end_hour(self):
         """Test that allocator uses config.time.default_end_hour for planned_end."""

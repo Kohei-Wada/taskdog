@@ -1,6 +1,6 @@
 """Greedy forward allocation strategy implementation."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.entities.task import Task
@@ -25,7 +25,7 @@ class GreedyForwardAllocator(TaskAllocatorBase):
         task: Task,
         start_date: datetime,
         max_hours_per_day: float,
-        daily_allocations: dict[str, float],
+        daily_allocations: dict[date, float],
         repository,
     ) -> Task | None:
         """Allocate task using greedy forward allocation.
@@ -60,7 +60,7 @@ class GreedyForwardAllocator(TaskAllocatorBase):
         assert remaining_hours is not None  # For mypy
         schedule_start = None
         schedule_end = None
-        task_daily_allocations: dict[str, float] = {}
+        task_daily_allocations: dict[date, float] = {}
 
         while remaining_hours > 0:
             # Skip weekends and holidays
@@ -77,9 +77,9 @@ class GreedyForwardAllocator(TaskAllocatorBase):
                     return None
 
             # Get available hours for this day
-            date_str = self._get_date_str(current_date)
+            date_obj = current_date.date()
             available_hours = self._calculate_available_hours(
-                daily_allocations, date_str, max_hours_per_day
+                daily_allocations, date_obj, max_hours_per_day
             )
 
             if available_hours > 0:
@@ -89,9 +89,9 @@ class GreedyForwardAllocator(TaskAllocatorBase):
 
                 # Allocate as much as possible for this day (greedy approach)
                 allocated = min(remaining_hours, available_hours)
-                current_allocation = self._get_current_allocation(daily_allocations, date_str)
-                daily_allocations[date_str] = current_allocation + allocated
-                task_daily_allocations[date_str] = allocated
+                current_allocation = self._get_current_allocation(daily_allocations, date_obj)
+                daily_allocations[date_obj] = current_allocation + allocated
+                task_daily_allocations[date_obj] = allocated
                 remaining_hours -= allocated
 
                 # Update end date

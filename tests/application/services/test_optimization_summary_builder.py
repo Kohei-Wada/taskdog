@@ -3,7 +3,7 @@
 import os
 import tempfile
 import unittest
-from datetime import datetime
+from datetime import date, datetime
 
 from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from domain.entities.task import Task, TaskStatus
@@ -52,7 +52,7 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
 
         modified_tasks = [task1, task2]
         task_states_before = {1: None, 2: None}  # Both were unscheduled
-        daily_allocations = {"2025-10-14": 8.0, "2025-10-15": 8.0}
+        daily_allocations = {date(2025, 10, 14): 8.0, date(2025, 10, 15): 8.0}
         max_hours_per_day = 8.0
 
         summary = self.builder.build(
@@ -80,7 +80,7 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
 
         modified_tasks = [task]
         task_states_before = {1: "2025-10-14 09:00:00"}  # Was previously scheduled
-        daily_allocations = {"2025-10-15": 8.0}
+        daily_allocations = {date(2025, 10, 15): 8.0}
         max_hours_per_day = 8.0
 
         summary = self.builder.build(
@@ -106,7 +106,7 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
 
         modified_tasks = [task]
         task_states_before = {1: None}
-        daily_allocations = {"2025-10-14": 8.0, "2025-10-15": 8.0}
+        daily_allocations = {date(2025, 10, 14): 8.0, date(2025, 10, 15): 8.0}
         max_hours_per_day = 8.0
 
         summary = self.builder.build(
@@ -130,7 +130,7 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
 
         modified_tasks = [task]
         task_states_before = {1: None}
-        daily_allocations = {"2025-10-14": 10.0}  # Exceeds max
+        daily_allocations = {date(2025, 10, 14): 10.0}  # Exceeds max
         max_hours_per_day = 8.0
 
         summary = self.builder.build(
@@ -138,7 +138,7 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
         )
 
         self.assertEqual(len(summary.overloaded_days), 1)
-        self.assertEqual(summary.overloaded_days[0], ("2025-10-14", 10.0))
+        self.assertEqual(summary.overloaded_days[0], (date(2025, 10, 14), 10.0))
 
     def test_build_with_unscheduled_tasks(self):
         """Test build detects unscheduled tasks."""
@@ -166,7 +166,7 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
 
         modified_tasks = [scheduled_task]
         task_states_before = {1: None}
-        daily_allocations = {"2025-10-14": 8.0}
+        daily_allocations = {date(2025, 10, 14): 8.0}
         max_hours_per_day = 8.0
 
         summary = self.builder.build(

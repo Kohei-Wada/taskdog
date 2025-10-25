@@ -1,6 +1,6 @@
 """Service for building optimization summary from task data."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 from application.dto.optimization_summary import OptimizationSummary
 from domain.entities.task import Task
@@ -26,7 +26,7 @@ class OptimizationSummaryBuilder:
         self,
         modified_tasks: list[Task],
         task_states_before: dict[int, datetime | None],
-        daily_allocations: dict[str, float],
+        daily_allocations: dict[date, float],
         max_hours_per_day: float,
     ) -> OptimizationSummary:
         """Calculate optimization summary from modified tasks.

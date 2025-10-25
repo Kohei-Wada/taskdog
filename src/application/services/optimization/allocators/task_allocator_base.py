@@ -2,7 +2,7 @@
 
 import copy
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from domain.entities.task import Task
@@ -40,7 +40,7 @@ class TaskAllocatorBase(ABC):
         task: Task,
         start_date: datetime,
         max_hours_per_day: float,
-        daily_allocations: dict[str, float],
+        daily_allocations: dict[date, float],
         repository,
     ) -> Task | None:
         """Allocate time blocks for a single task.
@@ -96,17 +96,6 @@ class TaskAllocatorBase(ABC):
         """
         return task.deadline
 
-    def _get_date_str(self, date: datetime) -> str:
-        """Convert datetime to date string format.
-
-        Args:
-            date: Datetime to convert
-
-        Returns:
-            Date string in YYYY-MM-DD format
-        """
-        return date.strftime("%Y-%m-%d")
-
     def _get_next_workday(self, current_date: datetime, direction: int = 1) -> datetime:
         """Get next workday, skipping weekends and holidays.
 
@@ -122,32 +111,34 @@ class TaskAllocatorBase(ABC):
             next_date += timedelta(days=direction)
         return next_date
 
-    def _get_current_allocation(self, daily_allocations: dict[str, float], date_str: str) -> float:
+    def _get_current_allocation(
+        self, daily_allocations: dict[date, float], date_obj: date
+    ) -> float:
         """Get current allocation for a specific date.
 
         Args:
             daily_allocations: Current daily allocations
-            date_str: Date string to look up
+            date_obj: Date to look up
 
         Returns:
             Current allocation hours for the date
         """
-        return daily_allocations.get(date_str, 0.0)
+        return daily_allocations.get(date_obj, 0.0)
 
     def _calculate_available_hours(
-        self, daily_allocations: dict[str, float], date_str: str, max_hours_per_day: float
+        self, daily_allocations: dict[date, float], date_obj: date, max_hours_per_day: float
     ) -> float:
         """Calculate available hours for a specific date.
 
         Args:
             daily_allocations: Current daily allocations
-            date_str: Date string to check
+            date_obj: Date to check
             max_hours_per_day: Maximum hours per day
 
         Returns:
             Available hours for the date
         """
-        current_allocation = self._get_current_allocation(daily_allocations, date_str)
+        current_allocation = self._get_current_allocation(daily_allocations, date_obj)
         return max_hours_per_day - current_allocation
 
     def _set_planned_times(
@@ -155,7 +146,7 @@ class TaskAllocatorBase(ABC):
         task: Task,
         schedule_start: datetime,
         schedule_end: datetime,
-        task_daily_allocations: dict[str, float],
+        task_daily_allocations: dict[date, float],
     ) -> None:
         """Set planned start, end, and daily allocations on task.
 
@@ -179,7 +170,7 @@ class TaskAllocatorBase(ABC):
         task.daily_allocations = task_daily_allocations
 
     def _rollback_allocations(
-        self, daily_allocations: dict[str, float], task_allocations: dict[str, float]
+        self, daily_allocations: dict[date, float], task_allocations: dict[date, float]
     ) -> None:
         """Rollback allocations from daily_allocations.
 
@@ -187,5 +178,5 @@ class TaskAllocatorBase(ABC):
             daily_allocations: Global daily allocations to rollback
             task_allocations: Task-specific allocations to remove
         """
-        for date_str, hours in task_allocations.items():
-            daily_allocations[date_str] -= hours
+        for date_obj, hours in task_allocations.items():
+            daily_allocations[date_obj] -= hours

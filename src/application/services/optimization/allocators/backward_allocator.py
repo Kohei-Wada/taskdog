@@ -1,6 +1,6 @@
 """Backward (Just-In-Time) allocation strategy implementation."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.entities.task import Task
@@ -27,7 +27,7 @@ class BackwardAllocator(TaskAllocatorBase):
         task: Task,
         start_date: datetime,
         max_hours_per_day: float,
-        daily_allocations: dict[str, float],
+        daily_allocations: dict[date, float],
         repository,
     ) -> Task | None:
         """Allocate task using backward allocation from deadline.
@@ -66,7 +66,7 @@ class BackwardAllocator(TaskAllocatorBase):
         schedule_end = None
 
         # Collect allocations in reverse order
-        temp_allocations: list[tuple[str, float, datetime]] = []
+        temp_allocations: list[tuple[date, float, datetime]] = []
 
         while remaining_hours > 0:
             # Skip weekends and holidays
@@ -79,32 +79,32 @@ class BackwardAllocator(TaskAllocatorBase):
                 # Cannot schedule - insufficient time before deadline
                 return None
 
-            date_str = self._get_date_str(current_date)
+            date_obj = current_date.date()
 
             # Calculate available hours for this day
             available_hours = self._calculate_available_hours(
-                daily_allocations, date_str, max_hours_per_day
+                daily_allocations, date_obj, max_hours_per_day
             )
 
             if available_hours > 0:
                 # Allocate as much as possible for this day
                 allocated = min(remaining_hours, available_hours)
-                temp_allocations.append((date_str, allocated, current_date))
+                temp_allocations.append((date_obj, allocated, current_date))
                 remaining_hours -= allocated
 
             current_date -= timedelta(days=1)
 
         # Apply allocations (we collected them in reverse, so apply in correct order)
         task_daily_allocations = {}
-        for date_str, hours, date_obj in reversed(temp_allocations):
-            current_allocation = self._get_current_allocation(daily_allocations, date_str)
-            daily_allocations[date_str] = current_allocation + hours
-            task_daily_allocations[date_str] = hours
+        for date_obj, hours, datetime_obj in reversed(temp_allocations):
+            current_allocation = self._get_current_allocation(daily_allocations, date_obj)
+            daily_allocations[date_obj] = current_allocation + hours
+            task_daily_allocations[date_obj] = hours
 
             # Track start and end
             if schedule_start is None:
-                schedule_start = date_obj
-            schedule_end = date_obj
+                schedule_start = datetime_obj
+            schedule_end = datetime_obj
 
         # Set planned times
         if schedule_start and schedule_end:
