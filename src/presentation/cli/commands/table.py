@@ -3,7 +3,9 @@
 import click
 
 from application.queries.filters.incomplete_filter import IncompleteFilter
+from application.queries.filters.status_filter import StatusFilter
 from application.queries.task_query_service import TaskQueryService
+from domain.entities.task import TaskStatus
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.renderers.rich_table_renderer import RichTableRenderer
@@ -17,6 +19,14 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
     "-a",
     is_flag=True,
     help="Show all tasks including completed, failed, and archived",
+)
+@click.option(
+    "--status",
+    type=click.Choice(
+        ["pending", "in_progress", "completed", "canceled", "archived"], case_sensitive=False
+    ),
+    default=None,
+    help="Filter tasks by status (overrides --all)",
 )
 @click.option(
     "--sort",
@@ -41,15 +51,18 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
 )
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def table_command(ctx, all, sort, reverse, fields):
+def table_command(ctx, all, status, sort, reverse, fields):
     """Display tasks as a flat table.
 
     By default, only shows incomplete tasks (PENDING, IN_PROGRESS).
     Use -a/--all to show all tasks including archived.
+    Use --status to filter by specific status.
 
     Examples:
         taskdog table                              # Show incomplete tasks
         taskdog table -a                           # Show all tasks (including archived)
+        taskdog table --status archived            # Show only archived tasks
+        taskdog table --status completed           # Show only completed tasks
         taskdog table -s priority -r               # Sort by priority descending
         taskdog table --fields id,name,status      # Show specific fields only
     """
@@ -63,9 +76,17 @@ def table_command(ctx, all, sort, reverse, fields):
         # Split by comma and strip whitespace
         field_list = [f.strip() for f in fields.split(",")]
 
-    # Apply filter based on --all flag
-    # Show all tasks (no filter) if --all, otherwise show incomplete only
-    filter_obj = None if all else IncompleteFilter()
+    # Apply filter based on options (priority: --status > --all > default)
+    if status:
+        # Filter by specific status (case-insensitive)
+        status_enum = TaskStatus(status.upper())
+        filter_obj = StatusFilter(status_enum)
+    elif all:
+        # Show all tasks (no filter)
+        filter_obj = None
+    else:
+        # Default: show incomplete only
+        filter_obj = IncompleteFilter()
 
     # Get filtered and sorted tasks
     tasks = task_query_service.get_filtered_tasks(filter_obj, sort_by=sort, reverse=reverse)
