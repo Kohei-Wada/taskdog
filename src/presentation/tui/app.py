@@ -170,6 +170,8 @@ class TaskdogTUI(App):
         self.push_screen(self.main_screen)
         # Load tasks after screen is fully mounted
         self.call_after_refresh(self._load_tasks)
+        # Start 1-second auto-refresh timer for elapsed time updates
+        self.set_interval(1.0, self._refresh_elapsed_time)
 
     def _load_tasks(self) -> list[Task]:
         """Load tasks from repository and update both gantt and table.
@@ -256,3 +258,17 @@ class TaskdogTUI(App):
         """Hide the search input and clear the filter."""
         if self.main_screen:
             self.main_screen.hide_search()
+
+    def _refresh_elapsed_time(self) -> None:
+        """Refresh the task table to update elapsed time for IN_PROGRESS tasks.
+
+        This is called every second by the auto-refresh timer.
+        Only updates the table display without reloading from repository.
+        """
+        if self.main_screen and self.main_screen.task_table:
+            # Get current tasks from the table (already loaded in memory)
+            tasks = self.main_screen.task_table._all_tasks
+            if tasks:
+                # Refresh the table display with current tasks
+                # This will recalculate elapsed time for IN_PROGRESS tasks
+                self.main_screen.task_table.refresh_tasks(tasks)

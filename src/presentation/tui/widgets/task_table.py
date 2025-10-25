@@ -6,7 +6,7 @@ from typing import ClassVar
 from textual.binding import Binding
 from textual.widgets import DataTable
 
-from domain.entities.task import Task
+from domain.entities.task import Task, TaskStatus
 from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.constants.colors import STATUS_STYLES
 from presentation.constants.symbols import EMOJI_NOTE
@@ -17,6 +17,7 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_DEADLINE_WIDTH,
     TASK_TABLE_DEPENDS_ON_WIDTH,
     TASK_TABLE_DURATION_WIDTH,
+    TASK_TABLE_ELAPSED_WIDTH,
     TASK_TABLE_FIXED_WIDTH,
     TASK_TABLE_ID_WIDTH,
     TASK_TABLE_NAME_WIDTH,
@@ -60,6 +61,7 @@ class TaskTable(DataTable):
         self.add_column("Name", width=TASK_TABLE_NAME_WIDTH)
         self.add_column("Pri", width=TASK_TABLE_PRIORITY_WIDTH)
         self.add_column("Status", width=TASK_TABLE_STATUS_WIDTH)
+        self.add_column("Elapsed", width=TASK_TABLE_ELAPSED_WIDTH)
         self.add_column("Fixed", width=TASK_TABLE_FIXED_WIDTH)
         self.add_column("Deps", width=TASK_TABLE_DEPENDS_ON_WIDTH)
         self.add_column("Duration", width=TASK_TABLE_DURATION_WIDTH)
@@ -106,6 +108,9 @@ class TaskTable(DataTable):
             # Check if task is fixed
             fixed_indicator = "📌" if task.is_fixed else ""
 
+            # Format elapsed time
+            elapsed_time = self._format_elapsed_time(task)
+
             # Add row
             self.add_row(
                 str(task.id),
@@ -116,6 +121,7 @@ class TaskTable(DataTable):
                 ),
                 str(task.priority),
                 status_styled,
+                elapsed_time,
                 fixed_indicator,
                 dependencies,
                 duration,
@@ -320,3 +326,31 @@ class TaskTable(DataTable):
         if len(deadline_str) >= DEADLINE_DISPLAY_LENGTH:
             return deadline_str[:DEADLINE_DISPLAY_LENGTH]
         return deadline_str
+
+    def _format_elapsed_time(self, task: Task) -> str:
+        """Format elapsed time for IN_PROGRESS tasks.
+
+        Args:
+            task: Task to format elapsed time for
+
+        Returns:
+            Formatted elapsed time string (e.g., "15:04:38" or "3d 15:04:38")
+        """
+        if task.status != TaskStatus.IN_PROGRESS or not task.actual_start:
+            return "-"
+
+        # Calculate elapsed time
+        elapsed_seconds = int((datetime.now() - task.actual_start).total_seconds())
+
+        # Convert to days, hours, minutes, seconds
+        days = elapsed_seconds // 86400
+        remaining_seconds = elapsed_seconds % 86400
+        hours = remaining_seconds // 3600
+        minutes = (remaining_seconds % 3600) // 60
+        seconds = remaining_seconds % 60
+
+        # Format based on duration
+        if days > 0:
+            return f"{days}d {hours}:{minutes:02d}:{seconds:02d}"
+        else:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
