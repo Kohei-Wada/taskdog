@@ -3,6 +3,8 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta
 
+from application.queries.filters.composite_filter import CompositeFilter
+from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.today_filter import TodayFilter
 from domain.entities.task import Task, TaskStatus
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -41,7 +43,7 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filter_obj = TodayFilter(include_completed=False)
+        filter_obj = TodayFilter()
         filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 1)
@@ -54,7 +56,7 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filter_obj = TodayFilter(include_completed=False)
+        filter_obj = TodayFilter()
         filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 0)
@@ -66,7 +68,7 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filter_obj = TodayFilter(include_completed=False)
+        filter_obj = TodayFilter()
         filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 1)
@@ -84,14 +86,14 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filter_obj = TodayFilter(include_completed=False)
+        filter_obj = TodayFilter()
         filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].name, "Planned Today")
 
-    def test_filter_excludes_completed_by_default(self):
-        """Test filter excludes completed tasks by default"""
+    def test_filter_includes_completed_task_with_deadline_today(self):
+        """Test TodayFilter itself includes completed tasks (filtering by date only)"""
         task = Task(
             name="Completed Today",
             priority=1,
@@ -102,13 +104,15 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filter_obj = TodayFilter(include_completed=False)
+        filter_obj = TodayFilter()
         filtered = filter_obj.filter(tasks)
 
-        self.assertEqual(len(filtered), 0)
+        # TodayFilter no longer filters by completion status
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0].name, "Completed Today")
 
-    def test_filter_includes_completed_when_specified(self):
-        """Test filter includes completed tasks when specified"""
+    def test_composite_filter_excludes_completed_tasks(self):
+        """Test CompositeFilter with IncompleteFilter excludes completed tasks"""
         task = Task(
             name="Completed Today",
             priority=1,
@@ -119,11 +123,30 @@ class TestTodayFilter(unittest.TestCase):
         self.repository.save(task)
 
         tasks = self.repository.get_all()
-        filter_obj = TodayFilter(include_completed=True)
+        # This mimics the default behavior of 'taskdog today' command
+        filter_obj = CompositeFilter([IncompleteFilter(), TodayFilter()])
+        filtered = filter_obj.filter(tasks)
+
+        # Completed task should be excluded by IncompleteFilter
+        self.assertEqual(len(filtered), 0)
+
+    def test_composite_filter_includes_incomplete_task_with_deadline_today(self):
+        """Test CompositeFilter with IncompleteFilter includes incomplete tasks"""
+        task = Task(
+            name="Pending Today",
+            priority=1,
+            deadline=self.today_dt,
+            status=TaskStatus.PENDING,
+        )
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        tasks = self.repository.get_all()
+        filter_obj = CompositeFilter([IncompleteFilter(), TodayFilter()])
         filtered = filter_obj.filter(tasks)
 
         self.assertEqual(len(filtered), 1)
-        self.assertEqual(filtered[0].name, "Completed Today")
+        self.assertEqual(filtered[0].name, "Pending Today")
 
 
 if __name__ == "__main__":

@@ -2,6 +2,8 @@
 
 import click
 
+from application.queries.filters.composite_filter import CompositeFilter
+from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.today_filter import TodayFilter
 from application.queries.task_query_service import TaskQueryService
 from presentation.cli.context import CliContext
@@ -9,7 +11,10 @@ from presentation.cli.error_handler import handle_command_errors
 from presentation.renderers.rich_table_renderer import RichTableRenderer
 
 
-@click.command(name="today", help="Display tasks for today (deadline, planned, or in-progress).")
+@click.command(
+    name="today",
+    help="Display tasks for today (shows incomplete tasks by default).",
+)
 @click.option(
     "-f",
     "--format",
@@ -21,7 +26,7 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
     "--all",
     "-a",
     is_flag=True,
-    help="Show all tasks including completed ones",
+    help="Show all tasks including completed, failed, and archived",
 )
 @click.option(
     "--sort",
@@ -46,15 +51,20 @@ def today_command(ctx, format, all, sort, reverse):
     - Planned period includes today (planned_start <= today <= planned_end)
     - Status is IN_PROGRESS
 
-    By default, completed tasks are excluded unless --all is specified.
+    By default, shows incomplete tasks (PENDING, IN_PROGRESS) only.
+    Use -a/--all to include all tasks (including archived).
     """
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
     query_service = TaskQueryService(repository)
 
-    # Create filter and get today's tasks
-    today_filter = TodayFilter(include_completed=all)
-    today_tasks = query_service.get_filtered_tasks(today_filter, sort_by=sort, reverse=reverse)
+    # Build filter: TodayFilter + optional IncompleteFilter (AND logic)
+    today_filter = TodayFilter()
+    # --all: Show all tasks (including ARCHIVED) that are relevant for today
+    # Default: Show only incomplete tasks that are relevant for today
+    filter_obj = today_filter if all else CompositeFilter([IncompleteFilter(), today_filter])
+
+    today_tasks = query_service.get_filtered_tasks(filter_obj, sort_by=sort, reverse=reverse)
 
     renderer = RichTableRenderer(ctx_obj.console_writer, ctx_obj.notes_repository)
     renderer.render(today_tasks)

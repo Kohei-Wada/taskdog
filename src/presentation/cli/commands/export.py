@@ -2,9 +2,12 @@
 
 import click
 
+from application.queries.filters.date_range_filter import DateRangeFilter
 from application.queries.task_query_service import TaskQueryService
+from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
 from presentation.exporters import CsvTaskExporter, JsonTaskExporter
+from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 # Valid fields for export
 VALID_FIELDS = {
@@ -23,7 +26,10 @@ VALID_FIELDS = {
 }
 
 
-@click.command(name="export", help="Export tasks to various formats.")
+@click.command(
+    name="export",
+    help="Export tasks to various formats (exports incomplete tasks by default).",
+)
 @click.option(
     "--format",
     type=click.Choice(["json", "csv"]),
@@ -44,19 +50,56 @@ VALID_FIELDS = {
     "Available: id, name, priority, status, created_at, planned_start, planned_end, "
     "deadline, actual_start, actual_end, estimated_duration, daily_allocations",
 )
+@click.option(
+    "--all",
+    "-a",
+    is_flag=True,
+    help="Export all tasks including completed, failed, and archived",
+)
+@click.option(
+    "--status",
+    type=click.Choice(
+        ["pending", "in_progress", "completed", "canceled", "archived"], case_sensitive=False
+    ),
+    default=None,
+    help="Filter tasks by status (overrides --all)",
+)
+@click.option(
+    "--start-date",
+    "-s",
+    type=DateTimeWithDefault(),
+    help="Start date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
+    "Shows tasks with any date field >= start date.",
+)
+@click.option(
+    "--end-date",
+    "-e",
+    type=DateTimeWithDefault(),
+    help="End date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
+    "Shows tasks with any date field <= end date.",
+)
 @click.pass_context
-def export_command(ctx, format, output, fields):
-    """Export all tasks in the specified format.
+def export_command(ctx, format, output, fields, all, status, start_date, end_date):
+    """Export tasks in the specified format.
+
+    By default, exports incomplete tasks (PENDING, IN_PROGRESS).
+    Use -a/--all to export all tasks (including archived).
+    Use --status to filter by specific status.
+    Use --start-date and --end-date to filter by date range.
 
     Supports JSON and CSV formats. More formats (Markdown, iCalendar)
     may be added in future versions.
 
     Examples:
-        taskdog export                              # Print JSON to stdout (all fields)
-        taskdog export -o tasks.json                # Save JSON to file (all fields)
+        taskdog export                              # Export incomplete tasks as JSON
+        taskdog export -a                           # Export all tasks (including archived)
+        taskdog export --status completed           # Export only completed tasks
+        taskdog export -o tasks.json                # Save JSON to file
         taskdog export --format csv -o tasks.csv    # Export to CSV
         taskdog export --fields id,name,priority    # Export only specific fields
         taskdog export -f id,name,status --format csv -o out.csv  # CSV with specific fields
+        taskdog export -a --status archived -o archived.json      # Export all archived tasks
+        taskdog export --start-date 2025-10-01 --end-date 2025-10-31  # October tasks
     """
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
@@ -64,8 +107,18 @@ def export_command(ctx, format, output, fields):
     task_query_service = TaskQueryService(repository)
 
     try:
-        # Get all tasks (no filter)
-        tasks = task_query_service.get_filtered_tasks(None)
+        # Apply filter based on options (priority: --status > --all > default)
+        filter_obj = build_task_filter(all=all, status=status)
+        tasks = task_query_service.get_filtered_tasks(filter_obj)
+
+        # Apply date range filter if specified (applied after status/all filter)
+        # Convert datetime to date objects if provided
+        start_date_obj = start_date.date() if start_date else None
+        end_date_obj = end_date.date() if end_date else None
+
+        if start_date_obj or end_date_obj:
+            date_filter = DateRangeFilter(start_date=start_date_obj, end_date=end_date_obj)
+            tasks = date_filter.filter(tasks)
 
         # Parse fields option
         field_list = None

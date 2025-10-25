@@ -13,15 +13,10 @@ class TodayFilter(TaskFilter):
     - Deadline is today
     - Planned period includes today (planned_start <= today <= planned_end)
     - Status is IN_PROGRESS
+
+    This filter should be combined with other filters (e.g., IncompleteFilter)
+    using CompositeFilter for proper filtering behavior.
     """
-
-    def __init__(self, include_completed: bool = False):
-        """Initialize filter.
-
-        Args:
-            include_completed: Whether to include completed tasks
-        """
-        self.include_completed = include_completed
 
     def filter(self, tasks: list[Task]) -> list[Task]:
         """Filter tasks that are relevant for today.
@@ -37,14 +32,6 @@ class TodayFilter(TaskFilter):
         matching_tasks = []
 
         for task in tasks:
-            # Always skip archived tasks (historical records, not relevant to today)
-            if not task.can_be_modified:
-                continue
-
-            # Skip completed tasks unless include_completed is True
-            if not self.include_completed and task.status == TaskStatus.COMPLETED:
-                continue
-
             # Check if task matches today's criteria
             if self._is_today_task(task, today):
                 matching_tasks.append(task)

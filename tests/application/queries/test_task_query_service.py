@@ -3,6 +3,8 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta
 
+from application.queries.filters.composite_filter import CompositeFilter
+from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.today_filter import TodayFilter
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task, TaskStatus
@@ -50,7 +52,7 @@ class TestTaskQueryService(unittest.TestCase):
         self.repository.save(task3)
 
         # Query
-        today_filter = TodayFilter(include_completed=False)
+        today_filter = TodayFilter()
         today_tasks = self.query_service.get_filtered_tasks(today_filter)
 
         # Verify
@@ -84,7 +86,7 @@ class TestTaskQueryService(unittest.TestCase):
         self.repository.save(task3)
 
         # Query
-        today_filter = TodayFilter(include_completed=False)
+        today_filter = TodayFilter()
         today_tasks = self.query_service.get_filtered_tasks(today_filter, sort_by="deadline")
 
         # Verify sorted by deadline
@@ -109,7 +111,7 @@ class TestTaskQueryService(unittest.TestCase):
         self.repository.save(task3)
 
         # Query with priority sorting
-        today_filter = TodayFilter(include_completed=False)
+        today_filter = TodayFilter()
         today_tasks = self.query_service.get_filtered_tasks(today_filter, sort_by="priority")
 
         # Verify sorted by priority (descending by default)
@@ -118,8 +120,8 @@ class TestTaskQueryService(unittest.TestCase):
         self.assertEqual(today_tasks[1].name, "Mid Priority")
         self.assertEqual(today_tasks[2].name, "Low Priority")
 
-    def test_get_today_tasks_excludes_completed_by_default(self):
-        """Test get_today_tasks excludes completed tasks by default"""
+    def test_composite_filter_with_incomplete_excludes_completed(self):
+        """Test CompositeFilter with IncompleteFilter excludes completed tasks"""
         task = Task(
             name="Completed Today",
             priority=1,
@@ -129,13 +131,14 @@ class TestTaskQueryService(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        today_filter = TodayFilter(include_completed=False)
-        today_tasks = self.query_service.get_filtered_tasks(today_filter)
+        # This mimics 'taskdog today' default behavior
+        composite_filter = CompositeFilter([IncompleteFilter(), TodayFilter()])
+        today_tasks = self.query_service.get_filtered_tasks(composite_filter)
 
         self.assertEqual(len(today_tasks), 0)
 
-    def test_get_today_tasks_includes_completed_when_specified(self):
-        """Test get_today_tasks includes completed tasks when specified"""
+    def test_today_filter_alone_includes_completed(self):
+        """Test TodayFilter alone includes completed tasks (mimics 'taskdog today --all')"""
         task = Task(
             name="Completed Today",
             priority=1,
@@ -145,7 +148,8 @@ class TestTaskQueryService(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        today_filter = TodayFilter(include_completed=True)
+        # This mimics 'taskdog today --all' behavior
+        today_filter = TodayFilter()
         today_tasks = self.query_service.get_filtered_tasks(today_filter)
 
         self.assertEqual(len(today_tasks), 1)
