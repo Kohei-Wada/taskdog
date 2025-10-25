@@ -71,10 +71,10 @@ class GanttDataTable(DataTable):
         self.clear(columns=True)
         self._date_columns.clear()
 
-        # Add fixed columns
-        self.add_column("ID", width=GANTT_TABLE_ID_WIDTH)
-        self.add_column("Task", width=GANTT_TABLE_TASK_MIN_WIDTH)
-        self.add_column("Est[h]", width=GANTT_TABLE_EST_HOURS_WIDTH)
+        # Add fixed columns with centered headers
+        self.add_column(Text("ID", justify="center"), width=GANTT_TABLE_ID_WIDTH)
+        self.add_column(Text("Task", justify="center"), width=GANTT_TABLE_TASK_MIN_WIDTH)
+        self.add_column(Text("Est[h]", justify="center"), width=GANTT_TABLE_EST_HOURS_WIDTH)
 
         # Add single Timeline column (contains all dates)
         # Store date range for later use
@@ -83,8 +83,8 @@ class GanttDataTable(DataTable):
             current_date = start_date + timedelta(days=day_offset)
             self._date_columns.append(current_date)
 
-        # Single Timeline column
-        self.add_column("Timeline")
+        # Single Timeline column with centered header
+        self.add_column(Text("Timeline", justify="center"))
 
     def load_gantt(self, gantt_result: GanttResult):
         """Load Gantt data into the table.
@@ -140,10 +140,25 @@ class GanttDataTable(DataTable):
             start_date, end_date, self._holiday_checker
         )
 
-        # Add three separate rows for month, today marker, and day
-        self.add_row("", "[dim]Date[/dim]", "", month_line)
-        self.add_row("", "", "", today_line)
-        self.add_row("", "", "", day_line)
+        # Add three separate rows for month, today marker, and day with centered cells
+        self.add_row(
+            Text("", justify="center"),
+            Text("Date", style="dim", justify="center"),
+            Text("", justify="center"),
+            month_line,
+        )
+        self.add_row(
+            Text("", justify="center"),
+            Text("", justify="center"),
+            Text("", justify="center"),
+            today_line,
+        )
+        self.add_row(
+            Text("", justify="center"),
+            Text("", justify="center"),
+            Text("", justify="center"),
+            day_line,
+        )
 
     def _add_task_row(
         self,
@@ -190,7 +205,12 @@ class GanttDataTable(DataTable):
             )
             timeline.append(display, style=style)
 
-        self.add_row(task_id, task_name, est_hours, timeline)
+        self.add_row(
+            Text(task_id, justify="center"),
+            Text(task_name, justify="center"),
+            Text(est_hours, justify="center"),
+            timeline,
+        )
 
     def _add_workload_row(
         self,
@@ -205,17 +225,17 @@ class GanttDataTable(DataTable):
             start_date: Start date of the chart
             end_date: End date of the chart
         """
-        # Fixed columns
-        workload_id = ""
-        workload_label = "[bold yellow]Workload[h][/bold yellow]"
-        workload_est = ""
-
         # Build workload timeline using the formatter
         workload_timeline = GanttCellFormatter.build_workload_timeline(
             daily_workload, start_date, end_date
         )
 
-        self.add_row(workload_id, workload_label, workload_est, workload_timeline)
+        self.add_row(
+            Text("", justify="center"),
+            Text("Workload[h]", style="bold yellow", justify="center"),
+            Text("", justify="center"),
+            workload_timeline,
+        )
 
     def get_legend_text(self) -> Text:
         """Build legend text for the Gantt chart.

@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import ClassVar
 
+from rich.text import Text
 from textual.binding import Binding
 from textual.widgets import DataTable
 
@@ -57,16 +58,16 @@ class TaskTable(DataTable):
 
     def setup_columns(self):
         """Set up table columns."""
-        self.add_column("ID", width=TASK_TABLE_ID_WIDTH)
-        self.add_column("Name", width=TASK_TABLE_NAME_WIDTH)
-        self.add_column("Pri", width=TASK_TABLE_PRIORITY_WIDTH)
-        self.add_column("Status", width=TASK_TABLE_STATUS_WIDTH)
-        self.add_column("Elapsed", width=TASK_TABLE_ELAPSED_WIDTH)
-        self.add_column("Fixed", width=TASK_TABLE_FIXED_WIDTH)
-        self.add_column("Deps", width=TASK_TABLE_DEPENDS_ON_WIDTH)
-        self.add_column("Duration", width=TASK_TABLE_DURATION_WIDTH)
-        self.add_column("Deadline", width=TASK_TABLE_DEADLINE_WIDTH)
-        self.add_column("Note", width=TASK_TABLE_NOTE_WIDTH)
+        self.add_column(Text("ID", justify="center"), width=TASK_TABLE_ID_WIDTH)
+        self.add_column(Text("Name", justify="center"), width=TASK_TABLE_NAME_WIDTH)
+        self.add_column(Text("Pri", justify="center"), width=TASK_TABLE_PRIORITY_WIDTH)
+        self.add_column(Text("Status", justify="center"), width=TASK_TABLE_STATUS_WIDTH)
+        self.add_column(Text("Elapsed", justify="center"), width=TASK_TABLE_ELAPSED_WIDTH)
+        self.add_column(Text("Fixed", justify="center"), width=TASK_TABLE_FIXED_WIDTH)
+        self.add_column(Text("Deps", justify="center"), width=TASK_TABLE_DEPENDS_ON_WIDTH)
+        self.add_column(Text("Duration", justify="center"), width=TASK_TABLE_DURATION_WIDTH)
+        self.add_column(Text("Deadline", justify="center"), width=TASK_TABLE_DEADLINE_WIDTH)
+        self.add_column(Text("Note", justify="center"), width=TASK_TABLE_NOTE_WIDTH)
 
     def load_tasks(self, tasks: list[Task]):
         """Load tasks into the table.
@@ -91,7 +92,6 @@ class TaskTable(DataTable):
             # Format status with color
             status_text = task.status.value
             status_color = STATUS_STYLES.get(task.status, "white")
-            status_styled = f"[{status_color}]{status_text}[/{status_color}]"
 
             # Format duration
             duration = self._format_duration(task)
@@ -111,22 +111,25 @@ class TaskTable(DataTable):
             # Format elapsed time
             elapsed_time = self._format_elapsed_time(task)
 
-            # Add row
+            # Format name
+            name_text = (
+                task.name[:TASK_NAME_MAX_DISPLAY_LENGTH] + "..."
+                if len(task.name) > TASK_NAME_MAX_DISPLAY_LENGTH
+                else task.name
+            )
+
+            # Add row with centered Text objects
             self.add_row(
-                str(task.id),
-                (
-                    task.name[:TASK_NAME_MAX_DISPLAY_LENGTH] + "..."
-                    if len(task.name) > TASK_NAME_MAX_DISPLAY_LENGTH
-                    else task.name
-                ),
-                str(task.priority),
-                status_styled,
-                elapsed_time,
-                fixed_indicator,
-                dependencies,
-                duration,
-                deadline,
-                note_indicator,
+                Text(str(task.id), justify="center"),
+                Text(name_text, justify="center"),
+                Text(str(task.priority), justify="center"),
+                Text(status_text, style=status_color, justify="center"),
+                Text(elapsed_time, justify="center"),
+                Text(fixed_indicator, justify="center"),
+                Text(dependencies, justify="center"),
+                Text(duration, justify="center"),
+                Text(deadline, justify="center"),
+                Text(note_indicator, justify="center"),
             )
             self._task_map[idx] = task
 
