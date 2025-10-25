@@ -3,8 +3,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 
+from domain.constants import SECONDS_PER_HOUR
 from domain.exceptions.task_exceptions import TaskValidationError
-from shared.constants.time import SECONDS_PER_HOUR
 
 
 class TaskStatus(Enum):

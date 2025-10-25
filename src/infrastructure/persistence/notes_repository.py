@@ -6,7 +6,7 @@ implementing the Infrastructure layer responsibility for file I/O.
 
 from pathlib import Path
 
-from shared.constants.time import MIN_FILE_SIZE_FOR_CONTENT
+from domain.constants import MIN_FILE_SIZE_FOR_CONTENT
 from shared.xdg_utils import XDGDirectories
 
 

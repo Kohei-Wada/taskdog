@@ -22,9 +22,7 @@ from shared.constants.status_verbs import StatusVerbs
 from shared.constants.time import (
     DAYS_PER_WEEK,
     MAX_HOURS_PER_DAY_LIMIT,
-    MIN_FILE_SIZE_FOR_CONTENT,
     MIN_HOURS_PER_DAY_EXCLUSIVE,
-    SECONDS_PER_HOUR,
 )
 
 # === Date and Time: Weekday Detection ===
@@ -58,12 +56,10 @@ __all__ = [
     "DEFAULT_START_HOUR",
     "ISO_8601_FORMAT",
     "MAX_HOURS_PER_DAY_LIMIT",
-    "MIN_FILE_SIZE_FOR_CONTENT",
     "MIN_HOURS_PER_DAY_EXCLUSIVE",
     "NOTES_DIR_NAME",
     "NOTE_FILE_EXTENSION",
     "SATURDAY",
-    "SECONDS_PER_HOUR",
     "SORT_SENTINEL_FUTURE",
     "SORT_SENTINEL_PAST",
     "SUNDAY",
