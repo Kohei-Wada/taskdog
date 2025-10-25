@@ -140,13 +140,18 @@ class TaskTable(DataTable):
             return None
         return self._task_map.get(self.cursor_row)
 
-    def refresh_tasks(self, tasks: list[Task]):
+    def refresh_tasks(self, tasks: list[Task], keep_scroll_position: bool = False):
         """Refresh the table with updated tasks while maintaining cursor position.
 
         Args:
             tasks: List of tasks to display
+            keep_scroll_position: Whether to preserve scroll position during refresh.
+                                 Set to True for periodic updates to avoid scroll stuttering.
         """
         current_row = self.cursor_row
+        # Save scroll position before refresh
+        saved_scroll_y = self.scroll_y if keep_scroll_position else None
+
         self._all_tasks = tasks
         # Reapply current filter if active
         if self._current_query:
@@ -154,9 +159,14 @@ class TaskTable(DataTable):
             self._render_tasks(filtered_tasks)
         else:
             self._render_tasks(tasks)
-        # Restore cursor position if still valid
+
+        # Always restore cursor position if still valid
         if 0 <= current_row < len(self._task_map):
             self.move_cursor(row=current_row)
+
+            # Restore scroll position to prevent stuttering
+            if saved_scroll_y is not None:
+                self.scroll_y = saved_scroll_y
 
     def filter_tasks(self, query: str):
         """Filter tasks based on search query with smart case matching.

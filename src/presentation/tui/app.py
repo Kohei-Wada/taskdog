@@ -271,4 +271,5 @@ class TaskdogTUI(App):
             if tasks:
                 # Refresh the table display with current tasks
                 # This will recalculate elapsed time for IN_PROGRESS tasks
-                self.main_screen.task_table.refresh_tasks(tasks)
+                # Keep scroll position to avoid stuttering during user navigation
+                self.main_screen.task_table.refresh_tasks(tasks, keep_scroll_position=True)

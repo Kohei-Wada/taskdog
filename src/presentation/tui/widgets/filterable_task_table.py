@@ -78,14 +78,16 @@ class FilterableTaskTable(Vertical):
             self.task_table.load_tasks(tasks)
             self._update_search_result()
 
-    def refresh_tasks(self, tasks: list[Task]) -> None:
+    def refresh_tasks(self, tasks: list[Task], keep_scroll_position: bool = False) -> None:
         """Refresh the table with updated tasks.
 
         Args:
             tasks: List of tasks to display
+            keep_scroll_position: Whether to preserve scroll position during refresh.
+                                 Set to True for periodic updates to avoid scroll stuttering.
         """
         if self.task_table:
-            self.task_table.refresh_tasks(tasks)
+            self.task_table.refresh_tasks(tasks, keep_scroll_position=keep_scroll_position)
             self._update_search_result()
 
     def get_selected_task(self) -> Task | None:
