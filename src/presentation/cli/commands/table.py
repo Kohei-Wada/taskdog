@@ -32,7 +32,6 @@ from shared.click_types.datetime_with_default import DateTimeWithDefault
 )
 @click.option(
     "--sort",
-    "-s",
     type=click.Choice(["id", "priority", "deadline", "name", "status", "planned_start"]),
     default="id",
     help="Sort tasks by specified field (default: id)",
@@ -53,12 +52,14 @@ from shared.click_types.datetime_with_default import DateTimeWithDefault
 )
 @click.option(
     "--start-date",
+    "-s",
     type=DateTimeWithDefault(),
     help="Start date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
     "Shows tasks with any date field >= start date.",
 )
 @click.option(
     "--end-date",
+    "-e",
     type=DateTimeWithDefault(),
     help="End date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
     "Shows tasks with any date field <= end date.",
