@@ -2,6 +2,7 @@
 
 import click
 
+from application.queries.filters.date_range_filter import DateRangeFilter
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.status_filter import StatusFilter
 from application.queries.task_query_service import TaskQueryService
@@ -9,6 +10,7 @@ from domain.entities.task import TaskStatus
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.renderers.rich_table_renderer import RichTableRenderer
+from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
 @click.command(
@@ -49,14 +51,27 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
     "Available: id, name, note, priority, status, depends_on, planned_start, planned_end, "
     "actual_start, actual_end, deadline, duration, created_at",
 )
+@click.option(
+    "--start-date",
+    type=DateTimeWithDefault(),
+    help="Start date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
+    "Shows tasks with any date field >= start date.",
+)
+@click.option(
+    "--end-date",
+    type=DateTimeWithDefault(),
+    help="End date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
+    "Shows tasks with any date field <= end date.",
+)
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def table_command(ctx, all, status, sort, reverse, fields):
+def table_command(ctx, all, status, sort, reverse, fields, start_date, end_date):
     """Display tasks as a flat table.
 
     By default, only shows incomplete tasks (PENDING, IN_PROGRESS).
     Use -a/--all to show all tasks including archived.
     Use --status to filter by specific status.
+    Use --start-date and --end-date to filter by date range.
 
     Examples:
         taskdog table                              # Show incomplete tasks
@@ -65,6 +80,8 @@ def table_command(ctx, all, status, sort, reverse, fields):
         taskdog table --status completed           # Show only completed tasks
         taskdog table -s priority -r               # Sort by priority descending
         taskdog table --fields id,name,status      # Show specific fields only
+        taskdog table --start-date 2025-10-01      # Tasks with dates >= Oct 1
+        taskdog table --start-date 2025-10-01 --end-date 2025-10-31  # October tasks
     """
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
@@ -75,6 +92,10 @@ def table_command(ctx, all, status, sort, reverse, fields):
     if fields:
         # Split by comma and strip whitespace
         field_list = [f.strip() for f in fields.split(",")]
+
+    # Convert datetime to date objects if provided
+    start_date_obj = start_date.date() if start_date else None
+    end_date_obj = end_date.date() if end_date else None
 
     # Apply filter based on options (priority: --status > --all > default)
     if status:
@@ -90,6 +111,11 @@ def table_command(ctx, all, status, sort, reverse, fields):
 
     # Get filtered and sorted tasks
     tasks = task_query_service.get_filtered_tasks(filter_obj, sort_by=sort, reverse=reverse)
+
+    # Apply date range filter if specified (applied after status/all filter)
+    if start_date_obj or end_date_obj:
+        date_filter = DateRangeFilter(start_date=start_date_obj, end_date=end_date_obj)
+        tasks = date_filter.filter(tasks)
 
     # Render and display
     console_writer = ctx_obj.console_writer
