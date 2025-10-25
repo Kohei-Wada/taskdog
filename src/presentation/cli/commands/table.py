@@ -3,10 +3,8 @@
 import click
 
 from application.queries.filters.date_range_filter import DateRangeFilter
-from application.queries.filters.incomplete_filter import IncompleteFilter
-from application.queries.filters.status_filter import StatusFilter
 from application.queries.task_query_service import TaskQueryService
-from domain.entities.task import TaskStatus
+from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.renderers.rich_table_renderer import RichTableRenderer
@@ -99,16 +97,7 @@ def table_command(ctx, all, status, sort, reverse, fields, start_date, end_date)
     end_date_obj = end_date.date() if end_date else None
 
     # Apply filter based on options (priority: --status > --all > default)
-    if status:
-        # Filter by specific status (case-insensitive)
-        status_enum = TaskStatus(status.upper())
-        filter_obj = StatusFilter(status_enum)
-    elif all:
-        # Show all tasks (no filter)
-        filter_obj = None
-    else:
-        # Default: show incomplete only
-        filter_obj = IncompleteFilter()
+    filter_obj = build_task_filter(all=all, status=status)
 
     # Get filtered and sorted tasks
     tasks = task_query_service.get_filtered_tasks(filter_obj, sort_by=sort, reverse=reverse)

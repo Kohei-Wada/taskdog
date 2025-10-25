@@ -2,8 +2,8 @@
 
 import click
 
-from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.task_query_service import TaskQueryService
+from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
@@ -17,6 +17,7 @@ from shared.utils.date_utils import get_previous_monday
 
 By default, shows incomplete tasks only (PENDING, IN_PROGRESS).
 Use -a/--all to include completed, failed, and archived tasks.
+Use --status to filter by specific status (overrides --all).
 
 \b
 WORKLOAD CALCULATION:
@@ -43,6 +44,7 @@ TIMELINE SYMBOLS:
 EXAMPLE:
   taskdog gantt                                  # Show incomplete tasks
   taskdog gantt -a                              # Show all tasks (including archived)
+  taskdog gantt --status completed              # Show only completed tasks
   taskdog gantt --start-date 2025-10-01 --end-date 2025-10-31
 """,
 )
@@ -67,6 +69,14 @@ EXAMPLE:
     help="Show all tasks including completed, failed, and archived",
 )
 @click.option(
+    "--status",
+    type=click.Choice(
+        ["pending", "in_progress", "completed", "canceled", "archived"], case_sensitive=False
+    ),
+    default=None,
+    help="Filter tasks by status (overrides --all)",
+)
+@click.option(
     "--sort",
     type=click.Choice(["id", "priority", "deadline", "name", "status", "planned_start"]),
     default="deadline",
@@ -80,11 +90,12 @@ EXAMPLE:
 )
 @click.pass_context
 @handle_command_errors("displaying Gantt chart")
-def gantt_command(ctx, start_date, end_date, show_all, sort, reverse):
+def gantt_command(ctx, start_date, end_date, show_all, status, sort, reverse):
     """Display tasks as a Gantt chart with workload analysis.
 
     By default, shows incomplete tasks (PENDING, IN_PROGRESS).
     Use -a/--all to include all tasks (including archived).
+    Use --status to filter by specific status (overrides --all).
 
     The Gantt chart visualizes task timelines and provides daily workload
     analysis to help identify scheduling conflicts and overallocated days.
@@ -93,9 +104,8 @@ def gantt_command(ctx, start_date, end_date, show_all, sort, reverse):
     repository = ctx_obj.repository
     task_query_service = TaskQueryService(repository)
 
-    # Apply appropriate filter based on --all flag
-    # Show all tasks (no filter) if --all, otherwise show incomplete only
-    filter_obj = None if show_all else IncompleteFilter()
+    # Apply filter based on options (priority: --status > --all > default)
+    filter_obj = build_task_filter(all=show_all, status=status)
 
     # Convert datetime to date objects if provided (DateTimeWithDefault returns datetime)
     # Default to previous Monday if start_date not provided
