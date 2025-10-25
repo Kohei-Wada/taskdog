@@ -186,36 +186,7 @@ class TaskdogTUI(App):
         # Update gantt chart and table
         if self.main_screen:
             if self.main_screen.gantt_widget:
-                # Calculate appropriate date range based on screen width
-                from datetime import timedelta
-
-                from shared.utils.date_utils import get_previous_monday
-
-                # Use gantt widget's display calculation if available
-                widget = self.main_screen.gantt_widget
-                display_days = (
-                    widget._calculate_display_days()
-                    if hasattr(widget, "_calculate_display_days")
-                    else 28
-                )
-                start_date = get_previous_monday()
-                end_date = start_date + timedelta(days=display_days - 1)
-
-                # Extract task IDs
-                task_ids = [t.id for t in tasks]
-
-                # Get pre-computed gantt data from TaskService with appropriate date range
-                gantt_result = self.task_service.get_gantt_data(
-                    task_ids=task_ids,
-                    sort_by=self._gantt_sort_by,
-                    start_date=start_date,
-                    end_date=end_date,
-                )
-                self.main_screen.gantt_widget.update_gantt(
-                    task_ids=task_ids,
-                    gantt_result=gantt_result,
-                    sort_by=self._gantt_sort_by,
-                )
+                self.main_screen.gantt_widget.update_gantt(tasks, sort_by=self._gantt_sort_by)
 
             if self.main_screen.task_table:
                 self.main_screen.task_table.refresh_tasks(tasks)

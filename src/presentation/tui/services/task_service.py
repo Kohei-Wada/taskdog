@@ -1,19 +1,17 @@
 """Task service facade for TUI operations."""
 
-from datetime import date, datetime
+from datetime import datetime
 
 from application.dto.archive_task_request import ArchiveTaskRequest
 from application.dto.cancel_task_request import CancelTaskRequest
 from application.dto.complete_task_request import CompleteTaskRequest
 from application.dto.create_task_request import CreateTaskRequest
-from application.dto.gantt_result import GanttResult
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.dto.pause_task_request import PauseTaskRequest
 from application.dto.start_task_request import StartTaskRequest
 from application.dto.update_task_request import UpdateTaskRequest
 from application.queries.filters.incomplete_filter import IncompleteFilter
-from application.queries.filters.task_filter import TaskFilter
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
@@ -232,40 +230,3 @@ class TaskService:
         """
         incomplete_filter = IncompleteFilter()
         return self.query_service.get_filtered_tasks(incomplete_filter, sort_by=sort_by)
-
-    def get_gantt_data(
-        self,
-        task_ids: list[int],
-        sort_by: str = "deadline",
-        start_date: date | None = None,
-        end_date: date | None = None,
-    ) -> GanttResult:
-        """Get Gantt chart data for the given tasks.
-
-        Args:
-            task_ids: List of task IDs to include in the gantt chart
-            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
-            start_date: Optional start date (auto-calculated if not provided)
-            end_date: Optional end date (auto-calculated if not provided)
-
-        Returns:
-            GanttResult containing business data for Gantt visualization
-        """
-
-        class TaskIdFilter(TaskFilter):
-            """Filter that only includes tasks with specific IDs."""
-
-            def __init__(self, task_id_set: set[int]):
-                self.task_ids = task_id_set
-
-            def filter(self, all_tasks: list[Task]) -> list[Task]:
-                return [t for t in all_tasks if t.id in self.task_ids]
-
-        filter_obj = TaskIdFilter(set(task_ids))
-        return self.query_service.get_gantt_data(
-            filter_obj=filter_obj,
-            sort_by=sort_by,
-            reverse=False,
-            start_date=start_date,
-            end_date=end_date,
-        )
