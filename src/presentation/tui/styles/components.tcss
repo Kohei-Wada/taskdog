@@ -25,7 +25,7 @@ Input {
 /* Filterable Task Table */
 #filterable-task-table {
     width: 100%;
-    height: auto;
+    height: 1fr;
     background: transparent;
     border: round $primary;
     margin-bottom: 1;

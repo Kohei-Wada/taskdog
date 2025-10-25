@@ -1,7 +1,7 @@
 """Main screen for the TUI."""
 
 from textual.app import ComposeResult
-from textual.containers import VerticalScroll
+from textual.containers import Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header
 
@@ -32,7 +32,7 @@ class MainScreen(Screen):
         """
         yield Header(show_clock=True)
 
-        with VerticalScroll():
+        with Vertical():
             # Gantt chart section (main display)
             self.gantt_widget = GanttWidget(id="gantt-widget")
             yield self.gantt_widget

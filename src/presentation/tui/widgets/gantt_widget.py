@@ -8,7 +8,7 @@ from contextlib import suppress
 from datetime import date, timedelta
 
 from textual.app import ComposeResult
-from textual.containers import Center
+from textual.containers import Center, VerticalScroll
 from textual.widgets import Static
 
 from application.dto.gantt_result import GanttResult
@@ -27,7 +27,7 @@ from shared.utils.date_utils import get_previous_monday
 from shared.utils.holiday_checker import HolidayChecker
 
 
-class GanttWidget(Static):
+class GanttWidget(VerticalScroll):
     """A widget for displaying gantt chart using GanttDataTable.
 
     This widget manages the GanttDataTable and handles date range calculations
@@ -118,6 +118,17 @@ class GanttWidget(Static):
 
         # Directly load the pre-computed gantt result
         self._load_gantt_data()
+
+    def update(self, message: str) -> None:
+        """Update the gantt widget with a message.
+
+        Args:
+            message: Message to display
+        """
+        if self._gantt_table:
+            self._gantt_table.clear(columns=True)
+            self._gantt_table.add_column("Message")
+            self._gantt_table.add_row(message)
 
     def _show_empty_message(self):
         """Show empty message when no tasks are available."""

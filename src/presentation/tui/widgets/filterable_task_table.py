@@ -1,7 +1,7 @@
 """Filterable task table widget combining search and table."""
 
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import Vertical
 from textual.widgets import Input
 
 from domain.entities.task import Task
@@ -10,7 +10,7 @@ from presentation.tui.widgets.search_input import SearchInput
 from presentation.tui.widgets.task_table import TaskTable
 
 
-class FilterableTaskTable(Container):
+class FilterableTaskTable(Vertical):
     """A task table with integrated search functionality."""
 
     def __init__(self, notes_repository: NotesRepository, *args, **kwargs):

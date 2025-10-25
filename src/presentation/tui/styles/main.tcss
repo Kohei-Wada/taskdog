@@ -24,9 +24,6 @@ MainScreen {
     background: transparent;
     border: round $primary;
     margin-bottom: 1;
-    overflow-y: auto;
-    overflow-x: auto;
-    content-align: center middle;
 }
 
 /* Gantt data table - inside gantt widget */
@@ -37,9 +34,7 @@ MainScreen {
 /* Task table - inside filterable container */
 #task-table {
     width: 100%;
-    height: auto;
-    min-height: 10;
-    max-height: 30;
+    height: 1fr;
     background: transparent;
     overflow-y: auto;
 }
