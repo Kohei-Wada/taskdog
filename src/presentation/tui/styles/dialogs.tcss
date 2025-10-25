@@ -23,7 +23,9 @@ TaskDetailScreen {
 
 /* Dialog size variants */
 .dialog-compact {
-    width: 55;  /* For simple yes/no confirmations */
+    width: auto;  /* Auto-adjust width based on content */
+    min-width: 55;  /* Minimum width for simple yes/no confirmations */
+    max-width: 90;  /* Maximum width to prevent too-wide dialogs */
     max-height: 20;
 }
 

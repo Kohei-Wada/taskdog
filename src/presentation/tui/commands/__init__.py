@@ -13,6 +13,7 @@ _LAZY_COMMANDS = {
     "cancel_task": "presentation.tui.commands.cancel_task_command:CancelTaskCommand",
     "done_task": "presentation.tui.commands.complete_task_command:CompleteTaskCommand",
     "delete_task": "presentation.tui.commands.delete_task_command:DeleteTaskCommand",
+    "hard_delete_task": "presentation.tui.commands.hard_delete_task_command:HardDeleteTaskCommand",
     "edit_note": "presentation.tui.commands.edit_note_command:EditNoteCommand",
     "edit_task": "presentation.tui.commands.edit_task_command:EditTaskCommand",
     "optimize": "presentation.tui.commands.optimize_command:OptimizeCommand",

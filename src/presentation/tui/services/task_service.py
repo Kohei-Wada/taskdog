@@ -10,6 +10,7 @@ from application.dto.gantt_result import GanttResult
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
 from application.dto.pause_task_request import PauseTaskRequest
+from application.dto.remove_task_request import RemoveTaskRequest
 from application.dto.start_task_request import StartTaskRequest
 from application.dto.update_task_request import UpdateTaskRequest
 from application.queries.filters.incomplete_filter import IncompleteFilter
@@ -20,6 +21,7 @@ from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from application.use_cases.pause_task import PauseTaskUseCase
+from application.use_cases.remove_task import RemoveTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task, TaskStatus
@@ -145,6 +147,16 @@ class TaskService:
         use_case = ArchiveTaskUseCase(self.repository, self.time_tracker)
         archive_input = ArchiveTaskRequest(task_id=task_id)
         return use_case.execute(archive_input)
+
+    def hard_delete_task(self, task_id: int) -> None:
+        """Permanently delete a task (hard delete).
+
+        Args:
+            task_id: Task ID
+        """
+        use_case = RemoveTaskUseCase(self.repository)
+        remove_input = RemoveTaskRequest(task_id=task_id)
+        use_case.execute(remove_input)
 
     def optimize_schedule(
         self,
