@@ -28,18 +28,56 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         if os.path.exists(self.test_filename):
             os.unlink(self.test_filename)
 
-    def test_execute_update_priority(self):
-        """Test updating task priority"""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+    def test_execute_update_single_field(self):
+        """Test updating a single field - parameterized test"""
+        future_date_7 = datetime.now() + timedelta(days=7)
+        future_date_14 = datetime.now() + timedelta(days=14)
+        future_date_30 = datetime.now() + timedelta(days=30)
 
-        input_dto = UpdateTaskRequest(task_id=task.id, priority=3)
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        test_cases = [
+            ("priority", {"priority": 3}, "priority", 3, "Update priority"),
+            (
+                "planned_start",
+                {"planned_start": future_date_7},
+                "planned_start",
+                future_date_7,
+                "Update planned start",
+            ),
+            (
+                "planned_end",
+                {"planned_end": future_date_14},
+                "planned_end",
+                future_date_14,
+                "Update planned end",
+            ),
+            (
+                "deadline",
+                {"deadline": future_date_30},
+                "deadline",
+                future_date_30,
+                "Update deadline",
+            ),
+            (
+                "estimated_duration",
+                {"estimated_duration": 4.5},
+                "estimated_duration",
+                4.5,
+                "Update estimated duration",
+            ),
+        ]
 
-        self.assertEqual(result_task.priority, 3)
-        self.assertIn("priority", updated_fields)
-        self.assertEqual(len(updated_fields), 1)
+        for field_name, update_kwargs, expected_field, expected_value, description in test_cases:
+            with self.subTest(description=description):
+                task = Task(name="Test Task", priority=1)
+                task.id = self.repository.generate_next_id()
+                self.repository.save(task)
+
+                input_dto = UpdateTaskRequest(task_id=task.id, **update_kwargs)
+                result_task, updated_fields = self.use_case.execute(input_dto)
+
+                self.assertEqual(getattr(result_task, field_name), expected_value)
+                self.assertIn(expected_field, updated_fields)
+                self.assertEqual(len(updated_fields), 1)
 
     def test_execute_update_status(self):
         """Test updating task status with time tracking"""
@@ -54,64 +92,6 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.assertIn("status", updated_fields)
         # Verify time tracking was triggered
         self.assertIsNotNone(result_task.actual_start)
-
-    def test_execute_update_planned_start(self):
-        """Test updating planned start time"""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
-
-        # Use future date
-        future_date = datetime.now() + timedelta(days=7)
-        input_dto = UpdateTaskRequest(task_id=task.id, planned_start=future_date)
-        result_task, updated_fields = self.use_case.execute(input_dto)
-
-        self.assertEqual(result_task.planned_start, future_date)
-        self.assertIn("planned_start", updated_fields)
-        self.assertEqual(len(updated_fields), 1)
-
-    def test_execute_update_planned_end(self):
-        """Test updating planned end time"""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
-
-        # Use future date
-        future_date = datetime.now() + timedelta(days=14)
-        input_dto = UpdateTaskRequest(task_id=task.id, planned_end=future_date)
-        result_task, updated_fields = self.use_case.execute(input_dto)
-
-        self.assertEqual(result_task.planned_end, future_date)
-        self.assertIn("planned_end", updated_fields)
-        self.assertEqual(len(updated_fields), 1)
-
-    def test_execute_update_deadline(self):
-        """Test updating deadline"""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
-
-        # Use future date
-        future_date = datetime.now() + timedelta(days=30)
-        input_dto = UpdateTaskRequest(task_id=task.id, deadline=future_date)
-        result_task, updated_fields = self.use_case.execute(input_dto)
-
-        self.assertEqual(result_task.deadline, future_date)
-        self.assertIn("deadline", updated_fields)
-        self.assertEqual(len(updated_fields), 1)
-
-    def test_execute_update_estimated_duration(self):
-        """Test updating estimated duration"""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
-
-        input_dto = UpdateTaskRequest(task_id=task.id, estimated_duration=4.5)
-        result_task, updated_fields = self.use_case.execute(input_dto)
-
-        self.assertEqual(result_task.estimated_duration, 4.5)
-        self.assertIn("estimated_duration", updated_fields)
-        self.assertEqual(len(updated_fields), 1)
 
     def test_execute_update_multiple_fields(self):
         """Test updating multiple fields at once"""
@@ -195,33 +175,26 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.assertIn("deadline", updated_fields)
         self.assertIn("estimated_duration", updated_fields)
 
-    def test_execute_status_change_to_completed_records_end_time(self):
-        """Test that changing status to COMPLETED records actual_end timestamp"""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        task.actual_start = datetime(2025, 10, 12, 9, 0, 0)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+    def test_execute_status_change_records_end_time(self):
+        """Test that changing status to finished states records actual_end timestamp"""
+        test_cases = [
+            (TaskStatus.COMPLETED, "Change to COMPLETED"),
+            (TaskStatus.CANCELED, "Change to CANCELED"),
+        ]
 
-        input_dto = UpdateTaskRequest(task_id=task.id, status=TaskStatus.COMPLETED)
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        for target_status, description in test_cases:
+            with self.subTest(description=description):
+                task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
+                task.actual_start = datetime(2025, 10, 12, 9, 0, 0)
+                task.id = self.repository.generate_next_id()
+                self.repository.save(task)
 
-        self.assertEqual(result_task.status, TaskStatus.COMPLETED)
-        self.assertIsNotNone(result_task.actual_end)
-        self.assertIn("status", updated_fields)
+                input_dto = UpdateTaskRequest(task_id=task.id, status=target_status)
+                result_task, updated_fields = self.use_case.execute(input_dto)
 
-    def test_execute_status_change_to_canceled_records_end_time(self):
-        """Test that changing status to CANCELED records actual_end timestamp"""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        task.actual_start = datetime(2025, 10, 12, 9, 0, 0)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
-
-        input_dto = UpdateTaskRequest(task_id=task.id, status=TaskStatus.CANCELED)
-        result_task, updated_fields = self.use_case.execute(input_dto)
-
-        self.assertEqual(result_task.status, TaskStatus.CANCELED)
-        self.assertIsNotNone(result_task.actual_end)
-        self.assertIn("status", updated_fields)
+                self.assertEqual(result_task.status, target_status)
+                self.assertIsNotNone(result_task.actual_end)
+                self.assertIn("status", updated_fields)
 
     def test_execute_updates_are_persisted(self):
         """Test that updates are correctly persisted to repository"""
