@@ -41,6 +41,18 @@ Input {
     margin-bottom: 1;
 }
 
+#search-input-container {
+    width: 100%;
+    height: 3;
+}
+
+#search-icon {
+    width: auto;
+    height: 3;
+    content-align: center middle;
+    padding: 0 1;
+}
+
 #search-input {
     width: 1fr;
     height: 3;

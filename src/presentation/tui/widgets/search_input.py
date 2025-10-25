@@ -1,7 +1,7 @@
 """Search input widget for filtering tasks in the TUI."""
 
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import Container, Horizontal
 from textual.message import Message
 from textual.widgets import Input, Static
 
@@ -19,7 +19,9 @@ class SearchInput(Container):
 
     def compose(self) -> ComposeResult:
         """Compose the search input with a label."""
-        yield Input(placeholder="🔍 Search for tasks...", id="search-input")
+        with Horizontal(id="search-input-container"):
+            yield Static("🔍", id="search-icon")
+            yield Input(placeholder="Search for tasks...", id="search-input")
         yield Static("", id="search-result", classes="search-result")
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
