@@ -180,24 +180,6 @@ class WorkloadCalculatorTest(unittest.TestCase):
             current_date = start_date + timedelta(days=day_offset)
             self.assertEqual(result[current_date], 0.0)
 
-    def test_count_weekdays(self):
-        """Test weekday counting helper method."""
-        # Monday to Friday (5 weekdays)
-        count_result = self.calculator._count_weekdays(date(2025, 1, 6), date(2025, 1, 10))
-        self.assertEqual(count_result, 5)
-
-        # Friday to Tuesday (3 weekdays: Fri, Mon, Tue)
-        count_result = self.calculator._count_weekdays(date(2025, 1, 10), date(2025, 1, 14))
-        self.assertEqual(count_result, 3)
-
-        # Saturday to Sunday (0 weekdays)
-        count_result = self.calculator._count_weekdays(date(2025, 1, 11), date(2025, 1, 12))
-        self.assertEqual(count_result, 0)
-
-        # Full week Monday to Sunday (5 weekdays)
-        count_result = self.calculator._count_weekdays(date(2025, 1, 6), date(2025, 1, 12))
-        self.assertEqual(count_result, 5)
-
     def test_calculate_daily_workload_excludes_completed_tasks(self):
         """Test that completed tasks are excluded from workload calculation."""
         # Task 1: PENDING task (Monday to Wednesday, 6 hours, 3 weekdays)
