@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import ClassVar
 
 from dateutil import parser as dateutil_parser
+from dateutil.parser import ParserError
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
@@ -179,7 +180,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         try:
             # Parse flexible date formats using dateutil
             start_date = dateutil_parser.parse(start_date_str, fuzzy=True)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, OverflowError, ParserError):
             error_message.update(
                 "[red]Error: Invalid date format. Examples: today, tomorrow, 2025-12-01[/red]"
             )

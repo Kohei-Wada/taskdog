@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from dateutil import parser as dateutil_parser
+from dateutil.parser import ParserError
 
 
 @dataclass
@@ -119,7 +120,7 @@ class DateTimeValidatorTUI:
             # Convert to the standard format YYYY-MM-DD HH:MM:SS
             formatted_datetime = parsed_date.strftime("%Y-%m-%d %H:%M:%S")
             return ValidationResult(is_valid=True, error_message="", value=formatted_datetime)
-        except (ValueError, TypeError, OverflowError):
+        except (ValueError, TypeError, OverflowError, ParserError):
             return ValidationResult(
                 is_valid=False,
                 error_message=f"Invalid {field_name} format. Examples: 2025-12-31, tomorrow 6pm",
