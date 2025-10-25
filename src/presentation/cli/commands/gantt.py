@@ -3,6 +3,7 @@
 import click
 
 from application.queries.task_query_service import TaskQueryService
+from presentation.cli.commands.common_options import filter_options, sort_options
 from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
@@ -60,37 +61,11 @@ EXAMPLE:
     type=DateTimeWithDefault(),
     help="End date for the chart (YYYY-MM-DD, MM-DD, or MM/DD). Defaults to last task date.",
 )
-@click.option(
-    "--all",
-    "-a",
-    "show_all",
-    is_flag=True,
-    default=False,
-    help="Show all tasks including completed, failed, and archived",
-)
-@click.option(
-    "--status",
-    type=click.Choice(
-        ["pending", "in_progress", "completed", "canceled", "archived"], case_sensitive=False
-    ),
-    default=None,
-    help="Filter tasks by status (overrides --all)",
-)
-@click.option(
-    "--sort",
-    type=click.Choice(["id", "priority", "deadline", "name", "status", "planned_start"]),
-    default="deadline",
-    help="Sort tasks by specified field (default: deadline)",
-)
-@click.option(
-    "--reverse",
-    "-r",
-    is_flag=True,
-    help="Reverse sort order",
-)
+@sort_options(default_sort="deadline")
+@filter_options()
 @click.pass_context
 @handle_command_errors("displaying Gantt chart")
-def gantt_command(ctx, start_date, end_date, show_all, status, sort, reverse):
+def gantt_command(ctx, start_date, end_date, all, status, sort, reverse):
     """Display tasks as a Gantt chart with workload analysis.
 
     By default, shows incomplete tasks (PENDING, IN_PROGRESS).
@@ -105,7 +80,7 @@ def gantt_command(ctx, start_date, end_date, show_all, status, sort, reverse):
     task_query_service = TaskQueryService(repository)
 
     # Apply filter based on options (priority: --status > --all > default)
-    filter_obj = build_task_filter(all=show_all, status=status)
+    filter_obj = build_task_filter(all=all, status=status)
 
     # Convert datetime to date objects if provided (DateTimeWithDefault returns datetime)
     # Default to previous Monday if start_date not provided

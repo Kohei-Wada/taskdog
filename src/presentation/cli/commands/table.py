@@ -2,43 +2,19 @@
 
 import click
 
-from application.queries.filters.date_range_filter import DateRangeFilter
-from application.queries.task_query_service import TaskQueryService
-from presentation.cli.commands.filter_helpers import build_task_filter
+from presentation.cli.commands.common_options import (
+    date_range_options,
+    filter_options,
+    sort_options,
+)
+from presentation.cli.commands.filter_helpers import apply_date_range_filter, build_task_filter
+from presentation.cli.commands.table_helpers import get_and_filter_tasks, render_table
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.renderers.rich_table_renderer import RichTableRenderer
-from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
 @click.command(
     name="table", help="Display tasks in flat table format (shows incomplete tasks by default)."
-)
-@click.option(
-    "--all",
-    "-a",
-    is_flag=True,
-    help="Show all tasks including completed, failed, and archived",
-)
-@click.option(
-    "--status",
-    type=click.Choice(
-        ["pending", "in_progress", "completed", "canceled", "archived"], case_sensitive=False
-    ),
-    default=None,
-    help="Filter tasks by status (overrides --all)",
-)
-@click.option(
-    "--sort",
-    type=click.Choice(["id", "priority", "deadline", "name", "status", "planned_start"]),
-    default="id",
-    help="Sort tasks by specified field (default: id)",
-)
-@click.option(
-    "--reverse",
-    "-r",
-    is_flag=True,
-    help="Reverse sort order",
 )
 @click.option(
     "--fields",
@@ -48,20 +24,9 @@ from shared.click_types.datetime_with_default import DateTimeWithDefault
     "Available: id, name, note, priority, status, depends_on, planned_start, planned_end, "
     "actual_start, actual_end, deadline, duration, created_at",
 )
-@click.option(
-    "--start-date",
-    "-s",
-    type=DateTimeWithDefault(),
-    help="Start date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
-    "Shows tasks with any date field >= start date.",
-)
-@click.option(
-    "--end-date",
-    "-e",
-    type=DateTimeWithDefault(),
-    help="End date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
-    "Shows tasks with any date field <= end date.",
-)
+@date_range_options()
+@sort_options(default_sort="id")
+@filter_options()
 @click.pass_context
 @handle_command_errors("displaying tasks")
 def table_command(ctx, all, status, sort, reverse, fields, start_date, end_date):
@@ -84,31 +49,20 @@ def table_command(ctx, all, status, sort, reverse, fields, start_date, end_date)
     """
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
-    task_query_service = TaskQueryService(repository)
 
-    # Parse fields option
+    # Parse fields option (no validation - renderer handles unknown fields gracefully)
     field_list = None
     if fields:
-        # Split by comma and strip whitespace
         field_list = [f.strip() for f in fields.split(",")]
-
-    # Convert datetime to date objects if provided
-    start_date_obj = start_date.date() if start_date else None
-    end_date_obj = end_date.date() if end_date else None
 
     # Apply filter based on options (priority: --status > --all > default)
     filter_obj = build_task_filter(all=all, status=status)
 
     # Get filtered and sorted tasks
-    tasks = task_query_service.get_filtered_tasks(filter_obj, sort_by=sort, reverse=reverse)
+    tasks = get_and_filter_tasks(repository, filter_obj, sort_by=sort, reverse=reverse)
 
-    # Apply date range filter if specified (applied after status/all filter)
-    if start_date_obj or end_date_obj:
-        date_filter = DateRangeFilter(start_date=start_date_obj, end_date=end_date_obj)
-        tasks = date_filter.filter(tasks)
+    # Apply date range filter if specified
+    tasks = apply_date_range_filter(tasks, start_date, end_date)
 
     # Render and display
-    console_writer = ctx_obj.console_writer
-    notes_repository = ctx_obj.notes_repository
-    renderer = RichTableRenderer(console_writer, notes_repository)
-    renderer.render(tasks, fields=field_list)
+    render_table(ctx_obj, tasks, fields=field_list)

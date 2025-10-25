@@ -2,12 +2,15 @@
 
 import click
 
-from application.queries.filters.date_range_filter import DateRangeFilter
 from application.queries.task_query_service import TaskQueryService
-from presentation.cli.commands.filter_helpers import build_task_filter
+from presentation.cli.commands.common_options import date_range_options, filter_options
+from presentation.cli.commands.filter_helpers import (
+    apply_date_range_filter,
+    build_task_filter,
+    parse_field_list,
+)
 from presentation.cli.context import CliContext
 from presentation.exporters import CsvTaskExporter, JsonTaskExporter
-from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 # Valid fields for export
 VALID_FIELDS = {
@@ -50,34 +53,8 @@ VALID_FIELDS = {
     "Available: id, name, priority, status, created_at, planned_start, planned_end, "
     "deadline, actual_start, actual_end, estimated_duration, daily_allocations",
 )
-@click.option(
-    "--all",
-    "-a",
-    is_flag=True,
-    help="Export all tasks including completed, failed, and archived",
-)
-@click.option(
-    "--status",
-    type=click.Choice(
-        ["pending", "in_progress", "completed", "canceled", "archived"], case_sensitive=False
-    ),
-    default=None,
-    help="Filter tasks by status (overrides --all)",
-)
-@click.option(
-    "--start-date",
-    "-s",
-    type=DateTimeWithDefault(),
-    help="Start date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
-    "Shows tasks with any date field >= start date.",
-)
-@click.option(
-    "--end-date",
-    "-e",
-    type=DateTimeWithDefault(),
-    help="End date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
-    "Shows tasks with any date field <= end date.",
-)
+@date_range_options()
+@filter_options()
 @click.pass_context
 def export_command(ctx, format, output, fields, all, status, start_date, end_date):
     """Export tasks in the specified format.
@@ -111,29 +88,11 @@ def export_command(ctx, format, output, fields, all, status, start_date, end_dat
         filter_obj = build_task_filter(all=all, status=status)
         tasks = task_query_service.get_filtered_tasks(filter_obj)
 
-        # Apply date range filter if specified (applied after status/all filter)
-        # Convert datetime to date objects if provided
-        start_date_obj = start_date.date() if start_date else None
-        end_date_obj = end_date.date() if end_date else None
+        # Apply date range filter if specified
+        tasks = apply_date_range_filter(tasks, start_date, end_date)
 
-        if start_date_obj or end_date_obj:
-            date_filter = DateRangeFilter(start_date=start_date_obj, end_date=end_date_obj)
-            tasks = date_filter.filter(tasks)
-
-        # Parse fields option
-        field_list = None
-        if fields:
-            # Split by comma and strip whitespace
-            field_list = [f.strip() for f in fields.split(",")]
-
-            # Validate field names
-            invalid_fields = [f for f in field_list if f not in VALID_FIELDS]
-            if invalid_fields:
-                valid_fields_str = ", ".join(sorted(VALID_FIELDS))
-                raise ValueError(
-                    f"Invalid field(s): {', '.join(invalid_fields)}. "
-                    f"Valid fields are: {valid_fields_str}"
-                )
+        # Parse and validate fields option
+        field_list = parse_field_list(fields, valid_fields=VALID_FIELDS)
 
         # Create appropriate exporter based on format
         if format == "json":

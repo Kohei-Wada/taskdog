@@ -30,6 +30,7 @@ from presentation.cli.commands.table import table_command
 from presentation.cli.commands.today import today_command
 from presentation.cli.commands.tui_command import tui_command
 from presentation.cli.commands.update import update_command
+from presentation.cli.commands.week import week_command
 from presentation.cli.context import CliContext
 from presentation.console.rich_console_writer import RichConsoleWriter
 from shared.config_manager import ConfigManager
@@ -114,6 +115,7 @@ cli.add_command(cancel_command)
 cli.add_command(gantt_command)
 cli.add_command(log_hours_command)
 cli.add_command(today_command)
+cli.add_command(week_command)
 cli.add_command(note_command)
 cli.add_command(show_command)
 cli.add_command(deadline_command)
