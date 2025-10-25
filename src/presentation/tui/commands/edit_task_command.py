@@ -112,7 +112,8 @@ class EditTaskCommand(TUICommandBase):
         )
 
         # Update task via TaskService with only changed fields
-        updated_task = self.task_service.update_task(
+        # TaskService.update_task returns (updated_task, updated_fields)
+        updated_task, updated_fields = self.task_service.update_task(
             task_id=task.id,  # type: ignore
             name=form_data.name if form_data.name != task.name else None,
             priority=form_data.priority if form_data.priority != task.priority else None,
@@ -124,23 +125,6 @@ class EditTaskCommand(TUICommandBase):
             planned_end=form_planned_end if form_planned_end != task.planned_end else None,
             is_fixed=form_data.is_fixed if form_data.is_fixed != task.is_fixed else None,
         )
-
-        # Build list of changed fields for notification
-        updated_fields = []
-        if form_data.name != task.name:
-            updated_fields.append("name")
-        if form_data.priority != task.priority:
-            updated_fields.append("priority")
-        if form_deadline != task.deadline:
-            updated_fields.append("deadline")
-        if form_data.estimated_duration != task.estimated_duration:
-            updated_fields.append("estimated_duration")
-        if form_planned_start != task.planned_start:
-            updated_fields.append("planned_start")
-        if form_planned_end != task.planned_end:
-            updated_fields.append("planned_end")
-        if form_data.is_fixed != task.is_fixed:
-            updated_fields.append("is_fixed")
 
         return updated_task, updated_fields
 
@@ -187,8 +171,5 @@ class EditTaskCommand(TUICommandBase):
         # Reload UI and notify
         self.reload_tasks()
 
-        if updated_fields:
-            fields_str = ", ".join(updated_fields)
-            self.notify_success(f"Updated task {updated_task.id}: {fields_str}")
-        else:
-            self.notify_warning("No changes made")
+        fields_str = ", ".join(updated_fields)
+        self.notify_success(f"Updated task {updated_task.id}: {fields_str}")

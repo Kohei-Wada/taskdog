@@ -201,7 +201,7 @@ class TaskService:
         deadline: datetime | None = None,
         estimated_duration: float | None = None,
         is_fixed: bool | None = None,
-    ) -> Task:
+    ) -> tuple[Task, list[str]]:
         """Update a task.
 
         Args:
@@ -216,7 +216,7 @@ class TaskService:
             is_fixed: Whether task is fixed (optional)
 
         Returns:
-            The updated task
+            Tuple of (updated task, list of updated field names)
         """
         use_case = UpdateTaskUseCase(self.repository, self.time_tracker)
         update_input = UpdateTaskRequest(
@@ -230,8 +230,7 @@ class TaskService:
             estimated_duration=estimated_duration,
             is_fixed=is_fixed,
         )
-        updated_task, _updated_fields = use_case.execute(update_input)
-        return updated_task
+        return use_case.execute(update_input)
 
     def get_incomplete_tasks(self, sort_by: str = "id") -> list[Task]:
         """Get incomplete tasks (PENDING, IN_PROGRESS).
