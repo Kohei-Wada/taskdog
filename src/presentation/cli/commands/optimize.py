@@ -1,5 +1,7 @@
 """Optimize command - Auto-generate optimal task schedules."""
 
+from datetime import datetime
+
 import click
 
 from application.dto.optimization_result import OptimizationResult
@@ -103,6 +105,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
             max_hours_per_day=max_hours_per_day,
             force_override=force,
             algorithm_name=algorithm,
+            current_time=datetime.now(),
         )
     )
 

@@ -85,8 +85,8 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
         Returns:
             Copy of task with updated schedule, or None if allocation fails
         """
-        # Create allocator with holiday_checker (available after optimize_tasks sets it)
-        allocator = GreedyForwardAllocator(self.config, self.holiday_checker)
+        # Create allocator with holiday_checker and current_time (available after optimize_tasks sets it)
+        allocator = GreedyForwardAllocator(self.config, self.holiday_checker, self.current_time)
         return allocator.allocate(
             task, start_date, max_hours_per_day, self.daily_allocations, self.repository
         )

@@ -67,6 +67,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         force_override: bool,
         holiday_checker: "HolidayChecker | None" = None,
+        current_time: datetime | None = None,
     ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
         """Optimize task schedules using genetic algorithm.
 
@@ -95,12 +96,13 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         self.start_date = start_date
         self.max_hours_per_day = max_hours_per_day
         self.holiday_checker = holiday_checker
+        self.current_time = current_time
         self.daily_allocations: dict[date, float] = {}
         self.failed_tasks: list[SchedulingFailure] = []
         self._initialize_allocations(tasks, force_override)
 
         # Create allocator instance
-        allocator = GreedyForwardAllocator(self.config, self.holiday_checker)
+        allocator = GreedyForwardAllocator(self.config, self.holiday_checker, self.current_time)
 
         # Clear fitness cache for new optimization run
         self._fitness_cache.clear()

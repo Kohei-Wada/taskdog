@@ -45,6 +45,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         force_override: bool,
         holiday_checker: "HolidayChecker | None" = None,
+        current_time: datetime | None = None,
     ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
         """Optimize task schedules using round-robin algorithm.
 
@@ -55,6 +56,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
             holiday_checker: Optional HolidayChecker for holiday detection
+            current_time: Current time for calculating remaining hours on today
 
         Returns:
             Tuple of (modified_tasks, daily_allocations, failed_tasks)
@@ -71,8 +73,9 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         # Filter out tasks without ID (should not happen, but for type safety)
         schedulable_tasks = [t for t in schedulable_tasks if t.id is not None]
 
-        # Store holiday_checker for use in allocation
+        # Store holiday_checker and current_time for use in allocation
         self.holiday_checker = holiday_checker
+        self.current_time = current_time
 
         # Initialize failed tasks list
         failed_tasks: list[SchedulingFailure] = []

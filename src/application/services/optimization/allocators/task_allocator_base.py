@@ -24,15 +24,22 @@ class TaskAllocatorBase(ABC):
     separately by the optimization strategy.
     """
 
-    def __init__(self, config: Config, holiday_checker: "HolidayChecker | None" = None):
+    def __init__(
+        self,
+        config: Config,
+        holiday_checker: "HolidayChecker | None" = None,
+        current_time: datetime | None = None,
+    ):
         """Initialize allocator with configuration.
 
         Args:
             config: Application configuration
             holiday_checker: Optional HolidayChecker for holiday detection
+            current_time: Current time for calculating remaining hours on today
         """
         self.config = config
         self.holiday_checker = holiday_checker
+        self.current_time = current_time
 
     @abstractmethod
     def allocate(
@@ -130,6 +137,9 @@ class TaskAllocatorBase(ABC):
     ) -> float:
         """Calculate available hours for a specific date.
 
+        If the date is today and current_time is set, calculates remaining hours
+        until end of business day (config.time.default_end_hour).
+
         Args:
             daily_allocations: Current daily allocations
             date_obj: Date to check
@@ -139,7 +149,17 @@ class TaskAllocatorBase(ABC):
             Available hours for the date
         """
         current_allocation = self._get_current_allocation(daily_allocations, date_obj)
-        return max_hours_per_day - current_allocation
+        available_from_max = max_hours_per_day - current_allocation
+
+        # If current_time is set and date_obj is today, limit by remaining hours
+        if self.current_time and date_obj == self.current_time.date():
+            end_hour = self.config.time.default_end_hour
+            current_hour = self.current_time.hour + self.current_time.minute / 60.0
+            remaining_hours_today = max(0.0, end_hour - current_hour)
+            # Return minimum of available_from_max and remaining_hours_today
+            return min(available_from_max, remaining_hours_today)
+
+        return available_from_max
 
     def _set_planned_times(
         self,

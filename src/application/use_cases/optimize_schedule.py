@@ -69,6 +69,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleRequest, OptimizationResul
             max_hours_per_day=input_dto.max_hours_per_day,
             force_override=input_dto.force_override,
             holiday_checker=self.holiday_checker,
+            current_time=input_dto.current_time,
         )
 
         # Save successfully scheduled tasks

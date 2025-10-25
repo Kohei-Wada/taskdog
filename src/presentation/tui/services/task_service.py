@@ -172,6 +172,7 @@ class TaskService:
             max_hours_per_day=max_hours_per_day or self.config.optimization.max_hours_per_day,
             force_override=force_override,
             algorithm_name=algorithm,
+            current_time=datetime.now(),
         )
 
         use_case = OptimizeScheduleUseCase(self.repository, self.config)
