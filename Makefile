@@ -1,4 +1,4 @@
-.PHONY: help test install clean lint format typecheck check completions
+.PHONY: help test install clean lint format typecheck check completions coverage
 
 .DEFAULT_GOAL := help
 
@@ -10,6 +10,12 @@ help: ## Show this help message
 
 test: ## Run all tests
 	PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
+
+coverage: ## Run tests with coverage report
+	PYTHONPATH=src uv run python -m coverage run -m unittest discover -s tests/ -t .
+	uv run python -m coverage report -m
+	uv run python -m coverage html
+	@echo "HTML coverage report generated in htmlcov/index.html"
 
 install: ## Install taskdog CLI tool
 	uv cache clean
