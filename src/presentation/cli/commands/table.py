@@ -3,8 +3,6 @@
 import click
 
 from application.queries.filters.incomplete_filter import IncompleteFilter
-from application.queries.filters.this_week_filter import ThisWeekFilter
-from application.queries.filters.today_filter import TodayFilter
 from application.queries.task_query_service import TaskQueryService
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
@@ -19,13 +17,6 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
     "-a",
     is_flag=True,
     help="Show all tasks including completed, failed, and archived",
-)
-@click.option(
-    "--filter",
-    type=click.Choice(["all", "incomplete", "today", "week"]),
-    default=None,
-    help="Filter tasks by criteria: all (all tasks), incomplete (default), "
-    "today (today's tasks), week (this week's tasks)",
 )
 @click.option(
     "--sort",
@@ -50,19 +41,17 @@ from presentation.renderers.rich_table_renderer import RichTableRenderer
 )
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def table_command(ctx, all, filter, sort, reverse, fields):
+def table_command(ctx, all, sort, reverse, fields):
     """Display tasks as a flat table.
 
     By default, only shows incomplete tasks (PENDING, IN_PROGRESS).
-    Use --filter to apply different filtering criteria.
+    Use -a/--all to show all tasks including archived.
 
     Examples:
         taskdog table                              # Show incomplete tasks
         taskdog table -a                           # Show all tasks (including archived)
-        taskdog table --filter today               # Show today's tasks
-        taskdog table --filter week                # Show this week's tasks
-        taskdog table --filter all                 # Show all tasks (same as -a)
-        taskdog table --filter week --fields id,name,deadline  # Combine options
+        taskdog table -s priority -r               # Sort by priority descending
+        taskdog table --fields id,name,status      # Show specific fields only
     """
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
@@ -74,26 +63,9 @@ def table_command(ctx, all, filter, sort, reverse, fields):
         # Split by comma and strip whitespace
         field_list = [f.strip() for f in fields.split(",")]
 
-    # Determine filter type (--all flag overrides --filter option for backward compatibility)
-    if all:
-        filter_type = "all"
-    elif filter:
-        filter_type = filter
-    else:
-        filter_type = "incomplete"
-
-    # Create appropriate filter object
-    if filter_type == "all":
-        # Show all tasks (no filter - includes archived)
-        filter_obj = None
-    elif filter_type == "incomplete":
-        filter_obj = IncompleteFilter()
-    elif filter_type == "today":
-        filter_obj = TodayFilter(include_completed=False)
-    elif filter_type == "week":
-        filter_obj = ThisWeekFilter(include_completed=False)
-    else:
-        filter_obj = IncompleteFilter()  # Default fallback
+    # Apply filter based on --all flag
+    # Show all tasks (no filter) if --all, otherwise show incomplete only
+    filter_obj = None if all else IncompleteFilter()
 
     # Get filtered and sorted tasks
     tasks = task_query_service.get_filtered_tasks(filter_obj, sort_by=sort, reverse=reverse)
