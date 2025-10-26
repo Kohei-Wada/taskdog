@@ -11,10 +11,10 @@ if TYPE_CHECKING:
     from presentation.tui.app import TaskdogTUI
 
 
-# Command metadata: (command_name, help_text)
+# Command metadata: (command_name, help_text, force_override)
 OPTIMIZE_COMMANDS: list[tuple[str, str, bool]] = [
     ("Optimize", "Optimize schedule with selected algorithm", False),
-    ("Force Optimize", "Force optimize schedule (override existing)", True),
+    ("Optimize (force)", "Force optimize schedule (override existing)", True),
 ]
 
 
