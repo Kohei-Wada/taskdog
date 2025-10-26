@@ -37,6 +37,8 @@ class TaskTable(DataTable):
     BINDINGS: ClassVar = [
         Binding("j", "cursor_down", "Down", show=False),
         Binding("k", "cursor_up", "Up", show=False),
+        Binding("ctrl+j", "cursor_down", "Down", show=False),
+        Binding("ctrl+k", "cursor_up", "Up", show=False),
         Binding("g", "scroll_home", "Top", show=False),
         Binding("G", "scroll_end", "Bottom", show=False),
         Binding("ctrl+d", "page_down", "Page Down", show=False),
