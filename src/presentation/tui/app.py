@@ -94,6 +94,14 @@ class TaskdogTUI(App):
         "edit_note": ("edit_note", {}),
     }
 
+    # Mapping of sort keys to display labels
+    _SORT_KEY_LABELS: ClassVar[dict[str, str]] = {
+        "deadline": "Deadline",
+        "planned_start": "Planned Start",
+        "priority": "Priority",
+        "id": "ID",
+    }
+
     # Load CSS from external files
     CSS_PATH: ClassVar[list[str | Path]] = _get_css_paths()
 
@@ -263,6 +271,10 @@ class TaskdogTUI(App):
         """
         self._gantt_sort_by = sort_key
         self._load_tasks()
+
+        # Show notification message
+        sort_label = self._SORT_KEY_LABELS.get(sort_key, sort_key)
+        self.notify(f"Sorted by {sort_label}")
 
     def action_show_search(self) -> None:
         """Show the search input."""
