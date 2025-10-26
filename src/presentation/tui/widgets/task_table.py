@@ -120,6 +120,9 @@ class TaskTable(DataTable):
                 else task.name
             )
 
+            # Apply strikethrough style for completed tasks
+            name_style = "strike" if task.status == TaskStatus.COMPLETED else None
+
             # Format tags
             tags_text = ", ".join(task.tags) if task.tags else ""
             if len(tags_text) > 18:
@@ -128,7 +131,7 @@ class TaskTable(DataTable):
             # Add row with centered Text objects
             self.add_row(
                 Text(str(task.id), justify="center"),
-                Text(name_text, justify="center"),
+                Text(name_text, style=name_style, justify="left"),
                 Text(str(task.priority), justify="center"),
                 Text(status_text, style=status_color, justify="center"),
                 Text(elapsed_time, justify="center"),

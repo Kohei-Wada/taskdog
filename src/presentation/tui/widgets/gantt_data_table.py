@@ -207,7 +207,7 @@ class GanttDataTable(DataTable):
 
         self.add_row(
             Text(task_id, justify="center"),
-            Text(task_name, justify="center"),
+            Text.from_markup(task_name, justify="left"),
             Text(est_hours, justify="center"),
             timeline,
         )
