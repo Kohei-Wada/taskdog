@@ -27,6 +27,7 @@ from presentation.cli.commands.show import show_command
 from presentation.cli.commands.start import start_command
 from presentation.cli.commands.stats import stats_command
 from presentation.cli.commands.table import table_command
+from presentation.cli.commands.tags import tags_command
 from presentation.cli.commands.today import today_command
 from presentation.cli.commands.tui_command import tui_command
 from presentation.cli.commands.update import update_command
@@ -128,6 +129,7 @@ cli.add_command(estimate_command)
 cli.add_command(schedule_command)
 cli.add_command(optimize_command)
 cli.add_command(stats_command)
+cli.add_command(tags_command)
 cli.add_command(tui_command)
 
 if __name__ == "__main__":

@@ -82,6 +82,7 @@ class EditTaskCommand(TUICommandBase):
             or form_planned_start != task.planned_start
             or form_planned_end != task.planned_end
             or form_data.is_fixed != task.is_fixed
+            or (form_data.tags or []) != task.tags
         )
 
         return fields_changed, dependencies_changed
@@ -124,6 +125,7 @@ class EditTaskCommand(TUICommandBase):
             planned_start=form_planned_start if form_planned_start != task.planned_start else None,
             planned_end=form_planned_end if form_planned_end != task.planned_end else None,
             is_fixed=form_data.is_fixed if form_data.is_fixed != task.is_fixed else None,
+            tags=(form_data.tags or []) if (form_data.tags or []) != task.tags else None,
         )
 
         return updated_task, updated_fields

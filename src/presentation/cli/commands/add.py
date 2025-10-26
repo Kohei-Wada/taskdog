@@ -33,9 +33,16 @@ from presentation.cli.error_handler import handle_task_errors
     type=int,
     help="Task IDs this task depends on (can be specified multiple times)",
 )
+@click.option(
+    "--tag",
+    "-t",
+    multiple=True,
+    type=str,
+    help="Tags for categorization and filtering (can be specified multiple times)",
+)
 @click.pass_context
 @handle_task_errors("adding task", is_parent=True)
-def add_command(ctx, name, priority, fixed, depends_on):
+def add_command(ctx, name, priority, fixed, depends_on, tag):
     """Add a new task.
 
     Usage:
@@ -67,6 +74,7 @@ def add_command(ctx, name, priority, fixed, depends_on):
         name=name,
         priority=effective_priority,
         is_fixed=fixed,
+        tags=list(tag) if tag else None,
     )
 
     # Execute use case
@@ -86,3 +94,5 @@ def add_command(ctx, name, priority, fixed, depends_on):
     console_writer.task_success("Added", task)
     if task.depends_on:
         console_writer.info(f"Dependencies: {task.depends_on}")
+    if task.tags:
+        console_writer.info(f"Tags: {', '.join(task.tags)}")

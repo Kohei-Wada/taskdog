@@ -54,6 +54,7 @@ class AddTaskCommand(TUICommandBase):
                 planned_start=planned_start,
                 planned_end=planned_end,
                 is_fixed=form_data.is_fixed,
+                tags=form_data.tags,
             )
 
             # Add dependencies if specified

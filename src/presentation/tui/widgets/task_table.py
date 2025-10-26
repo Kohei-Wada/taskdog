@@ -25,6 +25,7 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_NOTE_WIDTH,
     TASK_TABLE_PRIORITY_WIDTH,
     TASK_TABLE_STATUS_WIDTH,
+    TASK_TABLE_TAGS_WIDTH,
 )
 from shared.constants.formats import DATETIME_FORMAT
 
@@ -67,6 +68,7 @@ class TaskTable(DataTable):
         self.add_column(Text("Deps", justify="center"), width=TASK_TABLE_DEPENDS_ON_WIDTH)
         self.add_column(Text("Duration", justify="center"), width=TASK_TABLE_DURATION_WIDTH)
         self.add_column(Text("Deadline", justify="center"), width=TASK_TABLE_DEADLINE_WIDTH)
+        self.add_column(Text("Tags", justify="center"), width=TASK_TABLE_TAGS_WIDTH)
         self.add_column(Text("Note", justify="center"), width=TASK_TABLE_NOTE_WIDTH)
 
     def load_tasks(self, tasks: list[Task]):
@@ -118,6 +120,11 @@ class TaskTable(DataTable):
                 else task.name
             )
 
+            # Format tags
+            tags_text = ", ".join(task.tags) if task.tags else ""
+            if len(tags_text) > 18:
+                tags_text = tags_text[:17] + "..."
+
             # Add row with centered Text objects
             self.add_row(
                 Text(str(task.id), justify="center"),
@@ -129,6 +136,7 @@ class TaskTable(DataTable):
                 Text(dependencies, justify="center"),
                 Text(duration, justify="center"),
                 Text(deadline, justify="center"),
+                Text(tags_text, justify="center"),
                 Text(note_indicator, justify="center"),
             )
             self._task_map[idx] = task
@@ -237,7 +245,7 @@ class TaskTable(DataTable):
         """Check if a task matches the search query.
 
         Searches across all visible fields: ID, name, status, priority,
-        dependencies, duration, deadline, and fixed status.
+        dependencies, duration, deadline, tags, and fixed status.
 
         Args:
             task: Task to check
@@ -270,6 +278,10 @@ class TaskTable(DataTable):
         # Add dependencies if present
         if task.depends_on:
             searchable_fields.append(",".join(str(dep_id) for dep_id in task.depends_on))
+
+        # Add tags if present
+        if task.tags:
+            searchable_fields.extend(task.tags)
 
         # Add fixed indicators if task is fixed
         if task.is_fixed:

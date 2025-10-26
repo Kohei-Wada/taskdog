@@ -35,6 +35,7 @@ class CreateTaskUseCase(UseCase[CreateTaskRequest, Task]):
             deadline=input_dto.deadline,
             estimated_duration=input_dto.estimated_duration,
             is_fixed=input_dto.is_fixed,
+            tags=input_dto.tags or [],
         )
 
         return task

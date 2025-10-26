@@ -35,6 +35,7 @@ class Task:
         depends_on: List of task IDs that must be completed before this task can start
         is_fixed: Whether this task is fixed (cannot be moved by optimizer)
         actual_daily_hours: Actual work hours per day (date_str → hours)
+        tags: List of tags for categorization and filtering (non-empty, unique)
     """
 
     name: str
@@ -54,6 +55,7 @@ class Task:
     depends_on: list[int] = field(default_factory=list)
     is_fixed: bool = False
     actual_daily_hours: dict[date, float] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         """Validate entity invariants after initialization.
@@ -62,6 +64,7 @@ class Task:
         - Task name is not empty or whitespace-only
         - Priority is a positive integer
         - Estimated duration (if provided) is a positive number
+        - Tags are non-empty strings and unique
 
         Raises:
             TaskValidationError: If any invariant is violated
@@ -77,6 +80,13 @@ class Task:
         # Validate estimated_duration (if provided, must be positive)
         if self.estimated_duration is not None and self.estimated_duration <= 0:
             raise TaskValidationError("Estimated duration must be greater than 0")
+
+        # Validate tags (non-empty strings and unique)
+        for tag in self.tags:
+            if not tag or not tag.strip():
+                raise TaskValidationError("Tag cannot be empty")
+        if len(self.tags) != len(set(self.tags)):
+            raise TaskValidationError("Tags must be unique")
 
     @property
     def actual_duration_hours(self) -> float | None:
@@ -206,6 +216,7 @@ class Task:
             "actual_daily_hours": {k.isoformat(): v for k, v in self.actual_daily_hours.items()}
             if self.actual_daily_hours
             else {},
+            "tags": self.tags,
         }
 
     @classmethod
@@ -253,6 +264,10 @@ class Task:
             if is_deleted and "status" in task_data:
                 # If task was deleted, change status to ARCHIVED
                 task_data["status"] = TaskStatus.ARCHIVED
+
+        # Backward compatibility: initialize tags as empty list if not present
+        if "tags" not in task_data:
+            task_data["tags"] = []
 
         return cls(**task_data)
 

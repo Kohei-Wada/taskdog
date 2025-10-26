@@ -106,6 +106,12 @@ class RichTableRenderer(RichRendererBase):
             "style": "yellow",
             "no_wrap": True,
         },
+        "tags": {
+            "header": "Tags",
+            "justify": "left",
+            "style": "magenta",
+            "no_wrap": False,
+        },
     }
 
     # Default fields to display when none specified
@@ -117,6 +123,7 @@ class RichTableRenderer(RichRendererBase):
         "status",
         "is_fixed",
         "depends_on",
+        "tags",
         "planned_start",
         "planned_end",
         "actual_start",
@@ -207,6 +214,7 @@ class RichTableRenderer(RichRendererBase):
             "status": lambda t: self._format_status(t),
             "is_fixed": lambda t: "📌" if t.is_fixed else "",
             "depends_on": lambda t: self._format_dependencies(t),
+            "tags": lambda t: self._format_tags(t),
             "planned_start": lambda t: self._format_datetime(t.planned_start),
             "planned_end": lambda t: self._format_datetime(t.planned_end),
             "actual_start": lambda t: self._format_datetime(t.actual_start),
@@ -219,6 +227,19 @@ class RichTableRenderer(RichRendererBase):
 
         extractor = field_extractors.get(field_name)
         return extractor(task) if extractor else "-"
+
+    def _format_tags(self, task: Task) -> str:
+        """Format task tags for display.
+
+        Args:
+            task: Task to extract tags from
+
+        Returns:
+            Formatted tags string (e.g., "work, urgent" or "-")
+        """
+        if not task.tags:
+            return "-"
+        return ", ".join(task.tags)
 
     def _format_status(self, task: Task) -> str:
         """Format status with color styling.

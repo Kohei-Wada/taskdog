@@ -53,7 +53,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskRequest, tuple[Task, list[str]]]):
         input_dto: UpdateTaskRequest,
         updated_fields: list[str],
     ) -> None:
-        """Update standard fields (name, priority, planned times, deadline, estimated_duration, is_fixed).
+        """Update standard fields (name, priority, planned times, deadline, estimated_duration, is_fixed, tags).
 
         Args:
             task: Task to update
@@ -68,6 +68,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskRequest, tuple[Task, list[str]]]):
             "deadline": input_dto.deadline,
             "estimated_duration": input_dto.estimated_duration,
             "is_fixed": input_dto.is_fixed,
+            "tags": input_dto.tags,
         }
 
         for field_name, value in field_mapping.items():
