@@ -11,6 +11,13 @@ if TYPE_CHECKING:
     from presentation.tui.app import TaskdogTUI
 
 
+# Command metadata: (command_name, help_text)
+OPTIMIZE_COMMANDS: list[tuple[str, str, bool]] = [
+    ("Optimize", "Optimize schedule with selected algorithm", False),
+    ("Force Optimize", "Force optimize schedule (override existing)", True),
+]
+
+
 class SortCommandProvider(Provider):
     """Command provider for the main 'Sort' command."""
 
@@ -96,4 +103,45 @@ class SortOptionsProvider(Provider):
                     matcher.highlight(option_name),
                     partial(app.set_sort_order, sort_key),
                     help=description,
+                )
+
+
+class OptimizeCommandProvider(Provider):
+    """Command provider for optimization commands."""
+
+    async def discover(self) -> Hits:
+        """Return optimization commands.
+
+        Yields:
+            DiscoveryHit objects for Optimize and Force Optimize commands
+        """
+        app = cast("TaskdogTUI", self.app)
+
+        for command_name, help_text, force_override in OPTIMIZE_COMMANDS:
+            yield DiscoveryHit(
+                command_name,
+                partial(app.search_optimize, force_override),
+                help=help_text,
+            )
+
+    async def search(self, query: str) -> Hits:
+        """Search for optimization commands.
+
+        Args:
+            query: User's search query
+
+        Yields:
+            Hit objects for matching optimization commands
+        """
+        matcher = self.matcher(query)
+        app = cast("TaskdogTUI", self.app)
+
+        for command_name, help_text, force_override in OPTIMIZE_COMMANDS:
+            score = matcher.match(command_name)
+            if score > 0:
+                yield Hit(
+                    score,
+                    matcher.highlight(command_name),
+                    partial(app.search_optimize, force_override),
+                    help=help_text,
                 )

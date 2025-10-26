@@ -14,7 +14,11 @@ from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.notes_repository import NotesRepository
 from infrastructure.persistence.task_repository import TaskRepository
 from presentation.tui.commands.factory import CommandFactory
-from presentation.tui.commands.providers import SortCommandProvider, SortOptionsProvider
+from presentation.tui.commands.providers import (
+    OptimizeCommandProvider,
+    SortCommandProvider,
+    SortOptionsProvider,
+)
 from presentation.tui.context import TUIContext
 from presentation.tui.screens.main_screen import MainScreen
 from presentation.tui.services.task_service import TaskService
@@ -60,8 +64,6 @@ class TaskdogTUI(App):
         ("d", "done_task", "Done"),
         ("c", "cancel_task", "Cancel"),
         ("R", "reopen_task", "Reopen"),
-        ("o", "optimize", "Optimize"),
-        ("O", "optimize_force", "Force Optimize"),
         ("x", "delete_task", "Archive"),
         ("X", "hard_delete_task", "Delete"),
         ("r", "refresh", "Refresh"),
@@ -73,7 +75,7 @@ class TaskdogTUI(App):
     ]
 
     # Register custom command providers
-    COMMANDS = App.COMMANDS | {SortCommandProvider}
+    COMMANDS = App.COMMANDS | {SortCommandProvider, OptimizeCommandProvider}
 
     # Mapping of action names to command names and kwargs
     # Format: {action_name: (command_name, kwargs)}
@@ -89,8 +91,6 @@ class TaskdogTUI(App):
         "hard_delete_task": ("hard_delete_task", {}),
         "show_details": ("show_details", {}),
         "edit_task": ("edit_task", {}),
-        "optimize": ("optimize", {"force_override": False}),
-        "optimize_force": ("optimize", {"force_override": True}),
         "edit_note": ("edit_note", {}),
     }
 
@@ -243,6 +243,15 @@ class TaskdogTUI(App):
                 placeholder="Search for sort options…",
             ),
         )
+
+    def search_optimize(self, force_override: bool = False) -> None:
+        """Show optimization algorithm selection dialog.
+
+        Args:
+            force_override: Whether to force override existing schedules
+        """
+        # Execute optimize command which will show AlgorithmSelectionScreen
+        self.command_factory.execute("optimize", force_override=force_override)
 
     def set_sort_order(self, sort_key: str) -> None:
         """Set the sort order for Gantt chart and task list.
