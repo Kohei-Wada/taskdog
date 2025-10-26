@@ -18,8 +18,9 @@ class TaskSorter:
     - name: Task name (alphabetical, ascending by default)
     - status: Task status (alphabetical, ascending by default)
     - planned_start: Planned start date (ascending by default)
+    - estimated_duration: Estimated duration in hours (ascending by default - shorter tasks first)
 
-    Tasks with None values are sorted last for date/time fields.
+    Tasks with None values are sorted last for date/time/numeric fields.
     """
 
     def sort(
@@ -29,7 +30,7 @@ class TaskSorter:
 
         Args:
             tasks: List of tasks to sort
-            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
+            sort_by: Sort key (id, priority, deadline, name, status, planned_start, estimated_duration)
             reverse: Reverse sort order (default: False)
 
         Returns:
@@ -38,7 +39,15 @@ class TaskSorter:
         Raises:
             ValueError: If sort_by is not a valid sort key
         """
-        valid_keys = ["id", "priority", "deadline", "name", "status", "planned_start"]
+        valid_keys = [
+            "id",
+            "priority",
+            "deadline",
+            "name",
+            "status",
+            "planned_start",
+            "estimated_duration",
+        ]
         if sort_by not in valid_keys:
             raise ValueError(f"Invalid sort_by: {sort_by}. Must be one of {valid_keys}")
 
@@ -82,6 +91,9 @@ class TaskSorter:
         elif sort_by == "planned_start":
             return lambda task: self._parse_date_for_sort(task.planned_start)
 
+        elif sort_by == "estimated_duration":
+            return lambda task: self._parse_numeric_for_sort(task.estimated_duration)
+
     def _parse_date_for_sort(self, dt: datetime | None) -> datetime:
         """Prepare datetime for sorting, with None values sorted last.
 
@@ -94,3 +106,16 @@ class TaskSorter:
         if dt is None:
             return SORT_SENTINEL_FUTURE
         return dt
+
+    def _parse_numeric_for_sort(self, value: float | None) -> float:
+        """Prepare numeric value for sorting, with None values sorted last.
+
+        Args:
+            value: Numeric value to prepare for sorting (or None)
+
+        Returns:
+            float value (infinity if None)
+        """
+        if value is None:
+            return float("inf")
+        return value

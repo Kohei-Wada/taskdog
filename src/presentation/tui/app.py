@@ -99,6 +99,7 @@ class TaskdogTUI(App):
         "deadline": "Deadline",
         "planned_start": "Planned Start",
         "priority": "Priority",
+        "estimated_duration": "Duration",
         "id": "ID",
     }
 

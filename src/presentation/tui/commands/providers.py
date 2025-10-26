@@ -65,6 +65,7 @@ class SortOptionsProvider(Provider):
         ("deadline", "Deadline", "Urgency-based (earlier deadline first)"),
         ("planned_start", "Planned Start", "Timeline-based (chronological order)"),
         ("priority", "Priority", "Importance-based (higher priority first)"),
+        ("estimated_duration", "Duration", "Effort-based (shorter tasks first)"),
         ("id", "ID", "Creation order (lower ID first)"),
     ]
 
