@@ -12,22 +12,19 @@ from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.constants.colors import STATUS_STYLES
 from presentation.constants.symbols import EMOJI_NOTE
 from presentation.constants.table_dimensions import (
-    DEADLINE_DISPLAY_LENGTH,
     PAGE_SCROLL_SIZE,
     TASK_NAME_MAX_DISPLAY_LENGTH,
     TASK_TABLE_DEADLINE_WIDTH,
     TASK_TABLE_DEPENDS_ON_WIDTH,
     TASK_TABLE_DURATION_WIDTH,
     TASK_TABLE_ELAPSED_WIDTH,
-    TASK_TABLE_FIXED_WIDTH,
+    TASK_TABLE_FLAGS_WIDTH,
     TASK_TABLE_ID_WIDTH,
     TASK_TABLE_NAME_WIDTH,
-    TASK_TABLE_NOTE_WIDTH,
     TASK_TABLE_PRIORITY_WIDTH,
     TASK_TABLE_STATUS_WIDTH,
     TASK_TABLE_TAGS_WIDTH,
 )
-from shared.constants.formats import DATETIME_FORMAT
 
 
 class TaskTable(DataTable):
@@ -69,12 +66,13 @@ class TaskTable(DataTable):
         self.add_column(Text("Pri", justify="center"), width=TASK_TABLE_PRIORITY_WIDTH)
         self.add_column(Text("Status", justify="center"), width=TASK_TABLE_STATUS_WIDTH)
         self.add_column(Text("Elapsed", justify="center"), width=TASK_TABLE_ELAPSED_WIDTH)
-        self.add_column(Text("Fixed", justify="center"), width=TASK_TABLE_FIXED_WIDTH)
-        self.add_column(Text("Deps", justify="center"), width=TASK_TABLE_DEPENDS_ON_WIDTH)
         self.add_column(Text("Duration", justify="center"), width=TASK_TABLE_DURATION_WIDTH)
         self.add_column(Text("Deadline", justify="center"), width=TASK_TABLE_DEADLINE_WIDTH)
+        self.add_column(Text("Deps", justify="center"), width=TASK_TABLE_DEPENDS_ON_WIDTH)
         self.add_column(Text("Tags", justify="center"), width=TASK_TABLE_TAGS_WIDTH)
-        self.add_column(Text("Note", justify="center"), width=TASK_TABLE_NOTE_WIDTH)
+        self.add_column(
+            Text("", justify="center"), width=TASK_TABLE_FLAGS_WIDTH
+        )  # Flags (Fixed + Note)
 
     def on_mount(self) -> None:
         """Called when widget is mounted. Set initial indicator if table has rows."""
@@ -120,11 +118,10 @@ class TaskTable(DataTable):
             # Format dependencies
             dependencies = self._format_dependencies(task)
 
-            # Check if task has notes using NotesRepository
-            note_indicator = EMOJI_NOTE if self.notes_repository.has_notes(task.id) else ""
-
-            # Check if task is fixed
+            # Combine fixed and note indicators into flags
             fixed_indicator = "📌" if task.is_fixed else ""
+            note_indicator = EMOJI_NOTE if self.notes_repository.has_notes(task.id) else ""
+            flags = fixed_indicator + note_indicator
 
             # Format elapsed time
             elapsed_time = self._format_elapsed_time(task)
@@ -155,12 +152,11 @@ class TaskTable(DataTable):
                 Text(str(task.priority), justify="center"),
                 Text(status_text, style=status_color, justify="center"),
                 Text(elapsed_time, justify="center"),
-                Text(fixed_indicator, justify="center"),
-                Text(dependencies, justify="center"),
                 Text(duration, justify="center"),
                 Text(deadline, justify="center"),
+                Text(dependencies, justify="center"),
                 Text(tags_text, justify="center"),
-                Text(note_indicator, justify="center"),
+                Text(flags, justify="center"),  # Combined Fixed + Note flags (rightmost)
             )
             self._task_map[idx] = task
             self._row_keys[idx] = row_key
@@ -412,11 +408,15 @@ class TaskTable(DataTable):
         """
         if not deadline:
             return "-"
-        # Format datetime to string, then show only date and time (YYYY-MM-DD HH:MM)
-        deadline_str = deadline.strftime(DATETIME_FORMAT)
-        if len(deadline_str) >= DEADLINE_DISPLAY_LENGTH:
-            return deadline_str[:DEADLINE_DISPLAY_LENGTH]
-        return deadline_str
+
+        # Show year only if different from current year
+        current_year = datetime.now().year
+        if deadline.year == current_year:
+            # Current year: MM-DD HH:MM
+            return deadline.strftime("%m-%d %H:%M")
+        else:
+            # Different year: 'YY MM-DD HH:MM
+            return deadline.strftime("'%y %m-%d %H:%M")
 
     def _format_elapsed_time(self, task: Task) -> str:
         """Format elapsed time for IN_PROGRESS tasks.
