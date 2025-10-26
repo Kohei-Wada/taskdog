@@ -123,6 +123,7 @@ class RichTableRenderer(RichRendererBase):
         "status",
         "is_fixed",
         "depends_on",
+        "tags",
         "planned_start",
         "planned_end",
         "actual_start",
