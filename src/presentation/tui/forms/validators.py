@@ -1,6 +1,8 @@
 """Common validation logic for TUI forms."""
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Any
 
 from dateutil import parser as dateutil_parser
 from dateutil.parser import ParserError
@@ -21,7 +23,52 @@ class ValidationResult:
     value: object = None
 
 
-class TaskNameValidator:
+class BaseValidator(ABC):
+    """Base class for all validators.
+
+    This provides a common interface and helper methods for validation.
+    """
+
+    @staticmethod
+    @abstractmethod
+    def validate(*args: Any, **kwargs: Any) -> ValidationResult:
+        """Validate the input value.
+
+        Args:
+            *args: Positional arguments for validation
+            **kwargs: Keyword arguments for validation
+
+        Returns:
+            ValidationResult with validation status and error message
+        """
+        pass
+
+    @staticmethod
+    def _success(value: Any) -> ValidationResult:
+        """Create a successful validation result.
+
+        Args:
+            value: The validated value
+
+        Returns:
+            ValidationResult indicating success
+        """
+        return ValidationResult(is_valid=True, error_message="", value=value)
+
+    @staticmethod
+    def _error(message: str) -> ValidationResult:
+        """Create a failed validation result.
+
+        Args:
+            message: Error message
+
+        Returns:
+            ValidationResult indicating failure
+        """
+        return ValidationResult(is_valid=False, error_message=message, value=None)
+
+
+class TaskNameValidator(BaseValidator):
     """Validator for task names."""
 
     @staticmethod
@@ -36,13 +83,11 @@ class TaskNameValidator:
         """
         name = value.strip()
         if not name:
-            return ValidationResult(
-                is_valid=False, error_message="Task name is required", value=None
-            )
-        return ValidationResult(is_valid=True, error_message="", value=name)
+            return TaskNameValidator._error("Task name is required")
+        return TaskNameValidator._success(name)
 
 
-class PriorityValidator:
+class PriorityValidator(BaseValidator):
     """Validator for task priority."""
 
     @staticmethod
@@ -60,32 +105,22 @@ class PriorityValidator:
 
         # Empty string means default priority
         if not priority_str:
-            return ValidationResult(
-                is_valid=True,
-                error_message="",
-                value=default_priority,
-            )
+            return PriorityValidator._success(default_priority)
 
         # Try to parse as integer
         try:
             priority = int(priority_str)
         except ValueError:
-            return ValidationResult(
-                is_valid=False, error_message="Priority must be a number", value=None
-            )
+            return PriorityValidator._error("Priority must be a number")
 
         # Check that priority is positive
         if priority <= 0:
-            return ValidationResult(
-                is_valid=False,
-                error_message="Priority must be greater than 0",
-                value=None,
-            )
+            return PriorityValidator._error("Priority must be greater than 0")
 
-        return ValidationResult(is_valid=True, error_message="", value=priority)
+        return PriorityValidator._success(priority)
 
 
-class DateTimeValidatorTUI:
+class DateTimeValidatorTUI(BaseValidator):
     """Generic validator for date/time fields in TUI."""
 
     @staticmethod
@@ -98,13 +133,13 @@ class DateTimeValidatorTUI:
             default_hour: Default hour to use when only date is provided (from config)
 
         Returns:
-            ValidationResult with validation status, error message, and formatted date/time
+            ValidationResult with validation status, error_message, and formatted date/time
         """
         datetime_str = value.strip()
 
         # Empty string means no value
         if not datetime_str:
-            return ValidationResult(is_valid=True, error_message="", value=None)
+            return DateTimeValidatorTUI._success(None)
 
         # Check if input contains time component (look for colon)
         has_time = ":" in datetime_str
@@ -119,16 +154,14 @@ class DateTimeValidatorTUI:
 
             # Convert to the standard format YYYY-MM-DD HH:MM:SS
             formatted_datetime = parsed_date.strftime("%Y-%m-%d %H:%M:%S")
-            return ValidationResult(is_valid=True, error_message="", value=formatted_datetime)
+            return DateTimeValidatorTUI._success(formatted_datetime)
         except (ValueError, TypeError, OverflowError, ParserError):
-            return ValidationResult(
-                is_valid=False,
-                error_message=f"Invalid {field_name} format. Examples: 2025-12-31, tomorrow 6pm",
-                value=None,
+            return DateTimeValidatorTUI._error(
+                f"Invalid {field_name} format. Examples: 2025-12-31, tomorrow 6pm"
             )
 
 
-class DeadlineValidator:
+class DeadlineValidator(BaseValidator):
     """Validator for task deadlines."""
 
     @staticmethod
@@ -145,7 +178,7 @@ class DeadlineValidator:
         return DateTimeValidatorTUI.validate(value, "deadline", default_hour=default_hour)
 
 
-class PlannedStartValidator:
+class PlannedStartValidator(BaseValidator):
     """Validator for planned start date."""
 
     @staticmethod
@@ -162,7 +195,7 @@ class PlannedStartValidator:
         return DateTimeValidatorTUI.validate(value, "planned start", default_hour=default_hour)
 
 
-class PlannedEndValidator:
+class PlannedEndValidator(BaseValidator):
     """Validator for planned end date."""
 
     @staticmethod
@@ -179,7 +212,7 @@ class PlannedEndValidator:
         return DateTimeValidatorTUI.validate(value, "planned end", default_hour=default_hour)
 
 
-class DurationValidator:
+class DurationValidator(BaseValidator):
     """Validator for estimated duration."""
 
     @staticmethod
@@ -196,36 +229,26 @@ class DurationValidator:
 
         # Empty string means no duration estimate
         if not duration_str:
-            return ValidationResult(is_valid=True, error_message="", value=None)
+            return DurationValidator._success(None)
 
         # Try to parse as float
         try:
             duration = float(duration_str)
         except ValueError:
-            return ValidationResult(
-                is_valid=False, error_message="Duration must be a number", value=None
-            )
+            return DurationValidator._error("Duration must be a number")
 
         # Check that it's positive
         if duration <= 0:
-            return ValidationResult(
-                is_valid=False,
-                error_message="Duration must be greater than 0",
-                value=None,
-            )
+            return DurationValidator._error("Duration must be greater than 0")
 
         # Check reasonable upper limit (999 hours)
         if duration > 999:
-            return ValidationResult(
-                is_valid=False,
-                error_message="Duration must be 999 hours or less",
-                value=None,
-            )
+            return DurationValidator._error("Duration must be 999 hours or less")
 
-        return ValidationResult(is_valid=True, error_message="", value=duration)
+        return DurationValidator._success(duration)
 
 
-class DependenciesValidator:
+class DependenciesValidator(BaseValidator):
     """Validator for task dependencies (comma-separated task IDs)."""
 
     @staticmethod
@@ -242,7 +265,7 @@ class DependenciesValidator:
 
         # Empty string means no dependencies
         if not dependencies_str:
-            return ValidationResult(is_valid=True, error_message="", value=[])
+            return DependenciesValidator._success([])
 
         # Split by comma and parse each ID
         parts = [p.strip() for p in dependencies_str.split(",")]
@@ -255,28 +278,20 @@ class DependenciesValidator:
             try:
                 task_id = int(part)
             except ValueError:
-                return ValidationResult(
-                    is_valid=False,
-                    error_message=f"Invalid task ID: '{part}'. Must be a number.",
-                    value=None,
-                )
+                return DependenciesValidator._error(f"Invalid task ID: '{part}'. Must be a number.")
 
             if task_id <= 0:
-                return ValidationResult(
-                    is_valid=False,
-                    error_message=f"Task ID must be positive: {task_id}",
-                    value=None,
-                )
+                return DependenciesValidator._error(f"Task ID must be positive: {task_id}")
 
             task_ids.append(task_id)
 
         # Remove duplicates while preserving order
         unique_ids = list(dict.fromkeys(task_ids))
 
-        return ValidationResult(is_valid=True, error_message="", value=unique_ids)
+        return DependenciesValidator._success(unique_ids)
 
 
-class TagsValidator:
+class TagsValidator(BaseValidator):
     """Validator for task tags (comma-separated strings)."""
 
     @staticmethod
@@ -293,7 +308,7 @@ class TagsValidator:
 
         # Empty string means no tags
         if not tags_str:
-            return ValidationResult(is_valid=True, error_message="", value=[])
+            return TagsValidator._success([])
 
         # Split by comma and parse each tag
         parts = [p.strip() for p in tags_str.split(",")]
@@ -305,16 +320,12 @@ class TagsValidator:
 
             # Check for empty tag
             if not part.strip():
-                return ValidationResult(
-                    is_valid=False,
-                    error_message="Tag cannot be empty",
-                    value=None,
-                )
+                return TagsValidator._error("Tag cannot be empty")
 
             tags.append(part)
 
         # Check for duplicates
         if len(tags) != len(set(tags)):
-            return ValidationResult(is_valid=False, error_message="Tags must be unique", value=None)
+            return TagsValidator._error("Tags must be unique")
 
-        return ValidationResult(is_valid=True, error_message="", value=tags)
+        return TagsValidator._success(tags)

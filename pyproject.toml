@@ -170,6 +170,7 @@ packages = [
   "presentation.utils",
   "presentation.tui",
   "presentation.tui.commands",
+  "presentation.tui.formatters",
   "presentation.tui.forms",
   "presentation.tui.helpers",
   "presentation.tui.mixins",

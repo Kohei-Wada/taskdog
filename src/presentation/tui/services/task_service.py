@@ -29,11 +29,39 @@ from presentation.tui.context import TUIContext
 from shared.utils.date_utils import calculate_next_workday
 
 
+class _TaskIdFilter(TaskFilter):
+    """Filter that only includes tasks with specific IDs.
+
+    This is a private helper class used internally by TaskService
+    for filtering tasks by ID in gantt chart operations.
+    """
+
+    def __init__(self, task_id_set: set[int]):
+        """Initialize the filter.
+
+        Args:
+            task_id_set: Set of task IDs to include
+        """
+        self.task_ids = task_id_set
+
+    def filter(self, all_tasks: list[Task]) -> list[Task]:
+        """Filter tasks by ID.
+
+        Args:
+            all_tasks: All tasks to filter
+
+        Returns:
+            List of tasks matching the ID set
+        """
+        return [t for t in all_tasks if t.id in self.task_ids]
+
+
 class TaskService:
     """Facade service for task operations in TUI.
 
     This service provides a simplified interface to use cases,
-    reducing boilerplate in command classes.
+    reducing boilerplate in command classes. Methods are organized
+    into two categories: Commands (write operations) and Queries (read operations).
     """
 
     def __init__(self, context: TUIContext):
@@ -46,6 +74,10 @@ class TaskService:
         self.time_tracker = context.time_tracker
         self.query_service = context.query_service
         self.config = context.config
+
+    # ============================================================================
+    # Command Operations (Write)
+    # ============================================================================
 
     def create_task(
         self,
@@ -238,6 +270,10 @@ class TaskService:
         )
         return use_case.execute(update_input)
 
+    # ============================================================================
+    # Query Operations (Read)
+    # ============================================================================
+
     def get_incomplete_tasks(self, sort_by: str = "id") -> list[Task]:
         """Get incomplete tasks (PENDING, IN_PROGRESS).
 
@@ -268,17 +304,7 @@ class TaskService:
         Returns:
             GanttResult containing business data for Gantt visualization
         """
-
-        class TaskIdFilter(TaskFilter):
-            """Filter that only includes tasks with specific IDs."""
-
-            def __init__(self, task_id_set: set[int]):
-                self.task_ids = task_id_set
-
-            def filter(self, all_tasks: list[Task]) -> list[Task]:
-                return [t for t in all_tasks if t.id in self.task_ids]
-
-        filter_obj = TaskIdFilter(set(task_ids))
+        filter_obj = _TaskIdFilter(set(task_ids))
         return self.query_service.get_gantt_data(
             filter_obj=filter_obj,
             sort_by=sort_by,

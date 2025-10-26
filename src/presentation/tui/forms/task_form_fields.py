@@ -1,6 +1,7 @@
 """Common form field definitions for task dialogs."""
 
 from dataclasses import dataclass
+from datetime import datetime
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
@@ -36,6 +37,32 @@ class TaskFormData:
     is_fixed: bool = False
     depends_on: list[int] | None = None
     tags: list[str] | None = None
+
+    @staticmethod
+    def parse_datetime(datetime_str: str | None) -> datetime | None:
+        """Parse datetime string to datetime object.
+
+        Args:
+            datetime_str: Datetime string in YYYY-MM-DD HH:MM:SS format or None
+
+        Returns:
+            datetime object or None if datetime_str is None
+        """
+        if datetime_str is None:
+            return None
+        return datetime.strptime(datetime_str, DATETIME_FORMAT)
+
+    def get_deadline(self) -> datetime | None:
+        """Get deadline as datetime object."""
+        return self.parse_datetime(self.deadline)
+
+    def get_planned_start(self) -> datetime | None:
+        """Get planned start as datetime object."""
+        return self.parse_datetime(self.planned_start)
+
+    def get_planned_end(self) -> datetime | None:
+        """Get planned end as datetime object."""
+        return self.parse_datetime(self.planned_end)
 
 
 class TaskFormFields:
