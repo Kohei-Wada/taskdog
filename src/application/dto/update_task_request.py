@@ -30,6 +30,7 @@ class UpdateTaskRequest:
         deadline: New deadline (optional)
         estimated_duration: New estimated duration (optional)
         is_fixed: Whether task is fixed (optional)
+        tags: New tags list (optional)
     """
 
     task_id: int
@@ -41,3 +42,4 @@ class UpdateTaskRequest:
     deadline: datetime | None = None
     estimated_duration: float | None = None
     is_fixed: bool | None = None
+    tags: list[str] | None = None

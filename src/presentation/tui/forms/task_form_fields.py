@@ -24,6 +24,7 @@ class TaskFormData:
         planned_end: Optional planned end date in format YYYY-MM-DD HH:MM:SS
         is_fixed: Whether task schedule is fixed (won't be rescheduled by optimizer)
         depends_on: List of task IDs this task depends on
+        tags: List of tags for categorization and filtering
     """
 
     name: str
@@ -34,6 +35,7 @@ class TaskFormData:
     planned_end: str | None = None
     is_fixed: bool = False
     depends_on: list[int] | None = None
+    tags: list[str] | None = None
 
 
 class TaskFormFields:
@@ -132,6 +134,18 @@ class TaskFormFields:
                 placeholder="Optional: 1,2,3 (comma-separated task IDs)",
                 id="dependencies-input",
                 value=depends_on_str,
+            )
+
+            # Tags field
+            yield Label("Tags:", classes="field-label")
+            # Format current tags as comma-separated string
+            tags_str = ""
+            if task and task.tags:
+                tags_str = ",".join(task.tags)
+            yield Input(
+                placeholder="Optional: work,urgent,client-a (comma-separated tags)",
+                id="tags-input",
+                value=tags_str,
             )
 
             # Fixed field (checkbox)

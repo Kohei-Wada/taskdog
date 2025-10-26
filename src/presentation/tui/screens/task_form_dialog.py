@@ -15,6 +15,7 @@ from presentation.tui.forms.validators import (
     PlannedEndValidator,
     PlannedStartValidator,
     PriorityValidator,
+    TagsValidator,
     TaskNameValidator,
 )
 from presentation.tui.screens.base_dialog import BaseModalDialog
@@ -81,6 +82,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             "planned_start": self.query_one("#planned-start-input", Input),
             "planned_end": self.query_one("#planned-end-input", Input),
             "dependencies": self.query_one("#dependencies-input", Input),
+            "tags": self.query_one("#tags-input", Input),
         }
         fixed_checkbox = self.query_one("#fixed-checkbox", Checkbox)
         error_message = self.query_one("#error-message", Static)
@@ -101,6 +103,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             ("planned_start", inputs["planned_start"], PlannedStartValidator, [default_start_hour]),
             ("planned_end", inputs["planned_end"], PlannedEndValidator, [default_end_hour]),
             ("dependencies", inputs["dependencies"], DependenciesValidator, []),
+            ("tags", inputs["tags"], TagsValidator, []),
         ]
 
         # Run validations
@@ -123,6 +126,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             planned_end=results["planned_end"],
             is_fixed=fixed_checkbox.value,
             depends_on=results["dependencies"],
+            tags=results["tags"],
         )
 
         # Submit the form data

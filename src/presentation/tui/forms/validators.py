@@ -274,3 +274,47 @@ class DependenciesValidator:
         unique_ids = list(dict.fromkeys(task_ids))
 
         return ValidationResult(is_valid=True, error_message="", value=unique_ids)
+
+
+class TagsValidator:
+    """Validator for task tags (comma-separated strings)."""
+
+    @staticmethod
+    def validate(value: str) -> ValidationResult:
+        """Validate comma-separated tags.
+
+        Args:
+            value: Comma-separated tags (e.g., "work,urgent,client-a")
+
+        Returns:
+            ValidationResult with validation status, error message, and list of tags
+        """
+        tags_str = value.strip()
+
+        # Empty string means no tags
+        if not tags_str:
+            return ValidationResult(is_valid=True, error_message="", value=[])
+
+        # Split by comma and parse each tag
+        parts = [p.strip() for p in tags_str.split(",")]
+        tags = []
+
+        for part in parts:
+            if not part:  # Skip empty parts
+                continue
+
+            # Check for empty tag
+            if not part.strip():
+                return ValidationResult(
+                    is_valid=False,
+                    error_message="Tag cannot be empty",
+                    value=None,
+                )
+
+            tags.append(part)
+
+        # Check for duplicates
+        if len(tags) != len(set(tags)):
+            return ValidationResult(is_valid=False, error_message="Tags must be unique", value=None)
+
+        return ValidationResult(is_valid=True, error_message="", value=tags)

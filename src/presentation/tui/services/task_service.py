@@ -56,6 +56,7 @@ class TaskService:
         planned_start: datetime | None = None,
         planned_end: datetime | None = None,
         is_fixed: bool = False,
+        tags: list[str] | None = None,
     ) -> Task:
         """Create a new task.
 
@@ -67,6 +68,7 @@ class TaskService:
             planned_start: Planned start datetime (optional)
             planned_end: Planned end datetime (optional)
             is_fixed: Whether the task schedule is fixed (default: False)
+            tags: List of tags for categorization (optional)
 
         Returns:
             The created task
@@ -80,6 +82,7 @@ class TaskService:
             planned_start=planned_start,
             planned_end=planned_end,
             is_fixed=is_fixed,
+            tags=tags,
         )
         return use_case.execute(task_input)
 
@@ -201,6 +204,7 @@ class TaskService:
         deadline: datetime | None = None,
         estimated_duration: float | None = None,
         is_fixed: bool | None = None,
+        tags: list[str] | None = None,
     ) -> tuple[Task, list[str]]:
         """Update a task.
 
@@ -214,6 +218,7 @@ class TaskService:
             deadline: New deadline (optional)
             estimated_duration: New estimated duration (optional)
             is_fixed: Whether task is fixed (optional)
+            tags: New tags list (optional)
 
         Returns:
             Tuple of (updated task, list of updated field names)
@@ -229,6 +234,7 @@ class TaskService:
             deadline=deadline,
             estimated_duration=estimated_duration,
             is_fixed=is_fixed,
+            tags=tags,
         )
         return use_case.execute(update_input)
 
