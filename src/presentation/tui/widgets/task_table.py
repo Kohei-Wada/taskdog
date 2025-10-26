@@ -55,12 +55,15 @@ class TaskTable(DataTable):
         self.cursor_type = "row"
         self.zebra_stripes = True
         self._task_map: dict[int, Task] = {}  # Maps row index to Task
+        self._row_keys: dict[int, object] = {}  # Maps row index to DataTable row key
         self.notes_repository = notes_repository
         self._all_tasks: list[Task] = []  # All tasks (unfiltered)
         self._current_query: str = ""  # Current search query
+        self._previous_cursor_row: int = -1  # Track previous cursor position for indicator
 
     def setup_columns(self):
         """Set up table columns."""
+        self.add_column(Text("", justify="center"), width=2, key="indicator")
         self.add_column(Text("ID", justify="center"), width=TASK_TABLE_ID_WIDTH)
         self.add_column(Text("Name", justify="center"), width=TASK_TABLE_NAME_WIDTH)
         self.add_column(Text("Pri", justify="center"), width=TASK_TABLE_PRIORITY_WIDTH)
@@ -72,6 +75,12 @@ class TaskTable(DataTable):
         self.add_column(Text("Deadline", justify="center"), width=TASK_TABLE_DEADLINE_WIDTH)
         self.add_column(Text("Tags", justify="center"), width=TASK_TABLE_TAGS_WIDTH)
         self.add_column(Text("Note", justify="center"), width=TASK_TABLE_NOTE_WIDTH)
+
+    def on_mount(self) -> None:
+        """Called when widget is mounted. Set initial indicator if table has rows."""
+        # The indicator will be set by watch_cursor_row when the cursor is first positioned
+        # This happens automatically after mounting when the table has data
+        pass
 
     def load_tasks(self, tasks: list[Task]):
         """Load tasks into the table.
@@ -89,8 +98,13 @@ class TaskTable(DataTable):
         Args:
             tasks: List of tasks to render
         """
+        # Save current cursor position before clearing
+        saved_cursor_row = self.cursor_row if self.row_count > 0 else 0
+
         self.clear()
         self._task_map.clear()
+        self._row_keys.clear()
+        self._previous_cursor_row = -1  # Reset cursor tracking
 
         for idx, task in enumerate(tasks):
             # Format status with color
@@ -130,8 +144,12 @@ class TaskTable(DataTable):
             if len(tags_text) > 18:
                 tags_text = tags_text[:17] + "..."
 
-            # Add row with centered Text objects
-            self.add_row(
+            # Set indicator for current cursor position
+            indicator_text = ">" if idx == saved_cursor_row else ""
+
+            # Add row with centered Text objects and save the row key
+            row_key = self.add_row(
+                Text(indicator_text, justify="center"),  # Indicator column
                 Text(str(task.id), justify="center"),
                 Text(name_text, style=name_style, justify="left"),
                 Text(str(task.priority), justify="center"),
@@ -145,6 +163,11 @@ class TaskTable(DataTable):
                 Text(note_indicator, justify="center"),
             )
             self._task_map[idx] = task
+            self._row_keys[idx] = row_key
+
+        # Update the previous cursor row tracking
+        if saved_cursor_row >= 0 and saved_cursor_row < len(self._row_keys):
+            self._previous_cursor_row = saved_cursor_row
 
     def get_selected_task(self) -> Task | None:
         """Get the currently selected task.
@@ -295,27 +318,55 @@ class TaskTable(DataTable):
         # Check if query matches any field
         return any(matches(field) for field in searchable_fields)
 
+    def action_cursor_down(self) -> None:
+        """Override cursor down to update indicator."""
+        super().action_cursor_down()
+        self._update_indicator()
+
+    def action_cursor_up(self) -> None:
+        """Override cursor up to update indicator."""
+        super().action_cursor_up()
+        self._update_indicator()
+
     def action_scroll_home(self) -> None:
         """Move cursor to top (g key)."""
         if self.row_count > 0:
             self.move_cursor(row=0)
+            self._update_indicator()
 
     def action_scroll_end(self) -> None:
         """Move cursor to bottom (G key)."""
         if self.row_count > 0:
             self.move_cursor(row=self.row_count - 1)
+            self._update_indicator()
 
     def action_page_down(self) -> None:
         """Move cursor down by half page (Ctrl+d)."""
         if self.row_count > 0:
             new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
             self.move_cursor(row=new_row)
+            self._update_indicator()
 
     def action_page_up(self) -> None:
         """Move cursor up by half page (Ctrl+u)."""
         if self.row_count > 0:
             new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
             self.move_cursor(row=new_row)
+            self._update_indicator()
+
+    def _update_indicator(self) -> None:
+        """Update the selection indicator for the current cursor position."""
+        # Clear previous indicator if valid
+        if self._previous_cursor_row >= 0 and self._previous_cursor_row in self._row_keys:
+            prev_row_key = self._row_keys[self._previous_cursor_row]
+            self.update_cell(prev_row_key, "indicator", "")
+
+        # Set new indicator if valid
+        current_row = self.cursor_row
+        if current_row >= 0 and current_row in self._row_keys:
+            row_key = self._row_keys[current_row]
+            self.update_cell(row_key, "indicator", ">")
+            self._previous_cursor_row = current_row
 
     def _format_duration(self, task: Task) -> str:
         """Format duration information for display.
