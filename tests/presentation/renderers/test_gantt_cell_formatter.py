@@ -6,7 +6,12 @@ from datetime import date, datetime
 from rich.text import Text
 
 from domain.entities.task import Task, TaskStatus
-from presentation.constants.symbols import SYMBOL_ACTUAL, SYMBOL_EMPTY, SYMBOL_TODAY
+from presentation.constants.symbols import (
+    SYMBOL_CANCELED,
+    SYMBOL_EMPTY,
+    SYMBOL_IN_PROGRESS,
+    SYMBOL_TODAY,
+)
 from presentation.renderers.gantt_cell_formatter import GanttCellFormatter
 
 
@@ -69,7 +74,7 @@ class TestGanttCellFormatter(unittest.TestCase):
             status=TaskStatus.IN_PROGRESS,
         )
 
-        self.assertEqual(display, f" {SYMBOL_ACTUAL} ")
+        self.assertEqual(display, f" {SYMBOL_IN_PROGRESS} ")
         self.assertIn("bold blue", style)  # IN_PROGRESS color
 
     def test_format_timeline_cell_planned_period_with_hours(self):
@@ -191,7 +196,7 @@ class TestGanttCellFormatter(unittest.TestCase):
             status=TaskStatus.CANCELED,
         )
 
-        self.assertEqual(display, f" {SYMBOL_ACTUAL} ")
+        self.assertEqual(display, f" {SYMBOL_CANCELED} ")
         self.assertIn("bold red", style)  # CANCELED color
 
         # Test on different date - should not show the mark

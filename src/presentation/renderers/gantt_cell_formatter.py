@@ -27,8 +27,11 @@ from presentation.constants.symbols import (
     BACKGROUND_COLOR_HOLIDAY,
     BACKGROUND_COLOR_SATURDAY,
     BACKGROUND_COLOR_SUNDAY,
-    SYMBOL_ACTUAL,
+    SYMBOL_CANCELED,
+    SYMBOL_COMPLETED,
     SYMBOL_EMPTY,
+    SYMBOL_IN_PROGRESS,
+    SYMBOL_PENDING,
     SYMBOL_TODAY,
 )
 from shared.constants import (
@@ -100,9 +103,10 @@ class GanttCellFormatter:
         else:
             bg_color = None
 
-        # Layer 2: Actual period (highest priority) - use symbol
+        # Layer 2: Actual period (highest priority) - use status-specific symbol
         if is_actual:
-            display = f" {SYMBOL_ACTUAL} "
+            symbol = GanttCellFormatter.get_status_symbol(status)
+            display = f" {symbol} "
             status_color = GanttCellFormatter.get_status_color(status)
             style = f"{status_color} on {bg_color}" if bg_color else status_color
             return display, style
@@ -235,11 +239,11 @@ class GanttCellFormatter:
         legend.append("Legend: ", style="bold yellow")
         legend.append("   ", style=f"on {BACKGROUND_COLOR}")
         legend.append(" Planned  ", style="dim")
-        legend.append(SYMBOL_ACTUAL, style="bold blue")
+        legend.append(SYMBOL_IN_PROGRESS, style="bold blue")
         legend.append(" IN_PROGRESS  ", style="dim")
-        legend.append(SYMBOL_ACTUAL, style="bold green")
+        legend.append(SYMBOL_COMPLETED, style="bold green")
         legend.append(" COMPLETED  ", style="dim")
-        legend.append(SYMBOL_ACTUAL, style="bold red")
+        legend.append(SYMBOL_CANCELED, style="bold red")
         legend.append(" CANCELED  ", style="dim")
         legend.append("   ", style=f"on {BACKGROUND_COLOR_DEADLINE}")
         legend.append(" Deadline  ", style="dim")
@@ -284,6 +288,25 @@ class GanttCellFormatter:
         """
         # Use str(status) to handle both TaskStatus enum and string values
         return STATUS_COLORS_BOLD.get(status, "white")
+
+    @staticmethod
+    def get_status_symbol(status: TaskStatus) -> str:
+        """Get symbol for task status in actual period.
+
+        Args:
+            status: Task status
+
+        Returns:
+            Single-character symbol representing the status
+        """
+        if status == TaskStatus.IN_PROGRESS:
+            return SYMBOL_IN_PROGRESS
+        elif status == TaskStatus.COMPLETED:
+            return SYMBOL_COMPLETED
+        elif status == TaskStatus.CANCELED:
+            return SYMBOL_CANCELED
+        else:  # PENDING (should not appear in actual period normally)
+            return SYMBOL_PENDING
 
     @staticmethod
     def _is_in_date_range(current_date: date, start: date | None, end: date | None) -> bool:
