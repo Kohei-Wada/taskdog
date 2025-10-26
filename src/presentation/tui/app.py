@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from textual.app import App
+from textual.command import CommandPalette
 
 from application.queries.filters.non_archived_filter import NonArchivedFilter
 from application.queries.task_query_service import TaskQueryService
@@ -13,6 +14,7 @@ from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.notes_repository import NotesRepository
 from infrastructure.persistence.task_repository import TaskRepository
 from presentation.tui.commands.factory import CommandFactory
+from presentation.tui.commands.providers import SortCommandProvider, SortOptionsProvider
 from presentation.tui.context import TUIContext
 from presentation.tui.screens.main_screen import MainScreen
 from presentation.tui.services.task_service import TaskService
@@ -66,10 +68,12 @@ class TaskdogTUI(App):
         ("i", "show_details", "Info"),
         ("e", "edit_task", "Edit"),
         ("v", "edit_note", "Edit Note"),
-        ("S", "cycle_gantt_sort", "Sort"),
         ("/", "show_search", "Search"),
         ("escape", "hide_search", "Clear Search"),
     ]
+
+    # Register custom command providers
+    COMMANDS = App.COMMANDS | {SortCommandProvider}
 
     # Mapping of action names to command names and kwargs
     # Format: {action_name: (command_name, kwargs)}
@@ -228,26 +232,28 @@ class TaskdogTUI(App):
 
         return tasks
 
-    def action_cycle_gantt_sort(self) -> None:
-        """Show sort selection dialog."""
+    def search_sort(self) -> None:
+        """Show a fuzzy search command palette containing all sort options.
 
-        def handle_sort_selection(sort_by: str | None) -> None:
-            """Handle the sort selection from the dialog.
+        Selecting a sort option will change the sort order.
+        """
+        self.push_screen(
+            CommandPalette(
+                providers=[SortOptionsProvider],
+                placeholder="Search for sort options…",
+            ),
+        )
 
-            Args:
-                sort_by: Selected sort order, or None if cancelled
-            """
-            if sort_by is None:
-                return  # User cancelled
+    def set_sort_order(self, sort_key: str) -> None:
+        """Set the sort order for Gantt chart and task list.
 
-            self._gantt_sort_by = sort_by
-            self._load_tasks()
+        Called when user selects a sort option from Command Palette.
 
-        # Import here to avoid circular dependency
-        from presentation.tui.screens.sort_selection_screen import SortSelectionScreen
-
-        # Show sort selection screen
-        self.push_screen(SortSelectionScreen(self._gantt_sort_by), handle_sort_selection)
+        Args:
+            sort_key: Sort key (deadline, planned_start, priority, id)
+        """
+        self._gantt_sort_by = sort_key
+        self._load_tasks()
 
     def action_show_search(self) -> None:
         """Show the search input."""
