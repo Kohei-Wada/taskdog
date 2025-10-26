@@ -3,6 +3,7 @@
 from application.dto.set_task_tags_request import SetTaskTagsRequest
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
+from domain.exceptions.task_exceptions import TaskValidationError
 from infrastructure.persistence.task_repository import TaskRepository
 
 
@@ -35,7 +36,14 @@ class SetTaskTagsUseCase(UseCase[SetTaskTagsRequest, Task]):
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
-        # Replace tags (validation happens in Task.__post_init__)
+        # Validate tags before setting
+        for tag in input_dto.tags:
+            if not tag or not tag.strip():
+                raise TaskValidationError("Tag cannot be empty")
+        if len(input_dto.tags) != len(set(input_dto.tags)):
+            raise TaskValidationError("Tags must be unique")
+
+        # Replace tags
         task.tags = input_dto.tags
 
         # Save changes
