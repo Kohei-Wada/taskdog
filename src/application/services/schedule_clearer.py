@@ -30,10 +30,13 @@ class ScheduleClearer:
         Returns:
             List of tasks with cleared schedules
         """
+        # Clear schedule fields for each task
         for task in tasks:
             task.planned_start = None
             task.planned_end = None
             task.daily_allocations = {}
-            self.repository.save(task)
+
+        # Batch save for performance (single file write)
+        self.repository.save_all(tasks)
 
         return tasks

@@ -99,6 +99,49 @@ class JsonTaskRepository(TaskRepository):
         # Save to file
         self._save_to_file()
 
+    def save_all(self, tasks: list[Task]) -> None:
+        """Save multiple tasks atomically.
+
+        Args:
+            tasks: List of tasks to save
+
+        Raises:
+            ValueError: If any task doesn't have an ID
+        """
+        # Early return for empty list
+        if not tasks:
+            return
+
+        # Update in-memory state for all tasks
+        for task in tasks:
+            # Task must have an ID (assigned by create() or from_dict())
+            if task.id is None:
+                msg = "Cannot save task without ID. Use create() to generate ID."
+                raise ValueError(msg)
+
+            # Check if task already exists
+            existing = self._task_index.get(task.id)
+            if not existing:
+                # New task - add to list and both indexes
+                position = len(self.tasks)
+                self.tasks.append(task)
+                self._task_index[task.id] = task
+                self._task_position[task.id] = position
+            else:
+                # Task exists - update the existing task in place
+                # Automatically update the updated_at timestamp
+                task.updated_at = datetime.now()
+
+                # Use position index for O(1) access instead of O(n) search
+                position = self._task_position[task.id]
+                self.tasks[position] = task
+
+                # Update task index to point to new object
+                self._task_index[task.id] = task
+
+        # Single file write at the end (atomic operation)
+        self._save_to_file()
+
     def delete(self, task_id: int) -> None:
         """Delete a task by its ID.
 

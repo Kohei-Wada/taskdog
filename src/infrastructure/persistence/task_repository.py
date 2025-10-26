@@ -37,6 +37,20 @@ class TaskRepository(ABC):
         pass
 
     @abstractmethod
+    def save_all(self, tasks: list[Task]) -> None:
+        """Save multiple tasks in a single transaction.
+
+        Args:
+            tasks: List of tasks to save
+
+        Notes:
+            - All saves succeed or all fail (atomicity)
+            - More efficient than multiple save() calls
+            - Implementation-specific optimization possible
+        """
+        pass
+
+    @abstractmethod
     def delete(self, task_id: int) -> None:
         """Delete a task by its ID.
 

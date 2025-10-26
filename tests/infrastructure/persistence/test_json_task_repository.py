@@ -359,6 +359,125 @@ class TestJsonTaskRepository(unittest.TestCase):
         self.assertEqual(loaded.planned_start, original_dt)
         self.assertEqual(loaded.actual_start, datetime(2025, 10, 25, 14, 35, 0))
 
+    def test_save_all_updates_multiple_tasks(self):
+        """Test save_all() updates multiple existing tasks"""
+        # Create 3 tasks
+        task1 = Task(name="Task 1", priority=1, id=1)
+        task2 = Task(name="Task 2", priority=2, id=2)
+        task3 = Task(name="Task 3", priority=3, id=3)
+
+        self.repository.save(task1)
+        self.repository.save(task2)
+        self.repository.save(task3)
+
+        # Modify all tasks
+        task1.priority = 10
+        task2.priority = 20
+        task3.priority = 30
+
+        # Save all at once
+        self.repository.save_all([task1, task2, task3])
+
+        # Verify all updated
+        loaded1 = self.repository.get_by_id(1)
+        loaded2 = self.repository.get_by_id(2)
+        loaded3 = self.repository.get_by_id(3)
+
+        self.assertEqual(loaded1.priority, 10)
+        self.assertEqual(loaded2.priority, 20)
+        self.assertEqual(loaded3.priority, 30)
+
+    def test_save_all_creates_new_tasks(self):
+        """Test save_all() creates multiple new tasks"""
+        # Create 3 new tasks with IDs
+        task1 = Task(name="New Task 1", priority=1, id=1)
+        task2 = Task(name="New Task 2", priority=2, id=2)
+        task3 = Task(name="New Task 3", priority=3, id=3)
+
+        # Save all at once
+        self.repository.save_all([task1, task2, task3])
+
+        # Verify all created
+        tasks = self.repository.get_all()
+        self.assertEqual(len(tasks), 3)
+        self.assertEqual(tasks[0].name, "New Task 1")
+        self.assertEqual(tasks[1].name, "New Task 2")
+        self.assertEqual(tasks[2].name, "New Task 3")
+
+    def test_save_all_mixed_new_and_existing(self):
+        """Test save_all() with mix of new and existing tasks"""
+        # Create 2 existing tasks
+        task1 = Task(name="Existing 1", priority=1, id=1)
+        task2 = Task(name="Existing 2", priority=2, id=2)
+        self.repository.save(task1)
+        self.repository.save(task2)
+
+        # Modify existing task and create new task
+        task1.priority = 10
+        task3 = Task(name="New Task", priority=3, id=3)
+
+        # Save all at once
+        self.repository.save_all([task1, task3])
+
+        # Verify results
+        tasks = self.repository.get_all()
+        self.assertEqual(len(tasks), 3)
+
+        loaded1 = self.repository.get_by_id(1)
+        loaded3 = self.repository.get_by_id(3)
+
+        self.assertEqual(loaded1.priority, 10)
+        self.assertEqual(loaded3.name, "New Task")
+
+    def test_save_all_empty_list(self):
+        """Test save_all() with empty list does nothing"""
+        # Create a task first
+        task = Task(name="Test Task", priority=1, id=1)
+        self.repository.save(task)
+
+        # Save empty list should not affect anything
+        self.repository.save_all([])
+
+        # Verify task still exists
+        tasks = self.repository.get_all()
+        self.assertEqual(len(tasks), 1)
+
+    def test_save_all_without_id_raises_error(self):
+        """Test save_all() raises ValueError for task without ID"""
+        task1 = Task(name="Task 1", priority=1, id=1)
+        task2 = Task(name="Task without ID", priority=2, id=None)
+
+        # Should raise ValueError
+        with self.assertRaises(ValueError) as context:
+            self.repository.save_all([task1, task2])
+
+        self.assertIn("Cannot save task without ID", str(context.exception))
+
+    def test_save_all_updates_updated_at(self):
+        """Test save_all() updates updated_at for existing tasks"""
+        # Create tasks
+        task1 = Task(name="Task 1", priority=1, id=1)
+        task2 = Task(name="Task 2", priority=2, id=2)
+        self.repository.save(task1)
+        self.repository.save(task2)
+
+        initial_updated_at_1 = task1.updated_at
+        initial_updated_at_2 = task2.updated_at
+
+        # Wait a bit to ensure timestamp difference
+        time.sleep(0.01)
+
+        # Modify tasks
+        task1.priority = 10
+        task2.priority = 20
+
+        # Save all
+        self.repository.save_all([task1, task2])
+
+        # Verify updated_at was changed for both
+        self.assertGreater(task1.updated_at, initial_updated_at_1)
+        self.assertGreater(task2.updated_at, initial_updated_at_2)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -72,9 +72,8 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleRequest, OptimizationResul
             current_time=input_dto.current_time,
         )
 
-        # Save successfully scheduled tasks
-        for task in modified_tasks:
-            self.repository.save(task)
+        # Save successfully scheduled tasks (batch operation for performance)
+        self.repository.save_all(modified_tasks)
 
         # Clear schedules for tasks that couldn't be scheduled
         # (when force_override is True, schedulable tasks that failed to schedule
