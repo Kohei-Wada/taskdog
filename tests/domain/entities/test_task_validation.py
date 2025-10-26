@@ -20,6 +20,23 @@ class TaskValidationTest(unittest.TestCase):
         task = Task(name="Test Task", priority=5, estimated_duration=10.0)
         self.assertEqual(task.estimated_duration, 10.0)
 
+    def test_valid_task_with_tags(self):
+        """Test creating a task with valid tags."""
+        task = Task(name="Test Task", priority=5, tags=["work", "urgent"])
+        self.assertEqual(task.tags, ["work", "urgent"])
+
+    def test_invalid_tags_empty_string(self):
+        """Test that empty tag strings raise TaskValidationError."""
+        with self.assertRaises(TaskValidationError) as context:
+            Task(name="Test Task", priority=5, tags=["work", "", "urgent"])
+        self.assertIn("Tag cannot be empty", str(context.exception))
+
+    def test_invalid_tags_duplicate(self):
+        """Test that duplicate tags raise TaskValidationError."""
+        with self.assertRaises(TaskValidationError) as context:
+            Task(name="Test Task", priority=5, tags=["work", "urgent", "work"])
+        self.assertIn("Tags must be unique", str(context.exception))
+
     def test_invalid_name_raises_error(self):
         """Test that invalid task names raise TaskValidationError."""
         test_cases = [

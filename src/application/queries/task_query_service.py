@@ -52,6 +52,44 @@ class TaskQueryService(QueryService):
         # Sort tasks
         return self.sorter.sort(tasks, sort_by, reverse)
 
+    def filter_by_tags(self, tags: list[str], match_all: bool = False) -> list[Task]:
+        """Get tasks that match the specified tags.
+
+        Args:
+            tags: List of tags to filter by
+            match_all: If True, task must have all tags (AND logic).
+                      If False, task must have at least one tag (OR logic).
+
+        Returns:
+            List of tasks matching the tag filter
+        """
+        tasks = self.repository.get_all()
+
+        if not tags:
+            return tasks
+
+        if match_all:
+            # AND logic: task must have all specified tags
+            return [task for task in tasks if all(tag in task.tags for tag in tags)]
+        else:
+            # OR logic: task must have at least one specified tag
+            return [task for task in tasks if any(tag in task.tags for tag in tags)]
+
+    def get_all_tags(self) -> dict[str, int]:
+        """Get all unique tags with their task counts.
+
+        Returns:
+            Dictionary mapping tag names to task counts
+        """
+        tasks = self.repository.get_all()
+        tag_counts: dict[str, int] = {}
+
+        for task in tasks:
+            for tag in task.tags:
+                tag_counts[tag] = tag_counts.get(tag, 0) + 1
+
+        return tag_counts
+
     def get_gantt_data(
         self,
         filter_obj: TaskFilter | None = None,

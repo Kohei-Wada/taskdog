@@ -2,6 +2,7 @@
 
 import click
 
+from application.queries.task_query_service import TaskQueryService
 from presentation.cli.commands.common_options import (
     date_range_options,
     filter_options,
@@ -22,14 +23,21 @@ from presentation.cli.error_handler import handle_command_errors
     type=str,
     help="Comma-separated list of fields to display (e.g., 'id,name,note,priority,status'). "
     "Available: id, name, note, priority, status, depends_on, planned_start, planned_end, "
-    "actual_start, actual_end, deadline, duration, created_at",
+    "actual_start, actual_end, deadline, duration, created_at, tags",
+)
+@click.option(
+    "--tag",
+    "-t",
+    multiple=True,
+    type=str,
+    help="Filter by tags (can be specified multiple times, uses OR logic)",
 )
 @date_range_options()
 @sort_options(default_sort="id")
 @filter_options()
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def table_command(ctx, all, status, sort, reverse, fields, start_date, end_date):
+def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_date):
     """Display tasks as a flat table.
 
     By default, only shows incomplete tasks (PENDING, IN_PROGRESS).
@@ -55,11 +63,24 @@ def table_command(ctx, all, status, sort, reverse, fields, start_date, end_date)
     if fields:
         field_list = [f.strip() for f in fields.split(",")]
 
-    # Apply filter based on options (priority: --status > --all > default)
-    filter_obj = build_task_filter(all=all, status=status)
+    # Apply tag filter if specified
+    if tag:
+        query_service = TaskQueryService(repository)
+        tasks = query_service.filter_by_tags(list(tag), match_all=False)
+        # Apply status/all filter on tag-filtered tasks
+        filter_obj = build_task_filter(all=all, status=status)
+        if filter_obj:
+            tasks = filter_obj.filter(tasks)
+        # Apply sorting
+        from application.sorters.task_sorter import TaskSorter
 
-    # Get filtered and sorted tasks
-    tasks = get_and_filter_tasks(repository, filter_obj, sort_by=sort, reverse=reverse)
+        sorter = TaskSorter()
+        tasks = sorter.sort(tasks, sort, reverse)
+    else:
+        # Apply filter based on options (priority: --status > --all > default)
+        filter_obj = build_task_filter(all=all, status=status)
+        # Get filtered and sorted tasks
+        tasks = get_and_filter_tasks(repository, filter_obj, sort_by=sort, reverse=reverse)
 
     # Apply date range filter if specified
     tasks = apply_date_range_filter(tasks, start_date, end_date)
