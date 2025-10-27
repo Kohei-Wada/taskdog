@@ -1,21 +1,18 @@
-"""Tests for TaskTable search functionality."""
+"""Tests for TaskSearchFilter."""
 
 import unittest
 from datetime import datetime, timedelta
 
 from domain.entities.task import Task, TaskStatus
-from infrastructure.persistence.notes_repository import NotesRepository
-from presentation.tui.widgets.task_table import TaskTable
+from presentation.tui.widgets.task_search_filter import TaskSearchFilter
 
 
-class TestTaskTableSearch(unittest.TestCase):
-    """Test TaskTable search and filtering functionality."""
+class TestTaskSearchFilter(unittest.TestCase):
+    """Test TaskSearchFilter search and filtering functionality."""
 
     def setUp(self):
         """Set up test fixtures."""
-        self.notes_repo = NotesRepository()
-        self.task_table = TaskTable(self.notes_repo)
-        # Don't setup columns - we're only testing filter logic, not rendering
+        self.filter = TaskSearchFilter()
 
         # Create test tasks
         self.tasks = [
@@ -55,155 +52,134 @@ class TestTaskTableSearch(unittest.TestCase):
 
     def test_filter_by_id(self):
         """Test filtering tasks by ID."""
-        self.task_table._all_tasks = self.tasks
-
         # Search by name to verify filtering works
-        filtered = self.task_table._filter_tasks(self.tasks, "Fix")
+        filtered = self.filter.filter(self.tasks, "Fix")
         self.assertEqual(len(filtered), 2)  # Tasks 1 and 5 both have "Fix"
 
         # Search for task by ID 2
-        filtered = self.task_table._filter_tasks(self.tasks, "2")
+        filtered = self.filter.filter(self.tasks, "2")
         # Should match ID 2 and priority 2
         self.assertGreaterEqual(len(filtered), 1)
 
     def test_filter_by_name_case_insensitive(self):
         """Test case-insensitive filtering by name."""
-        self.task_table._all_tasks = self.tasks
-
         # Lowercase query should match "Fix authentication bug" (case-insensitive)
-        filtered = self.task_table._filter_tasks(self.tasks, "auth")
+        filtered = self.filter.filter(self.tasks, "auth")
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].id, 1)
 
         # Different case should still match when lowercase
-        filtered = self.task_table._filter_tasks(self.tasks, "registration")
+        filtered = self.filter.filter(self.tasks, "registration")
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].id, 2)
 
     def test_filter_by_name_case_sensitive(self):
         """Test case-sensitive filtering (smart case with uppercase in query)."""
-        self.task_table._all_tasks = self.tasks
-
         # Query with uppercase should be case-sensitive
-        filtered = self.task_table._filter_tasks(self.tasks, "URGENT")
+        filtered = self.filter.filter(self.tasks, "URGENT")
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].id, 5)
 
         # Different case should not match
-        filtered = self.task_table._filter_tasks(self.tasks, "urgent")
+        filtered = self.filter.filter(self.tasks, "urgent")
         self.assertEqual(len(filtered), 1)  # Matches because lowercase is case-insensitive
 
     def test_filter_by_status(self):
         """Test filtering by status."""
-        self.task_table._all_tasks = self.tasks
-
         # Search for PENDING status
-        filtered = self.task_table._filter_tasks(self.tasks, "PENDING")
+        filtered = self.filter.filter(self.tasks, "PENDING")
         self.assertEqual(len(filtered), 3)
         pending_ids = {task.id for task in filtered}
         self.assertEqual(pending_ids, {1, 4, 5})
 
         # Search for IN_PROGRESS status
-        filtered = self.task_table._filter_tasks(self.tasks, "IN_PROGRESS")
+        filtered = self.filter.filter(self.tasks, "IN_PROGRESS")
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].id, 2)
 
     def test_filter_by_priority(self):
         """Test filtering by priority."""
-        self.task_table._all_tasks = self.tasks
-
         # Search for priority 1
-        filtered = self.task_table._filter_tasks(self.tasks, "1")
+        filtered = self.filter.filter(self.tasks, "1")
         # Should match IDs 1, 3, 5 (priority 1) and also ID 2 ("Implement user registration" - no "1" in name)
         self.assertGreaterEqual(len(filtered), 3)
 
     def test_filter_by_fixed_status(self):
         """Test filtering by fixed status."""
-        self.task_table._all_tasks = self.tasks
-
         # Search for "fixed" keyword
-        filtered = self.task_table._filter_tasks(self.tasks, "fixed")
+        filtered = self.filter.filter(self.tasks, "fixed")
         self.assertEqual(len(filtered), 1)
         self.assertEqual(filtered[0].id, 5)
         self.assertTrue(filtered[0].is_fixed)
 
     def test_filter_partial_match(self):
         """Test partial string matching."""
-        self.task_table._all_tasks = self.tasks
-
         # Search for "bug" should match tasks with "bug" in name
-        filtered = self.task_table._filter_tasks(self.tasks, "bug")
+        filtered = self.filter.filter(self.tasks, "bug")
         self.assertEqual(len(filtered), 2)
         bug_ids = {task.id for task in filtered}
         self.assertEqual(bug_ids, {1, 5})
 
     def test_filter_no_matches(self):
         """Test filtering with no matches."""
-        self.task_table._all_tasks = self.tasks
-
-        filtered = self.task_table._filter_tasks(self.tasks, "nonexistent")
+        filtered = self.filter.filter(self.tasks, "nonexistent")
         self.assertEqual(len(filtered), 0)
 
     def test_filter_empty_query(self):
-        """Test filtering with empty query."""
-        self.task_table._all_tasks = self.tasks
-
-        # Empty string is contained in every string, so it matches all tasks
-        # This is expected behavior - filter_tasks() method handles empty query specially
-        # to show all tasks, but _filter_tasks will match all
-        filtered = self.task_table._filter_tasks(self.tasks, " ")
-        # Single space might match task names that contain spaces
-        # Let's check for a truly non-matching query
-        filtered = self.task_table._filter_tasks(self.tasks, "XYZ123NOMATCH")
-        self.assertEqual(len(filtered), 0)
+        """Test filtering with empty query returns all tasks."""
+        filtered = self.filter.filter(self.tasks, "")
+        self.assertEqual(len(filtered), 5)
+        self.assertEqual(filtered, self.tasks)
 
     def test_smart_case_lowercase_query(self):
         """Test smart case with lowercase query is case-insensitive."""
-        self.task_table._all_tasks = self.tasks
-
         # Lowercase "fix" should match both "Fix" and "fix"
-        filtered = self.task_table._filter_tasks(self.tasks, "fix")
+        filtered = self.filter.filter(self.tasks, "fix")
         self.assertEqual(len(filtered), 2)
         fix_ids = {task.id for task in filtered}
         self.assertEqual(fix_ids, {1, 5})
 
     def test_smart_case_mixed_case_query(self):
         """Test smart case with mixed case query is case-sensitive."""
-        self.task_table._all_tasks = self.tasks
-
         # Mixed case "Fix" should only match exact case
-        filtered = self.task_table._filter_tasks(self.tasks, "Fix")
+        filtered = self.filter.filter(self.tasks, "Fix")
         self.assertEqual(len(filtered), 2)  # Both have "Fix"
 
-    def test_is_filtered_property(self):
-        """Test is_filtered property."""
-        self.task_table._all_tasks = self.tasks
+    def test_matches_method(self):
+        """Test the matches method directly."""
+        task = self.tasks[0]  # "Fix authentication bug"
 
-        # Initially no filter
-        self.assertFalse(self.task_table.is_filtered)
+        # Should match
+        self.assertTrue(self.filter.matches(task, "auth"))
+        self.assertTrue(self.filter.matches(task, "Fix"))
+        self.assertTrue(self.filter.matches(task, "1"))  # Priority
 
-        # Set query directly (without rendering)
-        self.task_table._current_query = "bug"
-        self.assertTrue(self.task_table.is_filtered)
+        # Should not match
+        self.assertFalse(self.filter.matches(task, "urgent"))
+        self.assertFalse(self.filter.matches(task, "registration"))
 
-        # Clear query
-        self.task_table._current_query = ""
-        self.assertFalse(self.task_table.is_filtered)
+    def test_matches_with_explicit_case_sensitivity(self):
+        """Test matches method with explicit case sensitivity parameter."""
+        task = self.tasks[4]  # "URGENT: Fix production bug"
 
-    def test_current_query_property(self):
-        """Test current_query property."""
-        self.task_table._all_tasks = self.tasks
+        # Case-insensitive
+        self.assertTrue(self.filter.matches(task, "urgent", case_sensitive=False))
+        self.assertTrue(self.filter.matches(task, "URGENT", case_sensitive=False))
 
-        # Initially empty
-        self.assertEqual(self.task_table.current_query, "")
+        # Case-sensitive
+        self.assertTrue(self.filter.matches(task, "URGENT", case_sensitive=True))
+        self.assertFalse(self.filter.matches(task, "urgent", case_sensitive=True))
 
-        # Set query directly (without rendering)
-        self.task_table._current_query = "authentication"
-        self.assertEqual(self.task_table.current_query, "authentication")
+    def test_is_case_sensitive(self):
+        """Test smart case detection."""
+        # Lowercase queries should be case-insensitive
+        self.assertFalse(self.filter._is_case_sensitive("hello"))
+        self.assertFalse(self.filter._is_case_sensitive("test123"))
 
-        # Clear query
-        self.task_table._current_query = ""
-        self.assertEqual(self.task_table.current_query, "")
+        # Queries with uppercase should be case-sensitive
+        self.assertTrue(self.filter._is_case_sensitive("Hello"))
+        self.assertTrue(self.filter._is_case_sensitive("TEST"))
+        self.assertTrue(self.filter._is_case_sensitive("Test123"))
 
 
 if __name__ == "__main__":

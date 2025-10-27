@@ -1,4 +1,11 @@
-"""Task table widget for TUI."""
+"""Task table widget for TUI.
+
+This module provides a data table widget for displaying tasks with:
+- Vi-style keyboard navigation
+- Smart case search filtering
+- Selection indicators
+- Automatic formatting for all task fields
+"""
 
 from typing import ClassVar
 
@@ -6,13 +13,10 @@ from rich.text import Text
 from textual.binding import Binding
 from textual.widgets import DataTable
 
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
 from infrastructure.persistence.notes_repository import NotesRepository
-from presentation.constants.colors import STATUS_STYLES
-from presentation.constants.symbols import EMOJI_NOTE
 from presentation.constants.table_dimensions import (
     PAGE_SCROLL_SIZE,
-    TASK_NAME_MAX_DISPLAY_LENGTH,
     TASK_TABLE_DEADLINE_WIDTH,
     TASK_TABLE_DEPENDS_ON_WIDTH,
     TASK_TABLE_DURATION_WIDTH,
@@ -24,11 +28,19 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_STATUS_WIDTH,
     TASK_TABLE_TAGS_WIDTH,
 )
-from presentation.tui.formatters.task_table_formatter import TaskTableFormatter
+from presentation.tui.widgets.cursor_indicator_manager import CursorIndicatorManager
+from presentation.tui.widgets.task_search_filter import TaskSearchFilter
+from presentation.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 
 
 class TaskTable(DataTable):
-    """A data table widget for displaying tasks with Vi-style keyboard navigation."""
+    """A data table widget for displaying tasks with Vi-style keyboard navigation.
+
+    This widget acts as a coordinator that delegates responsibilities to:
+    - TaskSearchFilter: Handles search and filtering logic
+    - TaskTableRowBuilder: Builds table row data from Task entities
+    - CursorIndicatorManager: Manages the selection indicator
+    """
 
     # Add Vi-style bindings in addition to DataTable's default bindings
     BINDINGS: ClassVar = [
@@ -52,11 +64,14 @@ class TaskTable(DataTable):
         self.cursor_type = "row"
         self.zebra_stripes = True
         self._task_map: dict[int, Task] = {}  # Maps row index to Task
-        self._row_keys: dict[int, object] = {}  # Maps row index to DataTable row key
         self.notes_repository = notes_repository
         self._all_tasks: list[Task] = []  # All tasks (unfiltered)
         self._current_query: str = ""  # Current search query
-        self._previous_cursor_row: int = -1  # Track previous cursor position for indicator
+
+        # Components
+        self._search_filter = TaskSearchFilter()
+        self._row_builder = TaskTableRowBuilder(notes_repository)
+        self._indicator_manager = CursorIndicatorManager(self)
 
     def setup_columns(self):
         """Set up table columns."""
@@ -73,12 +88,6 @@ class TaskTable(DataTable):
         self.add_column(
             Text("", justify="center"), width=TASK_TABLE_FLAGS_WIDTH
         )  # Flags (Fixed + Note)
-
-    def on_mount(self) -> None:
-        """Called when widget is mounted. Set initial indicator if table has rows."""
-        # The indicator will be set by watch_cursor_row when the cursor is first positioned
-        # This happens automatically after mounting when the table has data
-        pass
 
     def load_tasks(self, tasks: list[Task]):
         """Load tasks into the table.
@@ -101,69 +110,21 @@ class TaskTable(DataTable):
 
         self.clear()
         self._task_map.clear()
-        self._row_keys.clear()
-        self._previous_cursor_row = -1  # Reset cursor tracking
+        self._indicator_manager.clear()
 
         for idx, task in enumerate(tasks):
-            # Format status with color
-            status_text = task.status.value
-            status_color = STATUS_STYLES.get(task.status, "white")
+            # Build row data using row builder
+            is_selected = idx == saved_cursor_row
+            row_data = self._row_builder.build_row(task, is_selected)
 
-            # Format duration
-            duration = TaskTableFormatter.format_duration(task)
-
-            # Format deadline
-            deadline = TaskTableFormatter.format_deadline(task.deadline)
-
-            # Format dependencies
-            dependencies = TaskTableFormatter.format_dependencies(task)
-
-            # Combine fixed and note indicators into flags
-            fixed_indicator = "📌" if task.is_fixed else ""
-            note_indicator = EMOJI_NOTE if self.notes_repository.has_notes(task.id) else ""
-            flags = fixed_indicator + note_indicator
-
-            # Format elapsed time
-            elapsed_time = TaskTableFormatter.format_elapsed_time(task)
-
-            # Format name
-            name_text = (
-                task.name[:TASK_NAME_MAX_DISPLAY_LENGTH] + "..."
-                if len(task.name) > TASK_NAME_MAX_DISPLAY_LENGTH
-                else task.name
-            )
-
-            # Apply strikethrough style for completed tasks
-            name_style = "strike" if task.status == TaskStatus.COMPLETED else None
-
-            # Format tags
-            tags_text = ", ".join(task.tags) if task.tags else ""
-            if len(tags_text) > 18:
-                tags_text = tags_text[:17] + "..."
-
-            # Set indicator for current cursor position
-            indicator_text = ">" if idx == saved_cursor_row else ""
-
-            # Add row with centered Text objects and save the row key
-            row_key = self.add_row(
-                Text(indicator_text, justify="center"),  # Indicator column
-                Text(str(task.id), justify="center"),
-                Text(name_text, style=name_style, justify="left"),
-                Text(str(task.priority), justify="center"),
-                Text(status_text, style=status_color, justify="center"),
-                Text(elapsed_time, justify="center"),
-                Text(duration, justify="center"),
-                Text(deadline, justify="center"),
-                Text(dependencies, justify="center"),
-                Text(tags_text, justify="center"),
-                Text(flags, justify="center"),  # Combined Fixed + Note flags (rightmost)
-            )
+            # Add row and register with indicator manager
+            row_key = self.add_row(*row_data)
             self._task_map[idx] = task
-            self._row_keys[idx] = row_key
+            self._indicator_manager.set_row_key(idx, row_key)
 
-        # Update the previous cursor row tracking
-        if saved_cursor_row >= 0 and saved_cursor_row < len(self._row_keys):
-            self._previous_cursor_row = saved_cursor_row
+        # Set initial indicator position
+        if saved_cursor_row >= 0 and saved_cursor_row < len(self._task_map):
+            self._indicator_manager.set_initial_indicator(saved_cursor_row)
 
     def get_selected_task(self) -> Task | None:
         """Get the currently selected task.
@@ -190,7 +151,7 @@ class TaskTable(DataTable):
         self._all_tasks = tasks
         # Reapply current filter if active
         if self._current_query:
-            filtered_tasks = self._filter_tasks(tasks, self._current_query)
+            filtered_tasks = self._search_filter.filter(tasks, self._current_query)
             self._render_tasks(filtered_tasks)
         else:
             self._render_tasks(tasks)
@@ -214,7 +175,7 @@ class TaskTable(DataTable):
             # No filter - show all tasks
             self._render_tasks(self._all_tasks)
         else:
-            filtered_tasks = self._filter_tasks(self._all_tasks, query)
+            filtered_tasks = self._search_filter.filter(self._all_tasks, query)
             self._render_tasks(filtered_tasks)
 
     def clear_filter(self):
@@ -241,78 +202,6 @@ class TaskTable(DataTable):
     def total_count(self) -> int:
         """Get the total number of tasks (unfiltered)."""
         return len(self._all_tasks)
-
-    def _filter_tasks(self, tasks: list[Task], query: str) -> list[Task]:
-        """Filter tasks based on query using smart case matching.
-
-        Smart case: case-insensitive if query is all lowercase,
-        case-sensitive if query contains any uppercase.
-
-        Args:
-            tasks: List of tasks to filter
-            query: Search query string
-
-        Returns:
-            List of tasks matching the query
-        """
-        # Smart case: case-sensitive if query has uppercase
-        case_sensitive = any(c.isupper() for c in query)
-
-        filtered = []
-        for task in tasks:
-            if self._task_matches_query(task, query, case_sensitive):
-                filtered.append(task)
-
-        return filtered
-
-    def _task_matches_query(self, task: Task, query: str, case_sensitive: bool) -> bool:
-        """Check if a task matches the search query.
-
-        Searches across all visible fields: ID, name, status, priority,
-        dependencies, duration, deadline, tags, and fixed status.
-
-        Args:
-            task: Task to check
-            query: Search query string
-            case_sensitive: Whether to use case-sensitive matching
-
-        Returns:
-            True if task matches query, False otherwise
-        """
-        # Prepare query for comparison
-        search_query = query if case_sensitive else query.lower()
-
-        # Helper function to check if text contains query
-        def matches(text: str) -> bool:
-            if not text:
-                return False
-            search_text = text if case_sensitive else text.lower()
-            return search_query in search_text
-
-        # Build searchable fields
-        searchable_fields = [
-            str(task.id),
-            task.name,
-            task.status.value,
-            str(task.priority),
-            TaskTableFormatter.format_duration(task),
-            TaskTableFormatter.format_deadline(task.deadline),
-        ]
-
-        # Add dependencies if present
-        if task.depends_on:
-            searchable_fields.append(",".join(str(dep_id) for dep_id in task.depends_on))
-
-        # Add tags if present
-        if task.tags:
-            searchable_fields.extend(task.tags)
-
-        # Add fixed indicators if task is fixed
-        if task.is_fixed:
-            searchable_fields.extend(["fixed", "📌"])
-
-        # Check if query matches any field
-        return any(matches(field) for field in searchable_fields)
 
     def action_cursor_down(self) -> None:
         """Override cursor down to update indicator."""
@@ -352,14 +241,4 @@ class TaskTable(DataTable):
 
     def _update_indicator(self) -> None:
         """Update the selection indicator for the current cursor position."""
-        # Clear previous indicator if valid
-        if self._previous_cursor_row >= 0 and self._previous_cursor_row in self._row_keys:
-            prev_row_key = self._row_keys[self._previous_cursor_row]
-            self.update_cell(prev_row_key, "indicator", "")
-
-        # Set new indicator if valid
-        current_row = self.cursor_row
-        if current_row >= 0 and current_row in self._row_keys:
-            row_key = self._row_keys[current_row]
-            self.update_cell(row_key, "indicator", ">")
-            self._previous_cursor_row = current_row
+        self._indicator_manager.update_indicator(self.cursor_row)
