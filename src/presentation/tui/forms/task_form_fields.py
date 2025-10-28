@@ -104,15 +104,12 @@ class TaskFormFields:
                 value=task.name if task else "",
             )
 
-            # Priority field
-            yield Label("Priority:", classes="field-label")
+            # Duration field
+            yield Label("Duration (hours):", classes="field-label")
             yield Input(
-                placeholder=f"Enter priority (default: {
-                    default_priority
-                }, higher = more important)",
-                id="priority-input",
-                type="integer",
-                value=str(task.priority) if task else "",
+                placeholder="Optional: 4, 2.5, 8",
+                id="duration-input",
+                value=str(task.estimated_duration) if task and task.estimated_duration else "",
             )
 
             # Deadline field
@@ -121,14 +118,6 @@ class TaskFormFields:
                 placeholder="Optional: 2025-12-31, tomorrow 6pm, next friday",
                 id="deadline-input",
                 value=task.deadline.strftime(DATETIME_FORMAT) if task and task.deadline else "",
-            )
-
-            # Duration field
-            yield Label("Duration (hours):", classes="field-label")
-            yield Input(
-                placeholder="Optional: 4, 2.5, 8",
-                id="duration-input",
-                value=str(task.estimated_duration) if task and task.estimated_duration else "",
             )
 
             # Planned Start field
@@ -149,6 +138,17 @@ class TaskFormFields:
                 value=task.planned_end.strftime(DATETIME_FORMAT)
                 if task and task.planned_end
                 else "",
+            )
+
+            # Priority field
+            yield Label("Priority:", classes="field-label")
+            yield Input(
+                placeholder=f"Enter priority (default: {
+                    default_priority
+                }, higher = more important)",
+                id="priority-input",
+                type="integer",
+                value=str(task.priority) if task else "",
             )
 
             # Dependencies field
