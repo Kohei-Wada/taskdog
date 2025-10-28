@@ -82,21 +82,21 @@ class TaskTable(DataTable):
         """Set up table columns."""
         self.add_column(Text("ID", justify="center"), width=TASK_TABLE_ID_WIDTH)
         self.add_column(Text("Name", justify="center"), width=TASK_TABLE_NAME_WIDTH)
-        self.add_column(Text("Pri", justify="center"), width=TASK_TABLE_PRIORITY_WIDTH)
         self.add_column(Text("Status", justify="center"), width=TASK_TABLE_STATUS_WIDTH)
+        self.add_column(Text("Pri", justify="center"), width=TASK_TABLE_PRIORITY_WIDTH)
+        self.add_column(
+            Text("Flag", justify="center"), width=TASK_TABLE_FLAGS_WIDTH
+        )  # Flags (Fixed + Note)
+        self.add_column(Text("Est", justify="center"), width=TASK_TABLE_EST_WIDTH)
+        self.add_column(Text("Actual", justify="center"), width=TASK_TABLE_ACTUAL_WIDTH)
+        self.add_column(Text("Deadline", justify="center"), width=TASK_TABLE_DEADLINE_WIDTH)
         self.add_column(Text("Plan Start", justify="center"), width=TASK_TABLE_PLANNED_START_WIDTH)
         self.add_column(Text("Plan End", justify="center"), width=TASK_TABLE_PLANNED_END_WIDTH)
         self.add_column(Text("Actual Start", justify="center"), width=TASK_TABLE_ACTUAL_START_WIDTH)
         self.add_column(Text("Actual End", justify="center"), width=TASK_TABLE_ACTUAL_END_WIDTH)
         self.add_column(Text("Elapsed", justify="center"), width=TASK_TABLE_ELAPSED_WIDTH)
-        self.add_column(Text("Est", justify="center"), width=TASK_TABLE_EST_WIDTH)
-        self.add_column(Text("Actual", justify="center"), width=TASK_TABLE_ACTUAL_WIDTH)
-        self.add_column(Text("Deadline", justify="center"), width=TASK_TABLE_DEADLINE_WIDTH)
         self.add_column(Text("Deps", justify="center"), width=TASK_TABLE_DEPENDS_ON_WIDTH)
         self.add_column(Text("Tags", justify="center"), width=TASK_TABLE_TAGS_WIDTH)
-        self.add_column(
-            Text("", justify="center"), width=TASK_TABLE_FLAGS_WIDTH
-        )  # Flags (Fixed + Note)
 
     def load_tasks(self, tasks: list[Task]):
         """Load tasks into the table.

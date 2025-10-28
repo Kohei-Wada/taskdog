@@ -40,19 +40,19 @@ class TaskTableRowBuilder:
         return (
             self._build_id_cell(task),
             self._build_name_cell(task),
-            self._build_priority_cell(task),
             self._build_status_cell(task),
+            self._build_priority_cell(task),
+            self._build_flags_cell(task),
+            self._build_estimated_duration_cell(task),
+            self._build_actual_duration_cell(task),
+            self._build_deadline_cell(task),
             self._build_planned_start_cell(task),
             self._build_planned_end_cell(task),
             self._build_actual_start_cell(task),
             self._build_actual_end_cell(task),
             self._build_elapsed_cell(task),
-            self._build_estimated_duration_cell(task),
-            self._build_actual_duration_cell(task),
-            self._build_deadline_cell(task),
             self._build_dependencies_cell(task),
             self._build_tags_cell(task),
-            self._build_flags_cell(task),
         )
 
     def _build_id_cell(self, task: Task) -> Text:
