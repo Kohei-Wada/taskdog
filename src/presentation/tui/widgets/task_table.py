@@ -28,6 +28,7 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_STATUS_WIDTH,
     TASK_TABLE_TAGS_WIDTH,
 )
+from presentation.tui.events import TaskSelected
 from presentation.tui.widgets.task_search_filter import TaskSearchFilter
 from presentation.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 
@@ -196,6 +197,20 @@ class TaskTable(DataTable):
     def action_cursor_up(self) -> None:
         """Override cursor up."""
         super().action_cursor_up()
+
+    def watch_cursor_row(self, old_row: int, new_row: int) -> None:
+        """Called when cursor row changes.
+
+        Posts a TaskSelected event to notify other widgets of the selection change.
+
+        Args:
+            old_row: Previous cursor row index
+            new_row: New cursor row index
+        """
+        # Get the currently selected task
+        selected_task = self.get_selected_task()
+        # Post TaskSelected event for other widgets to react
+        self.post_message(TaskSelected(selected_task))
 
     def action_scroll_home(self) -> None:
         """Move cursor to top (g key)."""

@@ -5,6 +5,8 @@ from textual.containers import Container, Horizontal
 from textual.message import Message
 from textual.widgets import Input, Static
 
+from presentation.tui.events import SearchQueryChanged
+
 
 class SearchInput(Container):
     """Search input widget with label for filtering tasks."""
@@ -23,6 +25,17 @@ class SearchInput(Container):
             yield Static("🔍", id="search-icon")
             yield Input(placeholder="Search for tasks...", id="search-input")
         yield Static("", id="search-result", classes="search-result")
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Handle search input value changes.
+
+        Args:
+            event: Input changed event
+        """
+        # Only handle events from our search input
+        if event.input.id == "search-input":
+            # Post SearchQueryChanged event for other widgets to react
+            self.post_message(SearchQueryChanged(event.value))
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         """Handle Enter key press in the search input.
