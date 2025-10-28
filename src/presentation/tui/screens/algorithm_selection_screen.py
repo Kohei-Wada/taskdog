@@ -52,7 +52,9 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
     """Modal screen for selecting optimization algorithm, max hours, and start date."""
 
     BINDINGS: ClassVar = [
-        ("ctrl+s", "submit", "Submit"),
+        Binding("ctrl+s", "submit", "Submit"),
+        Binding("ctrl+j", "focus_next", "Next field", priority=True),
+        Binding("ctrl+k", "focus_previous", "Previous field", priority=True),
     ]
 
     def __init__(self, config: Config, force_override: bool = False, *args, **kwargs):
@@ -79,7 +81,8 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
             )
             yield Label(title, id="dialog-title")
             yield Label(
-                "[dim]Ctrl+S to submit, Esc to cancel, Tab to switch[/dim]", id="dialog-hint"
+                "[dim]Ctrl+S: submit | Esc: cancel | Tab/Ctrl-j: next | Shift+Tab/Ctrl-k: previous[/dim]",
+                id="dialog-hint",
             )
 
             # Error message area
@@ -129,6 +132,14 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         days_until_monday = 7 - today.weekday()
         next_monday = today + timedelta(days=days_until_monday)
         return next_monday.strftime("%Y-%m-%d")
+
+    def action_focus_next(self) -> None:
+        """Move focus to the next field (Ctrl+J)."""
+        self.focus_next()
+
+    def action_focus_previous(self) -> None:
+        """Move focus to the previous field (Ctrl+K)."""
+        self.focus_previous()
 
     def action_submit(self) -> None:
         """Submit the form."""

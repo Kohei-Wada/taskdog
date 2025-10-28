@@ -3,6 +3,7 @@
 from typing import Any, ClassVar
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Container
 from textual.widgets import Checkbox, Input, Label, Static
 
@@ -30,8 +31,10 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
     """
 
     BINDINGS: ClassVar = [
-        ("escape", "cancel", "Cancel"),
-        ("ctrl+s", "submit", "Submit"),
+        Binding("escape", "cancel", "Cancel"),
+        Binding("ctrl+s", "submit", "Submit"),
+        Binding("ctrl+j", "focus_next", "Next field", priority=True),
+        Binding("ctrl+k", "focus_previous", "Previous field", priority=True),
     ]
 
     def __init__(self, task: Task | None = None, config: Config | None = None, *args, **kwargs):
@@ -54,7 +57,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         with Container(id=dialog_id, classes="dialog-base dialog-standard"):
             yield Label(f"[bold cyan]{dialog_title}[/bold cyan]", id="dialog-title")
             yield Label(
-                "[dim]Ctrl+S to submit, Esc to cancel, Tab to switch fields[/dim]",
+                "[dim]Ctrl+S: submit | Esc: cancel | Tab/Ctrl-j: next | Shift+Tab/Ctrl-k: previous[/dim]",
                 id="dialog-hint",
             )
 
@@ -70,6 +73,14 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
     def action_submit(self) -> None:
         """Submit the form (Ctrl+S)."""
         self._submit_form()
+
+    def action_focus_next(self) -> None:
+        """Move focus to the next field (Ctrl+J)."""
+        self.focus_next()
+
+    def action_focus_previous(self) -> None:
+        """Move focus to the previous field (Ctrl+K)."""
+        self.focus_previous()
 
     def _submit_form(self) -> None:
         """Validate and submit the form data."""
