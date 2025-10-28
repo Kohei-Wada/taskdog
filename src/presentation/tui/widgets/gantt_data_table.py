@@ -23,6 +23,9 @@ from presentation.renderers.gantt_cell_formatter import GanttCellFormatter
 if TYPE_CHECKING:
     from shared.utils.holiday_checker import HolidayChecker
 
+# Constants
+GANTT_HEADER_ROW_COUNT = 3  # Number of header rows (Month, Week, Date)
+
 
 class GanttDataTable(DataTable):
     """A Textual DataTable widget for displaying Gantt charts.
@@ -119,7 +122,7 @@ class GanttDataTable(DataTable):
                 gantt_result.date_range.start_date,
                 gantt_result.date_range.end_date,
             )
-            self._task_map[idx + 3] = task  # +3 because of 3 header rows
+            self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task
 
         # Add workload summary row
         self._add_workload_row(
@@ -175,7 +178,25 @@ class GanttDataTable(DataTable):
             start_date: Start date of the chart
             end_date: End date of the chart
         """
-        # Fixed columns
+        task_id, task_name, est_hours = self._format_task_metadata(task)
+        timeline = self._build_timeline(task, task_daily_hours, start_date, end_date)
+
+        self.add_row(
+            Text(task_id, justify="center"),
+            Text.from_markup(task_name, justify="left"),
+            Text(est_hours, justify="center"),
+            timeline,
+        )
+
+    def _format_task_metadata(self, task: Task) -> tuple[str, str, str]:
+        """Format fixed column metadata for a task.
+
+        Args:
+            task: Task to format
+
+        Returns:
+            Tuple of (task_id, task_name, estimated_hours)
+        """
         task_id = str(task.id)
 
         # Task name with strikethrough for completed tasks
@@ -186,7 +207,26 @@ class GanttDataTable(DataTable):
         # Estimated hours
         est_hours = f"{task.estimated_duration:.1f}" if task.estimated_duration else "-"
 
-        # Build timeline as Rich Text object
+        return task_id, task_name, est_hours
+
+    def _build_timeline(
+        self,
+        task: Task,
+        task_daily_hours: dict[date, float],
+        start_date: date,
+        end_date: date,
+    ) -> Text:
+        """Build timeline visualization for a task.
+
+        Args:
+            task: Task to build timeline for
+            task_daily_hours: Daily hours allocation
+            start_date: Start date of timeline
+            end_date: End date of timeline
+
+        Returns:
+            Rich Text object with formatted timeline
+        """
         days = (end_date - start_date).days + 1
         parsed_dates = GanttCellFormatter.parse_task_dates(task)
         timeline = Text()
@@ -205,12 +245,7 @@ class GanttDataTable(DataTable):
             )
             timeline.append(display, style=style)
 
-        self.add_row(
-            Text(task_id, justify="center"),
-            Text.from_markup(task_name, justify="left"),
-            Text(est_hours, justify="center"),
-            timeline,
-        )
+        return timeline
 
     def _add_workload_row(
         self,
