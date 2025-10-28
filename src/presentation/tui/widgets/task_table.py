@@ -56,6 +56,8 @@ class TaskTable(DataTable):
         Binding("G", "scroll_end", "Bottom", show=False),
         Binding("ctrl+d", "page_down", "Page Down", show=False),
         Binding("ctrl+u", "page_up", "Page Up", show=False),
+        Binding("h", "scroll_left", "Scroll Left", show=False),
+        Binding("l", "scroll_right", "Scroll Right", show=False),
     ]
 
     def __init__(self, notes_repository: NotesRepository, *args, **kwargs):
@@ -142,8 +144,9 @@ class TaskTable(DataTable):
                                  Set to True for periodic updates to avoid scroll stuttering.
         """
         current_row = self.cursor_row
-        # Save scroll position before refresh
+        # Save scroll position before refresh (both vertical and horizontal)
         saved_scroll_y = self.scroll_y if keep_scroll_position else None
+        saved_scroll_x = self.scroll_x if keep_scroll_position else None
 
         self._all_tasks = tasks
         # Reapply current filter if active
@@ -160,6 +163,8 @@ class TaskTable(DataTable):
             # Restore scroll position to prevent stuttering
             if saved_scroll_y is not None:
                 self.scroll_y = saved_scroll_y
+            if saved_scroll_x is not None:
+                self.scroll_x = saved_scroll_x
 
     def filter_tasks(self, query: str):
         """Filter tasks based on search query with smart case matching.
@@ -240,3 +245,15 @@ class TaskTable(DataTable):
         """Move cursor up by half page (Ctrl+u)."""
         new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
         self._safe_move_cursor(row=new_row)
+
+    def action_scroll_left(self) -> None:
+        """Scroll table left (h key)."""
+        # Scroll left by one column width (approximate)
+        scroll_amount = 10
+        self.scroll_x = max(0, self.scroll_x - scroll_amount)
+
+    def action_scroll_right(self) -> None:
+        """Scroll table right (l key)."""
+        # Scroll right by one column width (approximate)
+        scroll_amount = 10
+        self.scroll_x = self.scroll_x + scroll_amount

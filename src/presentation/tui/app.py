@@ -190,8 +190,11 @@ class TaskdogTUI(App):
         # Start 1-second auto-refresh timer for elapsed time updates
         self.set_interval(1.0, self._refresh_elapsed_time)
 
-    def _load_tasks(self) -> list[Task]:
+    def _load_tasks(self, keep_scroll_position: bool = False) -> list[Task]:
         """Load tasks from repository and update both gantt and table.
+
+        Args:
+            keep_scroll_position: Whether to preserve scroll position during refresh
 
         Returns:
             List of loaded tasks
@@ -241,7 +244,9 @@ class TaskdogTUI(App):
                 )
 
             if self.main_screen.task_table:
-                self.main_screen.task_table.refresh_tasks(tasks)
+                self.main_screen.task_table.refresh_tasks(
+                    tasks, keep_scroll_position=keep_scroll_position
+                )
 
         return tasks
 
@@ -319,7 +324,7 @@ class TaskdogTUI(App):
         Args:
             event: TaskCreated event containing the new task
         """
-        self._load_tasks()
+        self._load_tasks(keep_scroll_position=True)
 
     def on_task_updated(self, event: TaskUpdated) -> None:
         """Handle task updated event.
@@ -327,7 +332,7 @@ class TaskdogTUI(App):
         Args:
             event: TaskUpdated event containing the updated task
         """
-        self._load_tasks()
+        self._load_tasks(keep_scroll_position=True)
 
     def on_task_deleted(self, event: TaskDeleted) -> None:
         """Handle task deleted event.
@@ -335,7 +340,7 @@ class TaskdogTUI(App):
         Args:
             event: TaskDeleted event containing the deleted task ID
         """
-        self._load_tasks()
+        self._load_tasks(keep_scroll_position=True)
 
     def on_tasks_refreshed(self, event: TasksRefreshed) -> None:
         """Handle tasks refreshed event.
@@ -343,4 +348,4 @@ class TaskdogTUI(App):
         Args:
             event: TasksRefreshed event triggering a full reload
         """
-        self._load_tasks()
+        self._load_tasks(keep_scroll_position=True)
