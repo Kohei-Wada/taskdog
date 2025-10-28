@@ -42,8 +42,13 @@ class TaskTableRowBuilder:
             self._build_name_cell(task),
             self._build_priority_cell(task),
             self._build_status_cell(task),
+            self._build_planned_start_cell(task),
+            self._build_planned_end_cell(task),
+            self._build_actual_start_cell(task),
+            self._build_actual_end_cell(task),
             self._build_elapsed_cell(task),
-            self._build_duration_cell(task),
+            self._build_estimated_duration_cell(task),
+            self._build_actual_duration_cell(task),
             self._build_deadline_cell(task),
             self._build_dependencies_cell(task),
             self._build_tags_cell(task),
@@ -110,17 +115,77 @@ class TaskTableRowBuilder:
         elapsed_time = TaskTableFormatter.format_elapsed_time(task)
         return Text(elapsed_time, justify="center")
 
-    def _build_duration_cell(self, task: Task) -> Text:
+    def _build_planned_start_cell(self, task: Task) -> Text:
+        """Build planned start cell.
+
+        Args:
+            task: Task to extract planned start from
+
+        Returns:
+            Text object for planned start column
+        """
+        planned_start = TaskTableFormatter.format_planned_start(task.planned_start)
+        return Text(planned_start, justify="center")
+
+    def _build_planned_end_cell(self, task: Task) -> Text:
+        """Build planned end cell.
+
+        Args:
+            task: Task to extract planned end from
+
+        Returns:
+            Text object for planned end column
+        """
+        planned_end = TaskTableFormatter.format_planned_end(task.planned_end)
+        return Text(planned_end, justify="center")
+
+    def _build_actual_start_cell(self, task: Task) -> Text:
+        """Build actual start cell.
+
+        Args:
+            task: Task to extract actual start from
+
+        Returns:
+            Text object for actual start column
+        """
+        actual_start = TaskTableFormatter.format_actual_start(task.actual_start)
+        return Text(actual_start, justify="center")
+
+    def _build_actual_end_cell(self, task: Task) -> Text:
+        """Build actual end cell.
+
+        Args:
+            task: Task to extract actual end from
+
+        Returns:
+            Text object for actual end column
+        """
+        actual_end = TaskTableFormatter.format_actual_end(task.actual_end)
+        return Text(actual_end, justify="center")
+
+    def _build_estimated_duration_cell(self, task: Task) -> Text:
         """Build estimated duration cell.
 
         Args:
-            task: Task to extract duration from
+            task: Task to extract estimated duration from
 
         Returns:
-            Text object for duration column
+            Text object for estimated duration column
         """
-        duration = TaskTableFormatter.format_duration(task)
-        return Text(duration, justify="center")
+        est_duration = TaskTableFormatter.format_estimated_duration(task)
+        return Text(est_duration, justify="center")
+
+    def _build_actual_duration_cell(self, task: Task) -> Text:
+        """Build actual duration cell.
+
+        Args:
+            task: Task to extract actual duration from
+
+        Returns:
+            Text object for actual duration column
+        """
+        actual_duration = TaskTableFormatter.format_actual_duration(task)
+        return Text(actual_duration, justify="center")
 
     def _build_deadline_cell(self, task: Task) -> Text:
         """Build deadline cell.

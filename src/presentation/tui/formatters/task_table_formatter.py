@@ -70,6 +70,122 @@ class TaskTableFormatter:
             return deadline.strftime("'%y %m-%d %H:%M")
 
     @staticmethod
+    def format_estimated_duration(task: Task) -> str:
+        """Format estimated duration for display.
+
+        Args:
+            task: Task to format estimated duration for
+
+        Returns:
+            Formatted estimated duration string (e.g., "5h" or "-")
+        """
+        if not task.estimated_duration:
+            return "-"
+        return f"{task.estimated_duration}h"
+
+    @staticmethod
+    def format_actual_duration(task: Task) -> str:
+        """Format actual duration for display.
+
+        Args:
+            task: Task to format actual duration for
+
+        Returns:
+            Formatted actual duration string (e.g., "3h" or "-")
+        """
+        if not task.actual_duration_hours:
+            return "-"
+        return f"{task.actual_duration_hours}h"
+
+    @staticmethod
+    def format_planned_start(planned_start: datetime | None) -> str:
+        """Format planned start datetime for display.
+
+        Args:
+            planned_start: Planned start datetime object or None
+
+        Returns:
+            Formatted planned start string
+        """
+        if not planned_start:
+            return "-"
+
+        # Show year only if different from current year
+        current_year = datetime.now().year
+        if planned_start.year == current_year:
+            # Current year: MM-DD HH:MM
+            return planned_start.strftime("%m-%d %H:%M")
+        else:
+            # Different year: 'YY MM-DD HH:MM
+            return planned_start.strftime("'%y %m-%d %H:%M")
+
+    @staticmethod
+    def format_planned_end(planned_end: datetime | None) -> str:
+        """Format planned end datetime for display.
+
+        Args:
+            planned_end: Planned end datetime object or None
+
+        Returns:
+            Formatted planned end string
+        """
+        if not planned_end:
+            return "-"
+
+        # Show year only if different from current year
+        current_year = datetime.now().year
+        if planned_end.year == current_year:
+            # Current year: MM-DD HH:MM
+            return planned_end.strftime("%m-%d %H:%M")
+        else:
+            # Different year: 'YY MM-DD HH:MM
+            return planned_end.strftime("'%y %m-%d %H:%M")
+
+    @staticmethod
+    def format_actual_start(actual_start: datetime | None) -> str:
+        """Format actual start datetime for display.
+
+        Args:
+            actual_start: Actual start datetime object or None
+
+        Returns:
+            Formatted actual start string
+        """
+        if not actual_start:
+            return "-"
+
+        # Show year only if different from current year
+        current_year = datetime.now().year
+        if actual_start.year == current_year:
+            # Current year: MM-DD HH:MM
+            return actual_start.strftime("%m-%d %H:%M")
+        else:
+            # Different year: 'YY MM-DD HH:MM
+            return actual_start.strftime("'%y %m-%d %H:%M")
+
+    @staticmethod
+    def format_actual_end(actual_end: datetime | None) -> str:
+        """Format actual end datetime for display.
+
+        Args:
+            actual_end: Actual end datetime object or None
+
+        Returns:
+            Formatted actual end string
+        """
+        if not actual_end:
+            return "-"
+
+        # Show year only if different from current year
+        current_year = datetime.now().year
+        if actual_end.year == current_year:
+            # Current year: MM-DD HH:MM
+            return actual_end.strftime("%m-%d %H:%M")
+        else:
+            # Different year: 'YY MM-DD HH:MM
+            return actual_end.strftime("'%y %m-%d %H:%M")
+
+    @staticmethod
     def format_elapsed_time(task: Task) -> str:
         """Format elapsed time for IN_PROGRESS tasks.
 

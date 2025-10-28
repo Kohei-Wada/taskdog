@@ -17,13 +17,18 @@ from domain.entities.task import Task
 from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.constants.table_dimensions import (
     PAGE_SCROLL_SIZE,
+    TASK_TABLE_ACTUAL_END_WIDTH,
+    TASK_TABLE_ACTUAL_START_WIDTH,
+    TASK_TABLE_ACTUAL_WIDTH,
     TASK_TABLE_DEADLINE_WIDTH,
     TASK_TABLE_DEPENDS_ON_WIDTH,
-    TASK_TABLE_DURATION_WIDTH,
     TASK_TABLE_ELAPSED_WIDTH,
+    TASK_TABLE_EST_WIDTH,
     TASK_TABLE_FLAGS_WIDTH,
     TASK_TABLE_ID_WIDTH,
     TASK_TABLE_NAME_WIDTH,
+    TASK_TABLE_PLANNED_END_WIDTH,
+    TASK_TABLE_PLANNED_START_WIDTH,
     TASK_TABLE_PRIORITY_WIDTH,
     TASK_TABLE_STATUS_WIDTH,
     TASK_TABLE_TAGS_WIDTH,
@@ -77,8 +82,13 @@ class TaskTable(DataTable):
         self.add_column(Text("Name", justify="center"), width=TASK_TABLE_NAME_WIDTH)
         self.add_column(Text("Pri", justify="center"), width=TASK_TABLE_PRIORITY_WIDTH)
         self.add_column(Text("Status", justify="center"), width=TASK_TABLE_STATUS_WIDTH)
+        self.add_column(Text("Plan Start", justify="center"), width=TASK_TABLE_PLANNED_START_WIDTH)
+        self.add_column(Text("Plan End", justify="center"), width=TASK_TABLE_PLANNED_END_WIDTH)
+        self.add_column(Text("Actual Start", justify="center"), width=TASK_TABLE_ACTUAL_START_WIDTH)
+        self.add_column(Text("Actual End", justify="center"), width=TASK_TABLE_ACTUAL_END_WIDTH)
         self.add_column(Text("Elapsed", justify="center"), width=TASK_TABLE_ELAPSED_WIDTH)
-        self.add_column(Text("Duration", justify="center"), width=TASK_TABLE_DURATION_WIDTH)
+        self.add_column(Text("Est", justify="center"), width=TASK_TABLE_EST_WIDTH)
+        self.add_column(Text("Actual", justify="center"), width=TASK_TABLE_ACTUAL_WIDTH)
         self.add_column(Text("Deadline", justify="center"), width=TASK_TABLE_DEADLINE_WIDTH)
         self.add_column(Text("Deps", justify="center"), width=TASK_TABLE_DEPENDS_ON_WIDTH)
         self.add_column(Text("Tags", justify="center"), width=TASK_TABLE_TAGS_WIDTH)
