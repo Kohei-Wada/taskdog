@@ -10,6 +10,11 @@ from presentation.utils.note_editor import edit_task_note
 class EditNoteCommand(TUICommandBase):
     """Command to edit the selected task's note in external editor."""
 
+    def _on_note_saved(self, name: str, task_id: int) -> None:
+        """Handle successful note save."""
+        self.notify_success(f"Note saved for task: {name} (ID: {task_id})")
+        self.reload_tasks()
+
     @handle_tui_errors("editing note")
     def execute(self) -> None:
         """Execute the edit note command."""
@@ -23,8 +28,6 @@ class EditNoteCommand(TUICommandBase):
             task=task,
             notes_repository=self.context.notes_repository,
             app=self.app,
-            on_success=lambda name, id_: self.notify_success(
-                f"Note saved for task: {name} (ID: {id_})"
-            ),
+            on_success=lambda name, id_: self._on_note_saved(name, id_),
             on_error=self.notify_error,
         )
