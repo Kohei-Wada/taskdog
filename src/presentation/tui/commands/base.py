@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from domain.entities.task import Task
 from presentation.tui.context import TUIContext
+from presentation.tui.events import TasksRefreshed
 from presentation.tui.services.task_service import TaskService
 
 if TYPE_CHECKING:
@@ -50,8 +51,12 @@ class TUICommandBase(ABC):
         return self.app.main_screen.task_table.get_selected_task()
 
     def reload_tasks(self) -> None:
-        """Reload the task list from the repository and refresh the UI."""
-        self.app._load_tasks()
+        """Reload the task list from the repository and refresh the UI.
+
+        Posts a TasksRefreshed event which will be handled by the app,
+        triggering a UI refresh. This decouples commands from direct UI manipulation.
+        """
+        self.app.post_message(TasksRefreshed())
 
     def notify_success(self, message: str) -> None:
         """Show a success notification.

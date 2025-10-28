@@ -5,6 +5,7 @@ from domain.exceptions.task_exceptions import TaskValidationError
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import require_selected_task
 from presentation.tui.commands.registry import command_registry
+from presentation.tui.events import TaskUpdated
 from presentation.tui.forms.task_form_fields import TaskFormData
 from presentation.tui.helpers.dependency_helpers import sync_dependencies
 from presentation.tui.screens.task_form_dialog import TaskFormDialog
@@ -142,8 +143,8 @@ class EditTaskCommand(TUICommandBase):
                     "Some dependency operations failed:\n" + "\n".join(failed_operations)
                 )
 
-        # Reload UI and notify
-        self.reload_tasks()
+        # Post TaskUpdated event to trigger UI refresh
+        self.app.post_message(TaskUpdated(updated_task))
 
         fields_str = ", ".join(updated_fields)
         self.notify_success(f"Updated task {updated_task.id}: {fields_str}")

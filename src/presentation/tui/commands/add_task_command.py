@@ -5,6 +5,7 @@ from datetime import datetime
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
+from presentation.tui.events import TaskCreated
 from presentation.tui.forms.task_form_fields import TaskFormData
 from presentation.tui.helpers.dependency_helpers import add_dependencies
 from presentation.tui.screens.task_form_dialog import TaskFormDialog
@@ -72,7 +73,8 @@ class AddTaskCommand(TUICommandBase):
                         "Task created but some dependencies failed:\n" + "\n".join(error_msgs)
                     )
 
-            self.reload_tasks()
+            # Post TaskCreated event to trigger UI refresh
+            self.app.post_message(TaskCreated(task))
             self.notify_success(f"Added task: {task.name} (ID: {task.id})")
 
         # Show task form dialog in add mode (no task parameter)

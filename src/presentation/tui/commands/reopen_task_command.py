@@ -9,6 +9,7 @@ from domain.exceptions.task_exceptions import (
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
+from presentation.tui.events import TaskUpdated
 from presentation.tui.screens.confirmation_dialog import ConfirmationDialog
 
 
@@ -42,10 +43,10 @@ class ReopenTaskCommand(TUICommandBase):
             try:
                 use_case = ReopenTaskUseCase(self.context.repository, self.context.time_tracker)
                 input_dto = ReopenTaskRequest(task_id=task_id)
-                use_case.execute(input_dto)
+                updated_task = use_case.execute(input_dto)
 
-                # Reload tasks and notify
-                self.reload_tasks()
+                # Post TaskUpdated event to trigger UI refresh
+                self.app.post_message(TaskUpdated(updated_task))
                 self.notify_success(f"Reopened task: {task_name}")
 
             except (TaskValidationError, DependencyNotMetError) as e:

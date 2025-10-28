@@ -3,6 +3,7 @@
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors, require_selected_task
 from presentation.tui.commands.registry import command_registry
+from presentation.tui.events import TaskDeleted
 from presentation.tui.screens.confirmation_dialog import ConfirmationDialog
 
 
@@ -33,7 +34,9 @@ class HardDeleteTaskCommand(TUICommandBase):
 
             # Use TaskService to permanently delete the task (hard delete)
             self.task_service.hard_delete_task(task_id)
-            self.reload_tasks()
+
+            # Post TaskDeleted event to trigger UI refresh
+            self.app.post_message(TaskDeleted(task_id))
             self.notify_success(f"Permanently deleted task: {task_name} (ID: {task_id})")
 
         # Show confirmation dialog with strong warning
