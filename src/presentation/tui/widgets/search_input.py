@@ -26,7 +26,7 @@ class SearchInput(Container):
         """Compose the search input with a label."""
         with Horizontal(id="search-input-container"):
             yield Static("🔍", id="search-icon")
-            yield Input(placeholder="Search for tasks...", id=SEARCH_INPUT_ID)
+            yield Input(placeholder="Press '/' to search tasks", id=SEARCH_INPUT_ID)
         yield Static("", id="search-result", classes="search-result")
 
     def on_input_changed(self, event: Input.Changed) -> None:
