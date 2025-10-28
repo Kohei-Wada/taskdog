@@ -70,7 +70,7 @@ class TestStatusValidator(unittest.TestCase):
         # Mock repository to return completed dependencies
         dep1 = Task(id=1, name="Dep 1", status=TaskStatus.COMPLETED, priority=1)
         dep2 = Task(id=2, name="Dep 2", status=TaskStatus.COMPLETED, priority=1)
-        self.mock_repository.get_by_id.side_effect = lambda id: dep1 if id == 1 else dep2
+        self.mock_repository.get_by_ids.return_value = {1: dep1, 2: dep2}
 
         # Should not raise
         self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)
@@ -90,7 +90,7 @@ class TestStatusValidator(unittest.TestCase):
 
                 # Mock repository to return dependency with given status
                 dep = Task(id=1, name="Dependency", status=dep_status, priority=1)
-                self.mock_repository.get_by_id.return_value = dep
+                self.mock_repository.get_by_ids.return_value = {1: dep}
 
                 with self.assertRaises(DependencyNotMetError) as context:
                     self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)
@@ -102,8 +102,8 @@ class TestStatusValidator(unittest.TestCase):
         """Test that task with missing dependency cannot be started."""
         task = Task(id=2, name="Test", status=TaskStatus.PENDING, priority=1, depends_on=[999])
 
-        # Mock repository to return None (dependency not found)
-        self.mock_repository.get_by_id.return_value = None
+        # Mock repository to return empty dict (dependency not found)
+        self.mock_repository.get_by_ids.return_value = {}
 
         with self.assertRaises(DependencyNotMetError) as context:
             self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)
@@ -118,7 +118,7 @@ class TestStatusValidator(unittest.TestCase):
         # Mock repository: dep1 completed, dep2 pending
         dep1 = Task(id=1, name="Dep 1", status=TaskStatus.COMPLETED, priority=1)
         dep2 = Task(id=2, name="Dep 2", status=TaskStatus.PENDING, priority=1)
-        self.mock_repository.get_by_id.side_effect = lambda id: dep1 if id == 1 else dep2
+        self.mock_repository.get_by_ids.return_value = {1: dep1, 2: dep2}
 
         with self.assertRaises(DependencyNotMetError) as context:
             self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)

@@ -478,6 +478,65 @@ class TestJsonTaskRepository(unittest.TestCase):
         self.assertGreater(task1.updated_at, initial_updated_at_1)
         self.assertGreater(task2.updated_at, initial_updated_at_2)
 
+    def test_get_by_ids_returns_existing_tasks(self):
+        """Test get_by_ids() returns dict of existing tasks"""
+        # Create tasks
+        task1 = Task(name="Task 1", priority=1, id=1)
+        task2 = Task(name="Task 2", priority=2, id=2)
+        task3 = Task(name="Task 3", priority=3, id=3)
+        self.repository.save(task1)
+        self.repository.save(task2)
+        self.repository.save(task3)
+
+        # Get multiple tasks at once
+        tasks = self.repository.get_by_ids([1, 3])
+
+        # Verify results
+        self.assertEqual(len(tasks), 2)
+        self.assertIn(1, tasks)
+        self.assertIn(3, tasks)
+        self.assertEqual(tasks[1].name, "Task 1")
+        self.assertEqual(tasks[3].name, "Task 3")
+
+    def test_get_by_ids_with_empty_list(self):
+        """Test get_by_ids() returns empty dict for empty list"""
+        tasks = self.repository.get_by_ids([])
+        self.assertEqual(tasks, {})
+
+    def test_get_by_ids_with_missing_ids(self):
+        """Test get_by_ids() skips non-existent IDs"""
+        # Create one task
+        task1 = Task(name="Task 1", priority=1, id=1)
+        self.repository.save(task1)
+
+        # Request existing + non-existing
+        tasks = self.repository.get_by_ids([1, 999, 1000])
+
+        # Only existing task should be returned
+        self.assertEqual(len(tasks), 1)
+        self.assertIn(1, tasks)
+        self.assertNotIn(999, tasks)
+        self.assertNotIn(1000, tasks)
+        self.assertEqual(tasks[1].name, "Task 1")
+
+    def test_get_by_ids_with_all_missing_ids(self):
+        """Test get_by_ids() returns empty dict when all IDs are missing"""
+        tasks = self.repository.get_by_ids([999, 1000, 1001])
+        self.assertEqual(tasks, {})
+
+    def test_get_by_ids_maintains_object_identity(self):
+        """Test get_by_ids() returns same objects as get_by_id()"""
+        # Create task
+        task1 = Task(name="Task 1", priority=1, id=1)
+        self.repository.save(task1)
+
+        # Get via get_by_id and get_by_ids
+        task_single = self.repository.get_by_id(1)
+        tasks_batch = self.repository.get_by_ids([1])
+
+        # Should be the exact same object
+        self.assertIs(tasks_batch[1], task_single)
+
 
 if __name__ == "__main__":
     unittest.main()

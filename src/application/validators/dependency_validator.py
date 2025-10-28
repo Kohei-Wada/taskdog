@@ -32,10 +32,13 @@ class DependencyValidator:
         if not task.depends_on:
             return
 
+        # Batch fetch all dependencies at once (prevents N+1 query problem)
+        dep_tasks = repository.get_by_ids(task.depends_on)
+
         # Collect unmet dependencies
         unmet_dependency_ids = []
         for dep_id in task.depends_on:
-            dep_task = repository.get_by_id(dep_id)
+            dep_task = dep_tasks.get(dep_id)
             if dep_task is None or dep_task.status != TaskStatus.COMPLETED:
                 # Dependency doesn't exist or is not completed
                 unmet_dependency_ids.append(dep_id)

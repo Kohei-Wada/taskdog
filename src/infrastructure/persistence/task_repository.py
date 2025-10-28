@@ -28,6 +28,24 @@ class TaskRepository(ABC):
         pass
 
     @abstractmethod
+    def get_by_ids(self, task_ids: list[int]) -> dict[int, Task]:
+        """Retrieve multiple tasks by their IDs in a single operation.
+
+        Args:
+            task_ids: List of task IDs to retrieve
+
+        Returns:
+            Dictionary mapping task IDs to Task objects.
+            Missing IDs are not included in the result.
+
+        Notes:
+            - More efficient than multiple get_by_id() calls
+            - Prevents N+1 query problems in database implementations
+            - O(n) time complexity where n is len(task_ids)
+        """
+        pass
+
+    @abstractmethod
     def save(self, task: Task) -> None:
         """Save a task (create new or update existing).
 

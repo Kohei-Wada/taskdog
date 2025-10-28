@@ -65,6 +65,24 @@ class JsonTaskRepository(TaskRepository):
         """
         return self._task_index.get(task_id)
 
+    def get_by_ids(self, task_ids: list[int]) -> dict[int, Task]:
+        """Retrieve multiple tasks by their IDs in O(n) time.
+
+        Leverages the existing _task_index for O(1) lookup per task.
+
+        Args:
+            task_ids: List of task IDs to retrieve
+
+        Returns:
+            Dictionary mapping task IDs to Task objects.
+            Missing IDs are not included in the result.
+        """
+        return {
+            task_id: task
+            for task_id in task_ids
+            if (task := self._task_index.get(task_id)) is not None
+        }
+
     def save(self, task: Task) -> None:
         """Save a task (create new or update existing).
 

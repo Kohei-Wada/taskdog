@@ -29,7 +29,7 @@ class TestDependencyValidator(unittest.TestCase):
         # Mock repository to return completed dependencies
         dep1 = Task(id=1, name="Dep 1", status=TaskStatus.COMPLETED, priority=1)
         dep2 = Task(id=2, name="Dep 2", status=TaskStatus.COMPLETED, priority=1)
-        self.mock_repository.get_by_id.side_effect = lambda id: dep1 if id == 1 else dep2
+        self.mock_repository.get_by_ids.return_value = {1: dep1, 2: dep2}
 
         # Should not raise
         DependencyValidator.validate_dependencies_met(task, self.mock_repository)
@@ -40,7 +40,7 @@ class TestDependencyValidator(unittest.TestCase):
 
         # Mock repository to return pending dependency
         dep = Task(id=1, name="Dependency", status=TaskStatus.PENDING, priority=1)
-        self.mock_repository.get_by_id.return_value = dep
+        self.mock_repository.get_by_ids.return_value = {1: dep}
 
         with self.assertRaises(DependencyNotMetError) as context:
             DependencyValidator.validate_dependencies_met(task, self.mock_repository)
@@ -54,7 +54,7 @@ class TestDependencyValidator(unittest.TestCase):
 
         # Mock repository to return in-progress dependency
         dep = Task(id=1, name="Dependency", status=TaskStatus.IN_PROGRESS, priority=1)
-        self.mock_repository.get_by_id.return_value = dep
+        self.mock_repository.get_by_ids.return_value = {1: dep}
 
         with self.assertRaises(DependencyNotMetError) as context:
             DependencyValidator.validate_dependencies_met(task, self.mock_repository)
@@ -68,7 +68,7 @@ class TestDependencyValidator(unittest.TestCase):
 
         # Mock repository to return canceled dependency
         dep = Task(id=1, name="Dependency", status=TaskStatus.CANCELED, priority=1)
-        self.mock_repository.get_by_id.return_value = dep
+        self.mock_repository.get_by_ids.return_value = {1: dep}
 
         with self.assertRaises(DependencyNotMetError) as context:
             DependencyValidator.validate_dependencies_met(task, self.mock_repository)
@@ -80,8 +80,8 @@ class TestDependencyValidator(unittest.TestCase):
         """Test that task with missing dependency fails validation."""
         task = Task(id=2, name="Test", status=TaskStatus.PENDING, priority=1, depends_on=[999])
 
-        # Mock repository to return None (dependency not found)
-        self.mock_repository.get_by_id.return_value = None
+        # Mock repository to return empty dict (dependency not found)
+        self.mock_repository.get_by_ids.return_value = {}
 
         with self.assertRaises(DependencyNotMetError) as context:
             DependencyValidator.validate_dependencies_met(task, self.mock_repository)
@@ -96,7 +96,7 @@ class TestDependencyValidator(unittest.TestCase):
         # Mock repository: dep1 completed, dep2 pending
         dep1 = Task(id=1, name="Dep 1", status=TaskStatus.COMPLETED, priority=1)
         dep2 = Task(id=2, name="Dep 2", status=TaskStatus.PENDING, priority=1)
-        self.mock_repository.get_by_id.side_effect = lambda id: dep1 if id == 1 else dep2
+        self.mock_repository.get_by_ids.return_value = {1: dep1, 2: dep2}
 
         with self.assertRaises(DependencyNotMetError) as context:
             DependencyValidator.validate_dependencies_met(task, self.mock_repository)
@@ -114,9 +114,7 @@ class TestDependencyValidator(unittest.TestCase):
         dep1 = Task(id=1, name="Dep 1", status=TaskStatus.PENDING, priority=1)
         dep2 = Task(id=2, name="Dep 2", status=TaskStatus.IN_PROGRESS, priority=1)
         dep3 = Task(id=3, name="Dep 3", status=TaskStatus.CANCELED, priority=1)
-        self.mock_repository.get_by_id.side_effect = lambda id: (
-            dep1 if id == 1 else dep2 if id == 2 else dep3
-        )
+        self.mock_repository.get_by_ids.return_value = {1: dep1, 2: dep2, 3: dep3}
 
         with self.assertRaises(DependencyNotMetError) as context:
             DependencyValidator.validate_dependencies_met(task, self.mock_repository)
@@ -127,6 +125,21 @@ class TestDependencyValidator(unittest.TestCase):
         self.assertIn(1, context.exception.unmet_dependencies)
         self.assertIn(2, context.exception.unmet_dependencies)
         self.assertIn(3, context.exception.unmet_dependencies)
+
+    def test_validate_dependencies_uses_get_by_ids(self):
+        """Test that validator uses get_by_ids() for batch fetching."""
+        task = Task(id=3, name="Test", status=TaskStatus.PENDING, priority=1, depends_on=[1, 2])
+
+        # Mock repository to return completed dependencies
+        dep1 = Task(id=1, name="Dep 1", status=TaskStatus.COMPLETED, priority=1)
+        dep2 = Task(id=2, name="Dep 2", status=TaskStatus.COMPLETED, priority=1)
+        self.mock_repository.get_by_ids.return_value = {1: dep1, 2: dep2}
+
+        # Validate dependencies
+        DependencyValidator.validate_dependencies_met(task, self.mock_repository)
+
+        # Verify get_by_ids was called once with all dependency IDs
+        self.mock_repository.get_by_ids.assert_called_once_with([1, 2])
 
 
 if __name__ == "__main__":
