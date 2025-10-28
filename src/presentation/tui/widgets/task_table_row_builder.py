@@ -9,6 +9,9 @@ from presentation.constants.symbols import EMOJI_NOTE
 from presentation.constants.table_dimensions import TASK_NAME_MAX_DISPLAY_LENGTH
 from presentation.tui.formatters.task_table_formatter import TaskTableFormatter
 
+# Constants for text truncation
+TAGS_MAX_DISPLAY_LENGTH = 18
+
 
 class TaskTableRowBuilder:
     """Builds table row data from Task entities.
@@ -34,50 +37,140 @@ class TaskTableRowBuilder:
         Returns:
             Tuple of Text objects representing the table row columns
         """
+        return (
+            self._build_id_cell(task),
+            self._build_name_cell(task),
+            self._build_priority_cell(task),
+            self._build_status_cell(task),
+            self._build_elapsed_cell(task),
+            self._build_duration_cell(task),
+            self._build_deadline_cell(task),
+            self._build_dependencies_cell(task),
+            self._build_tags_cell(task),
+            self._build_flags_cell(task),
+        )
 
-        # Format status with color
+    def _build_id_cell(self, task: Task) -> Text:
+        """Build ID cell.
+
+        Args:
+            task: Task to extract ID from
+
+        Returns:
+            Text object for ID column
+        """
+        return Text(str(task.id), justify="center")
+
+    def _build_name_cell(self, task: Task) -> Text:
+        """Build name cell with truncation and strikethrough for completed tasks.
+
+        Args:
+            task: Task to extract name from
+
+        Returns:
+            Text object for name column
+        """
+        name_text = self._format_name(task.name)
+        name_style = "strike" if task.status == TaskStatus.COMPLETED else None
+        return Text(name_text, style=name_style, justify="left")
+
+    def _build_priority_cell(self, task: Task) -> Text:
+        """Build priority cell.
+
+        Args:
+            task: Task to extract priority from
+
+        Returns:
+            Text object for priority column
+        """
+        return Text(str(task.priority), justify="center")
+
+    def _build_status_cell(self, task: Task) -> Text:
+        """Build status cell with color coding.
+
+        Args:
+            task: Task to extract status from
+
+        Returns:
+            Text object for status column
+        """
         status_text = task.status.value
         status_color = STATUS_STYLES.get(task.status, "white")
+        return Text(status_text, style=status_color, justify="center")
 
-        # Format duration
+    def _build_elapsed_cell(self, task: Task) -> Text:
+        """Build elapsed time cell.
+
+        Args:
+            task: Task to calculate elapsed time for
+
+        Returns:
+            Text object for elapsed time column
+        """
+        elapsed_time = TaskTableFormatter.format_elapsed_time(task)
+        return Text(elapsed_time, justify="center")
+
+    def _build_duration_cell(self, task: Task) -> Text:
+        """Build estimated duration cell.
+
+        Args:
+            task: Task to extract duration from
+
+        Returns:
+            Text object for duration column
+        """
         duration = TaskTableFormatter.format_duration(task)
+        return Text(duration, justify="center")
 
-        # Format deadline
+    def _build_deadline_cell(self, task: Task) -> Text:
+        """Build deadline cell.
+
+        Args:
+            task: Task to extract deadline from
+
+        Returns:
+            Text object for deadline column
+        """
         deadline = TaskTableFormatter.format_deadline(task.deadline)
+        return Text(deadline, justify="center")
 
-        # Format dependencies
+    def _build_dependencies_cell(self, task: Task) -> Text:
+        """Build dependencies cell.
+
+        Args:
+            task: Task to extract dependencies from
+
+        Returns:
+            Text object for dependencies column
+        """
         dependencies = TaskTableFormatter.format_dependencies(task)
+        return Text(dependencies, justify="center")
 
-        # Combine fixed and note indicators into flags
+    def _build_tags_cell(self, task: Task) -> Text:
+        """Build tags cell with truncation.
+
+        Args:
+            task: Task to extract tags from
+
+        Returns:
+            Text object for tags column
+        """
+        tags_text = self._format_tags(task.tags)
+        return Text(tags_text, justify="center")
+
+    def _build_flags_cell(self, task: Task) -> Text:
+        """Build flags cell (fixed indicator + note indicator).
+
+        Args:
+            task: Task to build flags for
+
+        Returns:
+            Text object for flags column
+        """
         fixed_indicator = "📌" if task.is_fixed else ""
         note_indicator = EMOJI_NOTE if self.notes_repository.has_notes(task.id) else ""
         flags = fixed_indicator + note_indicator
-
-        # Format elapsed time
-        elapsed_time = TaskTableFormatter.format_elapsed_time(task)
-
-        # Format name with truncation
-        name_text = self._format_name(task.name)
-
-        # Apply strikethrough style for completed tasks
-        name_style = "strike" if task.status == TaskStatus.COMPLETED else None
-
-        # Format tags with truncation
-        tags_text = self._format_tags(task.tags)
-
-        # Build row with Text objects
-        return (
-            Text(str(task.id), justify="center"),
-            Text(name_text, style=name_style, justify="left"),
-            Text(str(task.priority), justify="center"),
-            Text(status_text, style=status_color, justify="center"),
-            Text(elapsed_time, justify="center"),
-            Text(duration, justify="center"),
-            Text(deadline, justify="center"),
-            Text(dependencies, justify="center"),
-            Text(tags_text, justify="center"),
-            Text(flags, justify="center"),  # Combined Fixed + Note flags
-        )
+        return Text(flags, justify="center")
 
     @staticmethod
     def _format_name(name: str) -> str:
@@ -107,6 +200,6 @@ class TaskTableRowBuilder:
             return ""
 
         tags_text = ", ".join(tags)
-        if len(tags_text) > 18:
-            return tags_text[:17] + "..."
+        if len(tags_text) > TAGS_MAX_DISPLAY_LENGTH:
+            return tags_text[: TAGS_MAX_DISPLAY_LENGTH - 1] + "..."
         return tags_text

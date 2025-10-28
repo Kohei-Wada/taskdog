@@ -4,7 +4,6 @@ This widget wraps the GanttDataTable and provides additional functionality
 like date range management and automatic resizing.
 """
 
-from contextlib import suppress
 from datetime import date, timedelta
 
 from textual.app import ComposeResult
@@ -77,17 +76,28 @@ class GanttWidget(VerticalScroll):
         Returns:
             HolidayChecker instance if country is configured, None otherwise
         """
-        # Access app config via self.app
-        with suppress(AttributeError):
-            # Type hint: app is TaskdogTUI which has config attribute
-            app = self.app  # type: ignore[attr-defined]
-            config: Config = app.config
+        # Validate app and config existence explicitly
+        if not hasattr(self, "app"):
+            return None
 
-            if config.region.country:
-                with suppress(ImportError, NotImplementedError):
-                    return HolidayChecker(config.region.country)
+        # Type hint: app is TaskdogTUI which has config attribute
+        app = self.app  # type: ignore[attr-defined]
 
-        return None
+        if not hasattr(app, "config"):
+            return None
+
+        config: Config = app.config
+
+        # Check if country is configured
+        if not config.region.country:
+            return None
+
+        # Try to create HolidayChecker, handling expected exceptions
+        try:
+            return HolidayChecker(config.region.country)
+        except (ImportError, NotImplementedError):
+            # Holiday data not available for this country
+            return None
 
     def update_gantt(
         self,
@@ -140,24 +150,32 @@ class GanttWidget(VerticalScroll):
         """Load and display gantt data from the pre-computed gantt result."""
         try:
             self._gantt_table.load_gantt(self._gantt_result)
-
-            # Update title with date range and sort order
-            if self._title_widget:
-                start_date = self._gantt_result.date_range.start_date
-                end_date = self._gantt_result.date_range.end_date
-                title_text = (
-                    f"[bold yellow]Gantt Chart[/bold yellow] "
-                    f"[dim]({start_date} to {end_date})[/dim] "
-                    f"[dim]- sorted by: {self._sort_by}[/dim]"
-                )
-                self._title_widget.update(title_text)
-
-            # Update legend
-            if self._legend_widget:
-                legend_text = self._gantt_table.get_legend_text()
-                self._legend_widget.update(legend_text)
+            self._update_title()
+            self._update_legend()
         except Exception as e:
             self._show_error_message(e)
+
+    def _update_title(self):
+        """Update title with date range and sort order."""
+        if not self._title_widget:
+            return
+
+        start_date = self._gantt_result.date_range.start_date
+        end_date = self._gantt_result.date_range.end_date
+        title_text = (
+            f"[bold yellow]Gantt Chart[/bold yellow] "
+            f"[dim]({start_date} to {end_date})[/dim] "
+            f"[dim]- sorted by: {self._sort_by}[/dim]"
+        )
+        self._title_widget.update(title_text)
+
+    def _update_legend(self):
+        """Update legend with gantt chart symbols."""
+        if not self._legend_widget:
+            return
+
+        legend_text = self._gantt_table.get_legend_text()
+        self._legend_widget.update(legend_text)
 
     def _show_error_message(self, error: Exception):
         """Show error message when rendering fails.
@@ -187,7 +205,9 @@ class GanttWidget(VerticalScroll):
         return weeks * DAYS_PER_WEEK
 
     def _calculate_date_range_for_display(self, display_days: int) -> tuple[date, date]:
-        """Calculate start and end dates based on display days and current gantt result.
+        """Calculate start and end dates based on display days.
+
+        Always starts from the previous Monday and extends by the specified number of days.
 
         Args:
             display_days: Number of days to display
@@ -195,36 +215,36 @@ class GanttWidget(VerticalScroll):
         Returns:
             Tuple of (start_date, end_date)
         """
-        if not self._gantt_result:
-            # No gantt result yet, use default range
-            start_date = get_previous_monday()
-            end_date = start_date + timedelta(days=display_days - 1)
-            return start_date, end_date
-
-        # Always recalculate date range based on new display_days
-        # to properly handle screen width changes
         start_date = get_previous_monday()
         end_date = start_date + timedelta(days=display_days - 1)
         return start_date, end_date
 
     def on_resize(self):
         """Handle resize events."""
-        if self._task_ids and self._gantt_result:
-            # Recalculate appropriate date range for new screen width
-            display_days = self._calculate_display_days()
-            start_date, end_date = self._calculate_date_range_for_display(display_days)
+        if not (self._task_ids and self._gantt_result):
+            return
 
-            # Request new gantt data with adjusted date range via app
-            try:
-                app = self.app  # type: ignore[attr-defined]
-                gantt_result = app.task_service.get_gantt_data(
-                    task_ids=self._task_ids,
-                    sort_by=self._sort_by,
-                    start_date=start_date,
-                    end_date=end_date,
-                )
-                self._gantt_result = gantt_result
-                self.call_after_refresh(self._render_gantt)
-            except AttributeError:
-                # App not available, just re-render with existing data
-                self.call_after_refresh(self._render_gantt)
+        display_days = self._calculate_display_days()
+        self._recalculate_gantt_for_width(display_days)
+
+    def _recalculate_gantt_for_width(self, display_days: int):
+        """Recalculate gantt data for new screen width.
+
+        Args:
+            display_days: Number of days to display
+        """
+        start_date, end_date = self._calculate_date_range_for_display(display_days)
+
+        # Try to fetch updated gantt data from app
+        if hasattr(self, "app") and hasattr(self.app, "task_service"):
+            app = self.app  # type: ignore[attr-defined]
+            gantt_result = app.task_service.get_gantt_data(
+                task_ids=self._task_ids,
+                sort_by=self._sort_by,
+                start_date=start_date,
+                end_date=end_date,
+            )
+            self._gantt_result = gantt_result
+
+        # Re-render with current or updated data
+        self.call_after_refresh(self._render_gantt)

@@ -9,6 +9,7 @@ from abc import abstractmethod
 
 from domain.entities.task import Task
 from presentation.tui.commands.base import TUICommandBase
+from presentation.tui.events import TaskUpdated
 
 
 class StatusChangeCommandBase(TUICommandBase):
@@ -90,8 +91,10 @@ class StatusChangeCommandBase(TUICommandBase):
             # Execute status change (delegated to subclass)
             updated_task = self.execute_status_change(task.id)
 
-            # Reload UI and notify success
-            self.reload_tasks()
+            # Post TaskUpdated event to trigger UI refresh
+            self.app.post_message(TaskUpdated(updated_task))
+
+            # Notify success
             success_verb = self.get_success_verb()
             self.notify_success(f"{success_verb} task: {updated_task.name} (ID: {updated_task.id})")
         except Exception as e:

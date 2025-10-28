@@ -58,10 +58,13 @@ class TestTUICommandBase(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_reload_tasks(self):
-        """Test reloading tasks."""
+        """Test reloading tasks posts TasksRefreshed event."""
         self.command.reload_tasks()
 
-        self.app._load_tasks.assert_called_once()
+        # Verify that TasksRefreshed event was posted
+        self.app.post_message.assert_called_once()
+        posted_event = self.app.post_message.call_args[0][0]
+        self.assertEqual(type(posted_event).__name__, "TasksRefreshed")
 
     def test_notify_success(self):
         """Test success notification."""

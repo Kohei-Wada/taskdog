@@ -2,10 +2,10 @@
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
-from textual.widgets import Input
 
 from domain.entities.task import Task
 from infrastructure.persistence.notes_repository import NotesRepository
+from presentation.tui.events import SearchQueryChanged
 from presentation.tui.widgets.search_input import SearchInput
 from presentation.tui.widgets.task_table import TaskTable
 
@@ -41,19 +41,15 @@ class FilterableTaskTable(Vertical):
         if self.task_table:
             self.task_table.setup_columns()
 
-    def on_input_changed(self, event: Input.Changed) -> None:
-        """Handle search input changes.
+    def on_search_query_changed(self, event: SearchQueryChanged) -> None:
+        """Handle search query changes via event.
 
         Args:
-            event: Input changed event
+            event: SearchQueryChanged event with the new query string
         """
-        # Only handle events from the search input
-        if event.input.id != "search-input":
-            return
-
         # Filter tasks based on search query
         if self.task_table:
-            self.task_table.filter_tasks(event.value)
+            self.task_table.filter_tasks(event.query)
             self._update_search_result()
 
     def on_search_input_submitted(self, event: SearchInput.Submitted) -> None:

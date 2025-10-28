@@ -19,6 +19,7 @@ from presentation.tui.commands.providers import (
     SortOptionsProvider,
 )
 from presentation.tui.context import TUIContext
+from presentation.tui.events import TaskCreated, TaskDeleted, TasksRefreshed, TaskUpdated
 from presentation.tui.screens.main_screen import MainScreen
 from presentation.tui.screens.vi_command_palette import ViCommandPalette
 from presentation.tui.services.task_service import TaskService
@@ -274,7 +275,9 @@ class TaskdogTUI(App):
             sort_key: Sort key (deadline, planned_start, priority, id)
         """
         self._gantt_sort_by = sort_key
-        self._load_tasks()
+
+        # Post TasksRefreshed event to trigger UI refresh with new sort order
+        self.post_message(TasksRefreshed())
 
         # Show notification message
         sort_label = self._SORT_KEY_LABELS.get(sort_key, sort_key)
@@ -308,3 +311,36 @@ class TaskdogTUI(App):
                 # This will recalculate elapsed time for IN_PROGRESS tasks
                 # Keep scroll position to avoid stuttering during user navigation
                 self.main_screen.task_table.refresh_tasks(tasks, keep_scroll_position=True)
+
+    # Event handlers for task operations
+    def on_task_created(self, event: TaskCreated) -> None:
+        """Handle task created event.
+
+        Args:
+            event: TaskCreated event containing the new task
+        """
+        self._load_tasks()
+
+    def on_task_updated(self, event: TaskUpdated) -> None:
+        """Handle task updated event.
+
+        Args:
+            event: TaskUpdated event containing the updated task
+        """
+        self._load_tasks()
+
+    def on_task_deleted(self, event: TaskDeleted) -> None:
+        """Handle task deleted event.
+
+        Args:
+            event: TaskDeleted event containing the deleted task ID
+        """
+        self._load_tasks()
+
+    def on_tasks_refreshed(self, event: TasksRefreshed) -> None:
+        """Handle tasks refreshed event.
+
+        Args:
+            event: TasksRefreshed event triggering a full reload
+        """
+        self._load_tasks()

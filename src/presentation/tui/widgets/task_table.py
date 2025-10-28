@@ -28,6 +28,7 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_STATUS_WIDTH,
     TASK_TABLE_TAGS_WIDTH,
 )
+from presentation.tui.events import TaskSelected
 from presentation.tui.widgets.task_search_filter import TaskSearchFilter
 from presentation.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 
@@ -189,32 +190,43 @@ class TaskTable(DataTable):
         """Get the total number of tasks (unfiltered)."""
         return len(self._all_tasks)
 
-    def action_cursor_down(self) -> None:
-        """Override cursor down."""
-        super().action_cursor_down()
+    def watch_cursor_row(self, old_row: int, new_row: int) -> None:
+        """Called when cursor row changes.
 
-    def action_cursor_up(self) -> None:
-        """Override cursor up."""
-        super().action_cursor_up()
+        Posts a TaskSelected event to notify other widgets of the selection change.
+
+        Args:
+            old_row: Previous cursor row index
+            new_row: New cursor row index
+        """
+        # Get the currently selected task
+        selected_task = self.get_selected_task()
+        # Post TaskSelected event for other widgets to react
+        self.post_message(TaskSelected(selected_task))
+
+    def _safe_move_cursor(self, row: int) -> None:
+        """Safely move cursor to specified row if table has rows.
+
+        Args:
+            row: Target row index
+        """
+        if self.row_count > 0:
+            self.move_cursor(row=row)
 
     def action_scroll_home(self) -> None:
         """Move cursor to top (g key)."""
-        if self.row_count > 0:
-            self.move_cursor(row=0)
+        self._safe_move_cursor(row=0)
 
     def action_scroll_end(self) -> None:
         """Move cursor to bottom (G key)."""
-        if self.row_count > 0:
-            self.move_cursor(row=self.row_count - 1)
+        self._safe_move_cursor(row=self.row_count - 1)
 
     def action_page_down(self) -> None:
         """Move cursor down by half page (Ctrl+d)."""
-        if self.row_count > 0:
-            new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
-            self.move_cursor(row=new_row)
+        new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
+        self._safe_move_cursor(row=new_row)
 
     def action_page_up(self) -> None:
         """Move cursor up by half page (Ctrl+u)."""
-        if self.row_count > 0:
-            new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
-            self.move_cursor(row=new_row)
+        new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
+        self._safe_move_cursor(row=new_row)

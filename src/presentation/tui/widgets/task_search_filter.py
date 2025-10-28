@@ -3,6 +3,10 @@
 from domain.entities.task import Task
 from presentation.tui.formatters.task_table_formatter import TaskTableFormatter
 
+# Constants for search keywords
+SEARCH_KEYWORD_FIXED = "fixed"
+SEARCH_SYMBOL_FIXED = "📌"
+
 
 class TaskSearchFilter:
     """Handles task search and filtering with smart case matching.
@@ -69,6 +73,25 @@ class TaskSearchFilter:
             return search_query in search_text
 
         # Build searchable fields
+        searchable_fields = TaskSearchFilter._build_searchable_fields(task)
+
+        # Check if query matches any field
+        return any(contains_query(field) for field in searchable_fields)
+
+    @staticmethod
+    def _build_searchable_fields(task: Task) -> list[str]:
+        """Build list of searchable text fields from task.
+
+        Extracts all visible fields that should be searchable, including
+        formatted versions of duration and deadline.
+
+        Args:
+            task: Task to extract searchable fields from
+
+        Returns:
+            List of searchable text strings
+        """
+        # Core fields always included
         searchable_fields = [
             str(task.id),
             task.name,
@@ -88,10 +111,9 @@ class TaskSearchFilter:
 
         # Add fixed indicators if task is fixed
         if task.is_fixed:
-            searchable_fields.extend(["fixed", "📌"])
+            searchable_fields.extend([SEARCH_KEYWORD_FIXED, SEARCH_SYMBOL_FIXED])
 
-        # Check if query matches any field
-        return any(contains_query(field) for field in searchable_fields)
+        return searchable_fields
 
     @staticmethod
     def _is_case_sensitive(query: str) -> bool:
