@@ -25,18 +25,15 @@ class TaskTableRowBuilder:
         """
         self.notes_repository = notes_repository
 
-    def build_row(self, task: Task, is_selected: bool = False) -> tuple[Text, ...]:
+    def build_row(self, task: Task) -> tuple[Text, ...]:
         """Build a table row from a task.
 
         Args:
             task: Task to build row for
-            is_selected: Whether this task is currently selected (for indicator)
 
         Returns:
             Tuple of Text objects representing the table row columns
         """
-        # Selection indicator
-        indicator_text = ">" if is_selected else ""
 
         # Format status with color
         status_text = task.status.value
@@ -70,7 +67,6 @@ class TaskTableRowBuilder:
 
         # Build row with Text objects
         return (
-            Text(indicator_text, justify="center"),  # Indicator column
             Text(str(task.id), justify="center"),
             Text(name_text, style=name_style, justify="left"),
             Text(str(task.priority), justify="center"),

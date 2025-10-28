@@ -28,7 +28,6 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_STATUS_WIDTH,
     TASK_TABLE_TAGS_WIDTH,
 )
-from presentation.tui.widgets.cursor_indicator_manager import CursorIndicatorManager
 from presentation.tui.widgets.task_search_filter import TaskSearchFilter
 from presentation.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 
@@ -39,7 +38,6 @@ class TaskTable(DataTable):
     This widget acts as a coordinator that delegates responsibilities to:
     - TaskSearchFilter: Handles search and filtering logic
     - TaskTableRowBuilder: Builds table row data from Task entities
-    - CursorIndicatorManager: Manages the selection indicator
     """
 
     # Add Vi-style bindings in addition to DataTable's default bindings
@@ -71,11 +69,9 @@ class TaskTable(DataTable):
         # Components
         self._search_filter = TaskSearchFilter()
         self._row_builder = TaskTableRowBuilder(notes_repository)
-        self._indicator_manager = CursorIndicatorManager(self)
 
     def setup_columns(self):
         """Set up table columns."""
-        self.add_column(Text("", justify="center"), width=2, key="indicator")
         self.add_column(Text("ID", justify="center"), width=TASK_TABLE_ID_WIDTH)
         self.add_column(Text("Name", justify="center"), width=TASK_TABLE_NAME_WIDTH)
         self.add_column(Text("Pri", justify="center"), width=TASK_TABLE_PRIORITY_WIDTH)
@@ -105,26 +101,16 @@ class TaskTable(DataTable):
         Args:
             tasks: List of tasks to render
         """
-        # Save current cursor position before clearing
-        saved_cursor_row = self.cursor_row if self.row_count > 0 else 0
-
         self.clear()
         self._task_map.clear()
-        self._indicator_manager.clear()
 
         for idx, task in enumerate(tasks):
             # Build row data using row builder
-            is_selected = idx == saved_cursor_row
-            row_data = self._row_builder.build_row(task, is_selected)
+            row_data = self._row_builder.build_row(task)
 
-            # Add row and register with indicator manager
-            row_key = self.add_row(*row_data)
+            # Add row
+            self.add_row(*row_data)
             self._task_map[idx] = task
-            self._indicator_manager.set_row_key(idx, row_key)
-
-        # Set initial indicator position
-        if saved_cursor_row >= 0 and saved_cursor_row < len(self._task_map):
-            self._indicator_manager.set_initial_indicator(saved_cursor_row)
 
     def get_selected_task(self) -> Task | None:
         """Get the currently selected task.
@@ -204,41 +190,31 @@ class TaskTable(DataTable):
         return len(self._all_tasks)
 
     def action_cursor_down(self) -> None:
-        """Override cursor down to update indicator."""
+        """Override cursor down."""
         super().action_cursor_down()
-        self._update_indicator()
 
     def action_cursor_up(self) -> None:
-        """Override cursor up to update indicator."""
+        """Override cursor up."""
         super().action_cursor_up()
-        self._update_indicator()
 
     def action_scroll_home(self) -> None:
         """Move cursor to top (g key)."""
         if self.row_count > 0:
             self.move_cursor(row=0)
-            self._update_indicator()
 
     def action_scroll_end(self) -> None:
         """Move cursor to bottom (G key)."""
         if self.row_count > 0:
             self.move_cursor(row=self.row_count - 1)
-            self._update_indicator()
 
     def action_page_down(self) -> None:
         """Move cursor down by half page (Ctrl+d)."""
         if self.row_count > 0:
             new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
             self.move_cursor(row=new_row)
-            self._update_indicator()
 
     def action_page_up(self) -> None:
         """Move cursor up by half page (Ctrl+u)."""
         if self.row_count > 0:
             new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
             self.move_cursor(row=new_row)
-            self._update_indicator()
-
-    def _update_indicator(self) -> None:
-        """Update the selection indicator for the current cursor position."""
-        self._indicator_manager.update_indicator(self.cursor_row)
