@@ -77,12 +77,16 @@ Taskdog includes a full-screen terminal user interface (TUI) for managing tasks 
 - `d` - Complete (done) selected task
 - `c` - Cancel selected task
 - `R` - Reopen task
-- `x` - Remove task
+- `x` - Archive task (soft delete)
+- `X` - Hard delete task (permanent)
 - `i` - Show task details
 - `e` - Edit task
+- `v` - Edit task note
 - `o` - Run optimizer
 - `r` - Refresh task list
-- `S` - Sort selection dialog
+- `S` - Sort selection dialog (deadline/planned_start/priority/estimated_duration/id)
+- `/` - Focus search box
+- `Escape` - Clear/hide search
 - `q` - Quit
 
 Launch the TUI with:
@@ -95,13 +99,13 @@ taskdog tui
 ### Core Commands
 
 **Task Creation & Updates**
-- `add "Task name" [-p PRIORITY] [--fixed] [-d DEP_ID]` - Create task
+- `add "Task name" [-p PRIORITY] [--fixed] [-d DEP_ID] [-t TAG]` - Create task (multiple -d and -t allowed)
 - `deadline ID DATE` - Set deadline (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)
 - `priority ID N` - Set priority (higher = more important)
 - `est ID HOURS` - Set estimated duration
 - `schedule ID START [END]` - Set planned schedule
 - `rename ID NAME` - Rename task
-- `update ID [--name] [--priority] [--status] [...]` - Multi-field update
+- `update ID [--name] [--priority] [--status] [--planned-start] [--planned-end] [--deadline] [--estimated-duration]` - Multi-field update
 
 **Task Management**
 - `start ID...` - Start tasks (records actual start time)
@@ -116,6 +120,14 @@ taskdog tui
 - `add-dependency TASK_ID DEP_ID` - Add dependency (circular detection)
 - `remove-dependency TASK_ID DEP_ID` - Remove dependency
 
+**Tags Management**
+- `tags` - List all tags with counts
+- `tags ID` - Show tags for a task
+- `tags ID TAG1 TAG2...` - Set tags for a task (replaces existing)
+
+**Time Tracking**
+- `log-hours ID HOURS [-d DATE]` - Log actual hours worked (default: today)
+
 **Optimization**
 - `optimize [--start-date DATE] [--max-hours-per-day N] [-a ALGORITHM] [-f]`
   - Algorithms: greedy (default), balanced, backward, priority_first, earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo
@@ -123,16 +135,32 @@ taskdog tui
   - Distributes workload across weekdays
 
 **Visualization**
-- `table [-a] [-s FIELD] [-r]` - Table view (sort by id/priority/deadline/name/status/planned_start)
-- `gantt [-s FIELD] [-r]` - Gantt chart with workload analysis (default sort: deadline)
-- `today` - Today's tasks
-- `show ID [--raw]` - Task details + notes
-- `export [--format json] [-o FILE]` - Export tasks
+- `table` - Table view with extensive options:
+  - Sort: `-s/--sort` (id, priority, deadline, name, status, planned_start)
+  - Filter: `--status` (pending, in_progress, completed, canceled, archived), `-t/--tag`, `--start-date`, `--end-date`
+  - Display: `-a/--all` (include archived), `-r/--reverse`, `-f/--fields` (custom field selection)
+- `gantt` - Gantt chart with workload analysis:
+  - Same filter/sort options as table (default sort: deadline)
+- `today` - Today's tasks (deadline today, planned includes today, or IN_PROGRESS)
+- `week` - This week's tasks (same filtering logic as today)
+- `show ID [--raw]` - Task details + notes (markdown rendered or raw)
+- `export` - Export tasks:
+  - Format: `--format` (json [default] or csv)
+  - Output: `-o/--output FILE`
+  - Fields: `-f/--fields` (custom field selection)
+  - Filters: Same as table (--all, --status, --tag, --start-date, --end-date)
+
+**Analytics**
+- `stats` - Task statistics and analytics:
+  - Period: `-p/--period` (all [default], 7d, 30d)
+  - Focus: `-f/--focus` (all [default], basic, time, estimation, deadline, priority, trends)
 
 **Notes & TUI**
 - `note ID` - Edit markdown notes ($EDITOR)
-- `tui` - Interactive TUI (keys: a/s/p/d/c/R/x/i/e/o/r/S/q)
-  - **S**: Sort selection dialog (deadline/planned_start/priority/id)
+- `tui` - Interactive TUI
+  - See Interactive TUI section above for full keyboard shortcuts
+  - Search: `/` to search, `Escape` to clear
+  - Sort: `S` for sort dialog (deadline/planned_start/priority/estimated_duration/id)
 
 
 ## Task States
@@ -141,10 +169,58 @@ taskdog tui
 - **IN_PROGRESS**: Being worked on (blue)
 - **COMPLETED**: Finished (green)
 - **CANCELED**: Won't be done (red)
+- **ARCHIVED**: Soft-deleted (can be restored)
+
+## Tags
+
+Tasks can be organized with tags for better categorization and filtering.
+
+```bash
+# Add task with tags
+taskdog add "Backend API" --tag backend --tag api
+
+# Manage tags
+taskdog tags                    # List all tags with counts
+taskdog tags 1                  # Show tags for task 1
+taskdog tags 1 urgent backend   # Set tags (replaces existing)
+
+# Filter by tags
+taskdog table --tag backend     # Show tasks with 'backend' tag
+taskdog table --tag api --tag db  # OR logic: tasks with 'api' OR 'db'
+```
 
 ## Data Storage
 
-Tasks: `$XDG_DATA_HOME/taskdog/tasks.json` (fallback: `~/.local/share/taskdog/tasks.json`)
+**Tasks**: `$XDG_DATA_HOME/taskdog/tasks.json` (fallback: `~/.local/share/taskdog/tasks.json`)
+
+**Config**: `$XDG_CONFIG_HOME/taskdog/config.toml` (fallback: `~/.config/taskdog/config.toml`)
+
+### Configuration
+
+Optional TOML configuration file with the following sections:
+
+```toml
+[optimization]
+max_hours_per_day = 6.0        # Default work hours per day (default: 6.0)
+default_algorithm = "greedy"   # Default scheduling algorithm (default: "greedy")
+
+[task]
+default_priority = 5           # Default task priority (default: 5)
+
+[display]
+datetime_format = "%Y-%m-%d %H:%M:%S"  # Datetime display format
+
+[time]
+default_start_hour = 9         # Business day start hour (default: 9)
+default_end_hour = 18          # Business day end hour (default: 18)
+
+[region]
+country = "JP"                 # ISO 3166-1 alpha-2 country code for holiday checking
+                               # Examples: "JP", "US", "GB", "DE"
+                               # Default: None (no holiday checking)
+```
+
+**Priority**: CLI arguments > Config file > Defaults
 
 ## Workflow
 
