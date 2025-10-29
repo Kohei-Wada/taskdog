@@ -6,6 +6,10 @@ from typing import ClassVar
 
 from textual.app import App
 
+from application.queries.filters.composite_filter import CompositeFilter
+from application.queries.filters.incomplete_or_active_filter import (
+    IncompleteOrActiveFilter,
+)
 from application.queries.filters.non_archived_filter import NonArchivedFilter
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
@@ -71,6 +75,7 @@ class TaskdogTUI(App):
         ("i", "show_details", "Info"),
         ("e", "edit_task", "Edit"),
         ("v", "edit_note", "Edit Note"),
+        ("t", "toggle_completed", "Toggle Done"),
         ("/", "show_search", "Search"),
         ("escape", "hide_search", "Clear Search"),
     ]
@@ -115,6 +120,7 @@ class TaskdogTUI(App):
         self.config = config if config is not None else ConfigManager.load()
         self.main_screen: MainScreen | None = None
         self._gantt_sort_by: str = "deadline"  # Default gantt sort order
+        self._hide_completed: bool = False  # Default: show all tasks
 
         # Initialize TUIContext
         self.notes_repository = NotesRepository()
@@ -204,10 +210,12 @@ class TaskdogTUI(App):
 
         # Get all non-deleted tasks (PENDING, IN_PROGRESS, COMPLETED, CANCELED)
         # Deleted tasks are excluded from display
-        non_archived_filter = NonArchivedFilter()
-        tasks = self.query_service.get_filtered_tasks(
-            non_archived_filter, sort_by=self._gantt_sort_by
-        )
+        # If hide_completed is True, also exclude COMPLETED and CANCELED tasks
+        if self._hide_completed:
+            task_filter = CompositeFilter([NonArchivedFilter(), IncompleteOrActiveFilter()])
+        else:
+            task_filter = NonArchivedFilter()
+        tasks = self.query_service.get_filtered_tasks(task_filter, sort_by=self._gantt_sort_by)
 
         # Update gantt chart and table
         if self.main_screen:
@@ -297,6 +305,17 @@ class TaskdogTUI(App):
         """Hide the search input and clear the filter."""
         if self.main_screen:
             self.main_screen.hide_search()
+
+    def action_toggle_completed(self) -> None:
+        """Toggle visibility of completed and canceled tasks."""
+        self._hide_completed = not self._hide_completed
+
+        # Reload tasks with new filter
+        self.post_message(TasksRefreshed())
+
+        # Show notification
+        status = "hidden" if self._hide_completed else "shown"
+        self.notify(f"Completed tasks {status}")
 
     def action_command_palette(self) -> None:
         """Show the command palette with Vi keybindings."""
