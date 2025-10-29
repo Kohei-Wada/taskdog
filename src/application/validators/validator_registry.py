@@ -4,6 +4,7 @@ from typing import Any
 
 from application.validators.datetime_validator import DateTimeValidator
 from application.validators.field_validator import FieldValidator
+from application.validators.numeric_field_validator import NumericFieldValidator
 from application.validators.status_validator import StatusValidator
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
@@ -32,6 +33,8 @@ class TaskFieldValidatorRegistry:
         self._validators["deadline"] = DateTimeValidator("deadline")
         self._validators["planned_start"] = DateTimeValidator("planned_start")
         self._validators["planned_end"] = DateTimeValidator("planned_end")
+        self._validators["estimated_duration"] = NumericFieldValidator("estimated_duration")
+        self._validators["priority"] = NumericFieldValidator("priority")
 
     def validate_field(self, field_name: str, value: Any, task: Task) -> None:
         """Validate a field value if a validator exists for that field.
