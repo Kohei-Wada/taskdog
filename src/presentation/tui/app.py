@@ -18,13 +18,13 @@ from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.notes_repository import NotesRepository
 from infrastructure.persistence.task_repository import TaskRepository
 from presentation.tui.commands.factory import CommandFactory
-from presentation.tui.commands.providers import (
+from presentation.tui.context import TUIContext
+from presentation.tui.events import TaskCreated, TaskDeleted, TasksRefreshed, TaskUpdated
+from presentation.tui.palette.providers import (
     OptimizeCommandProvider,
     SortCommandProvider,
     SortOptionsProvider,
 )
-from presentation.tui.context import TUIContext
-from presentation.tui.events import TaskCreated, TaskDeleted, TasksRefreshed, TaskUpdated
 from presentation.tui.screens.main_screen import MainScreen
 from presentation.tui.services.task_service import TaskService
 from shared.config_manager import Config, ConfigManager
@@ -329,7 +329,7 @@ class TaskdogTUI(App):
         """
         if self.main_screen and self.main_screen.task_table:
             # Get current tasks from the table (already loaded in memory)
-            tasks = self.main_screen.task_table._all_tasks
+            tasks = self.main_screen.task_table.all_tasks
             if tasks:
                 # Refresh the table display with current tasks
                 # This will recalculate elapsed time for IN_PROGRESS tasks

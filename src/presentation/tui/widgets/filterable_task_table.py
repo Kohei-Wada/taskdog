@@ -123,12 +123,23 @@ class FilterableTaskTable(Vertical):
             self.search_input.update_result(matched, total)
 
     @property
-    def _all_tasks(self) -> list[Task]:
-        """Get all tasks (for compatibility with app.py).
+    def all_tasks(self) -> list[Task]:
+        """Get all loaded tasks from the table.
 
         Returns:
-            List of all tasks
+            List of all tasks currently loaded in the table
         """
         if self.task_table:
             return self.task_table._all_tasks
         return []
+
+    @property
+    def _all_tasks(self) -> list[Task]:
+        """Get all tasks (deprecated, use all_tasks instead).
+
+        Returns:
+            List of all tasks
+
+        .. deprecated:: Use :attr:`all_tasks` instead
+        """
+        return self.all_tasks

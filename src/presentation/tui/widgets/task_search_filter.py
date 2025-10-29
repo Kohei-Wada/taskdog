@@ -1,7 +1,7 @@
 """Task search and filtering logic."""
 
 from domain.entities.task import Task
-from presentation.tui.formatters.task_table_formatter import TaskTableFormatter
+from presentation.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 
 # Constants for search keywords
 SEARCH_KEYWORD_FIXED = "fixed"
@@ -97,8 +97,8 @@ class TaskSearchFilter:
             task.name,
             task.status.value,
             str(task.priority),
-            TaskTableFormatter.format_duration(task),
-            TaskTableFormatter.format_deadline(task.deadline),
+            TaskTableRowBuilder.format_duration(task),
+            TaskTableRowBuilder.format_deadline(task.deadline),
         ]
 
         # Add dependencies if present

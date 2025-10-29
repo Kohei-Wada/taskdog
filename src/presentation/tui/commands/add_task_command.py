@@ -7,7 +7,6 @@ from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.events import TaskCreated
 from presentation.tui.forms.task_form_fields import TaskFormData
-from presentation.tui.helpers.dependency_helpers import add_dependencies
 from presentation.tui.screens.task_form_dialog import TaskFormDialog
 from shared.constants.formats import DATETIME_FORMAT
 
@@ -60,8 +59,8 @@ class AddTaskCommand(TUICommandBase):
 
             # Add dependencies if specified
             if form_data.depends_on and task.id is not None:
-                failed_dependencies = add_dependencies(
-                    task.id, form_data.depends_on, self.context.repository
+                failed_dependencies = self.task_service.add_dependencies(
+                    task.id, form_data.depends_on
                 )
 
                 # Show warnings for failed dependencies

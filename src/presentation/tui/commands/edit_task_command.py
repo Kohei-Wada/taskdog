@@ -7,7 +7,6 @@ from presentation.tui.commands.decorators import require_selected_task
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.events import TaskUpdated
 from presentation.tui.forms.task_form_fields import TaskFormData
-from presentation.tui.helpers.dependency_helpers import sync_dependencies
 from presentation.tui.screens.task_form_dialog import TaskFormDialog
 
 
@@ -129,11 +128,10 @@ class EditTaskCommand(TUICommandBase):
         if dependencies_changed:
             original_deps = set(task.depends_on) if task.depends_on else set()
             new_deps = set(form_data.depends_on) if form_data.depends_on else set()
-            failed_operations = sync_dependencies(
+            failed_operations = self.task_service.sync_dependencies(
                 task.id,  # type: ignore[arg-type]
                 original_deps,
                 new_deps,
-                self.context.repository,
             )
 
             updated_fields.append("dependencies")

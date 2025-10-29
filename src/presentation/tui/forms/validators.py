@@ -120,8 +120,8 @@ class PriorityValidator(BaseValidator):
         return PriorityValidator._success(priority)
 
 
-class DateTimeValidatorTUI(BaseValidator):
-    """Generic validator for date/time fields in TUI."""
+class DateTimeValidator(BaseValidator):
+    """Generic validator for date/time fields."""
 
     @staticmethod
     def validate(value: str, field_name: str, default_hour: int) -> ValidationResult:
@@ -139,7 +139,7 @@ class DateTimeValidatorTUI(BaseValidator):
 
         # Empty string means no value
         if not datetime_str:
-            return DateTimeValidatorTUI._success(None)
+            return DateTimeValidator._success(None)
 
         # Check if input contains time component (look for colon)
         has_time = ":" in datetime_str
@@ -154,9 +154,9 @@ class DateTimeValidatorTUI(BaseValidator):
 
             # Convert to the standard format YYYY-MM-DD HH:MM:SS
             formatted_datetime = parsed_date.strftime("%Y-%m-%d %H:%M:%S")
-            return DateTimeValidatorTUI._success(formatted_datetime)
+            return DateTimeValidator._success(formatted_datetime)
         except (ValueError, TypeError, OverflowError, ParserError):
-            return DateTimeValidatorTUI._error(
+            return DateTimeValidator._error(
                 f"Invalid {field_name} format. Examples: 2025-12-31, tomorrow 6pm"
             )
 

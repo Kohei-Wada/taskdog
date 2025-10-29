@@ -10,7 +10,7 @@ from textual.widgets import Checkbox, Input, Label, Static
 from domain.entities.task import Task
 from presentation.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from presentation.tui.forms.validators import (
-    DateTimeValidatorTUI,
+    DateTimeValidator,
     DependenciesValidator,
     DurationValidator,
     PriorityValidator,
@@ -109,18 +109,18 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         validations: list[tuple[str, Input, Any, list[Any]]] = [
             ("task_name", inputs["task_name"], TaskNameValidator, []),
             ("priority", inputs["priority"], PriorityValidator, [default_priority]),
-            ("deadline", inputs["deadline"], DateTimeValidatorTUI, ["deadline", default_end_hour]),
+            ("deadline", inputs["deadline"], DateTimeValidator, ["deadline", default_end_hour]),
             ("duration", inputs["duration"], DurationValidator, []),
             (
                 "planned_start",
                 inputs["planned_start"],
-                DateTimeValidatorTUI,
+                DateTimeValidator,
                 ["planned start", default_start_hour],
             ),
             (
                 "planned_end",
                 inputs["planned_end"],
-                DateTimeValidatorTUI,
+                DateTimeValidator,
                 ["planned end", default_end_hour],
             ),
             ("dependencies", inputs["dependencies"], DependenciesValidator, []),

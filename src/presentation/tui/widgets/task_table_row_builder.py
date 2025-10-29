@@ -1,6 +1,7 @@
 """Task table row builder for constructing table row data."""
 
 from collections.abc import Callable
+from datetime import datetime
 
 from rich.text import Text
 
@@ -9,7 +10,6 @@ from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.constants.colors import STATUS_STYLES
 from presentation.constants.symbols import EMOJI_NOTE
 from presentation.constants.table_dimensions import TASK_NAME_MAX_DISPLAY_LENGTH
-from presentation.tui.formatters.task_table_formatter import TaskTableFormatter
 
 # Constants for text truncation
 TAGS_MAX_DISPLAY_LENGTH = 18
@@ -139,7 +139,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for elapsed time column
         """
-        return self._create_cell_from_formatter(TaskTableFormatter.format_elapsed_time, task)
+        return self._create_cell_from_formatter(TaskTableRowBuilder.format_elapsed_time, task)
 
     def _build_planned_start_cell(self, task: Task) -> Text:
         """Build planned start cell.
@@ -151,7 +151,7 @@ class TaskTableRowBuilder:
             Text object for planned start column
         """
         return self._create_cell_from_formatter(
-            TaskTableFormatter.format_planned_start, task.planned_start
+            TaskTableRowBuilder.format_planned_start, task.planned_start
         )
 
     def _build_planned_end_cell(self, task: Task) -> Text:
@@ -164,7 +164,7 @@ class TaskTableRowBuilder:
             Text object for planned end column
         """
         return self._create_cell_from_formatter(
-            TaskTableFormatter.format_planned_end, task.planned_end
+            TaskTableRowBuilder.format_planned_end, task.planned_end
         )
 
     def _build_actual_start_cell(self, task: Task) -> Text:
@@ -177,7 +177,7 @@ class TaskTableRowBuilder:
             Text object for actual start column
         """
         return self._create_cell_from_formatter(
-            TaskTableFormatter.format_actual_start, task.actual_start
+            TaskTableRowBuilder.format_actual_start, task.actual_start
         )
 
     def _build_actual_end_cell(self, task: Task) -> Text:
@@ -190,7 +190,7 @@ class TaskTableRowBuilder:
             Text object for actual end column
         """
         return self._create_cell_from_formatter(
-            TaskTableFormatter.format_actual_end, task.actual_end
+            TaskTableRowBuilder.format_actual_end, task.actual_end
         )
 
     def _build_estimated_duration_cell(self, task: Task) -> Text:
@@ -202,7 +202,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for estimated duration column
         """
-        return self._create_cell_from_formatter(TaskTableFormatter.format_estimated_duration, task)
+        return self._create_cell_from_formatter(TaskTableRowBuilder.format_estimated_duration, task)
 
     def _build_actual_duration_cell(self, task: Task) -> Text:
         """Build actual duration cell.
@@ -213,7 +213,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for actual duration column
         """
-        return self._create_cell_from_formatter(TaskTableFormatter.format_actual_duration, task)
+        return self._create_cell_from_formatter(TaskTableRowBuilder.format_actual_duration, task)
 
     def _build_deadline_cell(self, task: Task) -> Text:
         """Build deadline cell.
@@ -224,7 +224,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for deadline column
         """
-        return self._create_cell_from_formatter(TaskTableFormatter.format_deadline, task.deadline)
+        return self._create_cell_from_formatter(TaskTableRowBuilder.format_deadline, task.deadline)
 
     def _build_dependencies_cell(self, task: Task) -> Text:
         """Build dependencies cell.
@@ -235,7 +235,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for dependencies column
         """
-        return self._create_cell_from_formatter(TaskTableFormatter.format_dependencies, task)
+        return self._create_cell_from_formatter(TaskTableRowBuilder.format_dependencies, task)
 
     def _build_tags_cell(self, task: Task) -> Text:
         """Build tags cell with truncation.
@@ -294,3 +294,179 @@ class TaskTableRowBuilder:
         if len(tags_text) > TAGS_MAX_DISPLAY_LENGTH:
             return tags_text[: TAGS_MAX_DISPLAY_LENGTH - 1] + "..."
         return tags_text
+
+    # ============================================================================
+    # Static Formatting Methods (formerly from TaskTableFormatter)
+    # ============================================================================
+
+    @staticmethod
+    def format_duration(task: Task) -> str:
+        """Format duration information for display.
+
+        Args:
+            task: Task to format duration for
+
+        Returns:
+            Formatted duration string
+        """
+        if not task.estimated_duration and not task.actual_duration_hours:
+            return "-"
+
+        parts = []
+        if task.estimated_duration:
+            parts.append(f"E:{task.estimated_duration}h")
+        if task.actual_duration_hours:
+            parts.append(f"A:{task.actual_duration_hours}h")
+
+        return " ".join(parts)
+
+    @staticmethod
+    def format_dependencies(task: Task) -> str:
+        """Format task dependencies for display.
+
+        Args:
+            task: Task to extract dependencies from
+
+        Returns:
+            Formatted dependencies string (e.g., "1,2,3" or "-")
+        """
+        if not task.depends_on:
+            return "-"
+        return ",".join(str(dep_id) for dep_id in task.depends_on)
+
+    @staticmethod
+    def _format_datetime(dt: datetime | None) -> str:
+        """Format datetime for display with year-aware formatting.
+
+        Shows MM-DD HH:MM for current year, 'YY MM-DD HH:MM otherwise.
+
+        Args:
+            dt: Datetime to format, or None
+
+        Returns:
+            Formatted string, or "-" if dt is None
+        """
+        if not dt:
+            return "-"
+
+        current_year = datetime.now().year
+        if dt.year == current_year:
+            return dt.strftime("%m-%d %H:%M")
+        return dt.strftime("'%y %m-%d %H:%M")
+
+    @staticmethod
+    def format_deadline(deadline: datetime | None) -> str:
+        """Format deadline for display.
+
+        Args:
+            deadline: Deadline datetime object or None
+
+        Returns:
+            Formatted deadline string
+        """
+        return TaskTableRowBuilder._format_datetime(deadline)
+
+    @staticmethod
+    def format_estimated_duration(task: Task) -> str:
+        """Format estimated duration for display.
+
+        Args:
+            task: Task to format estimated duration for
+
+        Returns:
+            Formatted estimated duration string (e.g., "5h" or "-")
+        """
+        if not task.estimated_duration:
+            return "-"
+        return f"{task.estimated_duration}h"
+
+    @staticmethod
+    def format_actual_duration(task: Task) -> str:
+        """Format actual duration for display.
+
+        Args:
+            task: Task to format actual duration for
+
+        Returns:
+            Formatted actual duration string (e.g., "3h" or "-")
+        """
+        if not task.actual_duration_hours:
+            return "-"
+        return f"{task.actual_duration_hours}h"
+
+    @staticmethod
+    def format_planned_start(planned_start: datetime | None) -> str:
+        """Format planned start datetime for display.
+
+        Args:
+            planned_start: Planned start datetime object or None
+
+        Returns:
+            Formatted planned start string
+        """
+        return TaskTableRowBuilder._format_datetime(planned_start)
+
+    @staticmethod
+    def format_planned_end(planned_end: datetime | None) -> str:
+        """Format planned end datetime for display.
+
+        Args:
+            planned_end: Planned end datetime object or None
+
+        Returns:
+            Formatted planned end string
+        """
+        return TaskTableRowBuilder._format_datetime(planned_end)
+
+    @staticmethod
+    def format_actual_start(actual_start: datetime | None) -> str:
+        """Format actual start datetime for display.
+
+        Args:
+            actual_start: Actual start datetime object or None
+
+        Returns:
+            Formatted actual start string
+        """
+        return TaskTableRowBuilder._format_datetime(actual_start)
+
+    @staticmethod
+    def format_actual_end(actual_end: datetime | None) -> str:
+        """Format actual end datetime for display.
+
+        Args:
+            actual_end: Actual end datetime object or None
+
+        Returns:
+            Formatted actual end string
+        """
+        return TaskTableRowBuilder._format_datetime(actual_end)
+
+    @staticmethod
+    def format_elapsed_time(task: Task) -> str:
+        """Format elapsed time for IN_PROGRESS tasks.
+
+        Args:
+            task: Task to format elapsed time for
+
+        Returns:
+            Formatted elapsed time string (e.g., "15:04:38" or "3d 15:04:38")
+        """
+        if task.status != TaskStatus.IN_PROGRESS or not task.actual_start:
+            return "-"
+
+        # Calculate elapsed time
+        elapsed_seconds = int((datetime.now() - task.actual_start).total_seconds())
+
+        # Convert to days, hours, minutes, seconds
+        days = elapsed_seconds // 86400
+        remaining_seconds = elapsed_seconds % 86400
+        hours = remaining_seconds // 3600
+        minutes = (remaining_seconds % 3600) // 60
+        seconds = remaining_seconds % 60
+
+        # Format based on duration
+        if days > 0:
+            return f"{days}d {hours}:{minutes:02d}:{seconds:02d}"
+        else:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
