@@ -28,6 +28,30 @@ class OptimizeCommand(TUICommandBase):
         super().__init__(app, context, task_service)
         self.force_override = force_override
 
+    def _format_failed_tasks_message(self, result, prefix: str = "") -> str:
+        """Format failed tasks message based on count.
+
+        Args:
+            result: OptimizationResult containing failed tasks
+            prefix: Optional prefix message (e.g., "Partially optimized: N succeeded. ")
+
+        Returns:
+            Formatted message string with task details or summary
+        """
+        failed_count = len(result.failed_tasks)
+        detail_threshold = 5
+
+        if failed_count <= detail_threshold:
+            # Show detailed list for few failures
+            failure_lines = [f"#{f.task.id} {f.task.name}: {f.reason}" for f in result.failed_tasks]
+            failures_text = "\n".join(failure_lines)
+            return f"{prefix}{failed_count} task(s) failed:\n{failures_text}"
+        else:
+            # Show summary only for many failures
+            return (
+                f"{prefix}{failed_count} tasks failed to schedule. Check gantt chart for details."
+            )
+
     def execute(self) -> None:
         """Execute the optimize command."""
 
@@ -56,16 +80,13 @@ class OptimizeCommand(TUICommandBase):
 
             # Show result notification
             if result.all_failed():
-                self.notify_warning(
-                    f"No tasks were optimized. All {len(result.failed_tasks)} task(s) failed to be scheduled."
-                )
+                message = self._format_failed_tasks_message(result, "No tasks were optimized. ")
+                self.notify_warning(message)
             elif result.has_failures():
                 success_count = len(result.successful_tasks)
-                failed_count = len(result.failed_tasks)
-                self.notify_warning(
-                    f"Partially optimized: {success_count} succeeded, {failed_count} failed. "
-                    f"Check gantt chart and task requirements."
-                )
+                prefix = f"Partially optimized: {success_count} succeeded. "
+                message = self._format_failed_tasks_message(result, prefix)
+                self.notify_warning(message)
             elif len(result.successful_tasks) > 0:
                 task_count = len(result.successful_tasks)
                 self.notify_success(
