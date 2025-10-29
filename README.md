@@ -73,7 +73,7 @@ Taskdog includes a full-screen terminal user interface (TUI) for managing tasks 
 **Keyboard Shortcuts:**
 - `a` - Add new task
 - `s` - Start selected task
-- `p` - Pause selected task
+- `P` - Pause selected task
 - `d` - Complete (done) selected task
 - `c` - Cancel selected task
 - `R` - Reopen task
