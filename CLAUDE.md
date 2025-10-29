@@ -30,7 +30,7 @@ uv run python -m unittest tests.test_module.TestClass.test_method  # Specific te
 # Code Quality
 make lint                        # Ruff linter
 make format                      # Ruff formatter
-make typecheck                   # mypy (Phase 3: moderate strictness)
+make typecheck                   # mypy (Phase 3->4: disallow_untyped_calls enabled)
 make check                       # lint + typecheck
 
 # Installation
