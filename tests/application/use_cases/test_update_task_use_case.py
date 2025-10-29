@@ -224,6 +224,104 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.assertEqual(result_task.estimated_duration, 3.5)
         self.assertIn("estimated_duration", updated_fields)
 
+    def test_execute_clears_daily_allocations_when_updating_planned_start(self):
+        """Test that daily_allocations is cleared when planned_start is updated (issue #171)"""
+        from datetime import date
+
+        task = Task(name="Task with allocations", priority=1)
+        task.id = self.repository.generate_next_id()
+        # Set daily_allocations as if optimized
+        task.daily_allocations = {
+            date(2025, 11, 1): 3.0,
+            date(2025, 11, 2): 2.5,
+        }
+        task.planned_start = datetime(2025, 11, 1, 9, 0, 0)
+        task.planned_end = datetime(2025, 11, 3, 18, 0, 0)
+        self.repository.save(task)
+
+        # Update planned_start to a different date
+        new_start = datetime(2025, 11, 5, 9, 0, 0)
+        input_dto = UpdateTaskRequest(task_id=task.id, planned_start=new_start)
+        result_task, updated_fields = self.use_case.execute(input_dto)
+
+        # Verify daily_allocations was cleared
+        self.assertEqual(result_task.daily_allocations, {})
+        self.assertIn("planned_start", updated_fields)
+        self.assertIn("daily_allocations", updated_fields)
+        self.assertEqual(result_task.planned_start, new_start)
+
+    def test_execute_clears_daily_allocations_when_updating_planned_end(self):
+        """Test that daily_allocations is cleared when planned_end is updated (issue #171)"""
+        from datetime import date
+
+        task = Task(name="Task with allocations", priority=1)
+        task.id = self.repository.generate_next_id()
+        # Set daily_allocations as if optimized
+        task.daily_allocations = {
+            date(2025, 11, 1): 3.0,
+            date(2025, 11, 2): 2.5,
+        }
+        task.planned_start = datetime(2025, 11, 1, 9, 0, 0)
+        task.planned_end = datetime(2025, 11, 3, 18, 0, 0)
+        self.repository.save(task)
+
+        # Update planned_end to a different date
+        new_end = datetime(2025, 11, 8, 18, 0, 0)
+        input_dto = UpdateTaskRequest(task_id=task.id, planned_end=new_end)
+        result_task, updated_fields = self.use_case.execute(input_dto)
+
+        # Verify daily_allocations was cleared
+        self.assertEqual(result_task.daily_allocations, {})
+        self.assertIn("planned_end", updated_fields)
+        self.assertIn("daily_allocations", updated_fields)
+        self.assertEqual(result_task.planned_end, new_end)
+
+    def test_execute_clears_daily_allocations_when_updating_both_planned_dates(self):
+        """Test that daily_allocations is cleared when both planned dates are updated"""
+        from datetime import date
+
+        task = Task(name="Task with allocations", priority=1)
+        task.id = self.repository.generate_next_id()
+        # Set daily_allocations as if optimized
+        task.daily_allocations = {
+            date(2025, 11, 1): 3.0,
+            date(2025, 11, 2): 2.5,
+        }
+        task.planned_start = datetime(2025, 11, 1, 9, 0, 0)
+        task.planned_end = datetime(2025, 11, 3, 18, 0, 0)
+        self.repository.save(task)
+
+        # Update both planned_start and planned_end
+        new_start = datetime(2025, 11, 10, 9, 0, 0)
+        new_end = datetime(2025, 11, 12, 18, 0, 0)
+        input_dto = UpdateTaskRequest(task_id=task.id, planned_start=new_start, planned_end=new_end)
+        result_task, updated_fields = self.use_case.execute(input_dto)
+
+        # Verify daily_allocations was cleared
+        self.assertEqual(result_task.daily_allocations, {})
+        self.assertIn("planned_start", updated_fields)
+        self.assertIn("planned_end", updated_fields)
+        self.assertIn("daily_allocations", updated_fields)
+
+    def test_execute_does_not_add_daily_allocations_field_when_already_empty(self):
+        """Test that daily_allocations field is not added when already empty"""
+        task = Task(name="Task without allocations", priority=1)
+        task.id = self.repository.generate_next_id()
+        task.planned_start = datetime(2025, 11, 1, 9, 0, 0)
+        task.planned_end = datetime(2025, 11, 3, 18, 0, 0)
+        # daily_allocations is already empty by default
+        self.repository.save(task)
+
+        # Update planned_start
+        new_start = datetime(2025, 11, 5, 9, 0, 0)
+        input_dto = UpdateTaskRequest(task_id=task.id, planned_start=new_start)
+        result_task, updated_fields = self.use_case.execute(input_dto)
+
+        # Verify daily_allocations is still empty and NOT in updated_fields
+        self.assertEqual(result_task.daily_allocations, {})
+        self.assertIn("planned_start", updated_fields)
+        self.assertNotIn("daily_allocations", updated_fields)
+
 
 if __name__ == "__main__":
     unittest.main()
