@@ -175,7 +175,7 @@ class JsonTaskRepository(TaskRepository):
             self._rebuild_index()
             self._save_to_file()
 
-    def create(self, name: str, priority: int, **kwargs) -> Task:
+    def create(self, name: str, priority: int, **kwargs: Any) -> Task:
         """Create a new task with auto-generated ID and save it.
 
         Args:

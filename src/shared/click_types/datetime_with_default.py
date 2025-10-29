@@ -1,6 +1,7 @@
 """Custom Click DateTime type that adds default time when only date is provided."""
 
 from datetime import datetime, time
+from typing import Any
 
 import click
 
@@ -43,7 +44,7 @@ class DateTimeWithDefault(click.DateTime):
         else:
             self.default_hour = int(default_hour)
 
-    def convert(self, value, param, ctx):
+    def convert(self, value: Any, param: Any, ctx: click.Context | None) -> datetime | None:
         """Convert date string to datetime, adding default time if needed.
 
         Args:
@@ -80,6 +81,9 @@ class DateTimeWithDefault(click.DateTime):
 
         if dt is None:
             return None
+
+        # Type narrowing for mypy
+        assert isinstance(dt, datetime)
 
         # If MM-DD format was used, add current year
         if is_short_format:

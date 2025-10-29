@@ -10,6 +10,7 @@ from shared.config_manager import Config
 from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
+    from infrastructure.persistence.task_repository import TaskRepository
     from shared.utils.holiday_checker import HolidayChecker
 
 
@@ -48,7 +49,7 @@ class TaskAllocatorBase(ABC):
         start_date: datetime,
         max_hours_per_day: float,
         daily_allocations: dict[date, float],
-        repository,
+        repository: "TaskRepository",
     ) -> Task | None:
         """Allocate time blocks for a single task.
 

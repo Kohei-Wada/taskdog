@@ -1,5 +1,7 @@
 """Custom Click types for positive numbers."""
 
+from typing import Any
+
 import click
 
 
@@ -17,7 +19,7 @@ class PositiveFloat(click.ParamType):
 
     name = "positive_float"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value: Any, param: Any, ctx: click.Context | None) -> float:
         """Convert and validate that the value is a positive float.
 
         Args:
@@ -62,7 +64,7 @@ class PositiveInt(click.ParamType):
 
     name = "positive_int"
 
-    def convert(self, value, param, ctx):
+    def convert(self, value: Any, param: Any, ctx: click.Context | None) -> int:
         """Convert and validate that the value is a positive integer.
 
         Args:

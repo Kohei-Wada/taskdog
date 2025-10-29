@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 from domain.entities.task import Task
 
@@ -87,7 +88,7 @@ class TaskRepository(ABC):
         pass
 
     @abstractmethod
-    def create(self, name: str, priority: int, **kwargs) -> Task:
+    def create(self, name: str, priority: int, **kwargs: Any) -> Task:
         """Create a new task with auto-generated ID and save it.
 
         Args:

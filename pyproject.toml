@@ -38,8 +38,8 @@ check_untyped_defs = true
 strict_equality = true
 warn_return_any = true
 warn_no_return = true
-# Phase 3->4: Gradually enabling stricter checks
-disallow_untyped_defs = false
+# Phase 3->4: Gradually enabling stricter checks (Part 1 complete)
+disallow_untyped_defs = false  # Phase 4 (29 errors remaining)
 disallow_any_generics = true  # Phase 4 (enabled)
 disallow_untyped_calls = true  # Phase 4 (enabled)
 show_error_context = true

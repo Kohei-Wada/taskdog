@@ -1,6 +1,6 @@
 """Task detail screen for TUI."""
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from textual.app import ComposeResult
 from textual.containers import Container, VerticalScroll
@@ -29,7 +29,7 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
         ("v", "edit_note", "Edit Note"),
     ]
 
-    def __init__(self, detail: GetTaskDetailResult | Task, *args, **kwargs):
+    def __init__(self, detail: GetTaskDetailResult | Task, *args: Any, **kwargs: Any):
         """Initialize the detail screen.
 
         Args:
