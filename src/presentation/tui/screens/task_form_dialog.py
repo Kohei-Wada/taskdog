@@ -10,11 +10,9 @@ from textual.widgets import Checkbox, Input, Label, Static
 from domain.entities.task import Task
 from presentation.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from presentation.tui.forms.validators import (
-    DeadlineValidator,
+    DateTimeValidatorTUI,
     DependenciesValidator,
     DurationValidator,
-    PlannedEndValidator,
-    PlannedStartValidator,
     PriorityValidator,
     TagsValidator,
     TaskNameValidator,
@@ -111,10 +109,20 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         validations: list[tuple[str, Input, Any, list[Any]]] = [
             ("task_name", inputs["task_name"], TaskNameValidator, []),
             ("priority", inputs["priority"], PriorityValidator, [default_priority]),
-            ("deadline", inputs["deadline"], DeadlineValidator, [default_end_hour]),
+            ("deadline", inputs["deadline"], DateTimeValidatorTUI, ["deadline", default_end_hour]),
             ("duration", inputs["duration"], DurationValidator, []),
-            ("planned_start", inputs["planned_start"], PlannedStartValidator, [default_start_hour]),
-            ("planned_end", inputs["planned_end"], PlannedEndValidator, [default_end_hour]),
+            (
+                "planned_start",
+                inputs["planned_start"],
+                DateTimeValidatorTUI,
+                ["planned start", default_start_hour],
+            ),
+            (
+                "planned_end",
+                inputs["planned_end"],
+                DateTimeValidatorTUI,
+                ["planned end", default_end_hour],
+            ),
             ("dependencies", inputs["dependencies"], DependenciesValidator, []),
             ("tags", inputs["tags"], TagsValidator, []),
         ]

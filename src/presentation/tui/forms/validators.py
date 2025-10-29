@@ -161,57 +161,6 @@ class DateTimeValidatorTUI(BaseValidator):
             )
 
 
-class DeadlineValidator(BaseValidator):
-    """Validator for task deadlines."""
-
-    @staticmethod
-    def validate(value: str, default_hour: int) -> ValidationResult:
-        """Validate a task deadline.
-
-        Args:
-            value: Deadline string to validate (can be empty for no deadline)
-            default_hour: Default hour to use when only date is provided (from config)
-
-        Returns:
-            ValidationResult with validation status, error message, and formatted deadline
-        """
-        return DateTimeValidatorTUI.validate(value, "deadline", default_hour=default_hour)
-
-
-class PlannedStartValidator(BaseValidator):
-    """Validator for planned start date."""
-
-    @staticmethod
-    def validate(value: str, default_hour: int) -> ValidationResult:
-        """Validate a planned start date.
-
-        Args:
-            value: Planned start string to validate (can be empty)
-            default_hour: Default hour to use when only date is provided (from config)
-
-        Returns:
-            ValidationResult with validation status, error message, and formatted date
-        """
-        return DateTimeValidatorTUI.validate(value, "planned start", default_hour=default_hour)
-
-
-class PlannedEndValidator(BaseValidator):
-    """Validator for planned end date."""
-
-    @staticmethod
-    def validate(value: str, default_hour: int) -> ValidationResult:
-        """Validate a planned end date.
-
-        Args:
-            value: Planned end string to validate (can be empty)
-            default_hour: Default hour to use when only date is provided (from config)
-
-        Returns:
-            ValidationResult with validation status, error message, and formatted date
-        """
-        return DateTimeValidatorTUI.validate(value, "planned end", default_hour=default_hour)
-
-
 class DurationValidator(BaseValidator):
     """Validator for estimated duration."""
 
