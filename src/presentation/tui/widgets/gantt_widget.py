@@ -5,6 +5,7 @@ like date range management and automatic resizing.
 """
 
 from datetime import date, timedelta
+from typing import Any
 
 from textual.app import ComposeResult
 from textual.containers import Center, VerticalScroll
@@ -33,7 +34,7 @@ class GanttWidget(VerticalScroll):
     based on available screen width.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the gantt widget."""
         super().__init__(*args, **kwargs)
         self._task_ids: list[int] = []

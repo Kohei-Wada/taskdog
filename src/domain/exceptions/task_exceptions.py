@@ -1,5 +1,7 @@
 """Custom exceptions for task operations."""
 
+from typing import Any
+
 
 class TaskError(Exception):
     """Base exception for all task-related errors."""
@@ -56,7 +58,7 @@ class DependencyNotMetError(TaskValidationError):
 class CorruptedDataError(TaskError):
     """Raised when tasks.json contains invalid data that violates entity invariants."""
 
-    def __init__(self, corrupted_tasks: list[dict]) -> None:
+    def __init__(self, corrupted_tasks: list[dict[str, Any]]) -> None:
         """Initialize with list of corrupted task data.
 
         Args:

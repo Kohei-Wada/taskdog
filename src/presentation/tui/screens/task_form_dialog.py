@@ -37,7 +37,9 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         Binding("ctrl+k", "focus_previous", "Previous field", priority=True),
     ]
 
-    def __init__(self, task: Task | None = None, config: Config | None = None, *args, **kwargs):
+    def __init__(
+        self, task: Task | None = None, config: Config | None = None, *args: Any, **kwargs: Any
+    ):
         """Initialize the dialog.
 
         Args:

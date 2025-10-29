@@ -1,5 +1,6 @@
 """Domain service for calculating workload from tasks."""
 
+from collections.abc import Iterable
 from datetime import date, timedelta
 
 from domain.entities.task import Task
@@ -119,7 +120,9 @@ class WorkloadCalculator:
 
         return result
 
-    def _merge_allocations(self, base: dict[date, float], allocations: map) -> dict[date, float]:
+    def _merge_allocations(
+        self, base: dict[date, float], allocations: Iterable[dict[date, float]]
+    ) -> dict[date, float]:
         """Merge multiple daily allocations into base workload.
 
         Args:

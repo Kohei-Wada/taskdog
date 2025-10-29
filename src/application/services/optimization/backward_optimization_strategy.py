@@ -1,6 +1,7 @@
 """Backward optimization strategy implementation."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from application.services.optimization.allocators.backward_allocator import (
     BackwardAllocator,
@@ -8,6 +9,9 @@ from application.services.optimization.allocators.backward_allocator import (
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
 from shared.config_manager import Config
+
+if TYPE_CHECKING:
+    from infrastructure.persistence.task_repository import TaskRepository
 
 
 class BackwardOptimizationStrategy(OptimizationStrategy):
@@ -40,7 +44,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         self.config = config
 
     def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository
+        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
     ) -> list[Task]:
         """Sort tasks by deadline (furthest first).
 
@@ -55,7 +59,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
             Sorted task list (furthest deadline first)
         """
 
-        def deadline_key(task: Task) -> tuple:
+        def deadline_key(task: Task) -> tuple[int, int, int | None]:
             if task.deadline:
                 deadline_dt = task.deadline
                 days_until = (deadline_dt - start_date).days

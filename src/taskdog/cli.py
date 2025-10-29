@@ -1,3 +1,5 @@
+from typing import Any
+
 import click
 from rich.console import Console
 
@@ -41,7 +43,7 @@ from shared.xdg_utils import XDGDirectories
 class TaskdogGroup(click.Group):
     """Custom Click Group that displays ASCII art before help."""
 
-    def format_help(self, ctx, formatter):
+    def format_help(self, ctx: click.Context, formatter: Any) -> None:
         """Override format_help to add ASCII art before help text."""
         from presentation.constants.ascii_art import (
             TASKDOG_ASCII_ART,
@@ -65,7 +67,7 @@ class TaskdogGroup(click.Group):
     invoke_without_command=True,
 )
 @click.pass_context
-def cli(ctx):
+def cli(ctx: click.Context) -> None:
     """Taskdog: Task management CLI tool with time tracking and optimization."""
     from domain.exceptions.task_exceptions import CorruptedDataError
 

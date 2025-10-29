@@ -9,6 +9,7 @@ from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task, TaskStatus
 
 if TYPE_CHECKING:
+    from infrastructure.persistence.task_repository import TaskRepository
     from shared.utils.holiday_checker import HolidayChecker
 
 
@@ -33,7 +34,7 @@ class OptimizationStrategy(ABC):
     def optimize_tasks(
         self,
         tasks: list[Task],
-        repository,
+        repository: "TaskRepository",
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
@@ -172,7 +173,7 @@ class OptimizationStrategy(ABC):
             self._record_failure(task, default_reason)
 
     def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository
+        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
     ) -> list[Task]:
         """Sort tasks by strategy-specific priority.
 

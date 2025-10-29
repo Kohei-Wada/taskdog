@@ -1,7 +1,7 @@
 """Algorithm selection screen for optimization."""
 
 from datetime import datetime
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from dateutil import parser as dateutil_parser
 from dateutil.parser import ParserError
@@ -57,7 +57,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         Binding("ctrl+k", "focus_previous", "Previous field", priority=True),
     ]
 
-    def __init__(self, config: Config, force_override: bool = False, *args, **kwargs):
+    def __init__(self, config: Config, force_override: bool = False, *args: Any, **kwargs: Any):
         """Initialize the screen.
 
         Args:

@@ -38,10 +38,10 @@ check_untyped_defs = true
 strict_equality = true
 warn_return_any = true
 warn_no_return = true
-# Phase 3: Stricter checks still disabled for gradual migration
-disallow_untyped_defs = false
-disallow_any_generics = false
-disallow_untyped_calls = false
+# Phase 4: Full strictness enabled
+disallow_untyped_defs = true  # Phase 4 (enabled)
+disallow_any_generics = true  # Phase 4 (enabled)
+disallow_untyped_calls = true  # Phase 4 (enabled)
 show_error_context = true
 
 [[tool.mypy.overrides]]
@@ -66,14 +66,11 @@ ignore_missing_imports = true
 # These will be fixed in Phase 3
 [[tool.mypy.overrides]]
 module = [
-  "application.services.workload_allocator",
-  "application.services.hierarchy_manager",
   "application.services.optimization_summary_builder",
   "application.sorters.optimization_task_sorter",
   "application.sorters.task_sorter",
   "application.queries.filters.today_filter",
   "application.queries.task_query_service",
-  "application.services.task_validator",
   "presentation.renderers.rich_renderer_base",
   "presentation.renderers.rich_table_renderer",
   "presentation.renderers.rich_gantt_renderer",

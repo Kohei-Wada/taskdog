@@ -1,6 +1,7 @@
 """Earliest Deadline First (EDF) optimization strategy implementation."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from application.services.optimization.allocators.greedy_forward_allocator import (
     GreedyForwardAllocator,
@@ -8,6 +9,9 @@ from application.services.optimization.allocators.greedy_forward_allocator impor
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
 from shared.config_manager import Config
+
+if TYPE_CHECKING:
+    from infrastructure.persistence.task_repository import TaskRepository
 
 
 class EarliestDeadlineOptimizationStrategy(OptimizationStrategy):
@@ -35,7 +39,7 @@ class EarliestDeadlineOptimizationStrategy(OptimizationStrategy):
         self.config = config
 
     def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository
+        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
     ) -> list[Task]:
         """Sort tasks by deadline (earliest first).
 

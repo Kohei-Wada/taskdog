@@ -1,5 +1,7 @@
 """Main screen for the TUI."""
 
+from typing import Any
+
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.screen import Screen
@@ -10,10 +12,10 @@ from presentation.tui.widgets.filterable_task_table import FilterableTaskTable
 from presentation.tui.widgets.gantt_widget import GanttWidget
 
 
-class MainScreen(Screen):
+class MainScreen(Screen[None]):
     """Main screen showing gantt chart and task list."""
 
-    def __init__(self, notes_repository: NotesRepository, *args, **kwargs):
+    def __init__(self, notes_repository: NotesRepository, *args: Any, **kwargs: Any):
         """Initialize the main screen.
 
         Args:

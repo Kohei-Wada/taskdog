@@ -1,6 +1,6 @@
 """Filter for this week's tasks."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from application.queries.filters.task_filter import TaskFilter
 from domain.entities.task import Task, TaskStatus
@@ -56,7 +56,7 @@ class ThisWeekFilter(TaskFilter):
 
         return matching_tasks
 
-    def _is_this_week_task(self, task: Task, week_start, week_end) -> bool:
+    def _is_this_week_task(self, task: Task, week_start: date, week_end: date) -> bool:
         """Check if a task is relevant for this week.
 
         Args:

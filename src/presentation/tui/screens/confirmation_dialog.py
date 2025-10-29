@@ -1,6 +1,6 @@
 """Confirmation dialog screen."""
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal
@@ -18,7 +18,7 @@ class ConfirmationDialog(BaseModalDialog[bool]):
         ("n", "cancel", "No"),
     ]
 
-    def __init__(self, title: str, message: str, *args, **kwargs):
+    def __init__(self, title: str, message: str, *args: Any, **kwargs: Any):
         """Initialize the confirmation dialog.
 
         Args:

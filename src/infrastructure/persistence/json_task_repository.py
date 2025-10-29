@@ -5,6 +5,7 @@ import shutil
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from domain.entities.task import Task
 from infrastructure.persistence.task_repository import TaskRepository
@@ -174,7 +175,7 @@ class JsonTaskRepository(TaskRepository):
             self._rebuild_index()
             self._save_to_file()
 
-    def create(self, name: str, priority: int, **kwargs) -> Task:
+    def create(self, name: str, priority: int, **kwargs: Any) -> Task:
         """Create a new task with auto-generated ID and save it.
 
         Args:
@@ -249,7 +250,7 @@ class JsonTaskRepository(TaskRepository):
             f"Failed to load tasks: corrupted data file ({original_error})"
         ) from original_error
 
-    def _parse_tasks(self, tasks_data: list[dict]) -> list[Task]:
+    def _parse_tasks(self, tasks_data: list[dict[str, Any]]) -> list[Task]:
         """Parse task data and validate entity invariants.
 
         Args:

@@ -17,6 +17,7 @@ from domain.entities.task import Task
 from shared.config_manager import Config
 
 if TYPE_CHECKING:
+    from infrastructure.persistence.task_repository import TaskRepository
     from shared.utils.holiday_checker import HolidayChecker
 
 
@@ -46,12 +47,14 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             config: Application configuration
         """
         self.config = config
-        self._evaluation_cache: dict[tuple, float] = {}  # Cache for evaluation results
+        self._evaluation_cache: dict[
+            tuple[int | None, ...], float
+        ] = {}  # Cache for evaluation results
 
     def optimize_tasks(
         self,
         tasks: list[Task],
-        repository,
+        repository: "TaskRepository",
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
@@ -130,7 +133,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-        repository,
+        repository: "TaskRepository",
         allocator: GreedyForwardAllocator,
     ) -> list[Task]:
         """Run Monte Carlo simulation to find optimal task ordering.
@@ -177,7 +180,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-        repository,
+        repository: "TaskRepository",
         allocator: GreedyForwardAllocator,
     ) -> float:
         """Evaluate ordering with caching to avoid redundant calculations.
@@ -224,7 +227,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-        repository,
+        repository: "TaskRepository",
         allocator: GreedyForwardAllocator,
     ) -> float:
         """Evaluate a task ordering by simulating scheduling.
@@ -286,7 +289,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         return score
 
     def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository
+        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
     ) -> list[Task]:
         """Not used by Monte Carlo strategy (overrides optimize_tasks)."""
         raise NotImplementedError(

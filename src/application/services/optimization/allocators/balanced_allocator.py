@@ -1,6 +1,10 @@
 """Balanced allocation strategy implementation."""
 
 from datetime import date, datetime, timedelta
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from infrastructure.persistence.task_repository import TaskRepository
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.entities.task import Task
@@ -28,7 +32,7 @@ class BalancedAllocator(TaskAllocatorBase):
         start_date: datetime,
         max_hours_per_day: float,
         daily_allocations: dict[date, float],
-        repository,
+        repository: "TaskRepository",
     ) -> Task | None:
         """Allocate task using balanced distribution.
 

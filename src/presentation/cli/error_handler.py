@@ -1,14 +1,18 @@
 """Common error handling decorators for CLI commands."""
 
+from collections.abc import Callable
 from functools import wraps
+from typing import Any, TypeVar
 
 import click
 
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from presentation.cli.context import CliContext
 
+F = TypeVar("F", bound=Callable[..., Any])
 
-def handle_task_errors(action_name: str, is_parent: bool = False):
+
+def handle_task_errors(action_name: str, is_parent: bool = False) -> Callable[[F], F]:
     """Decorator for task-specific error handling in CLI commands.
 
     Use this for commands that operate on specific task IDs (add, update, remove).
@@ -27,9 +31,9 @@ def handle_task_errors(action_name: str, is_parent: bool = False):
     - General Exception: Shows formatted error with action context
     """
 
-    def decorator(func):
+    def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Extract console_writer from context
             ctx = click.get_current_context()
             ctx_obj: CliContext = ctx.obj
@@ -42,12 +46,12 @@ def handle_task_errors(action_name: str, is_parent: bool = False):
             except Exception as e:
                 console_writer.error(action_name, e)
 
-        return wrapper
+        return wrapper  # type: ignore[return-value]
 
     return decorator
 
 
-def handle_command_errors(action_name: str):
+def handle_command_errors(action_name: str) -> Callable[[F], F]:
     """Decorator for general command error handling.
 
     Use this for commands that don't operate on specific task IDs (tree, table, gantt, today).
@@ -65,9 +69,9 @@ def handle_command_errors(action_name: str):
     - General Exception: Shows formatted error with action context
     """
 
-    def decorator(func):
+    def decorator(func: F) -> F:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             # Extract console_writer from context
             ctx = click.get_current_context()
             ctx_obj: CliContext = ctx.obj
@@ -78,6 +82,6 @@ def handle_command_errors(action_name: str):
             except Exception as e:
                 console_writer.error(action_name, e)
 
-        return wrapper
+        return wrapper  # type: ignore[return-value]
 
     return decorator

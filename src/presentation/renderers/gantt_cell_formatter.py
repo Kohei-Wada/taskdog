@@ -7,7 +7,7 @@ consistent visualization across different interfaces.
 
 import math
 from datetime import date, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rich.text import Text
 
@@ -54,7 +54,7 @@ class GanttCellFormatter:
     def format_timeline_cell(
         current_date: date,
         hours: float,
-        parsed_dates: dict,
+        parsed_dates: dict[str, Any],
         status: TaskStatus,
         holiday_checker: "HolidayChecker | None" = None,
     ) -> tuple[str, str]:
@@ -258,7 +258,7 @@ class GanttCellFormatter:
         return legend
 
     @staticmethod
-    def parse_task_dates(task: Task) -> dict:
+    def parse_task_dates(task: Task) -> dict[str, Any]:
         """Parse all task dates into a dictionary.
 
         Args:

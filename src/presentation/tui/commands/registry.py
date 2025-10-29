@@ -26,7 +26,7 @@ class CommandRegistry:
     (deferred import) for improved startup performance.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize an empty command registry."""
         self._commands: dict[str, type[TUICommandBase]] = {}
         self._lazy_commands: dict[str, str] = {}  # name -> module_path mapping
