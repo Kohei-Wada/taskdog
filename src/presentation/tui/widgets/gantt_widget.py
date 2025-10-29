@@ -9,6 +9,7 @@ from typing import Any
 
 from textual.app import ComposeResult
 from textual.containers import Center, VerticalScroll
+from textual.events import Resize
 from textual.widgets import Static
 
 from application.dto.gantt_result import GanttResult
@@ -120,7 +121,8 @@ class GanttWidget(VerticalScroll):
 
     def _render_gantt(self):
         """Render the gantt chart."""
-        if not self._gantt_table:
+        # Check if widget is mounted and table exists
+        if not self.is_mounted or not self._gantt_table:
             return
 
         if not self._gantt_result or self._gantt_result.is_empty():
@@ -192,13 +194,17 @@ class GanttWidget(VerticalScroll):
         if self._legend_widget:
             self._legend_widget.update("")
 
-    def _calculate_display_days(self) -> int:
+    def _calculate_display_days(self, widget_width: int | None = None) -> int:
         """Calculate optimal number of days to display.
+
+        Args:
+            widget_width: Widget width to use for calculation. If None, uses self.size.width.
 
         Returns:
             Number of days to display (rounded to weeks)
         """
-        widget_width = self.size.width if self.size else DEFAULT_GANTT_WIDGET_WIDTH
+        if widget_width is None:
+            widget_width = self.size.width if self.size else DEFAULT_GANTT_WIDGET_WIDTH
         console_width = max(widget_width - BORDER_WIDTH, MIN_CONSOLE_WIDTH)
         timeline_width = max(console_width - GANTT_TABLE_FIXED_WIDTH, MIN_TIMELINE_WIDTH)
         max_days = timeline_width // CHARS_PER_DAY
@@ -220,12 +226,20 @@ class GanttWidget(VerticalScroll):
         end_date = start_date + timedelta(days=display_days - 1)
         return start_date, end_date
 
-    def on_resize(self):
-        """Handle resize events."""
+    def on_resize(self, event: Resize) -> None:
+        """Handle resize events.
+
+        Args:
+            event: The resize event containing new size information
+        """
+        # Check if widget is mounted and has necessary data
+        if not self.is_mounted:
+            return
         if not (self._task_ids and self._gantt_result):
             return
 
-        display_days = self._calculate_display_days()
+        # Use size from event for accurate dimensions
+        display_days = self._calculate_display_days(widget_width=event.size.width)
         self._recalculate_gantt_for_width(display_days)
 
     def _recalculate_gantt_for_width(self, display_days: int):
