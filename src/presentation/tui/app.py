@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from textual.app import App
+from textual.command import CommandPalette
 
 from application.queries.filters.composite_filter import CompositeFilter
 from application.queries.filters.incomplete_or_active_filter import (
@@ -25,7 +26,6 @@ from presentation.tui.commands.providers import (
 from presentation.tui.context import TUIContext
 from presentation.tui.events import TaskCreated, TaskDeleted, TasksRefreshed, TaskUpdated
 from presentation.tui.screens.main_screen import MainScreen
-from presentation.tui.screens.vi_command_palette import ViCommandPalette
 from presentation.tui.services.task_service import TaskService
 from shared.config_manager import Config, ConfigManager
 
@@ -264,7 +264,7 @@ class TaskdogTUI(App):
         Selecting a sort option will change the sort order.
         """
         self.push_screen(
-            ViCommandPalette(
+            CommandPalette(
                 providers=[SortOptionsProvider],
                 placeholder="Search for sort options…",
             ),
@@ -318,8 +318,8 @@ class TaskdogTUI(App):
         self.notify(f"Completed tasks {status}")
 
     def action_command_palette(self) -> None:
-        """Show the command palette with Vi keybindings."""
-        self.push_screen(ViCommandPalette())
+        """Show the command palette."""
+        self.push_screen(CommandPalette())
 
     def _refresh_elapsed_time(self) -> None:
         """Refresh the task table to update elapsed time for IN_PROGRESS tasks.
