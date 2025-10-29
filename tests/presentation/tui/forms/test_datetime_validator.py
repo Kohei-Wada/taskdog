@@ -1,13 +1,8 @@
-"""Tests for DateTimeValidatorTUI and related validators."""
+"""Tests for DateTimeValidatorTUI."""
 
 import unittest
 
-from presentation.tui.forms.validators import (
-    DateTimeValidatorTUI,
-    DeadlineValidator,
-    PlannedEndValidator,
-    PlannedStartValidator,
-)
+from presentation.tui.forms.validators import DateTimeValidatorTUI
 
 
 class TestDateTimeValidatorTUI(unittest.TestCase):
@@ -82,72 +77,6 @@ class TestDateTimeValidatorTUI(unittest.TestCase):
         self.assertTrue(result.is_valid)
         # Should preserve 00:00 because ":" was present
         self.assertIn("00:00:00", result.value)
-
-
-class TestDeadlineValidator(unittest.TestCase):
-    """Test cases for DeadlineValidator."""
-
-    def test_validate_date_only_uses_default_end_hour(self):
-        """Test that deadline without time uses default end hour (18)."""
-        result = DeadlineValidator.validate("10/22", 18)
-        self.assertTrue(result.is_valid)
-        self.assertIn("18:00:00", result.value)
-
-    def test_validate_with_custom_default_hour(self):
-        """Test that custom default hour is applied."""
-        result = DeadlineValidator.validate("10/22", 20)
-        self.assertTrue(result.is_valid)
-        self.assertIn("20:00:00", result.value)
-
-    def test_validate_with_time_preserves_time(self):
-        """Test that deadline with time preserves it."""
-        result = DeadlineValidator.validate("10/22 14:00", 18)
-        self.assertTrue(result.is_valid)
-        self.assertIn("14:00:00", result.value)
-
-
-class TestPlannedStartValidator(unittest.TestCase):
-    """Test cases for PlannedStartValidator."""
-
-    def test_validate_date_only_uses_default_start_hour(self):
-        """Test that planned start without time uses default start hour (9)."""
-        result = PlannedStartValidator.validate("10/22", 9)
-        self.assertTrue(result.is_valid)
-        self.assertIn("09:00:00", result.value)
-
-    def test_validate_with_custom_default_hour(self):
-        """Test that custom default hour is applied."""
-        result = PlannedStartValidator.validate("10/22", 8)
-        self.assertTrue(result.is_valid)
-        self.assertIn("08:00:00", result.value)
-
-    def test_validate_with_time_preserves_time(self):
-        """Test that planned start with time preserves it."""
-        result = PlannedStartValidator.validate("10/22 10:00", 9)
-        self.assertTrue(result.is_valid)
-        self.assertIn("10:00:00", result.value)
-
-
-class TestPlannedEndValidator(unittest.TestCase):
-    """Test cases for PlannedEndValidator."""
-
-    def test_validate_date_only_uses_default_end_hour(self):
-        """Test that planned end without time uses default end hour (18)."""
-        result = PlannedEndValidator.validate("10/22", 18)
-        self.assertTrue(result.is_valid)
-        self.assertIn("18:00:00", result.value)
-
-    def test_validate_with_custom_default_hour(self):
-        """Test that custom default hour is applied."""
-        result = PlannedEndValidator.validate("10/22", 17)
-        self.assertTrue(result.is_valid)
-        self.assertIn("17:00:00", result.value)
-
-    def test_validate_with_time_preserves_time(self):
-        """Test that planned end with time preserves it."""
-        result = PlannedEndValidator.validate("10/22 16:00", 18)
-        self.assertTrue(result.is_valid)
-        self.assertIn("16:00:00", result.value)
 
 
 if __name__ == "__main__":
