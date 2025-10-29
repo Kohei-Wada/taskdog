@@ -78,6 +78,14 @@ class UpdateTaskUseCase(UseCase[UpdateTaskRequest, tuple[Task, list[str]]]):
                 setattr(task, field_name, value)
                 updated_fields.append(field_name)
 
+        # Clear daily_allocations when manually setting planned schedule
+        # This ensures manual scheduling takes precedence over optimizer-generated allocations
+        if (
+            "planned_start" in updated_fields or "planned_end" in updated_fields
+        ) and task.daily_allocations:
+            task.daily_allocations = {}
+            updated_fields.append("daily_allocations")
+
     def execute(self, input_dto: UpdateTaskRequest) -> tuple[Task, list[str]]:
         """Execute task update.
 
