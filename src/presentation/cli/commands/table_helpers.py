@@ -4,14 +4,14 @@ from application.queries.filters.composite_filter import CompositeFilter
 from application.queries.filters.task_filter import TaskFilter
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.task_repository import TaskRepository
 from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
 from presentation.renderers.rich_table_renderer import RichTableRenderer
 
 
 def get_and_filter_tasks(
-    repository: JsonTaskRepository,
+    repository: TaskRepository,
     filter_obj: TaskFilter | None,
     sort_by: str = "id",
     reverse: bool = False,
