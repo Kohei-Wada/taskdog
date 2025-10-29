@@ -48,6 +48,26 @@ class TaskTableFormatter:
         return ",".join(str(dep_id) for dep_id in task.depends_on)
 
     @staticmethod
+    def _format_datetime(dt: datetime | None) -> str:
+        """Format datetime for display with year-aware formatting.
+
+        Shows MM-DD HH:MM for current year, 'YY MM-DD HH:MM otherwise.
+
+        Args:
+            dt: Datetime to format, or None
+
+        Returns:
+            Formatted string, or "-" if dt is None
+        """
+        if not dt:
+            return "-"
+
+        current_year = datetime.now().year
+        if dt.year == current_year:
+            return dt.strftime("%m-%d %H:%M")
+        return dt.strftime("'%y %m-%d %H:%M")
+
+    @staticmethod
     def format_deadline(deadline: datetime | None) -> str:
         """Format deadline for display.
 
@@ -57,17 +77,7 @@ class TaskTableFormatter:
         Returns:
             Formatted deadline string
         """
-        if not deadline:
-            return "-"
-
-        # Show year only if different from current year
-        current_year = datetime.now().year
-        if deadline.year == current_year:
-            # Current year: MM-DD HH:MM
-            return deadline.strftime("%m-%d %H:%M")
-        else:
-            # Different year: 'YY MM-DD HH:MM
-            return deadline.strftime("'%y %m-%d %H:%M")
+        return TaskTableFormatter._format_datetime(deadline)
 
     @staticmethod
     def format_estimated_duration(task: Task) -> str:
@@ -107,17 +117,7 @@ class TaskTableFormatter:
         Returns:
             Formatted planned start string
         """
-        if not planned_start:
-            return "-"
-
-        # Show year only if different from current year
-        current_year = datetime.now().year
-        if planned_start.year == current_year:
-            # Current year: MM-DD HH:MM
-            return planned_start.strftime("%m-%d %H:%M")
-        else:
-            # Different year: 'YY MM-DD HH:MM
-            return planned_start.strftime("'%y %m-%d %H:%M")
+        return TaskTableFormatter._format_datetime(planned_start)
 
     @staticmethod
     def format_planned_end(planned_end: datetime | None) -> str:
@@ -129,17 +129,7 @@ class TaskTableFormatter:
         Returns:
             Formatted planned end string
         """
-        if not planned_end:
-            return "-"
-
-        # Show year only if different from current year
-        current_year = datetime.now().year
-        if planned_end.year == current_year:
-            # Current year: MM-DD HH:MM
-            return planned_end.strftime("%m-%d %H:%M")
-        else:
-            # Different year: 'YY MM-DD HH:MM
-            return planned_end.strftime("'%y %m-%d %H:%M")
+        return TaskTableFormatter._format_datetime(planned_end)
 
     @staticmethod
     def format_actual_start(actual_start: datetime | None) -> str:
@@ -151,17 +141,7 @@ class TaskTableFormatter:
         Returns:
             Formatted actual start string
         """
-        if not actual_start:
-            return "-"
-
-        # Show year only if different from current year
-        current_year = datetime.now().year
-        if actual_start.year == current_year:
-            # Current year: MM-DD HH:MM
-            return actual_start.strftime("%m-%d %H:%M")
-        else:
-            # Different year: 'YY MM-DD HH:MM
-            return actual_start.strftime("'%y %m-%d %H:%M")
+        return TaskTableFormatter._format_datetime(actual_start)
 
     @staticmethod
     def format_actual_end(actual_end: datetime | None) -> str:
@@ -173,17 +153,7 @@ class TaskTableFormatter:
         Returns:
             Formatted actual end string
         """
-        if not actual_end:
-            return "-"
-
-        # Show year only if different from current year
-        current_year = datetime.now().year
-        if actual_end.year == current_year:
-            # Current year: MM-DD HH:MM
-            return actual_end.strftime("%m-%d %H:%M")
-        else:
-            # Different year: 'YY MM-DD HH:MM
-            return actual_end.strftime("'%y %m-%d %H:%M")
+        return TaskTableFormatter._format_datetime(actual_end)
 
     @staticmethod
     def format_elapsed_time(task: Task) -> str:
