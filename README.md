@@ -82,6 +82,7 @@ Taskdog includes a full-screen terminal user interface (TUI) for managing tasks 
 - `i` - Show task details
 - `e` - Edit task
 - `v` - Edit task note
+- `t` - Toggle visibility of completed/canceled tasks
 - `o` - Run optimizer
 - `r` - Refresh task list
 - `S` - Sort selection dialog (deadline/planned_start/priority/estimated_duration/id)
