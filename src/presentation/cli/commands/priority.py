@@ -5,11 +5,12 @@ import click
 from presentation.cli.commands.update_helpers import execute_single_field_update
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from shared.click_types import PositiveInt
 
 
 @click.command(name="priority", help="Set task priority.")
 @click.argument("task_id", type=int)
-@click.argument("priority", type=int)
+@click.argument("priority", type=PositiveInt())
 @click.pass_context
 @handle_task_errors("setting priority")
 def priority_command(ctx, task_id, priority):
