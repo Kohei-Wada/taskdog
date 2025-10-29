@@ -61,7 +61,7 @@ class TaskdogTUI(App):
         ("q", "quit", "Quit"),
         ("a", "add_task", "Add"),
         ("s", "start_task", "Start"),
-        ("p", "pause_task", "Pause"),
+        ("P", "pause_task", "Pause"),
         ("d", "done_task", "Done"),
         ("c", "cancel_task", "Cancel"),
         ("R", "reopen_task", "Reopen"),
