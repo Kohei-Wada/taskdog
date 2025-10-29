@@ -1,5 +1,7 @@
 """Task table row builder for constructing table row data."""
 
+from collections.abc import Callable
+
 from rich.text import Text
 
 from domain.entities.task import Task, TaskStatus
@@ -55,6 +57,31 @@ class TaskTableRowBuilder:
             self._build_tags_cell(task),
         )
 
+    @staticmethod
+    def _create_centered_cell(value: str | int) -> Text:
+        """Create a centered text cell.
+
+        Args:
+            value: Value to display in the cell
+
+        Returns:
+            Text object with centered justification
+        """
+        return Text(str(value), justify="center")
+
+    @staticmethod
+    def _create_cell_from_formatter(formatter_func: Callable, *args: object) -> Text:
+        """Create a cell using a formatter function.
+
+        Args:
+            formatter_func: Formatter function to call
+            *args: Arguments to pass to the formatter
+
+        Returns:
+            Text object with centered justification
+        """
+        return Text(formatter_func(*args), justify="center")
+
     def _build_id_cell(self, task: Task) -> Text:
         """Build ID cell.
 
@@ -64,7 +91,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for ID column
         """
-        return Text(str(task.id), justify="center")
+        return self._create_centered_cell(task.id)
 
     def _build_name_cell(self, task: Task) -> Text:
         """Build name cell with truncation and strikethrough for completed tasks.
@@ -88,7 +115,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for priority column
         """
-        return Text(str(task.priority), justify="center")
+        return self._create_centered_cell(task.priority)
 
     def _build_status_cell(self, task: Task) -> Text:
         """Build status cell with color coding.
@@ -112,8 +139,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for elapsed time column
         """
-        elapsed_time = TaskTableFormatter.format_elapsed_time(task)
-        return Text(elapsed_time, justify="center")
+        return self._create_cell_from_formatter(TaskTableFormatter.format_elapsed_time, task)
 
     def _build_planned_start_cell(self, task: Task) -> Text:
         """Build planned start cell.
@@ -124,8 +150,9 @@ class TaskTableRowBuilder:
         Returns:
             Text object for planned start column
         """
-        planned_start = TaskTableFormatter.format_planned_start(task.planned_start)
-        return Text(planned_start, justify="center")
+        return self._create_cell_from_formatter(
+            TaskTableFormatter.format_planned_start, task.planned_start
+        )
 
     def _build_planned_end_cell(self, task: Task) -> Text:
         """Build planned end cell.
@@ -136,8 +163,9 @@ class TaskTableRowBuilder:
         Returns:
             Text object for planned end column
         """
-        planned_end = TaskTableFormatter.format_planned_end(task.planned_end)
-        return Text(planned_end, justify="center")
+        return self._create_cell_from_formatter(
+            TaskTableFormatter.format_planned_end, task.planned_end
+        )
 
     def _build_actual_start_cell(self, task: Task) -> Text:
         """Build actual start cell.
@@ -148,8 +176,9 @@ class TaskTableRowBuilder:
         Returns:
             Text object for actual start column
         """
-        actual_start = TaskTableFormatter.format_actual_start(task.actual_start)
-        return Text(actual_start, justify="center")
+        return self._create_cell_from_formatter(
+            TaskTableFormatter.format_actual_start, task.actual_start
+        )
 
     def _build_actual_end_cell(self, task: Task) -> Text:
         """Build actual end cell.
@@ -160,8 +189,9 @@ class TaskTableRowBuilder:
         Returns:
             Text object for actual end column
         """
-        actual_end = TaskTableFormatter.format_actual_end(task.actual_end)
-        return Text(actual_end, justify="center")
+        return self._create_cell_from_formatter(
+            TaskTableFormatter.format_actual_end, task.actual_end
+        )
 
     def _build_estimated_duration_cell(self, task: Task) -> Text:
         """Build estimated duration cell.
@@ -172,8 +202,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for estimated duration column
         """
-        est_duration = TaskTableFormatter.format_estimated_duration(task)
-        return Text(est_duration, justify="center")
+        return self._create_cell_from_formatter(TaskTableFormatter.format_estimated_duration, task)
 
     def _build_actual_duration_cell(self, task: Task) -> Text:
         """Build actual duration cell.
@@ -184,8 +213,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for actual duration column
         """
-        actual_duration = TaskTableFormatter.format_actual_duration(task)
-        return Text(actual_duration, justify="center")
+        return self._create_cell_from_formatter(TaskTableFormatter.format_actual_duration, task)
 
     def _build_deadline_cell(self, task: Task) -> Text:
         """Build deadline cell.
@@ -196,8 +224,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for deadline column
         """
-        deadline = TaskTableFormatter.format_deadline(task.deadline)
-        return Text(deadline, justify="center")
+        return self._create_cell_from_formatter(TaskTableFormatter.format_deadline, task.deadline)
 
     def _build_dependencies_cell(self, task: Task) -> Text:
         """Build dependencies cell.
@@ -208,8 +235,7 @@ class TaskTableRowBuilder:
         Returns:
             Text object for dependencies column
         """
-        dependencies = TaskTableFormatter.format_dependencies(task)
-        return Text(dependencies, justify="center")
+        return self._create_cell_from_formatter(TaskTableFormatter.format_dependencies, task)
 
     def _build_tags_cell(self, task: Task) -> Text:
         """Build tags cell with truncation.

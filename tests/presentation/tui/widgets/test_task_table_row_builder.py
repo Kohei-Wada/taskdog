@@ -29,16 +29,16 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         row = self.builder.build_row(task)
 
-        # Should return tuple of 10 Text objects (10 columns)
-        self.assertEqual(len(row), 10)
+        # Should return tuple of 15 Text objects (15 columns)
+        self.assertEqual(len(row), 15)
         self.assertIsInstance(row[0], Text)  # ID
         self.assertIsInstance(row[1], Text)  # Name
-        self.assertIsInstance(row[2], Text)  # Priority
+        self.assertIsInstance(row[3], Text)  # Priority
 
         # Check basic values
         self.assertEqual(str(row[0]), "1")  # ID
         self.assertEqual(str(row[1]), "Test task")  # Name
-        self.assertEqual(str(row[2]), "2")  # Priority
+        self.assertEqual(str(row[3]), "2")  # Priority
 
     def test_build_row_completed_task_has_strikethrough(self):
         """Test that completed tasks have strikethrough style on name."""
@@ -82,8 +82,8 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         row = self.builder.build_row(task)
 
-        # Flags column (last column) should contain fixed indicator
-        flags = str(row[9])
+        # Flags column should contain fixed indicator
+        flags = str(row[4])
         self.assertIn("📌", flags)
 
     def test_build_row_with_tags(self):
@@ -99,7 +99,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
         row = self.builder.build_row(task)
 
         # Tags column should show comma-separated tags
-        tags_text = str(row[8])
+        tags_text = str(row[14])
         self.assertEqual(tags_text, "urgent, backend")
 
     def test_build_row_with_deadline(self):
@@ -116,7 +116,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
         row = self.builder.build_row(task)
 
         # Deadline column should be formatted (not "-")
-        deadline_text = str(row[6])
+        deadline_text = str(row[7])
         self.assertNotEqual(deadline_text, "-")
 
     def test_build_row_with_dependencies(self):
@@ -132,7 +132,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
         row = self.builder.build_row(task)
 
         # Dependencies column should show comma-separated IDs
-        deps_text = str(row[7])
+        deps_text = str(row[13])
         self.assertEqual(deps_text, "1,2")
 
     def test_format_name_truncation(self):
@@ -191,7 +191,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
         row = self.builder.build_row(task)
 
         # Elapsed time column should show time (not "-")
-        elapsed_text = str(row[4])
+        elapsed_text = str(row[12])
         self.assertNotEqual(elapsed_text, "-")
 
     def test_build_row_with_estimated_duration(self):
