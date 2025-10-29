@@ -46,7 +46,9 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             config: Application configuration
         """
         self.config = config
-        self._evaluation_cache: dict[tuple, float] = {}  # Cache for evaluation results
+        self._evaluation_cache: dict[
+            tuple[int | None, ...], float
+        ] = {}  # Cache for evaluation results
 
     def optimize_tasks(
         self,

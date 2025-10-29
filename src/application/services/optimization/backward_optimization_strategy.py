@@ -55,7 +55,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
             Sorted task list (furthest deadline first)
         """
 
-        def deadline_key(task: Task) -> tuple:
+        def deadline_key(task: Task) -> tuple[int, int, int | None]:
             if task.deadline:
                 deadline_dt = task.deadline
                 days_until = (deadline_dt - start_date).days

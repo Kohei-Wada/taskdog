@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
+from typing import Any
 
 from domain.constants import SECONDS_PER_HOUR
 from domain.exceptions.task_exceptions import TaskValidationError
@@ -187,7 +188,7 @@ class Task:
             return dt.isoformat()
         return dt
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize task to dictionary for persistence.
 
         Datetime fields are serialized to ISO 8601 format strings for JSON compatibility.
@@ -220,7 +221,7 @@ class Task:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Task":
+    def from_dict(cls, data: dict[str, Any]) -> "Task":
         """Deserialize task from dictionary.
 
         Supports both string (legacy format) and datetime object formats for backward compatibility.
@@ -272,7 +273,7 @@ class Task:
         return cls(**task_data)
 
     @classmethod
-    def _process_created_at_field(cls, task_data: dict) -> None:
+    def _process_created_at_field(cls, task_data: dict[str, Any]) -> None:
         """Process created_at field with backward compatibility.
 
         Args:
@@ -293,7 +294,7 @@ class Task:
                 task_data["created_at"] = cls._parse_datetime_string(value)
 
     @classmethod
-    def _process_updated_at_field(cls, task_data: dict) -> None:
+    def _process_updated_at_field(cls, task_data: dict[str, Any]) -> None:
         """Process updated_at field with backward compatibility.
 
         Args:

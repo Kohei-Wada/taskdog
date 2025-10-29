@@ -57,7 +57,9 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             config: Application configuration
         """
         self.config = config
-        self._fitness_cache: dict[tuple, float] = {}  # Cache for fitness evaluations
+        self._fitness_cache: dict[
+            tuple[int | None, ...], float
+        ] = {}  # Cache for fitness evaluations
 
     def optimize_tasks(
         self,

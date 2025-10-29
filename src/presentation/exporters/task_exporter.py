@@ -1,6 +1,7 @@
 """Abstract base class for task exporters."""
 
 from abc import ABC, abstractmethod
+from typing import Any
 
 from domain.entities.task import Task
 
@@ -32,7 +33,7 @@ class TaskExporter(ABC):
         """
         pass
 
-    def _filter_fields(self, task_dict: dict) -> dict:
+    def _filter_fields(self, task_dict: dict[str, Any]) -> dict[str, Any]:
         """Filter task dictionary to include only specified fields.
 
         Args:

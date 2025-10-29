@@ -40,7 +40,7 @@ warn_return_any = true
 warn_no_return = true
 # Phase 3->4: Gradually enabling stricter checks
 disallow_untyped_defs = false
-disallow_any_generics = false
+disallow_any_generics = true  # Phase 4 (enabled)
 disallow_untyped_calls = true  # Phase 4 (enabled)
 show_error_context = true
 

@@ -3,6 +3,7 @@
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from textual.app import App
 
@@ -41,7 +42,7 @@ def _prepare_notes_file(task: Task, notes_repository: NotesRepository) -> Path:
 def _open_editor(
     notes_path: Path,
     editor: str,
-    app: App,
+    app: App[Any],
 ) -> None:
     """Open editor for notes file.
 
@@ -61,7 +62,7 @@ def _open_editor(
 def edit_task_note(
     task: Task,
     notes_repository: NotesRepository,
-    app: App,
+    app: App[Any],
     on_success: Callable[[str, int], None] | None = None,
     on_error: Callable[[str, Exception], None] | None = None,
 ) -> None:
