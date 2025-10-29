@@ -1,6 +1,7 @@
 """Dependency-aware optimization strategy implementation using Critical Path Method."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from application.services.optimization.allocators.greedy_forward_allocator import (
     GreedyForwardAllocator,
@@ -8,6 +9,9 @@ from application.services.optimization.allocators.greedy_forward_allocator impor
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
 from shared.config_manager import Config
+
+if TYPE_CHECKING:
+    from infrastructure.persistence.task_repository import TaskRepository
 
 
 class DependencyAwareOptimizationStrategy(OptimizationStrategy):
@@ -35,7 +39,7 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
         self.config = config
 
     def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository
+        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
     ) -> list[Task]:
         """Sort tasks by dependency depth, then by priority/deadline.
 
@@ -91,7 +95,9 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
             task, start_date, max_hours_per_day, self.daily_allocations, self.repository
         )
 
-    def _calculate_dependency_depths(self, tasks: list[Task], repository) -> dict[int, int]:
+    def _calculate_dependency_depths(
+        self, tasks: list[Task], repository: "TaskRepository"
+    ) -> dict[int, int]:
         """Calculate dependency depth for each task.
 
         Since parent-child relationships have been removed, all tasks have depth 0.

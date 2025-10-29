@@ -21,6 +21,7 @@ from domain.entities.task import Task
 from shared.config_manager import Config
 
 if TYPE_CHECKING:
+    from infrastructure.persistence.task_repository import TaskRepository
     from shared.utils.holiday_checker import HolidayChecker
 
 
@@ -64,7 +65,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     def optimize_tasks(
         self,
         tasks: list[Task],
-        repository,
+        repository: "TaskRepository",
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
@@ -134,7 +135,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         start_date: datetime,
         max_hours_per_day: float,
-        repository,
+        repository: "TaskRepository",
         allocator: GreedyForwardAllocator,
     ) -> list[Task]:
         """Run genetic algorithm to find optimal task ordering.
@@ -220,7 +221,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         task_order: list[Task],
         start_date: datetime,
         max_hours_per_day: float,
-        repository,
+        repository: "TaskRepository",
         allocator: GreedyForwardAllocator,
     ) -> float:
         """Evaluate fitness with caching to avoid redundant calculations.
@@ -257,7 +258,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         task_order: list[Task],
         start_date: datetime,
         max_hours_per_day: float,
-        repository,
+        repository: "TaskRepository",
         allocator: GreedyForwardAllocator,
     ) -> float:
         """Evaluate fitness of a task ordering.
@@ -392,7 +393,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         return mutated
 
     def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository
+        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
     ) -> list[Task]:
         """Not used by genetic strategy (overrides optimize_tasks)."""
         raise NotImplementedError("GeneticOptimizationStrategy overrides optimize_tasks directly")

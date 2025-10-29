@@ -89,7 +89,7 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def print(self, message: Any = "", **kwargs) -> None:
+    def print(self, message: Any = "", **kwargs: Any) -> None:
         """Print raw message.
 
         This method is used by formatters that need direct access to printing.

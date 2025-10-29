@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 from domain.entities.task import Task
 
@@ -7,7 +8,7 @@ class TaskRenderer(ABC):
     """Abstract interface for task rendering."""
 
     @abstractmethod
-    def render(self, tasks: list[Task], task_manager) -> None:
+    def render(self, tasks: list[Task], task_manager: Any) -> None:
         """Render tasks to output.
 
         Args:

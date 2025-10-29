@@ -1,5 +1,7 @@
 """Show details command for TUI."""
 
+from typing import Any
+
 from application.use_cases.get_task_detail import (
     GetTaskDetailInput,
     GetTaskDetailUseCase,
@@ -32,7 +34,7 @@ class ShowDetailsCommand(TUICommandBase):
         detail_screen = TaskDetailScreen(detail)
         self.app.push_screen(detail_screen, callback=self._handle_detail_screen_result)
 
-    def _handle_detail_screen_result(self, result) -> None:
+    def _handle_detail_screen_result(self, result: Any) -> None:
         """Handle the result from the detail screen.
 
         Args:

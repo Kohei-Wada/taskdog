@@ -12,6 +12,7 @@ from shared.config_manager import Config
 from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
+    from infrastructure.persistence.task_repository import TaskRepository
     from shared.utils.holiday_checker import HolidayChecker
 
 
@@ -40,7 +41,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
     def optimize_tasks(
         self,
         tasks: list[Task],
-        repository,
+        repository: "TaskRepository",
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
@@ -278,7 +279,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         return updated_tasks
 
     def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository
+        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
     ) -> list[Task]:
         """Not used by round-robin strategy (overrides optimize_tasks)."""
         raise NotImplementedError(

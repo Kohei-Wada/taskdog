@@ -1,11 +1,18 @@
 """Optimize command for TUI."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
+from application.dto.optimization_result import OptimizationResult
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
+from presentation.tui.context import TUIContext
 from presentation.tui.screens.algorithm_selection_screen import AlgorithmSelectionScreen
+from presentation.tui.services.task_service import TaskService
+
+if TYPE_CHECKING:
+    from presentation.tui.app import TaskdogTUI
 
 
 @command_registry.register("optimize")
@@ -16,7 +23,13 @@ class OptimizeCommand(TUICommandBase):
     with the selected algorithm.
     """
 
-    def __init__(self, app, context, task_service, force_override: bool = False):
+    def __init__(
+        self,
+        app: "TaskdogTUI",
+        context: TUIContext,
+        task_service: TaskService,
+        force_override: bool = False,
+    ) -> None:
         """Initialize the command.
 
         Args:
@@ -28,7 +41,7 @@ class OptimizeCommand(TUICommandBase):
         super().__init__(app, context, task_service)
         self.force_override = force_override
 
-    def _format_failed_tasks_message(self, result, prefix: str = "") -> str:
+    def _format_failed_tasks_message(self, result: OptimizationResult, prefix: str = "") -> str:
         """Format failed tasks message based on count.
 
         Args:

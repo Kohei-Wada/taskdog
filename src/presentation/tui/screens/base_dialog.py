@@ -3,6 +3,7 @@
 from abc import abstractmethod
 from typing import ClassVar, TypeVar
 
+from textual.app import ComposeResult
 from textual.screen import ModalScreen
 
 T = TypeVar("T")
@@ -34,7 +35,7 @@ class BaseModalDialog(ModalScreen[T]):
         self.dismiss(None)
 
     @abstractmethod
-    def compose(self):
+    def compose(self) -> ComposeResult:
         """Compose the dialog layout.
 
         Must be implemented by subclasses.
