@@ -10,7 +10,7 @@ from presentation.cli.commands.filter_helpers import (
     parse_field_list,
 )
 from presentation.cli.context import CliContext
-from presentation.exporters import CsvTaskExporter, JsonTaskExporter
+from presentation.exporters import CsvTaskExporter, JsonTaskExporter, MarkdownTableExporter
 
 # Valid fields for export
 VALID_FIELDS = {
@@ -35,7 +35,7 @@ VALID_FIELDS = {
 )
 @click.option(
     "--format",
-    type=click.Choice(["json", "csv"]),
+    type=click.Choice(["json", "csv", "markdown"]),
     default="json",
     help="Output format (default: json).",
 )
@@ -64,8 +64,7 @@ def export_command(ctx, format, output, fields, all, status, start_date, end_dat
     Use --status to filter by specific status.
     Use --start-date and --end-date to filter by date range.
 
-    Supports JSON and CSV formats. More formats (Markdown, iCalendar)
-    may be added in future versions.
+    Supports JSON, CSV, and Markdown table formats.
 
     Examples:
         taskdog export                              # Export non-archived tasks as JSON
@@ -73,8 +72,9 @@ def export_command(ctx, format, output, fields, all, status, start_date, end_dat
         taskdog export --status completed           # Export only completed tasks
         taskdog export -o tasks.json                # Save JSON to file
         taskdog export --format csv -o tasks.csv    # Export to CSV
+        taskdog export --format markdown -o tasks.md  # Export to Markdown table
         taskdog export --fields id,name,priority    # Export only specific fields
-        taskdog export -f id,name,status --format csv -o out.csv  # CSV with specific fields
+        taskdog export -f id,name,status --format markdown  # Markdown with specific fields
         taskdog export -a --status archived -o archived.json      # Export all archived tasks
         taskdog export --start-date 2025-10-01 --end-date 2025-10-31  # October tasks
     """
@@ -99,6 +99,8 @@ def export_command(ctx, format, output, fields, all, status, start_date, end_dat
             exporter = JsonTaskExporter(field_list=field_list)
         elif format == "csv":
             exporter = CsvTaskExporter(field_list=field_list)
+        elif format == "markdown":
+            exporter = MarkdownTableExporter(field_list=field_list)
         else:
             raise ValueError(f"Unsupported format: {format}")
 
