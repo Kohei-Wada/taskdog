@@ -94,7 +94,7 @@ class TaskTableRowBuilder:
         return self._create_centered_cell(task.id)
 
     def _build_name_cell(self, task: Task) -> Text:
-        """Build name cell with truncation and strikethrough for completed tasks.
+        """Build name cell with truncation and strikethrough for completed, canceled, and archived tasks.
 
         Args:
             task: Task to extract name from
@@ -103,7 +103,11 @@ class TaskTableRowBuilder:
             Text object for name column
         """
         name_text = self._format_name(task.name)
-        name_style = "strike" if task.status == TaskStatus.COMPLETED else None
+        name_style = (
+            "strike"
+            if task.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.ARCHIVED]
+            else None
+        )
         return Text(name_text, style=name_style, justify="left")
 
     def _build_priority_cell(self, task: Task) -> Text:
