@@ -3,7 +3,7 @@
 import unittest
 
 from application.queries.filters.composite_filter import CompositeFilter
-from application.queries.filters.incomplete_filter import IncompleteFilter
+from application.queries.filters.non_archived_filter import NonArchivedFilter
 from application.queries.filters.status_filter import StatusFilter
 from domain.entities.task import TaskStatus
 from presentation.cli.commands.filter_helpers import build_task_filter
@@ -13,10 +13,10 @@ class TestBuildTaskFilter(unittest.TestCase):
     """Tests for build_task_filter function."""
 
     def test_default_returns_incomplete_filter(self):
-        """Test default (no options) returns IncompleteFilter."""
+        """Test default (no options) returns NonArchivedFilter."""
         result = build_task_filter(all=False, status=None)
 
-        self.assertIsInstance(result, IncompleteFilter)
+        self.assertIsInstance(result, NonArchivedFilter)
 
     def test_all_only_returns_none(self):
         """Test --all only returns None (no filter)."""
@@ -25,17 +25,17 @@ class TestBuildTaskFilter(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_status_only_returns_composite_filter(self):
-        """Test --status only returns CompositeFilter with IncompleteFilter + StatusFilter."""
+        """Test --status only returns CompositeFilter with NonArchivedFilter + StatusFilter."""
         result = build_task_filter(all=False, status="pending")
 
         self.assertIsInstance(result, CompositeFilter)
         self.assertEqual(len(result.filters), 2)
-        self.assertIsInstance(result.filters[0], IncompleteFilter)
+        self.assertIsInstance(result.filters[0], NonArchivedFilter)
         self.assertIsInstance(result.filters[1], StatusFilter)
         self.assertEqual(result.filters[1].status, TaskStatus.PENDING)
 
     def test_all_and_status_returns_status_filter_only(self):
-        """Test --all --status returns StatusFilter only (no IncompleteFilter)."""
+        """Test --all --status returns StatusFilter only (no NonArchivedFilter)."""
         result = build_task_filter(all=True, status="canceled")
 
         self.assertIsInstance(result, StatusFilter)

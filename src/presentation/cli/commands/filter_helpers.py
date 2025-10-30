@@ -4,7 +4,7 @@ from datetime import datetime
 
 from application.queries.filters.composite_filter import CompositeFilter
 from application.queries.filters.date_range_filter import DateRangeFilter
-from application.queries.filters.incomplete_filter import IncompleteFilter
+from application.queries.filters.non_archived_filter import NonArchivedFilter
 from application.queries.filters.status_filter import StatusFilter
 from application.queries.filters.task_filter import TaskFilter
 from domain.entities.task import Task, TaskStatus
@@ -14,16 +14,16 @@ def build_task_filter(all: bool, status: str | None) -> TaskFilter | None:
     """Build task filter based on CLI options with AND logic.
 
     Logic:
-    - Default (no options): IncompleteFilter (PENDING, IN_PROGRESS only)
+    - Default (no options): NonArchivedFilter (is_archived=False, includes all statuses)
     - --all only: No filter (all tasks including archived)
-    - --status X only: IncompleteFilter + StatusFilter(X) (incomplete tasks filtered by status X)
+    - --status X only: NonArchivedFilter + StatusFilter(X) (non-archived tasks filtered by status X)
     - --all --status X: StatusFilter(X) only (all tasks including archived, filtered by status X)
 
-    The --all flag controls whether to include finished tasks (COMPLETED, CANCELED).
+    The --all flag controls whether to include archived tasks.
     The --status flag further filters by specific status.
 
     Args:
-        all: If True, include all tasks (finished + incomplete)
+        all: If True, include all tasks (including archived)
         status: Status string (case-insensitive), converts to TaskStatus enum
 
     Returns:
@@ -31,13 +31,13 @@ def build_task_filter(all: bool, status: str | None) -> TaskFilter | None:
 
     Examples:
         >>> build_task_filter(all=False, status=None)
-        IncompleteFilter()  # PENDING + IN_PROGRESS only
+        NonArchivedFilter()  # All non-archived tasks (any status)
 
         >>> build_task_filter(all=True, status=None)
-        None  # All tasks
+        None  # All tasks (including archived)
 
         >>> build_task_filter(all=False, status="pending")
-        CompositeFilter([IncompleteFilter(), StatusFilter(PENDING)])  # Incomplete + PENDING
+        CompositeFilter([NonArchivedFilter(), StatusFilter(PENDING)])  # Non-archived + PENDING
 
         >>> build_task_filter(all=True, status="completed")
         StatusFilter(COMPLETED)  # All tasks filtered by COMPLETED
@@ -51,15 +51,15 @@ def build_task_filter(all: bool, status: str | None) -> TaskFilter | None:
             # --all --status X: Show all tasks (including archived) filtered by status X
             return status_filter
         else:
-            # --status X only: Show incomplete tasks filtered by status X
-            # This creates AND logic: IncompleteFilter AND StatusFilter
-            return CompositeFilter([IncompleteFilter(), status_filter])
+            # --status X only: Show non-archived tasks filtered by status X
+            # This creates AND logic: NonArchivedFilter AND StatusFilter
+            return CompositeFilter([NonArchivedFilter(), status_filter])
     elif all:
         # --all only: Show all tasks (no filter)
         return None
     else:
-        # Default: Show incomplete only
-        return IncompleteFilter()
+        # Default: Show non-archived only
+        return NonArchivedFilter()
 
 
 def apply_date_range_filter(

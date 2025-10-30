@@ -31,7 +31,7 @@ VALID_FIELDS = {
 
 @click.command(
     name="export",
-    help="Export tasks to various formats (exports incomplete tasks by default).",
+    help="Export tasks to various formats (exports non-archived tasks by default).",
 )
 @click.option(
     "--format",
@@ -59,7 +59,7 @@ VALID_FIELDS = {
 def export_command(ctx, format, output, fields, all, status, start_date, end_date):
     """Export tasks in the specified format.
 
-    By default, exports incomplete tasks (PENDING, IN_PROGRESS).
+    By default, exports non-archived tasks (all statuses except archived).
     Use -a/--all to export all tasks (including archived).
     Use --status to filter by specific status.
     Use --start-date and --end-date to filter by date range.
@@ -68,7 +68,7 @@ def export_command(ctx, format, output, fields, all, status, start_date, end_dat
     may be added in future versions.
 
     Examples:
-        taskdog export                              # Export incomplete tasks as JSON
+        taskdog export                              # Export non-archived tasks as JSON
         taskdog export -a                           # Export all tasks (including archived)
         taskdog export --status completed           # Export only completed tasks
         taskdog export -o tasks.json                # Save JSON to file

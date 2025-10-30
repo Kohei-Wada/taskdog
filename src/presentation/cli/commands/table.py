@@ -15,7 +15,7 @@ from presentation.cli.error_handler import handle_command_errors
 
 
 @click.command(
-    name="table", help="Display tasks in flat table format (shows incomplete tasks by default)."
+    name="table", help="Display tasks in flat table format (shows non-archived tasks by default)."
 )
 @click.option(
     "--fields",
@@ -40,13 +40,13 @@ from presentation.cli.error_handler import handle_command_errors
 def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_date):
     """Display tasks as a flat table.
 
-    By default, only shows incomplete tasks (PENDING, IN_PROGRESS).
+    By default, shows non-archived tasks (all statuses except archived).
     Use -a/--all to show all tasks including archived.
     Use --status to filter by specific status.
     Use --start-date and --end-date to filter by date range.
 
     Examples:
-        taskdog table                              # Show incomplete tasks
+        taskdog table                              # Show non-archived tasks
         taskdog table -a                           # Show all tasks (including archived)
         taskdog table --status archived            # Show only archived tasks
         taskdog table --status completed           # Show only completed tasks

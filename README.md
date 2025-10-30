@@ -136,16 +136,16 @@ taskdog tui
   - Distributes workload across weekdays
 
 **Visualization**
-- `table` - Table view with extensive options:
+- `table` - Table view with extensive options (shows non-archived tasks by default):
   - Sort: `-s/--sort` (id, priority, deadline, name, status, planned_start)
   - Filter: `--status` (pending, in_progress, completed, canceled), `-t/--tag`, `--start-date`, `--end-date`
   - Display: `-a/--all` (include archived), `-r/--reverse`, `-f/--fields` (custom field selection)
-- `gantt` - Gantt chart with workload analysis:
+- `gantt` - Gantt chart with workload analysis (shows non-archived tasks by default):
   - Same filter/sort options as table (default sort: deadline)
 - `today` - Today's tasks (deadline today, planned includes today, or IN_PROGRESS)
 - `week` - This week's tasks (same filtering logic as today)
 - `show ID [--raw]` - Task details + notes (markdown rendered or raw)
-- `export` - Export tasks:
+- `export` - Export tasks (exports non-archived tasks by default):
   - Format: `--format` (json [default] or csv)
   - Output: `-o/--output FILE`
   - Fields: `-f/--fields` (custom field selection)

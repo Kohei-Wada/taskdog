@@ -16,8 +16,8 @@ from shared.utils.date_utils import get_previous_monday
     name="gantt",
     help="""Display tasks in Gantt chart format with workload analysis.
 
-By default, shows incomplete tasks only (PENDING, IN_PROGRESS).
-Use -a/--all to include completed, failed, and archived tasks.
+By default, shows non-archived tasks (all statuses except archived).
+Use -a/--all to include archived tasks.
 Use --status to filter by specific status (overrides --all).
 
 \b
@@ -43,7 +43,7 @@ TIMELINE SYMBOLS:
 
 \b
 EXAMPLE:
-  taskdog gantt                                  # Show incomplete tasks
+  taskdog gantt                                  # Show non-archived tasks
   taskdog gantt -a                              # Show all tasks (including archived)
   taskdog gantt --status completed              # Show only completed tasks
   taskdog gantt --start-date 2025-10-01 --end-date 2025-10-31
@@ -68,7 +68,7 @@ EXAMPLE:
 def gantt_command(ctx, start_date, end_date, all, status, sort, reverse):
     """Display tasks as a Gantt chart with workload analysis.
 
-    By default, shows incomplete tasks (PENDING, IN_PROGRESS).
+    By default, shows non-archived tasks (all statuses except archived).
     Use -a/--all to include all tasks (including archived).
     Use --status to filter by specific status (overrides --all).
 
