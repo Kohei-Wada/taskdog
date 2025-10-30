@@ -146,7 +146,7 @@ class GanttDataTable(DataTable):
         # Add three separate rows for month, today marker, and day with centered cells
         self.add_row(
             Text("", justify="center"),
-            Text("Date", style="dim", justify="center"),
+            Text("", justify="center"),
             Text("", justify="center"),
             month_line,
         )
