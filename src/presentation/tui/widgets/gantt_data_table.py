@@ -12,7 +12,7 @@ from rich.text import Text
 from textual.widgets import DataTable
 
 from application.dto.gantt_result import GanttResult
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
 from presentation.constants.table_dimensions import (
     GANTT_TABLE_EST_HOURS_WIDTH,
     GANTT_TABLE_ID_WIDTH,
@@ -199,9 +199,9 @@ class GanttDataTable(DataTable):
         """
         task_id = str(task.id)
 
-        # Task name with strikethrough for completed, canceled, and archived tasks
+        # Task name with strikethrough for completed and canceled tasks
         task_name = task.name
-        if task.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED] or task.is_archived:
+        if task.is_finished:
             task_name = f"[strike]{task_name}[/strike]"
 
         # Estimated hours

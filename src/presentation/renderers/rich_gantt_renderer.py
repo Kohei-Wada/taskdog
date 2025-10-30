@@ -5,7 +5,7 @@ from rich.table import Table
 from rich.text import Text
 
 from application.dto.gantt_result import GanttResult
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.colors import GANTT_COLUMN_EST_HOURS_COLOR
 from presentation.constants.table_dimensions import (
@@ -185,8 +185,8 @@ class RichGanttRenderer(RichRendererBase):
         """
         task_name = task.name
 
-        # Add strikethrough for completed, canceled, and archived tasks
-        if task.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED] or task.is_archived:
+        # Add strikethrough for completed and canceled tasks
+        if task.is_finished:
             task_name = f"[strike]{task_name}[/strike]"
 
         # Format estimated duration

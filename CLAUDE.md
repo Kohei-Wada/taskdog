@@ -11,9 +11,10 @@ Taskdog is a task management CLI tool built with Python, Click, and Rich. It sup
 **Tasks**: Stored in `tasks.json` at `$XDG_DATA_HOME/taskdog/tasks.json` (fallback: `~/.local/share/taskdog/tasks.json`)
 
 **Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/config.toml` (fallback: `~/.config/taskdog/config.toml`)
-- Settings: max_hours_per_day, default_algorithm, default_priority, datetime_format, default_start_hour, default_end_hour
+- Settings: max_hours_per_day, default_algorithm, default_priority, datetime_format, default_start_hour, default_end_hour, country (for holiday checking)
 - Priority: CLI args > Config file > Defaults
 - Access via `ctx.obj.config` (CLI) or `context.config` (TUI)
+- Country codes (ISO 3166-1 alpha-2): "JP", "US", "GB", "DE", etc.
 
 ## Development Commands
 
@@ -91,10 +92,11 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
 ### Key Components
 
 **Task Entity** (`src/domain/entities/task.py`)
-- Fields: id, name, priority, status, planned_start/end, deadline, actual_start/end, estimated_duration, daily_allocations, is_fixed, depends_on, actual_daily_hours, is_deleted
+- Fields: id, name, priority, status, planned_start/end, deadline, actual_start/end, estimated_duration, daily_allocations, is_fixed, depends_on, actual_daily_hours, tags, is_archived
 - Statuses: PENDING, IN_PROGRESS, COMPLETED, CANCELED
-- Always-Valid Entity: validates invariants in `__post_init__` (name non-empty, priority > 0, estimated_duration > 0 if set)
-- Properties: actual_duration_hours, notes_path, is_active, is_finished, can_be_modified, is_schedulable
+- Always-Valid Entity: validates invariants in `__post_init__` (name non-empty, priority > 0, estimated_duration > 0 if set, tags non-empty and unique)
+- Properties: actual_duration_hours, is_active, is_finished, can_be_modified, is_schedulable
+- Archive Design: is_archived is a boolean flag (not a status) to preserve original task state when soft-deleted
 
 **Repository** (`JsonTaskRepository`)
 - Atomic saves: temp file → backup → atomic rename
@@ -104,8 +106,9 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
 **TimeTracker**: Records actual_start (→IN_PROGRESS), actual_end (→COMPLETED/CANCELED), clears both (→PENDING)
 
 **Renderers**
-- `RichTableRenderer`: Task table with all fields
-- `RichGanttRenderer`: Timeline with daily hours, status symbols (◆), weekend coloring, workload summary
+- `RichTableRenderer`: Task table with all fields, strikethrough for finished tasks (uses task.is_finished)
+- `RichGanttRenderer`: Timeline with daily hours, status symbols (◆), weekend coloring, workload summary, strikethrough for finished tasks
+- Strikethrough applied only to COMPLETED/CANCELED tasks (task.is_finished), not archived tasks
 
 **CLI Patterns**
 - `update_helpers.py`: Shared helper for single-field updates (deadline, priority, estimate, rename)
@@ -129,9 +132,10 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
 Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 
 **Creation & Viewing**
-- `add "Task name" [--priority N] [--fixed] [--depends-on ID]`: Create task
-- `table [--sort FIELD] [--reverse] [--all] [--fields LIST]`: Table view with sorting
-- `today [--sort FIELD] [--reverse]`: Today's tasks
+- `add "Task name" [--priority N] [--fixed] [--depends-on ID] [--tag TAG]`: Create task (multiple -d/-t allowed)
+- `table [--sort FIELD] [--reverse] [--all] [--fields LIST] [--status STATUS] [--tag TAG] [--start-date] [--end-date]`: Table view with filtering
+- `today [--sort FIELD] [--reverse]`: Today's tasks (deadline today, planned includes today, or IN_PROGRESS)
+- `week [--sort FIELD] [--reverse]`: This week's tasks
 - `show ID [--raw]`: Task details + notes (markdown rendered or raw)
 
 **Status Management** (support multiple IDs)
@@ -146,24 +150,32 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 - `update ID [--priority] [--status] [...]`: Multi-field update
 
 **Management**
-- `rm ID... [--hard]`: Soft delete (default) or hard delete
-- `restore ID...`: Restore soft-deleted tasks
+- `rm ID... [--hard]`: Soft delete (default, sets is_archived=true) or hard delete (permanent removal)
+- `restore ID...`: Restore soft-deleted tasks (sets is_archived=false)
 - `add-dependency TASK_ID DEPENDS_ON_ID`: Add dependency (DFS cycle detection)
 - `remove-dependency TASK_ID DEPENDS_ON_ID`: Remove dependency
+- `tags [ID] [TAG...]`: List all tags, show task tags, or set task tags
 
 **Time & Optimization**
 - `log-hours ID HOURS [--date DATE]`: Log actual hours
 - `optimize [--start-date] [--max-hours-per-day] [--algorithm] [--force]`: Auto-schedule (9 strategies available)
 
 **Visualization**
-- `gantt [--sort] [--reverse]`: Gantt chart with workload summary (default sort: deadline)
-- `export [--format] [--output]`: Export tasks
-- `stats [--period] [--focus]`: Analytics
+- `gantt [--sort] [--reverse] [--all] [--status] [--tag] [--start-date] [--end-date]`: Gantt chart with workload summary (default sort: deadline)
+- `table [--sort] [--reverse] [--all] [--fields] [--status] [--tag] [--start-date] [--end-date]`: Task table with filtering
+- `today`: Today's tasks (deadline today, planned includes today, or IN_PROGRESS)
+- `week`: This week's tasks
+- `export [--format json|csv] [--output] [--fields] [--all] [--status] [--tag]`: Export tasks
+- `stats [--period all|7d|30d] [--focus all|basic|time|estimation|deadline|priority|trends]`: Analytics
 
 **Interactive**
 - `note ID`: Edit markdown notes ($EDITOR)
-- `tui`: Full-screen TUI (Textual) with keyboard shortcuts (a/s/p/d/c/R/x/i/e/o/r/S/q)
-  - `S`: Show sort selection dialog (deadline/planned_start/priority/id)
+- `tui`: Full-screen TUI (Textual) with keyboard shortcuts
+  - `a`: Add task, `s`: Start, `P`: Pause, `d`: Done, `c`: Cancel, `R`: Reopen
+  - `x`: Archive (soft delete), `X`: Hard delete, `i`: Details, `e`: Edit, `v`: Edit note
+  - `t`: Toggle completed/canceled visibility, `o`: Optimize, `r`: Refresh
+  - `S`: Sort dialog (deadline/planned_start/priority/estimated_duration/id)
+  - `/`: Search, `Escape`: Clear search, `q`: Quit
 
 ### Design Principles
 
@@ -179,6 +191,7 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 10. **Atomic Operations**: JsonTaskRepository uses temp file → backup → atomic rename
 11. **Config Priority**: CLI args > TOML config > defaults (uses Python 3.11+ tomllib)
 12. **Fixed Tasks**: is_fixed=True prevents rescheduling; hours counted in optimizer's max_hours_per_day calculation
+13. **Visual Styling**: Use task.is_finished property (not direct status checks) for strikethrough; archived tasks display without strikethrough
 
 ### Console Output
 

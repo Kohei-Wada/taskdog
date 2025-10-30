@@ -103,11 +103,7 @@ class TaskTableRowBuilder:
             Text object for name column
         """
         name_text = self._format_name(task.name)
-        name_style = (
-            "strike"
-            if task.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED] or task.is_archived
-            else None
-        )
+        name_style = "strike" if task.is_finished else None
         return Text(name_text, style=name_style, justify="left")
 
     def _build_priority_cell(self, task: Task) -> Text:

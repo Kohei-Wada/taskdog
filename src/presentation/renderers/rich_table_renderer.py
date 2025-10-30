@@ -2,7 +2,7 @@ from typing import ClassVar
 
 from rich.table import Table
 
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
 from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.table_styles import (
@@ -208,9 +208,7 @@ class RichTableRenderer(RichRendererBase):
         # Field value extractors mapping
         field_extractors = {
             "id": lambda t: str(t.id),
-            "name": lambda t: f"[strike]{t.name}[/strike]"
-            if t.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED] or t.is_archived
-            else t.name,
+            "name": lambda t: f"[strike]{t.name}[/strike]" if t.is_finished else t.name,
             "note": lambda t: "📝" if self.notes_repository.has_notes(t.id) else "",
             "priority": lambda t: str(t.priority),
             "status": lambda t: self._format_status(t),
