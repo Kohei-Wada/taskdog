@@ -84,6 +84,24 @@ class RichTableRenderer(RichRendererBase):
             "style": COLUMN_DURATION_STYLE,
             "no_wrap": True,
         },
+        "estimated_duration": {
+            "header": "Est",
+            "justify": "center",
+            "style": COLUMN_DURATION_STYLE,
+            "no_wrap": True,
+        },
+        "actual_duration": {
+            "header": "Actual",
+            "justify": "center",
+            "style": COLUMN_DURATION_STYLE,
+            "no_wrap": True,
+        },
+        "elapsed": {
+            "header": "Elapsed",
+            "justify": "center",
+            "style": "cyan",
+            "no_wrap": True,
+        },
         "created_at": {
             "header": "Created At",
             "style": "dim",
@@ -114,22 +132,24 @@ class RichTableRenderer(RichRendererBase):
         },
     }
 
-    # Default fields to display when none specified
+    # Default fields to display when none specified (matches TUI column order)
     DEFAULT_FIELDS: ClassVar[list[str]] = [
         "id",
         "name",
-        "note",
-        "priority",
         "status",
+        "priority",
+        "note",
         "is_fixed",
-        "depends_on",
-        "tags",
+        "estimated_duration",
+        "actual_duration",
+        "deadline",
         "planned_start",
         "planned_end",
         "actual_start",
         "actual_end",
-        "deadline",
-        "duration",
+        "elapsed",
+        "depends_on",
+        "tags",
     ]
 
     def __init__(self, console_writer: ConsoleWriter, notes_repository: NotesRepository):
@@ -221,6 +241,9 @@ class RichTableRenderer(RichRendererBase):
             "actual_end": lambda t: self._format_datetime(t.actual_end),
             "deadline": lambda t: self._format_datetime(t.deadline),
             "duration": lambda t: self._format_duration_info(t),
+            "estimated_duration": lambda t: self._format_estimated_duration(t),
+            "actual_duration": lambda t: self._format_actual_duration(t),
+            "elapsed": lambda t: self._format_elapsed(t),
             "created_at": lambda t: self._format_datetime(t.created_at),
             "updated_at": lambda t: self._format_datetime(t.updated_at),
         }
@@ -305,3 +328,61 @@ class RichTableRenderer(RichRendererBase):
             duration_parts.append(f"A:{task.actual_duration_hours}h")
 
         return " / ".join(duration_parts)
+
+    def _format_estimated_duration(self, task: Task) -> str:
+        """Format estimated duration for display.
+
+        Args:
+            task: Task to format estimated duration for
+
+        Returns:
+            Formatted estimated duration string (e.g., "5h" or "-")
+        """
+        if not task.estimated_duration:
+            return "-"
+        return f"{task.estimated_duration}h"
+
+    def _format_actual_duration(self, task: Task) -> str:
+        """Format actual duration for display.
+
+        Args:
+            task: Task to format actual duration for
+
+        Returns:
+            Formatted actual duration string (e.g., "3h" or "-")
+        """
+        if not task.actual_duration_hours:
+            return "-"
+        return f"{task.actual_duration_hours}h"
+
+    def _format_elapsed(self, task: Task) -> str:
+        """Format elapsed time for IN_PROGRESS tasks.
+
+        Args:
+            task: Task to format elapsed time for
+
+        Returns:
+            Formatted elapsed time string (e.g., "15:04:38" or "3d 15:04:38")
+        """
+        from datetime import datetime
+
+        from domain.entities.task import TaskStatus
+
+        if task.status != TaskStatus.IN_PROGRESS or not task.actual_start:
+            return "-"
+
+        # Calculate elapsed time
+        elapsed_seconds = int((datetime.now() - task.actual_start).total_seconds())
+
+        # Convert to days, hours, minutes, seconds
+        days = elapsed_seconds // 86400
+        remaining_seconds = elapsed_seconds % 86400
+        hours = remaining_seconds // 3600
+        minutes = (remaining_seconds % 3600) // 60
+        seconds = remaining_seconds % 60
+
+        # Format based on duration
+        if days > 0:
+            return f"{days}d {hours}:{minutes:02d}:{seconds:02d}"
+        else:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
