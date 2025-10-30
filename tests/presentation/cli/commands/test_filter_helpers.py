@@ -36,10 +36,10 @@ class TestBuildTaskFilter(unittest.TestCase):
 
     def test_all_and_status_returns_status_filter_only(self):
         """Test --all --status returns StatusFilter only (no IncompleteFilter)."""
-        result = build_task_filter(all=True, status="archived")
+        result = build_task_filter(all=True, status="canceled")
 
         self.assertIsInstance(result, StatusFilter)
-        self.assertEqual(result.status, TaskStatus.ARCHIVED)
+        self.assertEqual(result.status, TaskStatus.CANCELED)
 
     def test_status_case_insensitive(self):
         """Test status parameter is case-insensitive."""
@@ -53,7 +53,7 @@ class TestBuildTaskFilter(unittest.TestCase):
 
     def test_all_statuses_supported(self):
         """Test all TaskStatus enum values are supported."""
-        for status in ["pending", "in_progress", "completed", "canceled", "archived"]:
+        for status in ["pending", "in_progress", "completed", "canceled"]:
             result = build_task_filter(all=True, status=status)
             self.assertIsInstance(result, StatusFilter)
 

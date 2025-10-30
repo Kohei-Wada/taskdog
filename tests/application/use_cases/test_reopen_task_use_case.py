@@ -115,18 +115,6 @@ class TestReopenTaskUseCase(unittest.TestCase):
 
         self.assertIn("Cannot reopen task with status IN_PROGRESS", str(context.exception))
 
-    def test_execute_with_archived_task_raises_error(self):
-        """Test execute with archived task raises TaskValidationError."""
-        task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.ARCHIVED)
-
-        input_dto = ReopenTaskRequest(task_id=task.id)
-
-        with self.assertRaises(TaskValidationError) as context:
-            self.use_case.execute(input_dto)
-
-        self.assertIn("Cannot reopen task with status ARCHIVED", str(context.exception))
-        self.assertIn("Use 'restore' command", str(context.exception))
-
     def test_execute_with_dependencies_always_succeeds(self):
         """Test that reopen succeeds regardless of dependency states.
 

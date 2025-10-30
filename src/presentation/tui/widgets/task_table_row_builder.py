@@ -105,7 +105,7 @@ class TaskTableRowBuilder:
         name_text = self._format_name(task.name)
         name_style = (
             "strike"
-            if task.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.ARCHIVED]
+            if task.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED] or task.is_archived
             else None
         )
         return Text(name_text, style=name_style, justify="left")

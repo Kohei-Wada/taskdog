@@ -8,7 +8,6 @@ from application.dto.restore_task_request import RestoreTaskRequest
 from application.use_cases.restore_task import RestoreTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
-from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
@@ -21,8 +20,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
-        self.time_tracker = TimeTracker()
-        self.use_case = RestoreTaskUseCase(self.repository, self.time_tracker)
+        self.use_case = RestoreTaskUseCase(self.repository)
 
     def tearDown(self):
         """Clean up temporary file after each test"""
@@ -30,25 +28,31 @@ class TestRestoreTaskUseCase(unittest.TestCase):
             os.unlink(self.test_filename)
 
     def test_execute_restores_archived_task(self):
-        """Test execute changes ARCHIVED status to PENDING"""
-        # Create an archived task
-        task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.ARCHIVED)
+        """Test execute clears is_archived flag and preserves status"""
+        # Create an archived task (PENDING + is_archived)
+        task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.is_archived = True
+        self.repository.save(task)
 
         input_dto = RestoreTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
+        self.assertFalse(result.is_archived)
         self.assertEqual(result.status, TaskStatus.PENDING)
 
     def test_execute_persists_changes(self):
         """Test execute saves changes to repository"""
         # Create an archived task
-        task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.ARCHIVED)
+        task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.is_archived = True
+        self.repository.save(task)
 
         input_dto = RestoreTaskRequest(task_id=task.id)
         self.use_case.execute(input_dto)
 
         # Verify persistence
         retrieved = self.repository.get_by_id(task.id)
+        self.assertFalse(retrieved.is_archived)
         self.assertEqual(retrieved.status, TaskStatus.PENDING)
 
     def test_execute_with_invalid_task_raises_error(self):
@@ -68,29 +72,62 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto)
 
-        self.assertIn("Only ARCHIVED", str(context.exception))
+        self.assertIn("Only archived", str(context.exception))
 
     def test_execute_preserves_other_fields(self):
-        """Test execute only modifies status field"""
+        """Test execute only modifies is_archived flag"""
         # Create archived task with various fields
         task = self.repository.create(
             name="Test Task",
             priority=5,
-            status=TaskStatus.ARCHIVED,
+            status=TaskStatus.PENDING,
             estimated_duration=8.0,
         )
+        task.is_archived = True
+        self.repository.save(task)
+
         original_name = task.name
         original_priority = task.priority
         original_duration = task.estimated_duration
+        original_status = task.status
 
         input_dto = RestoreTaskRequest(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        # Verify only status changed
-        self.assertEqual(result.status, TaskStatus.PENDING)
+        # Verify only is_archived changed
+        self.assertFalse(result.is_archived)
+        self.assertEqual(result.status, original_status)
         self.assertEqual(result.name, original_name)
         self.assertEqual(result.priority, original_priority)
         self.assertEqual(result.estimated_duration, original_duration)
+
+    def test_execute_restores_archived_completed_task(self):
+        """Test execute restores archived COMPLETED task with original status"""
+        # Create an archived completed task
+        task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
+        task.is_archived = True
+        self.repository.save(task)
+
+        input_dto = RestoreTaskRequest(task_id=task.id)
+        result = self.use_case.execute(input_dto)
+
+        # Verify archived flag cleared and status preserved
+        self.assertFalse(result.is_archived)
+        self.assertEqual(result.status, TaskStatus.COMPLETED)
+
+    def test_execute_restores_archived_canceled_task(self):
+        """Test execute restores archived CANCELED task with original status"""
+        # Create an archived canceled task
+        task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.CANCELED)
+        task.is_archived = True
+        self.repository.save(task)
+
+        input_dto = RestoreTaskRequest(task_id=task.id)
+        result = self.use_case.execute(input_dto)
+
+        # Verify archived flag cleared and status preserved
+        self.assertFalse(result.is_archived)
+        self.assertEqual(result.status, TaskStatus.CANCELED)
 
 
 if __name__ == "__main__":

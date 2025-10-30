@@ -1,16 +1,18 @@
 """Use case for archiving a task."""
 
 from application.dto.archive_task_request import ArchiveTaskRequest
-from application.use_cases.status_change_use_case import StatusChangeUseCase
-from domain.entities.task import Task, TaskStatus
+from application.use_cases.base import UseCase
+from domain.entities.task import Task
+from domain.exceptions.task_exceptions import TaskNotFoundException
+from infrastructure.persistence.task_repository import TaskRepository
 
 
-class ArchiveTaskUseCase(StatusChangeUseCase[ArchiveTaskRequest]):
+class ArchiveTaskUseCase(UseCase[ArchiveTaskRequest, Task]):
     """Use case for archiving tasks.
 
     Archives a task for data retention while removing it from active views.
     This use case:
-    - Transitions task to ARCHIVED status from any current status
+    - Sets is_archived flag to True while preserving the task's status
     - Clears schedule data (daily_allocations)
     - Acts as a soft delete mechanism
 
@@ -18,27 +20,37 @@ class ArchiveTaskUseCase(StatusChangeUseCase[ArchiveTaskRequest]):
     Use RestoreTaskUseCase to restore an archived task.
     """
 
-    def _get_target_status(self) -> TaskStatus:
-        """Return ARCHIVED as the target status.
-
-        Returns:
-            TaskStatus.ARCHIVED
-        """
-        return TaskStatus.ARCHIVED
-
-    def _should_validate(self) -> bool:
-        """Skip validation - archiving is allowed from any status.
-
-        Returns:
-            False to skip standard validation
-        """
-        return False
-
-    def _before_status_change(self, task: Task) -> None:
-        """Clear schedule data before archiving.
+    def __init__(self, repository: TaskRepository) -> None:
+        """Initialize use case with repository.
 
         Args:
-            task: Task that will be archived
+            repository: Task repository for persistence
         """
+        self.repository = repository
+
+    def execute(self, input_dto: ArchiveTaskRequest) -> Task:
+        """Archive a task.
+
+        Args:
+            input_dto: Input containing task_id
+
+        Returns:
+            Archived task
+
+        Raises:
+            TaskNotFoundException: If task does not exist
+        """
+        # Get task
+        task = self.repository.get_by_id(input_dto.task_id)
+        if not task:
+            raise TaskNotFoundException(input_dto.task_id)
+
+        # Set archived flag
+        task.is_archived = True
+
         # Clear schedule data
         task.daily_allocations = {}
+
+        # Save and return
+        self.repository.save(task)
+        return task

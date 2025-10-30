@@ -15,11 +15,11 @@ def build_task_filter(all: bool, status: str | None) -> TaskFilter | None:
 
     Logic:
     - Default (no options): IncompleteFilter (PENDING, IN_PROGRESS only)
-    - --all only: No filter (all tasks including ARCHIVED)
+    - --all only: No filter (all tasks including archived)
     - --status X only: IncompleteFilter + StatusFilter(X) (incomplete tasks filtered by status X)
-    - --all --status X: StatusFilter(X) only (all tasks including ARCHIVED, filtered by status X)
+    - --all --status X: StatusFilter(X) only (all tasks including archived, filtered by status X)
 
-    The --all flag controls whether to include finished tasks (COMPLETED, CANCELED, ARCHIVED).
+    The --all flag controls whether to include finished tasks (COMPLETED, CANCELED).
     The --status flag further filters by specific status.
 
     Args:
@@ -39,8 +39,8 @@ def build_task_filter(all: bool, status: str | None) -> TaskFilter | None:
         >>> build_task_filter(all=False, status="pending")
         CompositeFilter([IncompleteFilter(), StatusFilter(PENDING)])  # Incomplete + PENDING
 
-        >>> build_task_filter(all=True, status="archived")
-        StatusFilter(ARCHIVED)  # All tasks filtered by ARCHIVED
+        >>> build_task_filter(all=True, status="completed")
+        StatusFilter(COMPLETED)  # All tasks filtered by COMPLETED
     """
     if status:
         # Status filter specified
@@ -48,7 +48,7 @@ def build_task_filter(all: bool, status: str | None) -> TaskFilter | None:
         status_filter = StatusFilter(status_enum)
 
         if all:
-            # --all --status X: Show all tasks (including ARCHIVED) filtered by status X
+            # --all --status X: Show all tasks (including archived) filtered by status X
             return status_filter
         else:
             # --status X only: Show incomplete tasks filtered by status X

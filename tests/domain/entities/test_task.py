@@ -14,7 +14,6 @@ class TestTaskIsSchedulable(unittest.TestCase):
         test_cases = [
             (TaskStatus.PENDING, 4.0, True, "PENDING with duration"),
             (TaskStatus.COMPLETED, 4.0, False, "COMPLETED task"),
-            (TaskStatus.ARCHIVED, 4.0, False, "ARCHIVED task"),
             (TaskStatus.IN_PROGRESS, 4.0, False, "IN_PROGRESS task"),
             (TaskStatus.CANCELED, 4.0, False, "CANCELED task"),
             (TaskStatus.PENDING, None, False, "PENDING without duration"),

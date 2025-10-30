@@ -8,7 +8,6 @@ from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.remove_task import RemoveTaskUseCase
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
-from shared.constants import StatusVerbs
 
 
 @click.command(
@@ -24,8 +23,8 @@ from shared.constants import StatusVerbs
 def rm_command(ctx, task_ids, hard):
     """Remove task(s).
 
-    By default, tasks are archived (status changed to ARCHIVED) and can be restored with 'taskdog restore'.
-    Tasks can be archived from any status (soft delete).
+    By default, tasks are archived (is_archived flag set to True) and can be restored with 'taskdog restore'.
+    Tasks can be archived from any status (soft delete) while preserving their original status.
     Use --hard flag to permanently delete tasks from the database.
     """
     ctx_obj: CliContext = ctx.obj
@@ -40,11 +39,12 @@ def rm_command(ctx, task_ids, hard):
             use_case.execute(input_dto)
             console_writer.success(f"Permanently deleted task with ID: {task_id}")
         else:
-            # Archive: change status to ARCHIVED
+            # Archive: set is_archived flag (preserves original status)
             input_dto = ArchiveTaskRequest(task_id=task_id)
-            use_case = ArchiveTaskUseCase(repository, ctx_obj.time_tracker)
+            use_case = ArchiveTaskUseCase(repository)
             task = use_case.execute(input_dto)
-            console_writer.task_success(StatusVerbs.ARCHIVED, task)
+            # Use task_success to avoid Rich-specific markup
+            console_writer.task_success("Archived (status preserved)", task)
             console_writer.info(f"Use 'taskdog restore {task_id}' to restore this task.")
 
     execute_batch_operation(task_ids, remove_single_task, console_writer, "removing task")

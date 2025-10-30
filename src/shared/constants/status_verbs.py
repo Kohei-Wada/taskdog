@@ -10,5 +10,3 @@ class StatusVerbs:
     CANCELED = "Canceled"
     REOPENED = "Reopened"
     RESTORED = "Restored"
-    ARCHIVED = "Archived"
-    DELETED = "Deleted"

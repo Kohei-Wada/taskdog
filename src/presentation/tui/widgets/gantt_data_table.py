@@ -201,7 +201,7 @@ class GanttDataTable(DataTable):
 
         # Task name with strikethrough for completed, canceled, and archived tasks
         task_name = task.name
-        if task.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.ARCHIVED]:
+        if task.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED] or task.is_archived:
             task_name = f"[strike]{task_name}[/strike]"
 
         # Estimated hours

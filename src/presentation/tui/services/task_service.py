@@ -186,7 +186,7 @@ class TaskService:
         Returns:
             The archived task
         """
-        use_case = ArchiveTaskUseCase(self.repository, self.time_tracker)
+        use_case = ArchiveTaskUseCase(self.repository)
         archive_input = ArchiveTaskRequest(task_id=task_id)
         return use_case.execute(archive_input)
 

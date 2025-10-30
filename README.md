@@ -138,7 +138,7 @@ taskdog tui
 **Visualization**
 - `table` - Table view with extensive options:
   - Sort: `-s/--sort` (id, priority, deadline, name, status, planned_start)
-  - Filter: `--status` (pending, in_progress, completed, canceled, archived), `-t/--tag`, `--start-date`, `--end-date`
+  - Filter: `--status` (pending, in_progress, completed, canceled), `-t/--tag`, `--start-date`, `--end-date`
   - Display: `-a/--all` (include archived), `-r/--reverse`, `-f/--fields` (custom field selection)
 - `gantt` - Gantt chart with workload analysis:
   - Same filter/sort options as table (default sort: deadline)
@@ -170,7 +170,8 @@ taskdog tui
 - **IN_PROGRESS**: Being worked on (blue)
 - **COMPLETED**: Finished (green)
 - **CANCELED**: Won't be done (red)
-- **ARCHIVED**: Soft-deleted (can be restored)
+
+**Note**: Archived tasks (soft-deleted) retain their original status and can be restored with `taskdog restore`.
 
 ## Tags
 

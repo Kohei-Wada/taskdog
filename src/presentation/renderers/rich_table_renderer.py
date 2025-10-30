@@ -209,7 +209,7 @@ class RichTableRenderer(RichRendererBase):
         field_extractors = {
             "id": lambda t: str(t.id),
             "name": lambda t: f"[strike]{t.name}[/strike]"
-            if t.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED, TaskStatus.ARCHIVED]
+            if t.status in [TaskStatus.COMPLETED, TaskStatus.CANCELED] or t.is_archived
             else t.name,
             "note": lambda t: "📝" if self.notes_repository.has_notes(t.id) else "",
             "priority": lambda t: str(t.priority),
