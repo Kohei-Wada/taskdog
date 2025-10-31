@@ -1,12 +1,13 @@
 """Tests for report command."""
 
 import unittest
-from datetime import date
+from datetime import date, datetime
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
 from domain.entities.task import Task, TaskStatus
+from domain.services.workload_calculator import WorkloadCalculator
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.cli.commands.report import (
     _generate_markdown_report,
@@ -19,6 +20,10 @@ from presentation.console.rich_console_writer import RichConsoleWriter
 
 class TestGroupTasksByDate(unittest.TestCase):
     """Tests for _group_tasks_by_date function."""
+
+    def setUp(self):
+        """Set up test dependencies."""
+        self.workload_calculator = WorkloadCalculator()
 
     def test_groups_tasks_by_allocation_date(self):
         """Test tasks are grouped by daily_allocations dates."""
@@ -37,7 +42,7 @@ class TestGroupTasksByDate(unittest.TestCase):
             daily_allocations={date(2025, 10, 30): 4.0},
         )
 
-        result = _group_tasks_by_date([task1, task2], None, None)
+        result = _group_tasks_by_date([task1, task2], None, None, self.workload_calculator)
 
         self.assertEqual(len(result), 2)
         self.assertEqual(len(result[date(2025, 10, 30)]), 2)  # task1 and task2
@@ -59,7 +64,12 @@ class TestGroupTasksByDate(unittest.TestCase):
             },
         )
 
-        result = _group_tasks_by_date([task], start_date=date(2025, 10, 30), end_date=None)
+        result = _group_tasks_by_date(
+            [task],
+            start_date=date(2025, 10, 30),
+            end_date=None,
+            workload_calculator=self.workload_calculator,
+        )
 
         self.assertEqual(len(result), 2)
         self.assertNotIn(date(2025, 10, 28), result)
@@ -80,7 +90,12 @@ class TestGroupTasksByDate(unittest.TestCase):
             },
         )
 
-        result = _group_tasks_by_date([task], start_date=None, end_date=date(2025, 10, 31))
+        result = _group_tasks_by_date(
+            [task],
+            start_date=None,
+            end_date=date(2025, 10, 31),
+            workload_calculator=self.workload_calculator,
+        )
 
         self.assertEqual(len(result), 2)
         self.assertIn(date(2025, 10, 30), result)
@@ -101,13 +116,13 @@ class TestGroupTasksByDate(unittest.TestCase):
             },
         )
 
-        result = _group_tasks_by_date([task], None, None)
+        result = _group_tasks_by_date([task], None, None, self.workload_calculator)
 
         dates = list(result.keys())
         self.assertEqual(dates, [date(2025, 10, 30), date(2025, 10, 31), date(2025, 11, 1)])
 
-    def test_ignores_tasks_without_allocations(self):
-        """Test tasks without daily_allocations are ignored."""
+    def test_ignores_tasks_without_schedule(self):
+        """Test tasks without schedule (no daily_allocations or planned dates) are ignored."""
         task_with_allocation = Task(
             id=1,
             name="Task 1",
@@ -115,17 +130,76 @@ class TestGroupTasksByDate(unittest.TestCase):
             status=TaskStatus.PENDING,
             daily_allocations={date(2025, 10, 30): 3.0},
         )
-        task_without_allocation = Task(
+        task_without_schedule = Task(
             id=2,
             name="Task 2",
             priority=5,
             status=TaskStatus.PENDING,
         )
 
-        result = _group_tasks_by_date([task_with_allocation, task_without_allocation], None, None)
+        result = _group_tasks_by_date(
+            [task_with_allocation, task_without_schedule], None, None, self.workload_calculator
+        )
 
         self.assertEqual(len(result), 1)
         self.assertEqual(len(result[date(2025, 10, 30)]), 1)
+
+    def test_includes_fixed_tasks_without_daily_allocations(self):
+        """Test fixed tasks with planned dates but no daily_allocations are included."""
+        # Fixed task with planned dates (manually scheduled, not optimized)
+        fixed_task = Task(
+            id=1,
+            name="Fixed Task",
+            priority=5,
+            status=TaskStatus.PENDING,
+            is_fixed=True,
+            planned_start=datetime(2025, 10, 30, 9, 0),
+            planned_end=datetime(2025, 10, 31, 18, 0),
+            estimated_duration=8.0,  # 8 hours total
+        )
+
+        # Task with daily_allocations (optimized)
+        optimized_task = Task(
+            id=2,
+            name="Optimized Task",
+            priority=5,
+            status=TaskStatus.PENDING,
+            daily_allocations={date(2025, 10, 30): 3.0},
+        )
+
+        result = _group_tasks_by_date(
+            [fixed_task, optimized_task], None, None, self.workload_calculator
+        )
+
+        # Both tasks should appear in the result
+        # Fixed task should be distributed across 2025/10/30 and 2025/10/31
+        self.assertIn(date(2025, 10, 30), result)
+
+        # Check that both tasks are present on 2025/10/30
+        tasks_on_oct_30 = [task for task, _ in result[date(2025, 10, 30)]]
+        task_names = [task.name for task in tasks_on_oct_30]
+        self.assertIn("Fixed Task", task_names)
+        self.assertIn("Optimized Task", task_names)
+
+    def test_includes_manually_scheduled_tasks(self):
+        """Test manually scheduled tasks (not fixed, with planned dates, no daily_allocations)."""
+        manual_task = Task(
+            id=1,
+            name="Manual Task",
+            priority=5,
+            status=TaskStatus.PENDING,
+            is_fixed=False,
+            planned_start=datetime(2025, 10, 30, 9, 0),
+            planned_end=datetime(2025, 10, 30, 18, 0),
+            estimated_duration=4.0,
+        )
+
+        result = _group_tasks_by_date([manual_task], None, None, self.workload_calculator)
+
+        # Manual task should appear in the result
+        self.assertIn(date(2025, 10, 30), result)
+        self.assertEqual(len(result[date(2025, 10, 30)]), 1)
+        self.assertEqual(result[date(2025, 10, 30)][0][0].name, "Manual Task")
 
 
 class TestGenerateMarkdownReport(unittest.TestCase):
@@ -246,7 +320,7 @@ class TestReportCommand(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.console_writer.warning.assert_called_once()
         self.assertIn(
-            "No tasks found in the specified date range",
+            "No scheduled tasks found",
             self.console_writer.warning.call_args[0][0],
         )
 

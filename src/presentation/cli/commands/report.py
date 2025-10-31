@@ -7,6 +7,7 @@ import click
 
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
+from domain.services.workload_calculator import WorkloadCalculator
 from presentation.cli.commands.common_options import (
     date_range_options,
     filter_options,
@@ -22,7 +23,7 @@ from presentation.cli.error_handler import handle_command_errors
     help="""Generate markdown workload report grouped by date.
 
 This command generates a markdown table showing tasks grouped by date with their allocated hours.
-Only tasks that have been scheduled by the optimizer (with daily_allocations) are included.
+Includes all scheduled work: optimized tasks, manually scheduled tasks, and fixed tasks.
 
 The output is formatted for easy copying to Notion or other documentation tools.
 
@@ -51,12 +52,13 @@ USAGE:
 def report_command(ctx, start_date, end_date, all, status, sort, reverse):
     """Generate markdown workload report grouped by date.
 
-    Shows only tasks with daily_allocations (scheduled by optimizer).
+    Shows all scheduled work including optimized tasks, manually scheduled tasks, and fixed tasks.
     Groups tasks by date and displays allocated hours for each day.
     """
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
     task_query_service = TaskQueryService(repository)
+    workload_calculator = WorkloadCalculator()
 
     # Apply filter based on options (priority: --status > --all > default)
     filter_obj = build_task_filter(all=all, status=status)
@@ -66,27 +68,17 @@ def report_command(ctx, start_date, end_date, all, status, sort, reverse):
         filter_obj=filter_obj, sort_by=sort, reverse=reverse
     )
 
-    # Filter to only tasks with daily_allocations
-    scheduled_tasks = [task for task in tasks if task.daily_allocations]
-
-    if not scheduled_tasks:
-        console_writer = ctx_obj.console_writer
-        console_writer.warning(
-            "No scheduled tasks found. Run 'taskdog optimize' to schedule tasks."
-        )
-        return
-
     # Convert datetime to date objects for filtering
     start_date_obj = start_date.date() if start_date else None
     end_date_obj = end_date.date() if end_date else None
 
-    # Group tasks by date (using daily_allocations)
-    grouped_tasks = _group_tasks_by_date(scheduled_tasks, start_date_obj, end_date_obj)
+    # Group tasks by date (using WorkloadCalculator)
+    grouped_tasks = _group_tasks_by_date(tasks, start_date_obj, end_date_obj, workload_calculator)
 
     if not grouped_tasks:
         console_writer = ctx_obj.console_writer
         console_writer.warning(
-            "No tasks found in the specified date range. Try adjusting --start-date or --end-date."
+            "No scheduled tasks found. Try adjusting --start-date or --end-date, or run 'taskdog optimize' to schedule tasks."
         )
         return
 
@@ -102,13 +94,15 @@ def _group_tasks_by_date(
     tasks: list[Task],
     start_date: date | None,
     end_date: date | None,
+    workload_calculator: WorkloadCalculator,
 ) -> dict[date, list[tuple[Task, float]]]:
-    """Group tasks by date using daily_allocations.
+    """Group tasks by date using WorkloadCalculator.
 
     Args:
-        tasks: List of tasks with daily_allocations
+        tasks: List of tasks to group
         start_date: Optional start date for filtering
         end_date: Optional end date for filtering
+        workload_calculator: WorkloadCalculator instance for calculating daily hours
 
     Returns:
         Dictionary mapping date to list of (task, allocated_hours) tuples, sorted by date
@@ -116,10 +110,15 @@ def _group_tasks_by_date(
     grouped: dict[date, list[tuple[Task, float]]] = defaultdict(list)
 
     for task in tasks:
-        if not task.daily_allocations:
+        # Use WorkloadCalculator to get daily hours for all tasks
+        # This handles optimized tasks (with daily_allocations),
+        # manually scheduled tasks (with planned dates), and fixed tasks
+        daily_hours = workload_calculator.get_task_daily_hours(task)
+
+        if not daily_hours:
             continue
 
-        for task_date, allocated_hours in task.daily_allocations.items():
+        for task_date, allocated_hours in daily_hours.items():
             # Apply date range filter
             if start_date and task_date < start_date:
                 continue
