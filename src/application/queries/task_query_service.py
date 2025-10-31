@@ -5,9 +5,9 @@ from datetime import date
 from application.dto.gantt_result import GanttDateRange, GanttResult
 from application.queries.base import QueryService
 from application.queries.filters.task_filter import TaskFilter
+from application.queries.workload_calculator import WorkloadCalculator
 from application.sorters.task_sorter import TaskSorter
 from domain.entities.task import Task
-from domain.services.workload_calculator import WorkloadCalculator
 
 
 class TaskQueryService(QueryService):

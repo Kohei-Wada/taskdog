@@ -1,10 +1,10 @@
-"""Tests for WorkloadCalculator domain service."""
+"""Tests for WorkloadCalculator query service."""
 
 import unittest
 from datetime import date, datetime, timedelta
 
+from application.queries.workload_calculator import WorkloadCalculator
 from domain.entities.task import Task, TaskStatus
-from domain.services.workload_calculator import WorkloadCalculator
 
 
 class WorkloadCalculatorTest(unittest.TestCase):

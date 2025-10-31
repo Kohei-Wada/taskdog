@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
+from application.queries.workload_calculator import WorkloadCalculator
 from domain.entities.task import Task, TaskStatus
-from domain.services.workload_calculator import WorkloadCalculator
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.cli.commands.report import (
     _generate_markdown_report,

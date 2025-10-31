@@ -53,7 +53,7 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
 
 **Domain** (`src/domain/`): Core business logic, no external dependencies
 - `entities/`: Task, TaskStatus
-- `services/`: TimeTracker (records timestamps), WorkloadCalculator (computes daily hours)
+- `services/`: TimeTracker (records timestamps)
 - `exceptions/`: TaskNotFoundException, TaskValidationError, TaskAlreadyFinishedError, TaskNotStartedError
 
 **Application** (`src/application/`): Business logic orchestration
@@ -66,7 +66,7 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
 - `services/`: WorkloadAllocator, OptimizationSummaryBuilder, TaskStatusService
   - `optimization/`: 9 scheduling strategies (greedy, balanced, backward, priority_first, earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo) + StrategyFactory
 - `sorters/`: TaskSorter (general queries), OptimizationTaskSorter (optimization-specific)
-- `queries/`: TaskQueryService for read-only operations (CQRS-like)
+- `queries/`: TaskQueryService, WorkloadCalculator (computes daily hours for read-only operations, CQRS-like)
 - `dto/`: Input/Output DTOs (CreateTaskInput, OptimizationResult, SchedulingFailure, etc.)
 
 **Infrastructure** (`src/infrastructure/`): External concerns

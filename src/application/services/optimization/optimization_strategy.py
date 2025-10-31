@@ -128,7 +128,7 @@ class OptimizationStrategy(ABC):
                 task_daily_hours = task.daily_allocations
             else:
                 # Calculate daily hours using WorkloadCalculator
-                from domain.services.workload_calculator import WorkloadCalculator
+                from application.queries.workload_calculator import WorkloadCalculator
 
                 calculator = WorkloadCalculator()
                 task_daily_hours = calculator.get_task_daily_hours(task)

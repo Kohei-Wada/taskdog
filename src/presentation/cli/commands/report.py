@@ -6,8 +6,8 @@ from datetime import date
 import click
 
 from application.queries.task_query_service import TaskQueryService
+from application.queries.workload_calculator import WorkloadCalculator
 from domain.entities.task import Task
-from domain.services.workload_calculator import WorkloadCalculator
 from presentation.cli.commands.common_options import (
     date_range_options,
     filter_options,
