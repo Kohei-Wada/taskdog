@@ -2,8 +2,6 @@ from typing import ClassVar
 
 from rich.table import Table
 
-from domain.entities.task import Task
-from domain.repositories.notes_repository import NotesRepository
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.table_styles import (
     COLUMN_DATETIME_NO_WRAP,
@@ -21,6 +19,7 @@ from presentation.constants.table_styles import (
     format_table_title,
 )
 from presentation.renderers.rich_renderer_base import RichRendererBase
+from presentation.view_models.task_view_model import TaskRowViewModel
 
 
 class RichTableRenderer(RichRendererBase):
@@ -152,21 +151,19 @@ class RichTableRenderer(RichRendererBase):
         "tags",
     ]
 
-    def __init__(self, console_writer: ConsoleWriter, notes_repository: NotesRepository):
+    def __init__(self, console_writer: ConsoleWriter):
         """Initialize the renderer.
 
         Args:
             console_writer: Console writer for output
-            notes_repository: Notes repository for checking note existence
         """
         self.console_writer = console_writer
-        self.notes_repository = notes_repository
 
-    def render(self, tasks: list[Task], fields: list[str] | None = None) -> None:
+    def render(self, tasks: list[TaskRowViewModel], fields: list[str] | None = None) -> None:
         """Render and print tasks as a table with Rich.
 
         Args:
-            tasks: List of all tasks
+            tasks: List of TaskRowViewModel for display
             fields: List of field names to display (None = all default fields)
 
         Raises:
@@ -215,11 +212,11 @@ class RichTableRenderer(RichRendererBase):
         # Print table using console writer
         self.console_writer.print(table)
 
-    def _get_field_value(self, task: Task, field_name: str) -> str:
+    def _get_field_value(self, task: TaskRowViewModel, field_name: str) -> str:
         """Get the formatted value for a specific field.
 
         Args:
-            task: Task to extract value from
+            task: TaskRowViewModel to extract value from
             field_name: Name of the field
 
         Returns:
@@ -229,7 +226,7 @@ class RichTableRenderer(RichRendererBase):
         field_extractors = {
             "id": lambda t: str(t.id),
             "name": lambda t: f"[strike]{t.name}[/strike]" if t.is_finished else t.name,
-            "note": lambda t: "📝" if self.notes_repository.has_notes(t.id) else "",
+            "note": lambda t: "📝" if t.has_notes else "",
             "priority": lambda t: str(t.priority),
             "status": lambda t: self._format_status(t),
             "is_fixed": lambda t: "📌" if t.is_fixed else "",
@@ -251,11 +248,11 @@ class RichTableRenderer(RichRendererBase):
         extractor = field_extractors.get(field_name)
         return extractor(task) if extractor else "-"
 
-    def _format_tags(self, task: Task) -> str:
+    def _format_tags(self, task: TaskRowViewModel) -> str:
         """Format task tags for display.
 
         Args:
-            task: Task to extract tags from
+            task: TaskRowViewModel to extract tags from
 
         Returns:
             Formatted tags string (e.g., "work, urgent" or "-")
@@ -264,11 +261,11 @@ class RichTableRenderer(RichRendererBase):
             return "-"
         return ", ".join(task.tags)
 
-    def _format_status(self, task: Task) -> str:
+    def _format_status(self, task: TaskRowViewModel) -> str:
         """Format status with color styling.
 
         Args:
-            task: Task to extract status from
+            task: TaskRowViewModel to extract status from
 
         Returns:
             Formatted status string with Rich markup
@@ -294,11 +291,11 @@ class RichTableRenderer(RichRendererBase):
             return dt.strftime("%Y-%m-%d %H:%M")
         return str(dt)
 
-    def _format_dependencies(self, task: Task) -> str:
+    def _format_dependencies(self, task: TaskRowViewModel) -> str:
         """Format task dependencies for display.
 
         Args:
-            task: Task to extract dependencies from
+            task: TaskRowViewModel to extract dependencies from
 
         Returns:
             Formatted dependencies string (e.g., "1,2,3" or "-")
@@ -307,11 +304,11 @@ class RichTableRenderer(RichRendererBase):
             return "-"
         return ",".join(str(dep_id) for dep_id in task.depends_on)
 
-    def _format_duration_info(self, task: Task) -> str:
+    def _format_duration_info(self, task: TaskRowViewModel) -> str:
         """Format duration information for a task.
 
         Args:
-            task: The task to format
+            task: TaskRowViewModel to format
 
         Returns:
             Formatted duration string
@@ -329,11 +326,11 @@ class RichTableRenderer(RichRendererBase):
 
         return " / ".join(duration_parts)
 
-    def _format_estimated_duration(self, task: Task) -> str:
+    def _format_estimated_duration(self, task: TaskRowViewModel) -> str:
         """Format estimated duration for display.
 
         Args:
-            task: Task to format estimated duration for
+            task: TaskRowViewModel to format estimated duration for
 
         Returns:
             Formatted estimated duration string (e.g., "5h" or "-")
@@ -342,11 +339,11 @@ class RichTableRenderer(RichRendererBase):
             return "-"
         return f"{task.estimated_duration}h"
 
-    def _format_actual_duration(self, task: Task) -> str:
+    def _format_actual_duration(self, task: TaskRowViewModel) -> str:
         """Format actual duration for display.
 
         Args:
-            task: Task to format actual duration for
+            task: TaskRowViewModel to format actual duration for
 
         Returns:
             Formatted actual duration string (e.g., "3h" or "-")
@@ -355,11 +352,11 @@ class RichTableRenderer(RichRendererBase):
             return "-"
         return f"{task.actual_duration_hours}h"
 
-    def _format_elapsed(self, task: Task) -> str:
+    def _format_elapsed(self, task: TaskRowViewModel) -> str:
         """Format elapsed time for IN_PROGRESS tasks.
 
         Args:
-            task: Task to format elapsed time for
+            task: TaskRowViewModel to format elapsed time for
 
         Returns:
             Formatted elapsed time string (e.g., "15:04:38" or "3d 15:04:38")

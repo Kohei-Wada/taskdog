@@ -33,6 +33,7 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_STATUS_WIDTH,
     TASK_TABLE_TAGS_WIDTH,
 )
+from presentation.mappers.task_mapper import TaskMapper
 from presentation.tui.events import TaskSelected
 from presentation.tui.widgets.task_search_filter import TaskSearchFilter
 from presentation.tui.widgets.task_table_row_builder import TaskTableRowBuilder
@@ -76,7 +77,8 @@ class TaskTable(DataTable):
 
         # Components
         self._search_filter = TaskSearchFilter()
-        self._row_builder = TaskTableRowBuilder(notes_repository)
+        self._task_mapper = TaskMapper(notes_repository)
+        self._row_builder = TaskTableRowBuilder()
 
     def setup_columns(self):
         """Set up table columns."""
@@ -117,12 +119,16 @@ class TaskTable(DataTable):
         self.clear()
         self._task_map.clear()
 
-        for idx, task in enumerate(tasks):
-            # Build row data using row builder
-            row_data = self._row_builder.build_row(task)
+        # Convert tasks to ViewModels
+        task_view_models = self._task_mapper.to_row_view_models(tasks)
+
+        for idx, (task, task_vm) in enumerate(zip(tasks, task_view_models, strict=False)):
+            # Build row data using row builder with ViewModel
+            row_data = self._row_builder.build_row(task_vm)
 
             # Add row
             self.add_row(*row_data)
+            # Store original Task for get_selected_task() compatibility
             self._task_map[idx] = task
 
     def get_selected_task(self) -> Task | None:

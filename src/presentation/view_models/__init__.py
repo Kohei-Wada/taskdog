@@ -12,6 +12,7 @@ from presentation.view_models.statistics_view_model import (
     TaskSummaryViewModel,
     TimeStatisticsViewModel,
 )
+from presentation.view_models.task_view_model import TaskRowViewModel
 
 __all__ = [
     "BaseViewModel",
@@ -19,6 +20,7 @@ __all__ = [
     "GanttViewModel",
     "StatisticsViewModel",
     "TaskGanttRowViewModel",
+    "TaskRowViewModel",
     "TaskSummaryViewModel",
     "TimeStatisticsViewModel",
 ]

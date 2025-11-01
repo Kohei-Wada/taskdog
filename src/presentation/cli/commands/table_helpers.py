@@ -7,6 +7,7 @@ from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
 from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
+from presentation.mappers.task_mapper import TaskMapper
 from presentation.renderers.rich_table_renderer import RichTableRenderer
 
 
@@ -41,8 +42,14 @@ def render_table(ctx_obj: CliContext, tasks: list[Task], fields: list[str] | Non
     """
     console_writer = ctx_obj.console_writer
     notes_repository = ctx_obj.notes_repository
-    renderer = RichTableRenderer(console_writer, notes_repository)
-    renderer.render(tasks, fields=fields)
+
+    # Convert tasks to ViewModels
+    task_mapper = TaskMapper(notes_repository)
+    task_view_models = task_mapper.to_row_view_models(tasks)
+
+    # Render using ViewModels
+    renderer = RichTableRenderer(console_writer)
+    renderer.render(task_view_models, fields=fields)
 
 
 def execute_time_filtered_command(
