@@ -1,5 +1,6 @@
 """Start task command for TUI."""
 
+from application.dto.task_operation_output import TaskOperationOutput
 from domain.entities.task import Task
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.commands.status_change_base import StatusChangeCommandBase
@@ -13,7 +14,7 @@ class StartTaskCommand(StatusChangeCommandBase):
         """Return action name for error handling."""
         return "starting task"
 
-    def execute_status_change(self, task_id: int) -> Task:
+    def execute_status_change(self, task_id: int) -> TaskOperationOutput | Task:
         """Start the task via TaskController."""
         return self.controller.start_task(task_id)
 

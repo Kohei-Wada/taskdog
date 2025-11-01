@@ -5,6 +5,7 @@ from typing import Any
 
 from rich.console import Console
 
+from application.dto.task_operation_output import TaskOperationOutput
 from domain.entities.task import Task
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.colors import STYLE_ERROR, STYLE_INFO, STYLE_SUCCESS, STYLE_WARNING
@@ -26,16 +27,16 @@ class RichConsoleWriter(ConsoleWriter):
         """
         self._console = console
 
-    def task_success(self, action: str, task: Task) -> None:
+    def task_success(self, action: str, output: TaskOperationOutput | Task) -> None:
         """Print success message with task info.
 
         Args:
             action: Action verb (e.g., "Added", "Started", "Completed", "Updated")
-            task: Task object
+            output: Task operation output DTO or Task object (for backward compatibility)
         """
         self._console.print(
             f"[{STYLE_SUCCESS}]{ICON_SUCCESS}[/{STYLE_SUCCESS}] {action} task: "
-            f"[bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan])"
+            f"[bold]{output.name}[/bold] (ID: [cyan]{output.id}[/cyan])"
         )
 
     def error(self, action: str, error: Exception) -> None:
@@ -128,43 +129,45 @@ class RichConsoleWriter(ConsoleWriter):
         """
         return self._console.width
 
-    def task_start_time(self, task: Task, was_already_in_progress: bool) -> None:
+    def task_start_time(
+        self, output: TaskOperationOutput | Task, was_already_in_progress: bool
+    ) -> None:
         """Print task start time information.
 
         Args:
-            task: Task that was started
+            output: Task operation output DTO or Task object (for backward compatibility)
             was_already_in_progress: Whether the task was already in progress
         """
         if was_already_in_progress:
             self._console.print(
                 f"  [yellow]⚠[/yellow] Task was already IN_PROGRESS (started at [blue]{
-                    task.actual_start
+                    output.actual_start
                 }[/blue])"
             )
-        elif task.actual_start:
-            self._console.print(f"  Started at: [blue]{task.actual_start}[/blue]")
+        elif output.actual_start:
+            self._console.print(f"  Started at: [blue]{output.actual_start}[/blue]")
 
-    def task_completion_details(self, task: Task) -> None:
+    def task_completion_details(self, output: TaskOperationOutput | Task) -> None:
         """Print task completion details (time, duration, comparison with estimate).
 
         This consolidates print_task_completion_time, print_task_duration,
         and print_duration_comparison into a single method.
 
         Args:
-            task: Completed task with actual_end and duration information
+            output: Completed task output DTO or Task object (for backward compatibility)
         """
         # Show completion time if available
-        if task.actual_end:
-            self._console.print(f"  Completed at: [blue]{task.actual_end}[/blue]")
+        if output.actual_end:
+            self._console.print(f"  Completed at: [blue]{output.actual_end}[/blue]")
 
         # Show duration if available
-        if task.actual_duration_hours:
-            self._console.print(f"  Duration: [cyan]{task.actual_duration_hours}h[/cyan]")
+        if output.actual_duration_hours:
+            self._console.print(f"  Duration: [cyan]{output.actual_duration_hours}h[/cyan]")
 
         # Show comparison with estimate if both available
-        if task.actual_duration_hours and task.estimated_duration:
-            actual_hours = task.actual_duration_hours
-            estimated_hours = task.estimated_duration
+        if output.actual_duration_hours and output.estimated_duration:
+            actual_hours = output.actual_duration_hours
+            estimated_hours = output.estimated_duration
             diff = actual_hours - estimated_hours
             if diff > 0:
                 self._console.print(

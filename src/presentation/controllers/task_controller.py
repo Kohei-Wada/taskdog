@@ -25,6 +25,7 @@ from application.dto.set_task_tags_input import SetTaskTagsInput
 from application.dto.start_task_input import StartTaskInput
 from application.dto.statistics_output import CalculateStatisticsInput, StatisticsOutput
 from application.dto.task_detail_output import GetTaskDetailOutput
+from application.dto.task_operation_output import TaskOperationOutput
 from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.add_dependency import AddDependencyUseCase
 from application.use_cases.archive_task import ArchiveTaskUseCase
@@ -84,7 +85,7 @@ class TaskController:
         self.config = config
         self.notes_repository = notes_repository
 
-    def start_task(self, task_id: int) -> Task:
+    def start_task(self, task_id: int) -> TaskOperationOutput:
         """Start a task.
 
         Changes task status to IN_PROGRESS and records actual start time.
@@ -93,7 +94,7 @@ class TaskController:
             task_id: ID of the task to start
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -101,9 +102,10 @@ class TaskController:
         """
         use_case = StartTaskUseCase(self.repository, self.time_tracker)
         request = StartTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
-    def complete_task(self, task_id: int) -> Task:
+    def complete_task(self, task_id: int) -> TaskOperationOutput:
         """Complete a task.
 
         Changes task status to COMPLETED and records actual end time.
@@ -112,7 +114,7 @@ class TaskController:
             task_id: ID of the task to complete
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -120,7 +122,8 @@ class TaskController:
         """
         use_case = CompleteTaskUseCase(self.repository, self.time_tracker)
         request = CompleteTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
     def pause_task(self, task_id: int) -> Task:
         """Pause a task.
@@ -170,7 +173,7 @@ class TaskController:
         planned_end: datetime | None = None,
         is_fixed: bool = False,
         tags: list[str] | None = None,
-    ) -> Task:
+    ) -> TaskOperationOutput:
         """Create a new task.
 
         Args:
@@ -184,7 +187,7 @@ class TaskController:
             tags: List of tags for categorization (optional)
 
         Returns:
-            The created task
+            TaskOperationOutput containing the created task information
 
         Raises:
             TaskValidationError: If task validation fails
@@ -200,7 +203,8 @@ class TaskController:
             is_fixed=is_fixed,
             tags=tags,
         )
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
     def reopen_task(self, task_id: int) -> Task:
         """Reopen a task.

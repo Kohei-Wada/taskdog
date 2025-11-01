@@ -12,7 +12,6 @@ from application.queries.filters.incomplete_or_active_filter import (
     IncompleteOrActiveFilter,
 )
 from application.queries.filters.non_archived_filter import NonArchivedFilter
-from domain.entities.task import Task
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
@@ -209,7 +208,7 @@ class TaskdogTUI(App):
         # Start 1-second auto-refresh timer for elapsed time updates
         self.set_interval(1.0, self._refresh_elapsed_time)
 
-    def _load_tasks(self, keep_scroll_position: bool = False) -> list[Task]:
+    def _load_tasks(self, keep_scroll_position: bool = False):
         """Load tasks from repository and update both gantt and table.
 
         Args:

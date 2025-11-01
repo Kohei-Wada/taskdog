@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
+from application.dto.task_operation_output import TaskOperationOutput
 from domain.entities.task import Task
 
 
@@ -15,12 +16,12 @@ class ConsoleWriter(ABC):
     """
 
     @abstractmethod
-    def task_success(self, action: str, task: Task) -> None:
+    def task_success(self, action: str, output: TaskOperationOutput | Task) -> None:
         """Print success message with task info.
 
         Args:
             action: Action verb (e.g., "Added", "Started", "Completed", "Updated")
-            task: Task object
+            output: Task operation output DTO or Task object (for backward compatibility)
         """
         pass
 
@@ -116,24 +117,26 @@ class ConsoleWriter(ABC):
         pass
 
     @abstractmethod
-    def task_start_time(self, task: Task, was_already_in_progress: bool) -> None:
+    def task_start_time(
+        self, output: TaskOperationOutput | Task, was_already_in_progress: bool
+    ) -> None:
         """Print task start time information.
 
         Args:
-            task: Task that was started
+            output: Task operation output DTO or Task object (for backward compatibility)
             was_already_in_progress: Whether the task was already in progress
         """
         pass
 
     @abstractmethod
-    def task_completion_details(self, task: Task) -> None:
+    def task_completion_details(self, output: TaskOperationOutput | Task) -> None:
         """Print task completion details (time, duration, comparison with estimate).
 
         This consolidates print_task_completion_time, print_task_duration,
         and print_duration_comparison into a single method.
 
         Args:
-            task: Completed task with actual_end and duration information
+            output: Completed task output DTO or Task object (for backward compatibility)
         """
         pass
 
