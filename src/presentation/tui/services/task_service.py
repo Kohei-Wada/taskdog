@@ -7,6 +7,7 @@ from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.queries.filters.task_filter import TaskFilter
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.entities.task import Task
+from presentation.controllers.query_controller import QueryController
 from presentation.controllers.task_controller import TaskController
 from presentation.mappers.gantt_mapper import GanttMapper
 from presentation.tui.context import TUIContext
@@ -57,10 +58,10 @@ class TaskService:
         """
         self.repository = context.repository
         self.time_tracker = context.time_tracker
-        self.query_service = context.query_service
         self.config = context.config
-        # Initialize controller for delegating simple operations
+        # Initialize controllers for delegating operations
         self.controller = TaskController(context.repository, context.time_tracker, context.config)
+        self.query_controller = QueryController(context.repository)
 
     # ============================================================================
     # Command Operations (Write)
@@ -121,7 +122,7 @@ class TaskService:
             GanttViewModel containing presentation-ready Gantt data
         """
         filter_obj = _TaskIdFilter(set(task_ids))
-        gantt_result = self.query_service.get_gantt_data(
+        gantt_result = self.query_controller.get_gantt_data(
             filter_obj=filter_obj,
             sort_by=sort_by,
             reverse=False,
