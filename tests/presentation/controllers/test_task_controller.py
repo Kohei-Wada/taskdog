@@ -444,8 +444,6 @@ class TestTaskController(unittest.TestCase):
 
     def test_log_hours_adds_to_daily_hours(self):
         """Test log_hours adds hours to actual_daily_hours dict."""
-        from datetime import date
-
         # Create a task
         task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
         task.id = self.repository.generate_next_id()
@@ -456,9 +454,8 @@ class TestTaskController(unittest.TestCase):
         hours = 3.5
         result = self.controller.log_hours(task.id, hours, date_str)
 
-        # Verify hours logged
-        expected_date = date(2025, 11, 1)
-        self.assertEqual(result.actual_daily_hours[expected_date], hours)
+        # Verify hours logged (DTO uses string keys)
+        self.assertEqual(result.actual_daily_hours[date_str], hours)
         self.assertEqual(result.id, task.id)
 
     def test_log_hours_persists_changes(self):

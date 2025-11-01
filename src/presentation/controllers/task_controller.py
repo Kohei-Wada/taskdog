@@ -283,7 +283,7 @@ class TaskController:
         task = use_case.execute(request)
         return TaskOperationOutput.from_task(task)
 
-    def add_dependency(self, task_id: int, depends_on_id: int) -> Task:
+    def add_dependency(self, task_id: int, depends_on_id: int) -> TaskOperationOutput:
         """Add a dependency to a task.
 
         Args:
@@ -291,7 +291,7 @@ class TaskController:
             depends_on_id: ID of the dependency task to add
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task or dependency not found
@@ -299,9 +299,10 @@ class TaskController:
         """
         use_case = AddDependencyUseCase(self.repository)
         request = AddDependencyInput(task_id=task_id, depends_on_id=depends_on_id)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
-    def remove_dependency(self, task_id: int, depends_on_id: int) -> Task:
+    def remove_dependency(self, task_id: int, depends_on_id: int) -> TaskOperationOutput:
         """Remove a dependency from a task.
 
         Args:
@@ -309,7 +310,7 @@ class TaskController:
             depends_on_id: ID of the dependency task to remove
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -317,9 +318,10 @@ class TaskController:
         """
         use_case = RemoveDependencyUseCase(self.repository)
         request = RemoveDependencyInput(task_id=task_id, depends_on_id=depends_on_id)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
-    def set_task_tags(self, task_id: int, tags: list[str]) -> Task:
+    def set_task_tags(self, task_id: int, tags: list[str]) -> TaskOperationOutput:
         """Set task tags (completely replaces existing tags).
 
         Args:
@@ -327,7 +329,7 @@ class TaskController:
             tags: List of tags to set
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -335,9 +337,10 @@ class TaskController:
         """
         use_case = SetTaskTagsUseCase(self.repository)
         request = SetTaskTagsInput(task_id=task_id, tags=tags)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
-    def log_hours(self, task_id: int, hours: float, date: str) -> Task:
+    def log_hours(self, task_id: int, hours: float, date: str) -> TaskOperationOutput:
         """Log actual hours worked on a task for a specific date.
 
         Args:
@@ -346,7 +349,7 @@ class TaskController:
             date: Date in YYYY-MM-DD format
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -354,7 +357,8 @@ class TaskController:
         """
         use_case = LogHoursUseCase(self.repository)
         request = LogHoursInput(task_id=task_id, hours=hours, date=date)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
     def update_task(
         self,
