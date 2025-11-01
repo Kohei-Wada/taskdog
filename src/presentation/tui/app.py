@@ -18,6 +18,7 @@ from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 from presentation.controllers.query_controller import QueryController
 from presentation.controllers.task_controller import TaskController
+from presentation.presenters.gantt_presenter import GanttPresenter
 from presentation.presenters.table_presenter import TablePresenter
 from presentation.tui.commands.factory import CommandFactory
 from presentation.tui.context import TUIContext
@@ -141,8 +142,9 @@ class TaskdogTUI(App):
         # Initialize TaskService with context
         self.task_service = TaskService(self.context, repository)
 
-        # Initialize TablePresenter for table view models
+        # Initialize presenters for view models
         self.table_presenter = TablePresenter(notes_repository)
+        self.gantt_presenter = GanttPresenter(notes_repository)
 
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context, self.task_service)
@@ -249,20 +251,26 @@ class TaskdogTUI(App):
                 start_date = get_previous_monday()
                 end_date = start_date + timedelta(days=display_days - 1)
 
-                # Extract task IDs
-                task_ids = [t.id for t in tasks]
-
-                # Get pre-computed gantt view model from TaskService with appropriate date range
-                gantt_view_model = self.task_service.get_gantt_data(
-                    task_ids=task_ids,
+                # Get gantt DTO using same filter as list_tasks (QueryController)
+                gantt_output = self.query_controller.get_gantt_data(
+                    filter_obj=task_filter,
                     sort_by=self._gantt_sort_by,
+                    reverse=False,
                     start_date=start_date,
                     end_date=end_date,
                 )
+
+                # Convert DTO to ViewModel using GanttPresenter directly
+                gantt_view_model = self.gantt_presenter.present(gantt_output)
+
+                # Extract task IDs for widget (still needed for widget state)
+                task_ids = [t.id for t in tasks]
+
                 self.main_screen.gantt_widget.update_gantt(
                     task_ids=task_ids,
                     gantt_view_model=gantt_view_model,
                     sort_by=self._gantt_sort_by,
+                    task_filter=task_filter,
                 )
 
             if self.main_screen.task_table:

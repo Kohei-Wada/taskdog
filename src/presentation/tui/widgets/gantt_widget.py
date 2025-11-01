@@ -12,6 +12,7 @@ from textual.containers import Center, VerticalScroll
 from textual.events import Resize
 from textual.widgets import Static
 
+from application.queries.filters.task_filter import TaskFilter
 from presentation.constants.table_dimensions import (
     BORDER_WIDTH,
     CHARS_PER_DAY,
@@ -41,6 +42,7 @@ class GanttWidget(VerticalScroll):
         self._task_ids: list[int] = []
         self._gantt_view_model: GanttViewModel | None = None
         self._sort_by: str = "deadline"  # Default sort order
+        self._task_filter: TaskFilter | None = None  # Filter for recalculation
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
         self._legend_widget: Static | None = None
@@ -106,17 +108,21 @@ class GanttWidget(VerticalScroll):
         task_ids: list[int],
         gantt_view_model: GanttViewModel,
         sort_by: str = "deadline",
+        task_filter: TaskFilter | None = None,
     ):
         """Update the gantt chart with new gantt data.
 
         Args:
             task_ids: List of task IDs (used for recalculating date range on resize)
-            gantt_view_model: Presentation-ready gantt data from TaskService
+            gantt_view_model: Presentation-ready gantt data
             sort_by: Sort order for tasks (default: "deadline")
+            task_filter: Filter object to use for recalculation on resize (optional)
         """
         self._task_ids = task_ids
         self._gantt_view_model = gantt_view_model
         self._sort_by = sort_by
+        if task_filter is not None:
+            self._task_filter = task_filter
         self._render_gantt()
 
     def _render_gantt(self):
@@ -250,16 +256,28 @@ class GanttWidget(VerticalScroll):
         """
         start_date, end_date = self._calculate_date_range_for_display(display_days)
 
-        # Try to fetch updated gantt data from app
-        if hasattr(self, "app") and hasattr(self.app, "task_service"):
+        # Try to fetch updated gantt data from app using QueryController + GanttPresenter
+        if hasattr(self, "app"):
             app = self.app  # type: ignore[attr-defined]
-            gantt_view_model = app.task_service.get_gantt_data(
-                task_ids=self._task_ids,
-                sort_by=self._sort_by,
-                start_date=start_date,
-                end_date=end_date,
-            )
-            self._gantt_view_model = gantt_view_model
+
+            # Check if app has required components and filter is available
+            if (
+                hasattr(app, "query_controller")
+                and hasattr(app, "gantt_presenter")
+                and self._task_filter is not None
+            ):
+                # Get DTO from QueryController using stored filter
+                gantt_output = app.query_controller.get_gantt_data(
+                    filter_obj=self._task_filter,
+                    sort_by=self._sort_by,
+                    reverse=False,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+
+                # Convert DTO to ViewModel using GanttPresenter
+                gantt_view_model = app.gantt_presenter.present(gantt_output)
+                self._gantt_view_model = gantt_view_model
 
         # Re-render with current or updated data
         self.call_after_refresh(self._render_gantt)
