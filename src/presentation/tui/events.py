@@ -1,5 +1,7 @@
 """Custom events for TUI components."""
 
+from datetime import date
+
 from textual.message import Message
 
 # Task operation events (posted by commands)
@@ -110,3 +112,29 @@ class SearchQueryChanged(Message):
         """
         super().__init__()
         self.query = query
+
+
+class GanttResizeRequested(Message):
+    """Event sent when the gantt widget needs recalculation due to resize.
+
+    This allows the app to handle gantt recalculation with proper access
+    to controllers and presenters, without the widget directly accessing them.
+
+    Attributes:
+        display_days: Number of days to display in the gantt chart
+        start_date: Start date for the date range
+        end_date: End date for the date range
+    """
+
+    def __init__(self, display_days: int, start_date: date, end_date: date):
+        """Initialize the event.
+
+        Args:
+            display_days: Number of days to display
+            start_date: Start date for gantt data
+            end_date: End date for gantt data
+        """
+        super().__init__()
+        self.display_days = display_days
+        self.start_date = start_date
+        self.end_date = end_date

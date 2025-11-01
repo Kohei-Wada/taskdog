@@ -22,7 +22,13 @@ from presentation.presenters.gantt_presenter import GanttPresenter
 from presentation.presenters.table_presenter import TablePresenter
 from presentation.tui.commands.factory import CommandFactory
 from presentation.tui.context import TUIContext
-from presentation.tui.events import TaskCreated, TaskDeleted, TasksRefreshed, TaskUpdated
+from presentation.tui.events import (
+    GanttResizeRequested,
+    TaskCreated,
+    TaskDeleted,
+    TasksRefreshed,
+    TaskUpdated,
+)
 from presentation.tui.palette.providers import (
     OptimizeCommandProvider,
     SortCommandProvider,
@@ -388,3 +394,38 @@ class TaskdogTUI(App):
             event: TasksRefreshed event triggering a full reload
         """
         self._load_tasks(keep_scroll_position=True)
+
+    def on_gantt_resize_requested(self, event: GanttResizeRequested) -> None:
+        """Handle gantt resize event.
+
+        Recalculates gantt data for the new display width and updates the widget.
+
+        Args:
+            event: GanttResizeRequested event containing display parameters
+        """
+        if not self.main_screen or not self.main_screen.gantt_widget:
+            return
+
+        gantt_widget = self.main_screen.gantt_widget
+
+        # Get the current filter from the gantt widget
+        task_filter = gantt_widget._task_filter if hasattr(gantt_widget, "_task_filter") else None
+        sort_by = gantt_widget._sort_by if hasattr(gantt_widget, "_sort_by") else "deadline"
+
+        # Get gantt data from QueryController with the new date range
+        gantt_output = self.query_controller.get_gantt_data(
+            filter_obj=task_filter,
+            sort_by=sort_by,
+            reverse=False,
+            start_date=event.start_date,
+            end_date=event.end_date,
+        )
+
+        # Convert to ViewModel using GanttPresenter
+        gantt_view_model = self.gantt_presenter.present(gantt_output)
+
+        # Update the gantt widget's view model
+        gantt_widget._gantt_view_model = gantt_view_model
+
+        # Trigger re-render with updated view model
+        gantt_widget.call_after_refresh(gantt_widget._render_gantt)

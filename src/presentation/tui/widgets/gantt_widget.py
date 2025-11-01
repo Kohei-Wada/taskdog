@@ -256,28 +256,9 @@ class GanttWidget(VerticalScroll):
         """
         start_date, end_date = self._calculate_date_range_for_display(display_days)
 
-        # Try to fetch updated gantt data from app using QueryController + GanttPresenter
-        if hasattr(self, "app"):
-            app = self.app  # type: ignore[attr-defined]
+        # Post event to request gantt recalculation from app
+        # App has access to controllers and presenters
+        # App's event handler will update the view model and trigger re-render
+        from presentation.tui.events import GanttResizeRequested
 
-            # Check if app has required components and filter is available
-            if (
-                hasattr(app, "query_controller")
-                and hasattr(app, "gantt_presenter")
-                and self._task_filter is not None
-            ):
-                # Get DTO from QueryController using stored filter
-                gantt_output = app.query_controller.get_gantt_data(
-                    filter_obj=self._task_filter,
-                    sort_by=self._sort_by,
-                    reverse=False,
-                    start_date=start_date,
-                    end_date=end_date,
-                )
-
-                # Convert DTO to ViewModel using GanttPresenter
-                gantt_view_model = app.gantt_presenter.present(gantt_output)
-                self._gantt_view_model = gantt_view_model
-
-        # Re-render with current or updated data
-        self.call_after_refresh(self._render_gantt)
+        self.post_message(GanttResizeRequested(display_days, start_date, end_date))
