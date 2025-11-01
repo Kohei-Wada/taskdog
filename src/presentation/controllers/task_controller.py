@@ -27,6 +27,7 @@ from application.dto.statistics_output import CalculateStatisticsInput, Statisti
 from application.dto.task_detail_output import GetTaskDetailOutput
 from application.dto.task_operation_output import TaskOperationOutput
 from application.dto.update_task_input import UpdateTaskInput
+from application.dto.update_task_output import UpdateTaskOutput
 from application.use_cases.add_dependency import AddDependencyUseCase
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.calculate_statistics import CalculateStatisticsUseCase
@@ -44,7 +45,7 @@ from application.use_cases.restore_task import RestoreTaskUseCase
 from application.use_cases.set_task_tags import SetTaskTagsUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from application.use_cases.update_task import UpdateTaskUseCase
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import TaskStatus
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
@@ -372,7 +373,7 @@ class TaskController:
         estimated_duration: float | None = None,
         is_fixed: bool | None = None,
         tags: list[str] | None = None,
-    ) -> tuple[Task, list[str]]:
+    ) -> UpdateTaskOutput:
         """Update task fields.
 
         Args:
@@ -388,7 +389,7 @@ class TaskController:
             tags: New tags list (optional)
 
         Returns:
-            Tuple of (updated task, list of updated field names)
+            UpdateTaskOutput containing updated task info and list of updated field names
 
         Raises:
             TaskNotFoundException: If task not found
@@ -407,7 +408,8 @@ class TaskController:
             is_fixed=is_fixed,
             tags=tags,
         )
-        return use_case.execute(request)
+        task, updated_fields = use_case.execute(request)
+        return UpdateTaskOutput.from_task_and_fields(task, updated_fields)
 
     def get_task_detail(self, task_id: int) -> GetTaskDetailOutput:
         """Get task details with notes.

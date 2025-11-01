@@ -486,13 +486,13 @@ class TestTaskController(unittest.TestCase):
         self.repository.save(task)
 
         # Update priority only
-        result, updated_fields = self.controller.update_task(task.id, priority=8)
+        output = self.controller.update_task(task.id, priority=8)
 
         # Verify priority changed
-        self.assertEqual(result.priority, 8)
-        self.assertEqual(result.id, task.id)
-        self.assertEqual(result.name, "Test Task")  # Other fields unchanged
-        self.assertEqual(updated_fields, ["priority"])
+        self.assertEqual(output.task.priority, 8)
+        self.assertEqual(output.task.id, task.id)
+        self.assertEqual(output.task.name, "Test Task")  # Other fields unchanged
+        self.assertEqual(output.updated_fields, ["priority"])
 
     def test_update_task_multiple_fields(self):
         """Test update_task updates multiple fields at once."""
@@ -503,16 +503,16 @@ class TestTaskController(unittest.TestCase):
 
         # Update multiple fields
         new_deadline = datetime(2025, 12, 31, 18, 0)
-        result, _updated_fields = self.controller.update_task(
+        output = self.controller.update_task(
             task.id, name="Updated Task", priority=7, deadline=new_deadline, estimated_duration=5.0
         )
 
         # Verify all fields updated
-        self.assertEqual(result.name, "Updated Task")
-        self.assertEqual(result.priority, 7)
-        self.assertEqual(result.deadline, new_deadline)
-        self.assertEqual(result.estimated_duration, 5.0)
-        self.assertEqual(result.id, task.id)
+        self.assertEqual(output.task.name, "Updated Task")
+        self.assertEqual(output.task.priority, 7)
+        self.assertEqual(output.task.deadline, new_deadline)
+        self.assertEqual(output.task.estimated_duration, 5.0)
+        self.assertEqual(output.task.id, task.id)
 
     def test_update_task_returns_updated_fields(self):
         """Test update_task returns list of updated field names."""
@@ -522,15 +522,15 @@ class TestTaskController(unittest.TestCase):
         self.repository.save(task)
 
         # Update some fields
-        _result, updated_fields = self.controller.update_task(
+        output = self.controller.update_task(
             task.id, priority=5, is_fixed=True, tags=["work", "urgent"]
         )
 
         # Verify updated fields list
-        self.assertIn("priority", updated_fields)
-        self.assertIn("is_fixed", updated_fields)
-        self.assertIn("tags", updated_fields)
-        self.assertEqual(len(updated_fields), 3)
+        self.assertIn("priority", output.updated_fields)
+        self.assertIn("is_fixed", output.updated_fields)
+        self.assertIn("tags", output.updated_fields)
+        self.assertEqual(len(output.updated_fields), 3)
 
     def test_update_task_persists_changes(self):
         """Test update_task persists changes to repository."""

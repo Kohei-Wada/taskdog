@@ -90,7 +90,7 @@ def update_command(
     status_enum = TaskStatus(status) if status else None
 
     # Update task via controller
-    task, updated_fields = controller.update_task(
+    result = controller.update_task(
         task_id=task_id,
         priority=priority,
         status=status_enum,
@@ -100,11 +100,11 @@ def update_command(
         estimated_duration=estimated_duration,
     )
 
-    if not updated_fields:
+    if not result.updated_fields:
         console_writer.warning(
             "No fields to update. Use --priority, --status, --planned-start, --planned-end, --deadline, or --estimated-duration"
         )
         return
 
     # Print updates
-    console_writer.task_fields_updated(task, updated_fields)
+    console_writer.task_fields_updated(result.task, result.updated_fields)

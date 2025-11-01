@@ -1,5 +1,6 @@
 """Edit task command for TUI."""
 
+from application.dto.task_operation_output import TaskOperationOutput
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
 from presentation.tui.commands.base import TUICommandBase
@@ -75,15 +76,17 @@ class EditTaskCommand(TUICommandBase):
 
         return fields_changed, dependencies_changed
 
-    def _update_task_fields(self, task: Task, form_data: TaskFormData) -> tuple[Task, list[str]]:
-        """Update task fields via TaskService.
+    def _update_task_fields(
+        self, task: Task, form_data: TaskFormData
+    ) -> tuple[TaskOperationOutput, list[str]]:
+        """Update task fields via TaskController.
 
         Args:
             task: Original task
             form_data: New form data
 
         Returns:
-            Tuple of (updated_task, list_of_updated_field_names)
+            Tuple of (updated_task_output, list_of_updated_field_names)
         """
         # Get datetime values using TaskFormData helper methods
         form_deadline = form_data.get_deadline()
@@ -91,8 +94,8 @@ class EditTaskCommand(TUICommandBase):
         form_planned_end = form_data.get_planned_end()
 
         # Update task via Controller with only changed fields
-        # Controller.update_task returns (updated_task, updated_fields)
-        updated_task, updated_fields = self.controller.update_task(
+        # Controller.update_task returns UpdateTaskOutput
+        result = self.controller.update_task(
             task_id=task.id,  # type: ignore
             name=form_data.name if form_data.name != task.name else None,
             priority=form_data.priority if form_data.priority != task.priority else None,
@@ -106,7 +109,7 @@ class EditTaskCommand(TUICommandBase):
             tags=(form_data.tags or []) if (form_data.tags or []) != task.tags else None,
         )
 
-        return updated_task, updated_fields
+        return result.task, result.updated_fields
 
     def _handle_task_update(self, task: Task, form_data: TaskFormData) -> None:
         """Handle the actual task update logic.
@@ -125,6 +128,7 @@ class EditTaskCommand(TUICommandBase):
 
         # Update task fields if changed
         updated_fields: list[str] = []
+        updated_task: TaskOperationOutput | Task
         if fields_changed:
             updated_task, updated_fields = self._update_task_fields(task, form_data)
         else:

@@ -36,5 +36,5 @@ def execute_single_field_update(
     controller = ctx_obj.task_controller
 
     # Update task via controller with dynamic field
-    task, _ = controller.update_task(task_id=task_id, **{field_name: field_value})
-    return task
+    result = controller.update_task(task_id=task_id, **{field_name: field_value})
+    return result.task

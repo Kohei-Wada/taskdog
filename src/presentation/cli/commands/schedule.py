@@ -32,7 +32,7 @@ def schedule_command(ctx, task_id, start, end):
     controller = ctx_obj.task_controller
 
     # Update task via controller
-    task, _updated_fields = controller.update_task(
+    result = controller.update_task(
         task_id=task_id,
         planned_start=start,
         planned_end=end,
@@ -40,8 +40,8 @@ def schedule_command(ctx, task_id, start, end):
 
     # Print success - format schedule as "start → end"
     def format_schedule(value) -> str:
-        start_str = task.planned_start if task.planned_start else "N/A"
-        end_str = task.planned_end if task.planned_end else "N/A"
+        start_str = result.task.planned_start if result.task.planned_start else "N/A"
+        end_str = result.task.planned_end if result.task.planned_end else "N/A"
         return f"{start_str} → {end_str}"
 
-    ctx_obj.console_writer.update_success(task, "schedule", task, format_schedule)
+    ctx_obj.console_writer.update_success(result.task, "schedule", result.task, format_schedule)
