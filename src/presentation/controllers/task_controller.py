@@ -4,7 +4,9 @@ This controller provides a shared interface between CLI and TUI layers,
 eliminating code duplication in use case instantiation and DTO construction.
 """
 
+from application.dto.complete_task_request import CompleteTaskRequest
 from application.dto.start_task_request import StartTaskRequest
+from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
@@ -59,4 +61,23 @@ class TaskController:
         """
         use_case = StartTaskUseCase(self.repository, self.time_tracker)
         request = StartTaskRequest(task_id=task_id)
+        return use_case.execute(request)
+
+    def complete_task(self, task_id: int) -> Task:
+        """Complete a task.
+
+        Changes task status to COMPLETED and records actual end time.
+
+        Args:
+            task_id: ID of the task to complete
+
+        Returns:
+            The updated task
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If task cannot be completed
+        """
+        use_case = CompleteTaskUseCase(self.repository, self.time_tracker)
+        request = CompleteTaskRequest(task_id=task_id)
         return use_case.execute(request)

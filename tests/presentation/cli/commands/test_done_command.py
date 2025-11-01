@@ -12,16 +12,17 @@ class TestDoneCommand(BaseBatchCommandTest):
     """Test cases for done command."""
 
     command_func = done_command
-    use_case_path = "presentation.cli.commands.done.CompleteTaskUseCase"
+    use_case_path = "presentation.cli.commands.done.TaskController"
+    controller_method = "complete_task"
     action_verb = "Completed"
     action_name = "complete"
 
-    @patch("presentation.cli.commands.done.CompleteTaskUseCase")
-    def test_complete_not_started_task(self, mock_use_case_class):
+    @patch("presentation.cli.commands.done.TaskController")
+    def test_complete_not_started_task(self, mock_controller_class):
         """Test completing a task that hasn't been started."""
         # Setup
-        mock_use_case = mock_use_case_class.return_value
-        mock_use_case.execute.side_effect = TaskNotStartedError(1)
+        mock_controller = mock_controller_class.return_value
+        mock_controller.complete_task.side_effect = TaskNotStartedError(1)
 
         # Execute
         result = self.runner.invoke(done_command, ["1"], obj=self.cli_context)

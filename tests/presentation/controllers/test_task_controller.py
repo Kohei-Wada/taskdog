@@ -75,6 +75,50 @@ class TestTaskController(unittest.TestCase):
         self.assertEqual(persisted_task.status, TaskStatus.IN_PROGRESS)
         self.assertIsNotNone(persisted_task.actual_start)
 
+    def test_complete_task_changes_status_to_completed(self):
+        """Test complete_task changes task status to COMPLETED."""
+        # Create and start a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Complete the task
+        result = self.controller.complete_task(task.id)
+
+        # Verify status changed
+        self.assertEqual(result.status, TaskStatus.COMPLETED)
+        self.assertEqual(result.id, task.id)
+        self.assertEqual(result.name, "Test Task")
+
+    def test_complete_task_records_actual_end_time(self):
+        """Test complete_task records actual_end timestamp."""
+        # Create and start a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Complete the task
+        result = self.controller.complete_task(task.id)
+
+        # Verify actual_end is set
+        self.assertIsNotNone(result.actual_end)
+
+    def test_complete_task_persists_changes(self):
+        """Test complete_task persists changes to repository."""
+        # Create and start a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Complete the task
+        self.controller.complete_task(task.id)
+
+        # Verify changes persisted
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertIsNotNone(persisted_task)
+        self.assertEqual(persisted_task.status, TaskStatus.COMPLETED)
+        self.assertIsNotNone(persisted_task.actual_end)
+
 
 if __name__ == "__main__":
     unittest.main()
