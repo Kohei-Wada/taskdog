@@ -163,6 +163,7 @@ packages = [
   "presentation.cli.commands",
   "presentation.console",
   "presentation.constants",
+  "presentation.enums",
   "presentation.exporters",
   "presentation.mappers",
   "presentation.renderers",
