@@ -82,7 +82,7 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
 
         # Format status with color
         status_text = self.task_data.status.value
-        status_color = STATUS_COLORS_BOLD.get(self.task_data.status, "white")
+        status_color = STATUS_COLORS_BOLD.get(self.task_data.status.value, "white")
         status_styled = f"[{status_color}]{status_text}[/{status_color}]"
         yield Static(
             f"[dim]Status:[/dim] {status_styled}",

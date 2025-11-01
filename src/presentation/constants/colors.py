@@ -1,7 +1,5 @@
 """Color constants for presentation layer."""
 
-from domain.entities.task import TaskStatus
-
 # Message styles (colors)
 STYLE_SUCCESS = "green"
 STYLE_ERROR = "red"
@@ -9,19 +7,21 @@ STYLE_WARNING = "yellow"
 STYLE_INFO = "cyan"
 
 # Status color styles for rendering
+# Note: Uses string keys to support both domain and presentation TaskStatus enums
 STATUS_STYLES = {
-    TaskStatus.PENDING: "yellow",
-    TaskStatus.IN_PROGRESS: "blue",
-    TaskStatus.COMPLETED: "green",
-    TaskStatus.CANCELED: "red",
+    "PENDING": "yellow",
+    "IN_PROGRESS": "blue",
+    "COMPLETED": "green",
+    "CANCELED": "red",
 }
 
 # Status colors (bold) for special rendering
+# Note: Uses string keys to support both domain and presentation TaskStatus enums
 STATUS_COLORS_BOLD = {
-    TaskStatus.PENDING: "yellow",
-    TaskStatus.IN_PROGRESS: "bold blue",
-    TaskStatus.COMPLETED: "bold green",
-    TaskStatus.CANCELED: "bold red",
+    "PENDING": "yellow",
+    "IN_PROGRESS": "bold blue",
+    "COMPLETED": "bold green",
+    "CANCELED": "bold red",
 }
 
 # Gantt Chart Column Header Colors (Gantt-specific)

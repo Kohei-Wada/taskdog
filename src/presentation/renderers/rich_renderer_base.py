@@ -27,7 +27,7 @@ class RichRendererBase(TaskRenderer):
         Returns:
             Rich style string (e.g., "yellow", "blue", "green", "red")
         """
-        return STATUS_STYLES.get(status, "white")
+        return STATUS_STYLES.get(status.value, "white")
 
     def _get_status_color(self, status: TaskStatus) -> str:
         """Get color for status bar in Gantt chart.
@@ -38,7 +38,7 @@ class RichRendererBase(TaskRenderer):
         Returns:
             Color string with bold modifier for Gantt charts
         """
-        return STATUS_COLORS_BOLD.get(status, "white")
+        return STATUS_COLORS_BOLD.get(status.value, "white")
 
     def _render_to_string(
         self, table: Table, footer: Text | None = None, width: int | None = None

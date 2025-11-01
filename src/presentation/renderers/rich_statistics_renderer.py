@@ -3,10 +3,12 @@
 from rich.table import Table
 from rich.text import Text
 
-from application.dto.statistics_result import StatisticsResult
-from domain.entities.task import Task
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.table_styles import TABLE_BORDER_STYLE, TABLE_HEADER_STYLE
+from presentation.view_models.statistics_view_model import (
+    StatisticsViewModel,
+    TaskSummaryViewModel,
+)
 
 
 class RichStatisticsRenderer:
@@ -24,11 +26,11 @@ class RichStatisticsRenderer:
         """
         self.console_writer = console_writer
 
-    def render(self, result: StatisticsResult, focus: str = "all") -> None:
-        """Render statistics result.
+    def render(self, view_model: StatisticsViewModel, focus: str = "all") -> None:
+        """Render statistics view model.
 
         Args:
-            result: Statistics result to display
+            view_model: Statistics ViewModel to display
             focus: Section to focus on ('all', 'basic', 'time', 'estimation', 'deadline', 'priority', 'trends')
         """
         # Title
@@ -38,30 +40,30 @@ class RichStatisticsRenderer:
 
         # Render sections based on focus
         if focus in ["all", "basic"]:
-            self._render_task_statistics(result)
+            self._render_task_statistics(view_model)
 
-        if focus in ["all", "time"] and result.time_stats:
-            self._render_time_statistics(result)
+        if focus in ["all", "time"] and view_model.time_stats:
+            self._render_time_statistics(view_model)
 
-        if focus in ["all", "estimation"] and result.estimation_stats:
-            self._render_estimation_statistics(result)
+        if focus in ["all", "estimation"] and view_model.estimation_stats:
+            self._render_estimation_statistics(view_model)
 
-        if focus in ["all", "deadline"] and result.deadline_stats:
-            self._render_deadline_statistics(result)
+        if focus in ["all", "deadline"] and view_model.deadline_stats:
+            self._render_deadline_statistics(view_model)
 
         if focus in ["all", "priority"]:
-            self._render_priority_statistics(result)
+            self._render_priority_statistics(view_model)
 
-        if focus in ["all", "trends"] and result.trend_stats:
-            self._render_trend_statistics(result)
+        if focus in ["all", "trends"] and view_model.trend_stats:
+            self._render_trend_statistics(view_model)
 
-    def _render_task_statistics(self, result: StatisticsResult) -> None:
+    def _render_task_statistics(self, view_model: StatisticsViewModel) -> None:
         """Render basic task statistics.
 
         Args:
-            result: Statistics result
+            view_model: Statistics ViewModel
         """
-        stats = result.task_stats
+        stats = view_model.task_stats
 
         # Create table
         table = Table(
@@ -91,13 +93,13 @@ class RichStatisticsRenderer:
         self.console_writer.print(table)
         self.console_writer.empty_line()
 
-    def _render_time_statistics(self, result: StatisticsResult) -> None:
+    def _render_time_statistics(self, view_model: StatisticsViewModel) -> None:
         """Render time tracking statistics.
 
         Args:
-            result: Statistics result
+            view_model: Statistics ViewModel
         """
-        stats = result.time_stats
+        stats = view_model.time_stats
         if not stats:
             return
 
@@ -135,13 +137,13 @@ class RichStatisticsRenderer:
         self.console_writer.print(table)
         self.console_writer.empty_line()
 
-    def _render_estimation_statistics(self, result: StatisticsResult) -> None:
+    def _render_estimation_statistics(self, view_model: StatisticsViewModel) -> None:
         """Render estimation accuracy statistics.
 
         Args:
-            result: Statistics result
+            view_model: Statistics ViewModel
         """
-        stats = result.estimation_stats
+        stats = view_model.estimation_stats
         if not stats:
             return
 
@@ -189,13 +191,13 @@ class RichStatisticsRenderer:
 
         self.console_writer.empty_line()
 
-    def _render_deadline_statistics(self, result: StatisticsResult) -> None:
+    def _render_deadline_statistics(self, view_model: StatisticsViewModel) -> None:
         """Render deadline compliance statistics.
 
         Args:
-            result: Statistics result
+            view_model: Statistics ViewModel
         """
-        stats = result.deadline_stats
+        stats = view_model.deadline_stats
         if not stats:
             return
 
@@ -228,13 +230,13 @@ class RichStatisticsRenderer:
         self.console_writer.print(table)
         self.console_writer.empty_line()
 
-    def _render_priority_statistics(self, result: StatisticsResult) -> None:
+    def _render_priority_statistics(self, view_model: StatisticsViewModel) -> None:
         """Render priority distribution statistics.
 
         Args:
-            result: Statistics result
+            view_model: Statistics ViewModel
         """
-        stats = result.priority_stats
+        stats = view_model.priority_stats
 
         # Create table
         table = Table(
@@ -262,13 +264,13 @@ class RichStatisticsRenderer:
         self.console_writer.print(table)
         self.console_writer.empty_line()
 
-    def _render_trend_statistics(self, result: StatisticsResult) -> None:
+    def _render_trend_statistics(self, view_model: StatisticsViewModel) -> None:
         """Render trend statistics.
 
         Args:
-            result: Statistics result
+            view_model: Statistics ViewModel
         """
-        stats = result.trend_stats
+        stats = view_model.trend_stats
         if not stats:
             return
 
@@ -320,12 +322,14 @@ class RichStatisticsRenderer:
 
         self.console_writer.print(table)
 
-    def _render_task_examples(self, title: str, tasks: list[Task], color: str = "white") -> None:
+    def _render_task_examples(
+        self, title: str, tasks: list[TaskSummaryViewModel], color: str = "white"
+    ) -> None:
         """Render task examples.
 
         Args:
             title: Section title
-            tasks: List of tasks to display
+            tasks: List of task ViewModels to display
             color: Color for the title
         """
         table = Table(

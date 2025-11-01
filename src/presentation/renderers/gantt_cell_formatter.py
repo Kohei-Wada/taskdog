@@ -7,6 +7,7 @@ consistent visualization across different interfaces.
 
 import math
 from datetime import date, timedelta
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from rich.text import Text
@@ -277,17 +278,18 @@ class GanttCellFormatter:
         }
 
     @staticmethod
-    def get_status_color(status: TaskStatus) -> str:
+    def get_status_color(status: TaskStatus | str) -> str:
         """Get color for task status.
 
         Args:
-            status: Task status
+            status: Task status (enum or string)
 
         Returns:
             Color string with bold modifier
         """
-        # Use str(status) to handle both TaskStatus enum and string values
-        return STATUS_COLORS_BOLD.get(status, "white")
+        # Handle both TaskStatus enum and string values
+        status_key = status.value if isinstance(status, Enum) else status
+        return STATUS_COLORS_BOLD.get(status_key, "white")
 
     @staticmethod
     def get_status_symbol(status: TaskStatus) -> str:

@@ -39,7 +39,7 @@ class RichDetailRenderer:
         table.add_row("Priority", str(task.priority))
 
         # Status with color
-        status_style = STATUS_STYLES.get(task.status, "white")
+        status_style = STATUS_STYLES.get(task.status.value, "white")
         table.add_row("Status", f"[{status_style}]{task.status.value}[/{status_style}]")
 
         # Fixed flag

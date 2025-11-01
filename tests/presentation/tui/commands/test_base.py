@@ -35,11 +35,15 @@ class TestTUICommandBase(unittest.TestCase):
     def test_get_selected_task_success(self):
         """Test getting selected task successfully."""
         expected_task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.PENDING)
-        self.app.main_screen.task_table.get_selected_task.return_value = expected_task
+        # Mock get_selected_task_id to return the task ID
+        self.app.main_screen.task_table.get_selected_task_id.return_value = 1
+        # Mock repository to return the expected task
+        self.context.repository.get_by_id.return_value = expected_task
 
         result = self.command.get_selected_task()
 
         self.assertEqual(result, expected_task)
+        self.context.repository.get_by_id.assert_called_once_with(1)
 
     def test_get_selected_task_no_screen(self):
         """Test getting selected task when screen is not available."""

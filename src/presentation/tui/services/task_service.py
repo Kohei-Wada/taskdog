@@ -6,7 +6,6 @@ from application.dto.archive_task_request import ArchiveTaskRequest
 from application.dto.cancel_task_request import CancelTaskRequest
 from application.dto.complete_task_request import CompleteTaskRequest
 from application.dto.create_task_request import CreateTaskRequest
-from application.dto.gantt_result import GanttResult
 from application.dto.manage_dependencies_request import (
     AddDependencyRequest,
     RemoveDependencyRequest,
@@ -32,7 +31,9 @@ from application.use_cases.start_task import StartTaskUseCase
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskValidationError
+from presentation.mappers.gantt_mapper import GanttMapper
 from presentation.tui.context import TUIContext
+from presentation.view_models.gantt_view_model import GanttViewModel
 from shared.utils.date_utils import calculate_next_workday
 
 
@@ -370,7 +371,7 @@ class TaskService:
         sort_by: str = "deadline",
         start_date: date | None = None,
         end_date: date | None = None,
-    ) -> GanttResult:
+    ) -> GanttViewModel:
         """Get Gantt chart data for the given tasks.
 
         Args:
@@ -380,13 +381,15 @@ class TaskService:
             end_date: Optional end date (auto-calculated if not provided)
 
         Returns:
-            GanttResult containing business data for Gantt visualization
+            GanttViewModel containing presentation-ready Gantt data
         """
         filter_obj = _TaskIdFilter(set(task_ids))
-        return self.query_service.get_gantt_data(
+        gantt_result = self.query_service.get_gantt_data(
             filter_obj=filter_obj,
             sort_by=sort_by,
             reverse=False,
             start_date=start_date,
             end_date=end_date,
         )
+        # Convert DTO to ViewModel
+        return GanttMapper.from_gantt_result(gantt_result)

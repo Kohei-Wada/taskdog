@@ -73,7 +73,8 @@ class AddTaskCommand(TUICommandBase):
                     )
 
             # Post TaskCreated event to trigger UI refresh
-            self.app.post_message(TaskCreated(task))
+            assert task.id is not None, "Created task must have an ID"
+            self.app.post_message(TaskCreated(task.id))
             self.notify_success(f"Added task: {task.name} (ID: {task.id})")
 
         # Show task form dialog in add mode (no task parameter)

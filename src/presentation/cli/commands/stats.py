@@ -6,6 +6,7 @@ from application.dto.statistics_result import CalculateStatisticsRequest
 from application.use_cases.calculate_statistics import CalculateStatisticsUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
+from presentation.mappers.statistics_mapper import StatisticsMapper
 from presentation.renderers.rich_statistics_renderer import RichStatisticsRenderer
 
 
@@ -53,6 +54,9 @@ def stats_command(ctx, period, focus):
         console_writer.warning("No tasks found to analyze.")
         return
 
+    # Convert DTO to ViewModel (Mapper applies presentation logic)
+    view_model = StatisticsMapper.from_statistics_result(result)
+
     # Render statistics
     renderer = RichStatisticsRenderer(console_writer)
-    renderer.render(result, focus=focus)
+    renderer.render(view_model, focus=focus)

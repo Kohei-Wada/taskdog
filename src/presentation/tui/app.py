@@ -17,6 +17,7 @@ from domain.entities.task import Task
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
+from presentation.mappers.task_mapper import TaskMapper
 from presentation.tui.commands.factory import CommandFactory
 from presentation.tui.context import TUIContext
 from presentation.tui.events import TaskCreated, TaskDeleted, TasksRefreshed, TaskUpdated
@@ -191,7 +192,7 @@ class TaskdogTUI(App):
 
     def on_mount(self) -> None:
         """Called when app is mounted."""
-        self.main_screen = MainScreen(self.notes_repository)
+        self.main_screen = MainScreen()
         self.push_screen(self.main_screen)
         # Load tasks after screen is fully mounted
         self.call_after_refresh(self._load_tasks)
@@ -240,8 +241,8 @@ class TaskdogTUI(App):
                 # Extract task IDs
                 task_ids = [t.id for t in tasks]
 
-                # Get pre-computed gantt data from TaskService with appropriate date range
-                gantt_result = self.task_service.get_gantt_data(
+                # Get pre-computed gantt view model from TaskService with appropriate date range
+                gantt_view_model = self.task_service.get_gantt_data(
                     task_ids=task_ids,
                     sort_by=self._gantt_sort_by,
                     start_date=start_date,
@@ -249,13 +250,16 @@ class TaskdogTUI(App):
                 )
                 self.main_screen.gantt_widget.update_gantt(
                     task_ids=task_ids,
-                    gantt_result=gantt_result,
+                    gantt_view_model=gantt_view_model,
                     sort_by=self._gantt_sort_by,
                 )
 
             if self.main_screen.task_table:
+                # Convert tasks to ViewModels
+                task_mapper = TaskMapper(self.notes_repository)
+                view_models = task_mapper.to_row_view_models(tasks)
                 self.main_screen.task_table.refresh_tasks(
-                    tasks, keep_scroll_position=keep_scroll_position
+                    view_models, keep_scroll_position=keep_scroll_position
                 )
 
         return tasks
@@ -330,13 +334,13 @@ class TaskdogTUI(App):
         Only updates the table display without reloading from repository.
         """
         if self.main_screen and self.main_screen.task_table:
-            # Get current tasks from the table (already loaded in memory)
-            tasks = self.main_screen.task_table.all_tasks
-            if tasks:
-                # Refresh the table display with current tasks
+            # Get current ViewModels from the table (already loaded in memory)
+            view_models = self.main_screen.task_table.all_viewmodels
+            if view_models:
+                # Refresh the table display with current ViewModels
                 # This will recalculate elapsed time for IN_PROGRESS tasks
                 # Keep scroll position to avoid stuttering during user navigation
-                self.main_screen.task_table.refresh_tasks(tasks, keep_scroll_position=True)
+                self.main_screen.task_table.refresh_tasks(view_models, keep_scroll_position=True)
 
     # Event handlers for task operations
     def on_task_created(self, event: TaskCreated) -> None:
