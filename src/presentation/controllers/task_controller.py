@@ -7,9 +7,9 @@ eliminating code duplication in use case instantiation and DTO construction.
 from application.dto.start_task_request import StartTaskRequest
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
+from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
-from shared.config_manager import ConfigManager
+from shared.config_manager import Config
 
 
 class TaskController:
@@ -27,16 +27,16 @@ class TaskController:
 
     def __init__(
         self,
-        repository: JsonTaskRepository,
+        repository: TaskRepository,
         time_tracker: TimeTracker,
-        config: ConfigManager,
+        config: Config,
     ):
         """Initialize the task controller.
 
         Args:
             repository: Task repository
             time_tracker: Time tracker service
-            config: Configuration manager
+            config: Configuration
         """
         self.repository = repository
         self.time_tracker = time_tracker
