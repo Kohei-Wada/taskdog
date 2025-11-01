@@ -7,7 +7,7 @@ calculations) is applied by the Mapper.
 
 from dataclasses import dataclass
 
-from application.dto.statistics_result import (
+from application.dto.statistics_output import (
     DeadlineComplianceStatistics,
     PriorityDistributionStatistics,
     TaskStatistics,
@@ -84,7 +84,7 @@ class EstimationAccuracyStatisticsViewModel(BaseViewModel):
 class StatisticsViewModel(BaseViewModel):
     """ViewModel for complete statistics result.
 
-    This is the presentation-ready version of StatisticsResult, containing
+    This is the presentation-ready version of StatisticsOutput, containing
     ViewModels instead of Task entities.
 
     Note: TaskStatistics, DeadlineComplianceStatistics, PriorityDistributionStatistics,

@@ -1,13 +1,13 @@
 """Use case for setting task tags."""
 
-from application.dto.set_task_tags_request import SetTaskTagsRequest
+from application.dto.set_task_tags_input import SetTaskTagsInput
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
 from domain.repositories.task_repository import TaskRepository
 
 
-class SetTaskTagsUseCase(UseCase[SetTaskTagsRequest, Task]):
+class SetTaskTagsUseCase(UseCase[SetTaskTagsInput, Task]):
     """Use case for setting task tags.
 
     Completely replaces the existing tags with the new tags.
@@ -21,7 +21,7 @@ class SetTaskTagsUseCase(UseCase[SetTaskTagsRequest, Task]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: SetTaskTagsRequest) -> Task:
+    def execute(self, input_dto: SetTaskTagsInput) -> Task:
         """Execute tag setting.
 
         Args:

@@ -2,14 +2,14 @@
 
 from datetime import date
 
-from application.dto.log_hours_request import LogHoursRequest
+from application.dto.log_hours_input import LogHoursInput
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
 from domain.repositories.task_repository import TaskRepository
 
 
-class LogHoursUseCase(UseCase[LogHoursRequest, Task]):
+class LogHoursUseCase(UseCase[LogHoursInput, Task]):
     """Use case for logging actual hours worked on a task."""
 
     def __init__(self, repository: TaskRepository):
@@ -20,7 +20,7 @@ class LogHoursUseCase(UseCase[LogHoursRequest, Task]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: LogHoursRequest) -> Task:
+    def execute(self, input_dto: LogHoursInput) -> Task:
         """Execute hours logging.
 
         Args:

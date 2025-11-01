@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from datetime import datetime
 
-from application.dto.create_task_request import CreateTaskRequest
-from application.dto.optimize_schedule_request import OptimizeScheduleRequest
+from application.dto.create_task_input import CreateTaskInput
+from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.entities.task import Task
@@ -67,7 +67,7 @@ class BaseOptimizationStrategyTest(unittest.TestCase):
         Returns:
             The created Task object
         """
-        input_dto = CreateTaskRequest(
+        input_dto = CreateTaskInput(
             name=name,
             priority=priority,
             estimated_duration=estimated_duration,
@@ -90,9 +90,9 @@ class BaseOptimizationStrategyTest(unittest.TestCase):
             force_override: Whether to force override existing schedules (default: False)
 
         Returns:
-            OptimizationResult from the use case
+            OptimizationOutput from the use case
         """
-        optimize_input = OptimizeScheduleRequest(
+        optimize_input = OptimizeScheduleInput(
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
             algorithm_name=self.algorithm_name,

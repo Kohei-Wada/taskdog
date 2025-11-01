@@ -8,7 +8,7 @@ from application.constants.optimization import (
     DEADLINE_PENALTY_MULTIPLIER,
     MONTE_CARLO_NUM_SIMULATIONS,
 )
-from application.dto.optimization_result import SchedulingFailure
+from application.dto.optimization_output import SchedulingFailure
 from application.services.optimization.allocators.greedy_forward_allocator import (
     GreedyForwardAllocator,
 )

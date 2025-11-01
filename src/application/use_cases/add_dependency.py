@@ -1,6 +1,6 @@
 """Use case for adding a task dependency."""
 
-from application.dto.manage_dependencies_request import AddDependencyRequest
+from application.dto.manage_dependencies_input import AddDependencyInput
 from application.services.dependency_graph_service import DependencyGraphService
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
@@ -8,7 +8,7 @@ from domain.exceptions.task_exceptions import TaskValidationError
 from domain.repositories.task_repository import TaskRepository
 
 
-class AddDependencyUseCase(UseCase[AddDependencyRequest, Task]):
+class AddDependencyUseCase(UseCase[AddDependencyInput, Task]):
     """Use case for adding a dependency to a task."""
 
     def __init__(self, repository: TaskRepository):
@@ -20,7 +20,7 @@ class AddDependencyUseCase(UseCase[AddDependencyRequest, Task]):
         self.repository = repository
         self.graph_service = DependencyGraphService(repository)
 
-    def execute(self, input_dto: AddDependencyRequest) -> Task:
+    def execute(self, input_dto: AddDependencyInput) -> Task:
         """Execute dependency addition.
 
         Args:

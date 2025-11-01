@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class LogHoursRequest:
+class LogHoursInput:
     """Request data for logging actual hours worked.
 
     Attributes:

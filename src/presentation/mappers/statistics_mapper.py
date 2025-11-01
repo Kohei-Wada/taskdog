@@ -1,12 +1,12 @@
-"""Mapper for converting StatisticsResult DTO to StatisticsViewModel.
+"""Mapper for converting StatisticsOutput DTO to StatisticsViewModel.
 
 This mapper extracts necessary fields from Task entities and creates
 presentation-ready view models.
 """
 
-from application.dto.statistics_result import (
+from application.dto.statistics_output import (
     EstimationAccuracyStatistics,
-    StatisticsResult,
+    StatisticsOutput,
     TimeStatistics,
 )
 from domain.entities.task import Task
@@ -19,7 +19,7 @@ from presentation.view_models.statistics_view_model import (
 
 
 class StatisticsMapper:
-    """Mapper for converting StatisticsResult to StatisticsViewModel.
+    """Mapper for converting StatisticsOutput to StatisticsViewModel.
 
     This class is responsible for:
     1. Extracting necessary fields from Task entities
@@ -27,8 +27,8 @@ class StatisticsMapper:
     """
 
     @staticmethod
-    def from_statistics_result(statistics_result: StatisticsResult) -> StatisticsViewModel:
-        """Convert StatisticsResult DTO to StatisticsViewModel.
+    def from_statistics_result(statistics_result: StatisticsOutput) -> StatisticsViewModel:
+        """Convert StatisticsOutput DTO to StatisticsViewModel.
 
         Args:
             statistics_result: Application layer DTO with Task entities
@@ -127,7 +127,7 @@ class StatisticsMapper:
         Returns:
             TaskSummaryViewModel with only necessary fields
         """
-        # Tasks from StatisticsResult are always saved, so they must have an id
+        # Tasks from StatisticsOutput are always saved, so they must have an id
         assert task.id is not None, "Task must have an id when mapping to ViewModel"
 
         return TaskSummaryViewModel(

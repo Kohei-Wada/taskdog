@@ -3,7 +3,7 @@
 import tempfile
 import unittest
 
-from application.dto.remove_task_request import RemoveTaskRequest
+from application.dto.remove_task_input import RemoveTaskInput
 from application.use_cases.remove_task import RemoveTaskUseCase
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -27,7 +27,7 @@ class RemoveTaskUseCaseTest(unittest.TestCase):
         task = self.repository.create(name="Test Task", priority=1)
 
         # Remove task
-        input_dto = RemoveTaskRequest(task_id=task.id)
+        input_dto = RemoveTaskInput(task_id=task.id)
         self.use_case.execute(input_dto)
 
         # Verify task removed
@@ -35,7 +35,7 @@ class RemoveTaskUseCaseTest(unittest.TestCase):
 
     def test_remove_nonexistent_task(self):
         """Test removing a task that doesn't exist."""
-        input_dto = RemoveTaskRequest(task_id=999)
+        input_dto = RemoveTaskInput(task_id=999)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)

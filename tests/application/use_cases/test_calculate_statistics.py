@@ -4,7 +4,7 @@ import unittest
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 
-from application.dto.statistics_result import CalculateStatisticsRequest
+from application.dto.statistics_output import CalculateStatisticsInput
 from application.use_cases.calculate_statistics import CalculateStatisticsUseCase
 from domain.entities.task import Task, TaskStatus
 
@@ -21,7 +21,7 @@ class TestCalculateStatisticsUseCase(unittest.TestCase):
         """Test execute with empty task list."""
         self.repository.get_all.return_value = []
 
-        result = self.use_case.execute(CalculateStatisticsRequest())
+        result = self.use_case.execute(CalculateStatisticsInput())
 
         self.assertEqual(result.task_stats.total_tasks, 0)
         self.repository.get_all.assert_called_once()
@@ -34,7 +34,7 @@ class TestCalculateStatisticsUseCase(unittest.TestCase):
         ]
         self.repository.get_all.return_value = tasks
 
-        result = self.use_case.execute(CalculateStatisticsRequest())
+        result = self.use_case.execute(CalculateStatisticsInput())
 
         self.assertEqual(result.task_stats.total_tasks, 2)
         self.assertEqual(result.task_stats.pending_count, 1)
@@ -62,7 +62,7 @@ class TestCalculateStatisticsUseCase(unittest.TestCase):
         ]
         self.repository.get_all.return_value = tasks
 
-        result = self.use_case.execute(CalculateStatisticsRequest(period="7d"))
+        result = self.use_case.execute(CalculateStatisticsInput(period="7d"))
 
         # Only the recent task should be counted
         self.assertEqual(result.task_stats.total_tasks, 1)
@@ -86,7 +86,7 @@ class TestCalculateStatisticsUseCase(unittest.TestCase):
         ]
         self.repository.get_all.return_value = tasks
 
-        result = self.use_case.execute(CalculateStatisticsRequest())
+        result = self.use_case.execute(CalculateStatisticsInput())
 
         # Verify all statistics sections are calculated
         self.assertIsNotNone(result.task_stats)

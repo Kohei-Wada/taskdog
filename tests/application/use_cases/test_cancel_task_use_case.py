@@ -3,7 +3,7 @@
 import unittest
 from datetime import datetime
 
-from application.dto.cancel_task_request import CancelTaskRequest
+from application.dto.cancel_task_input import CancelTaskInput
 from application.use_cases.cancel_task import CancelTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from tests.application.use_cases.status_change_test_base import (
@@ -15,7 +15,7 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
     """Test cases for CancelTaskUseCase"""
 
     use_case_class = CancelTaskUseCase
-    request_class = CancelTaskRequest
+    request_class = CancelTaskInput
     target_status = TaskStatus.CANCELED
     initial_status = TaskStatus.PENDING
 
@@ -28,7 +28,7 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = CancelTaskRequest(task_id=task.id)
+        input_dto = CancelTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.CANCELED)
@@ -42,7 +42,7 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
         task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
         self.repository.save(task)
 
-        input_dto = CancelTaskRequest(task_id=task.id)
+        input_dto = CancelTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.CANCELED)

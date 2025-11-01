@@ -2,8 +2,8 @@
 
 from datetime import date, datetime
 
-from application.dto.optimization_result import OptimizationResult
-from application.dto.optimize_schedule_request import OptimizeScheduleRequest
+from application.dto.optimization_output import OptimizationOutput
+from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.queries.filters.task_filter import TaskFilter
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.entities.task import Task
@@ -72,7 +72,7 @@ class TaskService:
         start_date: datetime | None = None,
         max_hours_per_day: float | None = None,
         force_override: bool = True,
-    ) -> OptimizationResult:
+    ) -> OptimizationOutput:
         """Optimize task schedules.
 
         Args:
@@ -82,12 +82,12 @@ class TaskService:
             force_override: Force override existing schedules (default: True for TUI)
 
         Returns:
-            OptimizationResult containing successful/failed tasks and summary
+            OptimizationOutput containing successful/failed tasks and summary
         """
         if start_date is None:
             start_date = calculate_next_workday()
 
-        optimize_input = OptimizeScheduleRequest(
+        optimize_input = OptimizeScheduleInput(
             start_date=start_date,
             max_hours_per_day=max_hours_per_day or self.config.optimization.max_hours_per_day,
             force_override=force_override,

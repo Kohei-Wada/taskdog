@@ -4,8 +4,8 @@ from datetime import datetime
 
 import click
 
-from application.dto.optimization_result import OptimizationResult
-from application.dto.optimize_schedule_request import OptimizeScheduleRequest
+from application.dto.optimization_output import OptimizationOutput
+from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
@@ -14,7 +14,7 @@ from shared.click_types.datetime_with_default import DateTimeWithDefault
 from shared.utils.date_utils import get_next_weekday
 
 
-def _show_failed_tasks(console_writer: ConsoleWriter, result: OptimizationResult) -> None:
+def _show_failed_tasks(console_writer: ConsoleWriter, result: OptimizationOutput) -> None:
     """Show details of failed tasks.
 
     Args:
@@ -100,7 +100,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
     # Execute optimization
     use_case = OptimizeScheduleUseCase(repository, config)
     result = use_case.execute(
-        OptimizeScheduleRequest(
+        OptimizeScheduleInput(
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
             force_override=force,

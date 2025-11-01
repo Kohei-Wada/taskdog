@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime
 
-from application.dto.complete_task_request import CompleteTaskRequest
+from application.dto.complete_task_input import CompleteTaskInput
 from application.use_cases.complete_task import CompleteTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskNotStartedError
@@ -14,7 +14,7 @@ class TestCompleteTaskUseCase(BaseStatusChangeUseCaseTest):
     """Test cases for CompleteTaskUseCase"""
 
     use_case_class = CompleteTaskUseCase
-    request_class = CompleteTaskRequest
+    request_class = CompleteTaskInput
     target_status = TaskStatus.COMPLETED
     initial_status = TaskStatus.IN_PROGRESS
 
@@ -29,7 +29,7 @@ class TestCompleteTaskUseCase(BaseStatusChangeUseCaseTest):
         task.actual_start = datetime(2025, 10, 12, 10, 0, 0)
         self.repository.save(task)
 
-        input_dto = CompleteTaskRequest(task_id=task.id)
+        input_dto = CompleteTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # actual_start should remain unchanged
@@ -42,7 +42,7 @@ class TestCompleteTaskUseCase(BaseStatusChangeUseCaseTest):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = CompleteTaskRequest(task_id=task.id)
+        input_dto = CompleteTaskInput(task_id=task.id)
 
         with self.assertRaises(TaskNotStartedError) as context:
             self.use_case.execute(input_dto)

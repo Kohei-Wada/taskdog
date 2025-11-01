@@ -6,7 +6,7 @@ from domain.entities.task import Task
 
 
 @dataclass
-class GetTaskDetailResult:
+class GetTaskDetailOutput:
     """Result DTO for task detail with notes.
 
     Attributes:

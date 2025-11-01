@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class SetTaskTagsRequest:
+class SetTaskTagsInput:
     """Request data for setting task tags.
 
     Attributes:

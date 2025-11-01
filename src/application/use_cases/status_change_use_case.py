@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from application.dto.status_change_request import StatusChangeRequest
+from application.dto.status_change_input import StatusChangeInput
 from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
 from application.validators.validator_registry import TaskFieldValidatorRegistry
@@ -11,7 +11,7 @@ from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 
 
-class StatusChangeUseCase[TInput: StatusChangeRequest](UseCase[TInput, Task], ABC):
+class StatusChangeUseCase[TInput: StatusChangeInput](UseCase[TInput, Task], ABC):
     """Base use case for status change operations.
 
     This class implements the Template Method pattern to eliminate code duplication
@@ -30,7 +30,7 @@ class StatusChangeUseCase[TInput: StatusChangeRequest](UseCase[TInput, Task], AB
     override hooks for custom behavior.
 
     Example:
-        class StartTaskUseCase(StatusChangeUseCase[StartTaskRequest]):
+        class StartTaskUseCase(StatusChangeUseCase[StartTaskInput]):
             def _get_target_status(self) -> TaskStatus:
                 return TaskStatus.IN_PROGRESS
     """

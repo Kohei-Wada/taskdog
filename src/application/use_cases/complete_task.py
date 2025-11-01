@@ -1,11 +1,11 @@
 """Use case for completing a task."""
 
-from application.dto.complete_task_request import CompleteTaskRequest
+from application.dto.complete_task_input import CompleteTaskInput
 from application.use_cases.status_change_use_case import StatusChangeUseCase
 from domain.entities.task import TaskStatus
 
 
-class CompleteTaskUseCase(StatusChangeUseCase[CompleteTaskRequest]):
+class CompleteTaskUseCase(StatusChangeUseCase[CompleteTaskInput]):
     """Use case for completing a task.
 
     Sets task status to COMPLETED and records actual end time.
