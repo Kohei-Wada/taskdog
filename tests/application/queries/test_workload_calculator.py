@@ -278,6 +278,47 @@ class WorkloadCalculatorTest(unittest.TestCase):
         self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)  # Thursday
         self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
 
+    def test_calculate_daily_workload_excludes_archived_tasks(self):
+        """Test that archived tasks are excluded from workload calculation."""
+        # Task 1: PENDING task (Monday to Wednesday, 6 hours, 3 weekdays)
+        # With equal distribution: 2h per day
+        task1 = Task(
+            id=1,
+            name="Active Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=datetime.fromtimestamp(1234567890.0),
+            planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
+            planned_end=datetime(2025, 1, 8, 18, 0, 0),  # Wednesday
+            estimated_duration=6.0,
+        )
+
+        # Task 2: PENDING but archived task (Wednesday to Friday, 9 hours) - should be excluded
+        task2 = Task(
+            id=2,
+            name="Archived Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=datetime.fromtimestamp(1234567890.0),
+            planned_start=datetime(2025, 1, 8, 9, 0, 0),  # Wednesday
+            planned_end=datetime(2025, 1, 10, 18, 0, 0),  # Friday
+            estimated_duration=9.0,
+            is_archived=True,
+        )
+
+        start_date = date(2025, 1, 6)  # Monday
+        end_date = date(2025, 1, 10)  # Friday
+
+        result = self.calculator.calculate_daily_workload([task1, task2], start_date, end_date)
+
+        # Only task1 (active) should be counted with equal distribution
+        # Task2 (archived) is excluded entirely
+        self.assertAlmostEqual(result[date(2025, 1, 6)], 2.0, places=2)  # Monday (task1)
+        self.assertAlmostEqual(result[date(2025, 1, 7)], 2.0, places=2)  # Tuesday (task1)
+        self.assertAlmostEqual(result[date(2025, 1, 8)], 2.0, places=2)  # Wednesday (task1)
+        self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)  # Thursday (task2 excluded)
+        self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday (task2 excluded)
+
 
 if __name__ == "__main__":
     unittest.main()

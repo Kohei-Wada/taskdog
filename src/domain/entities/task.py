@@ -186,10 +186,11 @@ class Task:
             True if task should be included in workload
 
         Business Rules:
+            - Exclude archived tasks
             - Exclude finished tasks (COMPLETED, CANCELED)
             - Include PENDING and IN_PROGRESS tasks
         """
-        return not self.is_finished
+        return not self.is_archived and not self.is_finished
 
     @staticmethod
     def _serialize_datetime(dt: datetime | str | None) -> str | None:

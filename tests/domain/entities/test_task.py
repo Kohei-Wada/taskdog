@@ -89,6 +89,16 @@ class TestTaskShouldCountInWorkload(unittest.TestCase):
                 result = task.should_count_in_workload()
                 self.assertEqual(result, expected)
 
+    def test_should_count_in_workload_excludes_archived(self):
+        """Test that archived tasks are not counted in workload."""
+        # Archived task with PENDING status should not be counted
+        task = Task(name="Test task", priority=100, status=TaskStatus.PENDING, is_archived=True)
+        self.assertFalse(task.should_count_in_workload())
+
+        # Archived task with IN_PROGRESS status should not be counted
+        task = Task(name="Test task", priority=100, status=TaskStatus.IN_PROGRESS, is_archived=True)
+        self.assertFalse(task.should_count_in_workload())
+
 
 class TestTaskSerialization(unittest.TestCase):
     """Test cases for Task serialization methods."""

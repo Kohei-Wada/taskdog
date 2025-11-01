@@ -27,7 +27,7 @@ class WorkloadCalculator:
             Dictionary mapping date to total estimated hours {date: hours}
         """
         empty_workload = self._initialize_daily_workload(start_date, end_date)
-        schedulable_tasks = filter(self._is_schedulable_task, tasks)
+        schedulable_tasks = filter(self._should_include_in_workload, tasks)
         task_allocations = map(self._task_to_daily_hours, schedulable_tasks)
         return self._merge_allocations(empty_workload, task_allocations)
 
@@ -36,7 +36,7 @@ class WorkloadCalculator:
         days = (end_date - start_date).days + 1
         return {start_date + timedelta(days=i): 0.0 for i in range(days)}
 
-    def _is_schedulable_task(self, task: Task) -> bool:
+    def _should_include_in_workload(self, task: Task) -> bool:
         """Check if a task should be included in workload calculation.
 
         Returns:
