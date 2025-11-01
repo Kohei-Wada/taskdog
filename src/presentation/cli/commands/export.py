@@ -4,9 +4,10 @@ import click
 
 from application.queries.task_query_service import TaskQueryService
 from presentation.cli.commands.common_options import date_range_options, filter_options
-from presentation.cli.commands.filter_helpers import build_task_filter, parse_field_list
+from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
 from presentation.exporters import CsvTaskExporter, JsonTaskExporter, MarkdownTableExporter
+from shared.click_types.field_list import FieldList
 
 # Valid fields for export
 VALID_FIELDS = {
@@ -44,7 +45,7 @@ VALID_FIELDS = {
 @click.option(
     "--fields",
     "-f",
-    type=str,
+    type=FieldList(valid_fields=VALID_FIELDS),
     help="Comma-separated list of fields to export (e.g., 'id,name,priority,status'). "
     "Available: id, name, priority, status, created_at, planned_start, planned_end, "
     "deadline, actual_start, actual_end, estimated_duration, daily_allocations",
@@ -101,16 +102,14 @@ def export_command(ctx, format, output, fields, tag, all, status, start_date, en
         )
         tasks = task_query_service.get_filtered_tasks(filter_obj)
 
-        # Parse and validate fields option
-        field_list = parse_field_list(fields, valid_fields=VALID_FIELDS)
-
+        # fields is already parsed and validated by FieldList Click type
         # Create appropriate exporter based on format
         if format == "json":
-            exporter = JsonTaskExporter(field_list=field_list)
+            exporter = JsonTaskExporter(field_list=fields)
         elif format == "csv":
-            exporter = CsvTaskExporter(field_list=field_list)
+            exporter = CsvTaskExporter(field_list=fields)
         elif format == "markdown":
-            exporter = MarkdownTableExporter(field_list=field_list)
+            exporter = MarkdownTableExporter(field_list=fields)
         else:
             raise ValueError(f"Unsupported format: {format}")
 

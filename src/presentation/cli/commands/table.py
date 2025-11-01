@@ -11,6 +11,7 @@ from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.commands.table_helpers import get_and_filter_tasks, render_table
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
+from shared.click_types.field_list import FieldList
 
 
 @click.command(
@@ -19,7 +20,7 @@ from presentation.cli.error_handler import handle_command_errors
 @click.option(
     "--fields",
     "-f",
-    type=str,
+    type=FieldList(),  # No validation - renderer handles unknown fields gracefully
     help="Comma-separated list of fields to display (e.g., 'id,name,note,priority,status'). "
     "Available: id, name, note, priority, status, depends_on, planned_start, planned_end, "
     "actual_start, actual_end, deadline, duration, created_at, tags",
@@ -59,11 +60,7 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
 
-    # Parse fields option (no validation - renderer handles unknown fields gracefully)
-    field_list = None
-    if fields:
-        field_list = [f.strip() for f in fields.split(",")]
-
+    # fields is already parsed by FieldList Click type (no validation)
     # Build integrated filter with all options (tags use OR logic by default)
     tags = list(tag) if tag else None
     filter_obj = build_task_filter(
@@ -79,4 +76,4 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
     tasks = get_and_filter_tasks(repository, filter_obj, sort_by=sort, reverse=reverse)
 
     # Render and display
-    render_table(ctx_obj, tasks, fields=field_list)
+    render_table(ctx_obj, tasks, fields=fields)
