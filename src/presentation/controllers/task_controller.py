@@ -10,6 +10,7 @@ from application.dto.archive_task_request import ArchiveTaskRequest
 from application.dto.cancel_task_request import CancelTaskRequest
 from application.dto.complete_task_request import CompleteTaskRequest
 from application.dto.create_task_request import CreateTaskRequest
+from application.dto.manage_dependencies_request import RemoveDependencyRequest
 from application.dto.pause_task_request import PauseTaskRequest
 from application.dto.remove_task_request import RemoveTaskRequest
 from application.dto.reopen_task_request import ReopenTaskRequest
@@ -20,6 +21,7 @@ from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.pause_task import PauseTaskUseCase
+from application.use_cases.remove_dependency import RemoveDependencyUseCase
 from application.use_cases.remove_task import RemoveTaskUseCase
 from application.use_cases.reopen_task import ReopenTaskUseCase
 from application.use_cases.restore_task import RestoreTaskUseCase
@@ -248,4 +250,22 @@ class TaskController:
         """
         use_case = RestoreTaskUseCase(self.repository)
         request = RestoreTaskRequest(task_id=task_id)
+        return use_case.execute(request)
+
+    def remove_dependency(self, task_id: int, depends_on_id: int) -> Task:
+        """Remove a dependency from a task.
+
+        Args:
+            task_id: ID of the task to remove dependency from
+            depends_on_id: ID of the dependency task to remove
+
+        Returns:
+            The updated task
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If dependency doesn't exist on task
+        """
+        use_case = RemoveDependencyUseCase(self.repository)
+        request = RemoveDependencyRequest(task_id=task_id, depends_on_id=depends_on_id)
         return use_case.execute(request)

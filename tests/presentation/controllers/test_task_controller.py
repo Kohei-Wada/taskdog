@@ -332,6 +332,45 @@ class TestTaskController(unittest.TestCase):
         self.assertIsNotNone(persisted_task)
         self.assertFalse(persisted_task.is_archived)
 
+    def test_remove_dependency_removes_from_list(self):
+        """Test remove_dependency removes dependency from task."""
+        # Create two tasks with dependency
+        dependency = Task(name="Dependency Task", priority=1, status=TaskStatus.PENDING)
+        dependency.id = self.repository.generate_next_id()
+        self.repository.save(dependency)
+
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        task.depends_on = [dependency.id]
+        self.repository.save(task)
+
+        # Remove the dependency
+        result = self.controller.remove_dependency(task.id, dependency.id)
+
+        # Verify dependency removed
+        self.assertEqual(result.depends_on, [])
+        self.assertEqual(result.id, task.id)
+
+    def test_remove_dependency_persists_changes(self):
+        """Test remove_dependency persists changes to repository."""
+        # Create two tasks with dependency
+        dependency = Task(name="Dependency Task", priority=1, status=TaskStatus.PENDING)
+        dependency.id = self.repository.generate_next_id()
+        self.repository.save(dependency)
+
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        task.depends_on = [dependency.id]
+        self.repository.save(task)
+
+        # Remove the dependency
+        self.controller.remove_dependency(task.id, dependency.id)
+
+        # Verify changes persisted
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertIsNotNone(persisted_task)
+        self.assertEqual(persisted_task.depends_on, [])
+
 
 if __name__ == "__main__":
     unittest.main()
