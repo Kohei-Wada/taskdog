@@ -279,6 +279,10 @@ class TestReportCommand(unittest.TestCase):
             notes_repository=MagicMock(),
             task_controller=self.task_controller,
             query_controller=self.query_controller,
+            lifecycle_controller=MagicMock(),
+            relationship_controller=MagicMock(),
+            analytics_controller=MagicMock(),
+            crud_controller=MagicMock(),
         )
 
     def test_shows_warning_when_no_scheduled_tasks(self):

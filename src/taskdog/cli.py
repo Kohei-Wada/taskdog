@@ -97,10 +97,24 @@ def cli(ctx: click.Context) -> None:
 
     # Initialize controllers
     from presentation.controllers.query_controller import QueryController
+    from presentation.controllers.task_analytics_controller import (
+        TaskAnalyticsController,
+    )
     from presentation.controllers.task_controller import TaskController
+    from presentation.controllers.task_crud_controller import TaskCrudController
+    from presentation.controllers.task_lifecycle_controller import (
+        TaskLifecycleController,
+    )
+    from presentation.controllers.task_relationship_controller import (
+        TaskRelationshipController,
+    )
 
     task_controller = TaskController(repository, time_tracker, config, notes_repository)
     query_controller = QueryController(repository)
+    lifecycle_controller = TaskLifecycleController(repository, time_tracker, config)
+    relationship_controller = TaskRelationshipController(repository, config)
+    analytics_controller = TaskAnalyticsController(repository, config)
+    crud_controller = TaskCrudController(repository, time_tracker, config)
 
     # Store in CliContext for type-safe access
     ctx.ensure_object(dict)
@@ -112,6 +126,10 @@ def cli(ctx: click.Context) -> None:
         notes_repository=notes_repository,
         task_controller=task_controller,
         query_controller=query_controller,
+        lifecycle_controller=lifecycle_controller,
+        relationship_controller=relationship_controller,
+        analytics_controller=analytics_controller,
+        crud_controller=crud_controller,
     )
 
 

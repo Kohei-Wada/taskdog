@@ -132,8 +132,23 @@ class TaskdogTUI(App):
         self._hide_completed: bool = False  # Default: show all tasks
 
         # Initialize controllers
+        from presentation.controllers.task_analytics_controller import (
+            TaskAnalyticsController,
+        )
+        from presentation.controllers.task_crud_controller import TaskCrudController
+        from presentation.controllers.task_lifecycle_controller import (
+            TaskLifecycleController,
+        )
+        from presentation.controllers.task_relationship_controller import (
+            TaskRelationshipController,
+        )
+
         task_controller = TaskController(repository, time_tracker, self.config, notes_repository)
         self.query_controller = QueryController(repository)
+        lifecycle_controller = TaskLifecycleController(repository, time_tracker, self.config)
+        relationship_controller = TaskRelationshipController(repository, self.config)
+        analytics_controller = TaskAnalyticsController(repository, self.config)
+        crud_controller = TaskCrudController(repository, time_tracker, self.config)
 
         # Initialize TUIContext
         self.context = TUIContext(
@@ -141,6 +156,10 @@ class TaskdogTUI(App):
             notes_repository=notes_repository,
             task_controller=task_controller,
             query_controller=self.query_controller,
+            lifecycle_controller=lifecycle_controller,
+            relationship_controller=relationship_controller,
+            analytics_controller=analytics_controller,
+            crud_controller=crud_controller,
         )
 
         # Initialize presenters for view models
