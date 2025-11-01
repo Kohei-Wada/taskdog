@@ -2,11 +2,10 @@
 
 import click
 
-from application.dto.start_task_request import StartTaskRequest
-from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import TaskStatus
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
+from presentation.controllers.task_controller import TaskController
 from shared.constants import StatusVerbs
 
 
@@ -19,15 +18,15 @@ def start_command(ctx, task_ids):
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
     time_tracker = ctx_obj.time_tracker
-    start_task_use_case = StartTaskUseCase(repository, time_tracker)
+    config = ctx_obj.config
+    controller = TaskController(repository, time_tracker, config)
 
     def start_single_task(task_id: int) -> None:
         # Check current status before starting
         task_before = repository.get_by_id(task_id)
         was_already_in_progress = task_before and task_before.status == TaskStatus.IN_PROGRESS
 
-        input_dto = StartTaskRequest(task_id=task_id)
-        task = start_task_use_case.execute(input_dto)
+        task = controller.start_task(task_id)
 
         # Print success message
         console_writer.task_success(StatusVerbs.STARTED, task)
