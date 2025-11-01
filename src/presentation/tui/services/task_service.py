@@ -4,16 +4,13 @@ from datetime import date, datetime
 
 from application.dto.optimization_output import OptimizationOutput
 from application.dto.optimize_schedule_input import OptimizeScheduleInput
-from application.dto.task_list_output import TaskListOutput
 from application.queries.filters.task_filter import TaskFilter
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
 from presentation.mappers.gantt_mapper import GanttMapper
-from presentation.presenters.table_presenter import TablePresenter
 from presentation.tui.context import TUIContext
 from presentation.view_models.gantt_view_model import GanttViewModel
-from presentation.view_models.task_view_model import TaskRowViewModel
 from shared.utils.date_utils import calculate_next_workday
 
 
@@ -134,20 +131,3 @@ class TaskService:
         )
         # Convert DTO to ViewModel
         return GanttMapper.from_gantt_result(gantt_result)
-
-    def get_table_view_models(self, tasks: list[Task]) -> list[TaskRowViewModel]:
-        """Convert tasks to table view models using TablePresenter.
-
-        Args:
-            tasks: List of Task entities to convert
-
-        Returns:
-            List of TaskRowViewModels ready for table rendering
-        """
-        # Create temporary DTO with tasks
-        # total_count and filtered_count are not used by presenter, just for DTO completeness
-        output = TaskListOutput(tasks=tasks, total_count=len(tasks), filtered_count=len(tasks))
-
-        # Convert using TablePresenter
-        presenter = TablePresenter(self.notes_repository)
-        return presenter.present(output)

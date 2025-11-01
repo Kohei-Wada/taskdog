@@ -18,6 +18,7 @@ from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 from presentation.controllers.query_controller import QueryController
 from presentation.controllers.task_controller import TaskController
+from presentation.presenters.table_presenter import TablePresenter
 from presentation.tui.commands.factory import CommandFactory
 from presentation.tui.context import TUIContext
 from presentation.tui.events import TaskCreated, TaskDeleted, TasksRefreshed, TaskUpdated
@@ -139,6 +140,9 @@ class TaskdogTUI(App):
 
         # Initialize TaskService with context
         self.task_service = TaskService(self.context, repository)
+
+        # Initialize TablePresenter for table view models
+        self.table_presenter = TablePresenter(notes_repository)
 
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context, self.task_service)
@@ -262,8 +266,8 @@ class TaskdogTUI(App):
                 )
 
             if self.main_screen.task_table:
-                # Convert tasks to ViewModels using TaskService
-                view_models = self.task_service.get_table_view_models(tasks)
+                # Convert TaskListOutput to ViewModels using TablePresenter directly
+                view_models = self.table_presenter.present(task_list_output)
                 self.main_screen.task_table.refresh_tasks(
                     view_models, keep_scroll_position=keep_scroll_position
                 )
