@@ -7,6 +7,7 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 from domain.entities.task import Task, TaskStatus
+from domain.repositories.notes_repository import NotesRepository
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.controllers.task_controller import TaskController
@@ -551,6 +552,126 @@ class TestTaskController(unittest.TestCase):
         self.assertIsNotNone(persisted_task)
         self.assertEqual(persisted_task.name, new_name)
         self.assertEqual(persisted_task.priority, new_priority)
+
+    def test_get_task_detail_with_notes(self):
+        """Test get_task_detail retrieves task with notes."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Mock notes repository with notes content
+        mock_notes_repo = MagicMock(spec=NotesRepository)
+        mock_notes_repo.has_notes.return_value = True
+        mock_notes_repo.read_notes.return_value = "# Test Notes\n\nSome content"
+
+        # Create controller with notes repository
+        controller_with_notes = TaskController(
+            self.repository, self.time_tracker, self.config, mock_notes_repo
+        )
+
+        # Get task detail
+        result = controller_with_notes.get_task_detail(task.id)
+
+        # Verify result
+        self.assertEqual(result.task.id, task.id)
+        self.assertEqual(result.task.name, "Test Task")
+        self.assertTrue(result.has_notes)
+        self.assertEqual(result.notes_content, "# Test Notes\n\nSome content")
+        mock_notes_repo.has_notes.assert_called_once_with(task.id)
+        mock_notes_repo.read_notes.assert_called_once_with(task.id)
+
+    def test_get_task_detail_without_notes(self):
+        """Test get_task_detail retrieves task without notes."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Mock notes repository without notes
+        mock_notes_repo = MagicMock(spec=NotesRepository)
+        mock_notes_repo.has_notes.return_value = False
+
+        # Create controller with notes repository
+        controller_with_notes = TaskController(
+            self.repository, self.time_tracker, self.config, mock_notes_repo
+        )
+
+        # Get task detail
+        result = controller_with_notes.get_task_detail(task.id)
+
+        # Verify result
+        self.assertEqual(result.task.id, task.id)
+        self.assertEqual(result.task.name, "Test Task")
+        self.assertFalse(result.has_notes)
+        self.assertIsNone(result.notes_content)
+        mock_notes_repo.has_notes.assert_called_once_with(task.id)
+        mock_notes_repo.read_notes.assert_not_called()
+
+    def test_get_task_detail_raises_error_when_notes_repository_not_initialized(self):
+        """Test get_task_detail raises ValueError when notes_repository is None."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Try to get task detail without notes repository
+        with self.assertRaises(ValueError) as context:
+            self.controller.get_task_detail(task.id)
+
+        self.assertIn("notes_repository is required", str(context.exception))
+
+    def test_calculate_statistics_returns_result(self):
+        """Test calculate_statistics returns StatisticsResult."""
+        # Create some tasks with various statuses
+        tasks_data = [
+            ("Task 1", TaskStatus.PENDING),
+            ("Task 2", TaskStatus.COMPLETED),
+            ("Task 3", TaskStatus.IN_PROGRESS),
+            ("Task 4", TaskStatus.COMPLETED),
+            ("Task 5", TaskStatus.CANCELED),
+        ]
+
+        for name, status in tasks_data:
+            task = Task(name=name, priority=1, status=status)
+            task.id = self.repository.generate_next_id()
+            self.repository.save(task)
+
+        # Calculate statistics with default period
+        result = self.controller.calculate_statistics()
+
+        # Verify result structure
+        self.assertIsNotNone(result.task_stats)
+        self.assertEqual(result.task_stats.total_tasks, 5)
+        self.assertEqual(result.task_stats.completed_count, 2)
+        self.assertEqual(result.task_stats.pending_count, 1)
+        self.assertEqual(result.task_stats.in_progress_count, 1)
+        self.assertEqual(result.task_stats.canceled_count, 1)
+
+    def test_calculate_statistics_with_period_parameter(self):
+        """Test calculate_statistics accepts period parameter."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Calculate statistics for different periods
+        result_all = self.controller.calculate_statistics(period="all")
+        result_7d = self.controller.calculate_statistics(period="7d")
+        result_30d = self.controller.calculate_statistics(period="30d")
+
+        # All should return valid results
+        self.assertIsNotNone(result_all.task_stats)
+        self.assertIsNotNone(result_7d.task_stats)
+        self.assertIsNotNone(result_30d.task_stats)
+
+    def test_calculate_statistics_raises_error_for_invalid_period(self):
+        """Test calculate_statistics raises ValueError for invalid period."""
+        # Try to calculate with invalid period
+        with self.assertRaises(ValueError) as context:
+            self.controller.calculate_statistics(period="invalid")
+
+        self.assertIn("Invalid period", str(context.exception))
 
 
 if __name__ == "__main__":

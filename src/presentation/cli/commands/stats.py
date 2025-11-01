@@ -2,10 +2,9 @@
 
 import click
 
-from application.dto.statistics_result import CalculateStatisticsRequest
-from application.use_cases.calculate_statistics import CalculateStatisticsUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
+from presentation.controllers.task_controller import TaskController
 from presentation.mappers.statistics_mapper import StatisticsMapper
 from presentation.renderers.rich_statistics_renderer import RichStatisticsRenderer
 
@@ -44,10 +43,12 @@ def stats_command(ctx, period, focus):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
+    config = ctx_obj.config
 
-    # Execute use case
-    use_case = CalculateStatisticsUseCase(repository)
-    result = use_case.execute(CalculateStatisticsRequest(period=period))
+    # Calculate statistics via controller
+    controller = TaskController(repository, time_tracker, config)
+    result = controller.calculate_statistics(period=period)
 
     # Check if we have any tasks
     if result.task_stats.total_tasks == 0:

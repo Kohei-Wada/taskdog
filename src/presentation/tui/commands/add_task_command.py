@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from domain.exceptions.task_exceptions import TaskValidationError
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
@@ -59,9 +60,13 @@ class AddTaskCommand(TUICommandBase):
 
             # Add dependencies if specified
             if form_data.depends_on and task.id is not None:
-                failed_dependencies = self.task_service.add_dependencies(
-                    task.id, form_data.depends_on
-                )
+                failed_dependencies = []
+
+                for dep_id in form_data.depends_on:
+                    try:
+                        self.controller.add_dependency(task.id, dep_id)
+                    except TaskValidationError as e:
+                        failed_dependencies.append((dep_id, str(e)))
 
                 # Show warnings for failed dependencies
                 if failed_dependencies:

@@ -2,21 +2,11 @@
 
 from datetime import date, datetime
 
-from application.dto.create_task_request import CreateTaskRequest
-from application.dto.manage_dependencies_request import (
-    AddDependencyRequest,
-    RemoveDependencyRequest,
-)
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
-from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.task_filter import TaskFilter
-from application.use_cases.add_dependency import AddDependencyUseCase
-from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
-from application.use_cases.remove_dependency import RemoveDependencyUseCase
-from domain.entities.task import Task, TaskStatus
-from domain.exceptions.task_exceptions import TaskValidationError
+from domain.entities.task import Task
 from presentation.controllers.task_controller import TaskController
 from presentation.mappers.gantt_mapper import GanttMapper
 from presentation.tui.context import TUIContext
@@ -76,45 +66,6 @@ class TaskService:
     # Command Operations (Write)
     # ============================================================================
 
-    def create_task(
-        self,
-        name: str,
-        priority: int | None = None,
-        deadline: datetime | None = None,
-        estimated_duration: float | None = None,
-        planned_start: datetime | None = None,
-        planned_end: datetime | None = None,
-        is_fixed: bool = False,
-        tags: list[str] | None = None,
-    ) -> Task:
-        """Create a new task.
-
-        Args:
-            name: Task name
-            priority: Task priority (default: from config)
-            deadline: Task deadline (optional)
-            estimated_duration: Estimated duration in hours (optional)
-            planned_start: Planned start datetime (optional)
-            planned_end: Planned end datetime (optional)
-            is_fixed: Whether the task schedule is fixed (default: False)
-            tags: List of tags for categorization (optional)
-
-        Returns:
-            The created task
-        """
-        use_case = CreateTaskUseCase(self.repository)
-        task_input = CreateTaskRequest(
-            name=name,
-            priority=priority or self.config.task.default_priority,
-            deadline=deadline,
-            estimated_duration=estimated_duration,
-            planned_start=planned_start,
-            planned_end=planned_end,
-            is_fixed=is_fixed,
-            tags=tags,
-        )
-        return use_case.execute(task_input)
-
     def optimize_schedule(
         self,
         algorithm: str,
@@ -147,135 +98,9 @@ class TaskService:
         use_case = OptimizeScheduleUseCase(self.repository, self.config)
         return use_case.execute(optimize_input)
 
-    def update_task(
-        self,
-        task_id: int,
-        name: str | None = None,
-        priority: int | None = None,
-        status: TaskStatus | None = None,
-        planned_start: datetime | None = None,
-        planned_end: datetime | None = None,
-        deadline: datetime | None = None,
-        estimated_duration: float | None = None,
-        is_fixed: bool | None = None,
-        tags: list[str] | None = None,
-    ) -> tuple[Task, list[str]]:
-        """Update a task.
-
-        Args:
-            task_id: ID of the task to update
-            name: New name (optional)
-            priority: New priority (optional)
-            status: New status (optional)
-            planned_start: New planned start (optional)
-            planned_end: New planned end (optional)
-            deadline: New deadline (optional)
-            estimated_duration: New estimated duration (optional)
-            is_fixed: Whether task is fixed (optional)
-            tags: New tags list (optional)
-
-        Returns:
-            Tuple of (updated task, list of updated field names)
-        """
-        return self.controller.update_task(
-            task_id=task_id,
-            name=name,
-            priority=priority,
-            status=status,
-            planned_start=planned_start,
-            planned_end=planned_end,
-            deadline=deadline,
-            estimated_duration=estimated_duration,
-            is_fixed=is_fixed,
-            tags=tags,
-        )
-
-    def add_dependencies(self, task_id: int, dependency_ids: list[int]) -> list[tuple[int, str]]:
-        """Add multiple dependencies to a task.
-
-        Args:
-            task_id: ID of the task to add dependencies to
-            dependency_ids: List of dependency task IDs to add
-
-        Returns:
-            List of (dependency_id, error_message) tuples for failed additions.
-            Empty list if all succeeded.
-        """
-        if not dependency_ids:
-            return []
-
-        use_case = AddDependencyUseCase(self.repository)
-        failed_dependencies = []
-
-        for dep_id in dependency_ids:
-            try:
-                dependency_input = AddDependencyRequest(task_id=task_id, depends_on_id=dep_id)
-                use_case.execute(dependency_input)
-            except TaskValidationError as e:
-                failed_dependencies.append((dep_id, str(e)))
-
-        return failed_dependencies
-
-    def sync_dependencies(
-        self,
-        task_id: int,
-        old_dependency_ids: set[int],
-        new_dependency_ids: set[int],
-    ) -> list[str]:
-        """Synchronize task dependencies by adding/removing as needed.
-
-        Args:
-            task_id: ID of the task to sync dependencies for
-            old_dependency_ids: Set of current dependency IDs
-            new_dependency_ids: Set of desired dependency IDs
-
-        Returns:
-            List of error messages for failed operations.
-            Empty list if all operations succeeded.
-        """
-        # Calculate differences
-        deps_to_remove = old_dependency_ids - new_dependency_ids
-        deps_to_add = new_dependency_ids - old_dependency_ids
-
-        failed_operations = []
-
-        # Remove dependencies
-        if deps_to_remove:
-            remove_use_case = RemoveDependencyUseCase(self.repository)
-            for dep_id in deps_to_remove:
-                try:
-                    remove_input = RemoveDependencyRequest(task_id=task_id, depends_on_id=dep_id)
-                    remove_use_case.execute(remove_input)
-                except TaskValidationError as e:
-                    failed_operations.append(f"Remove {dep_id}: {e}")
-
-        # Add dependencies
-        if deps_to_add:
-            add_use_case = AddDependencyUseCase(self.repository)
-            for dep_id in deps_to_add:
-                try:
-                    add_input = AddDependencyRequest(task_id=task_id, depends_on_id=dep_id)
-                    add_use_case.execute(add_input)
-                except TaskValidationError as e:
-                    failed_operations.append(f"Add {dep_id}: {e}")
-
-        return failed_operations
-
     # ============================================================================
     # Query Operations (Read)
     # ============================================================================
-
-    def get_incomplete_tasks(self, sort_by: str = "id") -> list[Task]:
-        """Get incomplete tasks (PENDING, IN_PROGRESS).
-
-        Args:
-            sort_by: Sort field
-
-        Returns:
-            List of incomplete tasks
-        """
-        incomplete_filter = IncompleteFilter()
-        return self.query_service.get_filtered_tasks(incomplete_filter, sort_by=sort_by)
 
     def get_gantt_data(
         self,

@@ -2,12 +2,9 @@
 
 import click
 
-from application.use_cases.get_task_detail import (
-    GetTaskDetailInput,
-    GetTaskDetailUseCase,
-)
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from presentation.controllers.task_controller import TaskController
 from presentation.renderers.rich_detail_renderer import RichDetailRenderer
 
 
@@ -21,12 +18,13 @@ def show_command(ctx, task_id, raw):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
+    config = ctx_obj.config
     notes_repository = ctx_obj.notes_repository
 
-    # Execute use case to get task detail
-    use_case = GetTaskDetailUseCase(repository, notes_repository)
-    input_dto = GetTaskDetailInput(task_id)
-    detail = use_case.execute(input_dto)
+    # Get task detail via controller
+    controller = TaskController(repository, time_tracker, config, notes_repository)
+    detail = controller.get_task_detail(task_id)
 
     # Render and display using renderer
     renderer = RichDetailRenderer(console_writer)

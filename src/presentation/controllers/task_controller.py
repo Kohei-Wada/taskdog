@@ -21,12 +21,16 @@ from application.dto.reopen_task_request import ReopenTaskRequest
 from application.dto.restore_task_request import RestoreTaskRequest
 from application.dto.set_task_tags_request import SetTaskTagsRequest
 from application.dto.start_task_request import StartTaskRequest
+from application.dto.statistics_result import CalculateStatisticsRequest, StatisticsResult
+from application.dto.task_detail_result import GetTaskDetailResult
 from application.dto.update_task_request import UpdateTaskRequest
 from application.use_cases.add_dependency import AddDependencyUseCase
 from application.use_cases.archive_task import ArchiveTaskUseCase
+from application.use_cases.calculate_statistics import CalculateStatisticsUseCase
 from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
+from application.use_cases.get_task_detail import GetTaskDetailInput, GetTaskDetailUseCase
 from application.use_cases.log_hours import LogHoursUseCase
 from application.use_cases.pause_task import PauseTaskUseCase
 from application.use_cases.remove_dependency import RemoveDependencyUseCase
@@ -37,6 +41,7 @@ from application.use_cases.set_task_tags import SetTaskTagsUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task, TaskStatus
+from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 from shared.config_manager import Config
@@ -53,6 +58,7 @@ class TaskController:
         repository: Task repository for data persistence
         time_tracker: Time tracker for recording timestamps
         config: Application configuration
+        notes_repository: Notes repository for notes file operations (optional)
     """
 
     def __init__(
@@ -60,6 +66,7 @@ class TaskController:
         repository: TaskRepository,
         time_tracker: TimeTracker,
         config: Config,
+        notes_repository: NotesRepository | None = None,
     ):
         """Initialize the task controller.
 
@@ -67,10 +74,12 @@ class TaskController:
             repository: Task repository
             time_tracker: Time tracker service
             config: Configuration
+            notes_repository: Notes repository (optional, required for get_task_detail)
         """
         self.repository = repository
         self.time_tracker = time_tracker
         self.config = config
+        self.notes_repository = notes_repository
 
     def start_task(self, task_id: int) -> Task:
         """Start a task.
@@ -382,4 +391,43 @@ class TaskController:
             is_fixed=is_fixed,
             tags=tags,
         )
+        return use_case.execute(request)
+
+    def get_task_detail(self, task_id: int) -> GetTaskDetailResult:
+        """Get task details with notes.
+
+        Args:
+            task_id: ID of the task to retrieve
+
+        Returns:
+            GetTaskDetailResult containing task and notes information
+
+        Raises:
+            TaskNotFoundException: If task not found
+            ValueError: If notes_repository is not initialized
+        """
+        if self.notes_repository is None:
+            raise ValueError("notes_repository is required for get_task_detail operation")
+
+        use_case = GetTaskDetailUseCase(self.repository, self.notes_repository)
+        input_dto = GetTaskDetailInput(task_id)
+        return use_case.execute(input_dto)
+
+    def calculate_statistics(self, period: str = "all") -> StatisticsResult:
+        """Calculate task statistics.
+
+        Args:
+            period: Time period for filtering ('7d', '30d', or 'all')
+
+        Returns:
+            StatisticsResult containing comprehensive task statistics
+
+        Raises:
+            ValueError: If period is invalid
+        """
+        if period not in ["all", "7d", "30d"]:
+            raise ValueError(f"Invalid period: {period}. Must be 'all', '7d', or '30d'")
+
+        use_case = CalculateStatisticsUseCase(self.repository)
+        request = CalculateStatisticsRequest(period=period)
         return use_case.execute(request)

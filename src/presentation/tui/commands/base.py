@@ -33,11 +33,12 @@ class TUICommandBase(ABC):
         self.app = app
         self.context = context
         self.task_service = task_service
-        # Initialize controller with context dependencies
+        # Initialize controller with context dependencies (including notes_repository)
         self.controller = TaskController(
             context.repository,
             context.time_tracker,
             context.config,
+            context.notes_repository,
         )
 
     @abstractmethod
