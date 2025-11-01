@@ -40,11 +40,11 @@ class ReopenTaskCommand(TUICommandBase):
 
             # Reopen the task
             try:
-                updated_task = self.controller.reopen_task(task_id)
+                output = self.controller.reopen_task(task_id)
 
                 # Post TaskUpdated event to trigger UI refresh
-                assert updated_task.id is not None, "Updated task must have an ID"
-                self.app.post_message(TaskUpdated(updated_task.id))
+                assert output.id is not None, "Updated task must have an ID"
+                self.app.post_message(TaskUpdated(output.id))
                 self.notify_success(f"Reopened task: {task_name}")
 
             except (TaskValidationError, DependencyNotMetError) as e:

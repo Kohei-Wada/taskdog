@@ -125,7 +125,7 @@ class TaskController:
         task = use_case.execute(request)
         return TaskOperationOutput.from_task(task)
 
-    def pause_task(self, task_id: int) -> Task:
+    def pause_task(self, task_id: int) -> TaskOperationOutput:
         """Pause a task.
 
         Changes task status to PENDING and clears actual start/end times.
@@ -134,7 +134,7 @@ class TaskController:
             task_id: ID of the task to pause
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -142,9 +142,10 @@ class TaskController:
         """
         use_case = PauseTaskUseCase(self.repository, self.time_tracker)
         request = PauseTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
-    def cancel_task(self, task_id: int) -> Task:
+    def cancel_task(self, task_id: int) -> TaskOperationOutput:
         """Cancel a task.
 
         Changes task status to CANCELED and records actual end time.
@@ -153,7 +154,7 @@ class TaskController:
             task_id: ID of the task to cancel
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -161,7 +162,8 @@ class TaskController:
         """
         use_case = CancelTaskUseCase(self.repository, self.time_tracker)
         request = CancelTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
     def create_task(
         self,
@@ -206,7 +208,7 @@ class TaskController:
         task = use_case.execute(request)
         return TaskOperationOutput.from_task(task)
 
-    def reopen_task(self, task_id: int) -> Task:
+    def reopen_task(self, task_id: int) -> TaskOperationOutput:
         """Reopen a task.
 
         Changes task status to PENDING and clears actual start/end times.
@@ -215,7 +217,7 @@ class TaskController:
             task_id: ID of the task to reopen
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -223,9 +225,10 @@ class TaskController:
         """
         use_case = ReopenTaskUseCase(self.repository, self.time_tracker)
         request = ReopenTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
-    def archive_task(self, task_id: int) -> Task:
+    def archive_task(self, task_id: int) -> TaskOperationOutput:
         """Archive a task (soft delete).
 
         Sets is_archived flag to True, preserving task data.
@@ -234,7 +237,7 @@ class TaskController:
             task_id: ID of the task to archive
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -242,7 +245,8 @@ class TaskController:
         """
         use_case = ArchiveTaskUseCase(self.repository)
         request = ArchiveTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
     def remove_task(self, task_id: int) -> None:
         """Remove a task (hard delete).
@@ -259,7 +263,7 @@ class TaskController:
         request = RemoveTaskInput(task_id=task_id)
         use_case.execute(request)
 
-    def restore_task(self, task_id: int) -> Task:
+    def restore_task(self, task_id: int) -> TaskOperationOutput:
         """Restore an archived task.
 
         Sets is_archived flag to False, making the task visible again.
@@ -268,7 +272,7 @@ class TaskController:
             task_id: ID of the task to restore
 
         Returns:
-            The updated task
+            TaskOperationOutput containing the updated task information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -276,7 +280,8 @@ class TaskController:
         """
         use_case = RestoreTaskUseCase(self.repository)
         request = RestoreTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        task = use_case.execute(request)
+        return TaskOperationOutput.from_task(task)
 
     def add_dependency(self, task_id: int, depends_on_id: int) -> Task:
         """Add a dependency to a task.
