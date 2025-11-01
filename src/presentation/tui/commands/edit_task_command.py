@@ -96,7 +96,7 @@ class EditTaskCommand(TUICommandBase):
 
         # Update task via Controller with only changed fields
         # Controller.update_task returns UpdateTaskOutput
-        result = self.controller.update_task(
+        result = self.crud_controller.update_task(
             task_id=task.id,
             name=form_data.name if form_data.name != task.name else None,
             priority=form_data.priority if form_data.priority != task.priority else None,
@@ -149,14 +149,14 @@ class EditTaskCommand(TUICommandBase):
             # Remove dependencies
             for dep_id in deps_to_remove:
                 try:
-                    self.controller.remove_dependency(task.id, dep_id)
+                    self.relationship_controller.remove_dependency(task.id, dep_id)
                 except TaskValidationError as e:
                     failed_operations.append(f"Remove {dep_id}: {e}")
 
             # Add dependencies
             for dep_id in deps_to_add:
                 try:
-                    self.controller.add_dependency(task.id, dep_id)
+                    self.relationship_controller.add_dependency(task.id, dep_id)
                 except TaskValidationError as e:
                     failed_operations.append(f"Add {dep_id}: {e}")
 

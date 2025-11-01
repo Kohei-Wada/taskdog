@@ -47,7 +47,7 @@ class AddTaskCommand(TUICommandBase):
             )
 
             # Create task via TaskController
-            task = self.controller.create_task(
+            task = self.crud_controller.create_task(
                 name=form_data.name,
                 priority=form_data.priority,
                 deadline=deadline,
@@ -64,7 +64,7 @@ class AddTaskCommand(TUICommandBase):
 
                 for dep_id in form_data.depends_on:
                     try:
-                        self.controller.add_dependency(task.id, dep_id)
+                        self.relationship_controller.add_dependency(task.id, dep_id)
                     except TaskValidationError as e:
                         failed_dependencies.append((dep_id, str(e)))
 

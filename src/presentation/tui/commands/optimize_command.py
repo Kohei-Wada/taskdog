@@ -78,7 +78,7 @@ class OptimizeCommand(TUICommandBase):
             algorithm, max_hours, start_date = settings
 
             # Use TaskController to optimize schedules
-            result = self.controller.optimize_schedule(
+            result = self.analytics_controller.optimize_schedule(
                 algorithm=algorithm,
                 start_date=start_date,
                 max_hours_per_day=max_hours,

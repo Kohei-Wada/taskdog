@@ -4,7 +4,13 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from application.dto.task_dto import TaskDetailDto
+from presentation.controllers.task_analytics_controller import TaskAnalyticsController
 from presentation.controllers.task_controller import TaskController
+from presentation.controllers.task_crud_controller import TaskCrudController
+from presentation.controllers.task_lifecycle_controller import TaskLifecycleController
+from presentation.controllers.task_relationship_controller import (
+    TaskRelationshipController,
+)
 from presentation.tui.context import TUIContext
 from presentation.tui.events import TasksRefreshed
 from presentation.view_models.task_view_model import TaskRowViewModel
@@ -33,12 +39,48 @@ class TUICommandBase(ABC):
 
     @property
     def controller(self) -> TaskController:
-        """Get the TaskController from context.
+        """Get the TaskController from context (legacy, will be deprecated).
 
         Returns:
             TaskController instance from TUIContext
         """
         return self.context.task_controller
+
+    @property
+    def lifecycle_controller(self) -> TaskLifecycleController:
+        """Get the TaskLifecycleController from context.
+
+        Returns:
+            TaskLifecycleController instance from TUIContext
+        """
+        return self.context.lifecycle_controller
+
+    @property
+    def crud_controller(self) -> TaskCrudController:
+        """Get the TaskCrudController from context.
+
+        Returns:
+            TaskCrudController instance from TUIContext
+        """
+        return self.context.crud_controller
+
+    @property
+    def relationship_controller(self) -> TaskRelationshipController:
+        """Get the TaskRelationshipController from context.
+
+        Returns:
+            TaskRelationshipController instance from TUIContext
+        """
+        return self.context.relationship_controller
+
+    @property
+    def analytics_controller(self) -> TaskAnalyticsController:
+        """Get the TaskAnalyticsController from context.
+
+        Returns:
+            TaskAnalyticsController instance from TUIContext
+        """
+        return self.context.analytics_controller
 
     @abstractmethod
     def execute(self) -> None:

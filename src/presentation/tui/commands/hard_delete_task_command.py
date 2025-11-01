@@ -34,7 +34,7 @@ class HardDeleteTaskCommand(TUICommandBase):
                 return  # User cancelled
 
             # Permanently delete the task (hard delete)
-            self.controller.remove_task(task_id)
+            self.crud_controller.remove_task(task_id)
 
             # Post TaskDeleted event to trigger UI refresh
             self.app.post_message(TaskDeleted(task_id))

@@ -40,7 +40,7 @@ class ReopenTaskCommand(TUICommandBase):
 
             # Reopen the task
             try:
-                output = self.controller.reopen_task(task_id)
+                output = self.lifecycle_controller.reopen_task(task_id)
 
                 # Post TaskUpdated event to trigger UI refresh
                 if output.id is None:

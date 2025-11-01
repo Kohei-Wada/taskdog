@@ -15,7 +15,7 @@ class PauseTaskCommand(StatusChangeCommandBase):
 
     def execute_status_change(self, task_id: int) -> TaskOperationOutput:
         """Pause the task via TaskController."""
-        return self.controller.pause_task(task_id)
+        return self.lifecycle_controller.pause_task(task_id)
 
     def get_success_verb(self) -> str:
         """Return success message verb."""
