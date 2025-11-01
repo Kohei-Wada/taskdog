@@ -50,11 +50,10 @@ class BackwardAllocator(TaskAllocatorBase):
             Copy of task with updated schedule, or None if allocation fails
         """
         # Validate and prepare task
-        if not self._validate_task(task):
+        prepared = self._prepare_task_for_allocation(task)
+        if prepared is None:
             return None
-
-        task_copy = self._create_task_copy(task)
-        effective_deadline = self._get_effective_deadline(task_copy)
+        task_copy, effective_deadline = prepared
 
         # Determine the target end date
         # If no deadline, schedule in near future (e.g., 1 week from start)

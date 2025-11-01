@@ -50,11 +50,10 @@ class BalancedAllocator(TaskAllocatorBase):
             Copy of task with updated schedule, or None if allocation fails
         """
         # Validate and prepare task
-        if not self._validate_task(task):
+        prepared = self._prepare_task_for_allocation(task)
+        if prepared is None:
             return None
-
-        task_copy = self._create_task_copy(task)
-        effective_deadline = self._get_effective_deadline(task_copy)
+        task_copy, effective_deadline = prepared
 
         # Calculate end date for distribution
         # If no deadline, use a reasonable period (2 weeks = 10 weekdays)

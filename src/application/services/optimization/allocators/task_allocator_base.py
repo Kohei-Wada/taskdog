@@ -105,6 +105,31 @@ class TaskAllocatorBase(ABC):
         """
         return task.deadline
 
+    def _prepare_task_for_allocation(self, task: Task) -> tuple[Task, datetime | None] | None:
+        """Validate and prepare task for allocation.
+
+        This method combines common preparation steps used by all allocators:
+        1. Validate task has estimated_duration
+        2. Create a deep copy for modification
+        3. Get effective deadline
+
+        Args:
+            task: Task to prepare
+
+        Returns:
+            Tuple of (task_copy, effective_deadline) if validation succeeds,
+            None if validation fails
+        """
+        # Validate task
+        if not self._validate_task(task):
+            return None
+
+        # Create copy and get deadline
+        task_copy = self._create_task_copy(task)
+        effective_deadline = self._get_effective_deadline(task_copy)
+
+        return (task_copy, effective_deadline)
+
     def _get_next_workday(self, current_date: datetime, direction: int = 1) -> datetime:
         """Get next workday, skipping weekends and holidays.
 
