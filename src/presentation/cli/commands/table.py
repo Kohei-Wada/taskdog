@@ -2,13 +2,12 @@
 
 import click
 
-from application.queries.task_query_service import TaskQueryService
 from presentation.cli.commands.common_options import (
     date_range_options,
     filter_options,
     sort_options,
 )
-from presentation.cli.commands.filter_helpers import apply_date_range_filter, build_task_filter
+from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.commands.table_helpers import get_and_filter_tasks, render_table
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
@@ -43,6 +42,7 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
     By default, shows non-archived tasks (all statuses except archived).
     Use -a/--all to show all tasks including archived.
     Use --status to filter by specific status.
+    Use --tag to filter by tags (OR logic when multiple tags specified).
     Use --start-date and --end-date to filter by date range.
 
     Examples:
@@ -50,6 +50,7 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
         taskdog table -a                           # Show all tasks (including archived)
         taskdog table --status archived            # Show only archived tasks
         taskdog table --status completed           # Show only completed tasks
+        taskdog table -t work -t urgent            # Tasks with tag "work" OR "urgent"
         taskdog table -s priority -r               # Sort by priority descending
         taskdog table --fields id,name,status      # Show specific fields only
         taskdog table --start-date 2025-10-01      # Tasks with dates >= Oct 1
@@ -63,27 +64,19 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
     if fields:
         field_list = [f.strip() for f in fields.split(",")]
 
-    # Apply tag filter if specified
-    if tag:
-        query_service = TaskQueryService(repository)
-        tasks = query_service.filter_by_tags(list(tag), match_all=False)
-        # Apply status/all filter on tag-filtered tasks
-        filter_obj = build_task_filter(all=all, status=status)
-        if filter_obj:
-            tasks = filter_obj.filter(tasks)
-        # Apply sorting
-        from application.sorters.task_sorter import TaskSorter
+    # Build integrated filter with all options (tags use OR logic by default)
+    tags = list(tag) if tag else None
+    filter_obj = build_task_filter(
+        all=all,
+        status=status,
+        tags=tags,
+        match_all=False,  # OR logic for multiple tags
+        start_date=start_date,
+        end_date=end_date,
+    )
 
-        sorter = TaskSorter()
-        tasks = sorter.sort(tasks, sort, reverse)
-    else:
-        # Apply filter based on options (priority: --status > --all > default)
-        filter_obj = build_task_filter(all=all, status=status)
-        # Get filtered and sorted tasks
-        tasks = get_and_filter_tasks(repository, filter_obj, sort_by=sort, reverse=reverse)
-
-    # Apply date range filter if specified
-    tasks = apply_date_range_filter(tasks, start_date, end_date)
+    # Get filtered and sorted tasks
+    tasks = get_and_filter_tasks(repository, filter_obj, sort_by=sort, reverse=reverse)
 
     # Render and display
     render_table(ctx_obj, tasks, fields=field_list)

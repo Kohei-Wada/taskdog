@@ -19,6 +19,7 @@ from shared.utils.date_utils import get_previous_monday
 By default, shows non-archived tasks (all statuses except archived).
 Use -a/--all to include archived tasks.
 Use --status to filter by specific status (overrides --all).
+Use --tag to filter by tags (OR logic when multiple tags specified).
 
 \b
 WORKLOAD CALCULATION:
@@ -46,8 +47,16 @@ EXAMPLE:
   taskdog gantt                                  # Show non-archived tasks
   taskdog gantt -a                              # Show all tasks (including archived)
   taskdog gantt --status completed              # Show only completed tasks
+  taskdog gantt -t work -t urgent               # Tasks with tag "work" OR "urgent"
   taskdog gantt --start-date 2025-10-01 --end-date 2025-10-31
 """,
+)
+@click.option(
+    "--tag",
+    "-t",
+    multiple=True,
+    type=str,
+    help="Filter by tags (can be specified multiple times, uses OR logic)",
 )
 @click.option(
     "--start-date",
@@ -65,12 +74,13 @@ EXAMPLE:
 @filter_options()
 @click.pass_context
 @handle_command_errors("displaying Gantt chart")
-def gantt_command(ctx, start_date, end_date, all, status, sort, reverse):
+def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     """Display tasks as a Gantt chart with workload analysis.
 
     By default, shows non-archived tasks (all statuses except archived).
     Use -a/--all to include all tasks (including archived).
     Use --status to filter by specific status (overrides --all).
+    Use --tag to filter by tags (OR logic when multiple tags specified).
 
     The Gantt chart visualizes task timelines and provides daily workload
     analysis to help identify scheduling conflicts and overallocated days.
@@ -79,8 +89,9 @@ def gantt_command(ctx, start_date, end_date, all, status, sort, reverse):
     repository = ctx_obj.repository
     task_query_service = TaskQueryService(repository)
 
-    # Apply filter based on options (priority: --status > --all > default)
-    filter_obj = build_task_filter(all=all, status=status)
+    # Build integrated filter with tags support (tags use OR logic by default)
+    tags = list(tag) if tag else None
+    filter_obj = build_task_filter(all=all, status=status, tags=tags, match_all=False)
 
     # Convert datetime to date objects if provided (DateTimeWithDefault returns datetime)
     # Default to previous Monday if start_date not provided

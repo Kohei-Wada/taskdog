@@ -6,92 +6,87 @@ from application.queries.filters.composite_filter import CompositeFilter
 from application.queries.filters.date_range_filter import DateRangeFilter
 from application.queries.filters.non_archived_filter import NonArchivedFilter
 from application.queries.filters.status_filter import StatusFilter
+from application.queries.filters.tag_filter import TagFilter
 from application.queries.filters.task_filter import TaskFilter
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import TaskStatus
 
 
-def build_task_filter(all: bool, status: str | None) -> TaskFilter | None:
+def build_task_filter(
+    all: bool,
+    status: str | None,
+    tags: list[str] | None = None,
+    match_all: bool = False,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> TaskFilter | None:
     """Build task filter based on CLI options with AND logic.
 
-    Logic:
-    - Default (no options): NonArchivedFilter (is_archived=False, includes all statuses)
-    - --all only: No filter (all tasks including archived)
-    - --status X only: NonArchivedFilter + StatusFilter(X) (non-archived tasks filtered by status X)
-    - --all --status X: StatusFilter(X) only (all tasks including archived, filtered by status X)
+    Combines multiple filters (archive, status, tags, date range) into a single CompositeFilter
+    using AND logic. All filters that are specified must match for a task to be included.
 
-    The --all flag controls whether to include archived tasks.
-    The --status flag further filters by specific status.
+    Archive Logic:
+    - Default (all=False): NonArchivedFilter (is_archived=False)
+    - --all: No archive filter (includes archived tasks)
+
+    Status Logic:
+    - --status X: StatusFilter(X) (filters by specific status)
+
+    Tag Logic:
+    - --tag A --tag B (match_all=False): OR logic (has tag A OR tag B)
+    - --tag A --tag B --match-all: AND logic (has tag A AND tag B)
+
+    Date Range Logic:
+    - --start-date/--end-date: DateRangeFilter (filters by planned/actual dates)
 
     Args:
         all: If True, include all tasks (including archived)
         status: Status string (case-insensitive), converts to TaskStatus enum
+        tags: List of tags to filter by (optional)
+        match_all: If True, task must have all tags (AND). If False, at least one tag (OR)
+        start_date: Start datetime for date range filter (optional)
+        end_date: End datetime for date range filter (optional)
 
     Returns:
         TaskFilter instance or None (no filter)
 
     Examples:
         >>> build_task_filter(all=False, status=None)
-        NonArchivedFilter()  # All non-archived tasks (any status)
+        NonArchivedFilter()  # All non-archived tasks
 
-        >>> build_task_filter(all=True, status=None)
-        None  # All tasks (including archived)
+        >>> build_task_filter(all=False, status="pending", tags=["work"])
+        CompositeFilter([NonArchivedFilter(), StatusFilter(PENDING), TagFilter(["work"])])
 
-        >>> build_task_filter(all=False, status="pending")
-        CompositeFilter([NonArchivedFilter(), StatusFilter(PENDING)])  # Non-archived + PENDING
-
-        >>> build_task_filter(all=True, status="completed")
-        StatusFilter(COMPLETED)  # All tasks filtered by COMPLETED
+        >>> build_task_filter(all=True, status="completed", tags=["urgent", "bug"], match_all=True)
+        CompositeFilter([StatusFilter(COMPLETED), TagFilter(["urgent", "bug"], match_all=True)])
     """
+    filters: list[TaskFilter] = []
+
+    # Archive filter (unless --all is specified)
+    if not all:
+        filters.append(NonArchivedFilter())
+
+    # Status filter
     if status:
-        # Status filter specified
         status_enum = TaskStatus(status.upper())
-        status_filter = StatusFilter(status_enum)
+        filters.append(StatusFilter(status_enum))
 
-        if all:
-            # --all --status X: Show all tasks (including archived) filtered by status X
-            return status_filter
-        else:
-            # --status X only: Show non-archived tasks filtered by status X
-            # This creates AND logic: NonArchivedFilter AND StatusFilter
-            return CompositeFilter([NonArchivedFilter(), status_filter])
-    elif all:
-        # --all only: Show all tasks (no filter)
-        return None
-    else:
-        # Default: Show non-archived only
-        return NonArchivedFilter()
+    # Tag filter
+    if tags:
+        filters.append(TagFilter(tags, match_all=match_all))
 
-
-def apply_date_range_filter(
-    tasks: list[Task], start_date_dt: datetime | None, end_date_dt: datetime | None
-) -> list[Task]:
-    """Apply date range filter to tasks.
-
-    Converts datetime objects to date and applies DateRangeFilter if either start or end date is provided.
-
-    Args:
-        tasks: List of tasks to filter
-        start_date_dt: Start datetime (will be converted to date)
-        end_date_dt: End datetime (will be converted to date)
-
-    Returns:
-        Filtered list of tasks (or original list if no dates provided)
-
-    Examples:
-        >>> tasks = [task1, task2, task3]
-        >>> apply_date_range_filter(tasks, None, None)
-        [task1, task2, task3]  # No filter applied
-
-        >>> apply_date_range_filter(tasks, datetime(2025, 10, 1), datetime(2025, 10, 31))
-        [task2]  # Only tasks with dates in October
-    """
-    start_date = start_date_dt.date() if start_date_dt else None
-    end_date = end_date_dt.date() if end_date_dt else None
-
+    # Date range filter
     if start_date or end_date:
-        date_filter = DateRangeFilter(start_date=start_date, end_date=end_date)
-        return date_filter.filter(tasks)
-    return tasks
+        start_date_obj = start_date.date() if start_date else None
+        end_date_obj = end_date.date() if end_date else None
+        filters.append(DateRangeFilter(start_date=start_date_obj, end_date=end_date_obj))
+
+    # Return combined filter or None if no filters
+    if not filters:
+        return None
+    elif len(filters) == 1:
+        return filters[0]
+    else:
+        return CompositeFilter(filters)
 
 
 def parse_field_list(

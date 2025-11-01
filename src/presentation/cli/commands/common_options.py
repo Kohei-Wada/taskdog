@@ -21,17 +21,17 @@ def filter_options():
         @click.option(
             "--status",
             type=click.Choice(
-                ["pending", "in_progress", "completed", "canceled", "archived"],
+                ["pending", "in_progress", "completed", "canceled"],
                 case_sensitive=False,
             ),
             default=None,
-            help="Filter tasks by status (overrides --all)",
+            help="Filter tasks by status (overrides --all). Note: archived tasks are controlled by the --all flag, not --status.",
         )
         @click.option(
             "--all",
             "-a",
             is_flag=True,
-            help="Show all tasks including completed, failed, and archived",
+            help="Show all tasks including completed, canceled, and archived",
         )
         @wraps(f)
         def wrapper(*args, **kwargs):

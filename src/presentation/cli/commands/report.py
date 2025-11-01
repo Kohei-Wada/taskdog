@@ -42,14 +42,22 @@ USAGE:
   taskdog report --start-date 2025-10-01        # Tasks from Oct 1st onwards
   taskdog report --start-date 10-01 --end-date 10-31  # Tasks in October
   taskdog report --status pending               # Only pending scheduled tasks
+  taskdog report -t work -t urgent              # Tasks with tag "work" OR "urgent"
 """,
+)
+@click.option(
+    "--tag",
+    "-t",
+    multiple=True,
+    type=str,
+    help="Filter by tags (can be specified multiple times, uses OR logic)",
 )
 @date_range_options()
 @sort_options(default_sort="planned_start")
 @filter_options()
 @click.pass_context
 @handle_command_errors("generating report")
-def report_command(ctx, start_date, end_date, all, status, sort, reverse):
+def report_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     """Generate markdown workload report grouped by date.
 
     Shows all scheduled work including optimized tasks, manually scheduled tasks, and fixed tasks.
@@ -60,8 +68,9 @@ def report_command(ctx, start_date, end_date, all, status, sort, reverse):
     task_query_service = TaskQueryService(repository)
     workload_calculator = WorkloadCalculator()
 
-    # Apply filter based on options (priority: --status > --all > default)
-    filter_obj = build_task_filter(all=all, status=status)
+    # Build integrated filter with tags support (tags use OR logic by default)
+    tags = list(tag) if tag else None
+    filter_obj = build_task_filter(all=all, status=status, tags=tags, match_all=False)
 
     # Get filtered and sorted tasks
     tasks = task_query_service.get_filtered_tasks(

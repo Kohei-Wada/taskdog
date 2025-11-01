@@ -4,11 +4,7 @@ import click
 
 from application.queries.task_query_service import TaskQueryService
 from presentation.cli.commands.common_options import date_range_options, filter_options
-from presentation.cli.commands.filter_helpers import (
-    apply_date_range_filter,
-    build_task_filter,
-    parse_field_list,
-)
+from presentation.cli.commands.filter_helpers import build_task_filter, parse_field_list
 from presentation.cli.context import CliContext
 from presentation.exporters import CsvTaskExporter, JsonTaskExporter, MarkdownTableExporter
 
@@ -53,15 +49,23 @@ VALID_FIELDS = {
     "Available: id, name, priority, status, created_at, planned_start, planned_end, "
     "deadline, actual_start, actual_end, estimated_duration, daily_allocations",
 )
+@click.option(
+    "--tag",
+    "-t",
+    multiple=True,
+    type=str,
+    help="Filter by tags (can be specified multiple times, uses OR logic)",
+)
 @date_range_options()
 @filter_options()
 @click.pass_context
-def export_command(ctx, format, output, fields, all, status, start_date, end_date):
+def export_command(ctx, format, output, fields, tag, all, status, start_date, end_date):
     """Export tasks in the specified format.
 
     By default, exports non-archived tasks (all statuses except archived).
     Use -a/--all to export all tasks (including archived).
     Use --status to filter by specific status.
+    Use --tag to filter by tags (OR logic when multiple tags specified).
     Use --start-date and --end-date to filter by date range.
 
     Supports JSON, CSV, and Markdown table formats.
@@ -70,6 +74,7 @@ def export_command(ctx, format, output, fields, all, status, start_date, end_dat
         taskdog export                              # Export non-archived tasks as JSON
         taskdog export -a                           # Export all tasks (including archived)
         taskdog export --status completed           # Export only completed tasks
+        taskdog export -t work -t urgent            # Export tasks with tag "work" OR "urgent"
         taskdog export -o tasks.json                # Save JSON to file
         taskdog export --format csv -o tasks.csv    # Export to CSV
         taskdog export --format markdown -o tasks.md  # Export to Markdown table
@@ -84,12 +89,17 @@ def export_command(ctx, format, output, fields, all, status, start_date, end_dat
     task_query_service = TaskQueryService(repository)
 
     try:
-        # Apply filter based on options (priority: --status > --all > default)
-        filter_obj = build_task_filter(all=all, status=status)
+        # Build integrated filter with all options (tags use OR logic by default)
+        tags = list(tag) if tag else None
+        filter_obj = build_task_filter(
+            all=all,
+            status=status,
+            tags=tags,
+            match_all=False,  # OR logic for multiple tags
+            start_date=start_date,
+            end_date=end_date,
+        )
         tasks = task_query_service.get_filtered_tasks(filter_obj)
-
-        # Apply date range filter if specified
-        tasks = apply_date_range_filter(tasks, start_date, end_date)
 
         # Parse and validate fields option
         field_list = parse_field_list(fields, valid_fields=VALID_FIELDS)
