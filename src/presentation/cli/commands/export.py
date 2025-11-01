@@ -2,10 +2,10 @@
 
 import click
 
-from application.queries.task_query_service import TaskQueryService
 from presentation.cli.commands.common_options import date_range_options, filter_options
 from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
+from presentation.controllers.query_controller import QueryController
 from presentation.exporters import CsvTaskExporter, JsonTaskExporter, MarkdownTableExporter
 from shared.click_types.field_list import FieldList
 
@@ -87,7 +87,7 @@ def export_command(ctx, format, output, fields, tag, all, status, start_date, en
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
     console_writer = ctx_obj.console_writer
-    task_query_service = TaskQueryService(repository)
+    query_controller = QueryController(repository)
 
     try:
         # Build integrated filter with all options (tags use OR logic by default)
@@ -100,7 +100,8 @@ def export_command(ctx, format, output, fields, tag, all, status, start_date, en
             start_date=start_date,
             end_date=end_date,
         )
-        tasks = task_query_service.get_filtered_tasks(filter_obj)
+        result = query_controller.list_tasks(filter_obj=filter_obj)
+        tasks = result.tasks
 
         # fields is already parsed and validated by FieldList Click type
         # Create appropriate exporter based on format

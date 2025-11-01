@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta
 
-from application.dto.update_task_request import UpdateTaskRequest
+from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
@@ -72,7 +72,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
                 task.id = self.repository.generate_next_id()
                 self.repository.save(task)
 
-                input_dto = UpdateTaskRequest(task_id=task.id, **update_kwargs)
+                input_dto = UpdateTaskInput(task_id=task.id, **update_kwargs)
                 result_task, updated_fields = self.use_case.execute(input_dto)
 
                 self.assertEqual(getattr(result_task, field_name), expected_value)
@@ -85,7 +85,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskRequest(task_id=task.id, status=TaskStatus.IN_PROGRESS)
+        input_dto = UpdateTaskInput(task_id=task.id, status=TaskStatus.IN_PROGRESS)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
         self.assertEqual(result_task.status, TaskStatus.IN_PROGRESS)
@@ -101,7 +101,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
         # Use future date
         future_date = datetime.now() + timedelta(days=7)
-        input_dto = UpdateTaskRequest(
+        input_dto = UpdateTaskInput(
             task_id=task.id,
             priority=2,
             planned_start=future_date,
@@ -123,7 +123,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskRequest(task_id=task.id)
+        input_dto = UpdateTaskInput(task_id=task.id)
         _result_task, updated_fields = self.use_case.execute(input_dto)
 
         self.assertEqual(len(updated_fields), 0)
@@ -133,7 +133,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
     def test_execute_with_invalid_task_raises_error(self):
         """Test with non-existent task raises TaskNotFoundException"""
-        input_dto = UpdateTaskRequest(task_id=999, priority=2)
+        input_dto = UpdateTaskInput(task_id=999, priority=2)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)
@@ -146,7 +146,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskRequest(
+        input_dto = UpdateTaskInput(
             task_id=task.id,
             status=TaskStatus.IN_PROGRESS,
             priority=3,
@@ -189,7 +189,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
                 task.id = self.repository.generate_next_id()
                 self.repository.save(task)
 
-                input_dto = UpdateTaskRequest(task_id=task.id, status=target_status)
+                input_dto = UpdateTaskInput(task_id=task.id, status=target_status)
                 result_task, updated_fields = self.use_case.execute(input_dto)
 
                 self.assertEqual(result_task.status, target_status)
@@ -202,7 +202,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskRequest(
+        input_dto = UpdateTaskInput(
             task_id=task.id, priority=5, deadline=datetime(2026, 10, 20, 18, 0, 0)
         )
         self.use_case.execute(input_dto)
@@ -218,7 +218,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskRequest(task_id=task.id, estimated_duration=3.5)
+        input_dto = UpdateTaskInput(task_id=task.id, estimated_duration=3.5)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
         self.assertEqual(result_task.estimated_duration, 3.5)
@@ -241,7 +241,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
         # Update planned_start to a different date
         new_start = datetime(2025, 11, 5, 9, 0, 0)
-        input_dto = UpdateTaskRequest(task_id=task.id, planned_start=new_start)
+        input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
         # Verify daily_allocations was cleared
@@ -267,7 +267,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
         # Update planned_end to a different date
         new_end = datetime(2025, 11, 8, 18, 0, 0)
-        input_dto = UpdateTaskRequest(task_id=task.id, planned_end=new_end)
+        input_dto = UpdateTaskInput(task_id=task.id, planned_end=new_end)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
         # Verify daily_allocations was cleared
@@ -294,7 +294,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         # Update both planned_start and planned_end
         new_start = datetime(2025, 11, 10, 9, 0, 0)
         new_end = datetime(2025, 11, 12, 18, 0, 0)
-        input_dto = UpdateTaskRequest(task_id=task.id, planned_start=new_start, planned_end=new_end)
+        input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start, planned_end=new_end)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
         # Verify daily_allocations was cleared
@@ -314,7 +314,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
         # Update planned_start
         new_start = datetime(2025, 11, 5, 9, 0, 0)
-        input_dto = UpdateTaskRequest(task_id=task.id, planned_start=new_start)
+        input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start)
         result_task, updated_fields = self.use_case.execute(input_dto)
 
         # Verify daily_allocations is still empty and NOT in updated_fields

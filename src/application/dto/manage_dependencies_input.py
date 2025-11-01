@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class AddDependencyRequest:
+class AddDependencyInput:
     """Request data for adding a task dependency.
 
     Attributes:
@@ -17,7 +17,7 @@ class AddDependencyRequest:
 
 
 @dataclass
-class RemoveDependencyRequest:
+class RemoveDependencyInput:
     """Request data for removing a task dependency.
 
     Attributes:

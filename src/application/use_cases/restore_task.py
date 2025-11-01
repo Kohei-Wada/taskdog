@@ -1,13 +1,13 @@
 """Use case for restoring an archived task."""
 
-from application.dto.restore_task_request import RestoreTaskRequest
+from application.dto.restore_task_input import RestoreTaskInput
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
 from domain.repositories.task_repository import TaskRepository
 
 
-class RestoreTaskUseCase(UseCase[RestoreTaskRequest, Task]):
+class RestoreTaskUseCase(UseCase[RestoreTaskInput, Task]):
     """Use case for restoring archived tasks.
 
     Restores an archived task back to its original status.
@@ -28,7 +28,7 @@ class RestoreTaskUseCase(UseCase[RestoreTaskRequest, Task]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: RestoreTaskRequest) -> Task:
+    def execute(self, input_dto: RestoreTaskInput) -> Task:
         """Restore an archived task.
 
         Args:

@@ -4,7 +4,7 @@ import os
 import tempfile
 import unittest
 
-from application.dto.manage_dependencies_request import RemoveDependencyRequest
+from application.dto.manage_dependencies_input import RemoveDependencyInput
 from application.use_cases.remove_dependency import RemoveDependencyUseCase
 from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
@@ -32,7 +32,7 @@ class TestRemoveDependencyUseCase(unittest.TestCase):
         task1 = self.repository.create(name="Task 1", priority=1)
         task2 = self.repository.create(name="Task 2", priority=1, depends_on=[task1.id])
 
-        input_dto = RemoveDependencyRequest(task_id=task2.id, depends_on_id=task1.id)
+        input_dto = RemoveDependencyInput(task_id=task2.id, depends_on_id=task1.id)
         result = self.use_case.execute(input_dto)
 
         self.assertNotIn(task1.id, result.depends_on)
@@ -43,7 +43,7 @@ class TestRemoveDependencyUseCase(unittest.TestCase):
         task1 = self.repository.create(name="Task 1", priority=1)
         task2 = self.repository.create(name="Task 2", priority=1, depends_on=[task1.id])
 
-        input_dto = RemoveDependencyRequest(task_id=task2.id, depends_on_id=task1.id)
+        input_dto = RemoveDependencyInput(task_id=task2.id, depends_on_id=task1.id)
         self.use_case.execute(input_dto)
 
         # Verify persistence
@@ -53,7 +53,7 @@ class TestRemoveDependencyUseCase(unittest.TestCase):
 
     def test_execute_with_nonexistent_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException."""
-        input_dto = RemoveDependencyRequest(task_id=999, depends_on_id=1)
+        input_dto = RemoveDependencyInput(task_id=999, depends_on_id=1)
 
         with self.assertRaises(TaskNotFoundException) as context:
             self.use_case.execute(input_dto)
@@ -65,7 +65,7 @@ class TestRemoveDependencyUseCase(unittest.TestCase):
         task1 = self.repository.create(name="Task 1", priority=1)
         task2 = self.repository.create(name="Task 2", priority=1)
 
-        input_dto = RemoveDependencyRequest(task_id=task2.id, depends_on_id=task1.id)
+        input_dto = RemoveDependencyInput(task_id=task2.id, depends_on_id=task1.id)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto)
@@ -79,7 +79,7 @@ class TestRemoveDependencyUseCase(unittest.TestCase):
         task3 = self.repository.create(name="Task 3", priority=1, depends_on=[task1.id, task2.id])
 
         # Remove only task1 dependency
-        input_dto = RemoveDependencyRequest(task_id=task3.id, depends_on_id=task1.id)
+        input_dto = RemoveDependencyInput(task_id=task3.id, depends_on_id=task1.id)
         result = self.use_case.execute(input_dto)
 
         self.assertNotIn(task1.id, result.depends_on)
@@ -91,7 +91,7 @@ class TestRemoveDependencyUseCase(unittest.TestCase):
         task1 = self.repository.create(name="Task 1", priority=1)
         task2 = self.repository.create(name="Task 2", priority=1)
 
-        input_dto = RemoveDependencyRequest(task_id=task2.id, depends_on_id=task1.id)
+        input_dto = RemoveDependencyInput(task_id=task2.id, depends_on_id=task1.id)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto)

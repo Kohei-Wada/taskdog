@@ -3,7 +3,7 @@
 import tempfile
 import unittest
 
-from application.dto.archive_task_request import ArchiveTaskRequest
+from application.dto.archive_task_input import ArchiveTaskInput
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
@@ -28,7 +28,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
 
         # Archive task
-        input_dto = ArchiveTaskRequest(task_id=task.id)
+        input_dto = ArchiveTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify task archived (is_archived=True, status preserved)
@@ -48,7 +48,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.CANCELED)
 
         # Archive task
-        input_dto = ArchiveTaskRequest(task_id=task.id)
+        input_dto = ArchiveTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify task archived
@@ -61,7 +61,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.PENDING)
 
         # Archive task
-        input_dto = ArchiveTaskRequest(task_id=task.id)
+        input_dto = ArchiveTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify task archived
@@ -74,7 +74,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
 
         # Archive task
-        input_dto = ArchiveTaskRequest(task_id=task.id)
+        input_dto = ArchiveTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify task archived
@@ -83,7 +83,7 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
 
     def test_archive_nonexistent_task(self):
         """Test archiving a task that doesn't exist."""
-        input_dto = ArchiveTaskRequest(task_id=999)
+        input_dto = ArchiveTaskInput(task_id=999)
 
         with self.assertRaises(TaskNotFoundException):
             self.use_case.execute(input_dto)

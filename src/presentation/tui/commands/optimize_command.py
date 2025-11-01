@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from application.dto.optimization_result import OptimizationResult
+from application.dto.optimization_output import OptimizationOutput
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
@@ -41,11 +41,11 @@ class OptimizeCommand(TUICommandBase):
         super().__init__(app, context, task_service)
         self.force_override = force_override
 
-    def _format_failed_tasks_message(self, result: OptimizationResult, prefix: str = "") -> str:
+    def _format_failed_tasks_message(self, result: OptimizationOutput, prefix: str = "") -> str:
         """Format failed tasks message based on count.
 
         Args:
-            result: OptimizationResult containing failed tasks
+            result: OptimizationOutput containing failed tasks
             prefix: Optional prefix message (e.g., "Partially optimized: N succeeded. ")
 
         Returns:

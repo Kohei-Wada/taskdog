@@ -19,8 +19,8 @@ class UseCase[TInput, TOutput](ABC):
         TOutput: The output type (usually a domain entity or DTO)
 
     Example:
-        class CreateTaskUseCase(UseCase[CreateTaskRequest, Task]):
-            def execute(self, input_dto: CreateTaskRequest) -> Task:
+        class CreateTaskUseCase(UseCase[CreateTaskInput, Task]):
+            def execute(self, input_dto: CreateTaskInput) -> Task:
                 # Validation
                 # Business logic
                 # Persistence

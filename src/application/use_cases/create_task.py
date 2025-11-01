@@ -1,12 +1,12 @@
 """Use case for creating a task."""
 
-from application.dto.create_task_request import CreateTaskRequest
+from application.dto.create_task_input import CreateTaskInput
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
 
 
-class CreateTaskUseCase(UseCase[CreateTaskRequest, Task]):
+class CreateTaskUseCase(UseCase[CreateTaskInput, Task]):
     """Use case for creating a new task with auto-generated ID."""
 
     def __init__(self, repository: TaskRepository):
@@ -17,7 +17,7 @@ class CreateTaskUseCase(UseCase[CreateTaskRequest, Task]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: CreateTaskRequest) -> Task:
+    def execute(self, input_dto: CreateTaskInput) -> Task:
         """Execute task creation.
 
         Args:

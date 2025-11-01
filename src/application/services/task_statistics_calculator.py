@@ -3,11 +3,11 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from application.dto.statistics_result import (
+from application.dto.statistics_output import (
     DeadlineComplianceStatistics,
     EstimationAccuracyStatistics,
     PriorityDistributionStatistics,
-    StatisticsResult,
+    StatisticsOutput,
     TaskStatistics,
     TimeStatistics,
     TrendStatistics,
@@ -30,7 +30,7 @@ class TaskStatisticsCalculator:
     # Estimation accuracy tolerance (±10%)
     ESTIMATION_TOLERANCE = 0.1
 
-    def calculate_all(self, tasks: list[Task], period: str = "all") -> StatisticsResult:
+    def calculate_all(self, tasks: list[Task], period: str = "all") -> StatisticsOutput:
         """Calculate all statistics for the given tasks.
 
         Args:
@@ -38,7 +38,7 @@ class TaskStatisticsCalculator:
             period: Time period filter ('7d', '30d', or 'all')
 
         Returns:
-            StatisticsResult containing all calculated statistics
+            StatisticsOutput containing all calculated statistics
         """
         # Filter tasks by period if needed
         filtered_tasks = self._filter_by_period(tasks, period) if period != "all" else tasks
@@ -51,7 +51,7 @@ class TaskStatisticsCalculator:
         priority_stats = self._calculate_priority_distribution(filtered_tasks)
         trend_stats = self._calculate_trends(filtered_tasks) if period == "all" else None
 
-        return StatisticsResult(
+        return StatisticsOutput(
             task_stats=task_stats,
             time_stats=time_stats,
             estimation_stats=estimation_stats,

@@ -2,11 +2,12 @@
 
 from datetime import date, datetime
 
-from application.dto.optimization_result import OptimizationResult
-from application.dto.optimize_schedule_request import OptimizeScheduleRequest
+from application.dto.optimization_output import OptimizationOutput
+from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.queries.filters.task_filter import TaskFilter
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.entities.task import Task
+from presentation.controllers.query_controller import QueryController
 from presentation.controllers.task_controller import TaskController
 from presentation.mappers.gantt_mapper import GanttMapper
 from presentation.tui.context import TUIContext
@@ -57,10 +58,10 @@ class TaskService:
         """
         self.repository = context.repository
         self.time_tracker = context.time_tracker
-        self.query_service = context.query_service
         self.config = context.config
-        # Initialize controller for delegating simple operations
+        # Initialize controllers for delegating operations
         self.controller = TaskController(context.repository, context.time_tracker, context.config)
+        self.query_controller = QueryController(context.repository)
 
     # ============================================================================
     # Command Operations (Write)
@@ -72,7 +73,7 @@ class TaskService:
         start_date: datetime | None = None,
         max_hours_per_day: float | None = None,
         force_override: bool = True,
-    ) -> OptimizationResult:
+    ) -> OptimizationOutput:
         """Optimize task schedules.
 
         Args:
@@ -82,12 +83,12 @@ class TaskService:
             force_override: Force override existing schedules (default: True for TUI)
 
         Returns:
-            OptimizationResult containing successful/failed tasks and summary
+            OptimizationOutput containing successful/failed tasks and summary
         """
         if start_date is None:
             start_date = calculate_next_workday()
 
-        optimize_input = OptimizeScheduleRequest(
+        optimize_input = OptimizeScheduleInput(
             start_date=start_date,
             max_hours_per_day=max_hours_per_day or self.config.optimization.max_hours_per_day,
             force_override=force_override,
@@ -121,7 +122,7 @@ class TaskService:
             GanttViewModel containing presentation-ready Gantt data
         """
         filter_obj = _TaskIdFilter(set(task_ids))
-        gantt_result = self.query_service.get_gantt_data(
+        gantt_result = self.query_controller.get_gantt_data(
             filter_obj=filter_obj,
             sort_by=sort_by,
             reverse=False,

@@ -126,7 +126,7 @@ class TrendStatistics:
 
 
 @dataclass
-class StatisticsResult:
+class StatisticsOutput:
     """Complete statistics result.
 
     Attributes:
@@ -147,7 +147,7 @@ class StatisticsResult:
 
 
 @dataclass
-class CalculateStatisticsRequest:
+class CalculateStatisticsInput:
     """Input for calculate statistics use case.
 
     Attributes:

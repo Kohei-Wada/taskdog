@@ -1,17 +1,17 @@
-"""Mapper for converting GanttResult DTO to GanttViewModel.
+"""Mapper for converting GanttOutput DTO to GanttViewModel.
 
 This mapper extracts necessary fields from Task entities and applies
 presentation logic (formatting, strikethrough) to create presentation-ready
 view models.
 """
 
-from application.dto.gantt_result import GanttResult
+from application.dto.gantt_output import GanttOutput
 from domain.entities.task import Task
 from presentation.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 
 
 class GanttMapper:
-    """Mapper for converting GanttResult to GanttViewModel.
+    """Mapper for converting GanttOutput to GanttViewModel.
 
     This class is responsible for:
     1. Extracting necessary fields from Task entities
@@ -20,8 +20,8 @@ class GanttMapper:
     """
 
     @staticmethod
-    def from_gantt_result(gantt_result: GanttResult) -> GanttViewModel:
-        """Convert GanttResult DTO to GanttViewModel.
+    def from_gantt_result(gantt_result: GanttOutput) -> GanttViewModel:
+        """Convert GanttOutput DTO to GanttViewModel.
 
         Args:
             gantt_result: Application layer DTO with Task entities
@@ -56,7 +56,7 @@ class GanttMapper:
         Returns:
             TaskGanttRowViewModel with presentation-ready data
         """
-        # Tasks from GanttResult are always saved, so they must have an id
+        # Tasks from GanttOutput are always saved, so they must have an id
         assert task.id is not None, "Task must have an id when mapping to ViewModel"
 
         # Apply strikethrough for finished tasks

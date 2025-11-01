@@ -1,11 +1,11 @@
 """Use case for removing a task."""
 
-from application.dto.remove_task_request import RemoveTaskRequest
+from application.dto.remove_task_input import RemoveTaskInput
 from application.use_cases.base import UseCase
 from domain.repositories.task_repository import TaskRepository
 
 
-class RemoveTaskUseCase(UseCase[RemoveTaskRequest, None]):
+class RemoveTaskUseCase(UseCase[RemoveTaskInput, None]):
     """Use case for removing tasks."""
 
     def __init__(self, repository: TaskRepository):
@@ -16,7 +16,7 @@ class RemoveTaskUseCase(UseCase[RemoveTaskRequest, None]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: RemoveTaskRequest) -> None:
+    def execute(self, input_dto: RemoveTaskInput) -> None:
         """Execute task removal.
 
         Args:

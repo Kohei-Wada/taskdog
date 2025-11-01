@@ -1,6 +1,6 @@
 import unittest
 
-from application.dto.start_task_request import StartTaskRequest
+from application.dto.start_task_input import StartTaskInput
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from tests.application.use_cases.status_change_test_base import (
@@ -12,7 +12,7 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
     """Test cases for StartTaskUseCase"""
 
     use_case_class = StartTaskUseCase
-    request_class = StartTaskRequest
+    request_class = StartTaskInput
     target_status = TaskStatus.IN_PROGRESS
     initial_status = TaskStatus.PENDING
 
@@ -25,7 +25,7 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = StartTaskRequest(task_id=task.id)
+        input_dto = StartTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertIsNone(result.actual_end)
@@ -36,7 +36,7 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = StartTaskRequest(task_id=task.id)
+        input_dto = StartTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.IN_PROGRESS)

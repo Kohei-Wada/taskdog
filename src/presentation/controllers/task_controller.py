@@ -6,24 +6,24 @@ eliminating code duplication in use case instantiation and DTO construction.
 
 from datetime import datetime
 
-from application.dto.archive_task_request import ArchiveTaskRequest
-from application.dto.cancel_task_request import CancelTaskRequest
-from application.dto.complete_task_request import CompleteTaskRequest
-from application.dto.create_task_request import CreateTaskRequest
-from application.dto.log_hours_request import LogHoursRequest
-from application.dto.manage_dependencies_request import (
-    AddDependencyRequest,
-    RemoveDependencyRequest,
+from application.dto.archive_task_input import ArchiveTaskInput
+from application.dto.cancel_task_input import CancelTaskInput
+from application.dto.complete_task_input import CompleteTaskInput
+from application.dto.create_task_input import CreateTaskInput
+from application.dto.log_hours_input import LogHoursInput
+from application.dto.manage_dependencies_input import (
+    AddDependencyInput,
+    RemoveDependencyInput,
 )
-from application.dto.pause_task_request import PauseTaskRequest
-from application.dto.remove_task_request import RemoveTaskRequest
-from application.dto.reopen_task_request import ReopenTaskRequest
-from application.dto.restore_task_request import RestoreTaskRequest
-from application.dto.set_task_tags_request import SetTaskTagsRequest
-from application.dto.start_task_request import StartTaskRequest
-from application.dto.statistics_result import CalculateStatisticsRequest, StatisticsResult
-from application.dto.task_detail_result import GetTaskDetailResult
-from application.dto.update_task_request import UpdateTaskRequest
+from application.dto.pause_task_input import PauseTaskInput
+from application.dto.remove_task_input import RemoveTaskInput
+from application.dto.reopen_task_input import ReopenTaskInput
+from application.dto.restore_task_input import RestoreTaskInput
+from application.dto.set_task_tags_input import SetTaskTagsInput
+from application.dto.start_task_input import StartTaskInput
+from application.dto.statistics_output import CalculateStatisticsInput, StatisticsOutput
+from application.dto.task_detail_output import GetTaskDetailOutput
+from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.add_dependency import AddDependencyUseCase
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.calculate_statistics import CalculateStatisticsUseCase
@@ -97,7 +97,7 @@ class TaskController:
             TaskValidationError: If task cannot be started
         """
         use_case = StartTaskUseCase(self.repository, self.time_tracker)
-        request = StartTaskRequest(task_id=task_id)
+        request = StartTaskInput(task_id=task_id)
         return use_case.execute(request)
 
     def complete_task(self, task_id: int) -> Task:
@@ -116,7 +116,7 @@ class TaskController:
             TaskValidationError: If task cannot be completed
         """
         use_case = CompleteTaskUseCase(self.repository, self.time_tracker)
-        request = CompleteTaskRequest(task_id=task_id)
+        request = CompleteTaskInput(task_id=task_id)
         return use_case.execute(request)
 
     def pause_task(self, task_id: int) -> Task:
@@ -135,7 +135,7 @@ class TaskController:
             TaskValidationError: If task cannot be paused
         """
         use_case = PauseTaskUseCase(self.repository, self.time_tracker)
-        request = PauseTaskRequest(task_id=task_id)
+        request = PauseTaskInput(task_id=task_id)
         return use_case.execute(request)
 
     def cancel_task(self, task_id: int) -> Task:
@@ -154,7 +154,7 @@ class TaskController:
             TaskValidationError: If task cannot be canceled
         """
         use_case = CancelTaskUseCase(self.repository, self.time_tracker)
-        request = CancelTaskRequest(task_id=task_id)
+        request = CancelTaskInput(task_id=task_id)
         return use_case.execute(request)
 
     def create_task(
@@ -187,7 +187,7 @@ class TaskController:
             TaskValidationError: If task validation fails
         """
         use_case = CreateTaskUseCase(self.repository)
-        request = CreateTaskRequest(
+        request = CreateTaskInput(
             name=name,
             priority=priority or self.config.task.default_priority,
             deadline=deadline,
@@ -215,7 +215,7 @@ class TaskController:
             TaskValidationError: If task cannot be reopened
         """
         use_case = ReopenTaskUseCase(self.repository, self.time_tracker)
-        request = ReopenTaskRequest(task_id=task_id)
+        request = ReopenTaskInput(task_id=task_id)
         return use_case.execute(request)
 
     def archive_task(self, task_id: int) -> Task:
@@ -234,7 +234,7 @@ class TaskController:
             TaskValidationError: If task cannot be archived
         """
         use_case = ArchiveTaskUseCase(self.repository)
-        request = ArchiveTaskRequest(task_id=task_id)
+        request = ArchiveTaskInput(task_id=task_id)
         return use_case.execute(request)
 
     def remove_task(self, task_id: int) -> None:
@@ -249,7 +249,7 @@ class TaskController:
             TaskNotFoundException: If task not found
         """
         use_case = RemoveTaskUseCase(self.repository)
-        request = RemoveTaskRequest(task_id=task_id)
+        request = RemoveTaskInput(task_id=task_id)
         use_case.execute(request)
 
     def restore_task(self, task_id: int) -> Task:
@@ -268,7 +268,7 @@ class TaskController:
             TaskValidationError: If task cannot be restored
         """
         use_case = RestoreTaskUseCase(self.repository)
-        request = RestoreTaskRequest(task_id=task_id)
+        request = RestoreTaskInput(task_id=task_id)
         return use_case.execute(request)
 
     def add_dependency(self, task_id: int, depends_on_id: int) -> Task:
@@ -286,7 +286,7 @@ class TaskController:
             TaskValidationError: If dependency would create a cycle, or task depends on itself
         """
         use_case = AddDependencyUseCase(self.repository)
-        request = AddDependencyRequest(task_id=task_id, depends_on_id=depends_on_id)
+        request = AddDependencyInput(task_id=task_id, depends_on_id=depends_on_id)
         return use_case.execute(request)
 
     def remove_dependency(self, task_id: int, depends_on_id: int) -> Task:
@@ -304,7 +304,7 @@ class TaskController:
             TaskValidationError: If dependency doesn't exist on task
         """
         use_case = RemoveDependencyUseCase(self.repository)
-        request = RemoveDependencyRequest(task_id=task_id, depends_on_id=depends_on_id)
+        request = RemoveDependencyInput(task_id=task_id, depends_on_id=depends_on_id)
         return use_case.execute(request)
 
     def set_task_tags(self, task_id: int, tags: list[str]) -> Task:
@@ -322,7 +322,7 @@ class TaskController:
             TaskValidationError: If tags are invalid (empty strings or duplicates)
         """
         use_case = SetTaskTagsUseCase(self.repository)
-        request = SetTaskTagsRequest(task_id=task_id, tags=tags)
+        request = SetTaskTagsInput(task_id=task_id, tags=tags)
         return use_case.execute(request)
 
     def log_hours(self, task_id: int, hours: float, date: str) -> Task:
@@ -341,7 +341,7 @@ class TaskController:
             TaskValidationError: If date format is invalid or hours <= 0
         """
         use_case = LogHoursUseCase(self.repository)
-        request = LogHoursRequest(task_id=task_id, hours=hours, date=date)
+        request = LogHoursInput(task_id=task_id, hours=hours, date=date)
         return use_case.execute(request)
 
     def update_task(
@@ -379,7 +379,7 @@ class TaskController:
             TaskValidationError: If validation fails for any field
         """
         use_case = UpdateTaskUseCase(self.repository, self.time_tracker)
-        request = UpdateTaskRequest(
+        request = UpdateTaskInput(
             task_id=task_id,
             name=name,
             priority=priority,
@@ -393,14 +393,14 @@ class TaskController:
         )
         return use_case.execute(request)
 
-    def get_task_detail(self, task_id: int) -> GetTaskDetailResult:
+    def get_task_detail(self, task_id: int) -> GetTaskDetailOutput:
         """Get task details with notes.
 
         Args:
             task_id: ID of the task to retrieve
 
         Returns:
-            GetTaskDetailResult containing task and notes information
+            GetTaskDetailOutput containing task and notes information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -413,14 +413,14 @@ class TaskController:
         input_dto = GetTaskDetailInput(task_id)
         return use_case.execute(input_dto)
 
-    def calculate_statistics(self, period: str = "all") -> StatisticsResult:
+    def calculate_statistics(self, period: str = "all") -> StatisticsOutput:
         """Calculate task statistics.
 
         Args:
             period: Time period for filtering ('7d', '30d', or 'all')
 
         Returns:
-            StatisticsResult containing comprehensive task statistics
+            StatisticsOutput containing comprehensive task statistics
 
         Raises:
             ValueError: If period is invalid
@@ -429,5 +429,5 @@ class TaskController:
             raise ValueError(f"Invalid period: {period}. Must be 'all', '7d', or '30d'")
 
         use_case = CalculateStatisticsUseCase(self.repository)
-        request = CalculateStatisticsRequest(period=period)
+        request = CalculateStatisticsInput(period=period)
         return use_case.execute(request)

@@ -1,6 +1,6 @@
 """Use case for getting task detail with notes."""
 
-from application.dto.task_detail_result import GetTaskDetailResult
+from application.dto.task_detail_output import GetTaskDetailOutput
 from application.use_cases.base import UseCase
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
@@ -22,7 +22,7 @@ class GetTaskDetailInput:
         self.task_id = task_id
 
 
-class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailResult]):
+class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailOutput]):
     """Use case for retrieving task details with notes.
 
     This use case fetches a task by ID and its associated notes file
@@ -39,14 +39,14 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailResult]):
         self.repository = repository
         self.notes_repository = notes_repository
 
-    def execute(self, input_dto: GetTaskDetailInput) -> GetTaskDetailResult:
+    def execute(self, input_dto: GetTaskDetailInput) -> GetTaskDetailOutput:
         """Execute task detail retrieval.
 
         Args:
             input_dto: Input data containing task ID
 
         Returns:
-            GetTaskDetailResult with task and notes information
+            GetTaskDetailOutput with task and notes information
 
         Raises:
             TaskNotFoundException: If task doesn't exist
@@ -57,4 +57,4 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailResult]):
         has_notes = self.notes_repository.has_notes(input_dto.task_id)
         notes_content = self.notes_repository.read_notes(input_dto.task_id) if has_notes else None
 
-        return GetTaskDetailResult(task=task, notes_content=notes_content, has_notes=has_notes)
+        return GetTaskDetailOutput(task=task, notes_content=notes_content, has_notes=has_notes)

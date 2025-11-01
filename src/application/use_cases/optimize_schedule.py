@@ -3,8 +3,8 @@
 from contextlib import suppress
 from datetime import datetime
 
-from application.dto.optimization_result import OptimizationResult
-from application.dto.optimize_schedule_request import OptimizeScheduleRequest
+from application.dto.optimization_output import OptimizationOutput
+from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.services.optimization.strategy_factory import StrategyFactory
 from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from application.services.schedule_clearer import ScheduleClearer
@@ -14,7 +14,7 @@ from shared.config_manager import Config
 from shared.utils.holiday_checker import HolidayChecker
 
 
-class OptimizeScheduleUseCase(UseCase[OptimizeScheduleRequest, OptimizationResult]):
+class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]):
     """Use case for optimizing task schedules.
 
     Analyzes all tasks and generates optimal schedules based on
@@ -39,14 +39,14 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleRequest, OptimizationResul
             with suppress(ImportError, NotImplementedError):
                 self.holiday_checker = HolidayChecker(config.region.country)
 
-    def execute(self, input_dto: OptimizeScheduleRequest) -> OptimizationResult:
+    def execute(self, input_dto: OptimizeScheduleInput) -> OptimizationOutput:
         """Execute schedule optimization.
 
         Args:
             input_dto: Optimization parameters
 
         Returns:
-            OptimizationResult containing successful/failed tasks, allocations, and summary
+            OptimizationOutput containing successful/failed tasks, allocations, and summary
 
         Raises:
             ValueError: If algorithm_name is not recognized
@@ -101,7 +101,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleRequest, OptimizationResul
         )
 
         # Create and return result
-        return OptimizationResult(
+        return OptimizationOutput(
             successful_tasks=modified_tasks,
             failed_tasks=failed_tasks,
             daily_allocations=daily_allocations,

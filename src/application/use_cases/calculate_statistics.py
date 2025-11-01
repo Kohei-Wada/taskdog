@@ -1,12 +1,12 @@
 """Calculate statistics use case."""
 
-from application.dto.statistics_result import CalculateStatisticsRequest, StatisticsResult
+from application.dto.statistics_output import CalculateStatisticsInput, StatisticsOutput
 from application.services.task_statistics_calculator import TaskStatisticsCalculator
 from application.use_cases.base import UseCase
 from domain.repositories.task_repository import TaskRepository
 
 
-class CalculateStatisticsUseCase(UseCase[CalculateStatisticsRequest, StatisticsResult]):
+class CalculateStatisticsUseCase(UseCase[CalculateStatisticsInput, StatisticsOutput]):
     """Use case for calculating task statistics.
 
     This use case retrieves all tasks from the repository and calculates
@@ -24,14 +24,14 @@ class CalculateStatisticsUseCase(UseCase[CalculateStatisticsRequest, StatisticsR
         self.repository = repository
         self.calculator = TaskStatisticsCalculator()
 
-    def execute(self, input_dto: CalculateStatisticsRequest) -> StatisticsResult:
+    def execute(self, input_dto: CalculateStatisticsInput) -> StatisticsOutput:
         """Execute the statistics calculation.
 
         Args:
             input_dto: Input containing period filter
 
         Returns:
-            StatisticsResult containing all calculated statistics
+            StatisticsOutput containing all calculated statistics
         """
         # Get all tasks from repository
         tasks = self.repository.get_all()

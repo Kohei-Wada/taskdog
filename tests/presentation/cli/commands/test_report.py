@@ -277,14 +277,16 @@ class TestReportCommand(unittest.TestCase):
             notes_repository=MagicMock(),
         )
 
-    @patch("presentation.cli.commands.report.TaskQueryService")
-    def test_shows_warning_when_no_scheduled_tasks(self, mock_query_service_class):
+    @patch("presentation.cli.commands.report.QueryController")
+    def test_shows_warning_when_no_scheduled_tasks(self, mock_controller_class):
         """Test warning is shown when no tasks have daily_allocations."""
         # Setup
         task_without_allocation = Task(id=1, name="Task 1", priority=5, status=TaskStatus.PENDING)
 
-        mock_query_service = mock_query_service_class.return_value
-        mock_query_service.get_filtered_tasks.return_value = [task_without_allocation]
+        mock_controller = mock_controller_class.return_value
+        mock_result = MagicMock()
+        mock_result.tasks = [task_without_allocation]
+        mock_controller.list_tasks.return_value = mock_result
 
         # Execute
         result = self.runner.invoke(report_command, [], obj=self.cli_context)
@@ -294,8 +296,8 @@ class TestReportCommand(unittest.TestCase):
         self.console_writer.warning.assert_called_once()
         self.assertIn("No scheduled tasks found", self.console_writer.warning.call_args[0][0])
 
-    @patch("presentation.cli.commands.report.TaskQueryService")
-    def test_shows_warning_when_no_tasks_in_date_range(self, mock_query_service_class):
+    @patch("presentation.cli.commands.report.QueryController")
+    def test_shows_warning_when_no_tasks_in_date_range(self, mock_controller_class):
         """Test warning is shown when no tasks match the date range."""
         # Setup
         task = Task(
@@ -306,8 +308,10 @@ class TestReportCommand(unittest.TestCase):
             daily_allocations={date(2025, 10, 30): 3.0},
         )
 
-        mock_query_service = mock_query_service_class.return_value
-        mock_query_service.get_filtered_tasks.return_value = [task]
+        mock_controller = mock_controller_class.return_value
+        mock_result = MagicMock()
+        mock_result.tasks = [task]
+        mock_controller.list_tasks.return_value = mock_result
 
         # Execute - query for November dates (task is in October)
         result = self.runner.invoke(
@@ -324,8 +328,8 @@ class TestReportCommand(unittest.TestCase):
             self.console_writer.warning.call_args[0][0],
         )
 
-    @patch("presentation.cli.commands.report.TaskQueryService")
-    def test_generates_report_for_scheduled_tasks(self, mock_query_service_class):
+    @patch("presentation.cli.commands.report.QueryController")
+    def test_generates_report_for_scheduled_tasks(self, mock_controller_class):
         """Test report is generated for tasks with daily_allocations."""
         # Setup
         task1 = Task(
@@ -343,8 +347,10 @@ class TestReportCommand(unittest.TestCase):
             daily_allocations={date(2025, 10, 30): 4.0},
         )
 
-        mock_query_service = mock_query_service_class.return_value
-        mock_query_service.get_filtered_tasks.return_value = [task1, task2]
+        mock_controller = mock_controller_class.return_value
+        mock_result = MagicMock()
+        mock_result.tasks = [task1, task2]
+        mock_controller.list_tasks.return_value = mock_result
 
         # Execute
         result = self.runner.invoke(report_command, [], obj=self.cli_context)

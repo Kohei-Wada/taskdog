@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime
 
-from application.dto.pause_task_request import PauseTaskRequest
+from application.dto.pause_task_input import PauseTaskInput
 from application.use_cases.pause_task import PauseTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from tests.application.use_cases.status_change_test_base import (
@@ -13,7 +13,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
     """Test cases for PauseTaskUseCase"""
 
     use_case_class = PauseTaskUseCase
-    request_class = PauseTaskRequest
+    request_class = PauseTaskInput
     target_status = TaskStatus.PENDING
     initial_status = TaskStatus.IN_PROGRESS
 
@@ -28,7 +28,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
         task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
         self.repository.save(task)
 
-        input_dto = PauseTaskRequest(task_id=task.id)
+        input_dto = PauseTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertIsNone(result.actual_start)
@@ -41,7 +41,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
         task.actual_end = datetime(2024, 1, 1, 12, 0, 0)  # Shouldn't normally exist for IN_PROGRESS
         self.repository.save(task)
 
-        input_dto = PauseTaskRequest(task_id=task.id)
+        input_dto = PauseTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertIsNone(result.actual_end)
@@ -52,7 +52,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = PauseTaskRequest(task_id=task.id)
+        input_dto = PauseTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.PENDING)

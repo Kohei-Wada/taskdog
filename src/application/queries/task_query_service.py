@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from application.dto.gantt_result import GanttDateRange, GanttResult
+from application.dto.gantt_output import GanttDateRange, GanttOutput
 from application.queries.base import QueryService
 from application.queries.filters.task_filter import TaskFilter
 from application.queries.workload_calculator import WorkloadCalculator
@@ -97,7 +97,7 @@ class TaskQueryService(QueryService):
         reverse: bool = False,
         start_date: date | None = None,
         end_date: date | None = None,
-    ) -> GanttResult:
+    ) -> GanttOutput:
         """Get Gantt chart data with business logic pre-computed.
 
         This method handles business data processing:
@@ -117,7 +117,7 @@ class TaskQueryService(QueryService):
             end_date: Optional end date (auto-calculated if not provided)
 
         Returns:
-            GanttResult containing business data for Gantt visualization
+            GanttOutput containing business data for Gantt visualization
         """
         # Get filtered and sorted tasks
         tasks = self.get_filtered_tasks(filter_obj, sort_by, reverse)
@@ -125,7 +125,7 @@ class TaskQueryService(QueryService):
         if not tasks:
             # Return empty result with today's date range
             today = date.today()
-            return GanttResult(
+            return GanttOutput(
                 date_range=GanttDateRange(start_date=today, end_date=today),
                 tasks=[],
                 task_daily_hours={},
@@ -138,7 +138,7 @@ class TaskQueryService(QueryService):
         if date_range is None:
             # No dates available in tasks
             today = date.today()
-            return GanttResult(
+            return GanttOutput(
                 date_range=GanttDateRange(start_date=today, end_date=today),
                 tasks=tasks,
                 task_daily_hours={},
@@ -159,7 +159,7 @@ class TaskQueryService(QueryService):
             tasks, range_start, range_end
         )
 
-        return GanttResult(
+        return GanttOutput(
             date_range=GanttDateRange(start_date=range_start, end_date=range_end),
             tasks=tasks,
             task_daily_hours=task_daily_hours,

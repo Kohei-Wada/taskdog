@@ -21,7 +21,7 @@ class SchedulingFailure:
 
 
 @dataclass
-class OptimizationResult:
+class OptimizationOutput:
     """Complete result of schedule optimization.
 
     This DTO encapsulates all information from the optimization process,

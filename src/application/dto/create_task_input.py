@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 @dataclass
-class CreateTaskRequest:
+class CreateTaskInput:
     """Request data for creating a task.
 
     Attributes:

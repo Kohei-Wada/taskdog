@@ -12,7 +12,7 @@ from application.constants.optimization import (
     GENETIC_MUTATION_RATE,
     GENETIC_POPULATION_SIZE,
 )
-from application.dto.optimization_result import SchedulingFailure
+from application.dto.optimization_output import SchedulingFailure
 from application.services.optimization.allocators.greedy_forward_allocator import (
     GreedyForwardAllocator,
 )

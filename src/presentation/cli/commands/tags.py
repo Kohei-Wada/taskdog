@@ -2,10 +2,10 @@
 
 import click
 
-from application.queries.task_query_service import TaskQueryService
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from presentation.controllers.query_controller import QueryController
 from presentation.controllers.task_controller import TaskController
 
 
@@ -28,23 +28,24 @@ def tags_command(ctx, task_id, tags):
 
     # Case 1: No arguments - show all tags
     if task_id is None:
-        query_service = TaskQueryService(repository)
-        tag_counts = query_service.get_all_tags()
+        query_controller = QueryController(repository)
+        stats = query_controller.get_tag_statistics()
 
-        if not tag_counts:
+        if not stats.tag_counts:
             console_writer.info("No tags found.")
             return
 
         console_writer.info("All tags:")
         # Sort by tag name
-        for tag in sorted(tag_counts.keys()):
-            count = tag_counts[tag]
+        for tag in sorted(stats.tag_counts.keys()):
+            count = stats.tag_counts[tag]
             console_writer.print(f"  {tag} ({count} task{'s' if count != 1 else ''})")
         return
 
     # Case 2: Task ID only - show tags for that task
     if not tags:
-        task = repository.get_by_id(task_id)
+        query_controller = QueryController(repository)
+        task = query_controller.get_task_by_id(task_id)
         if not task:
             raise TaskNotFoundException(task_id)
 

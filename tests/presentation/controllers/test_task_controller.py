@@ -622,7 +622,7 @@ class TestTaskController(unittest.TestCase):
         self.assertIn("notes_repository is required", str(context.exception))
 
     def test_calculate_statistics_returns_result(self):
-        """Test calculate_statistics returns StatisticsResult."""
+        """Test calculate_statistics returns StatisticsOutput."""
         # Create some tasks with various statuses
         tasks_data = [
             ("Task 1", TaskStatus.PENDING),

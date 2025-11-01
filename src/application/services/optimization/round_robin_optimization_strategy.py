@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from application.constants.optimization import ROUND_ROBIN_MAX_ITERATIONS
-from application.dto.optimization_result import SchedulingFailure
+from application.dto.optimization_output import SchedulingFailure
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
 from shared.config_manager import Config

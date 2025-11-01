@@ -17,7 +17,7 @@ UNSET = _Unset()
 
 
 @dataclass
-class UpdateTaskRequest:
+class UpdateTaskInput:
     """Request data for updating a task.
 
     Attributes:

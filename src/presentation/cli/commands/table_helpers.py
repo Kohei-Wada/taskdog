@@ -2,11 +2,11 @@
 
 from application.queries.filters.composite_filter import CompositeFilter
 from application.queries.filters.task_filter import TaskFilter
-from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
 from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
+from presentation.controllers.query_controller import QueryController
 from presentation.mappers.task_mapper import TaskMapper
 from presentation.renderers.rich_table_renderer import RichTableRenderer
 
@@ -28,8 +28,9 @@ def get_and_filter_tasks(
     Returns:
         Filtered and sorted list of tasks
     """
-    task_query_service = TaskQueryService(repository)
-    return task_query_service.get_filtered_tasks(filter_obj, sort_by=sort_by, reverse=reverse)
+    query_controller = QueryController(repository)
+    result = query_controller.list_tasks(filter_obj=filter_obj, sort_by=sort_by, reverse=reverse)
+    return result.tasks
 
 
 def render_table(ctx_obj: CliContext, tasks: list[Task], fields: list[str] | None = None) -> None:

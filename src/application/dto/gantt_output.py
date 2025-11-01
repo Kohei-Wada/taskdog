@@ -38,7 +38,7 @@ class GanttDateRange:
 
 
 @dataclass
-class GanttResult:
+class GanttOutput:
     """Complete Gantt chart data result.
 
     This DTO contains only business data needed for Gantt visualization.

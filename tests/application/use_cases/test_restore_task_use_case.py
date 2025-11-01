@@ -4,7 +4,7 @@ import os
 import tempfile
 import unittest
 
-from application.dto.restore_task_request import RestoreTaskRequest
+from application.dto.restore_task_input import RestoreTaskInput
 from application.use_cases.restore_task import RestoreTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
@@ -34,7 +34,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         task.is_archived = True
         self.repository.save(task)
 
-        input_dto = RestoreTaskRequest(task_id=task.id)
+        input_dto = RestoreTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertFalse(result.is_archived)
@@ -47,7 +47,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         task.is_archived = True
         self.repository.save(task)
 
-        input_dto = RestoreTaskRequest(task_id=task.id)
+        input_dto = RestoreTaskInput(task_id=task.id)
         self.use_case.execute(input_dto)
 
         # Verify persistence
@@ -57,7 +57,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
 
     def test_execute_with_invalid_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException"""
-        input_dto = RestoreTaskRequest(task_id=999)
+        input_dto = RestoreTaskInput(task_id=999)
 
         with self.assertRaises(TaskNotFoundException):
             self.use_case.execute(input_dto)
@@ -67,7 +67,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         # Create a completed (but not archived) task
         task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
 
-        input_dto = RestoreTaskRequest(task_id=task.id)
+        input_dto = RestoreTaskInput(task_id=task.id)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto)
@@ -91,7 +91,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         original_duration = task.estimated_duration
         original_status = task.status
 
-        input_dto = RestoreTaskRequest(task_id=task.id)
+        input_dto = RestoreTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify only is_archived changed
@@ -108,7 +108,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         task.is_archived = True
         self.repository.save(task)
 
-        input_dto = RestoreTaskRequest(task_id=task.id)
+        input_dto = RestoreTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify archived flag cleared and status preserved
@@ -122,7 +122,7 @@ class TestRestoreTaskUseCase(unittest.TestCase):
         task.is_archived = True
         self.repository.save(task)
 
-        input_dto = RestoreTaskRequest(task_id=task.id)
+        input_dto = RestoreTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify archived flag cleared and status preserved

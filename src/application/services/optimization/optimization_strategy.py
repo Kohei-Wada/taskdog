@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from application.dto.optimization_result import SchedulingFailure
+from application.dto.optimization_output import SchedulingFailure
 from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task, TaskStatus
 
