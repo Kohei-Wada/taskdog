@@ -12,7 +12,6 @@ from application.queries.filters.incomplete_or_active_filter import (
     IncompleteOrActiveFilter,
 )
 from application.queries.filters.non_archived_filter import NonArchivedFilter
-from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
@@ -121,7 +120,6 @@ class TaskdogTUI(App):
         self.repository = repository
         self.time_tracker = time_tracker
         self.notes_repository = notes_repository
-        self.query_service = TaskQueryService(repository)
         self.config = config if config is not None else ConfigManager.load()
         self.main_screen: MainScreen | None = None
         self._gantt_sort_by: str = "deadline"  # Default gantt sort order
@@ -129,14 +127,14 @@ class TaskdogTUI(App):
 
         # Initialize controllers
         task_controller = TaskController(repository, time_tracker, self.config, notes_repository)
-        query_controller = QueryController(repository)
+        self.query_controller = QueryController(repository)
 
         # Initialize TUIContext
         self.context = TUIContext(
             config=self.config,
             notes_repository=notes_repository,
             task_controller=task_controller,
-            query_controller=query_controller,
+            query_controller=self.query_controller,
         )
 
         # Initialize TaskService with context
@@ -222,7 +220,12 @@ class TaskdogTUI(App):
             task_filter = CompositeFilter([NonArchivedFilter(), IncompleteOrActiveFilter()])
         else:
             task_filter = NonArchivedFilter()
-        tasks = self.query_service.get_filtered_tasks(task_filter, sort_by=self._gantt_sort_by)
+
+        # Use QueryController instead of direct QueryService access
+        task_list_output = self.query_controller.list_tasks(
+            filter_obj=task_filter, sort_by=self._gantt_sort_by, reverse=False
+        )
+        tasks = task_list_output.tasks
 
         # Update gantt chart and table
         if self.main_screen:
