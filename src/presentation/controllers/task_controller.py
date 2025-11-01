@@ -4,12 +4,16 @@ This controller provides a shared interface between CLI and TUI layers,
 eliminating code duplication in use case instantiation and DTO construction.
 """
 
+from datetime import datetime
+
 from application.dto.cancel_task_request import CancelTaskRequest
 from application.dto.complete_task_request import CompleteTaskRequest
+from application.dto.create_task_request import CreateTaskRequest
 from application.dto.pause_task_request import PauseTaskRequest
 from application.dto.start_task_request import StartTaskRequest
 from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
+from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.pause_task import PauseTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
@@ -122,4 +126,46 @@ class TaskController:
         """
         use_case = CancelTaskUseCase(self.repository, self.time_tracker)
         request = CancelTaskRequest(task_id=task_id)
+        return use_case.execute(request)
+
+    def create_task(
+        self,
+        name: str,
+        priority: int | None = None,
+        deadline: datetime | None = None,
+        estimated_duration: float | None = None,
+        planned_start: datetime | None = None,
+        planned_end: datetime | None = None,
+        is_fixed: bool = False,
+        tags: list[str] | None = None,
+    ) -> Task:
+        """Create a new task.
+
+        Args:
+            name: Task name
+            priority: Task priority (default: from config)
+            deadline: Task deadline (optional)
+            estimated_duration: Estimated duration in hours (optional)
+            planned_start: Planned start datetime (optional)
+            planned_end: Planned end datetime (optional)
+            is_fixed: Whether the task schedule is fixed (default: False)
+            tags: List of tags for categorization (optional)
+
+        Returns:
+            The created task
+
+        Raises:
+            TaskValidationError: If task validation fails
+        """
+        use_case = CreateTaskUseCase(self.repository)
+        request = CreateTaskRequest(
+            name=name,
+            priority=priority or self.config.task.default_priority,
+            deadline=deadline,
+            estimated_duration=estimated_duration,
+            planned_start=planned_start,
+            planned_end=planned_end,
+            is_fixed=is_fixed,
+            tags=tags,
+        )
         return use_case.execute(request)

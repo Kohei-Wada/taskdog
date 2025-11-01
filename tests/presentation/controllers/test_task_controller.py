@@ -3,13 +3,13 @@
 import os
 import tempfile
 import unittest
+from datetime import datetime
 from unittest.mock import MagicMock
 
 from domain.entities.task import Task, TaskStatus
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.controllers.task_controller import TaskController
-from shared.config_manager import ConfigManager
 
 
 class TestTaskController(unittest.TestCase):
@@ -22,7 +22,10 @@ class TestTaskController(unittest.TestCase):
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
         self.time_tracker = TimeTracker()
-        self.config = MagicMock(spec=ConfigManager)
+        # Mock config with task.default_priority
+        self.config = MagicMock()
+        self.config.task = MagicMock()
+        self.config.task.default_priority = 5  # Default for most tests
         self.controller = TaskController(self.repository, self.time_tracker, self.config)
 
     def tearDown(self):
@@ -173,6 +176,57 @@ class TestTaskController(unittest.TestCase):
 
         # Verify actual_end is set
         self.assertIsNotNone(result.actual_end)
+
+    def test_create_task_basic(self):
+        """Test create_task creates a task with basic fields."""
+        # Create task
+        result = self.controller.create_task("New Task", priority=3)
+
+        # Verify task created
+        self.assertIsNotNone(result.id)
+        self.assertEqual(result.name, "New Task")
+        self.assertEqual(result.priority, 3)
+        self.assertEqual(result.status, TaskStatus.PENDING)
+
+    def test_create_task_with_all_fields(self):
+        """Test create_task with all optional fields."""
+        deadline = datetime(2025, 12, 31, 18, 0)
+        planned_start = datetime(2025, 11, 1, 9, 0)
+        planned_end = datetime(2025, 11, 1, 17, 0)
+
+        # Create task
+        result = self.controller.create_task(
+            name="Complex Task",
+            priority=8,
+            deadline=deadline,
+            estimated_duration=16.5,
+            planned_start=planned_start,
+            planned_end=planned_end,
+            is_fixed=True,
+            tags=["work", "urgent"],
+        )
+
+        # Verify all fields
+        self.assertIsNotNone(result.id)
+        self.assertEqual(result.name, "Complex Task")
+        self.assertEqual(result.priority, 8)
+        self.assertEqual(result.deadline, deadline)
+        self.assertEqual(result.estimated_duration, 16.5)
+        self.assertEqual(result.planned_start, planned_start)
+        self.assertEqual(result.planned_end, planned_end)
+        self.assertTrue(result.is_fixed)
+        self.assertEqual(result.tags, ["work", "urgent"])
+
+    def test_create_task_uses_default_priority(self):
+        """Test create_task uses config default priority when not specified."""
+        # Mock config
+        self.config.task.default_priority = 7
+
+        # Create task without priority
+        result = self.controller.create_task("Task with Default Priority")
+
+        # Verify default priority used
+        self.assertEqual(result.priority, 7)
 
 
 if __name__ == "__main__":

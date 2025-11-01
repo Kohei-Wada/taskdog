@@ -45,8 +45,8 @@ class AddTaskCommand(TUICommandBase):
                 else None
             )
 
-            # Create task via TaskService
-            task = self.task_service.create_task(
+            # Create task via TaskController
+            task = self.controller.create_task(
                 name=form_data.name,
                 priority=form_data.priority,
                 deadline=deadline,
