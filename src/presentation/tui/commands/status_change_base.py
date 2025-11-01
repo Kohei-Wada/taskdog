@@ -18,7 +18,7 @@ class StatusChangeCommandBase(TUICommandBase):
     This class implements the Template Method pattern to eliminate code duplication
     across status change commands. Subclasses only need to define:
     1. Action name (for error messages and progress indication)
-    2. Status change method (which TaskService method to call)
+    2. Status change method (which TaskController method to call)
     3. Success message verb (past tense: "Started", "Completed", etc.)
 
     Example:
@@ -28,7 +28,7 @@ class StatusChangeCommandBase(TUICommandBase):
                 return "starting task"
 
             def execute_status_change(self, task_id: int) -> Task:
-                return self.task_service.start_task(task_id)
+                return self.controller.start_task(task_id)
 
             def get_success_verb(self) -> str:
                 return "Started"
@@ -44,7 +44,7 @@ class StatusChangeCommandBase(TUICommandBase):
 
     @abstractmethod
     def execute_status_change(self, task_id: int) -> Task:
-        """Execute the status change operation via TaskService.
+        """Execute the status change operation via TaskController.
 
         Args:
             task_id: ID of the task to change status
@@ -72,7 +72,7 @@ class StatusChangeCommandBase(TUICommandBase):
         This method implements the common workflow with error handling:
         1. Get selected task
         2. Validate task selection
-        3. Execute status change via TaskService
+        3. Execute status change via TaskController
         4. Reload task list
         5. Show success notification
 

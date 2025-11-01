@@ -3,8 +3,6 @@
 from datetime import date, datetime
 
 from application.dto.archive_task_request import ArchiveTaskRequest
-from application.dto.cancel_task_request import CancelTaskRequest
-from application.dto.complete_task_request import CompleteTaskRequest
 from application.dto.create_task_request import CreateTaskRequest
 from application.dto.manage_dependencies_request import (
     AddDependencyRequest,
@@ -12,22 +10,16 @@ from application.dto.manage_dependencies_request import (
 )
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
-from application.dto.pause_task_request import PauseTaskRequest
 from application.dto.remove_task_request import RemoveTaskRequest
-from application.dto.start_task_request import StartTaskRequest
 from application.dto.update_task_request import UpdateTaskRequest
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.task_filter import TaskFilter
 from application.use_cases.add_dependency import AddDependencyUseCase
 from application.use_cases.archive_task import ArchiveTaskUseCase
-from application.use_cases.cancel_task import CancelTaskUseCase
-from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
-from application.use_cases.pause_task import PauseTaskUseCase
 from application.use_cases.remove_dependency import RemoveDependencyUseCase
 from application.use_cases.remove_task import RemoveTaskUseCase
-from application.use_cases.start_task import StartTaskUseCase
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskValidationError
@@ -125,58 +117,6 @@ class TaskService:
             tags=tags,
         )
         return use_case.execute(task_input)
-
-    def start_task(self, task_id: int) -> Task:
-        """Start a task.
-
-        Args:
-            task_id: Task ID
-
-        Returns:
-            The updated task
-        """
-        use_case = StartTaskUseCase(self.repository, self.time_tracker)
-        start_input = StartTaskRequest(task_id=task_id)
-        return use_case.execute(start_input)
-
-    def pause_task(self, task_id: int) -> Task:
-        """Pause a task.
-
-        Args:
-            task_id: Task ID
-
-        Returns:
-            The updated task
-        """
-        use_case = PauseTaskUseCase(self.repository, self.time_tracker)
-        pause_input = PauseTaskRequest(task_id=task_id)
-        return use_case.execute(pause_input)
-
-    def complete_task(self, task_id: int) -> Task:
-        """Complete a task.
-
-        Args:
-            task_id: Task ID
-
-        Returns:
-            The updated task
-        """
-        use_case = CompleteTaskUseCase(self.repository, self.time_tracker)
-        complete_input = CompleteTaskRequest(task_id=task_id)
-        return use_case.execute(complete_input)
-
-    def cancel_task(self, task_id: int) -> Task:
-        """Cancel a task.
-
-        Args:
-            task_id: Task ID
-
-        Returns:
-            The updated task
-        """
-        use_case = CancelTaskUseCase(self.repository, self.time_tracker)
-        cancel_input = CancelTaskRequest(task_id=task_id)
-        return use_case.execute(cancel_input)
 
     def remove_task(self, task_id: int) -> Task:
         """Remove a task (archive).
