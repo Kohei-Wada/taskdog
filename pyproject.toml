@@ -167,6 +167,7 @@ packages = [
   "presentation.enums",
   "presentation.exporters",
   "presentation.mappers",
+  "presentation.presenters",
   "presentation.renderers",
   "presentation.utils",
   "presentation.view_models",

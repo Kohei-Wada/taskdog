@@ -50,4 +50,4 @@ def today_command(ctx, format, all, status, sort, reverse):
     result = query_controller.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
 
     # Render and display
-    render_table(ctx_obj, result.tasks)
+    render_table(ctx_obj, result)

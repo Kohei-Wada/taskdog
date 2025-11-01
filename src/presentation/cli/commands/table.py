@@ -76,4 +76,4 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
     result = query_controller.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
 
     # Render and display
-    render_table(ctx_obj, result.tasks, fields=fields)
+    render_table(ctx_obj, result, fields=fields)

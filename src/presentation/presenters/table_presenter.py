@@ -1,9 +1,10 @@
-"""Mapper for converting Task entity to TaskRowViewModel.
+"""Presenter for converting TaskListOutput to TaskRowViewModels.
 
-This mapper extracts necessary fields from Task entities and creates
-presentation-ready view models for table/list display.
+This presenter extracts necessary fields from Task entities within TaskListOutput
+and creates presentation-ready view models for table/list display.
 """
 
+from application.dto.task_list_output import TaskListOutput
 from domain.entities.task import Task
 from domain.entities.task import TaskStatus as DomainTaskStatus
 from domain.repositories.notes_repository import NotesRepository
@@ -11,17 +12,17 @@ from presentation.enums.task_status import TaskStatus as PresentationTaskStatus
 from presentation.view_models.task_view_model import TaskRowViewModel
 
 
-class TaskMapper:
-    """Mapper for converting Task to TaskRowViewModel.
+class TablePresenter:
+    """Presenter for converting TaskListOutput DTO to TaskRowViewModels.
 
     This class is responsible for:
-    1. Extracting necessary fields from Task entities
+    1. Extracting necessary fields from Task entities within DTOs
     2. Checking for associated notes
     3. Converting domain data to presentation-ready ViewModels
     """
 
     def __init__(self, notes_repository: NotesRepository):
-        """Initialize the mapper.
+        """Initialize the presenter.
 
         Args:
             notes_repository: Repository for checking note existence
@@ -44,7 +45,18 @@ class TaskMapper:
         # Direct mapping by enum value
         return PresentationTaskStatus(domain_status.value)
 
-    def to_row_view_model(self, task: Task) -> TaskRowViewModel:
+    def present(self, output: TaskListOutput) -> list[TaskRowViewModel]:
+        """Convert TaskListOutput DTO to list of TaskRowViewModels.
+
+        Args:
+            output: TaskListOutput DTO from QueryController
+
+        Returns:
+            List of TaskRowViewModels ready for rendering
+        """
+        return [self._task_to_view_model(task) for task in output.tasks]
+
+    def _task_to_view_model(self, task: Task) -> TaskRowViewModel:
         """Convert a Task entity to TaskRowViewModel.
 
         Args:
@@ -79,14 +91,3 @@ class TaskMapper:
             created_at=task.created_at,
             updated_at=task.updated_at,
         )
-
-    def to_row_view_models(self, tasks: list[Task]) -> list[TaskRowViewModel]:
-        """Convert a list of Task entities to TaskRowViewModels.
-
-        Args:
-            tasks: List of domain Task entities
-
-        Returns:
-            List of TaskRowViewModels
-        """
-        return [self.to_row_view_model(task) for task in tasks]
