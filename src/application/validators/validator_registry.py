@@ -7,7 +7,7 @@ from application.validators.field_validator import FieldValidator
 from application.validators.numeric_field_validator import NumericFieldValidator
 from application.validators.status_validator import StatusValidator
 from domain.entities.task import Task
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 
 
 class TaskFieldValidatorRegistry:

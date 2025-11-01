@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 from application.dto.optimization_summary import OptimizationSummary
 from domain.entities.task import Task
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 
 
 class OptimizationSummaryBuilder:

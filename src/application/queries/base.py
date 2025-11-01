@@ -1,6 +1,6 @@
 """Base class for query services."""
 
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 
 
 class QueryService:

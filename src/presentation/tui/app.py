@@ -14,9 +14,9 @@ from application.queries.filters.incomplete_or_active_filter import (
 from application.queries.filters.non_archived_filter import NonArchivedFilter
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
+from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.notes_repository import NotesRepository
-from infrastructure.persistence.task_repository import TaskRepository
 from presentation.tui.commands.factory import CommandFactory
 from presentation.tui.context import TUIContext
 from presentation.tui.events import TaskCreated, TaskDeleted, TasksRefreshed, TaskUpdated

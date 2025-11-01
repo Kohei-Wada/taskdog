@@ -10,7 +10,7 @@ from shared.config_manager import Config
 from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
-    from infrastructure.persistence.task_repository import TaskRepository
+    from domain.repositories.task_repository import TaskRepository
     from shared.utils.holiday_checker import HolidayChecker
 
 

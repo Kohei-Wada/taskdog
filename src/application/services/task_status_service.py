@@ -1,8 +1,8 @@
 """Service for handling task status changes with time tracking."""
 
 from domain.entities.task import Task, TaskStatus
+from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
-from infrastructure.persistence.task_repository import TaskRepository
 
 
 class TaskStatusService:

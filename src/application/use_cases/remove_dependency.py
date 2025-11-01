@@ -4,7 +4,7 @@ from application.dto.manage_dependencies_request import RemoveDependencyRequest
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 
 
 class RemoveDependencyUseCase(UseCase[RemoveDependencyRequest, Task]):

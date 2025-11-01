@@ -143,6 +143,7 @@ packages = [
   "domain",
   "domain.entities",
   "domain.services",
+  "domain.repositories",
   "domain.exceptions",
   "application",
   "application.constants",

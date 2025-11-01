@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from domain.entities.task import Task
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 
 
 class FieldValidator(ABC):

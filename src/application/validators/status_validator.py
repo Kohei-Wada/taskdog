@@ -8,7 +8,7 @@ from domain.exceptions.task_exceptions import (
     TaskNotStartedError,
     TaskValidationError,
 )
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 
 
 class StatusValidator(FieldValidator):

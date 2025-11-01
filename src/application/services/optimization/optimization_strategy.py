@@ -9,7 +9,7 @@ from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task, TaskStatus
 
 if TYPE_CHECKING:
-    from infrastructure.persistence.task_repository import TaskRepository
+    from domain.repositories.task_repository import TaskRepository
     from shared.utils.holiday_checker import HolidayChecker
 
 

@@ -5,7 +5,7 @@ from application.services.dependency_graph_service import DependencyGraphService
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 
 
 class AddDependencyUseCase(UseCase[AddDependencyRequest, Task]):

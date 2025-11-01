@@ -2,7 +2,7 @@
 
 from application.dto.remove_task_request import RemoveTaskRequest
 from application.use_cases.base import UseCase
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 
 
 class RemoveTaskUseCase(UseCase[RemoveTaskRequest, None]):

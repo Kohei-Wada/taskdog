@@ -11,7 +11,7 @@ from domain.entities.task import Task
 from shared.config_manager import Config
 
 if TYPE_CHECKING:
-    from infrastructure.persistence.task_repository import TaskRepository
+    from domain.repositories.task_repository import TaskRepository
 
 
 class DependencyAwareOptimizationStrategy(OptimizationStrategy):

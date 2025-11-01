@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from domain.entities.task import Task
-    from infrastructure.persistence.task_repository import TaskRepository
+    from domain.repositories.task_repository import TaskRepository
 
 
 class UseCase[TInput, TOutput](ABC):

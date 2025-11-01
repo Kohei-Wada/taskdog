@@ -4,7 +4,7 @@ from application.dto.restore_task_request import RestoreTaskRequest
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 
 
 class RestoreTaskUseCase(UseCase[RestoreTaskRequest, Task]):

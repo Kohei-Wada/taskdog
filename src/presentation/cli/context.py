@@ -2,9 +2,9 @@
 
 from dataclasses import dataclass
 
+from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.notes_repository import NotesRepository
-from infrastructure.persistence.task_repository import TaskRepository
 from presentation.console.console_writer import ConsoleWriter
 from shared.config_manager import Config
 

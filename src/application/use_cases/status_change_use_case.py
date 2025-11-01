@@ -7,8 +7,8 @@ from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
 from application.validators.validator_registry import TaskFieldValidatorRegistry
 from domain.entities.task import Task, TaskStatus
+from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
-from infrastructure.persistence.task_repository import TaskRepository
 
 
 class StatusChangeUseCase[TInput: StatusChangeRequest](UseCase[TInput, Task], ABC):

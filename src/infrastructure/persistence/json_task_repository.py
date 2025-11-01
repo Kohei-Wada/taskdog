@@ -2,9 +2,9 @@ from datetime import datetime
 from typing import Any, cast
 
 from domain.entities.task import Task
+from domain.repositories.task_repository import TaskRepository
 from infrastructure.persistence.json_task_storage import JsonTaskStorage
 from infrastructure.persistence.task_index_manager import TaskIndexManager
-from infrastructure.persistence.task_repository import TaskRepository
 
 
 class JsonTaskRepository(TaskRepository):

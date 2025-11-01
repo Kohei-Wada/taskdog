@@ -9,7 +9,7 @@ from application.services.optimization.strategy_factory import StrategyFactory
 from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from application.services.schedule_clearer import ScheduleClearer
 from application.use_cases.base import UseCase
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 from shared.config_manager import Config
 from shared.utils.holiday_checker import HolidayChecker
 

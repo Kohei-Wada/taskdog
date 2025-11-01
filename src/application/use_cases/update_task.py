@@ -4,8 +4,8 @@ from application.dto.update_task_request import UpdateTaskRequest
 from application.use_cases.base import UseCase
 from application.validators.validator_registry import TaskFieldValidatorRegistry
 from domain.entities.task import Task
+from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
-from infrastructure.persistence.task_repository import TaskRepository
 
 
 class UpdateTaskUseCase(UseCase[UpdateTaskRequest, tuple[Task, list[str]]]):

@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task, TaskStatus
+from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.notes_repository import NotesRepository
-from infrastructure.persistence.task_repository import TaskRepository
 from presentation.tui.context import TUIContext
 from presentation.tui.services.task_service import TaskService
 from shared.config_manager import ConfigManager

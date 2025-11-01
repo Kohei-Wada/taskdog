@@ -1,6 +1,6 @@
 """Service for dependency graph operations."""
 
-from infrastructure.persistence.task_repository import TaskRepository
+from domain.repositories.task_repository import TaskRepository
 
 
 class DependencyGraphService:
