@@ -56,9 +56,8 @@ class ShowDetailsCommand(TUICommandBase):
             return
 
         # Edit note using shared helper (uses Domain interface)
-        # TODO: Update edit_task_note to accept TaskDetailDto
         edit_task_note(
-            task=output.task,  # type: ignore[arg-type]
+            task=output.task,
             notes_repository=self.context.notes_repository,
             app=self.app,
             on_success=lambda name, id_: self._on_edit_success(name, id_),

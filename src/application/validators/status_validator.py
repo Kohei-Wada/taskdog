@@ -55,28 +55,44 @@ class StatusValidator(FieldValidator):
             raise TaskValidationError("Task ID must not be None for status validation")
 
     def _validate_can_be_started(self, task: Task, repository: TaskRepository) -> None:
+        # Type narrowing (guaranteed by _ensure_task_has_id called in validate())
+        if task.id is None:
+            raise TaskValidationError("Task ID must not be None")
+
         # Early check: Cannot restart finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)  # type: ignore
+            raise TaskAlreadyFinishedError(task.id, task.status.value)
 
         # Check dependencies: all dependencies must be COMPLETED
         DependencyValidator.validate_dependencies_met(task, repository)
 
     def _validate_can_be_completed(self, task: Task) -> None:
+        # Type narrowing (guaranteed by _ensure_task_has_id called in validate())
+        if task.id is None:
+            raise TaskValidationError("Task ID must not be None")
+
         # Early check: Cannot re-complete finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)  # type: ignore
+            raise TaskAlreadyFinishedError(task.id, task.status.value)
 
         # Cannot complete PENDING tasks (must start first)
         if task.status == TaskStatus.PENDING:
-            raise TaskNotStartedError(task.id)  # type: ignore
+            raise TaskNotStartedError(task.id)
 
     def _validate_can_be_canceled(self, task: Task) -> None:
+        # Type narrowing (guaranteed by _ensure_task_has_id called in validate())
+        if task.id is None:
+            raise TaskValidationError("Task ID must not be None")
+
         # Cannot cancel already finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)  # type: ignore
+            raise TaskAlreadyFinishedError(task.id, task.status.value)
 
     def _validate_can_be_paused(self, task: Task) -> None:
+        # Type narrowing (guaranteed by _ensure_task_has_id called in validate())
+        if task.id is None:
+            raise TaskValidationError("Task ID must not be None")
+
         # Cannot pause finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)  # type: ignore
+            raise TaskAlreadyFinishedError(task.id, task.status.value)

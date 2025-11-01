@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -36,7 +36,7 @@ def handle_tui_errors(action_name: str) -> Callable[[F], F]:
                 self.notify_error(f"Error {action_name}", e)
                 return None
 
-        return wrapper  # type: ignore
+        return cast(F, wrapper)
 
     return decorator
 
@@ -68,4 +68,4 @@ def require_selected_task[F: Callable[..., Any]](func: F) -> F:
             return None
         return func(self, *args, **kwargs)
 
-    return wrapper  # type: ignore
+    return cast(F, wrapper)

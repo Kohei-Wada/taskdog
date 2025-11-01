@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 import click
 
@@ -46,7 +46,7 @@ def handle_task_errors(action_name: str, is_parent: bool = False) -> Callable[[F
             except Exception as e:
                 console_writer.error(action_name, e)
 
-        return wrapper  # type: ignore[return-value]
+        return cast(F, wrapper)
 
     return decorator
 
@@ -82,6 +82,6 @@ def handle_command_errors(action_name: str) -> Callable[[F], F]:
             except Exception as e:
                 console_writer.error(action_name, e)
 
-        return wrapper  # type: ignore[return-value]
+        return cast(F, wrapper)
 
     return decorator

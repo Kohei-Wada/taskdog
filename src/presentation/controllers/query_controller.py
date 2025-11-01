@@ -38,7 +38,7 @@ class QueryController:
             repository: Task repository
         """
         self.repository = repository
-        self.query_service: TaskQueryService = TaskQueryService(repository)  # type: ignore[no-untyped-call]
+        self.query_service: TaskQueryService = TaskQueryService(repository)
 
     def list_tasks(
         self,

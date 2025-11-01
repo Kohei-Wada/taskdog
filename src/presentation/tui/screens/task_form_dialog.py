@@ -7,7 +7,7 @@ from textual.binding import Binding
 from textual.containers import Container
 from textual.widgets import Checkbox, Input, Label, Static
 
-from domain.entities.task import Task
+from application.dto.task_dto import TaskDetailDto
 from presentation.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from presentation.tui.forms.validators import (
     DateTimeValidator,
@@ -25,7 +25,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
     """Unified modal dialog for adding or editing tasks.
 
     This dialog can be used for both creating new tasks and editing existing ones.
-    Pass a Task instance to edit mode, or None for add mode.
+    Pass a TaskDetailDto instance to edit mode, or None for add mode.
     """
 
     BINDINGS: ClassVar = [
@@ -36,12 +36,16 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
     ]
 
     def __init__(
-        self, task: Task | None = None, config: Config | None = None, *args: Any, **kwargs: Any
+        self,
+        task: TaskDetailDto | None = None,
+        config: Config | None = None,
+        *args: Any,
+        **kwargs: Any,
     ):
         """Initialize the dialog.
 
         Args:
-            task: Existing task for editing, or None for adding new task
+            task: Existing task DTO for editing, or None for adding new task
             config: Application configuration (loads default if None)
         """
         super().__init__(*args, **kwargs)

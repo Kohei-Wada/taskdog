@@ -1,7 +1,7 @@
 """Edit task command for TUI."""
 
+from application.dto.task_dto import TaskDetailDto
 from application.dto.task_operation_output import TaskOperationOutput
-from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import require_selected_task
@@ -38,22 +38,21 @@ class EditTaskCommand(TUICommandBase):
                 return  # User cancelled
 
             try:
-                self._handle_task_update(original_task, form_data)  # type: ignore[arg-type]
+                self._handle_task_update(original_task, form_data)
             except TaskValidationError as e:
                 self.notify_error("Validation error", e)
             except Exception as e:
                 self.notify_error("Error editing task", e)
 
         # Show task form dialog in edit mode
-        # TODO: Update TaskFormDialog to accept TaskDetailDto
-        dialog = TaskFormDialog(task=original_task, config=self.context.config)  # type: ignore[arg-type]
+        dialog = TaskFormDialog(task=original_task, config=self.context.config)
         self.app.push_screen(dialog, handle_task_data)
 
-    def _detect_changes(self, task: Task, form_data: TaskFormData) -> tuple[bool, bool]:
+    def _detect_changes(self, task: TaskDetailDto, form_data: TaskFormData) -> tuple[bool, bool]:
         """Detect what changed between task and form data.
 
         Args:
-            task: Original task
+            task: Original task DTO
             form_data: New form data
 
         Returns:
@@ -79,12 +78,12 @@ class EditTaskCommand(TUICommandBase):
         return fields_changed, dependencies_changed
 
     def _update_task_fields(
-        self, task: Task, form_data: TaskFormData
+        self, task: TaskDetailDto, form_data: TaskFormData
     ) -> tuple[TaskOperationOutput, list[str]]:
         """Update task fields via TaskController.
 
         Args:
-            task: Original task
+            task: Original task DTO
             form_data: New form data
 
         Returns:
@@ -98,7 +97,7 @@ class EditTaskCommand(TUICommandBase):
         # Update task via Controller with only changed fields
         # Controller.update_task returns UpdateTaskOutput
         result = self.controller.update_task(
-            task_id=task.id,  # type: ignore
+            task_id=task.id,
             name=form_data.name if form_data.name != task.name else None,
             priority=form_data.priority if form_data.priority != task.priority else None,
             deadline=form_deadline if form_deadline != task.deadline else None,
@@ -113,11 +112,11 @@ class EditTaskCommand(TUICommandBase):
 
         return result.task, result.updated_fields
 
-    def _handle_task_update(self, task: Task, form_data: TaskFormData) -> None:
+    def _handle_task_update(self, task: TaskDetailDto, form_data: TaskFormData) -> None:
         """Handle the actual task update logic.
 
         Args:
-            task: Original task
+            task: Original task DTO
             form_data: New form data from dialog
         """
         # Detect changes
@@ -130,7 +129,7 @@ class EditTaskCommand(TUICommandBase):
 
         # Update task fields if changed
         updated_fields: list[str] = []
-        updated_task: TaskOperationOutput | Task
+        updated_task: TaskOperationOutput | TaskDetailDto
         if fields_changed:
             updated_task, updated_fields = self._update_task_fields(task, form_data)
         else:
@@ -150,14 +149,14 @@ class EditTaskCommand(TUICommandBase):
             # Remove dependencies
             for dep_id in deps_to_remove:
                 try:
-                    self.controller.remove_dependency(task.id, dep_id)  # type: ignore[arg-type]
+                    self.controller.remove_dependency(task.id, dep_id)
                 except TaskValidationError as e:
                     failed_operations.append(f"Remove {dep_id}: {e}")
 
             # Add dependencies
             for dep_id in deps_to_add:
                 try:
-                    self.controller.add_dependency(task.id, dep_id)  # type: ignore[arg-type]
+                    self.controller.add_dependency(task.id, dep_id)
                 except TaskValidationError as e:
                     failed_operations.append(f"Add {dep_id}: {e}")
 

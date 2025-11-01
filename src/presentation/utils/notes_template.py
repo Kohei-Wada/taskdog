@@ -2,15 +2,15 @@
 
 from datetime import datetime
 
-from domain.entities.task import Task
+from application.dto.task_dto import TaskDetailDto
 from shared.constants.formats import DATETIME_FORMAT
 
 
-def generate_notes_template(task: Task) -> str:
+def generate_notes_template(task: TaskDetailDto) -> str:
     """Generate markdown template for task notes.
 
     Args:
-        task: Task entity to generate template for
+        task: Task DTO to generate template for
 
     Returns:
         Markdown template string with task information

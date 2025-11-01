@@ -7,7 +7,7 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.widgets import Checkbox, Input, Label, Static
 
-from domain.entities.task import Task
+from application.dto.task_dto import TaskDetailDto
 from shared.config_manager import Config, ConfigManager
 from shared.constants.formats import DATETIME_FORMAT
 
@@ -74,7 +74,7 @@ class TaskFormFields:
 
     @staticmethod
     def compose_form_fields(
-        task: Task | None = None, config: Config | None = None
+        task: TaskDetailDto | None = None, config: Config | None = None
     ) -> ComposeResult:
         """Compose task form fields.
 

@@ -9,6 +9,7 @@ from application.queries.filters.task_filter import TaskFilter
 from application.queries.workload_calculator import WorkloadCalculator
 from application.sorters.task_sorter import TaskSorter
 from domain.entities.task import Task
+from domain.repositories.task_repository import TaskRepository
 
 
 class TaskQueryService(QueryService):
@@ -18,7 +19,7 @@ class TaskQueryService(QueryService):
     query-specific logic. Optimized for data retrieval without state modification.
     """
 
-    def __init__(self, repository):
+    def __init__(self, repository: TaskRepository) -> None:
         """Initialize query service with repository.
 
         Args:

@@ -59,9 +59,16 @@ class TaskOperationOutput:
 
         Returns:
             TaskOperationOutput DTO for presentation layer
+
+        Raises:
+            ValueError: If task.id is None
         """
+        # Type narrowing
+        if task.id is None:
+            raise ValueError("Cannot convert task without ID to DTO")
+
         return cls(
-            id=task.id,  # type: ignore[arg-type]
+            id=task.id,
             name=task.name,
             status=task.status,
             priority=task.priority,
