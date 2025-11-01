@@ -70,7 +70,7 @@ class StatusChangeCommandBase(TUICommandBase):
         """Execute the status change command (Template Method).
 
         This method implements the common workflow with error handling:
-        1. Get selected task
+        1. Get selected task ID
         2. Validate task selection
         3. Execute status change via TaskController
         4. Reload task list
@@ -82,14 +82,14 @@ class StatusChangeCommandBase(TUICommandBase):
         action_name = self.get_action_name()
 
         try:
-            # Get selected task
-            task = self.get_selected_task()
-            if not task or task.id is None:
+            # Get selected task ID
+            task_id = self.get_selected_task_id()
+            if task_id is None:
                 self.notify_warning("No task selected")
                 return
 
             # Execute status change (delegated to subclass)
-            updated_task = self.execute_status_change(task.id)
+            updated_task = self.execute_status_change(task_id)
 
             # Post TaskUpdated event to trigger UI refresh
             assert updated_task.id is not None, "Updated task must have an ID"

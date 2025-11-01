@@ -23,14 +23,12 @@ class TestTUICommandBase(unittest.TestCase):
         self.app = MagicMock()
         self.app.main_screen = MagicMock()
         self.context = MagicMock()
-        self.task_service = MagicMock()
-        self.command = ConcreteCommand(self.app, self.context, self.task_service)
+        self.command = ConcreteCommand(self.app, self.context)
 
     def test_initialization(self):
         """Test command initialization."""
         self.assertEqual(self.command.app, self.app)
         self.assertEqual(self.command.context, self.context)
-        self.assertEqual(self.command.task_service, self.task_service)
 
     def test_controller_property(self):
         """Test controller property returns task_controller from context."""
@@ -46,13 +44,13 @@ class TestTUICommandBase(unittest.TestCase):
         expected_task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.PENDING)
         # Mock get_selected_task_id to return the task ID
         self.app.main_screen.task_table.get_selected_task_id.return_value = 1
-        # Mock app.repository to return the expected task
-        self.app.repository.get_by_id.return_value = expected_task
+        # Mock QueryController to return the expected task
+        self.context.query_controller.get_task_by_id.return_value = expected_task
 
         result = self.command.get_selected_task()
 
         self.assertEqual(result, expected_task)
-        self.app.repository.get_by_id.assert_called_once_with(1)
+        self.context.query_controller.get_task_by_id.assert_called_once_with(1)
 
     def test_get_selected_task_no_screen(self):
         """Test getting selected task when screen is not available."""

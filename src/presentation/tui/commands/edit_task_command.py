@@ -17,9 +17,15 @@ class EditTaskCommand(TUICommandBase):
     @require_selected_task
     def execute(self) -> None:
         """Execute the edit task command."""
-        # Get selected task - guaranteed to be non-None by decorator
-        task = self.get_selected_task()
-        assert task and task.id is not None
+        # Get selected task ID - guaranteed to be non-None by decorator
+        task_id = self.get_selected_task_id()
+        assert task_id is not None
+
+        # Fetch task via QueryController
+        task = self.context.query_controller.get_task_by_id(task_id)
+        if task is None:
+            self.notify_warning(f"Task #{task_id} not found")
+            return
 
         # Store original task reference
         original_task = task

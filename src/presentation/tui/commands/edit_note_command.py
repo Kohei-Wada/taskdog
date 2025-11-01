@@ -18,9 +18,15 @@ class EditNoteCommand(TUICommandBase):
     @handle_tui_errors("editing note")
     def execute(self) -> None:
         """Execute the edit note command."""
-        task = self.get_selected_task()
-        if not task or task.id is None:
+        task_id = self.get_selected_task_id()
+        if task_id is None:
             self.notify_warning("No task selected")
+            return
+
+        # Fetch task via QueryController
+        task = self.context.query_controller.get_task_by_id(task_id)
+        if task is None:
+            self.notify_warning(f"Task #{task_id} not found")
             return
 
         # Edit note using shared helper (uses Domain interface)

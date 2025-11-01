@@ -56,14 +56,14 @@ def require_selected_task[F: Callable[..., Any]](func: F) -> F:
     Example:
         @require_selected_task
         def execute(self) -> None:
-            task = self.get_selected_task()  # Guaranteed to be non-None
+            task_id = self.get_selected_task_id()  # Guaranteed to be non-None
             # ... command logic ...
     """
 
     @wraps(func)
     def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
-        task = self.get_selected_task()
-        if not task or task.id is None:
+        task_id = self.get_selected_task_id()
+        if task_id is None:
             self.notify_warning("No task selected")
             return None
         return func(self, *args, **kwargs)

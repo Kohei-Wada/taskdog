@@ -1,12 +1,8 @@
 """Optimize command - Auto-generate optimal task schedules."""
 
-from datetime import datetime
-
 import click
 
 from application.dto.optimization_output import OptimizationOutput
-from application.dto.optimize_schedule_input import OptimizeScheduleInput
-from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
 from presentation.console.console_writer import ConsoleWriter
@@ -85,7 +81,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
     """Auto-generate optimal schedules for tasks."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    repository = ctx_obj.repository
+    task_controller = ctx_obj.task_controller
     config = ctx_obj.config
 
     # Use start_date or get next weekday (DateTimeWithDefault already returns datetime)
@@ -97,16 +93,12 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
     if algorithm is None:
         algorithm = config.optimization.default_algorithm
 
-    # Execute optimization
-    use_case = OptimizeScheduleUseCase(repository, config)
-    result = use_case.execute(
-        OptimizeScheduleInput(
-            start_date=start_date,
-            max_hours_per_day=max_hours_per_day,
-            force_override=force,
-            algorithm_name=algorithm,
-            current_time=datetime.now(),
-        )
+    # Execute optimization via TaskController
+    result = task_controller.optimize_schedule(
+        algorithm=algorithm,
+        start_date=start_date,
+        max_hours_per_day=max_hours_per_day,
+        force_override=force,
     )
 
     # Handle empty result (no tasks to optimize)

@@ -15,6 +15,8 @@ from application.dto.manage_dependencies_input import (
     AddDependencyInput,
     RemoveDependencyInput,
 )
+from application.dto.optimization_output import OptimizationOutput
+from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.dto.pause_task_input import PauseTaskInput
 from application.dto.remove_task_input import RemoveTaskInput
 from application.dto.reopen_task_input import ReopenTaskInput
@@ -32,6 +34,7 @@ from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.get_task_detail import GetTaskDetailInput, GetTaskDetailUseCase
 from application.use_cases.log_hours import LogHoursUseCase
+from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from application.use_cases.pause_task import PauseTaskUseCase
 from application.use_cases.remove_dependency import RemoveDependencyUseCase
 from application.use_cases.remove_task import RemoveTaskUseCase
@@ -431,3 +434,35 @@ class TaskController:
         use_case = CalculateStatisticsUseCase(self.repository)
         request = CalculateStatisticsInput(period=period)
         return use_case.execute(request)
+
+    def optimize_schedule(
+        self,
+        algorithm: str,
+        start_date: datetime,
+        max_hours_per_day: float,
+        force_override: bool = True,
+    ) -> OptimizationOutput:
+        """Optimize task schedules.
+
+        Args:
+            algorithm: Optimization algorithm name
+            start_date: Start date for optimization
+            max_hours_per_day: Maximum hours per day
+            force_override: Force override existing schedules (default: True)
+
+        Returns:
+            OptimizationOutput containing successful/failed tasks and summary
+
+        Raises:
+            ValidationError: If algorithm is invalid or parameters are invalid
+        """
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=max_hours_per_day,
+            force_override=force_override,
+            algorithm_name=algorithm,
+            current_time=datetime.now(),
+        )
+
+        use_case = OptimizeScheduleUseCase(self.repository, self.config)
+        return use_case.execute(optimize_input)

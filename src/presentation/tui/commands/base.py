@@ -7,7 +7,6 @@ from domain.entities.task import Task
 from presentation.controllers.task_controller import TaskController
 from presentation.tui.context import TUIContext
 from presentation.tui.events import TasksRefreshed
-from presentation.tui.services.task_service import TaskService
 from presentation.view_models.task_view_model import TaskRowViewModel
 
 if TYPE_CHECKING:
@@ -18,21 +17,19 @@ class TUICommandBase(ABC):
     """Base class for TUI commands.
 
     Provides common functionality for command execution including:
-    - Access to TUIContext, TaskService, and TaskController
+    - Access to TUIContext and TaskController
     - Helper methods for task selection, reloading, and notifications
     """
 
-    def __init__(self, app: "TaskdogTUI", context: TUIContext, task_service: TaskService):
+    def __init__(self, app: "TaskdogTUI", context: TUIContext):
         """Initialize the command.
 
         Args:
             app: The TaskdogTUI application instance (for UI operations)
             context: TUI context with dependencies
-            task_service: Task service facade for use case operations
         """
         self.app = app
         self.context = context
-        self.task_service = task_service
 
     @property
     def controller(self) -> TaskController:
@@ -63,9 +60,8 @@ class TUICommandBase(ABC):
         task_id = self.get_selected_task_id()
         if task_id is None:
             return None
-        # Use controller to get task (could add get_by_id method to controller if needed)
-        # For now, use app's repository directly since this is a deprecated method anyway
-        return self.app.repository.get_by_id(task_id)
+        # Use QueryController instead of direct repository access
+        return self.context.query_controller.get_task_by_id(task_id)
 
     def get_selected_task_id(self) -> int | None:
         """Get the ID of the currently selected task.

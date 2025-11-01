@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.context import TUIContext
-from presentation.tui.services.task_service import TaskService
 
 if TYPE_CHECKING:
     from presentation.tui.app import TaskdogTUI
@@ -28,18 +27,15 @@ class CommandFactory:
         self,
         app: "TaskdogTUI",
         context: TUIContext,
-        task_service: TaskService,
     ):
         """Initialize the command factory.
 
         Args:
             app: The TaskdogTUI application instance
             context: TUI context with dependencies
-            task_service: Task service facade for use case operations
         """
         self.app = app
         self.context = context
-        self.task_service = task_service
 
     def create(
         self,
@@ -63,7 +59,6 @@ class CommandFactory:
         return command_class(
             app=self.app,
             context=self.context,
-            task_service=self.task_service,
             **kwargs,
         )
 

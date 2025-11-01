@@ -29,7 +29,6 @@ from presentation.tui.palette.providers import (
     SortOptionsProvider,
 )
 from presentation.tui.screens.main_screen import MainScreen
-from presentation.tui.services.task_service import TaskService
 from shared.config_manager import Config, ConfigManager
 
 
@@ -139,15 +138,12 @@ class TaskdogTUI(App):
             query_controller=self.query_controller,
         )
 
-        # Initialize TaskService with context
-        self.task_service = TaskService(self.context, repository)
-
         # Initialize presenters for view models
         self.table_presenter = TablePresenter(notes_repository)
         self.gantt_presenter = GanttPresenter(notes_repository)
 
         # Initialize CommandFactory for command execution
-        self.command_factory = CommandFactory(self, self.context, self.task_service)
+        self.command_factory = CommandFactory(self, self.context)
 
     # Action methods for command execution
     def action_refresh(self) -> None:

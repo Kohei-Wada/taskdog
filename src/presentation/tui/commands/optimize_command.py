@@ -9,7 +9,6 @@ from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.context import TUIContext
 from presentation.tui.screens.algorithm_selection_screen import AlgorithmSelectionScreen
-from presentation.tui.services.task_service import TaskService
 
 if TYPE_CHECKING:
     from presentation.tui.app import TaskdogTUI
@@ -27,7 +26,6 @@ class OptimizeCommand(TUICommandBase):
         self,
         app: "TaskdogTUI",
         context: TUIContext,
-        task_service: TaskService,
         force_override: bool = False,
     ) -> None:
         """Initialize the command.
@@ -35,10 +33,9 @@ class OptimizeCommand(TUICommandBase):
         Args:
             app: The TaskdogTUI application instance
             context: TUI context with dependencies
-            task_service: Task service facade
             force_override: Whether to force override existing schedules
         """
-        super().__init__(app, context, task_service)
+        super().__init__(app, context)
         self.force_override = force_override
 
     def _format_failed_tasks_message(self, result: OptimizationOutput, prefix: str = "") -> str:
@@ -80,8 +77,8 @@ class OptimizeCommand(TUICommandBase):
 
             algorithm, max_hours, start_date = settings
 
-            # Use TaskService to optimize schedules
-            result = self.task_service.optimize_schedule(
+            # Use TaskController to optimize schedules
+            result = self.controller.optimize_schedule(
                 algorithm=algorithm,
                 start_date=start_date,
                 max_hours_per_day=max_hours,

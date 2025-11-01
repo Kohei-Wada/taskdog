@@ -16,13 +16,13 @@ class ShowDetailsCommand(TUICommandBase):
     @handle_tui_errors("showing task details")
     def execute(self) -> None:
         """Execute the show details command."""
-        task = self.get_selected_task()
-        if not task or task.id is None:
+        task_id = self.get_selected_task_id()
+        if task_id is None:
             self.notify_warning("No task selected")
             return
 
         # Get task detail with notes via controller
-        detail = self.controller.get_task_detail(task.id)
+        detail = self.controller.get_task_detail(task_id)
 
         # Show task detail screen with notes
         detail_screen = TaskDetailScreen(detail)
@@ -49,8 +49,8 @@ class ShowDetailsCommand(TUICommandBase):
         Args:
             task_id: ID of the task to edit notes for
         """
-        # Get task from app repository (deprecated method uses app.repository)
-        task = self.app.repository.get_by_id(task_id)
+        # Get task via QueryController
+        task = self.context.query_controller.get_task_by_id(task_id)
         if not task:
             self.notify_warning(f"Task #{task_id} not found")
             return
