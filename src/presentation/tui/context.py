@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from application.queries.task_query_service import TaskQueryService
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
-from infrastructure.persistence.notes_repository import NotesRepository
+from infrastructure.persistence.file_notes_repository import FileNotesRepository
 from shared.config_manager import Config
 
 
@@ -28,4 +28,4 @@ class TUIContext:
     time_tracker: TimeTracker
     query_service: TaskQueryService
     config: Config
-    notes_repository: NotesRepository
+    notes_repository: FileNotesRepository

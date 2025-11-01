@@ -4,8 +4,8 @@ import click
 from rich.console import Console
 
 from domain.services.time_tracker import TimeTracker
+from infrastructure.persistence.file_notes_repository import FileNotesRepository
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
-from infrastructure.persistence.notes_repository import NotesRepository
 from presentation.cli.commands.add import add_command
 from presentation.cli.commands.add_dependency import add_dependency_command
 from presentation.cli.commands.cancel import cancel_command
@@ -85,7 +85,7 @@ def cli(ctx: click.Context) -> None:
     console_writer = RichConsoleWriter(console)
     time_tracker = TimeTracker()
     config = ConfigManager.load()
-    notes_repository = NotesRepository()
+    notes_repository = FileNotesRepository()
 
     # Initialize repository with error handling for corrupted data
     try:

@@ -1,24 +1,29 @@
-"""Repository for managing task notes files.
+"""File-based repository for managing task notes.
 
-This repository handles all file system operations related to task notes,
-implementing the Infrastructure layer responsibility for file I/O.
+This repository implements notes persistence using the local file system,
+providing file-specific operations like path retrieval alongside the
+standard NotesRepository interface.
 """
 
 from pathlib import Path
 
 from domain.constants import MIN_FILE_SIZE_FOR_CONTENT
+from domain.repositories.notes_repository import NotesRepository
 from shared.xdg_utils import XDGDirectories
 
 
-class NotesRepository:
-    """Repository for task notes file operations.
+class FileNotesRepository(NotesRepository):
+    """File-based implementation of notes repository.
 
-    Encapsulates all file system operations for task notes, isolating
-    these infrastructure concerns from the Domain layer.
+    Stores task notes as markdown files in the XDG data directory.
+    Provides both standard interface methods and file-specific operations.
     """
 
     def get_notes_path(self, task_id: int) -> Path:
         """Get path to task's markdown notes file.
+
+        This is a file-system-specific method not part of the abstract interface.
+        Used by presentation layer for editor integration.
 
         Args:
             task_id: Task ID

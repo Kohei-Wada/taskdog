@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from rich.text import Text
 
 from domain.entities.task import Task, TaskStatus
-from infrastructure.persistence.notes_repository import NotesRepository
+from infrastructure.persistence.file_notes_repository import FileNotesRepository
 from presentation.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 
 
@@ -15,7 +15,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.notes_repo = NotesRepository()
+        self.notes_repo = FileNotesRepository()
         self.builder = TaskTableRowBuilder(self.notes_repo)
 
     def test_build_row_basic_task(self):

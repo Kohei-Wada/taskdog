@@ -10,8 +10,8 @@ from application.use_cases.get_task_detail import (
 )
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskNotFoundException
+from infrastructure.persistence.file_notes_repository import FileNotesRepository
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
-from infrastructure.persistence.notes_repository import NotesRepository
 
 
 class TestGetTaskDetailUseCase(unittest.TestCase):
@@ -23,7 +23,7 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
-        self.notes_repository = NotesRepository()
+        self.notes_repository = FileNotesRepository()
         self.use_case = GetTaskDetailUseCase(self.repository, self.notes_repository)
 
         # Create temporary directory for notes

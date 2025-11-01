@@ -2,8 +2,8 @@
 
 from application.dto.task_detail_result import GetTaskDetailResult
 from application.use_cases.base import UseCase
+from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
-from infrastructure.persistence.notes_repository import NotesRepository
 
 
 class GetTaskDetailInput:

@@ -7,7 +7,7 @@ from textual.containers import Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header
 
-from infrastructure.persistence.notes_repository import NotesRepository
+from infrastructure.persistence.file_notes_repository import FileNotesRepository
 from presentation.tui.widgets.filterable_task_table import FilterableTaskTable
 from presentation.tui.widgets.gantt_widget import GanttWidget
 
@@ -15,7 +15,7 @@ from presentation.tui.widgets.gantt_widget import GanttWidget
 class MainScreen(Screen[None]):
     """Main screen showing gantt chart and task list."""
 
-    def __init__(self, notes_repository: NotesRepository, *args: Any, **kwargs: Any):
+    def __init__(self, notes_repository: FileNotesRepository, *args: Any, **kwargs: Any):
         """Initialize the main screen.
 
         Args:

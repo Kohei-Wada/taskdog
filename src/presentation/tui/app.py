@@ -16,7 +16,7 @@ from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
-from infrastructure.persistence.notes_repository import NotesRepository
+from infrastructure.persistence.file_notes_repository import FileNotesRepository
 from presentation.tui.commands.factory import CommandFactory
 from presentation.tui.context import TUIContext
 from presentation.tui.events import TaskCreated, TaskDeleted, TasksRefreshed, TaskUpdated
@@ -123,7 +123,7 @@ class TaskdogTUI(App):
         self._hide_completed: bool = False  # Default: show all tasks
 
         # Initialize TUIContext
-        self.notes_repository = NotesRepository()
+        self.notes_repository = FileNotesRepository()
         self.context = TUIContext(
             repository=repository,
             time_tracker=time_tracker,

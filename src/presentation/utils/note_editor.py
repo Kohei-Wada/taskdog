@@ -8,12 +8,12 @@ from typing import Any
 from textual.app import App
 
 from domain.entities.task import Task
-from infrastructure.persistence.notes_repository import NotesRepository
+from infrastructure.persistence.file_notes_repository import FileNotesRepository
 from presentation.utils.editor import get_editor
 from presentation.utils.notes_template import generate_notes_template
 
 
-def _prepare_notes_file(task: Task, notes_repository: NotesRepository) -> Path:
+def _prepare_notes_file(task: Task, notes_repository: FileNotesRepository) -> Path:
     """Prepare notes file for editing.
 
     Args:
@@ -61,7 +61,7 @@ def _open_editor(
 
 def edit_task_note(
     task: Task,
-    notes_repository: NotesRepository,
+    notes_repository: FileNotesRepository,
     app: App[Any],
     on_success: Callable[[str, int], None] | None = None,
     on_error: Callable[[str, Exception], None] | None = None,
