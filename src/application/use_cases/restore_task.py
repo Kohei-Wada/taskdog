@@ -3,7 +3,7 @@
 from application.dto.restore_task_input import RestoreTaskInput
 from application.dto.task_operation_output import TaskOperationOutput
 from application.use_cases.base import UseCase
-from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
+from domain.exceptions.task_exceptions import TaskValidationError
 from domain.repositories.task_repository import TaskRepository
 
 
@@ -42,9 +42,7 @@ class RestoreTaskUseCase(UseCase[RestoreTaskInput, TaskOperationOutput]):
             TaskValidationError: If task is not archived
         """
         # Get task
-        task = self.repository.get_by_id(input_dto.task_id)
-        if not task:
-            raise TaskNotFoundException(input_dto.task_id)
+        task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
         # Validate: can only restore archived tasks
         if not task.is_archived:

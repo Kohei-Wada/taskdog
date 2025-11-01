@@ -3,7 +3,6 @@
 from application.dto.archive_task_input import ArchiveTaskInput
 from application.dto.task_operation_output import TaskOperationOutput
 from application.use_cases.base import UseCase
-from domain.exceptions.task_exceptions import TaskNotFoundException
 from domain.repositories.task_repository import TaskRepository
 
 
@@ -41,9 +40,7 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, TaskOperationOutput]):
             TaskNotFoundException: If task does not exist
         """
         # Get task
-        task = self.repository.get_by_id(input_dto.task_id)
-        if not task:
-            raise TaskNotFoundException(input_dto.task_id)
+        task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
         # Set archived flag
         task.is_archived = True
