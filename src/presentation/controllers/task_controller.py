@@ -6,15 +6,23 @@ eliminating code duplication in use case instantiation and DTO construction.
 
 from datetime import datetime
 
+from application.dto.archive_task_request import ArchiveTaskRequest
 from application.dto.cancel_task_request import CancelTaskRequest
 from application.dto.complete_task_request import CompleteTaskRequest
 from application.dto.create_task_request import CreateTaskRequest
 from application.dto.pause_task_request import PauseTaskRequest
+from application.dto.remove_task_request import RemoveTaskRequest
+from application.dto.reopen_task_request import ReopenTaskRequest
+from application.dto.restore_task_request import RestoreTaskRequest
 from application.dto.start_task_request import StartTaskRequest
+from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.pause_task import PauseTaskUseCase
+from application.use_cases.remove_task import RemoveTaskUseCase
+from application.use_cases.reopen_task import ReopenTaskUseCase
+from application.use_cases.restore_task import RestoreTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
@@ -168,4 +176,76 @@ class TaskController:
             is_fixed=is_fixed,
             tags=tags,
         )
+        return use_case.execute(request)
+
+    def reopen_task(self, task_id: int) -> Task:
+        """Reopen a task.
+
+        Changes task status to PENDING and clears actual start/end times.
+
+        Args:
+            task_id: ID of the task to reopen
+
+        Returns:
+            The updated task
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If task cannot be reopened
+        """
+        use_case = ReopenTaskUseCase(self.repository, self.time_tracker)
+        request = ReopenTaskRequest(task_id=task_id)
+        return use_case.execute(request)
+
+    def archive_task(self, task_id: int) -> Task:
+        """Archive a task (soft delete).
+
+        Sets is_archived flag to True, preserving task data.
+
+        Args:
+            task_id: ID of the task to archive
+
+        Returns:
+            The updated task
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If task cannot be archived
+        """
+        use_case = ArchiveTaskUseCase(self.repository)
+        request = ArchiveTaskRequest(task_id=task_id)
+        return use_case.execute(request)
+
+    def remove_task(self, task_id: int) -> None:
+        """Remove a task (hard delete).
+
+        Permanently deletes the task from the repository.
+
+        Args:
+            task_id: ID of the task to remove
+
+        Raises:
+            TaskNotFoundException: If task not found
+        """
+        use_case = RemoveTaskUseCase(self.repository)
+        request = RemoveTaskRequest(task_id=task_id)
+        use_case.execute(request)
+
+    def restore_task(self, task_id: int) -> Task:
+        """Restore an archived task.
+
+        Sets is_archived flag to False, making the task visible again.
+
+        Args:
+            task_id: ID of the task to restore
+
+        Returns:
+            The updated task
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If task cannot be restored
+        """
+        use_case = RestoreTaskUseCase(self.repository)
+        request = RestoreTaskRequest(task_id=task_id)
         return use_case.execute(request)

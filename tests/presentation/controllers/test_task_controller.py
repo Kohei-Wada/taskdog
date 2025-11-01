@@ -228,6 +228,110 @@ class TestTaskController(unittest.TestCase):
         # Verify default priority used
         self.assertEqual(result.priority, 7)
 
+    def test_reopen_task_changes_status_to_pending(self):
+        """Test reopen_task changes task status to PENDING."""
+        # Create a completed task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Reopen the task
+        result = self.controller.reopen_task(task.id)
+
+        # Verify status changed
+        self.assertEqual(result.status, TaskStatus.PENDING)
+        self.assertEqual(result.id, task.id)
+
+    def test_reopen_task_clears_timestamps(self):
+        """Test reopen_task clears actual start/end timestamps."""
+        # Create a completed task with timestamps
+        task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
+        task.id = self.repository.generate_next_id()
+        task.actual_start = datetime.now()
+        task.actual_end = datetime.now()
+        self.repository.save(task)
+
+        # Reopen the task
+        result = self.controller.reopen_task(task.id)
+
+        # Verify timestamps are cleared
+        self.assertIsNone(result.actual_start)
+        self.assertIsNone(result.actual_end)
+
+    def test_archive_task_sets_archived_flag(self):
+        """Test archive_task sets is_archived to True."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Archive the task
+        result = self.controller.archive_task(task.id)
+
+        # Verify is_archived is True
+        self.assertTrue(result.is_archived)
+        self.assertEqual(result.id, task.id)
+
+    def test_archive_task_persists_changes(self):
+        """Test archive_task persists changes to repository."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Archive the task
+        self.controller.archive_task(task.id)
+
+        # Verify changes persisted
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertIsNotNone(persisted_task)
+        self.assertTrue(persisted_task.is_archived)
+
+    def test_remove_task_deletes_task(self):
+        """Test remove_task permanently deletes the task."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Remove the task
+        self.controller.remove_task(task.id)
+
+        # Verify task is deleted
+        deleted_task = self.repository.get_by_id(task.id)
+        self.assertIsNone(deleted_task)
+
+    def test_restore_task_clears_archived_flag(self):
+        """Test restore_task sets is_archived to False."""
+        # Create an archived task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        task.is_archived = True
+        self.repository.save(task)
+
+        # Restore the task
+        result = self.controller.restore_task(task.id)
+
+        # Verify is_archived is False
+        self.assertFalse(result.is_archived)
+        self.assertEqual(result.id, task.id)
+
+    def test_restore_task_persists_changes(self):
+        """Test restore_task persists changes to repository."""
+        # Create an archived task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        task.is_archived = True
+        self.repository.save(task)
+
+        # Restore the task
+        self.controller.restore_task(task.id)
+
+        # Verify changes persisted
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertIsNotNone(persisted_task)
+        self.assertFalse(persisted_task.is_archived)
+
 
 if __name__ == "__main__":
     unittest.main()

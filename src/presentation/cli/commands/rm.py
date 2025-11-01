@@ -2,12 +2,9 @@
 
 import click
 
-from application.dto.archive_task_request import ArchiveTaskRequest
-from application.dto.remove_task_request import RemoveTaskRequest
-from application.use_cases.archive_task import ArchiveTaskUseCase
-from application.use_cases.remove_task import RemoveTaskUseCase
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
+from presentation.controllers.task_controller import TaskController
 
 
 @click.command(
@@ -30,19 +27,18 @@ def rm_command(ctx, task_ids, hard):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
+    config = ctx_obj.config
+    controller = TaskController(repository, time_tracker, config)
 
     def remove_single_task(task_id: int) -> None:
         if hard:
             # Hard delete: permanently remove from database
-            input_dto = RemoveTaskRequest(task_id=task_id)
-            use_case = RemoveTaskUseCase(repository)
-            use_case.execute(input_dto)
+            controller.remove_task(task_id)
             console_writer.success(f"Permanently deleted task with ID: {task_id}")
         else:
             # Archive: set is_archived flag (preserves original status)
-            input_dto = ArchiveTaskRequest(task_id=task_id)
-            use_case = ArchiveTaskUseCase(repository)
-            task = use_case.execute(input_dto)
+            task = controller.archive_task(task_id)
             # Use task_success to avoid Rich-specific markup
             console_writer.task_success("Archived (status preserved)", task)
             console_writer.info(f"Use 'taskdog restore {task_id}' to restore this task.")

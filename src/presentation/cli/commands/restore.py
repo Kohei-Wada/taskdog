@@ -2,10 +2,9 @@
 
 import click
 
-from application.dto.restore_task_request import RestoreTaskRequest
-from application.use_cases.restore_task import RestoreTaskUseCase
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
+from presentation.controllers.task_controller import TaskController
 from shared.constants import StatusVerbs
 
 
@@ -17,11 +16,12 @@ def restore_command(ctx, task_ids):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
+    config = ctx_obj.config
+    controller = TaskController(repository, time_tracker, config)
 
     def restore_single_task(task_id: int) -> None:
-        input_dto = RestoreTaskRequest(task_id=task_id)
-        use_case = RestoreTaskUseCase(repository)
-        task = use_case.execute(input_dto)
+        task = controller.restore_task(task_id)
         console_writer.task_success(StatusVerbs.RESTORED, task)
 
     execute_batch_operation(task_ids, restore_single_task, console_writer, "restoring task")

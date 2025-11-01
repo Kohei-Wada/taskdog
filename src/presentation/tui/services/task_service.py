@@ -2,7 +2,6 @@
 
 from datetime import date, datetime
 
-from application.dto.archive_task_request import ArchiveTaskRequest
 from application.dto.create_task_request import CreateTaskRequest
 from application.dto.manage_dependencies_request import (
     AddDependencyRequest,
@@ -10,16 +9,13 @@ from application.dto.manage_dependencies_request import (
 )
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
-from application.dto.remove_task_request import RemoveTaskRequest
 from application.dto.update_task_request import UpdateTaskRequest
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.task_filter import TaskFilter
 from application.use_cases.add_dependency import AddDependencyUseCase
-from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from application.use_cases.remove_dependency import RemoveDependencyUseCase
-from application.use_cases.remove_task import RemoveTaskUseCase
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskValidationError
@@ -117,29 +113,6 @@ class TaskService:
             tags=tags,
         )
         return use_case.execute(task_input)
-
-    def remove_task(self, task_id: int) -> Task:
-        """Remove a task (archive).
-
-        Args:
-            task_id: Task ID
-
-        Returns:
-            The archived task
-        """
-        use_case = ArchiveTaskUseCase(self.repository)
-        archive_input = ArchiveTaskRequest(task_id=task_id)
-        return use_case.execute(archive_input)
-
-    def hard_delete_task(self, task_id: int) -> None:
-        """Permanently delete a task (hard delete).
-
-        Args:
-            task_id: Task ID
-        """
-        use_case = RemoveTaskUseCase(self.repository)
-        remove_input = RemoveTaskRequest(task_id=task_id)
-        use_case.execute(remove_input)
 
     def optimize_schedule(
         self,
