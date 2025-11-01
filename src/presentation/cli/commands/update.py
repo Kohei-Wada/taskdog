@@ -84,7 +84,7 @@ def update_command(
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.crud_controller
 
     # Convert status string to Enum if provided
     status_enum = TaskStatus(status) if status else None

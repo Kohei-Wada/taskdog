@@ -14,7 +14,7 @@ def restore_command(ctx, task_ids):
     """Restore archived task(s)."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.crud_controller
 
     def restore_single_task(task_id: int) -> None:
         task = controller.restore_task(task_id)

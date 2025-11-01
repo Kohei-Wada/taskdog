@@ -20,7 +20,7 @@ def pause_command(ctx, task_ids):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.lifecycle_controller
 
     def pause_single_task(task_id: int) -> None:
         # Check current status before pausing

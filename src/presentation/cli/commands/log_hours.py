@@ -30,7 +30,7 @@ def log_hours_command(ctx, task_id, hours, date):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.relationship_controller
 
     # Default to today if no date specified
     if date is None:

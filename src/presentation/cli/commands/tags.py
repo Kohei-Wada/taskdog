@@ -54,7 +54,7 @@ def tags_command(ctx, task_id, tags):
         return
 
     # Case 3: Task ID + tags - set tags
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.relationship_controller
     task = controller.set_task_tags(task_id, list(tags))
 
     if task.tags:

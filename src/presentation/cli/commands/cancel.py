@@ -14,7 +14,7 @@ def cancel_command(ctx, task_ids):
     """Mark task(s) as canceled."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.lifecycle_controller
 
     def cancel_single_task(task_id: int) -> None:
         task = controller.cancel_task(task_id)

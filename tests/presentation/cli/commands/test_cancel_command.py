@@ -13,6 +13,7 @@ class TestCancelCommand(BaseBatchCommandTest):
     command_func = cancel_command
     use_case_path = "presentation.cli.commands.cancel.TaskController"
     controller_method = "cancel_task"
+    controller_attr = "lifecycle_controller"
     action_verb = "Canceled"
     action_name = "cancel"
 
@@ -20,7 +21,7 @@ class TestCancelCommand(BaseBatchCommandTest):
         """Test canceling a task that is in progress."""
         # Setup
         canceled_task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.CANCELED)
-        self.task_controller.cancel_task.return_value = canceled_task
+        self.lifecycle_controller.cancel_task.return_value = canceled_task
 
         # Execute
         result = self.runner.invoke(cancel_command, ["1"], obj=self.cli_context)

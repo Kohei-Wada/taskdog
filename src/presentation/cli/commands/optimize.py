@@ -81,7 +81,7 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
     """Auto-generate optimal schedules for tasks."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    task_controller = ctx_obj.task_controller
+    analytics_controller = ctx_obj.analytics_controller
     config = ctx_obj.config
 
     # Use start_date or get next weekday (DateTimeWithDefault already returns datetime)
@@ -93,8 +93,8 @@ def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
     if algorithm is None:
         algorithm = config.optimization.default_algorithm
 
-    # Execute optimization via TaskController
-    result = task_controller.optimize_schedule(
+    # Execute optimization via AnalyticsController
+    result = analytics_controller.optimize_schedule(
         algorithm=algorithm,
         start_date=start_date,
         max_hours_per_day=max_hours_per_day,

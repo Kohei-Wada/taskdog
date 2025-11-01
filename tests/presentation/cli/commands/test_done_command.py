@@ -13,13 +13,14 @@ class TestDoneCommand(BaseBatchCommandTest):
     command_func = done_command
     use_case_path = "presentation.cli.commands.done.TaskController"
     controller_method = "complete_task"
+    controller_attr = "lifecycle_controller"
     action_verb = "Completed"
     action_name = "complete"
 
     def test_complete_not_started_task(self):
         """Test completing a task that hasn't been started."""
         # Setup
-        self.task_controller.complete_task.side_effect = TaskNotStartedError(1)
+        self.lifecycle_controller.complete_task.side_effect = TaskNotStartedError(1)
 
         # Execute
         result = self.runner.invoke(done_command, ["1"], obj=self.cli_context)

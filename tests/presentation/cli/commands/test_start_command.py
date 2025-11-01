@@ -13,6 +13,7 @@ class TestStartCommand(BaseBatchCommandTest):
     command_func = start_command
     use_case_path = "presentation.cli.commands.start.TaskController"
     controller_method = "start_task"
+    controller_attr = "lifecycle_controller"
     action_verb = "Started"
     action_name = "start"
 
@@ -22,7 +23,7 @@ class TestStartCommand(BaseBatchCommandTest):
         task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.IN_PROGRESS)
 
         self.repository.get_by_id.return_value = task
-        self.task_controller.start_task.return_value = task
+        self.lifecycle_controller.start_task.return_value = task
 
         # Execute
         result = self.runner.invoke(start_command, ["1"], obj=self.cli_context)

@@ -22,7 +22,7 @@ def add_dependency_command(ctx, task_id, depends_on_id):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.relationship_controller
 
     task = controller.add_dependency(task_id, depends_on_id)
 

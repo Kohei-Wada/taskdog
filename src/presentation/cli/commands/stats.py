@@ -41,7 +41,7 @@ def stats_command(ctx, period, focus):
     """Display task statistics and analytics."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.analytics_controller
 
     # Calculate statistics via controller
     result = controller.calculate_statistics(period=period)

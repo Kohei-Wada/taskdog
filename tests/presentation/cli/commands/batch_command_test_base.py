@@ -35,6 +35,9 @@ class BaseBatchCommandTest(unittest.TestCase):
     controller_method = (
         None  # Optional: "start_task", "complete_task", etc. (for controller-based commands)
     )
+    controller_attr = (
+        "task_controller"  # Which controller to use: lifecycle_controller, crud_controller, etc.
+    )
     success_callback = None  # Optional: task_start_time, task_completion_details, etc.
 
     @classmethod
@@ -52,6 +55,10 @@ class BaseBatchCommandTest(unittest.TestCase):
         self.config = MagicMock()
         self.task_controller = MagicMock()
         self.query_controller = MagicMock()
+        self.lifecycle_controller = MagicMock()
+        self.relationship_controller = MagicMock()
+        self.analytics_controller = MagicMock()
+        self.crud_controller = MagicMock()
 
         # Set up CLI context with all dependencies
         self.cli_context = MagicMock()
@@ -61,6 +68,10 @@ class BaseBatchCommandTest(unittest.TestCase):
         self.cli_context.config = self.config
         self.cli_context.task_controller = self.task_controller
         self.cli_context.query_controller = self.query_controller
+        self.cli_context.lifecycle_controller = self.lifecycle_controller
+        self.cli_context.relationship_controller = self.relationship_controller
+        self.cli_context.analytics_controller = self.analytics_controller
+        self.cli_context.crud_controller = self.crud_controller
 
     def _get_mock_method(self, mock_instance):
         """Get the mock method based on controller_method or execute.
@@ -79,7 +90,8 @@ class BaseBatchCommandTest(unittest.TestCase):
         """Test executing command on a single task successfully."""
         # Setup
         result_task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.COMPLETED)
-        mock_method = getattr(self.task_controller, self.controller_method)
+        controller = getattr(self, self.controller_attr)
+        mock_method = getattr(controller, self.controller_method)
         mock_method.return_value = result_task
 
         # Execute
@@ -97,7 +109,8 @@ class BaseBatchCommandTest(unittest.TestCase):
             Task(id=1, name="Task 1", priority=5, status=TaskStatus.COMPLETED),
             Task(id=2, name="Task 2", priority=5, status=TaskStatus.COMPLETED),
         ]
-        mock_method = getattr(self.task_controller, self.controller_method)
+        controller = getattr(self, self.controller_attr)
+        mock_method = getattr(controller, self.controller_method)
         mock_method.side_effect = result_tasks
 
         # Execute
@@ -113,7 +126,8 @@ class BaseBatchCommandTest(unittest.TestCase):
     def test_nonexistent_task(self):
         """Test command with non-existent task."""
         # Setup
-        mock_method = getattr(self.task_controller, self.controller_method)
+        controller = getattr(self, self.controller_attr)
+        mock_method = getattr(controller, self.controller_method)
         mock_method.side_effect = TaskNotFoundException(999)
 
         # Execute
@@ -128,7 +142,8 @@ class BaseBatchCommandTest(unittest.TestCase):
     def test_already_finished_task(self):
         """Test command with already finished task."""
         # Setup
-        mock_method = getattr(self.task_controller, self.controller_method)
+        controller = getattr(self, self.controller_attr)
+        mock_method = getattr(controller, self.controller_method)
         mock_method.side_effect = TaskAlreadyFinishedError(1, "COMPLETED")
 
         # Execute
@@ -144,7 +159,8 @@ class BaseBatchCommandTest(unittest.TestCase):
     def test_general_exception(self):
         """Test handling of general exception during command execution."""
         # Setup
-        mock_method = getattr(self.task_controller, self.controller_method)
+        controller = getattr(self, self.controller_attr)
+        mock_method = getattr(controller, self.controller_method)
         error = ValueError("Something went wrong")
         mock_method.side_effect = error
 

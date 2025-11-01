@@ -25,7 +25,7 @@ def rm_command(ctx, task_ids, hard):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.crud_controller
 
     def remove_single_task(task_id: int) -> None:
         if hard:

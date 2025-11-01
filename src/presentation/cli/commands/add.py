@@ -58,10 +58,11 @@ def add_command(ctx, name, priority, fixed, depends_on, tag):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.task_controller
+    crud_controller = ctx_obj.crud_controller
+    relationship_controller = ctx_obj.relationship_controller
 
     # Create task via controller
-    task = controller.create_task(
+    task = crud_controller.create_task(
         name=name,
         priority=priority,  # Controller handles default priority
         is_fixed=fixed,
@@ -72,7 +73,7 @@ def add_command(ctx, name, priority, fixed, depends_on, tag):
     if depends_on:
         for dep_id in depends_on:
             try:
-                task = controller.add_dependency(task.id, dep_id)
+                task = relationship_controller.add_dependency(task.id, dep_id)
             except TaskValidationError as e:
                 console_writer.validation_error(str(e))
                 # Continue adding other dependencies even if one fails

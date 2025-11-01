@@ -14,7 +14,7 @@ def done_command(ctx, task_ids):
     """Mark task(s) as completed."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.lifecycle_controller
 
     def complete_single_task(task_id: int) -> None:
         task = controller.complete_task(task_id)
