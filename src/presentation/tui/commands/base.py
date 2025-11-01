@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from application.dto.task_dto import TaskDetailDto
 from presentation.controllers.task_analytics_controller import TaskAnalyticsController
-from presentation.controllers.task_controller import TaskController
 from presentation.controllers.task_crud_controller import TaskCrudController
 from presentation.controllers.task_lifecycle_controller import TaskLifecycleController
 from presentation.controllers.task_relationship_controller import (
@@ -23,7 +22,7 @@ class TUICommandBase(ABC):
     """Base class for TUI commands.
 
     Provides common functionality for command execution including:
-    - Access to TUIContext and TaskController
+    - Access to TUIContext and specialized controllers
     - Helper methods for task selection, reloading, and notifications
     """
 
@@ -36,15 +35,6 @@ class TUICommandBase(ABC):
         """
         self.app = app
         self.context = context
-
-    @property
-    def controller(self) -> TaskController:
-        """Get the TaskController from context (legacy, will be deprecated).
-
-        Returns:
-            TaskController instance from TUIContext
-        """
-        return self.context.task_controller
 
     @property
     def lifecycle_controller(self) -> TaskLifecycleController:

@@ -16,7 +16,6 @@ from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 from presentation.controllers.query_controller import QueryController
-from presentation.controllers.task_controller import TaskController
 from presentation.presenters.gantt_presenter import GanttPresenter
 from presentation.presenters.table_presenter import TablePresenter
 from presentation.tui.commands.factory import CommandFactory
@@ -143,8 +142,7 @@ class TaskdogTUI(App):
             TaskRelationshipController,
         )
 
-        task_controller = TaskController(repository, time_tracker, self.config, notes_repository)
-        self.query_controller = QueryController(repository)
+        self.query_controller = QueryController(repository, notes_repository)
         lifecycle_controller = TaskLifecycleController(repository, time_tracker, self.config)
         relationship_controller = TaskRelationshipController(repository, self.config)
         analytics_controller = TaskAnalyticsController(repository, self.config)
@@ -154,7 +152,6 @@ class TaskdogTUI(App):
         self.context = TUIContext(
             config=self.config,
             notes_repository=notes_repository,
-            task_controller=task_controller,
             query_controller=self.query_controller,
             lifecycle_controller=lifecycle_controller,
             relationship_controller=relationship_controller,

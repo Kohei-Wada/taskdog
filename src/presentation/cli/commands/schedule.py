@@ -29,7 +29,7 @@ def schedule_command(ctx, task_id, start, end):
         taskdog schedule 5 "2025-10-15 09:00:00" "2025-10-17 18:00:00"
     """
     ctx_obj: CliContext = ctx.obj
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.crud_controller
 
     # Update task via controller
     result = controller.update_task(

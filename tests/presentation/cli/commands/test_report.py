@@ -269,7 +269,6 @@ class TestReportCommand(unittest.TestCase):
         self.runner = CliRunner()
         self.repository = MagicMock(spec=JsonTaskRepository)
         self.console_writer = MagicMock(spec=RichConsoleWriter)
-        self.task_controller = MagicMock()
         self.query_controller = MagicMock()
         self.cli_context = CliContext(
             console_writer=self.console_writer,
@@ -277,7 +276,6 @@ class TestReportCommand(unittest.TestCase):
             time_tracker=MagicMock(),
             config=MagicMock(),
             notes_repository=MagicMock(),
-            task_controller=self.task_controller,
             query_controller=self.query_controller,
             lifecycle_controller=MagicMock(),
             relationship_controller=MagicMock(),

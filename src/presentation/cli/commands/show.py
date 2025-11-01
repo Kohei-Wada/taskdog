@@ -16,7 +16,7 @@ def show_command(ctx, task_id, raw):
     """Show task details and notes with rich formatting."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.task_controller
+    controller = ctx_obj.query_controller
 
     # Get task detail via controller
     detail = controller.get_task_detail(task_id)

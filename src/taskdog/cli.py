@@ -100,7 +100,6 @@ def cli(ctx: click.Context) -> None:
     from presentation.controllers.task_analytics_controller import (
         TaskAnalyticsController,
     )
-    from presentation.controllers.task_controller import TaskController
     from presentation.controllers.task_crud_controller import TaskCrudController
     from presentation.controllers.task_lifecycle_controller import (
         TaskLifecycleController,
@@ -109,8 +108,7 @@ def cli(ctx: click.Context) -> None:
         TaskRelationshipController,
     )
 
-    task_controller = TaskController(repository, time_tracker, config, notes_repository)
-    query_controller = QueryController(repository)
+    query_controller = QueryController(repository, notes_repository)
     lifecycle_controller = TaskLifecycleController(repository, time_tracker, config)
     relationship_controller = TaskRelationshipController(repository, config)
     analytics_controller = TaskAnalyticsController(repository, config)
@@ -124,7 +122,6 @@ def cli(ctx: click.Context) -> None:
         time_tracker=time_tracker,
         config=config,
         notes_repository=notes_repository,
-        task_controller=task_controller,
         query_controller=query_controller,
         lifecycle_controller=lifecycle_controller,
         relationship_controller=relationship_controller,

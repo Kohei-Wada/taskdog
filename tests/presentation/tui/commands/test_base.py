@@ -32,12 +32,12 @@ class TestTUICommandBase(unittest.TestCase):
         self.assertEqual(self.command.app, self.app)
         self.assertEqual(self.command.context, self.context)
 
-    def test_controller_property(self):
-        """Test controller property returns task_controller from context."""
+    def test_lifecycle_controller_property(self):
+        """Test lifecycle_controller property returns lifecycle_controller from context."""
         mock_controller = MagicMock()
-        self.context.task_controller = mock_controller
+        self.context.lifecycle_controller = mock_controller
 
-        result = self.command.controller
+        result = self.command.lifecycle_controller
 
         self.assertEqual(result, mock_controller)
 

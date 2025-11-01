@@ -28,7 +28,7 @@ class StatusChangeCommandBase(TUICommandBase):
                 return "starting task"
 
             def execute_status_change(self, task_id: int) -> TaskOperationOutput:
-                return self.controller.start_task(task_id)
+                return self.context.lifecycle_controller.start_task(task_id)
 
             def get_success_verb(self) -> str:
                 return "Started"
@@ -44,7 +44,7 @@ class StatusChangeCommandBase(TUICommandBase):
 
     @abstractmethod
     def execute_status_change(self, task_id: int) -> TaskOperationOutput:
-        """Execute the status change operation via TaskController.
+        """Execute the status change operation via specialized controller.
 
         Args:
             task_id: ID of the task to change status
@@ -72,7 +72,7 @@ class StatusChangeCommandBase(TUICommandBase):
         This method implements the common workflow with error handling:
         1. Get selected task ID
         2. Validate task selection
-        3. Execute status change via TaskController
+        3. Execute status change via specialized controller
         4. Reload task list
         5. Show success notification
 

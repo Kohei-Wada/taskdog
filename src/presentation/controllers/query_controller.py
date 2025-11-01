@@ -10,11 +10,14 @@ from datetime import date
 from application.dto.gantt_output import GanttOutput
 from application.dto.get_task_by_id_output import GetTaskByIdOutput
 from application.dto.tag_statistics_output import TagStatisticsOutput
+from application.dto.task_detail_output import GetTaskDetailOutput
 from application.dto.task_dto import TaskDetailDto
 from application.dto.task_list_output import TaskListOutput
 from application.queries.filters.task_filter import TaskFilter
 from application.queries.task_query_service import TaskQueryService
+from application.use_cases.get_task_detail import GetTaskDetailInput, GetTaskDetailUseCase
 from domain.entities.task import Task
+from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 
 
@@ -28,16 +31,19 @@ class QueryController:
 
     Attributes:
         repository: Task repository for data access
+        notes_repository: Notes repository for task notes (optional)
         query_service: Task query service for complex queries
     """
 
-    def __init__(self, repository: TaskRepository):
+    def __init__(self, repository: TaskRepository, notes_repository: NotesRepository | None = None):
         """Initialize the query controller.
 
         Args:
             repository: Task repository
+            notes_repository: Notes repository (optional, required for get_task_detail)
         """
         self.repository = repository
+        self.notes_repository = notes_repository
         self.query_service: TaskQueryService = TaskQueryService(repository)
 
     def list_tasks(
@@ -146,6 +152,31 @@ class QueryController:
         # Convert Task to TaskDetailDto
         task_dto = self._task_to_detail_dto(task)
         return GetTaskByIdOutput(task=task_dto)
+
+    def get_task_detail(self, task_id: int) -> GetTaskDetailOutput:
+        """Get task details with notes.
+
+        Retrieves a task along with its markdown notes file.
+        Used by show command (CLI) and show_details_command (TUI).
+
+        Args:
+            task_id: Task ID
+
+        Returns:
+            GetTaskDetailOutput with task, notes_content, and has_notes
+
+        Raises:
+            ValueError: If notes_repository was not provided during initialization
+            TaskNotFoundException: If task with given ID doesn't exist
+        """
+        if self.notes_repository is None:
+            raise ValueError(
+                "notes_repository is required for get_task_detail. "
+                "Pass NotesRepository to QueryController.__init__"
+            )
+
+        use_case = GetTaskDetailUseCase(self.repository, self.notes_repository)
+        return use_case.execute(GetTaskDetailInput(task_id))
 
     def _task_to_detail_dto(self, task: Task) -> TaskDetailDto:
         """Convert Task entity to TaskDetailDto.

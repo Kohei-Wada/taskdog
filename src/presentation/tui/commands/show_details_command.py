@@ -21,8 +21,8 @@ class ShowDetailsCommand(TUICommandBase):
             self.notify_warning("No task selected")
             return
 
-        # Get task detail with notes via controller
-        detail = self.controller.get_task_detail(task_id)
+        # Get task detail with notes via query controller
+        detail = self.context.query_controller.get_task_detail(task_id)
 
         # Show task detail screen with notes
         detail_screen = TaskDetailScreen(detail)
