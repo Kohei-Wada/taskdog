@@ -69,7 +69,8 @@ class BalancedAllocator(TaskAllocatorBase):
 
         # Type narrowing for estimated_duration
         estimated_duration = task_copy.estimated_duration
-        assert estimated_duration is not None  # For mypy
+        if estimated_duration is None:
+            raise ValueError("Estimated duration cannot be None for balanced allocation")
 
         # Calculate target hours per day (even distribution)
         target_hours_per_day = estimated_duration / available_weekdays

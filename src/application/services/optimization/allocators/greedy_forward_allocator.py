@@ -61,7 +61,8 @@ class GreedyForwardAllocator(TaskAllocatorBase):
         # Find earliest available start date
         current_date = start_date
         remaining_hours = task_copy.estimated_duration  # Type narrowed by _create_task_copy
-        assert remaining_hours is not None  # For mypy
+        if remaining_hours is None:
+            raise ValueError("Remaining hours cannot be None")
         schedule_start = None
         schedule_end = None
         task_daily_allocations: dict[date, float] = {}

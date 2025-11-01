@@ -36,7 +36,8 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
             detail: GetTaskDetailOutput with task and notes
         """
         super().__init__(*args, **kwargs)
-        assert detail.task is not None, "Task detail must not be None"
+        if detail.task is None:
+            raise ValueError("Task detail must not be None")
         self.task_data: TaskDetailDto = detail.task
         self.notes_content = detail.notes_content
         self.has_notes = detail.has_notes

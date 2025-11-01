@@ -78,7 +78,8 @@ class AddTaskCommand(TUICommandBase):
                     )
 
             # Post TaskCreated event to trigger UI refresh
-            assert task.id is not None, "Created task must have an ID"
+            if task.id is None:
+                raise ValueError("Created task must have an ID")
             self.app.post_message(TaskCreated(task.id))
             self.notify_success(f"Added task: {task.name} (ID: {task.id})")
 

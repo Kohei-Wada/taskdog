@@ -126,7 +126,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             if remaining_hours > 0.001:  # Task not fully scheduled
                 task = task_map[task_id]
                 # Convert to DTO
-                assert task.id is not None, "Task must have an ID"
+                if task.id is None:
+                    raise ValueError("Task must have an ID")
                 task_dto = TaskSummaryDto(id=task.id, name=task.name)
 
                 if task_id in task_start_dates:
@@ -283,9 +284,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
         return updated_tasks
 
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
-    ) -> list[Task]:
+    def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Not used by round-robin strategy (overrides optimize_tasks)."""
         raise NotImplementedError(
             "RoundRobinOptimizationStrategy overrides optimize_tasks directly"

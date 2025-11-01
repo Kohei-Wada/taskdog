@@ -90,7 +90,8 @@ class TaskAllocatorBase(ABC):
         """
         task_copy = copy.deepcopy(task)
         # Type narrowing: guaranteed by _validate_task
-        assert task_copy.estimated_duration is not None
+        if task_copy.estimated_duration is None:
+            raise ValueError("Cannot allocate task without estimated duration")
         return task_copy
 
     def _get_effective_deadline(self, task: Task) -> datetime | None:

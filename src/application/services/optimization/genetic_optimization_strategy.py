@@ -392,9 +392,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         mutated[idx1], mutated[idx2] = mutated[idx2], mutated[idx1]
         return mutated
 
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
-    ) -> list[Task]:
+    def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Not used by genetic strategy (overrides optimize_tasks)."""
         raise NotImplementedError("GeneticOptimizationStrategy overrides optimize_tasks directly")
 

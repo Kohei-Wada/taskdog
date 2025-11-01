@@ -288,9 +288,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         score = priority_score + scheduled_bonus - deadline_penalty - workload_penalty
         return score
 
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
-    ) -> list[Task]:
+    def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Not used by Monte Carlo strategy (overrides optimize_tasks)."""
         raise NotImplementedError(
             "MonteCarloOptimizationStrategy overrides optimize_tasks directly"

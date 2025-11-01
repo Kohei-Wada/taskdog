@@ -11,7 +11,7 @@ from domain.entities.task import Task
 from shared.config_manager import Config
 
 if TYPE_CHECKING:
-    from domain.repositories.task_repository import TaskRepository
+    pass
 
 
 class BackwardOptimizationStrategy(OptimizationStrategy):
@@ -43,9 +43,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         """
         self.config = config
 
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
-    ) -> list[Task]:
+    def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by deadline (furthest first).
 
         Tasks without deadlines are placed at the beginning

@@ -11,7 +11,7 @@ from domain.entities.task import Task
 from shared.config_manager import Config
 
 if TYPE_CHECKING:
-    from domain.repositories.task_repository import TaskRepository
+    pass
 
 
 class DependencyAwareOptimizationStrategy(OptimizationStrategy):
@@ -38,9 +38,7 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
         """
         self.config = config
 
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
-    ) -> list[Task]:
+    def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by dependency depth, then by priority/deadline.
 
         Calculate dependency depth for each task and sort with multiple criteria:
@@ -51,13 +49,12 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
         Args:
             tasks: Filtered schedulable tasks
             start_date: Starting date for schedule optimization
-            repository: Task repository for hierarchy queries
 
         Returns:
             Tasks sorted by dependency depth, deadline, and priority
         """
         # Calculate dependency depth for each task
-        task_depths = self._calculate_dependency_depths(tasks, repository)
+        task_depths = self._calculate_dependency_depths(tasks)
 
         # Sort by dependency depth (leaf tasks first), then by priority/deadline
         return sorted(
@@ -95,16 +92,13 @@ class DependencyAwareOptimizationStrategy(OptimizationStrategy):
             task, start_date, max_hours_per_day, self.daily_allocations, self.repository
         )
 
-    def _calculate_dependency_depths(
-        self, tasks: list[Task], repository: "TaskRepository"
-    ) -> dict[int, int]:
+    def _calculate_dependency_depths(self, tasks: list[Task]) -> dict[int, int]:
         """Calculate dependency depth for each task.
 
         Since parent-child relationships have been removed, all tasks have depth 0.
 
         Args:
             tasks: List of tasks to analyze
-            repository: Task repository (unused, kept for compatibility)
 
         Returns:
             Dict mapping task_id to dependency depth (always 0)

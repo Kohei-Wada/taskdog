@@ -43,7 +43,8 @@ class ReopenTaskCommand(TUICommandBase):
                 output = self.controller.reopen_task(task_id)
 
                 # Post TaskUpdated event to trigger UI refresh
-                assert output.id is not None, "Updated task must have an ID"
+                if output.id is None:
+                    raise ValueError("Updated task must have an ID")
                 self.app.post_message(TaskUpdated(output.id))
                 self.notify_success(f"Reopened task: {task_name}")
 

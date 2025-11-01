@@ -269,7 +269,8 @@ class TaskQueryService(QueryService):
             TaskRowDto with fields needed for table display
         """
         # Tasks from repository must have an ID
-        assert task.id is not None, "Task must have an ID"
+        if task.id is None:
+            raise ValueError("Task must have an ID")
 
         return TaskRowDto(
             id=task.id,

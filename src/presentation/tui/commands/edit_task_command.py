@@ -20,7 +20,8 @@ class EditTaskCommand(TUICommandBase):
         """Execute the edit task command."""
         # Get selected task ID - guaranteed to be non-None by decorator
         task_id = self.get_selected_task_id()
-        assert task_id is not None
+        if task_id is None:
+            raise ValueError("Task ID cannot be None")
 
         # Fetch task via QueryController
         output = self.context.query_controller.get_task_by_id(task_id)
@@ -168,7 +169,8 @@ class EditTaskCommand(TUICommandBase):
                 )
 
         # Post TaskUpdated event to trigger UI refresh
-        assert updated_task.id is not None, "Updated task must have an ID"
+        if updated_task.id is None:
+            raise ValueError("Updated task must have an ID")
         self.app.post_message(TaskUpdated(updated_task.id))
 
         fields_str = ", ".join(updated_fields)

@@ -26,7 +26,10 @@ class DependencyValidator:
             DependencyNotMetError: If any dependency is not met
         """
         # task.id should always be set when this validator is called
-        assert task.id is not None
+        if task.id is None:
+            from domain.exceptions.task_exceptions import TaskValidationError
+
+            raise TaskValidationError("Task ID must not be None for dependency validation")
 
         # No dependencies to check
         if not task.depends_on:

@@ -157,7 +157,8 @@ class QueryController:
             TaskDetailDto with all task data
         """
         # Tasks from repository must have an ID
-        assert task.id is not None, "Task must have an ID"
+        if task.id is None:
+            raise ValueError("Task must have an ID")
 
         return TaskDetailDto(
             id=task.id,

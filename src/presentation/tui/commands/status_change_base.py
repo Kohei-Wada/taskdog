@@ -93,7 +93,8 @@ class StatusChangeCommandBase(TUICommandBase):
             updated_task = self.execute_status_change(task_id)
 
             # Post TaskUpdated event to trigger UI refresh
-            assert updated_task.id is not None, "Updated task must have an ID"
+            if updated_task.id is None:
+                raise ValueError("Updated task must have an ID")
             self.app.post_message(TaskUpdated(updated_task.id))
 
             # Notify success

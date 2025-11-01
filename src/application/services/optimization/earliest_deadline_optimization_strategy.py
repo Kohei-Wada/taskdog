@@ -11,7 +11,7 @@ from domain.entities.task import Task
 from shared.config_manager import Config
 
 if TYPE_CHECKING:
-    from domain.repositories.task_repository import TaskRepository
+    pass
 
 
 class EarliestDeadlineOptimizationStrategy(OptimizationStrategy):
@@ -38,9 +38,7 @@ class EarliestDeadlineOptimizationStrategy(OptimizationStrategy):
         """
         self.config = config
 
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
-    ) -> list[Task]:
+    def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by deadline (earliest first).
 
         Tasks are sorted by deadline in ascending order
@@ -50,7 +48,6 @@ class EarliestDeadlineOptimizationStrategy(OptimizationStrategy):
         Args:
             tasks: Filtered schedulable tasks
             start_date: Starting date for schedule optimization
-            repository: Task repository for hierarchy queries
 
         Returns:
             Tasks sorted by deadline (earliest deadline first)

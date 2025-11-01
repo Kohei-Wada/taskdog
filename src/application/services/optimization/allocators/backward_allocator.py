@@ -62,7 +62,8 @@ class BackwardAllocator(TaskAllocatorBase):
 
         # Type narrowing for estimated_duration
         remaining_hours = task_copy.estimated_duration
-        assert remaining_hours is not None  # For mypy
+        if remaining_hours is None:
+            raise ValueError("Remaining hours cannot be None")
 
         # Allocate backward from target_end
         current_date = target_end

@@ -83,7 +83,8 @@ class DateTimeWithDefault(click.DateTime):
             return None
 
         # Type narrowing for mypy
-        assert isinstance(dt, datetime)
+        if not isinstance(dt, datetime):
+            raise TypeError(f"Expected datetime object, got {type(dt).__name__}")
 
         # If MM-DD format was used, add current year
         if is_short_format:

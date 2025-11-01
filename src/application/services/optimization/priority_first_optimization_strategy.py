@@ -11,7 +11,7 @@ from domain.entities.task import Task
 from shared.config_manager import Config
 
 if TYPE_CHECKING:
-    from domain.repositories.task_repository import TaskRepository
+    pass
 
 
 class PriorityFirstOptimizationStrategy(OptimizationStrategy):
@@ -37,9 +37,7 @@ class PriorityFirstOptimizationStrategy(OptimizationStrategy):
         """
         self.config = config
 
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
-    ) -> list[Task]:
+    def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by priority field only (priority-first approach).
 
         Tasks are sorted by priority value in descending order
@@ -48,7 +46,6 @@ class PriorityFirstOptimizationStrategy(OptimizationStrategy):
         Args:
             tasks: Filtered schedulable tasks
             start_date: Starting date for schedule optimization
-            repository: Task repository for hierarchy queries
 
         Returns:
             Tasks sorted by priority (highest priority first)

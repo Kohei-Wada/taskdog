@@ -78,7 +78,7 @@ class OptimizationStrategy(ABC):
         schedulable_tasks = [task for task in tasks if task.is_schedulable(force_override)]
 
         # 4. Sort tasks by strategy-specific priority
-        sorted_tasks = self._sort_schedulable_tasks(schedulable_tasks, start_date, repository)
+        sorted_tasks = self._sort_schedulable_tasks(schedulable_tasks, start_date)
 
         # 5. Allocate time blocks for each task (strategy-specific)
         updated_tasks = []
@@ -152,7 +152,8 @@ class OptimizationStrategy(ABC):
             reason: Human-readable reason for the failure
         """
         # Convert Task to TaskSummaryDto
-        assert task.id is not None, "Task must have an ID"
+        if task.id is None:
+            raise ValueError("Task must have an ID")
         task_dto = TaskSummaryDto(id=task.id, name=task.name)
         self.failed_tasks.append(SchedulingFailure(task=task_dto, reason=reason))
 
@@ -176,9 +177,7 @@ class OptimizationStrategy(ABC):
         if not updated_task and not any(f.task.id == task.id for f in self.failed_tasks):
             self._record_failure(task, default_reason)
 
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime, repository: "TaskRepository"
-    ) -> list[Task]:
+    def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by strategy-specific priority.
 
         Default implementation sorts by deadline urgency, priority field, and task ID.
@@ -187,9 +186,6 @@ class OptimizationStrategy(ABC):
         Args:
             tasks: Filtered schedulable tasks
             start_date: Starting date for schedule optimization
-            repository: Deprecated. Will be removed in v2.0.
-                       Currently unused but kept for backward compatibility
-                       with existing optimization strategies.
 
         Returns:
             Sorted task list (highest priority first)

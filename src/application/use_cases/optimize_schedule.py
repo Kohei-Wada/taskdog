@@ -126,5 +126,6 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             TaskSummaryDto with basic task information
         """
         # Tasks from repository must have an ID
-        assert task.id is not None, "Task must have an ID"
+        if task.id is None:
+            raise ValueError("Task must have an ID")
         return TaskSummaryDto(id=task.id, name=task.name)

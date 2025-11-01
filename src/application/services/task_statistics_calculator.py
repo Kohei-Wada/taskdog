@@ -152,8 +152,10 @@ class TaskStatisticsCalculator:
         shortest_task = min(tasks_with_duration, key=lambda t: t.actual_duration_hours or 0.0)
 
         # Convert to DTOs (tasks must have IDs)
-        assert longest_task.id is not None, "Task must have an ID"
-        assert shortest_task.id is not None, "Task must have an ID"
+        if longest_task.id is None:
+            raise ValueError("Longest task must have an ID")
+        if shortest_task.id is None:
+            raise ValueError("Shortest task must have an ID")
         longest_task_dto = TaskSummaryDto(id=longest_task.id, name=longest_task.name)
         shortest_task_dto = TaskSummaryDto(id=shortest_task.id, name=shortest_task.name)
 
@@ -233,12 +235,14 @@ class TaskStatisticsCalculator:
         # Convert to DTOs (tasks must have IDs)
         best_tasks_dto = []
         for t in best_tasks:
-            assert t.id is not None, "Task must have an ID"
+            if t.id is None:
+                raise ValueError("Task must have an ID")
             best_tasks_dto.append(TaskSummaryDto(id=t.id, name=t.name))
 
         worst_tasks_dto = []
         for t in worst_tasks:
-            assert t.id is not None, "Task must have an ID"
+            if t.id is None:
+                raise ValueError("Task must have an ID")
             worst_tasks_dto.append(TaskSummaryDto(id=t.id, name=t.name))
 
         return EstimationAccuracyStatistics(
