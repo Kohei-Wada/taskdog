@@ -15,6 +15,7 @@ from application.dto.pause_task_request import PauseTaskRequest
 from application.dto.remove_task_request import RemoveTaskRequest
 from application.dto.reopen_task_request import ReopenTaskRequest
 from application.dto.restore_task_request import RestoreTaskRequest
+from application.dto.set_task_tags_request import SetTaskTagsRequest
 from application.dto.start_task_request import StartTaskRequest
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.cancel_task import CancelTaskUseCase
@@ -25,6 +26,7 @@ from application.use_cases.remove_dependency import RemoveDependencyUseCase
 from application.use_cases.remove_task import RemoveTaskUseCase
 from application.use_cases.reopen_task import ReopenTaskUseCase
 from application.use_cases.restore_task import RestoreTaskUseCase
+from application.use_cases.set_task_tags import SetTaskTagsUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
@@ -268,4 +270,22 @@ class TaskController:
         """
         use_case = RemoveDependencyUseCase(self.repository)
         request = RemoveDependencyRequest(task_id=task_id, depends_on_id=depends_on_id)
+        return use_case.execute(request)
+
+    def set_task_tags(self, task_id: int, tags: list[str]) -> Task:
+        """Set task tags (completely replaces existing tags).
+
+        Args:
+            task_id: ID of the task to set tags for
+            tags: List of tags to set
+
+        Returns:
+            The updated task
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If tags are invalid (empty strings or duplicates)
+        """
+        use_case = SetTaskTagsUseCase(self.repository)
+        request = SetTaskTagsRequest(task_id=task_id, tags=tags)
         return use_case.execute(request)

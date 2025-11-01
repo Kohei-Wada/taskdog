@@ -371,6 +371,39 @@ class TestTaskController(unittest.TestCase):
         self.assertIsNotNone(persisted_task)
         self.assertEqual(persisted_task.depends_on, [])
 
+    def test_set_task_tags_replaces_tags(self):
+        """Test set_task_tags replaces existing tags."""
+        # Create a task with initial tags
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        task.tags = ["old", "tags"]
+        self.repository.save(task)
+
+        # Set new tags
+        new_tags = ["new", "tags", "here"]
+        result = self.controller.set_task_tags(task.id, new_tags)
+
+        # Verify tags replaced
+        self.assertEqual(result.tags, new_tags)
+        self.assertEqual(result.id, task.id)
+
+    def test_set_task_tags_persists_changes(self):
+        """Test set_task_tags persists changes to repository."""
+        # Create a task with initial tags
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        task.tags = ["old"]
+        self.repository.save(task)
+
+        # Set new tags
+        new_tags = ["work", "urgent"]
+        self.controller.set_task_tags(task.id, new_tags)
+
+        # Verify changes persisted
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertIsNotNone(persisted_task)
+        self.assertEqual(persisted_task.tags, new_tags)
+
 
 if __name__ == "__main__":
     unittest.main()

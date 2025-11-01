@@ -2,12 +2,11 @@
 
 import click
 
-from application.dto.set_task_tags_request import SetTaskTagsRequest
 from application.queries.task_query_service import TaskQueryService
-from application.use_cases.set_task_tags import SetTaskTagsUseCase
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from presentation.controllers.task_controller import TaskController
 
 
 @click.command(name="tags", help="View or set task tags.")
@@ -58,9 +57,10 @@ def tags_command(ctx, task_id, tags):
         return
 
     # Case 3: Task ID + tags - set tags
-    use_case = SetTaskTagsUseCase(repository)
-    input_dto = SetTaskTagsRequest(task_id=task_id, tags=list(tags))
-    task = use_case.execute(input_dto)
+    time_tracker = ctx_obj.time_tracker
+    config = ctx_obj.config
+    controller = TaskController(repository, time_tracker, config)
+    task = controller.set_task_tags(task_id, list(tags))
 
     if task.tags:
         console_writer.task_success("Set tags for", task)
