@@ -240,8 +240,8 @@ class TaskdogTUI(App):
                 # Extract task IDs
                 task_ids = [t.id for t in tasks]
 
-                # Get pre-computed gantt data from TaskService with appropriate date range
-                gantt_result = self.task_service.get_gantt_data(
+                # Get pre-computed gantt view model from TaskService with appropriate date range
+                gantt_view_model = self.task_service.get_gantt_data(
                     task_ids=task_ids,
                     sort_by=self._gantt_sort_by,
                     start_date=start_date,
@@ -249,7 +249,7 @@ class TaskdogTUI(App):
                 )
                 self.main_screen.gantt_widget.update_gantt(
                     task_ids=task_ids,
-                    gantt_result=gantt_result,
+                    gantt_view_model=gantt_view_model,
                     sort_by=self._gantt_sort_by,
                 )
 

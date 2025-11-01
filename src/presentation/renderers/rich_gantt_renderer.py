@@ -1,11 +1,10 @@
 from contextlib import suppress
 from datetime import date, timedelta
+from typing import Any
 
 from rich.table import Table
 from rich.text import Text
 
-from application.dto.gantt_result import GanttResult
-from domain.entities.task import Task
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.colors import GANTT_COLUMN_EST_HOURS_COLOR
 from presentation.constants.table_dimensions import (
@@ -23,20 +22,22 @@ from presentation.constants.table_styles import (
 )
 from presentation.renderers.gantt_cell_formatter import GanttCellFormatter
 from presentation.renderers.rich_renderer_base import RichRendererBase
+from presentation.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from shared.config_manager import Config
 from shared.utils.holiday_checker import HolidayChecker
 
 
 class RichGanttRenderer(RichRendererBase):
-    """Renders GanttResult as a Rich table.
+    """Renders GanttViewModel as a Rich table.
 
     This renderer is responsible solely for presentation logic:
-    - Mapping GanttResult data to Rich Table format
+    - Mapping GanttViewModel data to Rich Table format
     - Applying colors, styles, and visual formatting
     - Building the final table with legend
 
     All business logic (date calculations, workload aggregation) is handled
-    by the Application layer (TaskQueryService.get_gantt_data()).
+    by the Application layer. Presentation formatting (strikethrough, etc.)
+    is applied by GanttMapper when converting from GanttResult to GanttViewModel.
     """
 
     def __init__(self, console_writer: ConsoleWriter, config: Config):
@@ -55,20 +56,20 @@ class RichGanttRenderer(RichRendererBase):
             with suppress(ImportError, NotImplementedError):
                 self.holiday_checker = HolidayChecker(config.region.country)
 
-    def build_table(self, gantt_result: GanttResult) -> Table | None:
-        """Build and return a Gantt chart Table object from GanttResult.
+    def build_table(self, gantt_view_model: GanttViewModel) -> Table | None:
+        """Build and return a Gantt chart Table object from GanttViewModel.
 
         Args:
-            gantt_result: Pre-computed Gantt data from Application layer
+            gantt_view_model: Presentation-ready Gantt data
 
         Returns:
             Rich Table object or None if no tasks
         """
-        if gantt_result.is_empty():
+        if gantt_view_model.is_empty():
             return None
 
-        start_date = gantt_result.date_range.start_date
-        end_date = gantt_result.date_range.end_date
+        start_date = gantt_view_model.start_date
+        end_date = gantt_view_model.end_date
 
         # Create Rich table
         table = Table(
@@ -102,16 +103,16 @@ class RichGanttRenderer(RichRendererBase):
         table.add_row("", "[dim]Date[/dim]", "", date_header)
 
         # Display all tasks in sort order
-        for task in gantt_result.tasks:
-            task_daily_hours = gantt_result.task_daily_hours.get(task.id, {})
-            self._add_task_to_gantt(task, task_daily_hours, table, start_date, end_date)
+        for task_vm in gantt_view_model.tasks:
+            task_daily_hours = gantt_view_model.task_daily_hours.get(task_vm.id, {})
+            self._add_task_to_gantt(task_vm, task_daily_hours, table, start_date, end_date)
 
         # Add section divider before workload summary
         table.add_section()
 
         # Add workload summary row
         workload_timeline = self._build_workload_summary_row(
-            gantt_result.daily_workload, start_date, end_date
+            gantt_view_model.daily_workload, start_date, end_date
         )
         table.add_row("", "[bold yellow]Workload\\[h][/bold yellow]", "", workload_timeline)
 
@@ -122,17 +123,17 @@ class RichGanttRenderer(RichRendererBase):
 
         return table
 
-    def render(self, gantt_result: GanttResult) -> None:
-        """Render and print Gantt chart from GanttResult.
+    def render(self, gantt_view_model: GanttViewModel) -> None:
+        """Render and print Gantt chart from GanttViewModel.
 
         Args:
-            gantt_result: Pre-computed Gantt data from Application layer
+            gantt_view_model: Presentation-ready Gantt data
         """
-        if gantt_result.is_empty():
+        if gantt_view_model.is_empty():
             self.console_writer.warning("No tasks found.")
             return
 
-        table = self.build_table(gantt_result)
+        table = self.build_table(gantt_view_model)
 
         if table is None:
             self.console_writer.warning("No tasks found.")
@@ -168,7 +169,7 @@ class RichGanttRenderer(RichRendererBase):
 
     def _add_task_to_gantt(
         self,
-        task: Task,
+        task_vm: TaskGanttRowViewModel,
         task_daily_hours: dict[date, float],
         table: Table,
         start_date: date,
@@ -177,29 +178,26 @@ class RichGanttRenderer(RichRendererBase):
         """Add a task to Gantt chart table.
 
         Args:
-            task: Task to add
+            task_vm: Task ViewModel to add
             task_daily_hours: Daily hours allocation for this task
             table: Rich Table object
             start_date: Start date of the chart
             end_date: End date of the chart
         """
-        task_name = task.name
+        # Use pre-formatted name (strikethrough already applied by mapper)
+        task_name = task_vm.formatted_name
 
-        # Add strikethrough for completed and canceled tasks
-        if task.is_finished:
-            task_name = f"[strike]{task_name}[/strike]"
-
-        # Format estimated duration
-        estimated_hours = self._format_estimated_hours(task.estimated_duration)
+        # Use pre-formatted estimated duration
+        estimated_hours = task_vm.formatted_estimated_duration
 
         # Build timeline
-        timeline = self._build_timeline(task, task_daily_hours, start_date, end_date)
+        timeline = self._build_timeline(task_vm, task_daily_hours, start_date, end_date)
 
-        table.add_row(str(task.id), task_name, estimated_hours, timeline)
+        table.add_row(str(task_vm.id), task_name, estimated_hours, timeline)
 
     def _build_timeline(
         self,
-        task: Task,
+        task_vm: TaskGanttRowViewModel,
         task_daily_hours: dict[date, float],
         start_date: date,
         end_date: date,
@@ -207,7 +205,7 @@ class RichGanttRenderer(RichRendererBase):
         """Build timeline visualization for a task using layered approach.
 
         Args:
-            task: Task to build timeline for
+            task_vm: Task ViewModel to build timeline for
             task_daily_hours: Daily hours allocation for this task
             start_date: Start date of the chart
             end_date: End date of the chart
@@ -217,8 +215,14 @@ class RichGanttRenderer(RichRendererBase):
         """
         days = (end_date - start_date).days + 1
 
-        # Parse task dates
-        parsed_dates = GanttCellFormatter.parse_task_dates(task)
+        # Create parsed_dates dict from ViewModel (dates are already converted)
+        parsed_dates: dict[str, Any] = {
+            "planned_start": task_vm.planned_start,
+            "planned_end": task_vm.planned_end,
+            "actual_start": task_vm.actual_start,
+            "actual_end": task_vm.actual_end,
+            "deadline": task_vm.deadline,
+        }
 
         # If no dates at all, show message
         if not any(parsed_dates.values()):
@@ -232,25 +236,12 @@ class RichGanttRenderer(RichRendererBase):
 
             # Determine cell display and styling using the formatter
             display, style = GanttCellFormatter.format_timeline_cell(
-                current_date, hours, parsed_dates, task.status, self.holiday_checker
+                current_date, hours, parsed_dates, task_vm.status, self.holiday_checker
             )
 
             timeline.append(display, style=style)
 
         return timeline
-
-    def _format_estimated_hours(self, estimated_duration: float | None) -> str:
-        """Format estimated duration for display.
-
-        Args:
-            estimated_duration: Estimated duration in hours (can be None)
-
-        Returns:
-            Formatted string (e.g., "8.0", "-")
-        """
-        if estimated_duration is None:
-            return "-"
-        return f"{estimated_duration:.1f}"
 
     def _build_legend(self) -> Text:
         """Build the legend text for the Gantt chart.

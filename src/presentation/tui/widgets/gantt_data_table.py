@@ -11,14 +11,13 @@ from typing import TYPE_CHECKING, ClassVar
 from rich.text import Text
 from textual.widgets import DataTable
 
-from application.dto.gantt_result import GanttResult
-from domain.entities.task import Task
 from presentation.constants.table_dimensions import (
     GANTT_TABLE_EST_HOURS_WIDTH,
     GANTT_TABLE_ID_WIDTH,
     GANTT_TABLE_TASK_MIN_WIDTH,
 )
 from presentation.renderers.gantt_cell_formatter import GanttCellFormatter
+from presentation.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 
 if TYPE_CHECKING:
     from shared.utils.holiday_checker import HolidayChecker
@@ -54,8 +53,8 @@ class GanttDataTable(DataTable):
         self.styles.padding = (0, 0)
 
         # Internal state
-        self._task_map: dict[int, Task] = {}  # Maps row index to Task
-        self._gantt_result: GanttResult | None = None
+        self._task_map: dict[int, TaskGanttRowViewModel] = {}  # Maps row index to TaskViewModel
+        self._gantt_view_model: GanttViewModel | None = None
         self._date_columns: list[date] = []  # Columns representing dates
         self._holiday_checker = holiday_checker
 
@@ -89,46 +88,46 @@ class GanttDataTable(DataTable):
         # Single Timeline column with centered header
         self.add_column(Text("Timeline", justify="center"))
 
-    def load_gantt(self, gantt_result: GanttResult):
+    def load_gantt(self, gantt_view_model: GanttViewModel):
         """Load Gantt data into the table.
 
         Args:
-            gantt_result: Pre-computed Gantt data from Application layer
+            gantt_view_model: Presentation-ready Gantt data
         """
-        self._gantt_result = gantt_result
+        self._gantt_view_model = gantt_view_model
         self._task_map.clear()
 
         # Setup columns based on date range
         self.setup_columns(
-            gantt_result.date_range.start_date,
-            gantt_result.date_range.end_date,
+            gantt_view_model.start_date,
+            gantt_view_model.end_date,
         )
 
-        if gantt_result.is_empty():
+        if gantt_view_model.is_empty():
             return
 
         # Add date header rows (Month, Today marker, Day)
         self._add_date_header_rows(
-            gantt_result.date_range.start_date,
-            gantt_result.date_range.end_date,
+            gantt_view_model.start_date,
+            gantt_view_model.end_date,
         )
 
         # Add task rows
-        for idx, task in enumerate(gantt_result.tasks):
-            task_daily_hours = gantt_result.task_daily_hours.get(task.id, {})
+        for idx, task_vm in enumerate(gantt_view_model.tasks):
+            task_daily_hours = gantt_view_model.task_daily_hours.get(task_vm.id, {})
             self._add_task_row(
-                task,
+                task_vm,
                 task_daily_hours,
-                gantt_result.date_range.start_date,
-                gantt_result.date_range.end_date,
+                gantt_view_model.start_date,
+                gantt_view_model.end_date,
             )
-            self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task
+            self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task_vm
 
         # Add workload summary row
         self._add_workload_row(
-            gantt_result.daily_workload,
-            gantt_result.date_range.start_date,
-            gantt_result.date_range.end_date,
+            gantt_view_model.daily_workload,
+            gantt_view_model.start_date,
+            gantt_view_model.end_date,
         )
 
     def _add_date_header_rows(self, start_date: date, end_date: date):
@@ -165,7 +164,7 @@ class GanttDataTable(DataTable):
 
     def _add_task_row(
         self,
-        task: Task,
+        task_vm: TaskGanttRowViewModel,
         task_daily_hours: dict[date, float],
         start_date: date,
         end_date: date,
@@ -173,13 +172,13 @@ class GanttDataTable(DataTable):
         """Add a task row to the Gantt table.
 
         Args:
-            task: Task to add
+            task_vm: Task ViewModel to add
             task_daily_hours: Daily hours allocation for this task
             start_date: Start date of the chart
-            end_date: End date of the chart
+            end_date: End_date: End date of the chart
         """
-        task_id, task_name, est_hours = self._format_task_metadata(task)
-        timeline = self._build_timeline(task, task_daily_hours, start_date, end_date)
+        task_id, task_name, est_hours = self._format_task_metadata(task_vm)
+        timeline = self._build_timeline(task_vm, task_daily_hours, start_date, end_date)
 
         self.add_row(
             Text(task_id, justify="center"),
@@ -188,30 +187,25 @@ class GanttDataTable(DataTable):
             timeline,
         )
 
-    def _format_task_metadata(self, task: Task) -> tuple[str, str, str]:
+    def _format_task_metadata(self, task_vm: TaskGanttRowViewModel) -> tuple[str, str, str]:
         """Format fixed column metadata for a task.
 
         Args:
-            task: Task to format
+            task_vm: Task ViewModel to format
 
         Returns:
             Tuple of (task_id, task_name, estimated_hours)
         """
-        task_id = str(task.id)
-
-        # Task name with strikethrough for completed and canceled tasks
-        task_name = task.name
-        if task.is_finished:
-            task_name = f"[strike]{task_name}[/strike]"
-
-        # Estimated hours
-        est_hours = f"{task.estimated_duration:.1f}" if task.estimated_duration else "-"
+        # Use pre-formatted values from ViewModel
+        task_id = str(task_vm.id)
+        task_name = task_vm.formatted_name
+        est_hours = task_vm.formatted_estimated_duration
 
         return task_id, task_name, est_hours
 
     def _build_timeline(
         self,
-        task: Task,
+        task_vm: TaskGanttRowViewModel,
         task_daily_hours: dict[date, float],
         start_date: date,
         end_date: date,
@@ -219,7 +213,7 @@ class GanttDataTable(DataTable):
         """Build timeline visualization for a task.
 
         Args:
-            task: Task to build timeline for
+            task_vm: Task ViewModel to build timeline for
             task_daily_hours: Daily hours allocation
             start_date: Start date of timeline
             end_date: End date of timeline
@@ -228,7 +222,16 @@ class GanttDataTable(DataTable):
             Rich Text object with formatted timeline
         """
         days = (end_date - start_date).days + 1
-        parsed_dates = GanttCellFormatter.parse_task_dates(task)
+
+        # Create parsed_dates dict from ViewModel (dates are already converted)
+        parsed_dates = {
+            "planned_start": task_vm.planned_start,
+            "planned_end": task_vm.planned_end,
+            "actual_start": task_vm.actual_start,
+            "actual_end": task_vm.actual_end,
+            "deadline": task_vm.deadline,
+        }
+
         timeline = Text()
 
         for day_offset in range(days):
@@ -240,7 +243,7 @@ class GanttDataTable(DataTable):
                 current_date,
                 hours,
                 parsed_dates,
-                task.status,
+                task_vm.status,
                 self._holiday_checker,
             )
             timeline.append(display, style=style)

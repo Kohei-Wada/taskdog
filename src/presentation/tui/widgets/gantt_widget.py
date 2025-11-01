@@ -12,7 +12,6 @@ from textual.containers import Center, VerticalScroll
 from textual.events import Resize
 from textual.widgets import Static
 
-from application.dto.gantt_result import GanttResult
 from presentation.constants.table_dimensions import (
     BORDER_WIDTH,
     CHARS_PER_DAY,
@@ -22,6 +21,7 @@ from presentation.constants.table_dimensions import (
     MIN_TIMELINE_WIDTH,
 )
 from presentation.tui.widgets.gantt_data_table import GanttDataTable
+from presentation.view_models.gantt_view_model import GanttViewModel
 from shared.config_manager import Config
 from shared.constants.time import DAYS_PER_WEEK
 from shared.utils.date_utils import get_previous_monday
@@ -39,7 +39,7 @@ class GanttWidget(VerticalScroll):
         """Initialize the gantt widget."""
         super().__init__(*args, **kwargs)
         self._task_ids: list[int] = []
-        self._gantt_result: GanttResult | None = None
+        self._gantt_view_model: GanttViewModel | None = None
         self._sort_by: str = "deadline"  # Default sort order
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
@@ -104,18 +104,18 @@ class GanttWidget(VerticalScroll):
     def update_gantt(
         self,
         task_ids: list[int],
-        gantt_result: GanttResult,
+        gantt_view_model: GanttViewModel,
         sort_by: str = "deadline",
     ):
         """Update the gantt chart with new gantt data.
 
         Args:
             task_ids: List of task IDs (used for recalculating date range on resize)
-            gantt_result: Pre-computed gantt data from TaskService
+            gantt_view_model: Presentation-ready gantt data from TaskService
             sort_by: Sort order for tasks (default: "deadline")
         """
         self._task_ids = task_ids
-        self._gantt_result = gantt_result
+        self._gantt_view_model = gantt_view_model
         self._sort_by = sort_by
         self._render_gantt()
 
@@ -125,11 +125,11 @@ class GanttWidget(VerticalScroll):
         if not self.is_mounted or not self._gantt_table:
             return
 
-        if not self._gantt_result or self._gantt_result.is_empty():
+        if not self._gantt_view_model or self._gantt_view_model.is_empty():
             self._show_empty_message()
             return
 
-        # Directly load the pre-computed gantt result
+        # Directly load the pre-computed gantt data
         self._load_gantt_data()
 
     def update(self, message: str) -> None:
@@ -150,9 +150,9 @@ class GanttWidget(VerticalScroll):
         self._gantt_table.add_row("[dim]No tasks to display[/dim]")
 
     def _load_gantt_data(self):
-        """Load and display gantt data from the pre-computed gantt result."""
+        """Load and display gantt data from the pre-computed gantt ViewModel."""
         try:
-            self._gantt_table.load_gantt(self._gantt_result)
+            self._gantt_table.load_gantt(self._gantt_view_model)
             self._update_title()
             self._update_legend()
         except Exception as e:
@@ -163,8 +163,8 @@ class GanttWidget(VerticalScroll):
         if not self._title_widget:
             return
 
-        start_date = self._gantt_result.date_range.start_date
-        end_date = self._gantt_result.date_range.end_date
+        start_date = self._gantt_view_model.start_date
+        end_date = self._gantt_view_model.end_date
         title_text = (
             f"[bold yellow]Gantt Chart[/bold yellow] "
             f"[dim]({start_date} to {end_date})[/dim] "
@@ -235,7 +235,7 @@ class GanttWidget(VerticalScroll):
         # Check if widget is mounted and has necessary data
         if not self.is_mounted:
             return
-        if not (self._task_ids and self._gantt_result):
+        if not (self._task_ids and self._gantt_view_model):
             return
 
         # Use size from event for accurate dimensions
@@ -253,13 +253,13 @@ class GanttWidget(VerticalScroll):
         # Try to fetch updated gantt data from app
         if hasattr(self, "app") and hasattr(self.app, "task_service"):
             app = self.app  # type: ignore[attr-defined]
-            gantt_result = app.task_service.get_gantt_data(
+            gantt_view_model = app.task_service.get_gantt_data(
                 task_ids=self._task_ids,
                 sort_by=self._sort_by,
                 start_date=start_date,
                 end_date=end_date,
             )
-            self._gantt_result = gantt_result
+            self._gantt_view_model = gantt_view_model
 
         # Re-render with current or updated data
         self.call_after_refresh(self._render_gantt)
