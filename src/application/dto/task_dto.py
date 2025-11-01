@@ -66,6 +66,33 @@ class TaskRowDto:
     created_at: datetime
     updated_at: datetime
 
+    def to_dict(self) -> dict[str, object]:
+        """Convert DTO to dictionary for export purposes.
+
+        Returns:
+            Dictionary with all task fields, using string values for enums and ISO format for datetimes.
+        """
+        return {
+            "id": self.id,
+            "name": self.name,
+            "priority": self.priority,
+            "status": self.status.value,
+            "planned_start": self.planned_start.isoformat() if self.planned_start else None,
+            "planned_end": self.planned_end.isoformat() if self.planned_end else None,
+            "deadline": self.deadline.isoformat() if self.deadline else None,
+            "actual_start": self.actual_start.isoformat() if self.actual_start else None,
+            "actual_end": self.actual_end.isoformat() if self.actual_end else None,
+            "estimated_duration": self.estimated_duration,
+            "actual_duration_hours": self.actual_duration_hours,
+            "is_fixed": self.is_fixed,
+            "depends_on": self.depends_on,
+            "tags": self.tags,
+            "is_archived": self.is_archived,
+            "is_finished": self.is_finished,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }
+
 
 @dataclass(frozen=True)
 class TaskDetailDto:

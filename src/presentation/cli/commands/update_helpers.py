@@ -4,7 +4,7 @@ from typing import Any
 
 import click
 
-from domain.entities.task import Task
+from application.dto.task_operation_output import TaskOperationOutput
 from presentation.cli.context import CliContext
 
 
@@ -13,8 +13,8 @@ def execute_single_field_update(
     task_id: int,
     field_name: str,
     field_value: Any,
-) -> Task:
-    """Execute a single field update and return updated task.
+) -> TaskOperationOutput:
+    """Execute a single field update and return updated task operation output.
 
     This helper reduces code duplication in specialized update commands
     (deadline, priority, estimate, rename).
@@ -26,7 +26,7 @@ def execute_single_field_update(
         field_value: New value for the field
 
     Returns:
-        Updated task
+        Task operation output containing updated task data
 
     Raises:
         TaskNotFoundException: If task with given ID does not exist

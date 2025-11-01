@@ -2,18 +2,18 @@
 
 import json
 
-from domain.entities.task import Task
+from application.dto.task_dto import TaskRowDto
 from presentation.exporters.task_exporter import TaskExporter
 
 
 class JsonTaskExporter(TaskExporter):
     """Exports tasks to JSON format."""
 
-    def export(self, tasks: list[Task]) -> str:
+    def export(self, tasks: list[TaskRowDto]) -> str:
         """Export tasks to JSON string.
 
         Args:
-            tasks: List of tasks to export
+            tasks: List of task DTOs to export
 
         Returns:
             JSON string representation of tasks

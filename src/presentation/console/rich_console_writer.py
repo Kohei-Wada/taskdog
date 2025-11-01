@@ -6,7 +6,6 @@ from typing import Any
 from rich.console import Console
 
 from application.dto.task_operation_output import TaskOperationOutput
-from domain.entities.task import Task
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.colors import STYLE_ERROR, STYLE_INFO, STYLE_SUCCESS, STYLE_WARNING
 from presentation.constants.icons import ICON_ERROR, ICON_INFO, ICON_SUCCESS, ICON_WARNING
@@ -27,12 +26,12 @@ class RichConsoleWriter(ConsoleWriter):
         """
         self._console = console
 
-    def task_success(self, action: str, output: TaskOperationOutput | Task) -> None:
+    def task_success(self, action: str, output: TaskOperationOutput) -> None:
         """Print success message with task info.
 
         Args:
             action: Action verb (e.g., "Added", "Started", "Completed", "Updated")
-            output: Task operation output DTO or Task object (for backward compatibility)
+            output: Task operation output DTO
         """
         self._console.print(
             f"[{STYLE_SUCCESS}]{ICON_SUCCESS}[/{STYLE_SUCCESS}] {action} task: "
@@ -85,7 +84,7 @@ class RichConsoleWriter(ConsoleWriter):
 
     def update_success(
         self,
-        task: Task,
+        output: TaskOperationOutput,
         field_name: str,
         value: Any,
         format_func: Callable[[Any], str] | None = None,
@@ -93,7 +92,7 @@ class RichConsoleWriter(ConsoleWriter):
         """Print standardized update success message.
 
         Args:
-            task: Task that was updated
+            output: Task operation output of the updated task
             field_name: Name of the field that was updated
             value: New value of the field
             format_func: Optional function to format the value for display
@@ -101,7 +100,7 @@ class RichConsoleWriter(ConsoleWriter):
         formatted_value = format_func(value) if format_func else str(value)
         self._console.print(
             f"[{STYLE_SUCCESS}]{ICON_SUCCESS}[/{STYLE_SUCCESS}] Set {field_name} for "
-            f"[bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan]): "
+            f"[bold]{output.name}[/bold] (ID: [cyan]{output.id}[/cyan]): "
             f"[magenta]{formatted_value}[/magenta]"
         )
 
@@ -129,13 +128,11 @@ class RichConsoleWriter(ConsoleWriter):
         """
         return self._console.width
 
-    def task_start_time(
-        self, output: TaskOperationOutput | Task, was_already_in_progress: bool
-    ) -> None:
+    def task_start_time(self, output: TaskOperationOutput, was_already_in_progress: bool) -> None:
         """Print task start time information.
 
         Args:
-            output: Task operation output DTO or Task object (for backward compatibility)
+            output: Task operation output DTO
             was_already_in_progress: Whether the task was already in progress
         """
         if was_already_in_progress:
@@ -147,14 +144,14 @@ class RichConsoleWriter(ConsoleWriter):
         elif output.actual_start:
             self._console.print(f"  Started at: [blue]{output.actual_start}[/blue]")
 
-    def task_completion_details(self, output: TaskOperationOutput | Task) -> None:
+    def task_completion_details(self, output: TaskOperationOutput) -> None:
         """Print task completion details (time, duration, comparison with estimate).
 
         This consolidates print_task_completion_time, print_task_duration,
         and print_duration_comparison into a single method.
 
         Args:
-            output: Completed task output DTO or Task object (for backward compatibility)
+            output: Completed task output DTO
         """
         # Show completion time if available
         if output.actual_end:
@@ -180,18 +177,18 @@ class RichConsoleWriter(ConsoleWriter):
             else:
                 self._console.print("  [green]✓[/green] Finished exactly on estimate!")
 
-    def task_fields_updated(self, task: Task, updated_fields: list[str]) -> None:
+    def task_fields_updated(self, output: TaskOperationOutput, updated_fields: list[str]) -> None:
         """Print task fields update success message.
 
         Args:
-            task: Updated task
+            output: Task operation output of the updated task
             updated_fields: List of field names that were updated
         """
         self._console.print(
-            f"[green]✓[/green] Updated task [bold]{task.name}[/bold] (ID: [cyan]{task.id}[/cyan]):"
+            f"[green]✓[/green] Updated task [bold]{output.name}[/bold] (ID: [cyan]{output.id}[/cyan]):"
         )
         for field in updated_fields:
-            value = getattr(task, field)
+            value = getattr(output, field)
             if field == "estimated_duration":
                 self._console.print(f"  • {field}: [cyan]{value}h[/cyan]")
             else:

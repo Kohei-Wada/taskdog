@@ -8,7 +8,6 @@ multiple command classes.
 from abc import abstractmethod
 
 from application.dto.task_operation_output import TaskOperationOutput
-from domain.entities.task import Task
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.events import TaskUpdated
 
@@ -28,7 +27,7 @@ class StatusChangeCommandBase(TUICommandBase):
             def get_action_name(self) -> str:
                 return "starting task"
 
-            def execute_status_change(self, task_id: int) -> Task:
+            def execute_status_change(self, task_id: int) -> TaskOperationOutput:
                 return self.controller.start_task(task_id)
 
             def get_success_verb(self) -> str:
@@ -44,14 +43,14 @@ class StatusChangeCommandBase(TUICommandBase):
         """
 
     @abstractmethod
-    def execute_status_change(self, task_id: int) -> TaskOperationOutput | Task:
+    def execute_status_change(self, task_id: int) -> TaskOperationOutput:
         """Execute the status change operation via TaskController.
 
         Args:
             task_id: ID of the task to change status
 
         Returns:
-            TaskOperationOutput or Task (for backward compatibility)
+            TaskOperationOutput containing the updated task data
 
         Raises:
             TaskNotFoundException: If task with given ID not found

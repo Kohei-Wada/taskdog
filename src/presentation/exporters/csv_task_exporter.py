@@ -4,7 +4,7 @@ import csv
 import io
 import json
 
-from domain.entities.task import Task
+from application.dto.task_dto import TaskRowDto
 from presentation.exporters.task_exporter import TaskExporter
 
 # Default fields for CSV export when no specific fields are requested
@@ -26,11 +26,11 @@ DEFAULT_CSV_FIELDS = [
 class CsvTaskExporter(TaskExporter):
     """Exports tasks to CSV format."""
 
-    def export(self, tasks: list[Task]) -> str:
+    def export(self, tasks: list[TaskRowDto]) -> str:
         """Export tasks to CSV string.
 
         Args:
-            tasks: List of tasks to export
+            tasks: List of task DTOs to export
 
         Returns:
             CSV string representation of tasks

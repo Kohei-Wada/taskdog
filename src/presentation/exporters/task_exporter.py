@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from domain.entities.task import Task
+from application.dto.task_dto import TaskRowDto
 
 
 class TaskExporter(ABC):
@@ -22,11 +22,11 @@ class TaskExporter(ABC):
         self.field_list = field_list
 
     @abstractmethod
-    def export(self, tasks: list[Task]) -> str:
+    def export(self, tasks: list[TaskRowDto]) -> str:
         """Export tasks to a string in the specific format.
 
         Args:
-            tasks: List of tasks to export
+            tasks: List of task DTOs to export
 
         Returns:
             String representation of tasks in the target format
