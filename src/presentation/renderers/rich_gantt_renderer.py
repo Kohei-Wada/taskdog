@@ -37,7 +37,7 @@ class RichGanttRenderer(RichRendererBase):
 
     All business logic (date calculations, workload aggregation) is handled
     by the Application layer. Presentation formatting (strikethrough, etc.)
-    is applied by GanttMapper when converting from GanttOutput to GanttViewModel.
+    is applied by GanttPresenter when converting from GanttOutput to GanttViewModel.
     """
 
     def __init__(self, console_writer: ConsoleWriter, config: Config):

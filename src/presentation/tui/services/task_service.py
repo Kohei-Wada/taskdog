@@ -8,7 +8,7 @@ from application.queries.filters.task_filter import TaskFilter
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
-from presentation.mappers.gantt_mapper import GanttMapper
+from presentation.presenters.gantt_presenter import GanttPresenter
 from presentation.tui.context import TUIContext
 from presentation.view_models.gantt_view_model import GanttViewModel
 from shared.utils.date_utils import calculate_next_workday
@@ -62,6 +62,8 @@ class TaskService:
         # Get controllers from context (no longer instantiate them)
         self.controller = context.task_controller
         self.query_controller = context.query_controller
+        # Initialize GanttPresenter for gantt view models
+        self.gantt_presenter = GanttPresenter()
 
     # ============================================================================
     # Command Operations (Write)
@@ -130,4 +132,4 @@ class TaskService:
             end_date=end_date,
         )
         # Convert DTO to ViewModel
-        return GanttMapper.from_gantt_result(gantt_result)
+        return self.gantt_presenter.present(gantt_result)

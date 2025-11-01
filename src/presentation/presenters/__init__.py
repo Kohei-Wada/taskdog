@@ -5,6 +5,7 @@ presentation layer ViewModels. They encapsulate the mapping logic and
 ensure the presentation layer remains independent from domain entities.
 """
 
+from presentation.presenters.gantt_presenter import GanttPresenter
 from presentation.presenters.table_presenter import TablePresenter
 
-__all__ = ["TablePresenter"]
+__all__ = ["GanttPresenter", "TablePresenter"]

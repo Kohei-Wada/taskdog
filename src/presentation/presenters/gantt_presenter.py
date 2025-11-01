@@ -1,17 +1,18 @@
-"""Mapper for converting GanttOutput DTO to GanttViewModel.
+"""Presenter for converting GanttOutput DTO to GanttViewModel.
 
-This mapper extracts necessary fields from Task entities and applies
+This presenter extracts necessary fields from Task entities and applies
 presentation logic (formatting, strikethrough) to create presentation-ready
 view models.
 """
 
 from application.dto.gantt_output import GanttOutput
 from domain.entities.task import Task
+from domain.repositories.notes_repository import NotesRepository
 from presentation.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 
 
-class GanttMapper:
-    """Mapper for converting GanttOutput to GanttViewModel.
+class GanttPresenter:
+    """Presenter for converting GanttOutput to GanttViewModel.
 
     This class is responsible for:
     1. Extracting necessary fields from Task entities
@@ -19,8 +20,16 @@ class GanttMapper:
     3. Converting domain data to presentation-ready ViewModels
     """
 
-    @staticmethod
-    def from_gantt_result(gantt_result: GanttOutput) -> GanttViewModel:
+    def __init__(self, notes_repository: NotesRepository | None = None):
+        """Initialize the GanttPresenter.
+
+        Args:
+            notes_repository: Optional notes repository for future enhancements
+                            (e.g., showing note indicators in gantt view)
+        """
+        self.notes_repository = notes_repository
+
+    def present(self, gantt_result: GanttOutput) -> GanttViewModel:
         """Convert GanttOutput DTO to GanttViewModel.
 
         Args:
@@ -30,9 +39,7 @@ class GanttMapper:
             GanttViewModel with TaskGanttRowViewModel (no Task entities)
         """
         # Convert each Task to TaskGanttRowViewModel
-        task_view_models = [
-            GanttMapper._map_task_to_view_model(task) for task in gantt_result.tasks
-        ]
+        task_view_models = [self._map_task_to_view_model(task) for task in gantt_result.tasks]
 
         return GanttViewModel(
             start_date=gantt_result.date_range.start_date,
@@ -42,8 +49,7 @@ class GanttMapper:
             daily_workload=gantt_result.daily_workload,
         )
 
-    @staticmethod
-    def _map_task_to_view_model(task: Task) -> TaskGanttRowViewModel:
+    def _map_task_to_view_model(self, task: Task) -> TaskGanttRowViewModel:
         """Convert a Task entity to TaskGanttRowViewModel.
 
         Applies presentation logic:
@@ -65,9 +71,7 @@ class GanttMapper:
             formatted_name = f"[strike]{task.name}[/strike]"
 
         # Format estimated duration
-        formatted_estimated_duration = GanttMapper._format_estimated_duration(
-            task.estimated_duration
-        )
+        formatted_estimated_duration = self._format_estimated_duration(task.estimated_duration)
 
         return TaskGanttRowViewModel(
             id=task.id,
@@ -84,8 +88,7 @@ class GanttMapper:
             is_finished=task.is_finished,
         )
 
-    @staticmethod
-    def _format_estimated_duration(estimated_duration: float | None) -> str:
+    def _format_estimated_duration(self, estimated_duration: float | None) -> str:
         """Format estimated duration for display.
 
         Args:

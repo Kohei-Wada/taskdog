@@ -6,7 +6,7 @@ from presentation.cli.commands.common_options import filter_options, sort_option
 from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.mappers.gantt_mapper import GanttMapper
+from presentation.presenters.gantt_presenter import GanttPresenter
 from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 from shared.utils.date_utils import get_previous_monday
@@ -107,8 +107,9 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
         end_date=end_date_obj,
     )
 
-    # Convert DTO to ViewModel (Mapper applies presentation logic)
-    gantt_view_model = GanttMapper.from_gantt_result(gantt_result)
+    # Convert DTO to ViewModel (Presenter applies presentation logic)
+    presenter = GanttPresenter()
+    gantt_view_model = presenter.present(gantt_result)
 
     # Render using Presentation layer (display logic)
     console_writer = ctx_obj.console_writer
