@@ -149,11 +149,16 @@ class Task:
             True if task can be scheduled
 
         Business Rules:
+            - Must not be archived
             - Must have estimated_duration set
             - Must be PENDING status (not IN_PROGRESS, COMPLETED, or CANCELED)
             - Must not be fixed (always protected, even with force_override)
             - If force_override is False, must not have existing schedule
         """
+        # Skip archived tasks
+        if self.is_archived:
+            return False
+
         # Skip finished tasks
         if self.is_finished:
             return False
