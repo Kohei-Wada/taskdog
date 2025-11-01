@@ -5,7 +5,9 @@ presentation-ready view models for table/list display.
 """
 
 from domain.entities.task import Task
+from domain.entities.task import TaskStatus as DomainTaskStatus
 from domain.repositories.notes_repository import NotesRepository
+from presentation.enums.task_status import TaskStatus as PresentationTaskStatus
 from presentation.view_models.task_view_model import TaskRowViewModel
 
 
@@ -26,6 +28,22 @@ class TaskMapper:
         """
         self.notes_repository = notes_repository
 
+    @staticmethod
+    def convert_status(domain_status: DomainTaskStatus) -> PresentationTaskStatus:
+        """Convert domain TaskStatus to presentation TaskStatus.
+
+        This maintains separation between domain and presentation layers while
+        ensuring the status values are properly converted.
+
+        Args:
+            domain_status: Domain layer TaskStatus
+
+        Returns:
+            Presentation layer TaskStatus
+        """
+        # Direct mapping by enum value
+        return PresentationTaskStatus(domain_status.value)
+
     def to_row_view_model(self, task: Task) -> TaskRowViewModel:
         """Convert a Task entity to TaskRowViewModel.
 
@@ -44,7 +62,7 @@ class TaskMapper:
         return TaskRowViewModel(
             id=task.id,
             name=task.name,
-            status=task.status,
+            status=self.convert_status(task.status),
             priority=task.priority,
             is_fixed=task.is_fixed,
             estimated_duration=task.estimated_duration,

@@ -7,7 +7,7 @@ without domain entity references.
 from dataclasses import dataclass
 from datetime import datetime
 
-from domain.entities.task import TaskStatus
+from presentation.enums.task_status import TaskStatus
 from presentation.view_models.base import BaseViewModel
 
 

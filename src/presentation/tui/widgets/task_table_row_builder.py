@@ -5,10 +5,10 @@ from datetime import datetime
 
 from rich.text import Text
 
-from domain.entities.task import TaskStatus
 from presentation.constants.colors import STATUS_STYLES
 from presentation.constants.symbols import EMOJI_NOTE
 from presentation.constants.table_dimensions import TASK_NAME_MAX_DISPLAY_LENGTH
+from presentation.enums.task_status import TaskStatus
 from presentation.view_models.task_view_model import TaskRowViewModel
 
 # Constants for text truncation
@@ -119,7 +119,7 @@ class TaskTableRowBuilder:
             Text object for status column
         """
         status_text = task_vm.status.value
-        status_color = STATUS_STYLES.get(task_vm.status, "white")
+        status_color = STATUS_STYLES.get(task_vm.status.value, "white")
         return Text(status_text, style=status_color, justify="center")
 
     def _build_elapsed_cell(self, task_vm: TaskRowViewModel) -> Text:
