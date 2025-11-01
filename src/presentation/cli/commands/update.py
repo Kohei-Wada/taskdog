@@ -2,11 +2,10 @@
 
 import click
 
-from application.dto.update_task_request import UpdateTaskRequest
-from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import TaskStatus
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from presentation.controllers.task_controller import TaskController
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
@@ -88,13 +87,14 @@ def update_command(
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
     time_tracker = ctx_obj.time_tracker
-    update_task_use_case = UpdateTaskUseCase(repository, time_tracker)
+    config = ctx_obj.config
+    controller = TaskController(repository, time_tracker, config)
 
     # Convert status string to Enum if provided
     status_enum = TaskStatus(status) if status else None
 
-    # Build input DTO
-    input_dto = UpdateTaskRequest(
+    # Update task via controller
+    task, updated_fields = controller.update_task(
         task_id=task_id,
         priority=priority,
         status=status_enum,
@@ -103,9 +103,6 @@ def update_command(
         deadline=deadline,
         estimated_duration=estimated_duration,
     )
-
-    # Execute use case
-    task, updated_fields = update_task_use_case.execute(input_dto)
 
     if not updated_fields:
         console_writer.warning(

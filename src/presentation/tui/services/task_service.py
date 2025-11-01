@@ -9,16 +9,15 @@ from application.dto.manage_dependencies_request import (
 )
 from application.dto.optimization_result import OptimizationResult
 from application.dto.optimize_schedule_request import OptimizeScheduleRequest
-from application.dto.update_task_request import UpdateTaskRequest
 from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.task_filter import TaskFilter
 from application.use_cases.add_dependency import AddDependencyUseCase
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from application.use_cases.remove_dependency import RemoveDependencyUseCase
-from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskValidationError
+from presentation.controllers.task_controller import TaskController
 from presentation.mappers.gantt_mapper import GanttMapper
 from presentation.tui.context import TUIContext
 from presentation.view_models.gantt_view_model import GanttViewModel
@@ -70,6 +69,8 @@ class TaskService:
         self.time_tracker = context.time_tracker
         self.query_service = context.query_service
         self.config = context.config
+        # Initialize controller for delegating simple operations
+        self.controller = TaskController(context.repository, context.time_tracker, context.config)
 
     # ============================================================================
     # Command Operations (Write)
@@ -176,8 +177,7 @@ class TaskService:
         Returns:
             Tuple of (updated task, list of updated field names)
         """
-        use_case = UpdateTaskUseCase(self.repository, self.time_tracker)
-        update_input = UpdateTaskRequest(
+        return self.controller.update_task(
             task_id=task_id,
             name=name,
             priority=priority,
@@ -189,7 +189,6 @@ class TaskService:
             is_fixed=is_fixed,
             tags=tags,
         )
-        return use_case.execute(update_input)
 
     def add_dependencies(self, task_id: int, dependency_ids: list[int]) -> list[tuple[int, str]]:
         """Add multiple dependencies to a task.

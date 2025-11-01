@@ -21,6 +21,7 @@ from application.dto.reopen_task_request import ReopenTaskRequest
 from application.dto.restore_task_request import RestoreTaskRequest
 from application.dto.set_task_tags_request import SetTaskTagsRequest
 from application.dto.start_task_request import StartTaskRequest
+from application.dto.update_task_request import UpdateTaskRequest
 from application.use_cases.add_dependency import AddDependencyUseCase
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.cancel_task import CancelTaskUseCase
@@ -34,7 +35,8 @@ from application.use_cases.reopen_task import ReopenTaskUseCase
 from application.use_cases.restore_task import RestoreTaskUseCase
 from application.use_cases.set_task_tags import SetTaskTagsUseCase
 from application.use_cases.start_task import StartTaskUseCase
-from domain.entities.task import Task
+from application.use_cases.update_task import UpdateTaskUseCase
+from domain.entities.task import Task, TaskStatus
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 from shared.config_manager import Config
@@ -331,4 +333,53 @@ class TaskController:
         """
         use_case = LogHoursUseCase(self.repository)
         request = LogHoursRequest(task_id=task_id, hours=hours, date=date)
+        return use_case.execute(request)
+
+    def update_task(
+        self,
+        task_id: int,
+        name: str | None = None,
+        priority: int | None = None,
+        status: TaskStatus | None = None,
+        planned_start: datetime | None = None,
+        planned_end: datetime | None = None,
+        deadline: datetime | None = None,
+        estimated_duration: float | None = None,
+        is_fixed: bool | None = None,
+        tags: list[str] | None = None,
+    ) -> tuple[Task, list[str]]:
+        """Update task fields.
+
+        Args:
+            task_id: ID of the task to update
+            name: New task name (optional)
+            priority: New priority (optional)
+            status: New status (optional)
+            planned_start: New planned start datetime (optional)
+            planned_end: New planned end datetime (optional)
+            deadline: New deadline (optional)
+            estimated_duration: New estimated duration in hours (optional)
+            is_fixed: Whether task schedule is fixed (optional)
+            tags: New tags list (optional)
+
+        Returns:
+            Tuple of (updated task, list of updated field names)
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If validation fails for any field
+        """
+        use_case = UpdateTaskUseCase(self.repository, self.time_tracker)
+        request = UpdateTaskRequest(
+            task_id=task_id,
+            name=name,
+            priority=priority,
+            status=status,
+            planned_start=planned_start,
+            planned_end=planned_end,
+            deadline=deadline,
+            estimated_duration=estimated_duration,
+            is_fixed=is_fixed,
+            tags=tags,
+        )
         return use_case.execute(request)

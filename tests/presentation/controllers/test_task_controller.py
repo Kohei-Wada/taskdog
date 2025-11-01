@@ -480,6 +480,78 @@ class TestTaskController(unittest.TestCase):
         expected_date = date(2025, 11, 2)
         self.assertEqual(persisted_task.actual_daily_hours[expected_date], hours)
 
+    def test_update_task_single_field(self):
+        """Test update_task updates a single field."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Update priority only
+        result, updated_fields = self.controller.update_task(task.id, priority=8)
+
+        # Verify priority changed
+        self.assertEqual(result.priority, 8)
+        self.assertEqual(result.id, task.id)
+        self.assertEqual(result.name, "Test Task")  # Other fields unchanged
+        self.assertEqual(updated_fields, ["priority"])
+
+    def test_update_task_multiple_fields(self):
+        """Test update_task updates multiple fields at once."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Update multiple fields
+        new_deadline = datetime(2025, 12, 31, 18, 0)
+        result, _updated_fields = self.controller.update_task(
+            task.id, name="Updated Task", priority=7, deadline=new_deadline, estimated_duration=5.0
+        )
+
+        # Verify all fields updated
+        self.assertEqual(result.name, "Updated Task")
+        self.assertEqual(result.priority, 7)
+        self.assertEqual(result.deadline, new_deadline)
+        self.assertEqual(result.estimated_duration, 5.0)
+        self.assertEqual(result.id, task.id)
+
+    def test_update_task_returns_updated_fields(self):
+        """Test update_task returns list of updated field names."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Update some fields
+        _result, updated_fields = self.controller.update_task(
+            task.id, priority=5, is_fixed=True, tags=["work", "urgent"]
+        )
+
+        # Verify updated fields list
+        self.assertIn("priority", updated_fields)
+        self.assertIn("is_fixed", updated_fields)
+        self.assertIn("tags", updated_fields)
+        self.assertEqual(len(updated_fields), 3)
+
+    def test_update_task_persists_changes(self):
+        """Test update_task persists changes to repository."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Update task
+        new_name = "Updated Name"
+        new_priority = 9
+        self.controller.update_task(task.id, name=new_name, priority=new_priority)
+
+        # Verify changes persisted
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertIsNotNone(persisted_task)
+        self.assertEqual(persisted_task.name, new_name)
+        self.assertEqual(persisted_task.priority, new_priority)
+
 
 if __name__ == "__main__":
     unittest.main()
