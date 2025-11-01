@@ -404,6 +404,45 @@ class TestTaskController(unittest.TestCase):
         self.assertIsNotNone(persisted_task)
         self.assertEqual(persisted_task.tags, new_tags)
 
+    def test_log_hours_adds_to_daily_hours(self):
+        """Test log_hours adds hours to actual_daily_hours dict."""
+        from datetime import date
+
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Log hours for a specific date
+        date_str = "2025-11-01"
+        hours = 3.5
+        result = self.controller.log_hours(task.id, hours, date_str)
+
+        # Verify hours logged
+        expected_date = date(2025, 11, 1)
+        self.assertEqual(result.actual_daily_hours[expected_date], hours)
+        self.assertEqual(result.id, task.id)
+
+    def test_log_hours_persists_changes(self):
+        """Test log_hours persists changes to repository."""
+        from datetime import date
+
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Log hours
+        date_str = "2025-11-02"
+        hours = 8.0
+        self.controller.log_hours(task.id, hours, date_str)
+
+        # Verify changes persisted
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertIsNotNone(persisted_task)
+        expected_date = date(2025, 11, 2)
+        self.assertEqual(persisted_task.actual_daily_hours[expected_date], hours)
+
 
 if __name__ == "__main__":
     unittest.main()

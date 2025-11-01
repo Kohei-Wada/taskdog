@@ -10,6 +10,7 @@ from application.dto.archive_task_request import ArchiveTaskRequest
 from application.dto.cancel_task_request import CancelTaskRequest
 from application.dto.complete_task_request import CompleteTaskRequest
 from application.dto.create_task_request import CreateTaskRequest
+from application.dto.log_hours_request import LogHoursRequest
 from application.dto.manage_dependencies_request import RemoveDependencyRequest
 from application.dto.pause_task_request import PauseTaskRequest
 from application.dto.remove_task_request import RemoveTaskRequest
@@ -21,6 +22,7 @@ from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
 from application.use_cases.create_task import CreateTaskUseCase
+from application.use_cases.log_hours import LogHoursUseCase
 from application.use_cases.pause_task import PauseTaskUseCase
 from application.use_cases.remove_dependency import RemoveDependencyUseCase
 from application.use_cases.remove_task import RemoveTaskUseCase
@@ -288,4 +290,23 @@ class TaskController:
         """
         use_case = SetTaskTagsUseCase(self.repository)
         request = SetTaskTagsRequest(task_id=task_id, tags=tags)
+        return use_case.execute(request)
+
+    def log_hours(self, task_id: int, hours: float, date: str) -> Task:
+        """Log actual hours worked on a task for a specific date.
+
+        Args:
+            task_id: ID of the task to log hours for
+            hours: Number of hours worked (must be > 0)
+            date: Date in YYYY-MM-DD format
+
+        Returns:
+            The updated task
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If date format is invalid or hours <= 0
+        """
+        use_case = LogHoursUseCase(self.repository)
+        request = LogHoursRequest(task_id=task_id, hours=hours, date=date)
         return use_case.execute(request)
