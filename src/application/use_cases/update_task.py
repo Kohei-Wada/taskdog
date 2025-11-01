@@ -1,6 +1,7 @@
 """Use case for updating a task."""
 
 from application.dto.update_task_input import UpdateTaskInput
+from application.dto.update_task_output import UpdateTaskOutput
 from application.use_cases.base import UseCase
 from application.validators.validator_registry import TaskFieldValidatorRegistry
 from domain.entities.task import Task
@@ -8,7 +9,7 @@ from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 
 
-class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
+class UpdateTaskUseCase(UseCase[UpdateTaskInput, UpdateTaskOutput]):
     """Use case for updating task properties.
 
     Supports updating multiple fields and handles time tracking for status changes.
@@ -86,14 +87,14 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
             task.daily_allocations = {}
             updated_fields.append("daily_allocations")
 
-    def execute(self, input_dto: UpdateTaskInput) -> tuple[Task, list[str]]:
+    def execute(self, input_dto: UpdateTaskInput) -> UpdateTaskOutput:
         """Execute task update.
 
         Args:
             input_dto: Task update input data
 
         Returns:
-            Tuple of (updated task, list of updated field names)
+            UpdateTaskOutput DTO containing updated task information and list of updated fields
 
         Raises:
             TaskNotFoundException: If task doesn't exist
@@ -109,4 +110,4 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, tuple[Task, list[str]]]):
         if updated_fields:
             self.repository.save(task)
 
-        return task, updated_fields
+        return UpdateTaskOutput.from_task_and_fields(task, updated_fields)

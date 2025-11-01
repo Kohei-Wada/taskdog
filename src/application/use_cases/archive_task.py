@@ -1,13 +1,13 @@
 """Use case for archiving a task."""
 
 from application.dto.archive_task_input import ArchiveTaskInput
+from application.dto.task_operation_output import TaskOperationOutput
 from application.use_cases.base import UseCase
-from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from domain.repositories.task_repository import TaskRepository
 
 
-class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, Task]):
+class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, TaskOperationOutput]):
     """Use case for archiving tasks.
 
     Archives a task for data retention while removing it from active views.
@@ -28,14 +28,14 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, Task]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: ArchiveTaskInput) -> Task:
+    def execute(self, input_dto: ArchiveTaskInput) -> TaskOperationOutput:
         """Archive a task.
 
         Args:
             input_dto: Input containing task_id
 
         Returns:
-            Archived task
+            TaskOperationOutput DTO containing archived task information
 
         Raises:
             TaskNotFoundException: If task does not exist
@@ -53,4 +53,4 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, Task]):
 
         # Save and return
         self.repository.save(task)
-        return task
+        return TaskOperationOutput.from_task(task)

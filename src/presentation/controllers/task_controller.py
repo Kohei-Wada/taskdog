@@ -103,8 +103,7 @@ class TaskController:
         """
         use_case = StartTaskUseCase(self.repository, self.time_tracker)
         request = StartTaskInput(task_id=task_id)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def complete_task(self, task_id: int) -> TaskOperationOutput:
         """Complete a task.
@@ -123,8 +122,7 @@ class TaskController:
         """
         use_case = CompleteTaskUseCase(self.repository, self.time_tracker)
         request = CompleteTaskInput(task_id=task_id)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def pause_task(self, task_id: int) -> TaskOperationOutput:
         """Pause a task.
@@ -143,8 +141,7 @@ class TaskController:
         """
         use_case = PauseTaskUseCase(self.repository, self.time_tracker)
         request = PauseTaskInput(task_id=task_id)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def cancel_task(self, task_id: int) -> TaskOperationOutput:
         """Cancel a task.
@@ -163,8 +160,7 @@ class TaskController:
         """
         use_case = CancelTaskUseCase(self.repository, self.time_tracker)
         request = CancelTaskInput(task_id=task_id)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def create_task(
         self,
@@ -206,8 +202,7 @@ class TaskController:
             is_fixed=is_fixed,
             tags=tags,
         )
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def reopen_task(self, task_id: int) -> TaskOperationOutput:
         """Reopen a task.
@@ -226,8 +221,7 @@ class TaskController:
         """
         use_case = ReopenTaskUseCase(self.repository, self.time_tracker)
         request = ReopenTaskInput(task_id=task_id)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def archive_task(self, task_id: int) -> TaskOperationOutput:
         """Archive a task (soft delete).
@@ -246,8 +240,7 @@ class TaskController:
         """
         use_case = ArchiveTaskUseCase(self.repository)
         request = ArchiveTaskInput(task_id=task_id)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def remove_task(self, task_id: int) -> None:
         """Remove a task (hard delete).
@@ -281,8 +274,7 @@ class TaskController:
         """
         use_case = RestoreTaskUseCase(self.repository)
         request = RestoreTaskInput(task_id=task_id)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def add_dependency(self, task_id: int, depends_on_id: int) -> TaskOperationOutput:
         """Add a dependency to a task.
@@ -300,8 +292,7 @@ class TaskController:
         """
         use_case = AddDependencyUseCase(self.repository)
         request = AddDependencyInput(task_id=task_id, depends_on_id=depends_on_id)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def remove_dependency(self, task_id: int, depends_on_id: int) -> TaskOperationOutput:
         """Remove a dependency from a task.
@@ -319,8 +310,7 @@ class TaskController:
         """
         use_case = RemoveDependencyUseCase(self.repository)
         request = RemoveDependencyInput(task_id=task_id, depends_on_id=depends_on_id)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def set_task_tags(self, task_id: int, tags: list[str]) -> TaskOperationOutput:
         """Set task tags (completely replaces existing tags).
@@ -338,8 +328,7 @@ class TaskController:
         """
         use_case = SetTaskTagsUseCase(self.repository)
         request = SetTaskTagsInput(task_id=task_id, tags=tags)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def log_hours(self, task_id: int, hours: float, date: str) -> TaskOperationOutput:
         """Log actual hours worked on a task for a specific date.
@@ -358,8 +347,7 @@ class TaskController:
         """
         use_case = LogHoursUseCase(self.repository)
         request = LogHoursInput(task_id=task_id, hours=hours, date=date)
-        task = use_case.execute(request)
-        return TaskOperationOutput.from_task(task)
+        return use_case.execute(request)
 
     def update_task(
         self,
@@ -408,8 +396,7 @@ class TaskController:
             is_fixed=is_fixed,
             tags=tags,
         )
-        task, updated_fields = use_case.execute(request)
-        return UpdateTaskOutput.from_task_and_fields(task, updated_fields)
+        return use_case.execute(request)
 
     def get_task_detail(self, task_id: int) -> GetTaskDetailOutput:
         """Get task details with notes.

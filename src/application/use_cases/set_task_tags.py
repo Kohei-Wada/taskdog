@@ -1,13 +1,13 @@
 """Use case for setting task tags."""
 
 from application.dto.set_task_tags_input import SetTaskTagsInput
+from application.dto.task_operation_output import TaskOperationOutput
 from application.use_cases.base import UseCase
-from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
 from domain.repositories.task_repository import TaskRepository
 
 
-class SetTaskTagsUseCase(UseCase[SetTaskTagsInput, Task]):
+class SetTaskTagsUseCase(UseCase[SetTaskTagsInput, TaskOperationOutput]):
     """Use case for setting task tags.
 
     Completely replaces the existing tags with the new tags.
@@ -21,14 +21,14 @@ class SetTaskTagsUseCase(UseCase[SetTaskTagsInput, Task]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: SetTaskTagsInput) -> Task:
+    def execute(self, input_dto: SetTaskTagsInput) -> TaskOperationOutput:
         """Execute tag setting.
 
         Args:
             input_dto: Tag setting input data
 
         Returns:
-            Updated task
+            TaskOperationOutput DTO containing updated task information
 
         Raises:
             TaskNotFoundException: If task doesn't exist
@@ -49,4 +49,4 @@ class SetTaskTagsUseCase(UseCase[SetTaskTagsInput, Task]):
         # Save changes
         self.repository.save(task)
 
-        return task
+        return TaskOperationOutput.from_task(task)

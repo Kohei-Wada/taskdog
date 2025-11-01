@@ -34,8 +34,8 @@ class TestLogHoursUseCase(unittest.TestCase):
         input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=4.5)
         result = self.use_case.execute(input_dto)
 
-        self.assertIn(date(2025, 1, 15), result.actual_daily_hours)
-        self.assertEqual(result.actual_daily_hours[date(2025, 1, 15)], 4.5)
+        self.assertIn("2025-01-15", result.actual_daily_hours)
+        self.assertEqual(result.actual_daily_hours["2025-01-15"], 4.5)
 
     def test_execute_persists_changes(self):
         """Test execute saves hours to repository."""
@@ -108,7 +108,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         result = self.use_case.execute(input_dto2)
 
         # Should have new value, not sum
-        self.assertEqual(result.actual_daily_hours[date(2025, 1, 15)], 5.0)
+        self.assertEqual(result.actual_daily_hours["2025-01-15"], 5.0)
 
     def test_execute_allows_multiple_dates(self):
         """Test execute allows logging hours for multiple dates."""
@@ -140,7 +140,7 @@ class TestLogHoursUseCase(unittest.TestCase):
         input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=2.75)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.actual_daily_hours[date(2025, 1, 15)], 2.75)
+        self.assertEqual(result.actual_daily_hours["2025-01-15"], 2.75)
 
 
 if __name__ == "__main__":

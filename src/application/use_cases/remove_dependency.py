@@ -1,13 +1,13 @@
 """Use case for removing a task dependency."""
 
 from application.dto.manage_dependencies_input import RemoveDependencyInput
+from application.dto.task_operation_output import TaskOperationOutput
 from application.use_cases.base import UseCase
-from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
 from domain.repositories.task_repository import TaskRepository
 
 
-class RemoveDependencyUseCase(UseCase[RemoveDependencyInput, Task]):
+class RemoveDependencyUseCase(UseCase[RemoveDependencyInput, TaskOperationOutput]):
     """Use case for removing a dependency from a task."""
 
     def __init__(self, repository: TaskRepository):
@@ -18,14 +18,14 @@ class RemoveDependencyUseCase(UseCase[RemoveDependencyInput, Task]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: RemoveDependencyInput) -> Task:
+    def execute(self, input_dto: RemoveDependencyInput) -> TaskOperationOutput:
         """Execute dependency removal.
 
         Args:
             input_dto: Dependency removal input data
 
         Returns:
-            Updated task with dependency removed
+            TaskOperationOutput DTO containing updated task information with dependency removed
 
         Raises:
             TaskNotFoundException: If task doesn't exist
@@ -46,4 +46,4 @@ class RemoveDependencyUseCase(UseCase[RemoveDependencyInput, Task]):
         # Save changes
         self.repository.save(task)
 
-        return task
+        return TaskOperationOutput.from_task(task)

@@ -34,7 +34,6 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
         # Verify task archived (is_archived=True, status preserved)
         self.assertTrue(result.is_archived)
         self.assertEqual(result.status, TaskStatus.COMPLETED)
-        self.assertEqual(result.daily_allocations, {})
 
         # Verify persisted
         archived_task = self.repository.get_by_id(task.id)

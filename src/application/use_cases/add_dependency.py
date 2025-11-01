@@ -1,14 +1,14 @@
 """Use case for adding a task dependency."""
 
 from application.dto.manage_dependencies_input import AddDependencyInput
+from application.dto.task_operation_output import TaskOperationOutput
 from application.services.dependency_graph_service import DependencyGraphService
 from application.use_cases.base import UseCase
-from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskValidationError
 from domain.repositories.task_repository import TaskRepository
 
 
-class AddDependencyUseCase(UseCase[AddDependencyInput, Task]):
+class AddDependencyUseCase(UseCase[AddDependencyInput, TaskOperationOutput]):
     """Use case for adding a dependency to a task."""
 
     def __init__(self, repository: TaskRepository):
@@ -20,14 +20,14 @@ class AddDependencyUseCase(UseCase[AddDependencyInput, Task]):
         self.repository = repository
         self.graph_service = DependencyGraphService(repository)
 
-    def execute(self, input_dto: AddDependencyInput) -> Task:
+    def execute(self, input_dto: AddDependencyInput) -> TaskOperationOutput:
         """Execute dependency addition.
 
         Args:
             input_dto: Dependency addition input data
 
         Returns:
-            Updated task with new dependency
+            TaskOperationOutput DTO containing updated task information with new dependency
 
         Raises:
             TaskNotFoundException: If task or dependency doesn't exist
@@ -68,4 +68,4 @@ class AddDependencyUseCase(UseCase[AddDependencyInput, Task]):
         # Save changes
         self.repository.save(task)
 
-        return task
+        return TaskOperationOutput.from_task(task)

@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 
 from application.dto.status_change_input import StatusChangeInput
+from application.dto.task_operation_output import TaskOperationOutput
 from application.services.task_status_service import TaskStatusService
 from application.use_cases.base import UseCase
 from application.validators.validator_registry import TaskFieldValidatorRegistry
@@ -11,7 +12,7 @@ from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
 
 
-class StatusChangeUseCase[TInput: StatusChangeInput](UseCase[TInput, Task], ABC):
+class StatusChangeUseCase[TInput: StatusChangeInput](UseCase[TInput, TaskOperationOutput], ABC):
     """Base use case for status change operations.
 
     This class implements the Template Method pattern to eliminate code duplication
@@ -47,7 +48,7 @@ class StatusChangeUseCase[TInput: StatusChangeInput](UseCase[TInput, Task], ABC)
         self.validator_registry = TaskFieldValidatorRegistry(repository)
         self.status_service = TaskStatusService()
 
-    def execute(self, input_dto: TInput) -> Task:
+    def execute(self, input_dto: TInput) -> TaskOperationOutput:
         """Execute status change workflow (Template Method).
 
         This method defines the common workflow for all status changes.
@@ -57,7 +58,7 @@ class StatusChangeUseCase[TInput: StatusChangeInput](UseCase[TInput, Task], ABC)
             input_dto: Input data containing task_id
 
         Returns:
-            Updated task with new status
+            TaskOperationOutput DTO containing updated task information
 
         Raises:
             TaskNotFoundException: If task doesn't exist
@@ -84,7 +85,7 @@ class StatusChangeUseCase[TInput: StatusChangeInput](UseCase[TInput, Task], ABC)
         # 6. Post-processing hook (optional)
         self._after_status_change(task)
 
-        return task
+        return TaskOperationOutput.from_task(task)
 
     @abstractmethod
     def _get_target_status(self) -> TaskStatus:

@@ -73,11 +73,11 @@ class TestUpdateTaskUseCase(unittest.TestCase):
                 self.repository.save(task)
 
                 input_dto = UpdateTaskInput(task_id=task.id, **update_kwargs)
-                result_task, updated_fields = self.use_case.execute(input_dto)
+                result = self.use_case.execute(input_dto)
 
-                self.assertEqual(getattr(result_task, field_name), expected_value)
-                self.assertIn(expected_field, updated_fields)
-                self.assertEqual(len(updated_fields), 1)
+                self.assertEqual(getattr(result.task, field_name), expected_value)
+                self.assertIn(expected_field, result.updated_fields)
+                self.assertEqual(len(result.updated_fields), 1)
 
     def test_execute_update_status(self):
         """Test updating task status with time tracking"""
@@ -86,12 +86,12 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         input_dto = UpdateTaskInput(task_id=task.id, status=TaskStatus.IN_PROGRESS)
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result_task.status, TaskStatus.IN_PROGRESS)
-        self.assertIn("status", updated_fields)
+        self.assertEqual(result.task.status, TaskStatus.IN_PROGRESS)
+        self.assertIn("status", result.updated_fields)
         # Verify time tracking was triggered
-        self.assertIsNotNone(result_task.actual_start)
+        self.assertIsNotNone(result.task.actual_start)
 
     def test_execute_update_multiple_fields(self):
         """Test updating multiple fields at once"""
@@ -107,15 +107,15 @@ class TestUpdateTaskUseCase(unittest.TestCase):
             planned_start=future_date,
             estimated_duration=3.0,
         )
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result_task.priority, 2)
-        self.assertEqual(result_task.planned_start, future_date)
-        self.assertEqual(result_task.estimated_duration, 3.0)
-        self.assertEqual(len(updated_fields), 3)
-        self.assertIn("priority", updated_fields)
-        self.assertIn("planned_start", updated_fields)
-        self.assertIn("estimated_duration", updated_fields)
+        self.assertEqual(result.task.priority, 2)
+        self.assertEqual(result.task.planned_start, future_date)
+        self.assertEqual(result.task.estimated_duration, 3.0)
+        self.assertEqual(len(result.updated_fields), 3)
+        self.assertIn("priority", result.updated_fields)
+        self.assertIn("planned_start", result.updated_fields)
+        self.assertIn("estimated_duration", result.updated_fields)
 
     def test_execute_no_updates(self):
         """Test when no fields are updated"""
@@ -124,9 +124,9 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         input_dto = UpdateTaskInput(task_id=task.id)
-        _result_task, updated_fields = self.use_case.execute(input_dto)
+        result = self.use_case.execute(input_dto)
 
-        self.assertEqual(len(updated_fields), 0)
+        self.assertEqual(len(result.updated_fields), 0)
         # Verify no save was called by checking the task remains unchanged
         retrieved = self.repository.get_by_id(task.id)
         self.assertEqual(retrieved.priority, 1)
@@ -155,25 +155,25 @@ class TestUpdateTaskUseCase(unittest.TestCase):
             deadline=datetime(2025, 10, 15, 18, 0, 0),
             estimated_duration=8.0,
         )
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        result = self.use_case.execute(input_dto)
 
         # Verify all fields were updated
-        self.assertEqual(result_task.status, TaskStatus.IN_PROGRESS)
-        self.assertEqual(result_task.priority, 3)
-        self.assertEqual(result_task.planned_start, datetime(2025, 10, 12, 9, 0, 0))
-        self.assertEqual(result_task.planned_end, datetime(2025, 10, 12, 18, 0, 0))
-        self.assertEqual(result_task.deadline, datetime(2025, 10, 15, 18, 0, 0))
-        self.assertEqual(result_task.estimated_duration, 8.0)
-        self.assertIsNotNone(result_task.actual_start)
+        self.assertEqual(result.task.status, TaskStatus.IN_PROGRESS)
+        self.assertEqual(result.task.priority, 3)
+        self.assertEqual(result.task.planned_start, datetime(2025, 10, 12, 9, 0, 0))
+        self.assertEqual(result.task.planned_end, datetime(2025, 10, 12, 18, 0, 0))
+        self.assertEqual(result.task.deadline, datetime(2025, 10, 15, 18, 0, 0))
+        self.assertEqual(result.task.estimated_duration, 8.0)
+        self.assertIsNotNone(result.task.actual_start)
 
         # Verify all field names are in updated_fields
-        self.assertEqual(len(updated_fields), 6)
-        self.assertIn("status", updated_fields)
-        self.assertIn("priority", updated_fields)
-        self.assertIn("planned_start", updated_fields)
-        self.assertIn("planned_end", updated_fields)
-        self.assertIn("deadline", updated_fields)
-        self.assertIn("estimated_duration", updated_fields)
+        self.assertEqual(len(result.updated_fields), 6)
+        self.assertIn("status", result.updated_fields)
+        self.assertIn("priority", result.updated_fields)
+        self.assertIn("planned_start", result.updated_fields)
+        self.assertIn("planned_end", result.updated_fields)
+        self.assertIn("deadline", result.updated_fields)
+        self.assertIn("estimated_duration", result.updated_fields)
 
     def test_execute_status_change_records_end_time(self):
         """Test that changing status to finished states records actual_end timestamp"""
@@ -190,11 +190,11 @@ class TestUpdateTaskUseCase(unittest.TestCase):
                 self.repository.save(task)
 
                 input_dto = UpdateTaskInput(task_id=task.id, status=target_status)
-                result_task, updated_fields = self.use_case.execute(input_dto)
+                result = self.use_case.execute(input_dto)
 
-                self.assertEqual(result_task.status, target_status)
-                self.assertIsNotNone(result_task.actual_end)
-                self.assertIn("status", updated_fields)
+                self.assertEqual(result.task.status, target_status)
+                self.assertIsNotNone(result.task.actual_end)
+                self.assertIn("status", result.updated_fields)
 
     def test_execute_updates_are_persisted(self):
         """Test that updates are correctly persisted to repository"""
@@ -219,10 +219,10 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.repository.save(task)
 
         input_dto = UpdateTaskInput(task_id=task.id, estimated_duration=3.5)
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result_task.estimated_duration, 3.5)
-        self.assertIn("estimated_duration", updated_fields)
+        self.assertEqual(result.task.estimated_duration, 3.5)
+        self.assertIn("estimated_duration", result.updated_fields)
 
     def test_execute_clears_daily_allocations_when_updating_planned_start(self):
         """Test that daily_allocations is cleared when planned_start is updated (issue #171)"""
@@ -242,13 +242,14 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         # Update planned_start to a different date
         new_start = datetime(2025, 11, 5, 9, 0, 0)
         input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start)
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        result = self.use_case.execute(input_dto)
 
-        # Verify daily_allocations was cleared
-        self.assertEqual(result_task.daily_allocations, {})
-        self.assertIn("planned_start", updated_fields)
-        self.assertIn("daily_allocations", updated_fields)
-        self.assertEqual(result_task.planned_start, new_start)
+        # Verify daily_allocations was cleared (check persisted task)
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertEqual(persisted_task.daily_allocations, {})  # type: ignore[union-attr]
+        self.assertIn("planned_start", result.updated_fields)
+        self.assertIn("daily_allocations", result.updated_fields)
+        self.assertEqual(result.task.planned_start, new_start)
 
     def test_execute_clears_daily_allocations_when_updating_planned_end(self):
         """Test that daily_allocations is cleared when planned_end is updated (issue #171)"""
@@ -268,13 +269,14 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         # Update planned_end to a different date
         new_end = datetime(2025, 11, 8, 18, 0, 0)
         input_dto = UpdateTaskInput(task_id=task.id, planned_end=new_end)
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        result = self.use_case.execute(input_dto)
 
-        # Verify daily_allocations was cleared
-        self.assertEqual(result_task.daily_allocations, {})
-        self.assertIn("planned_end", updated_fields)
-        self.assertIn("daily_allocations", updated_fields)
-        self.assertEqual(result_task.planned_end, new_end)
+        # Verify daily_allocations was cleared (check persisted task)
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertEqual(persisted_task.daily_allocations, {})  # type: ignore[union-attr]
+        self.assertIn("planned_end", result.updated_fields)
+        self.assertIn("daily_allocations", result.updated_fields)
+        self.assertEqual(result.task.planned_end, new_end)
 
     def test_execute_clears_daily_allocations_when_updating_both_planned_dates(self):
         """Test that daily_allocations is cleared when both planned dates are updated"""
@@ -295,13 +297,14 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         new_start = datetime(2025, 11, 10, 9, 0, 0)
         new_end = datetime(2025, 11, 12, 18, 0, 0)
         input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start, planned_end=new_end)
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        result = self.use_case.execute(input_dto)
 
-        # Verify daily_allocations was cleared
-        self.assertEqual(result_task.daily_allocations, {})
-        self.assertIn("planned_start", updated_fields)
-        self.assertIn("planned_end", updated_fields)
-        self.assertIn("daily_allocations", updated_fields)
+        # Verify daily_allocations was cleared (check persisted task)
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertEqual(persisted_task.daily_allocations, {})  # type: ignore[union-attr]
+        self.assertIn("planned_start", result.updated_fields)
+        self.assertIn("planned_end", result.updated_fields)
+        self.assertIn("daily_allocations", result.updated_fields)
 
     def test_execute_does_not_add_daily_allocations_field_when_already_empty(self):
         """Test that daily_allocations field is not added when already empty"""
@@ -315,12 +318,13 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         # Update planned_start
         new_start = datetime(2025, 11, 5, 9, 0, 0)
         input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start)
-        result_task, updated_fields = self.use_case.execute(input_dto)
+        result = self.use_case.execute(input_dto)
 
-        # Verify daily_allocations is still empty and NOT in updated_fields
-        self.assertEqual(result_task.daily_allocations, {})
-        self.assertIn("planned_start", updated_fields)
-        self.assertNotIn("daily_allocations", updated_fields)
+        # Verify daily_allocations is still empty and NOT in updated_fields (check persisted task)
+        persisted_task = self.repository.get_by_id(task.id)
+        self.assertEqual(persisted_task.daily_allocations, {})  # type: ignore[union-attr]
+        self.assertIn("planned_start", result.updated_fields)
+        self.assertNotIn("daily_allocations", result.updated_fields)
 
 
 if __name__ == "__main__":

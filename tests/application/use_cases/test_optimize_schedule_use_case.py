@@ -210,9 +210,11 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         """Test that completed tasks are not scheduled."""
         # Create completed task
         input_dto = CreateTaskInput(name="Completed Task", priority=100, estimated_duration=3.0)
-        task = self.create_use_case.execute(input_dto)
-        task.status = TaskStatus.COMPLETED
-        self.repository.save(task)
+        result = self.create_use_case.execute(input_dto)
+        # Get the actual task from repository to modify it
+        task = self.repository.get_by_id(result.id)
+        task.status = TaskStatus.COMPLETED  # type: ignore[union-attr]
+        self.repository.save(task)  # type: ignore[arg-type]
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)
@@ -231,9 +233,11 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         """Test that archived tasks are not scheduled."""
         # Create archived task
         input_dto = CreateTaskInput(name="Archived Task", priority=100, estimated_duration=3.0)
-        task = self.create_use_case.execute(input_dto)
-        task.is_archived = True
-        self.repository.save(task)
+        result = self.create_use_case.execute(input_dto)
+        # Get the actual task from repository to modify it
+        task = self.repository.get_by_id(result.id)
+        task.is_archived = True  # type: ignore[union-attr]
+        self.repository.save(task)  # type: ignore[arg-type]
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)

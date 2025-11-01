@@ -74,7 +74,9 @@ class BaseOptimizationStrategyTest(unittest.TestCase):
             deadline=deadline,
             is_fixed=is_fixed,
         )
-        return self.create_use_case.execute(input_dto)
+        result = self.create_use_case.execute(input_dto)
+        # Return the actual Task entity from repository for test manipulation
+        return self.repository.get_by_id(result.id)  # type: ignore[return-value]
 
     def optimize_schedule(
         self,
