@@ -2,10 +2,9 @@
 
 from dataclasses import dataclass
 
-from application.queries.task_query_service import TaskQueryService
 from domain.repositories.notes_repository import NotesRepository
-from domain.repositories.task_repository import TaskRepository
-from domain.services.time_tracker import TimeTracker
+from presentation.controllers.query_controller import QueryController
+from presentation.controllers.task_controller import TaskController
 from shared.config_manager import Config
 
 
@@ -17,15 +16,13 @@ class TUIContext:
     without coupling them to the entire app instance.
 
     Attributes:
-        repository: Task repository for data access
-        time_tracker: Time tracker service for recording timestamps
-        query_service: Query service for read-only operations
         config: Application configuration
         notes_repository: Notes repository for notes file operations
+        task_controller: Controller for task write operations
+        query_controller: Controller for task read operations
     """
 
-    repository: TaskRepository
-    time_tracker: TimeTracker
-    query_service: TaskQueryService
     config: Config
     notes_repository: NotesRepository
+    task_controller: TaskController
+    query_controller: QueryController

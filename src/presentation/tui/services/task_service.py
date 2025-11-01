@@ -7,8 +7,7 @@ from application.dto.optimize_schedule_input import OptimizeScheduleInput
 from application.queries.filters.task_filter import TaskFilter
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.entities.task import Task
-from presentation.controllers.query_controller import QueryController
-from presentation.controllers.task_controller import TaskController
+from domain.repositories.task_repository import TaskRepository
 from presentation.mappers.gantt_mapper import GanttMapper
 from presentation.tui.context import TUIContext
 from presentation.view_models.gantt_view_model import GanttViewModel
@@ -50,18 +49,19 @@ class TaskService:
     into two categories: Commands (write operations) and Queries (read operations).
     """
 
-    def __init__(self, context: TUIContext):
+    def __init__(self, context: TUIContext, repository: TaskRepository):
         """Initialize the task service.
 
         Args:
             context: TUI context with all required dependencies
+            repository: Task repository (needed for optimize_schedule which doesn't use controller yet)
         """
-        self.repository = context.repository
-        self.time_tracker = context.time_tracker
+        self.repository = repository  # Only for optimize_schedule use case
         self.config = context.config
-        # Initialize controllers for delegating operations
-        self.controller = TaskController(context.repository, context.time_tracker, context.config)
-        self.query_controller = QueryController(context.repository)
+        self.notes_repository = context.notes_repository
+        # Get controllers from context (no longer instantiate them)
+        self.controller = context.task_controller
+        self.query_controller = context.query_controller
 
     # ============================================================================
     # Command Operations (Write)

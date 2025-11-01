@@ -33,13 +33,15 @@ class TUICommandBase(ABC):
         self.app = app
         self.context = context
         self.task_service = task_service
-        # Initialize controller with context dependencies (including notes_repository)
-        self.controller = TaskController(
-            context.repository,
-            context.time_tracker,
-            context.config,
-            context.notes_repository,
-        )
+
+    @property
+    def controller(self) -> TaskController:
+        """Get the TaskController from context.
+
+        Returns:
+            TaskController instance from TUIContext
+        """
+        return self.context.task_controller
 
     @abstractmethod
     def execute(self) -> None:
@@ -61,7 +63,9 @@ class TUICommandBase(ABC):
         task_id = self.get_selected_task_id()
         if task_id is None:
             return None
-        return self.context.repository.get_by_id(task_id)
+        # Use controller to get task (could add get_by_id method to controller if needed)
+        # For now, use app's repository directly since this is a deprecated method anyway
+        return self.app.repository.get_by_id(task_id)
 
     def get_selected_task_id(self) -> int | None:
         """Get the ID of the currently selected task.

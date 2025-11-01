@@ -49,8 +49,8 @@ class ShowDetailsCommand(TUICommandBase):
         Args:
             task_id: ID of the task to edit notes for
         """
-        # Get task from repository
-        task = self.context.repository.get_by_id(task_id)
+        # Get task from app repository (deprecated method uses app.repository)
+        task = self.app.repository.get_by_id(task_id)
         if not task:
             self.notify_warning(f"Task #{task_id} not found")
             return

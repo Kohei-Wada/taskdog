@@ -17,6 +17,8 @@ from domain.entities.task import Task
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
+from presentation.controllers.query_controller import QueryController
+from presentation.controllers.task_controller import TaskController
 from presentation.mappers.task_mapper import TaskMapper
 from presentation.tui.commands.factory import CommandFactory
 from presentation.tui.context import TUIContext
@@ -126,17 +128,20 @@ class TaskdogTUI(App):
         self._gantt_sort_by: str = "deadline"  # Default gantt sort order
         self._hide_completed: bool = False  # Default: show all tasks
 
+        # Initialize controllers
+        task_controller = TaskController(repository, time_tracker, self.config, notes_repository)
+        query_controller = QueryController(repository)
+
         # Initialize TUIContext
         self.context = TUIContext(
-            repository=repository,
-            time_tracker=time_tracker,
-            query_service=self.query_service,
             config=self.config,
             notes_repository=notes_repository,
+            task_controller=task_controller,
+            query_controller=query_controller,
         )
 
         # Initialize TaskService with context
-        self.task_service = TaskService(self.context)
+        self.task_service = TaskService(self.context, repository)
 
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context, self.task_service)
