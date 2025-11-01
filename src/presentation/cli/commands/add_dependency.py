@@ -2,10 +2,9 @@
 
 import click
 
-from application.dto.manage_dependencies_request import AddDependencyRequest
-from application.use_cases.add_dependency import AddDependencyUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from presentation.controllers.task_controller import TaskController
 
 
 @click.command(name="add-dependency", help="Add a dependency to a task.")
@@ -25,10 +24,11 @@ def add_dependency_command(ctx, task_id, depends_on_id):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
+    config = ctx_obj.config
+    controller = TaskController(repository, time_tracker, config)
 
-    input_dto = AddDependencyRequest(task_id=task_id, depends_on_id=depends_on_id)
-    use_case = AddDependencyUseCase(repository)
-    task = use_case.execute(input_dto)
+    task = controller.add_dependency(task_id, depends_on_id)
 
     console_writer.success(f"Added dependency: Task {task_id} now depends on task {depends_on_id}")
     console_writer.info(f"Task {task_id} dependencies: {task.depends_on}")

@@ -11,13 +11,17 @@ from application.dto.cancel_task_request import CancelTaskRequest
 from application.dto.complete_task_request import CompleteTaskRequest
 from application.dto.create_task_request import CreateTaskRequest
 from application.dto.log_hours_request import LogHoursRequest
-from application.dto.manage_dependencies_request import RemoveDependencyRequest
+from application.dto.manage_dependencies_request import (
+    AddDependencyRequest,
+    RemoveDependencyRequest,
+)
 from application.dto.pause_task_request import PauseTaskRequest
 from application.dto.remove_task_request import RemoveTaskRequest
 from application.dto.reopen_task_request import ReopenTaskRequest
 from application.dto.restore_task_request import RestoreTaskRequest
 from application.dto.set_task_tags_request import SetTaskTagsRequest
 from application.dto.start_task_request import StartTaskRequest
+from application.use_cases.add_dependency import AddDependencyUseCase
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
@@ -254,6 +258,24 @@ class TaskController:
         """
         use_case = RestoreTaskUseCase(self.repository)
         request = RestoreTaskRequest(task_id=task_id)
+        return use_case.execute(request)
+
+    def add_dependency(self, task_id: int, depends_on_id: int) -> Task:
+        """Add a dependency to a task.
+
+        Args:
+            task_id: ID of the task to add dependency to
+            depends_on_id: ID of the dependency task to add
+
+        Returns:
+            The updated task
+
+        Raises:
+            TaskNotFoundException: If task or dependency not found
+            TaskValidationError: If dependency would create a cycle, or task depends on itself
+        """
+        use_case = AddDependencyUseCase(self.repository)
+        request = AddDependencyRequest(task_id=task_id, depends_on_id=depends_on_id)
         return use_case.execute(request)
 
     def remove_dependency(self, task_id: int, depends_on_id: int) -> Task:

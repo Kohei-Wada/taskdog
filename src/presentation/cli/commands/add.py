@@ -2,8 +2,6 @@
 
 import click
 
-from application.dto.manage_dependencies_request import AddDependencyRequest
-from application.use_cases.add_dependency import AddDependencyUseCase
 from domain.exceptions.task_exceptions import TaskValidationError
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
@@ -76,11 +74,9 @@ def add_command(ctx, name, priority, fixed, depends_on, tag):
 
     # Add dependencies if specified
     if depends_on:
-        add_dep_use_case = AddDependencyUseCase(repository)
         for dep_id in depends_on:
             try:
-                dep_input = AddDependencyRequest(task_id=task.id, depends_on_id=dep_id)
-                task = add_dep_use_case.execute(dep_input)
+                task = controller.add_dependency(task.id, dep_id)
             except TaskValidationError as e:
                 console_writer.validation_error(str(e))
                 # Continue adding other dependencies even if one fails
