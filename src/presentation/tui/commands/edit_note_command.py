@@ -23,7 +23,7 @@ class EditNoteCommand(TUICommandBase):
             self.notify_warning("No task selected")
             return
 
-        # Edit note using shared helper
+        # Edit note using shared helper (uses Domain interface)
         edit_task_note(
             task=task,
             notes_repository=self.context.notes_repository,

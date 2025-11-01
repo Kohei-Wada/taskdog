@@ -3,7 +3,7 @@ from typing import ClassVar
 from rich.table import Table
 
 from domain.entities.task import Task
-from infrastructure.persistence.notes_repository import NotesRepository
+from domain.repositories.notes_repository import NotesRepository
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.table_styles import (
     COLUMN_DATETIME_NO_WRAP,

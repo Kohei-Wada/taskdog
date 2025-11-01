@@ -14,9 +14,9 @@ from application.queries.filters.incomplete_or_active_filter import (
 from application.queries.filters.non_archived_filter import NonArchivedFilter
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task
+from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
-from infrastructure.persistence.file_notes_repository import FileNotesRepository
 from presentation.tui.commands.factory import CommandFactory
 from presentation.tui.context import TUIContext
 from presentation.tui.events import TaskCreated, TaskDeleted, TasksRefreshed, TaskUpdated
@@ -102,6 +102,7 @@ class TaskdogTUI(App):
         self,
         repository: TaskRepository,
         time_tracker: TimeTracker,
+        notes_repository: NotesRepository,
         config: Config | None = None,
         *args,
         **kwargs,
@@ -111,11 +112,13 @@ class TaskdogTUI(App):
         Args:
             repository: Task repository for data access
             time_tracker: Time tracker service
+            notes_repository: Notes repository for notes file operations
             config: Application configuration (optional, loads from file by default)
         """
         super().__init__(*args, **kwargs)
         self.repository = repository
         self.time_tracker = time_tracker
+        self.notes_repository = notes_repository
         self.query_service = TaskQueryService(repository)
         self.config = config if config is not None else ConfigManager.load()
         self.main_screen: MainScreen | None = None
@@ -123,13 +126,12 @@ class TaskdogTUI(App):
         self._hide_completed: bool = False  # Default: show all tasks
 
         # Initialize TUIContext
-        self.notes_repository = FileNotesRepository()
         self.context = TUIContext(
             repository=repository,
             time_tracker=time_tracker,
             query_service=self.query_service,
             config=self.config,
-            notes_repository=self.notes_repository,
+            notes_repository=notes_repository,
         )
 
         # Initialize TaskService with context

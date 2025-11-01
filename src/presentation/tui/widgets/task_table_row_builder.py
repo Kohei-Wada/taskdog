@@ -6,7 +6,7 @@ from datetime import datetime
 from rich.text import Text
 
 from domain.entities.task import Task, TaskStatus
-from infrastructure.persistence.notes_repository import NotesRepository
+from domain.repositories.notes_repository import NotesRepository
 from presentation.constants.colors import STATUS_STYLES
 from presentation.constants.symbols import EMOJI_NOTE
 from presentation.constants.table_dimensions import TASK_NAME_MAX_DISPLAY_LENGTH

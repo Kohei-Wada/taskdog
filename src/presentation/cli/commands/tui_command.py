@@ -25,7 +25,13 @@ def tui_command(ctx):
     repository = ctx_obj.repository
     time_tracker = ctx_obj.time_tracker
     config = ctx_obj.config
+    notes_repository = ctx_obj.notes_repository
 
     # Launch the TUI application
-    app = TaskdogTUI(repository=repository, time_tracker=time_tracker, config=config)
+    app = TaskdogTUI(
+        repository=repository,
+        time_tracker=time_tracker,
+        notes_repository=notes_repository,
+        config=config,
+    )
     app.run()

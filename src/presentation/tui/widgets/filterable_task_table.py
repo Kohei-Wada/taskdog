@@ -4,7 +4,7 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 
 from domain.entities.task import Task
-from infrastructure.persistence.notes_repository import NotesRepository
+from domain.repositories.notes_repository import NotesRepository
 from presentation.tui.events import SearchQueryChanged
 from presentation.tui.widgets.search_input import SearchInput
 from presentation.tui.widgets.task_table import TaskTable

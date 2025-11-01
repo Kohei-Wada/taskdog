@@ -14,7 +14,7 @@ from textual.binding import Binding
 from textual.widgets import DataTable
 
 from domain.entities.task import Task
-from infrastructure.persistence.notes_repository import NotesRepository
+from domain.repositories.notes_repository import NotesRepository
 from presentation.constants.table_dimensions import (
     PAGE_SCROLL_SIZE,
     TASK_TABLE_ACTUAL_END_WIDTH,
