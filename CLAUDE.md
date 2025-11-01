@@ -77,6 +77,7 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
 - `console/`: ConsoleWriter abstraction (RichConsoleWriter implementation)
 - `renderers/`: RichTableRenderer, RichGanttRenderer
 - `tui/`: Textual-based TUI with Command Pattern (CommandRegistry, CommandFactory, TUICommandBase)
+- `controllers/`: TaskController (writes), QueryController (reads) - orchestrate use cases/queries for all presentation layers
 
 **Shared** (`src/shared/`): Cross-cutting utilities
 - `xdg_utils.py`: XDG paths (get_tasks_file, get_config_file)
@@ -115,11 +116,22 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
 - `error_handler.py`: `@handle_task_errors`, `@handle_command_errors` decorators
 - Batch operations: Loop + per-task error handling (start, done, pause, rm, archive)
 
+**Controllers** (`src/presentation/controllers/`)
+- `TaskController`: Orchestrates write operations (commands)
+  - Methods: start_task, complete_task, create_task, update_task, archive_task, etc.
+  - Instantiates use cases, constructs Input DTOs, handles config defaults
+  - Used by: CLI commands, TUI TaskService, future API handlers
+- `QueryController`: Orchestrates read operations (queries)
+  - Methods: list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id
+  - Returns Output DTOs with metadata (TaskListOutput, GanttOutput, TagStatisticsOutput)
+  - Used by: CLI commands (table, gantt, tags, export, report), TUI TaskService, future API endpoints
+
 **TUI Command Pattern**
 - `@command_registry.register("name")` for automatic registration
 - `TUICommandBase`: Abstract base with helpers (get_selected_task, reload_tasks, notify_*)
 - `StatusChangeCommandBase`: Template Method for status changes
 - `CommandFactory`: Creates commands with DI
+- `TaskService`: Facade wrapping TaskController + QueryController for TUI
 
 ### Data Integrity
 
@@ -181,7 +193,10 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 
 1. **Clean Architecture**: Strict layer dependencies (Presentation → Application → Domain ← Infrastructure)
 2. **Use Case Pattern**: Each business operation = separate use case class with `execute(input_dto)`
-3. **CQRS-like**: Use cases for writes, TaskQueryService for reads
+3. **CQRS Pattern**: Commands (writes) via TaskController + Use Cases; Queries (reads) via QueryController + TaskQueryService
+   - TaskController: Orchestrates write use cases (start, complete, create, update, archive, etc.)
+   - QueryController: Orchestrates read queries (list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id)
+   - Both used by CLI, TUI, and future API layers for consistent interface
 4. **Template Method**: StatusChangeUseCase eliminates duplication across status change operations
 5. **Strategy Pattern**: 9 optimization algorithms managed by StrategyFactory; field validators via TaskFieldValidatorRegistry
 6. **Command Pattern (TUI)**: Auto-registration via decorator, DI via CommandFactory
