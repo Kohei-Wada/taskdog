@@ -4,9 +4,13 @@ This controller provides a shared interface between CLI and TUI layers,
 eliminating code duplication in use case instantiation and DTO construction.
 """
 
+from application.dto.cancel_task_request import CancelTaskRequest
 from application.dto.complete_task_request import CompleteTaskRequest
+from application.dto.pause_task_request import PauseTaskRequest
 from application.dto.start_task_request import StartTaskRequest
+from application.use_cases.cancel_task import CancelTaskUseCase
 from application.use_cases.complete_task import CompleteTaskUseCase
+from application.use_cases.pause_task import PauseTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
@@ -80,4 +84,42 @@ class TaskController:
         """
         use_case = CompleteTaskUseCase(self.repository, self.time_tracker)
         request = CompleteTaskRequest(task_id=task_id)
+        return use_case.execute(request)
+
+    def pause_task(self, task_id: int) -> Task:
+        """Pause a task.
+
+        Changes task status to PENDING and clears actual start/end times.
+
+        Args:
+            task_id: ID of the task to pause
+
+        Returns:
+            The updated task
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If task cannot be paused
+        """
+        use_case = PauseTaskUseCase(self.repository, self.time_tracker)
+        request = PauseTaskRequest(task_id=task_id)
+        return use_case.execute(request)
+
+    def cancel_task(self, task_id: int) -> Task:
+        """Cancel a task.
+
+        Changes task status to CANCELED and records actual end time.
+
+        Args:
+            task_id: ID of the task to cancel
+
+        Returns:
+            The updated task
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If task cannot be canceled
+        """
+        use_case = CancelTaskUseCase(self.repository, self.time_tracker)
+        request = CancelTaskRequest(task_id=task_id)
         return use_case.execute(request)

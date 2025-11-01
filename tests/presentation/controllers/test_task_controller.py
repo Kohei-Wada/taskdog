@@ -119,6 +119,61 @@ class TestTaskController(unittest.TestCase):
         self.assertEqual(persisted_task.status, TaskStatus.COMPLETED)
         self.assertIsNotNone(persisted_task.actual_end)
 
+    def test_pause_task_changes_status_to_pending(self):
+        """Test pause_task changes task status to PENDING."""
+        # Create and start a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Pause the task
+        result = self.controller.pause_task(task.id)
+
+        # Verify status changed
+        self.assertEqual(result.status, TaskStatus.PENDING)
+        self.assertEqual(result.id, task.id)
+
+    def test_pause_task_clears_timestamps(self):
+        """Test pause_task clears actual start/end timestamps."""
+        # Create and start a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Pause the task
+        result = self.controller.pause_task(task.id)
+
+        # Verify timestamps are cleared
+        self.assertIsNone(result.actual_start)
+        self.assertIsNone(result.actual_end)
+
+    def test_cancel_task_changes_status_to_canceled(self):
+        """Test cancel_task changes task status to CANCELED."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Cancel the task
+        result = self.controller.cancel_task(task.id)
+
+        # Verify status changed
+        self.assertEqual(result.status, TaskStatus.CANCELED)
+        self.assertEqual(result.id, task.id)
+
+    def test_cancel_task_records_actual_end_time(self):
+        """Test cancel_task records actual_end timestamp."""
+        # Create a task
+        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
+        task.id = self.repository.generate_next_id()
+        self.repository.save(task)
+
+        # Cancel the task
+        result = self.controller.cancel_task(task.id)
+
+        # Verify actual_end is set
+        self.assertIsNotNone(result.actual_end)
+
 
 if __name__ == "__main__":
     unittest.main()
