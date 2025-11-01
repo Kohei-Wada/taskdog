@@ -2,11 +2,11 @@
 
 import click
 
-from application.queries.task_query_service import TaskQueryService
 from presentation.cli.commands.common_options import filter_options, sort_options
 from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
+from presentation.controllers.query_controller import QueryController
 from presentation.mappers.gantt_mapper import GanttMapper
 from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
 from shared.click_types.datetime_with_default import DateTimeWithDefault
@@ -88,7 +88,7 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     """
     ctx_obj: CliContext = ctx.obj
     repository = ctx_obj.repository
-    task_query_service = TaskQueryService(repository)
+    query_controller = QueryController(repository)
 
     # Build integrated filter with tags support (tags use OR logic by default)
     tags = list(tag) if tag else None
@@ -100,8 +100,8 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
 
     end_date_obj = end_date.date() if end_date else None
 
-    # Get Gantt data from Application layer (business logic)
-    gantt_result = task_query_service.get_gantt_data(
+    # Get Gantt data from QueryController
+    gantt_result = query_controller.get_gantt_data(
         filter_obj=filter_obj,
         sort_by=sort,
         reverse=reverse,
