@@ -28,6 +28,7 @@ from presentation.tui.events import (
     TaskUpdated,
 )
 from presentation.tui.palette.providers import (
+    ExportCommandProvider,
     OptimizeCommandProvider,
     SortCommandProvider,
     SortOptionsProvider,
@@ -87,7 +88,7 @@ class TaskdogTUI(App):
     ]
 
     # Register custom command providers
-    COMMANDS = App.COMMANDS | {SortCommandProvider, OptimizeCommandProvider}
+    COMMANDS = App.COMMANDS | {SortCommandProvider, OptimizeCommandProvider, ExportCommandProvider}
 
     # Mapping of sort keys to display labels
     _SORT_KEY_LABELS: ClassVar[dict[str, str]] = {
@@ -319,6 +320,76 @@ class TaskdogTUI(App):
         """
         # Execute optimize command which will show AlgorithmSelectionScreen
         self.command_factory.execute("optimize", force_override=force_override)
+
+    def search_export(self) -> None:
+        """Show a fuzzy search command palette containing all export format options.
+
+        Selecting a format will trigger the export operation.
+        """
+        from presentation.tui.palette.providers import ExportFormatProvider
+
+        self.push_screen(
+            CommandPalette(
+                providers=[ExportFormatProvider],
+                placeholder="Select export format…",
+            ),
+        )
+
+    def execute_export(self, format_key: str) -> None:
+        """Execute export operation with selected format.
+
+        Args:
+            format_key: Export format (json, csv, markdown)
+        """
+        from datetime import datetime
+        from pathlib import Path
+
+        from presentation.exporters import (
+            CsvTaskExporter,
+            JsonTaskExporter,
+            MarkdownTableExporter,
+        )
+
+        try:
+            # Get all tasks (no filtering)
+            result = self.query_controller.list_tasks(filter_obj=None)
+            tasks = result.tasks
+
+            # Determine file extension and exporter
+            if format_key == "json":
+                exporter = JsonTaskExporter()
+                extension = "json"
+            elif format_key == "csv":
+                exporter = CsvTaskExporter()
+                extension = "csv"
+            elif format_key == "markdown":
+                exporter = MarkdownTableExporter()
+                extension = "md"
+            else:
+                self.notify(f"Unknown format: {format_key}", severity="error")
+                return
+
+            # Generate filename with current date
+            today = datetime.now().strftime("%Y%m%d")
+            filename = f"Taskdog_export_{today}.{extension}"
+
+            # Use ~/Downloads directory
+            downloads_dir = Path.home() / "Downloads"
+            downloads_dir.mkdir(parents=True, exist_ok=True)
+            output_path = downloads_dir / filename
+
+            # Export tasks
+            tasks_data = exporter.export(tasks)
+
+            # Write to file
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(tasks_data)
+
+            # Show success notification
+            self.notify(f"Exported {len(tasks)} tasks to {output_path}", severity="information")
+
+        except Exception as e:
+            self.notify(f"Export failed: {e}", severity="error")
 
     def set_sort_order(self, sort_key: str) -> None:
         """Set the sort order for Gantt chart and task list.
