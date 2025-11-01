@@ -1,7 +1,9 @@
 """Use case for getting task detail with notes."""
 
 from application.dto.task_detail_output import GetTaskDetailOutput
+from application.dto.task_dto import TaskDetailDto
 from application.use_cases.base import UseCase
+from domain.entities.task import Task
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 
@@ -57,4 +59,45 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailOutput]):
         has_notes = self.notes_repository.has_notes(input_dto.task_id)
         notes_content = self.notes_repository.read_notes(input_dto.task_id) if has_notes else None
 
-        return GetTaskDetailOutput(task=task, notes_content=notes_content, has_notes=has_notes)
+        # Convert Task entity to DTO
+        task_dto = self._convert_to_dto(task)
+
+        return GetTaskDetailOutput(task=task_dto, notes_content=notes_content, has_notes=has_notes)
+
+    def _convert_to_dto(self, task: Task) -> TaskDetailDto:
+        """Convert Task entity to TaskDetailDto.
+
+        Args:
+            task: Task entity
+
+        Returns:
+            TaskDetailDto with all task data
+        """
+        # Tasks from repository must have an ID
+        assert task.id is not None, "Task must have an ID"
+
+        return TaskDetailDto(
+            id=task.id,
+            name=task.name,
+            priority=task.priority,
+            status=task.status,
+            planned_start=task.planned_start,
+            planned_end=task.planned_end,
+            deadline=task.deadline,
+            actual_start=task.actual_start,
+            actual_end=task.actual_end,
+            estimated_duration=task.estimated_duration,
+            daily_allocations=task.daily_allocations,
+            is_fixed=task.is_fixed,
+            depends_on=task.depends_on,
+            actual_daily_hours=task.actual_daily_hours,
+            tags=task.tags,
+            is_archived=task.is_archived,
+            created_at=task.created_at,
+            updated_at=task.updated_at,
+            actual_duration_hours=task.actual_duration_hours,
+            is_active=task.is_active,
+            is_finished=task.is_finished,
+            can_be_modified=task.can_be_modified,
+            is_schedulable=task.is_schedulable(force_override=False),
+        )

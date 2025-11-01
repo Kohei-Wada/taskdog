@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from domain.entities.task import Task
+from application.dto.task_dto import TaskDetailDto
 
 
 @dataclass
@@ -10,11 +10,11 @@ class GetTaskDetailOutput:
     """Result DTO for task detail with notes.
 
     Attributes:
-        task: Task entity
+        task: Task data transfer object
         notes_content: Content of the notes file (optional)
         has_notes: Whether notes file exists
     """
 
-    task: Task
+    task: TaskDetailDto
     notes_content: str | None
     has_notes: bool

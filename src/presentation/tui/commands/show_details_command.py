@@ -50,14 +50,15 @@ class ShowDetailsCommand(TUICommandBase):
             task_id: ID of the task to edit notes for
         """
         # Get task via QueryController
-        task = self.context.query_controller.get_task_by_id(task_id)
-        if not task:
+        output = self.context.query_controller.get_task_by_id(task_id)
+        if not output.task:
             self.notify_warning(f"Task #{task_id} not found")
             return
 
         # Edit note using shared helper (uses Domain interface)
+        # TODO: Update edit_task_note to accept TaskDetailDto
         edit_task_note(
-            task=task,
+            task=output.task,  # type: ignore[arg-type]
             notes_repository=self.context.notes_repository,
             app=self.app,
             on_success=lambda name, id_: self._on_edit_success(name, id_),

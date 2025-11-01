@@ -21,7 +21,7 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
 
     def test_monte_carlo_schedules_single_task(self):
         """Test that Monte Carlo can schedule a single task."""
-        self.create_task(
+        task = self.create_task(
             "Single Task",
             priority=100,
             estimated_duration=12.0,
@@ -32,7 +32,6 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
 
         # Should successfully schedule
         self.assertEqual(len(result.successful_tasks), 1)
-        task = result.successful_tasks[0]
 
         # Verify basic properties
         self.assert_task_scheduled(task)
@@ -43,13 +42,15 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
     def test_monte_carlo_schedules_multiple_tasks(self):
         """Test that Monte Carlo can schedule multiple tasks."""
         # Create multiple tasks
+        tasks = []
         for i in range(3):
-            self.create_task(
+            task = self.create_task(
                 f"Task {i + 1}",
                 priority=100 - (i * 10),
                 estimated_duration=6.0,
                 deadline=datetime(2025, 10, 31, 18, 0, 0),
             )
+            tasks.append(task)
 
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
@@ -57,7 +58,7 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
         self.assertEqual(len(result.successful_tasks), 3)
 
         # Verify all tasks have valid schedules
-        for task in result.successful_tasks:
+        for task in tasks:
             self.assert_task_scheduled(task)
             self.assert_total_allocated_hours(task, 6.0)
 
@@ -85,7 +86,7 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
     def test_monte_carlo_respects_deadlines(self):
         """Test that Monte Carlo respects task deadlines."""
         # Create task with tight but achievable deadline
-        self.create_task(
+        task = self.create_task(
             "Tight Deadline",
             priority=100,
             estimated_duration=12.0,
@@ -97,10 +98,12 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
         # Should successfully schedule
         self.assertEqual(len(result.successful_tasks), 1)
 
-        task = result.successful_tasks[0]
+        # Refetch task from repository to get updated state
+        updated_task = self.repository.get_by_id(task.id)
+        assert updated_task is not None
 
         # Verify end date is before or on deadline
-        self.assertLessEqual(task.planned_end, task.deadline)
+        self.assertLessEqual(updated_task.planned_end, updated_task.deadline)
 
     def test_monte_carlo_fails_impossible_deadlines(self):
         """Test that Monte Carlo fails tasks with impossible deadlines."""
@@ -121,7 +124,7 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
     def test_monte_carlo_skips_weekends(self):
         """Test that Monte Carlo skips weekends."""
         # Create task that spans over a weekend
-        self.create_task(
+        task = self.create_task(
             "Weekend Task",
             priority=100,
             estimated_duration=12.0,
@@ -129,24 +132,28 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
         )
 
         # Start on Friday
-        result = self.optimize_schedule(start_date=datetime(2025, 10, 24, 9, 0, 0))
+        self.optimize_schedule(start_date=datetime(2025, 10, 24, 9, 0, 0))
 
-        task = result.successful_tasks[0]
+        # Refetch task from repository to get updated state
+        updated_task = self.repository.get_by_id(task.id)
+        assert updated_task is not None
 
         # Verify no weekend allocations
-        self.assertIsNone(task.daily_allocations.get(date(2025, 10, 25)))  # Saturday
-        self.assertIsNone(task.daily_allocations.get(date(2025, 10, 26)))  # Sunday
+        self.assertIsNone(updated_task.daily_allocations.get(date(2025, 10, 25)))  # Saturday
+        self.assertIsNone(updated_task.daily_allocations.get(date(2025, 10, 26)))  # Sunday
 
     def test_monte_carlo_produces_valid_results(self):
         """Test that Monte Carlo produces valid results with multiple simulations."""
         # Create multiple tasks with different priorities
+        tasks = []
         for i in range(5):
-            self.create_task(
+            task = self.create_task(
                 f"Task {i + 1}",
                 priority=100 - (i * 20),
                 estimated_duration=6.0,
                 deadline=datetime(2025, 10, 31, 18, 0, 0),
             )
+            tasks.append(task)
 
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
@@ -154,10 +161,12 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
         self.assertEqual(len(result.successful_tasks), 5)
 
         # Verify no overlapping allocations
-        for task in result.successful_tasks:
-            self.assertIsNotNone(task.daily_allocations)
+        for task in tasks:
+            updated_task = self.repository.get_by_id(task.id)
+            assert updated_task is not None
+            self.assertIsNotNone(updated_task.daily_allocations)
             # All daily allocations should be positive
-            for hours in task.daily_allocations.values():
+            for hours in updated_task.daily_allocations.values():
                 self.assertGreater(hours, 0)
 
     def test_monte_carlo_handles_empty_task_list(self):
@@ -171,23 +180,30 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
     def test_monte_carlo_finds_feasible_solution(self):
         """Test that Monte Carlo finds a feasible solution through multiple simulations."""
         # Create tasks with varying characteristics
-        self.create_task(
-            "High Priority",
-            priority=100,
-            estimated_duration=6.0,
-            deadline=datetime(2025, 10, 25, 18, 0, 0),
+        tasks = []
+        tasks.append(
+            self.create_task(
+                "High Priority",
+                priority=100,
+                estimated_duration=6.0,
+                deadline=datetime(2025, 10, 25, 18, 0, 0),
+            )
         )
-        self.create_task(
-            "Medium Priority",
-            priority=50,
-            estimated_duration=9.0,
-            deadline=datetime(2025, 10, 27, 18, 0, 0),
+        tasks.append(
+            self.create_task(
+                "Medium Priority",
+                priority=50,
+                estimated_duration=9.0,
+                deadline=datetime(2025, 10, 27, 18, 0, 0),
+            )
         )
-        self.create_task(
-            "Low Priority",
-            priority=25,
-            estimated_duration=12.0,
-            deadline=datetime(2025, 10, 30, 18, 0, 0),
+        tasks.append(
+            self.create_task(
+                "Low Priority",
+                priority=25,
+                estimated_duration=12.0,
+                deadline=datetime(2025, 10, 30, 18, 0, 0),
+            )
         )
 
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
@@ -196,10 +212,14 @@ class TestMonteCarloOptimizationStrategy(BaseOptimizationStrategyTest):
         self.assertEqual(len(result.successful_tasks), 3)
 
         # Verify all tasks respect their deadlines
-        for task in result.successful_tasks:
-            if task.deadline:
+        for task in tasks:
+            updated_task = self.repository.get_by_id(task.id)
+            assert updated_task is not None
+            if updated_task.deadline:
                 self.assertLessEqual(
-                    task.planned_end, task.deadline, f"Task {task.name} exceeds deadline"
+                    updated_task.planned_end,
+                    updated_task.deadline,
+                    f"Task {updated_task.name} exceeds deadline",
                 )
 
 

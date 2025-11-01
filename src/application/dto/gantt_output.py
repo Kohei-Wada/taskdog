@@ -12,7 +12,7 @@ Design Principle:
 from dataclasses import dataclass
 from datetime import date
 
-from domain.entities.task import Task
+from application.dto.task_dto import GanttTaskDto
 
 
 @dataclass
@@ -56,13 +56,13 @@ class GanttOutput:
 
     Attributes:
         date_range: Date range covered by the chart
-        tasks: Filtered and sorted tasks to display
+        tasks: Filtered and sorted task DTOs for display
         task_daily_hours: Daily hour allocations per task (task.id -> {date: hours})
         daily_workload: Daily workload totals across all tasks
     """
 
     date_range: GanttDateRange
-    tasks: list[Task]
+    tasks: list[GanttTaskDto]
     task_daily_hours: dict[int, dict[date, float]]
     daily_workload: dict[date, float]
 

@@ -48,16 +48,20 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Verify
         self.assertEqual(len(result.successful_tasks), 1)
-        self.assertIsNotNone(result.successful_tasks[0].planned_start)
-        self.assertIsNotNone(result.successful_tasks[0].planned_end)
+
+        # Re-fetch task from repository to verify scheduling
+        task = self.repository.get_by_id(result.successful_tasks[0].id)
+        assert task is not None
+        self.assertIsNotNone(task.planned_start)
+        self.assertIsNotNone(task.planned_end)
 
         # Task should be scheduled on the start date
-        self.assertEqual(result.successful_tasks[0].planned_start, datetime(2025, 10, 15, 9, 0, 0))
-        self.assertEqual(result.successful_tasks[0].planned_end, datetime(2025, 10, 15, 18, 0, 0))
+        self.assertEqual(task.planned_start, datetime(2025, 10, 15, 9, 0, 0))
+        self.assertEqual(task.planned_end, datetime(2025, 10, 15, 18, 0, 0))
 
         # Verify daily_allocations
-        self.assertIsNotNone(result.successful_tasks[0].daily_allocations)
-        self.assertEqual(result.successful_tasks[0].daily_allocations[date(2025, 10, 15)], 4.0)
+        self.assertIsNotNone(task.daily_allocations)
+        self.assertEqual(task.daily_allocations[date(2025, 10, 15)], 4.0)
 
     def test_optimize_multiple_tasks_same_day(self):
         """Test optimizing multiple tasks that fit in one day."""
@@ -78,7 +82,10 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # All 3 tasks (6h total) should fit in one day
         self.assertEqual(len(result.successful_tasks), 3)
-        for task in result.successful_tasks:
+        for task_dto in result.successful_tasks:
+            # Re-fetch task from repository to verify scheduling
+            task = self.repository.get_by_id(task_dto.id)
+            assert task is not None
             self.assertEqual(task.planned_start, datetime(2025, 10, 15, 9, 0, 0))
             self.assertEqual(task.planned_end, datetime(2025, 10, 15, 18, 0, 0))
 
@@ -96,8 +103,8 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
             priority=100,  # Normal priority
             estimated_duration=5.0,
         )
-        self.create_use_case.execute(input_dto1)
-        self.create_use_case.execute(input_dto2)
+        result1 = self.create_use_case.execute(input_dto1)
+        result2 = self.create_use_case.execute(input_dto2)
 
         # Optimize
         start_date = datetime(2025, 10, 15, 18, 0, 0)  # Wednesday
@@ -112,15 +119,18 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Tasks should span multiple days
         self.assertEqual(len(result.successful_tasks), 2)
 
+        # Re-fetch tasks from repository to verify scheduling
+        task1 = self.repository.get_by_id(result1.id)
+        task2 = self.repository.get_by_id(result2.id)
+        assert task1 is not None and task2 is not None
+
         # First task (priority 200, 5h) starts on start date and fits in one day
-        task1 = [t for t in result.successful_tasks if t.priority == 200][0]
         self.assertEqual(task1.planned_start, datetime(2025, 10, 15, 9, 0, 0))
         self.assertEqual(task1.planned_end, datetime(2025, 10, 15, 18, 0, 0))
         # Verify daily_allocations for task1
         self.assertEqual(task1.daily_allocations[date(2025, 10, 15)], 5.0)
 
         # Second task (priority 100, 5h) starts on same day (1h left) and spans to next day
-        task2 = [t for t in result.successful_tasks if t.priority == 100][0]
         self.assertEqual(task2.planned_start, datetime(2025, 10, 15, 9, 0, 0))
         self.assertEqual(task2.planned_end, datetime(2025, 10, 16, 18, 0, 0))
         # Verify daily_allocations for task2: 1h on first day, 4h on second day
@@ -131,7 +141,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         """Test that optimization skips weekends."""
         # Create task with 5h duration
         input_dto = CreateTaskInput(name="Weekend Task", priority=100, estimated_duration=5.0)
-        self.create_use_case.execute(input_dto)
+        task_result = self.create_use_case.execute(input_dto)
 
         # Start on Friday
         start_date = datetime(2025, 10, 17, 18, 0, 0)  # Friday
@@ -141,13 +151,17 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
             force_override=False,
             algorithm_name="greedy",
         )
-        result = self.optimize_use_case.execute(optimize_input)
+        self.optimize_use_case.execute(optimize_input)
+
+        # Re-fetch task from repository to verify scheduling
+        task = self.repository.get_by_id(task_result.id)
+        assert task is not None
 
         # Task should start on Friday
-        self.assertEqual(result.successful_tasks[0].planned_start, datetime(2025, 10, 17, 9, 0, 0))
+        self.assertEqual(task.planned_start, datetime(2025, 10, 17, 9, 0, 0))
         # And end on Monday (skipping weekend)
         # Friday: 5h allocated
-        self.assertEqual(result.successful_tasks[0].planned_end, datetime(2025, 10, 17, 18, 0, 0))
+        self.assertEqual(task.planned_end, datetime(2025, 10, 17, 18, 0, 0))
 
     def test_optimize_respects_priority(self):
         """Test that high priority tasks are scheduled first."""
@@ -169,7 +183,10 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Both tasks should be scheduled on same day (6h total)
         self.assertEqual(len(result.successful_tasks), 2)
-        for task in result.successful_tasks:
+        for task_dto in result.successful_tasks:
+            # Re-fetch task from repository to verify scheduling
+            task = self.repository.get_by_id(task_dto.id)
+            assert task is not None
             self.assertEqual(task.planned_start, datetime(2025, 10, 15, 9, 0, 0))
 
     def test_optimize_respects_deadline(self):
@@ -203,7 +220,10 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # Both should be scheduled
         self.assertEqual(len(result.successful_tasks), 2)
         # All tasks fit in one day
-        for task in result.successful_tasks:
+        for task_dto in result.successful_tasks:
+            # Re-fetch task from repository to verify scheduling
+            task = self.repository.get_by_id(task_dto.id)
+            assert task is not None
             self.assertEqual(task.planned_start, datetime(2025, 10, 15, 9, 0, 0))
 
     def test_optimize_skips_completed_tasks(self):
@@ -306,8 +326,8 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
             planned_start=datetime(2025, 10, 10, 18, 0, 0),
             planned_end=datetime(2025, 10, 10, 18, 0, 0),
         )
-        task = self.create_use_case.execute(input_dto)
-        old_start = task.planned_start
+        task_result = self.create_use_case.execute(input_dto)
+        old_start = task_result.planned_start
 
         # Optimize with force
         start_date = datetime(2025, 10, 15, 18, 0, 0)
@@ -321,8 +341,12 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
         # Task should be rescheduled
         self.assertEqual(len(result.successful_tasks), 1)
-        self.assertNotEqual(result.successful_tasks[0].planned_start, old_start)
-        self.assertEqual(result.successful_tasks[0].planned_start, datetime(2025, 10, 15, 9, 0, 0))
+
+        # Re-fetch task from repository to verify scheduling
+        task = self.repository.get_by_id(task_result.id)
+        assert task is not None
+        self.assertNotEqual(task.planned_start, old_start)
+        self.assertEqual(task.planned_start, datetime(2025, 10, 15, 9, 0, 0))
 
 
 if __name__ == "__main__":

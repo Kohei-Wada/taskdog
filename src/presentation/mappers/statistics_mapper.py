@@ -1,6 +1,6 @@
 """Mapper for converting StatisticsOutput DTO to StatisticsViewModel.
 
-This mapper extracts necessary fields from Task entities and creates
+This mapper extracts necessary fields from TaskSummaryDto and creates
 presentation-ready view models.
 """
 
@@ -9,7 +9,7 @@ from application.dto.statistics_output import (
     StatisticsOutput,
     TimeStatistics,
 )
-from domain.entities.task import Task
+from application.dto.task_dto import TaskSummaryDto
 from presentation.view_models.statistics_view_model import (
     EstimationAccuracyStatisticsViewModel,
     StatisticsViewModel,
@@ -22,8 +22,8 @@ class StatisticsMapper:
     """Mapper for converting StatisticsOutput to StatisticsViewModel.
 
     This class is responsible for:
-    1. Extracting necessary fields from Task entities
-    2. Converting domain data to presentation-ready ViewModels
+    1. Extracting necessary fields from TaskSummaryDto
+    2. Converting DTO data to presentation-ready ViewModels
     """
 
     @staticmethod
@@ -118,21 +118,19 @@ class StatisticsMapper:
         )
 
     @staticmethod
-    def _map_task_to_summary(task: Task) -> TaskSummaryViewModel:
-        """Convert a Task entity to TaskSummaryViewModel.
+    def _map_task_to_summary(task: TaskSummaryDto) -> TaskSummaryViewModel:
+        """Convert a TaskSummaryDto to TaskSummaryViewModel.
 
         Args:
-            task: Domain Task entity (must have an id)
+            task: TaskSummaryDto from application layer
 
         Returns:
-            TaskSummaryViewModel with only necessary fields
+            TaskSummaryViewModel with basic task information
         """
-        # Tasks from StatisticsOutput are always saved, so they must have an id
-        assert task.id is not None, "Task must have an id when mapping to ViewModel"
-
+        # TaskSummaryDto only has id and name, so we set optional fields to None
         return TaskSummaryViewModel(
             id=task.id,
             name=task.name,
-            estimated_duration=task.estimated_duration,
-            actual_duration_hours=task.actual_duration_hours,
+            estimated_duration=None,
+            actual_duration_hours=None,
         )

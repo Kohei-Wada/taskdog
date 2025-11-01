@@ -12,6 +12,7 @@ from application.dto.statistics_output import (
     TimeStatistics,
     TrendStatistics,
 )
+from application.dto.task_dto import TaskSummaryDto
 from domain.entities.task import Task, TaskStatus
 
 
@@ -150,12 +151,18 @@ class TaskStatisticsCalculator:
         longest_task = max(tasks_with_duration, key=lambda t: t.actual_duration_hours or 0.0)
         shortest_task = min(tasks_with_duration, key=lambda t: t.actual_duration_hours or 0.0)
 
+        # Convert to DTOs (tasks must have IDs)
+        assert longest_task.id is not None, "Task must have an ID"
+        assert shortest_task.id is not None, "Task must have an ID"
+        longest_task_dto = TaskSummaryDto(id=longest_task.id, name=longest_task.name)
+        shortest_task_dto = TaskSummaryDto(id=shortest_task.id, name=shortest_task.name)
+
         return TimeStatistics(
             total_work_hours=round(total_hours, 1),
             average_work_hours=round(avg_hours, 1),
             median_work_hours=round(median_hours, 1),
-            longest_task=longest_task,
-            shortest_task=shortest_task,
+            longest_task=longest_task_dto,
+            shortest_task=shortest_task_dto,
             tasks_with_time_tracking=len(tasks_with_duration),
         )
 
@@ -223,14 +230,25 @@ class TaskStatisticsCalculator:
         best_tasks = [t[0] for t in tasks_with_accuracy[:3]]
         worst_tasks = [t[0] for t in tasks_with_accuracy[-3:][::-1]]
 
+        # Convert to DTOs (tasks must have IDs)
+        best_tasks_dto = []
+        for t in best_tasks:
+            assert t.id is not None, "Task must have an ID"
+            best_tasks_dto.append(TaskSummaryDto(id=t.id, name=t.name))
+
+        worst_tasks_dto = []
+        for t in worst_tasks:
+            assert t.id is not None, "Task must have an ID"
+            worst_tasks_dto.append(TaskSummaryDto(id=t.id, name=t.name))
+
         return EstimationAccuracyStatistics(
             total_tasks_with_estimation=len(estimated_tasks),
             accuracy_rate=round(avg_accuracy, 2),
             over_estimated_count=over_estimated,
             under_estimated_count=under_estimated,
             exact_count=exact,
-            best_estimated_tasks=best_tasks,
-            worst_estimated_tasks=worst_tasks,
+            best_estimated_tasks=best_tasks_dto,
+            worst_estimated_tasks=worst_tasks_dto,
         )
 
     def _calculate_deadline_compliance(

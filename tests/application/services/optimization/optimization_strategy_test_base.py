@@ -111,31 +111,49 @@ class BaseOptimizationStrategyTest(unittest.TestCase):
         """Assert that a task has been scheduled.
 
         Args:
-            task: The task to check
+            task: The task to check (will be re-fetched from repository to get updated state)
             expected_start: Optional expected start date/time
             expected_end: Optional expected end date/time
         """
-        self.assertIsNotNone(task.planned_start, f"Task {task.name} should have planned_start")
-        self.assertIsNotNone(task.planned_end, f"Task {task.name} should have planned_end")
+        # Re-fetch task from repository to get updated state after optimization
+        assert task.id is not None, "Task must have an ID"
+        updated_task = self.repository.get_by_id(task.id)
+        assert updated_task is not None, f"Task {task.id} not found in repository"
+
         self.assertIsNotNone(
-            task.daily_allocations, f"Task {task.name} should have daily_allocations"
+            updated_task.planned_start, f"Task {updated_task.name} should have planned_start"
+        )
+        self.assertIsNotNone(
+            updated_task.planned_end, f"Task {updated_task.name} should have planned_end"
+        )
+        self.assertIsNotNone(
+            updated_task.daily_allocations,
+            f"Task {updated_task.name} should have daily_allocations",
         )
 
         if expected_start:
-            self.assertEqual(task.planned_start, expected_start)
+            self.assertEqual(updated_task.planned_start, expected_start)
         if expected_end:
-            self.assertEqual(task.planned_end, expected_end)
+            self.assertEqual(updated_task.planned_end, expected_end)
 
     def assert_total_allocated_hours(self, task: Task, expected_hours: float, places: int = 5):
         """Assert that the total allocated hours match expected.
 
         Args:
-            task: The task to check
+            task: The task to check (will be re-fetched from repository to get updated state)
             expected_hours: Expected total hours
             places: Decimal places for comparison (default: 5)
         """
-        self.assertIsNotNone(task.daily_allocations)
-        total = sum(task.daily_allocations.values())
+        # Re-fetch task from repository to get updated state after optimization
+        assert task.id is not None, "Task must have an ID"
+        updated_task = self.repository.get_by_id(task.id)
+        assert updated_task is not None, f"Task {task.id} not found in repository"
+
+        self.assertIsNotNone(updated_task.daily_allocations)
+        total = sum(updated_task.daily_allocations.values())
         self.assertAlmostEqual(
-            total, expected_hours, places=places, msg=f"Total allocated hours for {task.name}"
+            total,
+            expected_hours,
+            places=places,
+            msg=f"Total allocated hours for {updated_task.name}",
         )

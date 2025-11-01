@@ -23,13 +23,13 @@ class EditTaskCommand(TUICommandBase):
         assert task_id is not None
 
         # Fetch task via QueryController
-        task = self.context.query_controller.get_task_by_id(task_id)
-        if task is None:
+        output = self.context.query_controller.get_task_by_id(task_id)
+        if output.task is None:
             self.notify_warning(f"Task #{task_id} not found")
             return
 
-        # Store original task reference
-        original_task = task
+        # Store original task DTO
+        original_task = output.task
 
         def handle_task_data(form_data: TaskFormData | None) -> None:
             """Handle the task data from the dialog."""
@@ -37,14 +37,15 @@ class EditTaskCommand(TUICommandBase):
                 return  # User cancelled
 
             try:
-                self._handle_task_update(original_task, form_data)
+                self._handle_task_update(original_task, form_data)  # type: ignore[arg-type]
             except TaskValidationError as e:
                 self.notify_error("Validation error", e)
             except Exception as e:
                 self.notify_error("Error editing task", e)
 
         # Show task form dialog in edit mode
-        dialog = TaskFormDialog(task=task, config=self.context.config)
+        # TODO: Update TaskFormDialog to accept TaskDetailDto
+        dialog = TaskFormDialog(task=original_task, config=self.context.config)  # type: ignore[arg-type]
         self.app.push_screen(dialog, handle_task_data)
 
     def _detect_changes(self, task: Task, form_data: TaskFormData) -> tuple[bool, bool]:

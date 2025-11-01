@@ -169,7 +169,7 @@ class TestQueryController(unittest.TestCase):
         self.assertEqual(result.total_tagged_tasks, 0)
 
     def test_get_task_by_id_returns_task(self):
-        """Test get_task_by_id returns task entity."""
+        """Test get_task_by_id returns task DTO."""
         # Create test task
         task = self.repository.create(name="Test Task", priority=1, status=TaskStatus.PENDING)
 
@@ -177,17 +177,17 @@ class TestQueryController(unittest.TestCase):
         result = self.controller.get_task_by_id(task.id)
 
         # Verify result
-        self.assertIsNotNone(result)
-        self.assertEqual(result.id, task.id)
-        self.assertEqual(result.name, "Test Task")
+        self.assertIsNotNone(result.task)
+        self.assertEqual(result.task.id, task.id)
+        self.assertEqual(result.task.name, "Test Task")
 
     def test_get_task_by_id_returns_none_when_not_found(self):
         """Test get_task_by_id returns None for missing task."""
         # Try to get non-existent task
         result = self.controller.get_task_by_id(999)
 
-        # Verify None returned
-        self.assertIsNone(result)
+        # Verify task is None in output
+        self.assertIsNone(result.task)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ containing the filtered tasks along with metadata for pagination and statistics.
 
 from dataclasses import dataclass
 
-from domain.entities.task import Task
+from application.dto.task_dto import TaskRowDto
 
 
 @dataclass
@@ -17,11 +17,11 @@ class TaskListOutput:
     Used by table, today, week commands and future API endpoints.
 
     Attributes:
-        tasks: Filtered and sorted list of tasks
+        tasks: Filtered and sorted list of task DTOs
         total_count: Total number of tasks in repository (before filtering)
         filtered_count: Number of tasks after filtering
     """
 
-    tasks: list[Task]
+    tasks: list[TaskRowDto]
     total_count: int
     filtered_count: int

@@ -1,12 +1,12 @@
 """Presenter for converting GanttOutput DTO to GanttViewModel.
 
-This presenter extracts necessary fields from Task entities and applies
+This presenter extracts necessary fields from GanttTaskDto and applies
 presentation logic (formatting, strikethrough) to create presentation-ready
 view models.
 """
 
 from application.dto.gantt_output import GanttOutput
-from domain.entities.task import Task
+from application.dto.task_dto import GanttTaskDto
 from domain.repositories.notes_repository import NotesRepository
 from presentation.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 
@@ -33,12 +33,12 @@ class GanttPresenter:
         """Convert GanttOutput DTO to GanttViewModel.
 
         Args:
-            gantt_result: Application layer DTO with Task entities
+            gantt_result: Application layer DTO with GanttTaskDto
 
         Returns:
-            GanttViewModel with TaskGanttRowViewModel (no Task entities)
+            GanttViewModel with TaskGanttRowViewModel
         """
-        # Convert each Task to TaskGanttRowViewModel
+        # Convert each GanttTaskDto to TaskGanttRowViewModel
         task_view_models = [self._map_task_to_view_model(task) for task in gantt_result.tasks]
 
         return GanttViewModel(
@@ -49,22 +49,19 @@ class GanttPresenter:
             daily_workload=gantt_result.daily_workload,
         )
 
-    def _map_task_to_view_model(self, task: Task) -> TaskGanttRowViewModel:
-        """Convert a Task entity to TaskGanttRowViewModel.
+    def _map_task_to_view_model(self, task: GanttTaskDto) -> TaskGanttRowViewModel:
+        """Convert a GanttTaskDto to TaskGanttRowViewModel.
 
         Applies presentation logic:
         - Adds strikethrough to task name if finished
         - Formats estimated duration as string
 
         Args:
-            task: Domain Task entity (must have an id)
+            task: GanttTaskDto from application layer
 
         Returns:
             TaskGanttRowViewModel with presentation-ready data
         """
-        # Tasks from GanttOutput are always saved, so they must have an id
-        assert task.id is not None, "Task must have an id when mapping to ViewModel"
-
         # Apply strikethrough for finished tasks
         formatted_name = task.name
         if task.is_finished:

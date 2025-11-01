@@ -5,7 +5,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from application.dto.task_detail_output import GetTaskDetailOutput
-from domain.entities.task import Task
+from application.dto.task_dto import TaskDetailDto
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.colors import STATUS_STYLES
 from presentation.constants.table_styles import (
@@ -32,7 +32,7 @@ class RichDetailRenderer:
         """
         self.console_writer = console_writer
 
-    def _add_basic_info(self, table: Table, task: Task) -> None:
+    def _add_basic_info(self, table: Table, task: TaskDetailDto) -> None:
         """Add basic task information to table."""
         table.add_row("ID", str(task.id))
         table.add_row("Name", task.name)
@@ -51,7 +51,7 @@ class RichDetailRenderer:
             deps_str = ", ".join(str(dep_id) for dep_id in task.depends_on)
             table.add_row("Depends On", f"[cyan]{deps_str}[/cyan]")
 
-    def _add_time_fields(self, table: Table, task: Task) -> None:
+    def _add_time_fields(self, table: Table, task: TaskDetailDto) -> None:
         """Add time-related fields to table."""
         table.add_row("Created", task.created_at.strftime(DATETIME_FORMAT))
         table.add_row("Updated", task.updated_at.strftime(DATETIME_FORMAT))
@@ -71,7 +71,7 @@ class RichDetailRenderer:
         if task.actual_duration_hours:
             table.add_row("Actual Duration", f"{task.actual_duration_hours}h")
 
-    def _add_logged_hours(self, table: Table, task: Task) -> None:
+    def _add_logged_hours(self, table: Table, task: TaskDetailDto) -> None:
         """Add logged daily hours to table."""
         if task.actual_daily_hours:
             total_logged = sum(task.actual_daily_hours.values())
@@ -83,7 +83,7 @@ class RichDetailRenderer:
             )
             table.add_row("Daily Hours", f"[dim]{daily_str}[/dim]")
 
-    def format_task_info(self, task: Task) -> Table:
+    def format_task_info(self, task: TaskDetailDto) -> Table:
         """Format task basic information as a Rich table.
 
         Args:

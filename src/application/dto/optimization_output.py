@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 
 from application.dto.optimization_summary import OptimizationSummary
-from domain.entities.task import Task
+from application.dto.task_dto import TaskSummaryDto
 
 
 @dataclass
@@ -12,11 +12,11 @@ class SchedulingFailure:
     """Information about a task scheduling failure.
 
     Attributes:
-        task: The task that could not be scheduled
+        task: Basic task information (ID and name only)
         reason: Human-readable reason why scheduling failed
     """
 
-    task: Task
+    task: TaskSummaryDto
     reason: str
 
 
@@ -29,14 +29,14 @@ class OptimizationOutput:
     a summary of the optimization.
 
     Attributes:
-        successful_tasks: Tasks that were successfully scheduled
+        successful_tasks: Basic info of tasks that were successfully scheduled
         failed_tasks: Tasks that could not be scheduled with reasons
         daily_allocations: Mapping of date objects to allocated hours
         summary: Optimization summary with metrics
         task_states_before: Mapping of task IDs to their planned_start before optimization
     """
 
-    successful_tasks: list[Task]
+    successful_tasks: list[TaskSummaryDto]
     failed_tasks: list[SchedulingFailure]
     daily_allocations: dict[date, float]
     summary: OptimizationSummary

@@ -1,11 +1,11 @@
 """Presenter for converting TaskListOutput to TaskRowViewModels.
 
-This presenter extracts necessary fields from Task entities within TaskListOutput
+This presenter extracts necessary fields from TaskRowDto within TaskListOutput
 and creates presentation-ready view models for table/list display.
 """
 
+from application.dto.task_dto import TaskRowDto
 from application.dto.task_list_output import TaskListOutput
-from domain.entities.task import Task
 from domain.entities.task import TaskStatus as DomainTaskStatus
 from domain.repositories.notes_repository import NotesRepository
 from presentation.enums.task_status import TaskStatus as PresentationTaskStatus
@@ -16,9 +16,9 @@ class TablePresenter:
     """Presenter for converting TaskListOutput DTO to TaskRowViewModels.
 
     This class is responsible for:
-    1. Extracting necessary fields from Task entities within DTOs
+    1. Extracting necessary fields from TaskRowDto within DTOs
     2. Checking for associated notes
-    3. Converting domain data to presentation-ready ViewModels
+    3. Converting DTO data to presentation-ready ViewModels
     """
 
     def __init__(self, notes_repository: NotesRepository):
@@ -56,18 +56,15 @@ class TablePresenter:
         """
         return [self._task_to_view_model(task) for task in output.tasks]
 
-    def _task_to_view_model(self, task: Task) -> TaskRowViewModel:
-        """Convert a Task entity to TaskRowViewModel.
+    def _task_to_view_model(self, task: TaskRowDto) -> TaskRowViewModel:
+        """Convert a TaskRowDto to TaskRowViewModel.
 
         Args:
-            task: Domain Task entity (must have an id)
+            task: TaskRowDto from application layer
 
         Returns:
             TaskRowViewModel with presentation-ready data
         """
-        # Tasks being displayed are always saved, so they must have an id
-        assert task.id is not None, "Task must have an id when mapping to ViewModel"
-
         # Check if task has notes
         has_notes = self.notes_repository.has_notes(task.id)
 

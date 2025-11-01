@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from application.constants.optimization import ROUND_ROBIN_MAX_ITERATIONS
 from application.dto.optimization_output import SchedulingFailure
+from application.dto.task_dto import TaskSummaryDto
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
 from shared.config_manager import Config
@@ -124,11 +125,15 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         for task_id, remaining_hours in task_remaining.items():
             if remaining_hours > 0.001:  # Task not fully scheduled
                 task = task_map[task_id]
+                # Convert to DTO
+                assert task.id is not None, "Task must have an ID"
+                task_dto = TaskSummaryDto(id=task.id, name=task.name)
+
                 if task_id in task_start_dates:
                     # Partially scheduled but ran out of time
                     failed_tasks.append(
                         SchedulingFailure(
-                            task=task,
+                            task=task_dto,
                             reason=f"Could not complete scheduling before deadline ({remaining_hours:.1f}h remaining)",
                         )
                     )
@@ -136,7 +141,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                     # Never scheduled at all
                     failed_tasks.append(
                         SchedulingFailure(
-                            task=task, reason="Deadline too close or no time available"
+                            task=task_dto, reason="Deadline too close or no time available"
                         )
                     )
             else:

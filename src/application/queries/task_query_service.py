@@ -3,6 +3,7 @@
 from datetime import date
 
 from application.dto.gantt_output import GanttDateRange, GanttOutput
+from application.dto.task_dto import GanttTaskDto, TaskRowDto
 from application.queries.base import QueryService
 from application.queries.filters.task_filter import TaskFilter
 from application.queries.workload_calculator import WorkloadCalculator
@@ -26,6 +27,25 @@ class TaskQueryService(QueryService):
         super().__init__(repository)
         self.sorter = TaskSorter()
         self.workload_calculator = WorkloadCalculator()
+
+    def get_filtered_tasks_as_dtos(
+        self,
+        filter_obj: TaskFilter | None = None,
+        sort_by: str = "id",
+        reverse: bool = False,
+    ) -> list[TaskRowDto]:
+        """Get filtered tasks as TaskRowDto list.
+
+        Args:
+            filter_obj: Optional filter to apply
+            sort_by: Sort key
+            reverse: Reverse sort order
+
+        Returns:
+            List of TaskRowDto
+        """
+        tasks = self.get_filtered_tasks(filter_obj, sort_by, reverse)
+        return [self._task_to_row_dto(task) for task in tasks]
 
     def get_filtered_tasks(
         self,
@@ -138,9 +158,10 @@ class TaskQueryService(QueryService):
         if date_range is None:
             # No dates available in tasks
             today = date.today()
+            task_dtos = [self._task_to_gantt_dto(task) for task in tasks]
             return GanttOutput(
                 date_range=GanttDateRange(start_date=today, end_date=today),
-                tasks=tasks,
+                tasks=task_dtos,
                 task_daily_hours={},
                 daily_workload={},
             )
@@ -159,9 +180,12 @@ class TaskQueryService(QueryService):
             tasks, range_start, range_end
         )
 
+        # Convert tasks to DTOs
+        task_dtos = [self._task_to_gantt_dto(task) for task in tasks]
+
         return GanttOutput(
             date_range=GanttDateRange(start_date=range_start, end_date=range_end),
-            tasks=tasks,
+            tasks=task_dtos,
             task_daily_hours=task_daily_hours,
             daily_workload=daily_workload,
         )
@@ -212,3 +236,58 @@ class TaskQueryService(QueryService):
         final_end = end_date if end_date else auto_end
 
         return final_start, final_end
+
+    def _task_to_gantt_dto(self, task: Task) -> GanttTaskDto:
+        """Convert Task entity to GanttTaskDto.
+
+        Args:
+            task: Task entity
+
+        Returns:
+            GanttTaskDto with fields needed for Gantt visualization
+        """
+        return GanttTaskDto(
+            id=task.id,
+            name=task.name,
+            status=task.status,
+            estimated_duration=task.estimated_duration,
+            planned_start=task.planned_start,
+            planned_end=task.planned_end,
+            actual_start=task.actual_start,
+            actual_end=task.actual_end,
+            deadline=task.deadline,
+            is_finished=task.is_finished,
+        )
+
+    def _task_to_row_dto(self, task: Task) -> TaskRowDto:
+        """Convert Task entity to TaskRowDto.
+
+        Args:
+            task: Task entity
+
+        Returns:
+            TaskRowDto with fields needed for table display
+        """
+        # Tasks from repository must have an ID
+        assert task.id is not None, "Task must have an ID"
+
+        return TaskRowDto(
+            id=task.id,
+            name=task.name,
+            priority=task.priority,
+            status=task.status,
+            planned_start=task.planned_start,
+            planned_end=task.planned_end,
+            deadline=task.deadline,
+            actual_start=task.actual_start,
+            actual_end=task.actual_end,
+            estimated_duration=task.estimated_duration,
+            actual_duration_hours=task.actual_duration_hours,
+            is_fixed=task.is_fixed,
+            depends_on=task.depends_on,
+            tags=task.tags,
+            is_archived=task.is_archived,
+            is_finished=task.is_finished,
+            created_at=task.created_at,
+            updated_at=task.updated_at,
+        )

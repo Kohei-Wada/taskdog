@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from domain.entities.task import Task
+from application.dto.task_dto import TaskDetailDto
 from presentation.controllers.task_controller import TaskController
 from presentation.tui.context import TUIContext
 from presentation.tui.events import TasksRefreshed
@@ -48,20 +48,18 @@ class TUICommandBase(ABC):
         specific action associated with this command.
         """
 
-    def get_selected_task(self) -> Task | None:
+    def get_selected_task(self) -> TaskDetailDto | None:
         """Get the currently selected task from the table.
 
-        DEPRECATED: Use get_selected_task_id() or get_selected_task_vm() instead.
-        This method requires fetching the full Task from repository.
-
         Returns:
-            The selected task, or None if no task is selected or table not available
+            The selected task DTO, or None if no task is selected or table not available
         """
         task_id = self.get_selected_task_id()
         if task_id is None:
             return None
-        # Use QueryController instead of direct repository access
-        return self.context.query_controller.get_task_by_id(task_id)
+        # Use QueryController and extract task from output
+        output = self.context.query_controller.get_task_by_id(task_id)
+        return output.task
 
     def get_selected_task_id(self) -> int | None:
         """Get the ID of the currently selected task.

@@ -3,6 +3,7 @@
 from datetime import date, datetime
 
 from application.dto.optimization_summary import OptimizationSummary
+from application.dto.task_dto import TaskSummaryDto
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
 
@@ -90,6 +91,11 @@ class OptimizationSummaryBuilder:
             if not task.planned_start:
                 unscheduled_tasks.append(task)
 
+        # Convert unscheduled tasks to DTOs
+        unscheduled_tasks_dto = [
+            TaskSummaryDto(id=task.id, name=task.name) for task in unscheduled_tasks
+        ]
+
         # Workload validation
         overloaded_days = []
         for date_str, hours in sorted(daily_allocations.items()):
@@ -102,6 +108,6 @@ class OptimizationSummaryBuilder:
             total_hours=total_hours,
             deadline_conflicts=deadline_conflicts,
             days_span=days_span,
-            unscheduled_tasks=unscheduled_tasks,
+            unscheduled_tasks=unscheduled_tasks_dto,
             overloaded_days=overloaded_days,
         )

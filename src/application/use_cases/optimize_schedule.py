@@ -5,10 +5,12 @@ from datetime import datetime
 
 from application.dto.optimization_output import OptimizationOutput
 from application.dto.optimize_schedule_input import OptimizeScheduleInput
+from application.dto.task_dto import TaskSummaryDto
 from application.services.optimization.strategy_factory import StrategyFactory
 from application.services.optimization_summary_builder import OptimizationSummaryBuilder
 from application.services.schedule_clearer import ScheduleClearer
 from application.use_cases.base import UseCase
+from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
 from shared.config_manager import Config
 from shared.utils.holiday_checker import HolidayChecker
@@ -100,11 +102,29 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             modified_tasks, task_states_before, daily_allocations, input_dto.max_hours_per_day
         )
 
+        # Convert Tasks to DTOs
+        successful_tasks_dto = [self._task_to_summary_dto(task) for task in modified_tasks]
+        # failed_tasks is already list[SchedulingFailure] with TaskSummaryDto from strategy
+        failed_tasks_dto = failed_tasks
+
         # Create and return result
         return OptimizationOutput(
-            successful_tasks=modified_tasks,
-            failed_tasks=failed_tasks,
+            successful_tasks=successful_tasks_dto,
+            failed_tasks=failed_tasks_dto,
             daily_allocations=daily_allocations,
             summary=summary,
             task_states_before=task_states_before,
         )
+
+    def _task_to_summary_dto(self, task: Task) -> TaskSummaryDto:
+        """Convert Task entity to TaskSummaryDto.
+
+        Args:
+            task: Task entity
+
+        Returns:
+            TaskSummaryDto with basic task information
+        """
+        # Tasks from repository must have an ID
+        assert task.id is not None, "Task must have an ID"
+        return TaskSummaryDto(id=task.id, name=task.name)

@@ -3,6 +3,8 @@
 import unittest
 from unittest.mock import MagicMock
 
+from application.dto.get_task_by_id_output import GetTaskByIdOutput
+from application.dto.task_dto import TaskDetailDto
 from domain.entities.task import Task, TaskStatus
 from presentation.tui.commands.base import TUICommandBase
 
@@ -41,15 +43,41 @@ class TestTUICommandBase(unittest.TestCase):
 
     def test_get_selected_task_success(self):
         """Test getting selected task successfully."""
-        expected_task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.PENDING)
+        task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.PENDING)
+        # Create TaskDetailDto from task
+        task_dto = TaskDetailDto(
+            id=task.id,
+            name=task.name,
+            priority=task.priority,
+            status=task.status,
+            planned_start=None,
+            planned_end=None,
+            deadline=None,
+            actual_start=None,
+            actual_end=None,
+            estimated_duration=None,
+            daily_allocations={},
+            is_fixed=False,
+            depends_on=[],
+            actual_daily_hours={},
+            tags=[],
+            is_archived=False,
+            created_at=task.created_at,
+            updated_at=task.updated_at,
+            actual_duration_hours=None,
+            is_active=False,
+            is_finished=False,
+            can_be_modified=True,
+            is_schedulable=False,
+        )
         # Mock get_selected_task_id to return the task ID
         self.app.main_screen.task_table.get_selected_task_id.return_value = 1
-        # Mock QueryController to return the expected task
-        self.context.query_controller.get_task_by_id.return_value = expected_task
+        # Mock QueryController to return the GetTaskByIdOutput
+        self.context.query_controller.get_task_by_id.return_value = GetTaskByIdOutput(task=task_dto)
 
         result = self.command.get_selected_task()
 
-        self.assertEqual(result, expected_task)
+        self.assertEqual(result, task_dto)
         self.context.query_controller.get_task_by_id.assert_called_once_with(1)
 
     def test_get_selected_task_no_screen(self):

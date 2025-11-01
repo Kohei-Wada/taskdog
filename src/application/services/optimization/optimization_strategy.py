@@ -5,6 +5,7 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING
 
 from application.dto.optimization_output import SchedulingFailure
+from application.dto.task_dto import TaskSummaryDto
 from application.sorters.optimization_task_sorter import OptimizationTaskSorter
 from domain.entities.task import Task, TaskStatus
 
@@ -150,7 +151,10 @@ class OptimizationStrategy(ABC):
             task: The task that failed to be scheduled
             reason: Human-readable reason for the failure
         """
-        self.failed_tasks.append(SchedulingFailure(task=task, reason=reason))
+        # Convert Task to TaskSummaryDto
+        assert task.id is not None, "Task must have an ID"
+        task_dto = TaskSummaryDto(id=task.id, name=task.name)
+        self.failed_tasks.append(SchedulingFailure(task=task_dto, reason=reason))
 
     def _record_allocation_failure(
         self,

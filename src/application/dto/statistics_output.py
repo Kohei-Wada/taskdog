@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from domain.entities.task import Task
+from application.dto.task_dto import TaskSummaryDto
 
 
 @dataclass
@@ -34,16 +34,16 @@ class TimeStatistics:
         total_work_hours: Total work hours across all completed tasks
         average_work_hours: Average work hours per completed task
         median_work_hours: Median work hours per completed task
-        longest_task: Task with the longest actual duration
-        shortest_task: Task with the shortest actual duration
+        longest_task: Basic info of task with the longest actual duration
+        shortest_task: Basic info of task with the shortest actual duration
         tasks_with_time_tracking: Number of tasks with time tracking data
     """
 
     total_work_hours: float
     average_work_hours: float
     median_work_hours: float
-    longest_task: Task | None
-    shortest_task: Task | None
+    longest_task: TaskSummaryDto | None
+    shortest_task: TaskSummaryDto | None
     tasks_with_time_tracking: int
 
 
@@ -57,8 +57,8 @@ class EstimationAccuracyStatistics:
         over_estimated_count: Number of tasks finished faster than estimated
         under_estimated_count: Number of tasks that took longer than estimated
         exact_count: Number of tasks with accurate estimation (±10%)
-        best_estimated_tasks: Top 3 tasks with best estimation accuracy
-        worst_estimated_tasks: Top 3 tasks with worst estimation accuracy
+        best_estimated_tasks: Top 3 tasks with best estimation accuracy (basic info)
+        worst_estimated_tasks: Top 3 tasks with worst estimation accuracy (basic info)
     """
 
     total_tasks_with_estimation: int
@@ -66,8 +66,8 @@ class EstimationAccuracyStatistics:
     over_estimated_count: int
     under_estimated_count: int
     exact_count: int
-    best_estimated_tasks: list[Task]
-    worst_estimated_tasks: list[Task]
+    best_estimated_tasks: list[TaskSummaryDto]
+    worst_estimated_tasks: list[TaskSummaryDto]
 
 
 @dataclass

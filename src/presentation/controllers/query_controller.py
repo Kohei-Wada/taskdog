@@ -8,7 +8,9 @@ and filter construction.
 from datetime import date
 
 from application.dto.gantt_output import GanttOutput
+from application.dto.get_task_by_id_output import GetTaskByIdOutput
 from application.dto.tag_statistics_output import TagStatisticsOutput
+from application.dto.task_dto import TaskDetailDto
 from application.dto.task_list_output import TaskListOutput
 from application.queries.filters.task_filter import TaskFilter
 from application.queries.task_query_service import TaskQueryService
@@ -60,16 +62,16 @@ class QueryController:
         all_tasks = self.repository.get_all()
         total_count = len(all_tasks)
 
-        filtered_tasks = self.query_service.get_filtered_tasks(
+        filtered_task_dtos = self.query_service.get_filtered_tasks_as_dtos(
             filter_obj=filter_obj,
             sort_by=sort_by,
             reverse=reverse,
         )
 
         return TaskListOutput(
-            tasks=filtered_tasks,
+            tasks=filtered_task_dtos,
             total_count=total_count,
-            filtered_count=len(filtered_tasks),
+            filtered_count=len(filtered_task_dtos),
         )
 
     def get_gantt_data(
@@ -125,16 +127,60 @@ class QueryController:
             total_tagged_tasks=total_tagged_tasks,
         )
 
-    def get_task_by_id(self, task_id: int) -> Task | None:
+    def get_task_by_id(self, task_id: int) -> GetTaskByIdOutput:
         """Get a single task by ID.
 
-        Simple wrapper around repository lookup for consistency.
-        Used by various commands that need single task retrieval.
+        Retrieves a task and converts it to DTO.
+        Used by TUI commands and other components that need single task retrieval.
 
         Args:
             task_id: Task ID
 
         Returns:
-            Task entity or None if not found
+            GetTaskByIdOutput with TaskDetailDto (task=None if not found)
         """
-        return self.repository.get_by_id(task_id)
+        task = self.repository.get_by_id(task_id)
+        if task is None:
+            return GetTaskByIdOutput(task=None)
+
+        # Convert Task to TaskDetailDto
+        task_dto = self._task_to_detail_dto(task)
+        return GetTaskByIdOutput(task=task_dto)
+
+    def _task_to_detail_dto(self, task: Task) -> TaskDetailDto:
+        """Convert Task entity to TaskDetailDto.
+
+        Args:
+            task: Task entity
+
+        Returns:
+            TaskDetailDto with all task data
+        """
+        # Tasks from repository must have an ID
+        assert task.id is not None, "Task must have an ID"
+
+        return TaskDetailDto(
+            id=task.id,
+            name=task.name,
+            priority=task.priority,
+            status=task.status,
+            planned_start=task.planned_start,
+            planned_end=task.planned_end,
+            deadline=task.deadline,
+            actual_start=task.actual_start,
+            actual_end=task.actual_end,
+            estimated_duration=task.estimated_duration,
+            daily_allocations=task.daily_allocations,
+            is_fixed=task.is_fixed,
+            depends_on=task.depends_on,
+            actual_daily_hours=task.actual_daily_hours,
+            tags=task.tags,
+            is_archived=task.is_archived,
+            created_at=task.created_at,
+            updated_at=task.updated_at,
+            actual_duration_hours=task.actual_duration_hours,
+            is_active=task.is_active,
+            is_finished=task.is_finished,
+            can_be_modified=task.can_be_modified,
+            is_schedulable=task.is_schedulable(force_override=False),
+        )

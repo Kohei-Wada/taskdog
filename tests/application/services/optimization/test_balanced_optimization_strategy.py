@@ -17,7 +17,7 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         """Test that balanced strategy distributes hours evenly across available period."""
         # Create task with 10h duration and deadline 5 weekdays away
         # Monday to Friday = 5 weekdays, should allocate 2h/day
-        self.create_task(
+        task = self.create_task(
             "Balanced Task",
             estimated_duration=10.0,
             deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
@@ -27,7 +27,6 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
 
         # Verify balanced distribution
         self.assertEqual(len(result.successful_tasks), 1)
-        task = result.successful_tasks[0]
 
         # Should start Monday, end Friday
         self.assert_task_scheduled(
@@ -37,8 +36,10 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         )
 
         # Check daily allocations: 10h / 5 days = 2h/day
-        self.assertEqual(len(task.daily_allocations), 5)  # Mon-Fri
-        for _date_str, hours in task.daily_allocations.items():
+        updated_task = self.repository.get_by_id(task.id)
+        assert updated_task is not None
+        self.assertEqual(len(updated_task.daily_allocations), 5)  # Mon-Fri
+        for _date_str, hours in updated_task.daily_allocations.items():
             self.assertAlmostEqual(hours, 2.0, places=5)
 
     def test_balanced_without_deadline_uses_default_period(self):
@@ -62,7 +63,7 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         """Test that balanced strategy respects max_hours_per_day constraint."""
         # Create task that would need more days due to max_hours_per_day
         # 12h over 5 weekdays = 2.4h/day, but we set max to 6h/day (plenty)
-        self.create_task(
+        task = self.create_task(
             "Constrained Task",
             estimated_duration=12.0,
             deadline=datetime(2025, 10, 24, 18, 0, 0),
@@ -72,10 +73,11 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
 
         # Verify
         self.assertEqual(len(result.successful_tasks), 1)
-        task = result.successful_tasks[0]
 
         # Should respect max_hours_per_day
-        for _date_str, hours in task.daily_allocations.items():
+        updated_task = self.repository.get_by_id(task.id)
+        assert updated_task is not None
+        for _date_str, hours in updated_task.daily_allocations.items():
             self.assertLessEqual(hours, 6.0)
 
         # Total should still be 12h
@@ -84,17 +86,22 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
     def test_balanced_handles_multiple_tasks(self):
         """Test balanced strategy with multiple tasks."""
         # Create two tasks with deadlines
-        self.create_task(
-            "Task 1",
-            priority=200,
-            estimated_duration=6.0,
-            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Wednesday
+        tasks = []
+        tasks.append(
+            self.create_task(
+                "Task 1",
+                priority=200,
+                estimated_duration=6.0,
+                deadline=datetime(2025, 10, 22, 18, 0, 0),  # Wednesday
+            )
         )
-        self.create_task(
-            "Task 2",
-            priority=100,
-            estimated_duration=6.0,
-            deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
+        tasks.append(
+            self.create_task(
+                "Task 2",
+                priority=100,
+                estimated_duration=6.0,
+                deadline=datetime(2025, 10, 24, 18, 0, 0),  # Friday
+            )
         )
 
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
@@ -103,7 +110,7 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         self.assertEqual(len(result.successful_tasks), 2)
 
         # Each task should have daily allocations
-        for task in result.successful_tasks:
+        for task in tasks:
             self.assert_total_allocated_hours(task, 6.0)
 
     def test_balanced_fails_when_deadline_too_tight(self):

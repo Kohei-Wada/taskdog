@@ -7,7 +7,7 @@ from textual.containers import Container, VerticalScroll
 from textual.widgets import Label, Markdown, Static
 
 from application.dto.task_detail_output import GetTaskDetailOutput
-from domain.entities.task import Task
+from application.dto.task_dto import TaskDetailDto
 from presentation.constants.colors import STATUS_COLORS_BOLD
 from presentation.tui.screens.base_dialog import BaseModalDialog
 from shared.constants.formats import DATETIME_FORMAT
@@ -29,22 +29,17 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
         ("v", "edit_note", "Edit Note"),
     ]
 
-    def __init__(self, detail: GetTaskDetailOutput | Task, *args: Any, **kwargs: Any):
+    def __init__(self, detail: GetTaskDetailOutput, *args: Any, **kwargs: Any):
         """Initialize the detail screen.
 
         Args:
-            detail: GetTaskDetailOutput with task and notes, or Task object for backwards compatibility
+            detail: GetTaskDetailOutput with task and notes
         """
         super().__init__(*args, **kwargs)
-        # Support both GetTaskDetailOutput and Task for backwards compatibility
-        if isinstance(detail, GetTaskDetailOutput):
-            self.task_data = detail.task
-            self.notes_content = detail.notes_content
-            self.has_notes = detail.has_notes
-        else:
-            self.task_data = detail
-            self.notes_content = None
-            self.has_notes = False
+        assert detail.task is not None, "Task detail must not be None"
+        self.task_data: TaskDetailDto = detail.task
+        self.notes_content = detail.notes_content
+        self.has_notes = detail.has_notes
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
