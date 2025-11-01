@@ -40,15 +40,13 @@ class Task:
 
     Design Notes:
         Archive Implementation (2025-10-31):
-        - Previously, archiving was implemented as TaskStatus.ARCHIVED
-        - Changed to is_archived boolean flag to preserve original task status
+        - Archiving is implemented as is_archived boolean flag to preserve original task status
         - This aligns with industry standards (Jira, Trello) where archiving is
           a visibility flag rather than a terminal state
         - Benefits:
           * Original status (COMPLETED, CANCELED, etc.) is preserved
           * Restoring returns task to its exact previous state
           * More intuitive: "archived COMPLETED task" vs "ARCHIVED task"
-        - Migration: Old ARCHIVED status → PENDING + is_archived=True
     """
 
     name: str
@@ -70,7 +68,6 @@ class Task:
     actual_daily_hours: dict[date, float] = field(default_factory=dict)
     tags: list[str] = field(default_factory=list)
     # Archive flag: True = soft deleted, preserves original status
-    # Replaced TaskStatus.ARCHIVED (2025-10-31) to maintain status integrity
     is_archived: bool = False
 
     def __post_init__(self) -> None:
@@ -237,7 +234,7 @@ class Task:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Task":  # noqa: C901
+    def from_dict(cls, data: dict[str, Any]) -> "Task":
         """Deserialize task from dictionary.
 
         Supports both string (legacy format) and datetime object formats for backward compatibility.
@@ -253,31 +250,26 @@ class Task:
         """
         task_data = data.copy()
 
-        # Process timestamp fields
-        cls._process_created_at_field(task_data)
-        cls._process_updated_at_field(task_data)
-
         # Backward compatibility: migrate is_deleted to is_archived
         if "is_deleted" in task_data:
             is_deleted = task_data.pop("is_deleted")
             if is_deleted:
                 task_data["is_archived"] = True
 
-        # Backward compatibility: migrate ARCHIVED status to is_archived flag (BEFORE converting to Enum)
-        if (
-            "status" in task_data
-            and isinstance(task_data["status"], str)
-            and task_data["status"] == "ARCHIVED"
-        ):
-            task_data["status"] = "PENDING"
-            task_data["is_archived"] = True
-
         # Convert status string to Enum if present
         if "status" in task_data and isinstance(task_data["status"], str):
             task_data["status"] = TaskStatus(task_data["status"])
 
-        # Convert datetime string fields to datetime objects (backward compatibility)
-        datetime_fields = ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"]
+        # Convert datetime string fields to datetime objects
+        datetime_fields = [
+            "created_at",
+            "updated_at",
+            "planned_start",
+            "planned_end",
+            "deadline",
+            "actual_start",
+            "actual_end",
+        ]
         for field_name in datetime_fields:
             if field_name in task_data and isinstance(task_data[field_name], str):
                 task_data[field_name] = cls._parse_datetime_string(task_data[field_name])
@@ -300,51 +292,12 @@ class Task:
 
         return cls(**task_data)
 
-    @classmethod
-    def _process_created_at_field(cls, task_data: dict[str, Any]) -> None:
-        """Process created_at field with backward compatibility.
-
-        Args:
-            task_data: Task data dictionary to modify in-place
-        """
-        # Backward compatibility: support both 'timestamp' and 'created_at'
-        if "timestamp" in task_data and "created_at" not in task_data:
-            task_data["created_at"] = task_data.pop("timestamp")
-
-        # Convert created_at to datetime if it's a Unix timestamp (float/int)
-        if "created_at" in task_data:
-            value = task_data["created_at"]
-            if isinstance(value, int | float):
-                # Convert Unix timestamp to datetime
-                task_data["created_at"] = datetime.fromtimestamp(value)
-            elif isinstance(value, str):
-                # Convert string to datetime
-                task_data["created_at"] = cls._parse_datetime_string(value)
-
-    @classmethod
-    def _process_updated_at_field(cls, task_data: dict[str, Any]) -> None:
-        """Process updated_at field with backward compatibility.
-
-        Args:
-            task_data: Task data dictionary to modify in-place
-        """
-        # Backward compatibility: if updated_at is missing, use created_at
-        if "updated_at" not in task_data:
-            task_data["updated_at"] = task_data.get("created_at", datetime.now())
-        elif isinstance(task_data["updated_at"], str):
-            # Convert string to datetime
-            task_data["updated_at"] = cls._parse_datetime_string(task_data["updated_at"])
-
     @staticmethod
     def _parse_datetime_string(dt_str: str | None) -> datetime | None:
-        """Parse datetime string in multiple formats.
-
-        Supports:
-        - ISO 8601: "YYYY-MM-DDTHH:MM:SS"
-        - Legacy: "YYYY-MM-DD HH:MM:SS"
+        """Parse datetime string in ISO 8601 format.
 
         Args:
-            dt_str: Datetime string to parse
+            dt_str: Datetime string in ISO 8601 format (YYYY-MM-DDTHH:MM:SS)
 
         Returns:
             datetime object or None if parsing fails
@@ -352,18 +305,9 @@ class Task:
         if not dt_str:
             return None
 
-        # Try ISO 8601 format first (new format)
         try:
             return datetime.fromisoformat(dt_str)
         except (ValueError, AttributeError):
-            pass
-
-        # Try legacy format: "YYYY-MM-DD HH:MM:SS"
-        try:
-            from shared.constants.formats import DATETIME_FORMAT
-
-            return datetime.strptime(dt_str, DATETIME_FORMAT)
-        except (ValueError, ImportError):
             return None
 
     @staticmethod

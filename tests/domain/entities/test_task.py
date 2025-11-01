@@ -128,23 +128,6 @@ class TestTaskSerialization(unittest.TestCase):
         self.assertIsNone(result["actual_start"])
         self.assertIsNone(result["actual_end"])
 
-    def test_from_dict_backward_compatibility_without_updated_at(self):
-        """Test that from_dict uses created_at when updated_at is missing."""
-        created = datetime(2025, 1, 1, 0, 0, 0)
-        task_data = {
-            "id": 1,
-            "name": "Test Task",
-            "priority": 1,
-            "status": "PENDING",
-            "created_at": created.isoformat(),
-            # updated_at is missing (old data format)
-        }
-
-        task = Task.from_dict(task_data)
-
-        self.assertEqual(task.created_at, created)
-        self.assertEqual(task.updated_at, created)
-
     def test_from_dict_with_updated_at(self):
         """Test that from_dict correctly deserializes updated_at."""
         created = datetime(2025, 1, 1, 0, 0, 0)
