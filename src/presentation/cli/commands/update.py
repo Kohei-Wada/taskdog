@@ -5,7 +5,6 @@ import click
 from domain.entities.task import TaskStatus
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
-from presentation.controllers.task_controller import TaskController
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
@@ -85,10 +84,7 @@ def update_command(
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    repository = ctx_obj.repository
-    time_tracker = ctx_obj.time_tracker
-    config = ctx_obj.config
-    controller = TaskController(repository, time_tracker, config)
+    controller = ctx_obj.task_controller
 
     # Convert status string to Enum if provided
     status_enum = TaskStatus(status) if status else None

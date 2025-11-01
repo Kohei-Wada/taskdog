@@ -4,7 +4,6 @@ import click
 
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
-from presentation.controllers.task_controller import TaskController
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
@@ -30,7 +29,7 @@ def schedule_command(ctx, task_id, start, end):
         taskdog schedule 5 "2025-10-15 09:00:00" "2025-10-17 18:00:00"
     """
     ctx_obj: CliContext = ctx.obj
-    controller = TaskController(ctx_obj.repository, ctx_obj.time_tracker, ctx_obj.config)
+    controller = ctx_obj.task_controller
 
     # Update task via controller
     task, _updated_fields = controller.update_task(

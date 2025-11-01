@@ -6,7 +6,6 @@ from presentation.cli.commands.common_options import filter_options, sort_option
 from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.controllers.query_controller import QueryController
 from presentation.mappers.gantt_mapper import GanttMapper
 from presentation.renderers.rich_gantt_renderer import RichGanttRenderer
 from shared.click_types.datetime_with_default import DateTimeWithDefault
@@ -87,8 +86,7 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     analysis to help identify scheduling conflicts and overallocated days.
     """
     ctx_obj: CliContext = ctx.obj
-    repository = ctx_obj.repository
-    query_controller = QueryController(repository)
+    query_controller = ctx_obj.query_controller
 
     # Build integrated filter with tags support (tags use OR logic by default)
     tags = list(tag) if tag else None

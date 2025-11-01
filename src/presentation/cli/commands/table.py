@@ -11,7 +11,6 @@ from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.commands.table_helpers import render_table
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.controllers.query_controller import QueryController
 from shared.click_types.field_list import FieldList
 
 
@@ -59,7 +58,7 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
         taskdog table --start-date 2025-10-01 --end-date 2025-10-31  # October tasks
     """
     ctx_obj: CliContext = ctx.obj
-    repository = ctx_obj.repository
+    query_controller = ctx_obj.query_controller
 
     # fields is already parsed by FieldList Click type (no validation)
     # Build integrated filter with all options (tags use OR logic by default)
@@ -74,7 +73,6 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
     )
 
     # Get filtered and sorted tasks
-    query_controller = QueryController(repository)
     result = query_controller.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
 
     # Render and display

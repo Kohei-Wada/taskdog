@@ -5,7 +5,6 @@ import click
 from presentation.cli.commands.common_options import date_range_options, filter_options
 from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
-from presentation.controllers.query_controller import QueryController
 from presentation.exporters import CsvTaskExporter, JsonTaskExporter, MarkdownTableExporter
 from shared.click_types.field_list import FieldList
 
@@ -85,9 +84,8 @@ def export_command(ctx, format, output, fields, tag, all, status, start_date, en
         taskdog export --start-date 2025-10-01 --end-date 2025-10-31  # October tasks
     """
     ctx_obj: CliContext = ctx.obj
-    repository = ctx_obj.repository
     console_writer = ctx_obj.console_writer
-    query_controller = QueryController(repository)
+    query_controller = ctx_obj.query_controller
 
     try:
         # Build integrated filter with all options (tags use OR logic by default)

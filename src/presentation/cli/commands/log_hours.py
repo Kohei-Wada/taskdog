@@ -4,7 +4,6 @@ import click
 
 from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
 from presentation.cli.context import CliContext
-from presentation.controllers.task_controller import TaskController
 
 
 @click.command(name="log-hours", help="Log actual hours worked on a task for a specific date.")
@@ -31,9 +30,7 @@ def log_hours_command(ctx, task_id, hours, date):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    repository = ctx_obj.repository
-    time_tracker = ctx_obj.time_tracker
-    config = ctx_obj.config
+    controller = ctx_obj.task_controller
 
     # Default to today if no date specified
     if date is None:
@@ -42,7 +39,6 @@ def log_hours_command(ctx, task_id, hours, date):
         date = datetime.now().strftime("%Y-%m-%d")
 
     try:
-        controller = TaskController(repository, time_tracker, config)
         task = controller.log_hours(task_id, hours, date)
 
         console_writer.success(f"Logged {hours}h for task {task_id} on {date}")

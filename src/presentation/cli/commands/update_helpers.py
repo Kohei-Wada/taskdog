@@ -6,7 +6,6 @@ import click
 
 from domain.entities.task import Task
 from presentation.cli.context import CliContext
-from presentation.controllers.task_controller import TaskController
 
 
 def execute_single_field_update(
@@ -34,7 +33,7 @@ def execute_single_field_update(
         TaskValidationError: If update validation fails
     """
     ctx_obj: CliContext = ctx.obj
-    controller = TaskController(ctx_obj.repository, ctx_obj.time_tracker, ctx_obj.config)
+    controller = ctx_obj.task_controller
 
     # Update task via controller with dynamic field
     task, _ = controller.update_task(task_id=task_id, **{field_name: field_value})

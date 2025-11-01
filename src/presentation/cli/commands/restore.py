@@ -4,7 +4,6 @@ import click
 
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
-from presentation.controllers.task_controller import TaskController
 from shared.constants import StatusVerbs
 
 
@@ -15,10 +14,7 @@ def restore_command(ctx, task_ids):
     """Restore archived task(s)."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    repository = ctx_obj.repository
-    time_tracker = ctx_obj.time_tracker
-    config = ctx_obj.config
-    controller = TaskController(repository, time_tracker, config)
+    controller = ctx_obj.task_controller
 
     def restore_single_task(task_id: int) -> None:
         task = controller.restore_task(task_id)

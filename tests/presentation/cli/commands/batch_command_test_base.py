@@ -1,7 +1,7 @@
 """Base test class for CLI batch command tests."""
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from click.testing import CliRunner
 
@@ -50,6 +50,8 @@ class BaseBatchCommandTest(unittest.TestCase):
         self.time_tracker = MagicMock()
         self.console_writer = MagicMock()
         self.config = MagicMock()
+        self.task_controller = MagicMock()
+        self.query_controller = MagicMock()
 
         # Set up CLI context with all dependencies
         self.cli_context = MagicMock()
@@ -57,6 +59,8 @@ class BaseBatchCommandTest(unittest.TestCase):
         self.cli_context.time_tracker = self.time_tracker
         self.cli_context.console_writer = self.console_writer
         self.cli_context.config = self.config
+        self.cli_context.task_controller = self.task_controller
+        self.cli_context.query_controller = self.query_controller
 
     def _get_mock_method(self, mock_instance):
         """Get the mock method based on controller_method or execute.
@@ -73,93 +77,83 @@ class BaseBatchCommandTest(unittest.TestCase):
 
     def test_single_task_success(self):
         """Test executing command on a single task successfully."""
-        with patch(self.use_case_path) as mock_use_case_class:
-            # Setup
-            result_task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.COMPLETED)
-            mock_use_case = mock_use_case_class.return_value
-            mock_method = self._get_mock_method(mock_use_case)
-            mock_method.return_value = result_task
+        # Setup
+        result_task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.COMPLETED)
+        mock_method = getattr(self.task_controller, self.controller_method)
+        mock_method.return_value = result_task
 
-            # Execute
-            result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
+        # Execute
+        result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
 
-            # Verify
-            self.assertEqual(result.exit_code, 0)
-            mock_method.assert_called_once()
-            self.console_writer.task_success.assert_called_once_with(self.action_verb, result_task)
+        # Verify
+        self.assertEqual(result.exit_code, 0)
+        mock_method.assert_called_once()
+        self.console_writer.task_success.assert_called_once_with(self.action_verb, result_task)
 
     def test_multiple_tasks_success(self):
         """Test executing command on multiple tasks successfully."""
-        with patch(self.use_case_path) as mock_use_case_class:
-            # Setup
-            result_tasks = [
-                Task(id=1, name="Task 1", priority=5, status=TaskStatus.COMPLETED),
-                Task(id=2, name="Task 2", priority=5, status=TaskStatus.COMPLETED),
-            ]
-            mock_use_case = mock_use_case_class.return_value
-            mock_method = self._get_mock_method(mock_use_case)
-            mock_method.side_effect = result_tasks
+        # Setup
+        result_tasks = [
+            Task(id=1, name="Task 1", priority=5, status=TaskStatus.COMPLETED),
+            Task(id=2, name="Task 2", priority=5, status=TaskStatus.COMPLETED),
+        ]
+        mock_method = getattr(self.task_controller, self.controller_method)
+        mock_method.side_effect = result_tasks
 
-            # Execute
-            result = self.runner.invoke(self.command_func, ["1", "2"], obj=self.cli_context)
+        # Execute
+        result = self.runner.invoke(self.command_func, ["1", "2"], obj=self.cli_context)
 
-            # Verify
-            self.assertEqual(result.exit_code, 0)
-            self.assertEqual(mock_method.call_count, 2)
-            self.assertEqual(self.console_writer.task_success.call_count, 2)
-            # Verify spacing added for multiple tasks
-            self.assertEqual(self.console_writer.empty_line.call_count, 2)
+        # Verify
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(mock_method.call_count, 2)
+        self.assertEqual(self.console_writer.task_success.call_count, 2)
+        # Verify spacing added for multiple tasks
+        self.assertEqual(self.console_writer.empty_line.call_count, 2)
 
     def test_nonexistent_task(self):
         """Test command with non-existent task."""
-        with patch(self.use_case_path) as mock_use_case_class:
-            # Setup
-            mock_use_case = mock_use_case_class.return_value
-            mock_method = self._get_mock_method(mock_use_case)
-            mock_method.side_effect = TaskNotFoundException(999)
+        # Setup
+        mock_method = getattr(self.task_controller, self.controller_method)
+        mock_method.side_effect = TaskNotFoundException(999)
 
-            # Execute
-            result = self.runner.invoke(self.command_func, ["999"], obj=self.cli_context)
+        # Execute
+        result = self.runner.invoke(self.command_func, ["999"], obj=self.cli_context)
 
-            # Verify
-            self.assertEqual(result.exit_code, 0)
-            self.console_writer.validation_error.assert_called_once()
-            error_msg = self.console_writer.validation_error.call_args[0][0]
-            self.assertIn("999", error_msg)
+        # Verify
+        self.assertEqual(result.exit_code, 0)
+        self.console_writer.validation_error.assert_called_once()
+        error_msg = self.console_writer.validation_error.call_args[0][0]
+        self.assertIn("999", error_msg)
 
     def test_already_finished_task(self):
         """Test command with already finished task."""
-        with patch(self.use_case_path) as mock_use_case_class:
-            # Setup
-            mock_use_case = mock_use_case_class.return_value
-            mock_method = self._get_mock_method(mock_use_case)
-            mock_method.side_effect = TaskAlreadyFinishedError(1, "COMPLETED")
+        # Setup
+        mock_method = getattr(self.task_controller, self.controller_method)
+        mock_method.side_effect = TaskAlreadyFinishedError(1, "COMPLETED")
 
-            # Execute
-            result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
+        # Execute
+        result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
 
-            # Verify
-            self.assertEqual(result.exit_code, 0)
-            self.console_writer.validation_error.assert_called_once()
-            error_msg = self.console_writer.validation_error.call_args[0][0]
-            self.assertIn("task 1", error_msg)
-            self.assertIn("COMPLETED", error_msg)
+        # Verify
+        self.assertEqual(result.exit_code, 0)
+        self.console_writer.validation_error.assert_called_once()
+        error_msg = self.console_writer.validation_error.call_args[0][0]
+        self.assertIn("task 1", error_msg)
+        self.assertIn("COMPLETED", error_msg)
 
     def test_general_exception(self):
         """Test handling of general exception during command execution."""
-        with patch(self.use_case_path) as mock_use_case_class:
-            # Setup
-            mock_use_case = mock_use_case_class.return_value
-            mock_method = self._get_mock_method(mock_use_case)
-            error = ValueError("Something went wrong")
-            mock_method.side_effect = error
+        # Setup
+        mock_method = getattr(self.task_controller, self.controller_method)
+        error = ValueError("Something went wrong")
+        mock_method.side_effect = error
 
-            # Execute
-            result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
+        # Execute
+        result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
 
-            # Verify
-            self.assertEqual(result.exit_code, 0)
-            self.console_writer.error.assert_called_once_with(self.action_name, error)
+        # Verify
+        self.assertEqual(result.exit_code, 0)
+        self.console_writer.error.assert_called_once_with(self.action_name, error)
 
     def test_no_task_id_provided(self):
         """Test command without providing task ID."""

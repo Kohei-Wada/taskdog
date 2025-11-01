@@ -15,7 +15,6 @@ from presentation.cli.commands.common_options import (
 from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.controllers.query_controller import QueryController
 
 
 @click.command(
@@ -64,8 +63,7 @@ def report_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     Groups tasks by date and displays allocated hours for each day.
     """
     ctx_obj: CliContext = ctx.obj
-    repository = ctx_obj.repository
-    query_controller = QueryController(repository)
+    query_controller = ctx_obj.query_controller
     workload_calculator = WorkloadCalculator()
 
     # Build integrated filter with tags support (tags use OR logic by default)

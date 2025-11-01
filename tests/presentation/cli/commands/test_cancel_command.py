@@ -1,7 +1,6 @@
 """Tests for cancel command."""
 
 import unittest
-from unittest.mock import patch
 
 from domain.entities.task import Task, TaskStatus
 from presentation.cli.commands.cancel import cancel_command
@@ -17,14 +16,11 @@ class TestCancelCommand(BaseBatchCommandTest):
     action_verb = "Canceled"
     action_name = "cancel"
 
-    @patch("presentation.cli.commands.cancel.TaskController")
-    def test_cancel_in_progress_task(self, mock_controller_class):
+    def test_cancel_in_progress_task(self):
         """Test canceling a task that is in progress."""
         # Setup
         canceled_task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.CANCELED)
-
-        mock_controller = mock_controller_class.return_value
-        mock_controller.cancel_task.return_value = canceled_task
+        self.task_controller.cancel_task.return_value = canceled_task
 
         # Execute
         result = self.runner.invoke(cancel_command, ["1"], obj=self.cli_context)

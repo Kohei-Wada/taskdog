@@ -9,7 +9,6 @@ from presentation.cli.commands.filter_helpers import build_task_filter
 from presentation.cli.commands.table_helpers import render_table
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.controllers.query_controller import QueryController
 
 
 @click.command(
@@ -46,7 +45,7 @@ def week_command(ctx, format, all, status, sort, reverse):
         taskdog week --sort priority    # Sort by priority
     """
     ctx_obj: CliContext = ctx.obj
-    repository = ctx_obj.repository
+    query_controller = ctx_obj.query_controller
 
     # Build combined filter: time filter + status filter
     status_filter = build_task_filter(all=all, status=status)
@@ -54,7 +53,6 @@ def week_command(ctx, format, all, status, sort, reverse):
     filter_obj = CompositeFilter([status_filter, time_filter]) if status_filter else time_filter
 
     # Get filtered and sorted tasks
-    query_controller = QueryController(repository)
     result = query_controller.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
 
     # Render and display

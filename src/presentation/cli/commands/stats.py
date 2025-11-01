@@ -4,7 +4,6 @@ import click
 
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
-from presentation.controllers.task_controller import TaskController
 from presentation.mappers.statistics_mapper import StatisticsMapper
 from presentation.renderers.rich_statistics_renderer import RichStatisticsRenderer
 
@@ -42,12 +41,9 @@ def stats_command(ctx, period, focus):
     """Display task statistics and analytics."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    repository = ctx_obj.repository
-    time_tracker = ctx_obj.time_tracker
-    config = ctx_obj.config
+    controller = ctx_obj.task_controller
 
     # Calculate statistics via controller
-    controller = TaskController(repository, time_tracker, config)
     result = controller.calculate_statistics(period=period)
 
     # Check if we have any tasks

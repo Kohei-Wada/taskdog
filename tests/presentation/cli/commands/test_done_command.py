@@ -1,7 +1,6 @@
 """Tests for done command."""
 
 import unittest
-from unittest.mock import patch
 
 from domain.exceptions.task_exceptions import TaskNotStartedError
 from presentation.cli.commands.done import done_command
@@ -17,12 +16,10 @@ class TestDoneCommand(BaseBatchCommandTest):
     action_verb = "Completed"
     action_name = "complete"
 
-    @patch("presentation.cli.commands.done.TaskController")
-    def test_complete_not_started_task(self, mock_controller_class):
+    def test_complete_not_started_task(self):
         """Test completing a task that hasn't been started."""
         # Setup
-        mock_controller = mock_controller_class.return_value
-        mock_controller.complete_task.side_effect = TaskNotStartedError(1)
+        self.task_controller.complete_task.side_effect = TaskNotStartedError(1)
 
         # Execute
         result = self.runner.invoke(done_command, ["1"], obj=self.cli_context)

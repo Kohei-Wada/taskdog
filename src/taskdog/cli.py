@@ -95,6 +95,13 @@ def cli(ctx: click.Context) -> None:
         console_writer.error("loading tasks", e)
         ctx.exit(1)
 
+    # Initialize controllers
+    from presentation.controllers.query_controller import QueryController
+    from presentation.controllers.task_controller import TaskController
+
+    task_controller = TaskController(repository, time_tracker, config, notes_repository)
+    query_controller = QueryController(repository)
+
     # Store in CliContext for type-safe access
     ctx.ensure_object(dict)
     ctx.obj = CliContext(
@@ -103,6 +110,8 @@ def cli(ctx: click.Context) -> None:
         time_tracker=time_tracker,
         config=config,
         notes_repository=notes_repository,
+        task_controller=task_controller,
+        query_controller=query_controller,
     )
 
 

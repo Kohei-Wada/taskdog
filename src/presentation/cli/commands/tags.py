@@ -5,8 +5,6 @@ import click
 from domain.exceptions.task_exceptions import TaskNotFoundException
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
-from presentation.controllers.query_controller import QueryController
-from presentation.controllers.task_controller import TaskController
 
 
 @click.command(name="tags", help="View or set task tags.")
@@ -24,11 +22,10 @@ def tags_command(ctx, task_id, tags):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    repository = ctx_obj.repository
+    query_controller = ctx_obj.query_controller
 
     # Case 1: No arguments - show all tags
     if task_id is None:
-        query_controller = QueryController(repository)
         stats = query_controller.get_tag_statistics()
 
         if not stats.tag_counts:
@@ -44,7 +41,6 @@ def tags_command(ctx, task_id, tags):
 
     # Case 2: Task ID only - show tags for that task
     if not tags:
-        query_controller = QueryController(repository)
         task = query_controller.get_task_by_id(task_id)
         if not task:
             raise TaskNotFoundException(task_id)
@@ -58,9 +54,7 @@ def tags_command(ctx, task_id, tags):
         return
 
     # Case 3: Task ID + tags - set tags
-    time_tracker = ctx_obj.time_tracker
-    config = ctx_obj.config
-    controller = TaskController(repository, time_tracker, config)
+    controller = ctx_obj.task_controller
     task = controller.set_task_tags(task_id, list(tags))
 
     if task.tags:
