@@ -2,10 +2,9 @@
 
 import click
 
-from application.dto.log_hours_request import LogHoursRequest
-from application.use_cases.log_hours import LogHoursUseCase
 from domain.exceptions.task_exceptions import TaskNotFoundException, TaskValidationError
 from presentation.cli.context import CliContext
+from presentation.controllers.task_controller import TaskController
 
 
 @click.command(name="log-hours", help="Log actual hours worked on a task for a specific date.")
@@ -33,6 +32,8 @@ def log_hours_command(ctx, task_id, hours, date):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
+    config = ctx_obj.config
 
     # Default to today if no date specified
     if date is None:
@@ -41,9 +42,8 @@ def log_hours_command(ctx, task_id, hours, date):
         date = datetime.now().strftime("%Y-%m-%d")
 
     try:
-        input_dto = LogHoursRequest(task_id=task_id, date=date, hours=hours)
-        use_case = LogHoursUseCase(repository)
-        task = use_case.execute(input_dto)
+        controller = TaskController(repository, time_tracker, config)
+        task = controller.log_hours(task_id, hours, date)
 
         console_writer.success(f"Logged {hours}h for task {task_id} on {date}")
 

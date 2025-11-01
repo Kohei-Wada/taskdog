@@ -231,6 +231,27 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         # No tasks should be scheduled
         self.assertEqual(len(result.successful_tasks), 0)
 
+    def test_optimize_skips_archived_tasks(self):
+        """Test that archived tasks are not scheduled."""
+        # Create archived task
+        input_dto = CreateTaskRequest(name="Archived Task", priority=100, estimated_duration=3.0)
+        task = self.create_use_case.execute(input_dto)
+        task.is_archived = True
+        self.repository.save(task)
+
+        # Optimize
+        start_date = datetime(2025, 10, 15, 18, 0, 0)
+        optimize_input = OptimizeScheduleRequest(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+        )
+        result = self.optimize_use_case.execute(optimize_input)
+
+        # No tasks should be scheduled
+        self.assertEqual(len(result.successful_tasks), 0)
+
     def test_optimize_skips_tasks_without_duration(self):
         """Test that tasks without estimated duration are not scheduled."""
         # Create task without estimated duration

@@ -57,6 +57,20 @@ class TestTaskIsSchedulable(unittest.TestCase):
 
         self.assertTrue(result)
 
+    def test_is_not_schedulable_when_archived(self):
+        """Test that archived tasks are never schedulable."""
+        task = Task(
+            name="Archived task",
+            priority=100,
+            status=TaskStatus.PENDING,
+            estimated_duration=4.0,
+            is_archived=True,
+        )
+
+        # Archived tasks should not be schedulable, even with force_override
+        self.assertFalse(task.is_schedulable(force_override=False))
+        self.assertFalse(task.is_schedulable(force_override=True))
+
 
 class TestTaskShouldCountInWorkload(unittest.TestCase):
     """Test cases for Task.should_count_in_workload() method."""

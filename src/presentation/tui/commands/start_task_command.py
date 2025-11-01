@@ -14,8 +14,8 @@ class StartTaskCommand(StatusChangeCommandBase):
         return "starting task"
 
     def execute_status_change(self, task_id: int) -> Task:
-        """Start the task via TaskService."""
-        return self.task_service.start_task(task_id)
+        """Start the task via TaskController."""
+        return self.controller.start_task(task_id)
 
     def get_success_verb(self) -> str:
         """Return success message verb."""

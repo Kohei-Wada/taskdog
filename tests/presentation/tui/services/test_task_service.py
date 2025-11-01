@@ -1,11 +1,9 @@
 """Tests for TaskService."""
 
 import unittest
-from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from application.queries.task_query_service import TaskQueryService
-from domain.entities.task import Task, TaskStatus
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 from domain.services.time_tracker import TimeTracker
@@ -36,95 +34,6 @@ class TestTaskService(unittest.TestCase):
 
         # Initialize TaskService with context
         self.service = TaskService(self.context)
-
-    def test_create_task_with_default_priority(self):
-        """Test creating a task with default priority."""
-        expected_task = Task(
-            id=1,
-            name="Test Task",
-            priority=5,
-            status=TaskStatus.PENDING,
-            created_at=datetime.now(),
-        )
-
-        with patch(
-            "presentation.tui.services.task_service.CreateTaskUseCase"
-        ) as mock_use_case_class:
-            mock_use_case = MagicMock()
-            mock_use_case.execute.return_value = expected_task
-            mock_use_case_class.return_value = mock_use_case
-
-            result = self.service.create_task("Test Task")
-
-            self.assertEqual(result, expected_task)
-            mock_use_case.execute.assert_called_once()
-
-    def test_create_task_with_custom_priority(self):
-        """Test creating a task with custom priority."""
-        expected_task = Task(
-            id=1,
-            name="Test Task",
-            priority=8,
-            status=TaskStatus.PENDING,
-            created_at=datetime.now(),
-        )
-
-        with patch(
-            "presentation.tui.services.task_service.CreateTaskUseCase"
-        ) as mock_use_case_class:
-            mock_use_case = MagicMock()
-            mock_use_case.execute.return_value = expected_task
-            mock_use_case_class.return_value = mock_use_case
-
-            result = self.service.create_task("Test Task", priority=8)
-
-            self.assertEqual(result, expected_task)
-
-    def test_start_task(self):
-        """Test starting a task."""
-        task_id = 1
-        expected_task = Task(
-            id=task_id,
-            name="Test Task",
-            priority=5,
-            status=TaskStatus.IN_PROGRESS,
-            created_at=datetime.now(),
-        )
-
-        with patch(
-            "presentation.tui.services.task_service.StartTaskUseCase"
-        ) as mock_use_case_class:
-            mock_use_case = MagicMock()
-            mock_use_case.execute.return_value = expected_task
-            mock_use_case_class.return_value = mock_use_case
-
-            result = self.service.start_task(task_id)
-
-            self.assertEqual(result, expected_task)
-            mock_use_case.execute.assert_called_once()
-
-    def test_complete_task(self):
-        """Test completing a task."""
-        task_id = 1
-        expected_task = Task(
-            id=task_id,
-            name="Test Task",
-            priority=5,
-            status=TaskStatus.COMPLETED,
-            created_at=datetime.now(),
-        )
-
-        with patch(
-            "presentation.tui.services.task_service.CompleteTaskUseCase"
-        ) as mock_use_case_class:
-            mock_use_case = MagicMock()
-            mock_use_case.execute.return_value = expected_task
-            mock_use_case_class.return_value = mock_use_case
-
-            result = self.service.complete_task(task_id)
-
-            self.assertEqual(result, expected_task)
-            mock_use_case.execute.assert_called_once()
 
 
 if __name__ == "__main__":

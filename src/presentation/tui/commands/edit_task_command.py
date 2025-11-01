@@ -84,9 +84,9 @@ class EditTaskCommand(TUICommandBase):
         form_planned_start = form_data.get_planned_start()
         form_planned_end = form_data.get_planned_end()
 
-        # Update task via TaskService with only changed fields
-        # TaskService.update_task returns (updated_task, updated_fields)
-        updated_task, updated_fields = self.task_service.update_task(
+        # Update task via Controller with only changed fields
+        # Controller.update_task returns (updated_task, updated_fields)
+        updated_task, updated_fields = self.controller.update_task(
             task_id=task.id,  # type: ignore
             name=form_data.name if form_data.name != task.name else None,
             priority=form_data.priority if form_data.priority != task.priority else None,
@@ -128,11 +128,26 @@ class EditTaskCommand(TUICommandBase):
         if dependencies_changed:
             original_deps = set(task.depends_on) if task.depends_on else set()
             new_deps = set(form_data.depends_on) if form_data.depends_on else set()
-            failed_operations = self.task_service.sync_dependencies(
-                task.id,  # type: ignore[arg-type]
-                original_deps,
-                new_deps,
-            )
+
+            # Calculate differences
+            deps_to_remove = original_deps - new_deps
+            deps_to_add = new_deps - original_deps
+
+            failed_operations = []
+
+            # Remove dependencies
+            for dep_id in deps_to_remove:
+                try:
+                    self.controller.remove_dependency(task.id, dep_id)  # type: ignore[arg-type]
+                except TaskValidationError as e:
+                    failed_operations.append(f"Remove {dep_id}: {e}")
+
+            # Add dependencies
+            for dep_id in deps_to_add:
+                try:
+                    self.controller.add_dependency(task.id, dep_id)  # type: ignore[arg-type]
+                except TaskValidationError as e:
+                    failed_operations.append(f"Add {dep_id}: {e}")
 
             updated_fields.append("dependencies")
 

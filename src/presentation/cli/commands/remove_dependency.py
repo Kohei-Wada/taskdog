@@ -2,10 +2,9 @@
 
 import click
 
-from application.dto.manage_dependencies_request import RemoveDependencyRequest
-from application.use_cases.remove_dependency import RemoveDependencyUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from presentation.controllers.task_controller import TaskController
 
 
 @click.command(name="remove-dependency", help="Remove a dependency from a task.")
@@ -25,10 +24,11 @@ def remove_dependency_command(ctx, task_id, depends_on_id):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
+    config = ctx_obj.config
+    controller = TaskController(repository, time_tracker, config)
 
-    input_dto = RemoveDependencyRequest(task_id=task_id, depends_on_id=depends_on_id)
-    use_case = RemoveDependencyUseCase(repository)
-    task = use_case.execute(input_dto)
+    task = controller.remove_dependency(task_id, depends_on_id)
 
     console_writer.success(
         f"Removed dependency: Task {task_id} no longer depends on task {depends_on_id}"

@@ -33,8 +33,8 @@ class DeleteTaskCommand(TUICommandBase):
             if not confirmed:
                 return  # User cancelled
 
-            # Use TaskService to remove the task (soft delete)
-            self.task_service.remove_task(task_id)
+            # Archive the task (soft delete)
+            self.controller.archive_task(task_id)
 
             # Post TaskDeleted event to trigger UI refresh
             self.app.post_message(TaskDeleted(task_id))

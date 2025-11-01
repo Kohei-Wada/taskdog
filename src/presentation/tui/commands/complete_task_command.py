@@ -14,8 +14,8 @@ class CompleteTaskCommand(StatusChangeCommandBase):
         return "completing task"
 
     def execute_status_change(self, task_id: int) -> Task:
-        """Complete the task via TaskService."""
-        return self.task_service.complete_task(task_id)
+        """Complete the task via TaskController."""
+        return self.controller.complete_task(task_id)
 
     def get_success_verb(self) -> str:
         """Return success message verb."""

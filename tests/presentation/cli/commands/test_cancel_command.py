@@ -12,18 +12,19 @@ class TestCancelCommand(BaseBatchCommandTest):
     """Test cases for cancel command."""
 
     command_func = cancel_command
-    use_case_path = "presentation.cli.commands.cancel.CancelTaskUseCase"
+    use_case_path = "presentation.cli.commands.cancel.TaskController"
+    controller_method = "cancel_task"
     action_verb = "Canceled"
     action_name = "cancel"
 
-    @patch("presentation.cli.commands.cancel.CancelTaskUseCase")
-    def test_cancel_in_progress_task(self, mock_use_case_class):
+    @patch("presentation.cli.commands.cancel.TaskController")
+    def test_cancel_in_progress_task(self, mock_controller_class):
         """Test canceling a task that is in progress."""
         # Setup
         canceled_task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.CANCELED)
 
-        mock_use_case = mock_use_case_class.return_value
-        mock_use_case.execute.return_value = canceled_task
+        mock_controller = mock_controller_class.return_value
+        mock_controller.cancel_task.return_value = canceled_task
 
         # Execute
         result = self.runner.invoke(cancel_command, ["1"], obj=self.cli_context)

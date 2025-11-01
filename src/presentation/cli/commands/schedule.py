@@ -2,10 +2,9 @@
 
 import click
 
-from application.dto.update_task_request import UpdateTaskRequest
-from application.use_cases.update_task import UpdateTaskUseCase
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from presentation.controllers.task_controller import TaskController
 from shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
@@ -31,17 +30,14 @@ def schedule_command(ctx, task_id, start, end):
         taskdog schedule 5 "2025-10-15 09:00:00" "2025-10-17 18:00:00"
     """
     ctx_obj: CliContext = ctx.obj
-    update_task_use_case = UpdateTaskUseCase(ctx_obj.repository, ctx_obj.time_tracker)
+    controller = TaskController(ctx_obj.repository, ctx_obj.time_tracker, ctx_obj.config)
 
-    # Build input DTO
-    input_dto = UpdateTaskRequest(
+    # Update task via controller
+    task, _updated_fields = controller.update_task(
         task_id=task_id,
         planned_start=start,
         planned_end=end,
     )
-
-    # Execute use case
-    task, _updated_fields = update_task_use_case.execute(input_dto)
 
     # Print success - format schedule as "start → end"
     def format_schedule(value) -> str:

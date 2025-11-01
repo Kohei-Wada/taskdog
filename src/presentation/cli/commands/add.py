@@ -2,13 +2,10 @@
 
 import click
 
-from application.dto.create_task_request import CreateTaskRequest
-from application.dto.manage_dependencies_request import AddDependencyRequest
-from application.use_cases.add_dependency import AddDependencyUseCase
-from application.use_cases.create_task import CreateTaskUseCase
 from domain.exceptions.task_exceptions import TaskValidationError
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_task_errors
+from presentation.controllers.task_controller import TaskController
 
 
 @click.command(name="add", help="Add a new task.")
@@ -63,30 +60,23 @@ def add_command(ctx, name, priority, fixed, depends_on, tag):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     repository = ctx_obj.repository
+    time_tracker = ctx_obj.time_tracker
     config = ctx_obj.config
-    create_task_use_case = CreateTaskUseCase(repository)
+    controller = TaskController(repository, time_tracker, config)
 
-    # Use config default if priority not specified
-    effective_priority = priority if priority is not None else config.task.default_priority
-
-    # Build input DTO (only basic fields)
-    input_dto = CreateTaskRequest(
+    # Create task via controller
+    task = controller.create_task(
         name=name,
-        priority=effective_priority,
+        priority=priority,  # Controller handles default priority
         is_fixed=fixed,
         tags=list(tag) if tag else None,
     )
 
-    # Execute use case
-    task = create_task_use_case.execute(input_dto)
-
     # Add dependencies if specified
     if depends_on:
-        add_dep_use_case = AddDependencyUseCase(repository)
         for dep_id in depends_on:
             try:
-                dep_input = AddDependencyRequest(task_id=task.id, depends_on_id=dep_id)
-                task = add_dep_use_case.execute(dep_input)
+                task = controller.add_dependency(task.id, dep_id)
             except TaskValidationError as e:
                 console_writer.validation_error(str(e))
                 # Continue adding other dependencies even if one fails

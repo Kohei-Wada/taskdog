@@ -20,8 +20,10 @@ class BaseBatchCommandTest(unittest.TestCase):
 
     Subclasses must override:
     - command_func: The Click command function to test
-    - use_case_path: Full path to the use case class for patching
+    - use_case_path: Full path to the use case/controller class for patching
     - action_verb: Past tense action verb (e.g., "Started", "Completed")
+    - controller_method: Optional controller method name (e.g., "start_task", "complete_task")
+                        If not set, assumes use case with execute() method
     - success_callback: Optional callback method name (e.g., "task_start_time")
     """
 
@@ -30,6 +32,9 @@ class BaseBatchCommandTest(unittest.TestCase):
     use_case_path = None
     action_verb = None  # Past tense: "Started", "Completed", "Paused", "Canceled"
     action_name = None  # Present tense for errors: "start", "complete", "pause", "cancel"
+    controller_method = (
+        None  # Optional: "start_task", "complete_task", etc. (for controller-based commands)
+    )
     success_callback = None  # Optional: task_start_time, task_completion_details, etc.
 
     @classmethod
@@ -53,20 +58,34 @@ class BaseBatchCommandTest(unittest.TestCase):
         self.cli_context.console_writer = self.console_writer
         self.cli_context.config = self.config
 
+    def _get_mock_method(self, mock_instance):
+        """Get the mock method based on controller_method or execute.
+
+        Args:
+            mock_instance: The mocked controller or use case instance
+
+        Returns:
+            The mock method to call (controller method or execute)
+        """
+        if self.controller_method:
+            return getattr(mock_instance, self.controller_method)
+        return mock_instance.execute
+
     def test_single_task_success(self):
         """Test executing command on a single task successfully."""
         with patch(self.use_case_path) as mock_use_case_class:
             # Setup
             result_task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.COMPLETED)
             mock_use_case = mock_use_case_class.return_value
-            mock_use_case.execute.return_value = result_task
+            mock_method = self._get_mock_method(mock_use_case)
+            mock_method.return_value = result_task
 
             # Execute
             result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
 
             # Verify
             self.assertEqual(result.exit_code, 0)
-            mock_use_case.execute.assert_called_once()
+            mock_method.assert_called_once()
             self.console_writer.task_success.assert_called_once_with(self.action_verb, result_task)
 
     def test_multiple_tasks_success(self):
@@ -78,14 +97,15 @@ class BaseBatchCommandTest(unittest.TestCase):
                 Task(id=2, name="Task 2", priority=5, status=TaskStatus.COMPLETED),
             ]
             mock_use_case = mock_use_case_class.return_value
-            mock_use_case.execute.side_effect = result_tasks
+            mock_method = self._get_mock_method(mock_use_case)
+            mock_method.side_effect = result_tasks
 
             # Execute
             result = self.runner.invoke(self.command_func, ["1", "2"], obj=self.cli_context)
 
             # Verify
             self.assertEqual(result.exit_code, 0)
-            self.assertEqual(mock_use_case.execute.call_count, 2)
+            self.assertEqual(mock_method.call_count, 2)
             self.assertEqual(self.console_writer.task_success.call_count, 2)
             # Verify spacing added for multiple tasks
             self.assertEqual(self.console_writer.empty_line.call_count, 2)
@@ -95,7 +115,8 @@ class BaseBatchCommandTest(unittest.TestCase):
         with patch(self.use_case_path) as mock_use_case_class:
             # Setup
             mock_use_case = mock_use_case_class.return_value
-            mock_use_case.execute.side_effect = TaskNotFoundException(999)
+            mock_method = self._get_mock_method(mock_use_case)
+            mock_method.side_effect = TaskNotFoundException(999)
 
             # Execute
             result = self.runner.invoke(self.command_func, ["999"], obj=self.cli_context)
@@ -111,7 +132,8 @@ class BaseBatchCommandTest(unittest.TestCase):
         with patch(self.use_case_path) as mock_use_case_class:
             # Setup
             mock_use_case = mock_use_case_class.return_value
-            mock_use_case.execute.side_effect = TaskAlreadyFinishedError(1, "COMPLETED")
+            mock_method = self._get_mock_method(mock_use_case)
+            mock_method.side_effect = TaskAlreadyFinishedError(1, "COMPLETED")
 
             # Execute
             result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
@@ -128,8 +150,9 @@ class BaseBatchCommandTest(unittest.TestCase):
         with patch(self.use_case_path) as mock_use_case_class:
             # Setup
             mock_use_case = mock_use_case_class.return_value
+            mock_method = self._get_mock_method(mock_use_case)
             error = ValueError("Something went wrong")
-            mock_use_case.execute.side_effect = error
+            mock_method.side_effect = error
 
             # Execute
             result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)

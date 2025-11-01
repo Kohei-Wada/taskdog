@@ -4,10 +4,9 @@ from typing import Any
 
 import click
 
-from application.dto.update_task_request import UpdateTaskRequest
-from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task
 from presentation.cli.context import CliContext
+from presentation.controllers.task_controller import TaskController
 
 
 def execute_single_field_update(
@@ -35,11 +34,8 @@ def execute_single_field_update(
         TaskValidationError: If update validation fails
     """
     ctx_obj: CliContext = ctx.obj
-    update_task_use_case = UpdateTaskUseCase(ctx_obj.repository, ctx_obj.time_tracker)
+    controller = TaskController(ctx_obj.repository, ctx_obj.time_tracker, ctx_obj.config)
 
-    # Build DTO with dynamic field
-    input_dto = UpdateTaskRequest(task_id=task_id, **{field_name: field_value})
-
-    # Execute use case and return updated task
-    task, _ = update_task_use_case.execute(input_dto)
+    # Update task via controller with dynamic field
+    task, _ = controller.update_task(task_id=task_id, **{field_name: field_value})
     return task

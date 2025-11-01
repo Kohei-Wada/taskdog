@@ -1,7 +1,5 @@
 """Reopen task command for TUI."""
 
-from application.dto.reopen_task_request import ReopenTaskRequest
-from application.use_cases.reopen_task import ReopenTaskUseCase
 from domain.exceptions.task_exceptions import (
     DependencyNotMetError,
     TaskValidationError,
@@ -42,9 +40,7 @@ class ReopenTaskCommand(TUICommandBase):
 
             # Reopen the task
             try:
-                use_case = ReopenTaskUseCase(self.context.repository, self.context.time_tracker)
-                input_dto = ReopenTaskRequest(task_id=task_id)
-                updated_task = use_case.execute(input_dto)
+                updated_task = self.controller.reopen_task(task_id)
 
                 # Post TaskUpdated event to trigger UI refresh
                 assert updated_task.id is not None, "Updated task must have an ID"

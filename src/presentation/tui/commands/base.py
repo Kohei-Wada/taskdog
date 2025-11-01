@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from domain.entities.task import Task
+from presentation.controllers.task_controller import TaskController
 from presentation.tui.context import TUIContext
 from presentation.tui.events import TasksRefreshed
 from presentation.tui.services.task_service import TaskService
@@ -17,7 +18,7 @@ class TUICommandBase(ABC):
     """Base class for TUI commands.
 
     Provides common functionality for command execution including:
-    - Access to TUIContext and TaskService
+    - Access to TUIContext, TaskService, and TaskController
     - Helper methods for task selection, reloading, and notifications
     """
 
@@ -32,6 +33,13 @@ class TUICommandBase(ABC):
         self.app = app
         self.context = context
         self.task_service = task_service
+        # Initialize controller with context dependencies (including notes_repository)
+        self.controller = TaskController(
+            context.repository,
+            context.time_tracker,
+            context.config,
+            context.notes_repository,
+        )
 
     @abstractmethod
     def execute(self) -> None:

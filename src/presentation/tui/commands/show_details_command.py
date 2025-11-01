@@ -2,10 +2,6 @@
 
 from typing import Any
 
-from application.use_cases.get_task_detail import (
-    GetTaskDetailInput,
-    GetTaskDetailUseCase,
-)
 from presentation.tui.commands.base import TUICommandBase
 from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
@@ -25,10 +21,8 @@ class ShowDetailsCommand(TUICommandBase):
             self.notify_warning("No task selected")
             return
 
-        # Get task detail with notes using use case
-        use_case = GetTaskDetailUseCase(self.context.repository, self.context.notes_repository)
-        input_dto = GetTaskDetailInput(task.id)
-        detail = use_case.execute(input_dto)
+        # Get task detail with notes via controller
+        detail = self.controller.get_task_detail(task.id)
 
         # Show task detail screen with notes
         detail_screen = TaskDetailScreen(detail)
