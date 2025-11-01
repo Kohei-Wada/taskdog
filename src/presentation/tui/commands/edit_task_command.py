@@ -142,7 +142,8 @@ class EditTaskCommand(TUICommandBase):
                 )
 
         # Post TaskUpdated event to trigger UI refresh
-        self.app.post_message(TaskUpdated(updated_task))
+        assert updated_task.id is not None, "Updated task must have an ID"
+        self.app.post_message(TaskUpdated(updated_task.id))
 
         fields_str = ", ".join(updated_fields)
         self.notify_success(f"Updated task {updated_task.id}: {fields_str}")

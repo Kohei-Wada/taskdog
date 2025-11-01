@@ -2,8 +2,6 @@
 
 from textual.message import Message
 
-from domain.entities.task import Task
-
 # Task operation events (posted by commands)
 
 
@@ -14,17 +12,17 @@ class TaskUpdated(Message):
     direct coupling between components.
 
     Attributes:
-        task: The updated task
+        task_id: ID of the updated task
     """
 
-    def __init__(self, task: Task):
+    def __init__(self, task_id: int):
         """Initialize the event.
 
         Args:
-            task: The updated task
+            task_id: ID of the updated task
         """
         super().__init__()
-        self.task = task
+        self.task_id = task_id
 
 
 class TaskDeleted(Message):
@@ -58,17 +56,17 @@ class TaskCreated(Message):
     """Event sent when a new task is created.
 
     Attributes:
-        task: The newly created task
+        task_id: ID of the newly created task
     """
 
-    def __init__(self, task: Task):
+    def __init__(self, task_id: int):
         """Initialize the event.
 
         Args:
-            task: The newly created task
+            task_id: ID of the newly created task
         """
         super().__init__()
-        self.task = task
+        self.task_id = task_id
 
 
 # UI interaction events (posted by widgets)
@@ -81,17 +79,17 @@ class TaskSelected(Message):
     react to task selection changes without direct coupling.
 
     Attributes:
-        task: The selected task, or None if no task is selected
+        task_id: The selected task ID, or None if no task is selected
     """
 
-    def __init__(self, task: Task | None):
+    def __init__(self, task_id: int | None):
         """Initialize the event.
 
         Args:
-            task: The selected task, or None if selection is cleared
+            task_id: The selected task ID, or None if selection is cleared
         """
         super().__init__()
-        self.task = task
+        self.task_id = task_id
 
 
 class SearchQueryChanged(Message):

@@ -19,15 +19,16 @@ class ReopenTaskCommand(TUICommandBase):
 
     def execute(self) -> None:
         """Execute the reopen task command."""
-        task = self.get_selected_task()
-        if not task or task.id is None:
+        # Get selected task ViewModel (no repository fetch needed for confirmation)
+        task_vm = self.get_selected_task_vm()
+        if not task_vm:
             self.notify_warning("No task selected")
             return
 
-        # Capture task ID and name for use in callback
-        task_id = task.id
-        task_name = task.name
-        task_status = task.status.value
+        # Capture task ID, name, and status for use in callback
+        task_id = task_vm.id
+        task_name = task_vm.name
+        task_status = task_vm.status
 
         @handle_tui_errors("reopening task")
         def handle_confirmation(confirmed: bool | None) -> None:
@@ -46,7 +47,8 @@ class ReopenTaskCommand(TUICommandBase):
                 updated_task = use_case.execute(input_dto)
 
                 # Post TaskUpdated event to trigger UI refresh
-                self.app.post_message(TaskUpdated(updated_task))
+                assert updated_task.id is not None, "Updated task must have an ID"
+                self.app.post_message(TaskUpdated(updated_task.id))
                 self.notify_success(f"Reopened task: {task_name}")
 
             except (TaskValidationError, DependencyNotMetError) as e:

@@ -1,13 +1,10 @@
 """Main screen for the TUI."""
 
-from typing import Any
-
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header
 
-from domain.repositories.notes_repository import NotesRepository
 from presentation.tui.widgets.filterable_task_table import FilterableTaskTable
 from presentation.tui.widgets.gantt_widget import GanttWidget
 
@@ -15,14 +12,9 @@ from presentation.tui.widgets.gantt_widget import GanttWidget
 class MainScreen(Screen[None]):
     """Main screen showing gantt chart and task list."""
 
-    def __init__(self, notes_repository: NotesRepository, *args: Any, **kwargs: Any):
-        """Initialize the main screen.
-
-        Args:
-            notes_repository: Notes repository for task notes operations
-        """
-        super().__init__(*args, **kwargs)
-        self.notes_repository = notes_repository
+    def __init__(self) -> None:
+        """Initialize the main screen."""
+        super().__init__()
         self.task_table: FilterableTaskTable | None = None
         self.gantt_widget: GanttWidget | None = None
 
@@ -40,7 +32,7 @@ class MainScreen(Screen[None]):
             yield self.gantt_widget
 
             # Filterable task table (search + table)
-            self.task_table = FilterableTaskTable(self.notes_repository, id="filterable-task-table")
+            self.task_table = FilterableTaskTable(id="filterable-task-table")
             yield self.task_table
 
         yield Footer()

@@ -13,8 +13,6 @@ from rich.text import Text
 from textual.binding import Binding
 from textual.widgets import DataTable
 
-from domain.entities.task import Task
-from domain.repositories.notes_repository import NotesRepository
 from presentation.constants.table_dimensions import (
     PAGE_SCROLL_SIZE,
     TASK_TABLE_ACTUAL_END_WIDTH,
@@ -33,10 +31,10 @@ from presentation.constants.table_dimensions import (
     TASK_TABLE_STATUS_WIDTH,
     TASK_TABLE_TAGS_WIDTH,
 )
-from presentation.mappers.task_mapper import TaskMapper
 from presentation.tui.events import TaskSelected
 from presentation.tui.widgets.task_search_filter import TaskSearchFilter
 from presentation.tui.widgets.task_table_row_builder import TaskTableRowBuilder
+from presentation.view_models.task_view_model import TaskRowViewModel
 
 
 class TaskTable(DataTable):
@@ -44,7 +42,7 @@ class TaskTable(DataTable):
 
     This widget acts as a coordinator that delegates responsibilities to:
     - TaskSearchFilter: Handles search and filtering logic
-    - TaskTableRowBuilder: Builds table row data from Task entities
+    - TaskTableRowBuilder: Builds table row data from TaskRowViewModel
     """
 
     # Add Vi-style bindings in addition to DataTable's default bindings
@@ -61,23 +59,17 @@ class TaskTable(DataTable):
         Binding("l", "scroll_right", "Scroll Right", show=False),
     ]
 
-    def __init__(self, notes_repository: NotesRepository, *args, **kwargs):
-        """Initialize the task table.
-
-        Args:
-            notes_repository: Notes repository for checking note existence
-        """
+    def __init__(self, *args, **kwargs):
+        """Initialize the task table."""
         super().__init__(*args, **kwargs)
         self.cursor_type = "row"
         self.zebra_stripes = True
-        self._task_map: dict[int, Task] = {}  # Maps row index to Task
-        self.notes_repository = notes_repository
-        self._all_tasks: list[Task] = []  # All tasks (unfiltered)
+        self._viewmodel_map: dict[int, TaskRowViewModel] = {}  # Maps row index to ViewModel
+        self._all_viewmodels: list[TaskRowViewModel] = []  # All ViewModels (unfiltered)
         self._current_query: str = ""  # Current search query
 
         # Components
         self._search_filter = TaskSearchFilter()
-        self._task_mapper = TaskMapper(notes_repository)
         self._row_builder = TaskTableRowBuilder()
 
     def setup_columns(self):
@@ -100,52 +92,60 @@ class TaskTable(DataTable):
         self.add_column(Text("Deps", justify="center"), width=TASK_TABLE_DEPENDS_ON_WIDTH)
         self.add_column(Text("Tags", justify="center"), width=TASK_TABLE_TAGS_WIDTH)
 
-    def load_tasks(self, tasks: list[Task]):
-        """Load tasks into the table.
+    def load_tasks(self, view_models: list[TaskRowViewModel]):
+        """Load task ViewModels into the table.
 
         Args:
-            tasks: List of tasks to display
+            view_models: List of TaskRowViewModel to display
         """
-        self._all_tasks = tasks
+        self._all_viewmodels = view_models
         self._current_query = ""
-        self._render_tasks(tasks)
+        self._render_tasks(view_models)
 
-    def _render_tasks(self, tasks: list[Task]):
-        """Render tasks to the table.
+    def _render_tasks(self, view_models: list[TaskRowViewModel]):
+        """Render task ViewModels to the table.
 
         Args:
-            tasks: List of tasks to render
+            view_models: List of ViewModels to render
         """
         self.clear()
-        self._task_map.clear()
+        self._viewmodel_map.clear()
 
-        # Convert tasks to ViewModels
-        task_view_models = self._task_mapper.to_row_view_models(tasks)
-
-        for idx, (task, task_vm) in enumerate(zip(tasks, task_view_models, strict=False)):
+        for idx, task_vm in enumerate(view_models):
             # Build row data using row builder with ViewModel
             row_data = self._row_builder.build_row(task_vm)
 
             # Add row
             self.add_row(*row_data)
-            # Store original Task for get_selected_task() compatibility
-            self._task_map[idx] = task
+            # Store ViewModel
+            self._viewmodel_map[idx] = task_vm
 
-    def get_selected_task(self) -> Task | None:
-        """Get the currently selected task.
+    def get_selected_task_id(self) -> int | None:
+        """Get the ID of the currently selected task.
 
         Returns:
-            The selected Task, or None if no task is selected
+            The selected task ID, or None if no task is selected
         """
-        if self.cursor_row < 0 or self.cursor_row >= len(self._task_map):
-            return None
-        return self._task_map.get(self.cursor_row)
+        vm = self.get_selected_task_vm()
+        return vm.id if vm else None
 
-    def refresh_tasks(self, tasks: list[Task], keep_scroll_position: bool = False):
-        """Refresh the table with updated tasks while maintaining cursor position.
+    def get_selected_task_vm(self) -> TaskRowViewModel | None:
+        """Get the currently selected task as a ViewModel.
+
+        Returns:
+            The selected TaskRowViewModel, or None if no task is selected
+        """
+        if self.cursor_row < 0 or self.cursor_row >= len(self._viewmodel_map):
+            return None
+        return self._viewmodel_map.get(self.cursor_row)
+
+    def refresh_tasks(
+        self, view_models: list[TaskRowViewModel], keep_scroll_position: bool = False
+    ):
+        """Refresh the table with updated ViewModels while maintaining cursor position.
 
         Args:
-            tasks: List of tasks to display
+            view_models: List of TaskRowViewModel to display
             keep_scroll_position: Whether to preserve scroll position during refresh.
                                  Set to True for periodic updates to avoid scroll stuttering.
         """
@@ -154,16 +154,16 @@ class TaskTable(DataTable):
         saved_scroll_y = self.scroll_y if keep_scroll_position else None
         saved_scroll_x = self.scroll_x if keep_scroll_position else None
 
-        self._all_tasks = tasks
+        self._all_viewmodels = view_models
         # Reapply current filter if active
         if self._current_query:
-            filtered_tasks = self._search_filter.filter(tasks, self._current_query)
-            self._render_tasks(filtered_tasks)
+            filtered_vms = self._search_filter.filter(view_models, self._current_query)
+            self._render_tasks(filtered_vms)
         else:
-            self._render_tasks(tasks)
+            self._render_tasks(view_models)
 
         # Always restore cursor position if still valid
-        if 0 <= current_row < len(self._task_map):
+        if 0 <= current_row < len(self._viewmodel_map):
             self.move_cursor(row=current_row)
 
             # Restore scroll position to prevent stuttering
@@ -173,23 +173,23 @@ class TaskTable(DataTable):
                 self.scroll_x = saved_scroll_x
 
     def filter_tasks(self, query: str):
-        """Filter tasks based on search query with smart case matching.
+        """Filter task ViewModels based on search query with smart case matching.
 
         Args:
             query: Search query string
         """
         self._current_query = query
         if not query:
-            # No filter - show all tasks
-            self._render_tasks(self._all_tasks)
+            # No filter - show all ViewModels
+            self._render_tasks(self._all_viewmodels)
         else:
-            filtered_tasks = self._search_filter.filter(self._all_tasks, query)
-            self._render_tasks(filtered_tasks)
+            filtered_vms = self._search_filter.filter(self._all_viewmodels, query)
+            self._render_tasks(filtered_vms)
 
     def clear_filter(self):
-        """Clear the current filter and show all tasks."""
+        """Clear the current filter and show all ViewModels."""
         self._current_query = ""
-        self._render_tasks(self._all_tasks)
+        self._render_tasks(self._all_viewmodels)
 
     @property
     def is_filtered(self) -> bool:
@@ -204,12 +204,12 @@ class TaskTable(DataTable):
     @property
     def match_count(self) -> int:
         """Get the number of currently displayed (matched) tasks."""
-        return len(self._task_map)
+        return len(self._viewmodel_map)
 
     @property
     def total_count(self) -> int:
         """Get the total number of tasks (unfiltered)."""
-        return len(self._all_tasks)
+        return len(self._all_viewmodels)
 
     def watch_cursor_row(self, old_row: int, new_row: int) -> None:
         """Called when cursor row changes.
@@ -220,10 +220,10 @@ class TaskTable(DataTable):
             old_row: Previous cursor row index
             new_row: New cursor row index
         """
-        # Get the currently selected task
-        selected_task = self.get_selected_task()
+        # Get the currently selected task ID
+        selected_task_id = self.get_selected_task_id()
         # Post TaskSelected event for other widgets to react
-        self.post_message(TaskSelected(selected_task))
+        self.post_message(TaskSelected(selected_task_id))
 
     def _safe_move_cursor(self, row: int) -> None:
         """Safely move cursor to specified row if table has rows.

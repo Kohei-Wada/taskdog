@@ -3,24 +3,18 @@
 from textual.app import ComposeResult
 from textual.containers import Vertical
 
-from domain.entities.task import Task
-from domain.repositories.notes_repository import NotesRepository
 from presentation.tui.events import SearchQueryChanged
 from presentation.tui.widgets.search_input import SearchInput
 from presentation.tui.widgets.task_table import TaskTable
+from presentation.view_models.task_view_model import TaskRowViewModel
 
 
 class FilterableTaskTable(Vertical):
     """A task table with integrated search functionality."""
 
-    def __init__(self, notes_repository: NotesRepository, *args, **kwargs):
-        """Initialize the filterable task table.
-
-        Args:
-            notes_repository: Notes repository for task notes operations
-        """
+    def __init__(self, *args, **kwargs) -> None:
+        """Initialize the filterable task table."""
         super().__init__(*args, **kwargs)
-        self.notes_repository = notes_repository
         self.search_input: SearchInput | None = None
         self.task_table: TaskTable | None = None
 
@@ -33,7 +27,7 @@ class FilterableTaskTable(Vertical):
         self.search_input = SearchInput()
         yield self.search_input
 
-        self.task_table = TaskTable(self.notes_repository, id="task-table")
+        self.task_table = TaskTable(id="task-table")
         yield self.task_table
 
     def on_mount(self) -> None:
@@ -64,36 +58,48 @@ class FilterableTaskTable(Vertical):
 
     # Delegate methods to task_table
 
-    def load_tasks(self, tasks: list[Task]) -> None:
-        """Load tasks into the table.
+    def load_tasks(self, view_models: list[TaskRowViewModel]) -> None:
+        """Load task ViewModels into the table.
 
         Args:
-            tasks: List of tasks to display
+            view_models: List of TaskRowViewModel to display
         """
         if self.task_table:
-            self.task_table.load_tasks(tasks)
+            self.task_table.load_tasks(view_models)
             self._update_search_result()
 
-    def refresh_tasks(self, tasks: list[Task], keep_scroll_position: bool = False) -> None:
-        """Refresh the table with updated tasks.
+    def refresh_tasks(
+        self, view_models: list[TaskRowViewModel], keep_scroll_position: bool = False
+    ) -> None:
+        """Refresh the table with updated ViewModels.
 
         Args:
-            tasks: List of tasks to display
+            view_models: List of TaskRowViewModel to display
             keep_scroll_position: Whether to preserve scroll position during refresh.
                                  Set to True for periodic updates to avoid scroll stuttering.
         """
         if self.task_table:
-            self.task_table.refresh_tasks(tasks, keep_scroll_position=keep_scroll_position)
+            self.task_table.refresh_tasks(view_models, keep_scroll_position=keep_scroll_position)
             self._update_search_result()
 
-    def get_selected_task(self) -> Task | None:
-        """Get the currently selected task.
+    def get_selected_task_id(self) -> int | None:
+        """Get the ID of the currently selected task.
 
         Returns:
-            The selected Task, or None if no task is selected
+            The selected task ID, or None if no task is selected
         """
         if self.task_table:
-            return self.task_table.get_selected_task()
+            return self.task_table.get_selected_task_id()
+        return None
+
+    def get_selected_task_vm(self) -> TaskRowViewModel | None:
+        """Get the currently selected task as a ViewModel.
+
+        Returns:
+            The selected TaskRowViewModel, or None if no task is selected
+        """
+        if self.task_table:
+            return self.task_table.get_selected_task_vm()
         return None
 
     def show_search(self) -> None:
@@ -123,23 +129,12 @@ class FilterableTaskTable(Vertical):
             self.search_input.update_result(matched, total)
 
     @property
-    def all_tasks(self) -> list[Task]:
-        """Get all loaded tasks from the table.
+    def all_viewmodels(self) -> list[TaskRowViewModel]:
+        """Get all loaded ViewModels from the table.
 
         Returns:
-            List of all tasks currently loaded in the table
+            List of all TaskRowViewModel currently loaded in the table
         """
         if self.task_table:
-            return self.task_table._all_tasks
+            return self.task_table._all_viewmodels
         return []
-
-    @property
-    def _all_tasks(self) -> list[Task]:
-        """Get all tasks (deprecated, use all_tasks instead).
-
-        Returns:
-            List of all tasks
-
-        .. deprecated:: Use :attr:`all_tasks` instead
-        """
-        return self.all_tasks
