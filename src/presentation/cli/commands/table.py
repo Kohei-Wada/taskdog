@@ -8,9 +8,10 @@ from presentation.cli.commands.common_options import (
     sort_options,
 )
 from presentation.cli.commands.filter_helpers import build_task_filter
-from presentation.cli.commands.table_helpers import get_and_filter_tasks, render_table
+from presentation.cli.commands.table_helpers import render_table
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
+from presentation.controllers.query_controller import QueryController
 from shared.click_types.field_list import FieldList
 
 
@@ -73,7 +74,8 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
     )
 
     # Get filtered and sorted tasks
-    tasks = get_and_filter_tasks(repository, filter_obj, sort_by=sort, reverse=reverse)
+    query_controller = QueryController(repository)
+    result = query_controller.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
 
     # Render and display
-    render_table(ctx_obj, tasks, fields=fields)
+    render_table(ctx_obj, result.tasks, fields=fields)

@@ -2,11 +2,14 @@
 
 import click
 
+from application.queries.filters.composite_filter import CompositeFilter
 from application.queries.filters.today_filter import TodayFilter
 from presentation.cli.commands.common_options import filter_options, sort_options
-from presentation.cli.commands.table_helpers import execute_time_filtered_command
+from presentation.cli.commands.filter_helpers import build_task_filter
+from presentation.cli.commands.table_helpers import render_table
 from presentation.cli.context import CliContext
 from presentation.cli.error_handler import handle_command_errors
+from presentation.controllers.query_controller import QueryController
 
 
 @click.command(
@@ -37,4 +40,16 @@ def today_command(ctx, format, all, status, sort, reverse):
     Use --status to filter by specific status.
     """
     ctx_obj: CliContext = ctx.obj
-    execute_time_filtered_command(ctx_obj, TodayFilter(), all, status, sort, reverse)
+    repository = ctx_obj.repository
+
+    # Build combined filter: time filter + status filter
+    status_filter = build_task_filter(all=all, status=status)
+    time_filter = TodayFilter()
+    filter_obj = CompositeFilter([status_filter, time_filter]) if status_filter else time_filter
+
+    # Get filtered and sorted tasks
+    query_controller = QueryController(repository)
+    result = query_controller.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
+
+    # Render and display
+    render_table(ctx_obj, result.tasks)
