@@ -1,6 +1,5 @@
 """Domain service for calculating workload from tasks."""
 
-from collections.abc import Iterable
 from datetime import date, timedelta
 
 from domain.entities.task import Task
@@ -26,10 +25,24 @@ class WorkloadCalculator:
         Returns:
             Dictionary mapping date to total estimated hours {date: hours}
         """
-        empty_workload = self._initialize_daily_workload(start_date, end_date)
-        schedulable_tasks = filter(self._should_include_in_workload, tasks)
-        task_allocations = map(self._task_to_daily_hours, schedulable_tasks)
-        return self._merge_allocations(empty_workload, task_allocations)
+        # Initialize workload dictionary with zeros for all dates in range
+        workload = self._initialize_daily_workload(start_date, end_date)
+
+        # Process each task and accumulate daily hours
+        for task in tasks:
+            # Skip tasks that shouldn't be included in workload
+            if not self._should_include_in_workload(task):
+                continue
+
+            # Get daily hour allocations for this task
+            daily_hours = self._task_to_daily_hours(task)
+
+            # Add this task's hours to the total workload
+            for task_date, hours in daily_hours.items():
+                if task_date in workload:
+                    workload[task_date] += hours
+
+        return workload
 
     def _initialize_daily_workload(self, start_date: date, end_date: date) -> dict[date, float]:
         """Initialize daily workload dictionary with zeros for the date range."""
@@ -118,23 +131,4 @@ class WorkloadCalculator:
                 result[current_date] = hours_per_day
             current_date += timedelta(days=1)
 
-        return result
-
-    def _merge_allocations(
-        self, base: dict[date, float], allocations: Iterable[dict[date, float]]
-    ) -> dict[date, float]:
-        """Merge multiple daily allocations into base workload.
-
-        Args:
-            base: Base workload dictionary (will not be modified)
-            allocations: Iterator of allocation dictionaries to merge
-
-        Returns:
-            New dictionary with merged allocations
-        """
-        result = base.copy()
-        for allocation in allocations:
-            for task_date, hours in allocation.items():
-                if task_date in result:
-                    result[task_date] += hours
         return result
