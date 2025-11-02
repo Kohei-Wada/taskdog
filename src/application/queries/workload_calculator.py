@@ -4,7 +4,6 @@ from collections.abc import Iterable
 from datetime import date, timedelta
 
 from domain.entities.task import Task
-from shared.utils.date_utils import count_weekdays, is_weekday
 
 
 class WorkloadCalculator:
@@ -91,7 +90,11 @@ class WorkloadCalculator:
         return task.daily_allocations.copy()
 
     def _compute_from_planned_period(self, task: Task) -> dict[date, float]:
-        """Compute daily hours by distributing evenly across weekdays in planned period.
+        """Compute daily hours by distributing evenly across all days in planned period.
+
+        For manually scheduled tasks (without daily_allocations), distributes hours
+        across all days including weekends. For optimizer-generated schedules,
+        use daily_allocations which already exclude weekends.
 
         Args:
             task: Task with planned_start, planned_end, and estimated_duration
@@ -105,17 +108,18 @@ class WorkloadCalculator:
         planned_start = task.planned_start.date()
         planned_end = task.planned_end.date()
 
-        weekday_count = count_weekdays(planned_start, planned_end)
-        if weekday_count == 0:
+        # Calculate total days (including weekends)
+        total_days = (planned_end - planned_start).days + 1
+        if total_days == 0:
             return {}
 
-        hours_per_day = task.estimated_duration / weekday_count
+        hours_per_day = task.estimated_duration / total_days
 
+        # Distribute evenly across ALL days (including weekends)
         result: dict[date, float] = {}
         current_date = planned_start
         while current_date <= planned_end:
-            if is_weekday(current_date):
-                result[current_date] = hours_per_day
+            result[current_date] = hours_per_day
             current_date += timedelta(days=1)
 
         return result

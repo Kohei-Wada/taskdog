@@ -41,10 +41,10 @@ class WorkloadCalculatorTest(unittest.TestCase):
         self.assertAlmostEqual(result[date(2025, 1, 9)], 2.0, places=2)  # Thursday
         self.assertAlmostEqual(result[date(2025, 1, 10)], 2.0, places=2)  # Friday
 
-    def test_calculate_daily_workload_excludes_weekends(self):
-        """Test that weekends are excluded from workload calculation."""
+    def test_calculate_daily_workload_includes_weekends(self):
+        """Test that weekends are included for manually scheduled tasks."""
         # Task spanning a weekend (Friday to Tuesday)
-        # Expected with equal distribution: 6h / 3 weekdays (Fri, Mon, Tue) = 2h per day
+        # Expected with equal distribution: 6h / 5 days (Fri, Sat, Sun, Mon, Tue) = 1.2h per day
         task = Task(
             id=1,
             name="Test Task",
@@ -53,7 +53,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
             created_at=datetime.fromtimestamp(1234567890.0),
             planned_start=datetime(2025, 1, 10, 9, 0, 0),  # Friday
             planned_end=datetime(2025, 1, 14, 18, 0, 0),  # Tuesday (next week)
-            estimated_duration=6.0,  # 3 weekdays: Fri, Mon, Tue
+            estimated_duration=6.0,  # 5 days total
         )
 
         start_date = date(2025, 1, 10)  # Friday
@@ -61,12 +61,12 @@ class WorkloadCalculatorTest(unittest.TestCase):
 
         result = self.calculator.calculate_daily_workload([task], start_date, end_date)
 
-        # Equal distribution: 2h per weekday, weekends excluded
-        self.assertAlmostEqual(result[date(2025, 1, 10)], 2.0, places=2)  # Friday
-        self.assertAlmostEqual(result[date(2025, 1, 11)], 0.0, places=2)  # Saturday
-        self.assertAlmostEqual(result[date(2025, 1, 12)], 0.0, places=2)  # Sunday
-        self.assertAlmostEqual(result[date(2025, 1, 13)], 2.0, places=2)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 14)], 2.0, places=2)  # Tuesday
+        # Equal distribution: 1.2h per day, weekends included
+        self.assertAlmostEqual(result[date(2025, 1, 10)], 1.2, places=2)  # Friday
+        self.assertAlmostEqual(result[date(2025, 1, 11)], 1.2, places=2)  # Saturday
+        self.assertAlmostEqual(result[date(2025, 1, 12)], 1.2, places=2)  # Sunday
+        self.assertAlmostEqual(result[date(2025, 1, 13)], 1.2, places=2)  # Monday
+        self.assertAlmostEqual(result[date(2025, 1, 14)], 1.2, places=2)  # Tuesday
 
     def test_calculate_daily_workload_multiple_tasks(self):
         """Test workload calculation with multiple overlapping tasks."""
