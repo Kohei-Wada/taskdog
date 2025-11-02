@@ -281,6 +281,7 @@ class TestReportCommand(unittest.TestCase):
             relationship_controller=MagicMock(),
             analytics_controller=MagicMock(),
             crud_controller=MagicMock(),
+            holiday_checker=None,
         )
 
     def test_shows_warning_when_no_scheduled_tasks(self):

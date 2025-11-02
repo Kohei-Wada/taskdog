@@ -1,13 +1,15 @@
-"""Holiday checking utilities using the holidays package.
+"""Holiday checking implementation using the holidays package.
 
-This module provides functionality to check if a given date is a public holiday
-in a specific country. Holiday checking is optional and depends on configuration.
+This module provides the concrete implementation of IHolidayChecker interface
+using the external 'holidays' package.
 """
 
 # mypy: disable-error-code="unused-ignore"
 
 from datetime import date
 from typing import Any
+
+from domain.services.holiday_checker import IHolidayChecker
 
 holidays: Any
 try:
@@ -16,7 +18,7 @@ except ImportError:
     holidays = None
 
 
-class HolidayChecker:
+class HolidayChecker(IHolidayChecker):
     """Checks if a date is a public holiday in a specific country.
 
     Uses the `holidays` package to determine public holidays for various countries.

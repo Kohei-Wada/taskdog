@@ -3,7 +3,7 @@
 import unittest
 from datetime import date
 
-from shared.utils.holiday_checker import HolidayChecker
+from infrastructure.holiday_checker import HolidayChecker
 
 
 class TestHolidayCheckerJapan(unittest.TestCase):

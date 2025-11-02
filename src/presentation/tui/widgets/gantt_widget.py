@@ -13,6 +13,7 @@ from textual.events import Resize
 from textual.widgets import Static
 
 from application.queries.filters.task_filter import TaskFilter
+from domain.services.holiday_checker import IHolidayChecker
 from presentation.constants.table_dimensions import (
     BORDER_WIDTH,
     CHARS_PER_DAY,
@@ -23,10 +24,8 @@ from presentation.constants.table_dimensions import (
 )
 from presentation.tui.widgets.gantt_data_table import GanttDataTable
 from presentation.view_models.gantt_view_model import GanttViewModel
-from shared.config_manager import Config
 from shared.constants.time import DAYS_PER_WEEK
 from shared.utils.date_utils import get_previous_monday
-from shared.utils.holiday_checker import HolidayChecker
 
 
 class GanttWidget(VerticalScroll):
@@ -74,34 +73,23 @@ class GanttWidget(VerticalScroll):
         self._legend_widget.styles.margin = (1, 0, 0, 0)  # Top margin
         yield self._legend_widget
 
-    def _create_holiday_checker(self) -> HolidayChecker | None:
-        """Create HolidayChecker from app config.
+    def _create_holiday_checker(self) -> IHolidayChecker | None:
+        """Get HolidayChecker from app.
 
         Returns:
-            HolidayChecker instance if country is configured, None otherwise
+            HolidayChecker instance if configured, None otherwise
         """
-        # Validate app and config existence explicitly
+        # Validate app existence explicitly
         if not hasattr(self, "app"):
             return None
 
-        # Type hint: app is TaskdogTUI which has config attribute
+        # Type hint: app is TaskdogTUI which has holiday_checker attribute
         app = self.app  # type: ignore[attr-defined]
 
-        if not hasattr(app, "config"):
+        if not hasattr(app, "holiday_checker"):
             return None
 
-        config: Config = app.config
-
-        # Check if country is configured
-        if not config.region.country:
-            return None
-
-        # Try to create HolidayChecker, handling expected exceptions
-        try:
-            return HolidayChecker(config.region.country)
-        except (ImportError, NotImplementedError):
-            # Holiday data not available for this country
-            return None
+        return app.holiday_checker
 
     def update_gantt(
         self,

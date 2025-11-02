@@ -8,8 +8,8 @@ This module provides utilities for:
 Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
 
 Holiday checking:
-- Use HolidayChecker class for country-specific holiday detection
-- is_workday() function supports optional holiday checking via HolidayChecker
+- Use IHolidayChecker interface for country-specific holiday detection
+- is_workday() function supports optional holiday checking via IHolidayChecker
 """
 
 from datetime import date, datetime, timedelta
@@ -20,7 +20,7 @@ from shared.constants import WEEKDAY_THRESHOLD
 from shared.constants.formats import DATETIME_FORMAT
 
 if TYPE_CHECKING:
-    from shared.utils.holiday_checker import HolidayChecker
+    from domain.services.holiday_checker import IHolidayChecker
 
 
 def parse_date(date_str: str | None) -> date | None:
@@ -82,12 +82,12 @@ def is_weekend(dt: datetime | date) -> bool:
     return dt.weekday() >= WEEKDAY_THRESHOLD
 
 
-def is_workday(dt: datetime | date, holiday_checker: "HolidayChecker | None" = None) -> bool:
+def is_workday(dt: datetime | date, holiday_checker: "IHolidayChecker | None" = None) -> bool:
     """Check if a date is a workday (weekday and not a holiday).
 
     Args:
         dt: Date or datetime to check
-        holiday_checker: Optional HolidayChecker instance for holiday detection
+        holiday_checker: Optional IHolidayChecker instance for holiday detection
                          If None, only weekday/weekend is checked
 
     Returns:
@@ -102,7 +102,7 @@ def is_workday(dt: datetime | date, holiday_checker: "HolidayChecker | None" = N
         False
 
         >>> # With holiday checker - checks weekday/weekend and holidays
-        >>> from shared.utils.holiday_checker import HolidayChecker
+        >>> from infrastructure.holiday_checker import HolidayChecker
         >>> checker = HolidayChecker("JP")
         >>> is_workday(date(2025, 1, 1), checker)  # New Year's Day (holiday)
         False

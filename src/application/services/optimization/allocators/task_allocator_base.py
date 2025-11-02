@@ -11,7 +11,7 @@ from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
     from domain.repositories.task_repository import TaskRepository
-    from shared.utils.holiday_checker import HolidayChecker
+    from domain.services.holiday_checker import IHolidayChecker
 
 
 class TaskAllocatorBase(ABC):
@@ -28,14 +28,14 @@ class TaskAllocatorBase(ABC):
     def __init__(
         self,
         config: Config,
-        holiday_checker: "HolidayChecker | None" = None,
+        holiday_checker: "IHolidayChecker | None" = None,
         current_time: datetime | None = None,
     ):
         """Initialize allocator with configuration.
 
         Args:
             config: Application configuration
-            holiday_checker: Optional HolidayChecker for holiday detection
+            holiday_checker: Optional IHolidayChecker for holiday detection
             current_time: Current time for calculating remaining hours on today
         """
         self.config = config

@@ -1,10 +1,10 @@
-from contextlib import suppress
 from datetime import date, timedelta
 from typing import Any
 
 from rich.table import Table
 from rich.text import Text
 
+from domain.services.holiday_checker import IHolidayChecker
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.colors import GANTT_COLUMN_EST_HOURS_COLOR
 from presentation.constants.table_dimensions import (
@@ -23,8 +23,6 @@ from presentation.constants.table_styles import (
 from presentation.renderers.gantt_cell_formatter import GanttCellFormatter
 from presentation.renderers.rich_renderer_base import RichRendererBase
 from presentation.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
-from shared.config_manager import Config
-from shared.utils.holiday_checker import HolidayChecker
 
 
 class RichGanttRenderer(RichRendererBase):
@@ -40,21 +38,19 @@ class RichGanttRenderer(RichRendererBase):
     is applied by GanttPresenter when converting from GanttOutput to GanttViewModel.
     """
 
-    def __init__(self, console_writer: ConsoleWriter, config: Config):
+    def __init__(
+        self,
+        console_writer: ConsoleWriter,
+        holiday_checker: IHolidayChecker | None = None,
+    ):
         """Initialize the renderer.
 
         Args:
             console_writer: Console writer for output
-            config: Configuration object for holiday checking
+            holiday_checker: Holiday checker for workday validation (optional)
         """
         self.console_writer = console_writer
-        self.config = config
-
-        # Create HolidayChecker if country is configured
-        self.holiday_checker: HolidayChecker | None = None
-        if config.region.country:
-            with suppress(ImportError, NotImplementedError):
-                self.holiday_checker = HolidayChecker(config.region.country)
+        self.holiday_checker = holiday_checker
 
     def build_table(self, gantt_view_model: GanttViewModel) -> Table | None:
         """Build and return a Gantt chart Table object from GanttViewModel.

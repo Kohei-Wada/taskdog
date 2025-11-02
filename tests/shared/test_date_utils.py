@@ -3,6 +3,7 @@
 import unittest
 from datetime import date, datetime
 
+from infrastructure.holiday_checker import HolidayChecker
 from shared.utils.date_utils import (
     calculate_next_workday,
     get_previous_monday,
@@ -10,7 +11,6 @@ from shared.utils.date_utils import (
     is_weekend,
     is_workday,
 )
-from shared.utils.holiday_checker import HolidayChecker
 
 
 class TestDateUtils(unittest.TestCase):

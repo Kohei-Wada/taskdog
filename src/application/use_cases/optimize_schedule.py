@@ -1,6 +1,5 @@
 """Use case for optimizing task schedules."""
 
-from contextlib import suppress
 from datetime import datetime
 
 from application.dto.optimization_output import OptimizationOutput
@@ -12,8 +11,8 @@ from application.services.schedule_clearer import ScheduleClearer
 from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
+from domain.services.holiday_checker import IHolidayChecker
 from shared.config_manager import Config
-from shared.utils.holiday_checker import HolidayChecker
 
 
 class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]):
@@ -23,23 +22,24 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
     priorities, deadlines, and workload constraints.
     """
 
-    def __init__(self, repository: TaskRepository, config: Config):
+    def __init__(
+        self,
+        repository: TaskRepository,
+        config: Config,
+        holiday_checker: IHolidayChecker | None = None,
+    ):
         """Initialize use case.
 
         Args:
             repository: Task repository for data access
             config: Application configuration
+            holiday_checker: Holiday checker for workday validation (optional)
         """
         self.repository = repository
         self.config = config
         self.schedule_clearer = ScheduleClearer(repository)
         self.summary_builder = OptimizationSummaryBuilder(repository)
-
-        # Create HolidayChecker if country is configured
-        self.holiday_checker: HolidayChecker | None = None
-        if config.region.country:
-            with suppress(ImportError, NotImplementedError):
-                self.holiday_checker = HolidayChecker(config.region.country)
+        self.holiday_checker = holiday_checker
 
     def execute(self, input_dto: OptimizeScheduleInput) -> OptimizationOutput:
         """Execute schedule optimization.

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
+from domain.services.holiday_checker import IHolidayChecker
 from domain.services.time_tracker import TimeTracker
 from presentation.console.console_writer import ConsoleWriter
 from presentation.controllers.query_controller import QueryController
@@ -31,6 +32,7 @@ class CliContext:
         relationship_controller: Controller for task relationships (dependencies, tags, hours)
         analytics_controller: Controller for analytics operations (statistics, optimization)
         crud_controller: Controller for CRUD operations (create, update, archive, etc.)
+        holiday_checker: Holiday checker for workday validation (optional)
     """
 
     console_writer: ConsoleWriter
@@ -43,3 +45,4 @@ class CliContext:
     relationship_controller: TaskRelationshipController
     analytics_controller: TaskAnalyticsController
     crud_controller: TaskCrudController
+    holiday_checker: IHolidayChecker | None

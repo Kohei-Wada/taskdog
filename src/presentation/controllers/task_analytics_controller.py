@@ -13,6 +13,7 @@ from application.dto.statistics_output import CalculateStatisticsInput, Statisti
 from application.use_cases.calculate_statistics import CalculateStatisticsUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from domain.repositories.task_repository import TaskRepository
+from domain.services.holiday_checker import IHolidayChecker
 from presentation.controllers.base_controller import BaseTaskController
 from shared.config_manager import Config
 
@@ -29,16 +30,24 @@ class TaskAnalyticsController(BaseTaskController):
     Attributes:
         repository: Task repository (inherited from BaseTaskController)
         config: Application configuration (inherited from BaseTaskController)
+        holiday_checker: Holiday checker for workday validation (optional)
     """
 
-    def __init__(self, repository: TaskRepository, config: Config):
+    def __init__(
+        self,
+        repository: TaskRepository,
+        config: Config,
+        holiday_checker: IHolidayChecker | None = None,
+    ):
         """Initialize the analytics controller.
 
         Args:
             repository: Task repository
             config: Application configuration
+            holiday_checker: Holiday checker for workday validation (optional)
         """
         super().__init__(repository, config)
+        self.holiday_checker = holiday_checker
 
     def calculate_statistics(self, period: str = "all") -> StatisticsOutput:
         """Calculate task statistics.
@@ -88,5 +97,5 @@ class TaskAnalyticsController(BaseTaskController):
             current_time=datetime.now(),
         )
 
-        use_case = OptimizeScheduleUseCase(self.repository, self.config)
+        use_case = OptimizeScheduleUseCase(self.repository, self.config, self.holiday_checker)
         return use_case.execute(optimize_input)

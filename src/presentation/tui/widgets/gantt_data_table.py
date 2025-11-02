@@ -20,7 +20,7 @@ from presentation.renderers.gantt_cell_formatter import GanttCellFormatter
 from presentation.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 
 if TYPE_CHECKING:
-    from shared.utils.holiday_checker import HolidayChecker
+    from domain.services.holiday_checker import IHolidayChecker
 
 # Constants
 GANTT_HEADER_ROW_COUNT = 3  # Number of header rows (Month, Week, Date)
@@ -38,7 +38,7 @@ class GanttDataTable(DataTable):
     # No bindings - read-only display
     BINDINGS: ClassVar = []
 
-    def __init__(self, holiday_checker: "HolidayChecker | None" = None, *args, **kwargs):
+    def __init__(self, holiday_checker: "IHolidayChecker | None" = None, *args, **kwargs):
         """Initialize the Gantt data table.
 
         Args:

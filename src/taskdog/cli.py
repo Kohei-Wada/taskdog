@@ -1,9 +1,11 @@
+from contextlib import suppress
 from typing import Any
 
 import click
 from rich.console import Console
 
 from domain.services.time_tracker import TimeTracker
+from infrastructure.holiday_checker import HolidayChecker
 from infrastructure.persistence.file_notes_repository import FileNotesRepository
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.cli.commands.add import add_command
@@ -87,6 +89,12 @@ def cli(ctx: click.Context) -> None:
     config = ConfigManager.load()
     notes_repository = FileNotesRepository()
 
+    # Initialize HolidayChecker if country is configured
+    holiday_checker = None
+    if config.region.country:
+        with suppress(ImportError, NotImplementedError):
+            holiday_checker = HolidayChecker(config.region.country)
+
     # Initialize repository with error handling for corrupted data
     try:
         repository = JsonTaskRepository(tasksfile)
@@ -111,7 +119,7 @@ def cli(ctx: click.Context) -> None:
     query_controller = QueryController(repository, notes_repository)
     lifecycle_controller = TaskLifecycleController(repository, time_tracker, config)
     relationship_controller = TaskRelationshipController(repository, config)
-    analytics_controller = TaskAnalyticsController(repository, config)
+    analytics_controller = TaskAnalyticsController(repository, config, holiday_checker)
     crud_controller = TaskCrudController(repository, time_tracker, config)
 
     # Store in CliContext for type-safe access
@@ -127,6 +135,7 @@ def cli(ctx: click.Context) -> None:
         relationship_controller=relationship_controller,
         analytics_controller=analytics_controller,
         crud_controller=crud_controller,
+        holiday_checker=holiday_checker,
     )
 
 

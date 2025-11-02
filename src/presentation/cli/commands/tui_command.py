@@ -26,6 +26,7 @@ def tui_command(ctx):
     time_tracker = ctx_obj.time_tracker
     config = ctx_obj.config
     notes_repository = ctx_obj.notes_repository
+    holiday_checker = ctx_obj.holiday_checker
 
     # Launch the TUI application
     app = TaskdogTUI(
@@ -33,5 +34,6 @@ def tui_command(ctx):
         time_tracker=time_tracker,
         notes_repository=notes_repository,
         config=config,
+        holiday_checker=holiday_checker,
     )
     app.run()

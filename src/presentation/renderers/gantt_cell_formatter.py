@@ -15,7 +15,7 @@ from rich.text import Text
 from domain.entities.task import Task, TaskStatus
 
 if TYPE_CHECKING:
-    from shared.utils.holiday_checker import HolidayChecker
+    from domain.services.holiday_checker import IHolidayChecker
 from presentation.constants.colors import (
     DAY_STYLE_SATURDAY,
     DAY_STYLE_SUNDAY,
@@ -57,7 +57,7 @@ class GanttCellFormatter:
         hours: float,
         parsed_dates: dict[str, Any],
         status: TaskStatus,
-        holiday_checker: "HolidayChecker | None" = None,
+        holiday_checker: "IHolidayChecker | None" = None,
     ) -> tuple[str, str]:
         """Format a single timeline cell with daily hours and styling.
 
@@ -129,7 +129,7 @@ class GanttCellFormatter:
     def build_date_header_lines(
         start_date: date,
         end_date: date,
-        holiday_checker: "HolidayChecker | None" = None,
+        holiday_checker: "IHolidayChecker | None" = None,
     ) -> tuple[Text, Text, Text]:
         """Build date header lines (Month, Today marker, Day) for the timeline.
 
@@ -329,7 +329,7 @@ class GanttCellFormatter:
     @staticmethod
     def _get_background_color(
         current_date: date,
-        holiday_checker: "HolidayChecker | None" = None,
+        holiday_checker: "IHolidayChecker | None" = None,
     ) -> str:
         """Get background color based on day of week and holidays.
 

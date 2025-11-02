@@ -14,6 +14,7 @@ from application.queries.filters.incomplete_or_active_filter import (
 from application.queries.filters.non_archived_filter import NonArchivedFilter
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
+from domain.services.holiday_checker import IHolidayChecker
 from domain.services.time_tracker import TimeTracker
 from presentation.controllers.query_controller import QueryController
 from presentation.presenters.gantt_presenter import GanttPresenter
@@ -111,6 +112,7 @@ class TaskdogTUI(App):
         time_tracker: TimeTracker,
         notes_repository: NotesRepository,
         config: Config | None = None,
+        holiday_checker: IHolidayChecker | None = None,
         *args,
         **kwargs,
     ):
@@ -121,12 +123,14 @@ class TaskdogTUI(App):
             time_tracker: Time tracker service
             notes_repository: Notes repository for notes file operations
             config: Application configuration (optional, loads from file by default)
+            holiday_checker: Holiday checker for workday validation (optional)
         """
         super().__init__(*args, **kwargs)
         self.repository = repository
         self.time_tracker = time_tracker
         self.notes_repository = notes_repository
         self.config = config if config is not None else ConfigManager.load()
+        self.holiday_checker = holiday_checker
         self.main_screen: MainScreen | None = None
         self._gantt_sort_by: str = "deadline"  # Default gantt sort order
         self._hide_completed: bool = False  # Default: show all tasks
@@ -146,7 +150,9 @@ class TaskdogTUI(App):
         self.query_controller = QueryController(repository, notes_repository)
         lifecycle_controller = TaskLifecycleController(repository, time_tracker, self.config)
         relationship_controller = TaskRelationshipController(repository, self.config)
-        analytics_controller = TaskAnalyticsController(repository, self.config)
+        analytics_controller = TaskAnalyticsController(
+            repository, self.config, self.holiday_checker
+        )
         crud_controller = TaskCrudController(repository, time_tracker, self.config)
 
         # Initialize TUIContext
@@ -158,6 +164,7 @@ class TaskdogTUI(App):
             relationship_controller=relationship_controller,
             analytics_controller=analytics_controller,
             crud_controller=crud_controller,
+            holiday_checker=self.holiday_checker,
         )
 
         # Initialize presenters for view models

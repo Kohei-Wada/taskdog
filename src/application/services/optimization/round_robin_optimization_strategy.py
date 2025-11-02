@@ -14,7 +14,7 @@ from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
     from domain.repositories.task_repository import TaskRepository
-    from shared.utils.holiday_checker import HolidayChecker
+    from domain.services.holiday_checker import IHolidayChecker
 
 
 class RoundRobinOptimizationStrategy(OptimizationStrategy):
@@ -46,7 +46,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-        holiday_checker: "HolidayChecker | None" = None,
+        holiday_checker: "IHolidayChecker | None" = None,
         current_time: datetime | None = None,
     ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
         """Optimize task schedules using round-robin algorithm.
@@ -174,7 +174,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         task_effective_deadlines: dict[int, datetime | None],
-        holiday_checker: "HolidayChecker | None" = None,
+        holiday_checker: "IHolidayChecker | None" = None,
     ) -> None:
         """Allocate time in round-robin fashion across tasks.
 
