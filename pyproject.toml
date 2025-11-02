@@ -21,7 +21,6 @@ dev = [
   "ruff>=0.3.0",
   "mypy>=1.8.0",
   "types-python-dateutil>=2.8.0",
-  "pytest>=8.0.0",
   "coverage>=7.0.0",
 ]
 
@@ -152,7 +151,6 @@ packages = [
   "application.queries.filters",
   "application.services",
   "application.services.optimization",
-  "application.services.optimization.allocators",
   "application.sorters",
   "application.use_cases",
   "application.utils",
