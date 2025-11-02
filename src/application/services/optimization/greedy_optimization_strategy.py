@@ -1,16 +1,13 @@
 """Greedy optimization strategy implementation."""
 
-from datetime import datetime
-
+from application.services.optimization.allocator_based_strategy import AllocatorBasedStrategy
 from application.services.optimization.allocators.greedy_forward_allocator import (
     GreedyForwardAllocator,
 )
-from application.services.optimization.optimization_strategy import OptimizationStrategy
-from domain.entities.task import Task
-from shared.config_manager import Config
+from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 
 
-class GreedyOptimizationStrategy(OptimizationStrategy):
+class GreedyOptimizationStrategy(AllocatorBasedStrategy):
     """Greedy algorithm for task scheduling optimization.
 
     This strategy uses a greedy approach to schedule tasks:
@@ -25,32 +22,10 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
     DISPLAY_NAME = "Greedy"
     DESCRIPTION = "Front-loads tasks (default)"
 
-    def __init__(self, config: Config):
-        """Initialize strategy with greedy forward allocator.
-
-        Args:
-            config: Application configuration
-        """
-        self.config = config
-
-    def _allocate_task(
-        self,
-        task: Task,
-        start_date: datetime,
-        max_hours_per_day: float,
-    ) -> Task | None:
-        """Allocate time block using greedy forward allocator.
-
-        Args:
-            task: Task to schedule
-            start_date: Starting date for allocation
-            max_hours_per_day: Maximum hours per day
+    def _get_allocator_class(self) -> type[TaskAllocatorBase]:
+        """Return GreedyForwardAllocator for this strategy.
 
         Returns:
-            Copy of task with updated schedule, or None if allocation fails
+            GreedyForwardAllocator class for front-loading tasks
         """
-        # Create allocator with holiday_checker and current_time (available after optimize_tasks sets it)
-        allocator = GreedyForwardAllocator(self.config, self.holiday_checker, self.current_time)
-        return allocator.allocate(
-            task, start_date, max_hours_per_day, self.daily_allocations, self.repository
-        )
+        return GreedyForwardAllocator

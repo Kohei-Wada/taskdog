@@ -1,20 +1,16 @@
 """Backward optimization strategy implementation."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING
 
+from application.services.optimization.allocator_based_strategy import AllocatorBasedStrategy
 from application.services.optimization.allocators.backward_allocator import (
     BackwardAllocator,
 )
-from application.services.optimization.optimization_strategy import OptimizationStrategy
+from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.entities.task import Task
-from shared.config_manager import Config
-
-if TYPE_CHECKING:
-    pass
 
 
-class BackwardOptimizationStrategy(OptimizationStrategy):
+class BackwardOptimizationStrategy(AllocatorBasedStrategy):
     """Backward (Just-In-Time) algorithm for task scheduling optimization.
 
     This strategy schedules tasks as late as possible while meeting deadlines:
@@ -28,20 +24,20 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
     - Just-In-Time delivery approach
     - Keeps options open longer
 
-    This class inherits common workflow from OptimizationStrategy
-    and only implements strategy-specific sorting and allocation logic.
+    This class inherits common workflow from AllocatorBasedStrategy
+    and implements custom sorting logic for backward scheduling.
     """
 
     DISPLAY_NAME = "Backward"
     DESCRIPTION = "Just-in-time from deadlines"
 
-    def __init__(self, config: Config):
-        """Initialize strategy with configuration.
+    def _get_allocator_class(self) -> type[TaskAllocatorBase]:
+        """Return BackwardAllocator for this strategy.
 
-        Args:
-            config: Application configuration
+        Returns:
+            BackwardAllocator class for just-in-time scheduling
         """
-        self.config = config
+        return BackwardAllocator
 
     def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by deadline (furthest first).
@@ -68,25 +64,3 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
                 return (1, 0, task.id)
 
         return sorted(tasks, key=deadline_key)
-
-    def _allocate_task(
-        self,
-        task: Task,
-        start_date: datetime,
-        max_hours_per_day: float,
-    ) -> Task | None:
-        """Allocate time block using backward allocator.
-
-        Args:
-            task: Task to schedule
-            start_date: Earliest allowed start date
-            max_hours_per_day: Maximum hours per day
-
-        Returns:
-            Copy of task with updated schedule, or None if allocation fails
-        """
-        # Create allocator with holiday_checker and current_time (available after optimize_tasks sets it)
-        allocator = BackwardAllocator(self.config, self.holiday_checker, self.current_time)
-        return allocator.allocate(
-            task, start_date, max_hours_per_day, self.daily_allocations, self.repository
-        )
