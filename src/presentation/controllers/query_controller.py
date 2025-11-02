@@ -16,6 +16,7 @@ from application.dto.task_dto import TaskDetailDto
 from application.dto.task_list_output import TaskListOutput
 from application.queries.filters.task_filter import TaskFilter
 from application.queries.task_query_service import TaskQueryService
+from application.services.optimization.strategy_factory import StrategyFactory
 from application.use_cases.get_task_detail import GetTaskDetailInput, GetTaskDetailUseCase
 from domain.entities.task import Task
 from domain.repositories.notes_repository import NotesRepository
@@ -184,6 +185,20 @@ class QueryController:
 
         use_case = GetTaskDetailUseCase(self.repository, self.notes_repository)
         return use_case.execute(GetTaskDetailInput(task_id))
+
+    def get_algorithm_metadata(self) -> list[tuple[str, str, str]]:
+        """Get metadata for all available optimization algorithms.
+
+        Returns:
+            List of tuples (algorithm_id, display_name, description)
+            for all registered optimization algorithms.
+
+        Example:
+            >>> metadata = query_controller.get_algorithm_metadata()
+            >>> metadata[0]
+            ('greedy', 'Greedy', 'Front-loads tasks (default)')
+        """
+        return StrategyFactory.get_algorithm_metadata()
 
     def _task_to_detail_dto(self, task: Task) -> TaskDetailDto:
         """Convert Task entity to TaskDetailDto.

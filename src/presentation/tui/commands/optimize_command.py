@@ -106,8 +106,13 @@ class OptimizeCommand(TUICommandBase):
             else:
                 self.notify_warning("No tasks were optimized. Check task requirements.")
 
+        # Get algorithm metadata from QueryController
+        algorithm_metadata = self.query_controller.get_algorithm_metadata()
+
         # Show optimization settings screen
         self.app.push_screen(
-            AlgorithmSelectionScreen(self.context.config, force_override=self.force_override),
+            AlgorithmSelectionScreen(
+                self.context.config, algorithm_metadata, force_override=self.force_override
+            ),
             handle_optimization_settings,
         )

@@ -11,7 +11,6 @@ from textual.containers import Container, Vertical
 from textual.widgets import Input, Label, OptionList, Static
 from textual.widgets.option_list import Option
 
-from application.services.optimization.strategy_factory import StrategyFactory
 from presentation.tui.screens.base_dialog import BaseModalDialog
 from shared.config_manager import Config
 
@@ -57,18 +56,25 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         Binding("ctrl+k", "focus_previous", "Previous field", priority=True),
     ]
 
-    def __init__(self, config: Config, force_override: bool = False, *args: Any, **kwargs: Any):
+    def __init__(
+        self,
+        config: Config,
+        algorithm_metadata: list[tuple[str, str, str]],
+        force_override: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ):
         """Initialize the screen.
 
         Args:
             config: Application configuration
+            algorithm_metadata: List of (algorithm_id, display_name, description) tuples
             force_override: Whether this is a force override optimization
         """
         super().__init__(*args, **kwargs)
         self.config = config
         self.force_override = force_override
-        # Get algorithm metadata dynamically from StrategyFactory
-        self.algorithms = StrategyFactory.get_algorithm_metadata()
+        self.algorithms = algorithm_metadata
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""

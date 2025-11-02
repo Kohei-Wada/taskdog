@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from application.dto.task_dto import TaskDetailDto
+from presentation.controllers.query_controller import QueryController
 from presentation.controllers.task_analytics_controller import TaskAnalyticsController
 from presentation.controllers.task_crud_controller import TaskCrudController
 from presentation.controllers.task_lifecycle_controller import TaskLifecycleController
@@ -71,6 +72,15 @@ class TUICommandBase(ABC):
             TaskAnalyticsController instance from TUIContext
         """
         return self.context.analytics_controller
+
+    @property
+    def query_controller(self) -> QueryController:
+        """Get the QueryController from context.
+
+        Returns:
+            QueryController instance from TUIContext
+        """
+        return self.context.query_controller
 
     @abstractmethod
     def execute(self) -> None:
