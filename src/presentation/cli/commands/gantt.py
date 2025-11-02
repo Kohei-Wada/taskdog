@@ -25,8 +25,7 @@ Use --tag to filter by tags (OR logic when multiple tags specified).
 WORKLOAD CALCULATION:
   The chart displays a "Workload[h]" row at the bottom showing daily workload:
   - Hours are calculated from task estimated_duration
-  - Manually scheduled tasks: workload distributed across all days (including weekends)
-  - Optimizer-generated schedules: workload excludes weekends automatically
+  - Workload is distributed across weekdays only (excludes weekends)
   - Values are rounded up (e.g., 4.3h → 5h)
 
 \b
