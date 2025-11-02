@@ -7,9 +7,10 @@ if TYPE_CHECKING:
     from domain.repositories.task_repository import TaskRepository
 
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
+from application.utils.date_helper import is_workday
 from domain.entities.task import Task
 from shared.constants import DEFAULT_SCHEDULE_DAYS
-from shared.utils.date_utils import count_weekdays, is_workday
+from shared.utils.date_utils import count_weekdays
 
 
 class BalancedAllocator(TaskAllocatorBase):

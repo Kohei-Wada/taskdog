@@ -8,9 +8,9 @@ from application.constants.optimization import ROUND_ROBIN_MAX_ITERATIONS
 from application.dto.optimization_output import SchedulingFailure
 from application.dto.task_dto import TaskSummaryDto
 from application.services.optimization.optimization_strategy import OptimizationStrategy
+from application.utils.date_helper import is_workday
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
     from domain.repositories.task_repository import TaskRepository

@@ -2,25 +2,17 @@
 
 This module provides utilities for:
 - Parsing datetime strings (parse_date, parse_datetime)
-- Weekday/weekend detection (is_weekday, is_weekend, is_workday)
+- Weekday/weekend detection (is_weekday, is_weekend)
 - Workday calculations (count_weekdays, get_previous_monday, calculate_next_workday, get_next_weekday)
 
 Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
-
-Holiday checking:
-- Use IHolidayChecker interface for country-specific holiday detection
-- is_workday() function supports optional holiday checking via IHolidayChecker
 """
 
 from datetime import date, datetime, timedelta
-from typing import TYPE_CHECKING
 
 from shared.config_manager import ConfigManager
 from shared.constants import WEEKDAY_THRESHOLD
 from shared.constants.formats import DATETIME_FORMAT
-
-if TYPE_CHECKING:
-    from domain.services.holiday_checker import IHolidayChecker
 
 
 def parse_date(date_str: str | None) -> date | None:
@@ -80,44 +72,6 @@ def is_weekend(dt: datetime | date) -> bool:
         True if Saturday-Sunday, False if Monday-Friday
     """
     return dt.weekday() >= WEEKDAY_THRESHOLD
-
-
-def is_workday(dt: datetime | date, holiday_checker: "IHolidayChecker | None" = None) -> bool:
-    """Check if a date is a workday (weekday and not a holiday).
-
-    Args:
-        dt: Date or datetime to check
-        holiday_checker: Optional IHolidayChecker instance for holiday detection
-                         If None, only weekday/weekend is checked
-
-    Returns:
-        True if the date is a weekday AND not a holiday,
-        False if weekend or holiday
-
-    Examples:
-        >>> # Without holiday checker - only checks weekday/weekend
-        >>> is_workday(date(2025, 1, 6))  # Monday
-        True
-        >>> is_workday(date(2025, 1, 4))  # Saturday
-        False
-
-        >>> # With holiday checker - checks weekday/weekend and holidays
-        >>> from infrastructure.holiday_checker import HolidayChecker
-        >>> checker = HolidayChecker("JP")
-        >>> is_workday(date(2025, 1, 1), checker)  # New Year's Day (holiday)
-        False
-        >>> is_workday(date(2025, 1, 2), checker)  # Regular Thursday
-        True
-    """
-    if not is_weekday(dt):
-        return False
-
-    if holiday_checker is None:
-        return True
-
-    # Convert datetime to date for holiday checking
-    check_date = dt.date() if isinstance(dt, datetime) else dt
-    return not holiday_checker.is_holiday(check_date)
 
 
 def count_weekdays(start: datetime | date, end: datetime | date) -> int:

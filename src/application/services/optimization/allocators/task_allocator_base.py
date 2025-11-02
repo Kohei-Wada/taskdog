@@ -5,9 +5,9 @@ from abc import ABC, abstractmethod
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING
 
+from application.utils.date_helper import is_workday
 from domain.entities.task import Task
 from shared.config_manager import Config
-from shared.utils.date_utils import is_workday
 
 if TYPE_CHECKING:
     from domain.repositories.task_repository import TaskRepository
