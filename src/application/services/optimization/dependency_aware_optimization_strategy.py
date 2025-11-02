@@ -2,15 +2,13 @@
 
 from datetime import datetime
 
-from application.services.optimization.allocator_based_strategy import AllocatorBasedStrategy
-from application.services.optimization.allocators.greedy_forward_allocator import (
-    GreedyForwardAllocator,
+from application.services.optimization.greedy_optimization_strategy import (
+    GreedyOptimizationStrategy,
 )
-from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.entities.task import Task
 
 
-class DependencyAwareOptimizationStrategy(AllocatorBasedStrategy):
+class DependencyAwareOptimizationStrategy(GreedyOptimizationStrategy):
     """Dependency-aware algorithm using Critical Path Method (CPM).
 
     This strategy schedules tasks while respecting parent-child dependencies:
@@ -19,20 +17,12 @@ class DependencyAwareOptimizationStrategy(AllocatorBasedStrategy):
     3. Within same depth, use priority and deadline as secondary sort
     4. Allocate time blocks respecting the dependency order using greedy allocation
 
-    The allocation uses greedy forward allocation, filling each day to maximum
-    capacity before moving to the next day.
+    The allocation uses greedy forward allocation (inherited from GreedyOptimizationStrategy),
+    filling each day to maximum capacity before moving to the next day.
     """
 
     DISPLAY_NAME = "Dependency Aware"
     DESCRIPTION = "Critical Path Method"
-
-    def _get_allocator_class(self) -> type[TaskAllocatorBase]:
-        """Return GreedyForwardAllocator for this strategy.
-
-        Returns:
-            GreedyForwardAllocator class for front-loading tasks
-        """
-        return GreedyForwardAllocator
 
     def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by dependency depth, then by priority/deadline.

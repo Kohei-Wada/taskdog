@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 from application.constants.optimization import MONTE_CARLO_NUM_SIMULATIONS
 from application.dto.optimization_output import SchedulingFailure
 from application.services.optimization.allocation_context import AllocationContext
-from application.services.optimization.allocators.greedy_forward_allocator import (
-    GreedyForwardAllocator,
+from application.services.optimization.greedy_optimization_strategy import (
+    GreedyOptimizationStrategy,
 )
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.services.optimization.schedule_fitness_calculator import (
@@ -98,12 +98,10 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             current_time=current_time,
         )
 
-        # Create allocator instance
-        allocator = GreedyForwardAllocator(
+        # Create greedy strategy instance for allocation
+        greedy_strategy = GreedyOptimizationStrategy(
             self.default_start_hour,
             self.default_end_hour,
-            context.holiday_checker,
-            context.current_time,
         )
 
         # Clear evaluation cache for new optimization run
@@ -117,15 +115,13 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             max_hours_per_day,
             force_override,
             repository,
-            allocator,
+            greedy_strategy,
         )
 
         # Schedule tasks according to best order using greedy allocation
         updated_tasks = []
         for task in best_order:
-            updated_task = allocator.allocate(
-                task, start_date, max_hours_per_day, context.daily_allocations, repository
-            )
+            updated_task = greedy_strategy._allocate_task(task, context)
             if updated_task:
                 updated_tasks.append(updated_task)
             else:
@@ -143,7 +139,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         force_override: bool,
         repository: "TaskRepository",
-        allocator: GreedyForwardAllocator,
+        greedy_strategy: GreedyOptimizationStrategy,
     ) -> list[Task]:
         """Run Monte Carlo simulation to find optimal task ordering.
 
@@ -172,7 +168,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
                 max_hours_per_day,
                 force_override,
                 repository,
-                allocator,
+                greedy_strategy,
             )
 
             # Track best ordering
@@ -190,7 +186,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         force_override: bool,
         repository: "TaskRepository",
-        allocator: GreedyForwardAllocator,
+        greedy_strategy: GreedyOptimizationStrategy,
     ) -> float:
         """Evaluate ordering with caching to avoid redundant calculations.
 
@@ -221,7 +217,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             max_hours_per_day,
             force_override,
             repository,
-            allocator,
+            greedy_strategy,
         )
 
         # Cache the result
@@ -237,7 +233,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         force_override: bool,
         repository: "TaskRepository",
-        allocator: GreedyForwardAllocator,
+        greedy_strategy: GreedyOptimizationStrategy,
     ) -> float:
         """Evaluate a task ordering by simulating scheduling.
 
@@ -254,19 +250,28 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             Score (higher is better)
         """
         # Simulate scheduling with this order
-        temp_daily_allocations: dict[date, float] = {}
+        # Create a temporary context for simulation
+        temp_context = AllocationContext.create(
+            tasks=all_tasks,
+            repository=repository,
+            start_date=start_date,
+            max_hours_per_day=max_hours_per_day,
+            force_override=force_override,
+            holiday_checker=greedy_strategy._get_holiday_checker()
+            if hasattr(greedy_strategy, "_get_holiday_checker")
+            else None,
+            current_time=None,
+        )
         scheduled_tasks = []
 
         for task in task_order:
-            updated_task = allocator.allocate(
-                task, start_date, max_hours_per_day, temp_daily_allocations, repository
-            )
+            updated_task = greedy_strategy._allocate_task(task, temp_context)
             if updated_task:
                 scheduled_tasks.append(updated_task)
 
         # Calculate score using the calculator (with scheduling bonus)
         score = self.fitness_calculator.calculate_fitness(
-            scheduled_tasks, temp_daily_allocations, include_scheduling_bonus=True
+            scheduled_tasks, temp_context.daily_allocations, include_scheduling_bonus=True
         )
 
         return score

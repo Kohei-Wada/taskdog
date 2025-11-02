@@ -2,15 +2,13 @@
 
 from datetime import datetime
 
-from application.services.optimization.allocator_based_strategy import AllocatorBasedStrategy
-from application.services.optimization.allocators.greedy_forward_allocator import (
-    GreedyForwardAllocator,
+from application.services.optimization.greedy_optimization_strategy import (
+    GreedyOptimizationStrategy,
 )
-from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from domain.entities.task import Task
 
 
-class EarliestDeadlineOptimizationStrategy(AllocatorBasedStrategy):
+class EarliestDeadlineOptimizationStrategy(GreedyOptimizationStrategy):
     """Earliest Deadline First (EDF) algorithm for task scheduling optimization.
 
     This strategy schedules tasks purely based on deadline proximity:
@@ -19,20 +17,12 @@ class EarliestDeadlineOptimizationStrategy(AllocatorBasedStrategy):
     3. Allocate time blocks sequentially in deadline order using greedy allocation
     4. Ignore priority field completely
 
-    The allocation uses greedy forward allocation, filling each day to maximum
-    capacity before moving to the next day.
+    The allocation uses greedy forward allocation (inherited from GreedyOptimizationStrategy),
+    filling each day to maximum capacity before moving to the next day.
     """
 
     DISPLAY_NAME = "Earliest Deadline"
     DESCRIPTION = "EDF algorithm"
-
-    def _get_allocator_class(self) -> type[TaskAllocatorBase]:
-        """Return GreedyForwardAllocator for this strategy.
-
-        Returns:
-            GreedyForwardAllocator class for front-loading tasks
-        """
-        return GreedyForwardAllocator
 
     def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by deadline (earliest first).
