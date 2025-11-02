@@ -14,7 +14,6 @@ from application.services.optimization.allocators.greedy_forward_allocator impor
 )
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
-from shared.config_manager import Config
 
 if TYPE_CHECKING:
     from domain.repositories.task_repository import TaskRepository
@@ -40,13 +39,15 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
     NUM_SIMULATIONS = MONTE_CARLO_NUM_SIMULATIONS
 
-    def __init__(self, config: Config):
+    def __init__(self, default_start_hour: int, default_end_hour: int):
         """Initialize strategy with configuration.
 
         Args:
-            config: Application configuration
+            default_start_hour: Default start hour for tasks (e.g., 9)
+            default_end_hour: Default end hour for tasks (e.g., 18)
         """
-        self.config = config
+        self.default_start_hour = default_start_hour
+        self.default_end_hour = default_end_hour
         self._evaluation_cache: dict[
             tuple[int | None, ...], float
         ] = {}  # Cache for evaluation results
@@ -95,7 +96,9 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self._initialize_allocations(tasks, force_override)
 
         # Create allocator instance
-        allocator = GreedyForwardAllocator(self.config, self.holiday_checker, self.current_time)
+        allocator = GreedyForwardAllocator(
+            self.default_start_hour, self.default_end_hour, self.holiday_checker, self.current_time
+        )
 
         # Clear evaluation cache for new optimization run
         self._evaluation_cache.clear()

@@ -12,7 +12,6 @@ from application.use_cases.base import UseCase
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
 from domain.services.holiday_checker import IHolidayChecker
-from shared.config_manager import Config
 
 
 class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]):
@@ -25,18 +24,21 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
     def __init__(
         self,
         repository: TaskRepository,
-        config: Config,
+        default_start_hour: int,
+        default_end_hour: int,
         holiday_checker: IHolidayChecker | None = None,
     ):
         """Initialize use case.
 
         Args:
             repository: Task repository for data access
-            config: Application configuration
+            default_start_hour: Default start hour for tasks (e.g., 9)
+            default_end_hour: Default end hour for tasks (e.g., 18)
             holiday_checker: Holiday checker for workday validation (optional)
         """
         self.repository = repository
-        self.config = config
+        self.default_start_hour = default_start_hour
+        self.default_end_hour = default_end_hour
         self.schedule_clearer = ScheduleClearer(repository)
         self.summary_builder = OptimizationSummaryBuilder(repository)
         self.holiday_checker = holiday_checker
@@ -61,7 +63,9 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         }
 
         # Get optimization strategy
-        strategy = StrategyFactory.create(input_dto.algorithm_name, self.config)
+        strategy = StrategyFactory.create(
+            input_dto.algorithm_name, self.default_start_hour, self.default_end_hour
+        )
 
         # Run optimization
         modified_tasks, daily_allocations, failed_tasks = strategy.optimize_tasks(

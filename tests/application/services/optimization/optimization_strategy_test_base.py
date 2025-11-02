@@ -40,7 +40,10 @@ class BaseOptimizationStrategyTest(unittest.TestCase):
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
         self.create_use_case = CreateTaskUseCase(self.repository)
-        self.optimize_use_case = OptimizeScheduleUseCase(self.repository, ConfigManager.load())
+        config = ConfigManager.load()
+        self.optimize_use_case = OptimizeScheduleUseCase(
+            self.repository, config.time.default_start_hour, config.time.default_end_hour
+        )
 
     def tearDown(self):
         """Clean up temporary file after each test."""

@@ -6,21 +6,14 @@ from unittest.mock import MagicMock
 
 from application.services.optimization.allocators.balanced_allocator import BalancedAllocator
 from domain.entities.task import Task, TaskStatus
-from shared.config_manager import Config, DisplayConfig, OptimizationConfig, TaskConfig, TimeConfig
 
 
 class TestBalancedAllocator(unittest.TestCase):
     """Test cases for BalancedAllocator."""
 
     def setUp(self):
-        """Initialize allocator and config for each test."""
-        self.config = Config(
-            optimization=OptimizationConfig(max_hours_per_day=6.0, default_algorithm="balanced"),
-            task=TaskConfig(default_priority=5),
-            display=DisplayConfig(datetime_format="%Y-%m-%d %H:%M:%S"),
-            time=TimeConfig(default_start_hour=9, default_end_hour=18),
-        )
-        self.allocator = BalancedAllocator(self.config)
+        """Initialize allocator for each test."""
+        self.allocator = BalancedAllocator(default_start_hour=9, default_end_hour=18)
         self.repository = MagicMock()
 
     def test_allocate_distributes_evenly(self):

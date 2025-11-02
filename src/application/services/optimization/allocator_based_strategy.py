@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
-from shared.config_manager import Config
 
 if TYPE_CHECKING:
     pass
@@ -45,13 +44,15 @@ class AllocatorBasedStrategy(OptimizationStrategy):
                 return sorted(tasks, key=lambda t: t.priority)
     """
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, default_start_hour: int, default_end_hour: int) -> None:
         """Initialize the allocator-based strategy.
 
         Args:
-            config: Configuration object for strategy settings
+            default_start_hour: Default start hour for tasks (e.g., 9)
+            default_end_hour: Default end hour for tasks (e.g., 18)
         """
-        self.config = config
+        self.default_start_hour = default_start_hour
+        self.default_end_hour = default_end_hour
         self._allocator: TaskAllocatorBase | None = None  # Lazy initialization
 
     @abstractmethod
@@ -94,7 +95,8 @@ class AllocatorBasedStrategy(OptimizationStrategy):
         if self._allocator is None:
             allocator_class = self._get_allocator_class()
             self._allocator = allocator_class(
-                config=self.config,
+                default_start_hour=self.default_start_hour,
+                default_end_hour=self.default_end_hour,
                 holiday_checker=self.holiday_checker,
                 current_time=self.current_time,
             )

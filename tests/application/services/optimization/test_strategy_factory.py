@@ -30,15 +30,10 @@ from application.services.optimization.round_robin_optimization_strategy import 
     RoundRobinOptimizationStrategy,
 )
 from application.services.optimization.strategy_factory import StrategyFactory
-from shared.config_manager import ConfigManager
 
 
 class TestStrategyFactory(unittest.TestCase):
     """Test cases for StrategyFactory."""
-
-    def setUp(self):
-        """Create config for each test."""
-        self.config = ConfigManager._default_config()
 
     def test_create_all_strategy_types(self):
         """Test create returns correct strategy type for each algorithm."""
@@ -57,31 +52,23 @@ class TestStrategyFactory(unittest.TestCase):
 
         for algo_name, expected_class in strategies:
             with self.subTest(algorithm=algo_name):
-                strategy = StrategyFactory.create(algo_name, self.config)
+                strategy = StrategyFactory.create(algo_name, 9, 18)
                 self.assertIsInstance(strategy, expected_class)
 
     def test_create_with_unknown_algorithm_raises_error(self):
         """Test create raises ValueError for unknown algorithm."""
         with self.assertRaises(ValueError) as context:
-            StrategyFactory.create("unknown_algo", self.config)
+            StrategyFactory.create("unknown_algo", 9, 18)
 
         error_msg = str(context.exception)
         self.assertIn("Unknown optimization algorithm", error_msg)
         self.assertIn("unknown_algo", error_msg)
         self.assertIn("Available algorithms", error_msg)
 
-    def test_create_with_none_config_raises_error(self):
-        """Test create raises ValueError when config is None."""
-        with self.assertRaises(ValueError) as context:
-            StrategyFactory.create("greedy", None)
-
-        error_msg = str(context.exception)
-        self.assertIn("Config is required", error_msg)
-
     def test_create_defaults_to_greedy(self):
         """Test create uses 'greedy' as default algorithm when not specified."""
         # When algorithm_name defaults to "greedy"
-        strategy = StrategyFactory.create(config=self.config)
+        strategy = StrategyFactory.create(default_start_hour=9, default_end_hour=18)
 
         self.assertIsInstance(strategy, GreedyOptimizationStrategy)
 
@@ -156,16 +143,16 @@ class TestStrategyFactory(unittest.TestCase):
 
         for algo_name in algorithms:
             with self.subTest(algorithm=algo_name):
-                strategy = StrategyFactory.create(algo_name, self.config)
+                strategy = StrategyFactory.create(algo_name, 9, 18)
                 self.assertIsNotNone(strategy)
 
     def test_create_is_case_sensitive(self):
         """Test that algorithm names are case-sensitive."""
         with self.assertRaises(ValueError):
-            StrategyFactory.create("Greedy", self.config)
+            StrategyFactory.create("Greedy", 9, 18)
 
         with self.assertRaises(ValueError):
-            StrategyFactory.create("GREEDY", self.config)
+            StrategyFactory.create("GREEDY", 9, 18)
 
 
 if __name__ == "__main__":

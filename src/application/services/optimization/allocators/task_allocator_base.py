@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 from application.utils.date_helper import is_workday
 from domain.entities.task import Task
-from shared.config_manager import Config
 
 if TYPE_CHECKING:
     from domain.repositories.task_repository import TaskRepository
@@ -27,18 +26,21 @@ class TaskAllocatorBase(ABC):
 
     def __init__(
         self,
-        config: Config,
+        default_start_hour: int,
+        default_end_hour: int,
         holiday_checker: "IHolidayChecker | None" = None,
         current_time: datetime | None = None,
     ):
         """Initialize allocator with configuration.
 
         Args:
-            config: Application configuration
+            default_start_hour: Default start hour for tasks (e.g., 9)
+            default_end_hour: Default end hour for tasks (e.g., 18)
             holiday_checker: Optional IHolidayChecker for holiday detection
             current_time: Current time for calculating remaining hours on today
         """
-        self.config = config
+        self.default_start_hour = default_start_hour
+        self.default_end_hour = default_end_hour
         self.holiday_checker = holiday_checker
         self.current_time = current_time
 
@@ -165,7 +167,7 @@ class TaskAllocatorBase(ABC):
         """Calculate available hours for a specific date.
 
         If the date is today and current_time is set, calculates remaining hours
-        until end of business day (config.time.default_end_hour).
+        until end of business day (default_end_hour).
 
         Args:
             daily_allocations: Current daily allocations
@@ -180,7 +182,7 @@ class TaskAllocatorBase(ABC):
 
         # If current_time is set and date_obj is today, limit by remaining hours
         if self.current_time and date_obj == self.current_time.date():
-            end_hour = self.config.time.default_end_hour
+            end_hour = self.default_end_hour
             current_hour = self.current_time.hour + self.current_time.minute / 60.0
             remaining_hours_today = max(0.0, end_hour - current_hour)
             # Return minimum of available_from_max and remaining_hours_today
@@ -203,16 +205,14 @@ class TaskAllocatorBase(ABC):
             schedule_end: End datetime
             task_daily_allocations: Daily allocation hours
         """
-        # Set start time to config.time.default_start_hour (default: 9:00)
+        # Set start time to default_start_hour (default: 9:00)
         start_date_with_time = schedule_start.replace(
-            hour=self.config.time.default_start_hour, minute=0, second=0
+            hour=self.default_start_hour, minute=0, second=0
         )
         task.planned_start = start_date_with_time
 
-        # Set end time to config.time.default_end_hour (default: 18:00)
-        end_date_with_time = schedule_end.replace(
-            hour=self.config.time.default_end_hour, minute=0, second=0
-        )
+        # Set end time to default_end_hour (default: 18:00)
+        end_date_with_time = schedule_end.replace(hour=self.default_end_hour, minute=0, second=0)
         task.planned_end = end_date_with_time
         task.daily_allocations = task_daily_allocations
 

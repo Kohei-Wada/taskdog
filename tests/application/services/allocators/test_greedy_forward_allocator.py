@@ -8,21 +8,14 @@ from application.services.optimization.allocators.greedy_forward_allocator impor
     GreedyForwardAllocator,
 )
 from domain.entities.task import Task, TaskStatus
-from shared.config_manager import Config, DisplayConfig, OptimizationConfig, TaskConfig, TimeConfig
 
 
 class TestGreedyForwardAllocator(unittest.TestCase):
     """Test cases for GreedyForwardAllocator."""
 
     def setUp(self):
-        """Initialize allocator and config for each test."""
-        self.config = Config(
-            optimization=OptimizationConfig(max_hours_per_day=6.0, default_algorithm="greedy"),
-            task=TaskConfig(default_priority=5),
-            display=DisplayConfig(datetime_format="%Y-%m-%d %H:%M:%S"),
-            time=TimeConfig(default_start_hour=9, default_end_hour=18),
-        )
-        self.allocator = GreedyForwardAllocator(self.config)
+        """Initialize allocator for each test."""
+        self.allocator = GreedyForwardAllocator(default_start_hour=9, default_end_hour=18)
         self.repository = MagicMock()
 
     def test_allocate_single_task_fills_days_greedily(self):

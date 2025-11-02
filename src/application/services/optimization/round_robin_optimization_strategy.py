@@ -10,7 +10,6 @@ from application.dto.task_dto import TaskSummaryDto
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.utils.date_helper import is_workday
 from domain.entities.task import Task
-from shared.config_manager import Config
 
 if TYPE_CHECKING:
     from domain.repositories.task_repository import TaskRepository
@@ -31,13 +30,15 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
     DISPLAY_NAME = "Round Robin"
     DESCRIPTION = "Parallel progress on tasks"
 
-    def __init__(self, config: Config):
+    def __init__(self, default_start_hour: int, default_end_hour: int):
         """Initialize strategy with configuration.
 
         Args:
-            config: Application configuration
+            default_start_hour: Default start hour for tasks (e.g., 9)
+            default_end_hour: Default end hour for tasks (e.g., 18)
         """
-        self.config = config
+        self.default_start_hour = default_start_hour
+        self.default_end_hour = default_end_hour
 
     def optimize_tasks(
         self,
@@ -271,14 +272,10 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 start_dt = task_start_dates[task_id]
                 end_dt = task_end_dates[task_id]
 
-                # Set start time to config.time.default_start_hour (default: 9:00)
-                start_with_time = start_dt.replace(
-                    hour=self.config.time.default_start_hour, minute=0, second=0
-                )
-                # Set end time to config.time.default_end_hour (default: 18:00)
-                end_with_time = end_dt.replace(
-                    hour=self.config.time.default_end_hour, minute=0, second=0
-                )
+                # Set start time to default_start_hour (default: 9:00)
+                start_with_time = start_dt.replace(hour=self.default_start_hour, minute=0, second=0)
+                # Set end time to default_end_hour (default: 18:00)
+                end_with_time = end_dt.replace(hour=self.default_end_hour, minute=0, second=0)
 
                 task.planned_start = start_with_time
                 task.planned_end = end_with_time

@@ -6,21 +6,14 @@ from unittest.mock import MagicMock
 
 from application.services.optimization.allocators.backward_allocator import BackwardAllocator
 from domain.entities.task import Task, TaskStatus
-from shared.config_manager import Config, DisplayConfig, OptimizationConfig, TaskConfig, TimeConfig
 
 
 class TestBackwardAllocator(unittest.TestCase):
     """Test cases for BackwardAllocator."""
 
     def setUp(self):
-        """Initialize allocator and config for each test."""
-        self.config = Config(
-            optimization=OptimizationConfig(max_hours_per_day=6.0, default_algorithm="backward"),
-            task=TaskConfig(default_priority=5),
-            display=DisplayConfig(datetime_format="%Y-%m-%d %H:%M:%S"),
-            time=TimeConfig(default_start_hour=9, default_end_hour=18),
-        )
-        self.allocator = BackwardAllocator(self.config)
+        """Initialize allocator for each test."""
+        self.allocator = BackwardAllocator(default_start_hour=9, default_end_hour=18)
         self.repository = MagicMock()
 
     def test_allocate_schedules_backward_from_deadline(self):
