@@ -4,7 +4,6 @@ from typing import Any
 from rich.table import Table
 from rich.text import Text
 
-from domain.services.holiday_checker import IHolidayChecker
 from presentation.console.console_writer import ConsoleWriter
 from presentation.constants.colors import GANTT_COLUMN_EST_HOURS_COLOR
 from presentation.constants.table_dimensions import (
@@ -41,16 +40,13 @@ class RichGanttRenderer(RichRendererBase):
     def __init__(
         self,
         console_writer: ConsoleWriter,
-        holiday_checker: IHolidayChecker | None = None,
     ):
         """Initialize the renderer.
 
         Args:
             console_writer: Console writer for output
-            holiday_checker: Holiday checker for workday validation (optional)
         """
         self.console_writer = console_writer
-        self.holiday_checker = holiday_checker
 
     def build_table(self, gantt_view_model: GanttViewModel) -> Table | None:
         """Build and return a Gantt chart Table object from GanttViewModel.
@@ -95,13 +91,15 @@ class RichGanttRenderer(RichRendererBase):
         table.add_column("Timeline", style=COLUMN_NAME_STYLE)
 
         # Add date header row
-        date_header = self._build_date_header(start_date, end_date)
+        date_header = self._build_date_header(start_date, end_date, gantt_view_model.holidays)
         table.add_row("", "[dim]Date[/dim]", "", date_header)
 
         # Display all tasks in sort order
         for task_vm in gantt_view_model.tasks:
             task_daily_hours = gantt_view_model.task_daily_hours.get(task_vm.id, {})
-            self._add_task_to_gantt(task_vm, task_daily_hours, table, start_date, end_date)
+            self._add_task_to_gantt(
+                task_vm, task_daily_hours, table, start_date, end_date, gantt_view_model.holidays
+            )
 
         # Add section divider before workload summary
         table.add_section()
@@ -138,19 +136,20 @@ class RichGanttRenderer(RichRendererBase):
         # Print table (with caption as legend)
         self.console_writer.print(table)
 
-    def _build_date_header(self, start_date: date, end_date: date) -> Text:
+    def _build_date_header(self, start_date: date, end_date: date, holidays: set[date]) -> Text:
         """Build date header row for the timeline.
 
         Args:
             start_date: Start date of the chart
             end_date: End date of the chart
+            holidays: Set of holiday dates for styling
 
         Returns:
             Rich Text object with date labels (3 lines)
         """
         # Get the three header lines from the formatter
         month_line, today_line, day_line = GanttCellFormatter.build_date_header_lines(
-            start_date, end_date, self.holiday_checker
+            start_date, end_date, holidays
         )
 
         # Combine all three lines
@@ -170,6 +169,7 @@ class RichGanttRenderer(RichRendererBase):
         table: Table,
         start_date: date,
         end_date: date,
+        holidays: set[date],
     ):
         """Add a task to Gantt chart table.
 
@@ -179,6 +179,7 @@ class RichGanttRenderer(RichRendererBase):
             table: Rich Table object
             start_date: Start date of the chart
             end_date: End date of the chart
+            holidays: Set of holiday dates for styling
         """
         # Use pre-formatted name (strikethrough already applied by mapper)
         task_name = task_vm.formatted_name
@@ -187,7 +188,7 @@ class RichGanttRenderer(RichRendererBase):
         estimated_hours = task_vm.formatted_estimated_duration
 
         # Build timeline
-        timeline = self._build_timeline(task_vm, task_daily_hours, start_date, end_date)
+        timeline = self._build_timeline(task_vm, task_daily_hours, start_date, end_date, holidays)
 
         table.add_row(str(task_vm.id), task_name, estimated_hours, timeline)
 
@@ -197,6 +198,7 @@ class RichGanttRenderer(RichRendererBase):
         task_daily_hours: dict[date, float],
         start_date: date,
         end_date: date,
+        holidays: set[date],
     ) -> Text:
         """Build timeline visualization for a task using layered approach.
 
@@ -205,6 +207,7 @@ class RichGanttRenderer(RichRendererBase):
             task_daily_hours: Daily hours allocation for this task
             start_date: Start date of the chart
             end_date: End date of the chart
+            holidays: Set of holiday dates for styling
 
         Returns:
             Rich Text object with timeline visualization
@@ -232,7 +235,7 @@ class RichGanttRenderer(RichRendererBase):
 
             # Determine cell display and styling using the formatter
             display, style = GanttCellFormatter.format_timeline_cell(
-                current_date, hours, parsed_dates, task_vm.status, self.holiday_checker
+                current_date, hours, parsed_dates, task_vm.status, holidays
             )
 
             timeline.append(display, style=style)

@@ -61,6 +61,7 @@ class GanttViewModel(BaseViewModel):
         tasks: List of task view models for display
         task_daily_hours: Daily hour allocations per task (task.id -> {date: hours})
         daily_workload: Daily workload totals across all tasks
+        holidays: Set of holiday dates in the chart range (for rendering)
     """
 
     start_date: date
@@ -68,6 +69,7 @@ class GanttViewModel(BaseViewModel):
     tasks: list[TaskGanttRowViewModel]
     task_daily_hours: dict[int, dict[date, float]]
     daily_workload: dict[date, float]
+    holidays: set[date]
 
     @property
     def total_days(self) -> int:

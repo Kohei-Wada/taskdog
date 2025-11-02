@@ -6,7 +6,7 @@ like task selection, date range adjustment, and filtering.
 """
 
 from datetime import date, timedelta
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 from rich.text import Text
 from textual.widgets import DataTable
@@ -18,9 +18,6 @@ from presentation.constants.table_dimensions import (
 )
 from presentation.renderers.gantt_cell_formatter import GanttCellFormatter
 from presentation.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
-
-if TYPE_CHECKING:
-    from domain.services.holiday_checker import IHolidayChecker
 
 # Constants
 GANTT_HEADER_ROW_COUNT = 3  # Number of header rows (Month, Week, Date)
@@ -38,12 +35,8 @@ class GanttDataTable(DataTable):
     # No bindings - read-only display
     BINDINGS: ClassVar = []
 
-    def __init__(self, holiday_checker: "IHolidayChecker | None" = None, *args, **kwargs):
-        """Initialize the Gantt data table.
-
-        Args:
-            holiday_checker: Optional HolidayChecker for holiday detection
-        """
+    def __init__(self, *args, **kwargs):
+        """Initialize the Gantt data table."""
         super().__init__(*args, **kwargs)
         self.cursor_type = "none"
         self.zebra_stripes = True
@@ -56,7 +49,6 @@ class GanttDataTable(DataTable):
         self._task_map: dict[int, TaskGanttRowViewModel] = {}  # Maps row index to TaskViewModel
         self._gantt_view_model: GanttViewModel | None = None
         self._date_columns: list[date] = []  # Columns representing dates
-        self._holiday_checker = holiday_checker
 
     def setup_columns(
         self,
@@ -110,6 +102,7 @@ class GanttDataTable(DataTable):
         self._add_date_header_rows(
             gantt_view_model.start_date,
             gantt_view_model.end_date,
+            gantt_view_model.holidays,
         )
 
         # Add task rows
@@ -120,6 +113,7 @@ class GanttDataTable(DataTable):
                 task_daily_hours,
                 gantt_view_model.start_date,
                 gantt_view_model.end_date,
+                gantt_view_model.holidays,
             )
             self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task_vm
 
@@ -130,16 +124,17 @@ class GanttDataTable(DataTable):
             gantt_view_model.end_date,
         )
 
-    def _add_date_header_rows(self, start_date: date, end_date: date):
+    def _add_date_header_rows(self, start_date: date, end_date: date, holidays: set[date]):
         """Add date header rows (Month, Today marker, Day) as separate rows.
 
         Args:
             start_date: Start date of the chart
             end_date: End date of the chart
+            holidays: Set of holiday dates for styling
         """
         # Get the three header lines from the formatter
         month_line, today_line, day_line = GanttCellFormatter.build_date_header_lines(
-            start_date, end_date, self._holiday_checker
+            start_date, end_date, holidays
         )
 
         # Add three separate rows for month, today marker, and day with centered cells
@@ -168,6 +163,7 @@ class GanttDataTable(DataTable):
         task_daily_hours: dict[date, float],
         start_date: date,
         end_date: date,
+        holidays: set[date],
     ):
         """Add a task row to the Gantt table.
 
@@ -175,10 +171,11 @@ class GanttDataTable(DataTable):
             task_vm: Task ViewModel to add
             task_daily_hours: Daily hours allocation for this task
             start_date: Start date of the chart
-            end_date: End_date: End date of the chart
+            end_date: End date of the chart
+            holidays: Set of holiday dates for styling
         """
         task_id, task_name, est_hours = self._format_task_metadata(task_vm)
-        timeline = self._build_timeline(task_vm, task_daily_hours, start_date, end_date)
+        timeline = self._build_timeline(task_vm, task_daily_hours, start_date, end_date, holidays)
 
         self.add_row(
             Text(task_id, justify="center"),
@@ -209,6 +206,7 @@ class GanttDataTable(DataTable):
         task_daily_hours: dict[date, float],
         start_date: date,
         end_date: date,
+        holidays: set[date],
     ) -> Text:
         """Build timeline visualization for a task.
 
@@ -217,6 +215,7 @@ class GanttDataTable(DataTable):
             task_daily_hours: Daily hours allocation
             start_date: Start date of timeline
             end_date: End date of timeline
+            holidays: Set of holiday dates for styling
 
         Returns:
             Rich Text object with formatted timeline
@@ -244,7 +243,7 @@ class GanttDataTable(DataTable):
                 hours,
                 parsed_dates,
                 task_vm.status,
-                self._holiday_checker,
+                holidays,
             )
             timeline.append(display, style=style)
 

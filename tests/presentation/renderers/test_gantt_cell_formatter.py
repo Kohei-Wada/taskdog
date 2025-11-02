@@ -72,6 +72,7 @@ class TestGanttCellFormatter(unittest.TestCase):
             hours=4.0,
             parsed_dates=parsed_dates,
             status=TaskStatus.IN_PROGRESS,
+            holidays=set(),
         )
 
         self.assertEqual(display, f" {SYMBOL_IN_PROGRESS} ")
@@ -92,6 +93,7 @@ class TestGanttCellFormatter(unittest.TestCase):
             hours=4.0,
             parsed_dates=parsed_dates,
             status=TaskStatus.PENDING,
+            holidays=set(),
         )
 
         self.assertEqual(display, " 4 ")
@@ -112,6 +114,7 @@ class TestGanttCellFormatter(unittest.TestCase):
             hours=0.0,
             parsed_dates=parsed_dates,
             status=TaskStatus.PENDING,
+            holidays=set(),
         )
 
         self.assertEqual(display, SYMBOL_EMPTY)
@@ -132,6 +135,7 @@ class TestGanttCellFormatter(unittest.TestCase):
             hours=0.0,
             parsed_dates=parsed_dates,
             status=TaskStatus.PENDING,
+            holidays=set(),
         )
 
         self.assertEqual(display, SYMBOL_EMPTY)
@@ -153,6 +157,7 @@ class TestGanttCellFormatter(unittest.TestCase):
             hours=4.0,
             parsed_dates=parsed_dates,
             status=TaskStatus.COMPLETED,
+            holidays=set(),
         )
 
         # Should show empty symbol instead of hours for completed tasks
@@ -173,6 +178,7 @@ class TestGanttCellFormatter(unittest.TestCase):
             hours=4.0,
             parsed_dates=parsed_dates,
             status=TaskStatus.CANCELED,
+            holidays=set(),
         )
 
         # Should show empty symbol instead of hours for canceled tasks
@@ -194,6 +200,7 @@ class TestGanttCellFormatter(unittest.TestCase):
             hours=4.0,
             parsed_dates=parsed_dates,
             status=TaskStatus.CANCELED,
+            holidays=set(),
         )
 
         self.assertEqual(display, f" {SYMBOL_CANCELED} ")
@@ -205,6 +212,7 @@ class TestGanttCellFormatter(unittest.TestCase):
             hours=4.0,
             parsed_dates=parsed_dates,
             status=TaskStatus.CANCELED,
+            holidays=set(),
         )
 
         self.assertEqual(display, SYMBOL_EMPTY)  # Not showing hours for CANCELED
@@ -215,7 +223,7 @@ class TestGanttCellFormatter(unittest.TestCase):
         end_date = date(2025, 10, 5)
 
         month_line, today_line, day_line = GanttCellFormatter.build_date_header_lines(
-            start_date, end_date
+            start_date, end_date, set()
         )
 
         # Check that all are Text objects
@@ -241,7 +249,7 @@ class TestGanttCellFormatter(unittest.TestCase):
         end_date = today
 
         _month_line, today_line, _day_line = GanttCellFormatter.build_date_header_lines(
-            start_date, end_date
+            start_date, end_date, set()
         )
 
         # Today line should contain the today marker symbol

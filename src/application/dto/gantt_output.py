@@ -59,12 +59,14 @@ class GanttOutput:
         tasks: Filtered and sorted task DTOs for display
         task_daily_hours: Daily hour allocations per task (task.id -> {date: hours})
         daily_workload: Daily workload totals across all tasks
+        holidays: Set of holiday dates in the chart range
     """
 
     date_range: GanttDateRange
     tasks: list[GanttTaskDto]
     task_daily_hours: dict[int, dict[date, float]]
     daily_workload: dict[date, float]
+    holidays: set[date]
 
     def is_empty(self) -> bool:
         """Check if the Gantt chart has any task data.

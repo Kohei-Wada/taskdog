@@ -1,6 +1,7 @@
 """Task query service for read-optimized operations."""
 
-from datetime import date
+from datetime import date, timedelta
+from typing import TYPE_CHECKING
 
 from application.dto.gantt_output import GanttDateRange, GanttOutput
 from application.dto.task_dto import GanttTaskDto, TaskRowDto
@@ -10,6 +11,9 @@ from application.queries.workload_calculator import WorkloadCalculator
 from application.sorters.task_sorter import TaskSorter
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
+
+if TYPE_CHECKING:
+    from domain.services.holiday_checker import IHolidayChecker
 
 
 class TaskQueryService(QueryService):
@@ -118,6 +122,7 @@ class TaskQueryService(QueryService):
         reverse: bool = False,
         start_date: date | None = None,
         end_date: date | None = None,
+        holiday_checker: "IHolidayChecker | None" = None,
     ) -> GanttOutput:
         """Get Gantt chart data with business logic pre-computed.
 
@@ -126,6 +131,7 @@ class TaskQueryService(QueryService):
         - Calculating date ranges
         - Computing daily workload allocations per task
         - Computing daily workload totals
+        - Pre-computing holiday dates in the range
 
         Presentation logic (colors, styles, display flags) is handled
         by the renderer layer.
@@ -136,6 +142,7 @@ class TaskQueryService(QueryService):
             reverse: Reverse sort order (default: False)
             start_date: Optional start date (auto-calculated if not provided)
             end_date: Optional end date (auto-calculated if not provided)
+            holiday_checker: Optional holiday checker for pre-computing holidays
 
         Returns:
             GanttOutput containing business data for Gantt visualization
@@ -151,6 +158,7 @@ class TaskQueryService(QueryService):
                 tasks=[],
                 task_daily_hours={},
                 daily_workload={},
+                holidays=set(),
             )
 
         # Calculate date range
@@ -165,6 +173,7 @@ class TaskQueryService(QueryService):
                 tasks=task_dtos,
                 task_daily_hours={},
                 daily_workload={},
+                holidays=set(),
             )
 
         range_start, range_end = date_range
@@ -181,6 +190,15 @@ class TaskQueryService(QueryService):
             tasks, range_start, range_end
         )
 
+        # Pre-compute holidays in the date range
+        holidays: set[date] = set()
+        if holiday_checker:
+            current = range_start
+            while current <= range_end:
+                if holiday_checker.is_holiday(current):
+                    holidays.add(current)
+                current += timedelta(days=1)
+
         # Convert tasks to DTOs
         task_dtos = [self._task_to_gantt_dto(task) for task in tasks]
 
@@ -189,6 +207,7 @@ class TaskQueryService(QueryService):
             tasks=task_dtos,
             task_daily_hours=task_daily_hours,
             daily_workload=daily_workload,
+            holidays=holidays,
         )
 
     def _calculate_date_range(

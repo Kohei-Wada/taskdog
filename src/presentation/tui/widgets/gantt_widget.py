@@ -13,7 +13,6 @@ from textual.events import Resize
 from textual.widgets import Static
 
 from application.queries.filters.task_filter import TaskFilter
-from domain.services.holiday_checker import IHolidayChecker
 from presentation.constants.table_dimensions import (
     BORDER_WIDTH,
     CHARS_PER_DAY,
@@ -58,9 +57,8 @@ class GanttWidget(VerticalScroll):
         self._title_widget.styles.margin = (0, 0, 1, 0)  # Bottom margin
         yield self._title_widget
 
-        # Create HolidayChecker from app config
-        holiday_checker = self._create_holiday_checker()
-        self._gantt_table = GanttDataTable(holiday_checker=holiday_checker, id="gantt-table")
+        # Create GanttDataTable
+        self._gantt_table = GanttDataTable(id="gantt-table")
         self._gantt_table.styles.width = "auto"
 
         # Wrap table in Center container for horizontal centering
@@ -72,24 +70,6 @@ class GanttWidget(VerticalScroll):
         self._legend_widget.styles.text_align = "center"
         self._legend_widget.styles.margin = (1, 0, 0, 0)  # Top margin
         yield self._legend_widget
-
-    def _create_holiday_checker(self) -> IHolidayChecker | None:
-        """Get HolidayChecker from app.
-
-        Returns:
-            HolidayChecker instance if configured, None otherwise
-        """
-        # Validate app existence explicitly
-        if not hasattr(self, "app"):
-            return None
-
-        # Type hint: app is TaskdogTUI which has holiday_checker attribute
-        app = self.app  # type: ignore[attr-defined]
-
-        if not hasattr(app, "holiday_checker"):
-            return None
-
-        return app.holiday_checker
 
     def update_gantt(
         self,

@@ -8,14 +8,11 @@ consistent visualization across different interfaces.
 import math
 from datetime import date, timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rich.text import Text
 
 from domain.entities.task import Task, TaskStatus
-
-if TYPE_CHECKING:
-    from domain.services.holiday_checker import IHolidayChecker
 from presentation.constants.colors import (
     DAY_STYLE_SATURDAY,
     DAY_STYLE_SUNDAY,
@@ -57,7 +54,7 @@ class GanttCellFormatter:
         hours: float,
         parsed_dates: dict[str, Any],
         status: TaskStatus,
-        holiday_checker: "IHolidayChecker | None" = None,
+        holidays: set[date],
     ) -> tuple[str, str]:
         """Format a single timeline cell with daily hours and styling.
 
@@ -66,6 +63,7 @@ class GanttCellFormatter:
             hours: Allocated hours for this date
             parsed_dates: Dictionary of parsed task dates (from parse_task_dates)
             status: Task status
+            holidays: Set of holiday dates for background coloring
 
         Returns:
             Tuple of (display_text, style_string)
@@ -100,7 +98,7 @@ class GanttCellFormatter:
         if is_deadline:
             bg_color = BACKGROUND_COLOR_DEADLINE
         elif is_planned and status not in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
-            bg_color = GanttCellFormatter._get_background_color(current_date, holiday_checker)
+            bg_color = GanttCellFormatter._get_background_color(current_date, holidays)
         else:
             bg_color = None
 
@@ -129,14 +127,14 @@ class GanttCellFormatter:
     def build_date_header_lines(
         start_date: date,
         end_date: date,
-        holiday_checker: "IHolidayChecker | None" = None,
+        holidays: set[date],
     ) -> tuple[Text, Text, Text]:
         """Build date header lines (Month, Today marker, Day) for the timeline.
 
         Args:
             start_date: Start date of the chart
             end_date: End date of the chart
-            holiday_checker: Optional HolidayChecker for holiday detection
+            holidays: Set of holiday dates for day styling
 
         Returns:
             Tuple of three Rich Text objects (month_line, today_line, day_line)
@@ -176,7 +174,7 @@ class GanttCellFormatter:
             day_str = f"{day:2d} "  # Right-aligned, 2 digits + space
 
             # Check if holiday (highest priority)
-            if holiday_checker and holiday_checker.is_holiday(current_date):
+            if current_date in holidays:
                 day_style = "bold yellow"  # Orange-ish color for holidays
             elif weekday == SATURDAY:
                 day_style = DAY_STYLE_SATURDAY
@@ -329,7 +327,7 @@ class GanttCellFormatter:
     @staticmethod
     def _get_background_color(
         current_date: date,
-        holiday_checker: "IHolidayChecker | None" = None,
+        holidays: set[date],
     ) -> str:
         """Get background color based on day of week and holidays.
 
@@ -337,13 +335,13 @@ class GanttCellFormatter:
 
         Args:
             current_date: Date to check
-            holiday_checker: Optional HolidayChecker for holiday detection
+            holidays: Set of holiday dates
 
         Returns:
             Background color string (RGB)
         """
         # Check holiday first (highest priority after deadline)
-        if holiday_checker and holiday_checker.is_holiday(current_date):
+        if current_date in holidays:
             return BACKGROUND_COLOR_HOLIDAY
 
         # Then check weekends

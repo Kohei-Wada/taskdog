@@ -283,6 +283,7 @@ class TaskdogTUI(App):
                     reverse=False,
                     start_date=start_date,
                     end_date=end_date,
+                    holiday_checker=self.holiday_checker,
                 )
 
                 # Convert DTO to ViewModel using GanttPresenter directly
@@ -512,6 +513,7 @@ class TaskdogTUI(App):
             reverse=False,
             start_date=event.start_date,
             end_date=event.end_date,
+            holiday_checker=self.holiday_checker,
         )
 
         # Convert to ViewModel using GanttPresenter

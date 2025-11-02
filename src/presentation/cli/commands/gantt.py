@@ -105,6 +105,7 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
         reverse=reverse,
         start_date=start_date_obj,
         end_date=end_date_obj,
+        holiday_checker=ctx_obj.holiday_checker,
     )
 
     # Convert DTO to ViewModel (Presenter applies presentation logic)
@@ -113,6 +114,5 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
 
     # Render using Presentation layer (display logic)
     console_writer = ctx_obj.console_writer
-    holiday_checker = ctx_obj.holiday_checker
-    renderer = RichGanttRenderer(console_writer, holiday_checker)
+    renderer = RichGanttRenderer(console_writer)
     renderer.render(gantt_view_model)

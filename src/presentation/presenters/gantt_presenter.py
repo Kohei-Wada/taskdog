@@ -47,6 +47,7 @@ class GanttPresenter:
             tasks=task_view_models,
             task_daily_hours=gantt_result.task_daily_hours,
             daily_workload=gantt_result.daily_workload,
+            holidays=gantt_result.holidays,
         )
 
     def _map_task_to_view_model(self, task: GanttTaskDto) -> TaskGanttRowViewModel:

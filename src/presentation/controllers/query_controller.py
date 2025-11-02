@@ -6,6 +6,7 @@ and filter construction.
 """
 
 from datetime import date
+from typing import TYPE_CHECKING
 
 from application.dto.gantt_output import GanttOutput
 from application.dto.get_task_by_id_output import GetTaskByIdOutput
@@ -19,6 +20,9 @@ from application.use_cases.get_task_detail import GetTaskDetailInput, GetTaskDet
 from domain.entities.task import Task
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
+
+if TYPE_CHECKING:
+    from domain.services.holiday_checker import IHolidayChecker
 
 
 class QueryController:
@@ -87,6 +91,7 @@ class QueryController:
         reverse: bool = False,
         start_date: date | None = None,
         end_date: date | None = None,
+        holiday_checker: "IHolidayChecker | None" = None,
     ) -> GanttOutput:
         """Get Gantt chart data.
 
@@ -99,6 +104,7 @@ class QueryController:
             reverse: Reverse sort order (default: False)
             start_date: Optional start date for date range
             end_date: Optional end date for date range
+            holiday_checker: Optional holiday checker for rendering holidays
 
         Returns:
             GanttOutput with chart data and workload information
@@ -109,6 +115,7 @@ class QueryController:
             reverse=reverse,
             start_date=start_date,
             end_date=end_date,
+            holiday_checker=holiday_checker,
         )
 
     def get_tag_statistics(self) -> TagStatisticsOutput:
