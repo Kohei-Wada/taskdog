@@ -23,6 +23,7 @@ from presentation.constants.symbols import (
     BACKGROUND_COLOR,
     BACKGROUND_COLOR_DEADLINE,
     BACKGROUND_COLOR_HOLIDAY,
+    BACKGROUND_COLOR_PLANNED_LIGHT,
     BACKGROUND_COLOR_SATURDAY,
     BACKGROUND_COLOR_SUNDAY,
     SYMBOL_CANCELED,
@@ -94,11 +95,30 @@ class GanttCellFormatter:
 
         is_deadline = parsed_dates["deadline"] and current_date == parsed_dates["deadline"]
 
-        # Determine background color
+        # Determine background color with layered approach:
+        # 1. Base: Light gray for planned period (if not finished)
+        # 2. Override: Darker weekday color for allocated hours on weekdays
+        # 3. Override: Weekend/holiday colors (for planned period only, but overrides gray)
+        # 4. Override: Orange for deadline (highest priority)
+
+        # Check if this is a weekend or holiday
+        weekday = current_date.weekday()
+        is_weekend_or_holiday = current_date in holidays or weekday in (SATURDAY, SUNDAY)
+
         if is_deadline:
             bg_color = BACKGROUND_COLOR_DEADLINE
         elif is_planned and status not in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
-            bg_color = GanttCellFormatter._get_background_color(current_date, holidays)
+            if is_weekend_or_holiday:
+                # Weekend/holiday in planned period: always use weekend/holiday colors
+                bg_color = GanttCellFormatter._get_weekend_holiday_background_color(
+                    current_date, holidays
+                )
+            elif hours > 0:
+                # Allocated hours on weekday: use darker weekday color
+                bg_color = BACKGROUND_COLOR
+            else:
+                # No allocation on weekday: use light gray for planned period
+                bg_color = BACKGROUND_COLOR_PLANNED_LIGHT
         else:
             bg_color = None
 
@@ -236,8 +256,10 @@ class GanttCellFormatter:
         """
         legend = Text()
         legend.append("Legend: ", style="bold yellow")
+        legend.append("   ", style=f"on {BACKGROUND_COLOR_PLANNED_LIGHT}")
+        legend.append(" Planned period  ", style="dim")
         legend.append("   ", style=f"on {BACKGROUND_COLOR}")
-        legend.append(" Planned  ", style="dim")
+        legend.append(" Allocated hours  ", style="dim")
         legend.append(SYMBOL_IN_PROGRESS, style="bold blue")
         legend.append(" IN_PROGRESS  ", style="dim")
         legend.append(SYMBOL_COMPLETED, style="bold green")
@@ -325,22 +347,23 @@ class GanttCellFormatter:
         return False
 
     @staticmethod
-    def _get_background_color(
+    def _get_weekend_holiday_background_color(
         current_date: date,
         holidays: set[date],
     ) -> str:
-        """Get background color based on day of week and holidays.
+        """Get background color for weekends and holidays.
 
-        Priority: Holiday > Sunday > Saturday > Weekday
+        Used for weekends/holidays in the planned period.
+        Priority: Holiday > Sunday > Saturday
 
         Args:
             current_date: Date to check
             holidays: Set of holiday dates
 
         Returns:
-            Background color string (RGB)
+            Background color string (RGB) for weekend/holiday
         """
-        # Check holiday first (highest priority after deadline)
+        # Check holiday first (highest priority)
         if current_date in holidays:
             return BACKGROUND_COLOR_HOLIDAY
 
@@ -351,4 +374,5 @@ class GanttCellFormatter:
         elif weekday == SUNDAY:
             return BACKGROUND_COLOR_SUNDAY
         else:
+            # Should not reach here (this method is only called for weekends/holidays)
             return BACKGROUND_COLOR
