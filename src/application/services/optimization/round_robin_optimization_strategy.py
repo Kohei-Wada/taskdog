@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from application.constants.optimization import ROUND_ROBIN_MAX_ITERATIONS
 from application.dto.optimization_output import SchedulingFailure
-from application.dto.task_dto import TaskSummaryDto
+from application.services.optimization.allocation_context import AllocationContext
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from application.utils.date_helper import is_workday
 from domain.entities.task import Task
@@ -67,6 +67,17 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             - daily_allocations: Dict mapping date objects to allocated hours
             - failed_tasks: List of tasks that could not be scheduled (empty for round-robin)
         """
+        # Create allocation context
+        context = AllocationContext.create(
+            tasks=tasks,
+            repository=repository,
+            start_date=start_date,
+            max_hours_per_day=max_hours_per_day,
+            force_override=force_override,
+            holiday_checker=holiday_checker,
+            current_time=current_time,
+        )
+
         # Filter tasks that need scheduling
         schedulable_tasks = [task for task in tasks if task.is_schedulable(force_override)]
 
@@ -75,13 +86,6 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
         # Filter out tasks without ID (should not happen, but for type safety)
         schedulable_tasks = [t for t in schedulable_tasks if t.id is not None]
-
-        # Store holiday_checker and current_time for use in allocation
-        self.holiday_checker = holiday_checker
-        self.current_time = current_time
-
-        # Initialize failed tasks list
-        failed_tasks: list[SchedulingFailure] = []
 
         # Calculate effective deadlines for all tasks
         task_effective_deadlines: dict[int, datetime | None] = {
@@ -127,26 +131,16 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         for task_id, remaining_hours in task_remaining.items():
             if remaining_hours > 0.001:  # Task not fully scheduled
                 task = task_map[task_id]
-                # Convert to DTO
-                if task.id is None:
-                    raise ValueError("Task must have an ID")
-                task_dto = TaskSummaryDto(id=task.id, name=task.name)
 
                 if task_id in task_start_dates:
                     # Partially scheduled but ran out of time
-                    failed_tasks.append(
-                        SchedulingFailure(
-                            task=task_dto,
-                            reason=f"Could not complete scheduling before deadline ({remaining_hours:.1f}h remaining)",
-                        )
+                    context.record_failure(
+                        task,
+                        f"Could not complete scheduling before deadline ({remaining_hours:.1f}h remaining)",
                     )
                 else:
                     # Never scheduled at all
-                    failed_tasks.append(
-                        SchedulingFailure(
-                            task=task_dto, reason="Deadline too close or no time available"
-                        )
-                    )
+                    context.record_failure(task, "Deadline too close or no time available")
             else:
                 # Fully scheduled
                 fully_scheduled_task_ids.add(task_id)
@@ -164,7 +158,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         # Schedule propagation removed (no parent-child hierarchy)
 
         # Return modified tasks, daily allocations, and failed tasks
-        return updated_tasks, daily_allocations, failed_tasks
+        return updated_tasks, daily_allocations, context.failed_tasks
 
     def _allocate_round_robin(
         self,
@@ -291,12 +285,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             "RoundRobinOptimizationStrategy overrides optimize_tasks directly"
         )
 
-    def _allocate_task(
-        self,
-        task: Task,
-        start_date: datetime,
-        max_hours_per_day: float,
-    ) -> Task | None:
+    def _allocate_task(self, task: Task, context: AllocationContext) -> Task | None:
         """Not used by round-robin strategy (overrides optimize_tasks)."""
         raise NotImplementedError(
             "RoundRobinOptimizationStrategy overrides optimize_tasks directly"

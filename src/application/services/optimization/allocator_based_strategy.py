@@ -5,9 +5,9 @@ optimization strategies that delegate allocation logic to TaskAllocator instance
 """
 
 from abc import abstractmethod
-from datetime import datetime
 from typing import TYPE_CHECKING
 
+from application.services.optimization.allocation_context import AllocationContext
 from application.services.optimization.allocators.task_allocator_base import TaskAllocatorBase
 from application.services.optimization.optimization_strategy import OptimizationStrategy
 from domain.entities.task import Task
@@ -74,8 +74,7 @@ class AllocatorBasedStrategy(OptimizationStrategy):
     def _allocate_task(
         self,
         task: Task,
-        start_date: datetime,
-        max_hours_per_day: float,
+        context: AllocationContext,
     ) -> Task | None:
         """Allocate time block for a task using the configured allocator.
 
@@ -85,8 +84,7 @@ class AllocatorBasedStrategy(OptimizationStrategy):
 
         Args:
             task: Task to schedule
-            start_date: Starting date for allocation
-            max_hours_per_day: Maximum hours per day
+            context: Allocation context with all necessary state
 
         Returns:
             Copy of task with updated schedule, or None if allocation fails
@@ -97,15 +95,15 @@ class AllocatorBasedStrategy(OptimizationStrategy):
             self._allocator = allocator_class(
                 default_start_hour=self.default_start_hour,
                 default_end_hour=self.default_end_hour,
-                holiday_checker=self.holiday_checker,
-                current_time=self.current_time,
+                holiday_checker=context.holiday_checker,
+                current_time=context.current_time,
             )
 
         # Delegate allocation to the allocator
         return self._allocator.allocate(
             task=task,
-            start_date=start_date,
-            max_hours_per_day=max_hours_per_day,
-            daily_allocations=self.daily_allocations,
-            repository=self.repository,
+            start_date=context.start_date,
+            max_hours_per_day=context.max_hours_per_day,
+            daily_allocations=context.daily_allocations,
+            repository=context.repository,
         )

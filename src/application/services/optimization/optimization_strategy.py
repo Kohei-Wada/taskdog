@@ -5,9 +5,9 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING
 
 from application.dto.optimization_output import SchedulingFailure
-from application.dto.task_dto import TaskSummaryDto
+from application.services.optimization.allocation_context import AllocationContext
 from application.sorters.optimization_task_sorter import OptimizationTaskSorter
-from domain.entities.task import Task, TaskStatus
+from domain.entities.task import Task
 
 if TYPE_CHECKING:
     from domain.repositories.task_repository import TaskRepository
@@ -62,118 +62,35 @@ class OptimizationStrategy(ABC):
             - daily_allocations: Dict mapping date objects to allocated hours
             - failed_tasks: List of tasks that could not be scheduled with reasons
         """
-        # 1. Initialize context (instance variables for use by subclasses)
-        self.repository = repository
-        self.start_date = start_date
-        self.max_hours_per_day = max_hours_per_day
-        self.holiday_checker = holiday_checker
-        self.current_time = current_time
-        self.daily_allocations: dict[date, float] = {}
-        self.failed_tasks: list[SchedulingFailure] = []
+        # 1. Create allocation context with initialized state
+        context = AllocationContext.create(
+            tasks=tasks,
+            repository=repository,
+            start_date=start_date,
+            max_hours_per_day=max_hours_per_day,
+            force_override=force_override,
+            holiday_checker=holiday_checker,
+            current_time=current_time,
+        )
 
-        # 2. Initialize daily_allocations with existing scheduled tasks
-        self._initialize_allocations(tasks, force_override)
-
-        # 3. Filter tasks that need scheduling
+        # 2. Filter tasks that need scheduling
         schedulable_tasks = [task for task in tasks if task.is_schedulable(force_override)]
 
-        # 4. Sort tasks by strategy-specific priority
+        # 3. Sort tasks by strategy-specific priority
         sorted_tasks = self._sort_schedulable_tasks(schedulable_tasks, start_date)
 
-        # 5. Allocate time blocks for each task (strategy-specific)
+        # 4. Allocate time blocks for each task (strategy-specific)
         updated_tasks = []
         for task in sorted_tasks:
-            updated_task = self._allocate_task(task, start_date, max_hours_per_day)
+            updated_task = self._allocate_task(task, context)
             if updated_task:
                 updated_tasks.append(updated_task)
             else:
                 # Record allocation failure with default reason
-                self._record_allocation_failure(task, updated_task)
+                context.record_allocation_failure(task)
 
-        # 6. Return modified tasks, daily allocations, and failed tasks
-        return updated_tasks, self.daily_allocations, self.failed_tasks
-
-    def _initialize_allocations(self, tasks: list[Task], force_override: bool) -> None:
-        """Initialize daily_allocations with existing scheduled tasks.
-
-        This method pre-populates daily_allocations with hours from tasks
-        that already have schedules. This ensures that when we optimize new tasks,
-        we account for existing workload commitments.
-
-        Fixed tasks are ALWAYS included in daily_allocations, regardless of force_override,
-        because they represent immovable time constraints (meetings, deadlines, etc.) that
-        must be respected when scheduling other tasks.
-
-        Args:
-            tasks: All tasks in the system
-            force_override: Whether existing schedules will be overridden
-        """
-        # Import WorkloadCalculator once outside loop for better performance
-        from application.queries.workload_calculator import WorkloadCalculator
-
-        calculator = WorkloadCalculator()
-
-        for task in tasks:
-            # Skip finished tasks (completed/archived) - they don't contribute to future workload
-            if not task.should_count_in_workload():
-                continue
-
-            # Skip tasks without schedules
-            if not (task.planned_start and task.estimated_duration):
-                continue
-
-            # ALWAYS include fixed tasks in daily_allocations (they cannot be rescheduled)
-            # Also include IN_PROGRESS tasks (they should not be rescheduled)
-            # If force_override, skip PENDING non-fixed tasks (they will be rescheduled)
-            if force_override and not task.is_fixed and task.status != TaskStatus.IN_PROGRESS:
-                continue
-
-            # Get daily allocations for this task
-            # Use task.daily_allocations if available, otherwise calculate from WorkloadCalculator
-            task_daily_hours = task.daily_allocations or calculator.get_task_daily_hours(task)
-
-            # Add to global daily_allocations
-            for date_obj, hours in task_daily_hours.items():
-                if date_obj in self.daily_allocations:
-                    self.daily_allocations[date_obj] += hours
-                else:
-                    self.daily_allocations[date_obj] = hours
-
-    def _record_failure(self, task: Task, reason: str) -> None:
-        """Record a task scheduling failure with a reason.
-
-        Subclasses can call this method to record specific failure reasons
-        for tasks that could not be scheduled.
-
-        Args:
-            task: The task that failed to be scheduled
-            reason: Human-readable reason for the failure
-        """
-        # Convert Task to TaskSummaryDto
-        if task.id is None:
-            raise ValueError("Task must have an ID")
-        task_dto = TaskSummaryDto(id=task.id, name=task.name)
-        self.failed_tasks.append(SchedulingFailure(task=task_dto, reason=reason))
-
-    def _record_allocation_failure(
-        self,
-        task: Task,
-        updated_task: Task | None,
-        default_reason: str = "Could not find available time slot before deadline",
-    ) -> None:
-        """Record allocation failure if task wasn't successfully scheduled.
-
-        This is a convenience method that checks if allocation succeeded and
-        records a failure if it didn't, avoiding duplicate failure records.
-
-        Args:
-            task: Original task
-            updated_task: Result from allocation (None if failed)
-            default_reason: Default failure reason if none recorded
-        """
-        # Only record if allocation failed and not already recorded
-        if not updated_task and not any(f.task.id == task.id for f in self.failed_tasks):
-            self._record_failure(task, default_reason)
+        # 5. Return modified tasks, daily allocations, and failed tasks
+        return updated_tasks, context.daily_allocations, context.failed_tasks
 
     def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by strategy-specific priority.
@@ -195,22 +112,22 @@ class OptimizationStrategy(ABC):
     def _allocate_task(
         self,
         task: Task,
-        start_date: datetime,
-        max_hours_per_day: float,
+        context: AllocationContext,
     ) -> Task | None:
         """Allocate time block for a single task.
 
         Subclasses must implement this to define their allocation logic.
-        The strategy has access to:
-        - self.daily_allocations: Current daily allocation state
-        - self.repository: Task repository for hierarchy queries
-        - self.start_date: Starting date for allocation
-        - self.max_hours_per_day: Maximum hours per day constraint
+        The context provides access to:
+        - context.daily_allocations: Current daily allocation state
+        - context.repository: Task repository for hierarchy queries
+        - context.start_date: Starting date for allocation
+        - context.max_hours_per_day: Maximum hours per day constraint
+        - context.holiday_checker: Holiday checker (optional)
+        - context.current_time: Current time (optional)
 
         Args:
             task: Task to schedule
-            start_date: Starting date for allocation
-            max_hours_per_day: Maximum hours per day
+            context: Allocation context with all necessary state
 
         Returns:
             Copy of task with updated schedule, or None if allocation fails

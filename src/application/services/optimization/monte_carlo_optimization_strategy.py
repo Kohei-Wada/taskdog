@@ -4,15 +4,16 @@ import random
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from application.constants.optimization import (
-    DEADLINE_PENALTY_MULTIPLIER,
-    MONTE_CARLO_NUM_SIMULATIONS,
-)
+from application.constants.optimization import MONTE_CARLO_NUM_SIMULATIONS
 from application.dto.optimization_output import SchedulingFailure
+from application.services.optimization.allocation_context import AllocationContext
 from application.services.optimization.allocators.greedy_forward_allocator import (
     GreedyForwardAllocator,
 )
 from application.services.optimization.optimization_strategy import OptimizationStrategy
+from application.services.optimization.schedule_fitness_calculator import (
+    ScheduleFitnessCalculator,
+)
 from domain.entities.task import Task
 
 if TYPE_CHECKING:
@@ -48,6 +49,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         """
         self.default_start_hour = default_start_hour
         self.default_end_hour = default_end_hour
+        self.fitness_calculator = ScheduleFitnessCalculator()
         self._evaluation_cache: dict[
             tuple[int | None, ...], float
         ] = {}  # Cache for evaluation results
@@ -85,19 +87,23 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         if not schedulable_tasks:
             return [], {}, []
 
-        # Initialize context for allocation
-        self.repository = repository
-        self.start_date = start_date
-        self.max_hours_per_day = max_hours_per_day
-        self.holiday_checker = holiday_checker
-        self.current_time = current_time
-        self.daily_allocations: dict[date, float] = {}
-        self.failed_tasks: list[SchedulingFailure] = []
-        self._initialize_allocations(tasks, force_override)
+        # Create allocation context
+        context = AllocationContext.create(
+            tasks=tasks,
+            repository=repository,
+            start_date=start_date,
+            max_hours_per_day=max_hours_per_day,
+            force_override=force_override,
+            holiday_checker=holiday_checker,
+            current_time=current_time,
+        )
 
         # Create allocator instance
         allocator = GreedyForwardAllocator(
-            self.default_start_hour, self.default_end_hour, self.holiday_checker, self.current_time
+            self.default_start_hour,
+            self.default_end_hour,
+            context.holiday_checker,
+            context.current_time,
         )
 
         # Clear evaluation cache for new optimization run
@@ -118,16 +124,16 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         updated_tasks = []
         for task in best_order:
             updated_task = allocator.allocate(
-                task, start_date, max_hours_per_day, self.daily_allocations, repository
+                task, start_date, max_hours_per_day, context.daily_allocations, repository
             )
             if updated_task:
                 updated_tasks.append(updated_task)
             else:
                 # Record allocation failure
-                self._record_allocation_failure(task, updated_task)
+                context.record_allocation_failure(task)
 
         # Return modified tasks, daily allocations, and failed tasks
-        return updated_tasks, self.daily_allocations, self.failed_tasks
+        return updated_tasks, context.daily_allocations, context.failed_tasks
 
     def _monte_carlo_simulation(
         self,
@@ -258,37 +264,11 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             if updated_task:
                 scheduled_tasks.append(updated_task)
 
-        # Calculate score components
-        deadline_penalty = 0.0
-        priority_score = 0.0
+        # Calculate score using the calculator (with scheduling bonus)
+        score = self.fitness_calculator.calculate_fitness(
+            scheduled_tasks, temp_daily_allocations, include_scheduling_bonus=True
+        )
 
-        for i, task in enumerate(scheduled_tasks):
-            # Priority bonus (higher priority tasks scheduled earlier get bonus)
-            if task.priority:
-                priority_score += task.priority * (len(scheduled_tasks) - i)
-
-            # Deadline penalty (tasks finishing after deadline get penalty)
-            if task.deadline and task.planned_end:
-                deadline_dt = task.deadline
-                end_dt = task.planned_end
-                if end_dt > deadline_dt:
-                    days_late = (end_dt - deadline_dt).days
-                    deadline_penalty += days_late * DEADLINE_PENALTY_MULTIPLIER
-
-        # Workload variance penalty (prefer even distribution)
-        if temp_daily_allocations:
-            daily_hours = list(temp_daily_allocations.values())
-            avg_hours = sum(daily_hours) / len(daily_hours)
-            variance = sum((h - avg_hours) ** 2 for h in daily_hours) / len(daily_hours)
-            workload_penalty = variance * 10
-        else:
-            workload_penalty = 0
-
-        # Number of successfully scheduled tasks bonus
-        scheduled_bonus = len(scheduled_tasks) * 50
-
-        # Score = benefits - penalties
-        score = priority_score + scheduled_bonus - deadline_penalty - workload_penalty
         return score
 
     def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
@@ -297,12 +277,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             "MonteCarloOptimizationStrategy overrides optimize_tasks directly"
         )
 
-    def _allocate_task(
-        self,
-        task: Task,
-        start_date: datetime,
-        max_hours_per_day: float,
-    ) -> Task | None:
+    def _allocate_task(self, task: Task, context: AllocationContext) -> Task | None:
         """Not used by Monte Carlo strategy (overrides optimize_tasks)."""
         raise NotImplementedError(
             "MonteCarloOptimizationStrategy overrides optimize_tasks directly"
