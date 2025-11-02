@@ -93,8 +93,9 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             for task in schedulable_tasks
             if task.id is not None
         }
+        # Store original tasks (deep copy deferred until _build_updated_tasks)
         task_map: dict[int, Task] = {
-            task.id: copy.deepcopy(task) for task in schedulable_tasks if task.id is not None
+            task.id: task for task in schedulable_tasks if task.id is not None
         }
 
         # Track allocations per task and per day
@@ -251,7 +252,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         """Build updated tasks with schedules.
 
         Args:
-            task_map: Dict of tasks by ID
+            task_map: Dict of original tasks by ID
             task_start_dates: Dict of task start dates
             task_end_dates: Dict of task end dates
             task_daily_allocations: Dict of daily allocations per task
@@ -261,9 +262,12 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             List of updated tasks with schedules (only fully scheduled tasks)
         """
         updated_tasks = []
-        for task_id, task in task_map.items():
+        for task_id, original_task in task_map.items():
             # Only include fully scheduled tasks
             if task_id in fully_scheduled_task_ids and task_id in task_start_dates:
+                # Deep copy only for tasks that were fully scheduled (performance optimization)
+                task = copy.deepcopy(original_task)
+
                 start_dt = task_start_dates[task_id]
                 end_dt = task_end_dates[task_id]
 

@@ -58,9 +58,10 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             config: Application configuration
         """
         self.config = config
+        # Cache for fitness evaluations: stores (fitness, daily_allocations, scheduled_tasks)
         self._fitness_cache: dict[
-            tuple[int | None, ...], float
-        ] = {}  # Cache for fitness evaluations
+            tuple[int | None, ...], tuple[float, dict[date, float], list[Task]]
+        ] = {}
 
     def optimize_tasks(
         self,
@@ -110,22 +111,40 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         # Clear fitness cache for new optimization run
         self._fitness_cache.clear()
 
-        # Run genetic algorithm
+        # Run genetic algorithm to find best task order
         best_order = self._genetic_algorithm(
             schedulable_tasks, start_date, max_hours_per_day, repository, allocator
         )
 
-        # Schedule tasks according to best order using greedy allocation
-        updated_tasks = []
-        for task in best_order:
-            updated_task = allocator.allocate(
-                task, start_date, max_hours_per_day, self.daily_allocations, repository
-            )
-            if updated_task:
-                updated_tasks.append(updated_task)
-            else:
-                # Record allocation failure
-                self._record_allocation_failure(task, updated_task)
+        # Reuse cached allocation results for the best order (performance optimization)
+        cache_key = tuple(task.id for task in best_order)
+        if cache_key in self._fitness_cache:
+            # Use cached results to avoid redundant allocation
+            _fitness, cached_daily_allocations, cached_scheduled_tasks = self._fitness_cache[
+                cache_key
+            ]
+            # Update self.daily_allocations with cached results
+            self.daily_allocations.update(cached_daily_allocations)
+            updated_tasks = cached_scheduled_tasks
+
+            # Record failed tasks (tasks that were not successfully scheduled)
+            scheduled_task_ids = {task.id for task in cached_scheduled_tasks}
+            for task in best_order:
+                if task.id not in scheduled_task_ids:
+                    # Task was not successfully scheduled - record failure
+                    self._record_allocation_failure(task, None)
+        else:
+            # Fallback: allocate tasks if cache miss (shouldn't happen normally)
+            updated_tasks = []
+            for task in best_order:
+                updated_task = allocator.allocate(
+                    task, start_date, max_hours_per_day, self.daily_allocations, repository
+                )
+                if updated_task:
+                    updated_tasks.append(updated_task)
+                else:
+                    # Record allocation failure
+                    self._record_allocation_failure(task, updated_task)
 
         # Return modified tasks, daily allocations, and failed tasks
         return updated_tasks, self.daily_allocations, self.failed_tasks
@@ -157,11 +176,11 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         # Evolve population
         for _generation in range(self.GENERATIONS):
-            # Evaluate fitness for each individual
+            # Evaluate fitness for each individual (only need fitness scores for evolution)
             fitness_scores = [
                 self._evaluate_fitness_cached(
                     individual, start_date, max_hours_per_day, repository, allocator
-                )
+                )[0]  # Extract fitness score only
                 for individual in population
             ]
 
@@ -207,13 +226,14 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             population = next_generation
 
         # Return best individual from final generation
-        final_fitness = [
+        final_results = [
             self._evaluate_fitness_cached(
                 individual, start_date, max_hours_per_day, repository, allocator
             )
             for individual in population
         ]
-        best_idx = final_fitness.index(max(final_fitness))
+        # Find best individual by fitness score
+        best_idx = max(range(len(final_results)), key=lambda i: final_results[i][0])
         return population[best_idx]
 
     def _evaluate_fitness_cached(
@@ -223,7 +243,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         repository: "TaskRepository",
         allocator: GreedyForwardAllocator,
-    ) -> float:
+    ) -> tuple[float, dict[date, float], list[Task]]:
         """Evaluate fitness with caching to avoid redundant calculations.
 
         Args:
@@ -234,7 +254,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             allocator: Allocator instance
 
         Returns:
-            Fitness score (higher is better)
+            Tuple of (fitness_score, daily_allocations, scheduled_tasks)
         """
         # Create cache key from task IDs (tuple is hashable)
         cache_key = tuple(task.id for task in task_order)
@@ -243,15 +263,15 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         if cache_key in self._fitness_cache:
             return self._fitness_cache[cache_key]
 
-        # Calculate fitness
-        fitness = self._evaluate_fitness(
+        # Calculate fitness and allocation results
+        fitness, daily_allocations, scheduled_tasks = self._evaluate_fitness(
             task_order, start_date, max_hours_per_day, repository, allocator
         )
 
-        # Cache the result
-        self._fitness_cache[cache_key] = fitness
+        # Cache the complete result (fitness + allocations + tasks)
+        self._fitness_cache[cache_key] = (fitness, daily_allocations, scheduled_tasks)
 
-        return fitness
+        return fitness, daily_allocations, scheduled_tasks
 
     def _evaluate_fitness(
         self,
@@ -260,7 +280,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         repository: "TaskRepository",
         allocator: GreedyForwardAllocator,
-    ) -> float:
+    ) -> tuple[float, dict[date, float], list[Task]]:
         """Evaluate fitness of a task ordering.
 
         Higher fitness = better schedule.
@@ -269,9 +289,11 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             task_order: Ordering of tasks to evaluate
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
+            repository: Task repository
+            allocator: Allocator instance
 
         Returns:
-            Fitness score (higher is better)
+            Tuple of (fitness_score, daily_allocations, scheduled_tasks)
         """
         # Simulate scheduling with this order
         temp_daily_allocations: dict[date, float] = {}
@@ -312,7 +334,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         # Fitness = benefits - penalties
         fitness = priority_score - deadline_penalty - workload_penalty
-        return fitness
+        return fitness, temp_daily_allocations, scheduled_tasks
 
     def _select_parents(
         self, population: list[list[Task]], fitness_scores: list[float]

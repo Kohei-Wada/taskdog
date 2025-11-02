@@ -108,6 +108,11 @@ class OptimizationStrategy(ABC):
             tasks: All tasks in the system
             force_override: Whether existing schedules will be overridden
         """
+        # Import WorkloadCalculator once outside loop for better performance
+        from application.queries.workload_calculator import WorkloadCalculator
+
+        calculator = WorkloadCalculator()
+
         for task in tasks:
             # Skip finished tasks (completed/archived) - they don't contribute to future workload
             if not task.should_count_in_workload():
@@ -125,14 +130,7 @@ class OptimizationStrategy(ABC):
 
             # Get daily allocations for this task
             # Use task.daily_allocations if available, otherwise calculate from WorkloadCalculator
-            if task.daily_allocations:
-                task_daily_hours = task.daily_allocations
-            else:
-                # Calculate daily hours using WorkloadCalculator
-                from application.queries.workload_calculator import WorkloadCalculator
-
-                calculator = WorkloadCalculator()
-                task_daily_hours = calculator.get_task_daily_hours(task)
+            task_daily_hours = task.daily_allocations or calculator.get_task_daily_hours(task)
 
             # Add to global daily_allocations
             for date_obj, hours in task_daily_hours.items():
