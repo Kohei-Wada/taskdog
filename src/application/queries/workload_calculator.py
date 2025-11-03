@@ -1,6 +1,5 @@
 """Domain service for calculating workload from tasks."""
 
-from collections.abc import Iterable
 from datetime import date, timedelta
 
 from domain.entities.task import Task
@@ -26,28 +25,32 @@ class WorkloadCalculator:
         Returns:
             Dictionary mapping date to total estimated hours {date: hours}
         """
-        empty_workload = self._initialize_daily_workload(start_date, end_date)
-        schedulable_tasks = filter(self._should_include_in_workload, tasks)
-        task_allocations = map(self._task_to_daily_hours, schedulable_tasks)
-        return self._merge_allocations(empty_workload, task_allocations)
-
-    def _initialize_daily_workload(self, start_date: date, end_date: date) -> dict[date, float]:
-        """Initialize daily workload dictionary with zeros for the date range."""
+        # Initialize workload dictionary with zeros for all dates
         days = (end_date - start_date).days + 1
-        return {start_date + timedelta(days=i): 0.0 for i in range(days)}
+        daily_workload: dict[date, float] = {
+            start_date + timedelta(days=i): 0.0 for i in range(days)
+        }
 
-    def _should_include_in_workload(self, task: Task) -> bool:
-        """Check if a task should be included in workload calculation.
+        # Process each task and accumulate hours
+        for task in tasks:
+            # Skip tasks that should not be included in workload
+            if not (
+                task.should_count_in_workload()
+                and task.estimated_duration is not None
+                and task.planned_start is not None
+                and task.planned_end is not None
+            ):
+                continue
 
-        Returns:
-            True if task should be counted in workload, False otherwise
-        """
-        return (
-            task.should_count_in_workload()
-            and task.estimated_duration is not None
-            and task.planned_start is not None
-            and task.planned_end is not None
-        )
+            # Get daily hours for this task
+            task_daily_hours = self._task_to_daily_hours(task)
+
+            # Accumulate hours for each date
+            for task_date, hours in task_daily_hours.items():
+                if task_date in daily_workload:
+                    daily_workload[task_date] += hours
+
+        return daily_workload
 
     def get_task_daily_hours(self, task: Task) -> dict[date, float]:
         """Get daily hour allocations for a single task.
@@ -118,23 +121,4 @@ class WorkloadCalculator:
                 result[current_date] = hours_per_day
             current_date += timedelta(days=1)
 
-        return result
-
-    def _merge_allocations(
-        self, base: dict[date, float], allocations: Iterable[dict[date, float]]
-    ) -> dict[date, float]:
-        """Merge multiple daily allocations into base workload.
-
-        Args:
-            base: Base workload dictionary (will not be modified)
-            allocations: Iterator of allocation dictionaries to merge
-
-        Returns:
-            New dictionary with merged allocations
-        """
-        result = base.copy()
-        for allocation in allocations:
-            for task_date, hours in allocation.items():
-                if task_date in result:
-                    result[task_date] += hours
         return result
