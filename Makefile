@@ -22,6 +22,12 @@ install: ## Install taskdog CLI tool
 	uv build
 	uv tool install .
 
+reinstall: ## Reinstall taskdog CLI tool
+	uv cache clean
+	uv tool uninstall taskdog || true
+	uv build
+	uv tool install .
+
 clean: ## Clean build artifacts and cache
 	rm -rf build/ dist/ src/*.egg-info/
 	uv cache clean
