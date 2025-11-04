@@ -44,8 +44,7 @@ class NumericFieldValidator(FieldValidator):
         # Validate that value is numeric (int or float)
         if not isinstance(value, int | float):
             raise TaskValidationError(
-                f"Invalid type for {self.field_name}: {type(value).__name__}. "
-                f"Expected int or float"
+                f"Invalid type for {self.field_name}: {type(value).__name__}. Expected int or float"
             )
 
         # Reject non-positive values

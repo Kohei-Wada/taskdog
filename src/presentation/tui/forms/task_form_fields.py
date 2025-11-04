@@ -8,7 +8,7 @@ from textual.containers import Vertical
 from textual.widgets import Checkbox, Input, Label, Static
 
 from application.dto.task_dto import TaskDetailDto
-from shared.config_manager import Config, ConfigManager
+from shared.config_manager import Config
 from shared.constants.formats import DATETIME_FORMAT
 
 
@@ -80,7 +80,7 @@ class TaskFormFields:
 
         Args:
             task: Existing task for editing (None for new task)
-            config: Application configuration (loads default if None)
+            config: Application configuration
 
         Yields:
             Form field widgets
@@ -88,9 +88,9 @@ class TaskFormFields:
         # Error message area (hidden by default)
         yield Static("", id="error-message")
 
-        # Load config if not provided
+        # Config must be provided
         if config is None:
-            config = ConfigManager.load()
+            raise ValueError("config parameter is required")
 
         # Get default priority from config
         default_priority = config.task.default_priority

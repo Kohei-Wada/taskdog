@@ -7,7 +7,7 @@ from rich.console import Console
 from domain.services.time_tracker import TimeTracker
 from infrastructure.holiday_checker import HolidayChecker
 from infrastructure.persistence.file_notes_repository import FileNotesRepository
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.repository_factory import RepositoryFactory
 from presentation.cli.commands.add import add_command
 from presentation.cli.commands.add_dependency import add_dependency_command
 from presentation.cli.commands.cancel import cancel_command
@@ -40,7 +40,6 @@ from presentation.cli.commands.week import week_command
 from presentation.cli.context import CliContext
 from presentation.console.rich_console_writer import RichConsoleWriter
 from shared.config_manager import ConfigManager
-from shared.xdg_utils import XDGDirectories
 
 
 class TaskdogGroup(click.Group):
@@ -79,9 +78,6 @@ def cli(ctx: click.Context) -> None:
         click.echo(ctx.get_help())
         ctx.exit()
 
-    # Follow XDG Base Directory specification
-    tasksfile = str(XDGDirectories.get_tasks_file())
-
     # Initialize shared dependencies
     console = Console()
     console_writer = RichConsoleWriter(console)
@@ -95,9 +91,9 @@ def cli(ctx: click.Context) -> None:
         with suppress(ImportError, NotImplementedError):
             holiday_checker = HolidayChecker(config.region.country)
 
-    # Initialize repository with error handling for corrupted data
+    # Initialize repository using factory based on storage config
     try:
-        repository = JsonTaskRepository(tasksfile)
+        repository = RepositoryFactory.create(config.storage)
     except CorruptedDataError as e:
         # Display detailed error message
         console_writer.error("loading tasks", e)

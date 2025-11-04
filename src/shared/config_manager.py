@@ -79,6 +79,20 @@ class RegionConfig:
 
 
 @dataclass(frozen=True)
+class StorageConfig:
+    """Storage backend configuration.
+
+    Attributes:
+        backend: Storage backend to use ("json" or "sqlite")
+        database_url: SQLite database URL (only used when backend="sqlite")
+                      If None, defaults to XDG data directory
+    """
+
+    backend: str = "json"
+    database_url: str | None = None
+
+
+@dataclass(frozen=True)
 class Config:
     """Taskdog configuration.
 
@@ -88,6 +102,7 @@ class Config:
         display: Display-related settings
         time: Time-related settings
         region: Region-related settings (holidays, etc.)
+        storage: Storage backend settings
     """
 
     optimization: OptimizationConfig
@@ -95,6 +110,7 @@ class Config:
     display: DisplayConfig
     time: TimeConfig
     region: RegionConfig = field(default_factory=RegionConfig)
+    storage: StorageConfig = field(default_factory=StorageConfig)
 
 
 class ConfigManager:
@@ -131,6 +147,7 @@ class ConfigManager:
         display_data = data.get("display", {})
         time_data = data.get("time", {})
         region_data = data.get("region", {})
+        storage_data = data.get("storage", {})
 
         return Config(
             optimization=OptimizationConfig(
@@ -152,6 +169,10 @@ class ConfigManager:
             region=RegionConfig(
                 country=region_data.get("country"),
             ),
+            storage=StorageConfig(
+                backend=storage_data.get("backend", "json"),
+                database_url=storage_data.get("database_url"),
+            ),
         )
 
     @classmethod
@@ -167,4 +188,5 @@ class ConfigManager:
             display=DisplayConfig(),
             time=TimeConfig(),
             region=RegionConfig(),
+            storage=StorageConfig(),
         )

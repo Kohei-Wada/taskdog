@@ -50,8 +50,7 @@ class DependencyNotMetError(TaskValidationError):
         self.unmet_dependencies = unmet_dependencies
         dep_ids = ", ".join(str(dep_id) for dep_id in unmet_dependencies)
         super().__init__(
-            f"Cannot start task {task_id}: dependencies not met. "
-            f"Complete task(s) {dep_ids} first."
+            f"Cannot start task {task_id}: dependencies not met. Complete task(s) {dep_ids} first."
         )
 
 

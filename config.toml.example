@@ -1,0 +1,50 @@
+# Taskdog Configuration File Example
+# Copy this file to ~/.config/taskdog/config.toml and customize as needed
+#
+# All sections and fields are optional. Taskdog will use sensible defaults
+# for any omitted configuration.
+
+# Storage Backend Configuration
+[storage]
+# Backend to use: "json" (default) or "sqlite"
+backend = "json"
+
+# Optional: Custom database URL (only used when backend = "sqlite")
+# If not specified, uses ~/.local/share/taskdog/tasks.db
+# database_url = "sqlite:////custom/path/to/tasks.db"
+
+# Task-related Settings
+[task]
+# Default priority for new tasks (1-100, default: 50)
+default_priority = 50
+
+# Optimization Settings
+[optimization]
+# Maximum work hours per day for schedule optimization (default: 8.0)
+max_hours_per_day = 8.0
+
+# Default optimization algorithm (default: "greedy")
+# Available: greedy, balanced, backward, priority_first, earliest_deadline,
+#            round_robin, dependency_aware, genetic, monte_carlo
+default_algorithm = "greedy"
+
+# Display Settings
+[display]
+# Datetime format for display (default: "%Y-%m-%d %H:%M:%S")
+# Uses Python strftime format
+datetime_format = "%Y-%m-%d %H:%M:%S"
+
+# Time Settings
+[time]
+# Default hour for task start times / business day start (0-23, default: 9)
+default_start_hour = 9
+
+# Default hour for task end times and deadlines / business day end (0-23, default: 18)
+default_end_hour = 18
+
+# Region Settings
+[region]
+# ISO 3166-1 alpha-2 country code for holiday checking (default: none)
+# Examples: "JP" (Japan), "US" (United States), "GB" (United Kingdom), "DE" (Germany)
+# Leave commented out to disable holiday checking
+# country = "JP"

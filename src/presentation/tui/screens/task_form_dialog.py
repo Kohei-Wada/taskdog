@@ -18,7 +18,7 @@ from presentation.tui.forms.validators import (
     TaskNameValidator,
 )
 from presentation.tui.screens.base_dialog import BaseModalDialog
-from shared.config_manager import Config, ConfigManager
+from shared.config_manager import Config
 
 
 class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
@@ -46,12 +46,14 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
 
         Args:
             task: Existing task DTO for editing, or None for adding new task
-            config: Application configuration (loads default if None)
+            config: Application configuration
         """
         super().__init__(*args, **kwargs)
         self.task_to_edit = task
         self.is_edit_mode = task is not None
-        self.config = config if config is not None else ConfigManager.load()
+        if config is None:
+            raise ValueError("config parameter is required")
+        self.config = config
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""
