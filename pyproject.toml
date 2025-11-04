@@ -121,6 +121,7 @@ ignore = [
   "N818",
 ]  # TaskNotFoundException is widely used
 "tests/**/*.py" = ["SIM115", "RUF015"]  # Test code patterns are acceptable
+"scripts/**/*.py" = ["B904", "C901"]  # Migration scripts: exception chaining and complexity acceptable
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
