@@ -157,6 +157,7 @@ packages = [
   "application.validators",
   "infrastructure",
   "infrastructure.persistence",
+  "infrastructure.persistence.mappers",
   "presentation",
   "presentation.cli",
   "presentation.cli.commands",

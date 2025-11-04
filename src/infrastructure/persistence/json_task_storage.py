@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from domain.entities.task import Task
+from infrastructure.persistence.mappers.task_json_mapper import TaskJsonMapper
 from shared.constants.file_management import BACKUP_FILE_SUFFIX
 
 
@@ -22,6 +23,14 @@ class JsonTaskStorage:
     Provides safe, atomic write operations and automatic recovery from backup
     when the main file is corrupted.
     """
+
+    def __init__(self, mapper: TaskJsonMapper | None = None) -> None:
+        """Initialize JSON task storage with a mapper.
+
+        Args:
+            mapper: TaskJsonMapper instance for serialization. If None, creates a new instance.
+        """
+        self.mapper = mapper or TaskJsonMapper()
 
     def load(self, filename: str) -> list[Task]:
         """Load tasks from JSON file with fallback to backup.
@@ -73,8 +82,8 @@ class JsonTaskStorage:
         file_path = Path(filename)
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Prepare data
-        tasks_data = [task.to_dict() for task in tasks]
+        # Prepare data using mapper
+        tasks_data = [self.mapper.to_dict(task) for task in tasks]
 
         # Write to temporary file in the same directory (important for atomic rename)
         temp_fd, temp_path = tempfile.mkstemp(
@@ -151,7 +160,7 @@ class JsonTaskStorage:
 
         for data in tasks_data:
             try:
-                task = Task.from_dict(data)
+                task = self.mapper.from_dict(data)
                 tasks.append(task)
             except TaskValidationError as e:
                 # Collect corrupted task info

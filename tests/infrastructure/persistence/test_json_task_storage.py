@@ -8,6 +8,7 @@ from pathlib import Path
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import CorruptedDataError
 from infrastructure.persistence.json_task_storage import JsonTaskStorage
+from infrastructure.persistence.mappers.task_json_mapper import TaskJsonMapper
 from shared.constants.file_management import BACKUP_FILE_SUFFIX
 
 
@@ -16,7 +17,8 @@ class TestJsonTaskStorage(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures."""
-        self.storage = JsonTaskStorage()
+        self.mapper = TaskJsonMapper()
+        self.storage = JsonTaskStorage(self.mapper)
         self.temp_dir = tempfile.mkdtemp()
         self.test_file = str(Path(self.temp_dir) / "tasks.json")
         self.task1 = Task(id=1, name="Test Task 1", priority=1)
@@ -53,7 +55,7 @@ class TestJsonTaskStorage(unittest.TestCase):
 
     def test_load_returns_tasks_when_file_has_valid_json(self) -> None:
         """Test load returns tasks when file contains valid JSON."""
-        tasks_data = [self.task1.to_dict(), self.task2.to_dict()]
+        tasks_data = [self.mapper.to_dict(self.task1), self.mapper.to_dict(self.task2)]
         Path(self.test_file).write_text(
             json.dumps(tasks_data, indent=4, ensure_ascii=False), encoding="utf-8"
         )
@@ -79,7 +81,7 @@ class TestJsonTaskStorage(unittest.TestCase):
         """Test load loads from backup when main file is corrupted."""
         # Create valid backup
         backup_file = Path(self.test_file).with_suffix(BACKUP_FILE_SUFFIX)
-        tasks_data = [self.task1.to_dict()]
+        tasks_data = [self.mapper.to_dict(self.task1)]
         backup_file.write_text(
             json.dumps(tasks_data, indent=4, ensure_ascii=False), encoding="utf-8"
         )

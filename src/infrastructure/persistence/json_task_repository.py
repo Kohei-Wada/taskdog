@@ -4,6 +4,7 @@ from typing import Any, cast
 from domain.entities.task import Task
 from domain.repositories.task_repository import TaskRepository
 from infrastructure.persistence.json_task_storage import JsonTaskStorage
+from infrastructure.persistence.mappers.task_json_mapper import TaskJsonMapper
 from infrastructure.persistence.task_index_manager import TaskIndexManager
 
 
@@ -13,16 +14,19 @@ class JsonTaskRepository(TaskRepository):
     This repository uses composition to separate concerns:
     - JsonTaskStorage: Handles JSON I/O with atomic writes and backup
     - TaskIndexManager: Manages in-memory indexes for O(1) lookups
+    - TaskJsonMapper: Handles serialization between Task entities and JSON format
     """
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, mapper: TaskJsonMapper | None = None):
         """Initialize the repository with a JSON file.
 
         Args:
             filename: Path to the JSON file for task storage
+            mapper: TaskJsonMapper instance for serialization. If None, creates a new instance.
         """
         self.filename = filename
-        self._storage = JsonTaskStorage()
+        self._mapper = mapper or TaskJsonMapper()
+        self._storage = JsonTaskStorage(self._mapper)
         self.tasks = self._storage.load(filename)
         self._index_manager = TaskIndexManager(self.tasks)
 

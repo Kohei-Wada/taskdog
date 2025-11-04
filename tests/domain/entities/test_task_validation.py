@@ -4,10 +4,15 @@ import unittest
 
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskValidationError
+from infrastructure.persistence.mappers.task_json_mapper import TaskJsonMapper
 
 
 class TaskValidationTest(unittest.TestCase):
     """Test Task entity invariant validation in __post_init__."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.mapper = TaskJsonMapper()
 
     def test_valid_task_creation(self):
         """Test creating a task with valid values."""
@@ -87,7 +92,7 @@ class TaskValidationTest(unittest.TestCase):
             "status": "PENDING",
         }
         with self.assertRaises(TaskValidationError) as context:
-            Task.from_dict(data)
+            self.mapper.from_dict(data)
         self.assertIn("Task name cannot be empty", str(context.exception))
 
     def test_from_dict_with_valid_data(self):
@@ -99,7 +104,7 @@ class TaskValidationTest(unittest.TestCase):
             "status": "PENDING",
             "estimated_duration": 10.0,
         }
-        task = Task.from_dict(data)
+        task = self.mapper.from_dict(data)
         self.assertEqual(task.id, 1)
         self.assertEqual(task.name, "Test Task")
         self.assertEqual(task.priority, 5)
@@ -145,7 +150,7 @@ class TaskValidationTest(unittest.TestCase):
         for data, expected_error, description in test_cases:
             with self.subTest(description=description):
                 with self.assertRaises(TaskValidationError) as context:
-                    Task.from_dict(data)
+                    self.mapper.from_dict(data)
                 self.assertIn(expected_error, str(context.exception))
 
 
