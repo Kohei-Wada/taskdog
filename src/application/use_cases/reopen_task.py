@@ -41,13 +41,16 @@ class ReopenTaskUseCase(StatusChangeUseCase[ReopenTaskInput]):
         return False
 
     def _before_status_change(self, task: Task) -> None:
-        """Validate task can be reopened and clear time tracking.
+        """Validate task can be reopened.
 
         Args:
             task: Task that will be reopened
 
         Raises:
             TaskValidationError: If task cannot be reopened
+
+        Note:
+            Time tracking is now handled by Task.reopen() method in TaskStatusService.
         """
         # Validate: can only reopen COMPLETED or CANCELED tasks
         # Note: Archived tasks (is_archived=True) should use 'restore' command instead
@@ -58,5 +61,4 @@ class ReopenTaskUseCase(StatusChangeUseCase[ReopenTaskInput]):
                 "Use 'restore' command for archived tasks."
             )
 
-        # Clear time tracking (reset timestamps)
-        self.time_tracker.clear_time_tracking(task)
+        # Time tracking is handled by Task.reopen() in TaskStatusService

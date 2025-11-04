@@ -1,12 +1,13 @@
 """Use case for updating a task."""
 
+from datetime import datetime
+
 from application.dto.update_task_input import UpdateTaskInput
 from application.dto.update_task_output import UpdateTaskOutput
 from application.use_cases.base import UseCase
 from application.validators.validator_registry import TaskFieldValidatorRegistry
-from domain.entities.task import Task
+from domain.entities.task import Task, TaskStatus
 from domain.repositories.task_repository import TaskRepository
-from domain.services.time_tracker import TimeTracker
 
 
 class UpdateTaskUseCase(UseCase[UpdateTaskInput, UpdateTaskOutput]):
@@ -16,15 +17,13 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, UpdateTaskOutput]):
     Returns the updated task and list of updated field names.
     """
 
-    def __init__(self, repository: TaskRepository, time_tracker: TimeTracker):
+    def __init__(self, repository: TaskRepository):
         """Initialize use case.
 
         Args:
             repository: Task repository for data access
-            time_tracker: Time tracker for recording timestamps
         """
         self.repository = repository
-        self.time_tracker = time_tracker
         self.validator_registry = TaskFieldValidatorRegistry(repository)
 
     def _update_status(
@@ -33,7 +32,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, UpdateTaskOutput]):
         input_dto: UpdateTaskInput,
         updated_fields: list[str],
     ) -> None:
-        """Update task status with time tracking.
+        """Update task status with time tracking via Task entity methods.
 
         Args:
             task: Task to update
@@ -44,8 +43,18 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, UpdateTaskOutput]):
             # Validate status transition
             self.validator_registry.validate_field("status", input_dto.status, task)
 
-            self.time_tracker.record_time_on_status_change(task, input_dto.status)
-            task.status = input_dto.status
+            # Use Task entity methods for status changes (encapsulation)
+            timestamp = datetime.now()
+            if input_dto.status == TaskStatus.IN_PROGRESS:
+                task.start(timestamp)
+            elif input_dto.status == TaskStatus.COMPLETED:
+                task.complete(timestamp)
+            elif input_dto.status == TaskStatus.CANCELED:
+                task.cancel(timestamp)
+            elif input_dto.status == TaskStatus.PENDING:
+                # For update command, preserve timestamps by default (don't clear)
+                task.status = TaskStatus.PENDING
+
             updated_fields.append("status")
 
     def _update_standard_fields(
@@ -84,7 +93,12 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, UpdateTaskOutput]):
         if (
             "planned_start" in updated_fields or "planned_end" in updated_fields
         ) and task.daily_allocations:
-            task.daily_allocations = {}
+            task.clear_schedule()
+            # Re-set planned times since clear_schedule() clears them
+            if input_dto.planned_start:
+                task.planned_start = input_dto.planned_start
+            if input_dto.planned_end:
+                task.planned_end = input_dto.planned_end
             updated_fields.append("daily_allocations")
 
     def execute(self, input_dto: UpdateTaskInput) -> UpdateTaskOutput:

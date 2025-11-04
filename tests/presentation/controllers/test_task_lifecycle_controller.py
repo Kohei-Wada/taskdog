@@ -15,11 +15,9 @@ class TestTaskLifecycleController(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.repository = Mock(spec=JsonTaskRepository)
-        self.time_tracker = MagicMock()
         self.config = MagicMock()
         self.controller = TaskLifecycleController(
             repository=self.repository,
-            time_tracker=self.time_tracker,
             config=self.config,
         )
 
@@ -132,11 +130,6 @@ class TestTaskLifecycleController(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result.id, task_id)
         self.assertEqual(result.name, "Test Task")
-
-    def test_controller_has_time_tracker_dependency(self):
-        """Test that controller has time_tracker attribute."""
-        self.assertIsNotNone(self.controller.time_tracker)
-        self.assertEqual(self.controller.time_tracker, self.time_tracker)
 
     def test_controller_inherits_from_base_controller(self):
         """Test that controller has repository and config from base class."""

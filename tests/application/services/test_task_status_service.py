@@ -6,7 +6,6 @@ from datetime import datetime
 
 from application.services.task_status_service import TaskStatusService
 from domain.entities.task import TaskStatus
-from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
@@ -20,7 +19,6 @@ class TaskStatusServiceTest(unittest.TestCase):
         self.temp_file.close()
 
         self.repository = JsonTaskRepository(self.temp_file.name)
-        self.time_tracker = TimeTracker()
         self.service = TaskStatusService()
 
     def test_change_status_to_in_progress(self):
@@ -32,7 +30,7 @@ class TaskStatusServiceTest(unittest.TestCase):
 
         # Change to IN_PROGRESS
         updated = self.service.change_status_with_tracking(
-            task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
+            task, TaskStatus.IN_PROGRESS, self.repository
         )
 
         # Verify status changed and actual_start recorded
@@ -50,14 +48,14 @@ class TaskStatusServiceTest(unittest.TestCase):
         # Create a task and start it
         task = self.repository.create(name="Test Task", priority=1)
         task = self.service.change_status_with_tracking(
-            task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
+            task, TaskStatus.IN_PROGRESS, self.repository
         )
         self.assertIsNotNone(task.actual_start)
         self.assertIsNone(task.actual_end)
 
         # Complete the task
         updated = self.service.change_status_with_tracking(
-            task, TaskStatus.COMPLETED, self.time_tracker, self.repository
+            task, TaskStatus.COMPLETED, self.repository
         )
 
         # Verify status changed and actual_end recorded
@@ -75,12 +73,12 @@ class TaskStatusServiceTest(unittest.TestCase):
         # Create a task and start it
         task = self.repository.create(name="Test Task", priority=1)
         task = self.service.change_status_with_tracking(
-            task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
+            task, TaskStatus.IN_PROGRESS, self.repository
         )
 
         # Cancel the task
         updated = self.service.change_status_with_tracking(
-            task, TaskStatus.CANCELED, self.time_tracker, self.repository
+            task, TaskStatus.CANCELED, self.repository
         )
 
         # Verify status changed and actual_end recorded
@@ -99,29 +97,25 @@ class TaskStatusServiceTest(unittest.TestCase):
 
         # PENDING -> IN_PROGRESS
         task = self.service.change_status_with_tracking(
-            task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
+            task, TaskStatus.IN_PROGRESS, self.repository
         )
         self.assertEqual(task.status, TaskStatus.IN_PROGRESS)
         self.assertIsNotNone(task.actual_start)
 
         # IN_PROGRESS -> PENDING (restart)
-        task = self.service.change_status_with_tracking(
-            task, TaskStatus.PENDING, self.time_tracker, self.repository
-        )
+        task = self.service.change_status_with_tracking(task, TaskStatus.PENDING, self.repository)
         self.assertEqual(task.status, TaskStatus.PENDING)
 
         # PENDING -> IN_PROGRESS again
         task = self.service.change_status_with_tracking(
-            task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
+            task, TaskStatus.IN_PROGRESS, self.repository
         )
         self.assertEqual(task.status, TaskStatus.IN_PROGRESS)
         # actual_start should be updated to new start time
         self.assertIsNotNone(task.actual_start)
 
         # Finally complete
-        task = self.service.change_status_with_tracking(
-            task, TaskStatus.COMPLETED, self.time_tracker, self.repository
-        )
+        task = self.service.change_status_with_tracking(task, TaskStatus.COMPLETED, self.repository)
         self.assertEqual(task.status, TaskStatus.COMPLETED)
         self.assertIsNotNone(task.actual_end)
 
@@ -139,7 +133,7 @@ class TaskStatusServiceTest(unittest.TestCase):
 
         # Change status
         updated = self.service.change_status_with_tracking(
-            task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
+            task, TaskStatus.IN_PROGRESS, self.repository
         )
 
         # Verify other fields preserved
@@ -156,7 +150,7 @@ class TaskStatusServiceTest(unittest.TestCase):
         original_id = id(task)
 
         updated = self.service.change_status_with_tracking(
-            task, TaskStatus.IN_PROGRESS, self.time_tracker, self.repository
+            task, TaskStatus.IN_PROGRESS, self.repository
         )
 
         # Should return the same object

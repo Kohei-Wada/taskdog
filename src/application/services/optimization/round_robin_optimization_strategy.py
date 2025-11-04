@@ -273,7 +273,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
                 task.planned_start = start_with_time
                 task.planned_end = end_with_time
-                task.daily_allocations = task_daily_allocations[task_id]
+                task.set_daily_allocations(task_daily_allocations[task_id])
 
                 updated_tasks.append(task)
 

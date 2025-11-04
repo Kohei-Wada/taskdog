@@ -6,7 +6,6 @@ import unittest
 from unittest.mock import MagicMock
 
 from domain.entities.task import Task, TaskStatus
-from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from presentation.controllers.task_crud_controller import TaskCrudController
 
@@ -20,12 +19,10 @@ class TestTaskCrudController(unittest.TestCase):
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
-        self.time_tracker = TimeTracker()
         self.config = MagicMock()
         self.config.task.default_priority = 3
         self.controller = TaskCrudController(
             repository=self.repository,
-            time_tracker=self.time_tracker,
             config=self.config,
         )
 
@@ -129,11 +126,6 @@ class TestTaskCrudController(unittest.TestCase):
         # Assert - task should no longer exist
         deleted_task = self.repository.get_by_id(task.id)
         self.assertIsNone(deleted_task)
-
-    def test_controller_has_time_tracker_dependency(self):
-        """Test that controller has time_tracker attribute."""
-        self.assertIsNotNone(self.controller.time_tracker)
-        self.assertEqual(self.controller.time_tracker, self.time_tracker)
 
     def test_controller_inherits_from_base_controller(self):
         """Test that controller has repository and config from base class."""

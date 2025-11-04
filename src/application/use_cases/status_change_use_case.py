@@ -9,7 +9,6 @@ from application.use_cases.base import UseCase
 from application.validators.validator_registry import TaskFieldValidatorRegistry
 from domain.entities.task import Task, TaskStatus
 from domain.repositories.task_repository import TaskRepository
-from domain.services.time_tracker import TimeTracker
 
 
 class StatusChangeUseCase[TInput: StatusChangeInput](UseCase[TInput, TaskOperationOutput], ABC):
@@ -36,15 +35,13 @@ class StatusChangeUseCase[TInput: StatusChangeInput](UseCase[TInput, TaskOperati
                 return TaskStatus.IN_PROGRESS
     """
 
-    def __init__(self, repository: TaskRepository, time_tracker: TimeTracker):
+    def __init__(self, repository: TaskRepository):
         """Initialize use case with common dependencies.
 
         Args:
             repository: Task repository for data access
-            time_tracker: Time tracker for recording timestamps
         """
         self.repository = repository
-        self.time_tracker = time_tracker
         self.validator_registry = TaskFieldValidatorRegistry(repository)
         self.status_service = TaskStatusService()
 
@@ -78,9 +75,7 @@ class StatusChangeUseCase[TInput: StatusChangeInput](UseCase[TInput, TaskOperati
             self.validator_registry.validate_field("status", new_status, task)
 
         # 5. Apply status change with time tracking
-        task = self.status_service.change_status_with_tracking(
-            task, new_status, self.time_tracker, self.repository
-        )
+        task = self.status_service.change_status_with_tracking(task, new_status, self.repository)
 
         # 6. Post-processing hook (optional)
         self._after_status_change(task)

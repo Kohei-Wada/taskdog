@@ -28,5 +28,10 @@ class PauseTaskUseCase(StatusChangeUseCase[PauseTaskInput]):
 
         Args:
             task: Task that will be paused
+
+        Note:
+            Time tracking is now handled by Task.pause() method,
+            so this hook is empty. Kept for documentation purposes.
         """
-        self.time_tracker.clear_time_tracking(task)
+        # Time tracking is handled by Task.pause() in TaskStatusService
+        pass

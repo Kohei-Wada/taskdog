@@ -190,3 +190,146 @@ class Task:
             - Include PENDING and IN_PROGRESS tasks
         """
         return not self.is_archived and not self.is_finished
+
+    # State transition methods (Command methods for encapsulation)
+
+    def start(self, timestamp: datetime) -> None:
+        """Start the task and record timestamp.
+
+        Args:
+            timestamp: The time when the task is started
+
+        Side effects:
+            - Changes status to IN_PROGRESS
+            - Sets actual_start if not already set
+        """
+        if self.status == TaskStatus.IN_PROGRESS:
+            return  # Already started
+
+        self.status = TaskStatus.IN_PROGRESS
+        if not self.actual_start:
+            self.actual_start = timestamp
+
+    def complete(self, timestamp: datetime) -> None:
+        """Complete the task and record timestamp.
+
+        Args:
+            timestamp: The time when the task is completed
+
+        Side effects:
+            - Changes status to COMPLETED
+            - Sets actual_end if not already set
+        """
+        if self.status == TaskStatus.COMPLETED:
+            return  # Already completed
+
+        self.status = TaskStatus.COMPLETED
+        if not self.actual_end:
+            self.actual_end = timestamp
+
+    def cancel(self, timestamp: datetime) -> None:
+        """Cancel the task and record timestamp.
+
+        Args:
+            timestamp: The time when the task is canceled
+
+        Side effects:
+            - Changes status to CANCELED
+            - Sets actual_end if not already set
+        """
+        if self.status == TaskStatus.CANCELED:
+            return  # Already canceled
+
+        self.status = TaskStatus.CANCELED
+        if not self.actual_end:
+            self.actual_end = timestamp
+
+    def pause(self) -> None:
+        """Pause the task and clear time tracking.
+
+        Side effects:
+            - Changes status to PENDING
+            - Clears actual_start and actual_end
+        """
+        self.status = TaskStatus.PENDING
+        self.actual_start = None
+        self.actual_end = None
+
+    def reopen(self) -> None:
+        """Reopen a finished task back to PENDING.
+
+        Side effects:
+            - Changes status to PENDING
+            - Clears actual_start and actual_end
+        """
+        self.status = TaskStatus.PENDING
+        self.actual_start = None
+        self.actual_end = None
+
+    # Schedule management methods
+
+    def set_schedule(
+        self, start: datetime, end: datetime, allocations: dict[date, float] | None = None
+    ) -> None:
+        """Set the task schedule.
+
+        Args:
+            start: Planned start datetime
+            end: Planned end datetime
+            allocations: Optional daily work hours allocation
+
+        Side effects:
+            - Sets planned_start and planned_end
+            - Sets daily_allocations if provided
+        """
+        self.planned_start = start
+        self.planned_end = end
+        if allocations is not None:
+            self.daily_allocations = allocations
+
+    def clear_schedule(self) -> None:
+        """Clear the task schedule.
+
+        Side effects:
+            - Clears planned_start, planned_end, and daily_allocations
+        """
+        self.planned_start = None
+        self.planned_end = None
+        self.daily_allocations = {}
+
+    def set_daily_allocations(self, allocations: dict[date, float]) -> None:
+        """Set daily work hours allocation.
+
+        Args:
+            allocations: Dictionary mapping dates to work hours
+
+        Side effects:
+            - Replaces daily_allocations
+        """
+        self.daily_allocations = allocations
+
+    # Dependency management methods
+
+    def add_dependency(self, task_id: int) -> None:
+        """Add a dependency to this task.
+
+        Args:
+            task_id: ID of the task that must be completed before this task
+
+        Side effects:
+            - Adds task_id to depends_on list if not already present
+        """
+        if task_id not in self.depends_on:
+            self.depends_on.append(task_id)
+
+    def remove_dependency(self, task_id: int) -> None:
+        """Remove a dependency from this task.
+
+        Args:
+            task_id: ID of the dependency to remove
+
+        Side effects:
+            - Removes task_id from depends_on list if present
+        """
+        if task_id in self.depends_on:
+            self.depends_on.remove(task_id)

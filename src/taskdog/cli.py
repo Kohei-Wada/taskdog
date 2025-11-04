@@ -4,7 +4,6 @@ from typing import Any
 import click
 from rich.console import Console
 
-from domain.services.time_tracker import TimeTracker
 from infrastructure.holiday_checker import HolidayChecker
 from infrastructure.persistence.file_notes_repository import FileNotesRepository
 from infrastructure.persistence.repository_factory import RepositoryFactory
@@ -81,7 +80,6 @@ def cli(ctx: click.Context) -> None:
     # Initialize shared dependencies
     console = Console()
     console_writer = RichConsoleWriter(console)
-    time_tracker = TimeTracker()
     config = ConfigManager.load()
     notes_repository = FileNotesRepository()
 
@@ -113,17 +111,16 @@ def cli(ctx: click.Context) -> None:
     )
 
     query_controller = QueryController(repository, notes_repository)
-    lifecycle_controller = TaskLifecycleController(repository, time_tracker, config)
+    lifecycle_controller = TaskLifecycleController(repository, config)
     relationship_controller = TaskRelationshipController(repository, config)
     analytics_controller = TaskAnalyticsController(repository, config, holiday_checker)
-    crud_controller = TaskCrudController(repository, time_tracker, config)
+    crud_controller = TaskCrudController(repository, config)
 
     # Store in CliContext for type-safe access
     ctx.ensure_object(dict)
     ctx.obj = CliContext(
         console_writer=console_writer,
         repository=repository,
-        time_tracker=time_tracker,
         config=config,
         notes_repository=notes_repository,
         query_controller=query_controller,

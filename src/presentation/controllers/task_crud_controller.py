@@ -24,7 +24,6 @@ from application.use_cases.restore_task import RestoreTaskUseCase
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.repositories.task_repository import TaskRepository
-from domain.services.time_tracker import TimeTracker
 from presentation.controllers.base_controller import BaseTaskController
 from shared.config_manager import Config
 
@@ -39,29 +38,25 @@ class TaskCrudController(BaseTaskController):
     - Restoring archived tasks
     - Removing tasks permanently (hard delete)
 
-    The update operation supports time tracking for status changes.
+    The update operation supports time tracking via Task entity methods.
 
     Attributes:
         repository: Task repository (inherited from BaseTaskController)
         config: Application configuration (inherited from BaseTaskController)
-        time_tracker: Time tracker for recording timestamps in updates
     """
 
     def __init__(
         self,
         repository: TaskRepository,
-        time_tracker: TimeTracker,
         config: Config,
     ):
         """Initialize the CRUD controller.
 
         Args:
             repository: Task repository
-            time_tracker: Time tracker service for recording timestamps
             config: Application configuration
         """
         super().__init__(repository, config)
-        self.time_tracker = time_tracker
 
     def create_task(
         self,
@@ -139,7 +134,7 @@ class TaskCrudController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails for any field
         """
-        use_case = UpdateTaskUseCase(self.repository, self.time_tracker)
+        use_case = UpdateTaskUseCase(self.repository)
         request = UpdateTaskInput(
             task_id=task_id,
             name=name,

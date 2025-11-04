@@ -40,8 +40,8 @@ class RemoveDependencyUseCase(UseCase[RemoveDependencyInput, TaskOperationOutput
                 f"Task {input_dto.task_id} does not depend on task {input_dto.depends_on_id}"
             )
 
-        # Remove dependency
-        task.depends_on.remove(input_dto.depends_on_id)
+        # Remove dependency via Task entity method (encapsulation)
+        task.remove_dependency(input_dto.depends_on_id)
 
         # Save changes
         self.repository.save(task)

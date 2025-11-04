@@ -62,8 +62,8 @@ class AddDependencyUseCase(UseCase[AddDependencyInput, TaskOperationOutput]):
                 f"because it would create a circular chain."
             )
 
-        # Add dependency
-        task.depends_on.append(input_dto.depends_on_id)
+        # Add dependency via Task entity method (encapsulation)
+        task.add_dependency(input_dto.depends_on_id)
 
         # Save changes
         self.repository.save(task)

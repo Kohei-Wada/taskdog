@@ -7,7 +7,6 @@ from application.dto.update_task_input import UpdateTaskInput
 from application.use_cases.update_task import UpdateTaskUseCase
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
-from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
@@ -20,8 +19,7 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
-        self.time_tracker = TimeTracker()
-        self.use_case = UpdateTaskUseCase(self.repository, self.time_tracker)
+        self.use_case = UpdateTaskUseCase(self.repository)
 
     def tearDown(self):
         """Clean up temporary file after each test"""

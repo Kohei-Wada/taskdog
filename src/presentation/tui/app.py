@@ -15,7 +15,6 @@ from application.queries.filters.non_archived_filter import NonArchivedFilter
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 from domain.services.holiday_checker import IHolidayChecker
-from domain.services.time_tracker import TimeTracker
 from presentation.controllers.query_controller import QueryController
 from presentation.presenters.gantt_presenter import GanttPresenter
 from presentation.presenters.table_presenter import TablePresenter
@@ -109,7 +108,6 @@ class TaskdogTUI(App):
     def __init__(
         self,
         repository: TaskRepository,
-        time_tracker: TimeTracker,
         notes_repository: NotesRepository,
         config: Config | None = None,
         holiday_checker: IHolidayChecker | None = None,
@@ -120,14 +118,12 @@ class TaskdogTUI(App):
 
         Args:
             repository: Task repository for data access
-            time_tracker: Time tracker service
             notes_repository: Notes repository for notes file operations
             config: Application configuration (optional, loads from file by default)
             holiday_checker: Holiday checker for workday validation (optional)
         """
         super().__init__(*args, **kwargs)
         self.repository = repository
-        self.time_tracker = time_tracker
         self.notes_repository = notes_repository
         self.config = config if config is not None else ConfigManager.load()
         self.holiday_checker = holiday_checker
@@ -148,12 +144,12 @@ class TaskdogTUI(App):
         )
 
         self.query_controller = QueryController(repository, notes_repository)
-        lifecycle_controller = TaskLifecycleController(repository, time_tracker, self.config)
+        lifecycle_controller = TaskLifecycleController(repository, self.config)
         relationship_controller = TaskRelationshipController(repository, self.config)
         analytics_controller = TaskAnalyticsController(
             repository, self.config, self.holiday_checker
         )
-        crud_controller = TaskCrudController(repository, time_tracker, self.config)
+        crud_controller = TaskCrudController(repository, self.config)
 
         # Initialize TUIContext
         self.context = TUIContext(

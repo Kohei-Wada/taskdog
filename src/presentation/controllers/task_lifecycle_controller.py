@@ -20,7 +20,6 @@ from application.use_cases.pause_task import PauseTaskUseCase
 from application.use_cases.reopen_task import ReopenTaskUseCase
 from application.use_cases.start_task import StartTaskUseCase
 from domain.repositories.task_repository import TaskRepository
-from domain.services.time_tracker import TimeTracker
 from presentation.controllers.base_controller import BaseTaskController
 from shared.config_manager import Config
 
@@ -35,29 +34,25 @@ class TaskLifecycleController(BaseTaskController):
     - Canceling tasks (any status → CANCELED)
     - Reopening tasks (COMPLETED/CANCELED → PENDING)
 
-    All operations record appropriate timestamps via TimeTracker.
+    All operations record appropriate timestamps via Task entity methods.
 
     Attributes:
         repository: Task repository (inherited from BaseTaskController)
         config: Application configuration (inherited from BaseTaskController)
-        time_tracker: Time tracker for recording timestamps
     """
 
     def __init__(
         self,
         repository: TaskRepository,
-        time_tracker: TimeTracker,
         config: Config,
     ):
         """Initialize the lifecycle controller.
 
         Args:
             repository: Task repository
-            time_tracker: Time tracker service for recording timestamps
             config: Application configuration
         """
         super().__init__(repository, config)
-        self.time_tracker = time_tracker
 
     def start_task(self, task_id: int) -> TaskOperationOutput:
         """Start a task.
@@ -74,7 +69,7 @@ class TaskLifecycleController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be started
         """
-        use_case = StartTaskUseCase(self.repository, self.time_tracker)
+        use_case = StartTaskUseCase(self.repository)
         request = StartTaskInput(task_id=task_id)
         return use_case.execute(request)
 
@@ -93,7 +88,7 @@ class TaskLifecycleController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be completed
         """
-        use_case = CompleteTaskUseCase(self.repository, self.time_tracker)
+        use_case = CompleteTaskUseCase(self.repository)
         request = CompleteTaskInput(task_id=task_id)
         return use_case.execute(request)
 
@@ -112,7 +107,7 @@ class TaskLifecycleController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be paused
         """
-        use_case = PauseTaskUseCase(self.repository, self.time_tracker)
+        use_case = PauseTaskUseCase(self.repository)
         request = PauseTaskInput(task_id=task_id)
         return use_case.execute(request)
 
@@ -131,7 +126,7 @@ class TaskLifecycleController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be canceled
         """
-        use_case = CancelTaskUseCase(self.repository, self.time_tracker)
+        use_case = CancelTaskUseCase(self.repository)
         request = CancelTaskInput(task_id=task_id)
         return use_case.execute(request)
 
@@ -150,6 +145,6 @@ class TaskLifecycleController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be reopened
         """
-        use_case = ReopenTaskUseCase(self.repository, self.time_tracker)
+        use_case = ReopenTaskUseCase(self.repository)
         request = ReopenTaskInput(task_id=task_id)
         return use_case.execute(request)

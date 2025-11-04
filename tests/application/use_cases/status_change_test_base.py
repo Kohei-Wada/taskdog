@@ -15,7 +15,6 @@ from domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
 )
-from domain.services.time_tracker import TimeTracker
 from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
@@ -60,8 +59,7 @@ class BaseStatusChangeUseCaseTest(unittest.TestCase):
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = JsonTaskRepository(self.test_filename)
-        self.time_tracker = TimeTracker()
-        self.use_case = self.use_case_class(self.repository, self.time_tracker)
+        self.use_case = self.use_case_class(self.repository)
 
     def tearDown(self):
         """Clean up temporary file after each test."""

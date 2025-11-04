@@ -193,7 +193,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         # Set end time to default_end_hour (default: 18:00)
         end_date_with_time = schedule_end.replace(hour=self.default_end_hour, minute=0, second=0)
         task.planned_end = end_date_with_time
-        task.daily_allocations = task_daily_allocations
+        task.set_daily_allocations(task_daily_allocations)
 
     def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by deadline (furthest first).

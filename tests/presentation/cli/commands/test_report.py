@@ -273,7 +273,6 @@ class TestReportCommand(unittest.TestCase):
         self.cli_context = CliContext(
             console_writer=self.console_writer,
             repository=self.repository,
-            time_tracker=MagicMock(),
             config=MagicMock(),
             notes_repository=MagicMock(),
             query_controller=self.query_controller,
