@@ -1,0 +1,75 @@
+"""SQLAlchemy ORM model for Task entity.
+
+This module defines the database schema for tasks using SQLAlchemy 2.0 ORM.
+Complex fields (daily_allocations, actual_daily_hours, tags, depends_on) are
+stored as JSON TEXT columns for Phase 2 implementation.
+"""
+
+from datetime import datetime
+
+from sqlalchemy import Boolean, Float, Integer, String, Text
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    """Base class for all ORM models."""
+
+    pass
+
+
+class TaskModel(Base):
+    """SQLAlchemy ORM model for Task entity.
+
+    Maps to the 'tasks' table in the database. This model uses JSON TEXT columns
+    for complex fields (daily_allocations, tags, etc.) to maintain compatibility
+    with the existing JSON-based storage during the migration phase.
+
+    Schema corresponds to Task entity fields with SQLAlchemy types.
+    """
+
+    __tablename__ = "tasks"
+
+    # Primary key
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    # Core task fields
+    name: Mapped[str] = mapped_column(String(500), nullable=False)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(nullable=False)
+
+    # Schedule fields (nullable)
+    planned_start: Mapped[datetime | None] = mapped_column(nullable=True)
+    planned_end: Mapped[datetime | None] = mapped_column(nullable=True)
+    deadline: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    # Actual time tracking (nullable)
+    actual_start: Mapped[datetime | None] = mapped_column(nullable=True)
+    actual_end: Mapped[datetime | None] = mapped_column(nullable=True)
+
+    # Duration and scheduling
+    estimated_duration: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_fixed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # Complex fields stored as JSON TEXT
+    # Format: {"2025-01-15": 2.0, "2025-01-16": 3.0}
+    daily_allocations: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+
+    # Format: {"2025-01-15": 1.5}
+    actual_daily_hours: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+
+    # Format: [2, 3, 5]
+    depends_on: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+
+    # Format: ["urgent", "backend"]
+    tags: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+
+    # Archive flag
+    is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    def __repr__(self) -> str:
+        """String representation for debugging."""
+        return f"<TaskModel(id={self.id}, name='{self.name}', status='{self.status}')>"

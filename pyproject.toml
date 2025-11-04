@@ -9,6 +9,7 @@ dependencies = [
   "holidays>=0.60.0",
   "python-dateutil>=2.8.0",
   "rich>=14.2.0",
+  "sqlalchemy>=2.0.0",
   "textual>=0.88.0",
 ]
 
@@ -21,6 +22,7 @@ dev = [
   "ruff>=0.3.0",
   "mypy>=1.8.0",
   "types-python-dateutil>=2.8.0",
+  "types-sqlalchemy",
   "coverage>=7.0.0",
 ]
 
@@ -61,6 +63,10 @@ ignore_missing_imports = true
 module = "holidays.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "sqlalchemy.*"
+ignore_missing_imports = true
+
 # Temporarily ignore complex modules with many type issues for Phase 2
 # These will be fixed in Phase 3
 [[tool.mypy.overrides]]
@@ -77,6 +83,8 @@ module = [
   "presentation.tui.app",
   "presentation.tui.widgets.*",
   "presentation.tui.screens.algorithm_selection_screen",
+  "infrastructure.persistence.database.*",
+  "infrastructure.persistence.mappers.task_db_mapper",
 ]
 ignore_errors = true
 
@@ -157,6 +165,8 @@ packages = [
   "application.validators",
   "infrastructure",
   "infrastructure.persistence",
+  "infrastructure.persistence.database",
+  "infrastructure.persistence.database.models",
   "infrastructure.persistence.mappers",
   "presentation",
   "presentation.cli",
