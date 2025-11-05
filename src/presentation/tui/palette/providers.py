@@ -74,6 +74,7 @@ class SortOptionsProvider(Provider):
         ("priority", "Priority", "Importance-based (higher priority first)"),
         ("estimated_duration", "Duration", "Effort-based (shorter tasks first)"),
         ("id", "ID", "Creation order (lower ID first)"),
+        ("name", "Name", "Alphabetically (A-Z)"),
     ]
 
     async def discover(self) -> Hits:

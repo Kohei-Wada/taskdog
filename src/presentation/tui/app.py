@@ -97,6 +97,7 @@ class TaskdogTUI(App):
         "priority": "Priority",
         "estimated_duration": "Duration",
         "id": "ID",
+        "name": "Name",
     }
 
     # Load CSS from external files
