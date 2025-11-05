@@ -42,9 +42,9 @@ class HardDeleteTaskCommand(TUICommandBase):
 
         # Show confirmation dialog with strong warning
         dialog = ConfirmationDialog(
-            title="⚠️  PERMANENT DELETION",
+            title="WARNING: PERMANENT DELETION",
             message=f"Are you sure you want to PERMANENTLY delete task '{task_name}' (ID: {task_id})?\n\n"
-            f"⚠️  This action CANNOT be undone!\n"
-            f"⚠️  The task will be completely removed from the database.",
+            f"[!] This action CANNOT be undone!\n"
+            f"[!] The task will be completely removed from the database.",
         )
         self.app.push_screen(dialog, handle_confirmation)

@@ -140,6 +140,14 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
     def test_execute_update_all_fields_at_once(self):
         """Test updating all fields simultaneously"""
+        # Use dynamic future dates to avoid test failures as time passes
+        base_date = datetime.now() + timedelta(days=30)
+        planned_start = base_date.replace(hour=9, minute=0, second=0, microsecond=0)
+        planned_end = base_date.replace(hour=18, minute=0, second=0, microsecond=0)
+        deadline = (base_date + timedelta(days=3)).replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
+
         task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
@@ -148,9 +156,9 @@ class TestUpdateTaskUseCase(unittest.TestCase):
             task_id=task.id,
             status=TaskStatus.IN_PROGRESS,
             priority=3,
-            planned_start=datetime(2025, 10, 12, 9, 0, 0),
-            planned_end=datetime(2025, 10, 12, 18, 0, 0),
-            deadline=datetime(2025, 10, 15, 18, 0, 0),
+            planned_start=planned_start,
+            planned_end=planned_end,
+            deadline=deadline,
             estimated_duration=8.0,
         )
         result = self.use_case.execute(input_dto)
@@ -158,9 +166,9 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         # Verify all fields were updated
         self.assertEqual(result.task.status, TaskStatus.IN_PROGRESS)
         self.assertEqual(result.task.priority, 3)
-        self.assertEqual(result.task.planned_start, datetime(2025, 10, 12, 9, 0, 0))
-        self.assertEqual(result.task.planned_end, datetime(2025, 10, 12, 18, 0, 0))
-        self.assertEqual(result.task.deadline, datetime(2025, 10, 15, 18, 0, 0))
+        self.assertEqual(result.task.planned_start, planned_start)
+        self.assertEqual(result.task.planned_end, planned_end)
+        self.assertEqual(result.task.deadline, deadline)
         self.assertEqual(result.task.estimated_duration, 8.0)
         self.assertIsNotNone(result.task.actual_start)
 
@@ -183,7 +191,8 @@ class TestUpdateTaskUseCase(unittest.TestCase):
         for target_status, description in test_cases:
             with self.subTest(description=description):
                 task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
-                task.actual_start = datetime(2025, 10, 12, 9, 0, 0)
+                # Use a fixed past date for actual_start (already started tasks can have past dates)
+                task.actual_start = datetime.now() - timedelta(days=1)
                 task.id = self.repository.generate_next_id()
                 self.repository.save(task)
 
@@ -196,19 +205,22 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
     def test_execute_updates_are_persisted(self):
         """Test that updates are correctly persisted to repository"""
+        # Use dynamic future date to avoid test failures as time passes
+        deadline = (datetime.now() + timedelta(days=60)).replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
+
         task = Task(name="Test Task", priority=1)
         task.id = self.repository.generate_next_id()
         self.repository.save(task)
 
-        input_dto = UpdateTaskInput(
-            task_id=task.id, priority=5, deadline=datetime(2026, 10, 20, 18, 0, 0)
-        )
+        input_dto = UpdateTaskInput(task_id=task.id, priority=5, deadline=deadline)
         self.use_case.execute(input_dto)
 
         # Reload from repository to verify persistence
         persisted_task = self.repository.get_by_id(task.id)
         self.assertEqual(persisted_task.priority, 5)
-        self.assertEqual(persisted_task.deadline, datetime(2026, 10, 20, 18, 0, 0))
+        self.assertEqual(persisted_task.deadline, deadline)
 
     def test_execute_update_estimated_duration_succeeds_for_leaf_task(self):
         """Test that estimated_duration can be set for leaf tasks (no children)"""
@@ -224,21 +236,29 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
     def test_execute_clears_daily_allocations_when_updating_planned_start(self):
         """Test that daily_allocations is cleared when planned_start is updated (issue #171)"""
-        from datetime import date
+
+        # Use dynamic future dates to avoid test failures as time passes
+        base_date = datetime.now() + timedelta(days=30)
+        start_date = base_date.replace(hour=9, minute=0, second=0, microsecond=0)
+        end_date = (base_date + timedelta(days=2)).replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
+        new_start = (base_date + timedelta(days=4)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
 
         task = Task(name="Task with allocations", priority=1)
         task.id = self.repository.generate_next_id()
         # Set daily_allocations as if optimized
         task.daily_allocations = {
-            date(2025, 11, 1): 3.0,
-            date(2025, 11, 2): 2.5,
+            start_date.date(): 3.0,
+            (start_date + timedelta(days=1)).date(): 2.5,
         }
-        task.planned_start = datetime(2025, 11, 1, 9, 0, 0)
-        task.planned_end = datetime(2025, 11, 3, 18, 0, 0)
+        task.planned_start = start_date
+        task.planned_end = end_date
         self.repository.save(task)
 
         # Update planned_start to a different date
-        new_start = datetime(2025, 11, 5, 9, 0, 0)
         input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start)
         result = self.use_case.execute(input_dto)
 
@@ -251,21 +271,29 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
     def test_execute_clears_daily_allocations_when_updating_planned_end(self):
         """Test that daily_allocations is cleared when planned_end is updated (issue #171)"""
-        from datetime import date
+
+        # Use dynamic future dates to avoid test failures as time passes
+        base_date = datetime.now() + timedelta(days=30)
+        start_date = base_date.replace(hour=9, minute=0, second=0, microsecond=0)
+        end_date = (base_date + timedelta(days=2)).replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
+        new_end = (base_date + timedelta(days=7)).replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
 
         task = Task(name="Task with allocations", priority=1)
         task.id = self.repository.generate_next_id()
         # Set daily_allocations as if optimized
         task.daily_allocations = {
-            date(2025, 11, 1): 3.0,
-            date(2025, 11, 2): 2.5,
+            start_date.date(): 3.0,
+            (start_date + timedelta(days=1)).date(): 2.5,
         }
-        task.planned_start = datetime(2025, 11, 1, 9, 0, 0)
-        task.planned_end = datetime(2025, 11, 3, 18, 0, 0)
+        task.planned_start = start_date
+        task.planned_end = end_date
         self.repository.save(task)
 
         # Update planned_end to a different date
-        new_end = datetime(2025, 11, 8, 18, 0, 0)
         input_dto = UpdateTaskInput(task_id=task.id, planned_end=new_end)
         result = self.use_case.execute(input_dto)
 
@@ -278,22 +306,32 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
     def test_execute_clears_daily_allocations_when_updating_both_planned_dates(self):
         """Test that daily_allocations is cleared when both planned dates are updated"""
-        from datetime import date
+
+        # Use dynamic future dates to avoid test failures as time passes
+        base_date = datetime.now() + timedelta(days=30)
+        start_date = base_date.replace(hour=9, minute=0, second=0, microsecond=0)
+        end_date = (base_date + timedelta(days=2)).replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
+        new_start = (base_date + timedelta(days=9)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+        new_end = (base_date + timedelta(days=11)).replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
 
         task = Task(name="Task with allocations", priority=1)
         task.id = self.repository.generate_next_id()
         # Set daily_allocations as if optimized
         task.daily_allocations = {
-            date(2025, 11, 1): 3.0,
-            date(2025, 11, 2): 2.5,
+            start_date.date(): 3.0,
+            (start_date + timedelta(days=1)).date(): 2.5,
         }
-        task.planned_start = datetime(2025, 11, 1, 9, 0, 0)
-        task.planned_end = datetime(2025, 11, 3, 18, 0, 0)
+        task.planned_start = start_date
+        task.planned_end = end_date
         self.repository.save(task)
 
         # Update both planned_start and planned_end
-        new_start = datetime(2025, 11, 10, 9, 0, 0)
-        new_end = datetime(2025, 11, 12, 18, 0, 0)
         input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start, planned_end=new_end)
         result = self.use_case.execute(input_dto)
 
@@ -306,15 +344,24 @@ class TestUpdateTaskUseCase(unittest.TestCase):
 
     def test_execute_does_not_add_daily_allocations_field_when_already_empty(self):
         """Test that daily_allocations field is not added when already empty"""
+        # Use dynamic future dates to avoid test failures as time passes
+        base_date = datetime.now() + timedelta(days=30)
+        start_date = base_date.replace(hour=9, minute=0, second=0, microsecond=0)
+        end_date = (base_date + timedelta(days=2)).replace(
+            hour=18, minute=0, second=0, microsecond=0
+        )
+        new_start = (base_date + timedelta(days=4)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
+
         task = Task(name="Task without allocations", priority=1)
         task.id = self.repository.generate_next_id()
-        task.planned_start = datetime(2025, 11, 1, 9, 0, 0)
-        task.planned_end = datetime(2025, 11, 3, 18, 0, 0)
+        task.planned_start = start_date
+        task.planned_end = end_date
         # daily_allocations is already empty by default
         self.repository.save(task)
 
         # Update planned_start
-        new_start = datetime(2025, 11, 5, 9, 0, 0)
         input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start)
         result = self.use_case.execute(input_dto)
 
