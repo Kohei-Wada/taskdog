@@ -6,7 +6,7 @@ from datetime import datetime
 
 from application.services.task_status_service import TaskStatusService
 from domain.entities.task import TaskStatus
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
 
 
 class TaskStatusServiceTest(unittest.TestCase):
@@ -14,12 +14,20 @@ class TaskStatusServiceTest(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
-        self.temp_file.write("[]")
+        self.temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db")
         self.temp_file.close()
 
-        self.repository = JsonTaskRepository(self.temp_file.name)
+        self.repository = SqliteTaskRepository(f"sqlite:///{self.temp_file.name}")
         self.service = TaskStatusService()
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        if hasattr(self, "repository") and hasattr(self.repository, "close"):
+            self.repository.close()
+        import os
+
+        if os.path.exists(self.temp_file.name):
+            os.unlink(self.temp_file.name)
 
     def test_change_status_to_in_progress(self):
         """Test changing status to IN_PROGRESS records actual_start."""

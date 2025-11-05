@@ -9,7 +9,7 @@ from application.dto.create_task_input import CreateTaskInput
 from application.use_cases.create_task import CreateTaskUseCase
 from application.use_cases.optimize_schedule import OptimizeScheduleInput, OptimizeScheduleUseCase
 from domain.entities.task import TaskStatus
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
 from shared.config_manager import ConfigManager
 
 
@@ -18,10 +18,10 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
     def setUp(self):
         """Create temporary file and initialize use case for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db")
         self.test_file.close()
         self.test_filename = self.test_file.name
-        self.repository = JsonTaskRepository(self.test_filename)
+        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
         self.create_use_case = CreateTaskUseCase(self.repository)
         config = ConfigManager.load()
         self.optimize_use_case = OptimizeScheduleUseCase(
@@ -30,6 +30,8 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
 
     def tearDown(self):
         """Clean up temporary file after each test."""
+        if hasattr(self, "repository") and hasattr(self.repository, "close"):
+            self.repository.close()
         if os.path.exists(self.test_filename):
             os.unlink(self.test_filename)
 

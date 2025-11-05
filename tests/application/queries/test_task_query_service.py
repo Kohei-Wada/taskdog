@@ -8,7 +8,7 @@ from application.queries.filters.incomplete_filter import IncompleteFilter
 from application.queries.filters.today_filter import TodayFilter
 from application.queries.task_query_service import TaskQueryService
 from domain.entities.task import Task, TaskStatus
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
 
 
 class TestTaskQueryService(unittest.TestCase):
@@ -16,10 +16,10 @@ class TestTaskQueryService(unittest.TestCase):
 
     def setUp(self):
         """Create temporary file and initialize service for each test"""
-        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db")
         self.test_file.close()
         self.test_filename = self.test_file.name
-        self.repository = JsonTaskRepository(self.test_filename)
+        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
         self.query_service = TaskQueryService(self.repository)
 
         # Calculate date strings for testing
@@ -33,6 +33,8 @@ class TestTaskQueryService(unittest.TestCase):
 
     def tearDown(self):
         """Clean up temporary file after each test"""
+        if hasattr(self, "repository") and hasattr(self.repository, "close"):
+            self.repository.close()
         if os.path.exists(self.test_filename):
             os.unlink(self.test_filename)
 

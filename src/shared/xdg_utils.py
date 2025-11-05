@@ -11,7 +11,6 @@ from shared.constants.file_management import (
     CONFIG_FILE_NAME,
     NOTE_FILE_EXTENSION,
     NOTES_DIR_NAME,
-    TASKS_FILE_NAME,
 )
 
 
@@ -73,15 +72,6 @@ class XDGDirectories:
             cache_dir.mkdir(parents=True, exist_ok=True)
 
         return cache_dir
-
-    @classmethod
-    def get_tasks_file(cls) -> Path:
-        """Get path to tasks.json file.
-
-        Returns:
-            Path to tasks.json in data directory
-        """
-        return cls.get_data_home() / TASKS_FILE_NAME
 
     @classmethod
     def get_notes_dir(cls) -> Path:

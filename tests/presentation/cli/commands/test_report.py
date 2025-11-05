@@ -8,7 +8,7 @@ from click.testing import CliRunner
 
 from application.queries.workload_calculator import WorkloadCalculator
 from domain.entities.task import Task, TaskStatus
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
 from presentation.cli.commands.report import (
     _generate_markdown_report,
     _group_tasks_by_date,
@@ -267,7 +267,7 @@ class TestReportCommand(unittest.TestCase):
     def setUp(self):
         """Set up test dependencies."""
         self.runner = CliRunner()
-        self.repository = MagicMock(spec=JsonTaskRepository)
+        self.repository = MagicMock(spec=SqliteTaskRepository)
         self.console_writer = MagicMock(spec=RichConsoleWriter)
         self.query_controller = MagicMock()
         self.cli_context = CliContext(

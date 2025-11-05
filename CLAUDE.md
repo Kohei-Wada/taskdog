@@ -8,7 +8,7 @@ Taskdog is a task management CLI tool built with Python, Click, and Rich. It sup
 
 ### Data Storage & Configuration
 
-**Tasks**: Stored in `tasks.json` at `$XDG_DATA_HOME/taskdog/tasks.json` (fallback: `~/.local/share/taskdog/tasks.json`)
+**Tasks**: Stored in SQLite database `tasks.db` at `$XDG_DATA_HOME/taskdog/tasks.db` (fallback: `~/.local/share/taskdog/tasks.db`)
 
 **Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/config.toml` (fallback: `~/.config/taskdog/config.toml`)
 - Settings: max_hours_per_day, default_algorithm, default_priority, datetime_format, default_start_hour, default_end_hour, country (for holiday checking)
@@ -70,7 +70,7 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
 - `dto/`: Input/Output DTOs (CreateTaskInput, OptimizationResult, SchedulingFailure, etc.)
 
 **Infrastructure** (`src/infrastructure/`): External concerns
-- `persistence/`: JsonTaskRepository (atomic writes, backups, O(1) lookups via index)
+- `persistence/`: SqliteTaskRepository (transactional writes, indexed queries, efficient lookups)
 
 **Presentation** (`src/presentation/`): User interfaces
 - `cli/`: Click commands, CliContext (DI container), error handlers
@@ -99,10 +99,10 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
 - Properties: actual_duration_hours, is_active, is_finished, can_be_modified, is_schedulable
 - Archive Design: is_archived is a boolean flag (not a status) to preserve original task state when soft-deleted
 
-**Repository** (`JsonTaskRepository`)
-- Atomic saves: temp file → backup → atomic rename
-- O(1) lookups via in-memory index
-- Auto-recovery from backup on corruption
+**Repository** (`SqliteTaskRepository`)
+- Transactional writes with automatic rollback on errors
+- Indexed queries for efficient lookups and filtering
+- Connection pooling and proper resource management
 
 **TimeTracker**: Records actual_start (→IN_PROGRESS), actual_end (→COMPLETED/CANCELED), clears both (→PENDING)
 
@@ -137,7 +137,7 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
 
 **Entity Validation**: Task validates invariants in `__post_init__` (Always-Valid Entity pattern from DDD). Raises `TaskValidationError` for violations. No auto-correction.
 
-**Corrupted Data Handling**: `JsonTaskRepository._parse_tasks()` validates all tasks on load. Raises `CorruptedDataError` with diagnostics if any task is invalid. CLI catches at startup and exits gracefully.
+**Data Integrity**: `SqliteTaskRepository` uses database constraints and transactional writes to ensure data consistency. Invalid data is rejected at write time with appropriate error messages.
 
 ### CLI Commands
 
@@ -203,7 +203,7 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 7. **Always-Valid Entity**: Task validates invariants in `__post_init__` (DDD best practice)
 8. **Context-based DI**: CliContext/TUIContext dataclasses for dependency injection
 9. **ConsoleWriter Abstraction**: All CLI output through unified interface (RichConsoleWriter)
-10. **Atomic Operations**: JsonTaskRepository uses temp file → backup → atomic rename
+10. **Transactional Operations**: SqliteTaskRepository uses database transactions for atomic writes with automatic rollback
 11. **Config Priority**: CLI args > TOML config > defaults (uses Python 3.11+ tomllib)
 12. **Fixed Tasks**: is_fixed=True prevents rescheduling; hours counted in optimizer's max_hours_per_day calculation
 13. **Visual Styling**: Use task.is_finished property (not direct status checks) for strikethrough; archived tasks display without strikethrough

@@ -7,7 +7,7 @@ from application.dto.archive_task_input import ArchiveTaskInput
 from application.use_cases.archive_task import ArchiveTaskUseCase
 from domain.entities.task import TaskStatus
 from domain.exceptions.task_exceptions import TaskNotFoundException
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
 
 
 class ArchiveTaskUseCaseTest(unittest.TestCase):
@@ -15,12 +15,20 @@ class ArchiveTaskUseCaseTest(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
-        self.temp_file.write("[]")
+        self.temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db")
         self.temp_file.close()
 
-        self.repository = JsonTaskRepository(self.temp_file.name)
+        self.repository = SqliteTaskRepository(f"sqlite:///{self.temp_file.name}")
         self.use_case = ArchiveTaskUseCase(self.repository)
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        if hasattr(self, "repository") and hasattr(self.repository, "close"):
+            self.repository.close()
+        import os
+
+        if os.path.exists(self.temp_file.name):
+            os.unlink(self.temp_file.name)
 
     def test_archive_completed_task(self):
         """Test archiving a completed task sets is_archived flag and preserves status."""

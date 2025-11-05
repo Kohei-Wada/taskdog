@@ -90,14 +90,6 @@ class XDGDirectoriesTest(unittest.TestCase):
         expected = Path("/tmp/test_cache/taskdog")
         self.assertEqual(cache_home, expected)
 
-    def test_get_tasks_file(self):
-        """Test get_tasks_file returns correct path."""
-        os.environ["XDG_DATA_HOME"] = "/tmp/test_data"
-
-        tasks_file = XDGDirectories.get_tasks_file()
-        expected = Path("/tmp/test_data/taskdog/tasks.json")
-        self.assertEqual(tasks_file, expected)
-
     def test_get_note_file(self):
         """Test get_note_file returns correct path for task ID."""
         os.environ["XDG_DATA_HOME"] = "/tmp/test_data"

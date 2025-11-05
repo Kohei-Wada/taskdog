@@ -5,7 +5,7 @@ from datetime import datetime
 from unittest.mock import MagicMock, Mock
 
 from domain.entities.task import Task, TaskStatus
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
 from presentation.controllers.task_lifecycle_controller import TaskLifecycleController
 
 
@@ -14,7 +14,7 @@ class TestTaskLifecycleController(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.repository = Mock(spec=JsonTaskRepository)
+        self.repository = Mock(spec=SqliteTaskRepository)
         self.config = MagicMock()
         self.controller = TaskLifecycleController(
             repository=self.repository,

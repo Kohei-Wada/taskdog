@@ -6,7 +6,7 @@ import unittest
 from application.dto.remove_task_input import RemoveTaskInput
 from application.use_cases.remove_task import RemoveTaskUseCase
 from domain.exceptions.task_exceptions import TaskNotFoundException
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
 
 
 class RemoveTaskUseCaseTest(unittest.TestCase):
@@ -14,12 +14,20 @@ class RemoveTaskUseCaseTest(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
-        self.temp_file.write("[]")
+        self.temp_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db")
         self.temp_file.close()
 
-        self.repository = JsonTaskRepository(self.temp_file.name)
+        self.repository = SqliteTaskRepository(f"sqlite:///{self.temp_file.name}")
         self.use_case = RemoveTaskUseCase(self.repository)
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        if hasattr(self, "repository") and hasattr(self.repository, "close"):
+            self.repository.close()
+        import os
+
+        if os.path.exists(self.temp_file.name):
+            os.unlink(self.temp_file.name)
 
     def test_remove_task(self):
         """Test removing a task."""

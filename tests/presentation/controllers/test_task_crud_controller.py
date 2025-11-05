@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from domain.entities.task import Task, TaskStatus
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
 from presentation.controllers.task_crud_controller import TaskCrudController
 
 
@@ -15,10 +15,10 @@ class TestTaskCrudController(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db")
         self.test_file.close()
         self.test_filename = self.test_file.name
-        self.repository = JsonTaskRepository(self.test_filename)
+        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
         self.config = MagicMock()
         self.config.task.default_priority = 3
         self.controller = TaskCrudController(
@@ -28,6 +28,8 @@ class TestTaskCrudController(unittest.TestCase):
 
     def tearDown(self):
         """Clean up temporary file after each test."""
+        if hasattr(self, "repository") and hasattr(self.repository, "close"):
+            self.repository.close()
         if os.path.exists(self.test_filename):
             os.unlink(self.test_filename)
 

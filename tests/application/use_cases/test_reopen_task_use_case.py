@@ -12,7 +12,7 @@ from domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
+from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
 
 
 class TestReopenTaskUseCase(unittest.TestCase):
@@ -20,14 +20,16 @@ class TestReopenTaskUseCase(unittest.TestCase):
 
     def setUp(self):
         """Create temporary file and initialize use case for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db")
         self.test_file.close()
         self.test_filename = self.test_file.name
-        self.repository = JsonTaskRepository(self.test_filename)
+        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
         self.use_case = ReopenTaskUseCase(self.repository)
 
     def tearDown(self):
         """Clean up temporary file after each test."""
+        if hasattr(self, "repository") and hasattr(self.repository, "close"):
+            self.repository.close()
         if os.path.exists(self.test_filename):
             os.unlink(self.test_filename)
 

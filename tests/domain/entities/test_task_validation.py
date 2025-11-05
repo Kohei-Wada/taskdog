@@ -4,7 +4,7 @@ import unittest
 
 from domain.entities.task import Task, TaskStatus
 from domain.exceptions.task_exceptions import TaskValidationError
-from infrastructure.persistence.mappers.task_json_mapper import TaskJsonMapper
+from infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
 
 class TaskValidationTest(unittest.TestCase):
@@ -12,7 +12,7 @@ class TaskValidationTest(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.mapper = TaskJsonMapper()
+        self.mapper = TaskDbMapper()
 
     def test_valid_task_creation(self):
         """Test creating a task with valid values."""
@@ -90,6 +90,8 @@ class TaskValidationTest(unittest.TestCase):
             "name": "",  # Invalid name
             "priority": 5,
             "status": "PENDING",
+            "created_at": "2025-01-01T00:00:00",
+            "updated_at": "2025-01-01T00:00:00",
         }
         with self.assertRaises(TaskValidationError) as context:
             self.mapper.from_dict(data)
@@ -103,6 +105,8 @@ class TaskValidationTest(unittest.TestCase):
             "priority": 5,
             "status": "PENDING",
             "estimated_duration": 10.0,
+            "created_at": "2025-01-01T00:00:00",
+            "updated_at": "2025-01-01T00:00:00",
         }
         task = self.mapper.from_dict(data)
         self.assertEqual(task.id, 1)
@@ -113,14 +117,21 @@ class TaskValidationTest(unittest.TestCase):
 
     def test_from_dict_raises_validation_errors(self):
         """Test that from_dict raises validation errors for various invalid fields."""
+        base_fields = {"created_at": "2025-01-01T00:00:00", "updated_at": "2025-01-01T00:00:00"}
         test_cases = [
             (
-                {"id": 1, "name": "Test Task", "priority": 0, "status": "PENDING"},
+                {"id": 1, "name": "Test Task", "priority": 0, "status": "PENDING", **base_fields},
                 "Priority must be greater than 0",
                 "zero priority",
             ),
             (
-                {"id": 1, "name": "Test Task", "priority": -100, "status": "PENDING"},
+                {
+                    "id": 1,
+                    "name": "Test Task",
+                    "priority": -100,
+                    "status": "PENDING",
+                    **base_fields,
+                },
                 "Priority must be greater than 0",
                 "negative priority",
             ),
@@ -131,6 +142,7 @@ class TaskValidationTest(unittest.TestCase):
                     "priority": 5,
                     "status": "PENDING",
                     "estimated_duration": 0.0,
+                    **base_fields,
                 },
                 "Estimated duration must be greater than 0",
                 "zero estimated_duration",
@@ -142,6 +154,7 @@ class TaskValidationTest(unittest.TestCase):
                     "priority": 5,
                     "status": "PENDING",
                     "estimated_duration": -5.0,
+                    **base_fields,
                 },
                 "Estimated duration must be greater than 0",
                 "negative estimated_duration",

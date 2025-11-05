@@ -10,8 +10,8 @@ from application.use_cases.get_task_detail import (
 )
 from domain.entities.task import Task
 from domain.exceptions.task_exceptions import TaskNotFoundException
+from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
 from infrastructure.persistence.file_notes_repository import FileNotesRepository
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
 
 
 class TestGetTaskDetailUseCase(unittest.TestCase):
@@ -19,10 +19,10 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
 
     def setUp(self):
         """Create temporary file and initialize use case for each test"""
-        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
+        self.test_file = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db")
         self.test_file.close()
         self.test_filename = self.test_file.name
-        self.repository = JsonTaskRepository(self.test_filename)
+        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
         self.notes_repository = FileNotesRepository()
         self.use_case = GetTaskDetailUseCase(self.repository, self.notes_repository)
 
@@ -31,6 +31,8 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
 
     def tearDown(self):
         """Clean up temporary files after each test"""
+        if hasattr(self, "repository") and hasattr(self.repository, "close"):
+            self.repository.close()
         if os.path.exists(self.test_filename):
             os.unlink(self.test_filename)
 

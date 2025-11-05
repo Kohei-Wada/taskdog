@@ -5,7 +5,6 @@ import unittest
 from pathlib import Path
 
 from infrastructure.persistence.database.sqlite_task_repository import SqliteTaskRepository
-from infrastructure.persistence.json_task_repository import JsonTaskRepository
 from infrastructure.persistence.repository_factory import RepositoryFactory
 from shared.config_manager import StorageConfig
 
@@ -23,14 +22,6 @@ class TestRepositoryFactory(unittest.TestCase):
 
         if Path(self.temp_dir).exists():
             shutil.rmtree(self.temp_dir)
-
-    def test_create_json_repository(self) -> None:
-        """Test factory creates JsonTaskRepository for 'json' backend."""
-        config = StorageConfig(backend="json")
-
-        repository = RepositoryFactory.create(config)
-
-        self.assertIsInstance(repository, JsonTaskRepository)
 
     def test_create_sqlite_repository(self) -> None:
         """Test factory creates SqliteTaskRepository for 'sqlite' backend."""
@@ -60,11 +51,15 @@ class TestRepositoryFactory(unittest.TestCase):
 
     def test_create_with_uppercase_backend(self) -> None:
         """Test factory handles uppercase backend names."""
-        config = StorageConfig(backend="JSON")
+        db_path = Path(self.temp_dir) / "test.db"
+        config = StorageConfig(backend="SQLITE", database_url=f"sqlite:///{db_path}")
 
         repository = RepositoryFactory.create(config)
 
-        self.assertIsInstance(repository, JsonTaskRepository)
+        self.assertIsInstance(repository, SqliteTaskRepository)
+        # Clean up
+        if hasattr(repository, "close"):
+            repository.close()
 
     def test_create_with_mixed_case_backend(self) -> None:
         """Test factory handles mixed case backend names."""
@@ -87,24 +82,6 @@ class TestRepositoryFactory(unittest.TestCase):
         self.assertIn("Unsupported storage backend", str(context.exception))
         self.assertIn("postgresql", str(context.exception))
 
-    def test_json_repository_is_functional(self) -> None:
-        """Test created JSON repository is functional."""
-        config = StorageConfig(backend="json")
-
-        repository = RepositoryFactory.create(config)
-
-        # Test basic functionality
-        task = repository.create("Test Task", priority=1)
-        self.assertEqual(task.name, "Test Task")
-        # ID may not be 1 if tasks.json already exists, just verify it's set
-        self.assertIsNotNone(task.id)
-        self.assertGreater(task.id, 0)
-
-        # Verify persistence
-        retrieved = repository.get_by_id(task.id)
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved.name, "Test Task")
-
     def test_sqlite_repository_is_functional(self) -> None:
         """Test created SQLite repository is functional."""
         db_path = Path(self.temp_dir) / "test.db"
@@ -126,14 +103,6 @@ class TestRepositoryFactory(unittest.TestCase):
             # Clean up
             if hasattr(repository, "close"):
                 repository.close()
-
-    def test_default_storage_config_creates_json_repository(self) -> None:
-        """Test default StorageConfig creates JSON repository."""
-        config = StorageConfig()  # Uses default backend="json"
-
-        repository = RepositoryFactory.create(config)
-
-        self.assertIsInstance(repository, JsonTaskRepository)
 
 
 if __name__ == "__main__":
