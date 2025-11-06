@@ -25,16 +25,15 @@ def rm_command(ctx, task_ids, hard):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.crud_controller
 
     def remove_single_task(task_id: int) -> None:
         if hard:
             # Hard delete: permanently remove from database
-            controller.remove_task(task_id)
+            ctx_obj.api_client.remove_task(task_id)
             console_writer.success(f"Permanently deleted task with ID: {task_id}")
         else:
             # Archive: set is_archived flag (preserves original status)
-            task = controller.archive_task(task_id)
+            task = ctx_obj.api_client.archive_task(task_id)
             # Use task_success to avoid Rich-specific markup
             console_writer.task_success("Archived (status preserved)", task)
             console_writer.info(f"Use 'taskdog restore {task_id}' to restore this task.")

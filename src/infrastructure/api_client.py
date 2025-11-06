@@ -670,10 +670,11 @@ class TaskdogApiClient:
 
     def _convert_to_update_task_output(self, data: dict[str, Any]) -> UpdateTaskOutput:
         """Convert API response to UpdateTaskOutput."""
-        # UpdateTaskOutput は TaskOperationOutput とほぼ同じだが daily_allocations がある
-        from datetime import date as date_type
+        from application.dto.task_operation_output import TaskOperationOutput
+        from application.dto.update_task_output import UpdateTaskOutput
 
-        return UpdateTaskOutput(
+        # Construct TaskOperationOutput from the response data
+        task = TaskOperationOutput(
             id=data["id"],
             name=data["name"],
             status=TaskStatus(data["status"]),
@@ -696,13 +697,14 @@ class TaskdogApiClient:
             tags=data.get("tags", []),
             is_fixed=data.get("is_fixed", False),
             is_archived=data.get("is_archived", False),
-            daily_allocations={
-                date_type.fromisoformat(k): v for k, v in data.get("daily_allocations", {}).items()
-            },
             actual_duration_hours=data.get("actual_duration_hours"),
-            actual_daily_hours={
-                date_type.fromisoformat(k): v for k, v in data.get("actual_daily_hours", {}).items()
-            },
+            actual_daily_hours=data.get("actual_daily_hours", {}),
+        )
+
+        # Construct UpdateTaskOutput with nested task and updated_fields
+        return UpdateTaskOutput(
+            task=task,
+            updated_fields=data.get("updated_fields", []),
         )
 
     def _convert_to_task_list_output(self, data: dict[str, Any]) -> TaskListOutput:
@@ -735,6 +737,9 @@ class TaskdogApiClient:
                 depends_on=task.get("depends_on", []),
                 tags=task.get("tags", []),
                 is_archived=task.get("is_archived", False),
+                is_finished=task.get("is_finished", False),
+                created_at=datetime.fromisoformat(task["created_at"]),
+                updated_at=datetime.fromisoformat(task["updated_at"]),
             )
             for task in data["tasks"]
         ]
@@ -750,13 +755,126 @@ class TaskdogApiClient:
 
     def _convert_to_get_task_detail_output(self, data: dict[str, Any]) -> GetTaskDetailOutput:
         """Convert API response to GetTaskDetailOutput."""
-        # Simplified implementation
-        raise NotImplementedError("get_task_detail not yet implemented for API client")
+        from datetime import date as date_type
+
+        from application.dto.task_detail_output import GetTaskDetailOutput
+        from application.dto.task_dto import TaskDetailDto
+
+        # Convert task data
+        task = TaskDetailDto(
+            id=data["id"],
+            name=data["name"],
+            priority=data["priority"],
+            status=TaskStatus(data["status"]),
+            planned_start=datetime.fromisoformat(data["planned_start"])
+            if data.get("planned_start")
+            else None,
+            planned_end=datetime.fromisoformat(data["planned_end"])
+            if data.get("planned_end")
+            else None,
+            deadline=datetime.fromisoformat(data["deadline"]) if data.get("deadline") else None,
+            actual_start=datetime.fromisoformat(data["actual_start"])
+            if data.get("actual_start")
+            else None,
+            actual_end=datetime.fromisoformat(data["actual_end"])
+            if data.get("actual_end")
+            else None,
+            estimated_duration=data.get("estimated_duration"),
+            daily_allocations={
+                date_type.fromisoformat(k): v for k, v in data.get("daily_allocations", {}).items()
+            },
+            is_fixed=data.get("is_fixed", False),
+            depends_on=data.get("depends_on", []),
+            actual_daily_hours={
+                date_type.fromisoformat(k): v for k, v in data.get("actual_daily_hours", {}).items()
+            },
+            tags=data.get("tags", []),
+            is_archived=data.get("is_archived", False),
+            created_at=datetime.fromisoformat(data["created_at"]),
+            updated_at=datetime.fromisoformat(data["updated_at"]),
+            actual_duration_hours=data.get("actual_duration_hours"),
+            is_active=data.get("is_active", False),
+            is_finished=data.get("is_finished", False),
+            can_be_modified=data.get("can_be_modified", False),
+            is_schedulable=data.get("is_schedulable", False),
+        )
+
+        # Extract notes
+        notes_content = data.get("notes")
+        has_notes = notes_content is not None and notes_content != ""
+
+        return GetTaskDetailOutput(task=task, notes_content=notes_content, has_notes=has_notes)
 
     def _convert_to_gantt_output(self, data: dict[str, Any]) -> GanttOutput:
         """Convert API response to GanttOutput."""
-        # Simplified implementation
-        raise NotImplementedError("get_gantt_data not yet implemented for API client")
+        from datetime import datetime
+
+        from application.dto.gantt_output import GanttDateRange, GanttOutput
+        from application.dto.task_dto import GanttTaskDto
+        from domain.entities.task import TaskStatus
+
+        # Convert date_range
+        date_range = GanttDateRange(
+            start_date=datetime.fromisoformat(data["date_range"]["start_date"]).date(),
+            end_date=datetime.fromisoformat(data["date_range"]["end_date"]).date(),
+        )
+
+        # Convert tasks (list[GanttTaskResponse] -> list[GanttTaskDto])
+        tasks = [
+            GanttTaskDto(
+                id=task["id"],
+                name=task["name"],
+                status=TaskStatus[task["status"].upper()],
+                estimated_duration=task.get("estimated_duration"),
+                planned_start=(
+                    datetime.fromisoformat(task["planned_start"])
+                    if task.get("planned_start")
+                    else None
+                ),
+                planned_end=(
+                    datetime.fromisoformat(task["planned_end"]) if task.get("planned_end") else None
+                ),
+                actual_start=(
+                    datetime.fromisoformat(task["actual_start"])
+                    if task.get("actual_start")
+                    else None
+                ),
+                actual_end=(
+                    datetime.fromisoformat(task["actual_end"]) if task.get("actual_end") else None
+                ),
+                deadline=(
+                    datetime.fromisoformat(task["deadline"]) if task.get("deadline") else None
+                ),
+                is_finished=task["status"].upper() in ["COMPLETED", "CANCELED"],
+            )
+            for task in data["tasks"]
+        ]
+
+        # Convert task_daily_hours: dict[str, dict[str, float]] -> dict[int, dict[date, float]]
+        task_daily_hours = {
+            int(task_id): {
+                datetime.fromisoformat(date_str).date(): hours
+                for date_str, hours in daily_hours.items()
+            }
+            for task_id, daily_hours in data["task_daily_hours"].items()
+        }
+
+        # Convert daily_workload: dict[str, float] -> dict[date, float]
+        daily_workload = {
+            datetime.fromisoformat(date_str).date(): hours
+            for date_str, hours in data["daily_workload"].items()
+        }
+
+        # Convert holidays: list[str] -> set[date]
+        holidays = {datetime.fromisoformat(date_str).date() for date_str in data["holidays"]}
+
+        return GanttOutput(
+            date_range=date_range,
+            tasks=tasks,
+            task_daily_hours=task_daily_hours,
+            daily_workload=daily_workload,
+            holidays=holidays,
+        )
 
     def _convert_to_statistics_output(self, data: dict[str, Any]) -> StatisticsOutput:
         """Convert API response to StatisticsOutput."""
@@ -770,5 +888,14 @@ class TaskdogApiClient:
 
     def _convert_to_tag_statistics_output(self, data: dict[str, Any]) -> TagStatisticsOutput:
         """Convert API response to TagStatisticsOutput."""
-        # Simplified implementation
-        raise NotImplementedError("get_tag_statistics not yet implemented for API client")
+        from application.dto.tag_statistics_output import TagStatisticsOutput
+
+        # API returns: {tags: [{tag: str, count: int, completion_rate: float}], total_tags: int}
+        # Convert to DTO: {tag_counts: dict[str, int], total_tags: int, total_tagged_tasks: int}
+        tag_counts = {item["tag"]: item["count"] for item in data["tags"]}
+
+        return TagStatisticsOutput(
+            tag_counts=tag_counts,
+            total_tags=data["total_tags"],
+            total_tagged_tasks=0,  # Not available from API response
+        )

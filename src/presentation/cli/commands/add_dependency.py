@@ -22,9 +22,9 @@ def add_dependency_command(ctx, task_id, depends_on_id):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.relationship_controller
 
-    task = controller.add_dependency(task_id, depends_on_id)
+    # Add dependency via API client
+    task = ctx_obj.api_client.add_dependency(task_id, depends_on_id)
 
     console_writer.success(f"Added dependency: Task {task_id} now depends on task {depends_on_id}")
     console_writer.info(f"Task {task_id} dependencies: {task.depends_on}")

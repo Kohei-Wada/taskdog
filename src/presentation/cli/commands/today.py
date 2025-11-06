@@ -39,15 +39,14 @@ def today_command(ctx, format, all, status, sort, reverse):
     Use --status to filter by specific status.
     """
     ctx_obj: CliContext = ctx.obj
-    query_controller = ctx_obj.query_controller
 
     # Build combined filter: time filter + status filter
     status_filter = build_task_filter(all=all, status=status)
     time_filter = TodayFilter()
     filter_obj = CompositeFilter([status_filter, time_filter]) if status_filter else time_filter
 
-    # Get filtered and sorted tasks
-    result = query_controller.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
+    # Get filtered and sorted tasks via API client
+    result = ctx_obj.api_client.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
 
     # Render and display
     render_table(ctx_obj, result)

@@ -132,9 +132,11 @@ async def get_tag_statistics(controller: QueryControllerDep):
     result = controller.get_tag_statistics()
 
     # Convert DTO to response model
+    # Note: TagStatisticsOutput.tag_counts is a dict[str, int]
+    # completion_rate is not available in the DTO, so we set it to 0.0
     tags = [
-        TagStatisticsItem(tag=item.tag, count=item.count, completion_rate=item.completion_rate)
-        for item in result.tags  # type: ignore[attr-defined]
+        TagStatisticsItem(tag=tag_name, count=count, completion_rate=0.0)
+        for tag_name, count in result.tag_counts.items()
     ]
 
     return TagStatisticsResponse(tags=tags, total_tags=result.total_tags)
@@ -222,11 +224,11 @@ async def get_gantt_chart(
             actual_start=task.actual_start,
             actual_end=task.actual_end,
             deadline=task.deadline,
-            is_fixed=task.is_fixed,  # type: ignore[attr-defined]
-            is_archived=task.is_archived,  # type: ignore[attr-defined]
+            is_fixed=False,  # Not available in GanttTaskDto
+            is_archived=False,  # Not available in GanttTaskDto
             daily_allocations={
                 date_obj.isoformat(): hours
-                for date_obj, hours in task.daily_allocations.items()  # type: ignore[attr-defined]
+                for date_obj, hours in result.task_daily_hours.get(task.id, {}).items()
             },
         )
         for task in result.tasks

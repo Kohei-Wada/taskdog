@@ -51,28 +51,25 @@ def convert_to_task_operation_response(dto) -> TaskOperationResponse:
 
 def convert_to_update_task_response(dto) -> UpdateTaskResponse:
     """Convert UpdateTaskOutput DTO to Pydantic response model."""
+    task = dto.task  # UpdateTaskOutput has nested task attribute
     return UpdateTaskResponse(
-        id=dto.id,
-        name=dto.name,
-        status=dto.status,
-        priority=dto.priority,
-        deadline=dto.deadline,
-        estimated_duration=dto.estimated_duration,
-        planned_start=dto.planned_start,
-        planned_end=dto.planned_end,
-        actual_start=dto.actual_start,
-        actual_end=dto.actual_end,
-        depends_on=dto.depends_on,
-        tags=dto.tags,
-        is_fixed=dto.is_fixed,
-        is_archived=dto.is_archived,
-        daily_allocations={
-            date.isoformat(): hours for date, hours in dto.daily_allocations.items()
-        },
-        actual_duration_hours=dto.actual_duration_hours,
-        actual_daily_hours={
-            date.isoformat(): hours for date, hours in dto.actual_daily_hours.items()
-        },
+        id=task.id,
+        name=task.name,
+        status=task.status,
+        priority=task.priority,
+        deadline=task.deadline,
+        estimated_duration=task.estimated_duration,
+        planned_start=task.planned_start,
+        planned_end=task.planned_end,
+        actual_start=task.actual_start,
+        actual_end=task.actual_end,
+        depends_on=task.depends_on,
+        tags=task.tags,
+        is_fixed=task.is_fixed,
+        is_archived=task.is_archived,
+        actual_duration_hours=task.actual_duration_hours,
+        actual_daily_hours=task.actual_daily_hours,
+        updated_fields=dto.updated_fields,
     )
 
 
@@ -90,10 +87,14 @@ def convert_to_task_list_response(dto) -> TaskListResponse:
             estimated_duration=task.estimated_duration,
             actual_start=task.actual_start,
             actual_end=task.actual_end,
+            actual_duration_hours=task.actual_duration_hours,
             depends_on=task.depends_on,
             tags=task.tags,
             is_fixed=task.is_fixed,
             is_archived=task.is_archived,
+            is_finished=task.is_finished,
+            created_at=task.created_at,
+            updated_at=task.updated_at,
         )
         for task in dto.tasks
     ]
@@ -130,7 +131,9 @@ def convert_to_task_detail_response(dto) -> TaskDetailResponse:
         is_finished=dto.task.is_finished,
         can_be_modified=dto.task.can_be_modified,
         is_schedulable=dto.task.is_schedulable,
-        notes=dto.notes,
+        notes=dto.notes_content,
+        created_at=dto.task.created_at,
+        updated_at=dto.task.updated_at,
     )
 
 

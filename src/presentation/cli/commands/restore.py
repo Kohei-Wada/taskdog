@@ -14,10 +14,11 @@ def restore_command(ctx, task_ids):
     """Restore archived task(s)."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.crud_controller
 
     def restore_single_task(task_id: int) -> None:
-        task = controller.restore_task(task_id)
+        # Restore task via API client
+        task = ctx_obj.api_client.restore_task(task_id)
+
         console_writer.task_success(StatusVerbs.RESTORED, task)
 
     execute_batch_operation(task_ids, restore_single_task, console_writer, "restoring task")

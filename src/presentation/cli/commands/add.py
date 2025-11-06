@@ -58,13 +58,11 @@ def add_command(ctx, name, priority, fixed, depends_on, tag):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    crud_controller = ctx_obj.crud_controller
-    relationship_controller = ctx_obj.relationship_controller
 
-    # Create task via controller
-    task = crud_controller.create_task(
+    # Create task via API client
+    task = ctx_obj.api_client.create_task(
         name=name,
-        priority=priority,  # Controller handles default priority
+        priority=priority,
         is_fixed=fixed,
         tags=list(tag) if tag else None,
     )
@@ -73,7 +71,7 @@ def add_command(ctx, name, priority, fixed, depends_on, tag):
     if depends_on:
         for dep_id in depends_on:
             try:
-                task = relationship_controller.add_dependency(task.id, dep_id)
+                task = ctx_obj.api_client.add_dependency(task.id, dep_id)
             except TaskValidationError as e:
                 console_writer.validation_error(str(e))
                 # Continue adding other dependencies even if one fails

@@ -22,11 +22,11 @@ def tags_command(ctx, task_id, tags):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    query_controller = ctx_obj.query_controller
 
     # Case 1: No arguments - show all tags
     if task_id is None:
-        stats = query_controller.get_tag_statistics()
+        # Query tag statistics via API client
+        stats = ctx_obj.api_client.get_tag_statistics()
 
         if not stats.tag_counts:
             console_writer.info("No tags found.")
@@ -41,7 +41,8 @@ def tags_command(ctx, task_id, tags):
 
     # Case 2: Task ID only - show tags for that task
     if not tags:
-        task = query_controller.get_task_by_id(task_id)
+        # Get task via API client
+        task = ctx_obj.api_client.get_task_by_id(task_id)
         if not task:
             raise TaskNotFoundException(task_id)
 
@@ -54,8 +55,8 @@ def tags_command(ctx, task_id, tags):
         return
 
     # Case 3: Task ID + tags - set tags
-    controller = ctx_obj.relationship_controller
-    task = controller.set_task_tags(task_id, list(tags))
+    # Set tags via API client
+    task = ctx_obj.api_client.set_task_tags(task_id, list(tags))
 
     if task.tags:
         console_writer.task_success("Set tags for", task)

@@ -22,9 +22,9 @@ def remove_dependency_command(ctx, task_id, depends_on_id):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.relationship_controller
 
-    task = controller.remove_dependency(task_id, depends_on_id)
+    # Remove dependency via API client
+    task = ctx_obj.api_client.remove_dependency(task_id, depends_on_id)
 
     console_writer.success(
         f"Removed dependency: Task {task_id} no longer depends on task {depends_on_id}"

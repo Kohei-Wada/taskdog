@@ -84,13 +84,12 @@ def update_command(
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.crud_controller
 
     # Convert status string to Enum if provided
     status_enum = TaskStatus(status) if status else None
 
-    # Update task via controller
-    result = controller.update_task(
+    # Update task via API client
+    result = ctx_obj.api_client.update_task(
         task_id=task_id,
         priority=priority,
         status=status_enum,

@@ -20,16 +20,18 @@ def tui_command(ctx):
     - Enter: Show task details
     - r: Refresh task list
     - q: Quit
+
+    TUI now requires an API client connection (same as all other CLI commands).
     """
     ctx_obj: CliContext = ctx.obj
-    repository = ctx_obj.repository
+    api_client = ctx_obj.api_client
     config = ctx_obj.config
     notes_repository = ctx_obj.notes_repository
     holiday_checker = ctx_obj.holiday_checker
 
-    # Launch the TUI application
+    # Launch the TUI application with API client
     app = TaskdogTUI(
-        repository=repository,
+        api_client=api_client,
         notes_repository=notes_repository,
         config=config,
         holiday_checker=holiday_checker,

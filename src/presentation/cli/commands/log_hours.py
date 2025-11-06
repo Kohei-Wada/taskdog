@@ -30,7 +30,6 @@ def log_hours_command(ctx, task_id, hours, date):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.relationship_controller
 
     # Default to today if no date specified
     if date is None:
@@ -39,7 +38,8 @@ def log_hours_command(ctx, task_id, hours, date):
         date = datetime.now().strftime("%Y-%m-%d")
 
     try:
-        task = controller.log_hours(task_id, hours, date)
+        # Log hours via API client
+        task = ctx_obj.api_client.log_hours(task_id, hours, date)
 
         console_writer.success(f"Logged {hours}h for task {task_id} on {date}")
 

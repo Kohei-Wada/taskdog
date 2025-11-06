@@ -117,6 +117,51 @@ def cli(ctx: click.Context) -> None:
     analytics_controller = TaskAnalyticsController(repository, config, holiday_checker)
     crud_controller = TaskCrudController(repository, config)
 
+    # API client is now required for all CLI commands (except 'server')
+    # Check if API mode is enabled in config
+    if not config.api.enabled:
+        console_writer.error(
+            "initializing CLI",
+            Exception(
+                "API mode is required. Please enable it in config file or set TASKDOG_API_URL environment variable."
+            ),
+        )
+        ctx.exit(1)
+
+    # Start server if auto_start is enabled
+    if config.api.auto_start:
+        from shared.server_manager import ServerManager
+
+        server_manager = ServerManager(host=config.api.host, port=config.api.port)
+        if not server_manager.is_server_running():
+            console_writer.print("Starting API server...")
+            server_started = server_manager.start(wait_for_startup=True, timeout=10.0)
+            if not server_started:
+                console_writer.error(
+                    "starting API server",
+                    Exception(
+                        "Failed to start API server. Please start it manually with 'taskdog server'."
+                    ),
+                )
+                ctx.exit(1)
+
+    # Initialize API client (required)
+    from infrastructure.api_client import TaskdogApiClient
+
+    try:
+        api_client = TaskdogApiClient(base_url=f"http://{config.api.host}:{config.api.port}")
+        # Test connection
+        api_client.client.get("/health")
+    except Exception as e:
+        console_writer.error(
+            "connecting to API server",
+            Exception(
+                f"Cannot connect to API server at {config.api.host}:{config.api.port}. "
+                f"Please start the server with 'taskdog server' or check your configuration. Error: {e}"
+            ),
+        )
+        ctx.exit(1)
+
     # Store in CliContext for type-safe access
     ctx.ensure_object(dict)
     ctx.obj = CliContext(
@@ -130,6 +175,7 @@ def cli(ctx: click.Context) -> None:
         analytics_controller=analytics_controller,
         crud_controller=crud_controller,
         holiday_checker=holiday_checker,
+        api_client=api_client,
     )
 
 

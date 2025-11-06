@@ -93,6 +93,23 @@ class StorageConfig:
 
 
 @dataclass(frozen=True)
+class ApiConfig:
+    """API server configuration.
+
+    Attributes:
+        enabled: Whether to use API mode (client-server communication)
+        host: API server host
+        port: API server port
+        auto_start: Whether to automatically start server on CLI/TUI startup
+    """
+
+    enabled: bool = False
+    host: str = "127.0.0.1"
+    port: int = 8000
+    auto_start: bool = True
+
+
+@dataclass(frozen=True)
 class Config:
     """Taskdog configuration.
 
@@ -103,6 +120,7 @@ class Config:
         time: Time-related settings
         region: Region-related settings (holidays, etc.)
         storage: Storage backend settings
+        api: API server settings
     """
 
     optimization: OptimizationConfig
@@ -111,6 +129,7 @@ class Config:
     time: TimeConfig
     region: RegionConfig = field(default_factory=RegionConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
+    api: ApiConfig = field(default_factory=ApiConfig)
 
 
 class ConfigManager:
@@ -148,6 +167,7 @@ class ConfigManager:
         time_data = data.get("time", {})
         region_data = data.get("region", {})
         storage_data = data.get("storage", {})
+        api_data = data.get("api", {})
 
         return Config(
             optimization=OptimizationConfig(
@@ -173,6 +193,12 @@ class ConfigManager:
                 backend=storage_data.get("backend", "json"),
                 database_url=storage_data.get("database_url"),
             ),
+            api=ApiConfig(
+                enabled=api_data.get("enabled", False),
+                host=api_data.get("host", "127.0.0.1"),
+                port=api_data.get("port", 8000),
+                auto_start=api_data.get("auto_start", True),
+            ),
         )
 
     @classmethod
@@ -189,4 +215,5 @@ class ConfigManager:
             time=TimeConfig(),
             region=RegionConfig(),
             storage=StorageConfig(),
+            api=ApiConfig(),
         )

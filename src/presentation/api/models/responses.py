@@ -49,9 +49,9 @@ class UpdateTaskResponse(BaseModel):
     tags: list[str] = Field(default_factory=list)
     is_fixed: bool = False
     is_archived: bool = False
-    daily_allocations: dict[str, float] = Field(default_factory=dict)
     actual_duration_hours: float | None = None
     actual_daily_hours: dict[str, float] = Field(default_factory=dict)
+    updated_fields: list[str] = Field(default_factory=list)
 
 
 class TaskResponse(BaseModel):
@@ -69,10 +69,14 @@ class TaskResponse(BaseModel):
     estimated_duration: float | None = None
     actual_start: datetime | None = None
     actual_end: datetime | None = None
+    actual_duration_hours: float | None = None
     depends_on: list[int] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     is_fixed: bool = False
     is_archived: bool = False
+    is_finished: bool = False
+    created_at: datetime
+    updated_at: datetime
 
 
 class TaskDetailResponse(BaseModel):
@@ -103,6 +107,8 @@ class TaskDetailResponse(BaseModel):
     can_be_modified: bool = False
     is_schedulable: bool = False
     notes: str | None = None
+    created_at: datetime
+    updated_at: datetime
 
 
 class TaskListResponse(BaseModel):

@@ -2,7 +2,6 @@
 
 import click
 
-from domain.entities.task import TaskStatus
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
 from shared.constants import StatusVerbs
@@ -15,18 +14,13 @@ def start_command(ctx, task_ids):
     """Start working on tasks (set status to IN_PROGRESS)."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    repository = ctx_obj.repository
-    controller = ctx_obj.lifecycle_controller
 
     def start_single_task(task_id: int) -> None:
-        # Check current status before starting
-        task_before = repository.get_by_id(task_id)
-        was_already_in_progress = task_before and task_before.status == TaskStatus.IN_PROGRESS
-
-        task = controller.start_task(task_id)
+        # Start task via API client
+        task = ctx_obj.api_client.start_task(task_id)
 
         # Print success message
         console_writer.task_success(StatusVerbs.STARTED, task)
-        console_writer.task_start_time(task, was_already_in_progress)
+        console_writer.task_start_time(task, was_already_in_progress=False)
 
     execute_batch_operation(task_ids, start_single_task, console_writer, "start")

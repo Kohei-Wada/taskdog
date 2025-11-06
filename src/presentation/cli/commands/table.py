@@ -58,7 +58,6 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
         taskdog table --start-date 2025-10-01 --end-date 2025-10-31  # October tasks
     """
     ctx_obj: CliContext = ctx.obj
-    query_controller = ctx_obj.query_controller
 
     # fields is already parsed by FieldList Click type (no validation)
     # Build integrated filter with all options (tags use OR logic by default)
@@ -72,8 +71,8 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
         end_date=end_date,
     )
 
-    # Get filtered and sorted tasks
-    result = query_controller.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
+    # Get filtered and sorted tasks via API client
+    result = ctx_obj.api_client.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
 
     # Render and display
     render_table(ctx_obj, result, fields=fields)

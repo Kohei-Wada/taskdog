@@ -86,7 +86,6 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     analysis to help identify scheduling conflicts and overallocated days.
     """
     ctx_obj: CliContext = ctx.obj
-    query_controller = ctx_obj.query_controller
 
     # Build integrated filter with tags support (tags use OR logic by default)
     tags = list(tag) if tag else None
@@ -98,8 +97,8 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
 
     end_date_obj = end_date.date() if end_date else None
 
-    # Get Gantt data from QueryController
-    gantt_result = query_controller.get_gantt_data(
+    # Get Gantt data via API client
+    gantt_result = ctx_obj.api_client.get_gantt_data(
         filter_obj=filter_obj,
         sort_by=sort,
         reverse=reverse,

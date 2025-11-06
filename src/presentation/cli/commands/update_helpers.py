@@ -33,8 +33,8 @@ def execute_single_field_update(
         TaskValidationError: If update validation fails
     """
     ctx_obj: CliContext = ctx.obj
-    controller = ctx_obj.crud_controller
 
-    # Update task via controller with dynamic field
-    result = controller.update_task(task_id=task_id, **{field_name: field_value})
+    # Update task via API client with dynamic field
+    result = ctx_obj.api_client.update_task(task_id=task_id, **{field_name: field_value})
+
     return result.task

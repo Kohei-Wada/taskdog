@@ -25,10 +25,11 @@ def reopen_command(ctx, task_ids):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.lifecycle_controller
 
     def reopen_single_task(task_id: int) -> None:
-        task = controller.reopen_task(task_id)
+        # Reopen task via API client
+        task = ctx_obj.api_client.reopen_task(task_id)
+
         console_writer.task_success(StatusVerbs.REOPENED, task)
 
     execute_batch_operation(task_ids, reopen_single_task, console_writer, "reopening task")

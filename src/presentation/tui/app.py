@@ -2,10 +2,13 @@
 
 from importlib.resources import files
 from pathlib import Path
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from textual.app import App
 from textual.command import CommandPalette
+
+if TYPE_CHECKING:
+    from infrastructure.api_client import TaskdogApiClient
 
 from application.queries.filters.composite_filter import CompositeFilter
 from application.queries.filters.incomplete_or_active_filter import (
@@ -108,23 +111,38 @@ class TaskdogTUI(App):
 
     def __init__(
         self,
-        repository: TaskRepository,
+        api_client: "TaskdogApiClient",
         notes_repository: NotesRepository,
         config: Config | None = None,
         holiday_checker: IHolidayChecker | None = None,
+        repository: TaskRepository | None = None,
         *args,
         **kwargs,
     ):
         """Initialize the TUI application.
 
+        TUI now requires an API client connection to function.
+        Local repository mode is no longer supported.
+
         Args:
-            repository: Task repository for data access
+            api_client: API client for server communication (required)
             notes_repository: Notes repository for notes file operations
             config: Application configuration (optional, loads from file by default)
             holiday_checker: Holiday checker for workday validation (optional)
+            repository: Task repository (deprecated, kept for compatibility)
         """
         super().__init__(*args, **kwargs)
-        self.repository = repository
+        from infrastructure.api_client import TaskdogApiClient
+
+        if not isinstance(api_client, TaskdogApiClient):
+            from typing import TYPE_CHECKING
+
+            if TYPE_CHECKING:
+                # Type annotation for api_client parameter
+                pass
+
+        self.api_client = api_client
+        self.repository = repository  # Kept for backwards compatibility
         self.notes_repository = notes_repository
         self.config = config if config is not None else ConfigManager.load()
         self.holiday_checker = holiday_checker
@@ -132,7 +150,7 @@ class TaskdogTUI(App):
         self._gantt_sort_by: str = "deadline"  # Default gantt sort order
         self._hide_completed: bool = False  # Default: show all tasks
 
-        # Initialize controllers
+        # Initialize controllers (still using repository for now, will be refactored later)
         from presentation.controllers.task_analytics_controller import (
             TaskAnalyticsController,
         )
@@ -144,6 +162,12 @@ class TaskdogTUI(App):
             TaskRelationshipController,
         )
 
+        # Create dummy repository if not provided (for API-only mode)
+        if repository is None:
+            from infrastructure.persistence.repository_factory import RepositoryFactory
+
+            repository = RepositoryFactory.create(self.config.storage)
+
         self.query_controller = QueryController(repository, notes_repository)
         lifecycle_controller = TaskLifecycleController(repository, self.config)
         relationship_controller = TaskRelationshipController(repository, self.config)
@@ -152,8 +176,9 @@ class TaskdogTUI(App):
         )
         crud_controller = TaskCrudController(repository, self.config)
 
-        # Initialize TUIContext
+        # Initialize TUIContext with API client
         self.context = TUIContext(
+            api_client=self.api_client,
             config=self.config,
             notes_repository=notes_repository,
             query_controller=self.query_controller,

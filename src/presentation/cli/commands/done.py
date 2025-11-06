@@ -14,10 +14,10 @@ def done_command(ctx, task_ids):
     """Mark task(s) as completed."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.lifecycle_controller
 
     def complete_single_task(task_id: int) -> None:
-        task = controller.complete_task(task_id)
+        # Complete task via API client
+        task = ctx_obj.api_client.complete_task(task_id)
 
         # Print success message
         console_writer.task_success(StatusVerbs.COMPLETED, task)

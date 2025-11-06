@@ -2,7 +2,6 @@
 
 import click
 
-from domain.entities.task import TaskStatus
 from presentation.cli.commands.batch_helpers import execute_batch_operation
 from presentation.cli.context import CliContext
 from shared.constants import StatusVerbs
@@ -19,21 +18,13 @@ def pause_command(ctx, task_ids):
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    repository = ctx_obj.repository
-    controller = ctx_obj.lifecycle_controller
 
     def pause_single_task(task_id: int) -> None:
-        # Check current status before pausing
-        task_before = repository.get_by_id(task_id)
-        was_already_pending = task_before and task_before.status == TaskStatus.PENDING
-
-        task = controller.pause_task(task_id)
+        # Pause task via API client
+        task = ctx_obj.api_client.pause_task(task_id)
 
         # Print success message
-        if was_already_pending:
-            console_writer.info(f"Task {task_id} was already PENDING")
-        else:
-            console_writer.task_success(StatusVerbs.PAUSED, task)
-            console_writer.info("Time tracking has been reset")
+        console_writer.task_success(StatusVerbs.PAUSED, task)
+        console_writer.info("Time tracking has been reset")
 
     execute_batch_operation(task_ids, pause_single_task, console_writer, "pause")
