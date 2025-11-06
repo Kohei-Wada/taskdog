@@ -287,12 +287,30 @@ class TaskdogTUI(App):
                 # Cache gantt view model for toggle operations
                 self._gantt_view_model = gantt_view_model
 
-                # Extract task IDs for widget (still needed for widget state)
+                # Extract task IDs for widget
                 task_ids = [t.id for t in tasks]
+
+                # Filter gantt view model to match displayed tasks
+                filtered_task_ids = {t.id for t in tasks}
+                filtered_gantt_tasks = [
+                    task for task in gantt_view_model.tasks
+                    if task.id in filtered_task_ids
+                ]
+
+                # Create filtered GanttViewModel for display
+                from presentation.view_models.gantt_view_model import GanttViewModel
+                filtered_gantt_vm = GanttViewModel(
+                    tasks=filtered_gantt_tasks,
+                    task_daily_hours=gantt_view_model.task_daily_hours,
+                    daily_workload=gantt_view_model.daily_workload,
+                    start_date=gantt_view_model.start_date,
+                    end_date=gantt_view_model.end_date,
+                    holidays=gantt_view_model.holidays
+                )
 
                 self.main_screen.gantt_widget.update_gantt(
                     task_ids=task_ids,
-                    gantt_view_model=gantt_view_model,
+                    gantt_view_model=filtered_gantt_vm,
                     sort_by=self._gantt_sort_by,
                     task_filter=NonArchivedFilter(),
                 )
@@ -302,8 +320,8 @@ class TaskdogTUI(App):
                 from application.dto.task_list_output import TaskListOutput
                 filtered_output = TaskListOutput(
                     tasks=tasks,
-                    total_count=len(tasks),
-                    filters_applied=task_list_output.filters_applied
+                    total_count=task_list_output.total_count,
+                    filtered_count=len(tasks)
                 )
                 # Convert TaskListOutput to ViewModels using TablePresenter directly
                 view_models = self.table_presenter.present(filtered_output)
@@ -463,19 +481,36 @@ class TaskdogTUI(App):
                 from application.dto.task_list_output import TaskListOutput
                 filtered_output = TaskListOutput(
                     tasks=tasks,
-                    total_count=len(tasks),
-                    filters_applied=[]
+                    total_count=len(self._all_tasks),
+                    filtered_count=len(tasks)
                 )
                 view_models = self.table_presenter.present(filtered_output)
                 self.main_screen.task_table.refresh_tasks(view_models, keep_scroll_position=True)
 
             # Update gantt view with filtered tasks
             if self.main_screen.gantt_widget and self._gantt_view_model:
+                # Create a filtered gantt view model
+                filtered_task_ids = {t.id for t in tasks}
+                filtered_gantt_tasks = [
+                    task for task in self._gantt_view_model.tasks
+                    if task.id in filtered_task_ids
+                ]
+
+                # Create new GanttViewModel with filtered tasks
+                from presentation.view_models.gantt_view_model import GanttViewModel
+                filtered_gantt_vm = GanttViewModel(
+                    tasks=filtered_gantt_tasks,
+                    task_daily_hours=self._gantt_view_model.task_daily_hours,
+                    daily_workload=self._gantt_view_model.daily_workload,
+                    start_date=self._gantt_view_model.start_date,
+                    end_date=self._gantt_view_model.end_date,
+                    holidays=self._gantt_view_model.holidays
+                )
+
                 task_ids = [t.id for t in tasks]
-                # Gantt data is already loaded, just update which tasks to display
                 self.main_screen.gantt_widget.update_gantt(
                     task_ids=task_ids,
-                    gantt_view_model=self._gantt_view_model,
+                    gantt_view_model=filtered_gantt_vm,
                     sort_by=self._gantt_sort_by,
                     task_filter=NonArchivedFilter(),
                 )
