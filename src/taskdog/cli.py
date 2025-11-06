@@ -117,7 +117,26 @@ def cli(ctx: click.Context) -> None:
     analytics_controller = TaskAnalyticsController(repository, config, holiday_checker)
     crud_controller = TaskCrudController(repository, config)
 
-    # API client is now required for all CLI commands (except 'server')
+    # Skip API client initialization for 'server' command
+    if ctx.invoked_subcommand == "server":
+        # Server command doesn't need API client (it IS the API server)
+        ctx.ensure_object(dict)
+        ctx.obj = CliContext(
+            console_writer=console_writer,
+            repository=repository,
+            api_client=None,  # type: ignore[arg-type]
+            config=config,
+            notes_repository=notes_repository,
+            query_controller=query_controller,
+            lifecycle_controller=lifecycle_controller,
+            relationship_controller=relationship_controller,
+            analytics_controller=analytics_controller,
+            crud_controller=crud_controller,
+            holiday_checker=holiday_checker,
+        )
+        return
+
+    # API client is now required for all other CLI commands
     # Check if API mode is enabled in config
     if not config.api.enabled:
         console_writer.error(
