@@ -750,8 +750,51 @@ class TaskdogApiClient:
 
     def _convert_to_get_task_by_id_output(self, data: dict[str, Any]) -> GetTaskByIdOutput:
         """Convert API response to GetTaskByIdOutput."""
-        # Simplified implementation
-        raise NotImplementedError("get_task_by_id not yet implemented for API client")
+        from datetime import date as date_type
+
+        from application.dto.get_task_by_id_output import GetTaskByIdOutput
+        from application.dto.task_dto import TaskDetailDto
+
+        # Convert task data (same as get_task_detail but without notes)
+        task = TaskDetailDto(
+            id=data["id"],
+            name=data["name"],
+            priority=data["priority"],
+            status=TaskStatus(data["status"]),
+            planned_start=datetime.fromisoformat(data["planned_start"])
+            if data.get("planned_start")
+            else None,
+            planned_end=datetime.fromisoformat(data["planned_end"])
+            if data.get("planned_end")
+            else None,
+            deadline=datetime.fromisoformat(data["deadline"]) if data.get("deadline") else None,
+            actual_start=datetime.fromisoformat(data["actual_start"])
+            if data.get("actual_start")
+            else None,
+            actual_end=datetime.fromisoformat(data["actual_end"])
+            if data.get("actual_end")
+            else None,
+            estimated_duration=data.get("estimated_duration"),
+            daily_allocations={
+                date_type.fromisoformat(k): v for k, v in data.get("daily_allocations", {}).items()
+            },
+            is_fixed=data.get("is_fixed", False),
+            depends_on=data.get("depends_on", []),
+            actual_daily_hours={
+                date_type.fromisoformat(k): v for k, v in data.get("actual_daily_hours", {}).items()
+            },
+            tags=data.get("tags", []),
+            is_archived=data.get("is_archived", False),
+            created_at=datetime.fromisoformat(data["created_at"]),
+            updated_at=datetime.fromisoformat(data["updated_at"]),
+            actual_duration_hours=data.get("actual_duration_hours"),
+            is_active=data.get("is_active", False),
+            is_finished=data.get("is_finished", False),
+            can_be_modified=data.get("can_be_modified", False),
+            is_schedulable=data.get("is_schedulable", False),
+        )
+
+        return GetTaskByIdOutput(task=task)
 
     def _convert_to_get_task_detail_output(self, data: dict[str, Any]) -> GetTaskDetailOutput:
         """Convert API response to GetTaskDetailOutput."""
