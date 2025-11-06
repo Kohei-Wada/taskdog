@@ -23,8 +23,8 @@ class EditNoteCommand(TUICommandBase):
             self.notify_warning("No task selected")
             return
 
-        # Fetch task via QueryController
-        output = self.context.query_controller.get_task_by_id(task_id)
+        # Fetch task via API client
+        output = self.context.api_client.get_task_by_id(task_id)
         if output.task is None:
             self.notify_warning(f"Task #{task_id} not found")
             return

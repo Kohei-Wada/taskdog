@@ -77,8 +77,8 @@ class OptimizeCommand(TUICommandBase):
 
             algorithm, max_hours, start_date = settings
 
-            # Use TaskController to optimize schedules
-            result = self.analytics_controller.optimize_schedule(
+            # Use API client to optimize schedules
+            result = self.context.api_client.optimize_schedule(
                 algorithm=algorithm,
                 start_date=start_date,
                 max_hours_per_day=max_hours,
@@ -106,8 +106,8 @@ class OptimizeCommand(TUICommandBase):
             else:
                 self.notify_warning("No tasks were optimized. Check task requirements.")
 
-        # Get algorithm metadata from QueryController
-        algorithm_metadata = self.query_controller.get_algorithm_metadata()
+        # Get algorithm metadata from API client
+        algorithm_metadata = self.context.api_client.get_algorithm_metadata()
 
         # Show optimization settings screen
         self.app.push_screen(

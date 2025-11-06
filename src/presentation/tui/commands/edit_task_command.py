@@ -23,8 +23,8 @@ class EditTaskCommand(TUICommandBase):
         if task_id is None:
             raise ValueError("Task ID cannot be None")
 
-        # Fetch task via QueryController
-        output = self.context.query_controller.get_task_by_id(task_id)
+        # Fetch task via API client
+        output = self.context.api_client.get_task_by_id(task_id)
         if output.task is None:
             self.notify_warning(f"Task #{task_id} not found")
             return
@@ -94,9 +94,8 @@ class EditTaskCommand(TUICommandBase):
         form_planned_start = form_data.get_planned_start()
         form_planned_end = form_data.get_planned_end()
 
-        # Update task via Controller with only changed fields
-        # Controller.update_task returns UpdateTaskOutput
-        result = self.crud_controller.update_task(
+        # Update task via API client with only changed fields
+        result = self.context.api_client.update_task(
             task_id=task.id,
             name=form_data.name if form_data.name != task.name else None,
             priority=form_data.priority if form_data.priority != task.priority else None,
@@ -149,14 +148,14 @@ class EditTaskCommand(TUICommandBase):
             # Remove dependencies
             for dep_id in deps_to_remove:
                 try:
-                    self.relationship_controller.remove_dependency(task.id, dep_id)
+                    self.context.api_client.remove_dependency(task.id, dep_id)
                 except TaskValidationError as e:
                     failed_operations.append(f"Remove {dep_id}: {e}")
 
             # Add dependencies
             for dep_id in deps_to_add:
                 try:
-                    self.relationship_controller.add_dependency(task.id, dep_id)
+                    self.context.api_client.add_dependency(task.id, dep_id)
                 except TaskValidationError as e:
                     failed_operations.append(f"Add {dep_id}: {e}")
 

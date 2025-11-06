@@ -14,8 +14,8 @@ class PauseTaskCommand(StatusChangeCommandBase):
         return "pausing task"
 
     def execute_status_change(self, task_id: int) -> TaskOperationOutput:
-        """Pause the task via TaskController."""
-        return self.lifecycle_controller.pause_task(task_id)
+        """Pause the task via API client."""
+        return self.context.api_client.pause_task(task_id)
 
     def get_success_verb(self) -> str:
         """Return success message verb."""

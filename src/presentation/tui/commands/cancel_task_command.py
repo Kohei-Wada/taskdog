@@ -14,8 +14,8 @@ class CancelTaskCommand(StatusChangeCommandBase):
         return "canceling task"
 
     def execute_status_change(self, task_id: int) -> TaskOperationOutput:
-        """Cancel the task via TaskController."""
-        return self.lifecycle_controller.cancel_task(task_id)
+        """Cancel the task via API client."""
+        return self.context.api_client.cancel_task(task_id)
 
     def get_success_verb(self) -> str:
         """Return success message verb."""

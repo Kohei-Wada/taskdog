@@ -14,8 +14,8 @@ class StartTaskCommand(StatusChangeCommandBase):
         return "starting task"
 
     def execute_status_change(self, task_id: int) -> TaskOperationOutput:
-        """Start the task via TaskLifecycleController."""
-        return self.lifecycle_controller.start_task(task_id)
+        """Start the task via API client."""
+        return self.context.api_client.start_task(task_id)
 
     def get_success_verb(self) -> str:
         """Return success message verb."""

@@ -21,8 +21,8 @@ class ShowDetailsCommand(TUICommandBase):
             self.notify_warning("No task selected")
             return
 
-        # Get task detail with notes via query controller
-        detail = self.context.query_controller.get_task_detail(task_id)
+        # Get task detail with notes via API client
+        detail = self.context.api_client.get_task_detail(task_id)
 
         # Show task detail screen with notes
         detail_screen = TaskDetailScreen(detail)
@@ -49,8 +49,8 @@ class ShowDetailsCommand(TUICommandBase):
         Args:
             task_id: ID of the task to edit notes for
         """
-        # Get task via QueryController
-        output = self.context.query_controller.get_task_by_id(task_id)
+        # Get task via API client
+        output = self.context.api_client.get_task_by_id(task_id)
         if not output.task:
             self.notify_warning(f"Task #{task_id} not found")
             return
