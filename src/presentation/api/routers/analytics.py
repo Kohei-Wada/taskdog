@@ -343,21 +343,21 @@ async def optimize_schedule(
         # Convert DTO to response model
         failures = [
             SchedulingFailure(task_id=f.task_id, task_name=f.task_name, reason=f.reason)
-            for f in result.failures  # type: ignore[attr-defined]
+            for f in result.failed_tasks
         ]
 
         return OptimizationResponse(
             summary=OptimizationSummary(
-                total_tasks=result.summary.total_tasks,  # type: ignore[attr-defined]
-                scheduled_tasks=result.summary.scheduled_tasks,  # type: ignore[attr-defined]
-                failed_tasks=result.summary.failed_tasks,  # type: ignore[attr-defined]
+                total_tasks=result.summary.total_tasks,
+                scheduled_tasks=result.summary.scheduled_tasks,
+                failed_tasks=result.summary.failed_tasks,
                 total_hours=result.summary.total_hours,
-                start_date=result.summary.start_date,  # type: ignore[attr-defined]
-                end_date=result.summary.end_date,  # type: ignore[attr-defined]
-                algorithm=result.summary.algorithm,  # type: ignore[attr-defined]
+                start_date=result.summary.start_date,
+                end_date=result.summary.end_date,
+                algorithm=result.summary.algorithm,
             ),
             failures=failures,
-            message=result.message,  # type: ignore[attr-defined]
+            message=result.summary.message,
         )
     except TaskValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
