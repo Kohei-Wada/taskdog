@@ -6,11 +6,15 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
   "click>=8.3.0",
+  "fastapi>=0.115.0",
   "holidays>=0.60.0",
+  "httpx>=0.27.0",
+  "pydantic>=2.10.0",
   "python-dateutil>=2.8.0",
   "rich>=14.2.0",
   "sqlalchemy>=2.0.0",
   "textual>=0.88.0",
+  "uvicorn[standard]>=0.32.0",
 ]
 
 [project.scripts]
@@ -24,12 +28,6 @@ dev = [
   "types-python-dateutil>=2.8.0",
   "types-sqlalchemy",
   "coverage>=7.0.0",
-]
-api = [
-  "fastapi>=0.115.0",
-  "uvicorn[standard]>=0.32.0",
-  "pydantic>=2.10.0",
-  "httpx>=0.27.0",
 ]
 
 # mypy configuration
