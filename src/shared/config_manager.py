@@ -100,13 +100,11 @@ class ApiConfig:
         enabled: Whether to use API mode (client-server communication)
         host: API server host
         port: API server port
-        auto_start: Whether to automatically start server on CLI/TUI startup
     """
 
     enabled: bool = False
     host: str = "127.0.0.1"
     port: int = 8000
-    auto_start: bool = True
 
 
 @dataclass(frozen=True)
@@ -197,7 +195,6 @@ class ConfigManager:
                 enabled=api_data.get("enabled", False),
                 host=api_data.get("host", "127.0.0.1"),
                 port=api_data.get("port", 8000),
-                auto_start=api_data.get("auto_start", True),
             ),
         )
 

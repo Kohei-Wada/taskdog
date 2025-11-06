@@ -128,23 +128,6 @@ def cli(ctx: click.Context) -> None:
         )
         ctx.exit(1)
 
-    # Start server if auto_start is enabled
-    if config.api.auto_start:
-        from shared.server_manager import ServerManager
-
-        server_manager = ServerManager(host=config.api.host, port=config.api.port)
-        if not server_manager.is_server_running():
-            console_writer.print("Starting API server...")
-            server_started = server_manager.start(wait_for_startup=True, timeout=10.0)
-            if not server_started:
-                console_writer.error(
-                    "starting API server",
-                    Exception(
-                        "Failed to start API server. Please start it manually with 'taskdog server'."
-                    ),
-                )
-                ctx.exit(1)
-
     # Initialize API client (required)
     from infrastructure.api_client import TaskdogApiClient
 
@@ -157,7 +140,7 @@ def cli(ctx: click.Context) -> None:
             "connecting to API server",
             Exception(
                 f"Cannot connect to API server at {config.api.host}:{config.api.port}. "
-                f"Please start the server with 'taskdog server' or check your configuration. Error: {e}"
+                f"Please start the server first with 'taskdog server'. Error: {e}"
             ),
         )
         ctx.exit(1)
