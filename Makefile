@@ -22,11 +22,22 @@ install: ## Install taskdog CLI tool
 	uv build
 	uv tool install .
 
+install-api: ## Install taskdog with API server support
+	uv cache clean
+	uv build
+	uv tool install --with fastapi --with "uvicorn[standard]" --with pydantic .
+
 reinstall: ## Reinstall taskdog CLI tool
 	uv cache clean
 	uv tool uninstall taskdog || true
 	uv build
 	uv tool install .
+
+reinstall-api: ## Reinstall taskdog with API server support
+	uv cache clean
+	uv tool uninstall taskdog || true
+	uv build
+	uv tool install --with fastapi --with "uvicorn[standard]" --with pydantic .
 
 clean: ## Clean build artifacts and cache
 	rm -rf build/ dist/ src/*.egg-info/

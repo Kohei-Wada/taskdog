@@ -18,7 +18,7 @@ repos:
     rev: v1.13.0
     hooks:
       - id: mypy
-        additional_dependencies: [click>=8.3.0, rich>=14.2.0]
+        additional_dependencies: [click>=8.3.0, rich>=14.2.0, fastapi>=0.115.0, pydantic>=2.10.0, httpx>=0.27.0]
         args: [--config-file=pyproject.toml, src/]
         pass_filenames: false
 

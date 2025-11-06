@@ -25,6 +25,12 @@ dev = [
   "types-sqlalchemy",
   "coverage>=7.0.0",
 ]
+api = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.32.0",
+  "pydantic>=2.10.0",
+  "httpx>=0.27.0",
+]
 
 # mypy configuration
 [tool.mypy]
@@ -48,6 +54,12 @@ show_error_context = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["presentation.api.*", "infrastructure.api_client", "shared.server_manager"]
+disallow_untyped_defs = false
+disallow_any_generics = false
+disallow_untyped_calls = false
 check_untyped_defs = false
 
 # Ignore third-party library without type stubs
@@ -170,6 +182,9 @@ packages = [
   "infrastructure.persistence.database.models",
   "infrastructure.persistence.mappers",
   "presentation",
+  "presentation.api",
+  "presentation.api.models",
+  "presentation.api.routers",
   "presentation.cli",
   "presentation.cli.commands",
   "presentation.console",

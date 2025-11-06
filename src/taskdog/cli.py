@@ -27,6 +27,7 @@ from presentation.cli.commands.report import report_command
 from presentation.cli.commands.restore import restore_command
 from presentation.cli.commands.rm import rm_command
 from presentation.cli.commands.schedule import schedule_command
+from presentation.cli.commands.server import server_command
 from presentation.cli.commands.show import show_command
 from presentation.cli.commands.start import start_command
 from presentation.cli.commands.stats import stats_command
@@ -161,6 +162,7 @@ cli.add_command(optimize_command)
 cli.add_command(stats_command)
 cli.add_command(tags_command)
 cli.add_command(tui_command)
+cli.add_command(server_command)
 
 if __name__ == "__main__":
     cli()
