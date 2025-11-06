@@ -265,8 +265,8 @@ class TaskdogTUI(App):
         Returns:
             List of loaded tasks
         """
-        # Note: In API-only mode, repository.reload() is not needed
-        # Tasks are fetched fresh from the API server via query_controller
+        # Note: In API-only mode, tasks are fetched fresh from the API server
+        # No need for repository.reload() - api_client always gets latest data
 
         # Get all non-deleted tasks (PENDING, IN_PROGRESS, COMPLETED, CANCELED)
         # Deleted tasks are excluded from display
@@ -276,8 +276,8 @@ class TaskdogTUI(App):
         else:
             task_filter = NonArchivedFilter()
 
-        # Use QueryController instead of direct QueryService access
-        task_list_output = self.query_controller.list_tasks(
+        # Use API client to get fresh data from server
+        task_list_output = self.api_client.list_tasks(
             filter_obj=task_filter, sort_by=self._gantt_sort_by, reverse=False
         )
         tasks = task_list_output.tasks

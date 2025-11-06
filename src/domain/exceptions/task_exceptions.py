@@ -12,9 +12,15 @@ class TaskError(Exception):
 class TaskNotFoundException(TaskError):
     """Raised when a task with given ID is not found."""
 
-    def __init__(self, task_id: int) -> None:
-        self.task_id = task_id
-        super().__init__(f"Task with ID {task_id} not found")
+    def __init__(self, task_id: int | str) -> None:
+        if isinstance(task_id, str):
+            # Already formatted message from API (avoids double formatting)
+            super().__init__(task_id)
+            self.task_id = None  # Can't extract ID from message
+        else:
+            # Traditional usage with task ID
+            self.task_id = task_id
+            super().__init__(f"Task with ID {task_id} not found")
 
 
 class TaskValidationError(TaskError):
