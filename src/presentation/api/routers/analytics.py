@@ -364,16 +364,16 @@ async def optimize_schedule(
 
 
 @router.get("/algorithms", response_model=list[dict[str, str]])
-async def list_algorithms(controller: AnalyticsControllerDep):
+async def list_algorithms(controller: QueryControllerDep):
     """List available optimization algorithms.
 
     Args:
-        controller: Analytics controller dependency
+        controller: Query controller dependency
 
     Returns:
         List of algorithms with name, display name, and description
     """
-    algorithms = controller.get_algorithm_metadata()  # type: ignore[attr-defined]
+    algorithms = controller.get_algorithm_metadata()
     return [
         {"name": name, "display_name": display_name, "description": description}
         for name, display_name, description in algorithms
