@@ -300,8 +300,8 @@ class TaskdogTUI(App):
                 start_date = get_previous_monday()
                 end_date = start_date + timedelta(days=display_days - 1)
 
-                # Get gantt DTO using same filter as list_tasks (QueryController)
-                gantt_output = self.query_controller.get_gantt_data(
+                # Get gantt DTO using API client (fetches fresh data from server)
+                gantt_output = self.api_client.get_gantt_data(
                     filter_obj=task_filter,
                     sort_by=self._gantt_sort_by,
                     reverse=False,
