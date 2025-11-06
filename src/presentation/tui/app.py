@@ -142,7 +142,6 @@ class TaskdogTUI(App):
                 pass
 
         self.api_client = api_client
-        self.repository = repository  # Kept for backwards compatibility
         self.notes_repository = notes_repository
         self.config = config if config is not None else ConfigManager.load()
         self.holiday_checker = holiday_checker
@@ -167,6 +166,9 @@ class TaskdogTUI(App):
             from infrastructure.persistence.repository_factory import RepositoryFactory
 
             repository = RepositoryFactory.create(self.config.storage)
+
+        # Set repository after ensuring it's created
+        self.repository = repository
 
         self.query_controller = QueryController(repository, notes_repository)
         lifecycle_controller = TaskLifecycleController(repository, self.config)
@@ -263,8 +265,8 @@ class TaskdogTUI(App):
         Returns:
             List of loaded tasks
         """
-        # Reload tasks from file to detect external changes
-        self.repository.reload()
+        # Note: In API-only mode, repository.reload() is not needed
+        # Tasks are fetched fresh from the API server via query_controller
 
         # Get all non-deleted tasks (PENDING, IN_PROGRESS, COMPLETED, CANCELED)
         # Deleted tasks are excluded from display
