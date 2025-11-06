@@ -31,21 +31,19 @@ class HardDeleteTaskCommand(TUICommandBase):
             if not confirmed:
                 return  # User cancelled
 
-            try:
-                # Permanently delete the task (hard delete)
-                self.context.api_client.remove_task(task_id)
+            # Permanently delete the task (hard delete)
+            self.context.api_client.remove_task(task_id)
 
-                # Post TaskDeleted event to trigger UI refresh
-                self.app.post_message(TaskDeleted(task_id))
-                self.notify_success(f"Permanently deleted task: {task_name} (ID: {task_id})")
-            except Exception as e:
-                self.notify_error("Error hard deleting task", e)
+            # Post TaskDeleted event to trigger UI refresh
+            self.app.post_message(TaskDeleted(task_id))
+            self.notify_success(f"Permanently deleted task: {task_name} (ID: {task_id})")
 
         # Show confirmation dialog with strong warning
+        # Wrap callback with error handling from base class
         dialog = ConfirmationDialog(
             title="WARNING: PERMANENT DELETION",
             message=f"Are you sure you want to PERMANENTLY delete task '{task_name}' (ID: {task_id})?\n\n"
             f"[!] This action CANNOT be undone!\n"
             f"[!] The task will be completely removed from the database.",
         )
-        self.app.push_screen(dialog, handle_confirmation)
+        self.app.push_screen(dialog, self.handle_error(handle_confirmation))

@@ -37,16 +37,13 @@ class EditTaskCommand(TUICommandBase):
             if form_data is None:
                 return  # User cancelled
 
-            try:
-                self._handle_task_update(original_task, form_data)
-            except TaskValidationError as e:
-                self.notify_error("Validation error", e)
-            except Exception as e:
-                self.notify_error("Error editing task", e)
+            # Delegate actual update logic to helper method
+            self._handle_task_update(original_task, form_data)
 
         # Show task form dialog in edit mode
+        # Wrap callback with error handling from base class
         dialog = TaskFormDialog(task=original_task, config=self.context.config)
-        self.app.push_screen(dialog, handle_task_data)
+        self.app.push_screen(dialog, self.handle_error(handle_task_data))
 
     def _detect_changes(self, task: TaskDetailDto, form_data: TaskFormData) -> tuple[bool, bool]:
         """Detect what changed between task and form data.

@@ -44,6 +44,7 @@ class GanttWidget(VerticalScroll):
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
         self._legend_widget: Static | None = None
+        self._suppress_resize_handling: bool = False  # Flag to suppress resize during updates
 
     def compose(self) -> ComposeResult:
         """Compose the widget layout.
@@ -126,11 +127,16 @@ class GanttWidget(VerticalScroll):
     def _load_gantt_data(self):
         """Load and display gantt data from the pre-computed gantt ViewModel."""
         try:
+            # Suppress resize handling during table update to prevent unnecessary API calls
+            self._suppress_resize_handling = True
             self._gantt_table.load_gantt(self._gantt_view_model)
             self._update_title()
             self._update_legend()
         except Exception as e:
             self._show_error_message(e)
+        finally:
+            # Always re-enable resize handling
+            self._suppress_resize_handling = False
 
     def _update_title(self):
         """Update title with date range and sort order."""
@@ -206,6 +212,10 @@ class GanttWidget(VerticalScroll):
         Args:
             event: The resize event containing new size information
         """
+        # Skip resize handling if suppressed (during programmatic table updates)
+        if self._suppress_resize_handling:
+            return
+
         # Check if widget is mounted and has necessary data
         if not self.is_mounted:
             return

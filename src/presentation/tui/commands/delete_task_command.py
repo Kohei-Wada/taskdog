@@ -31,21 +31,19 @@ class DeleteTaskCommand(TUICommandBase):
             if not confirmed:
                 return  # User cancelled
 
-            try:
-                # Archive the task (soft delete)
-                self.context.api_client.archive_task(task_id)
+            # Archive the task (soft delete)
+            self.context.api_client.archive_task(task_id)
 
-                # Post TaskDeleted event to trigger UI refresh
-                self.app.post_message(TaskDeleted(task_id))
-                self.notify_success(f"Archived task: {task_name} (ID: {task_id})")
-            except Exception as e:
-                self.notify_error("Error deleting task", e)
+            # Post TaskDeleted event to trigger UI refresh
+            self.app.post_message(TaskDeleted(task_id))
+            self.notify_success(f"Archived task: {task_name} (ID: {task_id})")
 
         # Show confirmation dialog
+        # Wrap callback with error handling from base class
         dialog = ConfirmationDialog(
             title="Archive Task",
             message=f"Archive task '{task_name}' (ID: {task_id})?\n\n"
             f"The task will be soft-deleted and can be restored later.\n"
             f"(Use Shift+X for permanent deletion)",
         )
-        self.app.push_screen(dialog, handle_confirmation)
+        self.app.push_screen(dialog, self.handle_error(handle_confirmation))

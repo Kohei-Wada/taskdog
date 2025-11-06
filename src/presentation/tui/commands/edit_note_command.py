@@ -1,7 +1,6 @@
 """Edit note command for TUI."""
 
 from presentation.tui.commands.base import TUICommandBase
-from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
 from presentation.utils.note_editor import edit_task_note
 
@@ -15,8 +14,7 @@ class EditNoteCommand(TUICommandBase):
         self.notify_success(f"Note saved for task: {name} (ID: {task_id})")
         self.reload_tasks()
 
-    @handle_tui_errors("editing note")
-    def execute(self) -> None:
+    def execute_impl(self) -> None:
         """Execute the edit note command."""
         task_id = self.get_selected_task_id()
         if task_id is None:

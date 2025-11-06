@@ -75,45 +75,43 @@ class OptimizeCommand(TUICommandBase):
 
             algorithm, max_hours, start_date = settings
 
-            try:
-                # Use API client to optimize schedules
-                result = self.context.api_client.optimize_schedule(
-                    algorithm=algorithm,
-                    start_date=start_date,
-                    max_hours_per_day=max_hours,
-                    force_override=self.force_override,
+            # Use API client to optimize schedules
+            result = self.context.api_client.optimize_schedule(
+                algorithm=algorithm,
+                start_date=start_date,
+                max_hours_per_day=max_hours,
+                force_override=self.force_override,
+            )
+
+            # Reload tasks to show updated schedules
+            self.reload_tasks()
+
+            # Show result notification
+            if result.all_failed():
+                message = self._format_failed_tasks_message(result, "No tasks were optimized. ")
+                self.notify_warning(message)
+            elif result.has_failures():
+                success_count = len(result.successful_tasks)
+                prefix = f"Partially optimized: {success_count} succeeded. "
+                message = self._format_failed_tasks_message(result, prefix)
+                self.notify_warning(message)
+            elif len(result.successful_tasks) > 0:
+                task_count = len(result.successful_tasks)
+                self.notify_success(
+                    f"Optimized {task_count} task(s) using '{algorithm}' "
+                    f"(max {max_hours}h/day). Check gantt chart."
                 )
-
-                # Reload tasks to show updated schedules
-                self.reload_tasks()
-
-                # Show result notification
-                if result.all_failed():
-                    message = self._format_failed_tasks_message(result, "No tasks were optimized. ")
-                    self.notify_warning(message)
-                elif result.has_failures():
-                    success_count = len(result.successful_tasks)
-                    prefix = f"Partially optimized: {success_count} succeeded. "
-                    message = self._format_failed_tasks_message(result, prefix)
-                    self.notify_warning(message)
-                elif len(result.successful_tasks) > 0:
-                    task_count = len(result.successful_tasks)
-                    self.notify_success(
-                        f"Optimized {task_count} task(s) using '{algorithm}' "
-                        f"(max {max_hours}h/day). Check gantt chart."
-                    )
-                else:
-                    self.notify_warning("No tasks were optimized. Check task requirements.")
-            except Exception as e:
-                self.notify_error("Error optimizing schedules", e)
+            else:
+                self.notify_warning("No tasks were optimized. Check task requirements.")
 
         # Get algorithm metadata from API client
         algorithm_metadata = self.context.api_client.get_algorithm_metadata()
 
         # Show optimization settings screen
+        # Wrap callback with error handling from base class
         self.app.push_screen(
             AlgorithmSelectionScreen(
                 self.context.config, algorithm_metadata, force_override=self.force_override
             ),
-            handle_optimization_settings,
+            self.handle_error(handle_optimization_settings),
         )

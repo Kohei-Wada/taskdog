@@ -3,7 +3,6 @@
 from typing import Any
 
 from presentation.tui.commands.base import TUICommandBase
-from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.screens.task_detail_screen import TaskDetailScreen
 from presentation.utils.note_editor import edit_task_note
@@ -13,8 +12,7 @@ from presentation.utils.note_editor import edit_task_note
 class ShowDetailsCommand(TUICommandBase):
     """Command to show details of the selected task in a modal screen."""
 
-    @handle_tui_errors("showing task details")
-    def execute(self) -> None:
+    def execute_impl(self) -> None:
         """Execute the show details command."""
         task_id = self.get_selected_task_id()
         if task_id is None:

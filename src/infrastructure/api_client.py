@@ -925,9 +925,87 @@ class TaskdogApiClient:
         raise NotImplementedError("calculate_statistics not yet implemented for API client")
 
     def _convert_to_optimization_output(self, data: dict[str, Any]) -> OptimizationOutput:
-        """Convert API response to OptimizationOutput."""
-        # Simplified implementation
-        raise NotImplementedError("optimize_schedule not yet implemented for API client")
+        """Convert API response to OptimizationOutput.
+
+        Args:
+            data: API response data with format:
+                {
+                    "summary": {
+                        "total_tasks": int,
+                        "scheduled_tasks": int,
+                        "failed_tasks": int,
+                        "total_hours": float,
+                        "start_date": str (ISO),
+                        "end_date": str (ISO),
+                        "algorithm": str
+                    },
+                    "failures": [{
+                        "task_id": int,
+                        "task_name": str,
+                        "reason": str
+                    }],
+                    "message": str
+                }
+
+        Returns:
+            OptimizationOutput with all optimization results
+        """
+        from datetime import date, datetime
+
+        from application.dto.optimization_output import OptimizationOutput, SchedulingFailure
+        from application.dto.optimization_summary import OptimizationSummary
+        from application.dto.task_dto import TaskSummaryDto
+
+        # Parse summary
+        summary_data = data["summary"]
+
+        # Calculate days span from start_date and end_date
+        start_date = date.fromisoformat(summary_data["start_date"])
+        end_date = date.fromisoformat(summary_data["end_date"])
+        days_span = (end_date - start_date).days + 1
+
+        # Create TaskSummaryDto objects for unscheduled tasks from failures
+        unscheduled_tasks = [
+            TaskSummaryDto(id=f["task_id"], name=f["task_name"]) for f in data["failures"]
+        ]
+
+        summary = OptimizationSummary(
+            new_count=summary_data["scheduled_tasks"],
+            rescheduled_count=0,  # API doesn't distinguish between new and rescheduled
+            total_hours=summary_data["total_hours"],
+            deadline_conflicts=0,  # Not provided by API
+            days_span=days_span,
+            unscheduled_tasks=unscheduled_tasks,
+            overloaded_days=[],  # Not provided by API
+        )
+
+        # Parse failures
+        failures = [
+            SchedulingFailure(
+                task=TaskSummaryDto(id=f["task_id"], name=f["task_name"]),
+                reason=f["reason"],
+            )
+            for f in data["failures"]
+        ]
+
+        # Note: API response doesn't include successful_tasks details
+        # We'll create minimal TaskSummaryDto objects
+        successful_count = summary_data["scheduled_tasks"]
+        successful_tasks = [TaskSummaryDto(id=i, name=f"Task {i}") for i in range(successful_count)]
+
+        # Daily allocations - not provided in response, use empty dict
+        daily_allocations: dict[date, float] = {}
+
+        # Task states before - not provided in response, use empty dict
+        task_states_before: dict[int, datetime | None] = {}
+
+        return OptimizationOutput(
+            successful_tasks=successful_tasks,
+            failed_tasks=failures,
+            daily_allocations=daily_allocations,
+            summary=summary,
+            task_states_before=task_states_before,
+        )
 
     def _convert_to_tag_statistics_output(self, data: dict[str, Any]) -> TagStatisticsOutput:
         """Convert API response to TagStatisticsOutput."""

@@ -17,6 +17,22 @@ class ConcreteCommand(TUICommandBase):
         pass
 
 
+class ConcreteCommandWithImpl(TUICommandBase):
+    """Concrete command that uses execute_impl pattern."""
+
+    def __init__(self, app, context, should_raise=False):
+        """Initialize with optional error behavior."""
+        super().__init__(app, context)
+        self.should_raise = should_raise
+        self.executed = False
+
+    def execute_impl(self) -> None:
+        """Implementation that can optionally raise an error."""
+        self.executed = True
+        if self.should_raise:
+            raise ValueError("Test error from execute_impl")
+
+
 class TestTUICommandBase(unittest.TestCase):
     """Test cases for TUICommandBase."""
 
@@ -118,6 +134,73 @@ class TestTUICommandBase(unittest.TestCase):
         self.command.notify_warning(message)
 
         self.app.notify.assert_called_once_with(message, severity="warning")
+
+    def test_execute_impl_success(self):
+        """Test execute() with execute_impl() that succeeds."""
+        command = ConcreteCommandWithImpl(self.app, self.context, should_raise=False)
+        command.execute()
+
+        # Verify execute_impl was called
+        self.assertTrue(command.executed)
+        # Verify no error notification
+        self.app.notify.assert_not_called()
+
+    def test_execute_impl_with_error_handling(self):
+        """Test execute() with execute_impl() that raises an error."""
+        command = ConcreteCommandWithImpl(self.app, self.context, should_raise=True)
+        command.execute()
+
+        # Verify execute_impl was called
+        self.assertTrue(command.executed)
+        # Verify error notification was shown
+        self.app.notify.assert_called_once()
+        call_args = self.app.notify.call_args
+        self.assertIn("Error", call_args[0][0])
+        self.assertIn("Test error from execute_impl", call_args[0][0])
+        self.assertEqual(call_args[1]["severity"], "error")
+
+    def test_get_action_name_default(self):
+        """Test get_action_name() derives from class name."""
+        command = ConcreteCommandWithImpl(self.app, self.context)
+        action_name = command.get_action_name()
+
+        # "ConcreteCommandWithImpl" -> "concrete command with impl"
+        self.assertIn("concrete", action_name)
+        self.assertIn("command", action_name)
+
+    def test_handle_error_wrapper_success(self):
+        """Test handle_error() wrapper with successful callback."""
+        called = []
+
+        def callback(value):
+            called.append(value)
+            return value * 2
+
+        wrapped = self.command.handle_error(callback)
+        result = wrapped(5)
+
+        self.assertEqual(result, 10)
+        self.assertEqual(called, [5])
+        # No error notification
+        self.app.notify.assert_not_called()
+
+    def test_handle_error_wrapper_with_exception(self):
+        """Test handle_error() wrapper with callback that raises exception."""
+
+        def callback(value):
+            raise ValueError(f"Test error with {value}")
+
+        wrapped = self.command.handle_error(callback)
+        result = wrapped(5)
+
+        # Should return None on error
+        self.assertIsNone(result)
+        # Should show error notification
+        self.app.notify.assert_called_once()
+        call_args = self.app.notify.call_args
+        self.assertIn("Error", call_args[0][0])
+        self.assertIn("Test error with 5", call_args[0][0])
+        self.assertEqual(call_args[1]["severity"], "error")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
 """Base class for TUI commands."""
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from abc import ABC
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from application.dto.task_dto import TaskDetailDto
 from presentation.tui.context import TUIContext
@@ -11,13 +12,20 @@ from presentation.view_models.task_view_model import TaskRowViewModel
 if TYPE_CHECKING:
     from presentation.tui.app import TaskdogTUI
 
+F = TypeVar("F", bound=Callable[..., Any])
 
-class TUICommandBase(ABC):
+
+class TUICommandBase(ABC):  # noqa: B024
     """Base class for TUI commands.
 
     Provides common functionality for command execution including:
     - Access to TUIContext and API client
     - Helper methods for task selection, reloading, and notifications
+    - Template Method pattern for consistent error handling
+
+    Subclasses should override execute_impl() instead of execute() to get
+    automatic error handling. Alternatively, override execute() directly
+    for commands that need custom error handling logic.
     """
 
     def __init__(self, app: "TaskdogTUI", context: TUIContext):
@@ -30,13 +38,94 @@ class TUICommandBase(ABC):
         self.app = app
         self.context = context
 
-    @abstractmethod
     def execute(self) -> None:
-        """Execute the command.
+        """Execute the command with error handling (Template Method).
 
-        This method must be implemented by subclasses to perform the
-        specific action associated with this command.
+        This method provides consistent error handling across all commands.
+        Subclasses should override execute_impl() to define command logic.
+
+        For commands that need custom error handling (e.g., StatusChangeCommandBase),
+        or async callback patterns (e.g., dialog-based commands),
+        this method can be overridden directly.
         """
+        try:
+            self.execute_impl()
+        except Exception as e:
+            action_name = self.get_action_name()
+            self.notify_error(f"Error {action_name}", e)
+
+    def execute_impl(self) -> None:  # noqa: B027
+        """Implement the command logic here.
+
+        Subclasses should override this method to define their specific behavior.
+        This method is called by execute() within a try-except block.
+
+        For backwards compatibility, if not overridden, this will do nothing.
+        Commands that override execute() directly (like StatusChangeCommandBase
+        or dialog-based commands) don't need to implement this.
+        """
+        # Default implementation for backwards compatibility
+        # Subclasses should override this method
+        pass
+
+    def handle_error(self, callback_fn: F) -> F:
+        """Wrap a callback function with error handling.
+
+        This is useful for dialog callbacks or async operations where
+        exceptions can't be caught by the execute() method's try-except.
+
+        Args:
+            callback_fn: Function to wrap with error handling
+
+        Returns:
+            Wrapped function that catches exceptions and shows error notifications
+
+        Example:
+            def my_callback(data):
+                # Process data that might raise exceptions
+                ...
+
+            dialog.show(self.handle_error(my_callback))
+        """
+        from functools import wraps
+
+        @wraps(callback_fn)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            try:
+                return callback_fn(*args, **kwargs)
+            except Exception as e:
+                action_name = self.get_action_name()
+                self.notify_error(f"Error {action_name}", e)
+                return None
+
+        return cast(F, wrapper)
+
+    def get_action_name(self) -> str:
+        """Return the action name for error messages (e.g., "adding task").
+
+        Default implementation derives from class name (AddTaskCommand -> "adding task").
+        Subclasses can override for custom action names.
+
+        Returns:
+            Action name in present continuous form for error messages
+        """
+        # Convert "AddTaskCommand" to "adding task"
+        class_name = self.__class__.__name__
+        if class_name.endswith("Command"):
+            class_name = class_name[:-7]  # Remove "Command" suffix
+
+        # Convert camel case to words: "AddTask" -> "Add Task"
+        import re
+
+        words = re.sub(r"([A-Z])", r" \1", class_name).strip().lower()
+        # Add "...ing" suffix if it doesn't already end with "ing"
+        if not words.endswith("ing"):
+            # Simple heuristic: if ends with 'e', drop it before adding 'ing'
+            if words.endswith("e"):
+                words = words[:-1]
+            words += "ing"
+
+        return words
 
     def get_selected_task(self) -> TaskDetailDto | None:
         """Get the currently selected task from the table.
