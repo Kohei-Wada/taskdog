@@ -65,7 +65,6 @@ class OptimizeCommand(TUICommandBase):
     def execute(self) -> None:
         """Execute the optimize command."""
 
-        @handle_tui_errors("optimizing schedules")
         def handle_optimization_settings(settings: tuple[str, float, datetime] | None) -> None:
             """Handle the optimization settings from the dialog.
 
@@ -77,34 +76,37 @@ class OptimizeCommand(TUICommandBase):
 
             algorithm, max_hours, start_date = settings
 
-            # Use API client to optimize schedules
-            result = self.context.api_client.optimize_schedule(
-                algorithm=algorithm,
-                start_date=start_date,
-                max_hours_per_day=max_hours,
-                force_override=self.force_override,
-            )
-
-            # Reload tasks to show updated schedules
-            self.reload_tasks()
-
-            # Show result notification
-            if result.all_failed():
-                message = self._format_failed_tasks_message(result, "No tasks were optimized. ")
-                self.notify_warning(message)
-            elif result.has_failures():
-                success_count = len(result.successful_tasks)
-                prefix = f"Partially optimized: {success_count} succeeded. "
-                message = self._format_failed_tasks_message(result, prefix)
-                self.notify_warning(message)
-            elif len(result.successful_tasks) > 0:
-                task_count = len(result.successful_tasks)
-                self.notify_success(
-                    f"Optimized {task_count} task(s) using '{algorithm}' "
-                    f"(max {max_hours}h/day). Check gantt chart."
+            try:
+                # Use API client to optimize schedules
+                result = self.context.api_client.optimize_schedule(
+                    algorithm=algorithm,
+                    start_date=start_date,
+                    max_hours_per_day=max_hours,
+                    force_override=self.force_override,
                 )
-            else:
-                self.notify_warning("No tasks were optimized. Check task requirements.")
+
+                # Reload tasks to show updated schedules
+                self.reload_tasks()
+
+                # Show result notification
+                if result.all_failed():
+                    message = self._format_failed_tasks_message(result, "No tasks were optimized. ")
+                    self.notify_warning(message)
+                elif result.has_failures():
+                    success_count = len(result.successful_tasks)
+                    prefix = f"Partially optimized: {success_count} succeeded. "
+                    message = self._format_failed_tasks_message(result, prefix)
+                    self.notify_warning(message)
+                elif len(result.successful_tasks) > 0:
+                    task_count = len(result.successful_tasks)
+                    self.notify_success(
+                        f"Optimized {task_count} task(s) using '{algorithm}' "
+                        f"(max {max_hours}h/day). Check gantt chart."
+                    )
+                else:
+                    self.notify_warning("No tasks were optimized. Check task requirements.")
+            except Exception as e:
+                self.notify_error("Error optimizing schedules", e)
 
         # Get algorithm metadata from API client
         algorithm_metadata = self.context.api_client.get_algorithm_metadata()

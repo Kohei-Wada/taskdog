@@ -28,7 +28,6 @@ class ReopenTaskCommand(TUICommandBase):
         task_name = task_vm.name
         task_status = task_vm.status
 
-        @handle_tui_errors("reopening task")
         def handle_confirmation(confirmed: bool | None) -> None:
             """Handle the confirmation response.
 
@@ -50,7 +49,10 @@ class ReopenTaskCommand(TUICommandBase):
 
             except (TaskValidationError, DependencyNotMetError) as e:
                 # Show validation or dependency error
-                self.notify_error("reopening task", e)
+                self.notify_error("Error reopening task", e)
+            except Exception as e:
+                # Catch any other unexpected errors
+                self.notify_error("Error reopening task", e)
 
         # Show confirmation dialog
         dialog = ConfirmationDialog(
