@@ -23,7 +23,6 @@ class DeleteTaskCommand(TUICommandBase):
         task_id = task_vm.id
         task_name = task_vm.name
 
-        @handle_tui_errors("deleting task")
         def handle_confirmation(confirmed: bool | None) -> None:
             """Handle the confirmation response.
 
@@ -33,12 +32,15 @@ class DeleteTaskCommand(TUICommandBase):
             if not confirmed:
                 return  # User cancelled
 
-            # Archive the task (soft delete)
-            self.context.api_client.archive_task(task_id)
+            try:
+                # Archive the task (soft delete)
+                self.context.api_client.archive_task(task_id)
 
-            # Post TaskDeleted event to trigger UI refresh
-            self.app.post_message(TaskDeleted(task_id))
-            self.notify_success(f"Archived task: {task_name} (ID: {task_id})")
+                # Post TaskDeleted event to trigger UI refresh
+                self.app.post_message(TaskDeleted(task_id))
+                self.notify_success(f"Archived task: {task_name} (ID: {task_id})")
+            except Exception as e:
+                self.notify_error("Error deleting task", e)
 
         # Show confirmation dialog
         dialog = ConfirmationDialog(
