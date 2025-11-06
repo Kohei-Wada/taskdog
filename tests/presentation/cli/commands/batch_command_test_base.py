@@ -59,6 +59,7 @@ class BaseBatchCommandTest(unittest.TestCase):
         self.relationship_controller = MagicMock()
         self.analytics_controller = MagicMock()
         self.crud_controller = MagicMock()
+        self.api_client = MagicMock()
 
         # Set up CLI context with all dependencies
         self.cli_context = MagicMock()
@@ -72,6 +73,7 @@ class BaseBatchCommandTest(unittest.TestCase):
         self.cli_context.relationship_controller = self.relationship_controller
         self.cli_context.analytics_controller = self.analytics_controller
         self.cli_context.crud_controller = self.crud_controller
+        self.cli_context.api_client = self.api_client
 
     def _get_mock_method(self, mock_instance):
         """Get the mock method based on controller_method or execute.

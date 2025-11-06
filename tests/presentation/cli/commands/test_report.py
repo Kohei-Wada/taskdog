@@ -270,8 +270,10 @@ class TestReportCommand(unittest.TestCase):
         self.repository = MagicMock(spec=SqliteTaskRepository)
         self.console_writer = MagicMock(spec=RichConsoleWriter)
         self.query_controller = MagicMock()
+        self.api_client = MagicMock()
         self.cli_context = CliContext(
             console_writer=self.console_writer,
+            api_client=self.api_client,
             repository=self.repository,
             config=MagicMock(),
             notes_repository=MagicMock(),

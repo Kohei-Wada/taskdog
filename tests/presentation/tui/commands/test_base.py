@@ -32,15 +32,6 @@ class TestTUICommandBase(unittest.TestCase):
         self.assertEqual(self.command.app, self.app)
         self.assertEqual(self.command.context, self.context)
 
-    def test_lifecycle_controller_property(self):
-        """Test lifecycle_controller property returns lifecycle_controller from context."""
-        mock_controller = MagicMock()
-        self.context.lifecycle_controller = mock_controller
-
-        result = self.command.lifecycle_controller
-
-        self.assertEqual(result, mock_controller)
-
     def test_get_selected_task_success(self):
         """Test getting selected task successfully."""
         task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.PENDING)
@@ -72,13 +63,13 @@ class TestTUICommandBase(unittest.TestCase):
         )
         # Mock get_selected_task_id to return the task ID
         self.app.main_screen.task_table.get_selected_task_id.return_value = 1
-        # Mock QueryController to return the GetTaskByIdOutput
-        self.context.query_controller.get_task_by_id.return_value = GetTaskByIdOutput(task=task_dto)
+        # Mock API client to return the GetTaskByIdOutput
+        self.context.api_client.get_task_by_id.return_value = GetTaskByIdOutput(task=task_dto)
 
         result = self.command.get_selected_task()
 
         self.assertEqual(result, task_dto)
-        self.context.query_controller.get_task_by_id.assert_called_once_with(1)
+        self.context.api_client.get_task_by_id.assert_called_once_with(1)
 
     def test_get_selected_task_no_screen(self):
         """Test getting selected task when screen is not available."""
