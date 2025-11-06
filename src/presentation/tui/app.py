@@ -10,10 +10,6 @@ from textual.command import CommandPalette
 if TYPE_CHECKING:
     from infrastructure.api_client import TaskdogApiClient
 
-from application.queries.filters.composite_filter import CompositeFilter
-from application.queries.filters.incomplete_or_active_filter import (
-    IncompleteOrActiveFilter,
-)
 from application.queries.filters.non_archived_filter import NonArchivedFilter
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
@@ -147,6 +143,8 @@ class TaskdogTUI(App):
         self.main_screen: MainScreen | None = None
         self._gantt_sort_by: str = "deadline"  # Default gantt sort order
         self._hide_completed: bool = False  # Default: show all tasks
+        self._all_tasks: list = []  # Cache of all tasks for display filtering
+        self._gantt_view_model = None  # Cache of gantt view model
 
         # Create dummy repository if not provided (for API-only mode)
         if repository is None:
@@ -242,19 +240,18 @@ class TaskdogTUI(App):
         # Note: In API-only mode, tasks are fetched fresh from the API server
         # No need for repository.reload() - api_client always gets latest data
 
-        # Get all non-deleted tasks (PENDING, IN_PROGRESS, COMPLETED, CANCELED)
-        # Deleted tasks are excluded from display
-        # If hide_completed is True, also exclude COMPLETED and CANCELED tasks
-        if self._hide_completed:
-            task_filter = CompositeFilter([NonArchivedFilter(), IncompleteOrActiveFilter()])
-        else:
-            task_filter = NonArchivedFilter()
+        # Always fetch all non-archived tasks from API and cache them
+        task_filter = NonArchivedFilter()
 
         # Use API client to get fresh data from server
         task_list_output = self.api_client.list_tasks(
             filter_obj=task_filter, sort_by=self._gantt_sort_by, reverse=False
         )
-        tasks = task_list_output.tasks
+        # Cache all tasks
+        self._all_tasks = task_list_output.tasks
+
+        # Apply display filter based on _hide_completed setting
+        tasks = self._apply_display_filter(self._all_tasks)
 
         # Update gantt chart and table
         if self.main_screen:
@@ -275,8 +272,9 @@ class TaskdogTUI(App):
                 end_date = start_date + timedelta(days=display_days - 1)
 
                 # Get gantt DTO using API client (fetches fresh data from server)
+                # Always fetch all tasks, filter will be applied to displayed tasks
                 gantt_output = self.api_client.get_gantt_data(
-                    filter_obj=task_filter,
+                    filter_obj=NonArchivedFilter(),
                     sort_by=self._gantt_sort_by,
                     reverse=False,
                     start_date=start_date,
@@ -286,6 +284,8 @@ class TaskdogTUI(App):
 
                 # Convert DTO to ViewModel using GanttPresenter directly
                 gantt_view_model = self.gantt_presenter.present(gantt_output)
+                # Cache gantt view model for toggle operations
+                self._gantt_view_model = gantt_view_model
 
                 # Extract task IDs for widget (still needed for widget state)
                 task_ids = [t.id for t in tasks]
@@ -294,17 +294,43 @@ class TaskdogTUI(App):
                     task_ids=task_ids,
                     gantt_view_model=gantt_view_model,
                     sort_by=self._gantt_sort_by,
-                    task_filter=task_filter,
+                    task_filter=NonArchivedFilter(),
                 )
 
             if self.main_screen.task_table:
+                # Create filtered TaskListOutput for presenter
+                from application.dto.task_list_output import TaskListOutput
+                filtered_output = TaskListOutput(
+                    tasks=tasks,
+                    total_count=len(tasks),
+                    filters_applied=task_list_output.filters_applied
+                )
                 # Convert TaskListOutput to ViewModels using TablePresenter directly
-                view_models = self.table_presenter.present(task_list_output)
+                view_models = self.table_presenter.present(filtered_output)
                 self.main_screen.task_table.refresh_tasks(
                     view_models, keep_scroll_position=keep_scroll_position
                 )
 
         return tasks
+
+    def _apply_display_filter(self, tasks: list) -> list:
+        """Apply display filter based on _hide_completed setting.
+
+        Args:
+            tasks: List of all tasks
+
+        Returns:
+            Filtered list of tasks based on current display settings
+        """
+        if not self._hide_completed:
+            return tasks
+
+        # Filter out COMPLETED and CANCELED tasks when hide_completed is True
+        from domain.entities.task import TaskStatus
+        return [
+            task for task in tasks
+            if task.status not in (TaskStatus.COMPLETED, TaskStatus.CANCELED)
+        ]
 
     def search_sort(self) -> None:
         """Show a fuzzy search command palette containing all sort options.
@@ -428,8 +454,31 @@ class TaskdogTUI(App):
         """Toggle visibility of completed and canceled tasks."""
         self._hide_completed = not self._hide_completed
 
-        # Reload tasks with new filter
-        self.post_message(TasksRefreshed())
+        # Apply filter to cached tasks without API reload
+        if self._all_tasks and self.main_screen:
+            tasks = self._apply_display_filter(self._all_tasks)
+
+            # Update table view with filtered tasks
+            if self.main_screen.task_table:
+                from application.dto.task_list_output import TaskListOutput
+                filtered_output = TaskListOutput(
+                    tasks=tasks,
+                    total_count=len(tasks),
+                    filters_applied=[]
+                )
+                view_models = self.table_presenter.present(filtered_output)
+                self.main_screen.task_table.refresh_tasks(view_models, keep_scroll_position=True)
+
+            # Update gantt view with filtered tasks
+            if self.main_screen.gantt_widget and self._gantt_view_model:
+                task_ids = [t.id for t in tasks]
+                # Gantt data is already loaded, just update which tasks to display
+                self.main_screen.gantt_widget.update_gantt(
+                    task_ids=task_ids,
+                    gantt_view_model=self._gantt_view_model,
+                    sort_by=self._gantt_sort_by,
+                    task_filter=NonArchivedFilter(),
+                )
 
         # Show notification
         status = "hidden" if self._hide_completed else "shown"
