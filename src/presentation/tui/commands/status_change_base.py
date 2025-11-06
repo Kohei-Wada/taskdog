@@ -28,7 +28,7 @@ class StatusChangeCommandBase(TUICommandBase):
                 return "starting task"
 
             def execute_status_change(self, task_id: int) -> TaskOperationOutput:
-                return self.context.lifecycle_controller.start_task(task_id)
+                return self.context.api_client.start_task(task_id)
 
             def get_success_verb(self) -> str:
                 return "Started"

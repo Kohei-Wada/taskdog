@@ -1,7 +1,6 @@
 """Hard delete task command for TUI."""
 
 from presentation.tui.commands.base import TUICommandBase
-from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.events import TaskDeleted
 from presentation.tui.screens.confirmation_dialog import ConfirmationDialog

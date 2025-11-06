@@ -4,7 +4,6 @@ from datetime import datetime
 
 from domain.exceptions.task_exceptions import TaskValidationError
 from presentation.tui.commands.base import TUICommandBase
-from presentation.tui.commands.decorators import handle_tui_errors
 from presentation.tui.commands.registry import command_registry
 from presentation.tui.events import TaskCreated
 from presentation.tui.forms.task_form_fields import TaskFormData

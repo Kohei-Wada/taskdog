@@ -18,7 +18,6 @@ from application.queries.filters.non_archived_filter import NonArchivedFilter
 from domain.repositories.notes_repository import NotesRepository
 from domain.repositories.task_repository import TaskRepository
 from domain.services.holiday_checker import IHolidayChecker
-from presentation.controllers.query_controller import QueryController
 from presentation.presenters.gantt_presenter import GanttPresenter
 from presentation.presenters.table_presenter import TablePresenter
 from presentation.tui.commands.factory import CommandFactory
@@ -149,18 +148,6 @@ class TaskdogTUI(App):
         self._gantt_sort_by: str = "deadline"  # Default gantt sort order
         self._hide_completed: bool = False  # Default: show all tasks
 
-        # Initialize controllers (still using repository for now, will be refactored later)
-        from presentation.controllers.task_analytics_controller import (
-            TaskAnalyticsController,
-        )
-        from presentation.controllers.task_crud_controller import TaskCrudController
-        from presentation.controllers.task_lifecycle_controller import (
-            TaskLifecycleController,
-        )
-        from presentation.controllers.task_relationship_controller import (
-            TaskRelationshipController,
-        )
-
         # Create dummy repository if not provided (for API-only mode)
         if repository is None:
             from infrastructure.persistence.repository_factory import RepositoryFactory
@@ -170,24 +157,11 @@ class TaskdogTUI(App):
         # Set repository after ensuring it's created
         self.repository = repository
 
-        self.query_controller = QueryController(repository, notes_repository)
-        lifecycle_controller = TaskLifecycleController(repository, self.config)
-        relationship_controller = TaskRelationshipController(repository, self.config)
-        analytics_controller = TaskAnalyticsController(
-            repository, self.config, self.holiday_checker
-        )
-        crud_controller = TaskCrudController(repository, self.config)
-
         # Initialize TUIContext with API client
         self.context = TUIContext(
             api_client=self.api_client,
             config=self.config,
             notes_repository=notes_repository,
-            query_controller=self.query_controller,
-            lifecycle_controller=lifecycle_controller,
-            relationship_controller=relationship_controller,
-            analytics_controller=analytics_controller,
-            crud_controller=crud_controller,
             holiday_checker=self.holiday_checker,
         )
 
@@ -384,7 +358,7 @@ class TaskdogTUI(App):
 
         try:
             # Get all tasks (no filtering)
-            result = self.query_controller.list_tasks(filter_obj=None)
+            result = self.api_client.list_tasks(filter_obj=None)
             tasks = result.tasks
 
             # Determine file extension and exporter
@@ -530,8 +504,8 @@ class TaskdogTUI(App):
         task_filter = gantt_widget._task_filter if hasattr(gantt_widget, "_task_filter") else None
         sort_by = gantt_widget._sort_by if hasattr(gantt_widget, "_sort_by") else "deadline"
 
-        # Get gantt data from QueryController with the new date range
-        gantt_output = self.query_controller.get_gantt_data(
+        # Get gantt data from API client with the new date range
+        gantt_output = self.api_client.get_gantt_data(
             filter_obj=task_filter,
             sort_by=sort_by,
             reverse=False,
