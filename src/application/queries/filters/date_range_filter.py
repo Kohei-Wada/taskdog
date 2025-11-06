@@ -35,12 +35,13 @@ class DateRangeFilter(TaskFilter):
 
         A task is included if any of its date fields (planned_start, planned_end,
         actual_start, actual_end, deadline) falls within the specified range.
+        Tasks without any dates are also included (for gantt display purposes).
 
         Args:
             tasks: List of all tasks
 
         Returns:
-            List of tasks with dates in the specified range
+            List of tasks with dates in the specified range or without dates
         """
         filtered = []
         for task in tasks:
@@ -56,8 +57,9 @@ class DateRangeFilter(TaskFilter):
                 if dt:
                     task_dates.append(dt.date())
 
-            # Skip tasks with no dates
+            # Include tasks with no dates (unscheduled tasks)
             if not task_dates:
+                filtered.append(task)
                 continue
 
             # Check if any date falls within the range

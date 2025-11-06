@@ -76,15 +76,15 @@ class TestDateRangeFilter(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0].id, 2)
 
-    def test_filter_excludes_tasks_with_no_dates(self):
-        """Test filter excludes tasks with no date fields."""
+    def test_filter_includes_tasks_with_no_dates(self):
+        """Test filter includes tasks with no date fields (unscheduled tasks)."""
         date_filter = DateRangeFilter(start_date=date(2025, 1, 1))
         tasks = [self.task_jan, self.task_no_dates]
 
         result = date_filter.filter(tasks)
 
-        self.assertEqual(len(result), 1)
-        self.assertNotIn(self.task_no_dates, result)
+        self.assertEqual(len(result), 2)
+        self.assertIn(self.task_no_dates, result)
 
     def test_filter_checks_all_date_fields(self):
         """Test filter checks planned_start, planned_end, actual_start, actual_end, deadline."""
