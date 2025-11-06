@@ -342,22 +342,39 @@ async def optimize_schedule(
 
         # Convert DTO to response model
         failures = [
-            SchedulingFailure(task_id=f.task_id, task_name=f.task_name, reason=f.reason)
+            SchedulingFailure(task_id=f.task.id, task_name=f.task.name, reason=f.reason)
             for f in result.failed_tasks
         ]
 
+        # Calculate date range from daily allocations
+        if result.daily_allocations:
+            dates = list(result.daily_allocations.keys())
+            opt_start_date = min(dates)
+            opt_end_date = max(dates)
+        else:
+            opt_start_date = start_date.date()
+            opt_end_date = start_date.date()
+
+        # Build optimization message
+        if result.all_failed():
+            message = f"No tasks were scheduled. {len(result.failed_tasks)} task(s) failed."
+        elif result.has_failures():
+            message = f"Partially optimized: {len(result.successful_tasks)} succeeded, {len(result.failed_tasks)} failed."
+        else:
+            message = f"Successfully optimized {len(result.successful_tasks)} task(s)."
+
         return OptimizationResponse(
             summary=OptimizationSummary(
-                total_tasks=result.summary.total_tasks,
-                scheduled_tasks=result.summary.scheduled_tasks,
-                failed_tasks=result.summary.failed_tasks,
+                total_tasks=len(result.successful_tasks) + len(result.failed_tasks),
+                scheduled_tasks=len(result.successful_tasks),
+                failed_tasks=len(result.failed_tasks),
                 total_hours=result.summary.total_hours,
-                start_date=result.summary.start_date,
-                end_date=result.summary.end_date,
-                algorithm=result.summary.algorithm,
+                start_date=opt_start_date,
+                end_date=opt_end_date,
+                algorithm=request.algorithm,
             ),
             failures=failures,
-            message=result.summary.message,
+            message=message,
         )
     except TaskValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
