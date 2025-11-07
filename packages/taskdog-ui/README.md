@@ -21,8 +21,16 @@ This package provides two user interfaces for Taskdog:
 
 ## Installation
 
+Basic installation (CLI and TUI):
+
 ```bash
 pip install taskdog-ui
+```
+
+With server support (includes taskdog-server):
+
+```bash
+pip install taskdog-ui[server]
 ```
 
 For development:
@@ -30,6 +38,23 @@ For development:
 ```bash
 pip install -e ".[dev]"
 ```
+
+## Server Mode
+
+If using the TUI in API mode (client-server architecture), you need to start the server first:
+
+```bash
+# Install server if not already installed
+pip install taskdog-server
+
+# Start the server
+taskdog-server --host 127.0.0.1 --port 8000
+
+# Then launch TUI in another terminal
+taskdog tui
+```
+
+The TUI will automatically connect to the running server.
 
 ## Usage
 

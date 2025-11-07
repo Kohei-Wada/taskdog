@@ -25,9 +25,12 @@ dev = [
     "mypy>=1.0.0",
     "ruff>=0.7.0",
 ]
+server = [
+    "taskdog-server==0.4.0",
+]
 
 [project.scripts]
-taskdog = "taskdog.cli:cli"
+taskdog = "taskdog.cli_main:cli"
 
 [build-system]
 requires = ["setuptools>=68.0.0", "wheel"]

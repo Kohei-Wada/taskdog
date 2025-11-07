@@ -24,7 +24,6 @@ from taskdog.cli.commands.report import report_command
 from taskdog.cli.commands.restore import restore_command
 from taskdog.cli.commands.rm import rm_command
 from taskdog.cli.commands.schedule import schedule_command
-from taskdog.cli.commands.server import server_command
 from taskdog.cli.commands.show import show_command
 from taskdog.cli.commands.start import start_command
 from taskdog.cli.commands.stats import stats_command
@@ -150,7 +149,7 @@ def cli(ctx: click.Context) -> None:
         ctx.exit(1)
 
     # Initialize API client (required)
-    from infrastructure.api_client import TaskdogApiClient
+    from taskdog.infrastructure.api_client import TaskdogApiClient
 
     try:
         api_client = TaskdogApiClient(
@@ -214,7 +213,6 @@ cli.add_command(optimize_command)
 cli.add_command(stats_command)
 cli.add_command(tags_command)
 cli.add_command(tui_command)
-cli.add_command(server_command)
 
 if __name__ == "__main__":
     cli()

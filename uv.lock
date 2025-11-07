@@ -803,6 +803,9 @@ dev = [
     { name = "pytest-cov" },
     { name = "ruff" },
 ]
+server = [
+    { name = "taskdog-server" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -815,9 +818,10 @@ requires-dist = [
     { name = "rich", specifier = ">=14.2.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7.0" },
     { name = "taskdog-core", editable = "packages/taskdog-core" },
+    { name = "taskdog-server", marker = "extra == 'server'", editable = "packages/taskdog-server" },
     { name = "textual", specifier = ">=0.88.0" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["dev", "server"]
 
 [[package]]
 name = "taskdog-workspace"
