@@ -28,16 +28,20 @@ help: ## Show this help message
 # Installation Targets
 # ============================================================================
 
-install: install-core install-server install-ui ## Install all packages (recommended)
+install: ## Install all commands globally with uv tool (recommended)
+	@echo "Installing taskdog-server globally..."
+	cd packages/taskdog-server && uv tool install --force --reinstall .
+	@echo "Installing taskdog globally..."
+	cd packages/taskdog-ui && uv tool install --force --reinstall .
 	@echo ""
-	@echo "✓ All packages installed successfully!"
+	@echo "✓ All commands installed successfully!"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  - taskdog          (CLI/TUI)"
 	@echo "  - taskdog-server   (API server)"
 	@echo ""
 
-install-dev: ## Install all packages with development dependencies
+install-dev: ## Install all packages with development dependencies (for development)
 	@echo "Installing all packages with dev dependencies..."
 	cd packages/taskdog-core && uv pip install -e ".[dev]"
 	cd packages/taskdog-server && uv pip install -e ".[dev]"
@@ -46,33 +50,32 @@ install-dev: ## Install all packages with development dependencies
 	@echo "✓ Development environment ready!"
 	@echo ""
 
-install-core: ## Install taskdog-core package only
+install-core: ## Install taskdog-core package only (for development)
 	@echo "Installing taskdog-core..."
 	cd packages/taskdog-core && uv pip install -e .
 
-install-server: install-core ## Install taskdog-server (includes core dependency)
+install-server: install-core ## Install taskdog-server with pip (for development)
 	@echo "Installing taskdog-server..."
 	cd packages/taskdog-server && uv pip install -e .
 
-install-ui: install-core ## Install taskdog-ui (includes core dependency)
+install-ui: install-core ## Install taskdog-ui with pip (for development)
 	@echo "Installing taskdog-ui..."
 	cd packages/taskdog-ui && uv pip install -e .
 
-install-ui-only: install-ui ## Install UI only (alias for backward compatibility)
+install-local: install-core install-server install-ui ## Install all packages locally with pip (for development)
+	@echo ""
+	@echo "✓ All packages installed locally for development!"
+	@echo ""
 
-install-server-only: install-server ## Install server only (alias for clarity)
-
-reinstall: clean install ## Clean and reinstall all packages
+reinstall: clean install ## Clean and reinstall all commands globally
 	@echo "✓ Reinstallation complete!"
 
-# Tool Installation (Global)
-tool-install-ui: ## Install taskdog CLI tool globally (uv tool)
-	cd packages/taskdog-ui && uv tool install --force .
-	@echo "✓ taskdog installed globally"
-
-tool-install-server: ## Install taskdog-server CLI tool globally (uv tool)
-	cd packages/taskdog-server && uv tool install --force .
-	@echo "✓ taskdog-server installed globally"
+# Uninstall
+uninstall: ## Uninstall all commands
+	@echo "Uninstalling taskdog commands..."
+	-uv tool uninstall taskdog 2>/dev/null || true
+	-uv tool uninstall taskdog-server 2>/dev/null || true
+	@echo "✓ Uninstalled successfully!"
 
 # ============================================================================
 # Testing Targets
