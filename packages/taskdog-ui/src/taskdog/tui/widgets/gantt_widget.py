@@ -44,9 +44,6 @@ class GanttWidget(VerticalScroll):
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
         self._legend_widget: Static | None = None
-        self._suppress_resize_handling: bool = (
-            False  # Flag to suppress resize during updates
-        )
 
     def compose(self) -> ComposeResult:
         """Compose the widget layout.
@@ -129,16 +126,11 @@ class GanttWidget(VerticalScroll):
     def _load_gantt_data(self):
         """Load and display gantt data from the pre-computed gantt ViewModel."""
         try:
-            # Suppress resize handling during table update to prevent unnecessary API calls
-            self._suppress_resize_handling = True
             self._gantt_table.load_gantt(self._gantt_view_model)
             self._update_title()
             self._update_legend()
         except Exception as e:
             self._show_error_message(e)
-        finally:
-            # Always re-enable resize handling
-            self._suppress_resize_handling = False
 
     def _update_title(self):
         """Update title with date range and sort order."""
@@ -216,10 +208,6 @@ class GanttWidget(VerticalScroll):
         Args:
             event: The resize event containing new size information
         """
-        # Skip resize handling if suppressed (during programmatic table updates)
-        if self._suppress_resize_handling:
-            return
-
         # Check if widget is mounted and has necessary data
         if not self.is_mounted:
             return
@@ -237,6 +225,15 @@ class GanttWidget(VerticalScroll):
             display_days: Number of days to display
         """
         start_date, end_date = self._calculate_date_range_for_display(display_days)
+
+        # Only post resize event if date range actually changed
+        # This prevents unnecessary API reloads when toggling visibility or other non-resize updates
+        if (
+            self._gantt_view_model
+            and start_date == self._gantt_view_model.start_date
+            and end_date == self._gantt_view_model.end_date
+        ):
+            return  # No change needed
 
         # Post event to request gantt recalculation from app
         # App has access to controllers and presenters
