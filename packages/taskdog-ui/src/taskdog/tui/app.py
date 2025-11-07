@@ -8,7 +8,7 @@ from textual.app import App
 from textual.command import CommandPalette
 
 if TYPE_CHECKING:
-    from infrastructure.api_client import TaskdogApiClient
+    from taskdog.infrastructure.api_client import TaskdogApiClient
 
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
@@ -133,7 +133,7 @@ class TaskdogTUI(App):
             repository: Task repository (deprecated, kept for compatibility)
         """
         super().__init__(*args, **kwargs)
-        from infrastructure.api_client import TaskdogApiClient
+        from taskdog.infrastructure.api_client import TaskdogApiClient
 
         if not isinstance(api_client, TaskdogApiClient):
             from typing import TYPE_CHECKING
@@ -154,7 +154,9 @@ class TaskdogTUI(App):
 
         # Create dummy repository if not provided (for API-only mode)
         if repository is None:
-            from infrastructure.persistence.repository_factory import RepositoryFactory
+            from taskdog_core.infrastructure.persistence.repository_factory import (
+                RepositoryFactory,
+            )
 
             repository = RepositoryFactory.create(self.config.storage)
 
