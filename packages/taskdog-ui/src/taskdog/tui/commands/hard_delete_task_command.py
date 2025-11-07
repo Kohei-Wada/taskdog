@@ -1,51 +1,37 @@
 """Hard delete task command for TUI."""
 
-from taskdog.tui.commands.base import TUICommandBase
+from textual.message import Message
+
+from taskdog.tui.commands.confirmation_base import ConfirmationCommandBase
 from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.events import TaskDeleted
-from taskdog.tui.screens.confirmation_dialog import ConfirmationDialog
+from taskdog.view_models.task_view_model import TaskRowViewModel
 
 
 @command_registry.register("hard_delete_task")
-class HardDeleteTaskCommand(TUICommandBase):
+class HardDeleteTaskCommand(ConfirmationCommandBase):
     """Command to permanently delete the selected task (hard delete)."""
 
-    def execute(self) -> None:
-        """Execute the hard delete task command."""
-        # Get selected task ViewModel (no repository fetch needed for confirmation)
-        task_vm = self.get_selected_task_vm()
-        if not task_vm:
-            self.notify_warning("No task selected")
-            return
+    def get_confirmation_title(self) -> str:
+        """Return the confirmation dialog title."""
+        return "WARNING: PERMANENT DELETION"
 
-        # Capture task ID and name for use in callback
-        task_id = task_vm.id
-        task_name = task_vm.name
-
-        def handle_confirmation(confirmed: bool | None) -> None:
-            """Handle the confirmation response.
-
-            Args:
-                confirmed: True if user confirmed deletion, False/None otherwise
-            """
-            if not confirmed:
-                return  # User cancelled
-
-            # Permanently delete the task (hard delete)
-            self.context.api_client.remove_task(task_id)
-
-            # Post TaskDeleted event to trigger UI refresh
-            self.app.post_message(TaskDeleted(task_id))
-            self.notify_success(
-                f"Permanently deleted task: {task_name} (ID: {task_id})"
-            )
-
-        # Show confirmation dialog with strong warning
-        # Wrap callback with error handling from base class
-        dialog = ConfirmationDialog(
-            title="WARNING: PERMANENT DELETION",
-            message=f"Are you sure you want to PERMANENTLY delete task '{task_name}' (ID: {task_id})?\n\n"
+    def get_confirmation_message(self, task_vm: TaskRowViewModel) -> str:
+        """Return the confirmation dialog message."""
+        return (
+            f"Are you sure you want to PERMANENTLY delete task '{task_vm.name}' (ID: {task_vm.id})?\n\n"
             f"[!] This action CANNOT be undone!\n"
-            f"[!] The task will be completely removed from the database.",
+            f"[!] The task will be completely removed from the database."
         )
-        self.app.push_screen(dialog, self.handle_error(handle_confirmation))
+
+    def execute_confirmed_action(self, task_id: int) -> None:
+        """Permanently delete the task (hard delete)."""
+        self.context.api_client.remove_task(task_id)
+
+    def get_success_message(self, task_name: str, task_id: int) -> str:
+        """Return the success message."""
+        return f"Permanently deleted task: {task_name} (ID: {task_id})"
+
+    def get_event_for_task(self, task_id: int) -> Message:
+        """Return TaskDeleted event."""
+        return TaskDeleted(task_id)

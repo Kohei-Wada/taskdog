@@ -1,49 +1,37 @@
 """Delete task command for TUI."""
 
-from taskdog.tui.commands.base import TUICommandBase
+from textual.message import Message
+
+from taskdog.tui.commands.confirmation_base import ConfirmationCommandBase
 from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.events import TaskDeleted
-from taskdog.tui.screens.confirmation_dialog import ConfirmationDialog
+from taskdog.view_models.task_view_model import TaskRowViewModel
 
 
 @command_registry.register("delete_task")
-class DeleteTaskCommand(TUICommandBase):
+class DeleteTaskCommand(ConfirmationCommandBase):
     """Command to delete the selected task with confirmation (soft delete)."""
 
-    def execute(self) -> None:
-        """Execute the delete task command (soft delete)."""
-        # Get selected task ViewModel (no repository fetch needed for confirmation)
-        task_vm = self.get_selected_task_vm()
-        if not task_vm:
-            self.notify_warning("No task selected")
-            return
+    def get_confirmation_title(self) -> str:
+        """Return the confirmation dialog title."""
+        return "Archive Task"
 
-        # Capture task ID and name for use in callback
-        task_id = task_vm.id
-        task_name = task_vm.name
-
-        def handle_confirmation(confirmed: bool | None) -> None:
-            """Handle the confirmation response.
-
-            Args:
-                confirmed: True if user confirmed deletion, False/None otherwise
-            """
-            if not confirmed:
-                return  # User cancelled
-
-            # Archive the task (soft delete)
-            self.context.api_client.archive_task(task_id)
-
-            # Post TaskDeleted event to trigger UI refresh
-            self.app.post_message(TaskDeleted(task_id))
-            self.notify_success(f"Archived task: {task_name} (ID: {task_id})")
-
-        # Show confirmation dialog
-        # Wrap callback with error handling from base class
-        dialog = ConfirmationDialog(
-            title="Archive Task",
-            message=f"Archive task '{task_name}' (ID: {task_id})?\n\n"
+    def get_confirmation_message(self, task_vm: TaskRowViewModel) -> str:
+        """Return the confirmation dialog message."""
+        return (
+            f"Archive task '{task_vm.name}' (ID: {task_vm.id})?\n\n"
             f"The task will be soft-deleted and can be restored later.\n"
-            f"(Use Shift+X for permanent deletion)",
+            f"(Use Shift+X for permanent deletion)"
         )
-        self.app.push_screen(dialog, self.handle_error(handle_confirmation))
+
+    def execute_confirmed_action(self, task_id: int) -> None:
+        """Archive the task (soft delete)."""
+        self.context.api_client.archive_task(task_id)
+
+    def get_success_message(self, task_name: str, task_id: int) -> str:
+        """Return the success message."""
+        return f"Archived task: {task_name} (ID: {task_id})"
+
+    def get_event_for_task(self, task_id: int) -> Message:
+        """Return TaskDeleted event."""
+        return TaskDeleted(task_id)
