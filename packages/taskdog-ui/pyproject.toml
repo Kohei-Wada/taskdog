@@ -48,6 +48,7 @@ packages = [
     "taskdog.tui.forms",
     "taskdog.tui.palette",
     "taskdog.tui.services",
+    "taskdog.tui.styles",
     "taskdog.console",
     "taskdog.renderers",
     "taskdog.exporters",
@@ -61,6 +62,9 @@ packages = [
     "taskdog.infrastructure",
 ]
 package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+"taskdog.tui.styles" = ["*.tcss"]
 
 [tool.ruff]
 line-length = 88
