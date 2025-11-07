@@ -102,14 +102,16 @@ class TestTaskDataLoader(unittest.TestCase):
         # Setup mocks
         task1 = Task(id=1, name="Task 1", priority=1, status=TaskStatus.PENDING)
 
+        # Mock gantt data within task_list_output
+        gantt_output = Mock(spec=GanttOutput)
+
         task_list_output = TaskListOutput(
-            tasks=[task1], total_count=1, filtered_count=1
+            tasks=[task1],
+            total_count=1,
+            filtered_count=1,
+            gantt_data=gantt_output,  # Include gantt data in response
         )
         self.api_client.list_tasks.return_value = task_list_output
-
-        # Mock gantt data
-        gantt_output = Mock(spec=GanttOutput)
-        self.api_client.get_gantt_data.return_value = gantt_output
 
         gantt_task_vm = TaskGanttRowViewModel(
             id=1,
@@ -151,8 +153,14 @@ class TestTaskDataLoader(unittest.TestCase):
         self.assertIsNotNone(result.filtered_gantt_view_model)
         self.assertEqual(len(result.gantt_view_model.tasks), 1)
 
-        # Verify gantt API call
-        self.api_client.get_gantt_data.assert_called_once()
+        # Verify API call now uses include_gantt instead of get_gantt_data
+        call_args = self.api_client.list_tasks.call_args
+        self.assertEqual(call_args.kwargs["sort_by"], "deadline")
+        self.assertEqual(call_args.kwargs["reverse"], False)
+        self.assertEqual(call_args.kwargs["include_gantt"], True)
+        self.assertEqual(call_args.kwargs["gantt_start_date"], date(2025, 1, 1))
+        self.assertEqual(call_args.kwargs["gantt_end_date"], date(2025, 1, 7))
+        self.assertEqual(call_args.kwargs["holiday_checker"], self.holiday_checker)
 
     def test_apply_display_filter_show_all(self):
         """Test apply_display_filter with hide_completed=False."""

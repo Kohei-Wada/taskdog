@@ -65,6 +65,10 @@ class QueryController:
         filter_obj: TaskFilter | None = None,
         sort_by: str = "id",
         reverse: bool = False,
+        include_gantt: bool = False,
+        gantt_start_date: date | None = None,
+        gantt_end_date: date | None = None,
+        holiday_checker: "IHolidayChecker | None" = None,
     ) -> TaskListOutput:
         """Get filtered and sorted task list.
 
@@ -75,9 +79,13 @@ class QueryController:
             filter_obj: Optional filter to apply
             sort_by: Field to sort by (default: "id")
             reverse: Reverse sort order (default: False)
+            include_gantt: If True, include Gantt chart data in the output (default: False)
+            gantt_start_date: Start date for Gantt chart (used when include_gantt=True)
+            gantt_end_date: End date for Gantt chart (used when include_gantt=True)
+            holiday_checker: Holiday checker for Gantt chart (used when include_gantt=True)
 
         Returns:
-            TaskListOutput with filtered tasks and counts
+            TaskListOutput with filtered tasks, counts, and optionally Gantt data
         """
         all_tasks = self.repository.get_all()
         total_count = len(all_tasks)
@@ -88,10 +96,23 @@ class QueryController:
             reverse=reverse,
         )
 
+        # Optionally include Gantt chart data
+        gantt_data = None
+        if include_gantt:
+            gantt_data = self.get_gantt_data(
+                filter_obj=filter_obj,
+                sort_by=sort_by,
+                reverse=reverse,
+                start_date=gantt_start_date,
+                end_date=gantt_end_date,
+                holiday_checker=holiday_checker,
+            )
+
         return TaskListOutput(
             tasks=filtered_task_dtos,
             total_count=total_count,
             filtered_count=len(filtered_task_dtos),
+            gantt_data=gantt_data,
         )
 
     def get_gantt_data(

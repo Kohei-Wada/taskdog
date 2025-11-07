@@ -117,6 +117,7 @@ class TaskListResponse(BaseModel):
     tasks: list[TaskResponse]
     total_count: int
     filtered_count: int
+    gantt: "GanttResponse | None" = None
 
 
 class GanttDateRange(BaseModel):

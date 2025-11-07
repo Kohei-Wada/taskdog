@@ -16,7 +16,11 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
-from taskdog_server.api.dependencies import CrudControllerDep, QueryControllerDep
+from taskdog_server.api.dependencies import (
+    CrudControllerDep,
+    HolidayCheckerDep,
+    QueryControllerDep,
+)
 from taskdog_server.api.models.requests import CreateTaskRequest, UpdateTaskRequest
 from taskdog_server.api.models.responses import (
     TaskDetailResponse,
@@ -77,6 +81,12 @@ def convert_to_update_task_response(dto) -> UpdateTaskResponse:
 
 def convert_to_task_list_response(dto) -> TaskListResponse:
     """Convert TaskListOutput DTO to Pydantic response model."""
+    from taskdog_server.api.models.responses import (
+        GanttDateRange,
+        GanttResponse,
+        GanttTaskResponse,
+    )
+
     tasks = [
         TaskResponse(
             id=task.id,
@@ -100,8 +110,67 @@ def convert_to_task_list_response(dto) -> TaskListResponse:
         )
         for task in dto.tasks
     ]
+
+    # Convert gantt_data if present
+    gantt = None
+    if dto.gantt_data:
+        result = dto.gantt_data
+        gantt_tasks = [
+            GanttTaskResponse(
+                id=task.id,
+                name=task.name,
+                status=task.status,
+                estimated_duration=task.estimated_duration,
+                planned_start=task.planned_start,
+                planned_end=task.planned_end,
+                actual_start=task.actual_start,
+                actual_end=task.actual_end,
+                deadline=task.deadline,
+                is_fixed=False,  # Not available in GanttTaskDto
+                is_archived=False,  # Not available in GanttTaskDto
+                daily_allocations={
+                    date_obj.isoformat(): hours
+                    for date_obj, hours in result.task_daily_hours.get(
+                        task.id, {}
+                    ).items()
+                },
+            )
+            for task in result.tasks
+        ]
+
+        # Convert task_daily_hours (nested dict with date keys)
+        task_daily_hours = {
+            task_id: {
+                date_obj.isoformat(): hours for date_obj, hours in daily_hours.items()
+            }
+            for task_id, daily_hours in result.task_daily_hours.items()
+        }
+
+        # Convert daily_workload
+        daily_workload = {
+            date_obj.isoformat(): hours
+            for date_obj, hours in result.daily_workload.items()
+        }
+
+        # Convert holidays (set of dates to list of ISO strings)
+        holidays = [holiday.isoformat() for holiday in result.holidays]
+
+        gantt = GanttResponse(
+            date_range=GanttDateRange(
+                start_date=result.date_range.start_date,
+                end_date=result.date_range.end_date,
+            ),
+            tasks=gantt_tasks,
+            task_daily_hours=task_daily_hours,
+            daily_workload=daily_workload,
+            holidays=holidays,
+        )
+
     return TaskListResponse(
-        tasks=tasks, total_count=dto.total_count, filtered_count=dto.filtered_count
+        tasks=tasks,
+        total_count=dto.total_count,
+        filtered_count=dto.filtered_count,
+        gantt=gantt,
     )
 
 
@@ -178,6 +247,7 @@ async def create_task(request: CreateTaskRequest, controller: CrudControllerDep)
 @router.get("", response_model=TaskListResponse)
 async def list_tasks(
     controller: QueryControllerDep,
+    holiday_checker: HolidayCheckerDep,
     all: Annotated[bool, Query(description="Include archived tasks")] = False,
     status_filter: Annotated[
         str | None, Query(alias="status", description="Filter by status")
@@ -189,11 +259,21 @@ async def list_tasks(
     end_date: Annotated[str | None, Query(description="Filter by end date")] = None,
     sort: Annotated[str, Query(description="Sort field")] = "id",
     reverse: Annotated[bool, Query(description="Reverse sort order")] = False,
+    include_gantt: Annotated[
+        bool, Query(description="Include Gantt chart data in response")
+    ] = False,
+    gantt_start_date: Annotated[
+        str | None, Query(description="Gantt chart start date (ISO format)")
+    ] = None,
+    gantt_end_date: Annotated[
+        str | None, Query(description="Gantt chart end date (ISO format)")
+    ] = None,
 ):
     """List tasks with optional filtering and sorting.
 
     Args:
         controller: Query controller dependency
+        holiday_checker: Holiday checker dependency
         all: Include archived tasks
         status_filter: Filter by task status
         tags: Filter by tags (OR logic)
@@ -201,10 +281,15 @@ async def list_tasks(
         end_date: Filter by end date (ISO format)
         sort: Sort field name
         reverse: Reverse sort order
+        include_gantt: Include Gantt chart data
+        gantt_start_date: Gantt chart start date (ISO format)
+        gantt_end_date: Gantt chart end date (ISO format)
 
     Returns:
-        List of tasks with metadata
+        List of tasks with metadata, optionally including Gantt data
     """
+    from datetime import datetime
+
     # Build filter using >> operator to compose filters
     filter_obj: TaskFilter | None = None
 
@@ -226,15 +311,29 @@ async def list_tasks(
 
     # Date range filter
     if start_date or end_date:
-        from datetime import datetime
-
         start = datetime.fromisoformat(start_date).date() if start_date else None
         end = datetime.fromisoformat(end_date).date() if end_date else None
         date_f = DateRangeFilter(start_date=start, end_date=end)
         filter_obj = filter_obj >> date_f if filter_obj else date_f
 
-    # Query tasks
-    result = controller.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
+    # Parse Gantt date range
+    gantt_start = (
+        datetime.fromisoformat(gantt_start_date).date() if gantt_start_date else None
+    )
+    gantt_end = (
+        datetime.fromisoformat(gantt_end_date).date() if gantt_end_date else None
+    )
+
+    # Query tasks with optional Gantt data
+    result = controller.list_tasks(
+        filter_obj=filter_obj,
+        sort_by=sort,
+        reverse=reverse,
+        include_gantt=include_gantt,
+        gantt_start_date=gantt_start,
+        gantt_end_date=gantt_end,
+        holiday_checker=holiday_checker if include_gantt else None,
+    )
     return convert_to_task_list_response(result)
 
 

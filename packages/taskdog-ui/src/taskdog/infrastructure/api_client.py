@@ -540,6 +540,10 @@ class TaskdogApiClient:
         filter_obj: TaskFilter | None = None,
         sort_by: str = "id",
         reverse: bool = False,
+        include_gantt: bool = False,
+        gantt_start_date: date | None = None,
+        gantt_end_date: date | None = None,
+        holiday_checker: IHolidayChecker | None = None,
     ) -> TaskListOutput:
         """List tasks with optional filtering and sorting.
 
@@ -547,15 +551,30 @@ class TaskdogApiClient:
             filter_obj: Task filter (NOT IMPLEMENTED for API)
             sort_by: Sort field
             reverse: Reverse sort order
+            include_gantt: If True, include Gantt chart data
+            gantt_start_date: Gantt chart start date
+            gantt_end_date: Gantt chart end date
+            holiday_checker: Holiday checker (passed to server via config)
 
         Returns:
-            TaskListOutput with task list and metadata
+            TaskListOutput with task list and metadata, optionally including Gantt data
 
         Note:
             filter_obj is not yet implemented for API client.
             Use query parameters instead for now.
+            holiday_checker is ignored in API mode (server handles holidays).
         """
-        params = {"sort": sort_by, "reverse": str(reverse).lower()}
+        params = {
+            "sort": sort_by,
+            "reverse": str(reverse).lower(),
+            "include_gantt": str(include_gantt).lower(),
+        }
+
+        if include_gantt:
+            if gantt_start_date:
+                params["gantt_start_date"] = gantt_start_date.isoformat()
+            if gantt_end_date:
+                params["gantt_end_date"] = gantt_end_date.isoformat()
 
         response = self.client.get("/api/v1/tasks", params=params)
         if not response.is_success:
@@ -770,10 +789,16 @@ class TaskdogApiClient:
             for task in data["tasks"]
         ]
 
+        # Convert gantt data if present
+        gantt_data = None
+        if data.get("gantt"):
+            gantt_data = self._convert_to_gantt_output(data["gantt"])
+
         return TaskListOutput(
             tasks=tasks,
             total_count=data["total_count"],
             filtered_count=data["filtered_count"],
+            gantt_data=gantt_data,
         )
 
     def _convert_to_get_task_by_id_output(

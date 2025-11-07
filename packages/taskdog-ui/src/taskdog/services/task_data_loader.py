@@ -81,9 +81,18 @@ class TaskDataLoader:
         Returns:
             TaskData containing all loaded data and ViewModels
         """
-        # Fetch tasks from API
+        # Fetch tasks from API with optional gantt data in a single request
+        include_gantt = date_range is not None
+        gantt_start_date, gantt_end_date = date_range if date_range else (None, None)
+
         task_list_output = self.api_client.list_tasks(
-            filter_obj=task_filter, sort_by=sort_by, reverse=False
+            filter_obj=task_filter,
+            sort_by=sort_by,
+            reverse=False,
+            include_gantt=include_gantt,
+            gantt_start_date=gantt_start_date,
+            gantt_end_date=gantt_end_date,
+            holiday_checker=self.holiday_checker,
         )
 
         # Cache all tasks
@@ -100,14 +109,11 @@ class TaskDataLoader:
         )
         table_view_models = self.table_presenter.present(filtered_output)
 
-        # Load gantt data if date range provided
+        # Convert gantt data from response if present
         gantt_view_model = None
         filtered_gantt_view_model = None
-        if date_range:
-            start_date, end_date = date_range
-            gantt_view_model = self.load_gantt_data(
-                task_filter, sort_by, start_date, end_date
-            )
+        if task_list_output.gantt_data:
+            gantt_view_model = self.gantt_presenter.present(task_list_output.gantt_data)
             filtered_gantt_view_model = self.filter_gantt_by_tasks(
                 gantt_view_model, filtered_tasks
             )

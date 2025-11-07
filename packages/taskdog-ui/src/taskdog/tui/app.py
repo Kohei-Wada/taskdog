@@ -240,22 +240,24 @@ class TaskdogTUI(App):
         Returns:
             List of loaded tasks
         """
-        # Calculate date range for gantt if needed
-        date_range = None
+        # Calculate date range for gantt
+        # Always request gantt data, even if widget isn't mounted yet
+        from datetime import timedelta
+
+        from taskdog_core.shared.utils.date_utils import get_previous_monday
+
+        display_days = 28  # Default display days
         if self.main_screen and self.main_screen.gantt_widget:
-            from datetime import timedelta
-
-            from taskdog_core.shared.utils.date_utils import get_previous_monday
-
             widget = self.main_screen.gantt_widget
             display_days = (
                 widget._calculate_display_days()
                 if hasattr(widget, "_calculate_display_days")
                 else 28
             )
-            start_date = get_previous_monday()
-            end_date = start_date + timedelta(days=display_days - 1)
-            date_range = (start_date, end_date)
+
+        start_date = get_previous_monday()
+        end_date = start_date + timedelta(days=display_days - 1)
+        date_range = (start_date, end_date)
 
         # Load all data using TaskDataLoader
         task_data = self.task_data_loader.load_tasks(
@@ -527,21 +529,23 @@ class TaskdogTUI(App):
             gantt_widget._sort_by if hasattr(gantt_widget, "_sort_by") else "deadline"
         )
 
-        # Get gantt data from API client with the new date range
-        gantt_output = self.api_client.get_gantt_data(
+        # Use integrated API to get tasks + gantt data in single request
+        task_list_output = self.api_client.list_tasks(
             filter_obj=task_filter,
             sort_by=sort_by,
             reverse=False,
-            start_date=event.start_date,
-            end_date=event.end_date,
+            include_gantt=True,
+            gantt_start_date=event.start_date,
+            gantt_end_date=event.end_date,
             holiday_checker=self.holiday_checker,
         )
 
-        # Convert to ViewModel using GanttPresenter
-        gantt_view_model = self.gantt_presenter.present(gantt_output)
+        # Convert gantt data to ViewModel
+        if task_list_output.gantt_data:
+            gantt_view_model = self.gantt_presenter.present(task_list_output.gantt_data)
 
-        # Update the gantt widget's view model
-        gantt_widget._gantt_view_model = gantt_view_model
+            # Update the gantt widget's view model
+            gantt_widget._gantt_view_model = gantt_view_model
 
-        # Trigger re-render with updated view model
-        gantt_widget.call_after_refresh(gantt_widget._render_gantt)
+            # Trigger re-render with updated view model
+            gantt_widget.call_after_refresh(gantt_widget._render_gantt)
