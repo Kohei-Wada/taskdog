@@ -1,0 +1,83 @@
+[project]
+name = "taskdog-core"
+version = "0.4.0"
+description = "Core business logic and infrastructure for Taskdog"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    { name = "Kohei Wada" }
+]
+license = { text = "MIT" }
+
+dependencies = [
+    "holidays>=0.60.0",
+    "python-dateutil>=2.8.0",
+    "sqlalchemy>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "mypy>=1.0.0",
+    "ruff>=0.7.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+    "taskdog_core",
+    "taskdog_core.domain",
+    "taskdog_core.domain.entities",
+    "taskdog_core.domain.services",
+    "taskdog_core.domain.repositories",
+    "taskdog_core.domain.exceptions",
+    "taskdog_core.domain.validators",
+    "taskdog_core.application",
+    "taskdog_core.application.dto",
+    "taskdog_core.application.use_cases",
+    "taskdog_core.application.services",
+    "taskdog_core.application.services.optimization",
+    "taskdog_core.application.queries",
+    "taskdog_core.application.queries.filters",
+    "taskdog_core.application.sorters",
+    "taskdog_core.application.validators",
+    "taskdog_core.application.constants",
+    "taskdog_core.application.interfaces",
+    "taskdog_core.application.utils",
+    "taskdog_core.infrastructure",
+    "taskdog_core.infrastructure.config",
+    "taskdog_core.infrastructure.persistence",
+    "taskdog_core.infrastructure.persistence.database",
+    "taskdog_core.infrastructure.persistence.mappers",
+    "taskdog_core.controllers",
+    "taskdog_core.shared",
+    "taskdog_core.shared.constants",
+    "taskdog_core.shared.utils",
+]
+package-dir = { "" = "src" }
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

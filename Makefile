@@ -1,4 +1,4 @@
-.PHONY: help test install clean lint format typecheck check completions coverage
+.PHONY: help test test-core test-server test-ui install install-core install-server install-ui install-all clean lint format typecheck check
 
 .DEFAULT_GOAL := help
 
@@ -8,52 +8,59 @@ help: ## Show this help message
 	@echo "Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-test: ## Run all tests
-	PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
+# Testing
+test: ## Run all tests (all packages)
+	@echo "Running tests for taskdog-core..."
+	cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
+	@echo "Running tests for taskdog-ui..."
+	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
 
-coverage: ## Run tests with coverage report
-	PYTHONPATH=src uv run python -m coverage run -m unittest discover -s tests/ -t .
-	uv run python -m coverage report -m
-	uv run python -m coverage html
-	@echo "HTML coverage report generated in htmlcov/index.html"
+test-core: ## Run tests for taskdog-core only
+	cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
 
-install: ## Install taskdog CLI tool
-	uv cache clean
-	uv build
-	uv tool install .
+test-server: ## Run tests for taskdog-server only
+	cd packages/taskdog-server && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
 
-install-api: ## Install taskdog with API server support
-	uv cache clean
-	uv build
-	uv tool install --with fastapi --with "uvicorn[standard]" --with pydantic .
+test-ui: ## Run tests for taskdog-ui only
+	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
 
-reinstall: ## Reinstall taskdog CLI tool
-	uv cache clean
-	uv tool uninstall taskdog || true
-	uv build
-	uv tool install .
+# Installation
+install-core: ## Install taskdog-core package
+	cd packages/taskdog-core && uv pip install -e .
 
-reinstall-api: ## Reinstall taskdog with API server support
-	uv cache clean
-	uv tool uninstall taskdog || true
-	uv build
-	uv tool install --with fastapi --with "uvicorn[standard]" --with pydantic .
+install-server: install-core ## Install taskdog-server (includes core)
+	cd packages/taskdog-server && uv pip install -e .
 
+install-ui: install-core ## Install taskdog-ui (includes core)
+	cd packages/taskdog-ui && uv pip install -e .
+
+install-all: install-core install-server install-ui ## Install all packages
+
+install: install-ui ## Install taskdog UI (default, for backward compatibility)
+
+# Tool installation (global)
+tool-install-ui: ## Install taskdog CLI tool globally
+	cd packages/taskdog-ui && uv tool install .
+
+tool-install-server: ## Install taskdog-server CLI tool globally
+	cd packages/taskdog-server && uv tool install .
+
+# Clean
 clean: ## Clean build artifacts and cache
-	rm -rf build/ dist/ src/*.egg-info/
+	rm -rf packages/*/build/ packages/*/dist/ packages/*/src/*.egg-info/
 	uv cache clean
 
+# Code Quality
 lint: ## Check code with ruff linter
-	uv run ruff check src/ tests/
+	uv run ruff check packages/*/src/ packages/*/tests/
 
 format: ## Format code with ruff and apply fixes
-	uv run ruff format src/ tests/
-	uv run ruff check --fix src/ tests/
+	uv run ruff format packages/*/src/ packages/*/tests/
+	uv run ruff check --fix packages/*/src/ packages/*/tests/
 
 typecheck: ## Run mypy type checker
-	uv run mypy src/
+	uv run mypy packages/taskdog-core/src/
+	uv run mypy packages/taskdog-server/src/
+	uv run mypy packages/taskdog-ui/src/
 
 check: lint typecheck ## Run all code quality checks (lint + typecheck)
-
-completions: install ## Generate shell completions (requires installation)
-	_TASKDOG_COMPLETE=bash_source taskdog

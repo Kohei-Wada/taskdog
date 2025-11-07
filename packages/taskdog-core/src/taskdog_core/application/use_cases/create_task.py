@@ -1,0 +1,41 @@
+"""Use case for creating a task."""
+
+from taskdog_core.application.dto.create_task_input import CreateTaskInput
+from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
+from taskdog_core.application.use_cases.base import UseCase
+from taskdog_core.domain.repositories.task_repository import TaskRepository
+
+
+class CreateTaskUseCase(UseCase[CreateTaskInput, TaskOperationOutput]):
+    """Use case for creating a new task with auto-generated ID."""
+
+    def __init__(self, repository: TaskRepository):
+        """Initialize use case with repository.
+
+        Args:
+            repository: Task repository for data access
+        """
+        self.repository = repository
+
+    def execute(self, input_dto: CreateTaskInput) -> TaskOperationOutput:
+        """Execute task creation.
+
+        Args:
+            input_dto: Task creation input data
+
+        Returns:
+            TaskOperationOutput DTO containing created task information
+        """
+        # Create task via repository (ID auto-assigned)
+        task = self.repository.create(
+            name=input_dto.name,
+            priority=input_dto.priority,
+            planned_start=input_dto.planned_start,
+            planned_end=input_dto.planned_end,
+            deadline=input_dto.deadline,
+            estimated_duration=input_dto.estimated_duration,
+            is_fixed=input_dto.is_fixed,
+            tags=input_dto.tags or [],
+        )
+
+        return TaskOperationOutput.from_task(task)
