@@ -1,66 +1,134 @@
-.PHONY: help test test-core test-server test-ui install install-core install-server install-ui install-all clean lint format typecheck check
+.PHONY: help test test-core test-server test-ui test-all \
+        install install-dev install-core install-server install-ui \
+        install-ui-only install-server-only reinstall \
+        tool-install-ui tool-install-server \
+        clean lint format typecheck check
 
 .DEFAULT_GOAL := help
 
 help: ## Show this help message
-	@echo "Usage: make [target]"
+	@echo "╔════════════════════════════════════════════════════════╗"
+	@echo "║           Taskdog Makefile - Available Targets         ║"
+	@echo "╚════════════════════════════════════════════════════════╝"
 	@echo ""
-	@echo "Available targets:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	@echo "📦 Installation:"
+	@grep -E '^(install|reinstall|tool-install).*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "🧪 Testing:"
+	@grep -E '^test.*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "✨ Code Quality:"
+	@grep -E '^(lint|format|typecheck|check).*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "🧹 Cleanup:"
+	@grep -E '^clean.*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
 
-# Testing
-test: ## Run all tests (all packages)
-	@echo "Running tests for taskdog-core..."
-	cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
-	@echo "Running tests for taskdog-ui..."
-	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
+# ============================================================================
+# Installation Targets
+# ============================================================================
+
+install: install-core install-server install-ui ## Install all packages (recommended)
+	@echo ""
+	@echo "✓ All packages installed successfully!"
+	@echo ""
+	@echo "Available commands:"
+	@echo "  - taskdog          (CLI/TUI)"
+	@echo "  - taskdog-server   (API server)"
+	@echo ""
+
+install-dev: ## Install all packages with development dependencies
+	@echo "Installing all packages with dev dependencies..."
+	cd packages/taskdog-core && uv pip install -e ".[dev]"
+	cd packages/taskdog-server && uv pip install -e ".[dev]"
+	cd packages/taskdog-ui && uv pip install -e ".[dev]"
+	@echo ""
+	@echo "✓ Development environment ready!"
+	@echo ""
+
+install-core: ## Install taskdog-core package only
+	@echo "Installing taskdog-core..."
+	cd packages/taskdog-core && uv pip install -e .
+
+install-server: install-core ## Install taskdog-server (includes core dependency)
+	@echo "Installing taskdog-server..."
+	cd packages/taskdog-server && uv pip install -e .
+
+install-ui: install-core ## Install taskdog-ui (includes core dependency)
+	@echo "Installing taskdog-ui..."
+	cd packages/taskdog-ui && uv pip install -e .
+
+install-ui-only: install-ui ## Install UI only (alias for backward compatibility)
+
+install-server-only: install-server ## Install server only (alias for clarity)
+
+reinstall: clean install ## Clean and reinstall all packages
+	@echo "✓ Reinstallation complete!"
+
+# Tool Installation (Global)
+tool-install-ui: ## Install taskdog CLI tool globally (uv tool)
+	cd packages/taskdog-ui && uv tool install --force .
+	@echo "✓ taskdog installed globally"
+
+tool-install-server: ## Install taskdog-server CLI tool globally (uv tool)
+	cd packages/taskdog-server && uv tool install --force .
+	@echo "✓ taskdog-server installed globally"
+
+# ============================================================================
+# Testing Targets
+# ============================================================================
+
+test: test-core test-ui ## Run all tests (core + ui)
+	@echo ""
+	@echo "✓ All tests passed!"
+	@echo ""
+
+test-all: test ## Run all tests (alias for test)
 
 test-core: ## Run tests for taskdog-core only
+	@echo "Running taskdog-core tests..."
 	cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
 
 test-server: ## Run tests for taskdog-server only
+	@echo "Running taskdog-server tests..."
 	cd packages/taskdog-server && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
 
 test-ui: ## Run tests for taskdog-ui only
+	@echo "Running taskdog-ui tests..."
 	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
 
-# Installation
-install-core: ## Install taskdog-core package
-	cd packages/taskdog-core && uv pip install -e .
+# ============================================================================
+# Code Quality Targets
+# ============================================================================
 
-install-server: install-core ## Install taskdog-server (includes core)
-	cd packages/taskdog-server && uv pip install -e .
-
-install-ui: install-core ## Install taskdog-ui (includes core)
-	cd packages/taskdog-ui && uv pip install -e .
-
-install-all: install-core install-server install-ui ## Install all packages
-
-install: install-ui ## Install taskdog UI (default, for backward compatibility)
-
-# Tool installation (global)
-tool-install-ui: ## Install taskdog CLI tool globally
-	cd packages/taskdog-ui && uv tool install .
-
-tool-install-server: ## Install taskdog-server CLI tool globally
-	cd packages/taskdog-server && uv tool install .
-
-# Clean
-clean: ## Clean build artifacts and cache
-	rm -rf packages/*/build/ packages/*/dist/ packages/*/src/*.egg-info/
-	uv cache clean
-
-# Code Quality
 lint: ## Check code with ruff linter
+	@echo "Running ruff linter..."
 	uv run ruff check packages/*/src/ packages/*/tests/
 
 format: ## Format code with ruff and apply fixes
+	@echo "Formatting code with ruff..."
 	uv run ruff format packages/*/src/ packages/*/tests/
 	uv run ruff check --fix packages/*/src/ packages/*/tests/
 
-typecheck: ## Run mypy type checker
+typecheck: ## Run mypy type checker on all packages
+	@echo "Running mypy type checker..."
 	uv run mypy packages/taskdog-core/src/
 	uv run mypy packages/taskdog-server/src/
 	uv run mypy packages/taskdog-ui/src/
 
 check: lint typecheck ## Run all code quality checks (lint + typecheck)
+	@echo ""
+	@echo "✓ All code quality checks passed!"
+	@echo ""
+
+# ============================================================================
+# Cleanup Targets
+# ============================================================================
+
+clean: ## Clean build artifacts and cache
+	@echo "Cleaning build artifacts..."
+	rm -rf packages/*/build/ packages/*/dist/ packages/*/src/*.egg-info/
+	rm -rf packages/*/.ruff_cache/ packages/*/.mypy_cache/
+	find packages -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	uv cache clean
+	@echo "✓ Clean complete!"
