@@ -18,7 +18,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.notes_repo = FileNotesRepository()
-        self.builder = TaskTableRowBuilder(self.notes_repo)
+        self.builder = TaskTableRowBuilder()
 
     def test_build_row_basic_task(self):
         """Test building a row for a basic task."""
