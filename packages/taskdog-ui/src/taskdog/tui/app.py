@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
+from taskdog.services.task_data_loader import TaskDataLoader
 from taskdog.tui.commands.factory import CommandFactory
 from taskdog.tui.context import TUIContext
 from taskdog.tui.events import (
@@ -161,6 +162,14 @@ class TaskdogTUI(App):
         self.table_presenter = TablePresenter(notes_repository)
         self.gantt_presenter = GanttPresenter(notes_repository)
 
+        # Initialize TaskDataLoader for data fetching
+        self.task_data_loader = TaskDataLoader(
+            api_client=self.api_client,
+            table_presenter=self.table_presenter,
+            gantt_presenter=self.gantt_presenter,
+            holiday_checker=self.holiday_checker,
+        )
+
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context)
 
@@ -231,123 +240,53 @@ class TaskdogTUI(App):
         Returns:
             List of loaded tasks
         """
-        # Note: In API-only mode, tasks are fetched fresh from the API server
-        # No need for repository.reload() - api_client always gets latest data
+        # Calculate date range for gantt if needed
+        date_range = None
+        if self.main_screen and self.main_screen.gantt_widget:
+            from datetime import timedelta
 
-        # Always fetch all non-archived tasks from API and cache them
-        task_filter = NonArchivedFilter()
+            from taskdog_core.shared.utils.date_utils import get_previous_monday
 
-        # Use API client to get fresh data from server
-        task_list_output = self.api_client.list_tasks(
-            filter_obj=task_filter, sort_by=self._gantt_sort_by, reverse=False
+            widget = self.main_screen.gantt_widget
+            display_days = (
+                widget._calculate_display_days()
+                if hasattr(widget, "_calculate_display_days")
+                else 28
+            )
+            start_date = get_previous_monday()
+            end_date = start_date + timedelta(days=display_days - 1)
+            date_range = (start_date, end_date)
+
+        # Load all data using TaskDataLoader
+        task_data = self.task_data_loader.load_tasks(
+            task_filter=NonArchivedFilter(),
+            sort_by=self._gantt_sort_by,
+            hide_completed=self._hide_completed,
+            date_range=date_range,
         )
-        # Cache all tasks
-        self._all_tasks = task_list_output.tasks
 
-        # Apply display filter based on _hide_completed setting
-        tasks = self._apply_display_filter(self._all_tasks)
+        # Cache data for toggle operations
+        self._all_tasks = task_data.all_tasks
+        self._gantt_view_model = task_data.gantt_view_model
 
-        # Update gantt chart and table
+        # Update UI widgets
         if self.main_screen:
-            if self.main_screen.gantt_widget:
-                # Calculate appropriate date range based on screen width
-                from datetime import timedelta
-
-                from taskdog_core.shared.utils.date_utils import get_previous_monday
-
-                # Use gantt widget's display calculation if available
-                widget = self.main_screen.gantt_widget
-                display_days = (
-                    widget._calculate_display_days()
-                    if hasattr(widget, "_calculate_display_days")
-                    else 28
-                )
-                start_date = get_previous_monday()
-                end_date = start_date + timedelta(days=display_days - 1)
-
-                # Get gantt DTO using API client (fetches fresh data from server)
-                # Always fetch all tasks, filter will be applied to displayed tasks
-                gantt_output = self.api_client.get_gantt_data(
-                    filter_obj=NonArchivedFilter(),
-                    sort_by=self._gantt_sort_by,
-                    reverse=False,
-                    start_date=start_date,
-                    end_date=end_date,
-                    holiday_checker=self.holiday_checker,
-                )
-
-                # Convert DTO to ViewModel using GanttPresenter directly
-                gantt_view_model = self.gantt_presenter.present(gantt_output)
-                # Cache gantt view model for toggle operations
-                self._gantt_view_model = gantt_view_model
-
-                # Extract task IDs for widget
-                task_ids = [t.id for t in tasks]
-
-                # Filter gantt view model to match displayed tasks
-                filtered_task_ids = {t.id for t in tasks}
-                filtered_gantt_tasks = [
-                    task
-                    for task in gantt_view_model.tasks
-                    if task.id in filtered_task_ids
-                ]
-
-                # Create filtered GanttViewModel for display
-                from taskdog.view_models.gantt_view_model import GanttViewModel
-
-                filtered_gantt_vm = GanttViewModel(
-                    tasks=filtered_gantt_tasks,
-                    task_daily_hours=gantt_view_model.task_daily_hours,
-                    daily_workload=gantt_view_model.daily_workload,
-                    start_date=gantt_view_model.start_date,
-                    end_date=gantt_view_model.end_date,
-                    holidays=gantt_view_model.holidays,
-                )
-
+            if self.main_screen.gantt_widget and task_data.filtered_gantt_view_model:
+                task_ids = [t.id for t in task_data.filtered_tasks]
                 self.main_screen.gantt_widget.update_gantt(
                     task_ids=task_ids,
-                    gantt_view_model=filtered_gantt_vm,
+                    gantt_view_model=task_data.filtered_gantt_view_model,
                     sort_by=self._gantt_sort_by,
                     task_filter=NonArchivedFilter(),
                 )
 
             if self.main_screen.task_table:
-                # Create filtered TaskListOutput for presenter
-                from taskdog_core.application.dto.task_list_output import TaskListOutput
-
-                filtered_output = TaskListOutput(
-                    tasks=tasks,
-                    total_count=task_list_output.total_count,
-                    filtered_count=len(tasks),
-                )
-                # Convert TaskListOutput to ViewModels using TablePresenter directly
-                view_models = self.table_presenter.present(filtered_output)
                 self.main_screen.task_table.refresh_tasks(
-                    view_models, keep_scroll_position=keep_scroll_position
+                    task_data.table_view_models,
+                    keep_scroll_position=keep_scroll_position,
                 )
 
-        return tasks
-
-    def _apply_display_filter(self, tasks: list) -> list:
-        """Apply display filter based on _hide_completed setting.
-
-        Args:
-            tasks: List of all tasks
-
-        Returns:
-            Filtered list of tasks based on current display settings
-        """
-        if not self._hide_completed:
-            return tasks
-
-        # Filter out COMPLETED and CANCELED tasks when hide_completed is True
-        from taskdog_core.domain.entities.task import TaskStatus
-
-        return [
-            task
-            for task in tasks
-            if task.status not in (TaskStatus.COMPLETED, TaskStatus.CANCELED)
-        ]
+        return task_data.filtered_tasks
 
     def search_sort(self) -> None:
         """Show a fuzzy search command palette containing all sort options.
@@ -475,16 +414,19 @@ class TaskdogTUI(App):
 
         # Apply filter to cached tasks without API reload
         if self._all_tasks and self.main_screen:
-            tasks = self._apply_display_filter(self._all_tasks)
+            # Filter tasks using TaskDataLoader
+            filtered_tasks = self.task_data_loader.apply_display_filter(
+                self._all_tasks, self._hide_completed
+            )
 
             # Update table view with filtered tasks
             if self.main_screen.task_table:
                 from taskdog_core.application.dto.task_list_output import TaskListOutput
 
                 filtered_output = TaskListOutput(
-                    tasks=tasks,
+                    tasks=filtered_tasks,
                     total_count=len(self._all_tasks),
-                    filtered_count=len(tasks),
+                    filtered_count=len(filtered_tasks),
                 )
                 view_models = self.table_presenter.present(filtered_output)
                 self.main_screen.task_table.refresh_tasks(
@@ -493,27 +435,12 @@ class TaskdogTUI(App):
 
             # Update gantt view with filtered tasks
             if self.main_screen.gantt_widget and self._gantt_view_model:
-                # Create a filtered gantt view model
-                filtered_task_ids = {t.id for t in tasks}
-                filtered_gantt_tasks = [
-                    task
-                    for task in self._gantt_view_model.tasks
-                    if task.id in filtered_task_ids
-                ]
-
-                # Create new GanttViewModel with filtered tasks
-                from taskdog.view_models.gantt_view_model import GanttViewModel
-
-                filtered_gantt_vm = GanttViewModel(
-                    tasks=filtered_gantt_tasks,
-                    task_daily_hours=self._gantt_view_model.task_daily_hours,
-                    daily_workload=self._gantt_view_model.daily_workload,
-                    start_date=self._gantt_view_model.start_date,
-                    end_date=self._gantt_view_model.end_date,
-                    holidays=self._gantt_view_model.holidays,
+                # Filter gantt view model using TaskDataLoader
+                filtered_gantt_vm = self.task_data_loader.filter_gantt_by_tasks(
+                    self._gantt_view_model, filtered_tasks
                 )
 
-                task_ids = [t.id for t in tasks]
+                task_ids = [t.id for t in filtered_tasks]
                 self.main_screen.gantt_widget.update_gantt(
                     task_ids=task_ids,
                     gantt_view_model=filtered_gantt_vm,

@@ -41,6 +41,7 @@ packages = [
     "taskdog",
     "taskdog.builders",
     "taskdog.formatters",
+    "taskdog.services",
     "taskdog.cli",
     "taskdog.cli.commands",
     "taskdog.tui",

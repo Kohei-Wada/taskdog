@@ -1,6 +1,7 @@
 """Task search and filtering logic."""
 
-from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
+from taskdog.formatters.duration_formatter import DurationFormatter
 from taskdog.view_models.task_view_model import TaskRowViewModel
 
 # Constants for search keywords
@@ -95,14 +96,18 @@ class TaskSearchFilter:
         Returns:
             List of searchable text strings
         """
+        # Initialize formatters
+        duration_formatter = DurationFormatter()
+        date_formatter = DateTimeFormatter()
+
         # Core fields always included
         searchable_fields = [
             str(task_vm.id),
             task_vm.name,
             task_vm.status.value,
             str(task_vm.priority),
-            TaskTableRowBuilder.format_duration(task_vm),
-            TaskTableRowBuilder.format_deadline(task_vm.deadline),
+            duration_formatter.format_hours(task_vm.estimated_duration),
+            date_formatter.format_deadline(task_vm.deadline),
         ]
 
         # Add dependencies if present
