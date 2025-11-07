@@ -73,10 +73,10 @@ class StatusChangeCommandBase(TUICommandBase):
         1. Get selected task ID
         2. Validate task selection
         3. Execute status change via specialized controller
-        4. Reload task list
+        4. Post TaskUpdated event to trigger UI refresh
         5. Show success notification
 
-        Error handling is provided by @handle_tui_errors decorator.
+        Error handling is provided by try-except block in this method.
         """
         # Execute with error handling
         action_name = self.get_action_name()
