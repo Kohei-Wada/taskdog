@@ -15,9 +15,6 @@ from taskdog.cli.context import CliContext
 from taskdog.console.rich_console_writer import RichConsoleWriter
 from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
 from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
 
 
 class TestGroupTasksByDate(unittest.TestCase):
@@ -278,21 +275,13 @@ class TestReportCommand(unittest.TestCase):
     def setUp(self):
         """Set up test dependencies."""
         self.runner = CliRunner()
-        self.repository = MagicMock(spec=SqliteTaskRepository)
         self.console_writer = MagicMock(spec=RichConsoleWriter)
-        self.query_controller = MagicMock()
         self.api_client = MagicMock()
         self.cli_context = CliContext(
             console_writer=self.console_writer,
             api_client=self.api_client,
-            repository=self.repository,
             config=MagicMock(),
             notes_repository=MagicMock(),
-            query_controller=self.query_controller,
-            lifecycle_controller=MagicMock(),
-            relationship_controller=MagicMock(),
-            analytics_controller=MagicMock(),
-            crud_controller=MagicMock(),
             holiday_checker=None,
         )
 
@@ -305,7 +294,7 @@ class TestReportCommand(unittest.TestCase):
 
         mock_result = MagicMock()
         mock_result.tasks = [task_without_allocation]
-        self.query_controller.list_tasks.return_value = mock_result
+        self.api_client.list_tasks.return_value = mock_result
 
         # Execute
         result = self.runner.invoke(report_command, [], obj=self.cli_context)
@@ -330,7 +319,7 @@ class TestReportCommand(unittest.TestCase):
 
         mock_result = MagicMock()
         mock_result.tasks = [task]
-        self.query_controller.list_tasks.return_value = mock_result
+        self.api_client.list_tasks.return_value = mock_result
 
         # Execute - query for November dates (task is in October)
         result = self.runner.invoke(
@@ -367,7 +356,7 @@ class TestReportCommand(unittest.TestCase):
 
         mock_result = MagicMock()
         mock_result.tasks = [task1, task2]
-        self.query_controller.list_tasks.return_value = mock_result
+        self.api_client.list_tasks.return_value = mock_result
 
         # Execute
         result = self.runner.invoke(report_command, [], obj=self.cli_context)

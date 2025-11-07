@@ -63,17 +63,15 @@ def report_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     Groups tasks by date and displays allocated hours for each day.
     """
     ctx_obj: CliContext = ctx.obj
-    query_controller = ctx_obj.query_controller
+    api_client = ctx_obj.api_client
     workload_calculator = WorkloadCalculator()
 
     # Build integrated filter with tags support (tags use OR logic by default)
     tags = list(tag) if tag else None
     filter_obj = build_task_filter(all=all, status=status, tags=tags, match_all=False)
 
-    # Get filtered and sorted tasks
-    result = query_controller.list_tasks(
-        filter_obj=filter_obj, sort_by=sort, reverse=reverse
-    )
+    # Get filtered and sorted tasks via API
+    result = api_client.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
     tasks = result.tasks
 
     # Convert datetime to date objects for filtering

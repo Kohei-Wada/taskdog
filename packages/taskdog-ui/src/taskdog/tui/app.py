@@ -32,7 +32,6 @@ from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
 )
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
-from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.shared.config_manager import Config, ConfigManager
 
@@ -116,21 +115,19 @@ class TaskdogTUI(App):
         notes_repository: NotesRepository,
         config: Config | None = None,
         holiday_checker: IHolidayChecker | None = None,
-        repository: TaskRepository | None = None,
         *args,
         **kwargs,
     ):
         """Initialize the TUI application.
 
-        TUI now requires an API client connection to function.
-        Local repository mode is no longer supported.
+        TUI operates through the API client for all task operations.
+        Local file operations (notes, config) are performed directly.
 
         Args:
             api_client: API client for server communication (required)
             notes_repository: Notes repository for notes file operations
             config: Application configuration (optional, loads from file by default)
             holiday_checker: Holiday checker for workday validation (optional)
-            repository: Task repository (deprecated, kept for compatibility)
         """
         super().__init__(*args, **kwargs)
         from taskdog.infrastructure.api_client import TaskdogApiClient
@@ -151,17 +148,6 @@ class TaskdogTUI(App):
         self._hide_completed: bool = False  # Default: show all tasks
         self._all_tasks: list = []  # Cache of all tasks for display filtering
         self._gantt_view_model = None  # Cache of gantt view model
-
-        # Create dummy repository if not provided (for API-only mode)
-        if repository is None:
-            from taskdog_core.infrastructure.persistence.repository_factory import (
-                RepositoryFactory,
-            )
-
-            repository = RepositoryFactory.create(self.config.storage)
-
-        # Set repository after ensuring it's created
-        self.repository = repository
 
         # Initialize TUIContext with API client
         self.context = TUIContext(

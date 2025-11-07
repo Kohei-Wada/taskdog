@@ -39,7 +39,6 @@ from taskdog_core.infrastructure.holiday_checker import HolidayChecker
 from taskdog_core.infrastructure.persistence.file_notes_repository import (
     FileNotesRepository,
 )
-from taskdog_core.infrastructure.persistence.repository_factory import RepositoryFactory
 from taskdog_core.shared.config_manager import ConfigManager
 
 
@@ -72,8 +71,6 @@ class TaskdogGroup(click.Group):
 @click.pass_context
 def cli(ctx: click.Context) -> None:
     """Taskdog: Task management CLI tool with time tracking and optimization."""
-    from taskdog_core.domain.exceptions.task_exceptions import CorruptedDataError
-
     # Display help when no subcommand is provided
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
@@ -90,33 +87,6 @@ def cli(ctx: click.Context) -> None:
     if config.region.country:
         with suppress(ImportError, NotImplementedError):
             holiday_checker = HolidayChecker(config.region.country)
-
-    # Initialize repository using factory based on storage config
-    try:
-        repository = RepositoryFactory.create(config.storage)
-    except CorruptedDataError as e:
-        # Display detailed error message
-        console_writer.error("loading tasks", e)
-        ctx.exit(1)
-
-    # Initialize controllers
-    from taskdog_core.controllers.query_controller import QueryController
-    from taskdog_core.controllers.task_analytics_controller import (
-        TaskAnalyticsController,
-    )
-    from taskdog_core.controllers.task_crud_controller import TaskCrudController
-    from taskdog_core.controllers.task_lifecycle_controller import (
-        TaskLifecycleController,
-    )
-    from taskdog_core.controllers.task_relationship_controller import (
-        TaskRelationshipController,
-    )
-
-    query_controller = QueryController(repository, notes_repository)
-    lifecycle_controller = TaskLifecycleController(repository, config)
-    relationship_controller = TaskRelationshipController(repository, config)
-    analytics_controller = TaskAnalyticsController(repository, config, holiday_checker)
-    crud_controller = TaskCrudController(repository, config)
 
     # API client is now required for all CLI commands
     # Check if API mode is enabled in config
@@ -152,16 +122,10 @@ def cli(ctx: click.Context) -> None:
     ctx.ensure_object(dict)
     ctx.obj = CliContext(
         console_writer=console_writer,
-        repository=repository,
+        api_client=api_client,
         config=config,
         notes_repository=notes_repository,
-        query_controller=query_controller,
-        lifecycle_controller=lifecycle_controller,
-        relationship_controller=relationship_controller,
-        analytics_controller=analytics_controller,
-        crud_controller=crud_controller,
         holiday_checker=holiday_checker,
-        api_client=api_client,
     )
 
 

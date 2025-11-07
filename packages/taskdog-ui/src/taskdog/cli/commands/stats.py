@@ -41,10 +41,10 @@ def stats_command(ctx, period, focus):
     """Display task statistics and analytics."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    controller = ctx_obj.analytics_controller
+    api_client = ctx_obj.api_client
 
-    # Calculate statistics via controller
-    result = controller.calculate_statistics(period=period)
+    # Calculate statistics via API
+    result = api_client.get_statistics(period=period)
 
     # Check if we have any tasks
     if result.task_stats.total_tasks == 0:

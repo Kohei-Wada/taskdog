@@ -85,7 +85,7 @@ def export_command(ctx, format, output, fields, tag, all, status, start_date, en
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    query_controller = ctx_obj.query_controller
+    api_client = ctx_obj.api_client
 
     try:
         # Build integrated filter with all options (tags use OR logic by default)
@@ -98,7 +98,7 @@ def export_command(ctx, format, output, fields, tag, all, status, start_date, en
             start_date=start_date,
             end_date=end_date,
         )
-        result = query_controller.list_tasks(filter_obj=filter_obj)
+        result = api_client.list_tasks(filter_obj=filter_obj)
         tasks = result.tasks
 
         # fields is already parsed and validated by FieldList Click type

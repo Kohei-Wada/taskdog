@@ -20,15 +20,12 @@ def note_command(ctx, task_id):
     """Edit task notes in markdown using temporary file approach."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
-    repository = ctx_obj.repository
+    api_client = ctx_obj.api_client
     notes_repository = ctx_obj.notes_repository
 
-    # Get task from repository
-    task = repository.get_by_id(task_id)
-    if not task:
-        from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
-
-        raise TaskNotFoundException(task_id)
+    # Get task from API
+    result = api_client.get_task_by_id(task_id)
+    task = result.task
 
     # Ensure notes directory exists
     notes_repository.ensure_notes_dir()
