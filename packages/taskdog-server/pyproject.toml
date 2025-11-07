@@ -42,6 +42,9 @@ packages = [
 ]
 package-dir = { "" = "src" }
 
+[tool.setuptools.package-data]
+taskdog_server = ["py.typed"]
+
 [tool.ruff]
 line-length = 88
 target-version = "py313"

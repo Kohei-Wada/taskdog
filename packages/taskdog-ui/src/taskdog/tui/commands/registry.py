@@ -69,7 +69,7 @@ class CommandRegistry:
         Args:
             name: The command name (used as action identifier)
             module_path: Module path in format "module.path:ClassName"
-                        e.g., "presentation.tui.commands.start_task_command:StartTaskCommand"
+                        e.g., "taskdog.tui.commands.start_task_command:StartTaskCommand"
         """
         self._lazy_commands[name] = module_path
 

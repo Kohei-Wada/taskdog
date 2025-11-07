@@ -64,6 +64,7 @@ packages = [
 package-dir = { "" = "src" }
 
 [tool.setuptools.package-data]
+taskdog = ["py.typed"]
 "taskdog.tui.styles" = ["*.tcss"]
 
 [tool.ruff]

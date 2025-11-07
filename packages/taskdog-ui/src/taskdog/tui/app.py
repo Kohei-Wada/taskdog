@@ -47,7 +47,7 @@ def _get_css_paths() -> list[str | Path]:
     """
     try:
         # Use importlib.resources to locate the styles directory
-        styles_dir = files("presentation.tui") / "styles"
+        styles_dir = files("taskdog.tui") / "styles"
         return [
             str(styles_dir / "theme.tcss"),
             str(styles_dir / "components.tcss"),

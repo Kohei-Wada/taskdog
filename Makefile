@@ -106,12 +106,12 @@ test-ui: ## Run tests for taskdog-ui only
 
 lint: ## Check code with ruff linter
 	@echo "Running ruff linter..."
-	uv run ruff check packages/*/src/ packages/*/tests/
+	uv run ruff check --config pyproject.toml packages/*/src/ packages/*/tests/
 
 format: ## Format code with ruff and apply fixes
 	@echo "Formatting code with ruff..."
-	uv run ruff format packages/*/src/ packages/*/tests/
-	uv run ruff check --fix packages/*/src/ packages/*/tests/
+	uv run ruff format --config pyproject.toml packages/*/src/ packages/*/tests/
+	uv run ruff check --fix --config pyproject.toml packages/*/src/ packages/*/tests/
 
 typecheck: ## Run mypy type checker on all packages
 	@echo "Running mypy type checker..."

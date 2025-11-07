@@ -61,6 +61,9 @@ packages = [
 ]
 package-dir = { "" = "src" }
 
+[tool.setuptools.package-data]
+taskdog_core = ["py.typed"]
+
 [tool.ruff]
 line-length = 88
 target-version = "py313"
