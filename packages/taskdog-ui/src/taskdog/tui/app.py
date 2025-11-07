@@ -267,7 +267,7 @@ class TaskdogTUI(App):
                 # Calculate appropriate date range based on screen width
                 from datetime import timedelta
 
-                from shared.utils.date_utils import get_previous_monday
+                from taskdog_core.shared.utils.date_utils import get_previous_monday
 
                 # Use gantt widget's display calculation if available
                 widget = self.main_screen.gantt_widget
