@@ -11,7 +11,7 @@ from taskdog.tui.commands.registry import command_registry
 _LAZY_COMMANDS = {
     "add_task": "taskdog.tui.commands.add_task_command:AddTaskCommand",
     "cancel_task": "taskdog.tui.commands.cancel_task_command:CancelTaskCommand",
-    "done_task": "taskdog.tui.commands.complete_task_command:CompleteTaskCommand",
+    "complete_task": "taskdog.tui.commands.complete_task_command:CompleteTaskCommand",
     "delete_task": "taskdog.tui.commands.delete_task_command:DeleteTaskCommand",
     "hard_delete_task": "taskdog.tui.commands.hard_delete_task_command:HardDeleteTaskCommand",
     "edit_note": "taskdog.tui.commands.edit_note_command:EditNoteCommand",

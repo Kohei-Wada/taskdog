@@ -5,7 +5,7 @@ from taskdog.tui.commands.status_change_base import StatusChangeCommandBase
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
 
-@command_registry.register("done_task")
+@command_registry.register("complete_task")
 class CompleteTaskCommand(StatusChangeCommandBase):
     """Command to complete the selected task."""
 

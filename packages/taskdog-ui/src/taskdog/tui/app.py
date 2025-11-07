@@ -72,7 +72,7 @@ class TaskdogTUI(App):
         ("a", "add_task", "Add"),
         ("s", "start_task", "Start"),
         ("P", "pause_task", "Pause"),
-        ("d", "done_task", "Done"),
+        ("d", "complete_task", "Done"),
         ("c", "cancel_task", "Cancel"),
         ("R", "reopen_task", "Reopen"),
         ("x", "delete_task", "Archive"),
@@ -181,9 +181,9 @@ class TaskdogTUI(App):
         """Pause the selected task."""
         self.command_factory.execute("pause_task")
 
-    def action_done_task(self) -> None:
+    def action_complete_task(self) -> None:
         """Mark the selected task as done."""
-        self.command_factory.execute("done_task")
+        self.command_factory.execute("complete_task")
 
     def action_cancel_task(self) -> None:
         """Cancel the selected task."""
