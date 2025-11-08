@@ -40,6 +40,7 @@ class TaskdogApiClient:
         """
         self.base_url = base_url.rstrip("/")
         self.client = httpx.Client(base_url=self.base_url, timeout=timeout)
+        self._has_notes_cache: dict[int, bool] = {}  # Cache for has_notes info
 
     def close(self) -> None:
         """Close the HTTP client."""
@@ -751,43 +752,50 @@ class TaskdogApiClient:
         )
 
     def _convert_to_task_list_output(self, data: dict[str, Any]) -> TaskListOutput:
-        """Convert API response to TaskListOutput."""
+        """Convert API response to TaskListOutput.
+
+        Caches has_notes information from the API response for later use.
+        """
         # Simplified - full implementation would need to convert all task fields
         from taskdog_core.application.dto.task_dto import TaskRowDto
 
-        tasks = [
-            TaskRowDto(
-                id=task["id"],
-                name=task["name"],
-                priority=task["priority"],
-                status=TaskStatus(task["status"]),
-                planned_start=datetime.fromisoformat(task["planned_start"])
-                if task.get("planned_start")
-                else None,
-                planned_end=datetime.fromisoformat(task["planned_end"])
-                if task.get("planned_end")
-                else None,
-                deadline=datetime.fromisoformat(task["deadline"])
-                if task.get("deadline")
-                else None,
-                actual_start=datetime.fromisoformat(task["actual_start"])
-                if task.get("actual_start")
-                else None,
-                actual_end=datetime.fromisoformat(task["actual_end"])
-                if task.get("actual_end")
-                else None,
-                estimated_duration=task.get("estimated_duration"),
-                actual_duration_hours=task.get("actual_duration_hours"),
-                is_fixed=task.get("is_fixed", False),
-                depends_on=task.get("depends_on", []),
-                tags=task.get("tags", []),
-                is_archived=task.get("is_archived", False),
-                is_finished=task.get("is_finished", False),
-                created_at=datetime.fromisoformat(task["created_at"]),
-                updated_at=datetime.fromisoformat(task["updated_at"]),
+        tasks = []
+        for task in data["tasks"]:
+            # Cache has_notes information
+            self._has_notes_cache[task["id"]] = task.get("has_notes", False)
+
+            tasks.append(
+                TaskRowDto(
+                    id=task["id"],
+                    name=task["name"],
+                    priority=task["priority"],
+                    status=TaskStatus(task["status"]),
+                    planned_start=datetime.fromisoformat(task["planned_start"])
+                    if task.get("planned_start")
+                    else None,
+                    planned_end=datetime.fromisoformat(task["planned_end"])
+                    if task.get("planned_end")
+                    else None,
+                    deadline=datetime.fromisoformat(task["deadline"])
+                    if task.get("deadline")
+                    else None,
+                    actual_start=datetime.fromisoformat(task["actual_start"])
+                    if task.get("actual_start")
+                    else None,
+                    actual_end=datetime.fromisoformat(task["actual_end"])
+                    if task.get("actual_end")
+                    else None,
+                    estimated_duration=task.get("estimated_duration"),
+                    actual_duration_hours=task.get("actual_duration_hours"),
+                    is_fixed=task.get("is_fixed", False),
+                    depends_on=task.get("depends_on", []),
+                    tags=task.get("tags", []),
+                    is_archived=task.get("is_archived", False),
+                    is_finished=task.get("is_finished", False),
+                    created_at=datetime.fromisoformat(task["created_at"]),
+                    updated_at=datetime.fromisoformat(task["updated_at"]),
+                )
             )
-            for task in data["tasks"]
-        ]
 
         # Convert gantt data if present
         gantt_data = None
@@ -1167,6 +1175,8 @@ class TaskdogApiClient:
     def has_task_notes(self, task_id: int) -> bool:
         """Check if task has notes.
 
+        Uses cached information from list_tasks if available, otherwise queries API.
+
         Args:
             task_id: Task ID
 
@@ -1176,5 +1186,11 @@ class TaskdogApiClient:
         Raises:
             TaskNotFoundException: If task not found
         """
+        # Use cache if available (populated by list_tasks)
+        if task_id in self._has_notes_cache:
+            return self._has_notes_cache[task_id]
+
+        # Fall back to API call
         _, has_notes = self.get_task_notes(task_id)
+        self._has_notes_cache[task_id] = has_notes
         return has_notes

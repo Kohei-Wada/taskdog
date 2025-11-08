@@ -19,6 +19,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 from taskdog_server.api.dependencies import (
     CrudControllerDep,
     HolidayCheckerDep,
+    NotesRepositoryDep,
     QueryControllerDep,
 )
 from taskdog_server.api.models.requests import CreateTaskRequest, UpdateTaskRequest
@@ -79,8 +80,16 @@ def convert_to_update_task_response(dto) -> UpdateTaskResponse:
     )
 
 
-def convert_to_task_list_response(dto) -> TaskListResponse:
-    """Convert TaskListOutput DTO to Pydantic response model."""
+def convert_to_task_list_response(dto, notes_repo) -> TaskListResponse:
+    """Convert TaskListOutput DTO to Pydantic response model.
+
+    Args:
+        dto: TaskListOutput DTO from controller
+        notes_repo: Notes repository for checking note existence
+
+    Returns:
+        TaskListResponse with has_notes field populated
+    """
     from taskdog_server.api.models.responses import (
         GanttDateRange,
         GanttResponse,
@@ -105,6 +114,7 @@ def convert_to_task_list_response(dto) -> TaskListResponse:
             is_fixed=task.is_fixed,
             is_archived=task.is_archived,
             is_finished=task.is_finished,
+            has_notes=notes_repo.has_notes(task.id),
             created_at=task.created_at,
             updated_at=task.updated_at,
         )
@@ -247,6 +257,7 @@ async def create_task(request: CreateTaskRequest, controller: CrudControllerDep)
 @router.get("", response_model=TaskListResponse)
 async def list_tasks(
     controller: QueryControllerDep,
+    notes_repo: NotesRepositoryDep,
     holiday_checker: HolidayCheckerDep,
     all: Annotated[bool, Query(description="Include archived tasks")] = False,
     status_filter: Annotated[
@@ -334,7 +345,7 @@ async def list_tasks(
         gantt_end_date=gantt_end,
         holiday_checker=holiday_checker if include_gantt else None,
     )
-    return convert_to_task_list_response(result)
+    return convert_to_task_list_response(result, notes_repo)
 
 
 @router.get("/{task_id}", response_model=TaskDetailResponse)

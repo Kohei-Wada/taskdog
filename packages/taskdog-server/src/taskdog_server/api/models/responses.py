@@ -75,6 +75,7 @@ class TaskResponse(BaseModel):
     is_fixed: bool = False
     is_archived: bool = False
     is_finished: bool = False
+    has_notes: bool = False
     created_at: datetime
     updated_at: datetime
 
