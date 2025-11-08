@@ -148,6 +148,60 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         """Move focus to the previous field (Ctrl+K)."""
         self.focus_previous()
 
+    def _show_validation_error(self, message: str, widget_to_focus: Any) -> None:
+        """Show validation error and focus the relevant widget.
+
+        Args:
+            message: Error message to display
+            widget_to_focus: Widget to focus after showing error
+        """
+        error_message = self.query_one("#error-message", Static)
+        error_message.update(f"[red]Error: {message}[/red]")
+        widget_to_focus.focus()
+
+    def _validate_max_hours(self, value: str) -> tuple[float | None, str | None]:
+        """Validate and parse max hours input.
+
+        Args:
+            value: Input value to validate
+
+        Returns:
+            Tuple of (parsed_value, error_message).
+            If valid: (float_value, None)
+            If invalid: (None, error_message)
+        """
+        if not value:
+            return None, "Max hours per day is required"
+
+        try:
+            hours = float(value)
+            if hours <= 0:
+                return None, "Max hours must be greater than 0"
+            if hours > 24:
+                return None, "Max hours cannot exceed 24"
+            return hours, None
+        except ValueError:
+            return None, "Max hours must be a valid number"
+
+    def _validate_start_date(self, value: str) -> tuple[datetime | None, str | None]:
+        """Validate and parse start date input.
+
+        Args:
+            value: Input value to validate
+
+        Returns:
+            Tuple of (parsed_value, error_message).
+            If valid: (datetime_value, None)
+            If invalid: (None, error_message)
+        """
+        if not value:
+            return None, "Start date is required"
+
+        try:
+            return dateutil_parser.parse(value, fuzzy=True), None
+        except (ValueError, TypeError, OverflowError, ParserError):
+            return None, "Invalid date format. Examples: today, tomorrow, 2025-12-01"
+
     def action_submit(self) -> None:
         """Submit the form."""
         option_list = self.query_one("#algorithm-list", ViOptionList)
@@ -158,53 +212,26 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         # Clear previous error
         error_message.update("")
 
-        # Get selected algorithm
+        # Validate algorithm selection
         if option_list.highlighted is None:
-            error_message.update("[red]Error: Please select an algorithm[/red]")
-            option_list.focus()
+            self._show_validation_error("Please select an algorithm", option_list)
             return
-
         selected_algo = self.algorithms[option_list.highlighted][0]
 
-        # Validate and parse max hours
-        max_hours_str = max_hours_input.value.strip()
-        if not max_hours_str:
-            error_message.update("[red]Error: Max hours per day is required[/red]")
-            max_hours_input.focus()
+        # Validate max hours
+        max_hours, max_hours_error = self._validate_max_hours(
+            max_hours_input.value.strip()
+        )
+        if max_hours_error:
+            self._show_validation_error(max_hours_error, max_hours_input)
             return
 
-        try:
-            max_hours = float(max_hours_str)
-            if max_hours <= 0:
-                error_message.update(
-                    "[red]Error: Max hours must be greater than 0[/red]"
-                )
-                max_hours_input.focus()
-                return
-            if max_hours > 24:
-                error_message.update("[red]Error: Max hours cannot exceed 24[/red]")
-                max_hours_input.focus()
-                return
-        except ValueError:
-            error_message.update("[red]Error: Max hours must be a valid number[/red]")
-            max_hours_input.focus()
-            return
-
-        # Validate and parse start date
-        start_date_str = start_date_input.value.strip()
-        if not start_date_str:
-            error_message.update("[red]Error: Start date is required[/red]")
-            start_date_input.focus()
-            return
-
-        try:
-            # Parse flexible date formats using dateutil
-            start_date = dateutil_parser.parse(start_date_str, fuzzy=True)
-        except (ValueError, TypeError, OverflowError, ParserError):
-            error_message.update(
-                "[red]Error: Invalid date format. Examples: today, tomorrow, 2025-12-01[/red]"
-            )
-            start_date_input.focus()
+        # Validate start date
+        start_date, start_date_error = self._validate_start_date(
+            start_date_input.value.strip()
+        )
+        if start_date_error:
+            self._show_validation_error(start_date_error, start_date_input)
             return
 
         # Submit algorithm, max_hours, and start_date
