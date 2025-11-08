@@ -5,7 +5,6 @@ from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.events import TaskCreated
 from taskdog.tui.forms.task_form_fields import TaskFormData
 from taskdog.tui.screens.task_form_dialog import TaskFormDialog
-from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
 @command_registry.register("add_task")
@@ -38,23 +37,13 @@ class AddTaskCommand(TUICommandBase):
 
             # Add dependencies if specified
             if form_data.depends_on and task.id is not None:
-                failed_dependencies = []
-
-                for dep_id in form_data.depends_on:
-                    try:
-                        self.context.api_client.add_dependency(task.id, dep_id)
-                    except TaskValidationError as e:
-                        failed_dependencies.append((dep_id, str(e)))
-
-                # Show warnings for failed dependencies
-                if failed_dependencies:
-                    error_msgs = [
-                        f"Dependency {dep_id}: {error}"
-                        for dep_id, error in failed_dependencies
-                    ]
+                failed_operations = self.manage_dependencies(
+                    task.id, add_deps=form_data.depends_on
+                )
+                if failed_operations:
                     self.notify_warning(
                         "Task created but some dependencies failed:\n"
-                        + "\n".join(error_msgs)
+                        + "\n".join(failed_operations)
                     )
 
             # Post TaskCreated event to trigger UI refresh

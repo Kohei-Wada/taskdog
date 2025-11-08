@@ -8,6 +8,7 @@ from taskdog.tui.context import TUIContext
 from taskdog.tui.events import TasksRefreshed
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.task_dto import TaskDetailDto
+from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
@@ -192,3 +193,39 @@ class TUICommandBase(ABC):  # noqa: B024
             message: Warning message to display
         """
         self.app.notify(message, severity="warning")
+
+    def manage_dependencies(
+        self,
+        task_id: int,
+        add_deps: list[int] | None = None,
+        remove_deps: list[int] | None = None,
+    ) -> list[str]:
+        """Manage task dependencies with error handling.
+
+        Args:
+            task_id: ID of the task to manage dependencies for
+            add_deps: List of dependency IDs to add (optional)
+            remove_deps: List of dependency IDs to remove (optional)
+
+        Returns:
+            List of error messages for failed operations (empty if all succeeded)
+        """
+        failed_operations = []
+
+        # Remove dependencies
+        if remove_deps:
+            for dep_id in remove_deps:
+                try:
+                    self.context.api_client.remove_dependency(task_id, dep_id)
+                except TaskValidationError as e:
+                    failed_operations.append(f"Remove {dep_id}: {e}")
+
+        # Add dependencies
+        if add_deps:
+            for dep_id in add_deps:
+                try:
+                    self.context.api_client.add_dependency(task_id, dep_id)
+                except TaskValidationError as e:
+                    failed_operations.append(f"Add {dep_id}: {e}")
+
+        return failed_operations

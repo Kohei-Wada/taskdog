@@ -7,6 +7,7 @@ from taskdog.tui.commands.base import TUICommandBase
 from taskdog_core.application.dto.get_task_by_id_output import GetTaskByIdOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
 class ConcreteCommand(TUICommandBase):
@@ -205,6 +206,92 @@ class TestTUICommandBase(unittest.TestCase):
         self.assertIn("Error", call_args[0][0])
         self.assertIn("Test error with 5", call_args[0][0])
         self.assertEqual(call_args[1]["severity"], "error")
+
+    def test_manage_dependencies_add_only(self):
+        """Test manage_dependencies() with only adding dependencies."""
+        # Mock successful API calls
+        self.context.api_client.add_dependency.return_value = None
+
+        failures = self.command.manage_dependencies(task_id=1, add_deps=[2, 3, 4])
+
+        # Verify no failures
+        self.assertEqual(failures, [])
+        # Verify add_dependency called for each dep
+        self.assertEqual(self.context.api_client.add_dependency.call_count, 3)
+        self.context.api_client.add_dependency.assert_any_call(1, 2)
+        self.context.api_client.add_dependency.assert_any_call(1, 3)
+        self.context.api_client.add_dependency.assert_any_call(1, 4)
+
+    def test_manage_dependencies_remove_only(self):
+        """Test manage_dependencies() with only removing dependencies."""
+        # Mock successful API calls
+        self.context.api_client.remove_dependency.return_value = None
+
+        failures = self.command.manage_dependencies(task_id=1, remove_deps=[2, 3])
+
+        # Verify no failures
+        self.assertEqual(failures, [])
+        # Verify remove_dependency called for each dep
+        self.assertEqual(self.context.api_client.remove_dependency.call_count, 2)
+        self.context.api_client.remove_dependency.assert_any_call(1, 2)
+        self.context.api_client.remove_dependency.assert_any_call(1, 3)
+
+    def test_manage_dependencies_add_and_remove(self):
+        """Test manage_dependencies() with both adding and removing."""
+        # Mock successful API calls
+        self.context.api_client.add_dependency.return_value = None
+        self.context.api_client.remove_dependency.return_value = None
+
+        failures = self.command.manage_dependencies(
+            task_id=1, add_deps=[4, 5], remove_deps=[2, 3]
+        )
+
+        # Verify no failures
+        self.assertEqual(failures, [])
+        # Verify remove operations happen first
+        self.assertEqual(self.context.api_client.remove_dependency.call_count, 2)
+        self.context.api_client.remove_dependency.assert_any_call(1, 2)
+        self.context.api_client.remove_dependency.assert_any_call(1, 3)
+        # Then add operations
+        self.assertEqual(self.context.api_client.add_dependency.call_count, 2)
+        self.context.api_client.add_dependency.assert_any_call(1, 4)
+        self.context.api_client.add_dependency.assert_any_call(1, 5)
+
+    def test_manage_dependencies_with_failures(self):
+        """Test manage_dependencies() with some operations failing."""
+
+        # Mock add_dependency to fail for dep 3
+        def add_side_effect(task_id, dep_id):
+            if dep_id == 3:
+                raise TaskValidationError("Circular dependency detected")
+            return None
+
+        # Mock remove_dependency to fail for dep 2
+        def remove_side_effect(task_id, dep_id):
+            if dep_id == 2:
+                raise TaskValidationError("Dependency not found")
+            return None
+
+        self.context.api_client.add_dependency.side_effect = add_side_effect
+        self.context.api_client.remove_dependency.side_effect = remove_side_effect
+
+        failures = self.command.manage_dependencies(
+            task_id=1, add_deps=[3, 4], remove_deps=[2, 5]
+        )
+
+        # Verify we got 2 failure messages
+        self.assertEqual(len(failures), 2)
+        self.assertIn("Remove 2: Dependency not found", failures)
+        self.assertIn("Add 3: Circular dependency detected", failures)
+
+    def test_manage_dependencies_no_operations(self):
+        """Test manage_dependencies() with no operations."""
+        failures = self.command.manage_dependencies(task_id=1)
+
+        # Verify no failures and no API calls
+        self.assertEqual(failures, [])
+        self.context.api_client.add_dependency.assert_not_called()
+        self.context.api_client.remove_dependency.assert_not_called()
 
 
 if __name__ == "__main__":
