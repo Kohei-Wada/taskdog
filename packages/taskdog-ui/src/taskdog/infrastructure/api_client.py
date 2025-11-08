@@ -564,6 +564,58 @@ class TaskdogApiClient:
 
     # Query Controller methods
 
+    def _parse_filter_to_params(
+        self, filter_obj: TaskFilter | None, use_filter_prefix: bool = False
+    ) -> dict[str, Any]:
+        """Parse TaskFilter chain and convert to query parameters.
+
+        Args:
+            filter_obj: Task filter to parse
+            use_filter_prefix: If True, use 'filter_start_date' and 'filter_end_date'
+                             instead of 'start_date' and 'end_date' for DateRangeFilter
+
+        Returns:
+            Dictionary of query parameters
+        """
+        from taskdog_core.application.queries.filters.date_range_filter import (
+            DateRangeFilter,
+        )
+        from taskdog_core.application.queries.filters.non_archived_filter import (
+            NonArchivedFilter,
+        )
+        from taskdog_core.application.queries.filters.status_filter import StatusFilter
+        from taskdog_core.application.queries.filters.tag_filter import TagFilter
+
+        params: dict[str, Any] = {}
+
+        # Default: include archived tasks (all=True)
+        params["all"] = "true"
+
+        if filter_obj:
+            # Walk through the filter chain to extract components
+            current_filter: TaskFilter | None = filter_obj
+            while current_filter:
+                if isinstance(current_filter, NonArchivedFilter):
+                    params["all"] = "false"
+                elif isinstance(current_filter, StatusFilter):
+                    params["status"] = current_filter.status.value.lower()
+                elif isinstance(current_filter, TagFilter):
+                    params["tags"] = current_filter.tags
+                elif isinstance(current_filter, DateRangeFilter):
+                    start_key = (
+                        "filter_start_date" if use_filter_prefix else "start_date"
+                    )
+                    end_key = "filter_end_date" if use_filter_prefix else "end_date"
+                    if current_filter.start_date:
+                        params[start_key] = current_filter.start_date.isoformat()
+                    if current_filter.end_date:
+                        params[end_key] = current_filter.end_date.isoformat()
+
+                # Move to next filter in chain (if exists)
+                current_filter = getattr(current_filter, "_next", None)
+
+        return params
+
     def list_tasks(
         self,
         filter_obj: TaskFilter | None = None,
@@ -577,27 +629,31 @@ class TaskdogApiClient:
         """List tasks with optional filtering and sorting.
 
         Args:
-            filter_obj: Task filter (NOT IMPLEMENTED for API)
+            filter_obj: Task filter
             sort_by: Sort field
             reverse: Reverse sort order
             include_gantt: If True, include Gantt chart data
             gantt_start_date: Gantt chart start date
             gantt_end_date: Gantt chart end date
-            holiday_checker: Holiday checker (passed to server via config)
+            holiday_checker: Holiday checker (ignored for API - server handles holidays)
 
         Returns:
             TaskListOutput with task list and metadata, optionally including Gantt data
 
         Note:
-            filter_obj is not yet implemented for API client.
-            Use query parameters instead for now.
             holiday_checker is ignored in API mode (server handles holidays).
         """
-        params = {
+        params: dict[str, Any] = {
             "sort": sort_by,
             "reverse": str(reverse).lower(),
             "include_gantt": str(include_gantt).lower(),
         }
+
+        # Parse filter_obj and convert to query parameters
+        filter_params = self._parse_filter_to_params(
+            filter_obj, use_filter_prefix=False
+        )
+        params.update(filter_params)
 
         if include_gantt:
             if gantt_start_date:
@@ -662,20 +718,26 @@ class TaskdogApiClient:
         """Get Gantt chart data.
 
         Args:
-            filter_obj: Task filter (NOT IMPLEMENTED for API)
+            filter_obj: Task filter
             sort_by: Sort field
             reverse: Reverse sort order
             start_date: Chart start date
             end_date: Chart end date
-            holiday_checker: Holiday checker (NOT USED for API)
+            holiday_checker: Holiday checker (ignored for API - server handles holidays)
 
         Returns:
             GanttOutput with Gantt chart data
 
         Note:
-            filter_obj and holiday_checker are not yet implemented for API client.
+            holiday_checker is ignored in API mode (server handles holidays).
         """
-        params = {"sort": sort_by, "reverse": str(reverse).lower()}
+        params: dict[str, Any] = {"sort": sort_by, "reverse": str(reverse).lower()}
+
+        # Parse filter_obj and convert to query parameters
+        # Use 'filter_start_date' and 'filter_end_date' for DateRangeFilter in gantt
+        filter_params = self._parse_filter_to_params(filter_obj, use_filter_prefix=True)
+        params.update(filter_params)
+
         if start_date:
             params["start_date"] = start_date.isoformat()
         if end_date:
