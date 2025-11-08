@@ -3,6 +3,8 @@
 import unittest
 from unittest.mock import Mock
 
+from parameterized import parameterized
+
 from taskdog_core.application.validators.dependency_validator import DependencyValidator
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import DependencyNotMetError
@@ -15,136 +17,99 @@ class TestDependencyValidator(unittest.TestCase):
         """Initialize mock repository for each test."""
         self.mock_repository = Mock()
 
-    def test_validate_dependencies_met_with_no_dependencies(self):
-        """Test that task with no dependencies passes validation."""
+    @parameterized.expand(
+        [
+            # (scenario_name, task_id, depends_on, dep_configs, should_pass, expected_unmet_deps)
+            # dep_configs format: {dep_id: status} or "missing" for empty dict
+            # Valid cases
+            ("no_dependencies", 1, [], {}, True, None),
+            ("all_completed_single", 2, [1], {1: TaskStatus.COMPLETED}, True, None),
+            (
+                "all_completed_multiple",
+                3,
+                [1, 2],
+                {1: TaskStatus.COMPLETED, 2: TaskStatus.COMPLETED},
+                True,
+                None,
+            ),
+            # Invalid cases - single dependency
+            ("pending_dependency", 2, [1], {1: TaskStatus.PENDING}, False, [1]),
+            ("in_progress_dependency", 2, [1], {1: TaskStatus.IN_PROGRESS}, False, [1]),
+            ("canceled_dependency", 2, [1], {1: TaskStatus.CANCELED}, False, [1]),
+            ("missing_dependency", 2, [999], "missing", False, [999]),
+            # Invalid cases - mixed dependencies
+            (
+                "mixed_completed_and_pending",
+                3,
+                [1, 2],
+                {1: TaskStatus.COMPLETED, 2: TaskStatus.PENDING},
+                False,
+                [2],
+            ),
+            (
+                "all_unmet_mixed_statuses",
+                4,
+                [1, 2, 3],
+                {
+                    1: TaskStatus.PENDING,
+                    2: TaskStatus.IN_PROGRESS,
+                    3: TaskStatus.CANCELED,
+                },
+                False,
+                [1, 2, 3],
+            ),
+        ]
+    )
+    def test_dependency_validation_scenarios(
+        self,
+        scenario_name,
+        task_id,
+        depends_on,
+        dep_configs,
+        should_pass,
+        expected_unmet_deps,
+    ):
+        """Test validation of dependencies with various scenarios."""
         task = Task(
-            id=1, name="Test", status=TaskStatus.PENDING, priority=1, depends_on=[]
-        )
-
-        # Should not raise
-        DependencyValidator.validate_dependencies_met(task, self.mock_repository)
-
-    def test_validate_dependencies_met_with_completed_dependencies(self):
-        """Test that task with all COMPLETED dependencies passes validation."""
-        task = Task(
-            id=3, name="Test", status=TaskStatus.PENDING, priority=1, depends_on=[1, 2]
-        )
-
-        # Mock repository to return completed dependencies
-        dep1 = Task(id=1, name="Dep 1", status=TaskStatus.COMPLETED, priority=1)
-        dep2 = Task(id=2, name="Dep 2", status=TaskStatus.COMPLETED, priority=1)
-        self.mock_repository.get_by_ids.return_value = {1: dep1, 2: dep2}
-
-        # Should not raise
-        DependencyValidator.validate_dependencies_met(task, self.mock_repository)
-
-    def test_validate_dependencies_met_with_pending_dependency_raises_error(self):
-        """Test that task with PENDING dependency fails validation."""
-        task = Task(
-            id=2, name="Test", status=TaskStatus.PENDING, priority=1, depends_on=[1]
-        )
-
-        # Mock repository to return pending dependency
-        dep = Task(id=1, name="Dependency", status=TaskStatus.PENDING, priority=1)
-        self.mock_repository.get_by_ids.return_value = {1: dep}
-
-        with self.assertRaises(DependencyNotMetError) as context:
-            DependencyValidator.validate_dependencies_met(task, self.mock_repository)
-
-        self.assertEqual(context.exception.task_id, 2)
-        self.assertIn(1, context.exception.unmet_dependencies)
-
-    def test_validate_dependencies_met_with_in_progress_dependency_raises_error(self):
-        """Test that task with IN_PROGRESS dependency fails validation."""
-        task = Task(
-            id=2, name="Test", status=TaskStatus.PENDING, priority=1, depends_on=[1]
-        )
-
-        # Mock repository to return in-progress dependency
-        dep = Task(id=1, name="Dependency", status=TaskStatus.IN_PROGRESS, priority=1)
-        self.mock_repository.get_by_ids.return_value = {1: dep}
-
-        with self.assertRaises(DependencyNotMetError) as context:
-            DependencyValidator.validate_dependencies_met(task, self.mock_repository)
-
-        self.assertEqual(context.exception.task_id, 2)
-        self.assertIn(1, context.exception.unmet_dependencies)
-
-    def test_validate_dependencies_met_with_canceled_dependency_raises_error(self):
-        """Test that task with CANCELED dependency fails validation."""
-        task = Task(
-            id=2, name="Test", status=TaskStatus.PENDING, priority=1, depends_on=[1]
-        )
-
-        # Mock repository to return canceled dependency
-        dep = Task(id=1, name="Dependency", status=TaskStatus.CANCELED, priority=1)
-        self.mock_repository.get_by_ids.return_value = {1: dep}
-
-        with self.assertRaises(DependencyNotMetError) as context:
-            DependencyValidator.validate_dependencies_met(task, self.mock_repository)
-
-        self.assertEqual(context.exception.task_id, 2)
-        self.assertIn(1, context.exception.unmet_dependencies)
-
-    def test_validate_dependencies_met_with_missing_dependency_raises_error(self):
-        """Test that task with missing dependency fails validation."""
-        task = Task(
-            id=2, name="Test", status=TaskStatus.PENDING, priority=1, depends_on=[999]
-        )
-
-        # Mock repository to return empty dict (dependency not found)
-        self.mock_repository.get_by_ids.return_value = {}
-
-        with self.assertRaises(DependencyNotMetError) as context:
-            DependencyValidator.validate_dependencies_met(task, self.mock_repository)
-
-        self.assertEqual(context.exception.task_id, 2)
-        self.assertIn(999, context.exception.unmet_dependencies)
-
-    def test_validate_dependencies_met_with_mixed_dependencies_raises_error(self):
-        """Test that task with mix of met and unmet dependencies fails validation."""
-        task = Task(
-            id=3, name="Test", status=TaskStatus.PENDING, priority=1, depends_on=[1, 2]
-        )
-
-        # Mock repository: dep1 completed, dep2 pending
-        dep1 = Task(id=1, name="Dep 1", status=TaskStatus.COMPLETED, priority=1)
-        dep2 = Task(id=2, name="Dep 2", status=TaskStatus.PENDING, priority=1)
-        self.mock_repository.get_by_ids.return_value = {1: dep1, 2: dep2}
-
-        with self.assertRaises(DependencyNotMetError) as context:
-            DependencyValidator.validate_dependencies_met(task, self.mock_repository)
-
-        self.assertEqual(context.exception.task_id, 3)
-        # Only unmet dependency should be in the list
-        self.assertIn(2, context.exception.unmet_dependencies)
-        self.assertNotIn(1, context.exception.unmet_dependencies)
-
-    def test_validate_dependencies_met_with_multiple_unmet_dependencies(self):
-        """Test that all unmet dependencies are collected."""
-        task = Task(
-            id=4,
+            id=task_id,
             name="Test",
             status=TaskStatus.PENDING,
             priority=1,
-            depends_on=[1, 2, 3],
+            depends_on=depends_on,
         )
 
-        # Mock repository: all dependencies are pending
-        dep1 = Task(id=1, name="Dep 1", status=TaskStatus.PENDING, priority=1)
-        dep2 = Task(id=2, name="Dep 2", status=TaskStatus.IN_PROGRESS, priority=1)
-        dep3 = Task(id=3, name="Dep 3", status=TaskStatus.CANCELED, priority=1)
-        self.mock_repository.get_by_ids.return_value = {1: dep1, 2: dep2, 3: dep3}
+        # Build mock repository response
+        if dep_configs == "missing":
+            self.mock_repository.get_by_ids.return_value = {}
+        elif dep_configs:
+            deps_dict = {
+                dep_id: Task(id=dep_id, name=f"Dep {dep_id}", status=status, priority=1)
+                for dep_id, status in dep_configs.items()
+            }
+            self.mock_repository.get_by_ids.return_value = deps_dict
+        else:
+            # No dependencies case - no need to mock
+            pass
 
-        with self.assertRaises(DependencyNotMetError) as context:
+        if should_pass:
+            # Should not raise
             DependencyValidator.validate_dependencies_met(task, self.mock_repository)
+        else:
+            # Should raise DependencyNotMetError
+            with self.assertRaises(DependencyNotMetError) as context:
+                DependencyValidator.validate_dependencies_met(
+                    task, self.mock_repository
+                )
 
-        self.assertEqual(context.exception.task_id, 4)
-        # All three dependencies should be unmet
-        self.assertEqual(len(context.exception.unmet_dependencies), 3)
-        self.assertIn(1, context.exception.unmet_dependencies)
-        self.assertIn(2, context.exception.unmet_dependencies)
-        self.assertIn(3, context.exception.unmet_dependencies)
+            self.assertEqual(context.exception.task_id, task_id)
+            for unmet_dep_id in expected_unmet_deps:
+                self.assertIn(unmet_dep_id, context.exception.unmet_dependencies)
+
+            # For mixed cases, verify met dependencies are NOT in the list
+            if "mixed" in scenario_name:
+                for dep_id, status in dep_configs.items():
+                    if status == TaskStatus.COMPLETED:
+                        self.assertNotIn(dep_id, context.exception.unmet_dependencies)
 
     def test_validate_dependencies_uses_get_by_ids(self):
         """Test that validator uses get_by_ids() for batch fetching."""
