@@ -3,6 +3,7 @@
 import click
 
 from taskdog.cli.context import CliContext
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
@@ -40,7 +41,7 @@ def log_hours_command(ctx, task_id, hours, date):
     if date is None:
         from datetime import datetime
 
-        date = datetime.now().strftime("%Y-%m-%d")
+        date = DateTimeFormatter.format_date_only(datetime.now())
 
     try:
         # Log hours via API client

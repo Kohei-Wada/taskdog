@@ -13,6 +13,7 @@ from taskdog.cli.commands.common_options import (
 from taskdog.cli.commands.filter_helpers import build_task_filter
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
 from taskdog_core.domain.entities.task import Task
 
@@ -154,7 +155,7 @@ def _generate_markdown_report(
 
     for task_date, task_hours_list in grouped_tasks.items():
         # Date header in Japanese format (YYYY/MM/DD)
-        lines.append(f"{task_date.strftime('%Y/%m/%d')}")
+        lines.append(f"{DateTimeFormatter.format_date_japanese(task_date)}")
 
         # Table header
         lines.append("|タスク|想定工数[h]|")
