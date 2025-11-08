@@ -3,6 +3,8 @@
 import unittest
 from unittest.mock import Mock
 
+from parameterized import parameterized
+
 from taskdog_core.application.validators.status_validator import StatusValidator
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -21,23 +23,20 @@ class TestStatusValidator(unittest.TestCase):
         self.validator = StatusValidator()
         self.mock_repository = Mock()
 
-    def test_validate_successful_status_transitions(self):
-        """Test valid status transitions - parameterized test."""
-        test_cases = [
-            (TaskStatus.PENDING, TaskStatus.IN_PROGRESS, "PENDING to IN_PROGRESS"),
-            (TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED, "IN_PROGRESS to COMPLETED"),
-            (
-                TaskStatus.IN_PROGRESS,
-                TaskStatus.PENDING,
-                "IN_PROGRESS to PENDING (pause)",
-            ),
+    @parameterized.expand(
+        [
+            ("pending_to_in_progress", TaskStatus.PENDING, TaskStatus.IN_PROGRESS),
+            ("in_progress_to_completed", TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED),
+            ("in_progress_to_pending", TaskStatus.IN_PROGRESS, TaskStatus.PENDING),
         ]
-
-        for current_status, target_status, description in test_cases:
-            with self.subTest(description=description):
-                task = Task(id=1, name="Test", status=current_status, priority=1)
-                # Should not raise
-                self.validator.validate(target_status, task, self.mock_repository)
+    )
+    def test_validate_successful_status_transitions(
+        self, scenario, current_status, target_status
+    ):
+        """Test valid status transitions."""
+        task = Task(id=1, name="Test", status=current_status, priority=1)
+        # Should not raise
+        self.validator.validate(target_status, task, self.mock_repository)
 
     def test_validate_pending_to_completed_raises_error(self):
         """Test that PENDING task cannot transition directly to COMPLETED."""
@@ -48,24 +47,25 @@ class TestStatusValidator(unittest.TestCase):
 
         self.assertEqual(context.exception.task_id, 1)
 
-    def test_validate_finished_task_transitions_raise_error(self):
-        """Test that finished tasks cannot transition to active states - parameterized test."""
-        test_cases = [
-            (TaskStatus.COMPLETED, TaskStatus.IN_PROGRESS, "COMPLETED to IN_PROGRESS"),
-            (TaskStatus.CANCELED, TaskStatus.IN_PROGRESS, "CANCELED to IN_PROGRESS"),
-            (TaskStatus.COMPLETED, TaskStatus.PENDING, "COMPLETED to PENDING"),
-            (TaskStatus.CANCELED, TaskStatus.COMPLETED, "CANCELED to COMPLETED"),
+    @parameterized.expand(
+        [
+            ("completed_to_in_progress", TaskStatus.COMPLETED, TaskStatus.IN_PROGRESS),
+            ("canceled_to_in_progress", TaskStatus.CANCELED, TaskStatus.IN_PROGRESS),
+            ("completed_to_pending", TaskStatus.COMPLETED, TaskStatus.PENDING),
+            ("canceled_to_completed", TaskStatus.CANCELED, TaskStatus.COMPLETED),
         ]
+    )
+    def test_validate_finished_task_transitions_raise_error(
+        self, scenario, current_status, target_status
+    ):
+        """Test that finished tasks cannot transition to active states."""
+        task = Task(id=1, name="Test", status=current_status, priority=1)
 
-        for current_status, target_status, description in test_cases:
-            with self.subTest(description=description):
-                task = Task(id=1, name="Test", status=current_status, priority=1)
+        with self.assertRaises(TaskAlreadyFinishedError) as context:
+            self.validator.validate(target_status, task, self.mock_repository)
 
-                with self.assertRaises(TaskAlreadyFinishedError) as context:
-                    self.validator.validate(target_status, task, self.mock_repository)
-
-                self.assertEqual(context.exception.task_id, 1)
-                self.assertEqual(context.exception.status, current_status.name)
+        self.assertEqual(context.exception.task_id, 1)
+        self.assertEqual(context.exception.status, current_status.name)
 
     def test_validate_start_with_completed_dependencies_success(self):
         """Test that task with COMPLETED dependencies can be started."""
@@ -81,34 +81,33 @@ class TestStatusValidator(unittest.TestCase):
         # Should not raise
         self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)
 
-    def test_validate_start_with_unmet_dependency_raises_error(self):
-        """Test that task with unmet dependencies cannot be started - parameterized test."""
-        test_cases = [
-            (TaskStatus.PENDING, "PENDING dependency"),
-            (TaskStatus.IN_PROGRESS, "IN_PROGRESS dependency"),
+    @parameterized.expand(
+        [
+            ("pending_dependency", TaskStatus.PENDING),
+            ("in_progress_dependency", TaskStatus.IN_PROGRESS),
         ]
+    )
+    def test_validate_start_with_unmet_dependency_raises_error(
+        self, scenario, dep_status
+    ):
+        """Test that task with unmet dependencies cannot be started."""
+        task = Task(
+            id=2,
+            name="Test",
+            status=TaskStatus.PENDING,
+            priority=1,
+            depends_on=[1],
+        )
 
-        for dep_status, description in test_cases:
-            with self.subTest(description=description):
-                task = Task(
-                    id=2,
-                    name="Test",
-                    status=TaskStatus.PENDING,
-                    priority=1,
-                    depends_on=[1],
-                )
+        # Mock repository to return dependency with given status
+        dep = Task(id=1, name="Dependency", status=dep_status, priority=1)
+        self.mock_repository.get_by_ids.return_value = {1: dep}
 
-                # Mock repository to return dependency with given status
-                dep = Task(id=1, name="Dependency", status=dep_status, priority=1)
-                self.mock_repository.get_by_ids.return_value = {1: dep}
+        with self.assertRaises(DependencyNotMetError) as context:
+            self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)
 
-                with self.assertRaises(DependencyNotMetError) as context:
-                    self.validator.validate(
-                        TaskStatus.IN_PROGRESS, task, self.mock_repository
-                    )
-
-                self.assertEqual(context.exception.task_id, 2)
-                self.assertIn(1, context.exception.unmet_dependencies)
+        self.assertEqual(context.exception.task_id, 2)
+        self.assertIn(1, context.exception.unmet_dependencies)
 
     def test_validate_start_with_missing_dependency_raises_error(self):
         """Test that task with missing dependency cannot be started."""
@@ -162,34 +161,31 @@ class TestStatusValidator(unittest.TestCase):
 
         self.assertIn("Task ID must not be None", str(context.exception))
 
-    def test_validate_cancel_transitions(self):
-        """Test cancel transitions for different task states - parameterized test."""
-        test_cases = [
-            (TaskStatus.PENDING, None, "PENDING can be canceled"),
-            (TaskStatus.IN_PROGRESS, None, "IN_PROGRESS can be canceled"),
+    @parameterized.expand(
+        [
+            ("pending_can_be_canceled", TaskStatus.PENDING, None),
+            ("in_progress_can_be_canceled", TaskStatus.IN_PROGRESS, None),
             (
+                "completed_cannot_be_canceled",
                 TaskStatus.COMPLETED,
                 TaskAlreadyFinishedError,
-                "COMPLETED cannot be canceled",
             ),
         ]
+    )
+    def test_validate_cancel_transitions(
+        self, scenario, current_status, expected_error
+    ):
+        """Test cancel transitions for different task states."""
+        task = Task(id=1, name="Test", status=current_status, priority=1)
 
-        for current_status, expected_error, description in test_cases:
-            with self.subTest(description=description):
-                task = Task(id=1, name="Test", status=current_status, priority=1)
-
-                if expected_error:
-                    with self.assertRaises(expected_error) as context:
-                        self.validator.validate(
-                            TaskStatus.CANCELED, task, self.mock_repository
-                        )
-                    self.assertEqual(context.exception.task_id, 1)
-                    self.assertEqual(context.exception.status, current_status.name)
-                else:
-                    # Should not raise
-                    self.validator.validate(
-                        TaskStatus.CANCELED, task, self.mock_repository
-                    )
+        if expected_error:
+            with self.assertRaises(expected_error) as context:
+                self.validator.validate(TaskStatus.CANCELED, task, self.mock_repository)
+            self.assertEqual(context.exception.task_id, 1)
+            self.assertEqual(context.exception.status, current_status.name)
+        else:
+            # Should not raise
+            self.validator.validate(TaskStatus.CANCELED, task, self.mock_repository)
 
 
 if __name__ == "__main__":
