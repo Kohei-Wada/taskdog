@@ -1,7 +1,5 @@
 """Base test class for optimization strategy tests."""
 
-import os
-import tempfile
 import unittest
 from datetime import datetime
 
@@ -10,13 +8,11 @@ from taskdog_core.application.dto.optimize_schedule_input import OptimizeSchedul
 from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
 from taskdog_core.application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from taskdog_core.domain.entities.task import Task
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
 from taskdog_core.shared.config_manager import ConfigManager
+from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class BaseOptimizationStrategyTest(unittest.TestCase):
+class BaseOptimizationStrategyTest(InMemoryDatabaseTestCase):
     """Base test class for optimization strategy tests.
 
     Provides common fixtures and helper methods for testing different
@@ -31,18 +27,17 @@ class BaseOptimizationStrategyTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Skip test execution for the base class itself."""
+        """Skip test execution for the base class itself and create in-memory DB."""
         if cls is BaseOptimizationStrategyTest:
             raise unittest.SkipTest("Skipping base test class")
+        # Call parent to create in-memory database
+        super().setUpClass()
 
     def setUp(self):
-        """Create temporary file and initialize use cases for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+        """Clear database and initialize use cases for each test."""
+        # Call parent to clear database
+        super().setUp()
+        # Initialize use cases
         self.create_use_case = CreateTaskUseCase(self.repository)
         config = ConfigManager.load()
         self.optimize_use_case = OptimizeScheduleUseCase(
@@ -50,13 +45,6 @@ class BaseOptimizationStrategyTest(unittest.TestCase):
             config.time.default_start_hour,
             config.time.default_end_hour,
         )
-
-    def tearDown(self):
-        """Clean up temporary file after each test."""
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
 
     def create_task(
         self,

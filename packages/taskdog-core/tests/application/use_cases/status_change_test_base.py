@@ -5,8 +5,6 @@ across StartTaskUseCase, CompleteTaskUseCase, PauseTaskUseCase, and CancelTaskUs
 """
 
 import contextlib
-import os
-import tempfile
 import unittest
 from datetime import datetime
 
@@ -15,12 +13,10 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
 )
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
+from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class BaseStatusChangeUseCaseTest(unittest.TestCase):
+class BaseStatusChangeUseCaseTest(InMemoryDatabaseTestCase):
     """Base test class for status change use cases.
 
     Subclasses must override:
@@ -51,26 +47,18 @@ class BaseStatusChangeUseCaseTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Skip test execution for the base class itself."""
+        """Skip test execution for the base class itself and create in-memory DB."""
         if cls is BaseStatusChangeUseCaseTest:
             raise unittest.SkipTest("Skipping base test class")
+        # Call parent to create in-memory database
+        super().setUpClass()
 
     def setUp(self):
-        """Create temporary file and initialize use case for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+        """Clear database and initialize use case for each test."""
+        # Call parent to clear database
+        super().setUp()
+        # Initialize use case
         self.use_case = self.use_case_class(self.repository)
-
-    def tearDown(self):
-        """Clean up temporary file after each test."""
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
 
     def test_execute_sets_correct_status(self):
         """Test execute sets task status to the target status."""
