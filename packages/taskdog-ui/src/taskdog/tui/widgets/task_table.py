@@ -60,9 +60,9 @@ class TaskTable(DataTable):
         Binding("ctrl+u", "page_up", "Page Up", show=False),
         Binding("h", "scroll_left", "Scroll Left", show=False),
         Binding("l", "scroll_right", "Scroll Right", show=False),
-        Binding("space", "toggle_selection", "Select", show=False),
-        Binding("ctrl+a", "select_all", "Select All", show=False),
-        Binding("ctrl+n", "clear_selection", "Clear", show=False),
+        Binding("space", "toggle_selection", "Select", show=True),
+        Binding("ctrl+a", "select_all", "Select All", show=True),
+        Binding("ctrl+n", "clear_selection", "Clear", show=True),
     ]
 
     def __init__(self, *args, **kwargs):
