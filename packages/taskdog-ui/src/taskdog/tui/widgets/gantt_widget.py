@@ -106,22 +106,33 @@ class GanttWidget(VerticalScroll):
         # Directly load the pre-computed gantt data
         self._load_gantt_data()
 
+    def _display_table_message(self, column_label: str, message: str) -> None:
+        """Display a single-column message in the gantt table.
+
+        Helper method to consolidate the common pattern of showing messages
+        in the gantt table (empty state, errors, general updates).
+
+        Args:
+            column_label: Label for the single column
+            message: Message content to display
+        """
+        if not self._gantt_table:
+            return
+        self._gantt_table.clear(columns=True)
+        self._gantt_table.add_column(column_label)
+        self._gantt_table.add_row(message)
+
     def update(self, message: str) -> None:
         """Update the gantt widget with a message.
 
         Args:
             message: Message to display
         """
-        if self._gantt_table:
-            self._gantt_table.clear(columns=True)
-            self._gantt_table.add_column("Message")
-            self._gantt_table.add_row(message)
+        self._display_table_message("Message", message)
 
     def _show_empty_message(self):
         """Show empty message when no tasks are available."""
-        self._gantt_table.clear(columns=True)
-        self._gantt_table.add_column("Message")
-        self._gantt_table.add_row("[dim]No tasks to display[/dim]")
+        self._display_table_message("Message", "[dim]No tasks to display[/dim]")
 
     def _load_gantt_data(self):
         """Load and display gantt data from the pre-computed gantt ViewModel."""
@@ -160,9 +171,9 @@ class GanttWidget(VerticalScroll):
         Args:
             error: The exception that occurred
         """
-        self._gantt_table.clear(columns=True)
-        self._gantt_table.add_column("Error")
-        self._gantt_table.add_row(f"[red]Error rendering gantt: {error!s}[/red]")
+        self._display_table_message(
+            "Error", f"[red]Error rendering gantt: {error!s}[/red]"
+        )
         if self._title_widget:
             self._title_widget.update("")
         if self._legend_widget:
