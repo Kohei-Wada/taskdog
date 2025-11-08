@@ -22,6 +22,7 @@ from taskdog.tui.events import (
     TasksRefreshed,
     TaskUpdated,
 )
+from taskdog.tui.messages import UIUpdateRequested
 from taskdog.tui.palette.providers import (
     ExportCommandProvider,
     OptimizeCommandProvider,
@@ -147,6 +148,9 @@ class TaskdogTUI(App):
         # Initialize centralized state management
         self.app_state = AppState()
 
+        # Set up state change callback to post UIUpdateRequested messages
+        self.app_state.set_change_callback(self._on_state_change)
+
         # Initialize TUIContext with API client
         self.context = TUIContext(
             api_client=self.api_client,
@@ -172,6 +176,18 @@ class TaskdogTUI(App):
 
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context)
+
+    def _on_state_change(self, action: str) -> None:
+        """Handle state changes by posting UIUpdateRequested message.
+
+        This is called by AppState when state is modified.
+        It posts a UIUpdateRequested message to the message queue,
+        which widgets can listen to for reactive updates.
+
+        Args:
+            action: Description of what changed (e.g., "toggle_completed").
+        """
+        self.post_message(UIUpdateRequested(source_action=action))
 
     # Action methods for command execution
     def action_refresh(self) -> None:
