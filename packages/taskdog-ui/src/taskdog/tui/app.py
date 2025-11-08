@@ -33,6 +33,7 @@ from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
 )
+from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.shared.config_manager import Config, ConfigManager
 
@@ -205,16 +206,42 @@ class TaskdogTUI(App):
         """Fetch task data using TaskDataLoader.
 
         Returns:
-            TaskData object containing all task information
+            TaskData object containing all task information, or None if connection fails
         """
-        date_range = self._calculate_gantt_date_range()
+        try:
+            date_range = self._calculate_gantt_date_range()
 
-        return self.task_data_loader.load_tasks(
-            task_filter=NonArchivedFilter(),
-            sort_by=self._gantt_sort_by,
-            hide_completed=self._hide_completed,
-            date_range=date_range,
-        )
+            return self.task_data_loader.load_tasks(
+                task_filter=NonArchivedFilter(),
+                sort_by=self._gantt_sort_by,
+                hide_completed=self._hide_completed,
+                date_range=date_range,
+            )
+        except ServerConnectionError as e:
+            self.notify(
+                f"Server connection failed: {e.original_error.__class__.__name__}. Press 'r' to retry.",
+                severity="error",
+                timeout=10,
+            )
+            # Return empty task data to avoid crash
+            from taskdog.services.task_data_loader import TaskData
+            from taskdog_core.application.dto.task_list_output import TaskListOutput
+
+            empty_task_list_output = TaskListOutput(
+                tasks=[],
+                total_count=0,
+                filtered_count=0,
+                gantt_data=None,
+            )
+
+            return TaskData(
+                all_tasks=[],
+                filtered_tasks=[],
+                task_list_output=empty_task_list_output,
+                table_view_models=[],
+                gantt_view_model=None,
+                filtered_gantt_view_model=None,
+            )
 
     def _update_cache(self, task_data) -> None:
         """Update internal cache with task data.
@@ -345,6 +372,11 @@ class TaskdogTUI(App):
                 f"Exported {len(tasks)} tasks to {output_path}", severity="information"
             )
 
+        except ServerConnectionError as e:
+            self.notify(
+                f"Server connection failed: {e.original_error.__class__.__name__}",
+                severity="error",
+            )
         except Exception as e:
             self.notify(f"Export failed: {e}", severity="error")
 
@@ -439,24 +471,32 @@ class TaskdogTUI(App):
 
         gantt_widget = self.main_screen.gantt_widget
 
-        # Use public API to get current filter and sort order
-        task_filter = gantt_widget.get_task_filter()
-        sort_by = gantt_widget.get_sort_by()
+        try:
+            # Use public API to get current filter and sort order
+            task_filter = gantt_widget.get_task_filter()
+            sort_by = gantt_widget.get_sort_by()
 
-        # Use integrated API to get tasks + gantt data in single request
-        task_list_output = self.api_client.list_tasks(
-            filter_obj=task_filter,
-            sort_by=sort_by,
-            reverse=False,
-            include_gantt=True,
-            gantt_start_date=event.start_date,
-            gantt_end_date=event.end_date,
-            holiday_checker=self.holiday_checker,
-        )
+            # Use integrated API to get tasks + gantt data in single request
+            task_list_output = self.api_client.list_tasks(
+                filter_obj=task_filter,
+                sort_by=sort_by,
+                reverse=False,
+                include_gantt=True,
+                gantt_start_date=event.start_date,
+                gantt_end_date=event.end_date,
+                holiday_checker=self.holiday_checker,
+            )
 
-        # Convert gantt data to ViewModel
-        if task_list_output.gantt_data:
-            gantt_view_model = self.gantt_presenter.present(task_list_output.gantt_data)
+            # Convert gantt data to ViewModel
+            if task_list_output.gantt_data:
+                gantt_view_model = self.gantt_presenter.present(
+                    task_list_output.gantt_data
+                )
 
-            # Use public API to update view model and trigger re-render
-            gantt_widget.update_view_model_and_render(gantt_view_model)
+                # Use public API to update view model and trigger re-render
+                gantt_widget.update_view_model_and_render(gantt_view_model)
+        except ServerConnectionError as e:
+            self.notify(
+                f"Server connection failed: {e.original_error.__class__.__name__}",
+                severity="error",
+            )

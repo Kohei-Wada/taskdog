@@ -98,3 +98,20 @@ class CorruptedDataError(TaskError):
         )
 
         super().__init__("\n".join(error_lines))
+
+
+class ServerConnectionError(TaskError):
+    """Raised when connection to the API server fails."""
+
+    def __init__(self, base_url: str, original_error: Exception) -> None:
+        """Initialize with server URL and original error.
+
+        Args:
+            base_url: Base URL of the API server
+            original_error: Original exception from httpx
+        """
+        self.base_url = base_url
+        self.original_error = original_error
+        super().__init__(
+            f"Cannot connect to server at {base_url}: {type(original_error).__name__}: {original_error}"
+        )
