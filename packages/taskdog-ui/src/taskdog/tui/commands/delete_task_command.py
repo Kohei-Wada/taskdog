@@ -1,26 +1,28 @@
 """Delete task command for TUI."""
 
-from textual.message import Message
-
-from taskdog.tui.commands.confirmation_base import ConfirmationCommandBase
+from taskdog.tui.commands.batch_confirmation_base import BatchConfirmationCommandBase
 from taskdog.tui.commands.registry import command_registry
-from taskdog.tui.events import TaskDeleted
-from taskdog.view_models.task_view_model import TaskRowViewModel
 
 
 @command_registry.register("delete_task")
-class DeleteTaskCommand(ConfirmationCommandBase):
-    """Command to delete the selected task with confirmation (soft delete)."""
+class DeleteTaskCommand(BatchConfirmationCommandBase):
+    """Command to delete selected task(s) with confirmation (soft delete)."""
 
     def get_confirmation_title(self) -> str:
         """Return the confirmation dialog title."""
-        return "Archive Task"
+        return "Archive Tasks"
 
-    def get_confirmation_message(self, task_vm: TaskRowViewModel) -> str:
+    def get_confirmation_message(self, task_count: int) -> str:
         """Return the confirmation dialog message."""
+        if task_count == 1:
+            return (
+                "Archive this task?\n\n"
+                "The task will be soft-deleted and can be restored later.\n"
+                "(Use Shift+X for permanent deletion)"
+            )
         return (
-            f"Archive task '{task_vm.name}' (ID: {task_vm.id})?\n\n"
-            f"The task will be soft-deleted and can be restored later.\n"
+            f"Archive {task_count} tasks?\n\n"
+            f"Tasks will be soft-deleted and can be restored later.\n"
             f"(Use Shift+X for permanent deletion)"
         )
 
@@ -28,10 +30,8 @@ class DeleteTaskCommand(ConfirmationCommandBase):
         """Archive the task (soft delete)."""
         self.context.api_client.archive_task(task_id)
 
-    def get_success_message(self, task_name: str, task_id: int) -> str:
+    def get_success_message(self, task_count: int) -> str:
         """Return the success message."""
-        return f"Archived task: {task_name} (ID: {task_id})"
-
-    def get_event_for_task(self, task_id: int) -> Message:
-        """Return TaskDeleted event."""
-        return TaskDeleted(task_id)
+        if task_count == 1:
+            return "Archived 1 task"
+        return f"Archived {task_count} tasks"

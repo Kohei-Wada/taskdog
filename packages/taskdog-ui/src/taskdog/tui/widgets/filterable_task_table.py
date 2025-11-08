@@ -94,6 +94,14 @@ class FilterableTaskTable(Vertical):
         """Get the currently selected task as a ViewModel."""
         return self._table.get_selected_task_vm()
 
+    def get_selected_task_ids(self) -> list[int]:
+        """Get all selected task IDs for batch operations."""
+        return self._table.get_selected_task_ids()
+
+    def clear_selection(self) -> None:
+        """Clear all task selections."""
+        self._table.clear_selection()
+
     def show_search(self) -> None:
         """Focus the search input."""
         if self.search_input:

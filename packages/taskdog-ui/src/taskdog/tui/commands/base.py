@@ -164,6 +164,28 @@ class TUICommandBase(ABC):  # noqa: B024
             return None
         return self.app.main_screen.task_table.get_selected_task_vm()
 
+    def get_selected_task_ids(self) -> list[int]:
+        """Get all selected task IDs for batch operations.
+
+        If no tasks are selected, returns current cursor position task ID.
+        This maintains backward compatibility with single-task operations.
+
+        Returns:
+            List of selected task IDs, or [current_task_id] if none selected
+        """
+        if not self.app.main_screen or not self.app.main_screen.task_table:
+            return []
+        return self.app.main_screen.task_table.get_selected_task_ids()
+
+    def clear_selection(self) -> None:
+        """Clear all task selections in the table.
+
+        Called after batch operations complete to reset selection state.
+        """
+        if not self.app.main_screen or not self.app.main_screen.task_table:
+            return
+        self.app.main_screen.task_table.clear_selection()
+
     def reload_tasks(self) -> None:
         """Reload the task list from the repository and refresh the UI.
 

@@ -36,6 +36,9 @@ from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 from taskdog.view_models.task_view_model import TaskRowViewModel
 
+# Checkbox column width
+TASK_TABLE_CHECKBOX_WIDTH = 3
+
 
 class TaskTable(DataTable):
     """A data table widget for displaying tasks with Vi-style keyboard navigation.
@@ -57,6 +60,9 @@ class TaskTable(DataTable):
         Binding("ctrl+u", "page_up", "Page Up", show=False),
         Binding("h", "scroll_left", "Scroll Left", show=False),
         Binding("l", "scroll_right", "Scroll Right", show=False),
+        Binding("space", "toggle_selection", "Select", show=False),
+        Binding("ctrl+a", "select_all", "Select All", show=False),
+        Binding("ctrl+n", "clear_selection", "Clear", show=False),
     ]
 
     def __init__(self, *args, **kwargs):
@@ -69,6 +75,9 @@ class TaskTable(DataTable):
         ] = {}  # Maps row index to ViewModel
         self._all_viewmodels: list[TaskRowViewModel] = []  # All ViewModels (unfiltered)
         self._current_query: str = ""  # Current search query
+        self._selected_task_ids: set[int] = (
+            set()
+        )  # Selected task IDs for batch operations
 
         # Components
         self._search_filter = TaskSearchFilter()
@@ -76,6 +85,7 @@ class TaskTable(DataTable):
 
     def setup_columns(self):
         """Set up table columns."""
+        self.add_column(Text("", justify="center"), width=TASK_TABLE_CHECKBOX_WIDTH)
         self.add_column(Text("ID", justify="center"), width=TASK_TABLE_ID_WIDTH)
         self.add_column(Text("Name", justify="center"), width=TASK_TABLE_NAME_WIDTH)
         self.add_column(Text("Status", justify="center"), width=TASK_TABLE_STATUS_WIDTH)
@@ -128,13 +138,29 @@ class TaskTable(DataTable):
         self._viewmodel_map.clear()
 
         for idx, task_vm in enumerate(view_models):
+            # Build checkbox indicator
+            checkbox = self._build_checkbox(task_vm.id)
+
             # Build row data using row builder with ViewModel
             row_data = self._row_builder.build_row(task_vm)
 
-            # Add row
-            self.add_row(*row_data)
+            # Add checkbox as first column, then other columns
+            self.add_row(checkbox, *row_data)
             # Store ViewModel
             self._viewmodel_map[idx] = task_vm
+
+    def _build_checkbox(self, task_id: int) -> Text:
+        """Build checkbox indicator for a task.
+
+        Args:
+            task_id: Task ID to check selection status
+
+        Returns:
+            Rich Text object with checkbox indicator
+        """
+        if task_id in self._selected_task_ids:
+            return Text("✓", style="green bold")
+        return Text("")
 
     def get_selected_task_id(self) -> int | None:
         """Get the ID of the currently selected task.
@@ -288,3 +314,74 @@ class TaskTable(DataTable):
         # Scroll right by one column width (approximate)
         scroll_amount = 10
         self.scroll_x = self.scroll_x + scroll_amount
+
+    # Multi-selection actions
+    def action_toggle_selection(self) -> None:
+        """Toggle selection for current row (Space key)."""
+        task_id = self.get_selected_task_id()
+        if task_id is None:
+            return
+
+        if task_id in self._selected_task_ids:
+            self._selected_task_ids.remove(task_id)
+        else:
+            self._selected_task_ids.add(task_id)
+
+        # Refresh only the current row to update checkbox
+        self._refresh_current_row()
+
+    def action_select_all(self) -> None:
+        """Select all visible tasks (Ctrl+A)."""
+        # Select all tasks in current view (respecting filter)
+        for task_vm in self._viewmodel_map.values():
+            self._selected_task_ids.add(task_vm.id)
+        # Refresh table to show checkboxes
+        self._render_tasks(list(self._viewmodel_map.values()))
+
+    def action_clear_selection(self) -> None:
+        """Clear all selections (Ctrl+N)."""
+        self._selected_task_ids.clear()
+        # Refresh table to hide checkboxes
+        if self._current_query:
+            filtered_vms = self._search_filter.filter(
+                self._all_viewmodels, self._current_query
+            )
+            self._render_tasks(filtered_vms)
+        else:
+            self._render_tasks(self._all_viewmodels)
+
+    def _refresh_current_row(self) -> None:
+        """Refresh only the current row to update checkbox display."""
+        if self.cursor_row < 0 or self.cursor_row >= len(self._viewmodel_map):
+            return
+
+        task_vm = self._viewmodel_map[self.cursor_row]
+        checkbox = self._build_checkbox(task_vm.id)
+
+        # Update the checkbox cell
+        self.update_cell_at((self.cursor_row, 0), checkbox)
+
+    def get_selected_task_ids(self) -> list[int]:
+        """Get all selected task IDs for batch operations.
+
+        If no tasks are selected, returns current cursor position task ID.
+        This maintains backward compatibility with single-task operations.
+
+        Returns:
+            List of selected task IDs, or [current_task_id] if none selected
+        """
+        if self._selected_task_ids:
+            return sorted(self._selected_task_ids)
+
+        # Fall back to single selection (cursor position)
+        task_id = self.get_selected_task_id()
+        return [task_id] if task_id else []
+
+    def clear_selection(self) -> None:
+        """Clear all selections (called after batch operations)."""
+        self._selected_task_ids.clear()
+
+    @property
+    def selection_count(self) -> int:
+        """Get the number of selected tasks."""
+        return len(self._selected_task_ids)
