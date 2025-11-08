@@ -34,6 +34,10 @@ jobs:
           uv pip install -e packages/taskdog-core
           uv pip install -e packages/taskdog-server
           uv pip install -e packages/taskdog-ui
+          # Install dev dependencies for each package (needed for parameterized tests)
+          uv pip install -e "packages/taskdog-core[dev]"
+          uv pip install -e "packages/taskdog-server[dev]"
+          uv pip install -e "packages/taskdog-ui[dev]"
 
       - name: Run linter
         run: make lint
