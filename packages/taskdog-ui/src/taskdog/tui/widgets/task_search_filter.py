@@ -14,11 +14,17 @@ class TaskSearchFilter:
 
     Smart case: case-insensitive if query is all lowercase,
     case-sensitive if query contains any uppercase letters.
+
+    Formatters are cached at instance level to avoid repeated instantiation.
     """
 
-    @staticmethod
+    def __init__(self):
+        """Initialize with cached formatters for efficient reuse."""
+        self._duration_formatter = DurationFormatter()
+        self._date_formatter = DateTimeFormatter()
+
     def filter(
-        view_models: list[TaskRowViewModel], query: str
+        self, view_models: list[TaskRowViewModel], query: str
     ) -> list[TaskRowViewModel]:
         """Filter task ViewModels based on query using smart case matching.
 
@@ -33,18 +39,17 @@ class TaskSearchFilter:
             return view_models
 
         # Smart case: case-sensitive if query has uppercase
-        case_sensitive = TaskSearchFilter._is_case_sensitive(query)
+        case_sensitive = self._is_case_sensitive(query)
 
         filtered = []
         for vm in view_models:
-            if TaskSearchFilter.matches(vm, query, case_sensitive):
+            if self.matches(vm, query, case_sensitive):
                 filtered.append(vm)
 
         return filtered
 
-    @staticmethod
     def matches(
-        task_vm: TaskRowViewModel, query: str, case_sensitive: bool | None = None
+        self, task_vm: TaskRowViewModel, query: str, case_sensitive: bool | None = None
     ) -> bool:
         """Check if a task ViewModel matches the search query.
 
@@ -65,7 +70,7 @@ class TaskSearchFilter:
 
         # Determine case sensitivity if not explicitly provided
         if case_sensitive is None:
-            case_sensitive = TaskSearchFilter._is_case_sensitive(query)
+            case_sensitive = self._is_case_sensitive(query)
 
         # Prepare query for comparison
         search_query = query if case_sensitive else query.lower()
@@ -78,13 +83,12 @@ class TaskSearchFilter:
             return search_query in search_text
 
         # Build searchable fields
-        searchable_fields = TaskSearchFilter._build_searchable_fields(task_vm)
+        searchable_fields = self._build_searchable_fields(task_vm)
 
         # Check if query matches any field
         return any(contains_query(field) for field in searchable_fields)
 
-    @staticmethod
-    def _build_searchable_fields(task_vm: TaskRowViewModel) -> list[str]:
+    def _build_searchable_fields(self, task_vm: TaskRowViewModel) -> list[str]:
         """Build list of searchable text fields from task ViewModel.
 
         Extracts all visible fields that should be searchable, including
@@ -96,18 +100,14 @@ class TaskSearchFilter:
         Returns:
             List of searchable text strings
         """
-        # Initialize formatters
-        duration_formatter = DurationFormatter()
-        date_formatter = DateTimeFormatter()
-
-        # Core fields always included
+        # Core fields always included (using cached formatters)
         searchable_fields = [
             str(task_vm.id),
             task_vm.name,
             task_vm.status.value,
             str(task_vm.priority),
-            duration_formatter.format_hours(task_vm.estimated_duration),
-            date_formatter.format_deadline(task_vm.deadline),
+            self._duration_formatter.format_hours(task_vm.estimated_duration),
+            self._date_formatter.format_deadline(task_vm.deadline),
         ]
 
         # Add dependencies if present
@@ -126,8 +126,7 @@ class TaskSearchFilter:
 
         return searchable_fields
 
-    @staticmethod
-    def _is_case_sensitive(query: str) -> bool:
+    def _is_case_sensitive(self, query: str) -> bool:
         """Determine if query should use case-sensitive matching (smart case).
 
         Smart case: case-sensitive if query contains any uppercase letter,
