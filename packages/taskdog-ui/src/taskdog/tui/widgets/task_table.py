@@ -227,6 +227,15 @@ class TaskTable(DataTable):
         """Get the total number of tasks (unfiltered)."""
         return len(self._all_viewmodels)
 
+    @property
+    def all_viewmodels(self) -> list[TaskRowViewModel]:
+        """Get all loaded ViewModels (unfiltered).
+
+        Returns:
+            List of all TaskRowViewModel currently loaded in the table
+        """
+        return self._all_viewmodels
+
     def watch_cursor_row(self, old_row: int, new_row: int) -> None:
         """Called when cursor row changes.
 

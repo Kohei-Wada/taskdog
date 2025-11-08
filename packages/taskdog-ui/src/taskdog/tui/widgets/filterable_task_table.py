@@ -58,15 +58,16 @@ class FilterableTaskTable(Vertical):
 
     @property
     def _table(self) -> TaskTable:
-        """Access task table, asserting it exists.
+        """Access task table, ensuring it exists.
 
         Returns:
             The TaskTable instance
 
         Raises:
-            AssertionError: If task_table is not yet initialized
+            RuntimeError: If task_table is not yet initialized
         """
-        assert self.task_table is not None, "TaskTable not yet initialized"
+        if self.task_table is None:
+            raise RuntimeError("TaskTable not yet initialized")
         return self.task_table
 
     # Delegate methods to task_table
@@ -122,4 +123,4 @@ class FilterableTaskTable(Vertical):
     @property
     def all_viewmodels(self) -> list[TaskRowViewModel]:
         """Get all loaded ViewModels from the table."""
-        return self._table._all_viewmodels
+        return self._table.all_viewmodels
