@@ -4,6 +4,8 @@ import unittest
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 
+from parameterized import parameterized
+
 from taskdog_core.application.validators.datetime_validator import DateTimeValidator
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
@@ -13,117 +15,128 @@ class TestDateTimeValidator(unittest.TestCase):
     """Test cases for DateTimeValidator."""
 
     def setUp(self):
-        """Initialize validator and mock repository for each test."""
-        self.deadline_validator = DateTimeValidator("deadline")
-        self.planned_start_validator = DateTimeValidator("planned_start")
-        self.planned_end_validator = DateTimeValidator("planned_end")
+        """Initialize mock repository for each test."""
         self.mock_repository = Mock()
 
-    def test_validate_future_date_success(self):
-        """Test that future dates are accepted for new tasks."""
-        task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
-        future_date = datetime.now() + timedelta(days=7)
+    @parameterized.expand(
+        [
+            # (field_name, task_status, actual_start_days_offset, value_days_offset, should_pass, error_fragment)
+            # Valid cases - future dates for new tasks
+            ("deadline", TaskStatus.PENDING, None, 7, True, None),
+            ("planned_start", TaskStatus.PENDING, None, 7, True, None),
+            ("planned_end", TaskStatus.PENDING, None, 7, True, None),
+            # Valid cases - None values (clearing field)
+            ("deadline", TaskStatus.PENDING, None, None, True, None),
+            ("planned_start", TaskStatus.PENDING, None, None, True, None),
+            ("planned_end", TaskStatus.PENDING, None, None, True, None),
+            # Valid cases - past dates for started tasks
+            ("deadline", TaskStatus.IN_PROGRESS, -14, -7, True, None),
+            ("planned_start", TaskStatus.IN_PROGRESS, -14, -7, True, None),
+            ("planned_end", TaskStatus.IN_PROGRESS, -14, -7, True, None),
+            # Valid cases - past dates for completed tasks with actual_start
+            ("deadline", TaskStatus.COMPLETED, -30, -7, True, None),
+            ("planned_start", TaskStatus.COMPLETED, -30, -7, True, None),
+            ("planned_end", TaskStatus.COMPLETED, -30, -7, True, None),
+            # Valid cases - today/near future (1 minute ahead to avoid race conditions)
+            ("deadline", TaskStatus.PENDING, None, 0.0007, True, None),  # ~1 minute
+            ("planned_start", TaskStatus.PENDING, None, 0.0007, True, None),
+            ("planned_end", TaskStatus.PENDING, None, 0.0007, True, None),
+            # Invalid cases - past dates for new tasks
+            (
+                "deadline",
+                TaskStatus.PENDING,
+                None,
+                -7,
+                False,
+                "Cannot set deadline to past date",
+            ),
+            (
+                "planned_start",
+                TaskStatus.PENDING,
+                None,
+                -7,
+                False,
+                "Cannot set planned_start to past date",
+            ),
+            (
+                "planned_end",
+                TaskStatus.PENDING,
+                None,
+                -7,
+                False,
+                "Cannot set planned_end to past date",
+            ),
+            # Invalid cases - wrong types (string)
+            (
+                "deadline",
+                TaskStatus.PENDING,
+                None,
+                "invalid_string",
+                False,
+                "Invalid datetime type",
+            ),
+            (
+                "planned_start",
+                TaskStatus.PENDING,
+                None,
+                "invalid_string",
+                False,
+                "Invalid datetime type",
+            ),
+            # Invalid cases - wrong types (int)
+            (
+                "deadline",
+                TaskStatus.PENDING,
+                None,
+                "invalid_int",
+                False,
+                "Invalid datetime type",
+            ),
+        ]
+    )
+    def test_datetime_validation_scenarios(
+        self,
+        field_name,
+        task_status,
+        actual_start_days_offset,
+        value_days_offset,
+        should_pass,
+        error_fragment,
+    ):
+        """Test validation of datetime fields with various scenarios."""
+        # Build task with optional actual_start
+        task_kwargs = {
+            "id": 1,
+            "name": "Test",
+            "status": task_status,
+            "priority": 1,
+        }
+        if actual_start_days_offset is not None:
+            task_kwargs["actual_start"] = datetime.now() + timedelta(
+                days=actual_start_days_offset
+            )
+        task = Task(**task_kwargs)
 
-        # Should not raise for all validators
-        self.deadline_validator.validate(future_date, task, self.mock_repository)
-        self.planned_start_validator.validate(future_date, task, self.mock_repository)
-        self.planned_end_validator.validate(future_date, task, self.mock_repository)
+        # Build value based on offset or special markers
+        if value_days_offset is None:
+            value = None
+        elif value_days_offset == "invalid_string":
+            value = "2025-01-15 10:00:00"  # String instead of datetime
+        elif value_days_offset == "invalid_int":
+            value = 123456  # Int instead of datetime
+        else:
+            value = datetime.now() + timedelta(days=value_days_offset)
 
-    def test_validate_past_date_for_new_task_raises_error(self):
-        """Test that past dates are rejected for tasks that haven't started."""
-        task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
-        past_date = datetime.now() - timedelta(days=7)
+        validator = DateTimeValidator(field_name)
 
-        # Test deadline
-        with self.assertRaises(TaskValidationError) as context:
-            self.deadline_validator.validate(past_date, task, self.mock_repository)
-        self.assertIn("Cannot set deadline to past date", str(context.exception))
-        self.assertIn("haven't started", str(context.exception))
-
-        # Test planned_start
-        with self.assertRaises(TaskValidationError) as context:
-            self.planned_start_validator.validate(past_date, task, self.mock_repository)
-        self.assertIn("Cannot set planned_start to past date", str(context.exception))
-
-        # Test planned_end
-        with self.assertRaises(TaskValidationError) as context:
-            self.planned_end_validator.validate(past_date, task, self.mock_repository)
-        self.assertIn("Cannot set planned_end to past date", str(context.exception))
-
-    def test_validate_past_date_for_started_task_success(self):
-        """Test that past dates are allowed for tasks that have started."""
-        actual_start = datetime.now() - timedelta(days=14)
-        task = Task(
-            id=1,
-            name="Test",
-            status=TaskStatus.IN_PROGRESS,
-            priority=1,
-            actual_start=actual_start,
-        )
-        past_date = datetime.now() - timedelta(days=7)
-
-        # Should not raise - task has already started
-        self.deadline_validator.validate(past_date, task, self.mock_repository)
-        self.planned_start_validator.validate(past_date, task, self.mock_repository)
-        self.planned_end_validator.validate(past_date, task, self.mock_repository)
-
-    def test_validate_none_value_success(self):
-        """Test that None values (clearing the field) are accepted."""
-        task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
-
-        # Should not raise for None values
-        self.deadline_validator.validate(None, task, self.mock_repository)
-        self.planned_start_validator.validate(None, task, self.mock_repository)
-        self.planned_end_validator.validate(None, task, self.mock_repository)
-
-    def test_validate_invalid_type_raises_error(self):
-        """Test that invalid types are rejected (expects datetime objects)."""
-        task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
-        invalid_value = "2025-01-15 10:00:00"  # String instead of datetime object
-
-        with self.assertRaises(TaskValidationError) as context:
-            self.deadline_validator.validate(invalid_value, task, self.mock_repository)
-        self.assertIn("Invalid datetime type", str(context.exception))
-        self.assertIn("deadline", str(context.exception))
-
-    def test_validate_wrong_type_raises_error(self):
-        """Test that wrong types (int, None when checking type, etc.) are rejected."""
-        task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
-        wrong_type = 123456  # int instead of datetime
-
-        with self.assertRaises(TaskValidationError) as context:
-            self.deadline_validator.validate(wrong_type, task, self.mock_repository)
-        self.assertIn("Invalid datetime type", str(context.exception))
-
-    def test_validate_completed_task_with_actual_start_allows_past_dates(self):
-        """Test that completed tasks with actual_start can have past dates."""
-        actual_start = datetime.now() - timedelta(days=30)
-        task = Task(
-            id=1,
-            name="Test",
-            status=TaskStatus.COMPLETED,
-            priority=1,
-            actual_start=actual_start,
-        )
-        past_date = datetime.now() - timedelta(days=7)
-
-        # Should not raise - task has actual_start
-        self.deadline_validator.validate(past_date, task, self.mock_repository)
-        self.planned_start_validator.validate(past_date, task, self.mock_repository)
-        self.planned_end_validator.validate(past_date, task, self.mock_repository)
-
-    def test_validate_today_is_allowed(self):
-        """Test that today's date (current time) is allowed."""
-        task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)
-        # Use a time slightly in the future to avoid race conditions
-        today_plus_1min = datetime.now() + timedelta(minutes=1)
-
-        # Should not raise
-        self.deadline_validator.validate(today_plus_1min, task, self.mock_repository)
-        self.planned_start_validator.validate(
-            today_plus_1min, task, self.mock_repository
-        )
-        self.planned_end_validator.validate(today_plus_1min, task, self.mock_repository)
+        if should_pass:
+            # Should pass validation without raising
+            validator.validate(value, task, self.mock_repository)
+        else:
+            # Should raise TaskValidationError with expected message
+            with self.assertRaises(TaskValidationError) as context:
+                validator.validate(value, task, self.mock_repository)
+            self.assertIn(error_fragment, str(context.exception))
 
 
 if __name__ == "__main__":
