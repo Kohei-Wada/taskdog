@@ -7,6 +7,8 @@ from typing import Any
 from dateutil import parser as dateutil_parser
 from dateutil.parser import ParserError
 
+from taskdog.constants.validation_messages import ValidationMessages
+
 
 @dataclass
 class ValidationResult:
@@ -83,7 +85,7 @@ class TaskNameValidator(BaseValidator):
         """
         name = value.strip()
         if not name:
-            return TaskNameValidator._error("Task name is required")
+            return TaskNameValidator._error(ValidationMessages.TASK_NAME_REQUIRED)
         return TaskNameValidator._success(name)
 
 
@@ -111,11 +113,13 @@ class PriorityValidator(BaseValidator):
         try:
             priority = int(priority_str)
         except ValueError:
-            return PriorityValidator._error("Priority must be a number")
+            return PriorityValidator._error(ValidationMessages.PRIORITY_MUST_BE_NUMBER)
 
         # Check that priority is positive
         if priority <= 0:
-            return PriorityValidator._error("Priority must be greater than 0")
+            return PriorityValidator._error(
+                ValidationMessages.PRIORITY_MUST_BE_POSITIVE
+            )
 
         return PriorityValidator._success(priority)
 
@@ -157,7 +161,9 @@ class DateTimeValidator(BaseValidator):
             return DateTimeValidator._success(formatted_datetime)
         except (ValueError, TypeError, OverflowError, ParserError):
             return DateTimeValidator._error(
-                f"Invalid {field_name} format. Examples: 2025-12-31, tomorrow 6pm"
+                ValidationMessages.invalid_date_format(
+                    field_name, "2025-12-31, tomorrow 6pm"
+                )
             )
 
 
@@ -184,15 +190,17 @@ class DurationValidator(BaseValidator):
         try:
             duration = float(duration_str)
         except ValueError:
-            return DurationValidator._error("Duration must be a number")
+            return DurationValidator._error(ValidationMessages.DURATION_MUST_BE_NUMBER)
 
         # Check that it's positive
         if duration <= 0:
-            return DurationValidator._error("Duration must be greater than 0")
+            return DurationValidator._error(
+                ValidationMessages.DURATION_MUST_BE_POSITIVE
+            )
 
         # Check reasonable upper limit (999 hours)
         if duration > 999:
-            return DurationValidator._error("Duration must be 999 hours or less")
+            return DurationValidator._error(ValidationMessages.DURATION_MAX_EXCEEDED)
 
         return DurationValidator._success(duration)
 
@@ -228,12 +236,12 @@ class DependenciesValidator(BaseValidator):
                 task_id = int(part)
             except ValueError:
                 return DependenciesValidator._error(
-                    f"Invalid task ID: '{part}'. Must be a number."
+                    ValidationMessages.invalid_task_id(part)
                 )
 
             if task_id <= 0:
                 return DependenciesValidator._error(
-                    f"Task ID must be positive: {task_id}"
+                    ValidationMessages.invalid_task_id(part)
                 )
 
             task_ids.append(task_id)
@@ -273,12 +281,12 @@ class TagsValidator(BaseValidator):
 
             # Check for empty tag
             if not part.strip():
-                return TagsValidator._error("Tag cannot be empty")
+                return TagsValidator._error(ValidationMessages.TAG_CANNOT_BE_EMPTY)
 
             tags.append(part)
 
         # Check for duplicates
         if len(tags) != len(set(tags)):
-            return TagsValidator._error("Tags must be unique")
+            return TagsValidator._error(ValidationMessages.TAGS_MUST_BE_UNIQUE)
 
         return TagsValidator._success(tags)

@@ -68,14 +68,14 @@ class TestDependenciesValidator(unittest.TestCase):
         """Test validation fails with negative ID."""
         result = DependenciesValidator.validate("1,-2,3")
         self.assertFalse(result.is_valid)
-        self.assertIn("Task ID must be positive", result.error_message)
+        self.assertIn("Invalid task ID", result.error_message)
         self.assertIsNone(result.value)
 
     def test_validate_with_zero_id_returns_error(self):
         """Test validation fails with zero ID."""
         result = DependenciesValidator.validate("1,0,3")
         self.assertFalse(result.is_valid)
-        self.assertIn("Task ID must be positive", result.error_message)
+        self.assertIn("Invalid task ID", result.error_message)
         self.assertIsNone(result.value)
 
     def test_validate_with_float_returns_error(self):
