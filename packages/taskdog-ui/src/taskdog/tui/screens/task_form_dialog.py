@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container
-from textual.widgets import Checkbox, Input, Label, Static
+from textual.widgets import Checkbox, Input, Label
 
 from taskdog.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from taskdog.tui.forms.validators import (
@@ -104,10 +104,9 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             "tags": self.query_one("#tags-input", Input),
         }
         fixed_checkbox = self.query_one("#fixed-checkbox", Checkbox)
-        error_message = self.query_one("#error-message", Static)
 
         # Clear previous error
-        error_message.update("")
+        self._clear_validation_error()
 
         # Define validation chain with (field_name, input_widget, validator, validator_args)
         # Config is always available (loaded in __init__ if None)
@@ -145,8 +144,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         for field_name, input_widget, validator, args in validations:
             result = validator.validate(input_widget.value, *args)
             if not result.is_valid:
-                error_message.update(f"[red]Error: {result.error_message}[/red]")
-                input_widget.focus()
+                self._show_validation_error(result.error_message, input_widget)
                 return
             results[field_name] = result.value
 

@@ -148,17 +148,6 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         """Move focus to the previous field (Ctrl+K)."""
         self.focus_previous()
 
-    def _show_validation_error(self, message: str, widget_to_focus: Any) -> None:
-        """Show validation error and focus the relevant widget.
-
-        Args:
-            message: Error message to display
-            widget_to_focus: Widget to focus after showing error
-        """
-        error_message = self.query_one("#error-message", Static)
-        error_message.update(f"[red]Error: {message}[/red]")
-        widget_to_focus.focus()
-
     def _validate_max_hours(self, value: str) -> tuple[float | None, str | None]:
         """Validate and parse max hours input.
 
@@ -207,10 +196,9 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         option_list = self.query_one("#algorithm-list", ViOptionList)
         max_hours_input = self.query_one("#max-hours-input", Input)
         start_date_input = self.query_one("#start-date-input", Input)
-        error_message = self.query_one("#error-message", Static)
 
         # Clear previous error
-        error_message.update("")
+        self._clear_validation_error()
 
         # Validate algorithm selection
         if option_list.highlighted is None:

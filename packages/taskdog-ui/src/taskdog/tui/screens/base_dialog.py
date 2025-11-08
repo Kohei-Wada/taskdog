@@ -1,10 +1,11 @@
 """Base dialog class for TUI modal screens."""
 
 from abc import abstractmethod
-from typing import ClassVar, TypeVar
+from typing import Any, ClassVar, TypeVar
 
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
+from textual.widgets import Static
 
 T = TypeVar("T")
 
@@ -33,6 +34,38 @@ class BaseModalDialog(ModalScreen[T]):
         By default, dismisses with None. Override if different behavior is needed.
         """
         self.dismiss(None)
+
+    def _show_validation_error(self, message: str, widget_to_focus: Any) -> None:
+        """Show validation error and focus the relevant widget.
+
+        This method expects the dialog to have a Static widget with id="error-message".
+        If the widget is not found, only the focus operation will be performed.
+
+        Args:
+            message: Error message to display (will be formatted in red)
+            widget_to_focus: Widget to focus after showing error
+        """
+        try:
+            error_message = self.query_one("#error-message", Static)
+            error_message.update(f"[red]Error: {message}[/red]")
+        except Exception:
+            # If error-message widget doesn't exist, skip error display
+            # This allows dialogs without validation to not require the widget
+            pass
+        widget_to_focus.focus()
+
+    def _clear_validation_error(self) -> None:
+        """Clear validation error message.
+
+        This method expects the dialog to have a Static widget with id="error-message".
+        If the widget is not found, the operation will be silently ignored.
+        """
+        try:
+            error_message = self.query_one("#error-message", Static)
+            error_message.update("")
+        except Exception:
+            # If error-message widget doesn't exist, skip error clearing
+            pass
 
     @abstractmethod
     def compose(self) -> ComposeResult:
