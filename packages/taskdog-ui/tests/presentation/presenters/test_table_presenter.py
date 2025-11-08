@@ -9,7 +9,6 @@ from unittest.mock import Mock
 from taskdog.presenters.table_presenter import TablePresenter
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
@@ -26,8 +25,9 @@ class TestTablePresenter(unittest.TestCase):
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
-        self.notes_repository = Mock(spec=NotesRepository)
-        self.presenter = TablePresenter(self.notes_repository)
+        self.notes_checker = Mock()
+        self.notes_checker.has_task_notes = Mock(return_value=False)
+        self.presenter = TablePresenter(self.notes_checker)
 
     def tearDown(self):
         """Clean up temporary file after each test."""
@@ -46,8 +46,8 @@ class TestTablePresenter(unittest.TestCase):
             name="Task 2", priority=2, status=TaskStatus.IN_PROGRESS
         )
 
-        # Mock notes repository
-        self.notes_repository.has_notes.return_value = False
+        # Mock notes checker
+        self.notes_checker.has_task_notes.return_value = False
 
         # Create DTO
         output = TaskListOutput(tasks=[task1, task2], total_count=2, filtered_count=2)
@@ -70,7 +70,7 @@ class TestTablePresenter(unittest.TestCase):
         task = self.repository.create(name="Task with notes", priority=1)
 
         # Mock notes repository to return True for this task
-        self.notes_repository.has_notes.return_value = True
+        self.notes_checker.has_task_notes.return_value = True
 
         # Create DTO
         output = TaskListOutput(tasks=[task], total_count=1, filtered_count=1)
@@ -81,7 +81,7 @@ class TestTablePresenter(unittest.TestCase):
         # Verify has_notes is True
         self.assertEqual(len(view_models), 1)
         self.assertTrue(view_models[0].has_notes)
-        self.notes_repository.has_notes.assert_called_once_with(task.id)
+        self.notes_checker.has_task_notes.assert_called_once_with(task.id)
 
     def test_present_copies_task_fields(self):
         """Test present copies all relevant task fields to view model."""
@@ -104,8 +104,8 @@ class TestTablePresenter(unittest.TestCase):
             tags=["urgent", "backend"],
         )
 
-        # Mock notes repository
-        self.notes_repository.has_notes.return_value = False
+        # Mock notes checker
+        self.notes_checker.has_task_notes.return_value = False
 
         # Create DTO
         output = TaskListOutput(tasks=[task], total_count=1, filtered_count=1)
@@ -165,8 +165,8 @@ class TestTablePresenter(unittest.TestCase):
             name="Completed task", priority=1, status=TaskStatus.COMPLETED
         )
 
-        # Mock notes repository
-        self.notes_repository.has_notes.return_value = False
+        # Mock notes checker
+        self.notes_checker.has_task_notes.return_value = False
 
         # Create DTO
         output = TaskListOutput(tasks=[task], total_count=1, filtered_count=1)
@@ -184,8 +184,8 @@ class TestTablePresenter(unittest.TestCase):
             name="Canceled task", priority=1, status=TaskStatus.CANCELED
         )
 
-        # Mock notes repository
-        self.notes_repository.has_notes.return_value = False
+        # Mock notes checker
+        self.notes_checker.has_task_notes.return_value = False
 
         # Create DTO
         output = TaskListOutput(tasks=[task], total_count=1, filtered_count=1)
@@ -206,8 +206,8 @@ class TestTablePresenter(unittest.TestCase):
             tags=["tag1", "tag2"],
         )
 
-        # Mock notes repository
-        self.notes_repository.has_notes.return_value = False
+        # Mock notes checker
+        self.notes_checker.has_task_notes.return_value = False
 
         # Create DTO
         output = TaskListOutput(tasks=[task], total_count=1, filtered_count=1)

@@ -32,7 +32,6 @@ from taskdog.tui.screens.main_screen import MainScreen
 from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
 )
-from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.shared.config_manager import Config, ConfigManager
 
@@ -113,7 +112,6 @@ class TaskdogTUI(App):
     def __init__(
         self,
         api_client: "TaskdogApiClient",
-        notes_repository: NotesRepository,
         config: Config | None = None,
         holiday_checker: IHolidayChecker | None = None,
         *args,
@@ -122,11 +120,10 @@ class TaskdogTUI(App):
         """Initialize the TUI application.
 
         TUI operates through the API client for all task operations.
-        Local file operations (notes, config) are performed directly.
+        Notes are managed via API client as well.
 
         Args:
             api_client: API client for server communication (required)
-            notes_repository: Notes repository for notes file operations
             config: Application configuration (optional, loads from file by default)
             holiday_checker: Holiday checker for workday validation (optional)
         """
@@ -141,7 +138,6 @@ class TaskdogTUI(App):
                 pass
 
         self.api_client = api_client
-        self.notes_repository = notes_repository
         self.config = config if config is not None else ConfigManager.load()
         self.holiday_checker = holiday_checker
         self.main_screen: MainScreen | None = None
@@ -154,13 +150,12 @@ class TaskdogTUI(App):
         self.context = TUIContext(
             api_client=self.api_client,
             config=self.config,
-            notes_repository=notes_repository,
             holiday_checker=self.holiday_checker,
         )
 
-        # Initialize presenters for view models
-        self.table_presenter = TablePresenter(notes_repository)
-        self.gantt_presenter = GanttPresenter(notes_repository)
+        # Initialize presenters for view models (will be updated to not use notes_repository)
+        self.table_presenter = TablePresenter(api_client)
+        self.gantt_presenter = GanttPresenter(api_client)
 
         # Initialize TaskDataLoader for data fetching
         self.task_data_loader = TaskDataLoader(

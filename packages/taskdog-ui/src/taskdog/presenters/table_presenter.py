@@ -4,11 +4,30 @@ This presenter extracts necessary fields from TaskRowDto within TaskListOutput
 and creates presentation-ready view models for table/list display.
 """
 
+from typing import TYPE_CHECKING, Protocol
+
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.domain.repositories.notes_repository import NotesRepository
+
+if TYPE_CHECKING:
+    from taskdog.infrastructure.api_client import TaskdogApiClient
+
+
+class NotesChecker(Protocol):
+    """Protocol for checking notes existence (supports API client)."""
+
+    def has_task_notes(self, task_id: int) -> bool:
+        """Check if task has notes.
+
+        Args:
+            task_id: Task ID
+
+        Returns:
+            True if task has notes, False otherwise
+        """
+        ...
 
 
 class TablePresenter:
@@ -16,17 +35,17 @@ class TablePresenter:
 
     This class is responsible for:
     1. Extracting necessary fields from TaskRowDto within DTOs
-    2. Checking for associated notes
+    2. Checking for associated notes via API client
     3. Converting DTO data to presentation-ready ViewModels
     """
 
-    def __init__(self, notes_repository: NotesRepository):
+    def __init__(self, notes_checker: "NotesChecker | TaskdogApiClient"):
         """Initialize the presenter.
 
         Args:
-            notes_repository: Repository for checking note existence
+            notes_checker: API client or object with has_task_notes method
         """
-        self.notes_repository = notes_repository
+        self.notes_checker = notes_checker
 
     @staticmethod
     def convert_status(domain_status: TaskStatus) -> TaskStatus:
@@ -64,8 +83,8 @@ class TablePresenter:
         Returns:
             TaskRowViewModel with presentation-ready data
         """
-        # Check if task has notes
-        has_notes = self.notes_repository.has_notes(task.id)
+        # Check if task has notes via API
+        has_notes = self.notes_checker.has_task_notes(task.id)
 
         return TaskRowViewModel(
             id=task.id,

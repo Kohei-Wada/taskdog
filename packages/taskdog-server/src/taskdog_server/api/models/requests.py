@@ -131,3 +131,9 @@ class TaskSortParams(BaseModel):
         "id", description="Sort field (id, name, priority, deadline, etc.)"
     )
     reverse: bool = Field(False, description="Reverse sort order")
+
+
+class UpdateNotesRequest(BaseModel):
+    """Request model for updating task notes."""
+
+    content: str = Field(..., description="Notes content (markdown)")

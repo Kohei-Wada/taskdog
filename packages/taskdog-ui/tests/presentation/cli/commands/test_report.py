@@ -281,7 +281,6 @@ class TestReportCommand(unittest.TestCase):
             console_writer=self.console_writer,
             api_client=self.api_client,
             config=MagicMock(),
-            notes_repository=MagicMock(),
             holiday_checker=None,
         )
 

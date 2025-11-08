@@ -21,17 +21,13 @@ def note_command(ctx, task_id):
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     api_client = ctx_obj.api_client
-    notes_repository = ctx_obj.notes_repository
 
     # Get task from API
     result = api_client.get_task_by_id(task_id)
     task = result.task
 
-    # Ensure notes directory exists
-    notes_repository.ensure_notes_dir()
-
-    # Read existing notes or generate template
-    existing_content = notes_repository.read_notes(task_id)
+    # Read existing notes from API or generate template
+    existing_content, _ = api_client.get_task_notes(task_id)
     content = existing_content if existing_content else generate_notes_template(task)
 
     # Create temporary file
@@ -57,8 +53,8 @@ def note_command(ctx, task_id):
             # Read edited content
             edited_content = temp_path.read_text(encoding="utf-8")
 
-            # Save via Domain interface
-            notes_repository.write_notes(task_id, edited_content)
+            # Save via API
+            api_client.update_task_notes(task_id, edited_content)
 
             console_writer.success(f"Notes saved for task #{task_id}")
 

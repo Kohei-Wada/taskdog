@@ -28,13 +28,11 @@ def tui_command(ctx):
     ctx_obj: CliContext = ctx.obj
     api_client = ctx_obj.api_client
     config = ctx_obj.config
-    notes_repository = ctx_obj.notes_repository
     holiday_checker = ctx_obj.holiday_checker
 
     # Launch the TUI application with API client
     app = TaskdogTUI(
         api_client=api_client,
-        notes_repository=notes_repository,
         config=config,
         holiday_checker=holiday_checker,
     )

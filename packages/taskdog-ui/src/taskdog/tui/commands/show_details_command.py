@@ -53,10 +53,10 @@ class ShowDetailsCommand(TUICommandBase):
             self.notify_warning(f"Task #{task_id} not found")
             return
 
-        # Edit note using shared helper (uses Domain interface)
+        # Edit note using shared helper (uses API client via NotesProvider protocol)
         edit_task_note(
             task=output.task,
-            notes_repository=self.context.notes_repository,
+            notes_provider=self.context.api_client,
             app=self.app,
             on_success=lambda name, id_: self._on_edit_success(name, id_),
             on_error=self.notify_error,

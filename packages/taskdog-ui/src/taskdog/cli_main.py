@@ -36,9 +36,6 @@ from taskdog.cli.commands.week import week_command
 from taskdog.cli.context import CliContext
 from taskdog.console.rich_console_writer import RichConsoleWriter
 from taskdog_core.infrastructure.holiday_checker import HolidayChecker
-from taskdog_core.infrastructure.persistence.file_notes_repository import (
-    FileNotesRepository,
-)
 from taskdog_core.shared.config_manager import ConfigManager
 
 
@@ -80,7 +77,6 @@ def cli(ctx: click.Context) -> None:
     console = Console()
     console_writer = RichConsoleWriter(console)
     config = ConfigManager.load()
-    notes_repository = FileNotesRepository()
 
     # Initialize HolidayChecker if country is configured
     holiday_checker = None
@@ -124,7 +120,6 @@ def cli(ctx: click.Context) -> None:
         console_writer=console_writer,
         api_client=api_client,
         config=config,
-        notes_repository=notes_repository,
         holiday_checker=holiday_checker,
     )
 

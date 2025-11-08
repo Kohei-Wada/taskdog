@@ -7,9 +7,6 @@ from rich.text import Text
 
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_core.infrastructure.persistence.file_notes_repository import (
-    FileNotesRepository,
-)
 
 
 class TestTaskTableRowBuilder(unittest.TestCase):
@@ -17,7 +14,6 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        self.notes_repo = FileNotesRepository()
         self.builder = TaskTableRowBuilder()
 
     def test_build_row_basic_task(self):

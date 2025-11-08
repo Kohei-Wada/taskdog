@@ -5,10 +5,14 @@ presentation logic (formatting, strikethrough) to create presentation-ready
 view models.
 """
 
+from typing import TYPE_CHECKING
+
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.task_dto import GanttTaskDto
-from taskdog_core.domain.repositories.notes_repository import NotesRepository
+
+if TYPE_CHECKING:
+    from taskdog.infrastructure.api_client import TaskdogApiClient
 
 
 class GanttPresenter:
@@ -20,14 +24,13 @@ class GanttPresenter:
     3. Converting domain data to presentation-ready ViewModels
     """
 
-    def __init__(self, notes_repository: NotesRepository | None = None):
+    def __init__(self, api_client: "TaskdogApiClient | None" = None):
         """Initialize the GanttPresenter.
 
         Args:
-            notes_repository: Optional notes repository for future enhancements
-                            (e.g., showing note indicators in gantt view)
+            api_client: API client (kept for compatibility, currently unused)
         """
-        self.notes_repository = notes_repository
+        self.api_client = api_client
 
     def present(self, gantt_result: GanttOutput) -> GanttViewModel:
         """Convert GanttOutput DTO to GanttViewModel.

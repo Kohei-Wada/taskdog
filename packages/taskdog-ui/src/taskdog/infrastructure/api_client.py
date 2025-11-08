@@ -1114,3 +1114,67 @@ class TaskdogApiClient:
             total_tags=data["total_tags"],
             total_tagged_tasks=0,  # Not available from API response
         )
+
+    # Notes methods
+
+    def get_task_notes(self, task_id: int) -> tuple[str, bool]:
+        """Get task notes.
+
+        Args:
+            task_id: Task ID
+
+        Returns:
+            Tuple of (notes_content, has_notes)
+
+        Raises:
+            TaskNotFoundException: If task not found
+        """
+        response = self.client.get(f"/api/v1/tasks/{task_id}/notes")
+        if response.status_code != 200:
+            self._handle_error(response)
+        data = response.json()
+        return data["content"], data["has_notes"]
+
+    def update_task_notes(self, task_id: int, content: str) -> None:
+        """Update task notes.
+
+        Args:
+            task_id: Task ID
+            content: Notes content (markdown)
+
+        Raises:
+            TaskNotFoundException: If task not found
+        """
+        response = self.client.put(
+            f"/api/v1/tasks/{task_id}/notes", json={"content": content}
+        )
+        if response.status_code != 200:
+            self._handle_error(response)
+
+    def delete_task_notes(self, task_id: int) -> None:
+        """Delete task notes.
+
+        Args:
+            task_id: Task ID
+
+        Raises:
+            TaskNotFoundException: If task not found
+        """
+        response = self.client.delete(f"/api/v1/tasks/{task_id}/notes")
+        if response.status_code != 204:
+            self._handle_error(response)
+
+    def has_task_notes(self, task_id: int) -> bool:
+        """Check if task has notes.
+
+        Args:
+            task_id: Task ID
+
+        Returns:
+            True if task has notes, False otherwise
+
+        Raises:
+            TaskNotFoundException: If task not found
+        """
+        _, has_notes = self.get_task_notes(task_id)
+        return has_notes

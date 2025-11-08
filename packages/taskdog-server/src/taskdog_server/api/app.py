@@ -10,6 +10,7 @@ from taskdog_server.api.dependencies import initialize_api_context, set_api_cont
 from taskdog_server.api.routers import (
     analytics_router,
     lifecycle_router,
+    notes_router,
     relationships_router,
     tasks_router,
 )
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(
         relationships_router, prefix="/api/v1/tasks", tags=["relationships"]
     )
+    app.include_router(notes_router, prefix="/api/v1/tasks", tags=["notes"])
     app.include_router(analytics_router, prefix="/api/v1", tags=["analytics"])
 
     @app.get("/")

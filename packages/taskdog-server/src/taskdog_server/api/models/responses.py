@@ -257,3 +257,11 @@ class OptimizationResponse(BaseModel):
     summary: OptimizationSummary
     failures: list[SchedulingFailure] = Field(default_factory=list)
     message: str
+
+
+class NotesResponse(BaseModel):
+    """Response model for task notes."""
+
+    task_id: int
+    content: str
+    has_notes: bool
