@@ -1,6 +1,8 @@
 import unittest
 from datetime import datetime, timedelta
 
+from parameterized import parameterized
+
 from taskdog_core.application.sorters.task_sorter import TaskSorter
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
@@ -25,132 +27,106 @@ class TestTaskSorter(unittest.TestCase):
             hour=18
         )
 
-    def test_sort_by_id_ascending(self):
-        """Test sorting by ID in ascending order"""
-        task1 = Task(name="Task 3", priority=1)
-        task1.id = 3
-        task2 = Task(name="Task 1", priority=1)
-        task2.id = 1
-        task3 = Task(name="Task 2", priority=1)
-        task3.id = 2
+    @parameterized.expand(
+        [
+            # (field, reverse, task_values, expected_order, attr_to_check)
+            ("id", False, [3, 1, 2], [1, 2, 3], "id"),
+            ("id", True, [3, 1, 2], [3, 2, 1], "id"),
+            ("priority", False, [1, 5, 3], [5, 3, 1], "priority"),  # Default descending
+            (
+                "priority",
+                True,
+                [1, 5, 3],
+                [1, 3, 5],
+                "priority",
+            ),  # Reverse to ascending
+        ]
+    )
+    def test_sort_by_id_and_priority(
+        self, field, reverse, task_values, expected_order, attr_to_check
+    ):
+        """Test sorting by ID and priority with different directions."""
+        tasks = []
+        for i, value in enumerate(task_values, 1):
+            if field == "id":
+                task = Task(name=f"Task {value}", priority=1)
+                task.id = value
+            else:  # priority
+                task = Task(name=f"Task {i}", priority=value)
+                task.id = i
+            tasks.append(task)
 
-        tasks = [task1, task2, task3]
-        sorted_tasks = self.sorter.sort(tasks, sort_by="id")
+        sorted_tasks = self.sorter.sort(tasks, sort_by=field, reverse=reverse)
 
-        self.assertEqual(sorted_tasks[0].id, 1)
-        self.assertEqual(sorted_tasks[1].id, 2)
-        self.assertEqual(sorted_tasks[2].id, 3)
+        for i, expected in enumerate(expected_order):
+            self.assertEqual(getattr(sorted_tasks[i], attr_to_check), expected)
 
-    def test_sort_by_id_descending(self):
-        """Test sorting by ID in descending order"""
-        task1 = Task(name="Task 3", priority=1)
-        task1.id = 3
-        task2 = Task(name="Task 1", priority=1)
-        task2.id = 1
-        task3 = Task(name="Task 2", priority=1)
-        task3.id = 2
-
-        tasks = [task1, task2, task3]
-        sorted_tasks = self.sorter.sort(tasks, sort_by="id", reverse=True)
-
-        self.assertEqual(sorted_tasks[0].id, 3)
-        self.assertEqual(sorted_tasks[1].id, 2)
-        self.assertEqual(sorted_tasks[2].id, 1)
-
-    def test_sort_by_priority_descending_default(self):
-        """Test sorting by priority in descending order (default)"""
-        task1 = Task(name="Low Priority", priority=1)
+    @parameterized.expand(
+        [
+            ("deadline", ["Yesterday", "Today", "Tomorrow"]),
+            ("planned_start", ["Start Yesterday", "Start Today", "Start Tomorrow"]),
+        ]
+    )
+    def test_sort_by_date_fields(self, field, expected_names):
+        """Test sorting by date fields (deadline, planned_start)."""
+        task1 = Task(name=expected_names[2], priority=1, **{field: self.tomorrow_str})
         task1.id = 1
-        task2 = Task(name="High Priority", priority=5)
+        task2 = Task(name=expected_names[0], priority=1, **{field: self.yesterday_str})
         task2.id = 2
-        task3 = Task(name="Medium Priority", priority=3)
+        task3 = Task(name=expected_names[1], priority=1, **{field: self.today_str})
         task3.id = 3
 
         tasks = [task1, task2, task3]
-        sorted_tasks = self.sorter.sort(tasks, sort_by="priority")
+        sorted_tasks = self.sorter.sort(tasks, sort_by=field)
 
-        # Default for priority is descending (higher priority first)
-        self.assertEqual(sorted_tasks[0].priority, 5)
-        self.assertEqual(sorted_tasks[1].priority, 3)
-        self.assertEqual(sorted_tasks[2].priority, 1)
+        for i, expected_name in enumerate(expected_names):
+            self.assertEqual(sorted_tasks[i].name, expected_name)
 
-    def test_sort_by_priority_ascending(self):
-        """Test sorting by priority in ascending order"""
-        task1 = Task(name="Low Priority", priority=1)
+    @parameterized.expand(
+        [
+            ("deadline", "No Deadline", "With Deadline"),
+            ("planned_start", "No Plan", "With Plan"),
+        ]
+    )
+    def test_sort_with_none_values_last(self, field, none_name, value_name):
+        """Test that tasks with None date values are sorted last."""
+        task1 = Task(name=none_name, priority=1, **{field: None})
         task1.id = 1
-        task2 = Task(name="High Priority", priority=5)
-        task2.id = 2
-        task3 = Task(name="Medium Priority", priority=3)
-        task3.id = 3
-
-        tasks = [task1, task2, task3]
-        sorted_tasks = self.sorter.sort(tasks, sort_by="priority", reverse=True)
-
-        # Reverse=True for priority means ascending
-        self.assertEqual(sorted_tasks[0].priority, 1)
-        self.assertEqual(sorted_tasks[1].priority, 3)
-        self.assertEqual(sorted_tasks[2].priority, 5)
-
-    def test_sort_by_deadline_ascending(self):
-        """Test sorting by deadline in ascending order"""
-        task1 = Task(name="Tomorrow", priority=1, deadline=self.tomorrow_str)
-        task1.id = 1
-        task2 = Task(name="Yesterday", priority=1, deadline=self.yesterday_str)
-        task2.id = 2
-        task3 = Task(name="Today", priority=1, deadline=self.today_str)
-        task3.id = 3
-
-        tasks = [task1, task2, task3]
-        sorted_tasks = self.sorter.sort(tasks, sort_by="deadline")
-
-        self.assertEqual(sorted_tasks[0].name, "Yesterday")
-        self.assertEqual(sorted_tasks[1].name, "Today")
-        self.assertEqual(sorted_tasks[2].name, "Tomorrow")
-
-    def test_sort_by_deadline_none_values_last(self):
-        """Test that tasks with no deadline are sorted last"""
-        task1 = Task(name="No Deadline", priority=1, deadline=None)
-        task1.id = 1
-        task2 = Task(name="With Deadline", priority=1, deadline=self.today_str)
+        task2 = Task(name=value_name, priority=1, **{field: self.today_str})
         task2.id = 2
 
         tasks = [task1, task2]
-        sorted_tasks = self.sorter.sort(tasks, sort_by="deadline")
+        sorted_tasks = self.sorter.sort(tasks, sort_by=field)
 
-        self.assertEqual(sorted_tasks[0].name, "With Deadline")
-        self.assertEqual(sorted_tasks[1].name, "No Deadline")
+        self.assertEqual(sorted_tasks[0].name, value_name)
+        self.assertEqual(sorted_tasks[1].name, none_name)
 
-    def test_sort_by_name_alphabetical(self):
-        """Test sorting by name alphabetically"""
-        task1 = Task(name="Zebra", priority=1)
-        task1.id = 1
-        task2 = Task(name="Apple", priority=1)
-        task2.id = 2
-        task3 = Task(name="Banana", priority=1)
-        task3.id = 3
+    @parameterized.expand(
+        [
+            (
+                "alphabetical",
+                ["Zebra", "Apple", "Banana"],
+                ["Apple", "Banana", "Zebra"],
+            ),
+            (
+                "case_insensitive",
+                ["zebra", "Apple", "BANANA"],
+                ["Apple", "BANANA", "zebra"],
+            ),
+        ]
+    )
+    def test_sort_by_name(self, scenario, input_names, expected_names):
+        """Test sorting by name (alphabetical and case-insensitive)."""
+        tasks = []
+        for i, name in enumerate(input_names, 1):
+            task = Task(name=name, priority=1)
+            task.id = i
+            tasks.append(task)
 
-        tasks = [task1, task2, task3]
         sorted_tasks = self.sorter.sort(tasks, sort_by="name")
 
-        self.assertEqual(sorted_tasks[0].name, "Apple")
-        self.assertEqual(sorted_tasks[1].name, "Banana")
-        self.assertEqual(sorted_tasks[2].name, "Zebra")
-
-    def test_sort_by_name_case_insensitive(self):
-        """Test that name sorting is case-insensitive"""
-        task1 = Task(name="zebra", priority=1)
-        task1.id = 1
-        task2 = Task(name="Apple", priority=1)
-        task2.id = 2
-        task3 = Task(name="BANANA", priority=1)
-        task3.id = 3
-
-        tasks = [task1, task2, task3]
-        sorted_tasks = self.sorter.sort(tasks, sort_by="name")
-
-        self.assertEqual(sorted_tasks[0].name, "Apple")
-        self.assertEqual(sorted_tasks[1].name, "BANANA")
-        self.assertEqual(sorted_tasks[2].name, "zebra")
+        for i, expected_name in enumerate(expected_names):
+            self.assertEqual(sorted_tasks[i].name, expected_name)
 
     def test_sort_by_status(self):
         """Test sorting by status"""
@@ -168,37 +144,6 @@ class TestTaskSorter(unittest.TestCase):
         self.assertEqual(sorted_tasks[0].status, TaskStatus.COMPLETED)
         self.assertEqual(sorted_tasks[1].status, TaskStatus.IN_PROGRESS)
         self.assertEqual(sorted_tasks[2].status, TaskStatus.PENDING)
-
-    def test_sort_by_planned_start(self):
-        """Test sorting by planned start date"""
-        task1 = Task(name="Start Tomorrow", priority=1, planned_start=self.tomorrow_str)
-        task1.id = 1
-        task2 = Task(
-            name="Start Yesterday", priority=1, planned_start=self.yesterday_str
-        )
-        task2.id = 2
-        task3 = Task(name="Start Today", priority=1, planned_start=self.today_str)
-        task3.id = 3
-
-        tasks = [task1, task2, task3]
-        sorted_tasks = self.sorter.sort(tasks, sort_by="planned_start")
-
-        self.assertEqual(sorted_tasks[0].name, "Start Yesterday")
-        self.assertEqual(sorted_tasks[1].name, "Start Today")
-        self.assertEqual(sorted_tasks[2].name, "Start Tomorrow")
-
-    def test_sort_by_planned_start_none_values_last(self):
-        """Test that tasks with no planned_start are sorted last"""
-        task1 = Task(name="No Plan", priority=1, planned_start=None)
-        task1.id = 1
-        task2 = Task(name="With Plan", priority=1, planned_start=self.today_str)
-        task2.id = 2
-
-        tasks = [task1, task2]
-        sorted_tasks = self.sorter.sort(tasks, sort_by="planned_start")
-
-        self.assertEqual(sorted_tasks[0].name, "With Plan")
-        self.assertEqual(sorted_tasks[1].name, "No Plan")
 
     def test_sort_invalid_key_raises_error(self):
         """Test that invalid sort key raises ValueError"""
