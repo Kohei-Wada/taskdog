@@ -1,11 +1,18 @@
 # Taskdog
 
-A personal task management CLI tool with time tracking, schedule optimization, and beautiful terminal output.
+A task management system with CLI/TUI interfaces and REST API server, featuring time tracking, schedule optimization, and beautiful terminal output.
 
-**Note**: Designed for individual use. Stores tasks locally.
+**Architecture**: UV workspace monorepo with three packages:
+- **taskdog-core**: Core business logic and SQLite persistence
+- **taskdog-server**: FastAPI REST API server
+- **taskdog-ui**: CLI and TUI interfaces
+
+**Note**: Designed for individual use. Stores tasks locally in SQLite database.
 
 ## Features
 
+- **REST API Server**: FastAPI-based server with automatic OpenAPI documentation
+- **Multiple Interfaces**: CLI commands, full-screen TUI, and HTTP API
 - **Schedule Optimization**: 9 algorithms to auto-generate optimal schedules (respects fixed tasks & dependencies)
 - **Fixed Tasks**: Mark tasks as fixed to prevent rescheduling (e.g., meetings)
 - **Task Dependencies**: Define dependencies with circular detection
@@ -15,19 +22,43 @@ A personal task management CLI tool with time tracking, schedule optimization, a
 - **Markdown Notes**: Editor integration with Rich rendering
 - **Batch Operations**: Start/complete/pause/cancel multiple tasks at once
 - **Soft Delete**: Restore removed tasks
+- **SQLite Storage**: Transactional persistence with ACID guarantees
 
 ## Installation
+
+**Requirements**: Python 3.11+ (3.13+ for individual packages), [uv](https://github.com/astral-sh/uv)
 
 ```bash
 # Clone the repository
 git clone https://github.com/Kohei-Wada/taskdog.git
 cd taskdog
 
-# Install using Make
+# Install globally (recommended - installs taskdog and taskdog-server commands)
 make install
+
+# OR: Install with development dependencies (for contributing)
+make install-dev
+
+# OR: Install locally for development (editable mode)
+make install-local
+```
+
+**What gets installed:**
+- `taskdog` - CLI and TUI interface
+- `taskdog-server` - FastAPI REST API server
+
+**Common Make targets:**
+```bash
+make install          # Install as global commands via uv tool
+make install-dev      # Install all packages with dev dependencies
+make install-local    # Install locally for development (per-package)
+make reinstall        # Clean and reinstall
+make uninstall        # Remove global installations
 ```
 
 ## Quick Start
+
+### CLI Usage
 
 ```bash
 # Add tasks with priorities and estimates
@@ -55,6 +86,36 @@ taskdog table                       # Table view
 taskdog gantt                       # Gantt chart
 taskdog today                       # Today's tasks
 taskdog tui                         # Interactive TUI
+```
+
+### API Server Usage
+
+```bash
+# Start the server
+taskdog-server                      # Default: http://127.0.0.1:8000
+
+# With custom configuration
+taskdog-server --host 0.0.0.0 --port 3000 --reload
+
+# Access API documentation
+# Open http://localhost:8000/docs in your browser
+```
+
+**API Examples:**
+```bash
+# Create task via API
+curl -X POST http://localhost:8000/api/v1/tasks/ \
+  -H "Content-Type: application/json" \
+  -d '{"name": "API Task", "priority": 100}'
+
+# List tasks
+curl http://localhost:8000/api/v1/tasks/
+
+# Start task
+curl -X POST http://localhost:8000/api/v1/tasks/1/lifecycle/start
+
+# Get Gantt data
+curl http://localhost:8000/api/v1/analytics/gantt
 ```
 
 ## Interactive TUI
@@ -94,6 +155,63 @@ Launch the TUI with:
 ```bash
 taskdog tui
 ```
+
+## API Server
+
+The FastAPI server provides a comprehensive REST API for all task management operations.
+
+### Starting the Server
+
+```bash
+taskdog-server                           # Default: http://127.0.0.1:8000
+taskdog-server --host 0.0.0.0            # Bind to all interfaces
+taskdog-server --port 3000               # Custom port
+taskdog-server --reload                  # Auto-reload for development
+taskdog-server --workers 4               # Production with multiple workers
+```
+
+### API Endpoints
+
+**Documentation:**
+- `GET /docs` - Interactive Swagger UI (OpenAPI documentation)
+- `GET /redoc` - Alternative ReDoc documentation
+- `GET /health` - Health check endpoint
+
+**Task Management** (`/api/v1/tasks/`):
+- `GET /api/v1/tasks/` - List tasks with filtering (status, tags, date ranges, archived)
+- `POST /api/v1/tasks/` - Create new task
+- `GET /api/v1/tasks/{task_id}` - Get task details
+- `PATCH /api/v1/tasks/{task_id}` - Update task fields
+- `DELETE /api/v1/tasks/{task_id}` - Delete task (soft by default, `?hard=true` for permanent)
+
+**Lifecycle Operations** (`/api/v1/tasks/{task_id}/lifecycle/`):
+- `POST .../start` - Start task
+- `POST .../complete` - Complete task
+- `POST .../pause` - Pause task (reset to PENDING)
+- `POST .../cancel` - Cancel task
+- `POST .../reopen` - Reopen completed/canceled task
+- `POST .../restore` - Restore archived task
+- `POST .../log-hours` - Log actual hours worked
+
+**Relationships** (`/api/v1/tasks/{task_id}/`):
+- `POST .../dependencies` - Add dependency
+- `DELETE .../dependencies/{dep_id}` - Remove dependency
+- `GET .../tags` - Get task tags
+- `PUT .../tags` - Set task tags (replaces existing)
+
+**Notes** (`/api/v1/tasks/{task_id}/notes/`):
+- `GET .../notes` - Get task notes (markdown)
+- `PUT .../notes` - Update task notes
+
+**Analytics** (`/api/v1/analytics/`):
+- `GET .../stats` - Task statistics (period, focus filters)
+- `GET .../gantt` - Gantt chart data (date ranges, filters)
+- `GET .../tags` - Tag statistics
+
+**Optimization** (`/api/v1/optimize/`):
+- `POST .../schedule` - Run schedule optimization with algorithm selection
+
+All endpoints return JSON with proper HTTP status codes. See `/docs` for detailed schemas and interactive testing.
 
 ## Commands
 
@@ -193,7 +311,11 @@ taskdog table --tag api --tag db  # OR logic: tasks with 'api' OR 'db'
 
 ## Data Storage
 
-**Tasks**: `$XDG_DATA_HOME/taskdog/tasks.json` (fallback: `~/.local/share/taskdog/tasks.json`)
+**Tasks**: SQLite database at `$XDG_DATA_HOME/taskdog/tasks.db` (fallback: `~/.local/share/taskdog/tasks.db`)
+- Transactional writes with ACID guarantees
+- Automatic rollback on errors
+- Indexed queries for efficient filtering
+- Connection pooling and proper resource management
 
 **Config**: `$XDG_CONFIG_HOME/taskdog/config.toml` (fallback: `~/.config/taskdog/config.toml`)
 
@@ -234,32 +356,120 @@ country = "JP"                 # ISO 3166-1 alpha-2 country code for holiday che
 
 ## Development
 
-**Requirements**: Python 3.13+, [uv](https://github.com/astral-sh/uv)
+**Requirements**: Python 3.11+ (workspace root), Python 3.13+ (individual packages), [uv](https://github.com/astral-sh/uv)
+
+### Development Commands
 
 ```bash
-# Install
-make install
+# Installation
+make install-dev                    # Install all packages with dev dependencies
+make install-local                  # Install locally for development (editable mode)
+make install                        # Install as global commands
 
-# Test
-make test                           # All tests
-PYTHONPATH=src uv run python -m unittest tests/test_module.py  # Single file
+# Testing
+make test                           # All tests (core + server + ui)
+make test-core                      # Core package tests only
+make test-server                    # Server package tests only
+make test-ui                        # UI package tests only
 
-# Run during development
-PYTHONPATH=src uv run python -m taskdog.cli --help
+# Single test file (from package directory)
+cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest tests/test_module.py
+cd packages/taskdog-ui && PYTHONPATH=src uv run python -m unittest tests/test_module.py
+
+# Code Quality
+make lint                           # Ruff linter on all packages
+make format                         # Ruff formatter + auto-fix
+make typecheck                      # mypy type checking (progressive, Phase 4)
+make check                          # lint + typecheck
+
+# Cleanup
+make clean                          # Clean build artifacts and cache
+make uninstall                      # Uninstall global commands
+make reinstall                      # Clean + reinstall
+
+# Run during development (without installation)
+cd packages/taskdog-ui && PYTHONPATH=src uv run python -m taskdog.cli_main --help
+cd packages/taskdog-server && PYTHONPATH=src uv run python -m taskdog_server.main --help
 ```
+
+### Monorepo Structure
+
+The project uses UV workspace with three packages:
+
+```
+taskdog/
+├── packages/
+│   ├── taskdog-core/      # Core business logic
+│   │   ├── src/taskdog_core/
+│   │   │   ├── domain/           # Entities, services, exceptions
+│   │   │   ├── application/      # Use cases, queries, DTOs, validators
+│   │   │   ├── infrastructure/   # SQLite repository, config
+│   │   │   └── controllers/      # TaskController, QueryController
+│   │   └── tests/
+│   ├── taskdog-server/    # FastAPI REST API
+│   │   ├── src/taskdog_server/
+│   │   │   ├── api/              # Routers, models, dependencies
+│   │   │   └── main.py           # FastAPI application
+│   │   └── tests/
+│   └── taskdog-ui/        # CLI and TUI
+│       ├── src/taskdog/
+│       │   ├── cli/              # Click commands
+│       │   ├── tui/              # Textual TUI
+│       │   ├── console/          # Output formatters
+│       │   └── renderers/        # Table and Gantt renderers
+│       └── tests/
+├── pyproject.toml         # Workspace configuration
+└── Makefile              # Build and test automation
+```
+
+**Package Dependencies:**
+- `taskdog-server` depends on `taskdog-core`
+- `taskdog-ui` depends on `taskdog-core`
+- `taskdog-core` has no dependencies on other packages (pure business logic)
 
 ### Architecture
 
-**Clean Architecture** with 5 layers:
-- **Domain**: Entities (Task), services (TimeTracker), exceptions
-- **Application**: Use cases, queries, DTOs, validators, optimization strategies
-- **Infrastructure**: Repository implementations (JSON persistence)
-- **Presentation**: CLI commands, renderers, TUI
-- **Shared**: Cross-cutting utilities (XDG paths, config manager)
+**Clean Architecture** with 5 layers across three packages:
 
-**Key Patterns**: Use Case, Repository, Dependency Injection, CQRS-like, Template Method, Strategy, Command
+**Domain** (taskdog-core):
+- Entities (Task, TaskStatus)
+- Services (TimeTracker)
+- Exceptions (TaskNotFoundException, TaskValidationError, etc.)
 
-See [CLAUDE.md](CLAUDE.md) for details.
+**Application** (taskdog-core):
+- Use cases (CreateTaskUseCase, StartTaskUseCase, OptimizeScheduleUseCase, etc.)
+- Queries (TaskQueryService, WorkloadCalculator - CQRS pattern)
+- DTOs (Request/Response objects)
+- Validators (Field validation with Strategy Pattern)
+- Optimization strategies (9 algorithms with StrategyFactory)
+
+**Infrastructure** (taskdog-core):
+- Repository (SqliteTaskRepository with transactional writes)
+- Persistence mappers (TaskDbMapper)
+- Config (ConfigManager for TOML config)
+
+**Controllers** (taskdog-core):
+- TaskController: Orchestrates write operations (commands)
+- QueryController: Orchestrates read operations (queries)
+- Shared across all presentation layers (CLI, TUI, API)
+
+**Presentation** (taskdog-server + taskdog-ui):
+- **Server**: FastAPI routers, Pydantic models, API dependencies
+- **UI**: Click CLI commands, Textual TUI, Rich renderers, console writers
+
+**Shared** (across packages):
+- Cross-cutting utilities (XDG paths, date utils)
+
+**Key Patterns**:
+- Use Case (each business operation)
+- Repository (data persistence abstraction)
+- CQRS (separate read/write paths via TaskController and QueryController)
+- Dependency Injection (CliContext, TUIContext, ApiContext)
+- Template Method (StatusChangeUseCase)
+- Strategy (Optimization algorithms, field validators)
+- Command (TUI command pattern with registry)
+
+See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
 
 ## Contributing
 
