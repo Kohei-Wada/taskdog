@@ -5,6 +5,8 @@ import tempfile
 import unittest
 from datetime import datetime
 
+from parameterized import parameterized
+
 from taskdog_core.application.dto.reopen_task_input import ReopenTaskInput
 from taskdog_core.application.use_cases.reopen_task import ReopenTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
@@ -37,36 +39,33 @@ class TestReopenTaskUseCase(unittest.TestCase):
         if os.path.exists(self.test_filename):
             os.unlink(self.test_filename)
 
-    def test_execute_reopens_completed_task(self):
-        """Test execute reopens a completed task."""
-        task = self.repository.create(
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.COMPLETED,
-            actual_start=datetime(2025, 1, 1, 9, 0, 0),
-            actual_end=datetime(2025, 1, 1, 12, 0, 0),
-        )
+    @parameterized.expand(
+        [
+            ("completed_task", TaskStatus.COMPLETED, True, True),
+            ("canceled_task", TaskStatus.CANCELED, False, True),
+        ]
+    )
+    def test_execute_reopens_finished_tasks(
+        self, scenario, status, has_actual_start, has_actual_end
+    ):
+        """Test execute reopens completed/canceled tasks."""
+        create_kwargs = {
+            "name": "Test Task",
+            "priority": 1,
+            "status": status,
+        }
+        if has_actual_start:
+            create_kwargs["actual_start"] = datetime(2025, 1, 1, 9, 0, 0)
+        if has_actual_end:
+            create_kwargs["actual_end"] = datetime(2025, 1, 1, 12, 0, 0)
+
+        task = self.repository.create(**create_kwargs)
 
         input_dto = ReopenTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         self.assertEqual(result.status, TaskStatus.PENDING)
         self.assertIsNone(result.actual_start)
-        self.assertIsNone(result.actual_end)
-
-    def test_execute_reopens_canceled_task(self):
-        """Test execute reopens a canceled task."""
-        task = self.repository.create(
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.CANCELED,
-            actual_end=datetime(2025, 1, 1, 12, 0, 0),
-        )
-
-        input_dto = ReopenTaskInput(task_id=task.id)
-        result = self.use_case.execute(input_dto)
-
-        self.assertEqual(result.status, TaskStatus.PENDING)
         self.assertIsNone(result.actual_end)
 
     def test_execute_persists_changes(self):
@@ -97,33 +96,32 @@ class TestReopenTaskUseCase(unittest.TestCase):
 
         self.assertEqual(context.exception.task_id, 999)
 
-    def test_execute_with_pending_task_raises_error(self):
-        """Test execute with PENDING task raises TaskValidationError."""
-        task = self.repository.create(
-            name="Test Task", priority=1, status=TaskStatus.PENDING
-        )
+    @parameterized.expand(
+        [
+            (
+                "pending_task",
+                TaskStatus.PENDING,
+                "Cannot reopen task with status PENDING",
+            ),
+            (
+                "in_progress_task",
+                TaskStatus.IN_PROGRESS,
+                "Cannot reopen task with status IN_PROGRESS",
+            ),
+        ]
+    )
+    def test_execute_with_unfinished_task_raises_error(
+        self, scenario, status, expected_message
+    ):
+        """Test execute with PENDING/IN_PROGRESS task raises TaskValidationError."""
+        task = self.repository.create(name="Test Task", priority=1, status=status)
 
         input_dto = ReopenTaskInput(task_id=task.id)
 
         with self.assertRaises(TaskValidationError) as context:
             self.use_case.execute(input_dto)
 
-        self.assertIn("Cannot reopen task with status PENDING", str(context.exception))
-
-    def test_execute_with_in_progress_task_raises_error(self):
-        """Test execute with IN_PROGRESS task raises TaskValidationError."""
-        task = self.repository.create(
-            name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS
-        )
-
-        input_dto = ReopenTaskInput(task_id=task.id)
-
-        with self.assertRaises(TaskValidationError) as context:
-            self.use_case.execute(input_dto)
-
-        self.assertIn(
-            "Cannot reopen task with status IN_PROGRESS", str(context.exception)
-        )
+        self.assertIn(expected_message, str(context.exception))
 
     def test_execute_with_dependencies_always_succeeds(self):
         """Test that reopen succeeds regardless of dependency states.
