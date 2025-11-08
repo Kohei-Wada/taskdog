@@ -1,7 +1,5 @@
 """Taskdog TUI application."""
 
-from importlib.resources import files
-from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
 from textual.app import App
@@ -16,8 +14,11 @@ from taskdog.presenters.table_presenter import TablePresenter
 from taskdog.services.task_data_loader import TaskDataLoader
 from taskdog.tui.commands.factory import CommandFactory
 from taskdog.tui.constants.ui_settings import (
+    ACTION_TO_COMMAND_MAP,
     AUTO_REFRESH_INTERVAL_SECONDS,
     DEFAULT_GANTT_DISPLAY_DAYS,
+    EXPORT_FORMAT_CONFIG,
+    SORT_KEY_LABELS,
 )
 from taskdog.tui.context import TUIContext
 from taskdog.tui.events import GanttResizeRequested, TasksRefreshed
@@ -28,39 +29,12 @@ from taskdog.tui.palette.providers import (
     SortOptionsProvider,
 )
 from taskdog.tui.screens.main_screen import MainScreen
+from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
 )
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.shared.config_manager import Config, ConfigManager
-
-
-def _get_css_paths() -> list[str | Path]:
-    """Get CSS file paths using importlib.resources.
-
-    This ensures CSS files are found regardless of how the package is installed.
-
-    Returns:
-        List of CSS file paths
-    """
-    try:
-        # Use importlib.resources to locate the styles directory
-        styles_dir = files("taskdog.tui") / "styles"
-        return [
-            str(styles_dir / "theme.tcss"),
-            str(styles_dir / "components.tcss"),
-            str(styles_dir / "main.tcss"),
-            str(styles_dir / "dialogs.tcss"),
-        ]
-    except Exception:
-        # Fallback to __file__ for development
-        styles_dir = Path(__file__).parent / "styles"
-        return [
-            styles_dir / "theme.tcss",
-            styles_dir / "components.tcss",
-            styles_dir / "main.tcss",
-            styles_dir / "dialogs.tcss",
-        ]
 
 
 class TaskdogTUI(App):
@@ -92,18 +66,8 @@ class TaskdogTUI(App):
         ExportCommandProvider,
     }
 
-    # Mapping of sort keys to display labels
-    _SORT_KEY_LABELS: ClassVar[dict[str, str]] = {
-        "deadline": "Deadline",
-        "planned_start": "Planned Start",
-        "priority": "Priority",
-        "estimated_duration": "Duration",
-        "id": "ID",
-        "name": "Name",
-    }
-
     # Load CSS from external files
-    CSS_PATH: ClassVar[list[str | Path]] = _get_css_paths()
+    CSS_PATH: ClassVar = get_css_paths()
 
     # Disable mouse support
     ENABLE_MOUSE: ClassVar[bool] = False
@@ -167,22 +131,6 @@ class TaskdogTUI(App):
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context)
 
-    # Mapping of action names to command names for dynamic action handling
-    _ACTION_TO_COMMAND_MAP: ClassVar[dict[str, str]] = {
-        "action_refresh": "refresh",
-        "action_add_task": "add_task",
-        "action_start_task": "start_task",
-        "action_pause_task": "pause_task",
-        "action_complete_task": "complete_task",
-        "action_cancel_task": "cancel_task",
-        "action_reopen_task": "reopen_task",
-        "action_delete_task": "delete_task",
-        "action_hard_delete_task": "hard_delete_task",
-        "action_show_details": "show_details",
-        "action_edit_task": "edit_task",
-        "action_edit_note": "edit_note",
-    }
-
     def __getattr__(self, name: str):
         """Dynamically handle action_* methods by delegating to command_factory.
 
@@ -199,8 +147,8 @@ class TaskdogTUI(App):
         Raises:
             AttributeError: If the attribute doesn't match an action pattern
         """
-        if name in self._ACTION_TO_COMMAND_MAP:
-            command_name = self._ACTION_TO_COMMAND_MAP[name]
+        if name in ACTION_TO_COMMAND_MAP:
+            command_name = ACTION_TO_COMMAND_MAP[name]
 
             def execute_command() -> None:
                 self.command_factory.execute(command_name)
@@ -339,13 +287,6 @@ class TaskdogTUI(App):
             ),
         )
 
-    # Export format configuration mapping
-    _EXPORT_FORMATS: ClassVar[dict[str, dict[str, str]]] = {
-        "json": {"exporter_class": "JsonTaskExporter", "extension": "json"},
-        "csv": {"exporter_class": "CsvTaskExporter", "extension": "csv"},
-        "markdown": {"exporter_class": "MarkdownTableExporter", "extension": "md"},
-    }
-
     def execute_export(self, format_key: str) -> None:
         """Execute export operation with selected format.
 
@@ -373,7 +314,7 @@ class TaskdogTUI(App):
             tasks = result.tasks
 
             # Lookup format configuration
-            format_config = self._EXPORT_FORMATS.get(format_key)
+            format_config = EXPORT_FORMAT_CONFIG.get(format_key)
             if not format_config:
                 self.notify(f"Unknown format: {format_key}", severity="error")
                 return
@@ -421,7 +362,7 @@ class TaskdogTUI(App):
         self.post_message(TasksRefreshed())
 
         # Show notification message
-        sort_label = self._SORT_KEY_LABELS.get(sort_key, sort_key)
+        sort_label = SORT_KEY_LABELS.get(sort_key, sort_key)
         self.notify(f"Sorted by {sort_label}")
 
     def action_show_search(self) -> None:
