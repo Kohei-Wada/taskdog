@@ -172,54 +172,49 @@ class TaskdogTUI(App):
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context)
 
-    # Action methods for command execution
-    def action_refresh(self) -> None:
-        """Refresh the task list."""
-        self.command_factory.execute("refresh")
+    # Mapping of action names to command names for dynamic action handling
+    _ACTION_TO_COMMAND_MAP: ClassVar[dict[str, str]] = {
+        "action_refresh": "refresh",
+        "action_add_task": "add_task",
+        "action_start_task": "start_task",
+        "action_pause_task": "pause_task",
+        "action_complete_task": "complete_task",
+        "action_cancel_task": "cancel_task",
+        "action_reopen_task": "reopen_task",
+        "action_delete_task": "delete_task",
+        "action_hard_delete_task": "hard_delete_task",
+        "action_show_details": "show_details",
+        "action_edit_task": "edit_task",
+        "action_edit_note": "edit_note",
+    }
 
-    def action_add_task(self) -> None:
-        """Add a new task."""
-        self.command_factory.execute("add_task")
+    def __getattr__(self, name: str):
+        """Dynamically handle action_* methods by delegating to command_factory.
 
-    def action_start_task(self) -> None:
-        """Start the selected task."""
-        self.command_factory.execute("start_task")
+        This eliminates the need for 12 nearly-identical action methods.
+        When Textual calls action_foo(), this method intercepts it and
+        executes the corresponding "foo" command via command_factory.
 
-    def action_pause_task(self) -> None:
-        """Pause the selected task."""
-        self.command_factory.execute("pause_task")
+        Args:
+            name: Attribute name being accessed
 
-    def action_complete_task(self) -> None:
-        """Mark the selected task as done."""
-        self.command_factory.execute("complete_task")
+        Returns:
+            Callable that executes the corresponding command
 
-    def action_cancel_task(self) -> None:
-        """Cancel the selected task."""
-        self.command_factory.execute("cancel_task")
+        Raises:
+            AttributeError: If the attribute doesn't match an action pattern
+        """
+        if name in self._ACTION_TO_COMMAND_MAP:
+            command_name = self._ACTION_TO_COMMAND_MAP[name]
 
-    def action_reopen_task(self) -> None:
-        """Reopen the selected task."""
-        self.command_factory.execute("reopen_task")
+            def execute_command() -> None:
+                self.command_factory.execute(command_name)
 
-    def action_delete_task(self) -> None:
-        """Archive the selected task (soft delete)."""
-        self.command_factory.execute("delete_task")
+            return execute_command
 
-    def action_hard_delete_task(self) -> None:
-        """Permanently delete the selected task."""
-        self.command_factory.execute("hard_delete_task")
-
-    def action_show_details(self) -> None:
-        """Show details of the selected task."""
-        self.command_factory.execute("show_details")
-
-    def action_edit_task(self) -> None:
-        """Edit the selected task."""
-        self.command_factory.execute("edit_task")
-
-    def action_edit_note(self) -> None:
-        """Edit the note for the selected task."""
-        self.command_factory.execute("edit_note")
+        raise AttributeError(
+            f"'{type(self).__name__}' object has no attribute '{name}'"
+        )
 
     def on_mount(self) -> None:
         """Called when app is mounted."""
@@ -239,8 +234,17 @@ class TaskdogTUI(App):
         Returns:
             List of loaded tasks
         """
-        # Calculate date range for gantt
-        # Always request gantt data, even if widget isn't mounted yet
+        task_data = self._fetch_task_data()
+        self._update_cache(task_data)
+        self._refresh_ui(task_data, keep_scroll_position)
+        return task_data.filtered_tasks
+
+    def _calculate_gantt_date_range(self):
+        """Calculate the date range for Gantt chart display.
+
+        Returns:
+            Tuple of (start_date, end_date) for Gantt chart
+        """
         from datetime import timedelta
 
         from taskdog_core.shared.utils.date_utils import get_previous_monday
@@ -256,38 +260,58 @@ class TaskdogTUI(App):
 
         start_date = get_previous_monday()
         end_date = start_date + timedelta(days=display_days - 1)
-        date_range = (start_date, end_date)
+        return (start_date, end_date)
 
-        # Load all data using TaskDataLoader
-        task_data = self.task_data_loader.load_tasks(
+    def _fetch_task_data(self):
+        """Fetch task data using TaskDataLoader.
+
+        Returns:
+            TaskData object containing all task information
+        """
+        date_range = self._calculate_gantt_date_range()
+
+        return self.task_data_loader.load_tasks(
             task_filter=NonArchivedFilter(),
             sort_by=self._gantt_sort_by,
             hide_completed=self._hide_completed,
             date_range=date_range,
         )
 
-        # Cache data for toggle operations
+    def _update_cache(self, task_data) -> None:
+        """Update internal cache with task data.
+
+        Args:
+            task_data: TaskData object to cache
+        """
         self._all_tasks = task_data.all_tasks
         self._gantt_view_model = task_data.gantt_view_model
 
-        # Update UI widgets
-        if self.main_screen:
-            if self.main_screen.gantt_widget and task_data.filtered_gantt_view_model:
-                task_ids = [t.id for t in task_data.filtered_tasks]
-                self.main_screen.gantt_widget.update_gantt(
-                    task_ids=task_ids,
-                    gantt_view_model=task_data.filtered_gantt_view_model,
-                    sort_by=self._gantt_sort_by,
-                    task_filter=NonArchivedFilter(),
-                )
+    def _refresh_ui(self, task_data, keep_scroll_position: bool) -> None:
+        """Refresh UI widgets with task data.
 
-            if self.main_screen.task_table:
-                self.main_screen.task_table.refresh_tasks(
-                    task_data.table_view_models,
-                    keep_scroll_position=keep_scroll_position,
-                )
+        Args:
+            task_data: TaskData object containing view models
+            keep_scroll_position: Whether to preserve scroll position
+        """
+        if not self.main_screen:
+            return
 
-        return task_data.filtered_tasks
+        # Update Gantt widget
+        if self.main_screen.gantt_widget and task_data.filtered_gantt_view_model:
+            task_ids = [t.id for t in task_data.filtered_tasks]
+            self.main_screen.gantt_widget.update_gantt(
+                task_ids=task_ids,
+                gantt_view_model=task_data.filtered_gantt_view_model,
+                sort_by=self._gantt_sort_by,
+                task_filter=NonArchivedFilter(),
+            )
+
+        # Update Table widget
+        if self.main_screen.task_table:
+            self.main_screen.task_table.refresh_tasks(
+                task_data.table_view_models,
+                keep_scroll_position=keep_scroll_position,
+            )
 
     def search_sort(self) -> None:
         """Show a fuzzy search command palette containing all sort options.
@@ -324,6 +348,13 @@ class TaskdogTUI(App):
             ),
         )
 
+    # Export format configuration mapping
+    _EXPORT_FORMATS: ClassVar[dict[str, dict[str, str]]] = {
+        "json": {"exporter_class": "JsonTaskExporter", "extension": "json"},
+        "csv": {"exporter_class": "CsvTaskExporter", "extension": "csv"},
+        "markdown": {"exporter_class": "MarkdownTableExporter", "extension": "md"},
+    }
+
     def execute_export(self, format_key: str) -> None:
         """Execute export operation with selected format.
 
@@ -339,24 +370,28 @@ class TaskdogTUI(App):
             MarkdownTableExporter,
         )
 
+        # Exporter class lookup table
+        exporter_classes = {
+            "JsonTaskExporter": JsonTaskExporter,
+            "CsvTaskExporter": CsvTaskExporter,
+            "MarkdownTableExporter": MarkdownTableExporter,
+        }
+
         try:
             # Get all tasks (no filtering)
             result = self.api_client.list_tasks(filter_obj=None)
             tasks = result.tasks
 
-            # Determine file extension and exporter
-            if format_key == "json":
-                exporter = JsonTaskExporter()
-                extension = "json"
-            elif format_key == "csv":
-                exporter = CsvTaskExporter()
-                extension = "csv"
-            elif format_key == "markdown":
-                exporter = MarkdownTableExporter()
-                extension = "md"
-            else:
+            # Lookup format configuration
+            format_config = self._EXPORT_FORMATS.get(format_key)
+            if not format_config:
                 self.notify(f"Unknown format: {format_key}", severity="error")
                 return
+
+            # Instantiate exporter and get extension
+            exporter_class_name = format_config["exporter_class"]
+            exporter = exporter_classes[exporter_class_name]()
+            extension = format_config["extension"]
 
             # Generate filename with current date
             today = datetime.now().strftime("%Y%m%d")
