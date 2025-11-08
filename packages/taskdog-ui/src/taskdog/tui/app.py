@@ -245,21 +245,17 @@ class TaskdogTUI(App):
         Returns:
             Tuple of (start_date, end_date) for Gantt chart
         """
+        if self.main_screen and self.main_screen.gantt_widget:
+            # Use GanttWidget's public API instead of private method access
+            return self.main_screen.gantt_widget.calculate_date_range()
+
+        # Fallback when gantt_widget is not available
         from datetime import timedelta
 
         from taskdog_core.shared.utils.date_utils import get_previous_monday
 
-        display_days = DEFAULT_GANTT_DISPLAY_DAYS
-        if self.main_screen and self.main_screen.gantt_widget:
-            widget = self.main_screen.gantt_widget
-            display_days = (
-                widget._calculate_display_days()
-                if hasattr(widget, "_calculate_display_days")
-                else DEFAULT_GANTT_DISPLAY_DAYS
-            )
-
         start_date = get_previous_monday()
-        end_date = start_date + timedelta(days=display_days - 1)
+        end_date = start_date + timedelta(days=DEFAULT_GANTT_DISPLAY_DAYS - 1)
         return (start_date, end_date)
 
     def _fetch_task_data(self):
@@ -559,13 +555,9 @@ class TaskdogTUI(App):
 
         gantt_widget = self.main_screen.gantt_widget
 
-        # Get the current filter from the gantt widget
-        task_filter = (
-            gantt_widget._task_filter if hasattr(gantt_widget, "_task_filter") else None
-        )
-        sort_by = (
-            gantt_widget._sort_by if hasattr(gantt_widget, "_sort_by") else "deadline"
-        )
+        # Use public API to get current filter and sort order
+        task_filter = gantt_widget.get_task_filter()
+        sort_by = gantt_widget.get_sort_by()
 
         # Use integrated API to get tasks + gantt data in single request
         task_list_output = self.api_client.list_tasks(
@@ -582,8 +574,5 @@ class TaskdogTUI(App):
         if task_list_output.gantt_data:
             gantt_view_model = self.gantt_presenter.present(task_list_output.gantt_data)
 
-            # Update the gantt widget's view model
-            gantt_widget._gantt_view_model = gantt_view_model
-
-            # Trigger re-render with updated view model
-            gantt_widget.call_after_refresh(gantt_widget._render_gantt)
+            # Use public API to update view model and trigger re-render
+            gantt_widget.update_view_model_and_render(gantt_view_model)
