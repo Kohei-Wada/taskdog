@@ -12,15 +12,15 @@ def render_table(
     """Render tasks as a table.
 
     Args:
-        ctx_obj: CLI context with console writer and notes repository
+        ctx_obj: CLI context with console writer and API client
         output: TaskListOutput DTO from QueryController
         fields: Optional list of fields to display (None = all fields)
     """
     console_writer = ctx_obj.console_writer
-    notes_repository = ctx_obj.notes_repository
+    api_client = ctx_obj.api_client
 
     # Convert DTO to ViewModels using Presenter
-    presenter = TablePresenter(notes_repository)
+    presenter = TablePresenter(api_client)
     task_view_models = presenter.present(output)
 
     # Render using ViewModels
