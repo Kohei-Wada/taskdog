@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 from taskdog.tui.context import TUIContext
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.infrastructure.config.config_manager import Config
 
 
 class TestTaskdogTUIIntegration(unittest.TestCase):
@@ -17,10 +18,16 @@ class TestTaskdogTUIIntegration(unittest.TestCase):
         # Create mock API client
         self.api_client = Mock()
 
-        # Use default config
-        from taskdog_core.shared.config_manager import ConfigManager
-
-        self.config = ConfigManager.load()
+        # Create mock config
+        self.config = Config(
+            max_hours_per_day=8,
+            default_algorithm="greedy",
+            default_priority=1,
+            datetime_format="%Y-%m-%d %H:%M",
+            default_start_hour=9,
+            default_end_hour=18,
+            country="JP",
+        )
 
         # Create context
         self.context = TUIContext(
