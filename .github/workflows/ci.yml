@@ -29,7 +29,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --all-extras
+          uv sync --all-extras --dev
+          # Install workspace packages in editable mode for type checking
+          uv pip install -e packages/taskdog-core
+          uv pip install -e packages/taskdog-server
+          uv pip install -e packages/taskdog-ui
 
       - name: Run linter
         run: make lint
