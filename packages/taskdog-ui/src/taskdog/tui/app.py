@@ -450,12 +450,36 @@ class TaskdogTUI(App):
             self.notify(f"Completed tasks {status}")
             return
 
-        # Filter tasks using TaskDataLoader
-        filtered_tasks = self.task_data_loader.apply_display_filter(
+        # Apply display filter and update all views
+        filtered_tasks = self._apply_display_filter()
+        self._update_filtered_views(filtered_tasks)
+
+        # Show notification
+        status = "hidden" if self._hide_completed else "shown"
+        self.notify(f"Completed tasks {status}")
+
+    def _apply_display_filter(self):
+        """Apply display filter to cached tasks.
+
+        Returns:
+            List of filtered tasks based on current hide_completed setting
+        """
+        return self.task_data_loader.apply_display_filter(
             self._all_tasks, self._hide_completed
         )
 
-        # Update table view with filtered tasks
+    def _update_filtered_views(self, filtered_tasks) -> None:
+        """Update both table and gantt views with filtered tasks.
+
+        Centralizes the UI update logic for both table and gantt widgets.
+
+        Args:
+            filtered_tasks: List of tasks to display after filtering
+        """
+        if not self.main_screen:
+            return
+
+        # Update table view
         if self.main_screen.task_table:
             from taskdog_core.application.dto.task_list_output import TaskListOutput
 
@@ -469,7 +493,7 @@ class TaskdogTUI(App):
                 view_models, keep_scroll_position=True
             )
 
-        # Update gantt view with filtered tasks
+        # Update gantt view
         if self.main_screen.gantt_widget and self._gantt_view_model:
             # Filter gantt view model using TaskDataLoader
             filtered_gantt_vm = self.task_data_loader.filter_gantt_by_tasks(
@@ -483,10 +507,6 @@ class TaskdogTUI(App):
                 sort_by=self._gantt_sort_by,
                 task_filter=NonArchivedFilter(),
             )
-
-        # Show notification
-        status = "hidden" if self._hide_completed else "shown"
-        self.notify(f"Completed tasks {status}")
 
     def action_command_palette(self) -> None:
         """Show the command palette."""
