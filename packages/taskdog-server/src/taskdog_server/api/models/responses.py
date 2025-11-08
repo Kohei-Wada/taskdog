@@ -266,3 +266,15 @@ class NotesResponse(BaseModel):
     task_id: int
     content: str
     has_notes: bool
+
+
+class BatchNotesResponse(BaseModel):
+    """Response model for batch notes status check.
+
+    Used to check which tasks have notes in a single API call,
+    solving the N+1 query problem.
+    """
+
+    notes_status: dict[int, bool] = Field(
+        description="Mapping of task_id to has_notes boolean"
+    )
