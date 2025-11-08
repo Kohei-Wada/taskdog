@@ -18,6 +18,7 @@ from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
+    ServerConnectionError,
     TaskNotFoundException,
     TaskValidationError,
 )
@@ -74,6 +75,29 @@ class TaskdogApiClient:
         else:
             response.raise_for_status()
 
+    def _safe_request(self, method: str, *args, **kwargs) -> httpx.Response:
+        """Execute HTTP request with connection error handling.
+
+        Args:
+            method: HTTP method name ('get', 'post', 'patch', 'delete', 'put')
+            *args: Positional arguments for the request
+            **kwargs: Keyword arguments for the request
+
+        Returns:
+            HTTP response
+
+        Raises:
+            ServerConnectionError: If connection to server fails
+            TaskNotFoundException: If status is 404
+            TaskValidationError: If status is 400
+            Exception: For other errors
+        """
+        try:
+            request_method = getattr(self.client, method)
+            return request_method(*args, **kwargs)
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.RequestError) as e:
+            raise ServerConnectionError(self.base_url, e) from e
+
     # CRUD Controller methods
 
     def create_task(
@@ -116,7 +140,7 @@ class TaskdogApiClient:
             "tags": tags,
         }
 
-        response = self.client.post("/api/v1/tasks", json=payload)
+        response = self._safe_request("post", "/api/v1/tasks", json=payload)
         if response.status_code != 201:
             self._handle_error(response)
 
@@ -203,7 +227,7 @@ class TaskdogApiClient:
             tags,
         )
 
-        response = self.client.patch(f"/api/v1/tasks/{task_id}", json=payload)
+        response = self._safe_request("patch", f"/api/v1/tasks/{task_id}", json=payload)
         if not response.is_success:
             self._handle_error(response)
 
@@ -222,7 +246,7 @@ class TaskdogApiClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self.client.post(f"/api/v1/tasks/{task_id}/archive")
+        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/archive")
         if not response.is_success:
             self._handle_error(response)
 
@@ -242,7 +266,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If not archived
         """
-        response = self.client.post(f"/api/v1/tasks/{task_id}/restore")
+        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/restore")
         if not response.is_success:
             self._handle_error(response)
 
@@ -258,7 +282,7 @@ class TaskdogApiClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self.client.delete(f"/api/v1/tasks/{task_id}")
+        response = self._safe_request("delete", f"/api/v1/tasks/{task_id}")
         if not response.is_success:
             self._handle_error(response)
 
@@ -277,7 +301,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self.client.post(f"/api/v1/tasks/{task_id}/start")
+        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/start")
         if not response.is_success:
             self._handle_error(response)
 
@@ -297,7 +321,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self.client.post(f"/api/v1/tasks/{task_id}/complete")
+        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/complete")
         if not response.is_success:
             self._handle_error(response)
 
@@ -317,7 +341,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self.client.post(f"/api/v1/tasks/{task_id}/pause")
+        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/pause")
         if not response.is_success:
             self._handle_error(response)
 
@@ -337,7 +361,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self.client.post(f"/api/v1/tasks/{task_id}/cancel")
+        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/cancel")
         if not response.is_success:
             self._handle_error(response)
 
@@ -357,7 +381,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self.client.post(f"/api/v1/tasks/{task_id}/reopen")
+        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/reopen")
         if not response.is_success:
             self._handle_error(response)
 
@@ -380,7 +404,8 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails (e.g., circular dependency)
         """
-        response = self.client.post(
+        response = self._safe_request(
+            "post",
             f"/api/v1/tasks/{task_id}/dependencies",
             json={"depends_on_id": depends_on_id},
         )
@@ -406,8 +431,8 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self.client.delete(
-            f"/api/v1/tasks/{task_id}/dependencies/{depends_on_id}"
+        response = self._safe_request(
+            "delete", f"/api/v1/tasks/{task_id}/dependencies/{depends_on_id}"
         )
         if not response.is_success:
             self._handle_error(response)
@@ -429,7 +454,9 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self.client.put(f"/api/v1/tasks/{task_id}/tags", json={"tags": tags})
+        response = self._safe_request(
+            "put", f"/api/v1/tasks/{task_id}/tags", json={"tags": tags}
+        )
         if not response.is_success:
             self._handle_error(response)
 
@@ -453,7 +480,8 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self.client.post(
+        response = self._safe_request(
+            "post",
             f"/api/v1/tasks/{task_id}/log-hours",
             json={"hours": hours, "date": date_str},
         )
@@ -477,7 +505,7 @@ class TaskdogApiClient:
         Raises:
             TaskValidationError: If period is invalid
         """
-        response = self.client.get(f"/api/v1/statistics?period={period}")
+        response = self._safe_request("get", f"/api/v1/statistics?period={period}")
         if not response.is_success:
             self._handle_error(response)
 
@@ -512,7 +540,7 @@ class TaskdogApiClient:
             "force_override": force_override,
         }
 
-        response = self.client.post("/api/v1/optimize", json=payload)
+        response = self._safe_request("post", "/api/v1/optimize", json=payload)
         if not response.is_success:
             self._handle_error(response)
 
@@ -525,7 +553,7 @@ class TaskdogApiClient:
         Returns:
             List of (name, display_name, description) tuples
         """
-        response = self.client.get("/api/v1/algorithms")
+        response = self._safe_request("get", "/api/v1/algorithms")
         if not response.is_success:
             self._handle_error(response)
 
@@ -577,7 +605,7 @@ class TaskdogApiClient:
             if gantt_end_date:
                 params["gantt_end_date"] = gantt_end_date.isoformat()
 
-        response = self.client.get("/api/v1/tasks", params=params)
+        response = self._safe_request("get", "/api/v1/tasks", params=params)
         if not response.is_success:
             self._handle_error(response)
 
@@ -596,7 +624,7 @@ class TaskdogApiClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self.client.get(f"/api/v1/tasks/{task_id}")
+        response = self._safe_request("get", f"/api/v1/tasks/{task_id}")
         if not response.is_success:
             self._handle_error(response)
 
@@ -615,7 +643,7 @@ class TaskdogApiClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self.client.get(f"/api/v1/tasks/{task_id}")
+        response = self._safe_request("get", f"/api/v1/tasks/{task_id}")
         if not response.is_success:
             self._handle_error(response)
 
@@ -653,7 +681,7 @@ class TaskdogApiClient:
         if end_date:
             params["end_date"] = end_date.isoformat()
 
-        response = self.client.get("/api/v1/gantt", params=params)
+        response = self._safe_request("get", "/api/v1/gantt", params=params)
         if not response.is_success:
             self._handle_error(response)
 
@@ -666,7 +694,7 @@ class TaskdogApiClient:
         Returns:
             TagStatisticsOutput with tag statistics
         """
-        response = self.client.get("/api/v1/tags/statistics")
+        response = self._safe_request("get", "/api/v1/tags/statistics")
         if not response.is_success:
             self._handle_error(response)
 
@@ -1137,7 +1165,7 @@ class TaskdogApiClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self.client.get(f"/api/v1/tasks/{task_id}/notes")
+        response = self._safe_request("get", f"/api/v1/tasks/{task_id}/notes")
         if response.status_code != 200:
             self._handle_error(response)
         data = response.json()
@@ -1153,8 +1181,8 @@ class TaskdogApiClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self.client.put(
-            f"/api/v1/tasks/{task_id}/notes", json={"content": content}
+        response = self._safe_request(
+            "put", f"/api/v1/tasks/{task_id}/notes", json={"content": content}
         )
         if response.status_code != 200:
             self._handle_error(response)
@@ -1168,7 +1196,7 @@ class TaskdogApiClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self.client.delete(f"/api/v1/tasks/{task_id}/notes")
+        response = self._safe_request("delete", f"/api/v1/tasks/{task_id}/notes")
         if response.status_code != 204:
             self._handle_error(response)
 

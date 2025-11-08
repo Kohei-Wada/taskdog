@@ -1,7 +1,5 @@
 """Taskdog TUI application."""
 
-from importlib.resources import files
-from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar
 
 from textual.app import App
@@ -16,8 +14,11 @@ from taskdog.presenters.table_presenter import TablePresenter
 from taskdog.services.task_data_loader import TaskDataLoader
 from taskdog.tui.commands.factory import CommandFactory
 from taskdog.tui.constants.ui_settings import (
+    ACTION_TO_COMMAND_MAP,
     AUTO_REFRESH_INTERVAL_SECONDS,
     DEFAULT_GANTT_DISPLAY_DAYS,
+    EXPORT_FORMAT_CONFIG,
+    SORT_KEY_LABELS,
 )
 from taskdog.tui.context import TUIContext
 from taskdog.tui.events import GanttResizeRequested, TasksRefreshed
@@ -28,39 +29,13 @@ from taskdog.tui.palette.providers import (
     SortOptionsProvider,
 )
 from taskdog.tui.screens.main_screen import MainScreen
+from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
 )
+from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.shared.config_manager import Config, ConfigManager
-
-
-def _get_css_paths() -> list[str | Path]:
-    """Get CSS file paths using importlib.resources.
-
-    This ensures CSS files are found regardless of how the package is installed.
-
-    Returns:
-        List of CSS file paths
-    """
-    try:
-        # Use importlib.resources to locate the styles directory
-        styles_dir = files("taskdog.tui") / "styles"
-        return [
-            str(styles_dir / "theme.tcss"),
-            str(styles_dir / "components.tcss"),
-            str(styles_dir / "main.tcss"),
-            str(styles_dir / "dialogs.tcss"),
-        ]
-    except Exception:
-        # Fallback to __file__ for development
-        styles_dir = Path(__file__).parent / "styles"
-        return [
-            styles_dir / "theme.tcss",
-            styles_dir / "components.tcss",
-            styles_dir / "main.tcss",
-            styles_dir / "dialogs.tcss",
-        ]
 
 
 class TaskdogTUI(App):
@@ -92,18 +67,8 @@ class TaskdogTUI(App):
         ExportCommandProvider,
     }
 
-    # Mapping of sort keys to display labels
-    _SORT_KEY_LABELS: ClassVar[dict[str, str]] = {
-        "deadline": "Deadline",
-        "planned_start": "Planned Start",
-        "priority": "Priority",
-        "estimated_duration": "Duration",
-        "id": "ID",
-        "name": "Name",
-    }
-
     # Load CSS from external files
-    CSS_PATH: ClassVar[list[str | Path]] = _get_css_paths()
+    CSS_PATH: ClassVar = get_css_paths()
 
     # Disable mouse support
     ENABLE_MOUSE: ClassVar[bool] = False
@@ -167,22 +132,6 @@ class TaskdogTUI(App):
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context)
 
-    # Mapping of action names to command names for dynamic action handling
-    _ACTION_TO_COMMAND_MAP: ClassVar[dict[str, str]] = {
-        "action_refresh": "refresh",
-        "action_add_task": "add_task",
-        "action_start_task": "start_task",
-        "action_pause_task": "pause_task",
-        "action_complete_task": "complete_task",
-        "action_cancel_task": "cancel_task",
-        "action_reopen_task": "reopen_task",
-        "action_delete_task": "delete_task",
-        "action_hard_delete_task": "hard_delete_task",
-        "action_show_details": "show_details",
-        "action_edit_task": "edit_task",
-        "action_edit_note": "edit_note",
-    }
-
     def __getattr__(self, name: str):
         """Dynamically handle action_* methods by delegating to command_factory.
 
@@ -199,8 +148,8 @@ class TaskdogTUI(App):
         Raises:
             AttributeError: If the attribute doesn't match an action pattern
         """
-        if name in self._ACTION_TO_COMMAND_MAP:
-            command_name = self._ACTION_TO_COMMAND_MAP[name]
+        if name in ACTION_TO_COMMAND_MAP:
+            command_name = ACTION_TO_COMMAND_MAP[name]
 
             def execute_command() -> None:
                 self.command_factory.execute(command_name)
@@ -257,16 +206,42 @@ class TaskdogTUI(App):
         """Fetch task data using TaskDataLoader.
 
         Returns:
-            TaskData object containing all task information
+            TaskData object containing all task information, or None if connection fails
         """
-        date_range = self._calculate_gantt_date_range()
+        try:
+            date_range = self._calculate_gantt_date_range()
 
-        return self.task_data_loader.load_tasks(
-            task_filter=NonArchivedFilter(),
-            sort_by=self._gantt_sort_by,
-            hide_completed=self._hide_completed,
-            date_range=date_range,
-        )
+            return self.task_data_loader.load_tasks(
+                task_filter=NonArchivedFilter(),
+                sort_by=self._gantt_sort_by,
+                hide_completed=self._hide_completed,
+                date_range=date_range,
+            )
+        except ServerConnectionError as e:
+            self.notify(
+                f"Server connection failed: {e.original_error.__class__.__name__}. Press 'r' to retry.",
+                severity="error",
+                timeout=10,
+            )
+            # Return empty task data to avoid crash
+            from taskdog.services.task_data_loader import TaskData
+            from taskdog_core.application.dto.task_list_output import TaskListOutput
+
+            empty_task_list_output = TaskListOutput(
+                tasks=[],
+                total_count=0,
+                filtered_count=0,
+                gantt_data=None,
+            )
+
+            return TaskData(
+                all_tasks=[],
+                filtered_tasks=[],
+                task_list_output=empty_task_list_output,
+                table_view_models=[],
+                gantt_view_model=None,
+                filtered_gantt_view_model=None,
+            )
 
     def _update_cache(self, task_data) -> None:
         """Update internal cache with task data.
@@ -339,13 +314,6 @@ class TaskdogTUI(App):
             ),
         )
 
-    # Export format configuration mapping
-    _EXPORT_FORMATS: ClassVar[dict[str, dict[str, str]]] = {
-        "json": {"exporter_class": "JsonTaskExporter", "extension": "json"},
-        "csv": {"exporter_class": "CsvTaskExporter", "extension": "csv"},
-        "markdown": {"exporter_class": "MarkdownTableExporter", "extension": "md"},
-    }
-
     def execute_export(self, format_key: str) -> None:
         """Execute export operation with selected format.
 
@@ -373,7 +341,7 @@ class TaskdogTUI(App):
             tasks = result.tasks
 
             # Lookup format configuration
-            format_config = self._EXPORT_FORMATS.get(format_key)
+            format_config = EXPORT_FORMAT_CONFIG.get(format_key)
             if not format_config:
                 self.notify(f"Unknown format: {format_key}", severity="error")
                 return
@@ -404,6 +372,11 @@ class TaskdogTUI(App):
                 f"Exported {len(tasks)} tasks to {output_path}", severity="information"
             )
 
+        except ServerConnectionError as e:
+            self.notify(
+                f"Server connection failed: {e.original_error.__class__.__name__}",
+                severity="error",
+            )
         except Exception as e:
             self.notify(f"Export failed: {e}", severity="error")
 
@@ -421,7 +394,7 @@ class TaskdogTUI(App):
         self.post_message(TasksRefreshed())
 
         # Show notification message
-        sort_label = self._SORT_KEY_LABELS.get(sort_key, sort_key)
+        sort_label = SORT_KEY_LABELS.get(sort_key, sort_key)
         self.notify(f"Sorted by {sort_label}")
 
     def action_show_search(self) -> None:
@@ -498,24 +471,32 @@ class TaskdogTUI(App):
 
         gantt_widget = self.main_screen.gantt_widget
 
-        # Use public API to get current filter and sort order
-        task_filter = gantt_widget.get_task_filter()
-        sort_by = gantt_widget.get_sort_by()
+        try:
+            # Use public API to get current filter and sort order
+            task_filter = gantt_widget.get_task_filter()
+            sort_by = gantt_widget.get_sort_by()
 
-        # Use integrated API to get tasks + gantt data in single request
-        task_list_output = self.api_client.list_tasks(
-            filter_obj=task_filter,
-            sort_by=sort_by,
-            reverse=False,
-            include_gantt=True,
-            gantt_start_date=event.start_date,
-            gantt_end_date=event.end_date,
-            holiday_checker=self.holiday_checker,
-        )
+            # Use integrated API to get tasks + gantt data in single request
+            task_list_output = self.api_client.list_tasks(
+                filter_obj=task_filter,
+                sort_by=sort_by,
+                reverse=False,
+                include_gantt=True,
+                gantt_start_date=event.start_date,
+                gantt_end_date=event.end_date,
+                holiday_checker=self.holiday_checker,
+            )
 
-        # Convert gantt data to ViewModel
-        if task_list_output.gantt_data:
-            gantt_view_model = self.gantt_presenter.present(task_list_output.gantt_data)
+            # Convert gantt data to ViewModel
+            if task_list_output.gantt_data:
+                gantt_view_model = self.gantt_presenter.present(
+                    task_list_output.gantt_data
+                )
 
-            # Use public API to update view model and trigger re-render
-            gantt_widget.update_view_model_and_render(gantt_view_model)
+                # Use public API to update view model and trigger re-render
+                gantt_widget.update_view_model_and_render(gantt_view_model)
+        except ServerConnectionError as e:
+            self.notify(
+                f"Server connection failed: {e.original_error.__class__.__name__}",
+                severity="error",
+            )
