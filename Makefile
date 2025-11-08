@@ -81,7 +81,7 @@ uninstall: ## Uninstall all commands
 # Testing Targets
 # ============================================================================
 
-test: test-core test-ui ## Run all tests (core + ui)
+test: test-core test-server test-ui ## Run all tests (core + server + ui)
 	@echo ""
 	@echo "✓ All tests passed!"
 	@echo ""
