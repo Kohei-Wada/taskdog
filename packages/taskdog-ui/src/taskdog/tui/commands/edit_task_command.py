@@ -130,7 +130,7 @@ class EditTaskCommand(TUICommandBase):
         # Detect changes
         fields_changed, dependencies_changed = self._detect_changes(task, form_data)
 
-        # Check if anything changed
+        # Early return if nothing changed
         if not fields_changed and not dependencies_changed:
             self.notify_warning("No changes made")
             return
@@ -145,36 +145,8 @@ class EditTaskCommand(TUICommandBase):
 
         # Sync dependencies if changed
         if dependencies_changed:
-            original_deps = set(task.depends_on) if task.depends_on else set()
-            new_deps = set(form_data.depends_on) if form_data.depends_on else set()
-
-            # Calculate differences
-            deps_to_remove = original_deps - new_deps
-            deps_to_add = new_deps - original_deps
-
-            failed_operations = []
-
-            # Remove dependencies
-            for dep_id in deps_to_remove:
-                try:
-                    self.context.api_client.remove_dependency(task.id, dep_id)
-                except TaskValidationError as e:
-                    failed_operations.append(f"Remove {dep_id}: {e}")
-
-            # Add dependencies
-            for dep_id in deps_to_add:
-                try:
-                    self.context.api_client.add_dependency(task.id, dep_id)
-                except TaskValidationError as e:
-                    failed_operations.append(f"Add {dep_id}: {e}")
-
+            self._sync_dependencies(task, form_data)
             updated_fields.append("dependencies")
-
-            if failed_operations:
-                self.notify_warning(
-                    "Some dependency operations failed:\n"
-                    + "\n".join(failed_operations)
-                )
 
         # Post TaskUpdated event to trigger UI refresh
         if updated_task.id is None:
@@ -183,3 +155,39 @@ class EditTaskCommand(TUICommandBase):
 
         fields_str = ", ".join(updated_fields)
         self.notify_success(f"Updated task {updated_task.id}: {fields_str}")
+
+    def _sync_dependencies(self, task: TaskDetailDto, form_data: TaskFormData) -> None:
+        """Synchronize task dependencies.
+
+        Args:
+            task: Original task DTO
+            form_data: New form data with updated dependencies
+        """
+        original_deps = set(task.depends_on) if task.depends_on else set()
+        new_deps = set(form_data.depends_on) if form_data.depends_on else set()
+
+        # Calculate differences
+        deps_to_remove = original_deps - new_deps
+        deps_to_add = new_deps - original_deps
+
+        failed_operations = []
+
+        # Remove dependencies
+        for dep_id in deps_to_remove:
+            try:
+                self.context.api_client.remove_dependency(task.id, dep_id)
+            except TaskValidationError as e:
+                failed_operations.append(f"Remove {dep_id}: {e}")
+
+        # Add dependencies
+        for dep_id in deps_to_add:
+            try:
+                self.context.api_client.add_dependency(task.id, dep_id)
+            except TaskValidationError as e:
+                failed_operations.append(f"Add {dep_id}: {e}")
+
+        # Report any failures
+        if failed_operations:
+            self.notify_warning(
+                "Some dependency operations failed:\n" + "\n".join(failed_operations)
+            )

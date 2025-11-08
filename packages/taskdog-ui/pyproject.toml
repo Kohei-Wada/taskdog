@@ -46,6 +46,7 @@ packages = [
     "taskdog.cli.commands",
     "taskdog.tui",
     "taskdog.tui.commands",
+    "taskdog.tui.constants",
     "taskdog.tui.screens",
     "taskdog.tui.widgets",
     "taskdog.tui.forms",

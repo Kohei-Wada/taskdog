@@ -14,6 +14,10 @@ from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
 from taskdog.services.task_data_loader import TaskDataLoader
 from taskdog.tui.commands.factory import CommandFactory
+from taskdog.tui.constants.ui_settings import (
+    AUTO_REFRESH_INTERVAL_SECONDS,
+    DEFAULT_GANTT_DISPLAY_DAYS,
+)
 from taskdog.tui.context import TUIContext
 from taskdog.tui.events import (
     GanttResizeRequested,
@@ -223,8 +227,8 @@ class TaskdogTUI(App):
         self.push_screen(self.main_screen)
         # Load tasks after screen is fully mounted
         self.call_after_refresh(self._load_tasks)
-        # Start 1-second auto-refresh timer for elapsed time updates
-        self.set_interval(1.0, self._refresh_elapsed_time)
+        # Start auto-refresh timer for elapsed time updates
+        self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
 
     def _load_tasks(self, keep_scroll_position: bool = False):
         """Load tasks from repository and update both gantt and table.
@@ -241,13 +245,13 @@ class TaskdogTUI(App):
 
         from taskdog_core.shared.utils.date_utils import get_previous_monday
 
-        display_days = 28  # Default display days
+        display_days = DEFAULT_GANTT_DISPLAY_DAYS
         if self.main_screen and self.main_screen.gantt_widget:
             widget = self.main_screen.gantt_widget
             display_days = (
                 widget._calculate_display_days()
                 if hasattr(widget, "_calculate_display_days")
-                else 28
+                else DEFAULT_GANTT_DISPLAY_DAYS
             )
 
         start_date = get_previous_monday()
@@ -409,41 +413,45 @@ class TaskdogTUI(App):
         """Toggle visibility of completed and canceled tasks."""
         self._hide_completed = not self._hide_completed
 
-        # Apply filter to cached tasks without API reload
-        if self._all_tasks and self.main_screen:
-            # Filter tasks using TaskDataLoader
-            filtered_tasks = self.task_data_loader.apply_display_filter(
-                self._all_tasks, self._hide_completed
+        # Early return if no data or screen available
+        if not self._all_tasks or not self.main_screen:
+            status = "hidden" if self._hide_completed else "shown"
+            self.notify(f"Completed tasks {status}")
+            return
+
+        # Filter tasks using TaskDataLoader
+        filtered_tasks = self.task_data_loader.apply_display_filter(
+            self._all_tasks, self._hide_completed
+        )
+
+        # Update table view with filtered tasks
+        if self.main_screen.task_table:
+            from taskdog_core.application.dto.task_list_output import TaskListOutput
+
+            filtered_output = TaskListOutput(
+                tasks=filtered_tasks,
+                total_count=len(self._all_tasks),
+                filtered_count=len(filtered_tasks),
+            )
+            view_models = self.table_presenter.present(filtered_output)
+            self.main_screen.task_table.refresh_tasks(
+                view_models, keep_scroll_position=True
             )
 
-            # Update table view with filtered tasks
-            if self.main_screen.task_table:
-                from taskdog_core.application.dto.task_list_output import TaskListOutput
+        # Update gantt view with filtered tasks
+        if self.main_screen.gantt_widget and self._gantt_view_model:
+            # Filter gantt view model using TaskDataLoader
+            filtered_gantt_vm = self.task_data_loader.filter_gantt_by_tasks(
+                self._gantt_view_model, filtered_tasks
+            )
 
-                filtered_output = TaskListOutput(
-                    tasks=filtered_tasks,
-                    total_count=len(self._all_tasks),
-                    filtered_count=len(filtered_tasks),
-                )
-                view_models = self.table_presenter.present(filtered_output)
-                self.main_screen.task_table.refresh_tasks(
-                    view_models, keep_scroll_position=True
-                )
-
-            # Update gantt view with filtered tasks
-            if self.main_screen.gantt_widget and self._gantt_view_model:
-                # Filter gantt view model using TaskDataLoader
-                filtered_gantt_vm = self.task_data_loader.filter_gantt_by_tasks(
-                    self._gantt_view_model, filtered_tasks
-                )
-
-                task_ids = [t.id for t in filtered_tasks]
-                self.main_screen.gantt_widget.update_gantt(
-                    task_ids=task_ids,
-                    gantt_view_model=filtered_gantt_vm,
-                    sort_by=self._gantt_sort_by,
-                    task_filter=NonArchivedFilter(),
-                )
+            task_ids = [t.id for t in filtered_tasks]
+            self.main_screen.gantt_widget.update_gantt(
+                task_ids=task_ids,
+                gantt_view_model=filtered_gantt_vm,
+                sort_by=self._gantt_sort_by,
+                task_filter=NonArchivedFilter(),
+            )
 
         # Show notification
         status = "hidden" if self._hide_completed else "shown"

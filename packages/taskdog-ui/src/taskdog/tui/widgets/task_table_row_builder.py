@@ -8,10 +8,8 @@ from taskdog.constants.symbols import EMOJI_NOTE
 from taskdog.constants.table_dimensions import TASK_NAME_MAX_DISPLAY_LENGTH
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.formatters.duration_formatter import DurationFormatter
+from taskdog.tui.constants.ui_settings import TAGS_MAX_DISPLAY_LENGTH
 from taskdog.view_models.task_view_model import TaskRowViewModel
-
-# Constants for text truncation
-TAGS_MAX_DISPLAY_LENGTH = 18
 
 
 class TaskTableRowBuilder:
