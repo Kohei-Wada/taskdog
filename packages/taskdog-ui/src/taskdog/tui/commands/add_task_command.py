@@ -1,14 +1,11 @@
 """Add task command for TUI."""
 
-from datetime import datetime
-
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.events import TaskCreated
 from taskdog.tui.forms.task_form_fields import TaskFormData
 from taskdog.tui.screens.task_form_dialog import TaskFormDialog
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
-from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 
 @command_registry.register("add_task")
@@ -27,31 +24,14 @@ class AddTaskCommand(TUICommandBase):
             if form_data is None:
                 return  # User cancelled
 
-            # Convert form data strings to datetime
-            deadline = (
-                datetime.strptime(form_data.deadline, DATETIME_FORMAT)
-                if form_data.deadline
-                else None
-            )
-            planned_start = (
-                datetime.strptime(form_data.planned_start, DATETIME_FORMAT)
-                if form_data.planned_start
-                else None
-            )
-            planned_end = (
-                datetime.strptime(form_data.planned_end, DATETIME_FORMAT)
-                if form_data.planned_end
-                else None
-            )
-
-            # Create task via API client
+            # Create task via API client using TaskFormData helper methods
             task = self.context.api_client.create_task(
                 name=form_data.name,
                 priority=form_data.priority,
-                deadline=deadline,
+                deadline=form_data.get_deadline(),
                 estimated_duration=form_data.estimated_duration,
-                planned_start=planned_start,
-                planned_end=planned_end,
+                planned_start=form_data.get_planned_start(),
+                planned_end=form_data.get_planned_end(),
                 is_fixed=form_data.is_fixed,
                 tags=form_data.tags,
             )
