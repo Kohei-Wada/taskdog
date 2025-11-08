@@ -80,6 +80,8 @@ class GanttWidget(VerticalScroll):
     ):
         """Update the gantt chart with new gantt data.
 
+        DEPRECATED: Use set_props() for reactive updates with AppState.
+
         Args:
             task_ids: List of task IDs (used for recalculating date range on resize)
             gantt_view_model: Presentation-ready gantt data
@@ -241,3 +243,35 @@ class GanttWidget(VerticalScroll):
         from taskdog.tui.events import GanttResizeRequested
 
         self.post_message(GanttResizeRequested(display_days, start_date, end_date))
+
+    def set_props(
+        self,
+        gantt_view_model: GanttViewModel | None,
+        sort_by: str = "deadline",
+    ) -> None:
+        """Set props from AppState for reactive UI updates.
+
+        This implements the props pattern for unidirectional data flow.
+        The widget receives data from AppState and re-renders accordingly.
+
+        Note: task_ids and task_filter are derived internally for resize handling.
+
+        Args:
+            gantt_view_model: Gantt ViewModel from AppState.filtered_gantt_viewmodel
+            sort_by: Sort order from AppState.gantt_sort_by
+        """
+        if not self.is_mounted:
+            return
+
+        # Update internal state from props
+        self._gantt_view_model = gantt_view_model
+        self._sort_by = sort_by
+
+        # Extract task IDs from view model for resize recalculation
+        if gantt_view_model:
+            self._task_ids = [task.id for task in gantt_view_model.tasks]
+        else:
+            self._task_ids = []
+
+        # Render with new props
+        self._render_gantt()

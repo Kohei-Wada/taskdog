@@ -476,6 +476,52 @@ class TaskdogTUI(App):
         status = "hidden" if self.app_state.hide_completed else "shown"
         self.notify(f"Completed tasks {status}")
 
+    def on_ui_update_requested(self, event: UIUpdateRequested) -> None:
+        """Handle UIUpdateRequested message from AppState changes.
+
+        This is the central reactive update handler that syncs all widgets
+        with AppState whenever state changes occur.
+
+        Args:
+            event: UIUpdateRequested message with source_action
+        """
+        if not self.main_screen:
+            return
+
+        # Compute derived ViewModels from AppState
+        self.app_state.compute_table_viewmodels(self.table_presenter)
+        self.app_state.compute_filtered_gantt(self.task_data_loader)
+
+        # Push props to widgets
+        # FilterableTaskTable contains both TaskTable and SearchInput
+        if self.main_screen.task_table:
+            # Update TaskTable props
+            if self.main_screen.task_table.task_table:
+                self.main_screen.task_table.task_table.set_props(
+                    viewmodels=self.app_state.table_viewmodels,
+                    search_query=self.app_state.search_query,
+                    keep_scroll_position=True,
+                )
+
+            # Update SearchInput props
+            if self.main_screen.task_table.search_input:
+                self.main_screen.task_table.search_input.set_props(
+                    search_query=self.app_state.search_query
+                )
+
+                # Update search result count
+                self.main_screen.task_table.search_input.update_result(
+                    matched=len(self.app_state.table_viewmodels),
+                    total=len(self.app_state.all_tasks),
+                )
+
+        # Update GanttWidget props
+        if self.main_screen.gantt_widget:
+            self.main_screen.gantt_widget.set_props(
+                gantt_view_model=self.app_state.filtered_gantt_viewmodel,
+                sort_by=self.app_state.gantt_sort_by,
+            )
+
     def action_command_palette(self) -> None:
         """Show the command palette."""
         self.push_screen(CommandPalette())

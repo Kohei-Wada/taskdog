@@ -111,6 +111,8 @@ class TaskTable(DataTable):
     def load_tasks(self, view_models: list[TaskRowViewModel]):
         """Load task ViewModels into the table.
 
+        DEPRECATED: Use set_props() for reactive updates with AppState.
+
         Args:
             view_models: List of TaskRowViewModel to display
         """
@@ -279,3 +281,48 @@ class TaskTable(DataTable):
         # Scroll right by one column width (approximate)
         scroll_amount = 10
         self.scroll_x = self.scroll_x + scroll_amount
+
+    def set_props(
+        self,
+        viewmodels: list[TaskRowViewModel],
+        search_query: str = "",
+        keep_scroll_position: bool = True,
+    ) -> None:
+        """Set props from AppState for reactive UI updates.
+
+        This implements the props pattern for unidirectional data flow.
+        The widget receives data from AppState and re-renders accordingly.
+
+        Args:
+            viewmodels: List of TaskRowViewModel from AppState.table_viewmodels
+            search_query: Search query from AppState.search_query
+            keep_scroll_position: Whether to preserve scroll/cursor position
+        """
+        if not self.is_mounted:
+            return
+
+        # Save cursor and scroll positions if requested
+        current_row = self.cursor_row if keep_scroll_position else -1
+        saved_scroll_y = self.scroll_y if keep_scroll_position else None
+        saved_scroll_x = self.scroll_x if keep_scroll_position else None
+
+        # Update internal state from props
+        self._all_viewmodels = viewmodels
+        self._current_query = search_query
+
+        # Apply filter and render
+        if search_query:
+            filtered_vms = self._search_filter.filter(viewmodels, search_query)
+            self._render_tasks(filtered_vms)
+        else:
+            self._render_tasks(viewmodels)
+
+        # Restore cursor position if still valid
+        if keep_scroll_position and 0 <= current_row < len(self._viewmodel_map):
+            self.move_cursor(row=current_row)
+
+            # Restore scroll position to prevent stuttering
+            if saved_scroll_y is not None:
+                self.scroll_y = saved_scroll_y
+            if saved_scroll_x is not None:
+                self.scroll_x = saved_scroll_x

@@ -82,3 +82,21 @@ class SearchInput(Container):
         else:
             # Always show match count for consistency
             result_label.update(f"({matched}/{total})")
+
+    def set_props(self, search_query: str) -> None:
+        """Set the search query prop from AppState.
+
+        This implements the props pattern for reactive UI updates.
+        The widget syncs its input value with the prop from AppState.
+
+        Args:
+            search_query: Search query string from AppState
+        """
+        if not self.is_mounted:
+            return
+
+        search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
+
+        # Only update if the value actually changed (avoid triggering events)
+        if search_input.value != search_query:
+            search_input.value = search_query
