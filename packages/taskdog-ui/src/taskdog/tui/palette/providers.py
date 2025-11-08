@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from abc import abstractmethod
+from collections.abc import Callable
 from functools import partial
 from typing import TYPE_CHECKING, ClassVar, cast
 
@@ -23,6 +25,58 @@ EXPORT_FORMATS: list[tuple[str, str, str]] = [
     ("csv", "CSV", "Export tasks as CSV format"),
     ("markdown", "Markdown", "Export tasks as Markdown table"),
 ]
+
+
+class BaseListProvider(Provider):
+    """Base provider for list-based command palettes.
+
+    Eliminates code duplication by providing generic discover() and search()
+    implementations. Subclasses only need to implement get_options().
+    """
+
+    @abstractmethod
+    def get_options(self, app: TaskdogTUI) -> list[tuple[str, Callable[[], None], str]]:
+        """Return list of options for this provider.
+
+        Args:
+            app: TaskdogTUI application instance
+
+        Returns:
+            List of tuples: (option_name, callback, description)
+        """
+        ...
+
+    async def discover(self) -> Hits:
+        """Return all available options.
+
+        Yields:
+            DiscoveryHit objects for all options
+        """
+        app = cast("TaskdogTUI", self.app)
+        for option_name, callback, description in self.get_options(app):
+            yield DiscoveryHit(option_name, callback, help=description)
+
+    async def search(self, query: str) -> Hits:
+        """Search for options matching the query.
+
+        Args:
+            query: User's search query
+
+        Yields:
+            Hit objects for matching options
+        """
+        matcher = self.matcher(query)
+        app = cast("TaskdogTUI", self.app)
+
+        for option_name, callback, description in self.get_options(app):
+            score = matcher.match(option_name)
+            if score > 0:
+                yield Hit(
+                    score,
+                    matcher.highlight(option_name),
+                    callback,
+                    help=description,
+                )
 
 
 class SortCommandProvider(Provider):
@@ -64,7 +118,7 @@ class SortCommandProvider(Provider):
             )
 
 
-class SortOptionsProvider(Provider):
+class SortOptionsProvider(BaseListProvider):
     """Command provider for sort options (second stage)."""
 
     # Sort options: (sort_key, option_name, description)
@@ -77,83 +131,37 @@ class SortOptionsProvider(Provider):
         ("name", "Name", "Alphabetically (A-Z)"),
     ]
 
-    async def discover(self) -> Hits:
-        """Return all sort options.
-
-        Yields:
-            DiscoveryHit objects for all sort options
-        """
-        app = cast("TaskdogTUI", self.app)
-
-        for sort_key, option_name, description in self.SORT_OPTIONS:
-            yield DiscoveryHit(
-                option_name,
-                partial(app.set_sort_order, sort_key),
-                help=description,
-            )
-
-    async def search(self, query: str) -> Hits:
-        """Search for sort options.
+    def get_options(self, app: TaskdogTUI) -> list[tuple[str, Callable[[], None], str]]:
+        """Return sort options with callbacks.
 
         Args:
-            query: User's search query
+            app: TaskdogTUI application instance
 
-        Yields:
-            Hit objects for matching sort options
+        Returns:
+            List of (option_name, callback, description) tuples
         """
-        matcher = self.matcher(query)
-        app = cast("TaskdogTUI", self.app)
-
-        for sort_key, option_name, description in self.SORT_OPTIONS:
-            score = matcher.match(option_name)
-            if score > 0:
-                yield Hit(
-                    score,
-                    matcher.highlight(option_name),
-                    partial(app.set_sort_order, sort_key),
-                    help=description,
-                )
+        return [
+            (option_name, partial(app.set_sort_order, sort_key), description)
+            for sort_key, option_name, description in self.SORT_OPTIONS
+        ]
 
 
-class OptimizeCommandProvider(Provider):
+class OptimizeCommandProvider(BaseListProvider):
     """Command provider for optimization commands."""
 
-    async def discover(self) -> Hits:
-        """Return optimization commands.
-
-        Yields:
-            DiscoveryHit objects for Optimize and Force Optimize commands
-        """
-        app = cast("TaskdogTUI", self.app)
-
-        for command_name, help_text, force_override in OPTIMIZE_COMMANDS:
-            yield DiscoveryHit(
-                command_name,
-                partial(app.search_optimize, force_override),
-                help=help_text,
-            )
-
-    async def search(self, query: str) -> Hits:
-        """Search for optimization commands.
+    def get_options(self, app: TaskdogTUI) -> list[tuple[str, Callable[[], None], str]]:
+        """Return optimize command options with callbacks.
 
         Args:
-            query: User's search query
+            app: TaskdogTUI application instance
 
-        Yields:
-            Hit objects for matching optimization commands
+        Returns:
+            List of (command_name, callback, help_text) tuples
         """
-        matcher = self.matcher(query)
-        app = cast("TaskdogTUI", self.app)
-
-        for command_name, help_text, force_override in OPTIMIZE_COMMANDS:
-            score = matcher.match(command_name)
-            if score > 0:
-                yield Hit(
-                    score,
-                    matcher.highlight(command_name),
-                    partial(app.search_optimize, force_override),
-                    help=help_text,
-                )
+        return [
+            (command_name, partial(app.search_optimize, force_override), help_text)
+            for command_name, help_text, force_override in OPTIMIZE_COMMANDS
+        ]
 
 
 class ExportCommandProvider(Provider):
@@ -195,42 +203,19 @@ class ExportCommandProvider(Provider):
             )
 
 
-class ExportFormatProvider(Provider):
+class ExportFormatProvider(BaseListProvider):
     """Command provider for export format options (second stage)."""
 
-    async def discover(self) -> Hits:
-        """Return all export format options.
-
-        Yields:
-            DiscoveryHit objects for all export formats
-        """
-        app = cast("TaskdogTUI", self.app)
-
-        for format_key, format_name, description in EXPORT_FORMATS:
-            yield DiscoveryHit(
-                format_name,
-                partial(app.execute_export, format_key),
-                help=description,
-            )
-
-    async def search(self, query: str) -> Hits:
-        """Search for export format options.
+    def get_options(self, app: TaskdogTUI) -> list[tuple[str, Callable[[], None], str]]:
+        """Return export format options with callbacks.
 
         Args:
-            query: User's search query
+            app: TaskdogTUI application instance
 
-        Yields:
-            Hit objects for matching export formats
+        Returns:
+            List of (format_name, callback, description) tuples
         """
-        matcher = self.matcher(query)
-        app = cast("TaskdogTUI", self.app)
-
-        for format_key, format_name, description in EXPORT_FORMATS:
-            score = matcher.match(format_name)
-            if score > 0:
-                yield Hit(
-                    score,
-                    matcher.highlight(format_name),
-                    partial(app.execute_export, format_key),
-                    help=description,
-                )
+        return [
+            (format_name, partial(app.execute_export, format_key), description)
+            for format_key, format_name, description in EXPORT_FORMATS
+        ]
