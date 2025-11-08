@@ -1,118 +1,14 @@
-"""Tests for analytics router (statistics, optimization, gantt)."""
+"""Tests for analytics router (statistics, optimization, gantt chart)."""
 
-import os
-import tempfile
 import unittest
 from datetime import date, datetime, timedelta
 
-from fastapi.testclient import TestClient
-
-from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
-from taskdog_core.infrastructure.persistence.file_notes_repository import (
-    FileNotesRepository,
-)
-from taskdog_server.api.context import ApiContext
-from taskdog_server.api.dependencies import set_api_context
+from taskdog_core.domain.entities.task import Task, TaskStatus
+from tests.test_base import BaseApiRouterTest
 
 
-class TestAnalyticsRouter(unittest.TestCase):
+class TestAnalyticsRouter(BaseApiRouterTest):
     """Test cases for analytics router endpoints."""
-
-    def setUp(self):
-        """Set up test fixtures with real dependencies."""
-        # Create temporary database file
-        self.test_db = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db")
-        self.test_db.close()
-        self.test_db_path = self.test_db.name
-
-        # Create temporary notes directory
-        self.test_notes_dir = tempfile.mkdtemp()
-
-        # Initialize repositories
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_db_path}")
-        self.notes_repository = FileNotesRepository()
-
-        # Initialize API context with real controllers
-        from unittest.mock import MagicMock
-
-        from taskdog_core.controllers.query_controller import QueryController
-        from taskdog_core.controllers.task_analytics_controller import (
-            TaskAnalyticsController,
-        )
-        from taskdog_core.controllers.task_crud_controller import TaskCrudController
-        from taskdog_core.controllers.task_lifecycle_controller import (
-            TaskLifecycleController,
-        )
-        from taskdog_core.controllers.task_relationship_controller import (
-            TaskRelationshipController,
-        )
-
-        # Mock config with defaults
-        self.config = MagicMock()
-        self.config.task.default_priority = 3
-        self.config.scheduling.max_hours_per_day = 8.0
-        self.config.scheduling.default_algorithm = "greedy"
-        self.config.region.country = None
-
-        # Create controllers
-        query_controller = QueryController(self.repository, self.notes_repository)
-        lifecycle_controller = TaskLifecycleController(self.repository, self.config)
-        relationship_controller = TaskRelationshipController(
-            self.repository, self.config
-        )
-        analytics_controller = TaskAnalyticsController(
-            self.repository, self.config, None
-        )
-        crud_controller = TaskCrudController(self.repository, self.config)
-
-        # Create API context
-        api_context = ApiContext(
-            repository=self.repository,
-            config=self.config,
-            notes_repository=self.notes_repository,
-            query_controller=query_controller,
-            lifecycle_controller=lifecycle_controller,
-            relationship_controller=relationship_controller,
-            analytics_controller=analytics_controller,
-            crud_controller=crud_controller,
-            holiday_checker=None,
-        )
-
-        # Set context BEFORE creating app
-        set_api_context(api_context)
-
-        # Create test client with app
-        from fastapi import FastAPI
-
-        app = FastAPI(
-            title="Taskdog API Test",
-            description="Test instance",
-            version="1.0.0",
-        )
-
-        # Import and register routers
-        from taskdog_server.api.routers import analytics_router
-
-        app.include_router(analytics_router, prefix="/api/v1", tags=["analytics"])
-
-        self.client = TestClient(app)
-
-    def tearDown(self):
-        """Clean up temporary files after each test."""
-        if hasattr(self, "repository"):
-            self.repository.close()
-        if os.path.exists(self.test_db_path):
-            os.unlink(self.test_db_path)
-        # Clean up notes directory
-        import shutil
-
-        if os.path.exists(self.test_notes_dir):
-            shutil.rmtree(self.test_notes_dir)
-
-    # ===== GET /statistics Tests =====
 
     def test_get_statistics_with_no_tasks(self):
         """Test getting statistics when no tasks exist."""
@@ -130,7 +26,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_get_statistics_with_tasks(self):
         """Test getting statistics with tasks in various states."""
         # Arrange - create tasks
-        from taskdog_core.domain.entities.task import Task
 
         tasks = [
             Task(
@@ -212,7 +107,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_get_tag_statistics_with_tasks(self):
         """Test getting tag statistics with tagged tasks."""
         # Arrange - create tasks with tags
-        from taskdog_core.domain.entities.task import Task
 
         tasks = [
             Task(id=1, name="Task 1", priority=1, tags=["backend", "api"]),
@@ -258,7 +152,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_get_gantt_chart_with_tasks(self):
         """Test getting Gantt chart data with scheduled tasks."""
         # Arrange - create tasks with schedules
-        from taskdog_core.domain.entities.task import Task
 
         today = date.today()
         tomorrow = today + timedelta(days=1)
@@ -287,7 +180,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_get_gantt_chart_with_status_filter(self):
         """Test getting Gantt chart data with status filter."""
         # Arrange - create tasks with different statuses
-        from taskdog_core.domain.entities.task import Task
 
         tasks = [
             Task(id=1, name="Pending Task", priority=1, status=TaskStatus.PENDING),
@@ -308,7 +200,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_get_gantt_chart_with_tag_filter(self):
         """Test getting Gantt chart data with tag filter."""
         # Arrange - create tasks with tags
-        from taskdog_core.domain.entities.task import Task
 
         tasks = [
             Task(id=1, name="Backend Task", priority=1, tags=["backend"]),
@@ -345,7 +236,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_get_gantt_chart_include_archived(self):
         """Test getting Gantt chart data including archived tasks."""
         # Arrange - create archived task
-        from taskdog_core.domain.entities.task import Task
 
         task = Task(id=1, name="Archived Task", priority=1, is_archived=True)
         self.repository.save(task)
@@ -365,7 +255,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_get_gantt_chart_with_sorting(self):
         """Test getting Gantt chart data with sorting."""
         # Arrange - create tasks with different deadlines
-        from taskdog_core.domain.entities.task import Task
 
         today = date.today()
         tasks = [
@@ -404,7 +293,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_optimize_schedule_success(self):
         """Test successful schedule optimization."""
         # Arrange - create tasks to optimize
-        from taskdog_core.domain.entities.task import Task
 
         task = Task(
             id=1,
@@ -456,7 +344,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_optimize_schedule_with_defaults(self):
         """Test schedule optimization with default parameters."""
         # Arrange - create task
-        from taskdog_core.domain.entities.task import Task
 
         task = Task(
             id=1,
@@ -480,7 +367,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_optimize_schedule_with_failures(self):
         """Test schedule optimization with tasks that fail to schedule."""
         # Arrange - create task with impossible constraints
-        from taskdog_core.domain.entities.task import Task
 
         task = Task(
             id=1,
@@ -512,7 +398,6 @@ class TestAnalyticsRouter(unittest.TestCase):
     def test_optimize_schedule_force_override(self):
         """Test schedule optimization with force override."""
         # Arrange - create task with existing schedule
-        from taskdog_core.domain.entities.task import Task
 
         today = date.today()
         task = Task(

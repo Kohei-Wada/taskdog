@@ -49,8 +49,11 @@ class BaseApiRouterTest(unittest.TestCase):
         if cls is BaseApiRouterTest:
             raise unittest.SkipTest("Skipping base test class")
 
-        # In-memory database (shared across tests in this class)
-        cls.repository = SqliteTaskRepository("sqlite:///:memory:")
+        # In-memory database with shared cache (allows multiple connections to same DB)
+        # The "file::memory:?cache=shared" syntax ensures all connections see the same data
+        cls.repository = SqliteTaskRepository(
+            "sqlite:///file::memory:?cache=shared&uri=true"
+        )
         cls.notes_repository = FileNotesRepository()
 
         # Mock config with default values

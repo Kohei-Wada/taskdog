@@ -1,117 +1,13 @@
 """Tests for notes router (CRUD operations for markdown notes)."""
 
-import os
-import tempfile
 import unittest
 
-from fastapi.testclient import TestClient
-
 from taskdog_core.domain.entities.task import Task
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
-from taskdog_core.infrastructure.persistence.file_notes_repository import (
-    FileNotesRepository,
-)
-from taskdog_server.api.context import ApiContext
-from taskdog_server.api.dependencies import set_api_context
+from tests.test_base import BaseApiRouterTest
 
 
-class TestNotesRouter(unittest.TestCase):
+class TestNotesRouter(BaseApiRouterTest):
     """Test cases for notes router endpoints."""
-
-    def setUp(self):
-        """Set up test fixtures with real dependencies."""
-        # Create temporary database file
-        self.test_db = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".db")
-        self.test_db.close()
-        self.test_db_path = self.test_db.name
-
-        # Create temporary notes directory
-        self.test_notes_dir = tempfile.mkdtemp()
-
-        # Initialize repositories
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_db_path}")
-        self.notes_repository = FileNotesRepository()
-
-        # Initialize API context with real controllers
-        from unittest.mock import MagicMock
-
-        from taskdog_core.controllers.query_controller import QueryController
-        from taskdog_core.controllers.task_analytics_controller import (
-            TaskAnalyticsController,
-        )
-        from taskdog_core.controllers.task_crud_controller import TaskCrudController
-        from taskdog_core.controllers.task_lifecycle_controller import (
-            TaskLifecycleController,
-        )
-        from taskdog_core.controllers.task_relationship_controller import (
-            TaskRelationshipController,
-        )
-
-        # Mock config with defaults
-        self.config = MagicMock()
-        self.config.task.default_priority = 3
-        self.config.scheduling.max_hours_per_day = 8.0
-        self.config.scheduling.default_algorithm = "greedy"
-        self.config.region.country = None
-
-        # Create controllers
-        query_controller = QueryController(self.repository, self.notes_repository)
-        lifecycle_controller = TaskLifecycleController(self.repository, self.config)
-        relationship_controller = TaskRelationshipController(
-            self.repository, self.config
-        )
-        analytics_controller = TaskAnalyticsController(
-            self.repository, self.config, None
-        )
-        crud_controller = TaskCrudController(self.repository, self.config)
-
-        # Create API context
-        api_context = ApiContext(
-            repository=self.repository,
-            config=self.config,
-            notes_repository=self.notes_repository,
-            query_controller=query_controller,
-            lifecycle_controller=lifecycle_controller,
-            relationship_controller=relationship_controller,
-            analytics_controller=analytics_controller,
-            crud_controller=crud_controller,
-            holiday_checker=None,
-        )
-
-        # Set context BEFORE creating app
-        set_api_context(api_context)
-
-        # Create test client with app
-        from fastapi import FastAPI
-
-        app = FastAPI(
-            title="Taskdog API Test",
-            description="Test instance",
-            version="1.0.0",
-        )
-
-        # Import and register routers
-        from taskdog_server.api.routers import notes_router
-
-        app.include_router(notes_router, prefix="/api/v1/tasks", tags=["notes"])
-
-        self.client = TestClient(app)
-
-    def tearDown(self):
-        """Clean up temporary files after each test."""
-        if hasattr(self, "repository"):
-            self.repository.close()
-        if os.path.exists(self.test_db_path):
-            os.unlink(self.test_db_path)
-        # Clean up notes directory
-        import shutil
-
-        if os.path.exists(self.test_notes_dir):
-            shutil.rmtree(self.test_notes_dir)
-
-    # ===== GET /{task_id}/notes Tests =====
 
     def test_get_notes_for_existing_task_with_no_notes(self):
         """Test getting notes for a task that has no notes."""
