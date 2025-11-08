@@ -1,0 +1,93 @@
+[project]
+name = "taskdog-ui"
+version = "0.4.0"
+description = "CLI and TUI for Taskdog task management system"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    { name = "Kohei Wada" }
+]
+license = { text = "MIT" }
+
+dependencies = [
+    "taskdog-core==0.4.0",
+    "click>=8.3.0",
+    "rich>=14.2.0",
+    "textual>=0.88.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "mypy>=1.0.0",
+    "ruff>=0.7.0",
+]
+server = [
+    "taskdog-server==0.4.0",
+]
+
+[project.scripts]
+taskdog = "taskdog.cli_main:cli"
+
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = [
+    "taskdog",
+    "taskdog.builders",
+    "taskdog.formatters",
+    "taskdog.services",
+    "taskdog.cli",
+    "taskdog.cli.commands",
+    "taskdog.tui",
+    "taskdog.tui.commands",
+    "taskdog.tui.constants",
+    "taskdog.tui.screens",
+    "taskdog.tui.widgets",
+    "taskdog.tui.forms",
+    "taskdog.tui.palette",
+    "taskdog.tui.services",
+    "taskdog.tui.styles",
+    "taskdog.console",
+    "taskdog.renderers",
+    "taskdog.exporters",
+    "taskdog.constants",
+    "taskdog.presenters",
+    "taskdog.view_models",
+    "taskdog.mappers",
+    "taskdog.utils",
+    "taskdog.shared",
+    "taskdog.shared.click_types",
+    "taskdog.infrastructure",
+]
+package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+taskdog = ["py.typed"]
+"taskdog.tui.styles" = ["*.tcss"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

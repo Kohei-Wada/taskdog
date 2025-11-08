@@ -1,6 +1,0 @@
-"""DTO for starting a task."""
-
-from application.dto.base import SingleTaskInput
-
-# Type alias for semantic clarity
-StartTaskInput = SingleTaskInput

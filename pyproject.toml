@@ -1,20 +1,16 @@
 [project]
-name = "taskdog"
+name = "taskdog-workspace"
 version = "0.4.0"
-description = "Add your description here"
+description = "Taskdog monorepo workspace"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-  "click>=8.3.0",
-  "holidays>=0.60.0",
-  "python-dateutil>=2.8.0",
-  "rich>=14.2.0",
-  "sqlalchemy>=2.0.0",
-  "textual>=0.88.0",
+requires-python = ">=3.11"
+authors = [
+    { name = "Kohei Wada" }
 ]
+license = { text = "MIT" }
 
-[project.scripts]
-taskdog = "taskdog.cli:cli"
+# This is a workspace root - install individual packages from packages/ directory
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
@@ -26,10 +22,23 @@ dev = [
   "coverage>=7.0.0",
 ]
 
+# UV workspace configuration
+[tool.uv.workspace]
+members = [
+    "packages/taskdog-core",
+    "packages/taskdog-server",
+    "packages/taskdog-ui",
+]
+
+[tool.uv.sources]
+taskdog-core = { workspace = true }
+taskdog-server = { workspace = true }
+taskdog-ui = { workspace = true }
+
 # mypy configuration
 [tool.mypy]
 python_version = "3.13"
-mypy_path = "src"
+mypy_path = "packages/*/src"
 # Progressive type checking - Phase 3: Moderate strictness
 warn_unused_configs = true
 warn_redundant_casts = true
@@ -48,6 +57,12 @@ show_error_context = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["taskdog_server.api.*", "taskdog_server.main", "taskdog.infrastructure.api_client", "taskdog.shared.server_manager"]
+disallow_untyped_defs = false
+disallow_any_generics = false
+disallow_untyped_calls = false
 check_untyped_defs = false
 
 # Ignore third-party library without type stubs
@@ -71,20 +86,20 @@ ignore_missing_imports = true
 # These will be fixed in Phase 3
 [[tool.mypy.overrides]]
 module = [
-  "application.services.optimization_summary_builder",
-  "application.sorters.optimization_task_sorter",
-  "application.sorters.task_sorter",
-  "application.queries.filters.today_filter",
-  "application.queries.task_query_service",
-  "presentation.renderers.rich_renderer_base",
-  "presentation.renderers.rich_table_renderer",
-  "presentation.renderers.rich_gantt_renderer",
-  "presentation.cli.commands.*",
-  "presentation.tui.app",
-  "presentation.tui.widgets.*",
-  "presentation.tui.screens.algorithm_selection_screen",
-  "infrastructure.persistence.database.*",
-  "infrastructure.persistence.mappers.task_db_mapper",
+  "taskdog_core.application.services.optimization_summary_builder",
+  "taskdog_core.application.sorters.optimization_task_sorter",
+  "taskdog_core.application.sorters.task_sorter",
+  "taskdog_core.application.queries.filters.today_filter",
+  "taskdog_core.application.queries.task_query_service",
+  "taskdog.renderers.rich_renderer_base",
+  "taskdog.renderers.rich_table_renderer",
+  "taskdog.renderers.rich_gantt_renderer",
+  "taskdog.cli.commands.*",
+  "taskdog.tui.app",
+  "taskdog.tui.widgets.*",
+  "taskdog.tui.screens.algorithm_selection_screen",
+  "taskdog_core.infrastructure.persistence.database.*",
+  "taskdog_core.infrastructure.persistence.mappers.task_db_mapper",
 ]
 ignore_errors = true
 
@@ -113,14 +128,14 @@ ignore = [
 
 # Per-file ignores for complex functions that need refactoring
 [tool.ruff.lint.per-file-ignores]
-"src/application/services/optimization_summary_builder.py" = ["C901"]
-"src/domain/services/workload_calculator.py" = ["C901"]
-"src/infrastructure/persistence/json_task_repository.py" = ["C901"]
-"src/presentation/renderers/rich_gantt_renderer.py" = ["C901"]
-"src/domain/exceptions/task_exceptions.py" = [
+"packages/taskdog-core/src/taskdog_core/application/services/optimization_summary_builder.py" = ["C901"]
+"packages/taskdog-core/src/taskdog_core/domain/services/workload_calculator.py" = ["C901"]
+"packages/taskdog-core/src/taskdog_core/infrastructure/persistence/json_task_repository.py" = ["C901"]
+"packages/taskdog-ui/src/taskdog/renderers/rich_gantt_renderer.py" = ["C901"]
+"packages/taskdog-core/src/taskdog_core/domain/exceptions/task_exceptions.py" = [
   "N818",
 ]  # TaskNotFoundException is widely used
-"tests/**/*.py" = ["SIM115", "RUF015"]  # Test code patterns are acceptable
+"packages/*/tests/**/*.py" = ["SIM115", "RUF015"]  # Test code patterns are acceptable
 "scripts/**/*.py" = ["B904", "C901"]  # Migration scripts: exception chaining and complexity acceptable
 
 [tool.ruff.lint.mccabe]
@@ -129,11 +144,8 @@ max-complexity = 10
 [tool.ruff.lint.isort]
 known-first-party = [
   "taskdog",
-  "domain",
-  "application",
-  "infrastructure",
-  "presentation",
-  "shared",
+  "taskdog_core",
+  "taskdog_server",
 ]
 section-order = [
   "future",
@@ -143,58 +155,7 @@ section-order = [
   "local-folder",
 ]
 
-[tool.setuptools]
-packages = [
-  # Core CLI
-  "taskdog",
-  # Clean Architecture packages
-  "domain",
-  "domain.entities",
-  "domain.services",
-  "domain.repositories",
-  "domain.exceptions",
-  "application",
-  "application.constants",
-  "application.dto",
-  "application.queries",
-  "application.queries.filters",
-  "application.services",
-  "application.services.optimization",
-  "application.sorters",
-  "application.use_cases",
-  "application.utils",
-  "application.validators",
-  "infrastructure",
-  "infrastructure.persistence",
-  "infrastructure.persistence.database",
-  "infrastructure.persistence.database.models",
-  "infrastructure.persistence.mappers",
-  "presentation",
-  "presentation.cli",
-  "presentation.cli.commands",
-  "presentation.console",
-  "presentation.constants",
-  "presentation.controllers",
-  "presentation.enums",
-  "presentation.exporters",
-  "presentation.mappers",
-  "presentation.presenters",
-  "presentation.renderers",
-  "presentation.utils",
-  "presentation.view_models",
-  "presentation.tui",
-  "presentation.tui.commands",
-  "presentation.tui.forms",
-  "presentation.tui.palette",
-  "presentation.tui.screens",
-  "presentation.tui.services",
-  "presentation.tui.widgets",
-  "shared",
-  "shared.click_types",
-  "shared.constants",
-  "shared.utils",
-]
-package-dir = { "" = "src" }
-
-[tool.setuptools.package-data]
-"presentation.tui" = ["styles/*.tcss"]
+# Build system - workspace root doesn't build directly
+[build-system]
+requires = ["setuptools>=68.0.0"]
+build-backend = "setuptools.build_meta"

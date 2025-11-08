@@ -1,10 +1,34 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-Taskdog is a task management CLI tool built with Python, Click, and Rich. It supports time tracking, task dependencies, multiple task states, soft deletion, and schedule optimization. The codebase follows Clean Architecture principles.
+Taskdog is a task management system built with Python. It provides a CLI/TUI interface and a REST API server for managing tasks with time tracking, dependencies, schedule optimization, and rich terminal output. The codebase follows Clean Architecture principles and is organized as a UV workspace monorepo.
+
+### Monorepo Structure
+
+The repository uses UV workspace with three packages:
+
+**taskdog-core** (`packages/taskdog-core/`): Core business logic and infrastructure
+- Domain entities, use cases, repositories, validators
+- SQLite persistence layer with transactional writes
+- Schedule optimization algorithms (9 strategies)
+- No UI dependencies - pure business logic
+
+**taskdog-server** (`packages/taskdog-server/`): FastAPI REST API server
+- Depends on: taskdog-core
+- FastAPI application with automatic OpenAPI docs
+- API routers: tasks, lifecycle, relationships, analytics
+- Pydantic models for request/response validation
+- Health check and comprehensive error handling
+
+**taskdog-ui** (`packages/taskdog-ui/`): CLI and TUI interfaces
+- Depends on: taskdog-core
+- Click-based CLI commands with Rich output
+- Textual-based full-screen TUI
+- Optional API client for remote server communication
+- Renderers for tables, Gantt charts, and markdown notes
 
 ### Data Storage & Configuration
 
@@ -19,44 +43,102 @@ Taskdog is a task management CLI tool built with Python, Click, and Rich. It sup
 ## Development Commands
 
 ```bash
-# Setup
-uv pip install -e .              # Editable install (required for dev)
-uv pip install -e ".[dev]"       # With dev dependencies
+# Setup (from workspace root)
+make install-dev                 # Install all packages with dev dependencies (editable mode)
+make install-local               # Install all packages locally for development (alias for install-core install-server install-ui)
+make install                     # Install taskdog and taskdog-server as global commands via uv tool
+
+# Per-package installation (for development)
+make install-core                # Install taskdog-core only
+make install-server              # Install taskdog-server (includes core)
+make install-ui                  # Install taskdog-ui (includes core)
 
 # Testing
-make test                        # Run all tests
-uv run python -m unittest tests/test_create_task_use_case.py  # Single file
-uv run python -m unittest tests.test_module.TestClass.test_method  # Specific test
+make test                        # Run all tests (core + ui)
+make test-core                   # Run taskdog-core tests only
+make test-server                 # Run taskdog-server tests only
+make test-ui                     # Run taskdog-ui tests only
+
+# Single test file (run from package directory)
+cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest tests/test_module.py
+# Specific test method
+cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest tests.test_module.TestClass.test_method
 
 # Code Quality
-make lint                        # Ruff linter
-make format                      # Ruff formatter
-make typecheck                   # mypy (Phase 3->4: 2 of 3 settings enabled, prepared for final 29 errors)
+make lint                        # Ruff linter on all packages
+make format                      # Ruff formatter + auto-fix on all packages
+make typecheck                   # mypy on all packages (progressive type checking, Phase 4)
 make check                       # lint + typecheck
 
-# Installation
-make install                     # Install as CLI tool
-make clean                       # Clean build artifacts
+# Cleanup
+make clean                       # Clean build artifacts and cache
+make uninstall                   # Uninstall all global commands
+make reinstall                   # Clean + reinstall all global commands
 
-# Running
-taskdog --help                                          # After installation
-PYTHONPATH=src uv run python -m taskdog.cli --help     # During development
+# Running the applications
+taskdog --help                   # CLI/TUI (after make install)
+taskdog-server --help            # API server (after make install)
+
+# Development mode (without installation)
+cd packages/taskdog-ui && PYTHONPATH=src uv run python -m taskdog.cli_main --help
+cd packages/taskdog-server && PYTHONPATH=src uv run python -m taskdog_server.main --help
+
+# Server examples
+taskdog-server                   # Start on default 127.0.0.1:8000
+taskdog-server --host 0.0.0.0 --port 3000  # Custom host/port
+taskdog-server --reload          # Auto-reload for development
+taskdog-server --workers 4       # Production with multiple workers
+# API docs: http://localhost:8000/docs
+# Health check: http://localhost:8000/health
 ```
 
-**Testing**: Uses `unittest` framework. Tests mirror `src/` structure. Use `unittest.mock` for dependencies.
+**Testing**: Uses `unittest` framework. Tests mirror package structure under `packages/*/tests/`. Use `unittest.mock` for dependencies.
+
+## Working with the Monorepo
+
+**Package Navigation:**
+- Core business logic changes: `packages/taskdog-core/src/taskdog_core/`
+- API server changes: `packages/taskdog-server/src/taskdog_server/`
+- CLI/TUI changes: `packages/taskdog-ui/src/taskdog/`
+
+**Adding Features:**
+1. Add domain entities/use cases in `taskdog-core`
+2. Expose via controllers (TaskController/QueryController) in `taskdog-core`
+3. Add API endpoints in `taskdog-server` (if needed)
+4. Add CLI commands in `taskdog-ui` (if needed)
+5. Add TUI commands in `taskdog-ui` (if needed)
+
+**Testing Workflow:**
+- Test core changes: `make test-core`
+- Test server changes: `make test-server`
+- Test UI changes: `make test-ui`
+- Test everything: `make test`
+
+**Type Checking:**
+- Mypy configured with progressive type checking (Phase 4)
+- Some modules temporarily ignored (see pyproject.toml `[[tool.mypy.overrides]]`)
+- Run `make typecheck` before committing
+
+**Import Conventions:**
+- Core package: `from taskdog_core.domain.entities.task import Task`
+- Server package: `from taskdog_server.api.models.requests import CreateTaskRequest`
+- UI package: `from taskdog.cli.commands.add import add_command`
+- Cross-package: Server and UI import from `taskdog_core`
 
 ## Architecture
 
-Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastructure** / **Presentation** / **Shared**
+Clean Architecture with 5 layers across three packages: **Domain** ← **Application** → **Infrastructure** / **Presentation** / **Shared**
 
-### Layers
+### Package Structure
 
-**Domain** (`src/domain/`): Core business logic, no external dependencies
+**taskdog-core** contains Domain, Application, Infrastructure (persistence), and Shared layers:
+
+**Domain** (`packages/taskdog-core/src/taskdog_core/domain/`): Core business logic, no external dependencies
 - `entities/`: Task, TaskStatus
 - `services/`: TimeTracker (records timestamps)
 - `exceptions/`: TaskNotFoundException, TaskValidationError, TaskAlreadyFinishedError, TaskNotStartedError
 
-**Application** (`src/application/`): Business logic orchestration
+**Application** (`packages/taskdog-core/src/taskdog_core/application/`): Business logic orchestration
 - `use_cases/`: Each business operation is a separate use case with `execute(input_dto)` method
   - Base classes: `UseCase[TInput, TOutput]`, `StatusChangeUseCase` (Template Method pattern)
   - Examples: CreateTaskUseCase, StartTaskUseCase, OptimizeScheduleUseCase
@@ -67,71 +149,126 @@ Clean Architecture with 5 layers: **Domain** ← **Application** → **Infrastru
   - `optimization/`: 9 scheduling strategies (greedy, balanced, backward, priority_first, earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo) + StrategyFactory
 - `sorters/`: TaskSorter (general queries), OptimizationTaskSorter (optimization-specific)
 - `queries/`: TaskQueryService, WorkloadCalculator (computes daily hours for read-only operations, CQRS-like)
-- `dto/`: Input/Output DTOs (CreateTaskInput, OptimizationResult, SchedulingFailure, etc.)
+- `dto/`: Input/Output DTOs (CreateTaskRequest, OptimizationResult, SchedulingFailure, etc.)
 
-**Infrastructure** (`src/infrastructure/`): External concerns
-- `persistence/`: SqliteTaskRepository (transactional writes, indexed queries, efficient lookups)
+**Infrastructure** (`packages/taskdog-core/src/taskdog_core/infrastructure/`): External concerns
+- `persistence/database/`: SqliteTaskRepository (transactional writes, indexed queries, efficient lookups)
+- `persistence/mappers/`: TaskDbMapper for entity-to-database mapping
+- `config/`: ConfigManager (loads TOML config with fallback to defaults)
 
-**Presentation** (`src/presentation/`): User interfaces
-- `cli/`: Click commands, CliContext (DI container), error handlers
-- `console/`: ConsoleWriter abstraction (RichConsoleWriter implementation)
-- `renderers/`: RichTableRenderer, RichGanttRenderer
-- `tui/`: Textual-based TUI with Command Pattern (CommandRegistry, CommandFactory, TUICommandBase)
-- `controllers/`: TaskController (writes), QueryController (reads) - orchestrate use cases/queries for all presentation layers
+**Controllers** (`packages/taskdog-core/src/taskdog_core/controllers/`): Shared across all presentation layers
+- `TaskController`: Orchestrates write operations (commands)
+  - Methods: start_task, complete_task, create_task, update_task, archive_task, etc.
+  - Instantiates use cases, constructs Request DTOs, handles config defaults
+  - Used by: CLI, TUI, API server
+- `QueryController`: Orchestrates read operations (queries)
+  - Methods: list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id
+  - Returns Output DTOs with metadata (TaskListOutput, GanttOutput, TagStatisticsOutput)
+  - Used by: CLI, TUI, API server
 
-**Shared** (`src/shared/`): Cross-cutting utilities
-- `xdg_utils.py`: XDG paths (get_tasks_file, get_config_file)
-- `config_manager.py`: ConfigManager (loads TOML config with fallback to defaults)
-- `click_types/`: DateTimeWithDefault (adds 18:00:00 when only date provided)
+**Shared** (`packages/taskdog-core/src/taskdog_core/shared/`): Cross-cutting utilities
+- `utils/xdg_utils.py`: XDG paths (get_tasks_file, get_config_file)
+
+**taskdog-server** contains FastAPI-specific presentation layer:
+
+**API** (`packages/taskdog-server/src/taskdog_server/api/`):
+- `app.py`: FastAPI application setup with CORS, exception handlers
+- `routers/`: API route handlers
+  - `tasks.py`: Task CRUD operations
+  - `lifecycle.py`: Task status changes (start, complete, pause, cancel, reopen)
+  - `relationships.py`: Dependencies and tags
+  - `analytics.py`: Statistics and reporting
+- `models/`: Pydantic request/response models
+- `dependencies.py`: FastAPI dependency injection (repository, controllers)
+- `context.py`: ApiContext (similar to CliContext for DI)
+
+**taskdog-ui** contains CLI/TUI-specific presentation layer:
+
+**CLI** (`packages/taskdog-ui/src/taskdog/cli/`):
+- `cli_main.py`: Click application entry point
+- `commands/`: Click command implementations (add, start, done, table, gantt, etc.)
+- `context.py`: CliContext (DI container for console_writer, repository, time_tracker, config)
+- Error handlers: `@handle_task_errors`, `@handle_command_errors` decorators
+
+**Console** (`packages/taskdog-ui/src/taskdog/console/`):
+- `ConsoleWriter` abstraction for all CLI output
+- `RichConsoleWriter` implementation (Rich-based formatting)
+
+**Renderers** (`packages/taskdog-ui/src/taskdog/renderers/`):
+- `RichTableRenderer`: Task table with all fields, strikethrough for finished tasks
+- `RichGanttRenderer`: Timeline with daily hours, status symbols (◆), weekend coloring, workload summary
+
+**TUI** (`packages/taskdog-ui/src/taskdog/tui/`):
+- `app.py`: Textual application main screen
+- `commands/`: Command Pattern (CommandRegistry, CommandFactory, TUICommandBase)
+- `screens/`, `widgets/`, `forms/`: UI components
+- `services/task_service.py`: Facade wrapping TaskController + QueryController for TUI
+- `styles/`: TCSS stylesheets (included via package_data)
+
+**Infrastructure** (`packages/taskdog-ui/src/taskdog/infrastructure/`):
+- `api_client.py`: HTTP client for communicating with taskdog-server (optional remote mode)
+
+**Shared** (`packages/taskdog-ui/src/taskdog/shared/`):
+- `click_types/`: Custom Click parameter types (DateTimeWithDefault adds 18:00:00 when only date provided)
 
 ### Dependency Injection
 
-**CLI**: `CliContext` dataclass (console_writer, repository, time_tracker, config) passed via `ctx.obj`
-**TUI**: `TUIContext` dataclass + CommandFactory for command instantiation
-**Local**: Use cases, renderers, and query services instantiated per command
+**CLI** (`taskdog-ui`): `CliContext` dataclass (console_writer, repository, time_tracker, config) passed via `ctx.obj`
+**TUI** (`taskdog-ui`): `TUIContext` dataclass + CommandFactory for command instantiation
+**API** (`taskdog-server`): `ApiContext` dataclass + FastAPI dependency injection via `dependencies.py`
+**Local**: Use cases, renderers, and query services instantiated per command/request
 
 ### Key Components
 
-**Task Entity** (`src/domain/entities/task.py`)
+**Task Entity** (`packages/taskdog-core/src/taskdog_core/domain/entities/task.py`)
 - Fields: id, name, priority, status, planned_start/end, deadline, actual_start/end, estimated_duration, daily_allocations, is_fixed, depends_on, actual_daily_hours, tags, is_archived
 - Statuses: PENDING, IN_PROGRESS, COMPLETED, CANCELED
 - Always-Valid Entity: validates invariants in `__post_init__` (name non-empty, priority > 0, estimated_duration > 0 if set, tags non-empty and unique)
 - Properties: actual_duration_hours, is_active, is_finished, can_be_modified, is_schedulable
 - Archive Design: is_archived is a boolean flag (not a status) to preserve original task state when soft-deleted
 
-**Repository** (`SqliteTaskRepository`)
-- Transactional writes with automatic rollback on errors
+**Repository** (`packages/taskdog-core/src/taskdog_core/infrastructure/persistence/database/sqlite_task_repository.py`)
+- `SqliteTaskRepository`: Transactional writes with automatic rollback on errors
 - Indexed queries for efficient lookups and filtering
 - Connection pooling and proper resource management
+- Used by both CLI/TUI and API server
 
-**TimeTracker**: Records actual_start (→IN_PROGRESS), actual_end (→COMPLETED/CANCELED), clears both (→PENDING)
+**TimeTracker** (`packages/taskdog-core/src/taskdog_core/domain/services/time_tracker.py`):
+- Records actual_start (→IN_PROGRESS), actual_end (→COMPLETED/CANCELED), clears both (→PENDING)
 
-**Renderers**
+**Renderers** (`packages/taskdog-ui/src/taskdog/renderers/`)
 - `RichTableRenderer`: Task table with all fields, strikethrough for finished tasks (uses task.is_finished)
 - `RichGanttRenderer`: Timeline with daily hours, status symbols (◆), weekend coloring, workload summary, strikethrough for finished tasks
 - Strikethrough applied only to COMPLETED/CANCELED tasks (task.is_finished), not archived tasks
 
-**CLI Patterns**
+**CLI Patterns** (`packages/taskdog-ui/src/taskdog/cli/`)
 - `update_helpers.py`: Shared helper for single-field updates (deadline, priority, estimate, rename)
 - `error_handler.py`: `@handle_task_errors`, `@handle_command_errors` decorators
 - Batch operations: Loop + per-task error handling (start, done, pause, rm, archive)
 
-**Controllers** (`src/presentation/controllers/`)
+**Controllers** (`packages/taskdog-core/src/taskdog_core/controllers/`)
 - `TaskController`: Orchestrates write operations (commands)
   - Methods: start_task, complete_task, create_task, update_task, archive_task, etc.
-  - Instantiates use cases, constructs Input DTOs, handles config defaults
-  - Used by: CLI commands, TUI TaskService, future API handlers
+  - Instantiates use cases, constructs Request DTOs, handles config defaults
+  - Used by: CLI commands, TUI TaskService, API handlers
 - `QueryController`: Orchestrates read operations (queries)
   - Methods: list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id
   - Returns Output DTOs with metadata (TaskListOutput, GanttOutput, TagStatisticsOutput)
-  - Used by: CLI commands (table, gantt, tags, export, report), TUI TaskService, future API endpoints
+  - Used by: CLI commands (table, gantt, tags, export, report), TUI TaskService, API endpoints
 
-**TUI Command Pattern**
+**TUI Command Pattern** (`packages/taskdog-ui/src/taskdog/tui/commands/`)
 - `@command_registry.register("name")` for automatic registration
 - `TUICommandBase`: Abstract base with helpers (get_selected_task, reload_tasks, notify_*)
 - `StatusChangeCommandBase`: Template Method for status changes
 - `CommandFactory`: Creates commands with DI
 - `TaskService`: Facade wrapping TaskController + QueryController for TUI
+
+**API Patterns** (`packages/taskdog-server/src/taskdog_server/api/`)
+- FastAPI routers: tasks, lifecycle, relationships, analytics
+- Pydantic models for automatic request/response validation
+- Dependency injection via `dependencies.py` (get_repository, get_task_controller, get_query_controller)
+- Automatic OpenAPI documentation at `/docs`
+- Health check endpoint at `/health`
 
 ### Data Integrity
 
@@ -191,24 +328,71 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 
 ### Design Principles
 
-1. **Clean Architecture**: Strict layer dependencies (Presentation → Application → Domain ← Infrastructure)
-2. **Use Case Pattern**: Each business operation = separate use case class with `execute(input_dto)`
-3. **CQRS Pattern**: Commands (writes) via TaskController + Use Cases; Queries (reads) via QueryController + TaskQueryService
+1. **Monorepo with UV Workspace**: Three packages with clear separation of concerns
+   - `taskdog-core`: Pure business logic (no UI/API dependencies)
+   - `taskdog-server`: FastAPI REST API (depends on core)
+   - `taskdog-ui`: CLI/TUI interfaces (depends on core)
+2. **Clean Architecture**: Strict layer dependencies (Presentation → Application → Domain ← Infrastructure)
+3. **Shared Controllers**: TaskController and QueryController in core package used by all presentation layers (CLI, TUI, API)
+4. **Use Case Pattern**: Each business operation = separate use case class with `execute(input_dto)`
+5. **CQRS Pattern**: Commands (writes) via TaskController + Use Cases; Queries (reads) via QueryController + TaskQueryService
    - TaskController: Orchestrates write use cases (start, complete, create, update, archive, etc.)
    - QueryController: Orchestrates read queries (list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id)
-   - Both used by CLI, TUI, and future API layers for consistent interface
-4. **Template Method**: StatusChangeUseCase eliminates duplication across status change operations
-5. **Strategy Pattern**: 9 optimization algorithms managed by StrategyFactory; field validators via TaskFieldValidatorRegistry
-6. **Command Pattern (TUI)**: Auto-registration via decorator, DI via CommandFactory
-7. **Always-Valid Entity**: Task validates invariants in `__post_init__` (DDD best practice)
-8. **Context-based DI**: CliContext/TUIContext dataclasses for dependency injection
-9. **ConsoleWriter Abstraction**: All CLI output through unified interface (RichConsoleWriter)
-10. **Transactional Operations**: SqliteTaskRepository uses database transactions for atomic writes with automatic rollback
-11. **Config Priority**: CLI args > TOML config > defaults (uses Python 3.11+ tomllib)
-12. **Fixed Tasks**: is_fixed=True prevents rescheduling; hours counted in optimizer's max_hours_per_day calculation
-13. **Visual Styling**: Use task.is_finished property (not direct status checks) for strikethrough; archived tasks display without strikethrough
+   - Both used by CLI, TUI, and API layers for consistent interface
+6. **Template Method**: StatusChangeUseCase eliminates duplication across status change operations
+7. **Strategy Pattern**: 9 optimization algorithms managed by StrategyFactory; field validators via TaskFieldValidatorRegistry
+8. **Command Pattern (TUI)**: Auto-registration via decorator, DI via CommandFactory
+9. **Always-Valid Entity**: Task validates invariants in `__post_init__` (DDD best practice)
+10. **Context-based DI**: CliContext/TUIContext/ApiContext dataclasses for dependency injection
+11. **ConsoleWriter Abstraction**: All CLI output through unified interface (RichConsoleWriter)
+12. **Transactional Operations**: SqliteTaskRepository uses database transactions for atomic writes with automatic rollback
+13. **Config Priority**: CLI args > TOML config > defaults (uses Python 3.11+ tomllib)
+14. **Fixed Tasks**: is_fixed=True prevents rescheduling; hours counted in optimizer's max_hours_per_day calculation
+15. **Visual Styling**: Use task.is_finished property (not direct status checks) for strikethrough; archived tasks display without strikethrough
 
-### Console Output
+### API Server Endpoints
+
+The FastAPI server (`taskdog-server`) provides a REST API with automatic OpenAPI documentation at `/docs`:
+
+**Task Management** (`/api/tasks/`)
+- `GET /api/tasks/` - List tasks with filtering (status, tags, date ranges, archived)
+- `POST /api/tasks/` - Create new task
+- `GET /api/tasks/{task_id}` - Get task details
+- `PATCH /api/tasks/{task_id}` - Update task fields
+- `DELETE /api/tasks/{task_id}?hard=false` - Delete task (soft by default)
+
+**Lifecycle Operations** (`/api/tasks/{task_id}/`)
+- `POST /api/tasks/{task_id}/start` - Start task
+- `POST /api/tasks/{task_id}/complete` - Complete task
+- `POST /api/tasks/{task_id}/pause` - Pause task (reset to PENDING)
+- `POST /api/tasks/{task_id}/cancel` - Cancel task
+- `POST /api/tasks/{task_id}/reopen` - Reopen completed/canceled task
+- `POST /api/tasks/{task_id}/restore` - Restore archived task
+- `POST /api/tasks/{task_id}/log-hours` - Log actual hours worked
+
+**Relationships** (`/api/tasks/{task_id}/`)
+- `POST /api/tasks/{task_id}/dependencies` - Add dependency
+- `DELETE /api/tasks/{task_id}/dependencies/{dep_id}` - Remove dependency
+- `GET /api/tasks/{task_id}/tags` - Get task tags
+- `PUT /api/tasks/{task_id}/tags` - Set task tags (replaces existing)
+
+**Analytics** (`/api/analytics/`)
+- `GET /api/analytics/stats` - Task statistics (period, focus filters)
+- `GET /api/analytics/gantt` - Gantt chart data (date ranges, filters)
+- `GET /api/analytics/tags` - Tag statistics
+
+**Optimization** (`/api/optimize/`)
+- `POST /api/optimize/schedule` - Run schedule optimization with algorithm selection
+
+**System**
+- `GET /health` - Health check
+- `GET /` - Root redirect to docs
+- `GET /docs` - OpenAPI documentation (Swagger UI)
+- `GET /redoc` - Alternative API documentation (ReDoc)
+
+All endpoints return JSON with proper HTTP status codes. Error responses include detailed error messages.
+
+### Console Output (CLI/TUI)
 
 All CLI commands use `ConsoleWriter` abstraction (`RichConsoleWriter` implementation). Access via `ctx.obj.console_writer`.
 

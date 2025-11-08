@@ -1,0 +1,554 @@
+"""Taskdog TUI application."""
+
+from importlib.resources import files
+from pathlib import Path
+from typing import TYPE_CHECKING, ClassVar
+
+from textual.app import App
+from textual.command import CommandPalette
+
+if TYPE_CHECKING:
+    from taskdog.infrastructure.api_client import TaskdogApiClient
+
+from taskdog.presenters.gantt_presenter import GanttPresenter
+from taskdog.presenters.table_presenter import TablePresenter
+from taskdog.services.task_data_loader import TaskDataLoader
+from taskdog.tui.commands.factory import CommandFactory
+from taskdog.tui.constants.ui_settings import (
+    AUTO_REFRESH_INTERVAL_SECONDS,
+    DEFAULT_GANTT_DISPLAY_DAYS,
+)
+from taskdog.tui.context import TUIContext
+from taskdog.tui.events import (
+    GanttResizeRequested,
+    TaskCreated,
+    TaskDeleted,
+    TasksRefreshed,
+    TaskUpdated,
+)
+from taskdog.tui.palette.providers import (
+    ExportCommandProvider,
+    OptimizeCommandProvider,
+    SortCommandProvider,
+    SortOptionsProvider,
+)
+from taskdog.tui.screens.main_screen import MainScreen
+from taskdog_core.application.queries.filters.non_archived_filter import (
+    NonArchivedFilter,
+)
+from taskdog_core.domain.services.holiday_checker import IHolidayChecker
+from taskdog_core.shared.config_manager import Config, ConfigManager
+
+
+def _get_css_paths() -> list[str | Path]:
+    """Get CSS file paths using importlib.resources.
+
+    This ensures CSS files are found regardless of how the package is installed.
+
+    Returns:
+        List of CSS file paths
+    """
+    try:
+        # Use importlib.resources to locate the styles directory
+        styles_dir = files("taskdog.tui") / "styles"
+        return [
+            str(styles_dir / "theme.tcss"),
+            str(styles_dir / "components.tcss"),
+            str(styles_dir / "main.tcss"),
+            str(styles_dir / "dialogs.tcss"),
+        ]
+    except Exception:
+        # Fallback to __file__ for development
+        styles_dir = Path(__file__).parent / "styles"
+        return [
+            styles_dir / "theme.tcss",
+            styles_dir / "components.tcss",
+            styles_dir / "main.tcss",
+            styles_dir / "dialogs.tcss",
+        ]
+
+
+class TaskdogTUI(App):
+    """Taskdog TUI application."""
+
+    BINDINGS: ClassVar = [
+        ("q", "quit", "Quit"),
+        ("a", "add_task", "Add"),
+        ("s", "start_task", "Start"),
+        ("P", "pause_task", "Pause"),
+        ("d", "complete_task", "Done"),
+        ("c", "cancel_task", "Cancel"),
+        ("R", "reopen_task", "Reopen"),
+        ("x", "delete_task", "Archive"),
+        ("X", "hard_delete_task", "Delete"),
+        ("r", "refresh", "Refresh"),
+        ("i", "show_details", "Info"),
+        ("e", "edit_task", "Edit"),
+        ("v", "edit_note", "Edit Note"),
+        ("t", "toggle_completed", "Toggle Done"),
+        ("/", "show_search", "Search"),
+        ("escape", "hide_search", "Clear Search"),
+    ]
+
+    # Register custom command providers
+    COMMANDS = App.COMMANDS | {
+        SortCommandProvider,
+        OptimizeCommandProvider,
+        ExportCommandProvider,
+    }
+
+    # Mapping of sort keys to display labels
+    _SORT_KEY_LABELS: ClassVar[dict[str, str]] = {
+        "deadline": "Deadline",
+        "planned_start": "Planned Start",
+        "priority": "Priority",
+        "estimated_duration": "Duration",
+        "id": "ID",
+        "name": "Name",
+    }
+
+    # Load CSS from external files
+    CSS_PATH: ClassVar[list[str | Path]] = _get_css_paths()
+
+    # Disable mouse support
+    ENABLE_MOUSE: ClassVar[bool] = False
+
+    def __init__(
+        self,
+        api_client: "TaskdogApiClient",
+        config: Config | None = None,
+        holiday_checker: IHolidayChecker | None = None,
+        *args,
+        **kwargs,
+    ):
+        """Initialize the TUI application.
+
+        TUI operates through the API client for all task operations.
+        Notes are managed via API client as well.
+
+        Args:
+            api_client: API client for server communication (required)
+            config: Application configuration (optional, loads from file by default)
+            holiday_checker: Holiday checker for workday validation (optional)
+        """
+        super().__init__(*args, **kwargs)
+        from taskdog.infrastructure.api_client import TaskdogApiClient
+
+        if not isinstance(api_client, TaskdogApiClient):
+            from typing import TYPE_CHECKING
+
+            if TYPE_CHECKING:
+                # Type annotation for api_client parameter
+                pass
+
+        self.api_client = api_client
+        self.config = config if config is not None else ConfigManager.load()
+        self.holiday_checker = holiday_checker
+        self.main_screen: MainScreen | None = None
+        self._gantt_sort_by: str = "deadline"  # Default gantt sort order
+        self._hide_completed: bool = False  # Default: show all tasks
+        self._all_tasks: list = []  # Cache of all tasks for display filtering
+        self._gantt_view_model = None  # Cache of gantt view model
+
+        # Initialize TUIContext with API client
+        self.context = TUIContext(
+            api_client=self.api_client,
+            config=self.config,
+            holiday_checker=self.holiday_checker,
+        )
+
+        # Initialize presenters for view models (will be updated to not use notes_repository)
+        self.table_presenter = TablePresenter(api_client)
+        self.gantt_presenter = GanttPresenter(api_client)
+
+        # Initialize TaskDataLoader for data fetching
+        self.task_data_loader = TaskDataLoader(
+            api_client=self.api_client,
+            table_presenter=self.table_presenter,
+            gantt_presenter=self.gantt_presenter,
+            holiday_checker=self.holiday_checker,
+        )
+
+        # Initialize CommandFactory for command execution
+        self.command_factory = CommandFactory(self, self.context)
+
+    # Action methods for command execution
+    def action_refresh(self) -> None:
+        """Refresh the task list."""
+        self.command_factory.execute("refresh")
+
+    def action_add_task(self) -> None:
+        """Add a new task."""
+        self.command_factory.execute("add_task")
+
+    def action_start_task(self) -> None:
+        """Start the selected task."""
+        self.command_factory.execute("start_task")
+
+    def action_pause_task(self) -> None:
+        """Pause the selected task."""
+        self.command_factory.execute("pause_task")
+
+    def action_complete_task(self) -> None:
+        """Mark the selected task as done."""
+        self.command_factory.execute("complete_task")
+
+    def action_cancel_task(self) -> None:
+        """Cancel the selected task."""
+        self.command_factory.execute("cancel_task")
+
+    def action_reopen_task(self) -> None:
+        """Reopen the selected task."""
+        self.command_factory.execute("reopen_task")
+
+    def action_delete_task(self) -> None:
+        """Archive the selected task (soft delete)."""
+        self.command_factory.execute("delete_task")
+
+    def action_hard_delete_task(self) -> None:
+        """Permanently delete the selected task."""
+        self.command_factory.execute("hard_delete_task")
+
+    def action_show_details(self) -> None:
+        """Show details of the selected task."""
+        self.command_factory.execute("show_details")
+
+    def action_edit_task(self) -> None:
+        """Edit the selected task."""
+        self.command_factory.execute("edit_task")
+
+    def action_edit_note(self) -> None:
+        """Edit the note for the selected task."""
+        self.command_factory.execute("edit_note")
+
+    def on_mount(self) -> None:
+        """Called when app is mounted."""
+        self.main_screen = MainScreen()
+        self.push_screen(self.main_screen)
+        # Load tasks after screen is fully mounted
+        self.call_after_refresh(self._load_tasks)
+        # Start auto-refresh timer for elapsed time updates
+        self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
+
+    def _load_tasks(self, keep_scroll_position: bool = False):
+        """Load tasks from repository and update both gantt and table.
+
+        Args:
+            keep_scroll_position: Whether to preserve scroll position during refresh
+
+        Returns:
+            List of loaded tasks
+        """
+        # Calculate date range for gantt
+        # Always request gantt data, even if widget isn't mounted yet
+        from datetime import timedelta
+
+        from taskdog_core.shared.utils.date_utils import get_previous_monday
+
+        display_days = DEFAULT_GANTT_DISPLAY_DAYS
+        if self.main_screen and self.main_screen.gantt_widget:
+            widget = self.main_screen.gantt_widget
+            display_days = (
+                widget._calculate_display_days()
+                if hasattr(widget, "_calculate_display_days")
+                else DEFAULT_GANTT_DISPLAY_DAYS
+            )
+
+        start_date = get_previous_monday()
+        end_date = start_date + timedelta(days=display_days - 1)
+        date_range = (start_date, end_date)
+
+        # Load all data using TaskDataLoader
+        task_data = self.task_data_loader.load_tasks(
+            task_filter=NonArchivedFilter(),
+            sort_by=self._gantt_sort_by,
+            hide_completed=self._hide_completed,
+            date_range=date_range,
+        )
+
+        # Cache data for toggle operations
+        self._all_tasks = task_data.all_tasks
+        self._gantt_view_model = task_data.gantt_view_model
+
+        # Update UI widgets
+        if self.main_screen:
+            if self.main_screen.gantt_widget and task_data.filtered_gantt_view_model:
+                task_ids = [t.id for t in task_data.filtered_tasks]
+                self.main_screen.gantt_widget.update_gantt(
+                    task_ids=task_ids,
+                    gantt_view_model=task_data.filtered_gantt_view_model,
+                    sort_by=self._gantt_sort_by,
+                    task_filter=NonArchivedFilter(),
+                )
+
+            if self.main_screen.task_table:
+                self.main_screen.task_table.refresh_tasks(
+                    task_data.table_view_models,
+                    keep_scroll_position=keep_scroll_position,
+                )
+
+        return task_data.filtered_tasks
+
+    def search_sort(self) -> None:
+        """Show a fuzzy search command palette containing all sort options.
+
+        Selecting a sort option will change the sort order.
+        """
+        self.push_screen(
+            CommandPalette(
+                providers=[SortOptionsProvider],
+                placeholder="Search for sort options…",
+            ),
+        )
+
+    def search_optimize(self, force_override: bool = False) -> None:
+        """Show optimization algorithm selection dialog.
+
+        Args:
+            force_override: Whether to force override existing schedules
+        """
+        # Execute optimize command which will show AlgorithmSelectionScreen
+        self.command_factory.execute("optimize", force_override=force_override)
+
+    def search_export(self) -> None:
+        """Show a fuzzy search command palette containing all export format options.
+
+        Selecting a format will trigger the export operation.
+        """
+        from taskdog.tui.palette.providers import ExportFormatProvider
+
+        self.push_screen(
+            CommandPalette(
+                providers=[ExportFormatProvider],
+                placeholder="Select export format…",
+            ),
+        )
+
+    def execute_export(self, format_key: str) -> None:
+        """Execute export operation with selected format.
+
+        Args:
+            format_key: Export format (json, csv, markdown)
+        """
+        from datetime import datetime
+        from pathlib import Path
+
+        from taskdog.exporters import (
+            CsvTaskExporter,
+            JsonTaskExporter,
+            MarkdownTableExporter,
+        )
+
+        try:
+            # Get all tasks (no filtering)
+            result = self.api_client.list_tasks(filter_obj=None)
+            tasks = result.tasks
+
+            # Determine file extension and exporter
+            if format_key == "json":
+                exporter = JsonTaskExporter()
+                extension = "json"
+            elif format_key == "csv":
+                exporter = CsvTaskExporter()
+                extension = "csv"
+            elif format_key == "markdown":
+                exporter = MarkdownTableExporter()
+                extension = "md"
+            else:
+                self.notify(f"Unknown format: {format_key}", severity="error")
+                return
+
+            # Generate filename with current date
+            today = datetime.now().strftime("%Y%m%d")
+            filename = f"Taskdog_export_{today}.{extension}"
+
+            # Use ~/Downloads directory
+            downloads_dir = Path.home() / "Downloads"
+            downloads_dir.mkdir(parents=True, exist_ok=True)
+            output_path = downloads_dir / filename
+
+            # Export tasks
+            tasks_data = exporter.export(tasks)
+
+            # Write to file
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write(tasks_data)
+
+            # Show success notification
+            self.notify(
+                f"Exported {len(tasks)} tasks to {output_path}", severity="information"
+            )
+
+        except Exception as e:
+            self.notify(f"Export failed: {e}", severity="error")
+
+    def set_sort_order(self, sort_key: str) -> None:
+        """Set the sort order for Gantt chart and task list.
+
+        Called when user selects a sort option from Command Palette.
+
+        Args:
+            sort_key: Sort key (deadline, planned_start, priority, id)
+        """
+        self._gantt_sort_by = sort_key
+
+        # Post TasksRefreshed event to trigger UI refresh with new sort order
+        self.post_message(TasksRefreshed())
+
+        # Show notification message
+        sort_label = self._SORT_KEY_LABELS.get(sort_key, sort_key)
+        self.notify(f"Sorted by {sort_label}")
+
+    def action_show_search(self) -> None:
+        """Show the search input."""
+        if self.main_screen:
+            self.main_screen.show_search()
+
+    def action_hide_search(self) -> None:
+        """Hide the search input and clear the filter."""
+        if self.main_screen:
+            self.main_screen.hide_search()
+
+    def action_toggle_completed(self) -> None:
+        """Toggle visibility of completed and canceled tasks."""
+        self._hide_completed = not self._hide_completed
+
+        # Early return if no data or screen available
+        if not self._all_tasks or not self.main_screen:
+            status = "hidden" if self._hide_completed else "shown"
+            self.notify(f"Completed tasks {status}")
+            return
+
+        # Filter tasks using TaskDataLoader
+        filtered_tasks = self.task_data_loader.apply_display_filter(
+            self._all_tasks, self._hide_completed
+        )
+
+        # Update table view with filtered tasks
+        if self.main_screen.task_table:
+            from taskdog_core.application.dto.task_list_output import TaskListOutput
+
+            filtered_output = TaskListOutput(
+                tasks=filtered_tasks,
+                total_count=len(self._all_tasks),
+                filtered_count=len(filtered_tasks),
+            )
+            view_models = self.table_presenter.present(filtered_output)
+            self.main_screen.task_table.refresh_tasks(
+                view_models, keep_scroll_position=True
+            )
+
+        # Update gantt view with filtered tasks
+        if self.main_screen.gantt_widget and self._gantt_view_model:
+            # Filter gantt view model using TaskDataLoader
+            filtered_gantt_vm = self.task_data_loader.filter_gantt_by_tasks(
+                self._gantt_view_model, filtered_tasks
+            )
+
+            task_ids = [t.id for t in filtered_tasks]
+            self.main_screen.gantt_widget.update_gantt(
+                task_ids=task_ids,
+                gantt_view_model=filtered_gantt_vm,
+                sort_by=self._gantt_sort_by,
+                task_filter=NonArchivedFilter(),
+            )
+
+        # Show notification
+        status = "hidden" if self._hide_completed else "shown"
+        self.notify(f"Completed tasks {status}")
+
+    def action_command_palette(self) -> None:
+        """Show the command palette."""
+        self.push_screen(CommandPalette())
+
+    def _refresh_elapsed_time(self) -> None:
+        """Refresh the task table to update elapsed time for IN_PROGRESS tasks.
+
+        This is called every second by the auto-refresh timer.
+        Only updates the table display without reloading from repository.
+        """
+        if self.main_screen and self.main_screen.task_table:
+            # Get current ViewModels from the table (already loaded in memory)
+            view_models = self.main_screen.task_table.all_viewmodels
+            if view_models:
+                # Refresh the table display with current ViewModels
+                # This will recalculate elapsed time for IN_PROGRESS tasks
+                # Keep scroll position to avoid stuttering during user navigation
+                self.main_screen.task_table.refresh_tasks(
+                    view_models, keep_scroll_position=True
+                )
+
+    # Event handlers for task operations
+    def on_task_created(self, event: TaskCreated) -> None:
+        """Handle task created event.
+
+        Args:
+            event: TaskCreated event containing the new task
+        """
+        self._load_tasks(keep_scroll_position=True)
+
+    def on_task_updated(self, event: TaskUpdated) -> None:
+        """Handle task updated event.
+
+        Args:
+            event: TaskUpdated event containing the updated task
+        """
+        self._load_tasks(keep_scroll_position=True)
+
+    def on_task_deleted(self, event: TaskDeleted) -> None:
+        """Handle task deleted event.
+
+        Args:
+            event: TaskDeleted event containing the deleted task ID
+        """
+        self._load_tasks(keep_scroll_position=True)
+
+    def on_tasks_refreshed(self, event: TasksRefreshed) -> None:
+        """Handle tasks refreshed event.
+
+        Args:
+            event: TasksRefreshed event triggering a full reload
+        """
+        self._load_tasks(keep_scroll_position=True)
+
+    def on_gantt_resize_requested(self, event: GanttResizeRequested) -> None:
+        """Handle gantt resize event.
+
+        Recalculates gantt data for the new display width and updates the widget.
+
+        Args:
+            event: GanttResizeRequested event containing display parameters
+        """
+        if not self.main_screen or not self.main_screen.gantt_widget:
+            return
+
+        gantt_widget = self.main_screen.gantt_widget
+
+        # Get the current filter from the gantt widget
+        task_filter = (
+            gantt_widget._task_filter if hasattr(gantt_widget, "_task_filter") else None
+        )
+        sort_by = (
+            gantt_widget._sort_by if hasattr(gantt_widget, "_sort_by") else "deadline"
+        )
+
+        # Use integrated API to get tasks + gantt data in single request
+        task_list_output = self.api_client.list_tasks(
+            filter_obj=task_filter,
+            sort_by=sort_by,
+            reverse=False,
+            include_gantt=True,
+            gantt_start_date=event.start_date,
+            gantt_end_date=event.end_date,
+            holiday_checker=self.holiday_checker,
+        )
+
+        # Convert gantt data to ViewModel
+        if task_list_output.gantt_data:
+            gantt_view_model = self.gantt_presenter.present(task_list_output.gantt_data)
+
+            # Update the gantt widget's view model
+            gantt_widget._gantt_view_model = gantt_view_model
+
+            # Trigger re-render with updated view model
+            gantt_widget.call_after_refresh(gantt_widget._render_gantt)
