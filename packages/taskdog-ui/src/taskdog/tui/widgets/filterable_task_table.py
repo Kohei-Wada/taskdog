@@ -56,53 +56,43 @@ class FilterableTaskTable(Vertical):
         if self.task_table:
             self.task_table.focus()
 
+    @property
+    def _table(self) -> TaskTable:
+        """Access task table, ensuring it exists.
+
+        Returns:
+            The TaskTable instance
+
+        Raises:
+            RuntimeError: If task_table is not yet initialized
+        """
+        if self.task_table is None:
+            raise RuntimeError("TaskTable not yet initialized")
+        return self.task_table
+
     # Delegate methods to task_table
 
     def load_tasks(self, view_models: list[TaskRowViewModel]) -> None:
-        """Load task ViewModels into the table.
-
-        Args:
-            view_models: List of TaskRowViewModel to display
-        """
-        if self.task_table:
-            self.task_table.load_tasks(view_models)
-            self._update_search_result()
+        """Load task ViewModels into the table."""
+        self._table.load_tasks(view_models)
+        self._update_search_result()
 
     def refresh_tasks(
         self, view_models: list[TaskRowViewModel], keep_scroll_position: bool = False
     ) -> None:
-        """Refresh the table with updated ViewModels.
-
-        Args:
-            view_models: List of TaskRowViewModel to display
-            keep_scroll_position: Whether to preserve scroll position during refresh.
-                                 Set to True for periodic updates to avoid scroll stuttering.
-        """
-        if self.task_table:
-            self.task_table.refresh_tasks(
-                view_models, keep_scroll_position=keep_scroll_position
-            )
-            self._update_search_result()
+        """Refresh the table with updated ViewModels."""
+        self._table.refresh_tasks(
+            view_models, keep_scroll_position=keep_scroll_position
+        )
+        self._update_search_result()
 
     def get_selected_task_id(self) -> int | None:
-        """Get the ID of the currently selected task.
-
-        Returns:
-            The selected task ID, or None if no task is selected
-        """
-        if self.task_table:
-            return self.task_table.get_selected_task_id()
-        return None
+        """Get the ID of the currently selected task."""
+        return self._table.get_selected_task_id()
 
     def get_selected_task_vm(self) -> TaskRowViewModel | None:
-        """Get the currently selected task as a ViewModel.
-
-        Returns:
-            The selected TaskRowViewModel, or None if no task is selected
-        """
-        if self.task_table:
-            return self.task_table.get_selected_task_vm()
-        return None
+        """Get the currently selected task as a ViewModel."""
+        return self._table.get_selected_task_vm()
 
     def show_search(self) -> None:
         """Focus the search input."""
@@ -132,11 +122,5 @@ class FilterableTaskTable(Vertical):
 
     @property
     def all_viewmodels(self) -> list[TaskRowViewModel]:
-        """Get all loaded ViewModels from the table.
-
-        Returns:
-            List of all TaskRowViewModel currently loaded in the table
-        """
-        if self.task_table:
-            return self.task_table._all_viewmodels
-        return []
+        """Get all loaded ViewModels from the table."""
+        return self._table.all_viewmodels
