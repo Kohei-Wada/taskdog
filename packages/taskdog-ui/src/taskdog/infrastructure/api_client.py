@@ -1172,40 +1172,6 @@ class TaskdogApiClient:
         if response.status_code != 204:
             self._handle_error(response)
 
-    def get_notes_bulk(self, task_ids: list[int]) -> dict[int, bool]:
-        """Get notes status for multiple tasks in batch.
-
-        This method calls the batch notes endpoint to fetch notes status
-        for all provided task IDs in a single API call, avoiding the N+1 problem.
-
-        Args:
-            task_ids: List of task IDs to check
-
-        Returns:
-            Dictionary mapping task_id to has_notes boolean
-
-        Raises:
-            Exception: If the API request fails
-        """
-        if not task_ids:
-            return {}
-
-        # Build query string with multiple ids parameters
-        # GET /api/tasks/notes/batch?ids=1&ids=2&ids=3
-        params = [("ids", task_id) for task_id in task_ids]
-        response = self.client.get("/api/v1/tasks/notes/batch", params=params)
-
-        if response.status_code != 200:
-            self._handle_error(response)
-
-        data = response.json()
-        notes_status = data.get("notes_status", {})
-
-        # Update cache
-        self._has_notes_cache.update(notes_status)
-
-        return notes_status
-
     def has_task_notes(self, task_id: int) -> bool:
         """Check if task has notes.
 

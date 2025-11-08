@@ -1,11 +1,11 @@
 """Task notes endpoints (CRUD operations for markdown notes)."""
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, status
 
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import NotesRepositoryDep, RepositoryDep
 from taskdog_server.api.models.requests import UpdateNotesRequest
-from taskdog_server.api.models.responses import BatchNotesResponse, NotesResponse
+from taskdog_server.api.models.responses import NotesResponse
 
 router = APIRouter()
 
@@ -104,33 +104,3 @@ async def delete_task_notes(
         notes_repo.write_notes(task_id, "")
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-
-
-@router.get("/notes/batch", response_model=BatchNotesResponse)
-async def get_batch_notes(
-    notes_repo: NotesRepositoryDep,
-    task_ids: list[int] = Query(..., alias="ids"),  # noqa: B008
-):
-    """Get notes status for multiple tasks in batch.
-
-    This endpoint is optimized for checking which tasks have notes without
-    making individual API calls for each task (solving the N+1 query problem).
-
-    Args:
-        task_ids: List of task IDs to check
-        notes_repo: Notes repository dependency
-
-    Returns:
-        Dictionary mapping task_id to has_notes boolean
-
-    Example:
-        GET /api/v1/tasks/notes/batch?ids=1&ids=2&ids=3
-        Returns: {"notes_status": {1: true, 2: false, 3: true}}
-    """
-    notes_status = {}
-
-    for task_id in task_ids:
-        has_notes = notes_repo.has_notes(task_id)
-        notes_status[task_id] = has_notes
-
-    return BatchNotesResponse(notes_status=notes_status)

@@ -29,8 +29,6 @@ from taskdog.tui.palette.providers import (
     SortOptionsProvider,
 )
 from taskdog.tui.screens.main_screen import MainScreen
-from taskdog.tui.services.batch_notes_checker import BatchNotesChecker
-from taskdog.tui.state import AppState
 from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
 )
@@ -143,9 +141,10 @@ class TaskdogTUI(App):
         self.config = config if config is not None else ConfigManager.load()
         self.holiday_checker = holiday_checker
         self.main_screen: MainScreen | None = None
-
-        # Initialize centralized state management
-        self.app_state = AppState()
+        self._gantt_sort_by: str = "deadline"  # Default gantt sort order
+        self._hide_completed: bool = False  # Default: show all tasks
+        self._all_tasks: list = []  # Cache of all tasks for display filtering
+        self._gantt_view_model = None  # Cache of gantt view model
 
         # Initialize TUIContext with API client
         self.context = TUIContext(
@@ -154,12 +153,8 @@ class TaskdogTUI(App):
             holiday_checker=self.holiday_checker,
         )
 
-        # Initialize batch notes checker for N+1 fix
-        self.batch_notes_checker = BatchNotesChecker(api_client)
-
-        # Initialize presenters for view models
-        # Pass batch_notes_checker to TablePresenter to use batched notes fetching
-        self.table_presenter = TablePresenter(self.batch_notes_checker)
+        # Initialize presenters for view models (will be updated to not use notes_repository)
+        self.table_presenter = TablePresenter(api_client)
         self.gantt_presenter = GanttPresenter(api_client)
 
         # Initialize TaskDataLoader for data fetching
@@ -262,20 +257,14 @@ class TaskdogTUI(App):
         # Load all data using TaskDataLoader
         task_data = self.task_data_loader.load_tasks(
             task_filter=NonArchivedFilter(),
-            sort_by=self.app_state.gantt_sort_by,
-            hide_completed=self.app_state.hide_completed,
+            sort_by=self._gantt_sort_by,
+            hide_completed=self._hide_completed,
             date_range=date_range,
         )
 
-        # Batch load notes status (N+1 fix)
-        task_ids = [t.id for t in task_data.all_tasks]
-        if task_ids:
-            self.batch_notes_checker.load_bulk(task_ids)
-
-        # Update AppState cache
-        self.app_state.update_tasks_cache(task_data.all_tasks)
-        self.app_state.update_gantt_cache(task_data.gantt_view_model)
-        self.app_state.clear_cached_viewmodels()  # Clear ViewModel cache on reload
+        # Cache data for toggle operations
+        self._all_tasks = task_data.all_tasks
+        self._gantt_view_model = task_data.gantt_view_model
 
         # Update UI widgets
         if self.main_screen:
@@ -284,7 +273,7 @@ class TaskdogTUI(App):
                 self.main_screen.gantt_widget.update_gantt(
                     task_ids=task_ids,
                     gantt_view_model=task_data.filtered_gantt_view_model,
-                    sort_by=self.app_state.gantt_sort_by,
+                    sort_by=self._gantt_sort_by,
                     task_filter=NonArchivedFilter(),
                 )
 
@@ -397,8 +386,7 @@ class TaskdogTUI(App):
         Args:
             sort_key: Sort key (deadline, planned_start, priority, id)
         """
-        # Update state
-        self.app_state.set_sort_by(sort_key)
+        self._gantt_sort_by = sort_key
 
         # Post TasksRefreshed event to trigger UI refresh with new sort order
         self.post_message(TasksRefreshed())
@@ -419,13 +407,14 @@ class TaskdogTUI(App):
 
     def action_toggle_completed(self) -> None:
         """Toggle visibility of completed and canceled tasks."""
-        # Update state
-        self.app_state.toggle_completed()
+        self._hide_completed = not self._hide_completed
 
         # Apply filter to cached tasks without API reload
-        if self.app_state.all_tasks and self.main_screen:
-            # Filter tasks using AppState
-            filtered_tasks = self.app_state.get_filtered_tasks()
+        if self._all_tasks and self.main_screen:
+            # Filter tasks using TaskDataLoader
+            filtered_tasks = self.task_data_loader.apply_display_filter(
+                self._all_tasks, self._hide_completed
+            )
 
             # Update table view with filtered tasks
             if self.main_screen.task_table:
@@ -433,7 +422,7 @@ class TaskdogTUI(App):
 
                 filtered_output = TaskListOutput(
                     tasks=filtered_tasks,
-                    total_count=len(self.app_state.all_tasks),
+                    total_count=len(self._all_tasks),
                     filtered_count=len(filtered_tasks),
                 )
                 view_models = self.table_presenter.present(filtered_output)
@@ -442,22 +431,22 @@ class TaskdogTUI(App):
                 )
 
             # Update gantt view with filtered tasks
-            if self.main_screen.gantt_widget and self.app_state.gantt_view_model:
+            if self.main_screen.gantt_widget and self._gantt_view_model:
                 # Filter gantt view model using TaskDataLoader
                 filtered_gantt_vm = self.task_data_loader.filter_gantt_by_tasks(
-                    self.app_state.gantt_view_model, filtered_tasks
+                    self._gantt_view_model, filtered_tasks
                 )
 
                 task_ids = [t.id for t in filtered_tasks]
                 self.main_screen.gantt_widget.update_gantt(
                     task_ids=task_ids,
                     gantt_view_model=filtered_gantt_vm,
-                    sort_by=self.app_state.gantt_sort_by,
+                    sort_by=self._gantt_sort_by,
                     task_filter=NonArchivedFilter(),
                 )
 
         # Show notification
-        status = "hidden" if self.app_state.hide_completed else "shown"
+        status = "hidden" if self._hide_completed else "shown"
         self.notify(f"Completed tasks {status}")
 
     def action_command_palette(self) -> None:
@@ -531,11 +520,14 @@ class TaskdogTUI(App):
         task_filter = (
             gantt_widget._task_filter if hasattr(gantt_widget, "_task_filter") else None
         )
+        sort_by = (
+            gantt_widget._sort_by if hasattr(gantt_widget, "_sort_by") else "deadline"
+        )
 
         # Use integrated API to get tasks + gantt data in single request
         task_list_output = self.api_client.list_tasks(
             filter_obj=task_filter,
-            sort_by=self.app_state.gantt_sort_by,
+            sort_by=sort_by,
             reverse=False,
             include_gantt=True,
             gantt_start_date=event.start_date,
