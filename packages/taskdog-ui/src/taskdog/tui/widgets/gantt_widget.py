@@ -241,3 +241,62 @@ class GanttWidget(VerticalScroll):
         from taskdog.tui.events import GanttResizeRequested
 
         self.post_message(GanttResizeRequested(display_days, start_date, end_date))
+
+    # Public API methods for external access
+
+    def get_task_filter(self):
+        """Get current task filter.
+
+        Returns:
+            Current TaskFilter object or None
+        """
+        return self._task_filter
+
+    def get_sort_by(self) -> str:
+        """Get current sort order.
+
+        Returns:
+            Current sort field (e.g., "deadline", "priority")
+        """
+        return self._sort_by
+
+    def update_view_model_and_render(self, gantt_view_model) -> None:
+        """Update gantt view model and trigger re-render.
+
+        This method updates the internal view model and schedules a re-render
+        after the next refresh cycle.
+
+        Args:
+            gantt_view_model: New GanttViewModel to display
+        """
+        self._gantt_view_model = gantt_view_model
+        self.call_after_refresh(self._render_gantt)
+
+    def calculate_display_days(self, widget_width: int | None = None) -> int:
+        """Calculate optimal number of days to display based on widget width.
+
+        Public interface for display day calculation. This is useful for
+        determining date ranges before loading gantt data.
+
+        Args:
+            widget_width: Widget width to use for calculation. If None, uses self.size.width.
+
+        Returns:
+            Number of days to display (rounded to weeks)
+        """
+        return self._calculate_display_days(widget_width)
+
+    def calculate_date_range(self, widget_width: int | None = None):
+        """Calculate date range for gantt display based on widget width.
+
+        Convenience method that combines display day calculation and date range calculation.
+        Always starts from the previous Monday and extends by the calculated number of days.
+
+        Args:
+            widget_width: Widget width to use for calculation. If None, uses self.size.width.
+
+        Returns:
+            Tuple of (start_date, end_date)
+        """
+        display_days = self._calculate_display_days(widget_width)
+        return self._calculate_date_range_for_display(display_days)
