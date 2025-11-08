@@ -94,7 +94,7 @@ test-core: ## Run tests for taskdog-core only
 
 test-server: ## Run tests for taskdog-server only
 	@echo "Running taskdog-server tests..."
-	cd packages/taskdog-server && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
+	cd packages/taskdog-server && PYTHONPATH=src PYTHONWARNINGS="ignore::ResourceWarning" uv run python -m unittest discover -s tests/ -t .
 
 test-ui: ## Run tests for taskdog-ui only
 	@echo "Running taskdog-ui tests..."
