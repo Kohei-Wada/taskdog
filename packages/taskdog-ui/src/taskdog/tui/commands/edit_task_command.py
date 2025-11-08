@@ -8,7 +8,6 @@ from taskdog.tui.forms.task_form_fields import TaskFormData
 from taskdog.tui.screens.task_form_dialog import TaskFormDialog
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
-from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
 @command_registry.register("edit_task")
@@ -167,24 +166,13 @@ class EditTaskCommand(TUICommandBase):
         new_deps = set(form_data.depends_on) if form_data.depends_on else set()
 
         # Calculate differences
-        deps_to_remove = original_deps - new_deps
-        deps_to_add = new_deps - original_deps
+        deps_to_remove = list(original_deps - new_deps)
+        deps_to_add = list(new_deps - original_deps)
 
-        failed_operations = []
-
-        # Remove dependencies
-        for dep_id in deps_to_remove:
-            try:
-                self.context.api_client.remove_dependency(task.id, dep_id)
-            except TaskValidationError as e:
-                failed_operations.append(f"Remove {dep_id}: {e}")
-
-        # Add dependencies
-        for dep_id in deps_to_add:
-            try:
-                self.context.api_client.add_dependency(task.id, dep_id)
-            except TaskValidationError as e:
-                failed_operations.append(f"Add {dep_id}: {e}")
+        # Use base class helper method for dependency management
+        failed_operations = self.manage_dependencies(
+            task.id, add_deps=deps_to_add, remove_deps=deps_to_remove
+        )
 
         # Report any failures
         if failed_operations:

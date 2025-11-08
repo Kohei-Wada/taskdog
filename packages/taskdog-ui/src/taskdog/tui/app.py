@@ -19,13 +19,7 @@ from taskdog.tui.constants.ui_settings import (
     DEFAULT_GANTT_DISPLAY_DAYS,
 )
 from taskdog.tui.context import TUIContext
-from taskdog.tui.events import (
-    GanttResizeRequested,
-    TaskCreated,
-    TaskDeleted,
-    TasksRefreshed,
-    TaskUpdated,
-)
+from taskdog.tui.events import GanttResizeRequested, TasksRefreshed
 from taskdog.tui.palette.providers import (
     ExportCommandProvider,
     OptimizeCommandProvider,
@@ -473,37 +467,23 @@ class TaskdogTUI(App):
                 )
 
     # Event handlers for task operations
-    def on_task_created(self, event: TaskCreated) -> None:
-        """Handle task created event.
+    def _handle_task_change_event(self, event) -> None:
+        """Handle any task change event by reloading tasks.
+
+        This generic handler is used for all task modification events
+        (created, updated, deleted, refreshed) as they all require
+        the same response: reload tasks with scroll position preserved.
 
         Args:
-            event: TaskCreated event containing the new task
+            event: Task change event (TaskCreated/Updated/Deleted/Refreshed)
         """
         self._load_tasks(keep_scroll_position=True)
 
-    def on_task_updated(self, event: TaskUpdated) -> None:
-        """Handle task updated event.
-
-        Args:
-            event: TaskUpdated event containing the updated task
-        """
-        self._load_tasks(keep_scroll_position=True)
-
-    def on_task_deleted(self, event: TaskDeleted) -> None:
-        """Handle task deleted event.
-
-        Args:
-            event: TaskDeleted event containing the deleted task ID
-        """
-        self._load_tasks(keep_scroll_position=True)
-
-    def on_tasks_refreshed(self, event: TasksRefreshed) -> None:
-        """Handle tasks refreshed event.
-
-        Args:
-            event: TasksRefreshed event triggering a full reload
-        """
-        self._load_tasks(keep_scroll_position=True)
+    # Alias all task change event handlers to the generic handler
+    on_task_created = _handle_task_change_event
+    on_task_updated = _handle_task_change_event
+    on_task_deleted = _handle_task_change_event
+    on_tasks_refreshed = _handle_task_change_event
 
     def on_gantt_resize_requested(self, event: GanttResizeRequested) -> None:
         """Handle gantt resize event.
