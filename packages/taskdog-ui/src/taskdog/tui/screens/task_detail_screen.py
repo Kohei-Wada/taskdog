@@ -110,23 +110,18 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
         ):
             yield Static("", classes="detail-row")  # Empty row for spacing
             yield Label("[bold cyan]Schedule[/bold cyan]")
-            if self.task_data.planned_start:
-                yield self._create_detail_row(
-                    "Planned Start",
-                    self.task_data.planned_start.strftime(DATETIME_FORMAT),
-                )
-            if self.task_data.planned_end:
-                yield self._create_detail_row(
-                    "Planned End", self.task_data.planned_end.strftime(DATETIME_FORMAT)
-                )
-            if self.task_data.deadline:
-                yield self._create_detail_row(
-                    "Deadline", self.task_data.deadline.strftime(DATETIME_FORMAT)
-                )
-            if self.task_data.estimated_duration:
-                yield self._create_detail_row(
-                    "Estimated Duration", f"{self.task_data.estimated_duration}h"
-                )
+            yield from self._format_optional_datetime_row(
+                "Planned Start", self.task_data.planned_start
+            )
+            yield from self._format_optional_datetime_row(
+                "Planned End", self.task_data.planned_end
+            )
+            yield from self._format_optional_datetime_row(
+                "Deadline", self.task_data.deadline
+            )
+            yield from self._format_optional_duration_row(
+                "Estimated Duration", self.task_data.estimated_duration
+            )
 
     def _compose_tracking_section(self) -> ComposeResult:
         """Compose the actual tracking section."""
@@ -139,19 +134,15 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
         ):
             yield Static("", classes="detail-row")  # Empty row for spacing
             yield Label("[bold cyan]Actual Tracking[/bold cyan]")
-            if self.task_data.actual_start:
-                yield self._create_detail_row(
-                    "Actual Start",
-                    self.task_data.actual_start.strftime(DATETIME_FORMAT),
-                )
-            if self.task_data.actual_end:
-                yield self._create_detail_row(
-                    "Actual End", self.task_data.actual_end.strftime(DATETIME_FORMAT)
-                )
-            if self.task_data.actual_duration_hours:
-                yield self._create_detail_row(
-                    "Actual Duration", f"{self.task_data.actual_duration_hours:.2f}h"
-                )
+            yield from self._format_optional_datetime_row(
+                "Actual Start", self.task_data.actual_start
+            )
+            yield from self._format_optional_datetime_row(
+                "Actual End", self.task_data.actual_end
+            )
+            yield from self._format_optional_duration_row(
+                "Actual Duration", self.task_data.actual_duration_hours, precision=2
+            )
 
     def _create_detail_row(self, label: str, value: str) -> Static:
         """Create a detail row with label and value.
@@ -167,6 +158,38 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
             f"[dim]{label}:[/dim] {value}",
             classes="detail-row",
         )
+
+    def _format_optional_datetime_row(self, label: str, value: Any) -> ComposeResult:
+        """Format an optional datetime field as a detail row.
+
+        Args:
+            label: Field label
+            value: Optional datetime value
+
+        Yields:
+            Detail row widget if value exists
+        """
+        if value:
+            yield self._create_detail_row(label, value.strftime(DATETIME_FORMAT))
+
+    def _format_optional_duration_row(
+        self, label: str, hours: float | None, precision: int = 0
+    ) -> ComposeResult:
+        """Format an optional duration field as a detail row.
+
+        Args:
+            label: Field label
+            hours: Optional duration in hours
+            precision: Decimal places for formatting (default: 0 for integers)
+
+        Yields:
+            Detail row widget if hours exists
+        """
+        if hours:
+            formatted_hours = (
+                f"{hours:.{precision}f}h" if precision > 0 else f"{hours}h"
+            )
+            yield self._create_detail_row(label, formatted_hours)
 
     def action_scroll_down(self) -> None:
         """Scroll down (Ctrl+D)."""
