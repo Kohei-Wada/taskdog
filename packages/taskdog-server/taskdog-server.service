@@ -1,0 +1,28 @@
+[Unit]
+Description=Taskdog API Server
+Documentation=https://github.com/Kohei-Wada/taskdog
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --workers 4
+Restart=always
+RestartSec=5
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.local/share/taskdog
+
+# Environment
+Environment="PYTHONUNBUFFERED=1"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=taskdog-server
+
+[Install]
+WantedBy=default.target

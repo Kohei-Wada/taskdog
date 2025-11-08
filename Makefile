@@ -34,11 +34,24 @@ install: ## Install all commands globally with uv tool (recommended)
 	@echo "Installing taskdog globally..."
 	cd packages/taskdog-ui && uv tool install --force --reinstall .
 	@echo ""
+	@echo "Setting up systemd user service..."
+	@mkdir -p ~/.config/systemd/user
+	@cp packages/taskdog-server/taskdog-server.service ~/.config/systemd/user/
+	@systemctl --user daemon-reload
+	@systemctl --user enable taskdog-server.service
+	@echo ""
 	@echo "✓ All commands installed successfully!"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  - taskdog          (CLI/TUI)"
 	@echo "  - taskdog-server   (API server)"
+	@echo ""
+	@echo "Systemd service installed and enabled:"
+	@echo "  - Start:  systemctl --user start taskdog-server"
+	@echo "  - Status: systemctl --user status taskdog-server"
+	@echo "  - Logs:   journalctl --user -u taskdog-server -f"
+	@echo ""
+	@echo "See packages/taskdog-server/SYSTEMD.md for more details."
 	@echo ""
 
 install-dev: ## Install all packages with development dependencies (for development)
@@ -72,6 +85,11 @@ reinstall: clean install ## Clean and reinstall all commands globally
 
 # Uninstall
 uninstall: ## Uninstall all commands
+	@echo "Stopping and disabling systemd service..."
+	-systemctl --user stop taskdog-server.service 2>/dev/null || true
+	-systemctl --user disable taskdog-server.service 2>/dev/null || true
+	-rm -f ~/.config/systemd/user/taskdog-server.service
+	-systemctl --user daemon-reload
 	@echo "Uninstalling taskdog commands..."
 	-uv tool uninstall taskdog 2>/dev/null || true
 	-uv tool uninstall taskdog-server 2>/dev/null || true
@@ -134,4 +152,6 @@ clean: ## Clean build artifacts and cache
 	rm -rf packages/*/.ruff_cache/ packages/*/.mypy_cache/
 	find packages -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	uv cache clean
+	@echo "Stopping systemd service..."
+	-systemctl --user stop taskdog-server.service 2>/dev/null || true
 	@echo "✓ Clean complete!"

@@ -71,8 +71,8 @@ make typecheck                   # mypy on all packages (progressive type checki
 make check                       # lint + typecheck
 
 # Cleanup
-make clean                       # Clean build artifacts and cache
-make uninstall                   # Uninstall all global commands
+make clean                       # Clean build artifacts and cache (stops systemd service)
+make uninstall                   # Uninstall all global commands (removes systemd service)
 make reinstall                   # Clean + reinstall all global commands
 
 # Running the applications
@@ -90,6 +90,14 @@ taskdog-server --reload          # Auto-reload for development
 taskdog-server --workers 4       # Production with multiple workers
 # API docs: http://localhost:8000/docs
 # Health check: http://localhost:8000/health
+
+# Systemd user service (installed automatically with make install)
+systemctl --user start taskdog-server    # Start the service
+systemctl --user stop taskdog-server     # Stop the service
+systemctl --user status taskdog-server   # Check service status
+systemctl --user restart taskdog-server  # Restart the service
+journalctl --user -u taskdog-server -f   # View logs in real-time
+# See packages/taskdog-server/SYSTEMD.md for detailed documentation
 ```
 
 **Testing**: Uses `unittest` framework. Tests mirror package structure under `packages/*/tests/`. Use `unittest.mock` for dependencies.
