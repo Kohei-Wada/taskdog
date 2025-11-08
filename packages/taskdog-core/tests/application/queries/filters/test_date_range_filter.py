@@ -3,6 +3,8 @@
 import unittest
 from datetime import date, datetime
 
+from parameterized import parameterized
+
 from taskdog_core.application.queries.filters.date_range_filter import DateRangeFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
@@ -46,39 +48,27 @@ class TestDateRangeFilter(unittest.TestCase):
             id=4, name="No Dates", status=TaskStatus.PENDING, priority=1
         )
 
-    def test_filter_with_start_date_only(self):
-        """Test filter with only start_date filters tasks >= start_date."""
-        date_filter = DateRangeFilter(start_date=date(2025, 2, 1))
+    @parameterized.expand(
+        [
+            # (scenario, start_date, end_date, expected_task_ids)
+            ("start_date_only", date(2025, 2, 1), None, [2, 3]),
+            ("end_date_only", None, date(2025, 2, 28), [1, 2]),
+            ("both_dates", date(2025, 2, 1), date(2025, 2, 28), [2]),
+        ]
+    )
+    def test_filter_with_date_ranges(
+        self, scenario, start_date, end_date, expected_task_ids
+    ):
+        """Test filter with different date range configurations."""
+        date_filter = DateRangeFilter(start_date=start_date, end_date=end_date)
         tasks = [self.task_jan, self.task_feb, self.task_mar]
 
         result = date_filter.filter(tasks)
 
-        self.assertEqual(len(result), 2)
-        self.assertIn(self.task_feb, result)
-        self.assertIn(self.task_mar, result)
-
-    def test_filter_with_end_date_only(self):
-        """Test filter with only end_date filters tasks <= end_date."""
-        date_filter = DateRangeFilter(end_date=date(2025, 2, 28))
-        tasks = [self.task_jan, self.task_feb, self.task_mar]
-
-        result = date_filter.filter(tasks)
-
-        self.assertEqual(len(result), 2)
-        self.assertIn(self.task_jan, result)
-        self.assertIn(self.task_feb, result)
-
-    def test_filter_with_both_dates(self):
-        """Test filter with both start_date and end_date."""
-        date_filter = DateRangeFilter(
-            start_date=date(2025, 2, 1), end_date=date(2025, 2, 28)
-        )
-        tasks = [self.task_jan, self.task_feb, self.task_mar]
-
-        result = date_filter.filter(tasks)
-
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].id, 2)
+        self.assertEqual(len(result), len(expected_task_ids))
+        result_ids = [task.id for task in result]
+        for expected_id in expected_task_ids:
+            self.assertIn(expected_id, result_ids)
 
     def test_filter_includes_tasks_with_no_dates(self):
         """Test filter includes tasks with no date fields (unscheduled tasks)."""
