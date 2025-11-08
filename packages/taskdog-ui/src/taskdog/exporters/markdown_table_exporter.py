@@ -4,6 +4,7 @@ from datetime import date, datetime
 from typing import Any
 
 from taskdog.exporters.task_exporter import TaskExporter
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog_core.application.dto.task_dto import TaskRowDto
 
 # Default fields for Markdown table export when no specific fields are requested
@@ -82,11 +83,11 @@ class MarkdownTableExporter(TaskExporter):
 
         # Handle datetime objects
         if isinstance(value, datetime):
-            return value.strftime("%Y-%m-%d %H:%M:%S")
+            return DateTimeFormatter.format_datetime_for_export(value)
 
         # Handle date objects
         if isinstance(value, date):
-            return value.strftime("%Y-%m-%d")
+            return DateTimeFormatter.format_date_only(value)
 
         # Handle boolean (check before dict/list since bool is a subclass of int)
         if isinstance(value, bool):

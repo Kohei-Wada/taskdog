@@ -11,6 +11,7 @@ from textual.containers import Container, Vertical
 from textual.widgets import Input, Label, OptionList, Static
 from textual.widgets.option_list import Option
 
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog_core.shared.config_manager import Config
 
@@ -134,11 +135,11 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         today = datetime.now()
         # If today is a weekday, use today; otherwise use next Monday
         if today.weekday() < 5:  # Monday=0, Friday=4
-            return today.strftime("%Y-%m-%d")
+            return DateTimeFormatter.format_date_only(today)
         # Move to next Monday
         days_until_monday = 7 - today.weekday()
         next_monday = today + timedelta(days=days_until_monday)
-        return next_monday.strftime("%Y-%m-%d")
+        return DateTimeFormatter.format_date_only(next_monday)
 
     def action_focus_next(self) -> None:
         """Move focus to the next field (Ctrl+J)."""

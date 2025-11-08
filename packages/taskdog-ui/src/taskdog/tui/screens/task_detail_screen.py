@@ -7,6 +7,7 @@ from textual.containers import Container, VerticalScroll
 from textual.widgets import Label, Markdown, Static
 
 from taskdog.constants.colors import STATUS_COLORS_BOLD
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
@@ -85,10 +86,10 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
             classes="detail-row",
         )
         yield self._create_detail_row(
-            "Created", self.task_data.created_at.strftime(DATETIME_FORMAT)
+            "Created", DateTimeFormatter.format_created(self.task_data.created_at)
         )
         yield self._create_detail_row(
-            "Updated", self.task_data.updated_at.strftime(DATETIME_FORMAT)
+            "Updated", DateTimeFormatter.format_updated(self.task_data.updated_at)
         )
 
         # Dependencies

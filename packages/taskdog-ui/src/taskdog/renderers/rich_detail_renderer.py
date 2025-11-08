@@ -13,9 +13,9 @@ from taskdog.constants.table_styles import (
     TABLE_PADDING,
     format_table_title,
 )
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
-from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 
 class RichDetailRenderer:
@@ -53,19 +53,31 @@ class RichDetailRenderer:
 
     def _add_time_fields(self, table: Table, task: TaskDetailDto) -> None:
         """Add time-related fields to table."""
-        table.add_row("Created", task.created_at.strftime(DATETIME_FORMAT))
-        table.add_row("Updated", task.updated_at.strftime(DATETIME_FORMAT))
+        table.add_row("Created", DateTimeFormatter.format_created(task.created_at))
+        table.add_row("Updated", DateTimeFormatter.format_updated(task.updated_at))
 
         if task.planned_start:
-            table.add_row("Planned Start", task.planned_start.strftime(DATETIME_FORMAT))
+            table.add_row(
+                "Planned Start",
+                DateTimeFormatter.format_datetime_full(task.planned_start),
+            )
         if task.planned_end:
-            table.add_row("Planned End", task.planned_end.strftime(DATETIME_FORMAT))
+            table.add_row(
+                "Planned End", DateTimeFormatter.format_datetime_full(task.planned_end)
+            )
         if task.deadline:
-            table.add_row("Deadline", task.deadline.strftime(DATETIME_FORMAT))
+            table.add_row(
+                "Deadline", DateTimeFormatter.format_datetime_full(task.deadline)
+            )
         if task.actual_start:
-            table.add_row("Actual Start", task.actual_start.strftime(DATETIME_FORMAT))
+            table.add_row(
+                "Actual Start",
+                DateTimeFormatter.format_datetime_full(task.actual_start),
+            )
         if task.actual_end:
-            table.add_row("Actual End", task.actual_end.strftime(DATETIME_FORMAT))
+            table.add_row(
+                "Actual End", DateTimeFormatter.format_datetime_full(task.actual_end)
+            )
         if task.estimated_duration:
             table.add_row("Estimated Duration", f"{task.estimated_duration}h")
         if task.actual_duration_hours:

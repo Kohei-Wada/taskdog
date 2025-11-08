@@ -8,6 +8,7 @@ from dateutil import parser as dateutil_parser
 from dateutil.parser import ParserError
 
 from taskdog.constants.validation_messages import ValidationMessages
+from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 
 @dataclass
@@ -157,7 +158,7 @@ class DateTimeValidator(BaseValidator):
                 parsed_date = parsed_date.replace(hour=default_hour, minute=0, second=0)
 
             # Convert to the standard format YYYY-MM-DD HH:MM:SS
-            formatted_datetime = parsed_date.strftime("%Y-%m-%d %H:%M:%S")
+            formatted_datetime = parsed_date.strftime(DATETIME_FORMAT)
             return DateTimeValidator._success(formatted_datetime)
         except (ValueError, TypeError, OverflowError, ParserError):
             return DateTimeValidator._error(

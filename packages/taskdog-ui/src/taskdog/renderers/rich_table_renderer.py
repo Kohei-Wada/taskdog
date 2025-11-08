@@ -18,6 +18,7 @@ from taskdog.constants.table_styles import (
     TABLE_PADDING,
     format_table_title,
 )
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.renderers.rich_renderer_base import RichRendererBase
 from taskdog.view_models.task_view_model import TaskRowViewModel
 
@@ -292,7 +293,7 @@ class RichTableRenderer(RichRendererBase):
 
         if isinstance(dt, datetime):
             # Show only date and time (YYYY-MM-DD HH:MM)
-            return dt.strftime("%Y-%m-%d %H:%M")
+            return DateTimeFormatter.format_datetime_compact(dt)
         return str(dt)
 
     def _format_dependencies(self, task: TaskRowViewModel) -> str:

@@ -1,9 +1,7 @@
 """Template generator for task notes markdown files."""
 
-from datetime import datetime
-
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog_core.application.dto.task_dto import TaskDetailDto
-from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 
 def generate_notes_template(task: TaskDetailDto) -> str:
@@ -15,7 +13,7 @@ def generate_notes_template(task: TaskDetailDto) -> str:
     Returns:
         Markdown template string with task information
     """
-    now = datetime.now().strftime(DATETIME_FORMAT)
+    now = DateTimeFormatter.format_current_timestamp()
 
     template = f"""# Task #{task.id}: {task.name}
 

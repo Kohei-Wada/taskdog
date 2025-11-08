@@ -10,6 +10,7 @@ from textual.command import CommandPalette
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
 
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
 from taskdog.services.task_data_loader import TaskDataLoader
@@ -351,7 +352,6 @@ class TaskdogTUI(App):
         Args:
             format_key: Export format (json, csv, markdown)
         """
-        from datetime import datetime
         from pathlib import Path
 
         from taskdog.exporters import (
@@ -384,7 +384,7 @@ class TaskdogTUI(App):
             extension = format_config["extension"]
 
             # Generate filename with current date
-            today = datetime.now().strftime("%Y%m%d")
+            today = DateTimeFormatter.format_date_for_filename()
             filename = f"Taskdog_export_{today}.{extension}"
 
             # Use ~/Downloads directory

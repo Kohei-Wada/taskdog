@@ -7,6 +7,7 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.widgets import Checkbox, Input, Label, Static
 
+from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.config_manager import Config
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
@@ -119,7 +120,7 @@ class TaskFormFields:
             yield Input(
                 placeholder="Optional: 2025-12-31, tomorrow 6pm, next friday",
                 id="deadline-input",
-                value=task.deadline.strftime(DATETIME_FORMAT)
+                value=DateTimeFormatter.format_datetime_for_export(task.deadline)
                 if task and task.deadline
                 else "",
             )
@@ -129,7 +130,7 @@ class TaskFormFields:
             yield Input(
                 placeholder="Optional: 2025-11-01, tomorrow 9am, next monday",
                 id="planned-start-input",
-                value=task.planned_start.strftime(DATETIME_FORMAT)
+                value=DateTimeFormatter.format_datetime_for_export(task.planned_start)
                 if task and task.planned_start
                 else "",
             )
@@ -139,7 +140,7 @@ class TaskFormFields:
             yield Input(
                 placeholder="Optional: 2025-11-15, in 2 weeks, friday 5pm",
                 id="planned-end-input",
-                value=task.planned_end.strftime(DATETIME_FORMAT)
+                value=DateTimeFormatter.format_datetime_for_export(task.planned_end)
                 if task and task.planned_end
                 else "",
             )
