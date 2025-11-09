@@ -69,65 +69,21 @@ class GanttCellFormatter:
         Returns:
             Tuple of (display_text, style_string)
         """
-        # Check if date is in special periods
+        # Determine which periods this date falls into
         is_planned = GanttCellFormatter._is_in_date_range(
             current_date, parsed_dates["planned_start"], parsed_dates["planned_end"]
         )
-
-        # For actual period: handle three cases
-        # 1. IN_PROGRESS (actual_start exists, actual_end is None): show from actual_start to today
-        # 2. COMPLETED/CANCELED (both actual_start and actual_end exist): show the range
-        # 3. CANCELED without actual_start (only actual_end exists): show only actual_end date
-        if parsed_dates["actual_start"] and not parsed_dates["actual_end"]:
-            # Case 1: IN_PROGRESS
-            today = date.today()
-            is_actual = parsed_dates["actual_start"] <= current_date <= today
-        elif parsed_dates["actual_start"] and parsed_dates["actual_end"]:
-            # Case 2: Both dates exist
-            is_actual = GanttCellFormatter._is_in_date_range(
-                current_date, parsed_dates["actual_start"], parsed_dates["actual_end"]
-            )
-        elif parsed_dates["actual_end"] and not parsed_dates["actual_start"]:
-            # Case 3: Only actual_end (CANCELED without starting)
-            is_actual = current_date == parsed_dates["actual_end"]
-        else:
-            is_actual = False
-
+        is_actual = GanttCellFormatter._is_in_actual_period(current_date, parsed_dates)
         is_deadline = (
             parsed_dates["deadline"] and current_date == parsed_dates["deadline"]
         )
 
-        # Determine background color with layered approach:
-        # 1. Base: Light gray for planned period (if not finished)
-        # 2. Override: Darker weekday color for allocated hours on weekdays
-        # 3. Override: Weekend/holiday colors (for planned period only, but overrides gray)
-        # 4. Override: Orange for deadline (highest priority)
-
-        # Check if this is a weekend or holiday
-        weekday = current_date.weekday()
-        is_weekend_or_holiday = current_date in holidays or weekday in (
-            SATURDAY,
-            SUNDAY,
+        # Determine background color
+        bg_color = GanttCellFormatter._determine_cell_background_color(
+            current_date, hours, is_planned, is_deadline, status, holidays
         )
 
-        if is_deadline:
-            bg_color = BACKGROUND_COLOR_DEADLINE
-        elif is_planned and status not in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
-            if is_weekend_or_holiday:
-                # Weekend/holiday in planned period: always use weekend/holiday colors
-                bg_color = GanttCellFormatter._get_weekend_holiday_background_color(
-                    current_date, holidays
-                )
-            elif hours > 0:
-                # Allocated hours on weekday: use darker weekday color
-                bg_color = BACKGROUND_COLOR
-            else:
-                # No allocation on weekday: use light gray for planned period
-                bg_color = BACKGROUND_COLOR_PLANNED_LIGHT
-        else:
-            bg_color = None
-
-        # Layer 2: Actual period (highest priority) - use status-specific symbol
+        # Actual period (highest priority): show status symbol
         if is_actual:
             symbol = GanttCellFormatter.get_status_symbol(status)
             display = f" {symbol} "
@@ -135,15 +91,8 @@ class GanttCellFormatter:
             style = f"{status_color} on {bg_color}" if bg_color else status_color
             return display, style
 
-        # Layer 1: Show hours (for planned or deadline without actual)
-        # COMPLETED/CANCELED tasks: hide planned hours
-        if hours > 0 and status not in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
-            # Format: "4  " or "2.5" (right-aligned, 3 chars)
-            display = f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
-        else:
-            display = SYMBOL_EMPTY  # No hours allocated: " · "
-
-        # Apply background color
+        # Planned period or deadline: show hours
+        display = GanttCellFormatter._format_hours_display(hours, status)
         style = f"on {bg_color}" if bg_color else "dim"
 
         return display, style
@@ -352,6 +301,109 @@ class GanttCellFormatter:
         if start and end:
             return start <= current_date <= end
         return False
+
+    @staticmethod
+    def _is_in_actual_period(current_date: date, parsed_dates: dict[str, Any]) -> bool:
+        """Check if a date is in the actual execution period.
+
+        Handles three cases:
+        1. IN_PROGRESS: actual_start exists, actual_end is None (show from start to today)
+        2. COMPLETED/CANCELED: both actual_start and actual_end exist (show the range)
+        3. CANCELED without start: only actual_end exists (show only end date)
+
+        Args:
+            current_date: Date to check
+            parsed_dates: Dictionary of parsed task dates
+
+        Returns:
+            True if current_date is in actual period
+        """
+        actual_start = parsed_dates["actual_start"]
+        actual_end = parsed_dates["actual_end"]
+
+        if actual_start and not actual_end:
+            # Case 1: IN_PROGRESS - show from actual_start to today
+            today = date.today()
+            return bool(actual_start <= current_date <= today)
+        elif actual_start and actual_end:
+            # Case 2: Both dates exist - show the complete range
+            return bool(actual_start <= current_date <= actual_end)
+        elif actual_end and not actual_start:
+            # Case 3: Only actual_end (CANCELED without starting)
+            return bool(current_date == actual_end)
+        else:
+            return False
+
+    @staticmethod
+    def _determine_cell_background_color(
+        current_date: date,
+        hours: float,
+        is_planned: bool,
+        is_deadline: bool,
+        status: TaskStatus,
+        holidays: set[date],
+    ) -> str | None:
+        """Determine background color for a timeline cell.
+
+        Priority (highest to lowest):
+        1. Deadline: Orange
+        2. Planned period (for non-finished tasks):
+           - Weekend/holiday: Weekend/holiday colors
+           - Allocated hours on weekday: Darker weekday color
+           - No allocation on weekday: Light gray
+
+        Args:
+            current_date: Date of the cell
+            hours: Allocated hours for this date
+            is_planned: Whether this date is in the planned period
+            is_deadline: Whether this date is the deadline
+            status: Task status
+            holidays: Set of holiday dates
+
+        Returns:
+            Background color string or None
+        """
+        if is_deadline:
+            return BACKGROUND_COLOR_DEADLINE
+
+        if is_planned and status not in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
+            weekday = current_date.weekday()
+            is_weekend_or_holiday = current_date in holidays or weekday in (
+                SATURDAY,
+                SUNDAY,
+            )
+
+            if is_weekend_or_holiday:
+                return GanttCellFormatter._get_weekend_holiday_background_color(
+                    current_date, holidays
+                )
+            elif hours > 0:
+                return BACKGROUND_COLOR
+            else:
+                return BACKGROUND_COLOR_PLANNED_LIGHT
+
+        return None
+
+    @staticmethod
+    def _format_hours_display(hours: float, status: TaskStatus) -> str:
+        """Format hours display for a timeline cell.
+
+        Args:
+            hours: Allocated hours for this date
+            status: Task status
+
+        Returns:
+            Formatted display string (right-aligned, 3 characters)
+        """
+        # Hide planned hours for finished tasks
+        if status in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
+            return SYMBOL_EMPTY
+
+        if hours > 0:
+            # Format: "4  " or "2.5" (right-aligned, 3 chars)
+            return f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
+        else:
+            return SYMBOL_EMPTY
 
     @staticmethod
     def _get_weekend_holiday_background_color(
