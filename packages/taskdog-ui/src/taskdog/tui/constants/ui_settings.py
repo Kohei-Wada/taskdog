@@ -24,6 +24,7 @@ SORT_KEY_LABELS: dict[str, str] = {
     "estimated_duration": "Duration",
     "id": "ID",
     "name": "Name",
+    "status": "Status",
 }
 """Mapping of sort keys to display labels for UI."""
 

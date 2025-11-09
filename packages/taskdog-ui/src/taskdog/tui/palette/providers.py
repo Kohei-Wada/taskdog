@@ -129,6 +129,11 @@ class SortOptionsProvider(BaseListProvider):
         ("estimated_duration", "Duration", "Effort-based (shorter tasks first)"),
         ("id", "ID", "Creation order (lower ID first)"),
         ("name", "Name", "Alphabetically (A-Z)"),
+        (
+            "status",
+            "Status",
+            "State-based (CANCELED → COMPLETED → IN_PROGRESS → PENDING)",
+        ),
     ]
 
     def get_options(self, app: TaskdogTUI) -> list[tuple[str, Callable[[], None], str]]:
