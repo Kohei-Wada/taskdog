@@ -4,24 +4,15 @@
 # All sections and fields are optional. Taskdog will use sensible defaults
 # for any omitted configuration.
 
-# Storage Backend Configuration
-[storage]
-# Backend to use: "json" (default) or "sqlite"
-backend = "json"
-
-# Optional: Custom database URL (only used when backend = "sqlite")
-# If not specified, uses ~/.local/share/taskdog/tasks.db
-# database_url = "sqlite:////custom/path/to/tasks.db"
-
 # Task-related Settings
 [task]
-# Default priority for new tasks (1-100, default: 50)
-default_priority = 50
+# Default priority for new tasks (1-10, default: 5)
+default_priority = 5
 
 # Optimization Settings
 [optimization]
-# Maximum work hours per day for schedule optimization (default: 8.0)
-max_hours_per_day = 8.0
+# Maximum work hours per day for schedule optimization (default: 6.0)
+max_hours_per_day = 6.0
 
 # Default optimization algorithm (default: "greedy")
 # Available: greedy, balanced, backward, priority_first, earliest_deadline,
@@ -48,3 +39,14 @@ default_end_hour = 18
 # Examples: "JP" (Japan), "US" (United States), "GB" (United Kingdom), "DE" (Germany)
 # Leave commented out to disable holiday checking
 # country = "JP"
+
+# API Server Settings
+[api]
+# Enable API mode for client-server communication (default: false)
+enabled = false
+
+# API server host (default: "127.0.0.1")
+host = "127.0.0.1"
+
+# API server port (default: 8000)
+port = 8000

@@ -83,12 +83,12 @@ class StorageConfig:
     """Storage backend configuration.
 
     Attributes:
-        backend: Storage backend to use ("json" or "sqlite")
-        database_url: SQLite database URL (only used when backend="sqlite")
+        backend: Storage backend to use (currently only "sqlite" is supported)
+        database_url: SQLite database URL
                       If None, defaults to XDG data directory
     """
 
-    backend: str = "json"
+    backend: str = "sqlite"
     database_url: str | None = None
 
 
@@ -194,7 +194,7 @@ class ConfigManager:
                 country=region_data.get("country"),
             ),
             storage=StorageConfig(
-                backend=storage_data.get("backend", "json"),
+                backend=storage_data.get("backend", "sqlite"),
                 database_url=storage_data.get("database_url"),
             ),
             api=ApiConfig(
