@@ -217,7 +217,9 @@ class TaskdogTUI(App):
             )
         except ServerConnectionError as e:
             self.notify(
-                f"Server connection failed: {e.original_error.__class__.__name__}. Press 'r' to retry.",
+                f"Server connection failed: {
+                    e.original_error.__class__.__name__
+                }. Press 'r' to retry.",
                 severity="error",
                 timeout=10,
             )
