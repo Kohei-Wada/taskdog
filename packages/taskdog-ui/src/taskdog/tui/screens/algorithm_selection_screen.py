@@ -8,44 +8,13 @@ from dateutil.parser import ParserError
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
-from textual.widgets import Input, Label, OptionList, Static
+from textual.widgets import Input, Label, Static
 from textual.widgets.option_list import Option
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.screens.base_dialog import BaseModalDialog
+from taskdog.tui.widgets.vi_option_list import ViOptionList
 from taskdog_core.shared.config_manager import Config
-
-
-class ViOptionList(OptionList):
-    """OptionList with Vi-style key bindings."""
-
-    # Add Vi-style bindings
-    BINDINGS: ClassVar = [
-        Binding("j", "cursor_down", "Down", show=False),
-        Binding("k", "cursor_up", "Up", show=False),
-        Binding("g", "scroll_home", "Top", show=False),
-        Binding("G", "scroll_end", "Bottom", show=False),
-    ]
-
-    def action_cursor_down(self) -> None:
-        """Move cursor down (j key)."""
-        if self.highlighted is not None:
-            max_index = len(self._options) - 1
-            if self.highlighted < max_index:
-                self.highlighted += 1
-
-    def action_cursor_up(self) -> None:
-        """Move cursor up (k key)."""
-        if self.highlighted is not None and self.highlighted > 0:
-            self.highlighted -= 1
-
-    def action_scroll_home(self) -> None:
-        """Move to top (g key)."""
-        self.highlighted = 0
-
-    def action_scroll_end(self) -> None:
-        """Move to bottom (G key)."""
-        self.highlighted = len(self._options) - 1
 
 
 class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | None]):
