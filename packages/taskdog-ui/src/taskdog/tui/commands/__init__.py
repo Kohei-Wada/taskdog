@@ -13,6 +13,7 @@ _LAZY_COMMANDS = {
     "cancel_task": "taskdog.tui.commands.cancel_task_command:CancelTaskCommand",
     "complete_task": "taskdog.tui.commands.complete_task_command:CompleteTaskCommand",
     "delete_task": "taskdog.tui.commands.delete_task_command:DeleteTaskCommand",
+    "export": "taskdog.tui.commands.export_command:ExportCommand",
     "hard_delete_task": "taskdog.tui.commands.hard_delete_task_command:HardDeleteTaskCommand",
     "edit_note": "taskdog.tui.commands.edit_note_command:EditNoteCommand",
     "edit_task": "taskdog.tui.commands.edit_task_command:EditTaskCommand",
