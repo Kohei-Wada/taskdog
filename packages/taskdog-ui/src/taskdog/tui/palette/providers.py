@@ -221,6 +221,10 @@ class ExportFormatProvider(BaseListProvider):
             List of (format_name, callback, description) tuples
         """
         return [
-            (format_name, partial(app.execute_export, format_key), description)
+            (
+                format_name,
+                partial(app.command_factory.execute, "export", format_key=format_key),
+                description,
+            )
             for format_key, format_name, description in EXPORT_FORMATS
         ]

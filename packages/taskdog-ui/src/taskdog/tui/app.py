@@ -8,7 +8,6 @@ from textual.command import CommandPalette
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
 
-from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
 from taskdog.services.task_data_loader import TaskDataLoader
@@ -17,7 +16,6 @@ from taskdog.tui.constants.ui_settings import (
     ACTION_TO_COMMAND_MAP,
     AUTO_REFRESH_INTERVAL_SECONDS,
     DEFAULT_GANTT_DISPLAY_DAYS,
-    EXPORT_FORMAT_CONFIG,
     SORT_KEY_LABELS,
 )
 from taskdog.tui.context import TUIContext
@@ -313,72 +311,6 @@ class TaskdogTUI(App):
                 placeholder="Select export format…",
             ),
         )
-
-    def execute_export(self, format_key: str) -> None:
-        """Execute export operation with selected format.
-
-        Args:
-            format_key: Export format (json, csv, markdown)
-        """
-        from pathlib import Path
-
-        from taskdog.exporters import (
-            CsvTaskExporter,
-            JsonTaskExporter,
-            MarkdownTableExporter,
-        )
-
-        # Exporter class lookup table
-        exporter_classes = {
-            "JsonTaskExporter": JsonTaskExporter,
-            "CsvTaskExporter": CsvTaskExporter,
-            "MarkdownTableExporter": MarkdownTableExporter,
-        }
-
-        try:
-            # Get all tasks (no filtering)
-            result = self.api_client.list_tasks(filter_obj=None)
-            tasks = result.tasks
-
-            # Lookup format configuration
-            format_config = EXPORT_FORMAT_CONFIG.get(format_key)
-            if not format_config:
-                self.notify(f"Unknown format: {format_key}", severity="error")
-                return
-
-            # Instantiate exporter and get extension
-            exporter_class_name = format_config["exporter_class"]
-            exporter = exporter_classes[exporter_class_name]()
-            extension = format_config["extension"]
-
-            # Generate filename with current date
-            today = DateTimeFormatter.format_date_for_filename()
-            filename = f"Taskdog_export_{today}.{extension}"
-
-            # Use ~/Downloads directory
-            downloads_dir = Path.home() / "Downloads"
-            downloads_dir.mkdir(parents=True, exist_ok=True)
-            output_path = downloads_dir / filename
-
-            # Export tasks
-            tasks_data = exporter.export(tasks)
-
-            # Write to file
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(tasks_data)
-
-            # Show success notification
-            self.notify(
-                f"Exported {len(tasks)} tasks to {output_path}", severity="information"
-            )
-
-        except ServerConnectionError as e:
-            self.notify(
-                f"Server connection failed: {e.original_error.__class__.__name__}",
-                severity="error",
-            )
-        except Exception as e:
-            self.notify(f"Export failed: {e}", severity="error")
 
     def set_sort_order(self, sort_key: str) -> None:
         """Set the sort order for Gantt chart and task list.
