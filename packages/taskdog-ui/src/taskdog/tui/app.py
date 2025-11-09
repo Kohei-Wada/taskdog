@@ -22,6 +22,7 @@ from taskdog.tui.context import TUIContext
 from taskdog.tui.events import GanttResizeRequested, TasksRefreshed
 from taskdog.tui.palette.providers import (
     ExportCommandProvider,
+    ExportFormatProvider,
     OptimizeCommandProvider,
     SortCommandProvider,
     SortOptionsProvider,
@@ -305,8 +306,6 @@ class TaskdogTUI(App):
 
         Selecting a format will trigger the export operation.
         """
-        from taskdog.tui.palette.providers import ExportFormatProvider
-
         self.push_screen(
             CommandPalette(
                 providers=[ExportFormatProvider],
