@@ -161,10 +161,19 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         """
         best_order = None
         best_score = float("-inf")
+        evaluated_orderings: set[tuple[int, ...]] = set()
 
         for _ in range(self.NUM_SIMULATIONS):
             # Generate random ordering
             random_order = random.sample(schedulable_tasks, len(schedulable_tasks))
+
+            # Skip duplicate orderings
+            ordering_key = tuple(
+                task.id for task in random_order if task.id is not None
+            )
+            if ordering_key in evaluated_orderings:
+                continue
+            evaluated_orderings.add(ordering_key)
 
             # Evaluate this ordering (with caching)
             score = self._evaluate_ordering_cached(

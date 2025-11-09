@@ -7,7 +7,7 @@ stored as JSON TEXT columns for Phase 2 implementation.
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, Float, Integer, String, Text
+from sqlalchemy import Boolean, Float, Index, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -69,6 +69,15 @@ class TaskModel(Base):
 
     # Archive flag
     is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # Database indexes for frequently queried columns
+    __table_args__ = (
+        Index("idx_status", "status"),
+        Index("idx_is_archived", "is_archived"),
+        Index("idx_deadline", "deadline"),
+        Index("idx_planned_start", "planned_start"),
+        Index("idx_priority", "priority"),
+    )
 
     def __repr__(self) -> str:
         """String representation for debugging."""

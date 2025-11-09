@@ -142,8 +142,15 @@ class SqliteTaskRepository(TaskRepository):
             return
 
         with self.Session() as session:
+            # Bulk fetch existing tasks to avoid N+1 queries
+            existing_ids = [t.id for t in tasks if t.id is not None]
+            existing_models = {}
+            if existing_ids:
+                stmt = select(TaskModel).where(TaskModel.id.in_(existing_ids))
+                existing_models = {m.id: m for m in session.scalars(stmt).all()}
+
             for task in tasks:
-                existing_model = session.get(TaskModel, task.id)
+                existing_model = existing_models.get(task.id)
 
                 if existing_model:
                     # Update existing
