@@ -62,6 +62,8 @@ class BaseApiRouterTest(unittest.TestCase):
         cls.config.scheduling.max_hours_per_day = 8.0
         cls.config.scheduling.default_algorithm = "greedy"
         cls.config.region.country = None
+        cls.config.time.default_start_hour = 9
+        cls.config.time.default_end_hour = 18
 
         # Create controllers once (reused across all tests)
         query_controller = QueryController(cls.repository, cls.notes_repository)
