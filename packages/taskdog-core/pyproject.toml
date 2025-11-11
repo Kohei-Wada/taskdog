@@ -77,6 +77,8 @@ strict = false
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
+# Disable unused-ignore warnings (SQLAlchemy attr-defined errors are environment-dependent)
+warn_unused_ignores = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

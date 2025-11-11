@@ -73,7 +73,7 @@ class TagResolver:
             return [self._name_to_id_cache[name] for name in tag_names]
 
         # Query database for uncached tags
-        stmt = select(TagModel).where(TagModel.name.in_(uncached_names))
+        stmt = select(TagModel).where(TagModel.name.in_(uncached_names))  # type: ignore[attr-defined]
         existing_tags = self._session.scalars(stmt).all()
 
         # Update cache with existing tags
@@ -125,7 +125,7 @@ class TagResolver:
 
         # Query database for uncached tags
         if uncached_ids:
-            stmt = select(TagModel).where(TagModel.id.in_(uncached_ids))
+            stmt = select(TagModel).where(TagModel.id.in_(uncached_ids))  # type: ignore[attr-defined]
             tags = self._session.scalars(stmt).all()
 
             # Update cache
