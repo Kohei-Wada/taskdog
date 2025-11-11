@@ -34,7 +34,7 @@ TaskDetailScreen {
 }
 
 .dialog-wide {
-    width: 80;  /* For detailed information display */
+    width: 100;  /* For detailed information display */
 }
 
 /* =============================================================================
@@ -93,6 +93,11 @@ TaskDetailScreen {
     color: $text;
 }
 
+.notes-content {
+    width: 100%;
+    min-height: 10;
+}
+
 /* =============================================================================
    Specific Dialog Configurations
    ============================================================================= */
@@ -128,5 +133,5 @@ TaskDetailScreen {
 
 /* Task Detail Screen */
 #detail-screen {
-    max-height: 35;
+    max-height: 50;
 }
