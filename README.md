@@ -58,7 +58,37 @@ make uninstall        # Remove global installations
 
 ## Quick Start
 
-### CLI Usage
+### Step 1: Start the API Server (Required)
+
+Before using the CLI or TUI, start the API server:
+
+```bash
+# Start the server (runs on http://127.0.0.1:8000 by default)
+taskdog-server
+
+# Or with custom configuration
+taskdog-server --host 127.0.0.1 --port 8000
+```
+
+The server must be running for all CLI and TUI commands to work. See [API Server](#api-server) section for more options.
+
+### Step 2: Configure API Connection
+
+Edit `~/.config/taskdog/config.toml`:
+
+```toml
+[api]
+enabled = true
+host = "127.0.0.1"
+port = 8000
+```
+
+Or use environment variable:
+```bash
+export TASKDOG_API_URL=http://127.0.0.1:8000
+```
+
+### Step 3: Use CLI Commands
 
 ```bash
 # Add tasks with priorities and estimates
@@ -321,30 +351,44 @@ taskdog table --tag api --tag db  # OR logic: tasks with 'api' OR 'db'
 
 ### Configuration
 
-Optional TOML configuration file with the following sections:
+TOML configuration file with the following sections. The `[api]` section is required; all other sections are optional.
 
 ```toml
+# API Server Settings (REQUIRED)
+[api]
+enabled = true                 # Must be true for CLI/TUI to work (default: false)
+host = "127.0.0.1"            # API server host (default: "127.0.0.1")
+port = 8000                   # API server port (default: 8000)
+
+# Alternative: Set via environment variable (takes precedence)
+# export TASKDOG_API_URL=http://127.0.0.1:8000
+
+# Optimization Settings (optional)
 [optimization]
 max_hours_per_day = 6.0        # Default work hours per day (default: 6.0)
 default_algorithm = "greedy"   # Default scheduling algorithm (default: "greedy")
 
+# Task Settings (optional)
 [task]
 default_priority = 5           # Default task priority (default: 5)
 
+# Display Settings (optional)
 [display]
 datetime_format = "%Y-%m-%d %H:%M:%S"  # Datetime display format
 
+# Time Settings (optional)
 [time]
 default_start_hour = 9         # Business day start hour (default: 9)
 default_end_hour = 18          # Business day end hour (default: 18)
 
+# Region Settings (optional)
 [region]
 country = "JP"                 # ISO 3166-1 alpha-2 country code for holiday checking
                                # Examples: "JP", "US", "GB", "DE"
                                # Default: None (no holiday checking)
 ```
 
-**Priority**: CLI arguments > Config file > Defaults
+**Priority**: Environment variables > CLI arguments > Config file > Defaults
 
 ## Workflow
 
@@ -423,9 +467,14 @@ taskdog/
 ```
 
 **Package Dependencies:**
-- `taskdog-server` depends on `taskdog-core`
-- `taskdog-ui` depends on `taskdog-core`
+- `taskdog-server` depends on `taskdog-core` (direct access to controllers and repository)
+- `taskdog-ui` depends on `taskdog-core` (for DTOs and types only; accesses data via HTTP API)
 - `taskdog-core` has no dependencies on other packages (pure business logic)
+
+**Communication Flow:**
+```
+CLI/TUI (taskdog-ui) → HTTP API → FastAPI (taskdog-server) → Controllers/Repository (taskdog-core)
+```
 
 ### Architecture
 
@@ -444,14 +493,14 @@ taskdog/
 - Optimization strategies (9 algorithms with StrategyFactory)
 
 **Infrastructure** (taskdog-core):
-- Repository (SqliteTaskRepository with transactional writes)
+- Repository (SqliteTaskRepository with transactional writes - used by API server only)
 - Persistence mappers (TaskDbMapper)
 - Config (ConfigManager for TOML config)
 
 **Controllers** (taskdog-core):
 - TaskController: Orchestrates write operations (commands)
 - QueryController: Orchestrates read operations (queries)
-- Shared across all presentation layers (CLI, TUI, API)
+- Used by API server; CLI/TUI access controllers via HTTP API client
 
 **Presentation** (taskdog-server + taskdog-ui):
 - **Server**: FastAPI routers, Pydantic models, API dependencies

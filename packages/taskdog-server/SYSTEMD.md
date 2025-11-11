@@ -16,6 +16,63 @@ This will:
 3. Enable the service for automatic startup
 4. Reload the systemd daemon
 
+## Important: CLI/TUI Requires Running Server
+
+**The `taskdog` CLI and TUI commands require the server to be running.** Without a running server, all CLI/TUI commands will fail with connection errors.
+
+### Quick Setup for CLI/TUI
+
+After installing the service, follow these steps to use the CLI/TUI:
+
+**1. Start the server**
+
+```bash
+systemctl --user start taskdog-server
+systemctl --user enable taskdog-server  # Auto-start on login
+```
+
+**2. Configure the CLI**
+
+Choose one of these methods:
+
+**Method A: Config file** (Recommended)
+
+Edit `~/.config/taskdog/config.toml`:
+
+```toml
+[api]
+enabled = true
+host = "127.0.0.1"
+port = 8000
+```
+
+**Method B: Environment variable**
+
+Add to your shell configuration (~/.bashrc, ~/.zshrc, etc.):
+
+```bash
+export TASKDOG_API_URL=http://127.0.0.1:8000
+```
+
+**3. Verify connection**
+
+```bash
+# Test that CLI can connect to server
+taskdog table
+
+# If you see a table (even if empty), you're ready!
+```
+
+### Common Issues
+
+**Error: "Cannot connect to API server"**
+- Check if server is running: `systemctl --user status taskdog-server`
+- Start the server: `systemctl --user start taskdog-server`
+
+**Error: "API mode is required"**
+- Set `enabled = true` in config file (see Method A above)
+- Or set TASKDOG_API_URL environment variable (see Method B above)
+
 ## Starting the Service
 
 After installation, start the service with:
@@ -203,22 +260,3 @@ The default service configuration includes security hardening:
 - `ReadWritePaths=%h/.local/share/taskdog`: Allows writes only to data directory
 
 These settings provide defense-in-depth protection while allowing the service to function normally.
-
-## Using Taskdog CLI with the Server
-
-Once the server is running, you can configure the CLI to use it:
-
-```bash
-# Set the API URL environment variable
-export TASKDOG_API_URL=http://127.0.0.1:8000
-
-# Now CLI commands will use the API server
-taskdog table
-taskdog add "New task"
-```
-
-To make this permanent, add to your shell configuration (~/.bashrc, ~/.zshrc, etc.):
-
-```bash
-echo 'export TASKDOG_API_URL=http://127.0.0.1:8000' >> ~/.bashrc
-```

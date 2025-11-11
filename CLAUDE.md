@@ -27,7 +27,7 @@ The repository uses UV workspace with three packages:
 - Depends on: taskdog-core
 - Click-based CLI commands with Rich output
 - Textual-based full-screen TUI
-- Optional API client for remote server communication
+- API client for server communication (required - CLI/TUI do not work without API server)
 - Renderers for tables, Gantt charts, and markdown notes
 
 ### Data Storage & Configuration
@@ -164,15 +164,15 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 - `persistence/mappers/`: TaskDbMapper for entity-to-database mapping
 - `config/`: ConfigManager (loads TOML config with fallback to defaults)
 
-**Controllers** (`packages/taskdog-core/src/taskdog_core/controllers/`): Shared across all presentation layers
+**Controllers** (`packages/taskdog-core/src/taskdog_core/controllers/`): Unified interface for task operations
 - `TaskController`: Orchestrates write operations (commands)
   - Methods: start_task, complete_task, create_task, update_task, archive_task, etc.
   - Instantiates use cases, constructs Request DTOs, handles config defaults
-  - Used by: CLI, TUI, API server
+  - Used by: API server directly; CLI/TUI via HTTP API
 - `QueryController`: Orchestrates read operations (queries)
   - Methods: list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id
   - Returns Output DTOs with metadata (TaskListOutput, GanttOutput, TagStatisticsOutput)
-  - Used by: CLI, TUI, API server
+  - Used by: API server directly; CLI/TUI via HTTP API
 
 **Shared** (`packages/taskdog-core/src/taskdog_core/shared/`): Cross-cutting utilities
 - `utils/xdg_utils.py`: XDG paths (get_tasks_file, get_config_file)
@@ -195,7 +195,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 **CLI** (`packages/taskdog-ui/src/taskdog/cli/`):
 - `cli_main.py`: Click application entry point
 - `commands/`: Click command implementations (add, start, done, table, gantt, etc.)
-- `context.py`: CliContext (DI container for console_writer, repository, time_tracker, config)
+- `context.py`: CliContext (DI container for console_writer, api_client, config, holiday_checker)
 - Error handlers: `@handle_task_errors`, `@handle_command_errors` decorators
 
 **Console** (`packages/taskdog-ui/src/taskdog/console/`):
@@ -221,10 +221,10 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 ### Dependency Injection
 
-**CLI** (`taskdog-ui`): `CliContext` dataclass (console_writer, repository, time_tracker, config) passed via `ctx.obj`
-**TUI** (`taskdog-ui`): `TUIContext` dataclass + CommandFactory for command instantiation
+**CLI** (`taskdog-ui`): `CliContext` dataclass (console_writer, api_client, config, holiday_checker) passed via `ctx.obj`
+**TUI** (`taskdog-ui`): `TUIContext` dataclass (api_client, config, holiday_checker) + CommandFactory for command instantiation
 **API** (`taskdog-server`): `ApiContext` dataclass + FastAPI dependency injection via `dependencies.py`
-**Local**: Use cases, renderers, and query services instantiated per command/request
+**Communication**: CLI/TUI access all data via HTTP API client; only server directly uses repositories and controllers
 
 ### Key Components
 
@@ -239,7 +239,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 - `SqliteTaskRepository`: Transactional writes with automatic rollback on errors
 - Indexed queries for efficient lookups and filtering
 - Connection pooling and proper resource management
-- Used by both CLI/TUI and API server
+- Used by API server only (CLI/TUI access via HTTP API, not directly)
 
 **TimeTracker** (`packages/taskdog-core/src/taskdog_core/domain/services/time_tracker.py`):
 - Records actual_start (→IN_PROGRESS), actual_end (→COMPLETED/CANCELED), clears both (→PENDING)

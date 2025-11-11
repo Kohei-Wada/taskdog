@@ -39,24 +39,55 @@ For development:
 pip install -e ".[dev]"
 ```
 
-## Server Mode
+## Prerequisites
 
-If using the TUI in API mode (client-server architecture), you need to start the server first:
+**IMPORTANT**: The CLI and TUI require a running API server. All commands will fail without it.
+
+### 1. Install the Server
 
 ```bash
-# Install server if not already installed
-pip install taskdog-server
-
-# Start the server
-taskdog-server --host 127.0.0.1 --port 8000
-
-# Then launch TUI in another terminal
-taskdog tui
+# Server should be installed via workspace
+cd /path/to/taskdog
+make install
 ```
 
-The TUI will automatically connect to the running server.
+### 2. Start the Server
+
+```bash
+# Start the server (required before any CLI/TUI usage)
+taskdog-server --host 127.0.0.1 --port 8000
+
+# Or use systemd for auto-start (recommended)
+systemctl --user start taskdog-server
+systemctl --user enable taskdog-server
+```
+
+### 3. Configure API Connection
+
+Edit `~/.config/taskdog/config.toml`:
+
+```toml
+[api]
+enabled = true
+host = "127.0.0.1"
+port = 8000
+```
+
+Or set environment variable:
+```bash
+export TASKDOG_API_URL=http://127.0.0.1:8000
+```
+
+### 4. Verify Connection
+
+```bash
+# Test that CLI can connect to server
+taskdog table
+```
 
 ## Usage
+
+**Note**: All commands below require the server to be running (see Prerequisites above).
 
 ### CLI Examples
 

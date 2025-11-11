@@ -1,8 +1,36 @@
 # Taskdog Configuration File Example
 # Copy this file to ~/.config/taskdog/config.toml and customize as needed
 #
-# All sections and fields are optional. Taskdog will use sensible defaults
-# for any omitted configuration.
+# IMPORTANT: Before using taskdog CLI/TUI, you MUST:
+#   1. Set [api] enabled = true in this config (see below)
+#   2. Start the API server: taskdog-server
+#   3. Then you can run CLI commands: taskdog <command>
+#
+# The CLI and TUI require a running API server to function.
+# Most sections are optional except [api] which is required.
+
+# ============================================================
+# API Server Settings (REQUIRED)
+# ============================================================
+[api]
+# Enable API mode for client-server communication
+# NOTE: CLI and TUI will NOT work if this is false
+# You must start taskdog-server before using taskdog commands
+enabled = true
+
+# API server host - must match where taskdog-server is running
+# Use "127.0.0.1" for local server, or server IP for remote access
+host = "127.0.0.1"
+
+# API server port - must match the port taskdog-server is using
+port = 8000
+
+# Alternative: Set via environment variable (takes precedence over config)
+# export TASKDOG_API_URL=http://127.0.0.1:8000
+
+# ============================================================
+# Optional Settings (all sections below are optional)
+# ============================================================
 
 # Task-related Settings
 [task]
@@ -39,14 +67,3 @@ default_end_hour = 18
 # Examples: "JP" (Japan), "US" (United States), "GB" (United Kingdom), "DE" (Germany)
 # Leave commented out to disable holiday checking
 # country = "JP"
-
-# API Server Settings
-[api]
-# Enable API mode for client-server communication (default: false)
-enabled = false
-
-# API server host (default: "127.0.0.1")
-host = "127.0.0.1"
-
-# API server port (default: 8000)
-port = 8000
