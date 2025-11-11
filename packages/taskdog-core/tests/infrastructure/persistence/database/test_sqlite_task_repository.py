@@ -469,7 +469,6 @@ class TestSqliteTaskRepository(unittest.TestCase):
                 status="PENDING",
                 created_at=datetime.now(),
                 updated_at=datetime.now(),
-                tags="[]",
                 is_archived=False,
             )
 

@@ -64,15 +64,11 @@ class TaskModel(Base):
     # Format: [2, 3, 5]
     depends_on: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
 
-    # Format: ["urgent", "backend"]
-    tags: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
-
     # Archive flag
     is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Relationship to tags (many-to-many through task_tags)
-    # Note: The legacy JSON tags column (line 68) remains for backwards compatibility.
-    # This relationship will be used in Phase 2+ to normalize tag storage.
+    # Phase 6: All tags are stored in normalized schema (tags/task_tags tables).
     tag_models: Mapped[list["TagModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
         "TagModel",
         secondary="task_tags",

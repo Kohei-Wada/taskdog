@@ -11,6 +11,9 @@ If database_url is not provided, uses the default taskdog database location.
 
 The migration is idempotent - it can be run multiple times safely.
 Tasks that have already been migrated (have tag_models populated) are skipped.
+
+Phase 6 Update: Since tags column was removed from TaskModel ORM, the script now
+reads the legacy tags column directly via raw SQL queries.
 """
 
 import json
@@ -20,7 +23,7 @@ from pathlib import Path
 # Add taskdog-core to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "taskdog-core" / "src"))
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from taskdog_core.infrastructure.persistence.database.models import TagModel, TaskModel
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
@@ -71,6 +74,13 @@ def migrate_tags_to_normalized_schema(database_url: str | None = None) -> dict[s
             print(f"Found {total_tasks} tasks in database")
             print()
 
+            # Phase 6: Read legacy tags column directly from database
+            # (tags column no longer exists in TaskModel ORM)
+            tags_map = {}
+            result = session.execute(text("SELECT id, tags FROM tasks"))
+            for row in result:
+                tags_map[row[0]] = row[1]  # task_id -> tags JSON string
+
             for i, task_model in enumerate(tasks, 1):
                 task_id = task_model.id
                 task_name = task_model.name
@@ -85,8 +95,8 @@ def migrate_tags_to_normalized_schema(database_url: str | None = None) -> dict[s
                         stats["skipped"] += 1
                         continue
 
-                    # Parse JSON tags column
-                    json_tags = task_model.tags
+                    # Get JSON tags from raw SQL query result
+                    json_tags = tags_map.get(task_id, "[]")
                     if not json_tags or json_tags == "[]":
                         # No tags to migrate
                         stats["skipped"] += 1

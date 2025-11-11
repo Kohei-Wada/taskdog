@@ -7,7 +7,7 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import Session
 
 # Add scripts to path for importing
@@ -16,7 +16,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "scri
 from migrate_tags_to_normalized_schema import migrate_tags_to_normalized_schema
 
 from taskdog_core.infrastructure.persistence.database.models import (
-    Base,
     TagModel,
     TaskModel,
 )
@@ -26,14 +25,77 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
     """Test suite for tag migration script."""
 
     def setUp(self) -> None:
-        """Set up test fixtures with temporary database."""
+        """Set up test fixtures with temporary database.
+
+        Phase 6: Since tags column was removed from TaskModel, we manually
+        create the legacy schema (with tags column) for migration testing.
+        """
         self.temp_dir = tempfile.mkdtemp()
         self.db_path = Path(self.temp_dir) / "test_migration.db"
         self.database_url = f"sqlite:///{self.db_path}"
 
-        # Create database with schema
+        # Create database engine
         self.engine = create_engine(self.database_url)
-        Base.metadata.create_all(self.engine)
+
+        # Create legacy schema with tags column using raw SQL
+        with self.engine.connect() as conn:
+            # Create tasks table with legacy tags column
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE tasks (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name VARCHAR(500) NOT NULL,
+                        priority INTEGER NOT NULL,
+                        status VARCHAR(50) NOT NULL,
+                        created_at TIMESTAMP NOT NULL,
+                        updated_at TIMESTAMP NOT NULL,
+                        planned_start TIMESTAMP,
+                        planned_end TIMESTAMP,
+                        deadline TIMESTAMP,
+                        actual_start TIMESTAMP,
+                        actual_end TIMESTAMP,
+                        estimated_duration FLOAT,
+                        is_fixed BOOLEAN NOT NULL DEFAULT 0,
+                        daily_allocations TEXT NOT NULL DEFAULT '{}',
+                        actual_daily_hours TEXT NOT NULL DEFAULT '{}',
+                        depends_on TEXT NOT NULL DEFAULT '[]',
+                        is_archived BOOLEAN NOT NULL DEFAULT 0,
+                        tags TEXT NOT NULL DEFAULT '[]'
+                    )
+                    """
+                )
+            )
+
+            # Create tags table (normalized schema)
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE tags (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name VARCHAR(100) UNIQUE NOT NULL,
+                        created_at TIMESTAMP NOT NULL
+                    )
+                    """
+                )
+            )
+
+            # Create task_tags junction table
+            conn.execute(
+                text(
+                    """
+                    CREATE TABLE task_tags (
+                        task_id INTEGER NOT NULL,
+                        tag_id INTEGER NOT NULL,
+                        PRIMARY KEY (task_id, tag_id),
+                        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+                        FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+                    )
+                    """
+                )
+            )
+
+            conn.commit()
 
     def tearDown(self) -> None:
         """Clean up database."""
@@ -46,20 +108,43 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
     def _create_task_with_json_tags(
         self, task_id: int, name: str, tag_names: list[str]
     ) -> None:
-        """Helper to create a task with JSON tags (legacy format)."""
-        with Session(self.engine) as session:
-            task = TaskModel(
-                id=task_id,
-                name=name,
-                priority=1,
-                status="PENDING",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-                tags=json.dumps(tag_names),  # Legacy JSON format
-                is_archived=False,
+        """Helper to create a task with JSON tags (legacy format).
+
+        Phase 6: Since tags column was removed from TaskModel, we use raw SQL
+        to insert tasks with legacy JSON tags for migration testing.
+        """
+        # Use raw SQL to insert task with tags column (legacy format)
+        with self.engine.connect() as conn:
+            now = datetime.now().isoformat()
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO tasks
+                    (id, name, priority, status, created_at, updated_at,
+                     daily_allocations, actual_daily_hours, depends_on,
+                     is_fixed, is_archived, tags)
+                    VALUES
+                    (:id, :name, :priority, :status, :created_at, :updated_at,
+                     :daily_allocations, :actual_daily_hours, :depends_on,
+                     :is_fixed, :is_archived, :tags)
+                    """
+                ),
+                {
+                    "id": task_id,
+                    "name": name,
+                    "priority": 1,
+                    "status": "PENDING",
+                    "created_at": now,
+                    "updated_at": now,
+                    "daily_allocations": "{}",
+                    "actual_daily_hours": "{}",
+                    "depends_on": "[]",
+                    "is_fixed": False,
+                    "is_archived": False,
+                    "tags": json.dumps(tag_names),  # Legacy JSON format
+                },
             )
-            session.add(task)
-            session.commit()
+            conn.commit()
 
     def _get_task_tag_models(self, task_id: int) -> list[str]:
         """Helper to get tag names from task's tag_models relationship."""
@@ -123,19 +208,39 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
         """Test migration skips tasks with empty tags (Phase 5)."""
         # Create tasks with various empty tag representations
         self._create_task_with_json_tags(1, "Task 1", [])
-        with Session(self.engine) as session:
-            task2 = TaskModel(
-                id=2,
-                name="Task 2",
-                priority=1,
-                status="PENDING",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-                tags="",  # Empty string
-                is_archived=False,
+
+        # Create task with empty string tags using raw SQL
+        with self.engine.connect() as conn:
+            now = datetime.now().isoformat()
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO tasks
+                    (id, name, priority, status, created_at, updated_at,
+                     daily_allocations, actual_daily_hours, depends_on,
+                     is_fixed, is_archived, tags)
+                    VALUES
+                    (:id, :name, :priority, :status, :created_at, :updated_at,
+                     :daily_allocations, :actual_daily_hours, :depends_on,
+                     :is_fixed, :is_archived, :tags)
+                    """
+                ),
+                {
+                    "id": 2,
+                    "name": "Task 2",
+                    "priority": 1,
+                    "status": "PENDING",
+                    "created_at": now,
+                    "updated_at": now,
+                    "daily_allocations": "{}",
+                    "actual_daily_hours": "{}",
+                    "depends_on": "[]",
+                    "is_fixed": False,
+                    "is_archived": False,
+                    "tags": "",  # Empty string
+                },
             )
-            session.add(task2)
-            session.commit()
+            conn.commit()
 
         # Run migration
         stats = migrate_tags_to_normalized_schema(self.database_url)
@@ -147,20 +252,38 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
 
     def test_invalid_json(self) -> None:
         """Test migration handles invalid JSON gracefully (Phase 5)."""
-        # Create task with invalid JSON
-        with Session(self.engine) as session:
-            task = TaskModel(
-                id=1,
-                name="Task 1",
-                priority=1,
-                status="PENDING",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-                tags="{invalid json",  # Malformed JSON
-                is_archived=False,
+        # Create task with invalid JSON using raw SQL
+        with self.engine.connect() as conn:
+            now = datetime.now().isoformat()
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO tasks
+                    (id, name, priority, status, created_at, updated_at,
+                     daily_allocations, actual_daily_hours, depends_on,
+                     is_fixed, is_archived, tags)
+                    VALUES
+                    (:id, :name, :priority, :status, :created_at, :updated_at,
+                     :daily_allocations, :actual_daily_hours, :depends_on,
+                     :is_fixed, :is_archived, :tags)
+                    """
+                ),
+                {
+                    "id": 1,
+                    "name": "Task 1",
+                    "priority": 1,
+                    "status": "PENDING",
+                    "created_at": now,
+                    "updated_at": now,
+                    "daily_allocations": "{}",
+                    "actual_daily_hours": "{}",
+                    "depends_on": "[]",
+                    "is_fixed": False,
+                    "is_archived": False,
+                    "tags": "{invalid json",  # Malformed JSON
+                },
             )
-            session.add(task)
-            session.commit()
+            conn.commit()
 
         # Run migration
         stats = migrate_tags_to_normalized_schema(self.database_url)
@@ -172,25 +295,46 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
 
     def test_already_migrated_task(self) -> None:
         """Test migration skips tasks already migrated (Phase 5)."""
-        # Create task with both JSON tags and tag_models (already migrated)
-        with Session(self.engine) as session:
-            task = TaskModel(
-                id=1,
-                name="Task 1",
-                priority=1,
-                status="PENDING",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-                tags=json.dumps(["urgent"]),
-                is_archived=False,
+        # Create task with JSON tags using raw SQL
+        with self.engine.connect() as conn:
+            now = datetime.now().isoformat()
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO tasks
+                    (id, name, priority, status, created_at, updated_at,
+                     daily_allocations, actual_daily_hours, depends_on,
+                     is_fixed, is_archived, tags)
+                    VALUES
+                    (:id, :name, :priority, :status, :created_at, :updated_at,
+                     :daily_allocations, :actual_daily_hours, :depends_on,
+                     :is_fixed, :is_archived, :tags)
+                    """
+                ),
+                {
+                    "id": 1,
+                    "name": "Task 1",
+                    "priority": 1,
+                    "status": "PENDING",
+                    "created_at": now,
+                    "updated_at": now,
+                    "daily_allocations": "{}",
+                    "actual_daily_hours": "{}",
+                    "depends_on": "[]",
+                    "is_fixed": False,
+                    "is_archived": False,
+                    "tags": json.dumps(["urgent"]),
+                },
             )
+            conn.commit()
 
-            # Create tag and associate (simulating already migrated)
+        # Associate tag with task (simulating already migrated)
+        with Session(self.engine) as session:
+            task = session.get(TaskModel, 1)
             tag = TagModel(name="urgent", created_at=datetime.now())
             session.add(tag)
             session.flush()
             task.tag_models.append(tag)
-            session.add(task)
             session.commit()
 
         # Run migration
@@ -303,23 +447,46 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
         # Create unmigrated task
         self._create_task_with_json_tags(1, "Unmigrated", ["tag1"])
 
-        # Create already-migrated task
-        with Session(self.engine) as session:
-            task2 = TaskModel(
-                id=2,
-                name="Already migrated",
-                priority=1,
-                status="PENDING",
-                created_at=datetime.now(),
-                updated_at=datetime.now(),
-                tags=json.dumps(["tag2"]),
-                is_archived=False,
+        # Create already-migrated task using raw SQL
+        with self.engine.connect() as conn:
+            now = datetime.now().isoformat()
+            conn.execute(
+                text(
+                    """
+                    INSERT INTO tasks
+                    (id, name, priority, status, created_at, updated_at,
+                     daily_allocations, actual_daily_hours, depends_on,
+                     is_fixed, is_archived, tags)
+                    VALUES
+                    (:id, :name, :priority, :status, :created_at, :updated_at,
+                     :daily_allocations, :actual_daily_hours, :depends_on,
+                     :is_fixed, :is_archived, :tags)
+                    """
+                ),
+                {
+                    "id": 2,
+                    "name": "Already migrated",
+                    "priority": 1,
+                    "status": "PENDING",
+                    "created_at": now,
+                    "updated_at": now,
+                    "daily_allocations": "{}",
+                    "actual_daily_hours": "{}",
+                    "depends_on": "[]",
+                    "is_fixed": False,
+                    "is_archived": False,
+                    "tags": json.dumps(["tag2"]),
+                },
             )
+            conn.commit()
+
+        # Associate tag with task (simulating already migrated)
+        with Session(self.engine) as session:
+            task2 = session.get(TaskModel, 2)
             tag2 = TagModel(name="tag2", created_at=datetime.now())
             session.add(tag2)
             session.flush()
             task2.tag_models.append(tag2)
-            session.add(task2)
             session.commit()
 
         # Run migration

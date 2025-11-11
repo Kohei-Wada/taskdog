@@ -3,9 +3,8 @@
 This mapper handles conversion between Task domain entities and TaskModel
 ORM instances, including JSON serialization for complex fields.
 
-Phase 2 (Issue 228): Tags are now stored in normalized tables (tags/task_tags).
-The mapper reads tags from the TaskModel.tag_models relationship instead of
-the JSON tags column. The tags column is kept for backward compatibility.
+Phase 6 (Issue 228): Tags are stored exclusively in normalized tables (tags/task_tags).
+The mapper reads/writes tags via the TaskModel.tag_models relationship.
 """
 
 import json
@@ -57,8 +56,6 @@ class TaskDbMapper(TaskMapperInterface):
             "daily_allocations": self._serialize_date_dict(task.daily_allocations),
             "actual_daily_hours": self._serialize_date_dict(task.actual_daily_hours),
             "depends_on": json.dumps(task.depends_on),
-            # Phase 2: Tags are managed via relationship, keep column for backward compat
-            "tags": "[]",
             "is_archived": task.is_archived,
         }
 
@@ -82,7 +79,6 @@ class TaskDbMapper(TaskMapperInterface):
             data.get("actual_daily_hours", "{}")
         )
         depends_on = json.loads(data.get("depends_on", "[]"))
-        tags = json.loads(data.get("tags", "[]"))
 
         # Convert status string to Enum
         status = (
@@ -108,7 +104,7 @@ class TaskDbMapper(TaskMapperInterface):
             daily_allocations=daily_allocations,
             actual_daily_hours=actual_daily_hours,
             depends_on=depends_on,
-            tags=tags,
+            tags=[],  # Tags populated via tag_models relationship, not dict
             is_archived=data.get("is_archived", False),
         )
 
@@ -138,8 +134,6 @@ class TaskDbMapper(TaskMapperInterface):
             daily_allocations=self._serialize_date_dict(task.daily_allocations),
             actual_daily_hours=self._serialize_date_dict(task.actual_daily_hours),
             depends_on=json.dumps(task.depends_on),
-            # Phase 2: Tags are managed via relationship, keep column for backward compat
-            tags="[]",
             is_archived=task.is_archived,
         )
 
@@ -160,13 +154,8 @@ class TaskDbMapper(TaskMapperInterface):
         actual_daily_hours = self._deserialize_date_dict(model.actual_daily_hours)
         depends_on = json.loads(model.depends_on)
 
-        # Phase 2: Get tags from normalized relationship
-        # Fall back to JSON column for backward compatibility (migration support)
-        if hasattr(model, "tag_models") and model.tag_models:
-            tags = [tag.name for tag in model.tag_models]
-        else:
-            # Fallback for unmigrated data or empty tags
-            tags = json.loads(model.tags) if model.tags and model.tags != "[]" else []
+        # Phase 6: Get tags from normalized relationship only
+        tags = [tag.name for tag in model.tag_models] if model.tag_models else []
 
         return Task(
             id=model.id,
@@ -214,8 +203,6 @@ class TaskDbMapper(TaskMapperInterface):
         model.daily_allocations = self._serialize_date_dict(task.daily_allocations)
         model.actual_daily_hours = self._serialize_date_dict(task.actual_daily_hours)
         model.depends_on = json.dumps(task.depends_on)
-        # Phase 2: Tags are managed via relationship, keep column for backward compat
-        model.tags = "[]"
         model.is_archived = task.is_archived
 
     @staticmethod
