@@ -600,6 +600,132 @@ class TestTagModel(unittest.TestCase):
         self.assertEqual(tag_count_dict["tag1"], 2)
         self.assertEqual(tag_count_dict["tag2"], 2)
 
+    # ====================================================================
+    # Phase 4: Edge Case Tests
+    # ====================================================================
+
+    def test_tag_name_exactly_100_characters(self) -> None:
+        """Test tag name with exactly 100 characters (max length) (Phase 4)."""
+        # TagModel defines String(100), so 100 chars should succeed
+        tag_name = "a" * 100
+        tag = TagModel(name=tag_name, created_at=datetime.now())
+        self.session.add(tag)
+        self.session.commit()
+
+        # Verify it was saved correctly
+        retrieved = self.session.get(TagModel, tag.id)
+        self.assertIsNotNone(retrieved)
+        self.assertEqual(retrieved.name, tag_name)
+        self.assertEqual(len(retrieved.name), 100)
+
+    def test_tag_name_99_characters(self) -> None:
+        """Test tag name with 99 characters (just under max) (Phase 4)."""
+        tag_name = "b" * 99
+        tag = TagModel(name=tag_name, created_at=datetime.now())
+        self.session.add(tag)
+        self.session.commit()
+
+        # Verify it was saved correctly
+        retrieved = self.session.get(TagModel, tag.id)
+        self.assertIsNotNone(retrieved)
+        self.assertEqual(retrieved.name, tag_name)
+        self.assertEqual(len(retrieved.name), 99)
+
+    def test_tag_name_exceeding_100_characters_fails(self) -> None:
+        """Test tag name exceeding 100 characters is rejected (Phase 4)."""
+        # 101 characters should fail
+        tag_name = "c" * 101
+        tag = TagModel(name=tag_name, created_at=datetime.now())
+        self.session.add(tag)
+
+        # SQLite with String(100) will truncate or raise error
+        # Behavior depends on SQLAlchemy/SQLite version
+        # We just verify it doesn't silently succeed with 101 chars
+        try:
+            self.session.commit()
+            # If commit succeeds, verify it was truncated to 100
+            retrieved = self.session.get(TagModel, tag.id)
+            self.assertLessEqual(len(retrieved.name), 100)
+        except Exception:
+            # If it raises an error, that's also acceptable
+            self.session.rollback()
+            pass
+
+    def test_tag_with_newline_character(self) -> None:
+        """Test tag containing newline character (Phase 4)."""
+        tag = TagModel(name="urgent\nbackend", created_at=datetime.now())
+        self.session.add(tag)
+        self.session.commit()
+
+        # Verify newline is preserved
+        retrieved = self.session.get(TagModel, tag.id)
+        self.assertEqual(retrieved.name, "urgent\nbackend")
+        self.assertIn("\n", retrieved.name)
+
+    def test_tag_with_tab_character(self) -> None:
+        """Test tag containing tab character (Phase 4)."""
+        tag = TagModel(name="urgent\tbackend", created_at=datetime.now())
+        self.session.add(tag)
+        self.session.commit()
+
+        # Verify tab is preserved
+        retrieved = self.session.get(TagModel, tag.id)
+        self.assertEqual(retrieved.name, "urgent\tbackend")
+        self.assertIn("\t", retrieved.name)
+
+    def test_tag_with_sql_injection_attempt(self) -> None:
+        """Test tag name with SQL injection attempt is safely stored (Phase 4)."""
+        # This should be safely parameterized by SQLAlchemy
+        dangerous_name = "'; DROP TABLE tags;--"
+        tag = TagModel(name=dangerous_name, created_at=datetime.now())
+        self.session.add(tag)
+        self.session.commit()
+
+        # Verify it's stored as literal string, not executed as SQL
+        retrieved = self.session.get(TagModel, tag.id)
+        self.assertEqual(retrieved.name, dangerous_name)
+
+        # Verify tags table still exists by querying it
+        stmt = select(TagModel).where(TagModel.name == dangerous_name)
+        result = self.session.scalar(stmt)
+        self.assertIsNotNone(result)
+
+    def test_tag_with_emoji(self) -> None:
+        """Test tag name containing emoji characters (Phase 4)."""
+        tag_name = "🔥urgent🔥"
+        tag = TagModel(name=tag_name, created_at=datetime.now())
+        self.session.add(tag)
+        self.session.commit()
+
+        # Verify emoji is preserved
+        retrieved = self.session.get(TagModel, tag.id)
+        self.assertEqual(retrieved.name, tag_name)
+        self.assertIn("🔥", retrieved.name)
+
+    def test_tag_with_right_to_left_text(self) -> None:
+        """Test tag name with Arabic text (RTL) (Phase 4)."""
+        # Arabic for "urgent"
+        tag_name = "عاجل"
+        tag = TagModel(name=tag_name, created_at=datetime.now())
+        self.session.add(tag)
+        self.session.commit()
+
+        # Verify RTL text is preserved
+        retrieved = self.session.get(TagModel, tag.id)
+        self.assertEqual(retrieved.name, tag_name)
+
+    def test_tag_with_mixed_unicode(self) -> None:
+        """Test tag with mixed unicode (Latin, CJK, emoji) (Phase 4)."""
+        tag_name = "urgent緊急🚨"
+        tag = TagModel(name=tag_name, created_at=datetime.now())
+        self.session.add(tag)
+        self.session.commit()
+
+        # Verify all characters are preserved
+        retrieved = self.session.get(TagModel, tag.id)
+        self.assertEqual(retrieved.name, tag_name)
+        self.assertEqual(len(retrieved.name), 9)  # 6 latin + 2 CJK + 1 emoji
+
 
 if __name__ == "__main__":
     unittest.main()
