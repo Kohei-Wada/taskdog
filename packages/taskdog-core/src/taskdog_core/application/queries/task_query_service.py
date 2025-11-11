@@ -80,6 +80,9 @@ class TaskQueryService(QueryService):
     def filter_by_tags(self, tags: list[str], match_all: bool = False) -> list[Task]:
         """Get tasks that match the specified tags.
 
+        Phase 3 (Issue 228): Optimized to use SQL JOIN instead of loading
+        all tasks into memory and filtering in Python.
+
         Args:
             tags: List of tags to filter by
             match_all: If True, task must have all tags (AND logic).
@@ -88,10 +91,23 @@ class TaskQueryService(QueryService):
         Returns:
             List of tasks matching the tag filter
         """
-        tasks = self.repository.get_all()
-
         if not tags:
-            return tasks
+            return self.repository.get_all()
+
+        # Phase 3: Use SQL-based filtering
+        # Check if repository has the optimized method
+        if hasattr(self.repository, "get_task_ids_by_tags"):
+            task_ids = self.repository.get_task_ids_by_tags(tags, match_all)
+
+            if not task_ids:
+                return []
+
+            # Fetch tasks efficiently using get_by_ids
+            task_dict = self.repository.get_by_ids(task_ids)
+            return list(task_dict.values())
+
+        # Fallback to old implementation for repositories without optimization
+        tasks = self.repository.get_all()
 
         if match_all:
             # AND logic: task must have all specified tags
@@ -103,9 +119,18 @@ class TaskQueryService(QueryService):
     def get_all_tags(self) -> dict[str, int]:
         """Get all unique tags with their task counts.
 
+        Phase 3 (Issue 228): Optimized to use SQL aggregation (COUNT + GROUP BY)
+        instead of loading all tasks into memory and counting in Python.
+
         Returns:
             Dictionary mapping tag names to task counts
         """
+        # Phase 3: Use SQL-based aggregation
+        # Check if repository has the optimized method
+        if hasattr(self.repository, "get_tag_counts"):
+            return self.repository.get_tag_counts()
+
+        # Fallback to old implementation for repositories without optimization
         tasks = self.repository.get_all()
         tag_counts: dict[str, int] = {}
 

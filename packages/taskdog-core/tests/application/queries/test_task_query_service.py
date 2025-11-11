@@ -299,6 +299,86 @@ class TestTaskQueryService(unittest.TestCase):
 
         self.assertEqual(result, {})
 
+    # ====================================================================
+    # Phase 4: Edge Case Tests
+    # ====================================================================
+
+    def test_filter_by_tags_case_sensitivity_or_logic(self):
+        """Test that filter_by_tags treats 'urgent' and 'URGENT' as different (Phase 4)."""
+        # Create tasks with different case tags
+        task1 = Task(name="Task 1", priority=1, tags=["urgent"])
+        task1.id = self.repository.generate_next_id()
+        self.repository.save(task1)
+
+        task2 = Task(name="Task 2", priority=1, tags=["URGENT"])
+        task2.id = self.repository.generate_next_id()
+        self.repository.save(task2)
+
+        task3 = Task(name="Task 3", priority=1, tags=["Urgent"])
+        task3.id = self.repository.generate_next_id()
+        self.repository.save(task3)
+
+        # Filter by lowercase 'urgent' - should only match task1
+        result = self.query_service.filter_by_tags(["urgent"], match_all=False)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].id, task1.id)
+
+        # Filter by uppercase 'URGENT' - should only match task2
+        result = self.query_service.filter_by_tags(["URGENT"], match_all=False)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].id, task2.id)
+
+        # Filter by title case 'Urgent' - should only match task3
+        result = self.query_service.filter_by_tags(["Urgent"], match_all=False)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].id, task3.id)
+
+    def test_filter_by_tags_case_sensitivity_and_logic(self):
+        """Test case sensitivity with AND logic (Phase 4)."""
+        task1 = Task(name="Task 1", priority=1, tags=["urgent", "backend"])
+        task1.id = self.repository.generate_next_id()
+        self.repository.save(task1)
+
+        task2 = Task(name="Task 2", priority=1, tags=["URGENT", "backend"])
+        task2.id = self.repository.generate_next_id()
+        self.repository.save(task2)
+
+        # Filter by ["urgent", "backend"] - should only match task1
+        result = self.query_service.filter_by_tags(
+            ["urgent", "backend"], match_all=True
+        )
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].id, task1.id)
+
+        # Filter by ["URGENT", "backend"] - should only match task2
+        result = self.query_service.filter_by_tags(
+            ["URGENT", "backend"], match_all=True
+        )
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].id, task2.id)
+
+    def test_get_all_tags_case_sensitivity(self):
+        """Test that get_all_tags treats different cases as separate tags (Phase 4)."""
+        task1 = Task(name="Task 1", priority=1, tags=["urgent"])
+        task1.id = self.repository.generate_next_id()
+        self.repository.save(task1)
+
+        task2 = Task(name="Task 2", priority=1, tags=["URGENT"])
+        task2.id = self.repository.generate_next_id()
+        self.repository.save(task2)
+
+        task3 = Task(name="Task 3", priority=1, tags=["Urgent"])
+        task3.id = self.repository.generate_next_id()
+        self.repository.save(task3)
+
+        result = self.query_service.get_all_tags()
+
+        # Should have 3 separate tags due to case differences
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result["urgent"], 1)
+        self.assertEqual(result["URGENT"], 1)
+        self.assertEqual(result["Urgent"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

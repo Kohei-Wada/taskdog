@@ -42,7 +42,8 @@ mypy_path = "packages/*/src"
 # Progressive type checking - Phase 3: Moderate strictness
 warn_unused_configs = true
 warn_redundant_casts = true
-warn_unused_ignores = true
+# Disabled: SQLAlchemy attr-defined errors are environment-dependent (CI vs local)
+warn_unused_ignores = false
 # Phase 3: Moderate checks enabled
 check_untyped_defs = true
 strict_equality = true

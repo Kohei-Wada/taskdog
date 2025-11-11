@@ -2,6 +2,9 @@
 
 This mapper handles conversion between Task domain entities and TaskModel
 ORM instances, including JSON serialization for complex fields.
+
+Phase 6 (Issue 228): Tags are stored exclusively in normalized tables (tags/task_tags).
+The mapper reads/writes tags via the TaskModel.tag_models relationship.
 """
 
 import json
@@ -53,7 +56,6 @@ class TaskDbMapper(TaskMapperInterface):
             "daily_allocations": self._serialize_date_dict(task.daily_allocations),
             "actual_daily_hours": self._serialize_date_dict(task.actual_daily_hours),
             "depends_on": json.dumps(task.depends_on),
-            "tags": json.dumps(task.tags),
             "is_archived": task.is_archived,
         }
 
@@ -77,7 +79,6 @@ class TaskDbMapper(TaskMapperInterface):
             data.get("actual_daily_hours", "{}")
         )
         depends_on = json.loads(data.get("depends_on", "[]"))
-        tags = json.loads(data.get("tags", "[]"))
 
         # Convert status string to Enum
         status = (
@@ -103,7 +104,7 @@ class TaskDbMapper(TaskMapperInterface):
             daily_allocations=daily_allocations,
             actual_daily_hours=actual_daily_hours,
             depends_on=depends_on,
-            tags=tags,
+            tags=[],  # Tags populated via tag_models relationship, not dict
             is_archived=data.get("is_archived", False),
         )
 
@@ -133,7 +134,6 @@ class TaskDbMapper(TaskMapperInterface):
             daily_allocations=self._serialize_date_dict(task.daily_allocations),
             actual_daily_hours=self._serialize_date_dict(task.actual_daily_hours),
             depends_on=json.dumps(task.depends_on),
-            tags=json.dumps(task.tags),
             is_archived=task.is_archived,
         )
 
@@ -153,7 +153,9 @@ class TaskDbMapper(TaskMapperInterface):
         daily_allocations = self._deserialize_date_dict(model.daily_allocations)
         actual_daily_hours = self._deserialize_date_dict(model.actual_daily_hours)
         depends_on = json.loads(model.depends_on)
-        tags = json.loads(model.tags)
+
+        # Phase 6: Get tags from normalized relationship only
+        tags = [tag.name for tag in model.tag_models] if model.tag_models else []
 
         return Task(
             id=model.id,
@@ -201,7 +203,6 @@ class TaskDbMapper(TaskMapperInterface):
         model.daily_allocations = self._serialize_date_dict(task.daily_allocations)
         model.actual_daily_hours = self._serialize_date_dict(task.actual_daily_hours)
         model.depends_on = json.dumps(task.depends_on)
-        model.tags = json.dumps(task.tags)
         model.is_archived = task.is_archived
 
     @staticmethod

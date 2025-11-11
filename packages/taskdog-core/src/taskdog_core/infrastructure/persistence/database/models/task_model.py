@@ -8,7 +8,7 @@ stored as JSON TEXT columns for Phase 2 implementation.
 from datetime import datetime
 
 from sqlalchemy import Boolean, Float, Index, Integer, String, Text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
@@ -64,11 +64,17 @@ class TaskModel(Base):
     # Format: [2, 3, 5]
     depends_on: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
 
-    # Format: ["urgent", "backend"]
-    tags: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
-
     # Archive flag
     is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # Relationship to tags (many-to-many through task_tags)
+    # Phase 6: All tags are stored in normalized schema (tags/task_tags tables).
+    tag_models: Mapped[list["TagModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "TagModel",
+        secondary="task_tags",
+        back_populates="tasks",
+        lazy="selectin",
+    )
 
     # Database indexes for frequently queried columns
     __table_args__ = (
