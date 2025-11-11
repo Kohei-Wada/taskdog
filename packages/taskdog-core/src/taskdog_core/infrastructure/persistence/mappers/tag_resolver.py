@@ -91,6 +91,8 @@ class TagResolver:
             self._session.flush()  # Get the ID immediately
 
             # Update cache
+            # After flush(), ID is guaranteed to be set for autoincrement primary key
+            assert new_tag.id is not None, "Tag ID should be set after flush()"
             self._name_to_id_cache[name] = new_tag.id
             self._id_to_name_cache[new_tag.id] = name
 
