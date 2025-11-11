@@ -166,7 +166,7 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
         self._create_task_with_json_tags(1, "Task 1", ["urgent", "backend"])
 
         # Run migration
-        stats = migrate_tags_to_normalized_schema(self.database_url)
+        stats = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Verify migration stats
         self.assertEqual(stats["migrated"], 1)
@@ -186,11 +186,11 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
         self._create_task_with_json_tags(1, "Task 1", ["urgent"])
 
         # Run migration first time
-        stats1 = migrate_tags_to_normalized_schema(self.database_url)
+        stats1 = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
         self.assertEqual(stats1["migrated"], 1)
 
         # Run migration second time
-        stats2 = migrate_tags_to_normalized_schema(self.database_url)
+        stats2 = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Second run should skip already-migrated task
         self.assertEqual(stats2["migrated"], 0)
@@ -243,7 +243,7 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
             conn.commit()
 
         # Run migration
-        stats = migrate_tags_to_normalized_schema(self.database_url)
+        stats = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Both should be skipped
         self.assertEqual(stats["migrated"], 0)
@@ -286,7 +286,7 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
             conn.commit()
 
         # Run migration
-        stats = migrate_tags_to_normalized_schema(self.database_url)
+        stats = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Should report error
         self.assertEqual(stats["migrated"], 0)
@@ -338,7 +338,7 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
             session.commit()
 
         # Run migration
-        stats = migrate_tags_to_normalized_schema(self.database_url)
+        stats = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Should skip (already has tag_models)
         self.assertEqual(stats["migrated"], 0)
@@ -357,7 +357,7 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
         self._create_task_with_json_tags(1, "Task 1", special_tags)
 
         # Run migration
-        stats = migrate_tags_to_normalized_schema(self.database_url)
+        stats = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Verify migration success
         self.assertEqual(stats["migrated"], 1)
@@ -373,7 +373,7 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
         self._create_task_with_json_tags(1, "Task 1", unicode_tags)
 
         # Run migration
-        stats = migrate_tags_to_normalized_schema(self.database_url)
+        stats = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Verify migration success
         self.assertEqual(stats["migrated"], 1)
@@ -390,7 +390,7 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
         self._create_task_with_json_tags(1, "Task with many tags", large_tag_set)
 
         # Run migration
-        stats = migrate_tags_to_normalized_schema(self.database_url)
+        stats = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Verify migration success
         self.assertEqual(stats["migrated"], 1)
@@ -409,7 +409,7 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
         self._create_task_with_json_tags(3, "Task 3", ["backend", "database"])
 
         # Run migration
-        stats = migrate_tags_to_normalized_schema(self.database_url)
+        stats = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Verify all tasks migrated
         self.assertEqual(stats["migrated"], 3)
@@ -431,7 +431,7 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
             self._create_task_with_json_tags(i + 1, f"Task {i}", tags)
 
         # Run migration
-        stats = migrate_tags_to_normalized_schema(self.database_url)
+        stats = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Verify all tasks migrated
         self.assertEqual(stats["migrated"], 100)
@@ -490,7 +490,7 @@ class TestMigrateTagsToNormalizedSchema(unittest.TestCase):
             session.commit()
 
         # Run migration
-        stats = migrate_tags_to_normalized_schema(self.database_url)
+        stats = migrate_tags_to_normalized_schema(self.database_url, verbose=False)
 
         # Should migrate only the unmigrated one
         self.assertEqual(stats["migrated"], 1)

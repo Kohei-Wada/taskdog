@@ -33,11 +33,14 @@ from taskdog_core.infrastructure.persistence.mappers.tag_resolver import TagReso
 from taskdog_core.shared.xdg_utils import XDGDirectories
 
 
-def migrate_tags_to_normalized_schema(database_url: str | None = None) -> dict[str, int]:
+def migrate_tags_to_normalized_schema(
+    database_url: str | None = None, verbose: bool = True
+) -> dict[str, int]:
     """Migrate tags from JSON column to normalized schema.
 
     Args:
         database_url: Optional SQLAlchemy database URL. If None, uses default location.
+        verbose: If True, print progress messages. If False, run silently (useful for tests).
 
     Returns:
         Dictionary with migration statistics:
@@ -53,8 +56,9 @@ def migrate_tags_to_normalized_schema(database_url: str | None = None) -> dict[s
         db_path = XDGDirectories.get_data_home() / "tasks.db"
         database_url = f"sqlite:///{db_path}"
 
-    print(f"Starting migration for database: {database_url}")
-    print("=" * 60)
+    if verbose:
+        print(f"Starting migration for database: {database_url}")
+        print("=" * 60)
 
     # Create repository
     repository = SqliteTaskRepository(database_url)
@@ -71,8 +75,9 @@ def migrate_tags_to_normalized_schema(database_url: str | None = None) -> dict[s
             tasks = session.scalars(stmt).all()
 
             total_tasks = len(tasks)
-            print(f"Found {total_tasks} tasks in database")
-            print()
+            if verbose:
+                print(f"Found {total_tasks} tasks in database")
+                print()
 
             # Phase 6: Read legacy tags column directly from database
             # (tags column no longer exists in TaskModel ORM)
@@ -86,7 +91,7 @@ def migrate_tags_to_normalized_schema(database_url: str | None = None) -> dict[s
                 task_name = task_model.name
 
                 # Progress indicator
-                if i % 100 == 0 or i == total_tasks:
+                if verbose and (i % 100 == 0 or i == total_tasks):
                     print(f"Progress: {i}/{total_tasks} tasks processed...")
 
                 try:
@@ -105,8 +110,9 @@ def migrate_tags_to_normalized_schema(database_url: str | None = None) -> dict[s
                     try:
                         tag_names = json.loads(json_tags)
                     except json.JSONDecodeError as e:
-                        print(f"  WARNING: Task {task_id} ({task_name}) has invalid JSON: {e}")
-                        print(f"           JSON content: {json_tags[:100]}")
+                        if verbose:
+                            print(f"  WARNING: Task {task_id} ({task_name}) has invalid JSON: {e}")
+                            print(f"           JSON content: {json_tags[:100]}")
                         stats["errors"] += 1
                         continue
 
@@ -128,31 +134,35 @@ def migrate_tags_to_normalized_schema(database_url: str | None = None) -> dict[s
                     stats["migrated"] += 1
 
                 except Exception as e:
-                    print(f"  ERROR: Failed to migrate task {task_id} ({task_name}): {e}")
+                    if verbose:
+                        print(f"  ERROR: Failed to migrate task {task_id} ({task_name}): {e}")
                     stats["errors"] += 1
                     continue
 
             # Commit all changes
             session.commit()
-            print()
-            print("Migration committed successfully!")
+            if verbose:
+                print()
+                print("Migration committed successfully!")
 
     except Exception as e:
-        print(f"\nFATAL ERROR: Migration failed: {e}")
+        if verbose:
+            print(f"\nFATAL ERROR: Migration failed: {e}")
         raise
 
     finally:
         repository.close()
 
     # Print summary
-    print()
-    print("=" * 60)
-    print("Migration Summary:")
-    print(f"  Total tasks:     {total_tasks}")
-    print(f"  Migrated:        {stats['migrated']}")
-    print(f"  Skipped:         {stats['skipped']}")
-    print(f"  Errors:          {stats['errors']}")
-    print("=" * 60)
+    if verbose:
+        print()
+        print("=" * 60)
+        print("Migration Summary:")
+        print(f"  Total tasks:     {total_tasks}")
+        print(f"  Migrated:        {stats['migrated']}")
+        print(f"  Skipped:         {stats['skipped']}")
+        print(f"  Errors:          {stats['errors']}")
+        print("=" * 60)
 
     return stats
 
