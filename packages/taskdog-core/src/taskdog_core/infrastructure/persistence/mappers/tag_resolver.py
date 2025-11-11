@@ -117,33 +117,24 @@ class TagResolver:
         if not tag_ids:
             return []
 
-        tag_names: list[str] = []
-
-        # Check cache first
+        # Check cache first and collect uncached IDs
         uncached_ids = []
         for tag_id in tag_ids:
-            if tag_id in self._id_to_name_cache:
-                tag_names.append(self._id_to_name_cache[tag_id])
-            else:
+            if tag_id not in self._id_to_name_cache:
                 uncached_ids.append(tag_id)
 
-        if not uncached_ids:
-            return tag_names
-
         # Query database for uncached tags
-        stmt = select(TagModel).where(TagModel.id.in_(uncached_ids))
-        tags = self._session.scalars(stmt).all()
+        if uncached_ids:
+            stmt = select(TagModel).where(TagModel.id.in_(uncached_ids))
+            tags = self._session.scalars(stmt).all()
 
-        # Update cache and collect names
-        for tag in tags:
-            self._name_to_id_cache[tag.name] = tag.id
-            self._id_to_name_cache[tag.id] = tag.name
-            if tag.id in uncached_ids:
-                tag_names.append(tag.name)
+            # Update cache
+            for tag in tags:
+                self._name_to_id_cache[tag.name] = tag.id
+                self._id_to_name_cache[tag.id] = tag.name
 
-        # Preserve the original order
-        tag_names_by_id = {tag_id: self._id_to_name_cache[tag_id] for tag_id in tag_ids}
-        return [tag_names_by_id[tag_id] for tag_id in tag_ids]
+        # Preserve the original order using cached values
+        return [self._id_to_name_cache[tag_id] for tag_id in tag_ids]
 
     def clear_cache(self) -> None:
         """Clear the internal cache.

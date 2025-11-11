@@ -9,7 +9,7 @@ This is part of Phase 1 implementation for Issue 228 (tag entity separation).
 
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .task_model import Base
@@ -81,8 +81,7 @@ class TaskTagModel(Base):
     __table_args__ = (
         Index("idx_task_tags_task_id", "task_id"),
         Index("idx_task_tags_tag_id", "tag_id"),
-        # Ensure unique task-tag pairs
-        UniqueConstraint("task_id", "tag_id", name="uq_task_tag"),
+        # Note: Composite primary key (task_id, tag_id) already ensures uniqueness
     )
 
     def __repr__(self) -> str:

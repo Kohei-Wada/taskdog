@@ -288,11 +288,15 @@ class SqliteTaskRepository(TaskRepository):
 
         # Fetch TagModel instances
         stmt = select(TagModel).where(TagModel.id.in_(tag_ids))
-        tag_models = session.scalars(stmt).all()
+        tag_models_list = session.scalars(stmt).all()
+
+        # Preserve original order: SQL IN clause doesn't guarantee order
+        tag_models_by_id = {tag.id: tag for tag in tag_models_list}
+        ordered_tag_models = [tag_models_by_id[tag_id] for tag_id in tag_ids]
 
         # Associate tags with task (preserving order)
         # Note: SQLAlchemy will handle the task_tags junction table automatically
-        task_model.tag_models.extend(tag_models)
+        task_model.tag_models.extend(ordered_tag_models)
 
     def get_tag_counts(self) -> dict[str, int]:
         """Get all tags with their task counts using SQL aggregation.
@@ -361,14 +365,18 @@ class SqliteTaskRepository(TaskRepository):
                 #      JOIN tags ON task_tags.tag_id = tags.id
                 #      WHERE tags.name IN (...)
                 #      GROUP BY tasks.id
-                #      HAVING COUNT(DISTINCT tags.name) = len(tags)
+                #      HAVING COUNT(DISTINCT tags.name) = len(unique_tags)
+                # Note: Use len(set(tags)) to handle duplicate tags in input
+                unique_tag_count = len(set(tags))
                 stmt = (
                     select(TaskModel.id)
                     .join(TaskTagModel, TaskModel.id == TaskTagModel.task_id)
                     .join(TagModel, TaskTagModel.tag_id == TagModel.id)
                     .where(TagModel.name.in_(tags))
                     .group_by(TaskModel.id)
-                    .having(func.count(func.distinct(TagModel.name)) == len(tags))
+                    .having(
+                        func.count(func.distinct(TagModel.name)) == unique_tag_count
+                    )
                 )
             else:
                 # OR logic: task must have at least ONE specified tag
