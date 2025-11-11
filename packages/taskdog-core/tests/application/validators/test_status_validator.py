@@ -187,6 +187,47 @@ class TestStatusValidator(unittest.TestCase):
             # Should not raise
             self.validator.validate(TaskStatus.CANCELED, task, self.mock_repository)
 
+    @parameterized.expand(
+        [
+            (
+                "start_operation",
+                TaskStatus.COMPLETED,
+                TaskStatus.IN_PROGRESS,
+                "Cannot start task",
+            ),
+            (
+                "complete_operation",
+                TaskStatus.COMPLETED,
+                TaskStatus.COMPLETED,
+                "Cannot complete task",
+            ),
+            (
+                "cancel_operation",
+                TaskStatus.COMPLETED,
+                TaskStatus.CANCELED,
+                "Cannot cancel task",
+            ),
+            (
+                "pause_operation",
+                TaskStatus.CANCELED,
+                TaskStatus.PENDING,
+                "Cannot pause task",
+            ),
+        ]
+    )
+    def test_error_message_contains_correct_operation(
+        self, scenario, current_status, target_status, expected_message_prefix
+    ):
+        """Test that error message contains the correct operation verb for each status transition."""
+        task = Task(id=1, name="Test", status=current_status, priority=1)
+
+        with self.assertRaises(TaskAlreadyFinishedError) as context:
+            self.validator.validate(target_status, task, self.mock_repository)
+
+        error_message = str(context.exception)
+        self.assertIn(expected_message_prefix, error_message)
+        self.assertIn(f"task is already {current_status.name}", error_message)
+
 
 if __name__ == "__main__":
     unittest.main()

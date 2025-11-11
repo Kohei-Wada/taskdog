@@ -30,12 +30,16 @@ class TaskValidationError(TaskError):
 
 
 class TaskAlreadyFinishedError(TaskValidationError):
-    """Raised when trying to start a task that is already finished."""
+    """Raised when trying to modify a task that is already finished.
 
-    def __init__(self, task_id: int, status: str) -> None:
+    This error is used for multiple operations: start, complete, cancel, and pause.
+    """
+
+    def __init__(self, task_id: int, status: str, operation: str = "start") -> None:
         self.task_id = task_id
         self.status = status
-        super().__init__(f"Cannot start task {task_id}: task is already {status}")
+        self.operation = operation
+        super().__init__(f"Cannot {operation} task {task_id}: task is already {status}")
 
 
 class TaskNotStartedError(TaskValidationError):

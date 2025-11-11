@@ -63,7 +63,7 @@ class StatusValidator(FieldValidator):
 
         # Early check: Cannot restart finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)
+            raise TaskAlreadyFinishedError(task.id, task.status.value, "start")
 
         # Check dependencies: all dependencies must be COMPLETED
         DependencyValidator.validate_dependencies_met(task, repository)
@@ -75,7 +75,7 @@ class StatusValidator(FieldValidator):
 
         # Early check: Cannot re-complete finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)
+            raise TaskAlreadyFinishedError(task.id, task.status.value, "complete")
 
         # Cannot complete PENDING tasks (must start first)
         if task.status == TaskStatus.PENDING:
@@ -88,7 +88,7 @@ class StatusValidator(FieldValidator):
 
         # Cannot cancel already finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)
+            raise TaskAlreadyFinishedError(task.id, task.status.value, "cancel")
 
     def _validate_can_be_paused(self, task: Task) -> None:
         # Type narrowing (guaranteed by _ensure_task_has_id called in validate())
@@ -97,4 +97,4 @@ class StatusValidator(FieldValidator):
 
         # Cannot pause finished tasks
         if task.is_finished:
-            raise TaskAlreadyFinishedError(task.id, task.status.value)
+            raise TaskAlreadyFinishedError(task.id, task.status.value, "pause")
