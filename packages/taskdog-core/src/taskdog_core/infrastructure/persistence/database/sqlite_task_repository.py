@@ -3,20 +3,22 @@
 This repository provides database persistence for tasks using SQLite and
 SQLAlchemy 2.0 ORM. It implements the TaskRepository interface with full
 ACID transaction support.
+
+Phase 2 (Issue 228): Tags are now stored in normalized tables (tags/task_tags).
+The repository uses TagResolver to manage tag relationships when saving tasks.
 """
 
 from datetime import datetime
 from typing import Any
 
 from sqlalchemy import create_engine, select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.task_repository import TaskRepository
-from taskdog_core.infrastructure.persistence.database.models.task_model import (
-    Base,
-    TaskModel,
-)
+from taskdog_core.infrastructure.persistence.database.models import TagModel, TaskModel
+from taskdog_core.infrastructure.persistence.database.models.task_model import Base
+from taskdog_core.infrastructure.persistence.mappers.tag_resolver import TagResolver
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
 
@@ -110,10 +112,15 @@ class SqliteTaskRepository(TaskRepository):
     def save(self, task: Task) -> None:
         """Save a task (create new or update existing).
 
+        Phase 2: Also manages tag relationships via TagResolver.
+
         Args:
             task: The task to save
         """
         with self.Session() as session:
+            # Create TagResolver for this session
+            tag_resolver = TagResolver(session)
+
             # Check if task exists
             existing_model = session.get(TaskModel, task.id)
 
@@ -126,6 +133,11 @@ class SqliteTaskRepository(TaskRepository):
                 # Create new task
                 new_model = self.mapper.to_model(task)
                 session.add(new_model)
+                session.flush()  # Get the ID for tag relationships
+                existing_model = new_model
+
+            # Phase 2: Update tag relationships
+            self._update_task_tags(session, existing_model, task.tags, tag_resolver)
 
             session.commit()
 
@@ -135,6 +147,8 @@ class SqliteTaskRepository(TaskRepository):
     def save_all(self, tasks: list[Task]) -> None:
         """Save multiple tasks in a single transaction.
 
+        Phase 2: Also manages tag relationships via shared TagResolver.
+
         Args:
             tasks: List of tasks to save
         """
@@ -142,6 +156,9 @@ class SqliteTaskRepository(TaskRepository):
             return
 
         with self.Session() as session:
+            # Create TagResolver for this session (shared across all tasks)
+            tag_resolver = TagResolver(session)
+
             # Bulk fetch existing tasks to avoid N+1 queries
             existing_ids = [t.id for t in tasks if t.id is not None]
             existing_models = {}
@@ -160,6 +177,11 @@ class SqliteTaskRepository(TaskRepository):
                     # Create new
                     new_model = self.mapper.to_model(task)
                     session.add(new_model)
+                    session.flush()  # Get the ID for tag relationships
+                    existing_model = new_model
+
+                # Phase 2: Update tag relationships
+                self._update_task_tags(session, existing_model, task.tags, tag_resolver)
 
             session.commit()
 
@@ -224,6 +246,49 @@ class SqliteTaskRepository(TaskRepository):
         The next get_all() call will fetch fresh data from the database.
         """
         self._cache = None
+
+    def _update_task_tags(
+        self,
+        session: Session,
+        task_model: TaskModel,
+        tag_names: list[str],
+        tag_resolver: TagResolver,
+    ) -> None:
+        """Update task's tag relationships.
+
+        Phase 2 (Issue 228): This method manages the many-to-many relationship
+        between tasks and tags using the normalized schema.
+
+        Args:
+            session: SQLAlchemy session for database operations
+            task_model: The TaskModel instance to update
+            tag_names: List of tag names for this task
+            tag_resolver: TagResolver for tag name/ID conversion
+
+        Process:
+            1. Clear existing tag relationships
+            2. If tag_names is empty, we're done
+            3. Convert tag names to IDs (creates tags if needed)
+            4. Fetch TagModel instances for those IDs
+            5. Associate them with the task via relationship
+        """
+        # Clear existing relationships
+        task_model.tag_models.clear()
+
+        if not tag_names:
+            # No tags to associate
+            return
+
+        # Resolve tag names to IDs (creates new tags if needed)
+        tag_ids = tag_resolver.resolve_tag_names_to_ids(tag_names)
+
+        # Fetch TagModel instances
+        stmt = select(TagModel).where(TagModel.id.in_(tag_ids))
+        tag_models = session.scalars(stmt).all()
+
+        # Associate tags with task (preserving order)
+        # Note: SQLAlchemy will handle the task_tags junction table automatically
+        task_model.tag_models.extend(tag_models)
 
     def close(self) -> None:
         """Close database connections and clean up resources.
