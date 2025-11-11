@@ -25,8 +25,10 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
     """
 
     BINDINGS: ClassVar = [
-        ("ctrl+d", "scroll_down", "Scroll Down"),
-        ("ctrl+u", "scroll_up", "Scroll Up"),
+        ("j", "scroll_down_line", "Scroll Down"),
+        ("k", "scroll_up_line", "Scroll Up"),
+        ("ctrl+d", "scroll_down", "Scroll Down (Half Page)"),
+        ("ctrl+u", "scroll_up", "Scroll Up (Half Page)"),
         ("v", "edit_note", "Edit Note"),
     ]
 
@@ -192,13 +194,23 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
             )
             yield self._create_detail_row(label, formatted_hours)
 
+    def action_scroll_down_line(self) -> None:
+        """Scroll down one line (j key)."""
+        scroll_widget = self.query_one("#detail-content", VerticalScroll)
+        scroll_widget.scroll_relative(y=1, animate=False)
+
+    def action_scroll_up_line(self) -> None:
+        """Scroll up one line (k key)."""
+        scroll_widget = self.query_one("#detail-content", VerticalScroll)
+        scroll_widget.scroll_relative(y=-1, animate=False)
+
     def action_scroll_down(self) -> None:
-        """Scroll down (Ctrl+D)."""
+        """Scroll down half page (Ctrl+D)."""
         scroll_widget = self.query_one("#detail-content", VerticalScroll)
         scroll_widget.scroll_relative(y=scroll_widget.size.height // 2, animate=False)
 
     def action_scroll_up(self) -> None:
-        """Scroll up (Ctrl+U)."""
+        """Scroll up half page (Ctrl+U)."""
         scroll_widget = self.query_one("#detail-content", VerticalScroll)
         scroll_widget.scroll_relative(
             y=-(scroll_widget.size.height // 2), animate=False
