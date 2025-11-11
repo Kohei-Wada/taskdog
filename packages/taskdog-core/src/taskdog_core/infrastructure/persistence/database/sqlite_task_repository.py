@@ -11,12 +11,16 @@ The repository uses TagResolver to manage tag relationships when saving tasks.
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.task_repository import TaskRepository
-from taskdog_core.infrastructure.persistence.database.models import TagModel, TaskModel
+from taskdog_core.infrastructure.persistence.database.models import (
+    TagModel,
+    TaskModel,
+    TaskTagModel,
+)
 from taskdog_core.infrastructure.persistence.database.models.task_model import Base
 from taskdog_core.infrastructure.persistence.mappers.tag_resolver import TagResolver
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
@@ -289,6 +293,98 @@ class SqliteTaskRepository(TaskRepository):
         # Associate tags with task (preserving order)
         # Note: SQLAlchemy will handle the task_tags junction table automatically
         task_model.tag_models.extend(tag_models)
+
+    def get_tag_counts(self) -> dict[str, int]:
+        """Get all tags with their task counts using SQL aggregation.
+
+        Phase 3 (Issue 228): Optimized query using SQL COUNT() and GROUP BY
+        instead of loading all tasks into memory.
+
+        Returns:
+            Dictionary mapping tag names to task counts (non-zero counts only)
+
+        Example:
+            >>> repo.get_tag_counts()
+            {'urgent': 5, 'backend': 3, 'frontend': 2}
+        """
+        with self.Session() as session:
+            # SQL: SELECT tags.name, COUNT(task_tags.task_id)
+            #      FROM tags LEFT JOIN task_tags ON tags.id = task_tags.tag_id
+            #      GROUP BY tags.id, tags.name
+            stmt = (
+                select(TagModel.name, func.count(TaskTagModel.task_id))
+                .outerjoin(TaskTagModel, TagModel.id == TaskTagModel.tag_id)
+                .group_by(TagModel.id, TagModel.name)
+            )
+
+            results = session.execute(stmt).all()
+
+            # Filter out tags with zero tasks
+            return {name: count for name, count in results if count > 0}
+
+    def get_task_ids_by_tags(
+        self, tags: list[str], match_all: bool = False
+    ) -> list[int]:
+        """Get task IDs that match the specified tags using SQL JOIN.
+
+        Phase 3 (Issue 228): Optimized query using SQL JOIN instead of
+        loading all tasks into memory and filtering in Python.
+
+        Args:
+            tags: List of tag names to filter by
+            match_all: If True, task must have ALL tags (AND logic).
+                      If False, task must have at least ONE tag (OR logic).
+
+        Returns:
+            List of task IDs matching the tag filter
+
+        Example:
+            >>> # OR logic: tasks with 'urgent' OR 'backend'
+            >>> repo.get_task_ids_by_tags(['urgent', 'backend'], match_all=False)
+            [1, 2, 5, 7]
+
+            >>> # AND logic: tasks with 'urgent' AND 'backend'
+            >>> repo.get_task_ids_by_tags(['urgent', 'backend'], match_all=True)
+            [2, 5]
+        """
+        if not tags:
+            # No filter: return all task IDs
+            with self.Session() as session:
+                stmt = select(TaskModel.id)
+                return list(session.scalars(stmt).all())
+
+        with self.Session() as session:
+            if match_all:
+                # AND logic: task must have ALL specified tags
+                # SQL: SELECT tasks.id FROM tasks
+                #      JOIN task_tags ON tasks.id = task_tags.task_id
+                #      JOIN tags ON task_tags.tag_id = tags.id
+                #      WHERE tags.name IN (...)
+                #      GROUP BY tasks.id
+                #      HAVING COUNT(DISTINCT tags.name) = len(tags)
+                stmt = (
+                    select(TaskModel.id)
+                    .join(TaskTagModel, TaskModel.id == TaskTagModel.task_id)
+                    .join(TagModel, TaskTagModel.tag_id == TagModel.id)
+                    .where(TagModel.name.in_(tags))
+                    .group_by(TaskModel.id)
+                    .having(func.count(func.distinct(TagModel.name)) == len(tags))
+                )
+            else:
+                # OR logic: task must have at least ONE specified tag
+                # SQL: SELECT DISTINCT tasks.id FROM tasks
+                #      JOIN task_tags ON tasks.id = task_tags.task_id
+                #      JOIN tags ON task_tags.tag_id = tags.id
+                #      WHERE tags.name IN (...)
+                stmt = (
+                    select(TaskModel.id)
+                    .join(TaskTagModel, TaskModel.id == TaskTagModel.task_id)
+                    .join(TagModel, TaskTagModel.tag_id == TagModel.id)
+                    .where(TagModel.name.in_(tags))
+                    .distinct()
+                )
+
+            return list(session.scalars(stmt).all())
 
     def close(self) -> None:
         """Close database connections and clean up resources.

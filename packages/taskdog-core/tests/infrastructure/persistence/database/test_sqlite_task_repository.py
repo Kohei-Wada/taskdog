@@ -356,6 +356,98 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.assertEqual(retrieved.depends_on, [])
         self.assertEqual(retrieved.tags, [])
 
+    def test_get_tag_counts_returns_correct_counts(self) -> None:
+        """Test get_tag_counts returns accurate counts using SQL (Phase 3)."""
+        # Create tasks with various tags
+        _ = self.repository.create("Task 1", priority=1, tags=["urgent", "backend"])
+        _ = self.repository.create("Task 2", priority=1, tags=["urgent", "frontend"])
+        _ = self.repository.create("Task 3", priority=1, tags=["backend"])
+        _ = self.repository.create("Task 4", priority=1, tags=[])  # No tags
+
+        # Get tag counts
+        tag_counts = self.repository.get_tag_counts()
+
+        # Verify counts
+        self.assertEqual(tag_counts.get("urgent"), 2)
+        self.assertEqual(tag_counts.get("backend"), 2)
+        self.assertEqual(tag_counts.get("frontend"), 1)
+        self.assertEqual(len(tag_counts), 3)  # Only 3 unique tags
+
+    def test_get_tag_counts_with_no_tasks(self) -> None:
+        """Test get_tag_counts returns empty dict when no tasks exist (Phase 3)."""
+        tag_counts = self.repository.get_tag_counts()
+        self.assertEqual(tag_counts, {})
+
+    def test_get_task_ids_by_tags_or_logic(self) -> None:
+        """Test get_task_ids_by_tags with OR logic (Phase 3)."""
+        # Create tasks with various tags
+        task1 = self.repository.create("Task 1", priority=1, tags=["urgent", "backend"])
+        task2 = self.repository.create(
+            "Task 2", priority=1, tags=["urgent", "frontend"]
+        )
+        task3 = self.repository.create("Task 3", priority=1, tags=["backend"])
+        task4 = self.repository.create("Task 4", priority=1, tags=["other"])
+
+        # OR logic: tasks with 'urgent' OR 'backend'
+        task_ids = self.repository.get_task_ids_by_tags(
+            ["urgent", "backend"], match_all=False
+        )
+
+        # Should return task1 (has both), task2 (has urgent), task3 (has backend)
+        self.assertEqual(len(task_ids), 3)
+        self.assertIn(task1.id, task_ids)
+        self.assertIn(task2.id, task_ids)
+        self.assertIn(task3.id, task_ids)
+        self.assertNotIn(task4.id, task_ids)
+
+    def test_get_task_ids_by_tags_and_logic(self) -> None:
+        """Test get_task_ids_by_tags with AND logic (Phase 3)."""
+        # Create tasks with various tags
+        task1 = self.repository.create("Task 1", priority=1, tags=["urgent", "backend"])
+        task2 = self.repository.create(
+            "Task 2", priority=1, tags=["urgent", "backend", "frontend"]
+        )
+        task3 = self.repository.create("Task 3", priority=1, tags=["urgent"])
+        task4 = self.repository.create("Task 4", priority=1, tags=["backend"])
+
+        # AND logic: tasks with 'urgent' AND 'backend'
+        task_ids = self.repository.get_task_ids_by_tags(
+            ["urgent", "backend"], match_all=True
+        )
+
+        # Should return task1 and task2 (both have urgent AND backend)
+        self.assertEqual(len(task_ids), 2)
+        self.assertIn(task1.id, task_ids)
+        self.assertIn(task2.id, task_ids)
+        self.assertNotIn(task3.id, task_ids)
+        self.assertNotIn(task4.id, task_ids)
+
+    def test_get_task_ids_by_tags_with_empty_list(self) -> None:
+        """Test get_task_ids_by_tags with empty tag list returns all tasks (Phase 3)."""
+        task1 = self.repository.create("Task 1", priority=1, tags=["urgent"])
+        task2 = self.repository.create("Task 2", priority=1, tags=["backend"])
+        task3 = self.repository.create("Task 3", priority=1, tags=[])
+
+        # Empty tag list should return all task IDs
+        task_ids = self.repository.get_task_ids_by_tags([], match_all=False)
+
+        self.assertEqual(len(task_ids), 3)
+        self.assertIn(task1.id, task_ids)
+        self.assertIn(task2.id, task_ids)
+        self.assertIn(task3.id, task_ids)
+
+    def test_get_task_ids_by_tags_with_nonexistent_tag(self) -> None:
+        """Test get_task_ids_by_tags with nonexistent tag returns empty (Phase 3)."""
+        _ = self.repository.create("Task 1", priority=1, tags=["urgent"])
+        _ = self.repository.create("Task 2", priority=1, tags=["backend"])
+
+        # Nonexistent tag should return empty list
+        task_ids = self.repository.get_task_ids_by_tags(
+            ["nonexistent"], match_all=False
+        )
+
+        self.assertEqual(task_ids, [])
+
 
 if __name__ == "__main__":
     unittest.main()
