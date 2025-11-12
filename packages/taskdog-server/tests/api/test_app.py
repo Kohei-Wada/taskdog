@@ -48,7 +48,9 @@ class TestApp(unittest.TestCase):
         analytics_controller = TaskAnalyticsController(
             cls.mock_repository, cls.mock_config, None
         )
-        crud_controller = TaskCrudController(cls.mock_repository, cls.mock_config)
+        crud_controller = TaskCrudController(
+            cls.mock_repository, cls.mock_notes_repository, cls.mock_config
+        )
 
         # Create and set API context
         api_context = ApiContext(

@@ -70,7 +70,9 @@ class BaseApiRouterTest(unittest.TestCase):
         lifecycle_controller = TaskLifecycleController(cls.repository, cls.config)
         relationship_controller = TaskRelationshipController(cls.repository, cls.config)
         analytics_controller = TaskAnalyticsController(cls.repository, cls.config, None)
-        crud_controller = TaskCrudController(cls.repository, cls.config)
+        crud_controller = TaskCrudController(
+            cls.repository, cls.notes_repository, cls.config
+        )
 
         # Create API context once
         api_context = ApiContext(

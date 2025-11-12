@@ -53,7 +53,7 @@ def initialize_api_context() -> ApiContext:
     lifecycle_controller = TaskLifecycleController(repository, config)
     relationship_controller = TaskRelationshipController(repository, config)
     analytics_controller = TaskAnalyticsController(repository, config, holiday_checker)
-    crud_controller = TaskCrudController(repository, config)
+    crud_controller = TaskCrudController(repository, notes_repository, config)
 
     return ApiContext(
         repository=repository,

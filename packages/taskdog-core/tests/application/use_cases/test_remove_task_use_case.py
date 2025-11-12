@@ -2,6 +2,7 @@
 
 import tempfile
 import unittest
+from unittest.mock import MagicMock
 
 from taskdog_core.application.dto.remove_task_input import RemoveTaskInput
 from taskdog_core.application.use_cases.remove_task import RemoveTaskUseCase
@@ -22,7 +23,8 @@ class RemoveTaskUseCaseTest(unittest.TestCase):
         self.temp_file.close()
 
         self.repository = SqliteTaskRepository(f"sqlite:///{self.temp_file.name}")
-        self.use_case = RemoveTaskUseCase(self.repository)
+        self.notes_repository = MagicMock()
+        self.use_case = RemoveTaskUseCase(self.repository, self.notes_repository)
 
     def tearDown(self):
         """Clean up test fixtures."""
@@ -44,6 +46,9 @@ class RemoveTaskUseCaseTest(unittest.TestCase):
 
         # Verify task removed
         self.assertIsNone(self.repository.get_by_id(task.id))
+
+        # Verify notes deletion was called
+        self.notes_repository.delete_notes.assert_called_once_with(task.id)
 
     def test_remove_nonexistent_task(self):
         """Test removing a task that doesn't exist."""

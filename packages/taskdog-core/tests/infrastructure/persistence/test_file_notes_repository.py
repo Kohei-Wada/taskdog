@@ -306,6 +306,43 @@ class TestFileNotesRepository(unittest.TestCase):
 
         self.assertEqual(result, expected_content)
 
+    @patch(
+        "taskdog_core.infrastructure.persistence.file_notes_repository.XDGDirectories"
+    )
+    def test_delete_notes_removes_existing_file(self, mock_xdg: MagicMock) -> None:
+        """Test delete_notes removes existing notes file."""
+        notes_path = Path(self.temp_dir) / "notes" / "123.md"
+        notes_path.parent.mkdir(parents=True, exist_ok=True)
+        notes_path.write_text("# Test Note\n\nContent", encoding="utf-8")
+        mock_xdg.get_note_file.return_value = notes_path
+
+        # Verify file exists before deletion
+        self.assertTrue(notes_path.exists())
+
+        self.repo.delete_notes(self.task_id)
+
+        # Verify file was deleted
+        self.assertFalse(notes_path.exists())
+
+    @patch(
+        "taskdog_core.infrastructure.persistence.file_notes_repository.XDGDirectories"
+    )
+    def test_delete_notes_does_not_raise_when_file_not_exists(
+        self, mock_xdg: MagicMock
+    ) -> None:
+        """Test delete_notes is idempotent and doesn't fail if file doesn't exist."""
+        notes_path = Path(self.temp_dir) / "notes" / "123.md"
+        mock_xdg.get_note_file.return_value = notes_path
+
+        # Verify file doesn't exist
+        self.assertFalse(notes_path.exists())
+
+        # Should not raise any exception
+        self.repo.delete_notes(self.task_id)
+
+        # Still should not exist
+        self.assertFalse(notes_path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

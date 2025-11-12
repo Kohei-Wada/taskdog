@@ -88,3 +88,15 @@ class FileNotesRepository(NotesRepository):
         Creates the notes directory if it doesn't exist.
         """
         XDGDirectories.get_notes_dir()
+
+    def delete_notes(self, task_id: int) -> None:
+        """Delete notes file for a task.
+
+        Args:
+            task_id: Task ID
+
+        Note:
+            Does not raise error if notes don't exist (idempotent operation)
+        """
+        notes_path = self.get_notes_path(task_id)
+        notes_path.unlink(missing_ok=True)

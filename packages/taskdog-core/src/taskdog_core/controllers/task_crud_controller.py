@@ -24,6 +24,7 @@ from taskdog_core.application.use_cases.restore_task import RestoreTaskUseCase
 from taskdog_core.application.use_cases.update_task import UpdateTaskUseCase
 from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.shared.config_manager import Config
 
@@ -43,20 +44,24 @@ class TaskCrudController(BaseTaskController):
     Attributes:
         repository: Task repository (inherited from BaseTaskController)
         config: Application configuration (inherited from BaseTaskController)
+        notes_repository: Notes repository for managing task notes
     """
 
     def __init__(
         self,
         repository: TaskRepository,
+        notes_repository: NotesRepository,
         config: Config,
     ):
         """Initialize the CRUD controller.
 
         Args:
             repository: Task repository
+            notes_repository: Notes repository
             config: Application configuration
         """
         super().__init__(repository, config)
+        self.notes_repository = notes_repository
 
     def create_task(
         self,
@@ -190,7 +195,7 @@ class TaskCrudController(BaseTaskController):
     def remove_task(self, task_id: int) -> None:
         """Remove a task (hard delete).
 
-        Permanently deletes the task from the repository.
+        Permanently deletes the task and its associated notes from storage.
 
         Args:
             task_id: ID of the task to remove
@@ -198,6 +203,6 @@ class TaskCrudController(BaseTaskController):
         Raises:
             TaskNotFoundException: If task not found
         """
-        use_case = RemoveTaskUseCase(self.repository)
+        use_case = RemoveTaskUseCase(self.repository, self.notes_repository)
         request = RemoveTaskInput(task_id=task_id)
         use_case.execute(request)

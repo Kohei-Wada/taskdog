@@ -59,3 +59,15 @@ class NotesRepository(ABC):
         Creates necessary storage structure if it doesn't exist.
         """
         pass
+
+    @abstractmethod
+    def delete_notes(self, task_id: int) -> None:
+        """Delete notes for a task.
+
+        Args:
+            task_id: Task ID
+
+        Note:
+            Should not raise error if notes don't exist (idempotent operation)
+        """
+        pass

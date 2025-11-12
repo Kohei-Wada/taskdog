@@ -23,10 +23,12 @@ class TestTaskCrudController(unittest.TestCase):
         self.test_file.close()
         self.test_filename = self.test_file.name
         self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+        self.notes_repository = MagicMock()
         self.config = MagicMock()
         self.config.task.default_priority = 3
         self.controller = TaskCrudController(
             repository=self.repository,
+            notes_repository=self.notes_repository,
             config=self.config,
         )
 
@@ -136,6 +138,9 @@ class TestTaskCrudController(unittest.TestCase):
         # Assert - task should no longer exist
         deleted_task = self.repository.get_by_id(task.id)
         self.assertIsNone(deleted_task)
+
+        # Assert - notes deletion should be called
+        self.notes_repository.delete_notes.assert_called_once_with(task.id)
 
     def test_controller_inherits_from_base_controller(self):
         """Test that controller has repository and config from base class."""
