@@ -67,7 +67,8 @@ class TaskDataLoader:
         self,
         task_filter: TaskFilter | None,
         sort_by: str,
-        hide_completed: bool,
+        reverse: bool = False,
+        hide_completed: bool = False,
         date_range: tuple[date, date] | None = None,
     ) -> TaskData:
         """Load tasks from API and create ViewModels.
@@ -75,6 +76,7 @@ class TaskDataLoader:
         Args:
             task_filter: Filter for API query
             sort_by: Sort field name
+            reverse: Sort direction (default: False for ascending)
             hide_completed: Whether to hide completed/canceled tasks
             date_range: Optional (start_date, end_date) for gantt data
 
@@ -88,7 +90,7 @@ class TaskDataLoader:
         task_list_output = self.api_client.list_tasks(
             filter_obj=task_filter,
             sort_by=sort_by,
-            reverse=False,
+            reverse=reverse,
             include_gantt=include_gantt,
             gantt_start_date=gantt_start_date,
             gantt_end_date=gantt_end_date,
@@ -131,14 +133,16 @@ class TaskDataLoader:
         self,
         task_filter: TaskFilter | None,
         sort_by: str,
-        start_date: date,
-        end_date: date,
+        reverse: bool = False,
+        start_date: date | None = None,
+        end_date: date | None = None,
     ) -> GanttViewModel:
         """Load gantt data from API.
 
         Args:
             task_filter: Filter for API query
             sort_by: Sort field name
+            reverse: Sort direction (default: False for ascending)
             start_date: Start date for gantt
             end_date: End date for gantt
 
@@ -148,7 +152,7 @@ class TaskDataLoader:
         gantt_output = self.api_client.get_gantt_data(
             filter_obj=task_filter,
             sort_by=sort_by,
-            reverse=False,
+            reverse=reverse,
             start_date=start_date,
             end_date=end_date,
             holiday_checker=self.holiday_checker,

@@ -57,6 +57,7 @@ class TaskdogTUI(App):
         ("t", "toggle_completed", "Toggle Done"),
         ("/", "show_search", "Search"),
         ("escape", "hide_search", "Clear Search"),
+        ("ctrl+t", "toggle_sort_reverse", "Toggle Sort"),
     ]
 
     # Register custom command providers
@@ -105,6 +106,7 @@ class TaskdogTUI(App):
         self.holiday_checker = holiday_checker
         self.main_screen: MainScreen | None = None
         self._gantt_sort_by: str = "deadline"  # Default gantt sort order
+        self._gantt_reverse: bool = False  # Default: ascending order
         self._hide_completed: bool = False  # Default: show all tasks
         self._all_tasks: list = []  # Cache of all tasks for display filtering
         self._gantt_view_model = None  # Cache of gantt view model
@@ -213,6 +215,7 @@ class TaskdogTUI(App):
             return self.task_data_loader.load_tasks(
                 task_filter=NonArchivedFilter(),
                 sort_by=self._gantt_sort_by,
+                reverse=self._gantt_reverse,
                 hide_completed=self._hide_completed,
                 date_range=date_range,
             )
@@ -270,6 +273,7 @@ class TaskdogTUI(App):
                 task_ids=task_ids,
                 gantt_view_model=task_data.filtered_gantt_view_model,
                 sort_by=self._gantt_sort_by,
+                reverse=self._gantt_reverse,
                 task_filter=NonArchivedFilter(),
             )
 
@@ -326,9 +330,11 @@ class TaskdogTUI(App):
         # Post TasksRefreshed event to trigger UI refresh with new sort order
         self.post_message(TasksRefreshed())
 
-        # Show notification message
+        # Show notification message with current direction
         sort_label = SORT_KEY_LABELS.get(sort_key, sort_key)
-        self.notify(f"Sorted by {sort_label}")
+        arrow = "↓" if self._gantt_reverse else "↑"
+        direction = "descending" if self._gantt_reverse else "ascending"
+        self.notify(f"Sorted by {sort_label} {arrow} ({direction})")
 
     def action_show_search(self) -> None:
         """Show the search input."""
@@ -350,6 +356,19 @@ class TaskdogTUI(App):
         # Show notification
         status = "hidden" if self._hide_completed else "shown"
         self.notify(f"Completed tasks {status}")
+
+    def action_toggle_sort_reverse(self) -> None:
+        """Toggle sort direction (ascending ⇔ descending)."""
+        self._gantt_reverse = not self._gantt_reverse
+
+        # Reload tasks with new sort direction
+        self._load_tasks(keep_scroll_position=True)
+
+        # Show notification with current direction
+        direction = "descending" if self._gantt_reverse else "ascending"
+        sort_label = SORT_KEY_LABELS.get(self._gantt_sort_by, self._gantt_sort_by)
+        arrow = "↓" if self._gantt_reverse else "↑"
+        self.notify(f"Sort direction toggled: {sort_label} {arrow} ({direction})")
 
     def action_command_palette(self) -> None:
         """Show the command palette."""
@@ -413,7 +432,7 @@ class TaskdogTUI(App):
             task_list_output = self.api_client.list_tasks(
                 filter_obj=task_filter,
                 sort_by=sort_by,
-                reverse=False,
+                reverse=self._gantt_reverse,
                 include_gantt=True,
                 gantt_start_date=event.start_date,
                 gantt_end_date=event.end_date,

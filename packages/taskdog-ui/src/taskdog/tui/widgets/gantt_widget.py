@@ -40,6 +40,7 @@ class GanttWidget(VerticalScroll):
         self._task_ids: list[int] = []
         self._gantt_view_model: GanttViewModel | None = None
         self._sort_by: str = "deadline"  # Default sort order
+        self._reverse: bool = False  # Default: ascending order
         self._task_filter: TaskFilter | None = None  # Filter for recalculation
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
@@ -76,6 +77,7 @@ class GanttWidget(VerticalScroll):
         task_ids: list[int],
         gantt_view_model: GanttViewModel,
         sort_by: str = "deadline",
+        reverse: bool = False,
         task_filter: TaskFilter | None = None,
     ):
         """Update the gantt chart with new gantt data.
@@ -84,11 +86,13 @@ class GanttWidget(VerticalScroll):
             task_ids: List of task IDs (used for recalculating date range on resize)
             gantt_view_model: Presentation-ready gantt data
             sort_by: Sort order for tasks (default: "deadline")
+            reverse: Sort direction (default: False for ascending)
             task_filter: Filter object to use for recalculation on resize (optional)
         """
         self._task_ids = task_ids
         self._gantt_view_model = gantt_view_model
         self._sort_by = sort_by
+        self._reverse = reverse
         if task_filter is not None:
             self._task_filter = task_filter
         self._render_gantt()
@@ -150,10 +154,11 @@ class GanttWidget(VerticalScroll):
 
         start_date = self._gantt_view_model.start_date
         end_date = self._gantt_view_model.end_date
+        arrow = "↓" if self._reverse else "↑"
         title_text = (
             f"[bold yellow]Gantt Chart[/bold yellow] "
             f"[dim]({start_date} to {end_date})[/dim] "
-            f"[dim]- sorted by: {self._sort_by}[/dim]"
+            f"[dim]- sorted by: {self._sort_by} {arrow}[/dim]"
         )
         self._title_widget.update(title_text)
 
