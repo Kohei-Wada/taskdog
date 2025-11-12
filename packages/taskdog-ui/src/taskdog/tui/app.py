@@ -445,6 +445,15 @@ class TaskdogTUI(App):
                     task_list_output.gantt_data
                 )
 
+                # Apply display filter based on hide_completed setting
+                if self._hide_completed:
+                    filtered_tasks = self.task_data_loader.apply_display_filter(
+                        task_list_output.tasks, self._hide_completed
+                    )
+                    gantt_view_model = self.task_data_loader.filter_gantt_by_tasks(
+                        gantt_view_model, filtered_tasks
+                    )
+
                 # Use public API to update view model and trigger re-render
                 gantt_widget.update_view_model_and_render(gantt_view_model)
         except ServerConnectionError as e:
