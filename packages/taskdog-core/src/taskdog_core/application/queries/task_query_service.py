@@ -60,6 +60,10 @@ class TaskQueryService(QueryService):
     ) -> list[Task]:
         """Get tasks with optional filtering and sorting.
 
+        Hybrid approach: Simple filters (archived, status, tags, dates) are applied
+        at the SQL level for performance. Complex filters (dependencies, JSON fields)
+        are applied in Python after fetching.
+
         Args:
             filter_obj: Optional filter object to apply. If None, returns all tasks.
             sort_by: Sort key (id, priority, deadline, name, status, planned_start)
@@ -68,14 +72,147 @@ class TaskQueryService(QueryService):
         Returns:
             Filtered and sorted list of tasks
         """
-        tasks = self.repository.get_all()
+        # Hybrid approach: Use SQL filtering for simple filters
+        # Extract SQL-compatible filter parameters
+        sql_params = self._extract_sql_params(filter_obj)
 
-        # Apply filter if provided
-        if filter_obj:
-            tasks = filter_obj.filter(tasks)
+        # Get remaining complex filters that need Python processing
+        remaining_filter = self._get_remaining_filter(filter_obj)
+
+        # Fetch tasks with SQL filtering (repository.get_filtered() may optimize)
+        tasks = self.repository.get_filtered(**sql_params)
+
+        # Apply remaining complex filters in Python (if any)
+        if remaining_filter:
+            tasks = remaining_filter.filter(tasks)
 
         # Sort tasks
         return self.sorter.sort(tasks, sort_by, reverse)
+
+    def _extract_sql_params(self, filter_obj: TaskFilter | None) -> dict:  # noqa: C901
+        """Extract SQL-compatible filter parameters from filter object.
+
+        Walks through the filter chain and extracts parameters that can be
+        handled by repository.get_filtered() at the SQL level.
+
+        Args:
+            filter_obj: Filter object to extract from
+
+        Returns:
+            Dictionary of SQL filter parameters
+        """
+        from taskdog_core.application.queries.filters.composite_filter import (
+            CompositeFilter,
+        )
+        from taskdog_core.application.queries.filters.date_range_filter import (
+            DateRangeFilter,
+        )
+        from taskdog_core.application.queries.filters.non_archived_filter import (
+            NonArchivedFilter,
+        )
+        from taskdog_core.application.queries.filters.status_filter import StatusFilter
+        from taskdog_core.application.queries.filters.tag_filter import TagFilter
+
+        params = {
+            "include_archived": True,
+            "status": None,
+            "tags": None,
+            "match_all_tags": False,
+            "start_date": None,
+            "end_date": None,
+        }
+
+        if not filter_obj:
+            return params
+
+        # Walk through filter chain
+        current_filter = filter_obj
+        while current_filter:
+            if isinstance(current_filter, NonArchivedFilter):
+                params["include_archived"] = False
+            elif isinstance(current_filter, StatusFilter):
+                params["status"] = current_filter.status
+            elif isinstance(current_filter, TagFilter):
+                params["tags"] = current_filter.tags
+                params["match_all_tags"] = current_filter.match_all
+            elif isinstance(current_filter, DateRangeFilter):
+                params["start_date"] = current_filter.start_date
+                params["end_date"] = current_filter.end_date
+            elif isinstance(current_filter, CompositeFilter):
+                # Recursively process filters in CompositeFilter
+                for sub_filter in current_filter.filters:
+                    sub_params = self._extract_sql_params(sub_filter)
+                    # Merge parameters (prefer non-None values)
+                    for key, value in sub_params.items():
+                        if value is not None and (
+                            params[key] is None or key == "include_archived"
+                        ):
+                            if key == "include_archived":
+                                # For archived, use AND logic (False takes precedence)
+                                params[key] = params[key] and value
+                            else:
+                                params[key] = value
+
+            # Move to next filter in chain
+            current_filter = getattr(current_filter, "_next", None)
+
+        return params
+
+    def _get_remaining_filter(self, filter_obj: TaskFilter | None) -> TaskFilter | None:
+        """Get filters that cannot be handled by SQL and need Python processing.
+
+        Some filters like TodayFilter have complex logic that cannot be easily
+        translated to SQL WHERE clauses and need to be applied in Python.
+
+        Args:
+            filter_obj: Original filter object
+
+        Returns:
+            Filter object with only complex filters, or None if all filters are SQL-compatible
+        """
+        from taskdog_core.application.queries.filters.composite_filter import (
+            CompositeFilter,
+        )
+        from taskdog_core.application.queries.filters.incomplete_filter import (
+            IncompleteFilter,
+        )
+        from taskdog_core.application.queries.filters.this_week_filter import (
+            ThisWeekFilter,
+        )
+        from taskdog_core.application.queries.filters.today_filter import TodayFilter
+
+        if not filter_obj:
+            return None
+
+        # Check if filter contains complex filters that need Python processing
+        complex_filters = []
+
+        current_filter = filter_obj
+        while current_filter:
+            if isinstance(
+                current_filter, TodayFilter | ThisWeekFilter | IncompleteFilter
+            ):
+                # These filters have complex logic that needs Python processing
+                # - TodayFilter checks IN_PROGRESS status in addition to dates
+                # - IncompleteFilter uses task.is_finished property
+                complex_filters.append(current_filter)
+            elif isinstance(current_filter, CompositeFilter):
+                # Check sub-filters in CompositeFilter
+                for sub_filter in current_filter.filters:
+                    remaining = self._get_remaining_filter(sub_filter)
+                    if remaining:
+                        complex_filters.append(remaining)
+
+            current_filter = getattr(current_filter, "_next", None)
+
+        # If we have complex filters, compose them
+        if complex_filters:
+            if len(complex_filters) == 1:
+                return complex_filters[0]
+            else:
+                return CompositeFilter(complex_filters)
+
+        return None
 
     def filter_by_tags(self, tags: list[str], match_all: bool = False) -> list[Task]:
         """Get tasks that match the specified tags.

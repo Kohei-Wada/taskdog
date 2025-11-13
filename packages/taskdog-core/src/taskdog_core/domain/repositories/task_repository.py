@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
+from datetime import date
 from typing import Any
 
-from taskdog_core.domain.entities.task import Task
+from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
 class TaskRepository(ABC):
@@ -45,6 +46,40 @@ class TaskRepository(ABC):
             - O(n) time complexity where n is len(task_ids)
         """
         pass
+
+    def get_filtered(
+        self,
+        include_archived: bool = True,
+        status: TaskStatus | None = None,
+        tags: list[str] | None = None,
+        match_all_tags: bool = False,
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> list[Task]:
+        """Retrieve tasks with SQL WHERE clauses for efficient filtering.
+
+        This is an optional optimization method. Repositories that don't override
+        this method will fall back to fetching all tasks and filtering in Python.
+
+        Args:
+            include_archived: If False, exclude archived tasks (default: True)
+            status: Filter by task status (default: None, no status filter)
+            tags: Filter by tags with OR logic (default: None, no tag filter)
+            match_all_tags: If True, require all tags (AND); if False, any tag (OR)
+            start_date: Filter tasks with any date >= start_date (default: None)
+            end_date: Filter tasks with any date <= end_date (default: None)
+
+        Returns:
+            List of tasks matching the filter criteria
+
+        Notes:
+            - Default implementation falls back to get_all() (no optimization)
+            - Repositories should override this for SQL-level filtering
+            - Date filtering typically checks multiple date fields (deadline, planned dates, etc.)
+        """
+        # Default implementation: fallback to get_all() without optimization
+        # Subclasses should override this method to provide SQL-level filtering
+        return self.get_all()
 
     @abstractmethod
     def save(self, task: Task) -> None:

@@ -8,13 +8,13 @@ Phase 2 (Issue 228): Tags are now stored in normalized tables (tags/task_tags).
 The repository uses TagResolver to manage tag relationships when saving tasks.
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import create_engine, func, or_, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from taskdog_core.domain.entities.task import Task
+from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.infrastructure.persistence.database.models import (
     TagModel,
@@ -112,6 +112,131 @@ class SqliteTaskRepository(TaskRepository):
             stmt = select(TaskModel).where(TaskModel.id.in_(task_ids))
             models = session.scalars(stmt).all()
             return {model.id: self.mapper.from_model(model) for model in models}
+
+    def get_filtered(  # noqa: C901
+        self,
+        include_archived: bool = True,
+        status: TaskStatus | None = None,
+        tags: list[str] | None = None,
+        match_all_tags: bool = False,
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> list[Task]:
+        """Retrieve tasks with SQL WHERE clauses for efficient filtering.
+
+        This method applies filters at the database level using SQL WHERE clauses,
+        significantly improving performance compared to fetching all tasks and
+        filtering in Python.
+
+        Args:
+            include_archived: If False, exclude archived tasks (default: True)
+            status: Filter by task status (default: None, no status filter)
+            tags: Filter by tags with OR logic (default: None, no tag filter)
+            match_all_tags: If True, require all tags (AND logic); if False, any tag (OR logic)
+            start_date: Filter tasks with any date >= start_date (default: None)
+            end_date: Filter tasks with any date <= end_date (default: None)
+
+        Returns:
+            List of tasks matching the filter criteria
+
+        Note:
+            - Date filtering checks deadline, planned_start, planned_end, actual_start, actual_end
+            - Tag filtering uses SQL JOIN for efficiency (Phase 3)
+            - Archived filter uses indexed is_archived column
+            - Status filter uses indexed status column
+        """
+        with self.Session() as session:
+            stmt = select(TaskModel)
+
+            # Filter by archived status (uses index)
+            if not include_archived:
+                stmt = stmt.where(TaskModel.is_archived == False)  # noqa: E712
+
+            # Filter by status (uses index)
+            if status is not None:
+                stmt = stmt.where(TaskModel.status == status.value)
+
+            # Filter by tags (uses JOIN)
+            if tags:
+                if match_all_tags:
+                    # AND logic: task must have ALL specified tags
+                    for tag in tags:
+                        tag_subquery = (
+                            select(TaskTagModel.task_id)
+                            .join(TagModel, TaskTagModel.tag_id == TagModel.id)
+                            .where(TagModel.name == tag)
+                        )
+                        stmt = stmt.where(TaskModel.id.in_(tag_subquery))
+                else:
+                    # OR logic: task must have ANY of the specified tags
+                    tag_subquery = (
+                        select(TaskTagModel.task_id)
+                        .join(TagModel, TaskTagModel.tag_id == TagModel.id)
+                        .where(TagModel.name.in_(tags))
+                    )
+                    stmt = stmt.where(TaskModel.id.in_(tag_subquery))
+
+            # Filter by date range (checks multiple date fields)
+            if start_date is not None or end_date is not None:
+                date_conditions = []
+
+                # Check deadline
+                if start_date and end_date:
+                    date_conditions.append(
+                        TaskModel.deadline.between(start_date, end_date)
+                    )
+                elif start_date:
+                    date_conditions.append(TaskModel.deadline >= start_date)
+                elif end_date:
+                    date_conditions.append(TaskModel.deadline <= end_date)
+
+                # Check planned_start
+                if start_date and end_date:
+                    date_conditions.append(
+                        TaskModel.planned_start.between(start_date, end_date)
+                    )
+                elif start_date:
+                    date_conditions.append(TaskModel.planned_start >= start_date)
+                elif end_date:
+                    date_conditions.append(TaskModel.planned_start <= end_date)
+
+                # Check planned_end
+                if start_date and end_date:
+                    date_conditions.append(
+                        TaskModel.planned_end.between(start_date, end_date)
+                    )
+                elif start_date:
+                    date_conditions.append(TaskModel.planned_end >= start_date)
+                elif end_date:
+                    date_conditions.append(TaskModel.planned_end <= end_date)
+
+                # Check actual_start
+                if start_date and end_date:
+                    date_conditions.append(
+                        TaskModel.actual_start.between(start_date, end_date)
+                    )
+                elif start_date:
+                    date_conditions.append(TaskModel.actual_start >= start_date)
+                elif end_date:
+                    date_conditions.append(TaskModel.actual_start <= end_date)
+
+                # Check actual_end
+                if start_date and end_date:
+                    date_conditions.append(
+                        TaskModel.actual_end.between(start_date, end_date)
+                    )
+                elif start_date:
+                    date_conditions.append(TaskModel.actual_end >= start_date)
+                elif end_date:
+                    date_conditions.append(TaskModel.actual_end <= end_date)
+
+                # Apply OR condition: match if ANY date field is in range
+                if date_conditions:
+                    stmt = stmt.where(or_(*date_conditions))
+
+            # Execute query
+            models = session.scalars(stmt).all()
+            return [self.mapper.from_model(model) for model in models]
 
     def save(self, task: Task) -> None:
         """Save a task (create new or update existing).
