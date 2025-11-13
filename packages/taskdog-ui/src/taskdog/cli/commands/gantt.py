@@ -3,7 +3,6 @@
 import click
 
 from taskdog.cli.commands.common_options import filter_options, sort_options
-from taskdog.cli.commands.filter_helpers import build_task_filter
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
 from taskdog.presenters.gantt_presenter import GanttPresenter
@@ -87,9 +86,8 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     """
     ctx_obj: CliContext = ctx.obj
 
-    # Build integrated filter with tags support (tags use OR logic by default)
+    # Prepare filter parameters (tags use OR logic by default)
     tags = list(tag) if tag else None
-    filter_obj = build_task_filter(all=all, status=status, tags=tags, match_all=False)
 
     # Convert datetime to date objects if provided (DateTimeWithDefault returns datetime)
     # Default to previous Monday if start_date not provided
@@ -99,7 +97,9 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
 
     # Get Gantt data via API client
     gantt_result = ctx_obj.api_client.get_gantt_data(
-        filter_obj=filter_obj,
+        all=all,
+        status=status,
+        tags=tags,
         sort_by=sort,
         reverse=reverse,
         start_date=start_date_obj,

@@ -15,7 +15,6 @@ from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
-from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
     ServerConnectionError,
@@ -564,18 +563,17 @@ class TaskdogApiClient:
 
     # Query Controller methods
 
-    def _parse_filter_to_params(
-        self, filter_obj: TaskFilter | None, use_filter_prefix: bool = False
-    ) -> dict[str, Any]:
-        """Parse TaskFilter chain and convert to query parameters.
+    def _parse_filter_to_params_legacy(self, filter_obj) -> dict[str, any]:
+        """Parse TaskFilter object to query parameters (legacy support for TUI).
+
+        This is a temporary backward compatibility method for TUI.
+        CLI commands should use the new direct parameter API.
 
         Args:
-            filter_obj: Task filter to parse
-            use_filter_prefix: If True, use 'filter_start_date' and 'filter_end_date'
-                             instead of 'start_date' and 'end_date' for DateRangeFilter
+            filter_obj: TaskFilter object or None
 
         Returns:
-            Dictionary of query parameters
+            Dictionary with extracted parameters
         """
         from taskdog_core.application.queries.filters.date_range_filter import (
             DateRangeFilter,
@@ -586,39 +584,39 @@ class TaskdogApiClient:
         from taskdog_core.application.queries.filters.status_filter import StatusFilter
         from taskdog_core.application.queries.filters.tag_filter import TagFilter
 
-        params: dict[str, Any] = {}
-
-        # Default: include archived tasks (all=True)
-        params["all"] = "true"
+        params = {
+            "all": True,
+            "status": None,
+            "tags": None,
+            "start_date": None,
+            "end_date": None,
+        }
 
         if filter_obj:
-            # Walk through the filter chain to extract components
-            current_filter: TaskFilter | None = filter_obj
+            current_filter = filter_obj
             while current_filter:
                 if isinstance(current_filter, NonArchivedFilter):
-                    params["all"] = "false"
+                    params["all"] = False
                 elif isinstance(current_filter, StatusFilter):
                     params["status"] = current_filter.status.value.lower()
                 elif isinstance(current_filter, TagFilter):
                     params["tags"] = current_filter.tags
                 elif isinstance(current_filter, DateRangeFilter):
-                    start_key = (
-                        "filter_start_date" if use_filter_prefix else "start_date"
-                    )
-                    end_key = "filter_end_date" if use_filter_prefix else "end_date"
-                    if current_filter.start_date:
-                        params[start_key] = current_filter.start_date.isoformat()
-                    if current_filter.end_date:
-                        params[end_key] = current_filter.end_date.isoformat()
+                    params["start_date"] = current_filter.start_date
+                    params["end_date"] = current_filter.end_date
 
-                # Move to next filter in chain (if exists)
                 current_filter = getattr(current_filter, "_next", None)
 
         return params
 
     def list_tasks(
         self,
-        filter_obj: TaskFilter | None = None,
+        filter_obj=None,  # Legacy parameter for TUI compatibility
+        all: bool = False,
+        status: str | None = None,
+        tags: list[str] | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         sort_by: str = "id",
         reverse: bool = False,
         include_gantt: bool = False,
@@ -629,7 +627,12 @@ class TaskdogApiClient:
         """List tasks with optional filtering and sorting.
 
         Args:
-            filter_obj: Task filter
+            filter_obj: (DEPRECATED, TUI only) TaskFilter object for backward compatibility
+            all: Include archived tasks (default: False)
+            status: Filter by status (e.g., "pending", "in_progress", "completed", "canceled")
+            tags: Filter by tags (OR logic)
+            start_date: Filter by start date
+            end_date: Filter by end date
             sort_by: Sort field
             reverse: Reverse sort order
             include_gantt: If True, include Gantt chart data
@@ -642,18 +645,33 @@ class TaskdogApiClient:
 
         Note:
             holiday_checker is ignored in API mode (server handles holidays).
+            filter_obj is deprecated and only supported for TUI backward compatibility.
         """
+        # Handle legacy filter_obj parameter (TUI compatibility)
+        if filter_obj is not None:
+            legacy_params = self._parse_filter_to_params_legacy(filter_obj)
+            all = legacy_params["all"]
+            status = legacy_params["status"] or status
+            tags = legacy_params["tags"] or tags
+            start_date = legacy_params["start_date"] or start_date
+            end_date = legacy_params["end_date"] or end_date
+
         params: dict[str, Any] = {
+            "all": str(all).lower(),
             "sort": sort_by,
             "reverse": str(reverse).lower(),
             "include_gantt": str(include_gantt).lower(),
         }
 
-        # Parse filter_obj and convert to query parameters
-        filter_params = self._parse_filter_to_params(
-            filter_obj, use_filter_prefix=False
-        )
-        params.update(filter_params)
+        # Add filter parameters if provided
+        if status:
+            params["status"] = status.lower()
+        if tags:
+            params["tags"] = tags
+        if start_date:
+            params["start_date"] = start_date.isoformat()
+        if end_date:
+            params["end_date"] = end_date.isoformat()
 
         if include_gantt:
             if gantt_start_date:
@@ -708,7 +726,12 @@ class TaskdogApiClient:
 
     def get_gantt_data(
         self,
-        filter_obj: TaskFilter | None = None,
+        filter_obj=None,  # Legacy parameter for TUI compatibility
+        all: bool = False,
+        status: str | None = None,
+        tags: list[str] | None = None,
+        filter_start_date: date | None = None,
+        filter_end_date: date | None = None,
         sort_by: str = "deadline",
         reverse: bool = False,
         start_date: date | None = None,
@@ -718,11 +741,16 @@ class TaskdogApiClient:
         """Get Gantt chart data.
 
         Args:
-            filter_obj: Task filter
+            filter_obj: (DEPRECATED, TUI only) TaskFilter object for backward compatibility
+            all: Include archived tasks (default: False)
+            status: Filter by status
+            tags: Filter by tags (OR logic)
+            filter_start_date: Filter tasks by start date
+            filter_end_date: Filter tasks by end date
             sort_by: Sort field
             reverse: Reverse sort order
-            start_date: Chart start date
-            end_date: Chart end date
+            start_date: Chart display start date
+            end_date: Chart display end date
             holiday_checker: Holiday checker (ignored for API - server handles holidays)
 
         Returns:
@@ -730,14 +758,36 @@ class TaskdogApiClient:
 
         Note:
             holiday_checker is ignored in API mode (server handles holidays).
+            filter_start_date/filter_end_date are for filtering tasks.
+            start_date/end_date are for the chart display range.
+            filter_obj is deprecated and only supported for TUI backward compatibility.
         """
-        params: dict[str, Any] = {"sort": sort_by, "reverse": str(reverse).lower()}
+        # Handle legacy filter_obj parameter (TUI compatibility)
+        if filter_obj is not None:
+            legacy_params = self._parse_filter_to_params_legacy(filter_obj)
+            all = legacy_params["all"]
+            status = legacy_params["status"] or status
+            tags = legacy_params["tags"] or tags
+            filter_start_date = legacy_params["start_date"] or filter_start_date
+            filter_end_date = legacy_params["end_date"] or filter_end_date
 
-        # Parse filter_obj and convert to query parameters
-        # Use 'filter_start_date' and 'filter_end_date' for DateRangeFilter in gantt
-        filter_params = self._parse_filter_to_params(filter_obj, use_filter_prefix=True)
-        params.update(filter_params)
+        params: dict[str, Any] = {
+            "all": str(all).lower(),
+            "sort": sort_by,
+            "reverse": str(reverse).lower(),
+        }
 
+        # Add filter parameters if provided
+        if status:
+            params["status"] = status.lower()
+        if tags:
+            params["tags"] = tags
+        if filter_start_date:
+            params["filter_start_date"] = filter_start_date.isoformat()
+        if filter_end_date:
+            params["filter_end_date"] = filter_end_date.isoformat()
+
+        # Add chart display range if provided
         if start_date:
             params["start_date"] = start_date.isoformat()
         if end_date:

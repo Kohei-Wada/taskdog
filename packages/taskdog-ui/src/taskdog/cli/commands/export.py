@@ -3,7 +3,6 @@
 import click
 
 from taskdog.cli.commands.common_options import date_range_options, filter_options
-from taskdog.cli.commands.filter_helpers import build_task_filter
 from taskdog.cli.context import CliContext
 from taskdog.exporters import CsvTaskExporter, JsonTaskExporter, MarkdownTableExporter
 from taskdog.shared.click_types.field_list import FieldList
@@ -88,17 +87,19 @@ def export_command(ctx, format, output, fields, tag, all, status, start_date, en
     api_client = ctx_obj.api_client
 
     try:
-        # Build integrated filter with all options (tags use OR logic by default)
+        # Prepare filter parameters (tags use OR logic by default)
         tags = list(tag) if tag else None
-        filter_obj = build_task_filter(
+
+        # Get filtered tasks via API client (export uses default id sorting)
+        result = api_client.list_tasks(
             all=all,
             status=status,
             tags=tags,
-            match_all=False,  # OR logic for multiple tags
             start_date=start_date,
             end_date=end_date,
+            sort_by="id",
+            reverse=False,
         )
-        result = api_client.list_tasks(filter_obj=filter_obj)
         tasks = result.tasks
 
         # fields is already parsed and validated by FieldList Click type

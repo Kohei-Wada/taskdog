@@ -3,12 +3,10 @@
 import click
 
 from taskdog.cli.commands.common_options import filter_options, sort_options
-from taskdog.cli.commands.filter_helpers import build_task_filter
 from taskdog.cli.commands.table_helpers import render_table
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
-from taskdog_core.application.queries.filters.composite_filter import CompositeFilter
-from taskdog_core.application.queries.filters.this_week_filter import ThisWeekFilter
+from taskdog_core.shared.utils.date_utils import get_this_week_range
 
 
 @click.command(
@@ -46,16 +44,17 @@ def week_command(ctx, format, all, status, sort, reverse):
     """
     ctx_obj: CliContext = ctx.obj
 
-    # Build combined filter: time filter + status filter
-    status_filter = build_task_filter(all=all, status=status)
-    time_filter = ThisWeekFilter()
-    filter_obj = (
-        CompositeFilter([status_filter, time_filter]) if status_filter else time_filter
-    )
+    # Get this week's date range for filtering (Monday to Sunday)
+    start_date, end_date = get_this_week_range()
 
     # Get filtered and sorted tasks via API client
     result = ctx_obj.api_client.list_tasks(
-        filter_obj=filter_obj, sort_by=sort, reverse=reverse
+        all=all,
+        status=status,
+        start_date=start_date,
+        end_date=end_date,
+        sort_by=sort,
+        reverse=reverse,
     )
 
     # Render and display

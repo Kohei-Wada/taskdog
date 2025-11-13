@@ -7,7 +7,6 @@ from taskdog.cli.commands.common_options import (
     filter_options,
     sort_options,
 )
-from taskdog.cli.commands.filter_helpers import build_task_filter
 from taskdog.cli.commands.table_helpers import render_table
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
@@ -61,20 +60,18 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
     ctx_obj: CliContext = ctx.obj
 
     # fields is already parsed by FieldList Click type (no validation)
-    # Build integrated filter with all options (tags use OR logic by default)
+    # Prepare filter parameters (tags use OR logic by default)
     tags = list(tag) if tag else None
-    filter_obj = build_task_filter(
-        all=all,
-        status=status,
-        tags=tags,
-        match_all=False,  # OR logic for multiple tags
-        start_date=start_date,
-        end_date=end_date,
-    )
 
     # Get filtered and sorted tasks via API client
     result = ctx_obj.api_client.list_tasks(
-        filter_obj=filter_obj, sort_by=sort, reverse=reverse
+        all=all,
+        status=status,
+        tags=tags,
+        start_date=start_date,
+        end_date=end_date,
+        sort_by=sort,
+        reverse=reverse,
     )
 
     # Render and display

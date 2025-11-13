@@ -10,7 +10,6 @@ from taskdog.cli.commands.common_options import (
     filter_options,
     sort_options,
 )
-from taskdog.cli.commands.filter_helpers import build_task_filter
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
@@ -67,17 +66,24 @@ def report_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     api_client = ctx_obj.api_client
     workload_calculator = WorkloadCalculator()
 
-    # Build integrated filter with tags support (tags use OR logic by default)
+    # Prepare filter parameters (tags use OR logic by default)
     tags = list(tag) if tag else None
-    filter_obj = build_task_filter(all=all, status=status, tags=tags, match_all=False)
-
-    # Get filtered and sorted tasks via API
-    result = api_client.list_tasks(filter_obj=filter_obj, sort_by=sort, reverse=reverse)
-    tasks = result.tasks
 
     # Convert datetime to date objects for filtering
     start_date_obj = start_date.date() if start_date else None
     end_date_obj = end_date.date() if end_date else None
+
+    # Get filtered and sorted tasks via API
+    result = api_client.list_tasks(
+        all=all,
+        status=status,
+        tags=tags,
+        start_date=start_date_obj,
+        end_date=end_date_obj,
+        sort_by=sort,
+        reverse=reverse,
+    )
+    tasks = result.tasks
 
     # Group tasks by date (using WorkloadCalculator)
     grouped_tasks = _group_tasks_by_date(
