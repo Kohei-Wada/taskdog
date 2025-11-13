@@ -47,12 +47,6 @@ max_hours_per_day = 6.0
 #            round_robin, dependency_aware, genetic, monte_carlo
 default_algorithm = "greedy"
 
-# Display Settings
-[display]
-# Datetime format for display (default: "%Y-%m-%d %H:%M:%S")
-# Uses Python strftime format
-datetime_format = "%Y-%m-%d %H:%M:%S"
-
 # Time Settings
 [time]
 # Default hour for task start times / business day start (0-23, default: 9)

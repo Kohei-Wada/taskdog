@@ -4,7 +4,6 @@ from datetime import datetime
 
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_ALGORITHM,
-    DEFAULT_DATETIME_FORMAT,
     DEFAULT_END_HOUR,
     DEFAULT_MAX_HOURS_PER_DAY,
     DEFAULT_PRIORITY,
@@ -48,7 +47,6 @@ __all__ = [
     "DATETIME_FORMAT",
     "DAYS_PER_WEEK",
     "DEFAULT_ALGORITHM",
-    "DEFAULT_DATETIME_FORMAT",
     "DEFAULT_END_HOUR",
     "DEFAULT_MAX_HOURS_PER_DAY",
     "DEFAULT_PRIORITY",

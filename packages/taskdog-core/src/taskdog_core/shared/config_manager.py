@@ -9,7 +9,6 @@ from pathlib import Path
 
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_ALGORITHM,
-    DEFAULT_DATETIME_FORMAT,
     DEFAULT_END_HOUR,
     DEFAULT_MAX_HOURS_PER_DAY,
     DEFAULT_PRIORITY,
@@ -40,17 +39,6 @@ class TaskConfig:
     """
 
     default_priority: int = DEFAULT_PRIORITY
-
-
-@dataclass(frozen=True)
-class DisplayConfig:
-    """Display-related configuration.
-
-    Attributes:
-        datetime_format: Format string for datetime display
-    """
-
-    datetime_format: str = DEFAULT_DATETIME_FORMAT
 
 
 @dataclass(frozen=True)
@@ -114,7 +102,6 @@ class Config:
     Attributes:
         optimization: Optimization-related settings
         task: Task-related settings
-        display: Display-related settings
         time: Time-related settings
         region: Region-related settings (holidays, etc.)
         storage: Storage backend settings
@@ -123,7 +110,6 @@ class Config:
 
     optimization: OptimizationConfig
     task: TaskConfig
-    display: DisplayConfig
     time: TimeConfig
     region: RegionConfig = field(default_factory=RegionConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
@@ -161,7 +147,6 @@ class ConfigManager:
         # Parse sections with fallback to defaults
         optimization_data = data.get("optimization", {})
         task_data = data.get("task", {})
-        display_data = data.get("display", {})
         time_data = data.get("time", {})
         region_data = data.get("region", {})
         storage_data = data.get("storage", {})
@@ -178,11 +163,6 @@ class ConfigManager:
             ),
             task=TaskConfig(
                 default_priority=task_data.get("default_priority", DEFAULT_PRIORITY),
-            ),
-            display=DisplayConfig(
-                datetime_format=display_data.get(
-                    "datetime_format", DEFAULT_DATETIME_FORMAT
-                ),
             ),
             time=TimeConfig(
                 default_start_hour=time_data.get(
@@ -214,7 +194,6 @@ class ConfigManager:
         return Config(
             optimization=OptimizationConfig(),
             task=TaskConfig(),
-            display=DisplayConfig(),
             time=TimeConfig(),
             region=RegionConfig(),
             storage=StorageConfig(),

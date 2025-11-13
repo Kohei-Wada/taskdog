@@ -35,7 +35,7 @@ The repository uses UV workspace with three packages:
 **Tasks**: Stored in SQLite database `tasks.db` at `$XDG_DATA_HOME/taskdog/tasks.db` (fallback: `~/.local/share/taskdog/tasks.db`)
 
 **Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/config.toml` (fallback: `~/.config/taskdog/config.toml`)
-- Settings: max_hours_per_day, default_algorithm, default_priority, datetime_format, default_start_hour, default_end_hour, country (for holiday checking)
+- Settings: max_hours_per_day, default_algorithm, default_priority, default_start_hour, default_end_hour, country (for holiday checking)
 - Priority: CLI args > Config file > Defaults
 - Access via `ctx.obj.config` (CLI) or `context.config` (TUI)
 - Country codes (ISO 3166-1 alpha-2): "JP", "US", "GB", "DE", etc.

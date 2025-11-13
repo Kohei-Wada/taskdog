@@ -372,10 +372,6 @@ default_algorithm = "greedy"   # Default scheduling algorithm (default: "greedy"
 [task]
 default_priority = 5           # Default task priority (default: 5)
 
-# Display Settings (optional)
-[display]
-datetime_format = "%Y-%m-%d %H:%M:%S"  # Datetime display format
-
 # Time Settings (optional)
 [time]
 default_start_hour = 9         # Business day start hour (default: 9)

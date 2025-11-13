@@ -7,9 +7,6 @@ DEFAULT_ALGORITHM = "greedy"
 # === Task Defaults ===
 DEFAULT_PRIORITY = 5
 
-# === Display Defaults ===
-DEFAULT_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-
 # === Time Defaults ===
 DEFAULT_START_HOUR = 9  # Business day start hour
 DEFAULT_END_HOUR = 18  # Business day end hour (used for deadlines)
