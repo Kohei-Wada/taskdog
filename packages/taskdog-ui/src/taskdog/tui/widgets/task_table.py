@@ -159,7 +159,7 @@ class TaskTable(DataTable):
             Rich Text object with checkbox indicator
         """
         if task_id in self._selected_task_ids:
-            return Text("󰱒", style="green bold")
+            return Text("󰱒")
         return Text("󰄱")
 
     def get_selected_task_id(self) -> int | None:
