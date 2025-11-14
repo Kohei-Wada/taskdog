@@ -8,32 +8,11 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotStartedError,
     TaskValidationError,
 )
+from taskdog_server.api.converters import convert_to_task_operation_response
 from taskdog_server.api.dependencies import LifecycleControllerDep
 from taskdog_server.api.models.responses import TaskOperationResponse
 
 router = APIRouter()
-
-
-def convert_to_task_operation_response(dto) -> TaskOperationResponse:
-    """Convert TaskOperationOutput DTO to Pydantic response model."""
-    return TaskOperationResponse(
-        id=dto.id,
-        name=dto.name,
-        status=dto.status,
-        priority=dto.priority,
-        deadline=dto.deadline,
-        estimated_duration=dto.estimated_duration,
-        planned_start=dto.planned_start,
-        planned_end=dto.planned_end,
-        actual_start=dto.actual_start,
-        actual_end=dto.actual_end,
-        depends_on=dto.depends_on,
-        tags=dto.tags,
-        is_fixed=dto.is_fixed,
-        is_archived=dto.is_archived,
-        actual_duration_hours=dto.actual_duration_hours,
-        actual_daily_hours=dto.actual_daily_hours,
-    )
 
 
 @router.post("/{task_id}/start", response_model=TaskOperationResponse)
