@@ -233,6 +233,30 @@ class TaskdogApiClient:
         data = response.json()
         return self._convert_to_update_task_output(data)
 
+    def _lifecycle_operation(self, task_id: int, operation: str) -> TaskOperationOutput:
+        """Execute a lifecycle operation on a task.
+
+        Generic helper for lifecycle operations (archive, restore, start, complete, etc.)
+        that follow the same pattern.
+
+        Args:
+            task_id: Task ID
+            operation: Operation name (e.g., "archive", "start", "complete")
+
+        Returns:
+            TaskOperationOutput with updated task data
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If validation fails
+        """
+        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/{operation}")
+        if not response.is_success:
+            self._handle_error(response)
+
+        data = response.json()
+        return self._convert_to_task_operation_output(data)
+
     def archive_task(self, task_id: int) -> TaskOperationOutput:
         """Archive (soft delete) a task.
 
@@ -245,12 +269,7 @@ class TaskdogApiClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/archive")
-        if not response.is_success:
-            self._handle_error(response)
-
-        data = response.json()
-        return self._convert_to_task_operation_output(data)
+        return self._lifecycle_operation(task_id, "archive")
 
     def restore_task(self, task_id: int) -> TaskOperationOutput:
         """Restore an archived task.
@@ -265,12 +284,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If not archived
         """
-        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/restore")
-        if not response.is_success:
-            self._handle_error(response)
-
-        data = response.json()
-        return self._convert_to_task_operation_output(data)
+        return self._lifecycle_operation(task_id, "restore")
 
     def remove_task(self, task_id: int) -> None:
         """Permanently delete a task.
@@ -300,12 +314,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/start")
-        if not response.is_success:
-            self._handle_error(response)
-
-        data = response.json()
-        return self._convert_to_task_operation_output(data)
+        return self._lifecycle_operation(task_id, "start")
 
     def complete_task(self, task_id: int) -> TaskOperationOutput:
         """Complete a task.
@@ -320,12 +329,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/complete")
-        if not response.is_success:
-            self._handle_error(response)
-
-        data = response.json()
-        return self._convert_to_task_operation_output(data)
+        return self._lifecycle_operation(task_id, "complete")
 
     def pause_task(self, task_id: int) -> TaskOperationOutput:
         """Pause a task.
@@ -340,12 +344,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/pause")
-        if not response.is_success:
-            self._handle_error(response)
-
-        data = response.json()
-        return self._convert_to_task_operation_output(data)
+        return self._lifecycle_operation(task_id, "pause")
 
     def cancel_task(self, task_id: int) -> TaskOperationOutput:
         """Cancel a task.
@@ -360,12 +359,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/cancel")
-        if not response.is_success:
-            self._handle_error(response)
-
-        data = response.json()
-        return self._convert_to_task_operation_output(data)
+        return self._lifecycle_operation(task_id, "cancel")
 
     def reopen_task(self, task_id: int) -> TaskOperationOutput:
         """Reopen a task.
@@ -380,12 +374,7 @@ class TaskdogApiClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self._safe_request("post", f"/api/v1/tasks/{task_id}/reopen")
-        if not response.is_success:
-            self._handle_error(response)
-
-        data = response.json()
-        return self._convert_to_task_operation_output(data)
+        return self._lifecycle_operation(task_id, "reopen")
 
     # Relationship Controller methods
 
