@@ -5,6 +5,7 @@ from datetime import date, datetime
 from unittest.mock import MagicMock
 
 from click.testing import CliRunner
+from parameterized import parameterized
 
 from taskdog.cli.commands.report import (
     _generate_markdown_report,
@@ -13,37 +14,48 @@ from taskdog.cli.commands.report import (
 )
 from taskdog.cli.context import CliContext
 from taskdog.console.rich_console_writer import RichConsoleWriter
-from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.application.dto.task_dto import GanttTaskDto
+from taskdog_core.domain.entities.task import TaskStatus
+
+
+def _create_gantt_task(
+    task_id: int,
+    name: str,
+    status: TaskStatus = TaskStatus.PENDING,
+    estimated_duration: float | None = None,
+    planned_start: datetime | None = None,
+    planned_end: datetime | None = None,
+    is_finished: bool = False,
+) -> GanttTaskDto:
+    """Helper to create GanttTaskDto with sensible defaults."""
+    return GanttTaskDto(
+        id=task_id,
+        name=name,
+        status=status,
+        estimated_duration=estimated_duration,
+        planned_start=planned_start,
+        planned_end=planned_end,
+        actual_start=None,
+        actual_end=None,
+        deadline=None,
+        is_finished=is_finished,
+    )
 
 
 class TestGroupTasksByDate(unittest.TestCase):
     """Tests for _group_tasks_by_date function."""
 
-    def setUp(self):
-        """Set up test dependencies."""
-        self.workload_calculator = WorkloadCalculator()
-
     def test_groups_tasks_by_allocation_date(self):
         """Test tasks are grouped by daily_allocations dates."""
-        task1 = Task(
-            id=1,
-            name="Task 1",
-            priority=5,
-            status=TaskStatus.PENDING,
-            daily_allocations={date(2025, 10, 30): 3.0, date(2025, 10, 31): 2.0},
-        )
-        task2 = Task(
-            id=2,
-            name="Task 2",
-            priority=5,
-            status=TaskStatus.PENDING,
-            daily_allocations={date(2025, 10, 30): 4.0},
-        )
+        task1 = _create_gantt_task(1, "Task 1", estimated_duration=5.0)
+        task2 = _create_gantt_task(2, "Task 2", estimated_duration=4.0)
 
-        result = _group_tasks_by_date(
-            [task1, task2], None, None, self.workload_calculator
-        )
+        task_daily_hours = {
+            1: {date(2025, 10, 30): 3.0, date(2025, 10, 31): 2.0},
+            2: {date(2025, 10, 30): 4.0},
+        }
+
+        result = _group_tasks_by_date([task1, task2], task_daily_hours, None, None)
 
         self.assertEqual(len(result), 2)
         self.assertEqual(len(result[date(2025, 10, 30)]), 2)  # task1 and task2
@@ -51,73 +63,88 @@ class TestGroupTasksByDate(unittest.TestCase):
         self.assertEqual(result[date(2025, 10, 30)][0], (task1, 3.0))
         self.assertEqual(result[date(2025, 10, 30)][1], (task2, 4.0))
 
-    def test_filters_by_start_date(self):
-        """Test filtering by start_date."""
-        task = Task(
-            id=1,
-            name="Task 1",
-            priority=5,
-            status=TaskStatus.PENDING,
-            daily_allocations={
-                date(2025, 10, 28): 2.0,
-                date(2025, 10, 30): 3.0,
-                date(2025, 10, 31): 2.0,
-            },
-        )
+    @parameterized.expand(
+        [
+            (
+                "start_date_filter",
+                date(2025, 10, 30),  # start_date
+                None,  # end_date
+                {
+                    date(2025, 10, 28): 2.0,
+                    date(2025, 10, 30): 3.0,
+                    date(2025, 10, 31): 2.0,
+                },
+                [date(2025, 10, 30), date(2025, 10, 31)],  # expected included
+                [date(2025, 10, 28)],  # expected excluded
+            ),
+            (
+                "end_date_filter",
+                None,  # start_date
+                date(2025, 10, 31),  # end_date
+                {
+                    date(2025, 10, 30): 3.0,
+                    date(2025, 10, 31): 2.0,
+                    date(2025, 11, 1): 1.0,
+                },
+                [date(2025, 10, 30), date(2025, 10, 31)],  # expected included
+                [date(2025, 11, 1)],  # expected excluded
+            ),
+            (
+                "both_filters",
+                date(2025, 10, 30),  # start_date
+                date(2025, 10, 31),  # end_date
+                {
+                    date(2025, 10, 28): 1.0,
+                    date(2025, 10, 30): 3.0,
+                    date(2025, 10, 31): 2.0,
+                    date(2025, 11, 1): 1.0,
+                },
+                [date(2025, 10, 30), date(2025, 10, 31)],  # expected included
+                [date(2025, 10, 28), date(2025, 11, 1)],  # expected excluded
+            ),
+        ]
+    )
+    def test_filters_by_date_range(
+        self,
+        name,
+        start_date,
+        end_date,
+        daily_hours,
+        expected_included,
+        expected_excluded,
+    ):
+        """Test filtering by start_date and/or end_date."""
+        task = _create_gantt_task(1, "Task 1", estimated_duration=7.0)
+        task_daily_hours = {1: daily_hours}
 
         result = _group_tasks_by_date(
-            [task],
-            start_date=date(2025, 10, 30),
-            end_date=None,
-            workload_calculator=self.workload_calculator,
+            [task], task_daily_hours, start_date=start_date, end_date=end_date
         )
 
-        self.assertEqual(len(result), 2)
-        self.assertNotIn(date(2025, 10, 28), result)
-        self.assertIn(date(2025, 10, 30), result)
-        self.assertIn(date(2025, 10, 31), result)
+        # Check expected dates are included
+        for expected_date in expected_included:
+            self.assertIn(
+                expected_date, result, f"{name}: {expected_date} should be included"
+            )
 
-    def test_filters_by_end_date(self):
-        """Test filtering by end_date."""
-        task = Task(
-            id=1,
-            name="Task 1",
-            priority=5,
-            status=TaskStatus.PENDING,
-            daily_allocations={
-                date(2025, 10, 30): 3.0,
-                date(2025, 10, 31): 2.0,
-                date(2025, 11, 1): 1.0,
-            },
-        )
-
-        result = _group_tasks_by_date(
-            [task],
-            start_date=None,
-            end_date=date(2025, 10, 31),
-            workload_calculator=self.workload_calculator,
-        )
-
-        self.assertEqual(len(result), 2)
-        self.assertIn(date(2025, 10, 30), result)
-        self.assertIn(date(2025, 10, 31), result)
-        self.assertNotIn(date(2025, 11, 1), result)
+        # Check excluded dates are not present
+        for excluded_date in expected_excluded:
+            self.assertNotIn(
+                excluded_date, result, f"{name}: {excluded_date} should be excluded"
+            )
 
     def test_sorts_by_date(self):
         """Test result is sorted by date."""
-        task = Task(
-            id=1,
-            name="Task 1",
-            priority=5,
-            status=TaskStatus.PENDING,
-            daily_allocations={
+        task = _create_gantt_task(1, "Task 1", estimated_duration=6.0)
+        task_daily_hours = {
+            1: {
                 date(2025, 11, 1): 1.0,
                 date(2025, 10, 30): 3.0,
                 date(2025, 10, 31): 2.0,
-            },
-        )
+            }
+        }
 
-        result = _group_tasks_by_date([task], None, None, self.workload_calculator)
+        result = _group_tasks_by_date([task], task_daily_hours, None, None)
 
         dates = list(result.keys())
         self.assertEqual(
@@ -125,60 +152,46 @@ class TestGroupTasksByDate(unittest.TestCase):
         )
 
     def test_ignores_tasks_without_schedule(self):
-        """Test tasks without schedule (no daily_allocations or planned dates) are ignored."""
-        task_with_allocation = Task(
-            id=1,
-            name="Task 1",
-            priority=5,
-            status=TaskStatus.PENDING,
-            daily_allocations={date(2025, 10, 30): 3.0},
-        )
-        task_without_schedule = Task(
-            id=2,
-            name="Task 2",
-            priority=5,
-            status=TaskStatus.PENDING,
-        )
+        """Test tasks without schedule (no task_daily_hours) are ignored."""
+        task_with_allocation = _create_gantt_task(1, "Task 1", estimated_duration=3.0)
+        task_without_schedule = _create_gantt_task(2, "Task 2", estimated_duration=4.0)
+
+        task_daily_hours = {
+            1: {date(2025, 10, 30): 3.0},
+            # Task 2 has no daily hours
+        }
 
         result = _group_tasks_by_date(
             [task_with_allocation, task_without_schedule],
+            task_daily_hours,
             None,
             None,
-            self.workload_calculator,
         )
 
         self.assertEqual(len(result), 1)
         self.assertEqual(len(result[date(2025, 10, 30)]), 1)
 
     def test_includes_fixed_tasks_without_daily_allocations(self):
-        """Test fixed tasks with planned dates but no daily_allocations are included."""
-        # Fixed task with planned dates (manually scheduled, not optimized)
-        fixed_task = Task(
-            id=1,
-            name="Fixed Task",
-            priority=5,
-            status=TaskStatus.PENDING,
-            is_fixed=True,
+        """Test fixed tasks are included when they have task_daily_hours."""
+        fixed_task = _create_gantt_task(
+            1,
+            "Fixed Task",
+            estimated_duration=8.0,
             planned_start=datetime(2025, 10, 30, 9, 0),
             planned_end=datetime(2025, 10, 31, 18, 0),
-            estimated_duration=8.0,  # 8 hours total
         )
+        optimized_task = _create_gantt_task(2, "Optimized Task", estimated_duration=3.0)
 
-        # Task with daily_allocations (optimized)
-        optimized_task = Task(
-            id=2,
-            name="Optimized Task",
-            priority=5,
-            status=TaskStatus.PENDING,
-            daily_allocations={date(2025, 10, 30): 3.0},
-        )
+        task_daily_hours = {
+            1: {date(2025, 10, 30): 4.0, date(2025, 10, 31): 4.0},
+            2: {date(2025, 10, 30): 3.0},
+        }
 
         result = _group_tasks_by_date(
-            [fixed_task, optimized_task], None, None, self.workload_calculator
+            [fixed_task, optimized_task], task_daily_hours, None, None
         )
 
         # Both tasks should appear in the result
-        # Fixed task should be distributed across 2025/10/30 and 2025/10/31
         self.assertIn(date(2025, 10, 30), result)
 
         # Check that both tasks are present on 2025/10/30
@@ -188,21 +201,18 @@ class TestGroupTasksByDate(unittest.TestCase):
         self.assertIn("Optimized Task", task_names)
 
     def test_includes_manually_scheduled_tasks(self):
-        """Test manually scheduled tasks (not fixed, with planned dates, no daily_allocations)."""
-        manual_task = Task(
-            id=1,
-            name="Manual Task",
-            priority=5,
-            status=TaskStatus.PENDING,
-            is_fixed=False,
+        """Test manually scheduled tasks are included when they have task_daily_hours."""
+        manual_task = _create_gantt_task(
+            1,
+            "Manual Task",
+            estimated_duration=4.0,
             planned_start=datetime(2025, 10, 30, 9, 0),
             planned_end=datetime(2025, 10, 30, 18, 0),
-            estimated_duration=4.0,
         )
 
-        result = _group_tasks_by_date(
-            [manual_task], None, None, self.workload_calculator
-        )
+        task_daily_hours = {1: {date(2025, 10, 30): 4.0}}
+
+        result = _group_tasks_by_date([manual_task], task_daily_hours, None, None)
 
         # Manual task should appear in the result
         self.assertIn(date(2025, 10, 30), result)
@@ -213,60 +223,60 @@ class TestGroupTasksByDate(unittest.TestCase):
 class TestGenerateMarkdownReport(unittest.TestCase):
     """Tests for _generate_markdown_report function."""
 
-    def test_generates_correct_markdown_format(self):
-        """Test markdown output format is correct."""
-        task1 = Task(id=1, name="Task 1", priority=5, status=TaskStatus.PENDING)
-        task2 = Task(id=2, name="Task 2", priority=5, status=TaskStatus.PENDING)
-
-        grouped_tasks = {
-            date(2025, 10, 30): [(task1, 3.0), (task2, 4.0)],
-            date(2025, 10, 31): [(task1, 2.0)],
-        }
-
+    @parameterized.expand(
+        [
+            (
+                "multiple_tasks_multiple_dates",
+                {
+                    date(2025, 10, 30): [
+                        (_create_gantt_task(1, "Task 1"), 3.0),
+                        (_create_gantt_task(2, "Task 2"), 4.0),
+                    ],
+                    date(2025, 10, 31): [(_create_gantt_task(1, "Task 1"), 2.0)],
+                },
+                (
+                    "2025/10/30\n"
+                    "|タスク|想定工数[h]|\n"
+                    "|--|--|\n"
+                    "|Task 1|3|\n"
+                    "|Task 2|4|\n"
+                    "|sum|7|\n"
+                    "\n"
+                    "2025/10/31\n"
+                    "|タスク|想定工数[h]|\n"
+                    "|--|--|\n"
+                    "|Task 1|2|\n"
+                    "|sum|2|\n"
+                ),
+            ),
+            (
+                "zero_allocation",
+                {date(2025, 10, 30): [(_create_gantt_task(1, "Task 1"), 0.0)]},
+                (
+                    "2025/10/30\n"
+                    "|タスク|想定工数[h]|\n"
+                    "|--|--|\n"
+                    "|Task 1|-|\n"
+                    "|sum|-|\n"
+                ),
+            ),
+            (
+                "float_to_int_conversion",
+                {date(2025, 10, 30): [(_create_gantt_task(1, "Task 1"), 3.7)]},
+                (
+                    "2025/10/30\n"
+                    "|タスク|想定工数[h]|\n"
+                    "|--|--|\n"
+                    "|Task 1|3|\n"
+                    "|sum|3|\n"
+                ),
+            ),
+        ]
+    )
+    def test_markdown_generation(self, name, grouped_tasks, expected_output):
+        """Test markdown generation with various scenarios."""
         result = _generate_markdown_report(grouped_tasks)
-
-        expected = (
-            "2025/10/30\n"
-            "|タスク|想定工数[h]|\n"
-            "|--|--|\n"
-            "|Task 1|3|\n"
-            "|Task 2|4|\n"
-            "|sum|7|\n"
-            "\n"
-            "2025/10/31\n"
-            "|タスク|想定工数[h]|\n"
-            "|--|--|\n"
-            "|Task 1|2|\n"
-            "|sum|2|\n"
-        )
-
-        self.assertEqual(result, expected)
-
-    def test_handles_zero_allocation(self):
-        """Test tasks with zero allocation show '-'."""
-        task = Task(id=1, name="Task 1", priority=5, status=TaskStatus.PENDING)
-
-        grouped_tasks = {
-            date(2025, 10, 30): [(task, 0.0)],
-        }
-
-        result = _generate_markdown_report(grouped_tasks)
-
-        self.assertIn("|Task 1|-|", result)
-        self.assertIn("|sum|-|", result)
-
-    def test_converts_float_hours_to_int(self):
-        """Test allocated hours are converted to integers."""
-        task = Task(id=1, name="Task 1", priority=5, status=TaskStatus.PENDING)
-
-        grouped_tasks = {
-            date(2025, 10, 30): [(task, 3.7)],
-        }
-
-        result = _generate_markdown_report(grouped_tasks)
-
-        self.assertIn("|Task 1|3|", result)
-        self.assertIn("|sum|3|", result)
+        self.assertEqual(result, expected_output)
 
 
 class TestReportCommand(unittest.TestCase):
@@ -285,15 +295,12 @@ class TestReportCommand(unittest.TestCase):
         )
 
     def test_shows_warning_when_no_scheduled_tasks(self):
-        """Test warning is shown when no tasks have daily_allocations."""
-        # Setup
-        task_without_allocation = Task(
-            id=1, name="Task 1", priority=5, status=TaskStatus.PENDING
-        )
-
-        mock_result = MagicMock()
-        mock_result.tasks = [task_without_allocation]
-        self.api_client.list_tasks.return_value = mock_result
+        """Test warning is shown when no tasks have task_daily_hours."""
+        # Setup - empty gantt result
+        mock_gantt_result = MagicMock()
+        mock_gantt_result.tasks = []
+        mock_gantt_result.task_daily_hours = {}
+        self.api_client.get_gantt_data.return_value = mock_gantt_result
 
         # Execute
         result = self.runner.invoke(report_command, [], obj=self.cli_context)
@@ -307,18 +314,13 @@ class TestReportCommand(unittest.TestCase):
 
     def test_shows_warning_when_no_tasks_in_date_range(self):
         """Test warning is shown when no tasks match the date range."""
-        # Setup
-        task = Task(
-            id=1,
-            name="Task 1",
-            priority=5,
-            status=TaskStatus.PENDING,
-            daily_allocations={date(2025, 10, 30): 3.0},
-        )
+        # Task has hours in October, but we query for November
+        task = _create_gantt_task(1, "Task 1", estimated_duration=3.0)
 
-        mock_result = MagicMock()
-        mock_result.tasks = [task]
-        self.api_client.list_tasks.return_value = mock_result
+        mock_gantt_result = MagicMock()
+        mock_gantt_result.tasks = [task]
+        mock_gantt_result.task_daily_hours = {1: {date(2025, 10, 30): 3.0}}
+        self.api_client.get_gantt_data.return_value = mock_gantt_result
 
         # Execute - query for November dates (task is in October)
         result = self.runner.invoke(
@@ -336,26 +338,17 @@ class TestReportCommand(unittest.TestCase):
         )
 
     def test_generates_report_for_scheduled_tasks(self):
-        """Test report is generated for tasks with daily_allocations."""
-        # Setup
-        task1 = Task(
-            id=1,
-            name="Task 1",
-            priority=5,
-            status=TaskStatus.PENDING,
-            daily_allocations={date(2025, 10, 30): 3.0},
-        )
-        task2 = Task(
-            id=2,
-            name="Task 2",
-            priority=5,
-            status=TaskStatus.PENDING,
-            daily_allocations={date(2025, 10, 30): 4.0},
-        )
+        """Test report is generated for tasks with task_daily_hours."""
+        task1 = _create_gantt_task(1, "Task 1", estimated_duration=3.0)
+        task2 = _create_gantt_task(2, "Task 2", estimated_duration=4.0)
 
-        mock_result = MagicMock()
-        mock_result.tasks = [task1, task2]
-        self.api_client.list_tasks.return_value = mock_result
+        mock_gantt_result = MagicMock()
+        mock_gantt_result.tasks = [task1, task2]
+        mock_gantt_result.task_daily_hours = {
+            1: {date(2025, 10, 30): 3.0},
+            2: {date(2025, 10, 30): 4.0},
+        }
+        self.api_client.get_gantt_data.return_value = mock_gantt_result
 
         # Execute
         result = self.runner.invoke(report_command, [], obj=self.cli_context)

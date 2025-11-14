@@ -13,8 +13,7 @@ from taskdog.cli.commands.common_options import (
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
-from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-from taskdog_core.domain.entities.task import Task
+from taskdog_core.application.dto.task_dto import GanttTaskDto
 
 
 @click.command(
@@ -64,7 +63,6 @@ def report_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     """
     ctx_obj: CliContext = ctx.obj
     api_client = ctx_obj.api_client
-    workload_calculator = WorkloadCalculator()
 
     # Prepare filter parameters (tags use OR logic by default)
     tags = list(tag) if tag else None
@@ -73,21 +71,24 @@ def report_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
     start_date_obj = start_date.date() if start_date else None
     end_date_obj = end_date.date() if end_date else None
 
-    # Get filtered and sorted tasks via API
-    result = api_client.list_tasks(
+    # Get Gantt data via API (includes pre-calculated task_daily_hours)
+    gantt_result = api_client.get_gantt_data(
         all=all,
         status=status,
         tags=tags,
-        start_date=start_date_obj,
-        end_date=end_date_obj,
+        filter_start_date=start_date_obj,
+        filter_end_date=end_date_obj,
         sort_by=sort,
         reverse=reverse,
+        holiday_checker=ctx_obj.holiday_checker,
     )
-    tasks = result.tasks
 
-    # Group tasks by date (using WorkloadCalculator)
+    # Group tasks by date using pre-calculated daily hours
     grouped_tasks = _group_tasks_by_date(
-        tasks, start_date_obj, end_date_obj, workload_calculator
+        gantt_result.tasks,
+        gantt_result.task_daily_hours,
+        start_date_obj,
+        end_date_obj,
     )
 
     if not grouped_tasks:
@@ -106,29 +107,27 @@ def report_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
 
 
 def _group_tasks_by_date(
-    tasks: list[Task],
+    tasks: list[GanttTaskDto],
+    task_daily_hours: dict[int, dict[date, float]],
     start_date: date | None,
     end_date: date | None,
-    workload_calculator: WorkloadCalculator,
-) -> dict[date, list[tuple[Task, float]]]:
-    """Group tasks by date using WorkloadCalculator.
+) -> dict[date, list[tuple[GanttTaskDto, float]]]:
+    """Group tasks by date using pre-calculated daily hours.
 
     Args:
         tasks: List of tasks to group
+        task_daily_hours: Pre-calculated daily hours per task (task.id -> {date: hours})
         start_date: Optional start date for filtering
         end_date: Optional end date for filtering
-        workload_calculator: WorkloadCalculator instance for calculating daily hours
 
     Returns:
         Dictionary mapping date to list of (task, allocated_hours) tuples, sorted by date
     """
-    grouped: dict[date, list[tuple[Task, float]]] = defaultdict(list)
+    grouped: dict[date, list[tuple[GanttTaskDto, float]]] = defaultdict(list)
 
     for task in tasks:
-        # Use WorkloadCalculator to get daily hours for all tasks
-        # This handles optimized tasks (with daily_allocations),
-        # manually scheduled tasks (with planned dates), and fixed tasks
-        daily_hours = workload_calculator.get_task_daily_hours(task)
+        # Get pre-calculated daily hours for this task
+        daily_hours = task_daily_hours.get(task.id, {})
 
         if not daily_hours:
             continue
@@ -147,7 +146,7 @@ def _group_tasks_by_date(
 
 
 def _generate_markdown_report(
-    grouped_tasks: dict[date, list[tuple[Task, float]]],
+    grouped_tasks: dict[date, list[tuple[GanttTaskDto, float]]],
 ) -> str:
     """Generate markdown formatted report.
 
