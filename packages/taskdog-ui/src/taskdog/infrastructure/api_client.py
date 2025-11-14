@@ -1146,10 +1146,133 @@ class TaskdogApiClient:
         )
 
     def _convert_to_statistics_output(self, data: dict[str, Any]) -> StatisticsOutput:
-        """Convert API response to StatisticsOutput."""
-        # Simplified implementation
-        raise NotImplementedError(
-            "calculate_statistics not yet implemented for API client"
+        """Convert API response to StatisticsOutput.
+
+        Args:
+            data: API response data with format:
+                {
+                    "completion": {...},
+                    "time": {...} | None,
+                    "estimation": {...} | None,
+                    "deadline": {...} | None,
+                    "priority": {...},
+                    "trends": {...} | None
+                }
+
+        Returns:
+            StatisticsOutput with converted data
+        """
+        from taskdog_core.application.dto.statistics_output import (
+            DeadlineComplianceStatistics,
+            EstimationAccuracyStatistics,
+            PriorityDistributionStatistics,
+            StatisticsOutput,
+            TaskStatistics,
+            TimeStatistics,
+            TrendStatistics,
+        )
+
+        # Convert completion statistics (always present)
+        completion = data["completion"]
+        task_stats = TaskStatistics(
+            total_tasks=completion["total"],
+            pending_count=completion["pending"],
+            in_progress_count=completion["in_progress"],
+            completed_count=completion["completed"],
+            canceled_count=completion["canceled"],
+            completion_rate=completion["completion_rate"],
+        )
+
+        # Convert time statistics (optional)
+        time_stats = None
+        if data.get("time"):
+            time = data["time"]
+            time_stats = TimeStatistics(
+                total_work_hours=time["total_logged_hours"],
+                average_work_hours=time.get("average_task_duration") or 0.0,
+                median_work_hours=0.0,  # Not available in API response
+                longest_task=None,  # Not available in API response
+                shortest_task=None,  # Not available in API response
+                tasks_with_time_tracking=0,  # Not available in API response
+            )
+
+        # Convert estimation statistics (optional)
+        estimation_stats = None
+        if data.get("estimation"):
+            estimation = data["estimation"]
+            estimation_stats = EstimationAccuracyStatistics(
+                total_tasks_with_estimation=estimation["tasks_with_estimates"],
+                accuracy_rate=estimation["average_deviation_percentage"] / 100,
+                over_estimated_count=0,  # Not available in API response
+                under_estimated_count=0,  # Not available in API response
+                exact_count=0,  # Not available in API response
+                best_estimated_tasks=[],  # Not available in API response
+                worst_estimated_tasks=[],  # Not available in API response
+            )
+
+        # Convert deadline statistics (optional)
+        deadline_stats = None
+        if data.get("deadline"):
+            deadline = data["deadline"]
+            deadline_stats = DeadlineComplianceStatistics(
+                total_tasks_with_deadline=deadline["met"] + deadline["missed"],
+                met_deadline_count=deadline["met"],
+                missed_deadline_count=deadline["missed"],
+                compliance_rate=deadline["adherence_rate"],
+                average_delay_days=0.0,  # Not available in API response
+            )
+
+        # Convert priority statistics (always present)
+        priority = data["priority"]
+        priority_stats = PriorityDistributionStatistics(
+            high_priority_count=sum(
+                count
+                for prio, count in priority["distribution"].items()
+                if int(prio) >= 70
+            ),
+            medium_priority_count=sum(
+                count
+                for prio, count in priority["distribution"].items()
+                if 30 <= int(prio) < 70
+            ),
+            low_priority_count=sum(
+                count
+                for prio, count in priority["distribution"].items()
+                if int(prio) < 30
+            ),
+            high_priority_completion_rate=0.0,  # Not available in API response
+            priority_completion_map={
+                int(k): v for k, v in priority["distribution"].items()
+            },
+        )
+
+        # Convert trend statistics (optional)
+        trend_stats = None
+        if data.get("trends"):
+            trends = data["trends"]
+            # Calculate last 7 and 30 days from completed_per_day
+            completed_per_day = trends.get("completed_per_day", {})
+            last_7_days = (
+                sum(list(completed_per_day.values())[-7:]) if completed_per_day else 0
+            )
+            last_30_days = (
+                sum(list(completed_per_day.values())[-30:]) if completed_per_day else 0
+            )
+
+            trend_stats = TrendStatistics(
+                last_7_days_completed=last_7_days,
+                last_30_days_completed=last_30_days,
+                weekly_completion_trend={},  # Would need grouping logic
+                monthly_completion_trend={},  # Would need grouping logic
+            )
+
+        return StatisticsOutput(
+            task_stats=task_stats,
+            time_stats=time_stats,
+            estimation_stats=estimation_stats,
+            deadline_stats=deadline_stats,
+            priority_stats=priority_stats,
+            trend_stats=trend_stats,
         )
 
     def _convert_to_optimization_output(

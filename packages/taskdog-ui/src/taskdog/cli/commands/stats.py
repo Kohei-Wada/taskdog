@@ -44,7 +44,7 @@ def stats_command(ctx, period, focus):
     api_client = ctx_obj.api_client
 
     # Calculate statistics via API
-    result = api_client.get_statistics(period=period)
+    result = api_client.calculate_statistics(period=period)
 
     # Check if we have any tasks
     if result.task_stats.total_tasks == 0:
