@@ -1,7 +1,7 @@
-"""Infrastructure layer for taskdog-ui.
+"""API client modules for Taskdog server communication.
 
-This module provides the API client facade and specialized clients
-for communicating with the Taskdog server.
+This package contains specialized clients for different API domains,
+following Clean Architecture principles and domain-driven design.
 """
 
 from taskdog.infrastructure.api.analytics_client import AnalyticsClient
@@ -11,7 +11,6 @@ from taskdog.infrastructure.api.notes_client import NotesClient
 from taskdog.infrastructure.api.query_client import QueryClient
 from taskdog.infrastructure.api.relationship_client import RelationshipClient
 from taskdog.infrastructure.api.task_client import TaskClient
-from taskdog.infrastructure.api_client import TaskdogApiClient
 
 __all__ = [
     "AnalyticsClient",
@@ -21,5 +20,4 @@ __all__ = [
     "QueryClient",
     "RelationshipClient",
     "TaskClient",
-    "TaskdogApiClient",
 ]

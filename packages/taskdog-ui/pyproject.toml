@@ -67,6 +67,7 @@ packages = [
     "taskdog.shared",
     "taskdog.shared.click_types",
     "taskdog.infrastructure",
+    "taskdog.infrastructure.api",
 ]
 package-dir = { "" = "src" }
 
