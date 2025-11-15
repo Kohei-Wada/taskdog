@@ -255,12 +255,15 @@ async def update_task(
 
 
 @router.post("/{task_id}/archive", response_model=TaskOperationResponse)
-async def archive_task(task_id: int, controller: CrudControllerDep):
+async def archive_task(
+    task_id: int, controller: CrudControllerDep, background_tasks: BackgroundTasks
+):
     """Archive (soft delete) a task.
 
     Args:
         task_id: Task ID
         controller: CRUD controller dependency
+        background_tasks: Background tasks for WebSocket notifications
 
     Returns:
         Archived task data
@@ -270,18 +273,28 @@ async def archive_task(task_id: int, controller: CrudControllerDep):
     """
     try:
         result = controller.archive_task(task_id)
+
+        # Broadcast WebSocket event in background
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_updated, manager, result, ["is_archived"]
+        )
+
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 @router.post("/{task_id}/restore", response_model=TaskOperationResponse)
-async def restore_task(task_id: int, controller: CrudControllerDep):
+async def restore_task(
+    task_id: int, controller: CrudControllerDep, background_tasks: BackgroundTasks
+):
     """Restore an archived task.
 
     Args:
         task_id: Task ID
         controller: CRUD controller dependency
+        background_tasks: Background tasks for WebSocket notifications
 
     Returns:
         Restored task data
@@ -291,6 +304,13 @@ async def restore_task(task_id: int, controller: CrudControllerDep):
     """
     try:
         result = controller.restore_task(task_id)
+
+        # Broadcast WebSocket event in background
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_updated, manager, result, ["is_archived"]
+        )
+
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
