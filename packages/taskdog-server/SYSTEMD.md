@@ -131,7 +131,7 @@ systemctl --user enable taskdog-server
 The default service configuration:
 - **Host**: 127.0.0.1 (local only)
 - **Port**: 8000
-- **Workers**: 4
+- **Workers**: 2
 - **Auto-restart**: Yes (on failure)
 - **Data directory**: `~/.local/share/taskdog/`
 
@@ -154,7 +154,7 @@ Example modifications:
 
 **Change host and port (listen on all interfaces):**
 ```ini
-ExecStart=%h/.local/bin/taskdog-server --host 0.0.0.0 --port 9000 --workers 4
+ExecStart=%h/.local/bin/taskdog-server --host 0.0.0.0 --port 9000 --workers 2
 ```
 
 **Enable development mode with auto-reload:**
@@ -164,7 +164,7 @@ ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
 
 **Change number of workers:**
 ```ini
-ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --workers 8
+ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --workers 4
 ```
 
 ## Troubleshooting
