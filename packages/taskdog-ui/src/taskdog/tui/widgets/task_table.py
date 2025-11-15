@@ -11,6 +11,7 @@ from typing import ClassVar
 
 from rich.text import Text
 from textual.binding import Binding
+from textual.reactive import reactive
 from textual.widgets import DataTable
 
 from taskdog.constants.table_dimensions import (
@@ -47,6 +48,9 @@ class TaskTable(DataTable):
     - TaskSearchFilter: Handles search and filtering logic
     - TaskTableRowBuilder: Builds table row data from TaskRowViewModel
     """
+
+    # Reactive variable for selection count (Phase 3)
+    selection_count = reactive(0)
 
     # Add Vi-style bindings in addition to DataTable's default bindings
     BINDINGS: ClassVar = [
@@ -343,6 +347,9 @@ class TaskTable(DataTable):
         else:
             self._selected_task_ids.add(task_id)
 
+        # Update reactive variable (automatically triggers watch_selection_count)
+        self.selection_count = len(self._selected_task_ids)
+
         # Refresh only the current row to update checkbox
         self._refresh_current_row()
 
@@ -351,12 +358,16 @@ class TaskTable(DataTable):
         # Select all tasks in current view (respecting filter)
         for task_vm in self._viewmodel_map.values():
             self._selected_task_ids.add(task_vm.id)
+        # Update reactive variable
+        self.selection_count = len(self._selected_task_ids)
         # Refresh table to show checkboxes
         self._render_tasks(list(self._viewmodel_map.values()))
 
     def action_clear_selection(self) -> None:
         """Clear all selections (Ctrl+N)."""
         self._selected_task_ids.clear()
+        # Update reactive variable
+        self.selection_count = 0
         # Refresh table to hide checkboxes
         all_viewmodels = self._get_all_viewmodels_from_state()
         if self._current_query:
@@ -397,8 +408,5 @@ class TaskTable(DataTable):
     def clear_selection(self) -> None:
         """Clear all selections (called after batch operations)."""
         self._selected_task_ids.clear()
-
-    @property
-    def selection_count(self) -> int:
-        """Get the number of selected tasks."""
-        return len(self._selected_task_ids)
+        # Update reactive variable
+        self.selection_count = 0
