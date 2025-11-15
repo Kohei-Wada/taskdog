@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, status
 
 from taskdog_core.application.queries.filters.date_range_filter import DateRangeFilter
 from taskdog_core.application.queries.filters.non_archived_filter import (
@@ -36,6 +36,8 @@ from taskdog_server.api.models.responses import (
     TimeStatistics,
     TrendData,
 )
+from taskdog_server.api.routers.websocket import get_connection_manager
+from taskdog_server.websocket.broadcaster import broadcast_schedule_optimized
 
 router = APIRouter()
 
@@ -303,6 +305,7 @@ async def optimize_schedule(
     controller: AnalyticsControllerDep,
     background_tasks: BackgroundTasks,
     run_async: bool = Query(False, description="Run optimization in background"),
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Optimize task schedules using specified algorithm.
 
@@ -311,6 +314,7 @@ async def optimize_schedule(
         controller: Analytics controller dependency
         background_tasks: FastAPI background tasks
         run_async: If True, run in background and return immediately
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Optimization results with summary and failures
@@ -355,6 +359,17 @@ async def optimize_schedule(
             start_date=start_date,
             max_hours_per_day=max_hours,
             force_override=request.force_override,
+        )
+
+        # Broadcast WebSocket event in background (exclude the requester)
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_schedule_optimized,
+            manager,
+            len(result.successful_tasks),
+            len(result.failed_tasks),
+            request.algorithm,
+            x_client_id,
         )
 
         # Convert DTO to response model

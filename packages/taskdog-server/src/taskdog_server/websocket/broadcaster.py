@@ -124,3 +124,30 @@ async def broadcast_task_notes_updated(
         },
         exclude_client_id=exclude_client_id,
     )
+
+
+async def broadcast_schedule_optimized(
+    manager: Any,
+    scheduled_count: int,
+    failed_count: int,
+    algorithm: str,
+    exclude_client_id: str | None = None,
+) -> None:
+    """Broadcast schedule optimization event.
+
+    Args:
+        manager: ConnectionManager instance
+        scheduled_count: Number of successfully scheduled tasks
+        failed_count: Number of failed tasks
+        algorithm: Algorithm used for optimization
+        exclude_client_id: Optional client ID to exclude from broadcast
+    """
+    await manager.broadcast(
+        {
+            "type": "schedule_optimized",
+            "scheduled_count": scheduled_count,
+            "failed_count": failed_count,
+            "algorithm": algorithm,
+        },
+        exclude_client_id=exclude_client_id,
+    )

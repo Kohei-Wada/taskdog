@@ -197,6 +197,18 @@ class TaskdogTUI(App):
                     f"Task status changed: {task_name} ({old_status} → {new_status})",
                     severity="information",
                 )
+        elif msg_type == "schedule_optimized":
+            # Reload tasks on schedule optimization
+            self.call_later(self._load_tasks, keep_scroll_position=True)
+
+            # Show notification
+            scheduled_count = message.get("scheduled_count", 0)
+            failed_count = message.get("failed_count", 0)
+            algorithm = message.get("algorithm", "unknown")
+            self.notify(
+                f"Schedule optimized ({algorithm}): {scheduled_count} tasks scheduled, {failed_count} failed",
+                severity="information",
+            )
 
     def __getattr__(self, name: str):
         """Dynamically handle action_* methods by delegating to command_factory.
