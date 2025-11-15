@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, status
 
 from taskdog_core.application.queries.filters.date_range_filter import DateRangeFilter
 from taskdog_core.application.queries.filters.non_archived_filter import (
@@ -52,6 +52,7 @@ async def create_task(
     request: CreateTaskRequest,
     controller: CrudControllerDep,
     background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Create a new task.
 
@@ -59,6 +60,7 @@ async def create_task(
         request: Task creation data
         controller: CRUD controller dependency
         background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Created task data
@@ -78,9 +80,9 @@ async def create_task(
             tags=request.tags,
         )
 
-        # Broadcast WebSocket event in background
+        # Broadcast WebSocket event in background (exclude the requester)
         manager = get_connection_manager()
-        background_tasks.add_task(broadcast_task_created, manager, result)
+        background_tasks.add_task(broadcast_task_created, manager, result, x_client_id)
 
         return convert_to_task_operation_response(result)
     except TaskValidationError as e:
@@ -210,6 +212,7 @@ async def update_task(
     request: UpdateTaskRequest,
     controller: CrudControllerDep,
     background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Update task fields.
 
@@ -218,6 +221,7 @@ async def update_task(
         request: Fields to update (only provided fields are updated)
         controller: CRUD controller dependency
         background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Updated task data
@@ -239,10 +243,14 @@ async def update_task(
             tags=request.tags,
         )
 
-        # Broadcast WebSocket event in background
+        # Broadcast WebSocket event in background (exclude the requester)
         manager = get_connection_manager()
         background_tasks.add_task(
-            broadcast_task_updated, manager, result.task, result.updated_fields
+            broadcast_task_updated,
+            manager,
+            result.task,
+            result.updated_fields,
+            x_client_id,
         )
 
         return convert_to_update_task_response(result)
@@ -326,6 +334,7 @@ async def delete_task(
     controller: CrudControllerDep,
     query_controller: QueryControllerDep,
     background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Permanently delete a task.
 
@@ -334,6 +343,7 @@ async def delete_task(
         controller: CRUD controller dependency
         query_controller: Query controller dependency (for fetching task name before deletion)
         background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Raises:
         HTTPException: 404 if task not found
@@ -348,9 +358,11 @@ async def delete_task(
         # Delete task
         controller.remove_task(task_id)
 
-        # Broadcast WebSocket event in background
+        # Broadcast WebSocket event in background (exclude the requester)
         manager = get_connection_manager()
-        background_tasks.add_task(broadcast_task_deleted, manager, task_id, task_name)
+        background_tasks.add_task(
+            broadcast_task_deleted, manager, task_id, task_name, x_client_id
+        )
 
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

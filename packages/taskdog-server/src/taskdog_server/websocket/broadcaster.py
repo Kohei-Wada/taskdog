@@ -9,12 +9,15 @@ from typing import Any
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
 
-async def broadcast_task_created(manager: Any, task: TaskOperationOutput) -> None:
+async def broadcast_task_created(
+    manager: Any, task: TaskOperationOutput, exclude_client_id: str | None = None
+) -> None:
     """Broadcast task creation event.
 
     Args:
         manager: ConnectionManager instance
         task: The created task DTO
+        exclude_client_id: Optional client ID to exclude from broadcast
     """
     await manager.broadcast(
         {
@@ -23,12 +26,16 @@ async def broadcast_task_created(manager: Any, task: TaskOperationOutput) -> Non
             "task_name": task.name,
             "priority": task.priority,
             "status": task.status.value,
-        }
+        },
+        exclude_client_id=exclude_client_id,
     )
 
 
 async def broadcast_task_updated(
-    manager: Any, task: TaskOperationOutput, fields: list[str]
+    manager: Any,
+    task: TaskOperationOutput,
+    fields: list[str],
+    exclude_client_id: str | None = None,
 ) -> None:
     """Broadcast task update event.
 
@@ -36,6 +43,7 @@ async def broadcast_task_updated(
         manager: ConnectionManager instance
         task: The updated task DTO
         fields: List of updated field names
+        exclude_client_id: Optional client ID to exclude from broadcast
     """
     await manager.broadcast(
         {
@@ -44,29 +52,37 @@ async def broadcast_task_updated(
             "task_name": task.name,
             "updated_fields": fields,
             "status": task.status.value,
-        }
+        },
+        exclude_client_id=exclude_client_id,
     )
 
 
-async def broadcast_task_deleted(manager: Any, task_id: int, task_name: str) -> None:
+async def broadcast_task_deleted(
+    manager: Any, task_id: int, task_name: str, exclude_client_id: str | None = None
+) -> None:
     """Broadcast task deletion event.
 
     Args:
         manager: ConnectionManager instance
         task_id: The deleted task ID
         task_name: The deleted task name
+        exclude_client_id: Optional client ID to exclude from broadcast
     """
     await manager.broadcast(
         {
             "type": "task_deleted",
             "task_id": task_id,
             "task_name": task_name,
-        }
+        },
+        exclude_client_id=exclude_client_id,
     )
 
 
 async def broadcast_task_status_changed(
-    manager: Any, task: TaskOperationOutput, old_status: str
+    manager: Any,
+    task: TaskOperationOutput,
+    old_status: str,
+    exclude_client_id: str | None = None,
 ) -> None:
     """Broadcast task status change event.
 
@@ -74,6 +90,7 @@ async def broadcast_task_status_changed(
         manager: ConnectionManager instance
         task: The task DTO with new status
         old_status: The previous status value
+        exclude_client_id: Optional client ID to exclude from broadcast
     """
     await manager.broadcast(
         {
@@ -82,5 +99,6 @@ async def broadcast_task_status_changed(
             "task_name": task.name,
             "old_status": old_status,
             "new_status": task.status.value,
-        }
+        },
+        exclude_client_id=exclude_client_id,
     )

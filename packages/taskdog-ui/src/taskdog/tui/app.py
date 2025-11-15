@@ -162,6 +162,13 @@ class TaskdogTUI(App):
         """
         msg_type = message.get("type")
 
+        # Handle connection message - set client ID in API client
+        if msg_type == "connected":
+            client_id = message.get("client_id")
+            if client_id:
+                self.api_client._base.client_id = client_id
+            return
+
         if msg_type in (
             "task_created",
             "task_updated",

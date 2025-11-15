@@ -44,6 +44,7 @@ class WebSocketClient:
         self._websocket: Any = None
         self._running = False
         self._task: asyncio.Task[None] | None = None
+        self.client_id: str | None = None  # Received from server on connection
 
     async def connect(self) -> None:
         """Connect to the WebSocket server and start listening.
@@ -103,6 +104,12 @@ class WebSocketClient:
 
                         try:
                             message = json.loads(message_str)
+
+                            # Store client ID from connection message
+                            if message.get("type") == "connected":
+                                self.client_id = message.get("client_id")
+                                log.info(f"Received client ID: {self.client_id}")
+
                             self.on_message(message)
                         except json.JSONDecodeError:
                             log.warning(f"Invalid JSON received: {message_str!r}")

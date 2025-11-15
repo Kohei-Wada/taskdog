@@ -4,6 +4,8 @@ This module provides WebSocket endpoints for clients to receive
 real-time notifications about task changes.
 """
 
+import uuid
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from taskdog_server.websocket.connection_manager import ConnectionManager
@@ -32,16 +34,20 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
             "data": {...}  # Full task data or relevant fields
         }
     """
-    await manager.connect(websocket)
+    # Generate unique client ID for this connection
+    client_id = str(uuid.uuid4())
+
+    await manager.connect(client_id, websocket)
     try:
-        # Send welcome message
+        # Send welcome message with client ID
         await manager.send_personal_message(
             {
                 "type": "connected",
                 "message": "Connected to Taskdog real-time updates",
+                "client_id": client_id,
                 "connections": manager.get_connection_count(),
             },
-            websocket,
+            client_id,
         )
 
         # Keep connection alive and handle incoming messages
@@ -52,13 +58,13 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
             # Handle ping/pong for keepalive
             if data.get("type") == "ping":
                 await manager.send_personal_message(
-                    {"type": "pong", "timestamp": data.get("timestamp")}, websocket
+                    {"type": "pong", "timestamp": data.get("timestamp")}, client_id
                 )
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket)
+        manager.disconnect(client_id)
     except Exception:
-        manager.disconnect(websocket)
+        manager.disconnect(client_id)
 
 
 def get_connection_manager() -> ConnectionManager:

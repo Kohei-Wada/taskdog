@@ -14,59 +14,70 @@ class ConnectionManager:
 
     def __init__(self) -> None:
         """Initialize the connection manager."""
-        self.active_connections: list[WebSocket] = []
+        self.active_connections: dict[str, WebSocket] = {}  # client_id -> WebSocket
 
-    async def connect(self, websocket: WebSocket) -> None:
+    async def connect(self, client_id: str, websocket: WebSocket) -> None:
         """Accept a new WebSocket connection.
 
         Args:
+            client_id: Unique client identifier
             websocket: The WebSocket connection to accept
         """
         await websocket.accept()
-        self.active_connections.append(websocket)
+        self.active_connections[client_id] = websocket
 
-    def disconnect(self, websocket: WebSocket) -> None:
+    def disconnect(self, client_id: str) -> None:
         """Remove a WebSocket connection.
 
         Args:
-            websocket: The WebSocket connection to remove
+            client_id: Client identifier to disconnect
         """
-        if websocket in self.active_connections:
-            self.active_connections.remove(websocket)
+        if client_id in self.active_connections:
+            del self.active_connections[client_id]
 
-    async def broadcast(self, message: dict[str, Any]) -> None:
-        """Broadcast a message to all connected clients.
+    async def broadcast(
+        self, message: dict[str, Any], exclude_client_id: str | None = None
+    ) -> None:
+        """Broadcast a message to all connected clients except excluded one.
 
         Args:
             message: The message dictionary to broadcast
+            exclude_client_id: Optional client ID to exclude from broadcast
         """
         # Remove disconnected clients while broadcasting
         disconnected = []
-        for connection in self.active_connections:
+        for client_id, connection in self.active_connections.items():
+            # Skip the excluded client (usually the one who triggered the change)
+            if client_id == exclude_client_id:
+                continue
+
             try:
                 await connection.send_json(message)
             except Exception:
                 # Connection is broken, mark for removal
-                disconnected.append(connection)
+                disconnected.append(client_id)
 
         # Clean up disconnected clients
-        for connection in disconnected:
-            self.disconnect(connection)
+        for client_id in disconnected:
+            self.disconnect(client_id)
 
     async def send_personal_message(
-        self, message: dict[str, Any], websocket: WebSocket
+        self, message: dict[str, Any], client_id: str
     ) -> None:
         """Send a message to a specific client.
 
         Args:
             message: The message dictionary to send
-            websocket: The target WebSocket connection
+            client_id: The target client identifier
         """
+        if client_id not in self.active_connections:
+            return
+
         try:
-            await websocket.send_json(message)
+            await self.active_connections[client_id].send_json(message)
         except Exception:
             # Connection is broken, remove it
-            self.disconnect(websocket)
+            self.disconnect(client_id)
 
     def get_connection_count(self) -> int:
         """Get the number of active connections.

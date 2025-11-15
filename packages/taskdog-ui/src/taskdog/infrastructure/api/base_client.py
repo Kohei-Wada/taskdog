@@ -31,6 +31,7 @@ class BaseApiClient:
         """
         self.base_url = base_url.rstrip("/")
         self.client = httpx.Client(base_url=self.base_url, timeout=timeout)
+        self.client_id: str | None = None  # Set by WebSocket connection
 
     def close(self) -> None:
         """Close the HTTP client."""
@@ -82,6 +83,12 @@ class BaseApiClient:
             Exception: For other errors
         """
         try:
+            # Add X-Client-ID header if client_id is set
+            if self.client_id:
+                headers = kwargs.get("headers", {})
+                headers["X-Client-ID"] = self.client_id
+                kwargs["headers"] = headers
+
             request_method = getattr(self.client, method)
             return request_method(*args, **kwargs)
         except (httpx.ConnectError, httpx.TimeoutException, httpx.RequestError) as e:
