@@ -102,3 +102,25 @@ async def broadcast_task_status_changed(
         },
         exclude_client_id=exclude_client_id,
     )
+
+
+async def broadcast_task_notes_updated(
+    manager: Any, task_id: int, task_name: str, exclude_client_id: str | None = None
+) -> None:
+    """Broadcast task notes update event.
+
+    Args:
+        manager: ConnectionManager instance
+        task_id: The task ID
+        task_name: The task name
+        exclude_client_id: Optional client ID to exclude from broadcast
+    """
+    await manager.broadcast(
+        {
+            "type": "task_updated",
+            "task_id": task_id,
+            "task_name": task_name,
+            "updated_fields": ["notes"],
+        },
+        exclude_client_id=exclude_client_id,
+    )

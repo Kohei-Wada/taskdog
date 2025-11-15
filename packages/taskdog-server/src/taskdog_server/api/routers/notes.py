@@ -1,11 +1,15 @@
 """Task notes endpoints (CRUD operations for markdown notes)."""
 
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated
+
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, status
 
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import NotesRepositoryDep, RepositoryDep
 from taskdog_server.api.models.requests import UpdateNotesRequest
 from taskdog_server.api.models.responses import NotesResponse
+from taskdog_server.api.routers.websocket import get_connection_manager
+from taskdog_server.websocket.broadcaster import broadcast_task_notes_updated
 
 router = APIRouter()
 
@@ -48,6 +52,8 @@ async def update_task_notes(
     request: UpdateNotesRequest,
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
+    background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Update task notes.
 
@@ -56,6 +62,8 @@ async def update_task_notes(
         request: Notes content
         repository: Task repository dependency
         notes_repo: Notes repository dependency
+        background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Updated notes content and metadata
@@ -73,6 +81,12 @@ async def update_task_notes(
         notes_repo.write_notes(task_id, request.content)
         has_notes = notes_repo.has_notes(task_id)
 
+        # Broadcast WebSocket event in background (exclude the requester)
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_notes_updated, manager, task_id, task.name, x_client_id
+        )
+
         return NotesResponse(
             task_id=task_id, content=request.content, has_notes=has_notes
         )
@@ -82,7 +96,11 @@ async def update_task_notes(
 
 @router.delete("/{task_id}/notes", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task_notes(
-    task_id: int, repository: RepositoryDep, notes_repo: NotesRepositoryDep
+    task_id: int,
+    repository: RepositoryDep,
+    notes_repo: NotesRepositoryDep,
+    background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Delete task notes.
 
@@ -90,6 +108,8 @@ async def delete_task_notes(
         task_id: Task ID
         repository: Task repository dependency
         notes_repo: Notes repository dependency
+        background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Raises:
         HTTPException: 404 if task not found
@@ -102,5 +122,11 @@ async def delete_task_notes(
 
         # Delete notes by writing empty content
         notes_repo.write_notes(task_id, "")
+
+        # Broadcast WebSocket event in background (exclude the requester)
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_notes_updated, manager, task_id, task.name, x_client_id
+        )
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

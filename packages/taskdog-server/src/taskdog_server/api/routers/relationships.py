@@ -1,8 +1,9 @@
 """Task relationship endpoints (dependencies, tags, hours logging)."""
 
 from datetime import date
+from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, status
 
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
@@ -28,6 +29,7 @@ async def add_dependency(
     request: AddDependencyRequest,
     controller: RelationshipControllerDep,
     background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Add a dependency to a task.
 
@@ -36,6 +38,7 @@ async def add_dependency(
         request: Dependency data (ID of task to depend on)
         controller: Relationship controller dependency
         background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Updated task data with new dependency
@@ -46,10 +49,10 @@ async def add_dependency(
     try:
         result = controller.add_dependency(task_id, request.depends_on_id)
 
-        # Broadcast WebSocket event in background
+        # Broadcast WebSocket event in background (exclude the requester)
         manager = get_connection_manager()
         background_tasks.add_task(
-            broadcast_task_updated, manager, result, ["depends_on"]
+            broadcast_task_updated, manager, result, ["depends_on"], x_client_id
         )
 
         return convert_to_task_operation_response(result)
@@ -69,6 +72,7 @@ async def remove_dependency(
     depends_on_id: int,
     controller: RelationshipControllerDep,
     background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Remove a dependency from a task.
 
@@ -77,6 +81,7 @@ async def remove_dependency(
         depends_on_id: ID of dependency to remove
         controller: Relationship controller dependency
         background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Updated task data without the dependency
@@ -87,10 +92,10 @@ async def remove_dependency(
     try:
         result = controller.remove_dependency(task_id, depends_on_id)
 
-        # Broadcast WebSocket event in background
+        # Broadcast WebSocket event in background (exclude the requester)
         manager = get_connection_manager()
         background_tasks.add_task(
-            broadcast_task_updated, manager, result, ["depends_on"]
+            broadcast_task_updated, manager, result, ["depends_on"], x_client_id
         )
 
         return convert_to_task_operation_response(result)
@@ -108,6 +113,7 @@ async def set_task_tags(
     request: SetTaskTagsRequest,
     controller: RelationshipControllerDep,
     background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Set task tags (replaces existing tags).
 
@@ -116,6 +122,7 @@ async def set_task_tags(
         request: New tags list
         controller: Relationship controller dependency
         background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Updated task data with new tags
@@ -126,9 +133,11 @@ async def set_task_tags(
     try:
         result = controller.set_task_tags(task_id, request.tags)
 
-        # Broadcast WebSocket event in background
+        # Broadcast WebSocket event in background (exclude the requester)
         manager = get_connection_manager()
-        background_tasks.add_task(broadcast_task_updated, manager, result, ["tags"])
+        background_tasks.add_task(
+            broadcast_task_updated, manager, result, ["tags"], x_client_id
+        )
 
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
@@ -145,6 +154,7 @@ async def log_hours(
     request: LogHoursRequest,
     controller: RelationshipControllerDep,
     background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Log actual hours worked on a task for a specific date.
 
@@ -153,6 +163,7 @@ async def log_hours(
         request: Hours and date data
         controller: Relationship controller dependency
         background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Updated task data with logged hours
@@ -164,10 +175,10 @@ async def log_hours(
         log_date = request.date if request.date else date.today()
         result = controller.log_hours(task_id, request.hours, log_date.isoformat())
 
-        # Broadcast WebSocket event in background
+        # Broadcast WebSocket event in background (exclude the requester)
         manager = get_connection_manager()
         background_tasks.add_task(
-            broadcast_task_updated, manager, result, ["actual_daily_hours"]
+            broadcast_task_updated, manager, result, ["actual_daily_hours"], x_client_id
         )
 
         return convert_to_task_operation_response(result)
