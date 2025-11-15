@@ -4,6 +4,7 @@ from enum import Enum
 
 from taskdog_core.domain.constants import SECONDS_PER_HOUR
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
+from taskdog_core.shared.constants import MIN_PRIORITY_EXCLUSIVE
 
 
 class TaskStatus(Enum):
@@ -86,7 +87,7 @@ class Task:
             raise TaskValidationError("Task name cannot be empty")
 
         # Validate priority (must be positive)
-        if self.priority <= 0:
+        if self.priority <= MIN_PRIORITY_EXCLUSIVE:
             raise TaskValidationError("Priority must be greater than 0")
 
         # Validate estimated_duration (if provided, must be positive)

@@ -8,6 +8,8 @@ from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_MAX_HOURS_PER_DAY,
     DEFAULT_PRIORITY,
     DEFAULT_START_HOUR,
+    MAX_ESTIMATED_DURATION_HOURS,
+    MIN_PRIORITY_EXCLUSIVE,
 )
 from taskdog_core.shared.constants.file_management import (
     BACKUP_FILE_SUFFIX,
@@ -53,8 +55,10 @@ __all__ = [
     "DEFAULT_SCHEDULE_DAYS",
     "DEFAULT_START_HOUR",
     "ISO_8601_FORMAT",
+    "MAX_ESTIMATED_DURATION_HOURS",
     "MAX_HOURS_PER_DAY_LIMIT",
     "MIN_HOURS_PER_DAY_EXCLUSIVE",
+    "MIN_PRIORITY_EXCLUSIVE",
     "NOTES_DIR_NAME",
     "NOTE_FILE_EXTENSION",
     "SATURDAY",

@@ -4,7 +4,10 @@ import copy
 from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING
 
-from taskdog_core.application.constants.optimization import ROUND_ROBIN_MAX_ITERATIONS
+from taskdog_core.application.constants.optimization import (
+    ROUND_ROBIN_MAX_ITERATIONS,
+    SCHEDULING_EPSILON,
+)
 from taskdog_core.application.dto.optimization_output import SchedulingFailure
 from taskdog_core.application.services.optimization.allocation_context import (
     AllocationContext,
@@ -135,7 +138,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         # Identify tasks that couldn't be fully scheduled
         fully_scheduled_task_ids = set()
         for task_id, remaining_hours in task_remaining.items():
-            if remaining_hours > 0.001:  # Task not fully scheduled
+            if remaining_hours > SCHEDULING_EPSILON:  # Task not fully scheduled
                 task = task_map[task_id]
 
                 if task_id in task_start_dates:
@@ -197,7 +200,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         )
 
         iteration = 0
-        while any(hours > 0.001 for hours in task_remaining.values()):
+        while any(hours > SCHEDULING_EPSILON for hours in task_remaining.values()):
             iteration += 1
             if iteration > max_iterations:
                 break
@@ -211,7 +214,9 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
             # Get active tasks (with remaining hours)
             active_tasks = [
-                tid for tid, remaining in task_remaining.items() if remaining > 0.001
+                tid
+                for tid, remaining in task_remaining.items()
+                if remaining > SCHEDULING_EPSILON
             ]
 
             if not active_tasks:

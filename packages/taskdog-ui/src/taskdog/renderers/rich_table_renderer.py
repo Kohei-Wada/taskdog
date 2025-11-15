@@ -21,6 +21,11 @@ from taskdog.constants.table_styles import (
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.renderers.rich_renderer_base import RichRendererBase
 from taskdog.view_models.task_view_model import TaskRowViewModel
+from taskdog_core.domain.constants import (
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+    SECONDS_PER_MINUTE,
+)
 
 
 class RichTableRenderer(RichRendererBase):
@@ -377,11 +382,11 @@ class RichTableRenderer(RichRendererBase):
         elapsed_seconds = int((datetime.now() - task.actual_start).total_seconds())
 
         # Convert to days, hours, minutes, seconds
-        days = elapsed_seconds // 86400
-        remaining_seconds = elapsed_seconds % 86400
-        hours = remaining_seconds // 3600
-        minutes = (remaining_seconds % 3600) // 60
-        seconds = remaining_seconds % 60
+        days = elapsed_seconds // SECONDS_PER_DAY
+        remaining_seconds = elapsed_seconds % SECONDS_PER_DAY
+        hours = remaining_seconds // SECONDS_PER_HOUR
+        minutes = (remaining_seconds % SECONDS_PER_HOUR) // SECONDS_PER_MINUTE
+        seconds = remaining_seconds % SECONDS_PER_MINUTE
 
         # Format based on duration
         if days > 0:

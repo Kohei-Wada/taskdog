@@ -2,6 +2,7 @@
 
 from taskdog.constants.validation_messages import ValidationMessages
 from taskdog.tui.forms.validators.base import BaseValidator, ValidationResult
+from taskdog_core.shared.constants import MIN_PRIORITY_EXCLUSIVE
 
 
 class TaskNameValidator(BaseValidator):
@@ -50,7 +51,7 @@ class PriorityValidator(BaseValidator):
             return PriorityValidator._error(ValidationMessages.PRIORITY_MUST_BE_NUMBER)
 
         # Check that priority is positive
-        if priority <= 0:
+        if priority <= MIN_PRIORITY_EXCLUSIVE:
             return PriorityValidator._error(
                 ValidationMessages.PRIORITY_MUST_BE_POSITIVE
             )

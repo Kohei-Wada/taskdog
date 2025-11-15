@@ -2,6 +2,7 @@
 
 from taskdog.constants.validation_messages import ValidationMessages
 from taskdog.tui.forms.validators.base import BaseValidator, ValidationResult
+from taskdog_core.shared.constants import MAX_ESTIMATED_DURATION_HOURS
 
 
 class DurationValidator(BaseValidator):
@@ -35,8 +36,8 @@ class DurationValidator(BaseValidator):
                 ValidationMessages.DURATION_MUST_BE_POSITIVE
             )
 
-        # Check reasonable upper limit (999 hours)
-        if duration > 999:
+        # Check reasonable upper limit
+        if duration > MAX_ESTIMATED_DURATION_HOURS:
             return DurationValidator._error(ValidationMessages.DURATION_MAX_EXCEEDED)
 
         return DurationValidator._success(duration)

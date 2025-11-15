@@ -7,9 +7,11 @@ from typing import TYPE_CHECKING
 
 from taskdog_core.application.constants.optimization import (
     GENETIC_CROSSOVER_RATE,
+    GENETIC_EARLY_TERMINATION_GENERATIONS,
     GENETIC_GENERATIONS,
     GENETIC_MUTATION_RATE,
     GENETIC_POPULATION_SIZE,
+    GENETIC_TOURNAMENT_SIZE,
 )
 from taskdog_core.application.dto.optimization_output import SchedulingFailure
 from taskdog_core.application.services.optimization.allocation_context import (
@@ -55,7 +57,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     GENERATIONS = GENETIC_GENERATIONS
     CROSSOVER_RATE = GENETIC_CROSSOVER_RATE
     MUTATION_RATE = GENETIC_MUTATION_RATE
-    EARLY_TERMINATION_GENERATIONS = 10  # Terminate if no improvement for N generations
+    EARLY_TERMINATION_GENERATIONS = GENETIC_EARLY_TERMINATION_GENERATIONS
+    TOURNAMENT_SIZE = GENETIC_TOURNAMENT_SIZE
 
     def __init__(self, default_start_hour: int, default_end_hour: int):
         """Initialize strategy with configuration.
@@ -358,11 +361,12 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             List of selected parents
         """
         parents = []
-        tournament_size = 3
 
         for _ in range(len(population)):
             # Select random individuals for tournament
-            tournament_indices = random.sample(range(len(population)), tournament_size)
+            tournament_indices = random.sample(
+                range(len(population)), self.TOURNAMENT_SIZE
+            )
             # Choose best from tournament
             best_idx = max(tournament_indices, key=lambda i: fitness_scores[i])
             parents.append(population[best_idx])
