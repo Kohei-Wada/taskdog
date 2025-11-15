@@ -113,7 +113,7 @@ class SqliteTaskRepository(TaskRepository):
             models = session.scalars(stmt).all()
             return {model.id: self.mapper.from_model(model) for model in models}
 
-    def get_filtered(  # noqa: C901
+    def get_filtered(
         self,
         include_archived: bool = True,
         status: TaskStatus | None = None,
@@ -178,59 +178,9 @@ class SqliteTaskRepository(TaskRepository):
 
             # Filter by date range (checks multiple date fields)
             if start_date is not None or end_date is not None:
-                date_conditions = []
-
-                # Check deadline
-                if start_date and end_date:
-                    date_conditions.append(
-                        TaskModel.deadline.between(start_date, end_date)
-                    )
-                elif start_date:
-                    date_conditions.append(TaskModel.deadline >= start_date)
-                elif end_date:
-                    date_conditions.append(TaskModel.deadline <= end_date)
-
-                # Check planned_start
-                if start_date and end_date:
-                    date_conditions.append(
-                        TaskModel.planned_start.between(start_date, end_date)
-                    )
-                elif start_date:
-                    date_conditions.append(TaskModel.planned_start >= start_date)
-                elif end_date:
-                    date_conditions.append(TaskModel.planned_start <= end_date)
-
-                # Check planned_end
-                if start_date and end_date:
-                    date_conditions.append(
-                        TaskModel.planned_end.between(start_date, end_date)
-                    )
-                elif start_date:
-                    date_conditions.append(TaskModel.planned_end >= start_date)
-                elif end_date:
-                    date_conditions.append(TaskModel.planned_end <= end_date)
-
-                # Check actual_start
-                if start_date and end_date:
-                    date_conditions.append(
-                        TaskModel.actual_start.between(start_date, end_date)
-                    )
-                elif start_date:
-                    date_conditions.append(TaskModel.actual_start >= start_date)
-                elif end_date:
-                    date_conditions.append(TaskModel.actual_start <= end_date)
-
-                # Check actual_end
-                if start_date and end_date:
-                    date_conditions.append(
-                        TaskModel.actual_end.between(start_date, end_date)
-                    )
-                elif start_date:
-                    date_conditions.append(TaskModel.actual_end >= start_date)
-                elif end_date:
-                    date_conditions.append(TaskModel.actual_end <= end_date)
-
-                # Apply OR condition: match if ANY date field is in range
+                date_conditions = self._build_date_filter_conditions(
+                    start_date, end_date
+                )
                 if date_conditions:
                     stmt = stmt.where(or_(*date_conditions))
 
@@ -518,6 +468,51 @@ class SqliteTaskRepository(TaskRepository):
                 )
 
             return list(session.scalars(stmt).all())
+
+    def _build_date_filter_conditions(
+        self, start_date: date | None, end_date: date | None
+    ) -> list[Any]:
+        """Build SQL date filter conditions for multiple date fields.
+
+        This helper method creates SQLAlchemy filter conditions for date range
+        filtering across all date fields (deadline, planned_start, planned_end,
+        actual_start, actual_end). It handles three cases for each field:
+        - Both start and end dates: field.between(start_date, end_date)
+        - Only start date: field >= start_date
+        - Only end date: field <= end_date
+
+        Args:
+            start_date: Minimum date for filtering (inclusive), or None
+            end_date: Maximum date for filtering (inclusive), or None
+
+        Returns:
+            List of SQLAlchemy filter conditions (empty if both dates are None)
+
+        Note:
+            The returned conditions should be combined with OR logic, as we want
+            to match tasks where ANY of the date fields fall within the range.
+        """
+        date_conditions = []
+
+        # Define all date fields to check
+        date_fields = [
+            TaskModel.deadline,
+            TaskModel.planned_start,
+            TaskModel.planned_end,
+            TaskModel.actual_start,
+            TaskModel.actual_end,
+        ]
+
+        # Build conditions for each date field
+        for field in date_fields:
+            if start_date and end_date:
+                date_conditions.append(field.between(start_date, end_date))
+            elif start_date:
+                date_conditions.append(field >= start_date)
+            elif end_date:
+                date_conditions.append(field <= end_date)
+
+        return date_conditions
 
     def close(self) -> None:
         """Close database connections and clean up resources.

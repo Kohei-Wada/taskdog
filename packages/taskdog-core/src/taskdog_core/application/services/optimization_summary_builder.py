@@ -37,41 +37,90 @@ class OptimizationSummaryBuilder:
         Returns:
             Tuple of (new_count, rescheduled_count, total_hours, deadline_conflicts, days_span)
         """
-        new_count = 0
-        rescheduled_count = 0
-        total_hours = 0.0
-        deadline_conflicts = 0
+        # Calculate task counts and total hours
+        new_count, rescheduled_count = self._count_task_types(
+            modified_tasks, task_states_before
+        )
+        total_hours = self._calculate_total_hours(modified_tasks)
 
-        for task in modified_tasks:
-            if task.estimated_duration:
-                total_hours += task.estimated_duration
+        # Check for deadline conflicts
+        deadline_conflicts = self._count_deadline_conflicts(modified_tasks)
 
-            # Check if this was new or rescheduled
-            if task.id in task_states_before:
-                if task_states_before[task.id] is None:
-                    new_count += 1
-                else:
-                    rescheduled_count += 1
-
-            # Check deadline conflicts
-            if task.deadline and task.planned_end:
-                deadline_dt = task.deadline
-                end_dt = task.planned_end
-                if end_dt > deadline_dt:
-                    deadline_conflicts += 1
-
-        # Calculate date range
-        start_dates = [t.planned_start for t in modified_tasks if t.planned_start]
-        end_dates = [t.planned_end for t in modified_tasks if t.planned_end]
-
-        if start_dates and end_dates:
-            min_date = min(start_dates).date()
-            max_date = max(end_dates).date()
-            days_span = (max_date - min_date).days + 1
-        else:
-            days_span = 0
+        # Calculate date range span
+        days_span = self._calculate_days_span(modified_tasks)
 
         return new_count, rescheduled_count, total_hours, deadline_conflicts, days_span
+
+    def _count_task_types(
+        self, tasks: list[Task], task_states_before: dict[int, datetime | None]
+    ) -> tuple[int, int]:
+        """Count how many tasks are new vs rescheduled.
+
+        Args:
+            tasks: Tasks to analyze
+            task_states_before: Previous task states (planned_start before optimization)
+
+        Returns:
+            Tuple of (new_count, rescheduled_count)
+        """
+        new_count = 0
+        rescheduled_count = 0
+
+        for task in tasks:
+            if task.id not in task_states_before:
+                continue
+
+            if task_states_before[task.id] is None:
+                new_count += 1
+            else:
+                rescheduled_count += 1
+
+        return new_count, rescheduled_count
+
+    def _calculate_total_hours(self, tasks: list[Task]) -> float:
+        """Calculate total estimated hours across all tasks.
+
+        Args:
+            tasks: Tasks to sum hours for
+
+        Returns:
+            Total estimated hours
+        """
+        return sum(task.estimated_duration or 0.0 for task in tasks)
+
+    def _count_deadline_conflicts(self, tasks: list[Task]) -> int:
+        """Count tasks where planned_end exceeds deadline.
+
+        Args:
+            tasks: Tasks to check for conflicts
+
+        Returns:
+            Number of deadline conflicts
+        """
+        conflicts = 0
+        for task in tasks:
+            if task.deadline and task.planned_end and task.planned_end > task.deadline:
+                conflicts += 1
+        return conflicts
+
+    def _calculate_days_span(self, tasks: list[Task]) -> int:
+        """Calculate the span of days from earliest start to latest end.
+
+        Args:
+            tasks: Tasks to calculate date range for
+
+        Returns:
+            Number of days in the schedule (0 if no tasks have dates)
+        """
+        start_dates = [t.planned_start for t in tasks if t.planned_start]
+        end_dates = [t.planned_end for t in tasks if t.planned_end]
+
+        if not start_dates or not end_dates:
+            return 0
+
+        min_date = min(start_dates).date()
+        max_date = max(end_dates).date()
+        return (max_date - min_date).days + 1
 
     def _find_unscheduled_tasks(self) -> list[TaskSummaryDto]:
         """Find tasks that couldn't be scheduled.
