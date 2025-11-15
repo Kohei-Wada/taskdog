@@ -39,8 +39,7 @@ class GanttWidget(VerticalScroll):
         super().__init__(*args, **kwargs)
         self._task_ids: list[int] = []
         self._gantt_view_model: GanttViewModel | None = None
-        self._sort_by: str = "deadline"  # Default sort order
-        self._reverse: bool = False  # Default: ascending order
+        # NOTE: _sort_by and _reverse removed - now accessed via self.app.state (Step 2)
         self._task_filter: TaskFilter | None = None  # Filter for recalculation
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
@@ -85,14 +84,14 @@ class GanttWidget(VerticalScroll):
         Args:
             task_ids: List of task IDs (used for recalculating date range on resize)
             gantt_view_model: Presentation-ready gantt data
-            sort_by: Sort order for tasks (default: "deadline")
-            reverse: Sort direction (default: False for ascending)
+            sort_by: Sort order for tasks (kept for compatibility, value comes from app.state)
+            reverse: Sort direction (kept for compatibility, value comes from app.state)
             task_filter: Filter object to use for recalculation on resize (optional)
         """
         self._task_ids = task_ids
         self._gantt_view_model = gantt_view_model
-        self._sort_by = sort_by
-        self._reverse = reverse
+        # NOTE: sort_by and reverse parameters kept for API compatibility,
+        # but actual values are read from self.app.state
         if task_filter is not None:
             self._task_filter = task_filter
         self._render_gantt()
@@ -154,11 +153,16 @@ class GanttWidget(VerticalScroll):
 
         start_date = self._gantt_view_model.start_date
         end_date = self._gantt_view_model.end_date
-        arrow = "↓" if self._reverse else "↑"
+        # Access sort state from app.state
+        from taskdog.tui.app import TaskdogTUI
+
+        app = self.app
+        assert isinstance(app, TaskdogTUI)
+        arrow = "↓" if app.state.sort_reverse else "↑"
         title_text = (
             f"[bold yellow]Gantt Chart[/bold yellow] "
             f"[dim]({start_date} to {end_date})[/dim] "
-            f"[dim]- sorted by: {self._sort_by} {arrow}[/dim]"
+            f"[dim]- sorted by: {app.state.sort_by} {arrow}[/dim]"
         )
         self._title_widget.update(title_text)
 
@@ -274,7 +278,12 @@ class GanttWidget(VerticalScroll):
         Returns:
             Current sort field (e.g., "deadline", "priority")
         """
-        return self._sort_by
+        # Access sort state from app.state (single source of truth)
+        from taskdog.tui.app import TaskdogTUI
+
+        app = self.app
+        assert isinstance(app, TaskdogTUI)
+        return app.state.sort_by
 
     def update_view_model_and_render(self, gantt_view_model) -> None:
         """Update gantt view model and trigger re-render.
