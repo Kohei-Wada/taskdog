@@ -73,7 +73,7 @@ class TaskTable(DataTable):
         self._viewmodel_map: dict[
             int, TaskRowViewModel
         ] = {}  # Maps row index to ViewModel
-        self._all_viewmodels: list[TaskRowViewModel] = []  # All ViewModels (unfiltered)
+        # NOTE: _all_viewmodels removed - now accessed via self.app.state.viewmodels_cache (Step 5)
         self._current_query: str = ""  # Current search query
         self._selected_task_ids: set[int] = (
             set()
@@ -122,11 +122,11 @@ class TaskTable(DataTable):
         """Load task ViewModels into the table.
 
         Args:
-            view_models: List of TaskRowViewModel to display
+            view_models: List of TaskRowViewModel to display (kept for API compatibility)
         """
-        self._all_viewmodels = view_models
+        # NOTE: view_models parameter ignored - data is read from app.state (Step 5)
         self._current_query = ""
-        self._render_tasks(view_models)
+        self._render_tasks(self._get_all_viewmodels_from_state())
 
     def _render_tasks(self, view_models: list[TaskRowViewModel]):
         """Render task ViewModels to the table.
@@ -181,13 +181,25 @@ class TaskTable(DataTable):
             return None
         return self._viewmodel_map.get(self.cursor_row)
 
+    def _get_all_viewmodels_from_state(self) -> list[TaskRowViewModel]:
+        """Get all viewmodels from app state.
+
+        Returns:
+            List of all TaskRowViewModel from app state cache
+        """
+        from taskdog.tui.app import TaskdogTUI
+
+        app = self.app
+        assert isinstance(app, TaskdogTUI)
+        return app.state.viewmodels_cache
+
     def refresh_tasks(
         self, view_models: list[TaskRowViewModel], keep_scroll_position: bool = False
     ):
         """Refresh the table with updated ViewModels while maintaining cursor position.
 
         Args:
-            view_models: List of TaskRowViewModel to display
+            view_models: List of TaskRowViewModel to display (kept for API compatibility)
             keep_scroll_position: Whether to preserve scroll position during refresh.
                                  Set to True for periodic updates to avoid scroll stuttering.
         """
@@ -196,13 +208,16 @@ class TaskTable(DataTable):
         saved_scroll_y = self.scroll_y if keep_scroll_position else None
         saved_scroll_x = self.scroll_x if keep_scroll_position else None
 
-        self._all_viewmodels = view_models
+        # NOTE: view_models parameter ignored - data is read from app.state (Step 5)
+        all_viewmodels = self._get_all_viewmodels_from_state()
         # Reapply current filter if active
         if self._current_query:
-            filtered_vms = self._search_filter.filter(view_models, self._current_query)
+            filtered_vms = self._search_filter.filter(
+                all_viewmodels, self._current_query
+            )
             self._render_tasks(filtered_vms)
         else:
-            self._render_tasks(view_models)
+            self._render_tasks(all_viewmodels)
 
         # Always restore cursor position if still valid
         if 0 <= current_row < len(self._viewmodel_map):
@@ -221,17 +236,18 @@ class TaskTable(DataTable):
             query: Search query string
         """
         self._current_query = query
+        all_viewmodels = self._get_all_viewmodels_from_state()
         if not query:
             # No filter - show all ViewModels
-            self._render_tasks(self._all_viewmodels)
+            self._render_tasks(all_viewmodels)
         else:
-            filtered_vms = self._search_filter.filter(self._all_viewmodels, query)
+            filtered_vms = self._search_filter.filter(all_viewmodels, query)
             self._render_tasks(filtered_vms)
 
     def clear_filter(self):
         """Clear the current filter and show all ViewModels."""
         self._current_query = ""
-        self._render_tasks(self._all_viewmodels)
+        self._render_tasks(self._get_all_viewmodels_from_state())
 
     @property
     def is_filtered(self) -> bool:
@@ -251,16 +267,16 @@ class TaskTable(DataTable):
     @property
     def total_count(self) -> int:
         """Get the total number of tasks (unfiltered)."""
-        return len(self._all_viewmodels)
+        return len(self._get_all_viewmodels_from_state())
 
     @property
     def all_viewmodels(self) -> list[TaskRowViewModel]:
         """Get all loaded ViewModels (unfiltered).
 
         Returns:
-            List of all TaskRowViewModel currently loaded in the table
+            List of all TaskRowViewModel from app state cache
         """
-        return self._all_viewmodels
+        return self._get_all_viewmodels_from_state()
 
     def watch_cursor_row(self, old_row: int, new_row: int) -> None:
         """Called when cursor row changes.
@@ -342,13 +358,14 @@ class TaskTable(DataTable):
         """Clear all selections (Ctrl+N)."""
         self._selected_task_ids.clear()
         # Refresh table to hide checkboxes
+        all_viewmodels = self._get_all_viewmodels_from_state()
         if self._current_query:
             filtered_vms = self._search_filter.filter(
-                self._all_viewmodels, self._current_query
+                all_viewmodels, self._current_query
             )
             self._render_tasks(filtered_vms)
         else:
-            self._render_tasks(self._all_viewmodels)
+            self._render_tasks(all_viewmodels)
 
     def _refresh_current_row(self) -> None:
         """Refresh only the current row to update checkbox display."""

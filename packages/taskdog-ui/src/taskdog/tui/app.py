@@ -258,8 +258,14 @@ class TaskdogTUI(App):
         Args:
             task_data: TaskData object to cache
         """
-        self._all_tasks = task_data.all_tasks
-        self._gantt_view_model = task_data.gantt_view_model
+        self._all_tasks = (
+            task_data.all_tasks
+        )  # TODO: Will be migrated to state in Step 4
+        self._gantt_view_model = (
+            task_data.gantt_view_model
+        )  # TODO: Will be migrated to state in Step 4
+        # Update state cache for viewmodels (Step 5)
+        self.state.viewmodels_cache = task_data.table_view_models
 
     def _refresh_ui(self, task_data, keep_scroll_position: bool) -> None:
         """Refresh UI widgets with task data.
