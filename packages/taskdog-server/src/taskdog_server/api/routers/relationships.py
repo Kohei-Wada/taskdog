@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, status
 
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
@@ -16,13 +16,18 @@ from taskdog_server.api.models.requests import (
     SetTaskTagsRequest,
 )
 from taskdog_server.api.models.responses import TaskOperationResponse
+from taskdog_server.api.routers.websocket import get_connection_manager
+from taskdog_server.websocket.broadcaster import broadcast_task_updated
 
 router = APIRouter()
 
 
 @router.post("/{task_id}/dependencies", response_model=TaskOperationResponse)
 async def add_dependency(
-    task_id: int, request: AddDependencyRequest, controller: RelationshipControllerDep
+    task_id: int,
+    request: AddDependencyRequest,
+    controller: RelationshipControllerDep,
+    background_tasks: BackgroundTasks,
 ):
     """Add a dependency to a task.
 
@@ -30,6 +35,7 @@ async def add_dependency(
         task_id: Task ID that will depend on another task
         request: Dependency data (ID of task to depend on)
         controller: Relationship controller dependency
+        background_tasks: Background tasks for WebSocket notifications
 
     Returns:
         Updated task data with new dependency
@@ -39,6 +45,13 @@ async def add_dependency(
     """
     try:
         result = controller.add_dependency(task_id, request.depends_on_id)
+
+        # Broadcast WebSocket event in background
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_updated, manager, result, ["depends_on"]
+        )
+
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
@@ -52,7 +65,10 @@ async def add_dependency(
     "/{task_id}/dependencies/{depends_on_id}", response_model=TaskOperationResponse
 )
 async def remove_dependency(
-    task_id: int, depends_on_id: int, controller: RelationshipControllerDep
+    task_id: int,
+    depends_on_id: int,
+    controller: RelationshipControllerDep,
+    background_tasks: BackgroundTasks,
 ):
     """Remove a dependency from a task.
 
@@ -60,6 +76,7 @@ async def remove_dependency(
         task_id: Task ID
         depends_on_id: ID of dependency to remove
         controller: Relationship controller dependency
+        background_tasks: Background tasks for WebSocket notifications
 
     Returns:
         Updated task data without the dependency
@@ -69,6 +86,13 @@ async def remove_dependency(
     """
     try:
         result = controller.remove_dependency(task_id, depends_on_id)
+
+        # Broadcast WebSocket event in background
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_updated, manager, result, ["depends_on"]
+        )
+
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
@@ -80,7 +104,10 @@ async def remove_dependency(
 
 @router.put("/{task_id}/tags", response_model=TaskOperationResponse)
 async def set_task_tags(
-    task_id: int, request: SetTaskTagsRequest, controller: RelationshipControllerDep
+    task_id: int,
+    request: SetTaskTagsRequest,
+    controller: RelationshipControllerDep,
+    background_tasks: BackgroundTasks,
 ):
     """Set task tags (replaces existing tags).
 
@@ -88,6 +115,7 @@ async def set_task_tags(
         task_id: Task ID
         request: New tags list
         controller: Relationship controller dependency
+        background_tasks: Background tasks for WebSocket notifications
 
     Returns:
         Updated task data with new tags
@@ -97,6 +125,11 @@ async def set_task_tags(
     """
     try:
         result = controller.set_task_tags(task_id, request.tags)
+
+        # Broadcast WebSocket event in background
+        manager = get_connection_manager()
+        background_tasks.add_task(broadcast_task_updated, manager, result, ["tags"])
+
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
@@ -108,7 +141,10 @@ async def set_task_tags(
 
 @router.post("/{task_id}/log-hours", response_model=TaskOperationResponse)
 async def log_hours(
-    task_id: int, request: LogHoursRequest, controller: RelationshipControllerDep
+    task_id: int,
+    request: LogHoursRequest,
+    controller: RelationshipControllerDep,
+    background_tasks: BackgroundTasks,
 ):
     """Log actual hours worked on a task for a specific date.
 
@@ -116,6 +152,7 @@ async def log_hours(
         task_id: Task ID
         request: Hours and date data
         controller: Relationship controller dependency
+        background_tasks: Background tasks for WebSocket notifications
 
     Returns:
         Updated task data with logged hours
@@ -126,6 +163,13 @@ async def log_hours(
     try:
         log_date = request.date if request.date else date.today()
         result = controller.log_hours(task_id, request.hours, log_date.isoformat())
+
+        # Broadcast WebSocket event in background
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_updated, manager, result, ["actual_daily_hours"]
+        )
+
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
