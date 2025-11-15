@@ -146,7 +146,7 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
         )
 
         self.assertEqual(len(summary.overloaded_days), 1)
-        self.assertEqual(summary.overloaded_days[0], (date(2025, 10, 14), 10.0))
+        self.assertEqual(summary.overloaded_days[0], ("2025-10-14", 10.0))
 
     def test_build_with_unscheduled_tasks(self):
         """Test build detects unscheduled tasks."""

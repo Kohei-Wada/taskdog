@@ -23,25 +23,20 @@ class OptimizationSummaryBuilder:
         """
         self.repository = repository
 
-    def build(
+    def _analyze_modified_tasks(
         self,
         modified_tasks: list[Task],
         task_states_before: dict[int, datetime | None],
-        daily_allocations: dict[date, float],
-        max_hours_per_day: float,
-    ) -> OptimizationSummary:
-        """Calculate optimization summary from modified tasks.
+    ) -> tuple[int, int, float, int, int]:
+        """Analyze modified tasks to calculate metrics.
 
         Args:
             modified_tasks: Tasks that were optimized
             task_states_before: Mapping of task IDs to their planned_start before optimization
-            daily_allocations: Daily workload allocations (date_str -> hours)
-            max_hours_per_day: Maximum hours per day constraint
 
         Returns:
-            OptimizationSummary with calculated metrics
+            Tuple of (new_count, rescheduled_count, total_hours, deadline_conflicts, days_span)
         """
-        # Analyze changes
         new_count = 0
         rescheduled_count = 0
         total_hours = 0.0
@@ -76,7 +71,14 @@ class OptimizationSummaryBuilder:
         else:
             days_span = 0
 
-        # Check for tasks that couldn't be scheduled
+        return new_count, rescheduled_count, total_hours, deadline_conflicts, days_span
+
+    def _find_unscheduled_tasks(self) -> list[TaskSummaryDto]:
+        """Find tasks that couldn't be scheduled.
+
+        Returns:
+            List of TaskSummaryDto for unscheduled tasks
+        """
         all_tasks_after = self.repository.get_all()
         unscheduled_tasks = []
 
@@ -92,15 +94,60 @@ class OptimizationSummaryBuilder:
                 unscheduled_tasks.append(task)
 
         # Convert unscheduled tasks to DTOs
-        unscheduled_tasks_dto = [
-            TaskSummaryDto(id=task.id, name=task.name) for task in unscheduled_tasks
+        # Note: Tasks from repository always have IDs (persisted entities)
+        return [
+            TaskSummaryDto(id=task.id, name=task.name)  # type: ignore[arg-type]
+            for task in unscheduled_tasks
         ]
 
-        # Workload validation
+    def _validate_workload(
+        self, daily_allocations: dict[date, float], max_hours_per_day: float
+    ) -> list[tuple[str, float]]:
+        """Identify days where allocated hours exceed the maximum.
+
+        Args:
+            daily_allocations: Daily workload allocations (date -> hours)
+            max_hours_per_day: Maximum hours per day constraint
+
+        Returns:
+            List of (date_str, hours) tuples for overloaded days
+        """
         overloaded_days = []
-        for date_str, hours in sorted(daily_allocations.items()):
+        for date_obj, hours in sorted(daily_allocations.items()):
             if hours > max_hours_per_day:
-                overloaded_days.append((date_str, hours))
+                overloaded_days.append((date_obj.isoformat(), hours))
+        return overloaded_days
+
+    def build(
+        self,
+        modified_tasks: list[Task],
+        task_states_before: dict[int, datetime | None],
+        daily_allocations: dict[date, float],
+        max_hours_per_day: float,
+    ) -> OptimizationSummary:
+        """Calculate optimization summary from modified tasks.
+
+        Args:
+            modified_tasks: Tasks that were optimized
+            task_states_before: Mapping of task IDs to their planned_start before optimization
+            daily_allocations: Daily workload allocations (date_str -> hours)
+            max_hours_per_day: Maximum hours per day constraint
+
+        Returns:
+            OptimizationSummary with calculated metrics
+        """
+        # Delegate to specialized methods
+        (
+            new_count,
+            rescheduled_count,
+            total_hours,
+            deadline_conflicts,
+            days_span,
+        ) = self._analyze_modified_tasks(modified_tasks, task_states_before)
+
+        unscheduled_tasks_dto = self._find_unscheduled_tasks()
+
+        overloaded_days = self._validate_workload(daily_allocations, max_hours_per_day)
 
         return OptimizationSummary(
             new_count=new_count,
