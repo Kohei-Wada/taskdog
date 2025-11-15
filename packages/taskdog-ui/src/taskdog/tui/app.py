@@ -1,6 +1,6 @@
 """Taskdog TUI application."""
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual.app import App
 from textual.command import CommandPalette
@@ -8,6 +8,7 @@ from textual.command import CommandPalette
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
 
+from taskdog.infrastructure.websocket import WebSocketClient
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
 from taskdog.services.task_data_loader import TaskDataLoader
@@ -138,6 +139,58 @@ class TaskdogTUI(App):
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context)
 
+        # Initialize WebSocket client for real-time updates
+        ws_url = self._get_websocket_url()
+        self.websocket_client = WebSocketClient(ws_url, self._handle_websocket_message)
+
+    def _get_websocket_url(self) -> str:
+        """Get WebSocket URL from API client configuration.
+
+        Returns:
+            WebSocket URL (e.g., "ws://127.0.0.1:8000/ws")
+        """
+        # Convert HTTP URL to WebSocket URL
+        http_url = self.api_client.base_url
+        ws_url = http_url.replace("http://", "ws://").replace("https://", "wss://")
+        return f"{ws_url}/ws"
+
+    def _handle_websocket_message(self, message: dict[str, Any]) -> None:
+        """Handle incoming WebSocket messages.
+
+        Args:
+            message: WebSocket message dictionary
+        """
+        msg_type = message.get("type")
+
+        if msg_type in (
+            "task_created",
+            "task_updated",
+            "task_deleted",
+            "task_status_changed",
+        ):
+            # Reload tasks on any task change
+            self.call_later(self._load_tasks, keep_scroll_position=True)
+
+            # Show notification
+            task_name = message.get("task_name", "Unknown")
+            if msg_type == "task_created":
+                self.notify(f"Task created: {task_name}", severity="information")
+            elif msg_type == "task_updated":
+                fields = message.get("updated_fields", [])
+                self.notify(
+                    f"Task updated: {task_name} ({', '.join(fields)})",
+                    severity="information",
+                )
+            elif msg_type == "task_deleted":
+                self.notify(f"Task deleted: {task_name}", severity="warning")
+            elif msg_type == "task_status_changed":
+                old_status = message.get("old_status", "")
+                new_status = message.get("new_status", "")
+                self.notify(
+                    f"Task status changed: {task_name} ({old_status} → {new_status})",
+                    severity="information",
+                )
+
     def __getattr__(self, name: str):
         """Dynamically handle action_* methods by delegating to command_factory.
 
@@ -166,7 +219,7 @@ class TaskdogTUI(App):
             f"'{type(self).__name__}' object has no attribute '{name}'"
         )
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         """Called when app is mounted."""
         self.main_screen = MainScreen()
         self.push_screen(self.main_screen)
@@ -174,6 +227,13 @@ class TaskdogTUI(App):
         self.call_after_refresh(self._load_tasks)
         # Start auto-refresh timer for elapsed time updates
         self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
+        # Connect to WebSocket for real-time updates
+        await self.websocket_client.connect()
+
+    async def on_unmount(self) -> None:
+        """Called when app is unmounted."""
+        # Disconnect WebSocket
+        await self.websocket_client.disconnect()
 
     def _load_tasks(self, keep_scroll_position: bool = False):
         """Load tasks from repository and update both gantt and table.
