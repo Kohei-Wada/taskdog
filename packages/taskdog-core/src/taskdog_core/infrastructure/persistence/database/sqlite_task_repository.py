@@ -319,13 +319,6 @@ class SqliteTaskRepository(TaskRepository):
         self.save(task)
         return task
 
-    def reload(self) -> None:
-        """Reload tasks from database by invalidating cache.
-
-        The next get_all() call will fetch fresh data from the database.
-        """
-        self._cache = None
-
     def _update_task_tags(
         self,
         session: Session,

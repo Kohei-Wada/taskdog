@@ -214,22 +214,6 @@ class TestSqliteTaskRepository(unittest.TestCase):
         next_id = self.repository.generate_next_id()
         self.assertEqual(next_id, 6)
 
-    def test_reload_invalidates_cache(self) -> None:
-        """Test reload() invalidates in-memory cache."""
-        task = Task(id=1, name="Task 1", priority=1)
-        self.repository.save(task)
-
-        # Load into cache
-        first_call = self.repository.get_all()
-
-        # Reload (should invalidate cache)
-        self.repository.reload()
-
-        # Next call should reload from database
-        second_call = self.repository.get_all()
-
-        self.assertIsNot(first_call, second_call)
-
     def test_complex_field_serialization(self) -> None:
         """Test complex fields (daily_allocations, tags, etc.) are persisted correctly."""
         task = Task(
@@ -527,8 +511,7 @@ class TestSqliteTaskRepository(unittest.TestCase):
             # Expected error
             pass
 
-        # Reload and verify original tags are still there
-        self.repository.reload()
+        # Verify original tags are still there (get_by_id bypasses cache)
         retrieved = self.repository.get_by_id(task.id)
         self.assertIsNotNone(retrieved)
         self.assertEqual(set(retrieved.tags), set(original_tags))
