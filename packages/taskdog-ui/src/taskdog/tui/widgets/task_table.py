@@ -7,12 +7,15 @@ This module provides a data table widget for displaying tasks with:
 - Automatic formatting for all task fields
 """
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from rich.text import Text
 from textual.binding import Binding
 from textual.reactive import reactive
 from textual.widgets import DataTable
+
+if TYPE_CHECKING:
+    from taskdog.tui.app import TaskdogTUI
 
 from taskdog.constants.table_dimensions import (
     PAGE_SCROLL_SIZE,
@@ -51,6 +54,19 @@ class TaskTable(DataTable):
 
     # Reactive variable for selection count (Phase 3)
     selection_count = reactive(0)
+
+    def watch_selection_count(self, old: int, new: int) -> None:
+        """Called automatically when selection_count changes.
+
+        This reactive handler is currently a placeholder for future functionality
+        such as updating a selection count display in the footer.
+
+        Args:
+            old: Previous selection count
+            new: New selection count
+        """
+        # Future: Update footer or status bar with selection count
+        pass
 
     # Add Vi-style bindings in addition to DataTable's default bindings
     BINDINGS: ClassVar = [
@@ -191,10 +207,8 @@ class TaskTable(DataTable):
         Returns:
             List of all TaskRowViewModel from app state cache
         """
-        from taskdog.tui.app import TaskdogTUI
-
-        app = self.app
-        assert isinstance(app, TaskdogTUI)
+        # Access via app.state (TaskdogTUI imported via TYPE_CHECKING)
+        app: TaskdogTUI = self.app  # type: ignore[assignment]
         return app.state.viewmodels_cache
 
     def refresh_tasks(

@@ -5,7 +5,10 @@ like date range management and automatic resizing.
 """
 
 from datetime import date, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from taskdog.tui.app import TaskdogTUI
 
 from textual.app import ComposeResult
 from textual.containers import Center, VerticalScroll
@@ -90,10 +93,7 @@ class GanttWidget(VerticalScroll):
         """
         self._task_ids = task_ids
         # Store gantt view model in app state (Step 4)
-        from taskdog.tui.app import TaskdogTUI
-
-        app = self.app
-        assert isinstance(app, TaskdogTUI)
+        app: TaskdogTUI = self.app  # type: ignore[assignment]
         app.state.gantt_cache = gantt_view_model
         # NOTE: sort_by and reverse parameters kept for API compatibility,
         # but actual values are read from self.app.state
@@ -107,10 +107,7 @@ class GanttWidget(VerticalScroll):
         Returns:
             GanttViewModel from app state cache, or None if not available
         """
-        from taskdog.tui.app import TaskdogTUI
-
-        app = self.app
-        assert isinstance(app, TaskdogTUI)
+        app: TaskdogTUI = self.app  # type: ignore[assignment]
         return app.state.gantt_cache
 
     def _render_gantt(self):
@@ -178,10 +175,7 @@ class GanttWidget(VerticalScroll):
         start_date = gantt_view_model.start_date
         end_date = gantt_view_model.end_date
         # Access sort state from app.state
-        from taskdog.tui.app import TaskdogTUI
-
-        app = self.app
-        assert isinstance(app, TaskdogTUI)
+        app: TaskdogTUI = self.app  # type: ignore[assignment]
         arrow = "↓" if app.state.sort_reverse else "↑"
         title_text = (
             f"[bold yellow]Gantt Chart[/bold yellow] "
@@ -305,10 +299,7 @@ class GanttWidget(VerticalScroll):
             Current sort field (e.g., "deadline", "priority")
         """
         # Access sort state from app.state (single source of truth)
-        from taskdog.tui.app import TaskdogTUI
-
-        app = self.app
-        assert isinstance(app, TaskdogTUI)
+        app: TaskdogTUI = self.app  # type: ignore[assignment]
         return app.state.sort_by
 
     def update_view_model_and_render(self, gantt_view_model) -> None:
@@ -321,10 +312,7 @@ class GanttWidget(VerticalScroll):
             gantt_view_model: New GanttViewModel to display
         """
         # Store in app state (Step 4)
-        from taskdog.tui.app import TaskdogTUI
-
-        app = self.app
-        assert isinstance(app, TaskdogTUI)
+        app: TaskdogTUI = self.app  # type: ignore[assignment]
         app.state.gantt_cache = gantt_view_model
         self.call_after_refresh(self._render_gantt)
 
