@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, status
 
 from taskdog_core.application.queries.filters.date_range_filter import DateRangeFilter
 from taskdog_core.application.queries.filters.non_archived_filter import (
@@ -35,6 +35,12 @@ from taskdog_server.api.models.responses import (
     TaskOperationResponse,
     UpdateTaskResponse,
 )
+from taskdog_server.api.routers.websocket import get_connection_manager
+from taskdog_server.websocket.broadcaster import (
+    broadcast_task_created,
+    broadcast_task_deleted,
+    broadcast_task_updated,
+)
 
 router = APIRouter()
 
@@ -42,12 +48,19 @@ router = APIRouter()
 @router.post(
     "", response_model=TaskOperationResponse, status_code=status.HTTP_201_CREATED
 )
-async def create_task(request: CreateTaskRequest, controller: CrudControllerDep):
+async def create_task(
+    request: CreateTaskRequest,
+    controller: CrudControllerDep,
+    background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
+):
     """Create a new task.
 
     Args:
         request: Task creation data
         controller: CRUD controller dependency
+        background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Created task data
@@ -66,6 +79,11 @@ async def create_task(request: CreateTaskRequest, controller: CrudControllerDep)
             is_fixed=request.is_fixed,
             tags=request.tags,
         )
+
+        # Broadcast WebSocket event in background (exclude the requester)
+        manager = get_connection_manager()
+        background_tasks.add_task(broadcast_task_created, manager, result, x_client_id)
+
         return convert_to_task_operation_response(result)
     except TaskValidationError as e:
         raise HTTPException(
@@ -190,7 +208,11 @@ async def get_task(task_id: int, controller: QueryControllerDep):
 
 @router.patch("/{task_id}", response_model=UpdateTaskResponse)
 async def update_task(
-    task_id: int, request: UpdateTaskRequest, controller: CrudControllerDep
+    task_id: int,
+    request: UpdateTaskRequest,
+    controller: CrudControllerDep,
+    background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Update task fields.
 
@@ -198,6 +220,8 @@ async def update_task(
         task_id: Task ID
         request: Fields to update (only provided fields are updated)
         controller: CRUD controller dependency
+        background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Updated task data
@@ -218,6 +242,17 @@ async def update_task(
             is_fixed=request.is_fixed,
             tags=request.tags,
         )
+
+        # Broadcast WebSocket event in background (exclude the requester)
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_updated,
+            manager,
+            result.task,
+            result.updated_fields,
+            x_client_id,
+        )
+
         return convert_to_update_task_response(result)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
@@ -228,12 +263,15 @@ async def update_task(
 
 
 @router.post("/{task_id}/archive", response_model=TaskOperationResponse)
-async def archive_task(task_id: int, controller: CrudControllerDep):
+async def archive_task(
+    task_id: int, controller: CrudControllerDep, background_tasks: BackgroundTasks
+):
     """Archive (soft delete) a task.
 
     Args:
         task_id: Task ID
         controller: CRUD controller dependency
+        background_tasks: Background tasks for WebSocket notifications
 
     Returns:
         Archived task data
@@ -243,18 +281,28 @@ async def archive_task(task_id: int, controller: CrudControllerDep):
     """
     try:
         result = controller.archive_task(task_id)
+
+        # Broadcast WebSocket event in background
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_updated, manager, result, ["is_archived"]
+        )
+
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
 
 
 @router.post("/{task_id}/restore", response_model=TaskOperationResponse)
-async def restore_task(task_id: int, controller: CrudControllerDep):
+async def restore_task(
+    task_id: int, controller: CrudControllerDep, background_tasks: BackgroundTasks
+):
     """Restore an archived task.
 
     Args:
         task_id: Task ID
         controller: CRUD controller dependency
+        background_tasks: Background tasks for WebSocket notifications
 
     Returns:
         Restored task data
@@ -264,6 +312,13 @@ async def restore_task(task_id: int, controller: CrudControllerDep):
     """
     try:
         result = controller.restore_task(task_id)
+
+        # Broadcast WebSocket event in background
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_updated, manager, result, ["is_archived"]
+        )
+
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
@@ -274,17 +329,40 @@ async def restore_task(task_id: int, controller: CrudControllerDep):
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_task(task_id: int, controller: CrudControllerDep):
+async def delete_task(
+    task_id: int,
+    controller: CrudControllerDep,
+    query_controller: QueryControllerDep,
+    background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
+):
     """Permanently delete a task.
 
     Args:
         task_id: Task ID
         controller: CRUD controller dependency
+        query_controller: Query controller dependency (for fetching task name before deletion)
+        background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Raises:
         HTTPException: 404 if task not found
     """
     try:
+        # Get task name before deletion for notification
+        task_output = query_controller.get_task_by_id(task_id)
+        if task_output is None or task_output.task is None:
+            raise TaskNotFoundException(f"Task {task_id} not found")
+        task_name = task_output.task.name
+
+        # Delete task
         controller.remove_task(task_id)
+
+        # Broadcast WebSocket event in background (exclude the requester)
+        manager = get_connection_manager()
+        background_tasks.add_task(
+            broadcast_task_deleted, manager, task_id, task_name, x_client_id
+        )
+
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

@@ -33,7 +33,6 @@ class SqliteTaskRepository(TaskRepository):
     - Uses SQLite database for persistence
     - Provides ACID transaction guarantees
     - Implements connection pooling via SQLAlchemy engine
-    - Maintains in-memory cache for get_all() performance
     - Uses TaskDbMapper for entity-model conversion
     """
 
@@ -61,25 +60,16 @@ class SqliteTaskRepository(TaskRepository):
         # Create tables if they don't exist
         Base.metadata.create_all(self.engine)
 
-        # Initialize in-memory cache
-        self._cache: list[Task] | None = None
-
     def get_all(self) -> list[Task]:
         """Retrieve all tasks from database.
-
-        Uses in-memory cache for performance. Cache is invalidated on write operations.
 
         Returns:
             List of all tasks
         """
-        if self._cache is not None:
-            return self._cache
-
         with self.Session() as session:
             stmt = select(TaskModel)
             models = session.scalars(stmt).all()
-            self._cache = [self.mapper.from_model(model) for model in models]
-            return self._cache
+            return [self.mapper.from_model(model) for model in models]
 
     def get_by_id(self, task_id: int) -> Task | None:
         """Retrieve a task by its ID.
@@ -220,9 +210,6 @@ class SqliteTaskRepository(TaskRepository):
 
             session.commit()
 
-        # Invalidate cache
-        self._cache = None
-
     def save_all(self, tasks: list[Task]) -> None:
         """Save multiple tasks in a single transaction.
 
@@ -264,9 +251,6 @@ class SqliteTaskRepository(TaskRepository):
 
             session.commit()
 
-        # Invalidate cache
-        self._cache = None
-
     def delete(self, task_id: int) -> None:
         """Delete a task by its ID.
 
@@ -278,9 +262,6 @@ class SqliteTaskRepository(TaskRepository):
             if model:
                 session.delete(model)
                 session.commit()
-
-        # Invalidate cache
-        self._cache = None
 
     def generate_next_id(self) -> int:
         """Generate the next available task ID.

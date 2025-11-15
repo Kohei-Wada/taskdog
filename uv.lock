@@ -804,6 +804,7 @@ dependencies = [
     { name = "rich" },
     { name = "taskdog-core" },
     { name = "textual" },
+    { name = "websockets" },
 ]
 
 [package.optional-dependencies]
@@ -831,6 +832,7 @@ requires-dist = [
     { name = "taskdog-core", editable = "packages/taskdog-core" },
     { name = "taskdog-server", marker = "extra == 'server'", editable = "packages/taskdog-server" },
     { name = "textual", specifier = ">=0.88.0" },
+    { name = "websockets", specifier = ">=14.0" },
 ]
 provides-extras = ["dev", "server"]
 

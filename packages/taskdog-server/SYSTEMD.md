@@ -131,9 +131,11 @@ systemctl --user enable taskdog-server
 The default service configuration:
 - **Host**: 127.0.0.1 (local only)
 - **Port**: 8000
-- **Workers**: 4
+- **Workers**: 1 (required for WebSocket real-time sync)
 - **Auto-restart**: Yes (on failure)
 - **Data directory**: `~/.local/share/taskdog/`
+
+**Note**: WebSocket real-time synchronization requires `--workers 1`. Multiple workers are not supported yet due to lack of inter-process communication (would require Redis Pub/Sub or similar).
 
 ### Customizing the Service
 
@@ -154,7 +156,7 @@ Example modifications:
 
 **Change host and port (listen on all interfaces):**
 ```ini
-ExecStart=%h/.local/bin/taskdog-server --host 0.0.0.0 --port 9000 --workers 4
+ExecStart=%h/.local/bin/taskdog-server --host 0.0.0.0 --port 9000 --workers 1
 ```
 
 **Enable development mode with auto-reload:**
@@ -162,9 +164,11 @@ ExecStart=%h/.local/bin/taskdog-server --host 0.0.0.0 --port 9000 --workers 4
 ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
 ```
 
-**Change number of workers:**
+**WARNING: Multiple workers not supported with WebSocket**
 ```ini
-ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --workers 8
+# This will NOT work for WebSocket real-time sync:
+# ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --workers 4
+# Use --workers 1 for WebSocket support
 ```
 
 ## Troubleshooting

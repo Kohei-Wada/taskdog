@@ -39,6 +39,7 @@ packages = [
     "taskdog_server.api",
     "taskdog_server.api.models",
     "taskdog_server.api.routers",
+    "taskdog_server.websocket",
 ]
 package-dir = { "" = "src" }
 

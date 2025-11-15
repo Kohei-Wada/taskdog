@@ -85,37 +85,6 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.assertEqual(all_tasks[0].name, "Task 1")
         self.assertEqual(all_tasks[1].name, "Task 2")
 
-    def test_get_all_uses_cache(self) -> None:
-        """Test get_all() uses in-memory cache."""
-        task = Task(id=1, name="Cached Task", priority=1)
-        self.repository.save(task)
-
-        # First call loads from database
-        first_call = self.repository.get_all()
-
-        # Second call should use cache (same instance)
-        second_call = self.repository.get_all()
-
-        self.assertIs(first_call, second_call)
-
-    def test_get_all_cache_invalidated_on_save(self) -> None:
-        """Test cache is invalidated when save() is called."""
-        task1 = Task(id=1, name="Task 1", priority=1)
-        self.repository.save(task1)
-
-        # Load into cache
-        first_call = self.repository.get_all()
-
-        # Save another task (should invalidate cache)
-        task2 = Task(id=2, name="Task 2", priority=2)
-        self.repository.save(task2)
-
-        # Next call should reload from database
-        second_call = self.repository.get_all()
-
-        self.assertIsNot(first_call, second_call)
-        self.assertEqual(len(second_call), 2)
-
     def test_get_by_id_returns_task(self) -> None:
         """Test get_by_id() retrieves specific task."""
         task = Task(id=42, name="Specific Task", priority=1)

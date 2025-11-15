@@ -1,0 +1,88 @@
+"""WebSocket connection manager for real-time task updates.
+
+This module manages active WebSocket connections and broadcasts
+task change events to all connected clients.
+"""
+
+from typing import Any
+
+from fastapi import WebSocket
+
+
+class ConnectionManager:
+    """Manages WebSocket connections and broadcasts events to clients."""
+
+    def __init__(self) -> None:
+        """Initialize the connection manager."""
+        self.active_connections: dict[str, WebSocket] = {}  # client_id -> WebSocket
+
+    async def connect(self, client_id: str, websocket: WebSocket) -> None:
+        """Accept a new WebSocket connection.
+
+        Args:
+            client_id: Unique client identifier
+            websocket: The WebSocket connection to accept
+        """
+        await websocket.accept()
+        self.active_connections[client_id] = websocket
+
+    def disconnect(self, client_id: str) -> None:
+        """Remove a WebSocket connection.
+
+        Args:
+            client_id: Client identifier to disconnect
+        """
+        if client_id in self.active_connections:
+            del self.active_connections[client_id]
+
+    async def broadcast(
+        self, message: dict[str, Any], exclude_client_id: str | None = None
+    ) -> None:
+        """Broadcast a message to all connected clients except excluded one.
+
+        Args:
+            message: The message dictionary to broadcast
+            exclude_client_id: Optional client ID to exclude from broadcast
+        """
+        # Remove disconnected clients while broadcasting
+        disconnected = []
+        for client_id, connection in self.active_connections.items():
+            # Skip the excluded client (usually the one who triggered the change)
+            if client_id == exclude_client_id:
+                continue
+
+            try:
+                await connection.send_json(message)
+            except Exception:
+                # Connection is broken, mark for removal
+                disconnected.append(client_id)
+
+        # Clean up disconnected clients
+        for client_id in disconnected:
+            self.disconnect(client_id)
+
+    async def send_personal_message(
+        self, message: dict[str, Any], client_id: str
+    ) -> None:
+        """Send a message to a specific client.
+
+        Args:
+            message: The message dictionary to send
+            client_id: The target client identifier
+        """
+        if client_id not in self.active_connections:
+            return
+
+        try:
+            await self.active_connections[client_id].send_json(message)
+        except Exception:
+            # Connection is broken, remove it
+            self.disconnect(client_id)
+
+    def get_connection_count(self) -> int:
+        """Get the number of active connections.
+
+        Returns:
+            Number of active WebSocket connections
+        """
+        return len(self.active_connections)
