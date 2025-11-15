@@ -264,7 +264,10 @@ async def update_task(
 
 @router.post("/{task_id}/archive", response_model=TaskOperationResponse)
 async def archive_task(
-    task_id: int, controller: CrudControllerDep, background_tasks: BackgroundTasks
+    task_id: int,
+    controller: CrudControllerDep,
+    background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Archive (soft delete) a task.
 
@@ -272,6 +275,7 @@ async def archive_task(
         task_id: Task ID
         controller: CRUD controller dependency
         background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Archived task data
@@ -282,10 +286,10 @@ async def archive_task(
     try:
         result = controller.archive_task(task_id)
 
-        # Broadcast WebSocket event in background
+        # Broadcast WebSocket event in background (exclude the requester)
         manager = get_connection_manager()
         background_tasks.add_task(
-            broadcast_task_updated, manager, result, ["is_archived"]
+            broadcast_task_updated, manager, result, ["is_archived"], x_client_id
         )
 
         return convert_to_task_operation_response(result)
@@ -295,7 +299,10 @@ async def archive_task(
 
 @router.post("/{task_id}/restore", response_model=TaskOperationResponse)
 async def restore_task(
-    task_id: int, controller: CrudControllerDep, background_tasks: BackgroundTasks
+    task_id: int,
+    controller: CrudControllerDep,
+    background_tasks: BackgroundTasks,
+    x_client_id: Annotated[str | None, Header()] = None,
 ):
     """Restore an archived task.
 
@@ -303,6 +310,7 @@ async def restore_task(
         task_id: Task ID
         controller: CRUD controller dependency
         background_tasks: Background tasks for WebSocket notifications
+        x_client_id: Optional client ID from WebSocket connection
 
     Returns:
         Restored task data
@@ -313,10 +321,10 @@ async def restore_task(
     try:
         result = controller.restore_task(task_id)
 
-        # Broadcast WebSocket event in background
+        # Broadcast WebSocket event in background (exclude the requester)
         manager = get_connection_manager()
         background_tasks.add_task(
-            broadcast_task_updated, manager, result, ["is_archived"]
+            broadcast_task_updated, manager, result, ["is_archived"], x_client_id
         )
 
         return convert_to_task_operation_response(result)
