@@ -49,7 +49,7 @@ class GanttDataTable(DataTable):
         self._task_map: dict[
             int, TaskGanttRowViewModel
         ] = {}  # Maps row index to TaskViewModel
-        self._gantt_view_model: GanttViewModel | None = None
+        # NOTE: _gantt_view_model removed - data passed as parameter to load_gantt (Step 4)
         self._date_columns: list[date] = []  # Columns representing dates
 
     def setup_columns(
@@ -92,7 +92,7 @@ class GanttDataTable(DataTable):
         Args:
             gantt_view_model: Presentation-ready Gantt data
         """
-        self._gantt_view_model = gantt_view_model
+        # NOTE: No longer storing view model locally - just use parameter (Step 4)
         self._task_map.clear()
 
         # Setup columns based on date range

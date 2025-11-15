@@ -28,6 +28,7 @@ from taskdog.tui.palette.providers import (
     SortOptionsProvider,
 )
 from taskdog.tui.screens.main_screen import MainScreen
+from taskdog.tui.state import TUIState
 from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
@@ -105,17 +106,21 @@ class TaskdogTUI(App):
         self.config = config if config is not None else ConfigManager.load()
         self.holiday_checker = holiday_checker
         self.main_screen: MainScreen | None = None
-        self._gantt_sort_by: str = "deadline"  # Default gantt sort order
-        self._gantt_reverse: bool = False  # Default: ascending order
-        self._hide_completed: bool = False  # Default: show all tasks
-        self._all_tasks: list = []  # Cache of all tasks for display filtering
-        self._gantt_view_model = None  # Cache of gantt view model
 
-        # Initialize TUIContext with API client
+        # Initialize TUI state (Single Source of Truth for all app state)
+        self.state = TUIState()
+
+        # NOTE: All legacy state fields migrated to self.state (Phase 2 complete)
+        # - _gantt_sort_by, _gantt_reverse, _hide_completed → state (Step 2-3)
+        # - _all_tasks, _gantt_view_model → state (Step 4)
+        # - viewmodels → state (Step 5)
+
+        # Initialize TUIContext with API client and state
         self.context = TUIContext(
             api_client=self.api_client,
             config=self.config,
             holiday_checker=self.holiday_checker,
+            state=self.state,  # Share same state instance
         )
 
         # Initialize presenters for view models (will be updated to not use notes_repository)
@@ -214,9 +219,9 @@ class TaskdogTUI(App):
 
             return self.task_data_loader.load_tasks(
                 task_filter=NonArchivedFilter(),
-                sort_by=self._gantt_sort_by,
-                reverse=self._gantt_reverse,
-                hide_completed=self._hide_completed,
+                sort_by=self.state.sort_by,
+                reverse=self.state.sort_reverse,
+                hide_completed=self.state.hide_completed,
                 date_range=date_range,
             )
         except ServerConnectionError as e:
@@ -253,8 +258,12 @@ class TaskdogTUI(App):
         Args:
             task_data: TaskData object to cache
         """
-        self._all_tasks = task_data.all_tasks
-        self._gantt_view_model = task_data.gantt_view_model
+        # Update TUIState cache (Phase 2 complete: Steps 4 + 5)
+        self.state.update_caches(
+            tasks=task_data.all_tasks,
+            viewmodels=task_data.table_view_models,
+            gantt=task_data.gantt_view_model,
+        )
 
     def _refresh_ui(self, task_data, keep_scroll_position: bool) -> None:
         """Refresh UI widgets with task data.
@@ -272,8 +281,8 @@ class TaskdogTUI(App):
             self.main_screen.gantt_widget.update_gantt(
                 task_ids=task_ids,
                 gantt_view_model=task_data.filtered_gantt_view_model,
-                sort_by=self._gantt_sort_by,
-                reverse=self._gantt_reverse,
+                sort_by=self.state.sort_by,
+                reverse=self.state.sort_reverse,
                 task_filter=NonArchivedFilter(),
             )
 
@@ -325,15 +334,15 @@ class TaskdogTUI(App):
         Args:
             sort_key: Sort key (deadline, planned_start, priority, id)
         """
-        self._gantt_sort_by = sort_key
+        self.state.sort_by = sort_key
 
         # Post TasksRefreshed event to trigger UI refresh with new sort order
         self.post_message(TasksRefreshed())
 
         # Show notification message with current direction
         sort_label = SORT_KEY_LABELS.get(sort_key, sort_key)
-        arrow = "↓" if self._gantt_reverse else "↑"
-        direction = "descending" if self._gantt_reverse else "ascending"
+        arrow = "↓" if self.state.sort_reverse else "↑"
+        direction = "descending" if self.state.sort_reverse else "ascending"
         self.notify(f"Sorted by {sort_label} {arrow} ({direction})")
 
     def action_show_search(self) -> None:
@@ -348,26 +357,26 @@ class TaskdogTUI(App):
 
     def action_toggle_completed(self) -> None:
         """Toggle visibility of completed and canceled tasks."""
-        self._hide_completed = not self._hide_completed
+        self.state.hide_completed = not self.state.hide_completed
 
         # Reload tasks with new filter to recalculate gantt date range
         self._load_tasks(keep_scroll_position=True)
 
         # Show notification
-        status = "hidden" if self._hide_completed else "shown"
+        status = "hidden" if self.state.hide_completed else "shown"
         self.notify(f"Completed tasks {status}")
 
     def action_toggle_sort_reverse(self) -> None:
         """Toggle sort direction (ascending ⇔ descending)."""
-        self._gantt_reverse = not self._gantt_reverse
+        self.state.sort_reverse = not self.state.sort_reverse
 
         # Reload tasks with new sort direction
         self._load_tasks(keep_scroll_position=True)
 
         # Show notification with current direction
-        direction = "descending" if self._gantt_reverse else "ascending"
-        sort_label = SORT_KEY_LABELS.get(self._gantt_sort_by, self._gantt_sort_by)
-        arrow = "↓" if self._gantt_reverse else "↑"
+        direction = "descending" if self.state.sort_reverse else "ascending"
+        sort_label = SORT_KEY_LABELS.get(self.state.sort_by, self.state.sort_by)
+        arrow = "↓" if self.state.sort_reverse else "↑"
         self.notify(f"Sort direction toggled: {sort_label} {arrow} ({direction})")
 
     def action_command_palette(self) -> None:
@@ -432,7 +441,7 @@ class TaskdogTUI(App):
             task_list_output = self.api_client.list_tasks(
                 filter_obj=task_filter,
                 sort_by=sort_by,
-                reverse=self._gantt_reverse,
+                reverse=self.state.sort_reverse,
                 include_gantt=True,
                 gantt_start_date=event.start_date,
                 gantt_end_date=event.end_date,
@@ -446,9 +455,9 @@ class TaskdogTUI(App):
                 )
 
                 # Apply display filter based on hide_completed setting
-                if self._hide_completed:
+                if self.state.hide_completed:
                     filtered_tasks = self.task_data_loader.apply_display_filter(
-                        task_list_output.tasks, self._hide_completed
+                        task_list_output.tasks, self.state.hide_completed
                     )
                     gantt_view_model = self.task_data_loader.filter_gantt_by_tasks(
                         gantt_view_model, filtered_tasks
