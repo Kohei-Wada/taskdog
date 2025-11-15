@@ -110,10 +110,10 @@ class TaskdogTUI(App):
         # Initialize TUI state (Single Source of Truth for all app state)
         self.state = TUIState()
 
-        # Legacy state fields (will be migrated to self.state in subsequent steps)
-        # NOTE: _gantt_sort_by, _gantt_reverse, _hide_completed migrated to self.state (Step 2-3)
-        self._all_tasks: list = []  # Cache of all tasks for display filtering
-        self._gantt_view_model = None  # Cache of gantt view model
+        # NOTE: All legacy state fields migrated to self.state (Phase 2 complete)
+        # - _gantt_sort_by, _gantt_reverse, _hide_completed → state (Step 2-3)
+        # - _all_tasks, _gantt_view_model → state (Step 4)
+        # - viewmodels → state (Step 5)
 
         # Initialize TUIContext with API client and state
         self.context = TUIContext(
@@ -258,14 +258,12 @@ class TaskdogTUI(App):
         Args:
             task_data: TaskData object to cache
         """
-        self._all_tasks = (
-            task_data.all_tasks
-        )  # TODO: Will be migrated to state in Step 4
-        self._gantt_view_model = (
-            task_data.gantt_view_model
-        )  # TODO: Will be migrated to state in Step 4
-        # Update state cache for viewmodels (Step 5)
-        self.state.viewmodels_cache = task_data.table_view_models
+        # Update TUIState cache (Phase 2 complete: Steps 4 + 5)
+        self.state.update_caches(
+            tasks=task_data.all_tasks,
+            viewmodels=task_data.table_view_models,
+            gantt=task_data.gantt_view_model,
+        )
 
     def _refresh_ui(self, task_data, keep_scroll_position: bool) -> None:
         """Refresh UI widgets with task data.

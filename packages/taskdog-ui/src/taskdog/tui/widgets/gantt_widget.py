@@ -38,7 +38,7 @@ class GanttWidget(VerticalScroll):
         """Initialize the gantt widget."""
         super().__init__(*args, **kwargs)
         self._task_ids: list[int] = []
-        self._gantt_view_model: GanttViewModel | None = None
+        # NOTE: _gantt_view_model removed - now accessed via self.app.state.gantt_cache (Step 4)
         # NOTE: _sort_by and _reverse removed - now accessed via self.app.state (Step 2)
         self._task_filter: TaskFilter | None = None  # Filter for recalculation
         self._gantt_table: GanttDataTable | None = None
@@ -89,12 +89,29 @@ class GanttWidget(VerticalScroll):
             task_filter: Filter object to use for recalculation on resize (optional)
         """
         self._task_ids = task_ids
-        self._gantt_view_model = gantt_view_model
+        # Store gantt view model in app state (Step 4)
+        from taskdog.tui.app import TaskdogTUI
+
+        app = self.app
+        assert isinstance(app, TaskdogTUI)
+        app.state.gantt_cache = gantt_view_model
         # NOTE: sort_by and reverse parameters kept for API compatibility,
         # but actual values are read from self.app.state
         if task_filter is not None:
             self._task_filter = task_filter
         self._render_gantt()
+
+    def _get_gantt_from_state(self) -> GanttViewModel | None:
+        """Get gantt view model from app state.
+
+        Returns:
+            GanttViewModel from app state cache, or None if not available
+        """
+        from taskdog.tui.app import TaskdogTUI
+
+        app = self.app
+        assert isinstance(app, TaskdogTUI)
+        return app.state.gantt_cache
 
     def _render_gantt(self):
         """Render the gantt chart."""
@@ -102,7 +119,8 @@ class GanttWidget(VerticalScroll):
         if not self.is_mounted or not self._gantt_table:
             return
 
-        if not self._gantt_view_model or self._gantt_view_model.is_empty():
+        gantt_view_model = self._get_gantt_from_state()
+        if not gantt_view_model or gantt_view_model.is_empty():
             self._show_empty_message()
             return
 
@@ -140,9 +158,11 @@ class GanttWidget(VerticalScroll):
     def _load_gantt_data(self):
         """Load and display gantt data from the pre-computed gantt ViewModel."""
         try:
-            self._gantt_table.load_gantt(self._gantt_view_model)
-            self._update_title()
-            self._update_legend()
+            gantt_view_model = self._get_gantt_from_state()
+            if gantt_view_model:
+                self._gantt_table.load_gantt(gantt_view_model)
+                self._update_title()
+                self._update_legend()
         except Exception as e:
             self._show_error_message(e)
 
@@ -151,8 +171,12 @@ class GanttWidget(VerticalScroll):
         if not self._title_widget:
             return
 
-        start_date = self._gantt_view_model.start_date
-        end_date = self._gantt_view_model.end_date
+        gantt_view_model = self._get_gantt_from_state()
+        if not gantt_view_model:
+            return
+
+        start_date = gantt_view_model.start_date
+        end_date = gantt_view_model.end_date
         # Access sort state from app.state
         from taskdog.tui.app import TaskdogTUI
 
@@ -231,7 +255,8 @@ class GanttWidget(VerticalScroll):
         # Check if widget is mounted and has necessary data
         if not self.is_mounted:
             return
-        if not (self._task_ids and self._gantt_view_model):
+        gantt_view_model = self._get_gantt_from_state()
+        if not (self._task_ids and gantt_view_model):
             return
 
         # Use size from event for accurate dimensions
@@ -248,10 +273,11 @@ class GanttWidget(VerticalScroll):
 
         # Only post resize event if date range actually changed
         # This prevents unnecessary API reloads when toggling visibility or other non-resize updates
+        gantt_view_model = self._get_gantt_from_state()
         if (
-            self._gantt_view_model
-            and start_date == self._gantt_view_model.start_date
-            and end_date == self._gantt_view_model.end_date
+            gantt_view_model
+            and start_date == gantt_view_model.start_date
+            and end_date == gantt_view_model.end_date
         ):
             return  # No change needed
 
@@ -294,7 +320,12 @@ class GanttWidget(VerticalScroll):
         Args:
             gantt_view_model: New GanttViewModel to display
         """
-        self._gantt_view_model = gantt_view_model
+        # Store in app state (Step 4)
+        from taskdog.tui.app import TaskdogTUI
+
+        app = self.app
+        assert isinstance(app, TaskdogTUI)
+        app.state.gantt_cache = gantt_view_model
         self.call_after_refresh(self._render_gantt)
 
     def calculate_display_days(self, widget_width: int | None = None) -> int:
