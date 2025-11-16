@@ -60,7 +60,7 @@ class WebSocketHandler:
         """
         client_id = message.get("client_id")
         if client_id:
-            self.app.api_client._base.client_id = client_id
+            self.app.api_client.set_client_id(client_id)
 
     def _handle_task_event(self, message: dict[str, Any], msg_type: str) -> None:
         """Handle task-related WebSocket events.
@@ -82,7 +82,7 @@ class WebSocketHandler:
 
         # Only show "by {client_id}" if the source is different from this client
         display_source = None
-        if source_client_id and source_client_id != self.app.api_client._base.client_id:
+        if source_client_id and source_client_id != self.app.api_client.client_id:
             display_source = source_client_id
 
         if msg_type == "task_created":

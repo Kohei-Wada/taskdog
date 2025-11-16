@@ -64,10 +64,18 @@ class BatchConfirmationCommandBase(TUICommandBase):
 
         Returns:
             Message text for the confirmation dialog
+
+        Raises:
+            ValueError: If template string is missing required {count} placeholder
         """
         if task_count == 1:
             return self.get_single_task_confirmation()
-        return self.get_multiple_tasks_confirmation_template().format(count=task_count)
+        try:
+            return self.get_multiple_tasks_confirmation_template().format(
+                count=task_count
+            )
+        except KeyError as e:
+            raise ValueError(f"Template must contain {{count}} placeholder: {e}") from e
 
     @abstractmethod
     def execute_confirmed_action(self, task_id: int) -> None:

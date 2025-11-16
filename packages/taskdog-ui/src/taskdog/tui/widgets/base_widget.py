@@ -37,8 +37,14 @@ class TUIWidget:
             This property assumes the widget is mounted in a TaskdogTUI app.
             Using it before mounting or in a different app context will
             result in incorrect typing (though the runtime app will still work).
-        """
 
+        Raises:
+            RuntimeError: If the widget is not mounted or app is None
+        """
+        if not hasattr(self, "app") or self.app is None:
+            raise RuntimeError(
+                "Widget must be mounted in a TUI app before accessing tui_app"
+            )
         return self.app  # type: ignore[return-value]
 
     @property

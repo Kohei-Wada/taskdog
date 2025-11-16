@@ -52,14 +52,15 @@ class FormValidator:
     def __init__(
         self,
         screen: "BaseModalDialog[Any]",
-        error_callback: Callable[[str, Input], None] | None = None,
+        error_callback: Callable[[str, Input | None], None] | None = None,
     ):
         """Initialize the form validator.
 
         Args:
             screen: The modal dialog screen containing the form
             error_callback: Optional custom error display callback.
-                           Defaults to screen._show_validation_error
+                           Defaults to screen._show_validation_error.
+                           The widget parameter may be None if widget not found.
         """
         self.screen = screen
         self.fields: list[FormField] = []
@@ -100,7 +101,13 @@ class FormValidator:
 
         for field in self.fields:
             # Query the input widget
-            widget = self.screen.query_one(f"#{field.widget_id}", Input)
+            try:
+                widget = self.screen.query_one(f"#{field.widget_id}", Input)
+            except Exception:
+                # Widget not found - this is a validation error
+                error_msg = f"Required field '{field.name}' widget not found"
+                self.error_callback(error_msg, None)
+                return None
 
             # Run validation
             result: ValidationResult = field.validator.validate(
