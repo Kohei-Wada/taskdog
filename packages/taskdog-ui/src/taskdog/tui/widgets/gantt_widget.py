@@ -5,12 +5,13 @@ like date range management and automatic resizing.
 """
 
 from datetime import date, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Center, VerticalScroll
 from textual.events import Resize
 from textual.widgets import Static
@@ -37,9 +38,22 @@ class GanttWidget(VerticalScroll):
     based on available screen width.
     """
 
+    # Add Vi-style bindings for scrolling
+    BINDINGS: ClassVar = [
+        Binding("j", "scroll_down", "Scroll Down", show=False),
+        Binding("k", "scroll_up", "Scroll Up", show=False),
+        Binding("g", "scroll_home", "Top", show=False),
+        Binding("G", "scroll_end", "Bottom", show=False),
+        Binding("ctrl+d", "page_down", "Page Down", show=False),
+        Binding("ctrl+u", "page_up", "Page Up", show=False),
+        Binding("h", "scroll_left", "Scroll Left", show=False),
+        Binding("l", "scroll_right", "Scroll Right", show=False),
+    ]
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the gantt widget."""
         super().__init__(*args, **kwargs)
+        self.can_focus = True
         self._task_ids: list[int] = []
         # NOTE: _gantt_view_model removed - now accessed via self.app.state.gantt_cache (Step 4)
         # NOTE: _sort_by and _reverse removed - now accessed via self.app.state (Step 2)

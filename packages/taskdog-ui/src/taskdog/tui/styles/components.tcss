@@ -32,6 +32,10 @@ Input {
     padding: 1 0;
 }
 
+#filterable-task-table:focus-within {
+    border: round $accent;
+}
+
 /* Search Components */
 .search-container {
     height: auto;

@@ -25,6 +25,10 @@ MainScreen {
     margin-bottom: 1;
 }
 
+#gantt-widget:focus {
+    border: round $accent;
+}
+
 /* Gantt data table - inside gantt widget */
 #gantt-table {
     width: 100%;
