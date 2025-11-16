@@ -109,10 +109,16 @@ add_task_with_details() {
         shift
     done
 
-    # Build add command
+    # Build add command with all parameters
     local cmd="taskdog add \"$name\""
     if [[ -n "$priority" ]]; then
         cmd="$cmd --priority $priority"
+    fi
+    if [[ -n "$deadline" ]]; then
+        cmd="$cmd --deadline \"$deadline\""
+    fi
+    if [[ -n "$estimate" ]]; then
+        cmd="$cmd --estimate $estimate"
     fi
     for tag in "${tags[@]}"; do
         cmd="$cmd --tag $tag"
@@ -133,17 +139,7 @@ add_task_with_details() {
         return 1
     fi
 
-    # Set deadline if provided
-    if [[ -n "$deadline" ]]; then
-        taskdog deadline "$task_id" "$deadline" > /dev/null 2>&1
-    fi
-
-    # Set estimate if provided
-    if [[ -n "$estimate" ]]; then
-        taskdog estimate "$task_id" "$estimate" > /dev/null 2>&1
-    fi
-
-    # Set note if provided
+    # Set note if provided (note not yet supported in add command)
     if [[ -n "$note" ]]; then
         taskdog note "$task_id" --content "$note" > /dev/null 2>&1
     fi
