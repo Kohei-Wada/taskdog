@@ -45,5 +45,5 @@ jobs:
       - name: Run type checker
         run: make typecheck
 
-      - name: Run tests
-        run: make test
+      - name: Run tests with coverage
+        run: make coverage
