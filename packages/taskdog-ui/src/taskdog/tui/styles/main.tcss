@@ -19,8 +19,7 @@ MainScreen {
 /* Gantt chart - main display area */
 #gantt-widget {
     width: 100%;
-    height: auto;
-    max-height: 40;
+    height: 40;
     background: transparent;
     border: round $primary;
     margin-bottom: 1;
@@ -28,6 +27,8 @@ MainScreen {
 
 /* Gantt data table - inside gantt widget */
 #gantt-table {
+    width: 100%;
+    height: auto;
     border: round $primary;
 }
 
