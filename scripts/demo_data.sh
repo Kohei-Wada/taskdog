@@ -55,6 +55,7 @@ echo -e "  • Realistic deadlines (from tomorrow to 3 months ahead)"
 echo -e "  • Various estimates (2-30 hours)"
 echo -e "  • Various tags (work, personal, urgent, etc.)"
 echo -e "  • Task dependencies"
+echo -e "  • Detailed notes with context and actionable items"
 echo -e "  • Some tasks already started/completed"
 echo ""
 echo -e "${YELLOW}Warning: This will add tasks to your current database${NC}"
@@ -71,7 +72,7 @@ echo -e "${GREEN}Creating demo tasks...${NC}"
 echo ""
 
 # Function to add task with deadline and estimate
-# Usage: add_task_with_details "name" priority "tag1" "tag2" ... "deadline:YYYY-MM-DD" "estimate:HOURS"
+# Usage: add_task_with_details "name" priority "tag1" "tag2" ... "deadline:YYYY-MM-DD" "estimate:HOURS" "note:content"
 add_task_with_details() {
     local name="$1"
     shift
@@ -81,6 +82,7 @@ add_task_with_details() {
     local deadline=""
     local estimate=""
     local depends_on=()
+    local note=""
 
     # Parse arguments
     while [[ $# -gt 0 ]]; do
@@ -99,6 +101,9 @@ add_task_with_details() {
                 ;;
             depends:*)
                 depends_on+=("${1#depends:}")
+                ;;
+            note:*)
+                note="${1#note:}"
                 ;;
         esac
         shift
@@ -138,6 +143,11 @@ add_task_with_details() {
         taskdog estimate "$task_id" "$estimate" > /dev/null 2>&1
     fi
 
+    # Set note if provided
+    if [[ -n "$note" ]]; then
+        taskdog note "$task_id" --content "$note" > /dev/null 2>&1
+    fi
+
     echo "✓ Created: $name (ID: $task_id)"
     echo "$task_id"
 }
@@ -149,28 +159,28 @@ add_task_with_details() {
 echo -e "${BLUE}[Project: Web Application Development]${NC}"
 
 # Phase 1: Planning & Design
-T1=$(add_task_with_details "Project kickoff meeting" priority:4 tag:work tag:planning deadline:"$TOMORROW" estimate:2 | tail -1)
-T2=$(add_task_with_details "Define API specifications" priority:4 tag:work tag:backend tag:docs deadline:"$IN_3_DAYS" estimate:4 | tail -1)
-T3=$(add_task_with_details "Design database schema" priority:5 tag:work tag:backend tag:urgent deadline:"$IN_3_DAYS" estimate:6 | tail -1)
-T4=$(add_task_with_details "Create UI/UX mockups" priority:3 tag:work tag:frontend tag:design deadline:"$IN_5_DAYS" estimate:8 | tail -1)
+T1=$(add_task_with_details "Project kickoff meeting" priority:4 tag:work tag:planning deadline:"$TOMORROW" estimate:2 note:"Gather all stakeholders to discuss project scope, timeline, and deliverables. Prepare agenda: goals, tech stack, roles & responsibilities." | tail -1)
+T2=$(add_task_with_details "Define API specifications" priority:4 tag:work tag:backend tag:docs deadline:"$IN_3_DAYS" estimate:4 note:"Document all REST API endpoints with request/response schemas. Use OpenAPI 3.0 format. Include authentication flow and error codes." | tail -1)
+T3=$(add_task_with_details "Design database schema" priority:5 tag:work tag:backend tag:urgent deadline:"$IN_3_DAYS" estimate:6 note:"Create ER diagram for core entities: users, tasks, projects. Define indexes, foreign keys, and constraints. Consider normalization and query performance." | tail -1)
+T4=$(add_task_with_details "Create UI/UX mockups" priority:3 tag:work tag:frontend tag:design deadline:"$IN_5_DAYS" estimate:8 note:"Design wireframes for main pages: dashboard, task list, task details. Use Figma. Focus on mobile-first responsive design." | tail -1)
 
 # Phase 2: Backend Development
-T5=$(add_task_with_details "Setup development environment" priority:5 tag:work tag:backend tag:devops deadline:"$IN_5_DAYS" estimate:3 | tail -1)
-T6=$(add_task_with_details "Implement user authentication" priority:5 tag:work tag:backend tag:security deadline:"$IN_1_WEEK" estimate:8 | tail -1)
-T7=$(add_task_with_details "Create REST API endpoints" priority:4 tag:work tag:backend deadline:"$IN_10_DAYS" estimate:12 | tail -1)
-T8=$(add_task_with_details "Write API documentation" priority:3 tag:work tag:docs deadline:"$IN_10_DAYS" estimate:4 | tail -1)
+T5=$(add_task_with_details "Setup development environment" priority:5 tag:work tag:backend tag:devops deadline:"$IN_5_DAYS" estimate:3 note:"Configure Docker containers for local dev. Setup PostgreSQL, Redis. Create docker-compose.yml with hot-reload support." | tail -1)
+T6=$(add_task_with_details "Implement user authentication" priority:5 tag:work tag:backend tag:security deadline:"$IN_1_WEEK" estimate:8 note:"Implement JWT-based auth with refresh tokens. Add password hashing (bcrypt). Include email verification and password reset flows." | tail -1)
+T7=$(add_task_with_details "Create REST API endpoints" priority:4 tag:work tag:backend deadline:"$IN_10_DAYS" estimate:12 note:"Build CRUD endpoints for tasks, projects, users. Implement filtering, sorting, pagination. Add input validation and error handling." | tail -1)
+T8=$(add_task_with_details "Write API documentation" priority:3 tag:work tag:docs deadline:"$IN_10_DAYS" estimate:4 note:"Generate interactive API docs using Swagger/OpenAPI. Add examples for all endpoints. Include authentication guide and rate limiting info." | tail -1)
 
 # Phase 3: Frontend Development
-T9=$(add_task_with_details "Setup React project structure" priority:4 tag:work tag:frontend deadline:"$IN_1_WEEK" estimate:3 | tail -1)
-T10=$(add_task_with_details "Implement login/signup pages" priority:5 tag:work tag:frontend deadline:"$IN_10_DAYS" estimate:6 | tail -1)
-T11=$(add_task_with_details "Build dashboard components" priority:4 tag:work tag:frontend deadline:"$IN_2_WEEKS" estimate:10 | tail -1)
-T12=$(add_task_with_details "Add responsive design" priority:3 tag:work tag:frontend tag:design deadline:"$IN_2_WEEKS" estimate:8 | tail -1)
+T9=$(add_task_with_details "Setup React project structure" priority:4 tag:work tag:frontend deadline:"$IN_1_WEEK" estimate:3 note:"Initialize Vite + React + TypeScript project. Setup ESLint, Prettier. Configure routing (React Router), state management (Zustand), and API client (Axios)." | tail -1)
+T10=$(add_task_with_details "Implement login/signup pages" priority:5 tag:work tag:frontend deadline:"$IN_10_DAYS" estimate:6 note:"Create forms with validation (react-hook-form + zod). Handle JWT storage. Add social login buttons (Google, GitHub). Show error messages." | tail -1)
+T11=$(add_task_with_details "Build dashboard components" priority:4 tag:work tag:frontend deadline:"$IN_2_WEEKS" estimate:10 note:"Create reusable components: TaskCard, TaskList, ProjectCard, StatisticsWidget. Implement drag-and-drop for task ordering. Add real-time updates via WebSocket." | tail -1)
+T12=$(add_task_with_details "Add responsive design" priority:3 tag:work tag:frontend tag:design deadline:"$IN_2_WEEKS" estimate:8 note:"Apply Tailwind CSS breakpoints for mobile/tablet/desktop. Test on different screen sizes. Ensure touch-friendly UI on mobile devices." | tail -1)
 
 # Phase 4: Testing & Deployment
-T13=$(add_task_with_details "Write unit tests" priority:4 tag:work tag:testing deadline:"$IN_2_WEEKS" estimate:8 | tail -1)
-T14=$(add_task_with_details "Perform integration testing" priority:5 tag:work tag:testing tag:urgent deadline:"$IN_3_WEEKS" estimate:6 | tail -1)
-T15=$(add_task_with_details "Setup CI/CD pipeline" priority:3 tag:work tag:devops deadline:"$IN_3_WEEKS" estimate:5 | tail -1)
-T16=$(add_task_with_details "Deploy to production" priority:5 tag:work tag:devops tag:urgent deadline:"$IN_1_MONTH" estimate:4 | tail -1)
+T13=$(add_task_with_details "Write unit tests" priority:4 tag:work tag:testing deadline:"$IN_2_WEEKS" estimate:8 note:"Write Jest tests for backend services and API routes. Aim for 80% code coverage. Mock database and external services. Test edge cases and error handling." | tail -1)
+T14=$(add_task_with_details "Perform integration testing" priority:5 tag:work tag:testing tag:urgent deadline:"$IN_3_WEEKS" estimate:6 note:"Test end-to-end user flows with Playwright. Cover auth, CRUD operations, real-time updates. Test on Chrome, Firefox, Safari." | tail -1)
+T15=$(add_task_with_details "Setup CI/CD pipeline" priority:3 tag:work tag:devops deadline:"$IN_3_WEEKS" estimate:5 note:"Configure GitHub Actions for automated testing and deployment. Run tests on PR. Auto-deploy to staging on merge to main. Manual approval for prod." | tail -1)
+T16=$(add_task_with_details "Deploy to production" priority:5 tag:work tag:devops tag:urgent deadline:"$IN_1_MONTH" estimate:4 note:"Deploy to AWS ECS with load balancer. Configure SSL certificates. Setup database backups. Monitor logs and metrics with CloudWatch." | tail -1)
 
 # ============================================================================
 # Bug Fixes & Improvements
@@ -178,8 +188,8 @@ T16=$(add_task_with_details "Deploy to production" priority:5 tag:work tag:devop
 
 echo -e "${BLUE}[Bug Fixes & Improvements]${NC}"
 
-T17=$(add_task_with_details "Fix login page CSS issues" priority:4 tag:work tag:bugfix tag:frontend tag:urgent deadline:"$TOMORROW" estimate:2 | tail -1)
-T18=$(add_task_with_details "Optimize database queries" priority:3 tag:work tag:backend tag:performance deadline:"$IN_1_WEEK" estimate:4 | tail -1)
+T17=$(add_task_with_details "Fix login page CSS issues" priority:4 tag:work tag:bugfix tag:frontend tag:urgent deadline:"$TOMORROW" estimate:2 note:"Login button is misaligned on mobile. Form labels are cut off on narrow screens. Fix z-index issues with password visibility toggle." | tail -1)
+T18=$(add_task_with_details "Optimize database queries" priority:3 tag:work tag:backend tag:performance deadline:"$IN_1_WEEK" estimate:4 note:"Add indexes on frequently queried columns (user_id, created_at). Implement connection pooling. Use EXPLAIN ANALYZE to identify slow queries. Consider adding Redis cache." | tail -1)
 
 # ============================================================================
 # Documentation & Maintenance
@@ -187,8 +197,8 @@ T18=$(add_task_with_details "Optimize database queries" priority:3 tag:work tag:
 
 echo -e "${BLUE}[Documentation & Maintenance]${NC}"
 
-T19=$(add_task_with_details "Update README.md" priority:2 tag:work tag:docs deadline:"$IN_2_WEEKS" estimate:2 | tail -1)
-T20=$(add_task_with_details "Code review and refactoring" priority:2 tag:work tag:maintenance deadline:"$IN_3_WEEKS" estimate:6 | tail -1)
+T19=$(add_task_with_details "Update README.md" priority:2 tag:work tag:docs deadline:"$IN_2_WEEKS" estimate:2 note:"Add setup instructions, environment variables, and deployment guide. Include screenshots. Update API examples. Add troubleshooting section." | tail -1)
+T20=$(add_task_with_details "Code review and refactoring" priority:2 tag:work tag:maintenance deadline:"$IN_3_WEEKS" estimate:6 note:"Remove unused code and dependencies. Extract repeated logic into helper functions. Improve naming conventions. Add TypeScript types to any components." | tail -1)
 
 # ============================================================================
 # Personal Tasks
@@ -196,7 +206,7 @@ T20=$(add_task_with_details "Code review and refactoring" priority:2 tag:work ta
 
 echo -e "${BLUE}[Personal Tasks]${NC}"
 
-T21=$(add_task_with_details "Read technical blog posts" priority:1 tag:personal tag:learning deadline:"$IN_1_WEEK" estimate:2 | tail -1)
+T21=$(add_task_with_details "Read technical blog posts" priority:1 tag:personal tag:learning deadline:"$IN_1_WEEK" estimate:2 note:"Topics to explore: React Server Components, WebAssembly, Bun runtime, Deno 2.0. Take notes on key insights and potential applications." | tail -1)
 
 # ============================================================================
 # Long-term Projects (2-3 months ahead)
@@ -205,12 +215,12 @@ T21=$(add_task_with_details "Read technical blog posts" priority:1 tag:personal 
 echo -e "${BLUE}[Long-term Projects]${NC}"
 
 # Version 2.0 Planning
-T22=$(add_task_with_details "Plan version 2.0 features" priority:3 tag:work tag:planning tag:v2 deadline:"$IN_6_WEEKS" estimate:8 | tail -1)
-T23=$(add_task_with_details "Research new technology stack" priority:2 tag:work tag:research tag:v2 deadline:"$IN_2_MONTHS" estimate:12 | tail -1)
+T22=$(add_task_with_details "Plan version 2.0 features" priority:3 tag:work tag:planning tag:v2 deadline:"$IN_6_WEEKS" estimate:8 note:"Gather user feedback from v1.0. Prioritize features: advanced filters, custom views, team collaboration, mobile app. Create product roadmap." | tail -1)
+T23=$(add_task_with_details "Research new technology stack" priority:2 tag:work tag:research tag:v2 deadline:"$IN_2_MONTHS" estimate:12 note:"Evaluate alternatives: Remix vs Next.js 14, tRPC vs GraphQL, Prisma vs Drizzle ORM. Consider serverless architecture. Create comparison matrix." | tail -1)
 
 # Security & Infrastructure
-T24=$(add_task_with_details "Conduct security audit" priority:4 tag:work tag:security tag:audit deadline:"$IN_6_WEEKS" estimate:10 | tail -1)
-T25=$(add_task_with_details "Setup monitoring and alerts" priority:4 tag:work tag:devops tag:monitoring deadline:"$IN_2_MONTHS" estimate:8 | tail -1)
+T24=$(add_task_with_details "Conduct security audit" priority:4 tag:work tag:security tag:audit deadline:"$IN_6_WEEKS" estimate:10 note:"Run OWASP ZAP scan. Review authentication flows. Check for SQL injection, XSS vulnerabilities. Test rate limiting. Perform penetration testing." | tail -1)
+T25=$(add_task_with_details "Setup monitoring and alerts" priority:4 tag:work tag:devops tag:monitoring deadline:"$IN_2_MONTHS" estimate:8 note:"Configure Datadog/New Relic for APM. Setup alerts for error rates, response times, CPU/memory usage. Create dashboards for key metrics. Setup PagerDuty integration." | tail -1)
 
 echo ""
 echo -e "${GREEN}✓ Created 25 tasks${NC}"
@@ -286,6 +296,7 @@ echo "  • 3 completed tasks"
 echo "  • 3 in-progress tasks"
 echo "  • 19 pending tasks"
 echo "  • Multiple dependencies configured"
+echo "  • Detailed notes for all tasks"
 echo "  • Timeline: From tomorrow to 2 months ahead"
 echo "  • Estimates: 2-12 hours per task"
 echo ""
@@ -293,6 +304,7 @@ echo -e "${BLUE}Useful commands:${NC}"
 echo "  taskdog table          - View all tasks"
 echo "  taskdog gantt          - View Gantt chart"
 echo "  taskdog today          - View today's tasks"
+echo "  taskdog show <ID>      - View task details with notes"
 echo "  taskdog optimize       - Auto-schedule tasks"
 echo "  taskdog tui            - Open interactive TUI"
 echo ""
