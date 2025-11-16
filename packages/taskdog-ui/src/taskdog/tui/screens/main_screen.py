@@ -33,10 +33,12 @@ class MainScreen(Screen[None]):
         with Vertical():
             # Gantt chart section (main display)
             self.gantt_widget = GanttWidget(id="gantt-widget")
+            self.gantt_widget.border_title = "Gantt Chart"
             yield self.gantt_widget
 
             # Task table (main content)
             self.task_table = TaskTable(id="task-table")  # type: ignore[no-untyped-call]
+            self.task_table.border_title = "Tasks"
             yield self.task_table
 
             # Search input at the bottom (Vim-style)
