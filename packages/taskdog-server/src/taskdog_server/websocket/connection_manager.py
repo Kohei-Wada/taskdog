@@ -41,7 +41,9 @@ class ConnectionManager:
         if client_id in self.active_connections:
             del self.active_connections[client_id]
             logger.info(
-                f"WebSocket client disconnected: {client_id} (remaining: {len(self.active_connections)})"
+                f"WebSocket client disconnected: {client_id} (remaining: {
+                    len(self.active_connections)
+                })"
             )
 
     async def broadcast(
