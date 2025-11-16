@@ -21,6 +21,7 @@ from taskdog_core.application.use_cases.reopen_task import ReopenTaskUseCase
 from taskdog_core.application.use_cases.start_task import StartTaskUseCase
 from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+from taskdog_core.domain.services.logger import Logger
 from taskdog_core.shared.config_manager import Config
 
 
@@ -39,20 +40,23 @@ class TaskLifecycleController(BaseTaskController):
     Attributes:
         repository: Task repository (inherited from BaseTaskController)
         config: Application configuration (inherited from BaseTaskController)
+        logger: Optional logger (inherited from BaseTaskController)
     """
 
     def __init__(
         self,
         repository: TaskRepository,
         config: Config,
+        logger: Logger | None = None,
     ):
         """Initialize the lifecycle controller.
 
         Args:
             repository: Task repository
             config: Application configuration
+            logger: Optional logger for operation tracking
         """
-        super().__init__(repository, config)
+        super().__init__(repository, config, logger)
 
     def start_task(self, task_id: int) -> TaskOperationOutput:
         """Start a task.

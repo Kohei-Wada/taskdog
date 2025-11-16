@@ -22,6 +22,7 @@ from taskdog_core.infrastructure.persistence.file_notes_repository import (
 from taskdog_core.infrastructure.persistence.repository_factory import RepositoryFactory
 from taskdog_core.shared.config_manager import Config, ConfigManager
 from taskdog_server.api.context import ApiContext
+from taskdog_server.infrastructure.logging.standard_logger import StandardLogger
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
 # Global context instance
@@ -52,12 +53,31 @@ def initialize_api_context() -> ApiContext:
     # Initialize repository using factory based on storage config
     repository = RepositoryFactory.create(config.storage)
 
-    # Initialize controllers
-    query_controller = QueryController(repository, notes_repository)
-    lifecycle_controller = TaskLifecycleController(repository, config)
-    relationship_controller = TaskRelationshipController(repository, config)
-    analytics_controller = TaskAnalyticsController(repository, config, holiday_checker)
-    crud_controller = TaskCrudController(repository, notes_repository, config)
+    # Initialize loggers for each controller
+    query_logger = StandardLogger("taskdog_core.controllers.query_controller")
+    lifecycle_logger = StandardLogger(
+        "taskdog_core.controllers.task_lifecycle_controller"
+    )
+    relationship_logger = StandardLogger(
+        "taskdog_core.controllers.task_relationship_controller"
+    )
+    analytics_logger = StandardLogger(
+        "taskdog_core.controllers.task_analytics_controller"
+    )
+    crud_logger = StandardLogger("taskdog_core.controllers.task_crud_controller")
+
+    # Initialize controllers with loggers
+    query_controller = QueryController(repository, notes_repository, query_logger)
+    lifecycle_controller = TaskLifecycleController(repository, config, lifecycle_logger)
+    relationship_controller = TaskRelationshipController(
+        repository, config, relationship_logger
+    )
+    analytics_controller = TaskAnalyticsController(
+        repository, config, holiday_checker, analytics_logger
+    )
+    crud_controller = TaskCrudController(
+        repository, notes_repository, config, crud_logger
+    )
 
     return ApiContext(
         repository=repository,
