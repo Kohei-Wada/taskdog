@@ -87,8 +87,8 @@ class QueryController:
         Returns:
             TaskListOutput with filtered tasks, counts, and optionally Gantt data
         """
-        all_tasks = self.repository.get_all()
-        total_count = len(all_tasks)
+        # Use SQL COUNT for efficiency instead of loading all tasks
+        total_count = self.repository.count_tasks()
 
         filtered_task_dtos = self.query_service.get_filtered_tasks_as_dtos(
             filter_obj=filter_obj,
@@ -161,9 +161,8 @@ class QueryController:
         tag_counts = self.query_service.get_all_tags()
         total_tags = len(tag_counts)
 
-        # Calculate total number of tasks with at least one tag
-        all_tasks = self.repository.get_all()
-        total_tagged_tasks = sum(1 for task in all_tasks if task.tags)
+        # Use SQL COUNT for efficiency instead of loading all tasks
+        total_tagged_tasks = self.repository.count_tasks_with_tags()
 
         return TagStatisticsOutput(
             tag_counts=tag_counts,

@@ -81,6 +81,62 @@ class TaskRepository(ABC):
         # Subclasses should override this method to provide SQL-level filtering
         return self.get_all()
 
+    def count_tasks(
+        self,
+        include_archived: bool = True,
+        status: TaskStatus | None = None,
+        tags: list[str] | None = None,
+        match_all_tags: bool = False,
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> int:
+        """Count tasks matching filter criteria with SQL COUNT for efficiency.
+
+        This is an optional optimization method. Repositories that don't override
+        this method will fall back to counting tasks in Python.
+
+        Args:
+            include_archived: If False, exclude archived tasks (default: True)
+            status: Filter by task status (default: None, no status filter)
+            tags: Filter by tags (default: None, no tag filter)
+            match_all_tags: If True, require all tags (AND); if False, any tag (OR)
+            start_date: Filter tasks with any date >= start_date (default: None)
+            end_date: Filter tasks with any date <= end_date (default: None)
+
+        Returns:
+            Number of tasks matching the filter criteria
+
+        Notes:
+            - Default implementation uses len(get_filtered()) (no optimization)
+            - Repositories should override this for SQL COUNT optimization
+            - Uses same filter logic as get_filtered() for consistency
+        """
+        # Default implementation: fallback to counting filtered tasks
+        # Subclasses should override this method to use SQL COUNT
+        return len(
+            self.get_filtered(
+                include_archived, status, tags, match_all_tags, start_date, end_date
+            )
+        )
+
+    def count_tasks_with_tags(self) -> int:
+        """Count tasks that have at least one tag.
+
+        This is an optional optimization method. Repositories that don't override
+        this method will fall back to counting in Python.
+
+        Returns:
+            Number of tasks with at least one tag
+
+        Notes:
+            - Default implementation iterates all tasks (no optimization)
+            - Repositories should override this for SQL COUNT optimization
+            - Useful for tag statistics without loading all tasks
+        """
+        # Default implementation: fallback to Python iteration
+        # Subclasses should override this method to use SQL COUNT
+        return sum(1 for task in self.get_all() if task.tags)
+
     @abstractmethod
     def save(self, task: Task) -> None:
         """Save a task (create new or update existing).

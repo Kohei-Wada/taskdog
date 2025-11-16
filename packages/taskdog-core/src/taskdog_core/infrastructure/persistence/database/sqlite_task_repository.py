@@ -178,6 +178,97 @@ class SqliteTaskRepository(TaskRepository):
             models = session.scalars(stmt).all()
             return [self.mapper.from_model(model) for model in models]
 
+    def count_tasks(
+        self,
+        include_archived: bool = True,
+        status: TaskStatus | None = None,
+        tags: list[str] | None = None,
+        match_all_tags: bool = False,
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> int:
+        """Count tasks matching filter criteria using SQL COUNT for efficiency.
+
+        This method uses SQL COUNT(*) instead of loading all tasks into memory,
+        providing significant performance improvements for large datasets.
+
+        Args:
+            include_archived: If False, exclude archived tasks (default: True)
+            status: Filter by task status (default: None, no status filter)
+            tags: Filter by tags (default: None, no tag filter)
+            match_all_tags: If True, require all tags (AND logic); if False, any tag (OR logic)
+            start_date: Filter tasks with any date >= start_date (default: None)
+            end_date: Filter tasks with any date <= end_date (default: None)
+
+        Returns:
+            Number of tasks matching the filter criteria
+
+        Note:
+            Uses the same filter logic as get_filtered() for consistency.
+            Performance: O(1) index lookups vs O(n) task loading + deserialization.
+        """
+        with self.Session() as session:
+            stmt = select(func.count(TaskModel.id))
+
+            # Filter by archived status (uses index)
+            if not include_archived:
+                stmt = stmt.where(TaskModel.is_archived == False)  # noqa: E712
+
+            # Filter by status (uses index)
+            if status is not None:
+                stmt = stmt.where(TaskModel.status == status.value)
+
+            # Filter by tags (uses JOIN)
+            if tags:
+                if match_all_tags:
+                    # AND logic: task must have ALL specified tags
+                    for tag in tags:
+                        tag_subquery = (
+                            select(TaskTagModel.task_id)
+                            .join(TagModel, TaskTagModel.tag_id == TagModel.id)
+                            .where(TagModel.name == tag)
+                        )
+                        stmt = stmt.where(TaskModel.id.in_(tag_subquery))
+                else:
+                    # OR logic: task must have ANY of the specified tags
+                    tag_subquery = (
+                        select(TaskTagModel.task_id)
+                        .join(TagModel, TaskTagModel.tag_id == TagModel.id)
+                        .where(TagModel.name.in_(tags))
+                    )
+                    stmt = stmt.where(TaskModel.id.in_(tag_subquery))
+
+            # Filter by date range (checks multiple date fields)
+            if start_date is not None or end_date is not None:
+                date_conditions = self._build_date_filter_conditions(
+                    start_date, end_date
+                )
+                if date_conditions:
+                    stmt = stmt.where(or_(*date_conditions))
+
+            # Execute count query
+            count = session.scalar(stmt)
+            return count or 0
+
+    def count_tasks_with_tags(self) -> int:
+        """Count tasks that have at least one tag using SQL COUNT.
+
+        This method uses SQL aggregation instead of loading all tasks into memory,
+        providing significant performance improvements.
+
+        Returns:
+            Number of tasks with at least one tag
+
+        Note:
+            Uses SQL COUNT(DISTINCT task_id) for efficiency.
+            Performance: O(1) aggregation vs O(n) task loading + iteration.
+        """
+        with self.Session() as session:
+            # SQL: SELECT COUNT(DISTINCT task_id) FROM task_tags
+            stmt = select(func.count(func.distinct(TaskTagModel.task_id)))
+            count = session.scalar(stmt)
+            return count or 0
+
     def save(self, task: Task) -> None:
         """Save a task (create new or update existing).
 

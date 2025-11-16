@@ -543,6 +543,210 @@ class TestSqliteTaskRepository(unittest.TestCase):
             tag_models = session.scalars(stmt).all()
             self.assertEqual(len(tag_models), 1)
 
+    def test_count_tasks_returns_total_count(self) -> None:
+        """Test count_tasks() returns total task count without filters."""
+        # Create test tasks
+        task1 = Task(id=1, name="Task 1", priority=1)
+        task2 = Task(id=2, name="Task 2", priority=2, is_archived=True)
+        task3 = Task(id=3, name="Task 3", priority=3)
+
+        self.repository.save_all([task1, task2, task3])
+
+        # Count all tasks (including archived)
+        total_count = self.repository.count_tasks()
+        self.assertEqual(total_count, 3)
+
+        # Count non-archived tasks only
+        non_archived_count = self.repository.count_tasks(include_archived=False)
+        self.assertEqual(non_archived_count, 2)
+
+    def test_count_tasks_with_status_filter(self) -> None:
+        """Test count_tasks() with status filter."""
+        # Create tasks with different statuses
+        task1 = Task(id=1, name="Pending", priority=1, status=TaskStatus.PENDING)
+        task2 = Task(
+            id=2, name="In Progress", priority=2, status=TaskStatus.IN_PROGRESS
+        )
+        task3 = Task(id=3, name="Completed", priority=3, status=TaskStatus.COMPLETED)
+        task4 = Task(
+            id=4, name="Another Pending", priority=4, status=TaskStatus.PENDING
+        )
+
+        self.repository.save_all([task1, task2, task3, task4])
+
+        # Count PENDING tasks
+        pending_count = self.repository.count_tasks(status=TaskStatus.PENDING)
+        self.assertEqual(pending_count, 2)
+
+        # Count COMPLETED tasks
+        completed_count = self.repository.count_tasks(status=TaskStatus.COMPLETED)
+        self.assertEqual(completed_count, 1)
+
+        # Count IN_PROGRESS tasks
+        in_progress_count = self.repository.count_tasks(status=TaskStatus.IN_PROGRESS)
+        self.assertEqual(in_progress_count, 1)
+
+    def test_count_tasks_with_tag_filter(self) -> None:
+        """Test count_tasks() with tag filter (OR and AND logic)."""
+        # Create tasks with tags
+        task1 = Task(id=1, name="Task 1", priority=1, tags=["urgent"])
+        task2 = Task(id=2, name="Task 2", priority=2, tags=["urgent", "backend"])
+        task3 = Task(id=3, name="Task 3", priority=3, tags=["backend"])
+        task4 = Task(id=4, name="Task 4", priority=4, tags=["frontend"])
+
+        self.repository.save_all([task1, task2, task3, task4])
+
+        # OR logic: tasks with 'urgent' OR 'backend'
+        or_count = self.repository.count_tasks(
+            tags=["urgent", "backend"], match_all_tags=False
+        )
+        self.assertEqual(or_count, 3)  # task1, task2, task3
+
+        # AND logic: tasks with 'urgent' AND 'backend'
+        and_count = self.repository.count_tasks(
+            tags=["urgent", "backend"], match_all_tags=True
+        )
+        self.assertEqual(and_count, 1)  # only task2
+
+        # Single tag filter
+        urgent_count = self.repository.count_tasks(tags=["urgent"])
+        self.assertEqual(urgent_count, 2)  # task1, task2
+
+    def test_count_tasks_with_date_filter(self) -> None:
+        """Test count_tasks() with date range filter."""
+        # Create tasks with various dates
+        task1 = Task(id=1, name="Task 1", priority=1, deadline=date(2025, 1, 15))
+        task2 = Task(id=2, name="Task 2", priority=2, deadline=date(2025, 2, 10))
+        task3 = Task(id=3, name="Task 3", priority=3, deadline=date(2025, 3, 5))
+        task4 = Task(id=4, name="Task 4", priority=4, planned_start=date(2025, 2, 15))
+
+        self.repository.save_all([task1, task2, task3, task4])
+
+        # Count tasks in February 2025
+        feb_count = self.repository.count_tasks(
+            start_date=date(2025, 2, 1), end_date=date(2025, 2, 28)
+        )
+        self.assertEqual(feb_count, 2)  # task2, task4
+
+        # Count tasks after Feb 1
+        after_feb_count = self.repository.count_tasks(start_date=date(2025, 2, 1))
+        self.assertEqual(after_feb_count, 3)  # task2, task3, task4
+
+        # Count tasks before Feb 28
+        before_feb_count = self.repository.count_tasks(end_date=date(2025, 2, 28))
+        self.assertEqual(before_feb_count, 3)  # task1, task2, task4
+
+    def test_count_tasks_with_combined_filters(self) -> None:
+        """Test count_tasks() with multiple filters combined."""
+        # Create diverse test data
+        task1 = Task(
+            id=1,
+            name="Urgent Backend",
+            priority=1,
+            status=TaskStatus.PENDING,
+            tags=["urgent", "backend"],
+        )
+        task2 = Task(
+            id=2,
+            name="Urgent Frontend",
+            priority=2,
+            status=TaskStatus.IN_PROGRESS,
+            tags=["urgent", "frontend"],
+        )
+        task3 = Task(
+            id=3,
+            name="Backend",
+            priority=3,
+            status=TaskStatus.PENDING,
+            tags=["backend"],
+            is_archived=True,
+        )
+        task4 = Task(id=4, name="Normal", priority=4, status=TaskStatus.PENDING)
+
+        self.repository.save_all([task1, task2, task3, task4])
+
+        # Count non-archived PENDING tasks
+        pending_non_archived = self.repository.count_tasks(
+            status=TaskStatus.PENDING, include_archived=False
+        )
+        self.assertEqual(pending_non_archived, 2)  # task1, task4
+
+        # Count non-archived tasks with 'urgent' tag
+        urgent_non_archived = self.repository.count_tasks(
+            tags=["urgent"], include_archived=False
+        )
+        self.assertEqual(urgent_non_archived, 2)  # task1, task2
+
+        # Count non-archived PENDING tasks with 'urgent' tag
+        complex_filter = self.repository.count_tasks(
+            status=TaskStatus.PENDING, tags=["urgent"], include_archived=False
+        )
+        self.assertEqual(complex_filter, 1)  # only task1
+
+    def test_count_tasks_with_tags_returns_tagged_count(self) -> None:
+        """Test count_tasks_with_tags() returns count of tasks with at least one tag."""
+        # Create tasks with and without tags
+        task1 = Task(id=1, name="Tagged 1", priority=1, tags=["urgent"])
+        task2 = Task(id=2, name="Tagged 2", priority=2, tags=["backend", "frontend"])
+        task3 = Task(id=3, name="No tags", priority=3)
+        task4 = Task(id=4, name="Tagged 3", priority=4, tags=["docs"])
+        task5 = Task(id=5, name="Also no tags", priority=5)
+
+        self.repository.save_all([task1, task2, task3, task4, task5])
+
+        # Count tasks with at least one tag
+        tagged_count = self.repository.count_tasks_with_tags()
+        self.assertEqual(tagged_count, 3)  # task1, task2, task4
+
+    def test_count_tasks_with_tags_returns_zero_when_no_tags(self) -> None:
+        """Test count_tasks_with_tags() returns 0 when no tasks have tags."""
+        # Create tasks without tags
+        task1 = Task(id=1, name="No tags 1", priority=1)
+        task2 = Task(id=2, name="No tags 2", priority=2)
+
+        self.repository.save_all([task1, task2])
+
+        # Should return 0
+        tagged_count = self.repository.count_tasks_with_tags()
+        self.assertEqual(tagged_count, 0)
+
+    def test_count_tasks_consistency_with_get_filtered(self) -> None:
+        """Test count_tasks() returns same count as len(get_filtered())."""
+        # Create diverse test data
+        task1 = Task(
+            id=1, name="Task 1", priority=1, status=TaskStatus.PENDING, tags=["urgent"]
+        )
+        task2 = Task(
+            id=2,
+            name="Task 2",
+            priority=2,
+            status=TaskStatus.COMPLETED,
+            tags=["backend"],
+        )
+        task3 = Task(
+            id=3, name="Task 3", priority=3, status=TaskStatus.PENDING, is_archived=True
+        )
+        task4 = Task(id=4, name="Task 4", priority=4, deadline=date(2025, 2, 10))
+
+        self.repository.save_all([task1, task2, task3, task4])
+
+        # Test various filter combinations
+        test_cases = [
+            {"include_archived": False},
+            {"status": TaskStatus.PENDING},
+            {"tags": ["urgent"]},
+            {"status": TaskStatus.PENDING, "include_archived": False},
+        ]
+
+        for filters in test_cases:
+            count = self.repository.count_tasks(**filters)
+            filtered_tasks = self.repository.get_filtered(**filters)
+            self.assertEqual(
+                count,
+                len(filtered_tasks),
+                f"count_tasks({filters}) != len(get_filtered({filters}))",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
