@@ -2,6 +2,7 @@
 
 from taskdog.tui.commands.batch_confirmation_base import BatchConfirmationCommandBase
 from taskdog.tui.commands.registry import command_registry
+from taskdog.tui.messages import TUIMessageBuilder
 
 
 @command_registry.register("delete_task")
@@ -32,6 +33,4 @@ class DeleteTaskCommand(BatchConfirmationCommandBase):
 
     def get_success_message(self, task_count: int) -> str:
         """Return the success message."""
-        if task_count == 1:
-            return "Archived 1 task"
-        return f"Archived {task_count} tasks"
+        return TUIMessageBuilder.batch_success("Archived", task_count)

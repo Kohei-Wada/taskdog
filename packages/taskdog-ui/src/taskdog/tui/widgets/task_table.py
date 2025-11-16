@@ -15,7 +15,7 @@ from textual.reactive import reactive
 from textual.widgets import DataTable
 
 if TYPE_CHECKING:
-    from taskdog.tui.app import TaskdogTUI
+    pass
 
 from taskdog.constants.table_dimensions import (
     PAGE_SCROLL_SIZE,
@@ -35,6 +35,7 @@ from taskdog.constants.table_dimensions import (
     TASK_TABLE_STATUS_WIDTH,
 )
 from taskdog.tui.events import TaskSelected
+from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 from taskdog.view_models.task_view_model import TaskRowViewModel
@@ -43,7 +44,7 @@ from taskdog.view_models.task_view_model import TaskRowViewModel
 TASK_TABLE_CHECKBOX_WIDTH = 3
 
 
-class TaskTable(DataTable):
+class TaskTable(DataTable, TUIWidget):
     """A data table widget for displaying tasks with Vi-style keyboard navigation.
 
     This widget acts as a coordinator that delegates responsibilities to:
@@ -206,9 +207,7 @@ class TaskTable(DataTable):
         Returns:
             List of filtered TaskRowViewModel based on hide_completed setting
         """
-        # Access via app.state (TaskdogTUI imported via TYPE_CHECKING)
-        app: TaskdogTUI = self.app  # type: ignore[assignment]
-        return app.state.filtered_viewmodels
+        return self.tui_state.filtered_viewmodels
 
     def refresh_tasks(
         self, view_models: list[TaskRowViewModel], keep_scroll_position: bool = False

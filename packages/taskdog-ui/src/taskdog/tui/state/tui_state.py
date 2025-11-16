@@ -114,8 +114,7 @@ class TUIState:
         """
         if len(tasks) != len(viewmodels):
             raise ValueError(
-                f"tasks and viewmodels must have same length: "
-                f"{len(tasks)} != {len(viewmodels)}"
+                f"tasks and viewmodels must have same length: {len(tasks)} != {len(viewmodels)}"
             )
 
         self.tasks_cache = tasks

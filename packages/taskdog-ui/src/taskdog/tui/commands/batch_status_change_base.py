@@ -8,12 +8,6 @@ from abc import abstractmethod
 
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
-from taskdog_core.domain.exceptions.task_exceptions import (
-    TaskAlreadyFinishedError,
-    TaskNotFoundException,
-    TaskNotStartedError,
-    TaskValidationError,
-)
 
 
 class BatchStatusChangeCommandBase(TUICommandBase):
@@ -83,15 +77,8 @@ class BatchStatusChangeCommandBase(TUICommandBase):
                     # Single task: show detailed message
                     self.notify_success(success_message)
                 success_count += 1
-            except (
-                TaskNotFoundException,
-                TaskAlreadyFinishedError,
-                TaskNotStartedError,
-                TaskValidationError,
-            ) as e:
-                self.notify_error(f"Task {task_id}", e)
-                failure_count += 1
             except Exception as e:
+                # All exceptions handled uniformly
                 self.notify_error(f"Task {task_id}", e)
                 failure_count += 1
 
