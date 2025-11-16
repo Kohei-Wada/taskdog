@@ -29,6 +29,8 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
         ("k", "scroll_up_line", "Scroll Up"),
         ("ctrl+d", "scroll_down", "Scroll Down (Half Page)"),
         ("ctrl+u", "scroll_up", "Scroll Up (Half Page)"),
+        ("g", "scroll_to_top", "Scroll to Top"),
+        ("G", "scroll_to_bottom", "Scroll to Bottom"),
         ("v", "edit_note", "Edit Note"),
     ]
 
@@ -214,6 +216,16 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None]):
         scroll_widget.scroll_relative(
             y=-(scroll_widget.size.height // 2), animate=False
         )
+
+    def action_scroll_to_top(self) -> None:
+        """Scroll to top (g key)."""
+        scroll_widget = self.query_one("#detail-content", VerticalScroll)
+        scroll_widget.scroll_home(animate=False)
+
+    def action_scroll_to_bottom(self) -> None:
+        """Scroll to bottom (G key)."""
+        scroll_widget = self.query_one("#detail-content", VerticalScroll)
+        scroll_widget.scroll_end(animate=False)
 
     def action_edit_note(self) -> None:
         """Edit note (v key) - dismiss and return task ID to trigger note editing."""
