@@ -424,6 +424,7 @@ make test                           # All tests (core + server + ui)
 make test-core                      # Core package tests only
 make test-server                    # Server package tests only
 make test-ui                        # UI package tests only
+make coverage                       # Run tests with coverage report (sorted by coverage, low to high)
 
 # Single test file (from package directory)
 cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest tests/test_module.py
@@ -532,6 +533,13 @@ See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+**CI/CD**: All pull requests automatically run:
+- Linting (`make lint`)
+- Type checking (`make typecheck`)
+- Tests with coverage (`make coverage`)
+
+Coverage reports are displayed in CI logs, sorted by coverage (low → high) to highlight areas needing improvement.
 
 ## License
 
