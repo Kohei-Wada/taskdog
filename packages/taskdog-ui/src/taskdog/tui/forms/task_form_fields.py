@@ -8,6 +8,7 @@ from textual.containers import Vertical
 from textual.widgets import Checkbox, Input, Label, Static
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
+from taskdog.tui.utils.config_validator import require_config
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.config_manager import Config
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
@@ -89,9 +90,8 @@ class TaskFormFields:
         # Error message area (hidden by default)
         yield Static("", id="error-message")
 
-        # Config must be provided
-        if config is None:
-            raise ValueError("config parameter is required")
+        # Validate config parameter
+        config = require_config(config)
 
         # Get default priority from config
         default_priority = config.task.default_priority

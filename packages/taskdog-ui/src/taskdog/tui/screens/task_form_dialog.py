@@ -18,6 +18,7 @@ from taskdog.tui.forms.validators import (
     TaskNameValidator,
 )
 from taskdog.tui.screens.base_dialog import BaseModalDialog
+from taskdog.tui.utils.config_validator import require_config
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.config_manager import Config
 
@@ -52,9 +53,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         super().__init__(*args, **kwargs)
         self.task_to_edit = task
         self.is_edit_mode = task is not None
-        if config is None:
-            raise ValueError("config parameter is required")
-        self.config = config
+        self.config = require_config(config)
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""

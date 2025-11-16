@@ -8,6 +8,10 @@ and avoid magic numbers scattered throughout the codebase.
 AUTO_REFRESH_INTERVAL_SECONDS = 1.0
 """Interval in seconds for auto-refreshing elapsed time display."""
 
+# Time validation constants
+MAX_HOURS_PER_DAY = 24
+"""Maximum number of hours per day for schedule optimization validation."""
+
 # Gantt chart display settings
 DEFAULT_GANTT_DISPLAY_DAYS = 28
 """Default number of days to display in Gantt chart (4 weeks)."""
