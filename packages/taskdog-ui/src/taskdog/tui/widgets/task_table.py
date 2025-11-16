@@ -33,7 +33,6 @@ from taskdog.constants.table_dimensions import (
     TASK_TABLE_PLANNED_START_WIDTH,
     TASK_TABLE_PRIORITY_WIDTH,
     TASK_TABLE_STATUS_WIDTH,
-    TASK_TABLE_TAGS_WIDTH,
 )
 from taskdog.tui.events import TaskSelected
 from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
@@ -136,7 +135,7 @@ class TaskTable(DataTable):
         self.add_column(
             Text("Deps", justify="center"), width=TASK_TABLE_DEPENDS_ON_WIDTH
         )
-        self.add_column(Text("Tags", justify="center"), width=TASK_TABLE_TAGS_WIDTH)
+        self.add_column(Text("Tags", justify="center"), width=None)
 
     def load_tasks(self, view_models: list[TaskRowViewModel]):
         """Load task ViewModels into the table.

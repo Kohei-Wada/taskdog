@@ -12,7 +12,6 @@ from taskdog.constants.symbols import EMOJI_NOTE
 from taskdog.constants.table_dimensions import TASK_NAME_MAX_DISPLAY_LENGTH
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.formatters.duration_formatter import DurationFormatter
-from taskdog.tui.constants.ui_settings import TAGS_MAX_DISPLAY_LENGTH
 from taskdog.view_models.task_view_model import TaskRowViewModel
 
 
@@ -179,7 +178,7 @@ class TaskTableRowBuilder:
 
     @staticmethod
     def _format_tags(tags: list[str] | None) -> str:
-        """Format task tags with truncation if needed.
+        """Format task tags.
 
         Args:
             tags: List of tags to format
@@ -189,11 +188,7 @@ class TaskTableRowBuilder:
         """
         if not tags:
             return ""
-
-        tags_text = ", ".join(tags)
-        if len(tags_text) > TAGS_MAX_DISPLAY_LENGTH:
-            return tags_text[: TAGS_MAX_DISPLAY_LENGTH - 1] + "..."
-        return tags_text
+        return ", ".join(tags)
 
     @staticmethod
     def _format_dependencies(depends_on: list[int] | None) -> str:
