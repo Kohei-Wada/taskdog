@@ -30,7 +30,7 @@ TaskDetailScreen {
 }
 
 .dialog-standard {
-    width: 70;  /* For form-based dialogs and lists */
+    width: 80;  /* For form-based dialogs and lists */
 }
 
 .dialog-wide {
@@ -104,7 +104,7 @@ TaskDetailScreen {
 
 /* Algorithm Selection Dialog */
 #algorithm-dialog {
-    max-height: 35;
+    max-height: 40;
 }
 
 #algorithm-list {
@@ -128,7 +128,7 @@ TaskDetailScreen {
 /* Task Form Dialog (Add/Edit) */
 #add-task-dialog,
 #edit-task-dialog {
-    max-height: 45;  /* Accommodate planned_start/planned_end fields */
+    max-height: 50;  /* Accommodate planned_start/planned_end fields */
 }
 
 /* Task Detail Screen */
