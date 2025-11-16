@@ -1,4 +1,4 @@
-.PHONY: help test test-core test-server test-ui test-all \
+.PHONY: help test test-core test-server test-ui test-all coverage \
         install install-dev install-core install-server install-ui \
         install-ui-only install-server-only reinstall \
         tool-install-ui tool-install-server \
@@ -117,6 +117,24 @@ test-server: ## Run tests for taskdog-server only
 test-ui: ## Run tests for taskdog-ui only
 	@echo "Running taskdog-ui tests..."
 	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
+
+coverage: ## Run tests with coverage and show report in terminal (sorted by coverage, low to high)
+	@echo "Running tests with coverage..."
+	@echo ""
+	@echo "📊 taskdog-core coverage (sorted: low → high):"
+	@cd packages/taskdog-core && PYTHONPATH=src uv run coverage run -m unittest discover -s tests/ -t . 2>/dev/null
+	@cd packages/taskdog-core && uv run coverage report --show-missing --sort=Cover
+	@echo ""
+	@echo "📊 taskdog-server coverage (sorted: low → high):"
+	@cd packages/taskdog-server && PYTHONPATH=src PYTHONWARNINGS="ignore::ResourceWarning" uv run coverage run -m unittest discover -s tests/ -t . 2>/dev/null
+	@cd packages/taskdog-server && uv run coverage report --show-missing --sort=Cover
+	@echo ""
+	@echo "📊 taskdog-ui coverage (sorted: low → high):"
+	@cd packages/taskdog-ui && PYTHONPATH=src uv run coverage run -m unittest discover -s tests/ -t . 2>/dev/null
+	@cd packages/taskdog-ui && uv run coverage report --show-missing --sort=Cover
+	@echo ""
+	@echo "✓ Coverage report complete!"
+	@echo ""
 
 # ============================================================================
 # Code Quality Targets
