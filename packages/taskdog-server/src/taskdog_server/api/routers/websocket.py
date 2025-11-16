@@ -5,19 +5,21 @@ real-time notifications about task changes.
 """
 
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
+from taskdog_server.api.dependencies import get_connection_manager
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
 router = APIRouter()
 
-# Global connection manager instance
-manager = ConnectionManager()
-
 
 @router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket) -> None:
+async def websocket_endpoint(
+    websocket: WebSocket,
+    manager: Annotated[ConnectionManager, Depends(get_connection_manager)],
+) -> None:
     """WebSocket endpoint for real-time task updates.
 
     Clients connect to this endpoint to receive real-time notifications
@@ -65,12 +67,3 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
         manager.disconnect(client_id)
     except Exception:
         manager.disconnect(client_id)
-
-
-def get_connection_manager() -> ConnectionManager:
-    """Get the global connection manager instance.
-
-    Returns:
-        The connection manager instance
-    """
-    return manager

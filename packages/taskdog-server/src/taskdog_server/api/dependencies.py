@@ -22,9 +22,13 @@ from taskdog_core.infrastructure.persistence.file_notes_repository import (
 from taskdog_core.infrastructure.persistence.repository_factory import RepositoryFactory
 from taskdog_core.shared.config_manager import Config, ConfigManager
 from taskdog_server.api.context import ApiContext
+from taskdog_server.websocket.connection_manager import ConnectionManager
 
 # Global context instance
 _api_context: ApiContext | None = None
+
+# Global connection manager instance
+_connection_manager: ConnectionManager | None = None
 
 
 def initialize_api_context() -> ApiContext:
@@ -146,6 +150,25 @@ def get_holiday_checker(context: ApiContextDep) -> IHolidayChecker | None:
     return context.holiday_checker
 
 
+def get_connection_manager() -> ConnectionManager:
+    """Get the global ConnectionManager instance for WebSocket connections.
+
+    This function provides a singleton ConnectionManager instance that manages
+    all active WebSocket connections and handles broadcasting events.
+
+    Returns:
+        ConnectionManager: The global connection manager instance
+
+    Note:
+        The instance is lazily initialized on first access and reused
+        for all subsequent calls.
+    """
+    global _connection_manager
+    if _connection_manager is None:
+        _connection_manager = ConnectionManager()
+    return _connection_manager
+
+
 # Typed dependencies for endpoint signatures
 QueryControllerDep = Annotated[QueryController, Depends(get_query_controller)]
 LifecycleControllerDep = Annotated[
@@ -162,3 +185,4 @@ RepositoryDep = Annotated[TaskRepository, Depends(get_repository)]
 NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
 ConfigDep = Annotated[Config, Depends(get_config)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
+ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]

@@ -10,14 +10,16 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskValidationError,
 )
 from taskdog_server.api.converters import convert_to_task_operation_response
-from taskdog_server.api.dependencies import RelationshipControllerDep
+from taskdog_server.api.dependencies import (
+    ConnectionManagerDep,
+    RelationshipControllerDep,
+)
 from taskdog_server.api.models.requests import (
     AddDependencyRequest,
     LogHoursRequest,
     SetTaskTagsRequest,
 )
 from taskdog_server.api.models.responses import TaskOperationResponse
-from taskdog_server.api.routers.websocket import get_connection_manager
 from taskdog_server.websocket.broadcaster import broadcast_task_updated
 
 router = APIRouter()
@@ -28,6 +30,7 @@ async def add_dependency(
     task_id: int,
     request: AddDependencyRequest,
     controller: RelationshipControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -50,7 +53,6 @@ async def add_dependency(
         result = controller.add_dependency(task_id, request.depends_on_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_updated, manager, result, ["depends_on"], x_client_id
         )
@@ -71,6 +73,7 @@ async def remove_dependency(
     task_id: int,
     depends_on_id: int,
     controller: RelationshipControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -93,7 +96,6 @@ async def remove_dependency(
         result = controller.remove_dependency(task_id, depends_on_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_updated, manager, result, ["depends_on"], x_client_id
         )
@@ -112,6 +114,7 @@ async def set_task_tags(
     task_id: int,
     request: SetTaskTagsRequest,
     controller: RelationshipControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -134,7 +137,6 @@ async def set_task_tags(
         result = controller.set_task_tags(task_id, request.tags)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_updated, manager, result, ["tags"], x_client_id
         )
@@ -153,6 +155,7 @@ async def log_hours(
     task_id: int,
     request: LogHoursRequest,
     controller: RelationshipControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -176,7 +179,6 @@ async def log_hours(
         result = controller.log_hours(task_id, request.hours, log_date.isoformat())
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_updated, manager, result, ["actual_daily_hours"], x_client_id
         )

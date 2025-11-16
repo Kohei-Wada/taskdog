@@ -15,6 +15,7 @@ from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 from taskdog_server.api.dependencies import (
     AnalyticsControllerDep,
+    ConnectionManagerDep,
     HolidayCheckerDep,
     QueryControllerDep,
 )
@@ -36,7 +37,6 @@ from taskdog_server.api.models.responses import (
     TimeStatistics,
     TrendData,
 )
-from taskdog_server.api.routers.websocket import get_connection_manager
 from taskdog_server.websocket.broadcaster import broadcast_schedule_optimized
 
 router = APIRouter()
@@ -303,6 +303,7 @@ def run_optimization(
 async def optimize_schedule(
     request: OptimizeScheduleRequest,
     controller: AnalyticsControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     run_async: bool = Query(False, description="Run optimization in background"),
     x_client_id: Annotated[str | None, Header()] = None,
@@ -362,7 +363,6 @@ async def optimize_schedule(
         )
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_schedule_optimized,
             manager,

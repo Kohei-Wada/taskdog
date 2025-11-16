@@ -11,9 +11,8 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskValidationError,
 )
 from taskdog_server.api.converters import convert_to_task_operation_response
-from taskdog_server.api.dependencies import LifecycleControllerDep
+from taskdog_server.api.dependencies import ConnectionManagerDep, LifecycleControllerDep
 from taskdog_server.api.models.responses import TaskOperationResponse
-from taskdog_server.api.routers.websocket import get_connection_manager
 from taskdog_server.websocket.broadcaster import broadcast_task_status_changed
 
 router = APIRouter()
@@ -23,6 +22,7 @@ router = APIRouter()
 async def start_task(
     task_id: int,
     controller: LifecycleControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -44,7 +44,6 @@ async def start_task(
         result = controller.start_task(task_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_status_changed, manager, result, "PENDING", x_client_id
         )
@@ -62,6 +61,7 @@ async def start_task(
 async def complete_task(
     task_id: int,
     controller: LifecycleControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -83,7 +83,6 @@ async def complete_task(
         result = controller.complete_task(task_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_status_changed, manager, result, "IN_PROGRESS", x_client_id
         )
@@ -101,6 +100,7 @@ async def complete_task(
 async def pause_task(
     task_id: int,
     controller: LifecycleControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -122,7 +122,6 @@ async def pause_task(
         result = controller.pause_task(task_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_status_changed, manager, result, "IN_PROGRESS", x_client_id
         )
@@ -140,6 +139,7 @@ async def pause_task(
 async def cancel_task(
     task_id: int,
     controller: LifecycleControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -161,7 +161,6 @@ async def cancel_task(
         result = controller.cancel_task(task_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_status_changed, manager, result, "IN_PROGRESS", x_client_id
         )
@@ -179,6 +178,7 @@ async def cancel_task(
 async def reopen_task(
     task_id: int,
     controller: LifecycleControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -200,7 +200,6 @@ async def reopen_task(
         result = controller.reopen_task(task_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_status_changed, manager, result, "COMPLETED", x_client_id
         )

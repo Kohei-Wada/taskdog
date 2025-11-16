@@ -4,13 +4,14 @@ This module provides helper functions to broadcast task change events
 to all connected WebSocket clients.
 """
 
-from typing import Any
-
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
+from taskdog_server.websocket.connection_manager import ConnectionManager
 
 
 async def broadcast_task_created(
-    manager: Any, task: TaskOperationOutput, exclude_client_id: str | None = None
+    manager: ConnectionManager,
+    task: TaskOperationOutput,
+    exclude_client_id: str | None = None,
 ) -> None:
     """Broadcast task creation event.
 
@@ -32,7 +33,7 @@ async def broadcast_task_created(
 
 
 async def broadcast_task_updated(
-    manager: Any,
+    manager: ConnectionManager,
     task: TaskOperationOutput,
     fields: list[str],
     exclude_client_id: str | None = None,
@@ -58,7 +59,10 @@ async def broadcast_task_updated(
 
 
 async def broadcast_task_deleted(
-    manager: Any, task_id: int, task_name: str, exclude_client_id: str | None = None
+    manager: ConnectionManager,
+    task_id: int,
+    task_name: str,
+    exclude_client_id: str | None = None,
 ) -> None:
     """Broadcast task deletion event.
 
@@ -79,7 +83,7 @@ async def broadcast_task_deleted(
 
 
 async def broadcast_task_status_changed(
-    manager: Any,
+    manager: ConnectionManager,
     task: TaskOperationOutput,
     old_status: str,
     exclude_client_id: str | None = None,
@@ -105,7 +109,10 @@ async def broadcast_task_status_changed(
 
 
 async def broadcast_task_notes_updated(
-    manager: Any, task_id: int, task_name: str, exclude_client_id: str | None = None
+    manager: ConnectionManager,
+    task_id: int,
+    task_name: str,
+    exclude_client_id: str | None = None,
 ) -> None:
     """Broadcast task notes update event.
 
@@ -127,7 +134,7 @@ async def broadcast_task_notes_updated(
 
 
 async def broadcast_schedule_optimized(
-    manager: Any,
+    manager: ConnectionManager,
     scheduled_count: int,
     failed_count: int,
     algorithm: str,

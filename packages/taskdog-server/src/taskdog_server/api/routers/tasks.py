@@ -23,6 +23,7 @@ from taskdog_server.api.converters import (
     convert_to_update_task_response,
 )
 from taskdog_server.api.dependencies import (
+    ConnectionManagerDep,
     CrudControllerDep,
     HolidayCheckerDep,
     NotesRepositoryDep,
@@ -35,7 +36,6 @@ from taskdog_server.api.models.responses import (
     TaskOperationResponse,
     UpdateTaskResponse,
 )
-from taskdog_server.api.routers.websocket import get_connection_manager
 from taskdog_server.websocket.broadcaster import (
     broadcast_task_created,
     broadcast_task_deleted,
@@ -51,6 +51,7 @@ router = APIRouter()
 async def create_task(
     request: CreateTaskRequest,
     controller: CrudControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -59,6 +60,7 @@ async def create_task(
     Args:
         request: Task creation data
         controller: CRUD controller dependency
+        manager: WebSocket connection manager dependency
         background_tasks: Background tasks for WebSocket notifications
         x_client_id: Optional client ID from WebSocket connection
 
@@ -81,7 +83,6 @@ async def create_task(
         )
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(broadcast_task_created, manager, result, x_client_id)
 
         return convert_to_task_operation_response(result)
@@ -211,6 +212,7 @@ async def update_task(
     task_id: int,
     request: UpdateTaskRequest,
     controller: CrudControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -244,7 +246,6 @@ async def update_task(
         )
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_updated,
             manager,
@@ -266,6 +267,7 @@ async def update_task(
 async def archive_task(
     task_id: int,
     controller: CrudControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -287,7 +289,6 @@ async def archive_task(
         result = controller.archive_task(task_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_updated, manager, result, ["is_archived"], x_client_id
         )
@@ -301,6 +302,7 @@ async def archive_task(
 async def restore_task(
     task_id: int,
     controller: CrudControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -322,7 +324,6 @@ async def restore_task(
         result = controller.restore_task(task_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_updated, manager, result, ["is_archived"], x_client_id
         )
@@ -341,6 +342,7 @@ async def delete_task(
     task_id: int,
     controller: CrudControllerDep,
     query_controller: QueryControllerDep,
+    manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
 ):
@@ -367,7 +369,6 @@ async def delete_task(
         controller.remove_task(task_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        manager = get_connection_manager()
         background_tasks.add_task(
             broadcast_task_deleted, manager, task_id, task_name, x_client_id
         )
