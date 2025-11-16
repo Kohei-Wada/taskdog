@@ -48,14 +48,16 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
-        with Container(id="algorithm-dialog", classes="dialog-base dialog-standard"):
-            # Dynamic title based on force_override mode
-            title = (
-                "[bold cyan]Force Optimize Schedule Settings[/bold cyan]"
-                if self.force_override
-                else "[bold cyan]Optimize Schedule Settings[/bold cyan]"
-            )
-            yield Label(title, id="dialog-title")
+        # Dynamic title based on force_override mode
+        title = (
+            "Force Optimize Schedule Settings"
+            if self.force_override
+            else "Optimize Schedule Settings"
+        )
+        with Container(
+            id="algorithm-dialog", classes="dialog-base dialog-standard"
+        ) as container:
+            container.border_title = title
             yield Label(
                 "[dim]Ctrl+S: submit | Esc: cancel | Tab/Ctrl-j: next | Shift+Tab/Ctrl-k: previous[/dim]",
                 id="dialog-hint",

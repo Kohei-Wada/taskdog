@@ -31,8 +31,10 @@ class ConfirmationDialog(BaseModalDialog[bool]):
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""
-        with Container(id="confirmation-dialog", classes="dialog-base dialog-compact"):
-            yield Label(f"[bold cyan]{self.title_text}[/bold cyan]", id="dialog-title")
+        with Container(
+            id="confirmation-dialog", classes="dialog-base dialog-compact"
+        ) as container:
+            container.border_title = self.title_text
             yield Label(
                 "[dim]Y to confirm, N to cancel, Esc to cancel[/dim]",
                 id="dialog-hint",

@@ -1,12 +1,6 @@
 /* Shared Component Styles */
 
 /* Dialog Components */
-#dialog-title {
-    text-align: center;
-    padding: 0;
-    background: transparent;
-}
-
 #button-container {
     height: auto;
     align: center middle;
