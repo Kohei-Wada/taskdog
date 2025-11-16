@@ -252,24 +252,12 @@ class TestGenerateMarkdownReport(unittest.TestCase):
             (
                 "zero_allocation",
                 {date(2025, 10, 30): [(_create_gantt_task(1, "Task 1"), 0.0)]},
-                (
-                    "2025/10/30\n"
-                    "|タスク|想定工数[h]|\n"
-                    "|--|--|\n"
-                    "|Task 1|-|\n"
-                    "|sum|-|\n"
-                ),
+                ("2025/10/30\n|タスク|想定工数[h]|\n|--|--|\n|Task 1|-|\n|sum|-|\n"),
             ),
             (
                 "float_to_int_conversion",
                 {date(2025, 10, 30): [(_create_gantt_task(1, "Task 1"), 3.7)]},
-                (
-                    "2025/10/30\n"
-                    "|タスク|想定工数[h]|\n"
-                    "|--|--|\n"
-                    "|Task 1|3|\n"
-                    "|sum|3|\n"
-                ),
+                ("2025/10/30\n|タスク|想定工数[h]|\n|--|--|\n|Task 1|3|\n|sum|3|\n"),
             ),
         ]
     )

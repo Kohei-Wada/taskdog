@@ -158,8 +158,7 @@ def note_command(ctx, task_id, content, file, append):
     # Validate: only one explicit input source allowed
     if content is not None and file is not None:
         console_writer.validation_error(
-            "Cannot specify multiple input sources (--content, --file). "
-            "Choose only one."
+            "Cannot specify multiple input sources (--content, --file). Choose only one."
         )
         return
 

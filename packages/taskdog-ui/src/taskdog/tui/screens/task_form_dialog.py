@@ -7,6 +7,7 @@ from textual.binding import Binding
 from textual.containers import Container
 from textual.widgets import Checkbox, Input, Label
 
+from taskdog.tui.forms import FormValidator
 from taskdog.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from taskdog.tui.forms.validators import (
     DateTimeValidator,
@@ -17,6 +18,7 @@ from taskdog.tui.forms.validators import (
     TaskNameValidator,
 )
 from taskdog.tui.screens.base_dialog import BaseModalDialog
+from taskdog.tui.utils.config_validator import require_config
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.config_manager import Config
 
@@ -51,9 +53,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         super().__init__(*args, **kwargs)
         self.task_to_edit = task
         self.is_edit_mode = task is not None
-        if config is None:
-            raise ValueError("config parameter is required")
-        self.config = config
+        self.config = require_config(config)
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""
@@ -94,61 +94,52 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
 
     def _submit_form(self) -> None:
         """Validate and submit the form data."""
-        # Get all form inputs
-        inputs = {
-            "task_name": self.query_one("#task-name-input", Input),
-            "priority": self.query_one("#priority-input", Input),
-            "deadline": self.query_one("#deadline-input", Input),
-            "duration": self.query_one("#duration-input", Input),
-            "planned_start": self.query_one("#planned-start-input", Input),
-            "planned_end": self.query_one("#planned-end-input", Input),
-            "dependencies": self.query_one("#dependencies-input", Input),
-            "tags": self.query_one("#tags-input", Input),
-        }
+        # Get fixed checkbox value
         fixed_checkbox = self.query_one("#fixed-checkbox", Checkbox)
 
         # Clear previous error
         self._clear_validation_error()
 
-        # Define validation chain with (field_name, input_widget, validator, validator_args)
+        # Build validation chain using FormValidator
         # Config is always available (loaded in __init__ if None)
         default_priority = self.config.task.default_priority
         default_start_hour = self.config.time.default_start_hour
         default_end_hour = self.config.time.default_end_hour
-        validations: list[tuple[str, Input, Any, list[Any]]] = [
-            ("task_name", inputs["task_name"], TaskNameValidator, []),
-            ("priority", inputs["priority"], PriorityValidator, [default_priority]),
-            (
-                "deadline",
-                inputs["deadline"],
-                DateTimeValidator,
-                ["deadline", default_end_hour],
-            ),
-            ("duration", inputs["duration"], DurationValidator, []),
-            (
-                "planned_start",
-                inputs["planned_start"],
-                DateTimeValidator,
-                ["planned start", default_start_hour],
-            ),
-            (
-                "planned_end",
-                inputs["planned_end"],
-                DateTimeValidator,
-                ["planned end", default_end_hour],
-            ),
-            ("dependencies", inputs["dependencies"], DependenciesValidator, []),
-            ("tags", inputs["tags"], TagsValidator, []),
-        ]
+
+        validator = FormValidator(self)
+        validator.add_field("task_name", "task-name-input", TaskNameValidator)
+        validator.add_field(
+            "priority", "priority-input", PriorityValidator, default_priority
+        )
+        validator.add_field(
+            "deadline",
+            "deadline-input",
+            DateTimeValidator,
+            "deadline",
+            default_end_hour,
+        )
+        validator.add_field("duration", "duration-input", DurationValidator)
+        validator.add_field(
+            "planned_start",
+            "planned-start-input",
+            DateTimeValidator,
+            "planned start",
+            default_start_hour,
+        )
+        validator.add_field(
+            "planned_end",
+            "planned-end-input",
+            DateTimeValidator,
+            "planned end",
+            default_end_hour,
+        )
+        validator.add_field("dependencies", "dependencies-input", DependenciesValidator)
+        validator.add_field("tags", "tags-input", TagsValidator)
 
         # Run validations
-        results: dict[str, Any] = {}
-        for field_name, input_widget, validator, args in validations:
-            result = validator.validate(input_widget.value, *args)
-            if not result.is_valid:
-                self._show_validation_error(result.error_message, input_widget)
-                return
-            results[field_name] = result.value
+        results = validator.validate_all()
+        if results is None:
+            return  # Validation failed, error already displayed
 
         # All validations passed - create form data
         form_data = TaskFormData(

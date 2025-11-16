@@ -66,6 +66,23 @@ class TaskdogApiClient:
         """
         return self._base.client
 
+    @property
+    def client_id(self) -> str | None:
+        """Get the client ID used for WebSocket message attribution.
+
+        Returns:
+            The client ID string, or None if not set
+        """
+        return self._base.client_id
+
+    def set_client_id(self, client_id: str) -> None:
+        """Set the client ID for WebSocket message attribution.
+
+        Args:
+            client_id: Client ID to set
+        """
+        self._base.client_id = client_id
+
     def close(self) -> None:
         """Close the HTTP client."""
         self._base.close()

@@ -12,6 +12,7 @@ from textual.widgets import Input, Label, Static
 from textual.widgets.option_list import Option
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
+from taskdog.tui.constants.ui_settings import MAX_HOURS_PER_DAY
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_option_list import ViOptionList
 from taskdog_core.shared.config_manager import Config
@@ -138,8 +139,8 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
             hours = float(value)
             if hours <= 0:
                 return None, "Max hours must be greater than 0"
-            if hours > 24:
-                return None, "Max hours cannot exceed 24"
+            if hours > MAX_HOURS_PER_DAY:
+                return None, f"Max hours cannot exceed {MAX_HOURS_PER_DAY}"
             return hours, None
         except ValueError:
             return None, "Max hours must be a valid number"
