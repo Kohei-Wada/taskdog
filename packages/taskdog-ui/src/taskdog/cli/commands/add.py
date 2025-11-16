@@ -4,6 +4,7 @@ import click
 
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
+from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
@@ -36,25 +37,69 @@ from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
     type=str,
     help="Tags for categorization and filtering (can be specified multiple times)",
 )
+@click.option(
+    "--deadline",
+    "-D",
+    type=DateTimeWithDefault(),
+    default=None,
+    help="Task deadline (formats: YYYY-MM-DD, MM-DD, YYYY-MM-DD HH:MM:SS)",
+)
+@click.option(
+    "--estimate",
+    "-e",
+    type=float,
+    default=None,
+    help="Estimated duration in hours (must be > 0)",
+)
+@click.option(
+    "--start",
+    "-s",
+    type=DateTimeWithDefault(default_hour="start"),
+    default=None,
+    help="Planned start time (formats: YYYY-MM-DD, MM-DD, YYYY-MM-DD HH:MM:SS)",
+)
+@click.option(
+    "--end",
+    "-E",
+    type=DateTimeWithDefault(),
+    default=None,
+    help="Planned end time (formats: YYYY-MM-DD, MM-DD, YYYY-MM-DD HH:MM:SS)",
+)
 @click.pass_context
 @handle_task_errors("adding task", is_parent=True)
-def add_command(ctx, name, priority, fixed, depends_on, tag):
+def add_command(
+    ctx, name, priority, fixed, depends_on, tag, deadline, estimate, start, end
+):
     """Add a new task.
 
-    Usage:
-        taskdog add "Task name"
-        taskdog add "Task name" --priority 3
-        taskdog add "Task name" -p 2
+    You can set all task properties at creation time, or use dedicated commands
+    after creation (deadline, estimate, schedule) for updates.
 
-    To set deadline, estimate, or schedule, use dedicated commands after creation:
-        taskdog deadline <ID> <DATE>
-        taskdog estimate <ID> <HOURS>
-        taskdog schedule <ID> <START> [END]
+    Usage:
+        # Basic task
+        taskdog add "Task name"
+
+        # With priority and tags
+        taskdog add "Task name" --priority 3 --tag backend
+
+        # Full task with all properties
+        taskdog add "Implement auth" -p 5 -D "2025-12-01" -e 8 -s "2025-11-20" -t backend
 
     Examples:
+        # Simple task
         taskdog add "Implement authentication"
+
+        # With priority
         taskdog add "Fix login bug" -p 5
-        taskdog add "Add unit tests"
+
+        # With deadline and estimate
+        taskdog add "Add unit tests" --deadline "2025-12-15" --estimate 4
+
+        # Complete task with schedule
+        taskdog add "Code review" -p 3 -s "2025-11-20 09:00" -e "2025-11-20 12:00"
+
+        # With dependencies and tags
+        taskdog add "Deploy feature" -d 123 -t deployment -p 5
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
@@ -65,6 +110,10 @@ def add_command(ctx, name, priority, fixed, depends_on, tag):
         priority=priority,
         is_fixed=fixed,
         tags=list(tag) if tag else None,
+        deadline=deadline,
+        estimated_duration=estimate,
+        planned_start=start,
+        planned_end=end,
     )
 
     # Add dependencies if specified
