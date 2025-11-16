@@ -26,6 +26,7 @@ from taskdog_core.application.use_cases.get_task_detail import (
 from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+from taskdog_core.domain.services.logger import Logger
 
 if TYPE_CHECKING:
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
@@ -43,22 +44,26 @@ class QueryController:
         repository: Task repository for data access
         notes_repository: Notes repository for task notes (optional)
         query_service: Task query service for complex queries
+        logger: Optional logger for operation tracking
     """
 
     def __init__(
         self,
         repository: TaskRepository,
         notes_repository: NotesRepository | None = None,
+        logger: Logger | None = None,
     ):
         """Initialize the query controller.
 
         Args:
             repository: Task repository
             notes_repository: Notes repository (optional, required for get_task_detail)
+            logger: Optional logger for operation tracking
         """
         self.repository = repository
         self.notes_repository = notes_repository
         self.query_service: TaskQueryService = TaskQueryService(repository)
+        self.logger = logger
 
     def list_tasks(
         self,
