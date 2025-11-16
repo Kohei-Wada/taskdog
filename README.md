@@ -142,10 +142,10 @@ curl -X POST http://localhost:8000/api/v1/tasks/ \
 curl http://localhost:8000/api/v1/tasks/
 
 # Start task
-curl -X POST http://localhost:8000/api/v1/tasks/1/lifecycle/start
+curl -X POST http://localhost:8000/api/v1/tasks/1/start
 
 # Get Gantt data
-curl http://localhost:8000/api/v1/analytics/gantt
+curl http://localhost:8000/api/v1/gantt
 ```
 
 ## Interactive TUI
@@ -174,11 +174,11 @@ Taskdog includes a full-screen terminal user interface (TUI) for managing tasks 
 - `e` - Edit task
 - `v` - Edit task note
 - `t` - Toggle visibility of completed/canceled tasks
-- `o` - Run optimizer
 - `r` - Refresh task list
-- `S` - Sort selection dialog (deadline/planned_start/priority/estimated_duration/id)
+- `Ctrl+T` - Toggle sort order (ascending/descending)
 - `/` - Focus search box
 - `Escape` - Clear/hide search
+- `Ctrl+P` or `Ctrl+\` - Command palette (for optimize and other commands)
 - `q` - Quit
 
 Launch the TUI with:
@@ -214,32 +214,37 @@ taskdog-server --workers 4               # Production with multiple workers
 - `PATCH /api/v1/tasks/{task_id}` - Update task fields
 - `DELETE /api/v1/tasks/{task_id}` - Delete task (soft by default, `?hard=true` for permanent)
 
-**Lifecycle Operations** (`/api/v1/tasks/{task_id}/lifecycle/`):
+**Lifecycle Operations** (`/api/v1/tasks/{task_id}/`):
 - `POST .../start` - Start task
 - `POST .../complete` - Complete task
 - `POST .../pause` - Pause task (reset to PENDING)
 - `POST .../cancel` - Cancel task
 - `POST .../reopen` - Reopen completed/canceled task
-- `POST .../restore` - Restore archived task
 - `POST .../log-hours` - Log actual hours worked
+- `POST .../archive` - Archive task (soft delete)
+- `POST .../restore` - Restore archived task
 
 **Relationships** (`/api/v1/tasks/{task_id}/`):
 - `POST .../dependencies` - Add dependency
 - `DELETE .../dependencies/{dep_id}` - Remove dependency
-- `GET .../tags` - Get task tags
-- `PUT .../tags` - Set task tags (replaces existing)
+- `PUT .../tags` - Set task tags (replaces existing; tags also returned in task details)
 
 **Notes** (`/api/v1/tasks/{task_id}/notes/`):
 - `GET .../notes` - Get task notes (markdown)
 - `PUT .../notes` - Update task notes
+- `DELETE .../notes` - Delete task notes
 
-**Analytics** (`/api/v1/analytics/`):
-- `GET .../stats` - Task statistics (period, focus filters)
-- `GET .../gantt` - Gantt chart data (date ranges, filters)
-- `GET .../tags` - Tag statistics
+**Analytics** (`/api/v1/`):
+- `GET /api/v1/statistics` - Task statistics (period, focus filters)
+- `GET /api/v1/gantt` - Gantt chart data (date ranges, filters)
+- `GET /api/v1/tags/statistics` - Tag statistics
 
-**Optimization** (`/api/v1/optimize/`):
-- `POST .../schedule` - Run schedule optimization with algorithm selection
+**Optimization** (`/api/v1/`):
+- `POST /api/v1/optimize` - Run schedule optimization with algorithm selection
+- `GET /api/v1/algorithms` - List available optimization algorithms
+
+**Real-time Updates**:
+- `WebSocket /ws` - Real-time task notifications (task_created, task_updated, task_deleted, task_status_changed)
 
 All endpoints return JSON with proper HTTP status codes. See `/docs` for detailed schemas and interactive testing.
 
@@ -298,6 +303,9 @@ All endpoints return JSON with proper HTTP status codes. See `/docs` for detaile
   - Output: `-o/--output FILE`
   - Fields: `-f/--fields` (custom field selection)
   - Filters: Same as table (--all, --status, --tag, --start-date, --end-date)
+- `report` - Generate markdown workload report grouped by date:
+  - Filters: Same as table/export (--all, --status, --tag, --start-date, --end-date)
+  - Useful for exporting to Notion or other documentation tools
 
 **Analytics**
 - `stats` - Task statistics and analytics:
@@ -382,6 +390,11 @@ default_end_hour = 18          # Business day end hour (default: 18)
 country = "JP"                 # ISO 3166-1 alpha-2 country code for holiday checking
                                # Examples: "JP", "US", "GB", "DE"
                                # Default: None (no holiday checking)
+
+# Storage Settings (optional)
+[storage]
+database_url = "~/.local/share/taskdog/tasks.db"  # SQLite database location
+backend = "sqlite"             # Storage backend (default: "sqlite")
 ```
 
 **Priority**: Environment variables > CLI arguments > Config file > Defaults

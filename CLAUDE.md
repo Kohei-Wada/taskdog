@@ -35,10 +35,16 @@ The repository uses UV workspace with three packages:
 **Tasks**: Stored in SQLite database `tasks.db` at `$XDG_DATA_HOME/taskdog/tasks.db` (fallback: `~/.local/share/taskdog/tasks.db`)
 
 **Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/config.toml` (fallback: `~/.config/taskdog/config.toml`)
-- Settings: max_hours_per_day, default_algorithm, default_priority, default_start_hour, default_end_hour, country (for holiday checking)
-- Priority: CLI args > Config file > Defaults
+- Sections: `[api]` (required), `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
+- Settings:
+  - API: enabled, host, port
+  - Optimization: max_hours_per_day, default_algorithm
+  - Task: default_priority
+  - Time: default_start_hour, default_end_hour
+  - Region: country (ISO 3166-1 alpha-2: "JP", "US", "GB", "DE", etc.)
+  - Storage: database_url, backend
+- Priority: Environment vars > CLI args > Config file > Defaults
 - Access via `ctx.obj.config` (CLI) or `context.config` (TUI)
-- Country codes (ISO 3166-1 alpha-2): "JP", "US", "GB", "DE", etc.
 
 ## Development Commands
 
@@ -161,18 +167,28 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 **Infrastructure** (`packages/taskdog-core/src/taskdog_core/infrastructure/`): External concerns
 - `persistence/database/`: SqliteTaskRepository (transactional writes, indexed queries, efficient lookups)
+- `persistence/file/`: FileNotesRepository (markdown note storage)
 - `persistence/mappers/`: TaskDbMapper for entity-to-database mapping
 - `config/`: ConfigManager (loads TOML config with fallback to defaults)
 
 **Controllers** (`packages/taskdog-core/src/taskdog_core/controllers/`): Unified interface for task operations
-- `TaskController`: Orchestrates write operations (commands)
-  - Methods: start_task, complete_task, create_task, update_task, archive_task, etc.
+- `BaseTaskController`: Abstract base class for all task controllers
+- `TaskCrudController`: Orchestrates CRUD operations (create, read, update, delete)
+  - Methods: create_task, update_task, delete_task, hard_delete_task
   - Instantiates use cases, constructs Request DTOs, handles config defaults
-  - Used by: API server directly; CLI/TUI via HTTP API
+- `TaskLifecycleController`: Orchestrates lifecycle operations
+  - Methods: start_task, complete_task, pause_task, cancel_task, reopen_task
+  - Uses StatusChangeUseCase pattern for consistent state transitions
+- `TaskRelationshipController`: Orchestrates relationship operations
+  - Methods: add_dependency, remove_dependency, set_tags, log_hours
+  - Handles task dependencies and tag management
+- `TaskAnalyticsController`: Orchestrates analytics and optimization
+  - Methods: calculate_statistics, optimize_schedule
+  - Provides statistical analysis and schedule optimization
 - `QueryController`: Orchestrates read operations (queries)
   - Methods: list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id
   - Returns Output DTOs with metadata (TaskListOutput, GanttOutput, TagStatisticsOutput)
-  - Used by: API server directly; CLI/TUI via HTTP API
+- All controllers used by: API server directly; CLI/TUI via HTTP API
 
 **Shared** (`packages/taskdog-core/src/taskdog_core/shared/`): Cross-cutting utilities
 - `utils/xdg_utils.py`: XDG paths (get_tasks_file, get_config_file)
@@ -255,14 +271,14 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 - Batch operations: Loop + per-task error handling (start, done, pause, rm, archive)
 
 **Controllers** (`packages/taskdog-core/src/taskdog_core/controllers/`)
-- `TaskController`: Orchestrates write operations (commands)
-  - Methods: start_task, complete_task, create_task, update_task, archive_task, etc.
-  - Instantiates use cases, constructs Request DTOs, handles config defaults
-  - Used by: CLI commands, TUI TaskService, API handlers
-- `QueryController`: Orchestrates read operations (queries)
-  - Methods: list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id
+- `TaskCrudController`: Orchestrates CRUD operations (create, update, delete)
+- `TaskLifecycleController`: Orchestrates lifecycle operations (start, complete, pause, cancel, reopen)
+- `TaskRelationshipController`: Orchestrates relationship operations (dependencies, tags, log hours)
+- `TaskAnalyticsController`: Orchestrates analytics and optimization (statistics, optimize)
+- `QueryController`: Orchestrates read operations (list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id)
   - Returns Output DTOs with metadata (TaskListOutput, GanttOutput, TagStatisticsOutput)
-  - Used by: CLI commands (table, gantt, tags, export, report), TUI TaskService, API endpoints
+- All controllers instantiate use cases, construct Request DTOs, handle config defaults
+- Used by: API server directly; CLI/TUI via HTTP API client
 
 **TUI Command Pattern** (`packages/taskdog-ui/src/taskdog/tui/commands/`)
 - `@command_registry.register("name")` for automatic registration
@@ -272,11 +288,19 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 - `TaskService`: Facade wrapping TaskController + QueryController for TUI
 
 **API Patterns** (`packages/taskdog-server/src/taskdog_server/api/`)
-- FastAPI routers: tasks, lifecycle, relationships, analytics
+- FastAPI routers: tasks, lifecycle, relationships, analytics, notes, websocket
 - Pydantic models for automatic request/response validation
-- Dependency injection via `dependencies.py` (get_repository, get_task_controller, get_query_controller)
+- Dependency injection via `dependencies.py`:
+  - `CrudControllerDep` - TaskCrudController for CRUD operations
+  - `LifecycleControllerDep` - TaskLifecycleController for status changes
+  - `RelationshipControllerDep` - TaskRelationshipController for dependencies/tags
+  - `AnalyticsControllerDep` - TaskAnalyticsController for statistics
+  - `QueryControllerDep` - QueryController for read operations
+  - `NotesRepositoryDep` - NotesRepository for note persistence
+  - `ConnectionManagerDep` - WebSocket connection manager
 - Automatic OpenAPI documentation at `/docs`
 - Health check endpoint at `/health`
+- WebSocket support for real-time task updates
 
 ### Data Integrity
 
@@ -323,6 +347,7 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 - `today`: Today's tasks (deadline today, planned includes today, or IN_PROGRESS)
 - `week`: This week's tasks
 - `export [--format json|csv] [--output] [--fields] [--all] [--status] [--tag]`: Export tasks (exports non-archived tasks by default)
+- `report [--all] [--status] [--tag] [--start-date] [--end-date]`: Generate markdown workload report grouped by date (useful for Notion export)
 - `stats [--period all|7d|30d] [--focus all|basic|time|estimation|deadline|priority|trends]`: Analytics
 
 **Interactive**
@@ -330,9 +355,11 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 - `tui`: Full-screen TUI (Textual) with keyboard shortcuts
   - `a`: Add task, `s`: Start, `P`: Pause, `d`: Done, `c`: Cancel, `R`: Reopen
   - `x`: Archive (soft delete), `X`: Hard delete, `i`: Details, `e`: Edit, `v`: Edit note
-  - `t`: Toggle completed/canceled visibility, `o`: Optimize, `r`: Refresh
-  - `S`: Sort dialog (deadline/planned_start/priority/estimated_duration/id)
-  - `/`: Search, `Escape`: Clear search, `q`: Quit
+  - `t`: Toggle completed/canceled visibility, `r`: Refresh
+  - `Ctrl+T`: Toggle sort order (ascending/descending)
+  - `/`: Search, `Escape`: Clear search
+  - `Ctrl+P` or `Ctrl+\`: Command palette (for optimize and other commands)
+  - `q`: Quit
 
 ### Design Principles
 
@@ -341,12 +368,14 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
    - `taskdog-server`: FastAPI REST API (depends on core)
    - `taskdog-ui`: CLI/TUI interfaces (depends on core)
 2. **Clean Architecture**: Strict layer dependencies (Presentation → Application → Domain ← Infrastructure)
-3. **Shared Controllers**: TaskController and QueryController in core package used by all presentation layers (CLI, TUI, API)
+3. **Specialized Controllers**: Five specialized controllers in core package (SRP - Single Responsibility Principle)
+   - `TaskCrudController`, `TaskLifecycleController`, `TaskRelationshipController`, `TaskAnalyticsController`, `QueryController`
+   - Used by all presentation layers (CLI, TUI, API) via HTTP API
 4. **Use Case Pattern**: Each business operation = separate use case class with `execute(input_dto)`
-5. **CQRS Pattern**: Commands (writes) via TaskController + Use Cases; Queries (reads) via QueryController + TaskQueryService
-   - TaskController: Orchestrates write use cases (start, complete, create, update, archive, etc.)
-   - QueryController: Orchestrates read queries (list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id)
-   - Both used by CLI, TUI, and API layers for consistent interface
+5. **CQRS Pattern**: Commands (writes) via specialized controllers + Use Cases; Queries (reads) via QueryController + TaskQueryService
+   - Write controllers: CrudController, LifecycleController, RelationshipController, AnalyticsController
+   - Read controller: QueryController (list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id)
+   - All used by CLI, TUI, and API layers via HTTP API for consistent interface
 6. **Template Method**: StatusChangeUseCase eliminates duplication across status change operations
 7. **Strategy Pattern**: 9 optimization algorithms managed by StrategyFactory; field validators via TaskFieldValidatorRegistry
 8. **Command Pattern (TUI)**: Auto-registration via decorator, DI via CommandFactory
@@ -362,35 +391,46 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 
 The FastAPI server (`taskdog-server`) provides a REST API with automatic OpenAPI documentation at `/docs`:
 
-**Task Management** (`/api/tasks/`)
-- `GET /api/tasks/` - List tasks with filtering (status, tags, date ranges, archived)
-- `POST /api/tasks/` - Create new task
-- `GET /api/tasks/{task_id}` - Get task details
-- `PATCH /api/tasks/{task_id}` - Update task fields
-- `DELETE /api/tasks/{task_id}?hard=false` - Delete task (soft by default)
+**Task Management** (`/api/v1/tasks/`)
+- `GET /api/v1/tasks/` - List tasks with filtering (status, tags, date ranges, archived)
+- `POST /api/v1/tasks/` - Create new task
+- `GET /api/v1/tasks/{task_id}` - Get task details
+- `PATCH /api/v1/tasks/{task_id}` - Update task fields
+- `DELETE /api/v1/tasks/{task_id}?hard=false` - Delete task (soft by default)
 
-**Lifecycle Operations** (`/api/tasks/{task_id}/`)
-- `POST /api/tasks/{task_id}/start` - Start task
-- `POST /api/tasks/{task_id}/complete` - Complete task
-- `POST /api/tasks/{task_id}/pause` - Pause task (reset to PENDING)
-- `POST /api/tasks/{task_id}/cancel` - Cancel task
-- `POST /api/tasks/{task_id}/reopen` - Reopen completed/canceled task
-- `POST /api/tasks/{task_id}/restore` - Restore archived task
-- `POST /api/tasks/{task_id}/log-hours` - Log actual hours worked
+**Lifecycle Operations** (`/api/v1/tasks/{task_id}/`)
+- `POST /api/v1/tasks/{task_id}/start` - Start task
+- `POST /api/v1/tasks/{task_id}/complete` - Complete task
+- `POST /api/v1/tasks/{task_id}/pause` - Pause task (reset to PENDING)
+- `POST /api/v1/tasks/{task_id}/cancel` - Cancel task
+- `POST /api/v1/tasks/{task_id}/reopen` - Reopen completed/canceled task
+- `POST /api/v1/tasks/{task_id}/log-hours` - Log actual hours worked
+- `POST /api/v1/tasks/{task_id}/archive` - Archive task (soft delete)
+- `POST /api/v1/tasks/{task_id}/restore` - Restore archived task
 
-**Relationships** (`/api/tasks/{task_id}/`)
-- `POST /api/tasks/{task_id}/dependencies` - Add dependency
-- `DELETE /api/tasks/{task_id}/dependencies/{dep_id}` - Remove dependency
-- `GET /api/tasks/{task_id}/tags` - Get task tags
-- `PUT /api/tasks/{task_id}/tags` - Set task tags (replaces existing)
+**Relationships** (`/api/v1/tasks/{task_id}/`)
+- `POST /api/v1/tasks/{task_id}/dependencies` - Add dependency
+- `DELETE /api/v1/tasks/{task_id}/dependencies/{dep_id}` - Remove dependency
+- `PUT /api/v1/tasks/{task_id}/tags` - Set task tags (replaces existing; tags also returned in task details)
 
-**Analytics** (`/api/analytics/`)
-- `GET /api/analytics/stats` - Task statistics (period, focus filters)
-- `GET /api/analytics/gantt` - Gantt chart data (date ranges, filters)
-- `GET /api/analytics/tags` - Tag statistics
+**Notes** (`/api/v1/tasks/{task_id}/notes/`)
+- `GET /api/v1/tasks/{task_id}/notes` - Get task notes (markdown)
+- `PUT /api/v1/tasks/{task_id}/notes` - Update task notes
+- `DELETE /api/v1/tasks/{task_id}/notes` - Delete task notes
 
-**Optimization** (`/api/optimize/`)
-- `POST /api/optimize/schedule` - Run schedule optimization with algorithm selection
+**Analytics** (`/api/v1/`)
+- `GET /api/v1/statistics` - Task statistics (period, focus filters)
+- `GET /api/v1/gantt` - Gantt chart data (date ranges, filters)
+- `GET /api/v1/tags/statistics` - Tag statistics
+
+**Optimization** (`/api/v1/`)
+- `POST /api/v1/optimize` - Run schedule optimization with algorithm selection
+- `GET /api/v1/algorithms` - List available optimization algorithms
+
+**Real-time Updates**:
+- `WebSocket /ws` - Real-time task notifications (task_created, task_updated, task_deleted, task_status_changed)
+  - Client ID-based connection management
+  - Excludes event broadcaster from receiving their own events via X-Client-ID header
 
 **System**
 - `GET /health` - Health check
