@@ -281,7 +281,7 @@ class GanttDataTable(DataTable):
 
         self.add_row(
             Text("", justify="center"),
-            Text("Workload[h]", style="bold yellow", justify="center"),
+            Text("Est. Workload[h]", style="bold yellow", justify="center"),
             Text("", justify="center"),
             workload_timeline,
         )
