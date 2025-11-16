@@ -29,6 +29,7 @@ from taskdog.tui.palette.providers import (
     SortOptionsProvider,
 )
 from taskdog.tui.screens.main_screen import MainScreen
+from taskdog.tui.services.websocket_handler import WebSocketHandler
 from taskdog.tui.state import TUIState
 from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.application.queries.filters.non_archived_filter import (
@@ -139,6 +140,9 @@ class TaskdogTUI(App):
         # Initialize CommandFactory for command execution
         self.command_factory = CommandFactory(self, self.context)
 
+        # Initialize WebSocket handler for message processing
+        self.websocket_handler = WebSocketHandler(self)
+
         # Initialize WebSocket client for real-time updates
         ws_url = self._get_websocket_url()
         self.websocket_client = WebSocketClient(ws_url, self._handle_websocket_message)
@@ -157,81 +161,12 @@ class TaskdogTUI(App):
     def _handle_websocket_message(self, message: dict[str, Any]) -> None:
         """Handle incoming WebSocket messages.
 
+        Delegates message handling to WebSocketHandler for separation of concerns.
+
         Args:
             message: WebSocket message dictionary
         """
-        from taskdog.tui.messages import TUIMessageBuilder
-
-        msg_type = message.get("type")
-
-        # Handle connection message - set client ID in API client
-        if msg_type == "connected":
-            client_id = message.get("client_id")
-            if client_id:
-                self.api_client._base.client_id = client_id
-            return
-
-        if msg_type in (
-            "task_created",
-            "task_updated",
-            "task_deleted",
-            "task_status_changed",
-        ):
-            # Reload tasks on any task change
-            self.call_later(self._load_tasks, keep_scroll_position=True)
-
-            # Show notification with source client ID if available
-            task_name = message.get("task_name", "Unknown")
-            source_client_id = message.get("source_client_id")
-
-            # Only show "by {client_id}" if the source is different from this client
-            display_source = None
-            if source_client_id and source_client_id != self.api_client._base.client_id:
-                display_source = source_client_id
-
-            if msg_type == "task_created":
-                msg = TUIMessageBuilder.websocket_event(
-                    "added", task_name, source_client_id=display_source
-                )
-                self.notify(msg, severity="information")
-            elif msg_type == "task_updated":
-                fields = message.get("updated_fields", [])
-                details = ", ".join(fields)
-                msg = TUIMessageBuilder.websocket_event(
-                    "updated",
-                    task_name,
-                    details=details,
-                    source_client_id=display_source,
-                )
-                self.notify(msg, severity="information")
-            elif msg_type == "task_deleted":
-                msg = TUIMessageBuilder.websocket_event(
-                    "deleted", task_name, source_client_id=display_source
-                )
-                self.notify(msg, severity="warning")
-            elif msg_type == "task_status_changed":
-                old_status = message.get("old_status", "")
-                new_status = message.get("new_status", "")
-                details = f"{old_status} → {new_status}"
-                msg = TUIMessageBuilder.websocket_event(
-                    "status changed",
-                    task_name,
-                    details=details,
-                    source_client_id=display_source,
-                )
-                self.notify(msg, severity="information")
-        elif msg_type == "schedule_optimized":
-            # Reload tasks on schedule optimization
-            self.call_later(self._load_tasks, keep_scroll_position=True)
-
-            # Show notification
-            scheduled_count = message.get("scheduled_count", 0)
-            failed_count = message.get("failed_count", 0)
-            algorithm = message.get("algorithm", "unknown")
-            msg = TUIMessageBuilder.schedule_optimized(
-                algorithm, scheduled_count, failed_count
-            )
-            self.notify(msg, severity="information")
+        self.websocket_handler.handle_message(message)
 
     def __getattr__(self, name: str):
         """Dynamically handle action_* methods by delegating to command_factory.

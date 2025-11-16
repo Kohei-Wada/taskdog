@@ -13,18 +13,20 @@ class DeleteTaskCommand(BatchConfirmationCommandBase):
         """Return the confirmation dialog title."""
         return "Archive Tasks"
 
-    def get_confirmation_message(self, task_count: int) -> str:
-        """Return the confirmation dialog message."""
-        if task_count == 1:
-            return (
-                "Archive this task?\n\n"
-                "The task will be soft-deleted and can be restored later.\n"
-                "(Use Shift+X for permanent deletion)"
-            )
+    def get_single_task_confirmation(self) -> str:
+        """Return confirmation message for single task."""
         return (
-            f"Archive {task_count} tasks?\n\n"
-            f"Tasks will be soft-deleted and can be restored later.\n"
-            f"(Use Shift+X for permanent deletion)"
+            "Archive this task?\n\n"
+            "The task will be soft-deleted and can be restored later.\n"
+            "(Use Shift+X for permanent deletion)"
+        )
+
+    def get_multiple_tasks_confirmation_template(self) -> str:
+        """Return confirmation message template for multiple tasks."""
+        return (
+            "Archive {count} tasks?\n\n"
+            "Tasks will be soft-deleted and can be restored later.\n"
+            "(Use Shift+X for permanent deletion)"
         )
 
     def execute_confirmed_action(self, task_id: int) -> None:

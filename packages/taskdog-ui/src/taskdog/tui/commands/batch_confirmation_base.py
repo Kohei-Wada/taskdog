@@ -31,8 +31,33 @@ class BatchConfirmationCommandBase(TUICommandBase):
         pass
 
     @abstractmethod
+    def get_single_task_confirmation(self) -> str:
+        """Return confirmation message for single task.
+
+        Returns:
+            Message text for confirming operation on one task
+        """
+        pass
+
+    @abstractmethod
+    def get_multiple_tasks_confirmation_template(self) -> str:
+        """Return confirmation message template for multiple tasks.
+
+        The template should use {count} placeholder for the number of tasks.
+
+        Returns:
+            Message text template with {count} placeholder
+
+        Example:
+            "Archive {count} tasks?\\n\\nTasks will be soft-deleted..."
+        """
+        pass
+
     def get_confirmation_message(self, task_count: int) -> str:
         """Return the confirmation dialog message for batch operation.
+
+        This default implementation uses the template methods to construct
+        the appropriate message based on task count.
 
         Args:
             task_count: Number of tasks to operate on
@@ -40,7 +65,9 @@ class BatchConfirmationCommandBase(TUICommandBase):
         Returns:
             Message text for the confirmation dialog
         """
-        pass
+        if task_count == 1:
+            return self.get_single_task_confirmation()
+        return self.get_multiple_tasks_confirmation_template().format(count=task_count)
 
     @abstractmethod
     def execute_confirmed_action(self, task_id: int) -> None:
