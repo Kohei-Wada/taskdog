@@ -160,6 +160,8 @@ class TaskdogTUI(App):
         Args:
             message: WebSocket message dictionary
         """
+        from taskdog.tui.messages import TUIMessageBuilder
+
         msg_type = message.get("type")
 
         # Handle connection message - set client ID in API client
@@ -178,25 +180,46 @@ class TaskdogTUI(App):
             # Reload tasks on any task change
             self.call_later(self._load_tasks, keep_scroll_position=True)
 
-            # Show notification
+            # Show notification with source client ID if available
             task_name = message.get("task_name", "Unknown")
+            source_client_id = message.get("source_client_id")
+
+            # Only show "by {client_id}" if the source is different from this client
+            display_source = None
+            if source_client_id and source_client_id != self.api_client._base.client_id:
+                display_source = source_client_id
+
             if msg_type == "task_created":
-                self.notify(f"Task created: {task_name}", severity="information")
+                msg = TUIMessageBuilder.websocket_event(
+                    "added", task_name, source_client_id=display_source
+                )
+                self.notify(msg, severity="information")
             elif msg_type == "task_updated":
                 fields = message.get("updated_fields", [])
-                self.notify(
-                    f"Task updated: {task_name} ({', '.join(fields)})",
-                    severity="information",
+                details = ", ".join(fields)
+                msg = TUIMessageBuilder.websocket_event(
+                    "updated",
+                    task_name,
+                    details=details,
+                    source_client_id=display_source,
                 )
+                self.notify(msg, severity="information")
             elif msg_type == "task_deleted":
-                self.notify(f"Task deleted: {task_name}", severity="warning")
+                msg = TUIMessageBuilder.websocket_event(
+                    "deleted", task_name, source_client_id=display_source
+                )
+                self.notify(msg, severity="warning")
             elif msg_type == "task_status_changed":
                 old_status = message.get("old_status", "")
                 new_status = message.get("new_status", "")
-                self.notify(
-                    f"Task status changed: {task_name} ({old_status} → {new_status})",
-                    severity="information",
+                details = f"{old_status} → {new_status}"
+                msg = TUIMessageBuilder.websocket_event(
+                    "status changed",
+                    task_name,
+                    details=details,
+                    source_client_id=display_source,
                 )
+                self.notify(msg, severity="information")
         elif msg_type == "schedule_optimized":
             # Reload tasks on schedule optimization
             self.call_later(self._load_tasks, keep_scroll_position=True)
@@ -205,10 +228,10 @@ class TaskdogTUI(App):
             scheduled_count = message.get("scheduled_count", 0)
             failed_count = message.get("failed_count", 0)
             algorithm = message.get("algorithm", "unknown")
-            self.notify(
-                f"Schedule optimized ({algorithm}): {scheduled_count} tasks scheduled, {failed_count} failed",
-                severity="information",
+            msg = TUIMessageBuilder.schedule_optimized(
+                algorithm, scheduled_count, failed_count
             )
+            self.notify(msg, severity="information")
 
     def __getattr__(self, name: str):
         """Dynamically handle action_* methods by delegating to command_factory.

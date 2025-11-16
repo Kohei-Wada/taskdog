@@ -27,6 +27,7 @@ async def broadcast_task_created(
             "task_name": task.name,
             "priority": task.priority,
             "status": task.status.value,
+            "source_client_id": exclude_client_id,
         },
         exclude_client_id=exclude_client_id,
     )
@@ -53,6 +54,7 @@ async def broadcast_task_updated(
             "task_name": task.name,
             "updated_fields": fields,
             "status": task.status.value,
+            "source_client_id": exclude_client_id,
         },
         exclude_client_id=exclude_client_id,
     )
@@ -77,6 +79,7 @@ async def broadcast_task_deleted(
             "type": "task_deleted",
             "task_id": task_id,
             "task_name": task_name,
+            "source_client_id": exclude_client_id,
         },
         exclude_client_id=exclude_client_id,
     )
@@ -103,6 +106,7 @@ async def broadcast_task_status_changed(
             "task_name": task.name,
             "old_status": old_status,
             "new_status": task.status.value,
+            "source_client_id": exclude_client_id,
         },
         exclude_client_id=exclude_client_id,
     )
@@ -128,6 +132,7 @@ async def broadcast_task_notes_updated(
             "task_id": task_id,
             "task_name": task_name,
             "updated_fields": ["notes"],
+            "source_client_id": exclude_client_id,
         },
         exclude_client_id=exclude_client_id,
     )
@@ -155,6 +160,7 @@ async def broadcast_schedule_optimized(
             "scheduled_count": scheduled_count,
             "failed_count": failed_count,
             "algorithm": algorithm,
+            "source_client_id": exclude_client_id,
         },
         exclude_client_id=exclude_client_id,
     )

@@ -2,6 +2,7 @@
 
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.registry import command_registry
+from taskdog.tui.messages import TUIMessageBuilder
 from taskdog.utils.note_editor import edit_task_note
 
 
@@ -11,7 +12,8 @@ class EditNoteCommand(TUICommandBase):
 
     def _on_note_saved(self, name: str, task_id: int) -> None:
         """Handle successful note save."""
-        self.notify_success(f"Note saved for task: {name} (ID: {task_id})")
+        msg = TUIMessageBuilder.note_saved(name, task_id)
+        self.notify_success(msg)
         self.reload_tasks()
 
     def execute_impl(self) -> None:

@@ -2,6 +2,7 @@
 
 from taskdog.tui.commands.batch_status_change_base import BatchStatusChangeCommandBase
 from taskdog.tui.commands.registry import command_registry
+from taskdog.tui.messages import TUIMessageBuilder
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
 
@@ -15,4 +16,4 @@ class PauseTaskCommand(BatchStatusChangeCommandBase):
 
     def get_success_message(self, task_name: str, task_id: int) -> str:
         """Return success message."""
-        return f"Paused: {task_name} (ID: {task_id})"
+        return TUIMessageBuilder.task_action("Paused", task_name, task_id)

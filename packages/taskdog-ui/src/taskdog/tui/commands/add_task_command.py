@@ -4,6 +4,7 @@ from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.events import TaskCreated
 from taskdog.tui.forms.task_form_fields import TaskFormData
+from taskdog.tui.messages import TUIMessageBuilder
 from taskdog.tui.screens.task_form_dialog import TaskFormDialog
 
 
@@ -50,7 +51,8 @@ class AddTaskCommand(TUICommandBase):
             if task.id is None:
                 raise ValueError("Created task must have an ID")
             self.app.post_message(TaskCreated(task.id))
-            self.notify_success(f"Added task: {task.name} (ID: {task.id})")
+            msg = TUIMessageBuilder.task_action("Added task", task.name, task.id)
+            self.notify_success(msg)
 
         # Show task form dialog in add mode (no task parameter)
         # Wrap callback with error handling from base class
