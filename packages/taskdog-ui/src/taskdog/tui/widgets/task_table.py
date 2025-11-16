@@ -202,14 +202,14 @@ class TaskTable(DataTable):
         return self._viewmodel_map.get(self.cursor_row)
 
     def _get_all_viewmodels_from_state(self) -> list[TaskRowViewModel]:
-        """Get all viewmodels from app state.
+        """Get filtered viewmodels from app state.
 
         Returns:
-            List of all TaskRowViewModel from app state cache
+            List of filtered TaskRowViewModel based on hide_completed setting
         """
         # Access via app.state (TaskdogTUI imported via TYPE_CHECKING)
         app: TaskdogTUI = self.app  # type: ignore[assignment]
-        return app.state.viewmodels_cache
+        return app.state.filtered_viewmodels
 
     def refresh_tasks(
         self, view_models: list[TaskRowViewModel], keep_scroll_position: bool = False

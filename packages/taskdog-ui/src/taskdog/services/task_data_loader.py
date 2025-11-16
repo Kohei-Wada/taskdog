@@ -103,13 +103,14 @@ class TaskDataLoader:
         # Apply display filter
         filtered_tasks = self.apply_display_filter(all_tasks, hide_completed)
 
-        # Create table ViewModels
-        filtered_output = TaskListOutput(
-            tasks=filtered_tasks,
+        # Create table ViewModels from ALL tasks (not filtered)
+        # TUIState will handle filtering via filtered_viewmodels property
+        all_tasks_output = TaskListOutput(
+            tasks=all_tasks,
             total_count=task_list_output.total_count,
-            filtered_count=len(filtered_tasks),
+            filtered_count=len(all_tasks),
         )
-        table_view_models = self.table_presenter.present(filtered_output)
+        table_view_models = self.table_presenter.present(all_tasks_output)
 
         # Convert gantt data from response if present
         gantt_view_model = None
