@@ -50,6 +50,7 @@ packages = [
     "taskdog.tui.constants",
     "taskdog.tui.palette",
     "taskdog.tui.palette.providers",
+    "taskdog.tui.services",
     "taskdog.tui.utils",
     "taskdog.tui.screens",
     "taskdog.tui.widgets",
