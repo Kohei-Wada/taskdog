@@ -42,7 +42,17 @@ Input {
     width: 100%;
     padding: 0 2;
     background: transparent;
-    margin-bottom: 1;
+    margin-top: 1;
+    margin-bottom: 0;
+}
+
+/* Main search input at the bottom (Vim-style) */
+#main-search-input {
+    width: 100%;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    background: transparent;
 }
 
 #search-input-container {

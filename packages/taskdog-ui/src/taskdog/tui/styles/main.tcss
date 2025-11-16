@@ -36,10 +36,15 @@ MainScreen {
     border: round $primary;
 }
 
-/* Task table - inside filterable container */
+/* Task table - main content */
 #task-table {
     width: 100%;
     height: 1fr;
     background: transparent;
+    border: round $primary;
     overflow-y: auto;
+}
+
+#task-table:focus {
+    border: round $accent;
 }

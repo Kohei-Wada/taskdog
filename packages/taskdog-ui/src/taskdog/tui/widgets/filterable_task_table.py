@@ -24,16 +24,20 @@ class FilterableTaskTable(Vertical):
         Returns:
             Iterable of widgets to display
         """
-        self.search_input = SearchInput()
-        yield self.search_input
-
+        # Task table first (for natural focus order)
         self.task_table = TaskTable(id="task-table")
         yield self.task_table
+
+        # Search input below the table
+        self.search_input = SearchInput()
+        yield self.search_input
 
     def on_mount(self) -> None:
         """Called when widget is mounted."""
         if self.task_table:
             self.task_table.setup_columns()
+            # Set initial focus to the task table instead of search input
+            self.task_table.focus()
 
     def on_search_query_changed(self, event: SearchQueryChanged) -> None:
         """Handle search query changes via event.

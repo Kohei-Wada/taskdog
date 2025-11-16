@@ -17,16 +17,23 @@ class SearchInput(Container):
     class Submitted(Message):
         """Message sent when Enter is pressed in the search input."""
 
-    def __init__(self) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         """Initialize the search input widget."""
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self.add_class("search-container")
+        self.can_focus = False  # Don't auto-focus when parent receives focus
 
     def compose(self) -> ComposeResult:
         """Compose the search input with a label."""
         with Horizontal(id="search-input-container"):
             yield Static("🔍", id="search-icon")
-            yield Input(placeholder="Press '/' to search tasks", id=SEARCH_INPUT_ID)
+            search_input = Input(
+                placeholder="Press '/' to search tasks", id=SEARCH_INPUT_ID
+            )
+            search_input.can_focus = (
+                False  # Disable auto-focus, use focus_input() explicitly
+            )
+            yield search_input
         yield Static("", id="search-result", classes="search-result")
 
     def on_input_changed(self, event: Input.Changed) -> None:
@@ -66,6 +73,7 @@ class SearchInput(Container):
     def focus_input(self) -> None:
         """Focus the search input field."""
         search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
+        search_input.can_focus = True  # Temporarily enable focus
         search_input.focus()
 
     def update_result(self, matched: int, total: int) -> None:
