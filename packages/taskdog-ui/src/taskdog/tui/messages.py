@@ -78,6 +78,7 @@ class TUIMessageBuilder:
     def websocket_event(
         event_type: str,
         task_name: str,
+        task_id: int | None = None,
         details: str = "",
         source_client_id: str | None = None,
     ) -> str:
@@ -86,6 +87,7 @@ class TUIMessageBuilder:
         Args:
             event_type: The event type (e.g., "created", "deleted", "status changed")
             task_name: Name of the task
+            task_id: Optional task ID
             details: Optional additional details (e.g., field changes, status transition)
             source_client_id: Optional client ID that triggered the event
 
@@ -93,10 +95,12 @@ class TUIMessageBuilder:
             Formatted message string
 
         Examples:
-            - "Task created: Task name by client_abc"
-            - "Task status changed: Task name (PENDING → IN_PROGRESS) by client_abc"
+            - "Task created: Task name (ID: 123) by client_abc"
+            - "Task status changed: Task name (ID: 123) (PENDING → IN_PROGRESS) by client_abc"
         """
         base_msg = f"Task {event_type}: {task_name}"
+        if task_id is not None:
+            base_msg += f" (ID: {task_id})"
         if details:
             base_msg += f" ({details})"
         if source_client_id:

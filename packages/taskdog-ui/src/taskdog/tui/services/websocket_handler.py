@@ -78,6 +78,7 @@ class WebSocketHandler:
 
         # Show notification with source client ID if available
         task_name = message.get("task_name", "Unknown")
+        task_id = message.get("task_id")
         source_client_id = message.get("source_client_id")
 
         # Only show "by {client_id}" if the source is different from this client
@@ -87,7 +88,7 @@ class WebSocketHandler:
 
         if msg_type == "task_created":
             msg = TUIMessageBuilder.websocket_event(
-                "added", task_name, source_client_id=display_source
+                "added", task_name, task_id=task_id, source_client_id=display_source
             )
             self.app.notify(msg, severity="information")
         elif msg_type == "task_updated":
@@ -96,13 +97,14 @@ class WebSocketHandler:
             msg = TUIMessageBuilder.websocket_event(
                 "updated",
                 task_name,
+                task_id=task_id,
                 details=details,
                 source_client_id=display_source,
             )
             self.app.notify(msg, severity="information")
         elif msg_type == "task_deleted":
             msg = TUIMessageBuilder.websocket_event(
-                "deleted", task_name, source_client_id=display_source
+                "deleted", task_name, task_id=task_id, source_client_id=display_source
             )
             self.app.notify(msg, severity="warning")
         elif msg_type == "task_status_changed":
@@ -112,6 +114,7 @@ class WebSocketHandler:
             msg = TUIMessageBuilder.websocket_event(
                 "status changed",
                 task_name,
+                task_id=task_id,
                 details=details,
                 source_client_id=display_source,
             )
