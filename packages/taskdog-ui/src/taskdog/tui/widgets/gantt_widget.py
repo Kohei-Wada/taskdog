@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Center, VerticalScroll
+from textual.containers import VerticalScroll
 from textual.events import Resize
 from textual.widgets import Static
 
@@ -20,7 +20,6 @@ from taskdog.constants.table_dimensions import (
     BORDER_WIDTH,
     CHARS_PER_DAY,
     DEFAULT_GANTT_WIDGET_WIDTH,
-    GANTT_TABLE_FIXED_WIDTH,
     MIN_CONSOLE_WIDTH,
     MIN_TIMELINE_WIDTH,
 )
@@ -76,11 +75,7 @@ class GanttWidget(VerticalScroll):
 
         # Create GanttDataTable
         self._gantt_table = GanttDataTable(id="gantt-table")
-        self._gantt_table.styles.width = "auto"
-
-        # Wrap table in Center container for horizontal centering
-        with Center():
-            yield self._gantt_table
+        yield self._gantt_table
 
         # Legend below the table
         self._legend_widget = Static("")
@@ -151,8 +146,11 @@ class GanttWidget(VerticalScroll):
         if not self._gantt_table:
             return
         self._gantt_table.clear(columns=True)
-        self._gantt_table.add_column(column_label)
-        self._gantt_table.add_row(message)
+        # Add column with max width to fill the entire table
+        from rich.text import Text
+
+        self._gantt_table.add_column(Text(column_label, justify="center"))
+        self._gantt_table.add_row(Text.from_markup(message, justify="center"))
 
     def update(self, message: str) -> None:
         """Update the gantt widget with a message.
@@ -231,10 +229,14 @@ class GanttWidget(VerticalScroll):
         """
         if widget_width is None:
             widget_width = self.size.width if self.size else DEFAULT_GANTT_WIDGET_WIDTH
+
+        # Minimal overhead: just widget borders (2)
+        # Table now takes full width without Center container
         console_width = max(widget_width - BORDER_WIDTH, MIN_CONSOLE_WIDTH)
-        timeline_width = max(
-            console_width - GANTT_TABLE_FIXED_WIDTH, MIN_TIMELINE_WIDTH
-        )
+        # Actual fixed columns width: ID(4) + Task(20) + Est(7) + spacing = ~31
+        # Use even smaller value to allocate maximum space to timeline
+        actual_fixed_width = 32
+        timeline_width = max(console_width - actual_fixed_width, MIN_TIMELINE_WIDTH)
         max_days = timeline_width // CHARS_PER_DAY
         weeks = max(max_days // DAYS_PER_WEEK, 1)
         return weeks * DAYS_PER_WEEK
