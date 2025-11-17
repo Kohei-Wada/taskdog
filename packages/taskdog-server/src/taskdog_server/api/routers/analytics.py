@@ -328,7 +328,11 @@ async def optimize_schedule(
         start_date = request.start_date if request.start_date else datetime.now()
 
         # Use config default if not specified
-        max_hours = request.max_hours_per_day if request.max_hours_per_day else 8.0
+        max_hours = (
+            request.max_hours_per_day
+            if request.max_hours_per_day
+            else controller.config.optimization.max_hours_per_day
+        )
 
         if run_async:
             # Add to background tasks

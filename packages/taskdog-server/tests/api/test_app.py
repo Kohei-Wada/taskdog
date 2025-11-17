@@ -31,8 +31,8 @@ class TestApp(unittest.TestCase):
         cls.mock_notes_repository = MagicMock()
         cls.mock_config = MagicMock()
         cls.mock_config.task.default_priority = 3
-        cls.mock_config.scheduling.max_hours_per_day = 8.0
-        cls.mock_config.scheduling.default_algorithm = "greedy"
+        cls.mock_config.optimization.max_hours_per_day = 6.0
+        cls.mock_config.optimization.default_algorithm = "greedy"
         cls.mock_config.region.country = None
 
         # Create controllers with mocked dependencies
