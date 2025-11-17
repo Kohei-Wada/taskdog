@@ -104,3 +104,21 @@ class XDGDirectories:
             Path to config.toml in config directory
         """
         return cls.get_config_home() / CONFIG_FILE_NAME
+
+    @classmethod
+    def get_server_config_file(cls) -> Path:
+        """Get path to server.toml file.
+
+        Returns:
+            Path to server.toml in config directory
+        """
+        return cls.get_config_home() / "server.toml"
+
+    @classmethod
+    def get_client_config_file(cls) -> Path:
+        """Get path to client.toml file.
+
+        Returns:
+            Path to client.toml in config directory
+        """
+        return cls.get_config_home() / "client.toml"
