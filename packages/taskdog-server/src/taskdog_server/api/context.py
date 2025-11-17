@@ -12,7 +12,7 @@ from taskdog_core.controllers.task_relationship_controller import (
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
-from taskdog_core.shared.config_manager import Config
+from taskdog_core.shared.server_config_manager import ServerConfig
 
 
 @dataclass
@@ -21,7 +21,7 @@ class ApiContext:
 
     Attributes:
         repository: Task repository for data access
-        config: Application configuration
+        config: Server configuration
         notes_repository: Notes repository for notes file operations
         query_controller: Controller for task read operations
         lifecycle_controller: Controller for task lifecycle operations (start, complete, etc.)
@@ -32,7 +32,7 @@ class ApiContext:
     """
 
     repository: TaskRepository
-    config: Config
+    config: ServerConfig
     notes_repository: NotesRepository
     query_controller: QueryController
     lifecycle_controller: TaskLifecycleController

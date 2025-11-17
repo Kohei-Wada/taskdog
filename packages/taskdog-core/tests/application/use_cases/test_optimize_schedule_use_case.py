@@ -15,7 +15,7 @@ from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
-from taskdog_core.shared.config_manager import ConfigManager
+from taskdog_core.shared.server_config_manager import ServerConfigManager
 
 
 class TestOptimizeScheduleUseCase(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestOptimizeScheduleUseCase(unittest.TestCase):
         self.test_filename = self.test_file.name
         self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
         self.create_use_case = CreateTaskUseCase(self.repository)
-        config = ConfigManager.load()
+        config = ServerConfigManager.load()
         self.optimize_use_case = OptimizeScheduleUseCase(
             self.repository,
             config.time.default_start_hour,

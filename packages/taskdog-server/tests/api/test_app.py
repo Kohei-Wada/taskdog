@@ -12,6 +12,13 @@ from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleCont
 from taskdog_core.controllers.task_relationship_controller import (
     TaskRelationshipController,
 )
+from taskdog_core.shared.server_config_manager import (
+    RegionConfig,
+    ServerConfig,
+    StorageConfig,
+    TaskConfig,
+    TimeConfig,
+)
 from taskdog_server.api.context import ApiContext
 from taskdog_server.api.dependencies import set_api_context
 
@@ -26,14 +33,17 @@ class TestApp(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up shared test fixtures once for all tests."""
-        # Mock repositories and config
+        # Mock repositories
         cls.mock_repository = MagicMock()
         cls.mock_notes_repository = MagicMock()
-        cls.mock_config = MagicMock()
-        cls.mock_config.task.default_priority = 3
-        cls.mock_config.optimization.max_hours_per_day = 6.0
-        cls.mock_config.optimization.default_algorithm = "greedy"
-        cls.mock_config.region.country = None
+
+        # Server config
+        cls.mock_config = ServerConfig(
+            time=TimeConfig(default_start_hour=9, default_end_hour=18),
+            region=RegionConfig(country=None),
+            storage=StorageConfig(backend="sqlite", database_url=None),
+            task=TaskConfig(default_priority=3),
+        )
 
         # Create controllers with mocked dependencies
         query_controller = QueryController(

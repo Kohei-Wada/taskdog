@@ -69,15 +69,14 @@ class TestDependencyInjection(unittest.TestCase):
             config_path = f.name
             # Write minimal config
             f.write("[task]\ndefault_priority = 3\n")
-            f.write("[scheduling]\nmax_hours_per_day = 8.0\n")
-            f.write('default_algorithm = "greedy"\n')
+            f.write("[time]\ndefault_start_hour = 9\ndefault_end_hour = 18\n")
             f.write('[storage]\nbackend = "sqlite"\n')
             f.write('database_url = "sqlite:///:memory:"\n')
 
         try:
             # Mock XDG config path to use our temp file
             with patch(
-                "taskdog_core.shared.xdg_utils.XDGDirectories.get_config_file",
+                "taskdog_core.shared.xdg_utils.XDGDirectories.get_server_config_file",
                 return_value=Path(config_path),
             ):
                 # Act
@@ -279,14 +278,13 @@ class TestInitializeApiContext(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".toml") as f:
             config_path = f.name
             f.write("[task]\ndefault_priority = 3\n")
-            f.write("[scheduling]\nmax_hours_per_day = 8.0\n")
-            f.write('default_algorithm = "greedy"\n')
+            f.write("[time]\ndefault_start_hour = 9\ndefault_end_hour = 18\n")
             f.write('[storage]\nbackend = "sqlite"\n')
             f.write('database_url = "sqlite:///:memory:"\n')
 
         try:
             with patch(
-                "taskdog_core.shared.xdg_utils.XDGDirectories.get_config_file",
+                "taskdog_core.shared.xdg_utils.XDGDirectories.get_server_config_file",
                 return_value=Path(config_path),
             ):
                 # Act
@@ -308,15 +306,15 @@ class TestInitializeApiContext(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".toml") as f:
             config_path = f.name
             f.write("[task]\ndefault_priority = 3\n")
-            f.write("[scheduling]\nmax_hours_per_day = 8.0\n")
-            f.write('default_algorithm = "greedy"\n')
+            f.write("[time]\ndefault_start_hour = 9\n")
+            f.write("default_end_hour = 18\n")
             f.write('[storage]\nbackend = "sqlite"\n')
             f.write('database_url = "sqlite:///:memory:"\n')
             f.write('[region]\ncountry = "US"\n')
 
         try:
             with patch(
-                "taskdog_core.shared.xdg_utils.XDGDirectories.get_config_file",
+                "taskdog_core.shared.xdg_utils.XDGDirectories.get_server_config_file",
                 return_value=Path(config_path),
             ):
                 # Act
@@ -334,15 +332,14 @@ class TestInitializeApiContext(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".toml") as f:
             config_path = f.name
             f.write("[task]\ndefault_priority = 3\n")
-            f.write("[scheduling]\nmax_hours_per_day = 8.0\n")
-            f.write('default_algorithm = "greedy"\n')
+            f.write("[time]\ndefault_start_hour = 9\ndefault_end_hour = 18\n")
             f.write('[storage]\nbackend = "sqlite"\n')
             f.write('database_url = "sqlite:///:memory:"\n')
             f.write('[region]\ncountry = "XX"\n')  # Invalid country code
 
         try:
             with patch(
-                "taskdog_core.shared.xdg_utils.XDGDirectories.get_config_file",
+                "taskdog_core.shared.xdg_utils.XDGDirectories.get_server_config_file",
                 return_value=Path(config_path),
             ):
                 # Act - should not raise exception

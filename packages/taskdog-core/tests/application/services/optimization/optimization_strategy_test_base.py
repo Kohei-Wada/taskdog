@@ -8,7 +8,7 @@ from taskdog_core.application.dto.optimize_schedule_input import OptimizeSchedul
 from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
 from taskdog_core.application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from taskdog_core.domain.entities.task import Task
-from taskdog_core.shared.config_manager import ConfigManager
+from taskdog_core.shared.server_config_manager import ServerConfigManager
 from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
@@ -39,7 +39,7 @@ class BaseOptimizationStrategyTest(InMemoryDatabaseTestCase):
         super().setUp()
         # Initialize use cases
         self.create_use_case = CreateTaskUseCase(self.repository)
-        config = ConfigManager.load()
+        config = ServerConfigManager.load()
         self.optimize_use_case = OptimizeScheduleUseCase(
             self.repository,
             config.time.default_start_hour,

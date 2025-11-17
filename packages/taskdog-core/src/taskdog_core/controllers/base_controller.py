@@ -6,7 +6,7 @@ providing access to common dependencies like repository and config.
 
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.logger import Logger
-from taskdog_core.shared.config_manager import Config
+from taskdog_core.shared.server_config_manager import ServerConfig
 
 
 class BaseTaskController:
@@ -14,7 +14,7 @@ class BaseTaskController:
 
     Provides shared dependencies used across multiple controllers:
     - TaskRepository: For all data access operations
-    - Config: For application configuration (priorities, algorithms, etc.)
+    - ServerConfig: For server configuration (time, region, storage, task defaults)
     - Logger: For logging operations (optional)
 
     Specialized controllers inherit from this class and add their own
@@ -22,13 +22,16 @@ class BaseTaskController:
     """
 
     def __init__(
-        self, repository: TaskRepository, config: Config, logger: Logger | None = None
+        self,
+        repository: TaskRepository,
+        config: ServerConfig,
+        logger: Logger | None = None,
     ):
         """Initialize base controller with shared dependencies.
 
         Args:
             repository: Task repository for data access
-            config: Application configuration
+            config: Server configuration
             logger: Optional logger for operation tracking
         """
         self.repository = repository

@@ -22,7 +22,7 @@ from taskdog_core.application.use_cases.start_task import StartTaskUseCase
 from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.logger import Logger
-from taskdog_core.shared.config_manager import Config
+from taskdog_core.shared.server_config_manager import ServerConfig
 
 
 class TaskLifecycleController(BaseTaskController):
@@ -46,7 +46,7 @@ class TaskLifecycleController(BaseTaskController):
     def __init__(
         self,
         repository: TaskRepository,
-        config: Config,
+        config: ServerConfig,
         logger: Logger | None = None,
     ):
         """Initialize the lifecycle controller.

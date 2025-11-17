@@ -6,7 +6,6 @@ fixtures across tests (~50% speedup).
 """
 
 import unittest
-from unittest.mock import MagicMock
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -23,6 +22,13 @@ from taskdog_core.infrastructure.persistence.database.sqlite_task_repository imp
 )
 from taskdog_core.infrastructure.persistence.file_notes_repository import (
     FileNotesRepository,
+)
+from taskdog_core.shared.server_config_manager import (
+    RegionConfig,
+    ServerConfig,
+    StorageConfig,
+    TaskConfig,
+    TimeConfig,
 )
 from taskdog_server.api.context import ApiContext
 from taskdog_server.api.dependencies import set_api_context
@@ -56,14 +62,13 @@ class BaseApiRouterTest(unittest.TestCase):
         )
         cls.notes_repository = FileNotesRepository()
 
-        # Mock config with default values
-        cls.config = MagicMock()
-        cls.config.task.default_priority = 3
-        cls.config.optimization.max_hours_per_day = 6.0
-        cls.config.optimization.default_algorithm = "greedy"
-        cls.config.region.country = None
-        cls.config.time.default_start_hour = 9
-        cls.config.time.default_end_hour = 18
+        # Server config with default values
+        cls.config = ServerConfig(
+            time=TimeConfig(default_start_hour=9, default_end_hour=18),
+            region=RegionConfig(country=None),
+            storage=StorageConfig(backend="sqlite", database_url=None),
+            task=TaskConfig(default_priority=3),
+        )
 
         # Create controllers once (reused across all tests)
         query_controller = QueryController(cls.repository, cls.notes_repository)

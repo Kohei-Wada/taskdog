@@ -27,7 +27,7 @@ from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.logger import Logger
-from taskdog_core.shared.config_manager import Config
+from taskdog_core.shared.server_config_manager import ServerConfig
 
 
 class TaskCrudController(BaseTaskController):
@@ -52,7 +52,7 @@ class TaskCrudController(BaseTaskController):
         self,
         repository: TaskRepository,
         notes_repository: NotesRepository,
-        config: Config,
+        config: ServerConfig,
         logger: Logger | None = None,
     ):
         """Initialize the CRUD controller.
@@ -60,7 +60,7 @@ class TaskCrudController(BaseTaskController):
         Args:
             repository: Task repository
             notes_repository: Notes repository
-            config: Application configuration
+            config: Server configuration
             logger: Optional logger for operation tracking
         """
         super().__init__(repository, config, logger)

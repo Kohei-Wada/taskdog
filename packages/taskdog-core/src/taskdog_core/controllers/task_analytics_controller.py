@@ -21,7 +21,7 @@ from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.domain.services.logger import Logger
-from taskdog_core.shared.config_manager import Config
+from taskdog_core.shared.server_config_manager import ServerConfig
 
 
 class TaskAnalyticsController(BaseTaskController):
@@ -43,7 +43,7 @@ class TaskAnalyticsController(BaseTaskController):
     def __init__(
         self,
         repository: TaskRepository,
-        config: Config,
+        config: ServerConfig,
         holiday_checker: IHolidayChecker | None = None,
         logger: Logger | None = None,
     ):

@@ -8,7 +8,7 @@ from taskdog_core.infrastructure.persistence.database.sqlite_task_repository imp
     SqliteTaskRepository,
 )
 from taskdog_core.infrastructure.persistence.repository_factory import RepositoryFactory
-from taskdog_core.shared.config_manager import StorageConfig
+from taskdog_core.shared.server_config_manager import StorageConfig
 
 
 class TestRepositoryFactory(unittest.TestCase):

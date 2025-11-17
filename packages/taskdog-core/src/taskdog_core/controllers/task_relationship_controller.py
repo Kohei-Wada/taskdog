@@ -21,7 +21,7 @@ from taskdog_core.application.use_cases.set_task_tags import SetTaskTagsUseCase
 from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.logger import Logger
-from taskdog_core.shared.config_manager import Config
+from taskdog_core.shared.server_config_manager import ServerConfig
 
 
 class TaskRelationshipController(BaseTaskController):
@@ -41,7 +41,10 @@ class TaskRelationshipController(BaseTaskController):
     """
 
     def __init__(
-        self, repository: TaskRepository, config: Config, logger: Logger | None = None
+        self,
+        repository: TaskRepository,
+        config: ServerConfig,
+        logger: Logger | None = None,
     ):
         """Initialize the relationship controller.
 

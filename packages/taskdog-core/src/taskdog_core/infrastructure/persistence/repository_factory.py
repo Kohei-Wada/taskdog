@@ -9,7 +9,7 @@ from taskdog_core.infrastructure.persistence.database.sqlite_task_repository imp
     SqliteTaskRepository,
 )
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
-from taskdog_core.shared.config_manager import StorageConfig
+from taskdog_core.shared.server_config_manager import StorageConfig
 from taskdog_core.shared.xdg_utils import XDGDirectories
 
 

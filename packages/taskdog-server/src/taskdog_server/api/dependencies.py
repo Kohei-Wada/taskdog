@@ -20,7 +20,7 @@ from taskdog_core.infrastructure.persistence.file_notes_repository import (
     FileNotesRepository,
 )
 from taskdog_core.infrastructure.persistence.repository_factory import RepositoryFactory
-from taskdog_core.shared.config_manager import Config, ConfigManager
+from taskdog_core.shared.server_config_manager import ServerConfig, ServerConfigManager
 from taskdog_server.api.context import ApiContext
 from taskdog_server.infrastructure.logging.standard_logger import StandardLogger
 from taskdog_server.websocket.connection_manager import ConnectionManager
@@ -40,8 +40,8 @@ def initialize_api_context() -> ApiContext:
     Returns:
         ApiContext: Initialized context with all controllers
     """
-    # Load configuration
-    config = ConfigManager.load()
+    # Load server configuration
+    config = ServerConfigManager.load()
     notes_repository = FileNotesRepository()
 
     # Initialize HolidayChecker if country is configured
@@ -160,8 +160,8 @@ def get_notes_repository(context: ApiContextDep) -> NotesRepository:
     return context.notes_repository
 
 
-def get_config(context: ApiContextDep) -> Config:
-    """Get configuration from context."""
+def get_config(context: ApiContextDep) -> ServerConfig:
+    """Get server configuration from context."""
     return context.config
 
 
@@ -203,6 +203,6 @@ AnalyticsControllerDep = Annotated[
 CrudControllerDep = Annotated[TaskCrudController, Depends(get_crud_controller)]
 RepositoryDep = Annotated[TaskRepository, Depends(get_repository)]
 NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
-ConfigDep = Annotated[Config, Depends(get_config)]
+ConfigDep = Annotated[ServerConfig, Depends(get_config)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
