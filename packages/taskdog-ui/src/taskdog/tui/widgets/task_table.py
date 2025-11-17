@@ -38,18 +38,20 @@ from taskdog.tui.events import TaskSelected
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
+from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog.view_models.task_view_model import TaskRowViewModel
 
 # Checkbox column width
 TASK_TABLE_CHECKBOX_WIDTH = 3
 
 
-class TaskTable(DataTable, TUIWidget):
+class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
     """A data table widget for displaying tasks with Vi-style keyboard navigation.
 
     This widget acts as a coordinator that delegates responsibilities to:
     - TaskSearchFilter: Handles search and filtering logic
     - TaskTableRowBuilder: Builds table row data from TaskRowViewModel
+    - ViNavigationMixin: Provides Vi-style keybindings
     """
 
     # Reactive variable for selection count (Phase 3)
@@ -70,20 +72,19 @@ class TaskTable(DataTable, TUIWidget):
 
     # Add Vi-style bindings in addition to DataTable's default bindings
     BINDINGS: ClassVar = [
+        # j/k navigation using DataTable's built-in cursor actions
         Binding("j", "cursor_down", "Down", show=False),
         Binding("k", "cursor_up", "Up", show=False),
         Binding("ctrl+j", "cursor_down", "Down", show=False),
         Binding("ctrl+k", "cursor_up", "Up", show=False),
-        Binding("g", "scroll_home", "Top", show=False),
-        Binding("G", "scroll_end", "Bottom", show=False),
-        Binding("ctrl+d", "page_down", "Page Down", show=False),
-        Binding("ctrl+u", "page_up", "Page Up", show=False),
-        Binding("h", "scroll_left", "Scroll Left", show=False),
-        Binding("l", "scroll_right", "Scroll Right", show=False),
-        Binding("0", "scroll_home_horizontal", "Scroll to Leftmost", show=False),
-        Binding(
-            "dollar_sign", "scroll_end_horizontal", "Scroll to Rightmost", show=False
-        ),
+        # g/G navigation for top/bottom
+        Binding("g", "vi_home", "Top", show=False),
+        Binding("G", "vi_end", "Bottom", show=False),
+        # Vi-style page and horizontal scroll bindings from mixin
+        *ViNavigationMixin.VI_PAGE_BINDINGS,
+        *ViNavigationMixin.VI_HORIZONTAL_BINDINGS,
+        *ViNavigationMixin.VI_HORIZONTAL_JUMP_BINDINGS,
+        # Selection bindings
         Binding("space", "toggle_selection", "Select", show=True),
         Binding("ctrl+a", "select_all", "Select All", show=True),
         Binding("ctrl+n", "clear_selection", "Clear", show=True),
@@ -321,41 +322,41 @@ class TaskTable(DataTable, TUIWidget):
         if self.row_count > 0:
             self.move_cursor(row=row)
 
-    def action_scroll_home(self) -> None:
+    def action_vi_home(self) -> None:
         """Move cursor to top (g key)."""
         self._safe_move_cursor(row=0)
 
-    def action_scroll_end(self) -> None:
+    def action_vi_end(self) -> None:
         """Move cursor to bottom (G key)."""
         self._safe_move_cursor(row=self.row_count - 1)
 
-    def action_page_down(self) -> None:
+    def action_vi_page_down(self) -> None:
         """Move cursor down by half page (Ctrl+d)."""
         new_row = min(self.cursor_row + PAGE_SCROLL_SIZE, self.row_count - 1)
         self._safe_move_cursor(row=new_row)
 
-    def action_page_up(self) -> None:
+    def action_vi_page_up(self) -> None:
         """Move cursor up by half page (Ctrl+u)."""
         new_row = max(self.cursor_row - PAGE_SCROLL_SIZE, 0)
         self._safe_move_cursor(row=new_row)
 
-    def action_scroll_left(self) -> None:
+    def action_vi_scroll_left(self) -> None:
         """Scroll table left (h key)."""
         # Scroll left by one column width (approximate)
         scroll_amount = 10
         self.scroll_x = max(0, self.scroll_x - scroll_amount)
 
-    def action_scroll_right(self) -> None:
+    def action_vi_scroll_right(self) -> None:
         """Scroll table right (l key)."""
         # Scroll right by one column width (approximate)
         scroll_amount = 10
         self.scroll_x = self.scroll_x + scroll_amount
 
-    def action_scroll_home_horizontal(self) -> None:
+    def action_vi_home_horizontal(self) -> None:
         """Scroll table to leftmost position (0 key)."""
         self.scroll_x = 0
 
-    def action_scroll_end_horizontal(self) -> None:
+    def action_vi_end_horizontal(self) -> None:
         """Scroll table to rightmost position ($ key)."""
         # Calculate maximum horizontal scroll position
         # virtual_size.width is the total content width

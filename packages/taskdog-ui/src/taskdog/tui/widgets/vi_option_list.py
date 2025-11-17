@@ -2,11 +2,12 @@
 
 from typing import ClassVar
 
-from textual.binding import Binding
 from textual.widgets import OptionList
 
+from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 
-class ViOptionList(OptionList):
+
+class ViOptionList(OptionList, ViNavigationMixin):
     """OptionList with Vi-style key bindings.
 
     Extends Textual's OptionList to add Vi-style navigation:
@@ -20,32 +21,27 @@ class ViOptionList(OptionList):
         >>> option_list = ViOptionList(*options)
     """
 
-    # Add Vi-style bindings
-    BINDINGS: ClassVar = [
-        Binding("j", "cursor_down", "Down", show=False),
-        Binding("k", "cursor_up", "Up", show=False),
-        Binding("g", "scroll_home", "Top", show=False),
-        Binding("G", "scroll_end", "Bottom", show=False),
-    ]
+    # Use Vi vertical navigation bindings from mixin
+    BINDINGS: ClassVar = ViNavigationMixin.VI_VERTICAL_BINDINGS
 
-    def action_cursor_down(self) -> None:
+    def action_vi_down(self) -> None:
         """Move cursor down (j key)."""
         if self.highlighted is not None:
             max_index = len(self._options) - 1
             if self.highlighted < max_index:
                 self.highlighted += 1
 
-    def action_cursor_up(self) -> None:
+    def action_vi_up(self) -> None:
         """Move cursor up (k key)."""
         if self.highlighted is not None and self.highlighted > 0:
             self.highlighted -= 1
 
-    def action_scroll_home(self) -> None:
+    def action_vi_home(self) -> None:
         """Move to top (g key)."""
         if len(self._options) > 0:
             self.highlighted = 0
 
-    def action_scroll_end(self) -> None:
+    def action_vi_end(self) -> None:
         """Move to bottom (G key)."""
         if len(self._options) > 0:
             self.highlighted = len(self._options) - 1
