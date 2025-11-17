@@ -94,6 +94,18 @@ class TaskdogApiClient:
         """Context manager exit."""
         self.close()
 
+    def check_health(self) -> bool:
+        """Check if API server is reachable.
+
+        Returns:
+            True if server responds to health check, False otherwise
+        """
+        try:
+            response = self._base._safe_request("get", "/health")
+            return response.status_code == 200
+        except Exception:
+            return False
+
     # CRUD Controller methods - delegate to TaskClient
 
     def create_task(

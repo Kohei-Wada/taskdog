@@ -192,14 +192,18 @@ class TaskdogTUI(App):
 
     async def on_mount(self) -> None:
         """Called when app is mounted."""
-        self.main_screen = MainScreen()
+        self.main_screen = MainScreen(state=self.state)
         self.push_screen(self.main_screen)
         # Load tasks after screen is fully mounted
         self.call_after_refresh(self._load_tasks)
         # Start auto-refresh timer for elapsed time updates
         self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
+        # Start connection monitoring timer (check every 10 seconds)
+        self.set_interval(10.0, self._check_connection_status)
         # Connect to WebSocket for real-time updates
         await self.websocket_client.connect()
+        # Initial connection status check
+        self._check_connection_status()
 
     async def on_unmount(self) -> None:
         """Called when app is unmounted."""
@@ -500,3 +504,22 @@ class TaskdogTUI(App):
                 f"Server connection failed: {e.original_error.__class__.__name__}",
                 severity="error",
             )
+
+    def _check_connection_status(self) -> None:
+        """Check API and WebSocket connection status.
+
+        Updates TUIState with current connection status and refreshes
+        the ConnectionStatus widget display.
+        """
+        # Check API connection via health endpoint
+        api_connected = self.api_client.check_health()
+
+        # Check WebSocket connection
+        ws_connected = self.websocket_client.is_connected()
+
+        # Update state
+        self.state.update_connection_status(api_connected, ws_connected)
+
+        # Refresh ConnectionStatus widget if available
+        if self.main_screen and self.main_screen.connection_status:
+            self.main_screen.connection_status.refresh_from_state()

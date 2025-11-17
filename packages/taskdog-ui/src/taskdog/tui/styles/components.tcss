@@ -1,5 +1,41 @@
 /* Shared Component Styles */
 
+/* Header Container */
+#header-container {
+    width: 100%;
+    height: auto;
+    dock: top;
+}
+
+#main-header {
+    width: 1fr;
+}
+
+#connection-status {
+    width: auto;
+}
+
+/* Connection Status Indicator */
+.connection-status {
+    width: auto;
+    height: auto;
+    padding: 0 2;
+    content-align: right middle;
+    text-style: bold;
+}
+
+.status-online {
+    color: $success;
+}
+
+.status-partial {
+    color: $warning;
+}
+
+.status-offline {
+    color: $error;
+}
+
 /* Dialog Components */
 #button-container {
     height: auto;
