@@ -104,7 +104,6 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
         reverse=reverse,
         start_date=start_date_obj,
         end_date=end_date_obj,
-        holiday_checker=ctx_obj.holiday_checker,
     )
 
     # Convert DTO to ViewModel (Presenter applies presentation logic)

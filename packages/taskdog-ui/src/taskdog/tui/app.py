@@ -36,7 +36,6 @@ from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
 )
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
-from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.shared.config_manager import Config, ConfigManager
 
 
@@ -80,7 +79,6 @@ class TaskdogTUI(App):
         self,
         api_client: "TaskdogApiClient",
         config: Config | None = None,
-        holiday_checker: IHolidayChecker | None = None,
         *args,
         **kwargs,
     ):
@@ -92,7 +90,6 @@ class TaskdogTUI(App):
         Args:
             api_client: API client for server communication (required)
             config: Application configuration (optional, loads from file by default)
-            holiday_checker: Holiday checker for workday validation (optional)
         """
         super().__init__(*args, **kwargs)
         from taskdog.infrastructure.api_client import TaskdogApiClient
@@ -106,7 +103,6 @@ class TaskdogTUI(App):
 
         self.api_client = api_client
         self.config = config if config is not None else ConfigManager.load()
-        self.holiday_checker = holiday_checker
         self.main_screen: MainScreen | None = None
 
         # Initialize TUI state (Single Source of Truth for all app state)
@@ -121,7 +117,6 @@ class TaskdogTUI(App):
         self.context = TUIContext(
             api_client=self.api_client,
             config=self.config,
-            holiday_checker=self.holiday_checker,
             state=self.state,  # Share same state instance
         )
 
@@ -134,7 +129,6 @@ class TaskdogTUI(App):
             api_client=self.api_client,
             table_presenter=self.table_presenter,
             gantt_presenter=self.gantt_presenter,
-            holiday_checker=self.holiday_checker,
         )
 
         # Initialize CommandFactory for command execution
@@ -482,7 +476,6 @@ class TaskdogTUI(App):
                 include_gantt=True,
                 gantt_start_date=event.start_date,
                 gantt_end_date=event.end_date,
-                holiday_checker=self.holiday_checker,
             )
 
             # Convert gantt data to ViewModel

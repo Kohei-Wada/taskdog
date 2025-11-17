@@ -80,7 +80,6 @@ def report_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
         filter_end_date=end_date_obj,
         sort_by=sort,
         reverse=reverse,
-        holiday_checker=ctx_obj.holiday_checker,
     )
 
     # Group tasks by date using pre-calculated daily hours

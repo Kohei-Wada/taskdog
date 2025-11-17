@@ -279,7 +279,6 @@ class TestReportCommand(unittest.TestCase):
             console_writer=self.console_writer,
             api_client=self.api_client,
             config=MagicMock(),
-            holiday_checker=None,
         )
 
     def test_shows_warning_when_no_scheduled_tasks(self):

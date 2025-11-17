@@ -1,4 +1,3 @@
-from contextlib import suppress
 from typing import Any
 
 import click
@@ -35,7 +34,6 @@ from taskdog.cli.commands.update import update_command
 from taskdog.cli.commands.week import week_command
 from taskdog.cli.context import CliContext
 from taskdog.console.rich_console_writer import RichConsoleWriter
-from taskdog_core.infrastructure.holiday_checker import HolidayChecker
 from taskdog_core.shared.config_manager import ConfigManager
 
 
@@ -78,12 +76,6 @@ def cli(ctx: click.Context) -> None:
     console_writer = RichConsoleWriter(console)
     config = ConfigManager.load()
 
-    # Initialize HolidayChecker if country is configured
-    holiday_checker = None
-    if config.region.country:
-        with suppress(ImportError, NotImplementedError):
-            holiday_checker = HolidayChecker(config.region.country)
-
     # API client is now required for all CLI commands
     # Check if API mode is enabled in config
     if not config.api.enabled:
@@ -120,7 +112,6 @@ def cli(ctx: click.Context) -> None:
         console_writer=console_writer,
         api_client=api_client,
         config=config,
-        holiday_checker=holiday_checker,
     )
 
 

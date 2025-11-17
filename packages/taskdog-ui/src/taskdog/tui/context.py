@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from taskdog.tui.state import TUIState
-from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.shared.config_manager import Config
 
 if TYPE_CHECKING:
@@ -24,11 +23,9 @@ class TUIContext:
     Attributes:
         api_client: API client for server communication (required)
         config: Application configuration
-        holiday_checker: Holiday checker for workday validation (optional)
         state: TUI application state (shared with app instance)
     """
 
     api_client: "TaskdogApiClient"
     config: Config
-    holiday_checker: IHolidayChecker | None
     state: TUIState

@@ -20,13 +20,11 @@ class TestNoteCommand(unittest.TestCase):
         self.console_writer = MagicMock()
         self.api_client = MagicMock()
         self.config = MagicMock()
-        self.holiday_checker = MagicMock()
 
         self.cli_context = CliContext(
             console_writer=self.console_writer,
             api_client=self.api_client,
             config=self.config,
-            holiday_checker=self.holiday_checker,
         )
 
         # Setup mock task - just use a simple Mock object
