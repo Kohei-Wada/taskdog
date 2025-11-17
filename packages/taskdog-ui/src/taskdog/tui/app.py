@@ -198,12 +198,12 @@ class TaskdogTUI(App):
         self.call_after_refresh(self._load_tasks)
         # Start auto-refresh timer for elapsed time updates
         self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
-        # Start connection monitoring timer (check every 10 seconds)
-        self.set_interval(10.0, self._check_connection_status)
+        # Start connection monitoring timer (check every 3 seconds)
+        self.set_interval(3.0, self._check_connection_status)
         # Connect to WebSocket for real-time updates
         await self.websocket_client.connect()
-        # Initial connection status check
-        self._check_connection_status()
+        # Initial connection status check (delayed to allow WebSocket connection to stabilize)
+        self.call_later(self._check_connection_status)
 
     async def on_unmount(self) -> None:
         """Called when app is unmounted."""
