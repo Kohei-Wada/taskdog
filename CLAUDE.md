@@ -42,7 +42,7 @@ The repository uses UV workspace with three packages:
   - Region: country (ISO 3166-1 alpha-2: "JP", "US", "GB", "DE", etc.)
   - Storage: backend ("sqlite"), database_url
   - Task: default_priority (5)
-- See `server.toml.example` for full configuration options
+- See `examples/config/server.toml.example` for full configuration options
 
 **Client Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/client.toml` (fallback: `~/.config/taskdog/client.toml`)
 - Used by: taskdog CLI/TUI
@@ -51,7 +51,7 @@ The repository uses UV workspace with three packages:
   - Optimization: max_hours_per_day (8.0), default_algorithm ("greedy")
   - API: url (full URL) OR host ("127.0.0.1") + port (8000)
 - Environment variable override: `TASKDOG_API_URL` overrides API connection at runtime
-- See `client.toml.example` for full configuration options
+- See `examples/config/client.toml.example` for full configuration options
 
 **Priority**: Environment vars > CLI args > Config file > Defaults
 **Access**: `ctx.obj.config` (CLI) or `context.config` (TUI) for ClientConfig; ServerConfig used internally by API
