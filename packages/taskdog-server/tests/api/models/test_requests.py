@@ -278,14 +278,19 @@ class TestOptimizeScheduleRequest(unittest.TestCase):
 
     def test_valid_minimal_request(self):
         """Test creating request with minimal required fields."""
+        # Arrange
+        now = datetime.now()
+
         # Act
-        request = OptimizeScheduleRequest(algorithm="greedy")
+        request = OptimizeScheduleRequest(
+            algorithm="greedy", start_date=now, max_hours_per_day=8.0
+        )
 
         # Assert
         self.assertEqual(request.algorithm, "greedy")
-        self.assertIsNone(request.start_date)
-        self.assertIsNone(request.max_hours_per_day)
-        self.assertEqual(request.force_override, True)
+        self.assertEqual(request.start_date, now)
+        self.assertEqual(request.max_hours_per_day, 8.0)
+        self.assertEqual(request.force_override, True)  # Default value
 
     def test_valid_full_request(self):
         """Test creating request with all fields."""
@@ -310,7 +315,11 @@ class TestOptimizeScheduleRequest(unittest.TestCase):
         """Test that zero max hours is rejected."""
         # Act & Assert
         with self.assertRaises(ValidationError) as context:
-            OptimizeScheduleRequest(algorithm="greedy", max_hours_per_day=0.0)
+            OptimizeScheduleRequest(
+                algorithm="greedy",
+                start_date=datetime.now(),
+                max_hours_per_day=0.0,
+            )
 
         self.assertIn("max_hours_per_day", str(context.exception).lower())
 
@@ -318,7 +327,11 @@ class TestOptimizeScheduleRequest(unittest.TestCase):
         """Test that max hours > 24 is rejected."""
         # Act & Assert
         with self.assertRaises(ValidationError) as context:
-            OptimizeScheduleRequest(algorithm="greedy", max_hours_per_day=25.0)
+            OptimizeScheduleRequest(
+                algorithm="greedy",
+                start_date=datetime.now(),
+                max_hours_per_day=25.0,
+            )
 
         self.assertIn("max_hours_per_day", str(context.exception).lower())
 
@@ -327,6 +340,22 @@ class TestOptimizeScheduleRequest(unittest.TestCase):
         # Act & Assert
         with self.assertRaises(ValidationError):
             OptimizeScheduleRequest()
+
+    def test_missing_start_date(self):
+        """Test that start_date field is required."""
+        # Act & Assert
+        with self.assertRaises(ValidationError) as context:
+            OptimizeScheduleRequest(algorithm="greedy", max_hours_per_day=8.0)
+
+        self.assertIn("start_date", str(context.exception).lower())
+
+    def test_missing_max_hours_per_day(self):
+        """Test that max_hours_per_day field is required."""
+        # Act & Assert
+        with self.assertRaises(ValidationError) as context:
+            OptimizeScheduleRequest(algorithm="greedy", start_date=datetime.now())
+
+        self.assertIn("max_hours_per_day", str(context.exception).lower())
 
 
 class TestTaskFilterParams(unittest.TestCase):

@@ -341,8 +341,8 @@ class TestAnalyticsRouter(BaseApiRouterTest):
         data = response.json()
         self.assertIn("background", data["message"].lower())
 
-    def test_optimize_schedule_with_defaults(self):
-        """Test schedule optimization with default parameters."""
+    def test_optimize_schedule_with_all_required_params(self):
+        """Test schedule optimization with all required parameters."""
         # Arrange - create task
 
         task = Task(
@@ -354,7 +354,12 @@ class TestAnalyticsRouter(BaseApiRouterTest):
         )
         self.repository.save(task)
 
-        request_data = {"algorithm": "greedy"}
+        # All parameters are now required
+        request_data = {
+            "algorithm": "greedy",
+            "start_date": datetime.now().isoformat(),
+            "max_hours_per_day": 8.0,
+        }
 
         # Act
         response = self.client.post("/api/v1/optimize", json=request_data)
@@ -382,6 +387,7 @@ class TestAnalyticsRouter(BaseApiRouterTest):
 
         request_data = {
             "algorithm": "greedy",
+            "start_date": datetime.now().isoformat(),
             "max_hours_per_day": 8.0,
             "force_override": False,
         }
@@ -417,8 +423,9 @@ class TestAnalyticsRouter(BaseApiRouterTest):
 
         request_data = {
             "algorithm": "greedy",
-            "force_override": True,
+            "start_date": datetime.now().isoformat(),
             "max_hours_per_day": 8.0,
+            "force_override": True,
         }
 
         # Act
@@ -428,6 +435,34 @@ class TestAnalyticsRouter(BaseApiRouterTest):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("summary", data)
+
+    def test_optimize_schedule_missing_required_params(self):
+        """Test that missing required parameters returns 422 validation error."""
+        # Arrange - test missing start_date
+        request_data = {
+            "algorithm": "greedy",
+            "max_hours_per_day": 8.0,
+            # Missing start_date
+        }
+
+        # Act
+        response = self.client.post("/api/v1/optimize", json=request_data)
+
+        # Assert
+        self.assertEqual(response.status_code, 422)  # Pydantic validation error
+
+        # Test missing max_hours_per_day
+        request_data = {
+            "algorithm": "greedy",
+            "start_date": datetime.now().isoformat(),
+            # Missing max_hours_per_day
+        }
+
+        # Act
+        response = self.client.post("/api/v1/optimize", json=request_data)
+
+        # Assert
+        self.assertEqual(response.status_code, 422)  # Pydantic validation error
 
     # ===== GET /algorithms Tests =====
 

@@ -324,11 +324,8 @@ async def optimize_schedule(
         HTTPException: 400 if validation fails
     """
     try:
-        # Use current date if not specified
-        start_date = request.start_date if request.start_date else datetime.now()
-
-        # Use default if not specified (will be required in Phase 2)
-        max_hours = request.max_hours_per_day if request.max_hours_per_day else 6.0
+        # All parameters are now required in the request
+        # (client must provide all optimization settings)
 
         if run_async:
             # Add to background tasks
@@ -336,8 +333,8 @@ async def optimize_schedule(
                 run_optimization,
                 controller,
                 request.algorithm,
-                start_date,
-                max_hours,
+                request.start_date,
+                request.max_hours_per_day,
                 request.force_override,
             )
             return OptimizationResponse(
@@ -346,8 +343,8 @@ async def optimize_schedule(
                     scheduled_tasks=0,
                     failed_tasks=0,
                     total_hours=0.0,
-                    start_date=start_date.date(),
-                    end_date=start_date.date(),
+                    start_date=request.start_date.date(),
+                    end_date=request.start_date.date(),
                     algorithm=request.algorithm,
                 ),
                 failures=[],
@@ -357,8 +354,8 @@ async def optimize_schedule(
         # Run synchronously
         result = controller.optimize_schedule(
             algorithm=request.algorithm,
-            start_date=start_date,
-            max_hours_per_day=max_hours,
+            start_date=request.start_date,
+            max_hours_per_day=request.max_hours_per_day,
             force_override=request.force_override,
         )
 
@@ -384,8 +381,8 @@ async def optimize_schedule(
             opt_start_date = min(dates)
             opt_end_date = max(dates)
         else:
-            opt_start_date = start_date.date()
-            opt_end_date = start_date.date()
+            opt_start_date = request.start_date.date()
+            opt_end_date = request.start_date.date()
 
         # Build optimization message
         if result.all_failed():
