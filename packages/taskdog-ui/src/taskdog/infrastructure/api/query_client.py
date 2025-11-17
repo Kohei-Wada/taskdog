@@ -17,7 +17,6 @@ from taskdog_core.application.dto.get_task_by_id_output import GetTaskByIdOutput
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
 from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
-from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 class QueryClient:
@@ -100,7 +99,6 @@ class QueryClient:
         include_gantt: bool = False,
         gantt_start_date: date | None = None,
         gantt_end_date: date | None = None,
-        holiday_checker: IHolidayChecker | None = None,
     ) -> TaskListOutput:
         """List tasks with optional filtering and sorting.
 
@@ -116,13 +114,11 @@ class QueryClient:
             include_gantt: If True, include Gantt chart data
             gantt_start_date: Gantt chart start date
             gantt_end_date: Gantt chart end date
-            holiday_checker: Holiday checker (ignored for API - server handles holidays)
 
         Returns:
             TaskListOutput with task list and metadata, optionally including Gantt data
 
         Note:
-            holiday_checker is ignored in API mode (server handles holidays).
             filter_obj is deprecated and only supported for TUI backward compatibility.
         """
         # Handle legacy filter_obj parameter (TUI compatibility)
@@ -214,7 +210,6 @@ class QueryClient:
         reverse: bool = False,
         start_date: date | None = None,
         end_date: date | None = None,
-        holiday_checker: IHolidayChecker | None = None,
     ) -> GanttOutput:
         """Get Gantt chart data.
 
@@ -229,13 +224,11 @@ class QueryClient:
             reverse: Reverse sort order
             start_date: Chart display start date
             end_date: Chart display end date
-            holiday_checker: Holiday checker (ignored for API - server handles holidays)
 
         Returns:
             GanttOutput with Gantt chart data
 
         Note:
-            holiday_checker is ignored in API mode (server handles holidays).
             filter_start_date/filter_end_date are for filtering tasks.
             start_date/end_date are for the chart display range.
             filter_obj is deprecated and only supported for TUI backward compatibility.

@@ -23,13 +23,11 @@ class TestTaskDataLoader(unittest.TestCase):
         self.api_client = Mock()
         self.table_presenter = Mock()
         self.gantt_presenter = Mock()
-        self.holiday_checker = Mock()
 
         self.loader = TaskDataLoader(
             api_client=self.api_client,
             table_presenter=self.table_presenter,
             gantt_presenter=self.gantt_presenter,
-            holiday_checker=self.holiday_checker,
         )
 
     def test_load_tasks_without_gantt(self):
@@ -160,7 +158,6 @@ class TestTaskDataLoader(unittest.TestCase):
         self.assertEqual(call_args.kwargs["include_gantt"], True)
         self.assertEqual(call_args.kwargs["gantt_start_date"], date(2025, 1, 1))
         self.assertEqual(call_args.kwargs["gantt_end_date"], date(2025, 1, 7))
-        self.assertEqual(call_args.kwargs["holiday_checker"], self.holiday_checker)
 
     def test_apply_display_filter_show_all(self):
         """Test apply_display_filter with hide_completed=False."""

@@ -76,9 +76,6 @@ def cli(ctx: click.Context) -> None:
     console_writer = RichConsoleWriter(console)
     config = ClientConfigManager.load()
 
-    # HolidayChecker is fetched from server (region config is server-side)
-    holiday_checker = None
-
     # Initialize API client (required for all CLI commands)
     from taskdog.infrastructure.api_client import TaskdogApiClient
 
@@ -105,7 +102,6 @@ def cli(ctx: click.Context) -> None:
         console_writer=console_writer,
         api_client=api_client,
         config=config,
-        holiday_checker=holiday_checker,
     )
 
 

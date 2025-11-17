@@ -12,7 +12,6 @@ from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 @dataclass
@@ -48,7 +47,6 @@ class TaskDataLoader:
         api_client: TaskdogApiClient,
         table_presenter: TablePresenter,
         gantt_presenter: GanttPresenter,
-        holiday_checker: IHolidayChecker | None = None,
     ):
         """Initialize TaskDataLoader.
 
@@ -56,12 +54,10 @@ class TaskDataLoader:
             api_client: API client for fetching tasks
             table_presenter: Presenter for table ViewModels
             gantt_presenter: Presenter for gantt ViewModels
-            holiday_checker: Optional holiday checker for gantt data
         """
         self.api_client = api_client
         self.table_presenter = table_presenter
         self.gantt_presenter = gantt_presenter
-        self.holiday_checker = holiday_checker
 
     def load_tasks(
         self,
@@ -94,7 +90,6 @@ class TaskDataLoader:
             include_gantt=include_gantt,
             gantt_start_date=gantt_start_date,
             gantt_end_date=gantt_end_date,
-            holiday_checker=self.holiday_checker,
         )
 
         # Cache all tasks
@@ -156,7 +151,6 @@ class TaskDataLoader:
             reverse=reverse,
             start_date=start_date,
             end_date=end_date,
-            holiday_checker=self.holiday_checker,
         )
         return self.gantt_presenter.present(gantt_output)
 

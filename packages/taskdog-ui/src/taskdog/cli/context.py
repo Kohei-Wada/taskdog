@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from taskdog.console.console_writer import ConsoleWriter
 from taskdog.shared.client_config_manager import ClientConfig
-from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
@@ -22,10 +21,8 @@ class CliContext:
         console_writer: Console writer for output
         api_client: API client for server communication (required)
         config: Client configuration (loaded from local file)
-        holiday_checker: Holiday checker for workday validation (optional)
     """
 
     console_writer: ConsoleWriter
     api_client: "TaskdogApiClient"
     config: ClientConfig
-    holiday_checker: IHolidayChecker | None

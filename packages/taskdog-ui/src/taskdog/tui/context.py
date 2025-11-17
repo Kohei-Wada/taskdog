@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from taskdog.shared.client_config_manager import ClientConfig
 from taskdog.tui.state import TUIState
-from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
@@ -24,11 +23,9 @@ class TUIContext:
     Attributes:
         api_client: API client for server communication (required)
         config: Client configuration
-        holiday_checker: Holiday checker for workday validation (optional)
         state: TUI application state (shared with app instance)
     """
 
     api_client: "TaskdogApiClient"
     config: ClientConfig
-    holiday_checker: IHolidayChecker | None
     state: TUIState

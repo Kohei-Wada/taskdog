@@ -25,7 +25,6 @@ from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 class TaskdogApiClient:
@@ -240,7 +239,6 @@ class TaskdogApiClient:
         include_gantt: bool = False,
         gantt_start_date: date | None = None,
         gantt_end_date: date | None = None,
-        holiday_checker: IHolidayChecker | None = None,
     ) -> TaskListOutput:
         """List tasks with optional filtering and sorting."""
         return self._queries.list_tasks(
@@ -255,7 +253,6 @@ class TaskdogApiClient:
             include_gantt,
             gantt_start_date,
             gantt_end_date,
-            holiday_checker,
         )
 
     def get_task_by_id(self, task_id: int) -> GetTaskByIdOutput:
@@ -278,7 +275,6 @@ class TaskdogApiClient:
         reverse: bool = False,
         start_date: date | None = None,
         end_date: date | None = None,
-        holiday_checker: IHolidayChecker | None = None,
     ) -> GanttOutput:
         """Get Gantt chart data."""
         return self._queries.get_gantt_data(
@@ -292,7 +288,6 @@ class TaskdogApiClient:
             reverse,
             start_date,
             end_date,
-            holiday_checker,
         )
 
     def get_tag_statistics(self) -> TagStatisticsOutput:
