@@ -80,6 +80,10 @@ class TaskTable(DataTable, TUIWidget):
         Binding("ctrl+u", "page_up", "Page Up", show=False),
         Binding("h", "scroll_left", "Scroll Left", show=False),
         Binding("l", "scroll_right", "Scroll Right", show=False),
+        Binding("0", "scroll_home_horizontal", "Scroll to Leftmost", show=False),
+        Binding(
+            "dollar_sign", "scroll_end_horizontal", "Scroll to Rightmost", show=False
+        ),
         Binding("space", "toggle_selection", "Select", show=True),
         Binding("ctrl+a", "select_all", "Select All", show=True),
         Binding("ctrl+n", "clear_selection", "Clear", show=True),
@@ -346,6 +350,18 @@ class TaskTable(DataTable, TUIWidget):
         # Scroll right by one column width (approximate)
         scroll_amount = 10
         self.scroll_x = self.scroll_x + scroll_amount
+
+    def action_scroll_home_horizontal(self) -> None:
+        """Scroll table to leftmost position (0 key)."""
+        self.scroll_x = 0
+
+    def action_scroll_end_horizontal(self) -> None:
+        """Scroll table to rightmost position ($ key)."""
+        # Calculate maximum horizontal scroll position
+        # virtual_size.width is the total content width
+        # size.width is the visible viewport width
+        max_scroll = max(0, self.virtual_size.width - self.size.width)
+        self.scroll_x = max_scroll
 
     # Multi-selection actions
     def action_toggle_selection(self) -> None:
