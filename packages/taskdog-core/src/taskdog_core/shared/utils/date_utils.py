@@ -11,9 +11,9 @@ Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
 
 from datetime import date, datetime, timedelta
 
-from taskdog_core.shared.config_manager import ConfigManager
 from taskdog_core.shared.constants import WEEKDAY_THRESHOLD
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
+from taskdog_core.shared.server_config_manager import ServerConfigManager
 
 
 def parse_date(date_str: str | None) -> date | None:
@@ -144,7 +144,7 @@ def get_next_weekday() -> datetime:
     Returns:
         datetime object representing the next weekday at default_start_hour from config
     """
-    config = ConfigManager.load()
+    config = ServerConfigManager.load()
     today = datetime.now()
     next_day = today + timedelta(days=1)
 

@@ -107,14 +107,6 @@ class XDGDirectoriesTest(unittest.TestCase):
         expected = Path("/tmp/test_data/taskdog/notes")
         self.assertEqual(notes_dir, expected)
 
-    def test_get_config_file(self):
-        """Test get_config_file returns correct path."""
-        os.environ["XDG_CONFIG_HOME"] = "/tmp/test_config"
-
-        config_file = XDGDirectories.get_config_file()
-        expected = Path("/tmp/test_config/taskdog/config.toml")
-        self.assertEqual(config_file, expected)
-
     def test_app_name_constant(self):
         """Test APP_NAME constant is set correctly."""
         self.assertEqual(XDGDirectories.APP_NAME, "taskdog")

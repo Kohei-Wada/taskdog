@@ -8,7 +8,6 @@ import os
 from pathlib import Path
 
 from taskdog_core.shared.constants.file_management import (
-    CONFIG_FILE_NAME,
     NOTE_FILE_EXTENSION,
     NOTES_DIR_NAME,
 )
@@ -95,15 +94,6 @@ class XDGDirectories:
             Path to note markdown file
         """
         return cls.get_notes_dir() / f"{task_id}{NOTE_FILE_EXTENSION}"
-
-    @classmethod
-    def get_config_file(cls) -> Path:
-        """Get path to config.toml file.
-
-        Returns:
-            Path to config.toml in config directory
-        """
-        return cls.get_config_home() / CONFIG_FILE_NAME
 
     @classmethod
     def get_server_config_file(cls) -> Path:
