@@ -1,0 +1,22 @@
+# Example server configuration file for taskdog-server
+# Location: ~/.config/taskdog/server.toml (or $XDG_CONFIG_HOME/taskdog/server.toml)
+
+# Time-related settings (used by server for optimization calculations)
+[time]
+default_start_hour = 9   # Default work start hour (0-23)
+default_end_hour = 18    # Default work end hour (0-23)
+
+# Regional settings (for holiday detection)
+[region]
+country = "JP"  # ISO 3166-1 alpha-2 country code (JP, US, GB, DE, etc.)
+                # Set to null or omit to disable holiday detection
+
+# Storage backend settings
+[storage]
+backend = "sqlite"                                      # Storage backend: "sqlite"
+database_url = "~/.local/share/taskdog/tasks.db"      # SQLite database path
+                                                       # Uses XDG_DATA_HOME if not specified
+
+# Task default settings
+[task]
+default_priority = 5  # Default priority for new tasks (higher = more important)

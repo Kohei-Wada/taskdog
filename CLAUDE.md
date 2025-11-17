@@ -34,17 +34,27 @@ The repository uses UV workspace with three packages:
 
 **Tasks**: Stored in SQLite database `tasks.db` at `$XDG_DATA_HOME/taskdog/tasks.db` (fallback: `~/.local/share/taskdog/tasks.db`)
 
-**Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/config.toml` (fallback: `~/.config/taskdog/config.toml`)
-- Sections: `[api]` (required), `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
+**Server Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/server.toml` (fallback: `~/.config/taskdog/server.toml`)
+- Used by: taskdog-server (API server)
+- Sections: `[time]`, `[region]`, `[storage]`, `[task]`
 - Settings:
-  - API: enabled, host, port
-  - Optimization: max_hours_per_day, default_algorithm
-  - Task: default_priority
-  - Time: default_start_hour, default_end_hour
+  - Time: default_start_hour (9), default_end_hour (18)
   - Region: country (ISO 3166-1 alpha-2: "JP", "US", "GB", "DE", etc.)
-  - Storage: database_url, backend
-- Priority: Environment vars > CLI args > Config file > Defaults
-- Access via `ctx.obj.config` (CLI) or `context.config` (TUI)
+  - Storage: backend ("sqlite"), database_url
+  - Task: default_priority (5)
+- See `server.toml.example` for full configuration options
+
+**Client Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/client.toml` (fallback: `~/.config/taskdog/client.toml`)
+- Used by: taskdog CLI/TUI
+- Sections: `[optimization]`, `[api]`
+- Settings:
+  - Optimization: max_hours_per_day (8.0), default_algorithm ("greedy")
+  - API: url (full URL) OR host ("127.0.0.1") + port (8000)
+- Environment variable override: `TASKDOG_API_URL` overrides API connection at runtime
+- See `client.toml.example` for full configuration options
+
+**Priority**: Environment vars > CLI args > Config file > Defaults
+**Access**: `ctx.obj.config` (CLI) or `context.config` (TUI) for ClientConfig; ServerConfig used internally by API
 
 ## Development Commands
 

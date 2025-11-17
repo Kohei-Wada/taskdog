@@ -1,0 +1,23 @@
+# Example client configuration file for taskdog CLI/TUI
+# Location: ~/.config/taskdog/client.toml (or $XDG_CONFIG_HOME/taskdog/client.toml)
+
+# Optimization default settings (used as defaults in CLI/TUI)
+[optimization]
+max_hours_per_day = 8.0           # Default maximum work hours per day
+default_algorithm = "greedy"      # Default optimization algorithm
+                                  # Available: greedy, balanced, backward, priority_first,
+                                  #            earliest_deadline, round_robin, dependency_aware,
+                                  #            genetic, monte_carlo
+
+# API connection settings
+[api]
+# Option 1: Use full URL (takes precedence over host+port)
+# url = "http://localhost:8000"
+
+# Option 2: Use host and port separately
+host = "127.0.0.1"  # API server host
+port = 8000         # API server port
+
+# Environment variable override:
+# Set TASKDOG_API_URL to override the API URL at runtime
+# Example: export TASKDOG_API_URL=http://remote-server:9000

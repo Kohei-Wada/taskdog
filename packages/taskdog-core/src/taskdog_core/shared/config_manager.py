@@ -1,9 +1,19 @@
 """Configuration management for taskdog.
 
+DEPRECATED: This module is deprecated and will be removed in a future version.
+
+Please use the new separated config managers instead:
+- For server-side configuration: taskdog_core.shared.server_config_manager.ServerConfigManager
+- For client-side configuration: taskdog.shared.client_config_manager.ClientConfigManager
+
+The unified config.toml file is no longer supported. Use server.toml and client.toml instead.
+See server.toml.example and client.toml.example for configuration options.
+
 Loads configuration from TOML file with fallback to default values.
 """
 
 import tomllib
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -123,12 +133,22 @@ class ConfigManager:
     def load(cls, config_path: Path | None = None) -> Config:
         """Load configuration from TOML file with fallback to defaults.
 
+        DEPRECATED: Use ServerConfigManager or ClientConfigManager instead.
+
         Args:
             config_path: Path to config file (default: XDG config path)
 
         Returns:
             Config object with loaded or default values
         """
+        warnings.warn(
+            "ConfigManager is deprecated. "
+            "Use ServerConfigManager (server-side) or ClientConfigManager (client-side) instead. "
+            "The unified config.toml is no longer supported; use server.toml and client.toml.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         if config_path is None:
             config_path = XDGDirectories.get_config_file()
 
