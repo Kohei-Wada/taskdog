@@ -17,7 +17,7 @@ TaskDetailScreen {
 .dialog-base {
     height: auto;
     background: $surface;
-    border: round $primary;
+    border: double $primary;
     padding: 1;
 }
 
@@ -60,7 +60,7 @@ TaskDetailScreen {
     height: auto;
     max-height: 12;
     margin: 0 0 1 0;
-    border: round $primary;
+    border: double $primary;
 }
 
 /* Form container */

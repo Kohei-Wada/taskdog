@@ -21,13 +21,13 @@ Input {
     width: 100%;
     height: 1fr;
     background: transparent;
-    border: round $primary;
+    border: double $primary;
     margin-bottom: 1;
     padding: 1 0;
 }
 
 #filterable-task-table:focus-within {
-    border: round $accent;
+    border: double $accent;
 }
 
 /* Search Components */
