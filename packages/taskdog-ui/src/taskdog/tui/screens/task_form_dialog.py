@@ -7,6 +7,7 @@ from textual.binding import Binding
 from textual.containers import Container
 from textual.widgets import Checkbox, Input, Label
 
+from taskdog.shared.client_config_manager import ClientConfig
 from taskdog.tui.forms import FormValidator
 from taskdog.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from taskdog.tui.forms.validators import (
@@ -20,7 +21,11 @@ from taskdog.tui.forms.validators import (
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog.tui.utils.config_validator import require_config
 from taskdog_core.application.dto.task_dto import TaskDetailDto
-from taskdog_core.shared.config_manager import Config
+from taskdog_core.shared.constants.config_defaults import (
+    DEFAULT_END_HOUR,
+    DEFAULT_PRIORITY,
+    DEFAULT_START_HOUR,
+)
 
 
 class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
@@ -40,7 +45,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
     def __init__(
         self,
         task: TaskDetailDto | None = None,
-        config: Config | None = None,
+        config: ClientConfig | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -101,10 +106,10 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         self._clear_validation_error()
 
         # Build validation chain using FormValidator
-        # Config is always available (loaded in __init__ if None)
-        default_priority = self.config.task.default_priority
-        default_start_hour = self.config.time.default_start_hour
-        default_end_hour = self.config.time.default_end_hour
+        # Use default constants (client doesn't store task/time defaults)
+        default_priority = DEFAULT_PRIORITY
+        default_start_hour = DEFAULT_START_HOUR
+        default_end_hour = DEFAULT_END_HOUR
 
         validator = FormValidator(self)
         validator.add_field("task_name", "task-name-input", TaskNameValidator)

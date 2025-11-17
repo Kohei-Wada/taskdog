@@ -4,27 +4,27 @@ This module provides helper functions for validating configuration
 parameters to reduce duplication across TUI components.
 """
 
-from taskdog_core.shared.config_manager import Config
+from taskdog.shared.client_config_manager import ClientConfig
 
 
-def require_config(config: Config | None) -> Config:
+def require_config(config: ClientConfig | None) -> ClientConfig:
     """Validate that config is not None.
 
     This helper eliminates repeated config validation checks
     throughout the TUI codebase.
 
     Args:
-        config: Configuration object that may be None
+        config: ClientConfig object that may be None
 
     Returns:
-        The validated Config object
+        The validated ClientConfig object
 
     Raises:
         ValueError: If config is None
 
     Example:
         >>> config = require_config(config)
-        >>> # Now config is guaranteed to be Config, not None
+        >>> # Now config is guaranteed to be ClientConfig, not None
     """
     if config is None:
         raise ValueError("config parameter is required")

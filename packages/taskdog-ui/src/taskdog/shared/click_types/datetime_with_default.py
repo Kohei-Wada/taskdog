@@ -5,7 +5,6 @@ from typing import Any
 
 import click
 
-from taskdog_core.shared.config_manager import ConfigManager
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 
@@ -20,8 +19,8 @@ class DateTimeWithDefault(click.DateTime):
 
     Args:
         default_hour: Default hour to use when only date is provided.
-                     If None, uses config.time.default_end_hour
-                     If "start", uses config.time.default_start_hour
+                     If None, uses default end hour (18:00)
+                     If "start", uses default start hour (9:00)
                      If int, uses that specific hour
     """
 
@@ -30,17 +29,16 @@ class DateTimeWithDefault(click.DateTime):
 
         Args:
             default_hour: Hour to use as default when only date provided
-                         - None: loads from config (default_end_hour = 18)
-                         - "start": loads from config (default_start_hour = 9)
+                         - None: uses default end hour (18:00)
+                         - "start": uses default start hour (9:00)
                          - int (0-23): uses specific hour
         """
         super().__init__(formats=[DATETIME_FORMAT, "%Y-%m-%d", "%m-%d", "%m/%d"])
-        config = ConfigManager.load()
 
         if default_hour is None:
-            self.default_hour = config.time.default_end_hour
+            self.default_hour = 18  # Default end hour
         elif default_hour == "start":
-            self.default_hour = config.time.default_start_hour
+            self.default_hour = 9  # Default start hour
         else:
             self.default_hour = int(default_hour)
 

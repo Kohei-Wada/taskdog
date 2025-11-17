@@ -1,4 +1,3 @@
-from contextlib import suppress
 from typing import Any
 
 import click
@@ -35,8 +34,7 @@ from taskdog.cli.commands.update import update_command
 from taskdog.cli.commands.week import week_command
 from taskdog.cli.context import CliContext
 from taskdog.console.rich_console_writer import RichConsoleWriter
-from taskdog_core.infrastructure.holiday_checker import HolidayChecker
-from taskdog_core.shared.config_manager import ConfigManager
+from taskdog.shared.client_config_manager import ClientConfigManager
 
 
 class TaskdogGroup(click.Group):
@@ -76,39 +74,26 @@ def cli(ctx: click.Context) -> None:
     # Initialize shared dependencies
     console = Console()
     console_writer = RichConsoleWriter(console)
-    config = ConfigManager.load()
+    config = ClientConfigManager.load()
 
-    # Initialize HolidayChecker if country is configured
+    # HolidayChecker is fetched from server (region config is server-side)
     holiday_checker = None
-    if config.region.country:
-        with suppress(ImportError, NotImplementedError):
-            holiday_checker = HolidayChecker(config.region.country)
 
-    # API client is now required for all CLI commands
-    # Check if API mode is enabled in config
-    if not config.api.enabled:
-        console_writer.error(
-            "initializing CLI",
-            Exception(
-                "API mode is required. Please enable it in config file or set TASKDOG_API_URL environment variable."
-            ),
-        )
-        ctx.exit(1)
-
-    # Initialize API client (required)
+    # Initialize API client (required for all CLI commands)
     from taskdog.infrastructure.api_client import TaskdogApiClient
 
+    # Determine API URL from config (url takes precedence over host+port)
+    api_url = config.api.url or f"http://{config.api.host}:{config.api.port}"
+
     try:
-        api_client = TaskdogApiClient(
-            base_url=f"http://{config.api.host}:{config.api.port}"
-        )
+        api_client = TaskdogApiClient(base_url=api_url)
         # Test connection
         api_client.client.get("/health")
     except Exception as e:
         console_writer.error(
             "connecting to API server",
             Exception(
-                f"Cannot connect to API server at {config.api.host}:{config.api.port}. "
+                f"Cannot connect to API server at {api_url}. "
                 f"Please start the server first with 'taskdog-server'. Error: {e}"
             ),
         )

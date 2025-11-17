@@ -12,10 +12,10 @@ from textual.widgets import Input, Label, Static
 from textual.widgets.option_list import Option
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
+from taskdog.shared.client_config_manager import ClientConfig
 from taskdog.tui.constants.ui_settings import MAX_HOURS_PER_DAY
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_option_list import ViOptionList
-from taskdog_core.shared.config_manager import Config
 
 
 class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | None]):
@@ -29,7 +29,7 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
 
     def __init__(
         self,
-        config: Config,
+        config: ClientConfig,
         algorithm_metadata: list[tuple[str, str, str]],
         force_override: bool = False,
         *args: Any,

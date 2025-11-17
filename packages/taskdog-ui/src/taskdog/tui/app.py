@@ -12,6 +12,7 @@ from taskdog.infrastructure.websocket import WebSocketClient
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
 from taskdog.services.task_data_loader import TaskDataLoader
+from taskdog.shared.client_config_manager import ClientConfig, ClientConfigManager
 from taskdog.tui.commands.factory import CommandFactory
 from taskdog.tui.constants.ui_settings import (
     ACTION_TO_COMMAND_MAP,
@@ -37,7 +38,6 @@ from taskdog_core.application.queries.filters.non_archived_filter import (
 )
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
-from taskdog_core.shared.config_manager import Config, ConfigManager
 
 
 class TaskdogTUI(App):
@@ -79,7 +79,7 @@ class TaskdogTUI(App):
     def __init__(
         self,
         api_client: "TaskdogApiClient",
-        config: Config | None = None,
+        config: ClientConfig | None = None,
         holiday_checker: IHolidayChecker | None = None,
         *args,
         **kwargs,
@@ -105,7 +105,7 @@ class TaskdogTUI(App):
                 pass
 
         self.api_client = api_client
-        self.config = config if config is not None else ConfigManager.load()
+        self.config = config if config is not None else ClientConfigManager.load()
         self.holiday_checker = holiday_checker
         self.main_screen: MainScreen | None = None
 
