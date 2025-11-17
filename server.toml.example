@@ -13,9 +13,9 @@ country = "JP"  # ISO 3166-1 alpha-2 country code (JP, US, GB, DE, etc.)
 
 # Storage backend settings
 [storage]
-backend = "sqlite"                                      # Storage backend: "sqlite"
-database_url = "~/.local/share/taskdog/tasks.db"      # SQLite database path
-                                                       # Uses XDG_DATA_HOME if not specified
+backend = "sqlite"                  # Storage backend: "sqlite"
+# database_url = "/path/to/tasks.db"  # Optional: Custom SQLite database path (absolute path or with ~)
+                                     # If omitted, uses XDG_DATA_HOME: ~/.local/share/taskdog/tasks.db
 
 # Task default settings
 [task]

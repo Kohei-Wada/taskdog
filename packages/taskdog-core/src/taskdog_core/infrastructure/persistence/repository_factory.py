@@ -57,7 +57,18 @@ class RepositoryFactory:
         """
         # Use custom database_url if provided, otherwise use default XDG location
         if storage_config.database_url:
-            database_url = storage_config.database_url
+            # If database_url is a file path (not a full SQLite URL), convert it
+            db_path_str = storage_config.database_url
+
+            # Check if it's already a full sqlite:// URL
+            if db_path_str.startswith("sqlite:///"):
+                database_url = db_path_str
+            else:
+                # It's a file path - expand tilde and convert to absolute path
+                from pathlib import Path
+
+                db_path = Path(db_path_str).expanduser().resolve()
+                database_url = f"sqlite:///{db_path}"
         else:
             # Default: sqlite:///<XDG_DATA_HOME>/taskdog/tasks.db
             data_dir = XDGDirectories.get_data_home()
