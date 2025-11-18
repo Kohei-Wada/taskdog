@@ -125,6 +125,7 @@ select = [
 ]
 ignore = [
   "E501",  # line too long (handled by formatter)
+  "UP047",  # Type parameter syntax requires Python 3.12+ but we support 3.11
 ]
 
 # Per-file ignores
