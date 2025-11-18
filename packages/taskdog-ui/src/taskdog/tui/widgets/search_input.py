@@ -1,6 +1,10 @@
 """Search input widget for filtering tasks in the TUI."""
 
+from typing import ClassVar
+
+from textual import events
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.message import Message
 from textual.widgets import Input, Static
@@ -17,6 +21,15 @@ class SearchInput(Container):
     class Submitted(Message):
         """Message sent when Enter is pressed in the search input."""
 
+    class RefineFilter(Message):
+        """Message sent when Ctrl+R is pressed to refine the filter."""
+
+        bubble = True  # Enable message bubbling to parent widgets
+
+    BINDINGS: ClassVar = [
+        Binding("ctrl+r", "refine_filter", "Refine Filter", show=False),
+    ]
+
     def __init__(self, *args, **kwargs) -> None:
         """Initialize the search input widget."""
         super().__init__(*args, **kwargs)
@@ -25,6 +38,7 @@ class SearchInput(Container):
 
     def compose(self) -> ComposeResult:
         """Compose the search input with a label."""
+        yield Static("", id="filter-chain", classes="filter-chain")
         with Horizontal(id="search-input-container"):
             search_input = Input(
                 placeholder="Press '/' to search tasks", id=SEARCH_INPUT_ID
@@ -55,11 +69,28 @@ class SearchInput(Container):
             # Post a message to the parent screen
             self.post_message(self.Submitted())
 
+    def on_key(self, event: events.Key) -> None:
+        """Handle key events.
+
+        Args:
+            event: Key event
+        """
+        if event.key == "ctrl+r":
+            event.prevent_default()
+            event.stop()
+            self.action_refine_filter()
+
     def clear(self) -> None:
-        """Clear the search input."""
+        """Clear the search input and filter chain display."""
         search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
         search_input.value = ""
         self.update_result(0, 0)
+        self.update_filter_chain([])
+
+    def clear_input_only(self) -> None:
+        """Clear only the search input, preserving filter chain display."""
+        search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
+        search_input.value = ""
 
     @property
     def value(self) -> str:
@@ -71,6 +102,13 @@ class SearchInput(Container):
         """Focus the search input field."""
         search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
         search_input.focus()
+
+    def action_refine_filter(self) -> None:
+        """Handle Ctrl+R key press to refine the filter.
+
+        Posts a RefineFilter message to parent widget for handling.
+        """
+        self.post_message(self.RefineFilter())
 
     def update_result(self, matched: int, total: int) -> None:
         """Update the search result count display.
@@ -86,3 +124,18 @@ class SearchInput(Container):
         else:
             # Always show match count for consistency
             result_label.update(f"({matched}/{total})")
+
+    def update_filter_chain(self, filter_chain: list[str]) -> None:
+        """Update the filter chain display.
+
+        Args:
+            filter_chain: List of filter queries applied in order
+        """
+        filter_chain_label = self.query_one("#filter-chain", Static)
+        if not filter_chain:
+            # No filter chain
+            filter_chain_label.update("")
+        else:
+            # Display filter chain: filter1 > filter2 > ...
+            chain_display = " > ".join(f'"{f}"' for f in filter_chain)
+            filter_chain_label.update(f"Filters: {chain_display} > [Type to refine]")

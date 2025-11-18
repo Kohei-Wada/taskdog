@@ -135,3 +135,11 @@ Input {
     text-align: left;
     color: $text-muted;
 }
+
+.filter-chain {
+    width: 100%;
+    height: auto;
+    padding: 0 0 0 2;
+    text-align: left;
+    color: $accent;
+}

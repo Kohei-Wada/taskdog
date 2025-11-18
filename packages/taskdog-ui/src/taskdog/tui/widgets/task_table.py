@@ -98,6 +98,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         ] = {}  # Maps row index to ViewModel
         # NOTE: _all_viewmodels removed - now accessed via self.app.state.viewmodels_cache (Step 5)
         self._current_query: str = ""  # Current search query
+        self._filter_chain: list[str] = []  # Progressive filter chain
         self._selected_task_ids: set[int] = (
             set()
         )  # Selected task IDs for batch operations
@@ -149,6 +150,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         """
         # NOTE: view_models parameter ignored - data is read from app.state (Step 5)
         self._current_query = ""
+        self._filter_chain = []
         self._render_tasks(self._get_all_viewmodels_from_state())
 
     def _render_tasks(self, view_models: list[TaskRowViewModel]):
@@ -229,14 +231,18 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
 
         # NOTE: view_models parameter ignored - data is read from app.state (Step 5)
         all_viewmodels = self._get_all_viewmodels_from_state()
-        # Reapply current filter if active
+
+        # Reapply filter chain and current query if active
+        filtered_vms = all_viewmodels
+        # Apply filter chain first
+        for filter_query in self._filter_chain:
+            filtered_vms = self._search_filter.filter(filtered_vms, filter_query)
+
+        # Apply current query to the chain result
         if self._current_query:
-            filtered_vms = self._search_filter.filter(
-                all_viewmodels, self._current_query
-            )
-            self._render_tasks(filtered_vms)
-        else:
-            self._render_tasks(all_viewmodels)
+            filtered_vms = self._search_filter.filter(filtered_vms, self._current_query)
+
+        self._render_tasks(filtered_vms)
 
         # Always restore cursor position if still valid
         if 0 <= current_row < len(self._viewmodel_map):
@@ -251,32 +257,64 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
     def filter_tasks(self, query: str):
         """Filter task ViewModels based on search query with smart case matching.
 
+        Applies filter chain first, then applies current query to the result.
+
         Args:
             query: Search query string
         """
         self._current_query = query
         all_viewmodels = self._get_all_viewmodels_from_state()
-        if not query:
-            # No filter - show all ViewModels
-            self._render_tasks(all_viewmodels)
-        else:
-            filtered_vms = self._search_filter.filter(all_viewmodels, query)
-            self._render_tasks(filtered_vms)
+
+        # Apply filter chain first
+        filtered_vms = all_viewmodels
+        for filter_query in self._filter_chain:
+            filtered_vms = self._search_filter.filter(filtered_vms, filter_query)
+
+        # Apply current query to the chain result
+        if query:
+            filtered_vms = self._search_filter.filter(filtered_vms, query)
+
+        self._render_tasks(filtered_vms)
 
     def clear_filter(self):
-        """Clear the current filter and show all ViewModels."""
+        """Clear the current filter and filter chain, then show all ViewModels."""
         self._current_query = ""
+        self._filter_chain = []
         self._render_tasks(self._get_all_viewmodels_from_state())
 
     @property
     def is_filtered(self) -> bool:
         """Check if a filter is currently active."""
-        return bool(self._current_query)
+        return bool(self._current_query or self._filter_chain)
 
     @property
     def current_query(self) -> str:
         """Get the current search query."""
         return self._current_query
+
+    @property
+    def filter_chain(self) -> list[str]:
+        """Get the current filter chain.
+
+        Returns:
+            List of filter queries applied in order
+        """
+        return self._filter_chain.copy()
+
+    def add_filter_to_chain(self, query: str) -> None:
+        """Add current query to filter chain for progressive filtering.
+
+        Args:
+            query: Filter query to add to the chain
+        """
+        if query:
+            self._filter_chain.append(query)
+            # Clear current query after adding to chain
+            self._current_query = ""
+
+    def clear_filter_chain(self) -> None:
+        """Clear all filters in the filter chain."""
+        self._filter_chain = []
 
     @property
     def match_count(self) -> int:

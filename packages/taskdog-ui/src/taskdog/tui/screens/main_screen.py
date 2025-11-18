@@ -101,6 +101,39 @@ class MainScreen(Screen[None]):
         if self.task_table:
             self.task_table.focus()
 
+    def on_search_input_refine_filter(self, event: SearchInput.RefineFilter) -> None:
+        """Handle Ctrl+R key press in search input to refine filter.
+
+        Args:
+            event: SearchInput RefineFilter event
+        """
+        self._refine_filter()
+
+    def _refine_filter(self) -> None:
+        """Add current search query to filter chain for progressive filtering."""
+        if not self.search_input or not self.task_table:
+            return
+
+        current_query = self.search_input.value
+        if not current_query:
+            return
+
+        # Add current query to filter chain
+        self.task_table.add_filter_to_chain(current_query)
+
+        # Clear search input for new query
+        self.search_input.clear_input_only()
+
+        # Update filter chain display
+        filter_chain = self.task_table.filter_chain
+        self.search_input.update_filter_chain(filter_chain)
+
+        # Reapply filters to show refined results
+        self.task_table.filter_tasks("")
+
+        # Update search result count
+        self._update_search_result()
+
     def show_search(self) -> None:
         """Focus the search input."""
         if self.search_input:
