@@ -59,6 +59,7 @@ class TaskdogTUI(App):
         Binding("v", "edit_note", "Edit Note", show=False),
         Binding("t", "toggle_completed", "Toggle Done", show=False),
         Binding("/", "show_search", "Search", show=False),
+        Binding("ctrl+r", "show_search", "Search", show=False),
         Binding("escape", "hide_search", "Clear Search", show=False),
         Binding("ctrl+t", "toggle_sort_reverse", "Toggle Sort", show=False),
     ]
