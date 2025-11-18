@@ -26,7 +26,6 @@ class SearchInput(Container):
     def compose(self) -> ComposeResult:
         """Compose the search input with a label."""
         with Horizontal(id="search-input-container"):
-            yield Static("🔍", id="search-icon")
             search_input = Input(
                 placeholder="Press '/' to search tasks", id=SEARCH_INPUT_ID
             )

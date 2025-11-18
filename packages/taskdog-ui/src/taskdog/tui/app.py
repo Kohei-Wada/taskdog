@@ -3,6 +3,7 @@
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual.app import App
+from textual.binding import Binding
 from textual.command import CommandPalette
 
 if TYPE_CHECKING:
@@ -43,23 +44,23 @@ class TaskdogTUI(App):
     """Taskdog TUI application."""
 
     BINDINGS: ClassVar = [
-        ("q", "quit", "Quit"),
-        ("a", "add_task", "Add"),
-        ("s", "start_task", "Start"),
-        ("P", "pause_task", "Pause"),
-        ("d", "complete_task", "Done"),
-        ("c", "cancel_task", "Cancel"),
-        ("R", "reopen_task", "Reopen"),
-        ("x", "delete_task", "Archive"),
-        ("X", "hard_delete_task", "Delete"),
-        ("r", "refresh", "Refresh"),
-        ("i", "show_details", "Info"),
-        ("e", "edit_task", "Edit"),
-        ("v", "edit_note", "Edit Note"),
-        ("t", "toggle_completed", "Toggle Done"),
-        ("/", "show_search", "Search"),
-        ("escape", "hide_search", "Clear Search"),
-        ("ctrl+t", "toggle_sort_reverse", "Toggle Sort"),
+        Binding("q", "quit", "Quit", show=True),
+        Binding("a", "add_task", "Add", show=True),
+        Binding("s", "start_task", "Start", show=False),
+        Binding("P", "pause_task", "Pause", show=False),
+        Binding("d", "complete_task", "Done", show=False),
+        Binding("c", "cancel_task", "Cancel", show=False),
+        Binding("R", "reopen_task", "Reopen", show=False),
+        Binding("x", "delete_task", "Archive", show=False),
+        Binding("X", "hard_delete_task", "Delete", show=False),
+        Binding("r", "refresh", "Refresh", show=True),
+        Binding("i", "show_details", "Info", show=False),
+        Binding("e", "edit_task", "Edit", show=False),
+        Binding("v", "edit_note", "Edit Note", show=False),
+        Binding("t", "toggle_completed", "Toggle Done", show=False),
+        Binding("/", "show_search", "Search", show=False),
+        Binding("escape", "hide_search", "Clear Search", show=False),
+        Binding("ctrl+t", "toggle_sort_reverse", "Toggle Sort", show=False),
     ]
 
     # Register custom command providers
@@ -509,7 +510,7 @@ class TaskdogTUI(App):
         """Check API and WebSocket connection status.
 
         Updates TUIState with current connection status and refreshes
-        the ConnectionStatus widget display.
+        the CustomFooter widget display.
         """
         # Check API connection via health endpoint
         api_connected = self.api_client.check_health()
@@ -520,6 +521,6 @@ class TaskdogTUI(App):
         # Update state
         self.state.update_connection_status(api_connected, ws_connected)
 
-        # Refresh ConnectionStatus widget if available
-        if self.main_screen and self.main_screen.connection_status:
-            self.main_screen.connection_status.refresh_from_state()
+        # Refresh CustomFooter widget if available
+        if self.main_screen and self.main_screen.custom_footer:
+            self.main_screen.custom_footer.refresh_from_state()

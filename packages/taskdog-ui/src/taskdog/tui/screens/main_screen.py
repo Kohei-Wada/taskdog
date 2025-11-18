@@ -1,13 +1,13 @@
 """Main screen for the TUI."""
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.containers import Vertical
 from textual.screen import Screen
-from textual.widgets import Footer, Header
+from textual.widgets import Header
 
 from taskdog.tui.events import SearchQueryChanged
 from taskdog.tui.state import TUIState
-from taskdog.tui.widgets.connection_status import ConnectionStatus
+from taskdog.tui.widgets.custom_footer import CustomFooter
 from taskdog.tui.widgets.gantt_widget import GanttWidget
 from taskdog.tui.widgets.search_input import SearchInput
 from taskdog.tui.widgets.task_table import TaskTable
@@ -28,7 +28,7 @@ class MainScreen(Screen[None]):
         self.task_table: TaskTable | None = None
         self.gantt_widget: GanttWidget | None = None
         self.search_input: SearchInput | None = None
-        self.connection_status: ConnectionStatus | None = None
+        self.custom_footer: CustomFooter | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout.
@@ -36,15 +36,8 @@ class MainScreen(Screen[None]):
         Returns:
             Iterable of widgets to display
         """
-        # Header with connection status
-        with Horizontal(id="header-container"):
-            yield Header(show_clock=True, id="main-header")
-            # Only add connection status if state is available
-            if self.state:
-                self.connection_status = ConnectionStatus(
-                    self.state, id="connection-status"
-                )
-                yield self.connection_status
+        # Header (simplified, no connection status)
+        yield Header(show_clock=True, id="main-header")
 
         with Vertical():
             # Gantt chart section (main display)
@@ -61,7 +54,10 @@ class MainScreen(Screen[None]):
             self.search_input = SearchInput(id="main-search-input")
             yield self.search_input
 
-        yield Footer()
+        # Custom footer with keybindings and connection status
+        if self.state:
+            self.custom_footer = CustomFooter(self.state, id="custom-footer")
+            yield self.custom_footer
 
     def on_mount(self) -> None:
         """Called when screen is mounted."""

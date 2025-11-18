@@ -36,6 +36,35 @@
     color: $error;
 }
 
+/* Custom Footer */
+#custom-footer {
+    width: 100%;
+    height: auto;
+    dock: bottom;
+    background: $surface;
+}
+
+#footer-container {
+    width: 100%;
+    height: auto;
+    padding: 0 1;
+}
+
+#footer-keybindings {
+    width: 1fr;
+    height: auto;
+    content-align: left middle;
+    padding: 0 1;
+}
+
+#footer-connection-status {
+    width: auto;
+    height: auto;
+    content-align: right middle;
+    padding: 0 2;
+    text-style: bold;
+}
+
 /* Dialog Components */
 #button-container {
     height: auto;
@@ -88,13 +117,6 @@ Input {
 #search-input-container {
     width: 100%;
     height: 3;
-}
-
-#search-icon {
-    width: auto;
-    height: 3;
-    content-align: center middle;
-    padding: 0 1;
 }
 
 #search-input {
