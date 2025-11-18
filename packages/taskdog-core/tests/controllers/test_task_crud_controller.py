@@ -63,7 +63,7 @@ class TestTaskCrudController(unittest.TestCase):
         self.assertEqual(result.priority, 3)  # From config
 
     def test_update_task_returns_update_task_output(self):
-        """Test that update_task returns UpdateTaskOutput."""
+        """Test that update_task returns TaskUpdateOutput."""
         # Create a task
         task = Task(name="Original Name", priority=1, status=TaskStatus.PENDING)
         task.id = self.repository.generate_next_id()

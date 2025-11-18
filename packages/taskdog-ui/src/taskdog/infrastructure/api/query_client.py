@@ -12,9 +12,9 @@ from taskdog.infrastructure.api.converters import (
     convert_to_task_list_output,
 )
 from taskdog_core.application.dto.gantt_output import GanttOutput
-from taskdog_core.application.dto.get_task_by_id_output import GetTaskByIdOutput
+from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
-from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
+from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 
 
@@ -159,14 +159,14 @@ class QueryClient:
         data = response.json()
         return convert_to_task_list_output(data, self._has_notes_cache)
 
-    def get_task_by_id(self, task_id: int) -> GetTaskByIdOutput:
+    def get_task_by_id(self, task_id: int) -> TaskByIdOutput:
         """Get task by ID.
 
         Args:
             task_id: Task ID
 
         Returns:
-            GetTaskByIdOutput with task data
+            TaskByIdOutput with task data
 
         Raises:
             TaskNotFoundException: If task not found
@@ -178,14 +178,14 @@ class QueryClient:
         data = response.json()
         return convert_to_get_task_by_id_output(data)
 
-    def get_task_detail(self, task_id: int) -> GetTaskDetailOutput:
+    def get_task_detail(self, task_id: int) -> TaskDetailOutput:
         """Get task details with notes.
 
         Args:
             task_id: Task ID
 
         Returns:
-            GetTaskDetailOutput with task data and notes
+            TaskDetailOutput with task data and notes
 
         Raises:
             TaskNotFoundException: If task not found

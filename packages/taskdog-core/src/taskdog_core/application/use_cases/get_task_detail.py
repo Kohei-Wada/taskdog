@@ -1,6 +1,6 @@
 """Use case for getting task detail with notes."""
 
-from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
+from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.entities.task import Task
@@ -24,7 +24,7 @@ class GetTaskDetailInput:
         self.task_id = task_id
 
 
-class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailOutput]):
+class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, TaskDetailOutput]):
     """Use case for retrieving task details with notes.
 
     This use case fetches a task by ID and its associated notes file
@@ -41,14 +41,14 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailOutput]):
         self.repository = repository
         self.notes_repository = notes_repository
 
-    def execute(self, input_dto: GetTaskDetailInput) -> GetTaskDetailOutput:
+    def execute(self, input_dto: GetTaskDetailInput) -> TaskDetailOutput:
         """Execute task detail retrieval.
 
         Args:
             input_dto: Input data containing task ID
 
         Returns:
-            GetTaskDetailOutput with task and notes information
+            TaskDetailOutput with task and notes information
 
         Raises:
             TaskNotFoundException: If task doesn't exist
@@ -64,7 +64,7 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, GetTaskDetailOutput]):
         # Convert Task entity to DTO
         task_dto = self._convert_to_dto(task)
 
-        return GetTaskDetailOutput(
+        return TaskDetailOutput(
             task=task_dto, notes_content=notes_content, has_notes=has_notes
         )
 

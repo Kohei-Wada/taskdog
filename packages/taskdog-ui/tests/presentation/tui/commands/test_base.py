@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog_core.application.dto.get_task_by_id_output import GetTaskByIdOutput
+from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
@@ -80,8 +80,8 @@ class TestTUICommandBase(unittest.TestCase):
         )
         # Mock get_selected_task_id to return the task ID
         self.app.main_screen.task_table.get_selected_task_id.return_value = 1
-        # Mock API client to return the GetTaskByIdOutput
-        self.context.api_client.get_task_by_id.return_value = GetTaskByIdOutput(
+        # Mock API client to return the TaskByIdOutput
+        self.context.api_client.get_task_by_id.return_value = TaskByIdOutput(
             task=task_dto
         )
 

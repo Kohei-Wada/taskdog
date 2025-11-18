@@ -4,10 +4,10 @@ This module contains all conversion functions that transform use case DTOs
 from taskdog-core into Pydantic response models for the API.
 """
 
-from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
+from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
-from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
+from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_server.api.models.responses import (
     GanttDateRange,
@@ -45,9 +45,9 @@ def convert_to_task_operation_response(
     )
 
 
-def convert_to_update_task_response(dto: UpdateTaskOutput) -> UpdateTaskResponse:
-    """Convert UpdateTaskOutput DTO to Pydantic response model."""
-    task = dto.task  # UpdateTaskOutput has nested task attribute
+def convert_to_update_task_response(dto: TaskUpdateOutput) -> UpdateTaskResponse:
+    """Convert TaskUpdateOutput DTO to Pydantic response model."""
+    task = dto.task  # TaskUpdateOutput has nested task attribute
     return UpdateTaskResponse(
         id=task.id,
         name=task.name,
@@ -169,8 +169,8 @@ def convert_to_task_list_response(
     )
 
 
-def convert_to_task_detail_response(dto: GetTaskDetailOutput) -> TaskDetailResponse:
-    """Convert GetTaskDetailOutput DTO to Pydantic response model."""
+def convert_to_task_detail_response(dto: TaskDetailOutput) -> TaskDetailResponse:
+    """Convert TaskDetailOutput DTO to Pydantic response model."""
     return TaskDetailResponse(
         id=dto.task.id,
         name=dto.task.name,

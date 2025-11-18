@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from taskdog_core.application.dto.update_task_input import UpdateTaskInput
-from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
+from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.application.validators.validator_registry import (
     TaskFieldValidatorRegistry,
@@ -12,7 +12,7 @@ from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 
-class UpdateTaskUseCase(UseCase[UpdateTaskInput, UpdateTaskOutput]):
+class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
     """Use case for updating task properties.
 
     Supports updating multiple fields and handles time tracking for status changes.
@@ -103,14 +103,14 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, UpdateTaskOutput]):
                 task.planned_end = input_dto.planned_end
             updated_fields.append("daily_allocations")
 
-    def execute(self, input_dto: UpdateTaskInput) -> UpdateTaskOutput:
+    def execute(self, input_dto: UpdateTaskInput) -> TaskUpdateOutput:
         """Execute task update.
 
         Args:
             input_dto: Task update input data
 
         Returns:
-            UpdateTaskOutput DTO containing updated task information and list of updated fields
+            TaskUpdateOutput DTO containing updated task information and list of updated fields
 
         Raises:
             TaskNotFoundException: If task doesn't exist
@@ -126,4 +126,4 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, UpdateTaskOutput]):
         if updated_fields:
             self.repository.save(task)
 
-        return UpdateTaskOutput.from_task_and_fields(task, updated_fields)
+        return TaskUpdateOutput.from_task_and_fields(task, updated_fields)

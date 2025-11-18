@@ -14,7 +14,7 @@ from taskdog.constants.table_styles import (
     format_table_title,
 )
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
-from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
+from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 
@@ -114,7 +114,7 @@ class RichDetailRenderer:
 
         return table
 
-    def render(self, dto: GetTaskDetailOutput, raw: bool = False) -> None:
+    def render(self, dto: TaskDetailOutput, raw: bool = False) -> None:
         """Render and display task detail.
 
         Args:

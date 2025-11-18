@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any
 
 from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
-from taskdog_core.application.dto.get_task_by_id_output import GetTaskByIdOutput
+from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.optimization_output import (
     OptimizationOutput,
     SchedulingFailure,
@@ -25,7 +25,7 @@ from taskdog_core.application.dto.statistics_output import (
     TrendStatistics,
 )
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
-from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
+from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import (
     GanttTaskDto,
     TaskDetailDto,
@@ -34,7 +34,7 @@ from taskdog_core.application.dto.task_dto import (
 )
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
-from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
+from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.entities.task import TaskStatus
 
 # === Datetime Conversion Utilities ===
@@ -117,20 +117,20 @@ def convert_to_task_operation_output(data: dict[str, Any]) -> TaskOperationOutpu
     )
 
 
-def convert_to_update_task_output(data: dict[str, Any]) -> UpdateTaskOutput:
-    """Convert API response to UpdateTaskOutput.
+def convert_to_update_task_output(data: dict[str, Any]) -> TaskUpdateOutput:
+    """Convert API response to TaskUpdateOutput.
 
     Args:
         data: API response data
 
     Returns:
-        UpdateTaskOutput with updated task data and fields
+        TaskUpdateOutput with updated task data and fields
     """
     # Reuse convert_to_task_operation_output to avoid duplication
     task = convert_to_task_operation_output(data)
 
-    # Construct UpdateTaskOutput with nested task and updated_fields
-    return UpdateTaskOutput(
+    # Construct TaskUpdateOutput with nested task and updated_fields
+    return TaskUpdateOutput(
         task=task,
         updated_fields=data.get("updated_fields", []),
     )
@@ -196,14 +196,14 @@ def convert_to_task_list_output(
     )
 
 
-def convert_to_get_task_by_id_output(data: dict[str, Any]) -> GetTaskByIdOutput:
-    """Convert API response to GetTaskByIdOutput.
+def convert_to_get_task_by_id_output(data: dict[str, Any]) -> TaskByIdOutput:
+    """Convert API response to TaskByIdOutput.
 
     Args:
         data: API response data
 
     Returns:
-        GetTaskByIdOutput with task data
+        TaskByIdOutput with task data
     """
     # Parse datetime fields using utility
     dt_fields = _parse_datetime_fields(
@@ -243,17 +243,17 @@ def convert_to_get_task_by_id_output(data: dict[str, Any]) -> GetTaskByIdOutput:
         is_schedulable=data.get("is_schedulable", False),
     )
 
-    return GetTaskByIdOutput(task=task)
+    return TaskByIdOutput(task=task)
 
 
-def convert_to_get_task_detail_output(data: dict[str, Any]) -> GetTaskDetailOutput:
-    """Convert API response to GetTaskDetailOutput.
+def convert_to_get_task_detail_output(data: dict[str, Any]) -> TaskDetailOutput:
+    """Convert API response to TaskDetailOutput.
 
     Args:
         data: API response data
 
     Returns:
-        GetTaskDetailOutput with task data and notes
+        TaskDetailOutput with task data and notes
     """
     # Parse datetime fields using utility
     dt_fields = _parse_datetime_fields(
@@ -297,9 +297,7 @@ def convert_to_get_task_detail_output(data: dict[str, Any]) -> GetTaskDetailOutp
     notes_content = data.get("notes")
     has_notes = notes_content is not None and notes_content != ""
 
-    return GetTaskDetailOutput(
-        task=task, notes_content=notes_content, has_notes=has_notes
-    )
+    return TaskDetailOutput(task=task, notes_content=notes_content, has_notes=has_notes)
 
 
 def convert_to_gantt_output(data: dict[str, Any]) -> GanttOutput:
@@ -370,6 +368,137 @@ def convert_to_gantt_output(data: dict[str, Any]) -> GanttOutput:
     )
 
 
+def _parse_task_statistics(completion_data: dict[str, Any]) -> TaskStatistics:
+    """Parse task completion statistics from API response.
+
+    Args:
+        completion_data: Completion section from API response
+
+    Returns:
+        TaskStatistics object
+    """
+    return TaskStatistics(
+        total_tasks=completion_data["total"],
+        pending_count=completion_data["pending"],
+        in_progress_count=completion_data["in_progress"],
+        completed_count=completion_data["completed"],
+        canceled_count=completion_data["canceled"],
+        completion_rate=completion_data["completion_rate"],
+    )
+
+
+def _parse_time_statistics(time_data: dict[str, Any]) -> TimeStatistics:
+    """Parse time tracking statistics from API response.
+
+    Args:
+        time_data: Time section from API response
+
+    Returns:
+        TimeStatistics object
+    """
+    return TimeStatistics(
+        total_work_hours=time_data["total_logged_hours"],
+        average_work_hours=time_data.get("average_task_duration") or 0.0,
+        median_work_hours=0.0,  # Not available in API response
+        longest_task=None,  # Not available in API response
+        shortest_task=None,  # Not available in API response
+        tasks_with_time_tracking=0,  # Not available in API response
+    )
+
+
+def _parse_estimation_statistics(
+    estimation_data: dict[str, Any],
+) -> EstimationAccuracyStatistics:
+    """Parse estimation accuracy statistics from API response.
+
+    Args:
+        estimation_data: Estimation section from API response
+
+    Returns:
+        EstimationAccuracyStatistics object
+    """
+    return EstimationAccuracyStatistics(
+        total_tasks_with_estimation=estimation_data["tasks_with_estimates"],
+        accuracy_rate=estimation_data["average_deviation_percentage"] / 100,
+        over_estimated_count=0,  # Not available in API response
+        under_estimated_count=0,  # Not available in API response
+        exact_count=0,  # Not available in API response
+        best_estimated_tasks=[],  # Not available in API response
+        worst_estimated_tasks=[],  # Not available in API response
+    )
+
+
+def _parse_deadline_statistics(
+    deadline_data: dict[str, Any],
+) -> DeadlineComplianceStatistics:
+    """Parse deadline compliance statistics from API response.
+
+    Args:
+        deadline_data: Deadline section from API response
+
+    Returns:
+        DeadlineComplianceStatistics object
+    """
+    return DeadlineComplianceStatistics(
+        total_tasks_with_deadline=deadline_data["met"] + deadline_data["missed"],
+        met_deadline_count=deadline_data["met"],
+        missed_deadline_count=deadline_data["missed"],
+        compliance_rate=deadline_data["adherence_rate"],
+        average_delay_days=0.0,  # Not available in API response
+    )
+
+
+def _parse_priority_statistics(
+    priority_data: dict[str, Any],
+) -> PriorityDistributionStatistics:
+    """Parse priority distribution statistics from API response.
+
+    Args:
+        priority_data: Priority section from API response
+
+    Returns:
+        PriorityDistributionStatistics object
+    """
+    distribution = priority_data["distribution"]
+    return PriorityDistributionStatistics(
+        high_priority_count=sum(
+            count for prio, count in distribution.items() if int(prio) >= 70
+        ),
+        medium_priority_count=sum(
+            count for prio, count in distribution.items() if 30 <= int(prio) < 70
+        ),
+        low_priority_count=sum(
+            count for prio, count in distribution.items() if int(prio) < 30
+        ),
+        high_priority_completion_rate=0.0,  # Not available in API response
+        priority_completion_map={int(k): v for k, v in distribution.items()},
+    )
+
+
+def _parse_trend_statistics(trends_data: dict[str, Any]) -> TrendStatistics:
+    """Parse trend statistics from API response.
+
+    Args:
+        trends_data: Trends section from API response
+
+    Returns:
+        TrendStatistics object
+    """
+    # Calculate last 7 and 30 days from completed_per_day
+    completed_per_day = trends_data.get("completed_per_day", {})
+    last_7_days = sum(list(completed_per_day.values())[-7:]) if completed_per_day else 0
+    last_30_days = (
+        sum(list(completed_per_day.values())[-30:]) if completed_per_day else 0
+    )
+
+    return TrendStatistics(
+        last_7_days_completed=last_7_days,
+        last_30_days_completed=last_30_days,
+        weekly_completion_trend={},  # Would need grouping logic
+        monthly_completion_trend={},  # Would need grouping logic
+    )
+
+
 def convert_to_statistics_output(data: dict[str, Any]) -> StatisticsOutput:
     """Convert API response to StatisticsOutput.
 
@@ -387,95 +516,21 @@ def convert_to_statistics_output(data: dict[str, Any]) -> StatisticsOutput:
     Returns:
         StatisticsOutput with converted data
     """
-    # Convert completion statistics (always present)
-    completion = data["completion"]
-    task_stats = TaskStatistics(
-        total_tasks=completion["total"],
-        pending_count=completion["pending"],
-        in_progress_count=completion["in_progress"],
-        completed_count=completion["completed"],
-        canceled_count=completion["canceled"],
-        completion_rate=completion["completion_rate"],
+    # Parse each statistics section using helper functions
+    task_stats = _parse_task_statistics(data["completion"])
+    time_stats = _parse_time_statistics(data["time"]) if data.get("time") else None
+    estimation_stats = (
+        _parse_estimation_statistics(data["estimation"])
+        if data.get("estimation")
+        else None
     )
-
-    # Convert time statistics (optional)
-    time_stats = None
-    if data.get("time"):
-        time = data["time"]
-        time_stats = TimeStatistics(
-            total_work_hours=time["total_logged_hours"],
-            average_work_hours=time.get("average_task_duration") or 0.0,
-            median_work_hours=0.0,  # Not available in API response
-            longest_task=None,  # Not available in API response
-            shortest_task=None,  # Not available in API response
-            tasks_with_time_tracking=0,  # Not available in API response
-        )
-
-    # Convert estimation statistics (optional)
-    estimation_stats = None
-    if data.get("estimation"):
-        estimation = data["estimation"]
-        estimation_stats = EstimationAccuracyStatistics(
-            total_tasks_with_estimation=estimation["tasks_with_estimates"],
-            accuracy_rate=estimation["average_deviation_percentage"] / 100,
-            over_estimated_count=0,  # Not available in API response
-            under_estimated_count=0,  # Not available in API response
-            exact_count=0,  # Not available in API response
-            best_estimated_tasks=[],  # Not available in API response
-            worst_estimated_tasks=[],  # Not available in API response
-        )
-
-    # Convert deadline statistics (optional)
-    deadline_stats = None
-    if data.get("deadline"):
-        deadline = data["deadline"]
-        deadline_stats = DeadlineComplianceStatistics(
-            total_tasks_with_deadline=deadline["met"] + deadline["missed"],
-            met_deadline_count=deadline["met"],
-            missed_deadline_count=deadline["missed"],
-            compliance_rate=deadline["adherence_rate"],
-            average_delay_days=0.0,  # Not available in API response
-        )
-
-    # Convert priority statistics (always present)
-    priority = data["priority"]
-    priority_stats = PriorityDistributionStatistics(
-        high_priority_count=sum(
-            count for prio, count in priority["distribution"].items() if int(prio) >= 70
-        ),
-        medium_priority_count=sum(
-            count
-            for prio, count in priority["distribution"].items()
-            if 30 <= int(prio) < 70
-        ),
-        low_priority_count=sum(
-            count for prio, count in priority["distribution"].items() if int(prio) < 30
-        ),
-        high_priority_completion_rate=0.0,  # Not available in API response
-        priority_completion_map={
-            int(k): v for k, v in priority["distribution"].items()
-        },
+    deadline_stats = (
+        _parse_deadline_statistics(data["deadline"]) if data.get("deadline") else None
     )
-
-    # Convert trend statistics (optional)
-    trend_stats = None
-    if data.get("trends"):
-        trends = data["trends"]
-        # Calculate last 7 and 30 days from completed_per_day
-        completed_per_day = trends.get("completed_per_day", {})
-        last_7_days = (
-            sum(list(completed_per_day.values())[-7:]) if completed_per_day else 0
-        )
-        last_30_days = (
-            sum(list(completed_per_day.values())[-30:]) if completed_per_day else 0
-        )
-
-        trend_stats = TrendStatistics(
-            last_7_days_completed=last_7_days,
-            last_30_days_completed=last_30_days,
-            weekly_completion_trend={},  # Would need grouping logic
-            monthly_completion_trend={},  # Would need grouping logic
-        )
+    priority_stats = _parse_priority_statistics(data["priority"])
+    trend_stats = (
+        _parse_trend_statistics(data["trends"]) if data.get("trends") else None
+    )
 
     return StatisticsOutput(
         task_stats=task_stats,
@@ -485,6 +540,59 @@ def convert_to_statistics_output(data: dict[str, Any]) -> StatisticsOutput:
         priority_stats=priority_stats,
         trend_stats=trend_stats,
     )
+
+
+def _parse_optimization_summary(
+    summary_data: dict[str, Any], failures: list[dict[str, Any]]
+) -> OptimizationSummary:
+    """Parse optimization summary from API response.
+
+    Args:
+        summary_data: Summary section from API response
+        failures: Failures list from API response
+
+    Returns:
+        OptimizationSummary object
+    """
+    # Calculate days span from start_date and end_date
+    start_date = date_type.fromisoformat(summary_data["start_date"])
+    end_date = date_type.fromisoformat(summary_data["end_date"])
+    days_span = (end_date - start_date).days + 1
+
+    # Create TaskSummaryDto objects for unscheduled tasks from failures
+    unscheduled_tasks = [
+        TaskSummaryDto(id=f["task_id"], name=f["task_name"]) for f in failures
+    ]
+
+    return OptimizationSummary(
+        new_count=summary_data["scheduled_tasks"],
+        rescheduled_count=0,  # API doesn't distinguish between new and rescheduled
+        total_hours=summary_data["total_hours"],
+        deadline_conflicts=0,  # Not provided by API
+        days_span=days_span,
+        unscheduled_tasks=unscheduled_tasks,
+        overloaded_days=[],  # Not provided by API
+    )
+
+
+def _parse_scheduling_failures(
+    failures_data: list[dict[str, Any]],
+) -> list[SchedulingFailure]:
+    """Parse scheduling failures from API response.
+
+    Args:
+        failures_data: Failures list from API response
+
+    Returns:
+        List of SchedulingFailure objects
+    """
+    return [
+        SchedulingFailure(
+            task=TaskSummaryDto(id=f["task_id"], name=f["task_name"]),
+            reason=f["reason"],
+        )
+        for f in failures_data
+    ]
 
 
 def convert_to_optimization_output(data: dict[str, Any]) -> OptimizationOutput:
@@ -513,49 +621,18 @@ def convert_to_optimization_output(data: dict[str, Any]) -> OptimizationOutput:
     Returns:
         OptimizationOutput with all optimization results
     """
-    # Parse summary
-    summary_data = data["summary"]
-
-    # Calculate days span from start_date and end_date
-    start_date = date_type.fromisoformat(summary_data["start_date"])
-    end_date = date_type.fromisoformat(summary_data["end_date"])
-    days_span = (end_date - start_date).days + 1
-
-    # Create TaskSummaryDto objects for unscheduled tasks from failures
-    unscheduled_tasks = [
-        TaskSummaryDto(id=f["task_id"], name=f["task_name"]) for f in data["failures"]
-    ]
-
-    summary = OptimizationSummary(
-        new_count=summary_data["scheduled_tasks"],
-        rescheduled_count=0,  # API doesn't distinguish between new and rescheduled
-        total_hours=summary_data["total_hours"],
-        deadline_conflicts=0,  # Not provided by API
-        days_span=days_span,
-        unscheduled_tasks=unscheduled_tasks,
-        overloaded_days=[],  # Not provided by API
-    )
-
-    # Parse failures
-    failures = [
-        SchedulingFailure(
-            task=TaskSummaryDto(id=f["task_id"], name=f["task_name"]),
-            reason=f["reason"],
-        )
-        for f in data["failures"]
-    ]
+    summary = _parse_optimization_summary(data["summary"], data["failures"])
+    failures = _parse_scheduling_failures(data["failures"])
 
     # Note: API response doesn't include successful_tasks details
     # We'll create minimal TaskSummaryDto objects
-    successful_count = summary_data["scheduled_tasks"]
+    successful_count = data["summary"]["scheduled_tasks"]
     successful_tasks = [
         TaskSummaryDto(id=i, name=f"Task {i}") for i in range(successful_count)
     ]
 
-    # Daily allocations - not provided in response, use empty dict
+    # Daily allocations and task states not provided in response
     daily_allocations: dict[date_type, float] = {}
-
-    # Task states before - not provided in response, use empty dict
     task_states_before: dict[int, datetime | None] = {}
 
     return OptimizationOutput(

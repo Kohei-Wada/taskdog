@@ -7,7 +7,7 @@ from taskdog_core.domain.entities.task import Task
 
 
 @dataclass
-class UpdateTaskOutput:
+class TaskUpdateOutput:
     """Output DTO for update_task operation.
 
     This DTO wraps TaskOperationOutput and adds metadata about which
@@ -24,7 +24,7 @@ class UpdateTaskOutput:
     @classmethod
     def from_task_and_fields(
         cls, task: Task, updated_fields: list[str]
-    ) -> "UpdateTaskOutput":
+    ) -> "TaskUpdateOutput":
         """Convert Task entity and field list to DTO.
 
         Args:
@@ -32,7 +32,7 @@ class UpdateTaskOutput:
             updated_fields: List of field names that were updated
 
         Returns:
-            UpdateTaskOutput DTO for presentation layer
+            TaskUpdateOutput DTO for presentation layer
         """
         return cls(
             task=TaskOperationOutput.from_task(task),

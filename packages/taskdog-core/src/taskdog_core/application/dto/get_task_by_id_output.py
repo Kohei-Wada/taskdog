@@ -9,7 +9,7 @@ from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 
 @dataclass
-class GetTaskByIdOutput:
+class TaskByIdOutput:
     """Output DTO for single task retrieval by ID.
 
     Used by QueryController.get_task_by_id() and consumed by TUI commands.

@@ -13,6 +13,14 @@ from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 if TYPE_CHECKING:
+    from taskdog_core.application.queries.filters.composite_filter import (
+        CompositeFilter,
+    )
+    from taskdog_core.application.queries.filters.date_range_filter import (
+        DateRangeFilter,
+    )
+    from taskdog_core.application.queries.filters.status_filter import StatusFilter
+    from taskdog_core.application.queries.filters.tag_filter import TagFilter
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
@@ -89,7 +97,7 @@ class TaskQueryService(QueryService):
         # Sort tasks
         return self.sorter.sort(tasks, sort_by, reverse)
 
-    def _extract_sql_params(self, filter_obj: TaskFilter | None) -> dict:  # noqa: C901
+    def _extract_sql_params(self, filter_obj: TaskFilter | None) -> dict:
         """Extract SQL-compatible filter parameters from filter object.
 
         Walks through the filter chain and extracts parameters that can be
@@ -113,7 +121,37 @@ class TaskQueryService(QueryService):
         from taskdog_core.application.queries.filters.status_filter import StatusFilter
         from taskdog_core.application.queries.filters.tag_filter import TagFilter
 
-        params = {
+        params = self._get_default_sql_params()
+
+        if not filter_obj:
+            return params
+
+        # Walk through filter chain and dispatch to handlers
+        current_filter = filter_obj
+        while current_filter:
+            if isinstance(current_filter, NonArchivedFilter):
+                self._handle_non_archived_filter(params)
+            elif isinstance(current_filter, StatusFilter):
+                self._handle_status_filter(params, current_filter)
+            elif isinstance(current_filter, TagFilter):
+                self._handle_tag_filter(params, current_filter)
+            elif isinstance(current_filter, DateRangeFilter):
+                self._handle_date_range_filter(params, current_filter)
+            elif isinstance(current_filter, CompositeFilter):
+                self._handle_composite_filter(params, current_filter)
+
+            # Move to next filter in chain
+            current_filter = getattr(current_filter, "_next", None)
+
+        return params
+
+    def _get_default_sql_params(self) -> dict:
+        """Get default SQL filter parameters.
+
+        Returns:
+            Dictionary with default values for all SQL parameters
+        """
+        return {
             "include_archived": True,
             "status": None,
             "tags": None,
@@ -122,41 +160,76 @@ class TaskQueryService(QueryService):
             "end_date": None,
         }
 
-        if not filter_obj:
-            return params
+    def _handle_non_archived_filter(self, params: dict) -> None:
+        """Handle NonArchivedFilter by setting include_archived to False.
 
-        # Walk through filter chain
-        current_filter = filter_obj
-        while current_filter:
-            if isinstance(current_filter, NonArchivedFilter):
-                params["include_archived"] = False
-            elif isinstance(current_filter, StatusFilter):
-                params["status"] = current_filter.status
-            elif isinstance(current_filter, TagFilter):
-                params["tags"] = current_filter.tags
-                params["match_all_tags"] = current_filter.match_all
-            elif isinstance(current_filter, DateRangeFilter):
-                params["start_date"] = current_filter.start_date
-                params["end_date"] = current_filter.end_date
-            elif isinstance(current_filter, CompositeFilter):
-                # Recursively process filters in CompositeFilter
-                for sub_filter in current_filter.filters:
-                    sub_params = self._extract_sql_params(sub_filter)
-                    # Merge parameters (prefer non-None values)
-                    for key, value in sub_params.items():
-                        if value is not None and (
-                            params[key] is None or key == "include_archived"
-                        ):
-                            if key == "include_archived":
-                                # For archived, use AND logic (False takes precedence)
-                                params[key] = params[key] and value
-                            else:
-                                params[key] = value
+        Args:
+            params: SQL parameters dictionary to update
+        """
+        params["include_archived"] = False
 
-            # Move to next filter in chain
-            current_filter = getattr(current_filter, "_next", None)
+    def _handle_status_filter(self, params: dict, filter_obj: "StatusFilter") -> None:
+        """Handle StatusFilter by extracting status value.
 
-        return params
+        Args:
+            params: SQL parameters dictionary to update
+            filter_obj: StatusFilter instance
+        """
+        params["status"] = filter_obj.status
+
+    def _handle_tag_filter(self, params: dict, filter_obj: "TagFilter") -> None:
+        """Handle TagFilter by extracting tags and match_all flag.
+
+        Args:
+            params: SQL parameters dictionary to update
+            filter_obj: TagFilter instance
+        """
+        params["tags"] = filter_obj.tags
+        params["match_all_tags"] = filter_obj.match_all
+
+    def _handle_date_range_filter(
+        self, params: dict, filter_obj: "DateRangeFilter"
+    ) -> None:
+        """Handle DateRangeFilter by extracting start_date and end_date.
+
+        Args:
+            params: SQL parameters dictionary to update
+            filter_obj: DateRangeFilter instance
+        """
+        params["start_date"] = filter_obj.start_date
+        params["end_date"] = filter_obj.end_date
+
+    def _handle_composite_filter(
+        self, params: dict, filter_obj: "CompositeFilter"
+    ) -> None:
+        """Handle CompositeFilter by recursively processing sub-filters.
+
+        Args:
+            params: SQL parameters dictionary to update
+            filter_obj: CompositeFilter instance
+        """
+        for sub_filter in filter_obj.filters:
+            sub_params = self._extract_sql_params(sub_filter)
+            self._merge_sql_params(params, sub_params)
+
+    def _merge_sql_params(self, params: dict, sub_params: dict) -> None:
+        """Merge sub-filter parameters into main parameters.
+
+        Uses the following merge logic:
+        - For include_archived: Use AND logic (False takes precedence)
+        - For other fields: Prefer non-None values from sub_params
+
+        Args:
+            params: Main parameters dictionary to update
+            sub_params: Sub-filter parameters to merge
+        """
+        for key, value in sub_params.items():
+            if value is not None and (params[key] is None or key == "include_archived"):
+                if key == "include_archived":
+                    # For archived, use AND logic (False takes precedence)
+                    params[key] = params[key] and value
+                else:
+                    params[key] = value
 
     def _get_remaining_filter(self, filter_obj: TaskFilter | None) -> TaskFilter | None:
         """Get filters that cannot be handled by SQL and need Python processing.

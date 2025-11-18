@@ -16,7 +16,7 @@ from taskdog_core.application.dto.remove_task_input import RemoveTaskInput
 from taskdog_core.application.dto.restore_task_input import RestoreTaskInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_input import UpdateTaskInput
-from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
+from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.application.use_cases.archive_task import ArchiveTaskUseCase
 from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
 from taskdog_core.application.use_cases.remove_task import RemoveTaskUseCase
@@ -130,7 +130,7 @@ class TaskCrudController(BaseTaskController):
         estimated_duration: float | None = None,
         is_fixed: bool | None = None,
         tags: list[str] | None = None,
-    ) -> UpdateTaskOutput:
+    ) -> TaskUpdateOutput:
         """Update task fields.
 
         Args:
@@ -146,7 +146,7 @@ class TaskCrudController(BaseTaskController):
             tags: New tags list (optional)
 
         Returns:
-            UpdateTaskOutput containing updated task info and list of updated field names
+            TaskUpdateOutput containing updated task info and list of updated field names
 
         Raises:
             TaskNotFoundException: If task not found

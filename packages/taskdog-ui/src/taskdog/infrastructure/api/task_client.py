@@ -9,7 +9,7 @@ from taskdog.infrastructure.api.converters import (
     convert_to_update_task_output,
 )
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
-from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
+from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.entities.task import TaskStatus
 
 
@@ -137,7 +137,7 @@ class TaskClient:
         estimated_duration: float | None = None,
         is_fixed: bool | None = None,
         tags: list[str] | None = None,
-    ) -> UpdateTaskOutput:
+    ) -> TaskUpdateOutput:
         """Update task fields.
 
         Args:
@@ -153,7 +153,7 @@ class TaskClient:
             tags: New tags list
 
         Returns:
-            UpdateTaskOutput with updated task data
+            TaskUpdateOutput with updated task data
 
         Raises:
             TaskNotFoundException: If task not found

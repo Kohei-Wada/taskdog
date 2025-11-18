@@ -6,7 +6,7 @@ from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 
 @dataclass
-class GetTaskDetailOutput:
+class TaskDetailOutput:
     """Result DTO for task detail with notes.
 
     Attributes:

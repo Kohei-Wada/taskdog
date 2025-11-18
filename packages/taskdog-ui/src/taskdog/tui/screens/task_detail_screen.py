@@ -10,7 +10,7 @@ from taskdog.constants.colors import STATUS_COLORS_BOLD
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
-from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
+from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
@@ -31,11 +31,11 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
         ("v", "edit_note", "Edit Note"),
     ]
 
-    def __init__(self, detail: GetTaskDetailOutput, *args: Any, **kwargs: Any):
+    def __init__(self, detail: TaskDetailOutput, *args: Any, **kwargs: Any):
         """Initialize the detail screen.
 
         Args:
-            detail: GetTaskDetailOutput with task and notes
+            detail: TaskDetailOutput with task and notes
         """
         super().__init__(*args, **kwargs)
         if detail.task is None:

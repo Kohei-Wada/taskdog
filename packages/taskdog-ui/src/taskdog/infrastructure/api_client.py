@@ -15,14 +15,14 @@ from taskdog.infrastructure.api.query_client import QueryClient
 from taskdog.infrastructure.api.relationship_client import RelationshipClient
 from taskdog.infrastructure.api.task_client import TaskClient
 from taskdog_core.application.dto.gantt_output import GanttOutput
-from taskdog_core.application.dto.get_task_by_id_output import GetTaskByIdOutput
+from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.application.dto.statistics_output import StatisticsOutput
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
-from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
+from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
-from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
+from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.entities.task import TaskStatus
 
 
@@ -142,7 +142,7 @@ class TaskdogApiClient:
         estimated_duration: float | None = None,
         is_fixed: bool | None = None,
         tags: list[str] | None = None,
-    ) -> UpdateTaskOutput:
+    ) -> TaskUpdateOutput:
         """Update task fields."""
         return self._tasks.update_task(
             task_id,
@@ -266,11 +266,11 @@ class TaskdogApiClient:
             gantt_end_date,
         )
 
-    def get_task_by_id(self, task_id: int) -> GetTaskByIdOutput:
+    def get_task_by_id(self, task_id: int) -> TaskByIdOutput:
         """Get task by ID."""
         return self._queries.get_task_by_id(task_id)
 
-    def get_task_detail(self, task_id: int) -> GetTaskDetailOutput:
+    def get_task_detail(self, task_id: int) -> TaskDetailOutput:
         """Get task details with notes."""
         return self._queries.get_task_detail(task_id)
 

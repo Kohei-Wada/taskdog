@@ -9,9 +9,9 @@ from datetime import date
 from typing import TYPE_CHECKING
 
 from taskdog_core.application.dto.gantt_output import GanttOutput
-from taskdog_core.application.dto.get_task_by_id_output import GetTaskByIdOutput
+from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
-from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
+from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
@@ -175,7 +175,7 @@ class QueryController:
             total_tagged_tasks=total_tagged_tasks,
         )
 
-    def get_task_by_id(self, task_id: int) -> GetTaskByIdOutput:
+    def get_task_by_id(self, task_id: int) -> TaskByIdOutput:
         """Get a single task by ID.
 
         Retrieves a task and converts it to DTO.
@@ -185,17 +185,17 @@ class QueryController:
             task_id: Task ID
 
         Returns:
-            GetTaskByIdOutput with TaskDetailDto (task=None if not found)
+            TaskByIdOutput with TaskDetailDto (task=None if not found)
         """
         task = self.repository.get_by_id(task_id)
         if task is None:
-            return GetTaskByIdOutput(task=None)
+            return TaskByIdOutput(task=None)
 
         # Convert Task to TaskDetailDto
         task_dto = self._task_to_detail_dto(task)
-        return GetTaskByIdOutput(task=task_dto)
+        return TaskByIdOutput(task=task_dto)
 
-    def get_task_detail(self, task_id: int) -> GetTaskDetailOutput:
+    def get_task_detail(self, task_id: int) -> TaskDetailOutput:
         """Get task details with notes.
 
         Retrieves a task along with its markdown notes file.
@@ -205,7 +205,7 @@ class QueryController:
             task_id: Task ID
 
         Returns:
-            GetTaskDetailOutput with task, notes_content, and has_notes
+            TaskDetailOutput with task, notes_content, and has_notes
 
         Raises:
             ValueError: If notes_repository was not provided during initialization
