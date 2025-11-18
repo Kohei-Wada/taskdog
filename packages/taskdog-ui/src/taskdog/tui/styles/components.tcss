@@ -124,6 +124,10 @@ Input {
     height: 3;
 }
 
+#search-input:focus {
+    border: double $accent;
+}
+
 .search-result {
     width: 100%;
     height: auto;
