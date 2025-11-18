@@ -3,7 +3,6 @@
 Converts JSON responses from API to taskdog-core DTOs.
 Single source of truth for all API-to-DTO transformations.
 """
-# mypy: ignore-errors
 
 from datetime import date as date_type
 from datetime import datetime
@@ -38,6 +37,51 @@ from taskdog_core.application.dto.task_operation_output import TaskOperationOutp
 from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
 from taskdog_core.domain.entities.task import TaskStatus
 
+# === Datetime Conversion Utilities ===
+
+
+def _parse_optional_datetime(data: dict[str, Any], field: str) -> datetime | None:
+    """Parse ISO datetime from dict, returning None if field missing/None.
+
+    Args:
+        data: Dictionary containing datetime fields
+        field: Field name to extract
+
+    Returns:
+        Parsed datetime or None if field is missing/None
+    """
+    value = data.get(field)
+    return datetime.fromisoformat(value) if value else None
+
+
+def _parse_optional_date(data: dict[str, Any], field: str) -> date_type | None:
+    """Parse ISO date from dict, returning None if field missing/None.
+
+    Args:
+        data: Dictionary containing date fields
+        field: Field name to extract
+
+    Returns:
+        Parsed date or None if field is missing/None
+    """
+    value = data.get(field)
+    return date_type.fromisoformat(value) if value else None
+
+
+def _parse_datetime_fields(
+    data: dict[str, Any], fields: list[str]
+) -> dict[str, datetime | None]:
+    """Parse multiple datetime fields from API response.
+
+    Args:
+        data: Dictionary containing datetime fields
+        fields: List of field names to parse
+
+    Returns:
+        Dictionary mapping field names to parsed datetime values
+    """
+    return {field: _parse_optional_datetime(data, field) for field in fields}
+
 
 def convert_to_task_operation_output(data: dict[str, Any]) -> TaskOperationOutput:
     """Convert API response to TaskOperationOutput.
@@ -48,27 +92,22 @@ def convert_to_task_operation_output(data: dict[str, Any]) -> TaskOperationOutpu
     Returns:
         TaskOperationOutput with task data
     """
+    # Parse datetime fields using utility
+    dt_fields = _parse_datetime_fields(
+        data, ["deadline", "planned_start", "planned_end", "actual_start", "actual_end"]
+    )
+
     return TaskOperationOutput(
         id=data["id"],
         name=data["name"],
         status=TaskStatus(data["status"]),
         priority=data["priority"],
-        deadline=datetime.fromisoformat(data["deadline"])
-        if data.get("deadline")
-        else None,
+        deadline=dt_fields["deadline"],
         estimated_duration=data.get("estimated_duration"),
-        planned_start=datetime.fromisoformat(data["planned_start"])
-        if data.get("planned_start")
-        else None,
-        planned_end=datetime.fromisoformat(data["planned_end"])
-        if data.get("planned_end")
-        else None,
-        actual_start=datetime.fromisoformat(data["actual_start"])
-        if data.get("actual_start")
-        else None,
-        actual_end=datetime.fromisoformat(data["actual_end"])
-        if data.get("actual_end")
-        else None,
+        planned_start=dt_fields["planned_start"],
+        planned_end=dt_fields["planned_end"],
+        actual_start=dt_fields["actual_start"],
+        actual_end=dt_fields["actual_end"],
         depends_on=data.get("depends_on", []),
         tags=data.get("tags", []),
         is_fixed=data.get("is_fixed", False),
@@ -87,35 +126,8 @@ def convert_to_update_task_output(data: dict[str, Any]) -> UpdateTaskOutput:
     Returns:
         UpdateTaskOutput with updated task data and fields
     """
-    # Construct TaskOperationOutput from the response data
-    task = TaskOperationOutput(
-        id=data["id"],
-        name=data["name"],
-        status=TaskStatus(data["status"]),
-        priority=data["priority"],
-        deadline=datetime.fromisoformat(data["deadline"])
-        if data.get("deadline")
-        else None,
-        estimated_duration=data.get("estimated_duration"),
-        planned_start=datetime.fromisoformat(data["planned_start"])
-        if data.get("planned_start")
-        else None,
-        planned_end=datetime.fromisoformat(data["planned_end"])
-        if data.get("planned_end")
-        else None,
-        actual_start=datetime.fromisoformat(data["actual_start"])
-        if data.get("actual_start")
-        else None,
-        actual_end=datetime.fromisoformat(data["actual_end"])
-        if data.get("actual_end")
-        else None,
-        depends_on=data.get("depends_on", []),
-        tags=data.get("tags", []),
-        is_fixed=data.get("is_fixed", False),
-        is_archived=data.get("is_archived", False),
-        actual_duration_hours=data.get("actual_duration_hours"),
-        actual_daily_hours=data.get("actual_daily_hours", {}),
-    )
+    # Reuse convert_to_task_operation_output to avoid duplication
+    task = convert_to_task_operation_output(data)
 
     # Construct UpdateTaskOutput with nested task and updated_fields
     return UpdateTaskOutput(
@@ -142,27 +154,23 @@ def convert_to_task_list_output(
         if has_notes_cache is not None:
             has_notes_cache[task["id"]] = task.get("has_notes", False)
 
+        # Parse datetime fields using utility
+        dt_fields = _parse_datetime_fields(
+            task,
+            ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"],
+        )
+
         tasks.append(
             TaskRowDto(
                 id=task["id"],
                 name=task["name"],
                 priority=task["priority"],
                 status=TaskStatus(task["status"]),
-                planned_start=datetime.fromisoformat(task["planned_start"])
-                if task.get("planned_start")
-                else None,
-                planned_end=datetime.fromisoformat(task["planned_end"])
-                if task.get("planned_end")
-                else None,
-                deadline=datetime.fromisoformat(task["deadline"])
-                if task.get("deadline")
-                else None,
-                actual_start=datetime.fromisoformat(task["actual_start"])
-                if task.get("actual_start")
-                else None,
-                actual_end=datetime.fromisoformat(task["actual_end"])
-                if task.get("actual_end")
-                else None,
+                planned_start=dt_fields["planned_start"],
+                planned_end=dt_fields["planned_end"],
+                deadline=dt_fields["deadline"],
+                actual_start=dt_fields["actual_start"],
+                actual_end=dt_fields["actual_end"],
                 estimated_duration=task.get("estimated_duration"),
                 actual_duration_hours=task.get("actual_duration_hours"),
                 is_fixed=task.get("is_fixed", False),
@@ -197,27 +205,22 @@ def convert_to_get_task_by_id_output(data: dict[str, Any]) -> GetTaskByIdOutput:
     Returns:
         GetTaskByIdOutput with task data
     """
+    # Parse datetime fields using utility
+    dt_fields = _parse_datetime_fields(
+        data, ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"]
+    )
+
     # Convert task data (same as get_task_detail but without notes)
     task = TaskDetailDto(
         id=data["id"],
         name=data["name"],
         priority=data["priority"],
         status=TaskStatus(data["status"]),
-        planned_start=datetime.fromisoformat(data["planned_start"])
-        if data.get("planned_start")
-        else None,
-        planned_end=datetime.fromisoformat(data["planned_end"])
-        if data.get("planned_end")
-        else None,
-        deadline=datetime.fromisoformat(data["deadline"])
-        if data.get("deadline")
-        else None,
-        actual_start=datetime.fromisoformat(data["actual_start"])
-        if data.get("actual_start")
-        else None,
-        actual_end=datetime.fromisoformat(data["actual_end"])
-        if data.get("actual_end")
-        else None,
+        planned_start=dt_fields["planned_start"],
+        planned_end=dt_fields["planned_end"],
+        deadline=dt_fields["deadline"],
+        actual_start=dt_fields["actual_start"],
+        actual_end=dt_fields["actual_end"],
         estimated_duration=data.get("estimated_duration"),
         daily_allocations={
             date_type.fromisoformat(k): v
@@ -252,27 +255,22 @@ def convert_to_get_task_detail_output(data: dict[str, Any]) -> GetTaskDetailOutp
     Returns:
         GetTaskDetailOutput with task data and notes
     """
+    # Parse datetime fields using utility
+    dt_fields = _parse_datetime_fields(
+        data, ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"]
+    )
+
     # Convert task data
     task = TaskDetailDto(
         id=data["id"],
         name=data["name"],
         priority=data["priority"],
         status=TaskStatus(data["status"]),
-        planned_start=datetime.fromisoformat(data["planned_start"])
-        if data.get("planned_start")
-        else None,
-        planned_end=datetime.fromisoformat(data["planned_end"])
-        if data.get("planned_end")
-        else None,
-        deadline=datetime.fromisoformat(data["deadline"])
-        if data.get("deadline")
-        else None,
-        actual_start=datetime.fromisoformat(data["actual_start"])
-        if data.get("actual_start")
-        else None,
-        actual_end=datetime.fromisoformat(data["actual_end"])
-        if data.get("actual_end")
-        else None,
+        planned_start=dt_fields["planned_start"],
+        planned_end=dt_fields["planned_end"],
+        deadline=dt_fields["deadline"],
+        actual_start=dt_fields["actual_start"],
+        actual_end=dt_fields["actual_end"],
         estimated_duration=data.get("estimated_duration"),
         daily_allocations={
             date_type.fromisoformat(k): v
@@ -320,41 +318,28 @@ def convert_to_gantt_output(data: dict[str, Any]) -> GanttOutput:
     )
 
     # Convert tasks (list[GanttTaskResponse] -> list[GanttTaskDto])
-    tasks = [
-        GanttTaskDto(
-            id=task["id"],
-            name=task["name"],
-            status=TaskStatus[task["status"].upper()],
-            estimated_duration=task.get("estimated_duration"),
-            planned_start=(
-                datetime.fromisoformat(task["planned_start"])
-                if task.get("planned_start")
-                else None
-            ),
-            planned_end=(
-                datetime.fromisoformat(task["planned_end"])
-                if task.get("planned_end")
-                else None
-            ),
-            actual_start=(
-                datetime.fromisoformat(task["actual_start"])
-                if task.get("actual_start")
-                else None
-            ),
-            actual_end=(
-                datetime.fromisoformat(task["actual_end"])
-                if task.get("actual_end")
-                else None
-            ),
-            deadline=(
-                datetime.fromisoformat(task["deadline"])
-                if task.get("deadline")
-                else None
-            ),
-            is_finished=task["status"].upper() in ["COMPLETED", "CANCELED"],
+    tasks = []
+    for task in data["tasks"]:
+        # Parse datetime fields using utility
+        dt_fields = _parse_datetime_fields(
+            task,
+            ["planned_start", "planned_end", "actual_start", "actual_end", "deadline"],
         )
-        for task in data["tasks"]
-    ]
+
+        tasks.append(
+            GanttTaskDto(
+                id=task["id"],
+                name=task["name"],
+                status=TaskStatus[task["status"].upper()],
+                estimated_duration=task.get("estimated_duration"),
+                planned_start=dt_fields["planned_start"],
+                planned_end=dt_fields["planned_end"],
+                actual_start=dt_fields["actual_start"],
+                actual_end=dt_fields["actual_end"],
+                deadline=dt_fields["deadline"],
+                is_finished=task["status"].upper() in ["COMPLETED", "CANCELED"],
+            )
+        )
 
     # Convert task_daily_hours: dict[str, dict[str, float]] -> dict[int, dict[date, float]]
     task_daily_hours = {

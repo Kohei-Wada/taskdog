@@ -1,5 +1,4 @@
 """Task relationship operations client."""
-# mypy: ignore-errors
 
 from taskdog.infrastructure.api.base_client import BaseApiClient
 from taskdog.infrastructure.api.converters import convert_to_task_operation_output

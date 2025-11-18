@@ -1,6 +1,6 @@
 """Base HTTP client infrastructure for Taskdog API."""
-# mypy: ignore-errors
 
+from collections.abc import Callable
 from typing import Any
 
 import httpx  # type: ignore[import-not-found]
@@ -65,7 +65,7 @@ class BaseApiClient:
         else:
             response.raise_for_status()
 
-    def _safe_request(self, method: str, *args, **kwargs) -> httpx.Response:
+    def _safe_request(self, method: str, *args: Any, **kwargs: Any) -> httpx.Response:
         """Execute HTTP request with connection error handling.
 
         Args:
@@ -89,7 +89,7 @@ class BaseApiClient:
                 headers["X-Client-ID"] = self.client_id
                 kwargs["headers"] = headers
 
-            request_method = getattr(self.client, method)
+            request_method: Callable[..., httpx.Response] = getattr(self.client, method)
             return request_method(*args, **kwargs)
         except (httpx.ConnectError, httpx.TimeoutException, httpx.RequestError) as e:
             raise ServerConnectionError(self.base_url, e) from e

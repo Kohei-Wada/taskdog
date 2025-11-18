@@ -3,7 +3,6 @@
 This module provides backward compatibility by delegating to specialized
 clients while maintaining the same public API.
 """
-# mypy: ignore-errors
 
 from datetime import date, datetime
 from typing import Any

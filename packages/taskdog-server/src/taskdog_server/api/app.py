@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from taskdog_core.shared.config_manager import ConfigManager
 from taskdog_server.api.dependencies import initialize_api_context, set_api_context
 from taskdog_server.api.middleware import LoggingMiddleware
 from taskdog_server.api.routers import (
@@ -54,10 +55,15 @@ def create_app() -> FastAPI:
     # Add logging middleware (should be first to log all requests)
     app.add_middleware(LoggingMiddleware)
 
-    # Configure CORS
+    # Load configuration to get CORS settings
+    config = ConfigManager.load()
+
+    # Configure CORS with settings from config file or defaults
+    # Default origins: localhost:3000, localhost:8000, 127.0.0.1:3000, 127.0.0.1:8000
+    # Can be overridden in config.toml under [api] section with cors_origins = [...]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # TODO: Configure from settings
+        allow_origins=config.api.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

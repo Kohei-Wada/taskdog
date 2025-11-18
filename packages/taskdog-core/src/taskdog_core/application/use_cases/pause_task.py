@@ -4,7 +4,7 @@ from taskdog_core.application.dto.pause_task_input import PauseTaskInput
 from taskdog_core.application.use_cases.status_change_use_case import (
     StatusChangeUseCase,
 )
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
 
 
 class PauseTaskUseCase(StatusChangeUseCase[PauseTaskInput]):
@@ -13,8 +13,9 @@ class PauseTaskUseCase(StatusChangeUseCase[PauseTaskInput]):
     Sets task status to PENDING and clears actual start/end timestamps.
     This allows resetting a task that was started by mistake.
 
-    This use case inherits common status change logic from StatusChangeUseCase
-    and uses the _before_status_change hook to clear time tracking data.
+    This use case inherits common status change logic from StatusChangeUseCase.
+    Time tracking (clearing actual_start/end timestamps) is handled automatically
+    by Task.pause() method in TaskStatusService, so no pre-hook is needed.
     """
 
     def _get_target_status(self) -> TaskStatus:
@@ -24,16 +25,3 @@ class PauseTaskUseCase(StatusChangeUseCase[PauseTaskInput]):
             TaskStatus.PENDING
         """
         return TaskStatus.PENDING
-
-    def _before_status_change(self, task: Task) -> None:
-        """Clear time tracking fields before pausing.
-
-        Args:
-            task: Task that will be paused
-
-        Note:
-            Time tracking is now handled by Task.pause() method,
-            so this hook is empty. Kept for documentation purposes.
-        """
-        # Time tracking is handled by Task.pause() in TaskStatusService
-        pass

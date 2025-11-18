@@ -1,5 +1,4 @@
 """Task notes operations client."""
-# mypy: ignore-errors
 
 from taskdog.infrastructure.api.base_client import BaseApiClient
 

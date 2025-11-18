@@ -1,7 +1,7 @@
 """Task CRUD operations client."""
-# mypy: ignore-errors
 
 from datetime import datetime
+from typing import Any
 
 from taskdog.infrastructure.api.base_client import BaseApiClient
 from taskdog.infrastructure.api.converters import (
@@ -87,7 +87,7 @@ class TaskClient:
         estimated_duration: float | None,
         is_fixed: bool | None,
         tags: list[str] | None,
-    ) -> dict:
+    ) -> dict[str, Any]:
         """Build update task payload from optional parameters.
 
         Args:
@@ -104,7 +104,7 @@ class TaskClient:
         Returns:
             Dictionary with non-None fields
         """
-        payload = {}
+        payload: dict[str, Any] = {}
         if name is not None:
             payload["name"] = name
         if priority is not None:

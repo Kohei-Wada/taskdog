@@ -9,6 +9,7 @@ from pathlib import Path
 
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_ALGORITHM,
+    DEFAULT_CORS_ORIGINS,
     DEFAULT_END_HOUR,
     DEFAULT_MAX_HOURS_PER_DAY,
     DEFAULT_PRIORITY,
@@ -88,11 +89,13 @@ class ApiConfig:
         enabled: Whether to use API mode (client-server communication)
         host: API server host
         port: API server port
+        cors_origins: List of allowed CORS origins for API requests
     """
 
     enabled: bool = False
     host: str = "127.0.0.1"
     port: int = 8000
+    cors_origins: list[str] = field(default_factory=lambda: DEFAULT_CORS_ORIGINS.copy())
 
 
 @dataclass(frozen=True)
@@ -181,6 +184,7 @@ class ConfigManager:
                 enabled=api_data.get("enabled", False),
                 host=api_data.get("host", "127.0.0.1"),
                 port=api_data.get("port", 8000),
+                cors_origins=api_data.get("cors_origins", DEFAULT_CORS_ORIGINS),
             ),
         )
 

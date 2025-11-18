@@ -1,5 +1,4 @@
 """Task query operations client."""
-# mypy: ignore-errors
 
 from datetime import date
 from typing import Any
@@ -30,17 +29,17 @@ class QueryClient:
     - Legacy filter support for TUI
     """
 
-    def __init__(self, base_client: BaseApiClient, notes_cache: dict[int, bool]):
+    def __init__(self, base_client: BaseApiClient, has_notes_cache: dict[int, bool]):
         """Initialize query client.
 
         Args:
             base_client: Base API client for HTTP operations
-            notes_cache: Shared cache for has_notes information
+            has_notes_cache: Shared cache for has_notes information
         """
         self._base = base_client
-        self._notes_cache = notes_cache
+        self._has_notes_cache = has_notes_cache
 
-    def _parse_filter_to_params_legacy(self, filter_obj) -> dict[str, any]:
+    def _parse_filter_to_params_legacy(self, filter_obj: Any) -> dict[str, Any]:
         """Parse TaskFilter object to query parameters (legacy support for TUI).
 
         This is a temporary backward compatibility method for TUI.
@@ -61,7 +60,7 @@ class QueryClient:
         from taskdog_core.application.queries.filters.status_filter import StatusFilter
         from taskdog_core.application.queries.filters.tag_filter import TagFilter
 
-        params = {
+        params: dict[str, Any] = {
             "all": True,
             "status": None,
             "tags": None,
@@ -88,7 +87,7 @@ class QueryClient:
 
     def list_tasks(
         self,
-        filter_obj=None,  # Legacy parameter for TUI compatibility
+        filter_obj: Any = None,  # Legacy parameter for TUI compatibility
         all: bool = False,
         status: str | None = None,
         tags: list[str] | None = None,
@@ -158,7 +157,7 @@ class QueryClient:
             self._base._handle_error(response)
 
         data = response.json()
-        return convert_to_task_list_output(data, self._notes_cache)
+        return convert_to_task_list_output(data, self._has_notes_cache)
 
     def get_task_by_id(self, task_id: int) -> GetTaskByIdOutput:
         """Get task by ID.
@@ -200,7 +199,7 @@ class QueryClient:
 
     def get_gantt_data(
         self,
-        filter_obj=None,  # Legacy parameter for TUI compatibility
+        filter_obj: Any = None,  # Legacy parameter for TUI compatibility
         all: bool = False,
         status: str | None = None,
         tags: list[str] | None = None,

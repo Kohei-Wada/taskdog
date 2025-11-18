@@ -4,6 +4,11 @@ This module contains all conversion functions that transform use case DTOs
 from taskdog-core into Pydantic response models for the API.
 """
 
+from taskdog_core.application.dto.task_detail_output import GetTaskDetailOutput
+from taskdog_core.application.dto.task_list_output import TaskListOutput
+from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
+from taskdog_core.application.dto.update_task_output import UpdateTaskOutput
+from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_server.api.models.responses import (
     GanttDateRange,
     GanttResponse,
@@ -16,7 +21,9 @@ from taskdog_server.api.models.responses import (
 )
 
 
-def convert_to_task_operation_response(dto) -> TaskOperationResponse:
+def convert_to_task_operation_response(
+    dto: TaskOperationOutput,
+) -> TaskOperationResponse:
     """Convert TaskOperationOutput DTO to Pydantic response model."""
     return TaskOperationResponse(
         id=dto.id,
@@ -38,7 +45,7 @@ def convert_to_task_operation_response(dto) -> TaskOperationResponse:
     )
 
 
-def convert_to_update_task_response(dto) -> UpdateTaskResponse:
+def convert_to_update_task_response(dto: UpdateTaskOutput) -> UpdateTaskResponse:
     """Convert UpdateTaskOutput DTO to Pydantic response model."""
     task = dto.task  # UpdateTaskOutput has nested task attribute
     return UpdateTaskResponse(
@@ -62,7 +69,9 @@ def convert_to_update_task_response(dto) -> UpdateTaskResponse:
     )
 
 
-def convert_to_task_list_response(dto, notes_repo) -> TaskListResponse:
+def convert_to_task_list_response(
+    dto: TaskListOutput, notes_repo: NotesRepository
+) -> TaskListResponse:
     """Convert TaskListOutput DTO to Pydantic response model.
 
     Args:
@@ -160,7 +169,7 @@ def convert_to_task_list_response(dto, notes_repo) -> TaskListResponse:
     )
 
 
-def convert_to_task_detail_response(dto) -> TaskDetailResponse:
+def convert_to_task_detail_response(dto: GetTaskDetailOutput) -> TaskDetailResponse:
     """Convert GetTaskDetailOutput DTO to Pydantic response model."""
     return TaskDetailResponse(
         id=dto.task.id,

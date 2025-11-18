@@ -1,5 +1,4 @@
 """Analytics and optimization client."""
-# mypy: ignore-errors
 
 from datetime import datetime
 
