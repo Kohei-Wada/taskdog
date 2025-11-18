@@ -29,6 +29,7 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
         *ViNavigationMixin.VI_VERTICAL_BINDINGS,
         *ViNavigationMixin.VI_PAGE_BINDINGS,
         ("v", "edit_note", "Edit Note"),
+        ("q", "cancel", "Close"),
     ]
 
     def __init__(self, detail: TaskDetailOutput, *args: Any, **kwargs: Any):
