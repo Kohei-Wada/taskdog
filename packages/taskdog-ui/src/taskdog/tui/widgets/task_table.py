@@ -154,14 +154,22 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         self._render_tasks(self._get_all_viewmodels_from_state())
 
     def _render_tasks(self, view_models: list[TaskRowViewModel]):
-        """Render task ViewModels to the table.
+        """Render task ViewModels to the table using Textual's recommended pattern.
+
+        Instead of clearing and rebuilding the entire table, this method:
+        - Updates existing rows using update_cell_at() to preserve cursor and hover state
+        - Adds new rows only when needed
+        - Removes excess rows only when needed
+
+        This approach maintains mouse hover state and cursor position automatically.
 
         Args:
             view_models: List of ViewModels to render
         """
-        self.clear()
-        self._viewmodel_map.clear()
+        current_row_count = self.row_count
+        new_row_count = len(view_models)
 
+        # Update existing rows and add new ones
         for idx, task_vm in enumerate(view_models):
             # Build checkbox indicator
             checkbox = self._build_checkbox(task_vm.id)
@@ -169,10 +177,28 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
             # Build row data using row builder with ViewModel
             row_data = self._row_builder.build_row(task_vm)
 
-            # Add checkbox as first column, then other columns
-            self.add_row(checkbox, *row_data)
+            if idx < current_row_count:
+                # Update existing row using update_cell_at() - preserves cursor/hover state
+                self.update_cell_at((idx, 0), checkbox)  # Checkbox column
+                for col_idx, value in enumerate(row_data, start=1):
+                    self.update_cell_at((idx, col_idx), value)
+            else:
+                # Add new row
+                self.add_row(checkbox, *row_data)
+
             # Store ViewModel
             self._viewmodel_map[idx] = task_vm
+
+        # Remove excess rows from the end
+        while self.row_count > new_row_count:
+            # Remove from viewmodel map first (before removing the row)
+            row_idx_to_remove = self.row_count - 1
+            if row_idx_to_remove in self._viewmodel_map:
+                del self._viewmodel_map[row_idx_to_remove]
+            # Get the last row key from coordinates and remove it
+            # coordinate_to_cell_key returns (row_key, column_key)
+            row_key, _ = self.coordinate_to_cell_key((row_idx_to_remove, 0))
+            self.remove_row(row_key)
 
     def _build_checkbox(self, task_id: int) -> Text:
         """Build checkbox indicator for a task.

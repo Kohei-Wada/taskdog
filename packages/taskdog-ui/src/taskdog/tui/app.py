@@ -73,8 +73,8 @@ class TaskdogTUI(App):
     # Load CSS from external files
     CSS_PATH: ClassVar = get_css_paths()
 
-    # Disable mouse support
-    ENABLE_MOUSE: ClassVar[bool] = False
+    # Enable mouse support
+    ENABLE_MOUSE: ClassVar[bool] = True
 
     def __init__(
         self,
