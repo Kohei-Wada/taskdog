@@ -21,7 +21,7 @@ class SearchInput(Container):
         """Initialize the search input widget."""
         super().__init__(*args, **kwargs)
         self.add_class("search-container")
-        self.can_focus = False  # Don't auto-focus when parent receives focus
+        # Container itself doesn't need to be focusable; Input widget inside is focusable
 
     def compose(self) -> ComposeResult:
         """Compose the search input with a label."""
@@ -29,9 +29,7 @@ class SearchInput(Container):
             search_input = Input(
                 placeholder="Press '/' to search tasks", id=SEARCH_INPUT_ID
             )
-            search_input.can_focus = (
-                False  # Disable auto-focus, use focus_input() explicitly
-            )
+            search_input.can_focus = True  # Allow focus for Ctrl+J/K navigation
             yield search_input
         yield Static("", id="search-result", classes="search-result")
 
@@ -72,7 +70,6 @@ class SearchInput(Container):
     def focus_input(self) -> None:
         """Focus the search input field."""
         search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
-        search_input.can_focus = True  # Temporarily enable focus
         search_input.focus()
 
     def update_result(self, matched: int, total: int) -> None:

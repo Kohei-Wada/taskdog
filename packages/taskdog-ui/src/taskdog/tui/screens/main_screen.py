@@ -1,6 +1,9 @@
 """Main screen for the TUI."""
 
+from typing import ClassVar
+
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import Screen
 from textual.widgets import Header
@@ -16,6 +19,13 @@ from taskdog.view_models.task_view_model import TaskRowViewModel
 
 class MainScreen(Screen[None]):
     """Main screen showing gantt chart and task list."""
+
+    BINDINGS: ClassVar = [
+        Binding("ctrl+j", "focus_next", "Next widget", show=False, priority=True),
+        Binding(
+            "ctrl+k", "focus_previous", "Previous widget", show=False, priority=True
+        ),
+    ]
 
     def __init__(self, state: TUIState | None = None) -> None:
         """Initialize the main screen.
@@ -164,3 +174,11 @@ class MainScreen(Screen[None]):
         if self.task_table:
             return self.task_table.all_viewmodels
         return []
+
+    def action_focus_next(self) -> None:
+        """Move focus to the next widget (Ctrl+J)."""
+        self.screen.focus_next()
+
+    def action_focus_previous(self) -> None:
+        """Move focus to the previous widget (Ctrl+K)."""
+        self.screen.focus_previous()

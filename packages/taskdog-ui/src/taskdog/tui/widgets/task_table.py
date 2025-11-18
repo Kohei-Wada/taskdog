@@ -75,8 +75,6 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         # j/k navigation using DataTable's built-in cursor actions
         Binding("j", "cursor_down", "Down", show=False),
         Binding("k", "cursor_up", "Up", show=False),
-        Binding("ctrl+j", "cursor_down", "Down", show=False),
-        Binding("ctrl+k", "cursor_up", "Up", show=False),
         # g/G navigation for top/bottom
         Binding("g", "vi_home", "Top", show=False),
         Binding("G", "vi_end", "Bottom", show=False),
