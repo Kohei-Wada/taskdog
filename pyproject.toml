@@ -134,7 +134,7 @@ ignore = [
 ]  # TaskNotFoundException is widely used
 "packages/*/tests/**/*.py" = ["SIM115", "RUF015"]  # Test code patterns are acceptable
 "scripts/**/*.py" = ["B904", "C901"]  # Migration scripts: exception chaining and complexity acceptable
-# "packages/taskdog-server/src/taskdog_server/api/error_handlers.py" = ["UP047"]  # Type parameters require Python 3.12+ (rule not available in this ruff version)
+"packages/taskdog-server/src/taskdog_server/api/error_handlers.py" = ["UP047"]  # Type parameters require Python 3.12+
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
