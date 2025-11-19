@@ -2,12 +2,28 @@
 
 from datetime import date, timedelta
 
+from taskdog_core.application.queries.strategies.workload_calculation_strategy import (
+    WeekdayOnlyStrategy,
+    WorkloadCalculationStrategy,
+)
 from taskdog_core.domain.entities.task import Task
-from taskdog_core.shared.utils.date_utils import count_weekdays, is_weekday
 
 
 class WorkloadCalculator:
-    """Calculates daily workload from tasks with estimated duration."""
+    """Calculates daily workload from tasks with estimated duration.
+
+    Uses a WorkloadCalculationStrategy to determine how to distribute hours
+    when daily_allocations is not explicitly set.
+    """
+
+    def __init__(self, strategy: WorkloadCalculationStrategy | None = None):
+        """Initialize the workload calculator.
+
+        Args:
+            strategy: Strategy for computing workload from planned periods.
+                     Defaults to WeekdayOnlyStrategy for backward compatibility.
+        """
+        self.strategy = strategy or WeekdayOnlyStrategy()
 
     def calculate_daily_workload(
         self, tasks: list[Task], start_date: date, end_date: date
@@ -94,7 +110,10 @@ class WorkloadCalculator:
         return task.daily_allocations.copy()
 
     def _compute_from_planned_period(self, task: Task) -> dict[date, float]:
-        """Compute daily hours by distributing evenly across weekdays in planned period.
+        """Compute daily hours using the configured strategy.
+
+        Delegates to the strategy to determine how hours should be distributed
+        across the planned period (e.g., weekdays only vs. all days).
 
         Args:
             task: Task with planned_start, planned_end, and estimated_duration
@@ -102,23 +121,4 @@ class WorkloadCalculator:
         Returns:
             Dictionary mapping date to hours {date: hours}
         """
-        if not (task.planned_start and task.planned_end and task.estimated_duration):
-            return {}
-
-        planned_start = task.planned_start.date()
-        planned_end = task.planned_end.date()
-
-        weekday_count = count_weekdays(planned_start, planned_end)
-        if weekday_count == 0:
-            return {}
-
-        hours_per_day = task.estimated_duration / weekday_count
-
-        result: dict[date, float] = {}
-        current_date = planned_start
-        while current_date <= planned_end:
-            if is_weekday(current_date):
-                result[current_date] = hours_per_day
-            current_date += timedelta(days=1)
-
-        return result
+        return self.strategy.compute_from_planned_period(task)

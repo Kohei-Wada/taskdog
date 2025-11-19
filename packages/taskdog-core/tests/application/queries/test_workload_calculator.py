@@ -3,6 +3,9 @@
 import unittest
 from datetime import date, datetime, timedelta
 
+from taskdog_core.application.queries.strategies.workload_calculation_strategy import (
+    ActualScheduleStrategy,
+)
 from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
@@ -354,6 +357,141 @@ class WorkloadCalculatorTest(unittest.TestCase):
         self.assertAlmostEqual(
             result[date(2025, 1, 10)], 0.0, places=2
         )  # Friday (task2 excluded)
+
+
+class WorkloadCalculatorWithActualScheduleStrategyTest(unittest.TestCase):
+    """Test cases for WorkloadCalculator with ActualScheduleStrategy.
+
+    These tests verify that when using ActualScheduleStrategy, workload
+    calculations include weekends and honor manually scheduled tasks.
+    """
+
+    def setUp(self):
+        """Set up test fixtures with ActualScheduleStrategy."""
+        self.calculator = WorkloadCalculator(ActualScheduleStrategy())
+
+    def test_calculate_daily_workload_prioritizes_weekdays_in_period(self):
+        """Test that ActualScheduleStrategy prioritizes weekdays within the period."""
+        # Task spanning Friday to Tuesday (5 days total, 3 weekdays)
+        # Expected: 10h / 3 weekdays = 3.33h per weekday
+        task = Task(
+            id=1,
+            name="Weekday Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=datetime.fromtimestamp(1234567890.0),
+            planned_start=datetime(2025, 1, 10, 9, 0, 0),  # Friday
+            planned_end=datetime(2025, 1, 14, 18, 0, 0),  # Tuesday
+            estimated_duration=10.0,
+        )
+
+        start_date = date(2025, 1, 10)  # Friday
+        end_date = date(2025, 1, 14)  # Tuesday
+
+        result = self.calculator.calculate_daily_workload([task], start_date, end_date)
+
+        # Weekdays should have 3.33h, weekends should be 0
+        self.assertAlmostEqual(result[date(2025, 1, 10)], 3.33, places=2)  # Friday
+        self.assertAlmostEqual(result[date(2025, 1, 11)], 0.0, places=2)  # Saturday
+        self.assertAlmostEqual(result[date(2025, 1, 12)], 0.0, places=2)  # Sunday
+        self.assertAlmostEqual(result[date(2025, 1, 13)], 3.33, places=2)  # Monday
+        self.assertAlmostEqual(result[date(2025, 1, 14)], 3.33, places=2)  # Tuesday
+
+    def test_calculate_daily_workload_weekend_only_task(self):
+        """Test that weekend-only tasks are properly calculated."""
+        # Task scheduled only on Saturday-Sunday
+        task = Task(
+            id=1,
+            name="Weekend Only Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=datetime.fromtimestamp(1234567890.0),
+            planned_start=datetime(2025, 1, 11, 9, 0, 0),  # Saturday
+            planned_end=datetime(2025, 1, 12, 18, 0, 0),  # Sunday
+            estimated_duration=10.0,
+        )
+
+        start_date = date(2025, 1, 10)  # Friday
+        end_date = date(2025, 1, 14)  # Tuesday
+
+        result = self.calculator.calculate_daily_workload([task], start_date, end_date)
+
+        # Weekend should have hours, weekdays should be 0
+        # 10h / 2 days = 5h per day
+        self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
+        self.assertAlmostEqual(result[date(2025, 1, 11)], 5.0, places=2)  # Saturday
+        self.assertAlmostEqual(result[date(2025, 1, 12)], 5.0, places=2)  # Sunday
+        self.assertAlmostEqual(result[date(2025, 1, 13)], 0.0, places=2)  # Monday
+        self.assertAlmostEqual(result[date(2025, 1, 14)], 0.0, places=2)  # Tuesday
+
+    def test_calculate_daily_workload_single_weekend_day(self):
+        """Test that single weekend day tasks are properly calculated."""
+        # Task scheduled only on Saturday
+        task = Task(
+            id=1,
+            name="Saturday Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=datetime.fromtimestamp(1234567890.0),
+            planned_start=datetime(2025, 1, 11, 9, 0, 0),  # Saturday
+            planned_end=datetime(2025, 1, 11, 18, 0, 0),  # Same Saturday
+            estimated_duration=8.0,
+        )
+
+        start_date = date(2025, 1, 10)  # Friday
+        end_date = date(2025, 1, 14)  # Tuesday
+
+        result = self.calculator.calculate_daily_workload([task], start_date, end_date)
+
+        # Only Saturday should have hours
+        self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
+        self.assertAlmostEqual(result[date(2025, 1, 11)], 8.0, places=2)  # Saturday
+        self.assertAlmostEqual(result[date(2025, 1, 12)], 0.0, places=2)  # Sunday
+        self.assertAlmostEqual(result[date(2025, 1, 13)], 0.0, places=2)  # Monday
+        self.assertAlmostEqual(result[date(2025, 1, 14)], 0.0, places=2)  # Tuesday
+
+    def test_calculate_daily_workload_mixed_weekday_weekend_tasks(self):
+        """Test workload with both weekday and weekend tasks."""
+        # Task 1: Weekday task (Monday to Wednesday, 6 hours)
+        task1 = Task(
+            id=1,
+            name="Weekday Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=datetime.fromtimestamp(1234567890.0),
+            planned_start=datetime(2025, 1, 6, 9, 0, 0),  # Monday
+            planned_end=datetime(2025, 1, 8, 18, 0, 0),  # Wednesday
+            estimated_duration=6.0,
+        )
+
+        # Task 2: Weekend task (Saturday to Sunday, 10 hours)
+        task2 = Task(
+            id=2,
+            name="Weekend Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=datetime.fromtimestamp(1234567890.0),
+            planned_start=datetime(2025, 1, 11, 9, 0, 0),  # Saturday
+            planned_end=datetime(2025, 1, 12, 18, 0, 0),  # Sunday
+            estimated_duration=10.0,
+        )
+
+        start_date = date(2025, 1, 6)  # Monday
+        end_date = date(2025, 1, 12)  # Sunday
+
+        result = self.calculator.calculate_daily_workload(
+            [task1, task2], start_date, end_date
+        )
+
+        # Task 1: 6h / 3 days = 2h per day (Mon-Wed)
+        # Task 2: 10h / 2 days = 5h per day (Sat-Sun)
+        self.assertAlmostEqual(result[date(2025, 1, 6)], 2.0, places=2)  # Monday
+        self.assertAlmostEqual(result[date(2025, 1, 7)], 2.0, places=2)  # Tuesday
+        self.assertAlmostEqual(result[date(2025, 1, 8)], 2.0, places=2)  # Wednesday
+        self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)  # Thursday
+        self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
+        self.assertAlmostEqual(result[date(2025, 1, 11)], 5.0, places=2)  # Saturday
+        self.assertAlmostEqual(result[date(2025, 1, 12)], 5.0, places=2)  # Sunday
 
 
 if __name__ == "__main__":

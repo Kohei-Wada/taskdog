@@ -7,6 +7,9 @@ from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutpu
 from taskdog_core.application.dto.task_dto import GanttTaskDto, TaskRowDto
 from taskdog_core.application.queries.base import QueryService
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
+from taskdog_core.application.queries.strategies.workload_calculation_strategy import (
+    ActualScheduleStrategy,
+)
 from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
 from taskdog_core.application.sorters.task_sorter import TaskSorter
 from taskdog_core.domain.entities.task import Task
@@ -39,7 +42,6 @@ class TaskQueryService(QueryService):
         """
         super().__init__(repository)
         self.sorter = TaskSorter()
-        self.workload_calculator = WorkloadCalculator()
 
     def get_filtered_tasks_as_dtos(
         self,
@@ -413,15 +415,22 @@ class TaskQueryService(QueryService):
 
         range_start, range_end = date_range
 
+        # Create workload calculator with holiday checker for this request
+        # Use ActualScheduleStrategy to honor manually scheduled tasks
+        # while excluding weekends and holidays
+        workload_calculator = WorkloadCalculator(
+            ActualScheduleStrategy(holiday_checker)
+        )
+
         # Calculate daily hours per task
         task_daily_hours: dict[int, dict[date, float]] = {}
         for task in tasks:
-            daily_hours = self.workload_calculator.get_task_daily_hours(task)
+            daily_hours = workload_calculator.get_task_daily_hours(task)
             if daily_hours:
                 task_daily_hours[task.id] = daily_hours
 
         # Calculate daily workload totals
-        daily_workload = self.workload_calculator.calculate_daily_workload(
+        daily_workload = workload_calculator.calculate_daily_workload(
             tasks, range_start, range_end
         )
 
