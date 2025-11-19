@@ -53,7 +53,7 @@ class ExportCommand(TUICommandBase):
         """Execute the export command."""
         try:
             # Get all tasks (no filtering)
-            result = self.context.api_client.list_tasks(filter_obj=None)
+            result = self.context.api_client.list_tasks()
             tasks = result.tasks
 
             # Lookup format configuration

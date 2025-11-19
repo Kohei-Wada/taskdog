@@ -33,9 +33,6 @@ from taskdog.tui.screens.main_screen import MainScreen
 from taskdog.tui.services.websocket_handler import WebSocketHandler
 from taskdog.tui.state import TUIState
 from taskdog.tui.utils.css_loader import get_css_paths
-from taskdog_core.application.queries.filters.non_archived_filter import (
-    NonArchivedFilter,
-)
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 from taskdog_core.shared.config_manager import Config, ConfigManager
 
@@ -255,7 +252,7 @@ class TaskdogTUI(App):
             date_range = self._calculate_gantt_date_range()
 
             return self.task_data_loader.load_tasks(
-                task_filter=NonArchivedFilter(),
+                all=False,  # Non-archived by default
                 sort_by=self.state.sort_by,
                 reverse=self.state.sort_reverse,
                 hide_completed=self.state.hide_completed,
@@ -320,7 +317,7 @@ class TaskdogTUI(App):
                 gantt_view_model=task_data.filtered_gantt_view_model,
                 sort_by=self.state.sort_by,
                 reverse=self.state.sort_reverse,
-                task_filter=NonArchivedFilter(),
+                all=False,  # Non-archived by default
             )
 
         # Update Table widget
@@ -471,12 +468,12 @@ class TaskdogTUI(App):
 
         try:
             # Use public API to get current filter and sort order
-            task_filter = gantt_widget.get_task_filter()
+            all = gantt_widget.get_filter_all()
             sort_by = gantt_widget.get_sort_by()
 
             # Use integrated API to get tasks + gantt data in single request
             task_list_output = self.api_client.list_tasks(
-                filter_obj=task_filter,
+                all=all,
                 sort_by=sort_by,
                 reverse=self.state.sort_reverse,
                 include_gantt=True,

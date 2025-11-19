@@ -9,9 +9,6 @@ from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowVie
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
-from taskdog_core.application.queries.filters.non_archived_filter import (
-    NonArchivedFilter,
-)
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
@@ -47,7 +44,7 @@ class TestTaskDataLoader(unittest.TestCase):
 
         # Execute
         result = self.loader.load_tasks(
-            task_filter=NonArchivedFilter(),
+            all=False,
             sort_by="deadline",
             hide_completed=False,
             date_range=None,
@@ -84,7 +81,7 @@ class TestTaskDataLoader(unittest.TestCase):
 
         # Execute with hide_completed=True
         result = self.loader.load_tasks(
-            task_filter=NonArchivedFilter(),
+            all=False,
             sort_by="deadline",
             hide_completed=True,
             date_range=None,
@@ -140,7 +137,7 @@ class TestTaskDataLoader(unittest.TestCase):
 
         # Execute with date range
         result = self.loader.load_tasks(
-            task_filter=NonArchivedFilter(),
+            all=False,
             sort_by="deadline",
             hide_completed=False,
             date_range=(date(2025, 1, 1), date(2025, 1, 7)),

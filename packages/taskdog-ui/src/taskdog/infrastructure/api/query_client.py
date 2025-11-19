@@ -26,7 +26,6 @@ class QueryClient:
     - Get individual tasks
     - Gantt chart data
     - Tag statistics
-    - Legacy filter support for TUI
     """
 
     def __init__(self, base_client: BaseApiClient, has_notes_cache: dict[int, bool]):
@@ -39,55 +38,8 @@ class QueryClient:
         self._base = base_client
         self._has_notes_cache = has_notes_cache
 
-    def _parse_filter_to_params_legacy(self, filter_obj: Any) -> dict[str, Any]:
-        """Parse TaskFilter object to query parameters (legacy support for TUI).
-
-        This is a temporary backward compatibility method for TUI.
-        CLI commands should use the new direct parameter API.
-
-        Args:
-            filter_obj: TaskFilter object or None
-
-        Returns:
-            Dictionary with extracted parameters
-        """
-        from taskdog_core.application.queries.filters.date_range_filter import (
-            DateRangeFilter,
-        )
-        from taskdog_core.application.queries.filters.non_archived_filter import (
-            NonArchivedFilter,
-        )
-        from taskdog_core.application.queries.filters.status_filter import StatusFilter
-        from taskdog_core.application.queries.filters.tag_filter import TagFilter
-
-        params: dict[str, Any] = {
-            "all": True,
-            "status": None,
-            "tags": None,
-            "start_date": None,
-            "end_date": None,
-        }
-
-        if filter_obj:
-            current_filter = filter_obj
-            while current_filter:
-                if isinstance(current_filter, NonArchivedFilter):
-                    params["all"] = False
-                elif isinstance(current_filter, StatusFilter):
-                    params["status"] = current_filter.status.value.lower()
-                elif isinstance(current_filter, TagFilter):
-                    params["tags"] = current_filter.tags
-                elif isinstance(current_filter, DateRangeFilter):
-                    params["start_date"] = current_filter.start_date
-                    params["end_date"] = current_filter.end_date
-
-                current_filter = getattr(current_filter, "_next", None)
-
-        return params
-
     def list_tasks(
         self,
-        filter_obj: Any = None,  # Legacy parameter for TUI compatibility
         all: bool = False,
         status: str | None = None,
         tags: list[str] | None = None,
@@ -102,7 +54,6 @@ class QueryClient:
         """List tasks with optional filtering and sorting.
 
         Args:
-            filter_obj: (DEPRECATED, TUI only) TaskFilter object for backward compatibility
             all: Include archived tasks (default: False)
             status: Filter by status (e.g., "pending", "in_progress", "completed", "canceled")
             tags: Filter by tags (OR logic)
@@ -116,19 +67,7 @@ class QueryClient:
 
         Returns:
             TaskListOutput with task list and metadata, optionally including Gantt data
-
-        Note:
-            filter_obj is deprecated and only supported for TUI backward compatibility.
         """
-        # Handle legacy filter_obj parameter (TUI compatibility)
-        if filter_obj is not None:
-            legacy_params = self._parse_filter_to_params_legacy(filter_obj)
-            all = legacy_params["all"]
-            status = legacy_params["status"] or status
-            tags = legacy_params["tags"] or tags
-            start_date = legacy_params["start_date"] or start_date
-            end_date = legacy_params["end_date"] or end_date
-
         params: dict[str, Any] = {
             "all": str(all).lower(),
             "sort": sort_by,
@@ -199,7 +138,6 @@ class QueryClient:
 
     def get_gantt_data(
         self,
-        filter_obj: Any = None,  # Legacy parameter for TUI compatibility
         all: bool = False,
         status: str | None = None,
         tags: list[str] | None = None,
@@ -213,7 +151,6 @@ class QueryClient:
         """Get Gantt chart data.
 
         Args:
-            filter_obj: (DEPRECATED, TUI only) TaskFilter object for backward compatibility
             all: Include archived tasks (default: False)
             status: Filter by status
             tags: Filter by tags (OR logic)
@@ -230,17 +167,7 @@ class QueryClient:
         Note:
             filter_start_date/filter_end_date are for filtering tasks.
             start_date/end_date are for the chart display range.
-            filter_obj is deprecated and only supported for TUI backward compatibility.
         """
-        # Handle legacy filter_obj parameter (TUI compatibility)
-        if filter_obj is not None:
-            legacy_params = self._parse_filter_to_params_legacy(filter_obj)
-            all = legacy_params["all"]
-            status = legacy_params["status"] or status
-            tags = legacy_params["tags"] or tags
-            filter_start_date = legacy_params["start_date"] or filter_start_date
-            filter_end_date = legacy_params["end_date"] or filter_end_date
-
         params: dict[str, Any] = {
             "all": str(all).lower(),
             "sort": sort_by,

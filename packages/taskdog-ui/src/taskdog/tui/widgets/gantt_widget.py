@@ -26,7 +26,6 @@ from taskdog.constants.table_dimensions import (
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.gantt_data_table import GanttDataTable
 from taskdog.view_models.gantt_view_model import GanttViewModel
-from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.shared.constants.time import DAYS_PER_WEEK
 from taskdog_core.shared.utils.date_utils import get_previous_monday
 
@@ -57,7 +56,7 @@ class GanttWidget(VerticalScroll, TUIWidget):
         self._task_ids: list[int] = []
         # NOTE: _gantt_view_model removed - now accessed via self.app.state.gantt_cache (Step 4)
         # NOTE: _sort_by and _reverse removed - now accessed via self.app.state (Step 2)
-        self._task_filter: TaskFilter | None = None  # Filter for recalculation
+        self._filter_all: bool = False  # Include archived tasks flag for recalculation
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
         self._legend_widget: Static | None = None
@@ -90,7 +89,7 @@ class GanttWidget(VerticalScroll, TUIWidget):
         gantt_view_model: GanttViewModel,
         sort_by: str = "deadline",
         reverse: bool = False,
-        task_filter: TaskFilter | None = None,
+        all: bool = False,
     ):
         """Update the gantt chart with new gantt data.
 
@@ -99,15 +98,14 @@ class GanttWidget(VerticalScroll, TUIWidget):
             gantt_view_model: Presentation-ready gantt data
             sort_by: Sort order for tasks (kept for compatibility, value comes from app.state)
             reverse: Sort direction (kept for compatibility, value comes from app.state)
-            task_filter: Filter object to use for recalculation on resize (optional)
+            all: Include archived tasks (default: False)
         """
         self._task_ids = task_ids
         # Store gantt view model in app state (Step 4)
         self.tui_state.gantt_cache = gantt_view_model
         # NOTE: sort_by and reverse parameters kept for API compatibility,
         # but actual values are read from self.tui_state
-        if task_filter is not None:
-            self._task_filter = task_filter
+        self._filter_all = all
         self._render_gantt()
 
     def _get_gantt_from_state(self) -> GanttViewModel | None:
@@ -298,13 +296,13 @@ class GanttWidget(VerticalScroll, TUIWidget):
 
     # Public API methods for external access
 
-    def get_task_filter(self):
-        """Get current task filter.
+    def get_filter_all(self) -> bool:
+        """Get current archive filter setting.
 
         Returns:
-            Current TaskFilter object or None
+            Whether to include archived tasks
         """
-        return self._task_filter
+        return self._filter_all
 
     def get_sort_by(self) -> str:
         """Get current sort order.

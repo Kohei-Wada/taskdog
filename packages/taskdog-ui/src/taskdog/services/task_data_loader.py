@@ -10,7 +10,6 @@ from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
-from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.domain.entities.task import TaskStatus
 
 
@@ -61,8 +60,8 @@ class TaskDataLoader:
 
     def load_tasks(
         self,
-        task_filter: TaskFilter | None,
-        sort_by: str,
+        all: bool = False,
+        sort_by: str = "id",
         reverse: bool = False,
         hide_completed: bool = False,
         date_range: tuple[date, date] | None = None,
@@ -70,7 +69,7 @@ class TaskDataLoader:
         """Load tasks from API and create ViewModels.
 
         Args:
-            task_filter: Filter for API query
+            all: Include archived tasks (default: False)
             sort_by: Sort field name
             reverse: Sort direction (default: False for ascending)
             hide_completed: Whether to hide completed/canceled tasks
@@ -84,7 +83,7 @@ class TaskDataLoader:
         gantt_start_date, gantt_end_date = date_range if date_range else (None, None)
 
         task_list_output = self.api_client.list_tasks(
-            filter_obj=task_filter,
+            all=all,
             sort_by=sort_by,
             reverse=reverse,
             include_gantt=include_gantt,
@@ -127,8 +126,8 @@ class TaskDataLoader:
 
     def load_gantt_data(
         self,
-        task_filter: TaskFilter | None,
-        sort_by: str,
+        all: bool = False,
+        sort_by: str = "deadline",
         reverse: bool = False,
         start_date: date | None = None,
         end_date: date | None = None,
@@ -136,7 +135,7 @@ class TaskDataLoader:
         """Load gantt data from API.
 
         Args:
-            task_filter: Filter for API query
+            all: Include archived tasks (default: False)
             sort_by: Sort field name
             reverse: Sort direction (default: False for ascending)
             start_date: Start date for gantt
@@ -146,7 +145,7 @@ class TaskDataLoader:
             GanttViewModel from presenter
         """
         gantt_output = self.api_client.get_gantt_data(
-            filter_obj=task_filter,
+            all=all,
             sort_by=sort_by,
             reverse=reverse,
             start_date=start_date,

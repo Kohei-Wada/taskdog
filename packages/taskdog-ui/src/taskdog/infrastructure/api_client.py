@@ -239,7 +239,6 @@ class TaskdogApiClient:
 
     def list_tasks(
         self,
-        filter_obj=None,  # Legacy parameter for TUI compatibility
         all: bool = False,
         status: str | None = None,
         tags: list[str] | None = None,
@@ -253,7 +252,6 @@ class TaskdogApiClient:
     ) -> TaskListOutput:
         """List tasks with optional filtering and sorting."""
         return self._queries.list_tasks(
-            filter_obj,
             all,
             status,
             tags,
@@ -276,7 +274,6 @@ class TaskdogApiClient:
 
     def get_gantt_data(
         self,
-        filter_obj=None,  # Legacy parameter for TUI compatibility
         all: bool = False,
         status: str | None = None,
         tags: list[str] | None = None,
@@ -289,7 +286,6 @@ class TaskdogApiClient:
     ) -> GanttOutput:
         """Get Gantt chart data."""
         return self._queries.get_gantt_data(
-            filter_obj,
             all,
             status,
             tags,
