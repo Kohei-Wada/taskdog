@@ -19,6 +19,7 @@ from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
+    from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
     from taskdog_core.domain.repositories.task_repository import TaskRepository
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -56,6 +57,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         force_override: bool,
         holiday_checker: "IHolidayChecker | None" = None,
         current_time: datetime | None = None,
+        workload_calculator: "WorkloadCalculator | None" = None,
     ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
         """Optimize task schedules using round-robin algorithm.
 
@@ -67,6 +69,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             force_override: Whether to override existing schedules
             holiday_checker: Optional HolidayChecker for holiday detection
             current_time: Current time for calculating remaining hours on today
+            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             Tuple of (modified_tasks, daily_allocations, failed_tasks)
@@ -83,6 +86,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             force_override=force_override,
             holiday_checker=holiday_checker,
             current_time=current_time,
+            workload_calculator=workload_calculator,
         )
 
         # Filter tasks that need scheduling

@@ -12,6 +12,7 @@ from taskdog_core.application.services.optimization.allocation_initializer impor
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
+    from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
     from taskdog_core.domain.repositories.task_repository import TaskRepository
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -50,6 +51,7 @@ class AllocationContext:
         force_override: bool,
         holiday_checker: "IHolidayChecker | None" = None,
         current_time: "datetime | None" = None,
+        workload_calculator: "WorkloadCalculator | None" = None,
     ) -> "AllocationContext":
         """Factory method that creates context with initialized allocations.
 
@@ -64,12 +66,14 @@ class AllocationContext:
             force_override: Whether to override existing schedules
             holiday_checker: Optional holiday checker
             current_time: Optional current time for time-aware operations
+            workload_calculator: Optional pre-configured calculator (injected from UseCase)
 
         Returns:
             Initialized AllocationContext
         """
         # Initialize allocations from existing tasks
-        initializer = AllocationInitializer()
+        # Inject workload calculator from UseCase for proper strategy selection
+        initializer = AllocationInitializer(workload_calculator=workload_calculator)
         daily_allocations = initializer.initialize_allocations(tasks, force_override)
 
         return cls(

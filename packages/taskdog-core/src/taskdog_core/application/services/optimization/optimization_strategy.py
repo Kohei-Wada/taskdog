@@ -14,6 +14,7 @@ from taskdog_core.application.sorters.optimization_task_sorter import (
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
+    from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
     from taskdog_core.domain.repositories.task_repository import TaskRepository
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -45,6 +46,7 @@ class OptimizationStrategy(ABC):
         force_override: bool,
         holiday_checker: "IHolidayChecker | None" = None,
         current_time: datetime | None = None,
+        workload_calculator: "WorkloadCalculator | None" = None,
     ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
         """Optimize task schedules using template method pattern.
 
@@ -59,6 +61,7 @@ class OptimizationStrategy(ABC):
             force_override: Whether to override existing schedules
             holiday_checker: Optional HolidayChecker for holiday detection
             current_time: Current time for calculating remaining hours on today
+            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             Tuple of (modified_tasks, daily_allocations, failed_tasks)
@@ -67,6 +70,7 @@ class OptimizationStrategy(ABC):
             - failed_tasks: List of tasks that could not be scheduled with reasons
         """
         # 1. Create allocation context with initialized state
+        # Pass workload_calculator from UseCase for proper strategy selection
         context = AllocationContext.create(
             tasks=tasks,
             repository=repository,
@@ -75,6 +79,7 @@ class OptimizationStrategy(ABC):
             force_override=force_override,
             holiday_checker=holiday_checker,
             current_time=current_time,
+            workload_calculator=workload_calculator,
         )
 
         # 2. Filter tasks that need scheduling

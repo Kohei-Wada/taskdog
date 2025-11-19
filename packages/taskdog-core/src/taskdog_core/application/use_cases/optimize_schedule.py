@@ -5,6 +5,7 @@ from datetime import datetime
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.application.dto.optimize_schedule_input import OptimizeScheduleInput
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
+from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
 from taskdog_core.application.services.optimization.strategy_factory import (
     StrategyFactory,
 )
@@ -12,6 +13,9 @@ from taskdog_core.application.services.optimization_summary_builder import (
     OptimizationSummaryBuilder,
 )
 from taskdog_core.application.services.schedule_clearer import ScheduleClearer
+from taskdog_core.application.services.workload_calculation_strategy_factory import (
+    WorkloadCalculationStrategyFactory,
+)
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.task_repository import TaskRepository
@@ -66,12 +70,21 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             t.id: t.planned_start for t in all_tasks if t.id is not None
         }
 
+        # Create WorkloadCalculator for optimization context
+        # Factory selects appropriate strategy (WeekdayOnlyStrategy for optimization)
+        # UseCase constructs the calculator with the strategy
+        workload_strategy = WorkloadCalculationStrategyFactory.create_for_optimization(
+            holiday_checker=self.holiday_checker,
+            include_weekends=False,  # Future: from config
+        )
+        workload_calculator = WorkloadCalculator(workload_strategy)
+
         # Get optimization strategy
         strategy = StrategyFactory.create(
             input_dto.algorithm_name, self.default_start_hour, self.default_end_hour
         )
 
-        # Run optimization
+        # Run optimization with injected workload calculator
         modified_tasks, daily_allocations, failed_tasks = strategy.optimize_tasks(
             tasks=all_tasks,
             repository=self.repository,
@@ -80,6 +93,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             force_override=input_dto.force_override,
             holiday_checker=self.holiday_checker,
             current_time=input_dto.current_time,
+            workload_calculator=workload_calculator,
         )
 
         # Save successfully scheduled tasks (batch operation for performance)

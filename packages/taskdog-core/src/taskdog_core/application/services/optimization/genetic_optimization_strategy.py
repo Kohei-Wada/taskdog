@@ -29,6 +29,7 @@ from taskdog_core.application.services.optimization.schedule_fitness_calculator 
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
+    from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
     from taskdog_core.domain.repositories.task_repository import TaskRepository
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -84,6 +85,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         force_override: bool,
         holiday_checker: "IHolidayChecker | None" = None,
         current_time: datetime | None = None,
+        workload_calculator: "WorkloadCalculator | None" = None,
     ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
         """Optimize task schedules using genetic algorithm.
 
@@ -94,6 +96,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
             holiday_checker: Optional HolidayChecker for holiday detection
+            current_time: Current time for calculating remaining hours on today
+            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             Tuple of (modified_tasks, daily_allocations, failed_tasks)
@@ -118,6 +122,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             force_override=force_override,
             holiday_checker=holiday_checker,
             current_time=current_time,
+            workload_calculator=workload_calculator,
         )
 
         # Create greedy strategy instance for allocation
@@ -136,6 +141,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             max_hours_per_day,
             repository,
             greedy_strategy,
+            workload_calculator,
         )
 
         # Reuse cached allocation results for the best order (performance optimization)
@@ -176,6 +182,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         repository: "TaskRepository",
         greedy_strategy: GreedyOptimizationStrategy,
+        workload_calculator: "WorkloadCalculator | None" = None,
     ) -> list[Task]:
         """Run genetic algorithm to find optimal task ordering.
 
@@ -183,6 +190,9 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             tasks: List of tasks to schedule
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
+            repository: Task repository
+            greedy_strategy: Greedy strategy instance
+            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             List of tasks in optimal order
@@ -206,6 +216,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
                     max_hours_per_day,
                     repository,
                     greedy_strategy,
+                    workload_calculator,
                 )[0]  # Extract fitness score only
                 for individual in population
             ]
@@ -254,7 +265,12 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         # Return best individual from final generation
         final_results = [
             self._evaluate_fitness_cached(
-                individual, start_date, max_hours_per_day, repository, greedy_strategy
+                individual,
+                start_date,
+                max_hours_per_day,
+                repository,
+                greedy_strategy,
+                workload_calculator,
             )
             for individual in population
         ]
@@ -269,6 +285,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         repository: "TaskRepository",
         greedy_strategy: GreedyOptimizationStrategy,
+        workload_calculator: "WorkloadCalculator | None" = None,
     ) -> tuple[float, dict[date, float], list[Task]]:
         """Evaluate fitness with caching to avoid redundant calculations.
 
@@ -277,7 +294,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
             repository: Task repository
-            allocator: Allocator instance
+            greedy_strategy: Greedy strategy instance
+            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             Tuple of (fitness_score, daily_allocations, scheduled_tasks)
@@ -291,7 +309,12 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         # Calculate fitness and allocation results
         fitness, daily_allocations, scheduled_tasks = self._evaluate_fitness(
-            task_order, start_date, max_hours_per_day, repository, greedy_strategy
+            task_order,
+            start_date,
+            max_hours_per_day,
+            repository,
+            greedy_strategy,
+            workload_calculator,
         )
 
         # Cache the complete result (fitness + allocations + tasks)
@@ -306,6 +329,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         repository: "TaskRepository",
         greedy_strategy: GreedyOptimizationStrategy,
+        workload_calculator: "WorkloadCalculator | None" = None,
     ) -> tuple[float, dict[date, float], list[Task]]:
         """Evaluate fitness of a task ordering.
 
@@ -316,7 +340,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
             repository: Task repository
-            allocator: Allocator instance
+            greedy_strategy: Greedy strategy instance
+            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             Tuple of (fitness_score, daily_allocations, scheduled_tasks)
@@ -331,6 +356,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             force_override=False,
             holiday_checker=None,
             current_time=None,
+            workload_calculator=workload_calculator,
         )
         scheduled_tasks = []
 
