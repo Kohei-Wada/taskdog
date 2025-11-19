@@ -4,7 +4,7 @@
 repos:
   # Ruff - fast Python linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.4
+    rev: v0.14.5
     hooks:
       # Run the linter
       - id: ruff
@@ -15,7 +15,7 @@ repos:
   # mypy - static type checker
   # Phase 2: mypy enabled with permissive settings
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+    rev: v1.18.2
     hooks:
       - id: mypy
         additional_dependencies: [click>=8.3.0, rich>=14.2.0, fastapi>=0.115.0, pydantic>=2.10.0, httpx>=0.27.0, "uvicorn[standard]>=0.32.0"]
@@ -24,7 +24,7 @@ repos:
 
   # Standard pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
