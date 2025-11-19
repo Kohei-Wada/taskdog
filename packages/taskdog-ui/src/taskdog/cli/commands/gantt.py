@@ -1,5 +1,7 @@
 """Gantt command - Display tasks in Gantt chart format."""
 
+from datetime import date, timedelta
+
 import click
 
 from taskdog.cli.commands.common_options import filter_options, sort_options
@@ -8,7 +10,6 @@ from taskdog.cli.error_handler import handle_command_errors
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.renderers.rich_gantt_renderer import RichGanttRenderer
 from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
-from taskdog_core.shared.utils.date_utils import get_previous_monday
 
 
 @click.command(
@@ -91,7 +92,11 @@ def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
 
     # Convert datetime to date objects if provided (DateTimeWithDefault returns datetime)
     # Default to previous Monday if start_date not provided
-    start_date_obj = start_date.date() if start_date else get_previous_monday()
+    if start_date:
+        start_date_obj = start_date.date()
+    else:
+        today = date.today()
+        start_date_obj = today - timedelta(days=today.weekday())
 
     end_date_obj = end_date.date() if end_date else None
 

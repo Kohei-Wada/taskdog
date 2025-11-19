@@ -234,11 +234,10 @@ class TaskdogTUI(App):
             return self.main_screen.gantt_widget.calculate_date_range()
 
         # Fallback when gantt_widget is not available
-        from datetime import timedelta
+        from datetime import date, timedelta
 
-        from taskdog_core.shared.utils.date_utils import get_previous_monday
-
-        start_date = get_previous_monday()
+        today = date.today()
+        start_date = today - timedelta(days=today.weekday())
         end_date = start_date + timedelta(days=DEFAULT_GANTT_DISPLAY_DAYS - 1)
         return (start_date, end_date)
 

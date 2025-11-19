@@ -27,7 +27,6 @@ from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.gantt_data_table import GanttDataTable
 from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog_core.shared.constants.time import DAYS_PER_WEEK
-from taskdog_core.shared.utils.date_utils import get_previous_monday
 
 
 class GanttWidget(VerticalScroll, TUIWidget):
@@ -248,7 +247,8 @@ class GanttWidget(VerticalScroll, TUIWidget):
         Returns:
             Tuple of (start_date, end_date)
         """
-        start_date = get_previous_monday()
+        today = date.today()
+        start_date = today - timedelta(days=today.weekday())
         end_date = start_date + timedelta(days=display_days - 1)
         return start_date, end_date
 
