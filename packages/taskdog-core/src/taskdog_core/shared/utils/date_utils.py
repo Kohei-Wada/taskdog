@@ -11,7 +11,6 @@ Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
 
 from datetime import date, datetime, timedelta
 
-from taskdog_core.shared.config_manager import ConfigManager
 from taskdog_core.shared.constants import WEEKDAY_THRESHOLD
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
@@ -138,13 +137,15 @@ def calculate_next_workday(start_date: datetime | None = None) -> datetime:
     return today + timedelta(days=days_until_monday)
 
 
-def get_next_weekday() -> datetime:
+def get_next_weekday(default_start_hour: int = 9) -> datetime:
     """Get the next weekday (skip weekends).
 
+    Args:
+        default_start_hour: Hour to set for the returned datetime (default: 9)
+
     Returns:
-        datetime object representing the next weekday at default_start_hour from config
+        datetime object representing the next weekday at the specified hour
     """
-    config = ConfigManager.load()
     today = datetime.now()
     next_day = today + timedelta(days=1)
 
@@ -152,10 +153,8 @@ def get_next_weekday() -> datetime:
     while is_weekend(next_day):
         next_day += timedelta(days=1)
 
-    # Set time to default_start_hour from config (default: 9:00) for schedule start times
-    return next_day.replace(
-        hour=config.time.default_start_hour, minute=0, second=0, microsecond=0
-    )
+    # Set time to specified hour for schedule start times
+    return next_day.replace(hour=default_start_hour, minute=0, second=0, microsecond=0)
 
 
 def get_today_range() -> tuple[date, date]:

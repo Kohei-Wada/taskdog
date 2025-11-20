@@ -97,7 +97,9 @@ def optimize_command(
     config = ctx_obj.config
 
     # Use start_date or get next weekday (DateTimeWithDefault already returns datetime)
-    start_date = start_date if start_date else get_next_weekday()
+    start_date = (
+        start_date if start_date else get_next_weekday(config.time.default_start_hour)
+    )
 
     # Use config defaults if not provided via CLI
     if max_hours_per_day is None:
