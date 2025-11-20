@@ -3,6 +3,8 @@
 import unittest
 from datetime import date
 
+from parameterized import parameterized
+
 from taskdog_core.infrastructure.holiday_checker import HolidayChecker
 
 
@@ -13,33 +15,20 @@ class TestHolidayCheckerJapan(unittest.TestCase):
         """Set up test fixtures."""
         self.checker = HolidayChecker("JP")
 
-    def test_new_years_day(self):
-        """Test that New Year's Day is recognized as a holiday."""
-        self.assertTrue(self.checker.is_holiday(date(2025, 1, 1)))
-
-    def test_golden_week_showa_day(self):
-        """Test that Showa Day (April 29) is recognized."""
-        self.assertTrue(self.checker.is_holiday(date(2025, 4, 29)))
-
-    def test_golden_week_constitution_day(self):
-        """Test that Constitution Day (May 3) is recognized."""
-        self.assertTrue(self.checker.is_holiday(date(2025, 5, 3)))
-
-    def test_golden_week_greenery_day(self):
-        """Test that Greenery Day (May 4) is recognized."""
-        self.assertTrue(self.checker.is_holiday(date(2025, 5, 4)))
-
-    def test_golden_week_childrens_day(self):
-        """Test that Children's Day (May 5) is recognized."""
-        self.assertTrue(self.checker.is_holiday(date(2025, 5, 5)))
-
-    def test_regular_weekday_not_holiday(self):
-        """Test that a regular weekday is not a holiday."""
-        self.assertFalse(self.checker.is_holiday(date(2025, 1, 7)))  # Tuesday
-
-    def test_regular_weekend_not_holiday(self):
-        """Test that a regular weekend is not a holiday."""
-        self.assertFalse(self.checker.is_holiday(date(2025, 1, 4)))  # Saturday
+    @parameterized.expand(
+        [
+            ("new_years_day", date(2025, 1, 1), True),
+            ("showa_day", date(2025, 4, 29), True),
+            ("constitution_day", date(2025, 5, 3), True),
+            ("greenery_day", date(2025, 5, 4), True),
+            ("childrens_day", date(2025, 5, 5), True),
+            ("regular_weekday", date(2025, 1, 7), False),
+            ("regular_weekend", date(2025, 1, 4), False),
+        ]
+    )
+    def test_is_holiday_japan(self, _scenario, test_date, expected_is_holiday):
+        """Test Japanese holiday detection."""
+        self.assertEqual(self.checker.is_holiday(test_date), expected_is_holiday)
 
     def test_get_holiday_name(self):
         """Test that holiday names are retrieved correctly."""

@@ -1,0 +1,541 @@
+"""Tests for DTO to Pydantic response model converters."""
+
+import unittest
+from datetime import date, datetime
+from unittest.mock import Mock
+
+from parameterized import parameterized
+
+from taskdog_core.application.dto.gantt_output import (
+    GanttDateRange,
+    GanttOutput,
+)
+from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
+from taskdog_core.application.dto.task_dto import (
+    GanttTaskDto,
+    TaskDetailDto,
+)
+from taskdog_core.application.dto.task_list_output import TaskListOutput
+from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
+from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
+from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_server.api.converters import (
+    convert_to_task_detail_response,
+    convert_to_task_list_response,
+    convert_to_task_operation_response,
+    convert_to_update_task_response,
+)
+
+
+class TestConvertToTaskOperationResponse(unittest.TestCase):
+    """Test cases for convert_to_task_operation_response."""
+
+    def test_convert_minimal_dto(self):
+        """Test converting DTO with minimal fields."""
+        # Arrange
+        dto = TaskOperationOutput(
+            id=1,
+            name="Test Task",
+            status=TaskStatus.PENDING,
+            priority=1,
+            deadline=None,
+            estimated_duration=None,
+            planned_start=None,
+            planned_end=None,
+            actual_start=None,
+            actual_end=None,
+            depends_on=[],
+            tags=[],
+            is_fixed=False,
+            is_archived=False,
+            actual_duration_hours=None,
+            actual_daily_hours={},
+        )
+
+        # Act
+        response = convert_to_task_operation_response(dto)
+
+        # Assert
+        self.assertEqual(response.id, 1)
+        self.assertEqual(response.name, "Test Task")
+        self.assertEqual(response.status, TaskStatus.PENDING)
+        self.assertEqual(response.priority, 1)
+        self.assertIsNone(response.deadline)
+        self.assertIsNone(response.estimated_duration)
+        self.assertEqual(response.depends_on, [])
+        self.assertEqual(response.tags, [])
+        self.assertEqual(response.is_fixed, False)
+        self.assertEqual(response.is_archived, False)
+
+    def test_convert_full_dto(self):
+        """Test converting DTO with all fields populated."""
+        # Arrange
+        now = datetime.now()
+        dto = TaskOperationOutput(
+            id=1,
+            name="Test Task",
+            status=TaskStatus.IN_PROGRESS,
+            priority=2,
+            deadline=now,
+            estimated_duration=8.0,
+            planned_start=now,
+            planned_end=now,
+            actual_start=now,
+            actual_end=None,
+            depends_on=[2, 3],
+            tags=["backend", "api"],
+            is_fixed=True,
+            is_archived=False,
+            actual_duration_hours=4.5,
+            actual_daily_hours={"2025-01-01": 2.5, "2025-01-02": 2.0},
+        )
+
+        # Act
+        response = convert_to_task_operation_response(dto)
+
+        # Assert
+        self.assertEqual(response.id, 1)
+        self.assertEqual(response.name, "Test Task")
+        self.assertEqual(response.status, TaskStatus.IN_PROGRESS)
+        self.assertEqual(response.priority, 2)
+        self.assertEqual(response.deadline, now)
+        self.assertEqual(response.estimated_duration, 8.0)
+        self.assertEqual(response.planned_start, now)
+        self.assertEqual(response.planned_end, now)
+        self.assertEqual(response.actual_start, now)
+        self.assertIsNone(response.actual_end)
+        self.assertEqual(response.depends_on, [2, 3])
+        self.assertEqual(response.tags, ["backend", "api"])
+        self.assertEqual(response.is_fixed, True)
+        self.assertEqual(response.is_archived, False)
+        self.assertEqual(response.actual_duration_hours, 4.5)
+        self.assertEqual(
+            response.actual_daily_hours, {"2025-01-01": 2.5, "2025-01-02": 2.0}
+        )
+
+
+class TestConvertToUpdateTaskResponse(unittest.TestCase):
+    """Test cases for convert_to_update_task_response."""
+
+    def test_convert_with_updated_fields(self):
+        """Test converting TaskUpdateOutput with updated_fields."""
+        # Arrange
+        now = datetime.now()
+        task = TaskOperationOutput(
+            id=1,
+            name="Updated Task",
+            status=TaskStatus.COMPLETED,
+            priority=3,
+            deadline=now,
+            estimated_duration=10.0,
+            planned_start=now,
+            planned_end=now,
+            actual_start=now,
+            actual_end=now,
+            depends_on=[],
+            tags=["updated"],
+            is_fixed=False,
+            is_archived=False,
+            actual_duration_hours=9.5,
+            actual_daily_hours={},
+        )
+        dto = TaskUpdateOutput(task=task, updated_fields=["name", "priority", "status"])
+
+        # Act
+        response = convert_to_update_task_response(dto)
+
+        # Assert
+        self.assertEqual(response.id, 1)
+        self.assertEqual(response.name, "Updated Task")
+        self.assertEqual(response.status, TaskStatus.COMPLETED)
+        self.assertEqual(response.priority, 3)
+        self.assertEqual(response.updated_fields, ["name", "priority", "status"])
+
+    def test_convert_with_empty_updated_fields(self):
+        """Test converting TaskUpdateOutput with no updated fields."""
+        # Arrange
+        task = TaskOperationOutput(
+            id=1,
+            name="Test Task",
+            status=TaskStatus.PENDING,
+            priority=1,
+            deadline=None,
+            estimated_duration=None,
+            planned_start=None,
+            planned_end=None,
+            actual_start=None,
+            actual_end=None,
+            depends_on=[],
+            tags=[],
+            is_fixed=False,
+            is_archived=False,
+            actual_duration_hours=None,
+            actual_daily_hours={},
+        )
+        dto = TaskUpdateOutput(task=task, updated_fields=[])
+
+        # Act
+        response = convert_to_update_task_response(dto)
+
+        # Assert
+        self.assertEqual(response.id, 1)
+        self.assertEqual(response.updated_fields, [])
+
+
+class TestConvertToTaskListResponse(unittest.TestCase):
+    """Test cases for convert_to_task_list_response."""
+
+    def test_convert_empty_list(self):
+        """Test converting empty task list."""
+        # Arrange
+        dto = TaskListOutput(tasks=[], total_count=0, filtered_count=0, gantt_data=None)
+        notes_repo = Mock()
+
+        # Act
+        response = convert_to_task_list_response(dto, notes_repo)
+
+        # Assert
+        self.assertEqual(response.tasks, [])
+        self.assertEqual(response.total_count, 0)
+        self.assertEqual(response.filtered_count, 0)
+        self.assertIsNone(response.gantt)
+
+    def test_convert_task_list_without_gantt(self):
+        """Test converting task list without gantt data."""
+        # Arrange
+        now = datetime.now()
+        task = Task(
+            id=1,
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=now,
+            updated_at=now,
+        )
+        dto = TaskListOutput(
+            tasks=[task], total_count=10, filtered_count=1, gantt_data=None
+        )
+        notes_repo = Mock()
+        notes_repo.has_notes = Mock(return_value=False)
+
+        # Act
+        response = convert_to_task_list_response(dto, notes_repo)
+
+        # Assert
+        self.assertEqual(len(response.tasks), 1)
+        self.assertEqual(response.tasks[0].id, 1)
+        self.assertEqual(response.tasks[0].name, "Test Task")
+        self.assertEqual(response.tasks[0].has_notes, False)
+        self.assertEqual(response.total_count, 10)
+        self.assertEqual(response.filtered_count, 1)
+        self.assertIsNone(response.gantt)
+        notes_repo.has_notes.assert_called_once_with(1)
+
+    def test_convert_task_list_with_notes(self):
+        """Test converting task list with notes."""
+        # Arrange
+        now = datetime.now()
+        task = Task(
+            id=1,
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=now,
+            updated_at=now,
+        )
+        dto = TaskListOutput(
+            tasks=[task], total_count=1, filtered_count=1, gantt_data=None
+        )
+        notes_repo = Mock()
+        notes_repo.has_notes = Mock(return_value=True)
+
+        # Act
+        response = convert_to_task_list_response(dto, notes_repo)
+
+        # Assert
+        self.assertEqual(response.tasks[0].has_notes, True)
+
+    def test_convert_task_list_with_gantt_data(self):
+        """Test converting task list with gantt data."""
+        # Arrange
+        now = datetime.now()
+        task = Task(
+            id=1,
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=now,
+            updated_at=now,
+        )
+        gantt_task = GanttTaskDto(
+            id=1,
+            name="Test Task",
+            status=TaskStatus.PENDING,
+            estimated_duration=8.0,
+            planned_start=now,
+            planned_end=now,
+            actual_start=None,
+            actual_end=None,
+            deadline=None,
+            is_finished=False,
+        )
+        start_date = date(2025, 1, 1)
+        end_date = date(2025, 1, 5)
+        gantt_output = GanttOutput(
+            date_range=GanttDateRange(start_date=start_date, end_date=end_date),
+            tasks=[gantt_task],
+            task_daily_hours={1: {date(2025, 1, 1): 4.0, date(2025, 1, 2): 4.0}},
+            daily_workload={date(2025, 1, 1): 8.0, date(2025, 1, 2): 8.0},
+            holidays={date(2025, 1, 4)},
+        )
+        dto = TaskListOutput(
+            tasks=[task], total_count=1, filtered_count=1, gantt_data=gantt_output
+        )
+        notes_repo = Mock()
+        notes_repo.has_notes = Mock(return_value=False)
+
+        # Act
+        response = convert_to_task_list_response(dto, notes_repo)
+
+        # Assert
+        self.assertIsNotNone(response.gantt)
+        self.assertEqual(response.gantt.date_range.start_date, start_date)
+        self.assertEqual(response.gantt.date_range.end_date, end_date)
+        self.assertEqual(len(response.gantt.tasks), 1)
+        self.assertEqual(response.gantt.tasks[0].id, 1)
+        self.assertEqual(response.gantt.tasks[0].name, "Test Task")
+        # Check date conversion to ISO strings
+        self.assertIn("2025-01-01", response.gantt.task_daily_hours[1])
+        self.assertIn("2025-01-02", response.gantt.task_daily_hours[1])
+        self.assertEqual(response.gantt.task_daily_hours[1]["2025-01-01"], 4.0)
+        self.assertIn("2025-01-01", response.gantt.daily_workload)
+        self.assertEqual(response.gantt.daily_workload["2025-01-01"], 8.0)
+        self.assertIn("2025-01-04", response.gantt.holidays)
+
+    def test_convert_multiple_tasks(self):
+        """Test converting task list with multiple tasks."""
+        # Arrange
+        now = datetime.now()
+        task1 = Task(
+            id=1,
+            name="Task 1",
+            priority=1,
+            status=TaskStatus.PENDING,
+            created_at=now,
+            updated_at=now,
+        )
+        task2 = Task(
+            id=2,
+            name="Task 2",
+            priority=2,
+            status=TaskStatus.IN_PROGRESS,
+            created_at=now,
+            updated_at=now,
+        )
+        dto = TaskListOutput(
+            tasks=[task1, task2], total_count=2, filtered_count=2, gantt_data=None
+        )
+        notes_repo = Mock()
+        notes_repo.has_notes = Mock(side_effect=[True, False])
+
+        # Act
+        response = convert_to_task_list_response(dto, notes_repo)
+
+        # Assert
+        self.assertEqual(len(response.tasks), 2)
+        self.assertEqual(response.tasks[0].id, 1)
+        self.assertEqual(response.tasks[0].has_notes, True)
+        self.assertEqual(response.tasks[1].id, 2)
+        self.assertEqual(response.tasks[1].has_notes, False)
+
+
+class TestConvertToTaskDetailResponse(unittest.TestCase):
+    """Test cases for convert_to_task_detail_response."""
+
+    def test_convert_minimal_task_detail(self):
+        """Test converting task detail with minimal fields."""
+        # Arrange
+        now = datetime.now()
+        task_dto = TaskDetailDto(
+            id=1,
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            planned_start=None,
+            planned_end=None,
+            deadline=None,
+            actual_start=None,
+            actual_end=None,
+            estimated_duration=None,
+            daily_allocations={},
+            is_fixed=False,
+            depends_on=[],
+            actual_daily_hours={},
+            tags=[],
+            is_archived=False,
+            created_at=now,
+            updated_at=now,
+            actual_duration_hours=None,
+            is_active=False,
+            is_finished=False,
+            can_be_modified=True,
+            is_schedulable=True,
+        )
+        dto = TaskDetailOutput(task=task_dto, notes_content=None, has_notes=False)
+
+        # Act
+        response = convert_to_task_detail_response(dto)
+
+        # Assert
+        self.assertEqual(response.id, 1)
+        self.assertEqual(response.name, "Test Task")
+        self.assertEqual(response.priority, 1)
+        self.assertEqual(response.status, TaskStatus.PENDING)
+        self.assertIsNone(response.notes)
+        self.assertEqual(response.daily_allocations, {})
+        self.assertEqual(response.actual_daily_hours, {})
+
+    def test_convert_full_task_detail(self):
+        """Test converting task detail with all fields."""
+        # Arrange
+        now = datetime.now()
+        task_dto = TaskDetailDto(
+            id=1,
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.IN_PROGRESS,
+            planned_start=now,
+            planned_end=now,
+            deadline=now,
+            actual_start=now,
+            actual_end=None,
+            estimated_duration=8.0,
+            daily_allocations={date(2025, 1, 1): 4.0, date(2025, 1, 2): 4.0},
+            is_fixed=True,
+            depends_on=[2, 3],
+            actual_daily_hours={date(2025, 1, 1): 3.5},
+            tags=["backend", "api"],
+            is_archived=False,
+            created_at=now,
+            updated_at=now,
+            actual_duration_hours=3.5,
+            is_active=True,
+            is_finished=False,
+            can_be_modified=True,
+            is_schedulable=False,
+        )
+        dto = TaskDetailOutput(
+            task=task_dto, notes_content="# Task Notes\n\nSome notes.", has_notes=True
+        )
+
+        # Act
+        response = convert_to_task_detail_response(dto)
+
+        # Assert
+        self.assertEqual(response.id, 1)
+        self.assertEqual(response.name, "Test Task")
+        self.assertEqual(response.status, TaskStatus.IN_PROGRESS)
+        self.assertEqual(response.estimated_duration, 8.0)
+        self.assertEqual(response.depends_on, [2, 3])
+        self.assertEqual(response.tags, ["backend", "api"])
+        self.assertEqual(response.is_fixed, True)
+        self.assertEqual(response.notes, "# Task Notes\n\nSome notes.")
+        # Check date conversion to ISO strings
+        self.assertIn("2025-01-01", response.daily_allocations)
+        self.assertEqual(response.daily_allocations["2025-01-01"], 4.0)
+        self.assertIn("2025-01-01", response.actual_daily_hours)
+        self.assertEqual(response.actual_daily_hours["2025-01-01"], 3.5)
+
+    @parameterized.expand(
+        [
+            ("is_active", TaskStatus.IN_PROGRESS, True, False),
+            ("not_active", TaskStatus.PENDING, False, False),
+            ("is_finished", TaskStatus.COMPLETED, False, True),
+            ("not_finished", TaskStatus.PENDING, False, False),
+        ]
+    )
+    def test_convert_computed_properties(
+        self, _scenario, status, expected_active, expected_finished
+    ):
+        """Test converting task detail with computed properties."""
+        # Arrange
+        now = datetime.now()
+        actual_start = (
+            now if status in [TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED] else None
+        )
+        actual_end = now if status == TaskStatus.COMPLETED else None
+
+        task_dto = TaskDetailDto(
+            id=1,
+            name="Test Task",
+            priority=1,
+            status=status,
+            planned_start=None,
+            planned_end=None,
+            deadline=None,
+            actual_start=actual_start,
+            actual_end=actual_end,
+            estimated_duration=None,
+            daily_allocations={},
+            is_fixed=False,
+            depends_on=[],
+            actual_daily_hours={},
+            tags=[],
+            is_archived=False,
+            created_at=now,
+            updated_at=now,
+            actual_duration_hours=None,
+            is_active=expected_active,
+            is_finished=expected_finished,
+            can_be_modified=not expected_finished,
+            is_schedulable=True,
+        )
+        dto = TaskDetailOutput(task=task_dto, notes_content=None, has_notes=False)
+
+        # Act
+        response = convert_to_task_detail_response(dto)
+
+        # Assert
+        self.assertEqual(response.is_active, expected_active)
+        self.assertEqual(response.is_finished, expected_finished)
+
+    def test_convert_with_empty_notes(self):
+        """Test converting task detail with empty notes."""
+        # Arrange
+        now = datetime.now()
+        task_dto = TaskDetailDto(
+            id=1,
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            planned_start=None,
+            planned_end=None,
+            deadline=None,
+            actual_start=None,
+            actual_end=None,
+            estimated_duration=None,
+            daily_allocations={},
+            is_fixed=False,
+            depends_on=[],
+            actual_daily_hours={},
+            tags=[],
+            is_archived=False,
+            created_at=now,
+            updated_at=now,
+            actual_duration_hours=None,
+            is_active=False,
+            is_finished=False,
+            can_be_modified=True,
+            is_schedulable=True,
+        )
+        dto = TaskDetailOutput(task=task_dto, notes_content="", has_notes=False)
+
+        # Act
+        response = convert_to_task_detail_response(dto)
+
+        # Assert
+        self.assertEqual(response.notes, "")
+
+
+if __name__ == "__main__":
+    unittest.main()

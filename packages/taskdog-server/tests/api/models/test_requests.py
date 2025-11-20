@@ -3,6 +3,7 @@
 import unittest
 from datetime import date, datetime
 
+from parameterized import parameterized
 from pydantic import ValidationError
 
 from taskdog_core.domain.entities.task import TaskStatus
@@ -59,53 +60,35 @@ class TestCreateTaskRequest(unittest.TestCase):
         self.assertEqual(request.is_fixed, True)
         self.assertEqual(request.tags, ["backend", "api"])
 
-    def test_invalid_empty_name(self):
-        """Test that empty name is rejected."""
-        # Act & Assert
+    @parameterized.expand(
+        [
+            ("empty_name", {"name": ""}, "name"),
+            ("zero_priority", {"name": "Test", "priority": 0}, "priority"),
+            ("negative_priority", {"name": "Test", "priority": -1}, "priority"),
+            (
+                "zero_duration",
+                {"name": "Test", "estimated_duration": 0.0},
+                "estimated_duration",
+            ),
+            (
+                "empty_tag",
+                {"name": "Test", "tags": ["valid", ""]},
+                "Tags must be non-empty",
+            ),
+            (
+                "duplicate_tags",
+                {"name": "Test", "tags": ["tag1", "tag1"]},
+                "Tags must be unique",
+            ),
+        ]
+    )
+    def test_create_task_request_validation_errors(
+        self, _scenario, kwargs, expected_error
+    ):
+        """Test CreateTaskRequest validation errors."""
         with self.assertRaises(ValidationError) as context:
-            CreateTaskRequest(name="")
-
-        self.assertIn("name", str(context.exception))
-
-    def test_invalid_zero_priority(self):
-        """Test that zero priority is rejected."""
-        # Act & Assert
-        with self.assertRaises(ValidationError) as context:
-            CreateTaskRequest(name="Test", priority=0)
-
-        self.assertIn("priority", str(context.exception).lower())
-
-    def test_invalid_negative_priority(self):
-        """Test that negative priority is rejected."""
-        # Act & Assert
-        with self.assertRaises(ValidationError) as context:
-            CreateTaskRequest(name="Test", priority=-1)
-
-        self.assertIn("priority", str(context.exception).lower())
-
-    def test_invalid_zero_estimated_duration(self):
-        """Test that zero estimated duration is rejected."""
-        # Act & Assert
-        with self.assertRaises(ValidationError) as context:
-            CreateTaskRequest(name="Test", estimated_duration=0.0)
-
-        self.assertIn("estimated_duration", str(context.exception).lower())
-
-    def test_invalid_empty_tag(self):
-        """Test that empty tags are rejected."""
-        # Act & Assert
-        with self.assertRaises(ValidationError) as context:
-            CreateTaskRequest(name="Test", tags=["valid", ""])
-
-        self.assertIn("Tags must be non-empty", str(context.exception))
-
-    def test_invalid_duplicate_tags(self):
-        """Test that duplicate tags are rejected."""
-        # Act & Assert
-        with self.assertRaises(ValidationError) as context:
-            CreateTaskRequest(name="Test", tags=["tag1", "tag1"])
-
-        self.assertIn("Tags must be unique", str(context.exception))
+            CreateTaskRequest(**kwargs)
+        self.assertIn(expected_error, str(context.exception))
 
     def test_valid_single_tag(self):
         """Test creating request with single tag."""
@@ -147,29 +130,20 @@ class TestUpdateTaskRequest(unittest.TestCase):
         # Assert
         self.assertEqual(request.status, TaskStatus.IN_PROGRESS)
 
-    def test_invalid_empty_name(self):
-        """Test that empty name is rejected."""
-        # Act & Assert
+    @parameterized.expand(
+        [
+            ("empty_name", {"name": ""}, "name"),
+            ("zero_priority", {"priority": 0}, "priority"),
+            ("empty_tag", {"tags": ["valid", ""]}, "Tags must be non-empty"),
+        ]
+    )
+    def test_update_task_request_validation_errors(
+        self, _scenario, kwargs, expected_error
+    ):
+        """Test UpdateTaskRequest validation errors."""
         with self.assertRaises(ValidationError) as context:
-            UpdateTaskRequest(name="")
-
-        self.assertIn("name", str(context.exception))
-
-    def test_invalid_zero_priority(self):
-        """Test that zero priority is rejected."""
-        # Act & Assert
-        with self.assertRaises(ValidationError) as context:
-            UpdateTaskRequest(priority=0)
-
-        self.assertIn("priority", str(context.exception).lower())
-
-    def test_invalid_empty_tag(self):
-        """Test that empty tags are rejected."""
-        # Act & Assert
-        with self.assertRaises(ValidationError) as context:
-            UpdateTaskRequest(tags=["valid", ""])
-
-        self.assertIn("Tags must be non-empty", str(context.exception))
+            UpdateTaskRequest(**kwargs)
+        self.assertIn(expected_error, str(context.exception))
 
 
 class TestAddDependencyRequest(unittest.TestCase):
@@ -201,21 +175,19 @@ class TestSetTaskTagsRequest(unittest.TestCase):
         # Assert
         self.assertEqual(request.tags, ["backend", "api"])
 
-    def test_invalid_empty_tag(self):
-        """Test that empty tags are rejected."""
-        # Act & Assert
+    @parameterized.expand(
+        [
+            ("empty_tag", {"tags": ["valid", ""]}, "Tags must be non-empty"),
+            ("duplicate_tags", {"tags": ["tag1", "tag1"]}, "Tags must be unique"),
+        ]
+    )
+    def test_set_tags_request_validation_errors(
+        self, _scenario, kwargs, expected_error
+    ):
+        """Test SetTaskTagsRequest validation errors."""
         with self.assertRaises(ValidationError) as context:
-            SetTaskTagsRequest(tags=["valid", ""])
-
-        self.assertIn("Tags must be non-empty", str(context.exception))
-
-    def test_invalid_duplicate_tags(self):
-        """Test that duplicate tags are rejected."""
-        # Act & Assert
-        with self.assertRaises(ValidationError) as context:
-            SetTaskTagsRequest(tags=["tag1", "tag1"])
-
-        self.assertIn("Tags must be unique", str(context.exception))
+            SetTaskTagsRequest(**kwargs)
+        self.assertIn(expected_error, str(context.exception))
 
     def test_valid_empty_list(self):
         """Test creating request with empty tag list."""
@@ -250,21 +222,19 @@ class TestLogHoursRequest(unittest.TestCase):
         self.assertEqual(request.hours, 4.5)
         self.assertIsNone(request.date)
 
-    def test_invalid_zero_hours(self):
-        """Test that zero hours is rejected."""
-        # Act & Assert
+    @parameterized.expand(
+        [
+            ("zero_hours", {"hours": 0.0}, "hours"),
+            ("negative_hours", {"hours": -1.0}, "hours"),
+        ]
+    )
+    def test_log_hours_request_validation_errors(
+        self, _scenario, kwargs, expected_error
+    ):
+        """Test LogHoursRequest validation errors."""
         with self.assertRaises(ValidationError) as context:
-            LogHoursRequest(hours=0.0)
-
-        self.assertIn("hours", str(context.exception).lower())
-
-    def test_invalid_negative_hours(self):
-        """Test that negative hours is rejected."""
-        # Act & Assert
-        with self.assertRaises(ValidationError) as context:
-            LogHoursRequest(hours=-1.0)
-
-        self.assertIn("hours", str(context.exception).lower())
+            LogHoursRequest(**kwargs)
+        self.assertIn(expected_error, str(context.exception).lower())
 
     def test_missing_hours(self):
         """Test that hours field is required."""
@@ -306,21 +276,27 @@ class TestOptimizeScheduleRequest(unittest.TestCase):
         self.assertEqual(request.max_hours_per_day, 8.0)
         self.assertEqual(request.force_override, False)
 
-    def test_invalid_zero_max_hours(self):
-        """Test that zero max hours is rejected."""
-        # Act & Assert
+    @parameterized.expand(
+        [
+            (
+                "zero_max_hours",
+                {"algorithm": "greedy", "max_hours_per_day": 0.0},
+                "max_hours_per_day",
+            ),
+            (
+                "excessive_max_hours",
+                {"algorithm": "greedy", "max_hours_per_day": 25.0},
+                "max_hours_per_day",
+            ),
+        ]
+    )
+    def test_optimize_schedule_request_validation_errors(
+        self, _scenario, kwargs, expected_error
+    ):
+        """Test OptimizeScheduleRequest validation errors."""
         with self.assertRaises(ValidationError) as context:
-            OptimizeScheduleRequest(algorithm="greedy", max_hours_per_day=0.0)
-
-        self.assertIn("max_hours_per_day", str(context.exception).lower())
-
-    def test_invalid_excessive_max_hours(self):
-        """Test that max hours > 24 is rejected."""
-        # Act & Assert
-        with self.assertRaises(ValidationError) as context:
-            OptimizeScheduleRequest(algorithm="greedy", max_hours_per_day=25.0)
-
-        self.assertIn("max_hours_per_day", str(context.exception).lower())
+            OptimizeScheduleRequest(**kwargs)
+        self.assertIn(expected_error, str(context.exception).lower())
 
     def test_missing_algorithm(self):
         """Test that algorithm field is required."""
