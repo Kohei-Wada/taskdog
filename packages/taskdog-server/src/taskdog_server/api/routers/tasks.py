@@ -54,7 +54,7 @@ async def create_task(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Create a new task.
 
     Args:
@@ -117,7 +117,7 @@ async def list_tasks(
     gantt_end_date: Annotated[
         str | None, Query(description="Gantt chart end date (ISO format)")
     ] = None,
-):
+) -> TaskListResponse:
     """List tasks with optional filtering and sorting.
 
     Args:
@@ -187,7 +187,7 @@ async def list_tasks(
 
 
 @router.get("/{task_id}", response_model=TaskDetailResponse)
-async def get_task(task_id: int, controller: QueryControllerDep):
+async def get_task(task_id: int, controller: QueryControllerDep) -> TaskDetailResponse:
     """Get task details by ID.
 
     Args:
@@ -215,7 +215,7 @@ async def update_task(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> UpdateTaskResponse:
     """Update task fields.
 
     Args:
@@ -270,7 +270,7 @@ async def archive_task(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Archive (soft delete) a task.
 
     Args:
@@ -305,7 +305,7 @@ async def restore_task(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Restore an archived task.
 
     Args:
@@ -345,7 +345,7 @@ async def delete_task(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> None:
     """Permanently delete a task.
 
     Args:

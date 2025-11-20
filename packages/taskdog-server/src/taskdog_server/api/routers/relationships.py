@@ -33,7 +33,7 @@ async def add_dependency(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Add a dependency to a task.
 
     Args:
@@ -76,7 +76,7 @@ async def remove_dependency(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Remove a dependency from a task.
 
     Args:
@@ -117,7 +117,7 @@ async def set_task_tags(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Set task tags (replaces existing tags).
 
     Args:
@@ -158,7 +158,7 @@ async def log_hours(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Log actual hours worked on a task for a specific date.
 
     Args:

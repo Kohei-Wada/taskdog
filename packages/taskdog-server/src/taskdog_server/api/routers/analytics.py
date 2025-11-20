@@ -46,7 +46,7 @@ router = APIRouter()
 async def get_statistics(
     controller: AnalyticsControllerDep,
     period: str = Query("all", description="Time period: all, 7d, or 30d"),
-):
+) -> StatisticsResponse:
     """Get task statistics for a time period.
 
     Args:
@@ -127,7 +127,7 @@ async def get_statistics(
 
 
 @router.get("/tags/statistics", response_model=TagStatisticsResponse)
-async def get_tag_statistics(controller: QueryControllerDep):
+async def get_tag_statistics(controller: QueryControllerDep) -> TagStatisticsResponse:
     """Get tag usage statistics.
 
     Args:
@@ -168,7 +168,7 @@ async def get_gantt_chart(
     ] = None,
     sort: Annotated[str, Query(description="Sort field")] = "deadline",
     reverse: Annotated[bool, Query(description="Reverse sort order")] = False,
-):
+) -> GanttResponse:
     """Get Gantt chart data with workload calculations.
 
     Args:
@@ -275,7 +275,7 @@ async def get_gantt_chart(
 
 
 def run_optimization(
-    controller,
+    controller: AnalyticsControllerDep,
     algorithm: str,
     start_date: datetime,
     max_hours_per_day: float,
@@ -307,7 +307,7 @@ async def optimize_schedule(
     background_tasks: BackgroundTasks,
     run_async: bool = Query(False, description="Run optimization in background"),
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> OptimizationResponse:
     """Optimize task schedules using specified algorithm.
 
     Args:
@@ -417,7 +417,7 @@ async def optimize_schedule(
 
 
 @router.get("/algorithms", response_model=list[dict[str, str]])
-async def list_algorithms(controller: QueryControllerDep):
+async def list_algorithms(controller: QueryControllerDep) -> list[dict[str, str]]:
     """List available optimization algorithms.
 
     Args:
