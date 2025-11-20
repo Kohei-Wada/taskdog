@@ -11,7 +11,7 @@ The repository uses TagResolver to manage tag relationships when saving tasks.
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import create_engine, func, or_, select
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -22,6 +22,9 @@ from taskdog_core.infrastructure.persistence.database.models import (
     TaskTagModel,
 )
 from taskdog_core.infrastructure.persistence.database.models.task_model import Base
+from taskdog_core.infrastructure.persistence.database.query_builders import (
+    TaskQueryBuilder,
+)
 from taskdog_core.infrastructure.persistence.mappers.tag_resolver import TagResolver
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
@@ -134,45 +137,18 @@ class SqliteTaskRepository(TaskRepository):
             - Tag filtering uses SQL JOIN for efficiency (Phase 3)
             - Archived filter uses indexed is_archived column
             - Status filter uses indexed status column
+            - Uses TaskQueryBuilder to construct the SQL query
         """
         with self.Session() as session:
-            stmt = select(TaskModel)
-
-            # Filter by archived status (uses index)
-            if not include_archived:
-                stmt = stmt.where(TaskModel.is_archived == False)  # noqa: E712
-
-            # Filter by status (uses index)
-            if status is not None:
-                stmt = stmt.where(TaskModel.status == status.value)
-
-            # Filter by tags (uses JOIN)
-            if tags:
-                if match_all_tags:
-                    # AND logic: task must have ALL specified tags
-                    for tag in tags:
-                        tag_subquery = (
-                            select(TaskTagModel.task_id)
-                            .join(TagModel, TaskTagModel.tag_id == TagModel.id)
-                            .where(TagModel.name == tag)
-                        )
-                        stmt = stmt.where(TaskModel.id.in_(tag_subquery))  # type: ignore[attr-defined]
-                else:
-                    # OR logic: task must have ANY of the specified tags
-                    tag_subquery = (
-                        select(TaskTagModel.task_id)
-                        .join(TagModel, TaskTagModel.tag_id == TagModel.id)
-                        .where(TagModel.name.in_(tags))  # type: ignore[attr-defined]
-                    )
-                    stmt = stmt.where(TaskModel.id.in_(tag_subquery))  # type: ignore[attr-defined]
-
-            # Filter by date range (checks multiple date fields)
-            if start_date is not None or end_date is not None:
-                date_conditions = self._build_date_filter_conditions(
-                    start_date, end_date
-                )
-                if date_conditions:
-                    stmt = stmt.where(or_(*date_conditions))
+            # Build query using TaskQueryBuilder (eliminates duplication with count_tasks)
+            stmt = (
+                TaskQueryBuilder(select(TaskModel))
+                .with_archived_filter(include_archived)
+                .with_status_filter(status)
+                .with_tag_filter(tags, match_all_tags)
+                .with_date_filter(start_date, end_date)
+                .build()
+            )
 
             # Execute query
             models = session.scalars(stmt).all()
@@ -206,45 +182,18 @@ class SqliteTaskRepository(TaskRepository):
         Note:
             Uses the same filter logic as get_filtered() for consistency.
             Performance: O(1) index lookups vs O(n) task loading + deserialization.
+            Uses TaskQueryBuilder to construct the SQL query (same as get_filtered).
         """
         with self.Session() as session:
-            stmt = select(func.count(TaskModel.id))
-
-            # Filter by archived status (uses index)
-            if not include_archived:
-                stmt = stmt.where(TaskModel.is_archived == False)  # noqa: E712
-
-            # Filter by status (uses index)
-            if status is not None:
-                stmt = stmt.where(TaskModel.status == status.value)
-
-            # Filter by tags (uses JOIN)
-            if tags:
-                if match_all_tags:
-                    # AND logic: task must have ALL specified tags
-                    for tag in tags:
-                        tag_subquery = (
-                            select(TaskTagModel.task_id)
-                            .join(TagModel, TaskTagModel.tag_id == TagModel.id)
-                            .where(TagModel.name == tag)
-                        )
-                        stmt = stmt.where(TaskModel.id.in_(tag_subquery))  # type: ignore[attr-defined]
-                else:
-                    # OR logic: task must have ANY of the specified tags
-                    tag_subquery = (
-                        select(TaskTagModel.task_id)
-                        .join(TagModel, TaskTagModel.tag_id == TagModel.id)
-                        .where(TagModel.name.in_(tags))  # type: ignore[attr-defined]
-                    )
-                    stmt = stmt.where(TaskModel.id.in_(tag_subquery))  # type: ignore[attr-defined]
-
-            # Filter by date range (checks multiple date fields)
-            if start_date is not None or end_date is not None:
-                date_conditions = self._build_date_filter_conditions(
-                    start_date, end_date
-                )
-                if date_conditions:
-                    stmt = stmt.where(or_(*date_conditions))
+            # Build count query using TaskQueryBuilder (eliminates duplication with get_filtered)
+            stmt = (
+                TaskQueryBuilder(select(func.count(TaskModel.id)))
+                .with_archived_filter(include_archived)
+                .with_status_filter(status)
+                .with_tag_filter(tags, match_all_tags)
+                .with_date_filter(start_date, end_date)
+                .build()
+            )
 
             # Execute count query
             count = session.scalar(stmt)
@@ -533,51 +482,6 @@ class SqliteTaskRepository(TaskRepository):
                 )
 
             return list(session.scalars(stmt).all())
-
-    def _build_date_filter_conditions(
-        self, start_date: date | None, end_date: date | None
-    ) -> list[Any]:
-        """Build SQL date filter conditions for multiple date fields.
-
-        This helper method creates SQLAlchemy filter conditions for date range
-        filtering across all date fields (deadline, planned_start, planned_end,
-        actual_start, actual_end). It handles three cases for each field:
-        - Both start and end dates: field.between(start_date, end_date)
-        - Only start date: field >= start_date
-        - Only end date: field <= end_date
-
-        Args:
-            start_date: Minimum date for filtering (inclusive), or None
-            end_date: Maximum date for filtering (inclusive), or None
-
-        Returns:
-            List of SQLAlchemy filter conditions (empty if both dates are None)
-
-        Note:
-            The returned conditions should be combined with OR logic, as we want
-            to match tasks where ANY of the date fields fall within the range.
-        """
-        date_conditions = []
-
-        # Define all date fields to check
-        date_fields = [
-            TaskModel.deadline,
-            TaskModel.planned_start,
-            TaskModel.planned_end,
-            TaskModel.actual_start,
-            TaskModel.actual_end,
-        ]
-
-        # Build conditions for each date field
-        for field in date_fields:
-            if start_date and end_date:
-                date_conditions.append(field.between(start_date, end_date))  # type: ignore[attr-defined]
-            elif start_date:
-                date_conditions.append(field >= start_date)  # type: ignore[operator]
-            elif end_date:
-                date_conditions.append(field <= end_date)  # type: ignore[operator]
-
-        return date_conditions
 
     def close(self) -> None:
         """Close database connections and clean up resources.

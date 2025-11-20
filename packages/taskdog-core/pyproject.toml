@@ -52,6 +52,7 @@ packages = [
     "taskdog_core.infrastructure.persistence",
     "taskdog_core.infrastructure.persistence.database",
     "taskdog_core.infrastructure.persistence.database.models",
+    "taskdog_core.infrastructure.persistence.database.query_builders",
     "taskdog_core.infrastructure.persistence.mappers",
     "taskdog_core.controllers",
     "taskdog_core.shared",
