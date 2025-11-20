@@ -144,10 +144,13 @@ class OptimizationSummaryBuilder:
 
         # Convert unscheduled tasks to DTOs
         # Note: Tasks from repository always have IDs (persisted entities)
-        return [
-            TaskSummaryDto(id=task.id, name=task.name)  # type: ignore[arg-type]
-            for task in unscheduled_tasks
-        ]
+        result = []
+        for task in unscheduled_tasks:
+            assert task.id is not None, (
+                f"Task {task.name} has no ID (persisted tasks must have IDs)"
+            )
+            result.append(TaskSummaryDto(id=task.id, name=task.name))
+        return result
 
     def _validate_workload(
         self, daily_allocations: dict[date, float], max_hours_per_day: float

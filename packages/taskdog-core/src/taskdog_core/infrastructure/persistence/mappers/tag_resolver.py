@@ -73,6 +73,8 @@ class TagResolver:
             return [self._name_to_id_cache[name] for name in tag_names]
 
         # Query database for uncached tags
+        # Note: SQLAlchemy's Mapped type system has limitations with class attribute access
+        # mypy cannot infer that TagModel.name is an InstrumentedAttribute with .in_() method
         stmt = select(TagModel).where(TagModel.name.in_(uncached_names))  # type: ignore[attr-defined]
         existing_tags = self._session.scalars(stmt).all()
 
@@ -125,6 +127,8 @@ class TagResolver:
 
         # Query database for uncached tags
         if uncached_ids:
+            # Note: SQLAlchemy's Mapped type system has limitations with class attribute access
+            # mypy cannot infer that TagModel.id is an InstrumentedAttribute with .in_() method
             stmt = select(TagModel).where(TagModel.id.in_(uncached_ids))  # type: ignore[attr-defined]
             tags = self._session.scalars(stmt).all()
 

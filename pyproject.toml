@@ -87,7 +87,6 @@ ignore_missing_imports = true
 # These will be fixed in Phase 3
 [[tool.mypy.overrides]]
 module = [
-  "taskdog_core.application.services.optimization_summary_builder",
   "taskdog_core.application.sorters.optimization_task_sorter",
   "taskdog_core.application.sorters.task_sorter",
   "taskdog_core.application.queries.filters.today_filter",
