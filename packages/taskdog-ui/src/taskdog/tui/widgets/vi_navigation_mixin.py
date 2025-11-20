@@ -28,28 +28,68 @@ class ViNavigationMixin:
 
     # Basic vertical navigation (j/k for up/down, g/G for top/bottom)
     VI_VERTICAL_BINDINGS: ClassVar = [
-        Binding("j", "vi_down", "Down", show=False),
-        Binding("k", "vi_up", "Up", show=False),
-        Binding("g", "vi_home", "Top", show=False),
-        Binding("G", "vi_end", "Bottom", show=False),
+        Binding(
+            "j", "vi_down", "Down", show=False, tooltip="Move cursor down (Vi-style)"
+        ),
+        Binding("k", "vi_up", "Up", show=False, tooltip="Move cursor up (Vi-style)"),
+        Binding("g", "vi_home", "Top", show=False, tooltip="Jump to top (Vi-style)"),
+        Binding(
+            "G", "vi_end", "Bottom", show=False, tooltip="Jump to bottom (Vi-style)"
+        ),
     ]
 
     # Half-page scrolling
     VI_PAGE_BINDINGS: ClassVar = [
-        Binding("ctrl+d", "vi_page_down", "Page Down", show=False),
-        Binding("ctrl+u", "vi_page_up", "Page Up", show=False),
+        Binding(
+            "ctrl+d",
+            "vi_page_down",
+            "Page Down",
+            show=False,
+            tooltip="Scroll down half a page (Vi-style)",
+        ),
+        Binding(
+            "ctrl+u",
+            "vi_page_up",
+            "Page Up",
+            show=False,
+            tooltip="Scroll up half a page (Vi-style)",
+        ),
     ]
 
     # Horizontal scrolling
     VI_HORIZONTAL_BINDINGS: ClassVar = [
-        Binding("h", "vi_scroll_left", "Scroll Left", show=False),
-        Binding("l", "vi_scroll_right", "Scroll Right", show=False),
+        Binding(
+            "h",
+            "vi_scroll_left",
+            "Scroll Left",
+            show=False,
+            tooltip="Scroll left (Vi-style)",
+        ),
+        Binding(
+            "l",
+            "vi_scroll_right",
+            "Scroll Right",
+            show=False,
+            tooltip="Scroll right (Vi-style)",
+        ),
     ]
 
     # Horizontal jump to edges
     VI_HORIZONTAL_JUMP_BINDINGS: ClassVar = [
-        Binding("0", "vi_home_horizontal", "Scroll to Leftmost", show=False),
-        Binding("dollar_sign", "vi_end_horizontal", "Scroll to Rightmost", show=False),
+        Binding(
+            "0",
+            "vi_home_horizontal",
+            "Scroll to Leftmost",
+            show=False,
+            tooltip="Jump to leftmost position (Vi-style)",
+        ),
+        Binding(
+            "dollar_sign",
+            "vi_end_horizontal",
+            "Scroll to Rightmost",
+            show=False,
+            tooltip="Jump to rightmost position (Vi-style)",
+        ),
     ]
 
     # Complete set of all Vi bindings

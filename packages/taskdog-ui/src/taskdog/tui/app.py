@@ -41,24 +41,114 @@ class TaskdogTUI(App):
     """Taskdog TUI application."""
 
     BINDINGS: ClassVar = [
-        Binding("q", "quit", "Quit", show=True),
-        Binding("a", "add_task", "Add", show=True),
-        Binding("s", "start_task", "Start", show=False),
-        Binding("P", "pause_task", "Pause", show=False),
-        Binding("d", "complete_task", "Done", show=False),
-        Binding("c", "cancel_task", "Cancel", show=False),
-        Binding("R", "reopen_task", "Reopen", show=False),
-        Binding("x", "delete_task", "Archive", show=False),
-        Binding("X", "hard_delete_task", "Delete", show=False),
-        Binding("r", "refresh", "Refresh", show=True),
-        Binding("i", "show_details", "Info", show=False),
-        Binding("e", "edit_task", "Edit", show=False),
-        Binding("v", "edit_note", "Edit Note", show=False),
-        Binding("t", "toggle_completed", "Toggle Done", show=False),
-        Binding("/", "show_search", "Search", show=False),
-        Binding("ctrl+r", "show_search", "Search", show=False),
-        Binding("escape", "hide_search", "Clear Search", show=False),
-        Binding("ctrl+t", "toggle_sort_reverse", "Toggle Sort", show=False),
+        Binding(
+            "q",
+            "quit",
+            "Quit",
+            show=True,
+            tooltip="Quit the app and return to the command prompt",
+        ),
+        Binding("a", "add_task", "Add", show=True, tooltip="Create a new task"),
+        Binding(
+            "s", "start_task", "Start", show=False, tooltip="Start the selected task"
+        ),
+        Binding(
+            "P",
+            "pause_task",
+            "Pause",
+            show=False,
+            tooltip="Pause the selected task and reset to PENDING status",
+        ),
+        Binding(
+            "d",
+            "complete_task",
+            "Done",
+            show=False,
+            tooltip="Mark the selected task as completed",
+        ),
+        Binding(
+            "c", "cancel_task", "Cancel", show=False, tooltip="Cancel the selected task"
+        ),
+        Binding(
+            "R",
+            "reopen_task",
+            "Reopen",
+            show=False,
+            tooltip="Reopen a completed or canceled task",
+        ),
+        Binding(
+            "x",
+            "delete_task",
+            "Archive",
+            show=False,
+            tooltip="Archive the selected task (soft delete)",
+        ),
+        Binding(
+            "X",
+            "hard_delete_task",
+            "Delete",
+            show=False,
+            tooltip="Permanently delete the selected task",
+        ),
+        Binding(
+            "r",
+            "refresh",
+            "Refresh",
+            show=True,
+            tooltip="Refresh the task list from the server",
+        ),
+        Binding(
+            "i",
+            "show_details",
+            "Info",
+            show=False,
+            tooltip="Show detailed information about the selected task",
+        ),
+        Binding(
+            "e",
+            "edit_task",
+            "Edit",
+            show=False,
+            tooltip="Edit the selected task's properties",
+        ),
+        Binding(
+            "v",
+            "edit_note",
+            "Edit Note",
+            show=False,
+            tooltip="Edit markdown notes for the selected task",
+        ),
+        Binding(
+            "t",
+            "toggle_completed",
+            "Toggle Done",
+            show=False,
+            tooltip="Toggle visibility of completed and canceled tasks",
+        ),
+        Binding(
+            "/", "show_search", "Search", show=False, tooltip="Search for tasks by name"
+        ),
+        Binding(
+            "ctrl+r",
+            "show_search",
+            "Search",
+            show=False,
+            tooltip="Search for tasks by name",
+        ),
+        Binding(
+            "escape",
+            "hide_search",
+            "Clear Search",
+            show=False,
+            tooltip="Clear the search filter and show all tasks",
+        ),
+        Binding(
+            "ctrl+t",
+            "toggle_sort_reverse",
+            "Toggle Sort",
+            show=False,
+            tooltip="Toggle sort direction (ascending ⇔ descending)",
+        ),
     ]
 
     # Register custom command providers

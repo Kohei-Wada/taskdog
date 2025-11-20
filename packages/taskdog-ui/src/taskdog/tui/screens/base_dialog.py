@@ -4,6 +4,7 @@ from abc import abstractmethod
 from typing import Any, ClassVar, TypeVar
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
@@ -25,7 +26,7 @@ class BaseModalDialog(ModalScreen[T]):
     """
 
     BINDINGS: ClassVar = [
-        ("escape", "cancel", "Cancel"),
+        Binding("escape", "cancel", "Cancel", tooltip="Cancel and close the dialog"),
     ]
 
     def action_cancel(self) -> None:

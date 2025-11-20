@@ -21,9 +21,21 @@ class MainScreen(Screen[None]):
     """Main screen showing gantt chart and task list."""
 
     BINDINGS: ClassVar = [
-        Binding("ctrl+j", "focus_next", "Next widget", show=False, priority=True),
         Binding(
-            "ctrl+k", "focus_previous", "Previous widget", show=False, priority=True
+            "ctrl+j",
+            "focus_next",
+            "Next widget",
+            show=False,
+            priority=True,
+            tooltip="Move focus to next widget (gantt/table)",
+        ),
+        Binding(
+            "ctrl+k",
+            "focus_previous",
+            "Previous widget",
+            show=False,
+            priority=True,
+            tooltip="Move focus to previous widget (gantt/table)",
         ),
     ]
 

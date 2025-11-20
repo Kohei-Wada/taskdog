@@ -73,19 +73,47 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
     # Add Vi-style bindings in addition to DataTable's default bindings
     BINDINGS: ClassVar = [
         # j/k navigation using DataTable's built-in cursor actions
-        Binding("j", "cursor_down", "Down", show=False),
-        Binding("k", "cursor_up", "Up", show=False),
+        Binding(
+            "j",
+            "cursor_down",
+            "Down",
+            show=False,
+            tooltip="Move cursor down (Vi-style)",
+        ),
+        Binding(
+            "k", "cursor_up", "Up", show=False, tooltip="Move cursor up (Vi-style)"
+        ),
         # g/G navigation for top/bottom
-        Binding("g", "vi_home", "Top", show=False),
-        Binding("G", "vi_end", "Bottom", show=False),
+        Binding("g", "vi_home", "Top", show=False, tooltip="Jump to top (Vi-style)"),
+        Binding(
+            "G", "vi_end", "Bottom", show=False, tooltip="Jump to bottom (Vi-style)"
+        ),
         # Vi-style page and horizontal scroll bindings from mixin
         *ViNavigationMixin.VI_PAGE_BINDINGS,
         *ViNavigationMixin.VI_HORIZONTAL_BINDINGS,
         *ViNavigationMixin.VI_HORIZONTAL_JUMP_BINDINGS,
         # Selection bindings
-        Binding("space", "toggle_selection", "Select", show=True),
-        Binding("ctrl+a", "select_all", "Select All", show=True),
-        Binding("ctrl+n", "clear_selection", "Clear", show=True),
+        Binding(
+            "space",
+            "toggle_selection",
+            "Select",
+            show=True,
+            tooltip="Toggle selection for the current task",
+        ),
+        Binding(
+            "ctrl+a",
+            "select_all",
+            "Select All",
+            show=True,
+            tooltip="Select all tasks in the table",
+        ),
+        Binding(
+            "ctrl+n",
+            "clear_selection",
+            "Clear",
+            show=True,
+            tooltip="Clear all selections",
+        ),
     ]
 
     def __init__(self, *args, **kwargs):

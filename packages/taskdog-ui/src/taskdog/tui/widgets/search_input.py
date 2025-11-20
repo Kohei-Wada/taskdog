@@ -27,7 +27,13 @@ class SearchInput(Container):
         bubble = True  # Enable message bubbling to parent widgets
 
     BINDINGS: ClassVar = [
-        Binding("ctrl+r", "refine_filter", "Refine Filter", show=False),
+        Binding(
+            "ctrl+r",
+            "refine_filter",
+            "Refine Filter",
+            show=False,
+            tooltip="Refine the search filter",
+        ),
     ]
 
     def __init__(self, *args, **kwargs) -> None:

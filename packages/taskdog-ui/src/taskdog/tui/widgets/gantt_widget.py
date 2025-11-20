@@ -38,14 +38,58 @@ class GanttWidget(VerticalScroll, TUIWidget):
 
     # Add Vi-style bindings for scrolling
     BINDINGS: ClassVar = [
-        Binding("j", "scroll_down", "Scroll Down", show=False),
-        Binding("k", "scroll_up", "Scroll Up", show=False),
-        Binding("g", "scroll_home", "Top", show=False),
-        Binding("G", "scroll_end", "Bottom", show=False),
-        Binding("ctrl+d", "page_down", "Page Down", show=False),
-        Binding("ctrl+u", "page_up", "Page Up", show=False),
-        Binding("h", "scroll_left", "Scroll Left", show=False),
-        Binding("l", "scroll_right", "Scroll Right", show=False),
+        Binding(
+            "j",
+            "scroll_down",
+            "Scroll Down",
+            show=False,
+            tooltip="Scroll down one line (Vi-style)",
+        ),
+        Binding(
+            "k",
+            "scroll_up",
+            "Scroll Up",
+            show=False,
+            tooltip="Scroll up one line (Vi-style)",
+        ),
+        Binding(
+            "g", "scroll_home", "Top", show=False, tooltip="Scroll to top (Vi-style)"
+        ),
+        Binding(
+            "G",
+            "scroll_end",
+            "Bottom",
+            show=False,
+            tooltip="Scroll to bottom (Vi-style)",
+        ),
+        Binding(
+            "ctrl+d",
+            "page_down",
+            "Page Down",
+            show=False,
+            tooltip="Scroll down half a page (Vi-style)",
+        ),
+        Binding(
+            "ctrl+u",
+            "page_up",
+            "Page Up",
+            show=False,
+            tooltip="Scroll up half a page (Vi-style)",
+        ),
+        Binding(
+            "h",
+            "scroll_left",
+            "Scroll Left",
+            show=False,
+            tooltip="Scroll left (Vi-style)",
+        ),
+        Binding(
+            "l",
+            "scroll_right",
+            "Scroll Right",
+            show=False,
+            tooltip="Scroll right (Vi-style)",
+        ),
     ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

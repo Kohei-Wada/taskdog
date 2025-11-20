@@ -31,10 +31,29 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
     """
 
     BINDINGS: ClassVar = [
-        Binding("escape", "cancel", "Cancel"),
-        Binding("ctrl+s", "submit", "Submit"),
-        Binding("ctrl+j", "focus_next", "Next field", priority=True),
-        Binding("ctrl+k", "focus_previous", "Previous field", priority=True),
+        Binding(
+            "escape",
+            "cancel",
+            "Cancel",
+            tooltip="Cancel and close the form without saving",
+        ),
+        Binding(
+            "ctrl+s", "submit", "Submit", tooltip="Submit the form and save changes"
+        ),
+        Binding(
+            "ctrl+j",
+            "focus_next",
+            "Next field",
+            priority=True,
+            tooltip="Move to next form field",
+        ),
+        Binding(
+            "ctrl+k",
+            "focus_previous",
+            "Previous field",
+            priority=True,
+            tooltip="Move to previous form field",
+        ),
     ]
 
     def __init__(

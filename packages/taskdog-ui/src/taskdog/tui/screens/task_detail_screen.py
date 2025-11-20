@@ -3,6 +3,7 @@
 from typing import Any, ClassVar
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Label, Markdown, Static
 
@@ -28,8 +29,10 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
     BINDINGS: ClassVar = [
         *ViNavigationMixin.VI_VERTICAL_BINDINGS,
         *ViNavigationMixin.VI_PAGE_BINDINGS,
-        ("v", "edit_note", "Edit Note"),
-        ("q", "cancel", "Close"),
+        Binding(
+            "v", "edit_note", "Edit Note", tooltip="Edit markdown notes for this task"
+        ),
+        Binding("q", "cancel", "Close", tooltip="Close the task detail screen"),
     ]
 
     def __init__(self, detail: TaskDetailOutput, *args: Any, **kwargs: Any):

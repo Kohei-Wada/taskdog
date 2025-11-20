@@ -3,6 +3,7 @@
 from typing import Any, ClassVar
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.widgets import Button, Label
 
@@ -13,9 +14,14 @@ class ConfirmationDialog(BaseModalDialog[bool]):
     """Modal dialog for confirming actions with keyboard shortcuts."""
 
     BINDINGS: ClassVar = [
-        ("escape", "cancel", "Cancel"),
-        ("y", "confirm", "Yes"),
-        ("n", "cancel", "No"),
+        Binding(
+            "escape",
+            "cancel",
+            "Cancel",
+            tooltip="Cancel the action and close the dialog",
+        ),
+        Binding("y", "confirm", "Yes", tooltip="Confirm the action"),
+        Binding("n", "cancel", "No", tooltip="Cancel the action and close the dialog"),
     ]
 
     def __init__(self, title: str, message: str, *args: Any, **kwargs: Any):

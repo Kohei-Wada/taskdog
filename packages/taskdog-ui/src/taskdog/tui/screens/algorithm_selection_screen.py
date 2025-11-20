@@ -22,9 +22,26 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
     """Modal screen for selecting optimization algorithm, max hours, and start date."""
 
     BINDINGS: ClassVar = [
-        Binding("ctrl+s", "submit", "Submit"),
-        Binding("ctrl+j", "focus_next", "Next field", priority=True),
-        Binding("ctrl+k", "focus_previous", "Previous field", priority=True),
+        Binding(
+            "ctrl+s",
+            "submit",
+            "Submit",
+            tooltip="Submit and start optimization with selected algorithm",
+        ),
+        Binding(
+            "ctrl+j",
+            "focus_next",
+            "Next field",
+            priority=True,
+            tooltip="Move to next form field",
+        ),
+        Binding(
+            "ctrl+k",
+            "focus_previous",
+            "Previous field",
+            priority=True,
+            tooltip="Move to previous form field",
+        ),
     ]
 
     def __init__(
