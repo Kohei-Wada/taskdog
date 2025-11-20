@@ -37,7 +37,7 @@ class TableCellBuilder:
             Text object with left justification
         """
         # Rich Text expects style as str or None (handled internally)
-        text = Text(value, justify="left")
+        text: Text = Text(value, justify="left")
         if style:
             text.stylize(style)
         return text
@@ -58,7 +58,7 @@ class TableCellBuilder:
         Returns:
             Text object with specified style and justification
         """
-        text = Text(value, justify=justify)
+        text: Text = Text(value, justify=justify)
         if style:
             text.stylize(style)
         return text

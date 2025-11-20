@@ -45,7 +45,7 @@ class TUIWidget:
             raise RuntimeError(
                 "Widget must be mounted in a TUI app before accessing tui_app"
             )
-        return self.app  # type: ignore[return-value]
+        return self.app  # type: ignore[no-any-return]
 
     @property
     def tui_state(self) -> "TUIState":
