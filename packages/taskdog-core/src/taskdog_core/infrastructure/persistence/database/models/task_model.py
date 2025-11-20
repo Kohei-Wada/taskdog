@@ -8,7 +8,12 @@ stored as JSON TEXT columns for Phase 2 implementation.
 from datetime import datetime
 
 from sqlalchemy import Boolean, Float, Index, Integer, String, Text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import (  # type: ignore[attr-defined]  # SQLAlchemy 2.0 type stubs limitation
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 
 class Base(DeclarativeBase):

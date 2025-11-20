@@ -83,8 +83,8 @@ ignore_missing_imports = true
 module = "sqlalchemy.*"
 ignore_missing_imports = true
 
-# Temporarily ignore complex modules with many type issues for Phase 2
-# These will be fixed in Phase 3 (Tier 3: Presentation layers)
+# Temporarily ignore UI modules with missing type annotations (Tier 4)
+# These require Click decorator type annotations and Rich library compatibility fixes
 [[tool.mypy.overrides]]
 module = [
   "taskdog.renderers.rich_renderer_base",
@@ -94,7 +94,6 @@ module = [
   "taskdog.tui.app",
   "taskdog.tui.widgets.*",
   "taskdog.tui.screens.algorithm_selection_screen",
-  "taskdog_core.infrastructure.persistence.database.*",
 ]
 ignore_errors = true
 

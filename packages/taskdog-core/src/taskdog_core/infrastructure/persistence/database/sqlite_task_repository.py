@@ -99,7 +99,7 @@ class SqliteTaskRepository(TaskRepository):
             return {}
 
         with self.Session() as session:
-            stmt = select(TaskModel).where(TaskModel.id.in_(task_ids))
+            stmt = select(TaskModel).where(TaskModel.id.in_(task_ids))  # type: ignore[attr-defined]
             models = session.scalars(stmt).all()
             return {model.id: self.mapper.from_model(model) for model in models}
 
@@ -156,15 +156,15 @@ class SqliteTaskRepository(TaskRepository):
                             .join(TagModel, TaskTagModel.tag_id == TagModel.id)
                             .where(TagModel.name == tag)
                         )
-                        stmt = stmt.where(TaskModel.id.in_(tag_subquery))
+                        stmt = stmt.where(TaskModel.id.in_(tag_subquery))  # type: ignore[attr-defined]
                 else:
                     # OR logic: task must have ANY of the specified tags
                     tag_subquery = (
                         select(TaskTagModel.task_id)
                         .join(TagModel, TaskTagModel.tag_id == TagModel.id)
-                        .where(TagModel.name.in_(tags))
+                        .where(TagModel.name.in_(tags))  # type: ignore[attr-defined]
                     )
-                    stmt = stmt.where(TaskModel.id.in_(tag_subquery))
+                    stmt = stmt.where(TaskModel.id.in_(tag_subquery))  # type: ignore[attr-defined]
 
             # Filter by date range (checks multiple date fields)
             if start_date is not None or end_date is not None:
@@ -228,15 +228,15 @@ class SqliteTaskRepository(TaskRepository):
                             .join(TagModel, TaskTagModel.tag_id == TagModel.id)
                             .where(TagModel.name == tag)
                         )
-                        stmt = stmt.where(TaskModel.id.in_(tag_subquery))
+                        stmt = stmt.where(TaskModel.id.in_(tag_subquery))  # type: ignore[attr-defined]
                 else:
                     # OR logic: task must have ANY of the specified tags
                     tag_subquery = (
                         select(TaskTagModel.task_id)
                         .join(TagModel, TaskTagModel.tag_id == TagModel.id)
-                        .where(TagModel.name.in_(tags))
+                        .where(TagModel.name.in_(tags))  # type: ignore[attr-defined]
                     )
-                    stmt = stmt.where(TaskModel.id.in_(tag_subquery))
+                    stmt = stmt.where(TaskModel.id.in_(tag_subquery))  # type: ignore[attr-defined]
 
             # Filter by date range (checks multiple date fields)
             if start_date is not None or end_date is not None:
@@ -320,7 +320,7 @@ class SqliteTaskRepository(TaskRepository):
             existing_ids = [t.id for t in tasks if t.id is not None]
             existing_models = {}
             if existing_ids:
-                stmt = select(TaskModel).where(TaskModel.id.in_(existing_ids))
+                stmt = select(TaskModel).where(TaskModel.id.in_(existing_ids))  # type: ignore[attr-defined]
                 existing_models = {m.id: m for m in session.scalars(stmt).all()}
 
             for task in tasks:
@@ -361,7 +361,7 @@ class SqliteTaskRepository(TaskRepository):
             The next available ID (max_id + 1, or 1 if no tasks exist)
         """
         with self.Session() as session:
-            stmt = select(TaskModel.id).order_by(TaskModel.id.desc()).limit(1)
+            stmt = select(TaskModel.id).order_by(TaskModel.id.desc()).limit(1)  # type: ignore[attr-defined]
             result = session.scalar(stmt)
             return (result + 1) if result is not None else 1
 
@@ -417,7 +417,7 @@ class SqliteTaskRepository(TaskRepository):
             5. Associate them with the task via relationship
         """
         # Clear existing relationships
-        task_model.tag_models.clear()
+        task_model.tag_models.clear()  # type: ignore[attr-defined]
 
         if not tag_names:
             # No tags to associate
@@ -427,7 +427,7 @@ class SqliteTaskRepository(TaskRepository):
         tag_ids = tag_resolver.resolve_tag_names_to_ids(tag_names)
 
         # Fetch TagModel instances
-        stmt = select(TagModel).where(TagModel.id.in_(tag_ids))
+        stmt = select(TagModel).where(TagModel.id.in_(tag_ids))  # type: ignore[attr-defined]
         tag_models_list = session.scalars(stmt).all()
 
         # Preserve original order: SQL IN clause doesn't guarantee order
@@ -436,7 +436,7 @@ class SqliteTaskRepository(TaskRepository):
 
         # Associate tags with task (preserving order)
         # Note: SQLAlchemy will handle the task_tags junction table automatically
-        task_model.tag_models.extend(ordered_tag_models)
+        task_model.tag_models.extend(ordered_tag_models)  # type: ignore[attr-defined]
 
     def get_tag_counts(self) -> dict[str, int]:
         """Get all tags with their task counts using SQL aggregation.
@@ -512,7 +512,7 @@ class SqliteTaskRepository(TaskRepository):
                     select(TaskModel.id)
                     .join(TaskTagModel, TaskModel.id == TaskTagModel.task_id)
                     .join(TagModel, TaskTagModel.tag_id == TagModel.id)
-                    .where(TagModel.name.in_(tags))
+                    .where(TagModel.name.in_(tags))  # type: ignore[attr-defined]
                     .group_by(TaskModel.id)
                     .having(
                         func.count(func.distinct(TagModel.name)) == unique_tag_count
@@ -528,7 +528,7 @@ class SqliteTaskRepository(TaskRepository):
                     select(TaskModel.id)
                     .join(TaskTagModel, TaskModel.id == TaskTagModel.task_id)
                     .join(TagModel, TaskTagModel.tag_id == TagModel.id)
-                    .where(TagModel.name.in_(tags))
+                    .where(TagModel.name.in_(tags))  # type: ignore[attr-defined]
                     .distinct()
                 )
 
@@ -571,11 +571,11 @@ class SqliteTaskRepository(TaskRepository):
         # Build conditions for each date field
         for field in date_fields:
             if start_date and end_date:
-                date_conditions.append(field.between(start_date, end_date))
+                date_conditions.append(field.between(start_date, end_date))  # type: ignore[attr-defined]
             elif start_date:
-                date_conditions.append(field >= start_date)
+                date_conditions.append(field >= start_date)  # type: ignore[operator]
             elif end_date:
-                date_conditions.append(field <= end_date)
+                date_conditions.append(field <= end_date)  # type: ignore[operator]
 
         return date_conditions
 
