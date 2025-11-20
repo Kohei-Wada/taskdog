@@ -3,6 +3,8 @@
 import unittest
 from datetime import date, datetime
 
+from parameterized import parameterized
+
 from taskdog_core.shared.utils.date_utils import (
     calculate_next_workday,
     get_previous_monday,
@@ -14,65 +16,41 @@ from taskdog_core.shared.utils.date_utils import (
 class TestDateUtils(unittest.TestCase):
     """Test cases for date utility functions."""
 
-    def test_calculate_next_workday_monday(self):
-        """Test calculation for Monday (should return same day)."""
-        monday = datetime(2025, 1, 6)  # Monday
-        result = calculate_next_workday(monday)
-        self.assertEqual(result.weekday(), 0)  # Monday
-        self.assertEqual(result.date(), monday.date())
-
-    def test_calculate_next_workday_friday(self):
-        """Test calculation for Friday (should return same day)."""
-        friday = datetime(2025, 1, 10)  # Friday
-        result = calculate_next_workday(friday)
-        self.assertEqual(result.weekday(), 4)  # Friday
-        self.assertEqual(result.date(), friday.date())
-
-    def test_calculate_next_workday_saturday(self):
-        """Test calculation for Saturday (should return next Monday)."""
-        saturday = datetime(2025, 1, 4)  # Saturday
-        result = calculate_next_workday(saturday)
-        self.assertEqual(result.weekday(), 0)  # Monday
-        self.assertEqual(result.date(), datetime(2025, 1, 6).date())  # Next Monday
-
-    def test_calculate_next_workday_sunday(self):
-        """Test calculation for Sunday (should return next Monday)."""
-        sunday = datetime(2025, 1, 5)  # Sunday
-        result = calculate_next_workday(sunday)
-        self.assertEqual(result.weekday(), 0)  # Monday
-        self.assertEqual(result.date(), datetime(2025, 1, 6).date())  # Next Monday
+    @parameterized.expand(
+        [
+            ("monday", datetime(2025, 1, 6), 0, datetime(2025, 1, 6)),
+            ("friday", datetime(2025, 1, 10), 4, datetime(2025, 1, 10)),
+            ("saturday_to_monday", datetime(2025, 1, 4), 0, datetime(2025, 1, 6)),
+            ("sunday_to_monday", datetime(2025, 1, 5), 0, datetime(2025, 1, 6)),
+        ]
+    )
+    def test_calculate_next_workday(
+        self, _scenario, input_date, expected_weekday, expected_date
+    ):
+        """Test calculation for various days of the week."""
+        result = calculate_next_workday(input_date)
+        self.assertEqual(result.weekday(), expected_weekday)
+        self.assertEqual(result.date(), expected_date.date())
 
 
 class TestGetPreviousMonday(unittest.TestCase):
     """Test cases for get_previous_monday function."""
 
-    def test_get_previous_monday_on_monday(self):
-        """Test that Monday returns itself."""
-        monday = date(2025, 1, 6)  # Monday
-        result = get_previous_monday(monday)
-        self.assertEqual(result, monday)
-        self.assertEqual(result.weekday(), 0)  # Monday
-
-    def test_get_previous_monday_on_tuesday(self):
-        """Test that Tuesday returns previous Monday."""
-        tuesday = date(2025, 1, 7)  # Tuesday
-        result = get_previous_monday(tuesday)
-        self.assertEqual(result, date(2025, 1, 6))  # Previous Monday
-        self.assertEqual(result.weekday(), 0)  # Monday
-
-    def test_get_previous_monday_on_wednesday(self):
-        """Test that Wednesday returns previous Monday."""
-        wednesday = date(2025, 1, 8)  # Wednesday
-        result = get_previous_monday(wednesday)
-        self.assertEqual(result, date(2025, 1, 6))  # Monday of this week
-        self.assertEqual(result.weekday(), 0)  # Monday
-
-    def test_get_previous_monday_on_sunday(self):
-        """Test that Sunday returns previous Monday (6 days ago)."""
-        sunday = date(2025, 1, 12)  # Sunday
-        result = get_previous_monday(sunday)
-        self.assertEqual(result, date(2025, 1, 6))  # Monday of this week
-        self.assertEqual(result.weekday(), 0)  # Monday
+    @parameterized.expand(
+        [
+            ("monday", date(2025, 1, 6), date(2025, 1, 6)),
+            ("tuesday", date(2025, 1, 7), date(2025, 1, 6)),
+            ("wednesday", date(2025, 1, 8), date(2025, 1, 6)),
+            ("sunday", date(2025, 1, 12), date(2025, 1, 6)),
+        ]
+    )
+    def test_get_previous_monday_for_weekday(
+        self, _scenario, input_date, expected_monday
+    ):
+        """Test that various days return the correct previous Monday."""
+        result = get_previous_monday(input_date)
+        self.assertEqual(result, expected_monday)
+        self.assertEqual(result.weekday(), 0)
 
     def test_get_previous_monday_default_none(self):
         """Test that None uses today's date."""
@@ -94,29 +72,20 @@ class TestGetPreviousMonday(unittest.TestCase):
 class TestWeekdayHelpers(unittest.TestCase):
     """Test cases for is_weekday and is_weekend helper functions."""
 
-    def test_is_weekday_monday(self):
-        """Test that Monday is a weekday."""
-        monday = date(2025, 1, 6)  # Monday
-        self.assertTrue(is_weekday(monday))
-        self.assertFalse(is_weekend(monday))
-
-    def test_is_weekday_friday(self):
-        """Test that Friday is a weekday."""
-        friday = date(2025, 1, 10)  # Friday
-        self.assertTrue(is_weekday(friday))
-        self.assertFalse(is_weekend(friday))
-
-    def test_is_weekend_saturday(self):
-        """Test that Saturday is a weekend."""
-        saturday = date(2025, 1, 4)  # Saturday
-        self.assertFalse(is_weekday(saturday))
-        self.assertTrue(is_weekend(saturday))
-
-    def test_is_weekend_sunday(self):
-        """Test that Sunday is a weekend."""
-        sunday = date(2025, 1, 5)  # Sunday
-        self.assertFalse(is_weekday(sunday))
-        self.assertTrue(is_weekend(sunday))
+    @parameterized.expand(
+        [
+            ("monday", date(2025, 1, 6), True, False),
+            ("friday", date(2025, 1, 10), True, False),
+            ("saturday", date(2025, 1, 4), False, True),
+            ("sunday", date(2025, 1, 5), False, True),
+        ]
+    )
+    def test_weekday_weekend_classification(
+        self, _scenario, test_date, is_weekday_expected, is_weekend_expected
+    ):
+        """Test that dates are correctly classified as weekday or weekend."""
+        self.assertEqual(is_weekday(test_date), is_weekday_expected)
+        self.assertEqual(is_weekend(test_date), is_weekend_expected)
 
     def test_is_weekday_with_datetime(self):
         """Test that helper functions work with datetime objects."""

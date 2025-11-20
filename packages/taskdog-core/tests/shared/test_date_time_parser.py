@@ -3,53 +3,43 @@
 import unittest
 from datetime import date, datetime
 
+from parameterized import parameterized
+
 from taskdog_core.shared.utils.date_utils import parse_date, parse_datetime
 
 
 class DateTimeParserTest(unittest.TestCase):
     """Test cases for parse_date and parse_datetime functions."""
 
-    def test_parse_date_valid(self):
-        """Test date parsing with valid input."""
-        result = parse_date("2025-01-06 09:00:00")
-        self.assertEqual(result, date(2025, 1, 6))
+    @parameterized.expand(
+        [
+            ("valid_datetime_string", "2025-01-06 09:00:00", date(2025, 1, 6)),
+            ("date_with_time", "2025-12-25 23:59:59", date(2025, 12, 25)),
+            ("invalid_string", "invalid-date", None),
+            ("none_input", None, None),
+        ]
+    )
+    def test_parse_date(self, _scenario, input_str, expected_result):
+        """Test parse_date with various inputs."""
+        result = parse_date(input_str)
+        self.assertEqual(result, expected_result)
 
-    def test_parse_date_invalid(self):
-        """Test date parsing with invalid input."""
-        result = parse_date("invalid-date")
-        self.assertIsNone(result)
-
-    def test_parse_date_none(self):
-        """Test date parsing with None input."""
-        result = parse_date(None)
-        self.assertIsNone(result)
-
-    def test_parse_date_extracts_date_part(self):
-        """Test that parse_date correctly extracts date part from datetime string."""
-        result = parse_date("2025-12-25 23:59:59")
-        self.assertEqual(result, date(2025, 12, 25))
-
-    def test_parse_datetime_valid(self):
-        """Test datetime parsing with valid input."""
-        result = parse_datetime("2025-01-06 09:30:45")
-        self.assertEqual(result, datetime(2025, 1, 6, 9, 30, 45))
-
-    def test_parse_datetime_invalid(self):
-        """Test datetime parsing with invalid input."""
-        result = parse_datetime("invalid-datetime")
-        self.assertIsNone(result)
-
-    def test_parse_datetime_none(self):
-        """Test datetime parsing with None input."""
-        result = parse_datetime(None)
-        self.assertIsNone(result)
-
-    def test_parse_datetime_preserves_time(self):
-        """Test that parse_datetime preserves time information."""
-        result = parse_datetime("2025-12-25 23:59:59")
-        self.assertEqual(result.hour, 23)
-        self.assertEqual(result.minute, 59)
-        self.assertEqual(result.second, 59)
+    @parameterized.expand(
+        [
+            ("valid_datetime", "2025-01-06 09:30:45", datetime(2025, 1, 6, 9, 30, 45)),
+            (
+                "preserves_time",
+                "2025-12-25 23:59:59",
+                datetime(2025, 12, 25, 23, 59, 59),
+            ),
+            ("invalid_string", "invalid-datetime", None),
+            ("none_input", None, None),
+        ]
+    )
+    def test_parse_datetime(self, _scenario, input_str, expected_result):
+        """Test parse_datetime with various inputs."""
+        result = parse_datetime(input_str)
+        self.assertEqual(result, expected_result)
 
 
 if __name__ == "__main__":

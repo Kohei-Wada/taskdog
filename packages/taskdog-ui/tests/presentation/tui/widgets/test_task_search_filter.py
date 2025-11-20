@@ -3,6 +3,8 @@
 import unittest
 from datetime import datetime, timedelta
 
+from parameterized import parameterized
+
 from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
@@ -172,16 +174,18 @@ class TestTaskSearchFilter(unittest.TestCase):
         self.assertTrue(self.filter.matches(task, "URGENT", case_sensitive=True))
         self.assertFalse(self.filter.matches(task, "urgent", case_sensitive=True))
 
-    def test_is_case_sensitive(self):
+    @parameterized.expand(
+        [
+            ("lowercase", "hello", False),
+            ("lowercase_with_numbers", "test123", False),
+            ("mixed_case", "Hello", True),
+            ("uppercase", "TEST", True),
+            ("mixed_with_numbers", "Test123", True),
+        ]
+    )
+    def test_is_case_sensitive(self, _scenario, query, expected_case_sensitive):
         """Test smart case detection."""
-        # Lowercase queries should be case-insensitive
-        self.assertFalse(self.filter._is_case_sensitive("hello"))
-        self.assertFalse(self.filter._is_case_sensitive("test123"))
-
-        # Queries with uppercase should be case-sensitive
-        self.assertTrue(self.filter._is_case_sensitive("Hello"))
-        self.assertTrue(self.filter._is_case_sensitive("TEST"))
-        self.assertTrue(self.filter._is_case_sensitive("Test123"))
+        self.assertEqual(self.filter._is_case_sensitive(query), expected_case_sensitive)
 
 
 if __name__ == "__main__":

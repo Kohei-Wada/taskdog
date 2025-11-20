@@ -1,6 +1,8 @@
 import unittest
 from datetime import datetime
 
+from parameterized import parameterized
+
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.services.time_tracker import TimeTracker
 
@@ -12,22 +14,24 @@ class TestTimeTracker(unittest.TestCase):
         """Create a TimeTracker instance for each test"""
         self.tracker = TimeTracker()
 
-    def test_record_time_on_status_change_sets_timestamps(self):
-        """Test that appropriate timestamps are recorded for different status changes."""
-        test_cases = [
-            (TaskStatus.IN_PROGRESS, "actual_start", "IN_PROGRESS sets actual_start"),
-            (TaskStatus.COMPLETED, "actual_end", "COMPLETED sets actual_end"),
-            (TaskStatus.CANCELED, "actual_end", "CANCELED sets actual_end"),
+    @parameterized.expand(
+        [
+            ("in_progress_sets_actual_start", TaskStatus.IN_PROGRESS, "actual_start"),
+            ("completed_sets_actual_end", TaskStatus.COMPLETED, "actual_end"),
+            ("canceled_sets_actual_end", TaskStatus.CANCELED, "actual_end"),
         ]
-        for new_status, field_name, description in test_cases:
-            with self.subTest(description=description):
-                task = Task(name="Test Task", priority=1, id=1)
-                self.assertIsNone(getattr(task, field_name))
+    )
+    def test_record_time_on_status_change_sets_timestamps(
+        self, _scenario, new_status, field_name
+    ):
+        """Test that appropriate timestamps are recorded for different status changes."""
+        task = Task(name="Test Task", priority=1, id=1)
+        self.assertIsNone(getattr(task, field_name))
 
-                self.tracker.record_time_on_status_change(task, new_status)
+        self.tracker.record_time_on_status_change(task, new_status)
 
-                self.assertIsNotNone(getattr(task, field_name))
-                self.assertIsInstance(getattr(task, field_name), datetime)
+        self.assertIsNotNone(getattr(task, field_name))
+        self.assertIsInstance(getattr(task, field_name), datetime)
 
     def test_no_record_for_pending(self):
         """Test that no timestamps are recorded for PENDING status"""
@@ -106,31 +110,33 @@ class TestTimeTracker(unittest.TestCase):
         # Original start time should be preserved
         self.assertEqual(task.actual_start, original_start)
 
-    def test_clear_time_tracking_handles_all_scenarios(self):
-        """Test that clear_time_tracking clears timestamps in various scenarios."""
-        test_cases = [
+    @parameterized.expand(
+        [
             (
+                "both_timestamps_set",
                 datetime(2025, 1, 1, 10, 0, 0),
                 datetime(2025, 1, 1, 18, 0, 0),
-                "both timestamps set",
             ),
-            (datetime(2025, 1, 1, 10, 0, 0), None, "only actual_start set"),
-            (None, None, "no timestamps set"),
+            ("only_actual_start_set", datetime(2025, 1, 1, 10, 0, 0), None),
+            ("no_timestamps_set", None, None),
         ]
-        for actual_start, actual_end, description in test_cases:
-            with self.subTest(description=description):
-                task = Task(
-                    name="Test Task",
-                    priority=1,
-                    id=1,
-                    actual_start=actual_start,
-                    actual_end=actual_end,
-                )
+    )
+    def test_clear_time_tracking_handles_all_scenarios(
+        self, _scenario, actual_start, actual_end
+    ):
+        """Test that clear_time_tracking clears timestamps in various scenarios."""
+        task = Task(
+            name="Test Task",
+            priority=1,
+            id=1,
+            actual_start=actual_start,
+            actual_end=actual_end,
+        )
 
-                self.tracker.clear_time_tracking(task)
+        self.tracker.clear_time_tracking(task)
 
-                self.assertIsNone(task.actual_start)
-                self.assertIsNone(task.actual_end)
+        self.assertIsNone(task.actual_start)
+        self.assertIsNone(task.actual_end)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import Mock
 
 import click
+from parameterized import parameterized
 
 from taskdog_core.shared.click_types.field_list import FieldList
 
@@ -16,47 +17,21 @@ class TestFieldList(unittest.TestCase):
         self.param = Mock()
         self.ctx = Mock()
 
-    def test_convert_single_field(self):
-        """Test conversion of single field."""
+    @parameterized.expand(
+        [
+            ("single_field", "id", ["id"]),
+            ("multiple_fields", "id,name,priority", ["id", "name", "priority"]),
+            ("with_whitespace", "id, name , priority", ["id", "name", "priority"]),
+            ("none_input", None, None),
+            ("empty_string", "", None),
+            ("whitespace_only", "   ", None),
+        ]
+    )
+    def test_convert(self, _scenario, input_str, expected_result):
+        """Test FieldList conversion with various inputs."""
         param_type = FieldList()
-        result = param_type.convert("id", self.param, self.ctx)
-
-        self.assertEqual(result, ["id"])
-
-    def test_convert_multiple_fields(self):
-        """Test conversion of multiple comma-separated fields."""
-        param_type = FieldList()
-        result = param_type.convert("id,name,priority", self.param, self.ctx)
-
-        self.assertEqual(result, ["id", "name", "priority"])
-
-    def test_convert_with_whitespace(self):
-        """Test that whitespace around fields is stripped."""
-        param_type = FieldList()
-        result = param_type.convert("id, name , priority", self.param, self.ctx)
-
-        self.assertEqual(result, ["id", "name", "priority"])
-
-    def test_convert_none_returns_none(self):
-        """Test that None input returns None."""
-        param_type = FieldList()
-        result = param_type.convert(None, self.param, self.ctx)
-
-        self.assertIsNone(result)
-
-    def test_convert_empty_string_returns_none(self):
-        """Test that empty string returns None."""
-        param_type = FieldList()
-        result = param_type.convert("", self.param, self.ctx)
-
-        self.assertIsNone(result)
-
-    def test_convert_whitespace_only_returns_none(self):
-        """Test that whitespace-only string returns None."""
-        param_type = FieldList()
-        result = param_type.convert("   ", self.param, self.ctx)
-
-        self.assertIsNone(result)
+        result = param_type.convert(input_str, self.param, self.ctx)
+        self.assertEqual(result, expected_result)
 
     def test_validation_with_valid_fields(self):
         """Test that valid fields pass validation."""
@@ -66,44 +41,31 @@ class TestFieldList(unittest.TestCase):
 
         self.assertEqual(result, ["id", "name", "priority"])
 
-    def test_validation_rejects_invalid_fields(self):
-        """Test that invalid fields are rejected."""
-        valid_fields = {"id", "name", "priority"}
+    @parameterized.expand(
+        [
+            (
+                "single_invalid",
+                {"id", "name", "priority"},
+                "id,invalid,name",
+                "Invalid field(s): invalid",
+            ),
+            (
+                "multiple_invalid",
+                {"id", "name"},
+                "id,invalid1,invalid2,name",
+                "Invalid field(s):",
+            ),
+            ("all_invalid", {"id", "name"}, "foo,bar", "Invalid field(s): foo, bar"),
+        ]
+    )
+    def test_validation_errors(
+        self, _scenario, valid_fields, input_str, expected_error
+    ):
+        """Test FieldList validation errors."""
         param_type = FieldList(valid_fields=valid_fields)
-
         with self.assertRaises(click.exceptions.BadParameter) as context:
-            param_type.convert("id,invalid,name", self.param, self.ctx)
-
-        error_message = str(context.exception)
-        self.assertIn("Invalid field(s): invalid", error_message)
-        self.assertIn("Valid fields are:", error_message)
-        self.assertIn("id", error_message)
-        self.assertIn("name", error_message)
-        self.assertIn("priority", error_message)
-
-    def test_validation_rejects_multiple_invalid_fields(self):
-        """Test that multiple invalid fields are reported."""
-        valid_fields = {"id", "name"}
-        param_type = FieldList(valid_fields=valid_fields)
-
-        with self.assertRaises(click.exceptions.BadParameter) as context:
-            param_type.convert("id,invalid1,invalid2,name", self.param, self.ctx)
-
-        error_message = str(context.exception)
-        self.assertIn("Invalid field(s):", error_message)
-        self.assertIn("invalid1", error_message)
-        self.assertIn("invalid2", error_message)
-
-    def test_validation_with_all_invalid_fields(self):
-        """Test validation when all fields are invalid."""
-        valid_fields = {"id", "name"}
-        param_type = FieldList(valid_fields=valid_fields)
-
-        with self.assertRaises(click.exceptions.BadParameter) as context:
-            param_type.convert("foo,bar", self.param, self.ctx)
-
-        error_message = str(context.exception)
-        self.assertIn("Invalid field(s): foo, bar", error_message)
+            param_type.convert(input_str, self.param, self.ctx)
+        self.assertIn(expected_error, str(context.exception))
 
     def test_no_validation_when_valid_fields_not_provided(self):
         """Test that no validation occurs when valid_fields is None."""
