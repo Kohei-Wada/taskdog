@@ -20,7 +20,7 @@ router = APIRouter()
 @router.get("/{task_id}/notes", response_model=NotesResponse)
 async def get_task_notes(
     task_id: int, repository: RepositoryDep, notes_repo: NotesRepositoryDep
-):
+) -> NotesResponse:
     """Get task notes.
 
     Args:
@@ -58,7 +58,7 @@ async def update_task_notes(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> NotesResponse:
     """Update task notes.
 
     Args:
@@ -105,7 +105,7 @@ async def delete_task_notes(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> None:
     """Delete task notes.
 
     Args:

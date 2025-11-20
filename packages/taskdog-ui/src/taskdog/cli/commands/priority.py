@@ -13,7 +13,7 @@ from taskdog.shared.click_types import PositiveInt
 @click.argument("priority", type=PositiveInt())
 @click.pass_context
 @handle_task_errors("setting priority")
-def priority_command(ctx, task_id, priority):
+def priority_command(ctx: click.Context, task_id: int, priority: int) -> None:
     """Set priority for a task.
 
     Usage:

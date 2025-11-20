@@ -13,7 +13,7 @@ from taskdog.shared.click_types import PositiveFloat
 @click.argument("hours", type=PositiveFloat())
 @click.pass_context
 @handle_task_errors("setting estimate")
-def estimate_command(ctx, task_id, hours):
+def estimate_command(ctx: click.Context, task_id: int, hours: float) -> None:
     """Set estimated duration for a task.
 
     Usage:

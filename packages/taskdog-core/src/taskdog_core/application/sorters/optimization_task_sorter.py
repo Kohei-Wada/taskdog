@@ -35,7 +35,7 @@ class OptimizationTaskSorter:
             Sorted task list
         """
 
-        def priority_key(task: Task) -> tuple:
+        def priority_key(task: Task) -> tuple[int | float, int, int | None]:
             # Get task's deadline
             deadline = task.deadline
 

@@ -1,10 +1,17 @@
 """Export command - Export tasks to various formats."""
 
+from datetime import datetime
+
 import click
 
 from taskdog.cli.commands.common_options import date_range_options, filter_options
 from taskdog.cli.context import CliContext
-from taskdog.exporters import CsvTaskExporter, JsonTaskExporter, MarkdownTableExporter
+from taskdog.exporters import (
+    CsvTaskExporter,
+    JsonTaskExporter,
+    MarkdownTableExporter,
+    TaskExporter,
+)
 from taskdog.shared.click_types.field_list import FieldList
 
 # Valid fields for export
@@ -58,7 +65,17 @@ VALID_FIELDS = {
 @date_range_options()
 @filter_options()
 @click.pass_context
-def export_command(ctx, format, output, fields, tag, all, status, start_date, end_date):
+def export_command(
+    ctx: click.Context,
+    format: str,
+    output: str | None,
+    fields: list[str] | None,
+    tag: tuple[str, ...],
+    all: bool,
+    status: str | None,
+    start_date: datetime | None,
+    end_date: datetime | None,
+) -> None:
     """Export tasks in the specified format.
 
     By default, exports non-archived tasks (all statuses except archived).
@@ -104,6 +121,7 @@ def export_command(ctx, format, output, fields, tag, all, status, start_date, en
 
         # fields is already parsed and validated by FieldList Click type
         # Create appropriate exporter based on format
+        exporter: TaskExporter
         if format == "json":
             exporter = JsonTaskExporter(field_list=fields)
         elif format == "csv":

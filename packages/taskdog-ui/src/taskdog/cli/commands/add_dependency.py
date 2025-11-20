@@ -11,7 +11,9 @@ from taskdog.cli.error_handler import handle_task_errors
 @click.argument("depends_on_id", type=int)
 @click.pass_context
 @handle_task_errors("adding dependency")
-def add_dependency_command(ctx, task_id, depends_on_id):
+def add_dependency_command(
+    ctx: click.Context, task_id: int, depends_on_id: int
+) -> None:
     """Add a dependency to a task.
 
     Usage:

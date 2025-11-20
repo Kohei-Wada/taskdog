@@ -1,5 +1,7 @@
 """Add command - Add a new task."""
 
+from datetime import datetime
+
 import click
 
 from taskdog.cli.context import CliContext
@@ -68,8 +70,17 @@ from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 @click.pass_context
 @handle_task_errors("adding task", is_parent=True)
 def add_command(
-    ctx, name, priority, fixed, depends_on, tag, deadline, estimate, start, end
-):
+    ctx: click.Context,
+    name: str,
+    priority: int,
+    fixed: bool,
+    depends_on: tuple[int, ...],
+    tag: tuple[str, ...],
+    deadline: datetime | None,
+    estimate: float | None,
+    start: datetime | None,
+    end: datetime | None,
+) -> None:
     """Add a new task.
 
     You can set all task properties at creation time, or use dedicated commands

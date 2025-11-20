@@ -1,7 +1,9 @@
 """ViOptionList widget with Vi-style key bindings."""
 
+from collections.abc import Sequence
 from typing import ClassVar
 
+from textual.binding import Binding
 from textual.widgets import OptionList
 
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
@@ -22,7 +24,9 @@ class ViOptionList(OptionList, ViNavigationMixin):
     """
 
     # Use Vi vertical navigation bindings from mixin
-    BINDINGS: ClassVar = ViNavigationMixin.VI_VERTICAL_BINDINGS
+    BINDINGS: ClassVar[Sequence[Binding | tuple[str, str] | tuple[str, str, str]]] = (
+        ViNavigationMixin.VI_VERTICAL_BINDINGS
+    )
 
     def action_vi_down(self) -> None:
         """Move cursor down (j key)."""

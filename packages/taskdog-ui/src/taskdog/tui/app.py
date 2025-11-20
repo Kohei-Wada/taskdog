@@ -1,5 +1,6 @@
 """Taskdog TUI application."""
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual.app import App
@@ -159,7 +160,7 @@ class TaskdogTUI(App):
     }
 
     # Load CSS from external files
-    CSS_PATH: ClassVar = get_css_paths()
+    CSS_PATH: ClassVar[list[str | Path]] = get_css_paths()
 
     # Enable mouse support
     ENABLE_MOUSE: ClassVar[bool] = True

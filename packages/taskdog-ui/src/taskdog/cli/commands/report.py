@@ -1,7 +1,7 @@
 """Report command - Generate markdown workload report grouped by date."""
 
 from collections import defaultdict
-from datetime import date
+from datetime import date, datetime
 
 import click
 
@@ -55,7 +55,16 @@ USAGE:
 @filter_options()
 @click.pass_context
 @handle_command_errors("generating report")
-def report_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
+def report_command(
+    ctx: click.Context,
+    tag: tuple[str, ...],
+    start_date: datetime | None,
+    end_date: datetime | None,
+    all: bool,
+    status: str | None,
+    sort: str,
+    reverse: bool,
+) -> None:
     """Generate markdown workload report grouped by date.
 
     Shows all scheduled work including optimized tasks, manually scheduled tasks, and fixed tasks.

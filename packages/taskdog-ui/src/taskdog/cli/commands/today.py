@@ -25,7 +25,14 @@ from taskdog.cli.error_handler import handle_command_errors
 @filter_options()
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def today_command(ctx, format, all, status, sort, reverse):
+def today_command(
+    ctx: click.Context,
+    format: str,
+    all: bool,
+    status: str | None,
+    sort: str,
+    reverse: bool,
+) -> None:
     """Display tasks for today.
 
     Shows tasks that meet any of these criteria:

@@ -21,7 +21,7 @@ async def start_task(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Start a task (change status to IN_PROGRESS and record start time).
 
     Args:
@@ -54,7 +54,7 @@ async def complete_task(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Complete a task (change status to COMPLETED and record end time).
 
     Args:
@@ -87,7 +87,7 @@ async def pause_task(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Pause a task (change status to PENDING and clear timestamps).
 
     Args:
@@ -120,7 +120,7 @@ async def cancel_task(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Cancel a task (change status to CANCELED and record end time).
 
     Args:
@@ -153,7 +153,7 @@ async def reopen_task(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
     x_client_id: Annotated[str | None, Header()] = None,
-):
+) -> TaskOperationResponse:
     """Reopen a task (change status to PENDING and clear timestamps).
 
     Args:

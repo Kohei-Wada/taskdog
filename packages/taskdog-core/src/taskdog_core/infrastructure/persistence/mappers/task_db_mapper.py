@@ -149,13 +149,31 @@ class TaskDbMapper(TaskMapperInterface):
         Raises:
             TaskValidationError: If the model data violates Task entity invariants
         """
+        # Validate required fields (database enforces NOT NULL constraints)
+        assert model.name is not None, "TaskModel.name must not be None"
+        assert model.priority is not None, "TaskModel.priority must not be None"
+        assert model.status is not None, "TaskModel.status must not be None"
+        assert model.created_at is not None, "TaskModel.created_at must not be None"
+        assert model.updated_at is not None, "TaskModel.updated_at must not be None"
+        assert model.is_fixed is not None, "TaskModel.is_fixed must not be None"
+        assert model.is_archived is not None, "TaskModel.is_archived must not be None"
+        assert model.daily_allocations is not None, (
+            "TaskModel.daily_allocations must not be None"
+        )
+        assert model.actual_daily_hours is not None, (
+            "TaskModel.actual_daily_hours must not be None"
+        )
+        assert model.depends_on is not None, "TaskModel.depends_on must not be None"
+
         # Parse JSON fields
         daily_allocations = self._deserialize_date_dict(model.daily_allocations)
         actual_daily_hours = self._deserialize_date_dict(model.actual_daily_hours)
         depends_on = json.loads(model.depends_on)
 
         # Phase 6: Get tags from normalized relationship only
-        tags = [tag.name for tag in model.tag_models] if model.tag_models else []
+        tags: list[str] = (
+            [tag.name for tag in model.tag_models] if model.tag_models else []
+        )
 
         return Task(
             id=model.id,

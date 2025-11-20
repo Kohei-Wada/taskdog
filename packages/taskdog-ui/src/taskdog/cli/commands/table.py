@@ -1,5 +1,7 @@
 """Table command - Display tasks in flat table format."""
 
+from datetime import datetime
+
 import click
 
 from taskdog.cli.commands.common_options import (
@@ -37,7 +39,17 @@ from taskdog.shared.click_types.field_list import FieldList
 @filter_options()
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_date):
+def table_command(
+    ctx: click.Context,
+    all: bool,
+    status: str | None,
+    sort: str,
+    reverse: bool,
+    fields: list[str] | None,
+    tag: tuple[str, ...],
+    start_date: datetime | None,
+    end_date: datetime | None,
+) -> None:
     """Display tasks as a flat table.
 
     By default, shows non-archived tasks (all statuses except archived).
@@ -68,8 +80,8 @@ def table_command(ctx, all, status, sort, reverse, fields, tag, start_date, end_
         all=all,
         status=status,
         tags=tags,
-        start_date=start_date,
-        end_date=end_date,
+        start_date=start_date.date() if start_date else None,
+        end_date=end_date.date() if end_date else None,
         sort_by=sort,
         reverse=reverse,
     )

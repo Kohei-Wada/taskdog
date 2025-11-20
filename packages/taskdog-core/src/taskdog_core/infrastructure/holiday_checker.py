@@ -4,18 +4,14 @@ This module provides the concrete implementation of IHolidayChecker interface
 using the external 'holidays' package.
 """
 
-# mypy: disable-error-code="unused-ignore"
-
 from datetime import date
-from typing import Any
 
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
-holidays: Any
 try:
-    import holidays  # type: ignore[no-redef]
+    import holidays as _holidays_module
 except ImportError:
-    holidays = None
+    _holidays_module = None  # type: ignore[assignment]
 
 
 class HolidayChecker(IHolidayChecker):
@@ -48,7 +44,7 @@ class HolidayChecker(IHolidayChecker):
             ImportError: If holidays package is not installed
             NotImplementedError: If country code is not supported
         """
-        if country and holidays is None:
+        if country and _holidays_module is None:
             raise ImportError(
                 "The 'holidays' package is required for holiday checking. "
                 "Install it with: uv pip install holidays"
@@ -58,9 +54,9 @@ class HolidayChecker(IHolidayChecker):
         self._holidays = None
 
         if country:
-            assert holidays is not None  # Guaranteed by the check above
+            assert _holidays_module is not None  # Guaranteed by the check above
             try:
-                self._holidays = holidays.country_holidays(country)
+                self._holidays = _holidays_module.country_holidays(country)
             except NotImplementedError as e:
                 raise NotImplementedError(
                     f"Country code '{country}' is not supported by the holidays package. "

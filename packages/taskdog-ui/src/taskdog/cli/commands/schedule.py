@@ -1,5 +1,8 @@
 """Schedule command - Set planned schedule for a task."""
 
+from datetime import datetime
+from typing import Any
+
 import click
 
 from taskdog.cli.context import CliContext
@@ -13,7 +16,12 @@ from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 @click.argument("end", type=DateTimeWithDefault(), required=False)
 @click.pass_context
 @handle_task_errors("setting schedule")
-def schedule_command(ctx, task_id, start, end):
+def schedule_command(
+    ctx: click.Context,
+    task_id: int,
+    start: datetime,
+    end: datetime | None,
+) -> None:
     """Set planned schedule for a task.
 
     Usage:
@@ -38,7 +46,7 @@ def schedule_command(ctx, task_id, start, end):
     )
 
     # Print success - format schedule as "start → end"
-    def format_schedule(value) -> str:
+    def format_schedule(value: Any) -> str:
         start_str = result.task.planned_start if result.task.planned_start else "N/A"
         end_str = result.task.planned_end if result.task.planned_end else "N/A"
         return f"{start_str} → {end_str}"

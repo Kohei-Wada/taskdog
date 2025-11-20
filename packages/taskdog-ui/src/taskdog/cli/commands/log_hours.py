@@ -23,7 +23,9 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     help="Date in YYYY-MM-DD format (default: today)",
 )
 @click.pass_context
-def log_hours_command(ctx, task_id, hours, date):
+def log_hours_command(
+    ctx: click.Context, task_id: int, hours: float, date: str | None
+) -> None:
     """Log actual hours worked on a task.
 
     Usage:

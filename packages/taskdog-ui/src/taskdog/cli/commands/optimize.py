@@ -1,5 +1,7 @@
 """Optimize command - Auto-generate optimal task schedules."""
 
+from datetime import datetime
+
 import click
 
 from taskdog.cli.context import CliContext
@@ -81,7 +83,13 @@ Use --force to override existing schedules.
 @click.option("--force", "-f", is_flag=True, help="Override existing schedules")
 @click.pass_context
 @handle_command_errors("optimizing schedules")
-def optimize_command(ctx, start_date, max_hours_per_day, algorithm, force):
+def optimize_command(
+    ctx: click.Context,
+    start_date: datetime | None,
+    max_hours_per_day: float | None,
+    algorithm: str | None,
+    force: bool,
+) -> None:
     """Auto-generate optimal schedules for tasks."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

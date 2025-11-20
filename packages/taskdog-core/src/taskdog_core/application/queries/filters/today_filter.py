@@ -1,6 +1,6 @@
 """Filter for today's tasks."""
 
-from datetime import datetime
+from datetime import date, datetime
 
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -38,7 +38,7 @@ class TodayFilter(TaskFilter):
 
         return matching_tasks
 
-    def _is_today_task(self, task: Task, today) -> bool:
+    def _is_today_task(self, task: Task, today: date) -> bool:
         """Check if a task is relevant for today.
 
         Args:

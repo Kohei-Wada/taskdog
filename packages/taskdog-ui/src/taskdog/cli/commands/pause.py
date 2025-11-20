@@ -12,7 +12,7 @@ from taskdog_core.shared.constants import StatusVerbs
 )
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.pass_context
-def pause_command(ctx, task_ids):
+def pause_command(ctx: click.Context, task_ids: tuple[int, ...]) -> None:
     """Pause tasks and reset time tracking (set status to PENDING).
 
     This command is useful when you accidentally started a task and want to reset it.

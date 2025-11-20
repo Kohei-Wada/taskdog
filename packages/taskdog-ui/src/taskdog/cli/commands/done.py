@@ -10,7 +10,7 @@ from taskdog_core.shared.constants import StatusVerbs
 @click.command(name="done", help="Mark task(s) as completed.")
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.pass_context
-def done_command(ctx, task_ids):
+def done_command(ctx: click.Context, task_ids: tuple[int, ...]) -> None:
     """Mark task(s) as completed."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

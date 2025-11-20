@@ -1,13 +1,15 @@
 """Common CLI option decorators for reuse across commands."""
 
+from collections.abc import Callable
 from functools import wraps
+from typing import Any
 
 import click
 
 from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
-def filter_options():
+def filter_options() -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Add common filter options (--all, --status) to a command.
 
     Usage:
@@ -17,7 +19,7 @@ def filter_options():
             pass
     """
 
-    def decorator(f):
+    def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @click.option(
             "--status",
             type=click.Choice(
@@ -34,7 +36,7 @@ def filter_options():
             help="Show all tasks including completed, canceled, and archived",
         )
         @wraps(f)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return f(*args, **kwargs)
 
         return wrapper
@@ -42,7 +44,9 @@ def filter_options():
     return decorator
 
 
-def sort_options(default_sort: str = "id"):
+def sort_options(
+    default_sort: str = "id",
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Add common sort options (--sort, --reverse) to a command.
 
     Args:
@@ -55,7 +59,7 @@ def sort_options(default_sort: str = "id"):
             pass
     """
 
-    def decorator(f):
+    def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @click.option(
             "--reverse",
             "-r",
@@ -71,7 +75,7 @@ def sort_options(default_sort: str = "id"):
             help=f"Sort tasks by specified field (default: {default_sort})",
         )
         @wraps(f)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return f(*args, **kwargs)
 
         return wrapper
@@ -79,7 +83,7 @@ def sort_options(default_sort: str = "id"):
     return decorator
 
 
-def date_range_options():
+def date_range_options() -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Add common date range options (--start-date, --end-date) to a command.
 
     Usage:
@@ -89,7 +93,7 @@ def date_range_options():
             pass
     """
 
-    def decorator(f):
+    def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
         @click.option(
             "--end-date",
             "-e",
@@ -105,7 +109,7 @@ def date_range_options():
             "Shows tasks with any date field >= start date.",
         )
         @wraps(f)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             return f(*args, **kwargs)
 
         return wrapper

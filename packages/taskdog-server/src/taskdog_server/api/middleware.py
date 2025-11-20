@@ -2,7 +2,7 @@
 
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -20,7 +20,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
     - Error details with stack trace for 5xx responses
     """
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:  # type: ignore[override]
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         """Process request and log details.
 
         Args:
@@ -57,7 +59,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 },
             )
 
-            return response  # type: ignore[no-any-return]
+            return response
 
         except Exception as exc:
             # Calculate processing time

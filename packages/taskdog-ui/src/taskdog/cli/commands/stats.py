@@ -37,7 +37,7 @@ Use --period to filter by time period and --focus to show specific sections.
 )
 @click.pass_context
 @handle_command_errors("calculating statistics")
-def stats_command(ctx, period, focus):
+def stats_command(ctx: click.Context, period: str, focus: str) -> None:
     """Display task statistics and analytics."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

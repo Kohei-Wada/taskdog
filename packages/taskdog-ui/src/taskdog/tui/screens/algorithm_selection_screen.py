@@ -212,5 +212,9 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
             self._show_validation_error(start_date_error, start_date_input)
             return
 
+        # Type narrowing: validation ensures non-None values at this point
+        assert max_hours is not None, "max_hours validated above"
+        assert start_date is not None, "start_date validated above"
+
         # Submit algorithm, max_hours, and start_date
         self.dismiss((selected_algo, max_hours, start_date))

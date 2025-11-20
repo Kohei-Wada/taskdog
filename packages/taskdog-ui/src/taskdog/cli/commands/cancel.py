@@ -10,7 +10,7 @@ from taskdog_core.shared.constants import StatusVerbs
 @click.command(name="cancel", help="Mark task(s) as canceled.")
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.pass_context
-def cancel_command(ctx, task_ids):
+def cancel_command(ctx: click.Context, task_ids: tuple[int, ...]) -> None:
     """Mark task(s) as canceled."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

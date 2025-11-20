@@ -1,6 +1,6 @@
 """Gantt command - Display tasks in Gantt chart format."""
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 import click
 
@@ -74,7 +74,16 @@ EXAMPLE:
 @filter_options()
 @click.pass_context
 @handle_command_errors("displaying Gantt chart")
-def gantt_command(ctx, tag, start_date, end_date, all, status, sort, reverse):
+def gantt_command(
+    ctx: click.Context,
+    tag: tuple[str, ...],
+    start_date: datetime | None,
+    end_date: datetime | None,
+    all: bool,
+    status: str | None,
+    sort: str,
+    reverse: bool,
+) -> None:
     """Display tasks as a Gantt chart with workload analysis.
 
     By default, shows non-archived tasks (all statuses except archived).
