@@ -28,6 +28,8 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 
 **Requirements**: Python 3.11+ (3.13+ for individual packages), [uv](https://github.com/astral-sh/uv)
 
+**Supported Platforms**: Linux, macOS (Windows support coming soon)
+
 ```bash
 # Clone the repository
 git clone https://github.com/Kohei-Wada/taskdog.git
@@ -46,10 +48,31 @@ make install-local
 **What gets installed:**
 - `taskdog` - CLI and TUI interface
 - `taskdog-server` - FastAPI REST API server
+- **Linux**: systemd user service for automatic startup
+- **macOS**: launchd service for automatic startup
+
+**Platform-Specific Service Management:**
+
+**Linux (systemd):**
+```bash
+systemctl --user start taskdog-server    # Start server
+systemctl --user status taskdog-server   # Check status
+systemctl --user stop taskdog-server     # Stop server
+journalctl --user -u taskdog-server -f   # View logs
+```
+
+**macOS (launchd):**
+```bash
+launchctl start com.github.kohei-wada.taskdog-server   # Start server
+launchctl stop com.github.kohei-wada.taskdog-server    # Stop server
+launchctl list | grep taskdog-server                   # Check status
+tail -f ~/Library/Logs/taskdog-server.log              # View logs
+```
 
 **Common Make targets:**
 ```bash
 make install          # Install as global commands via uv tool
+make check-deps       # Check if required tools are installed
 make install-dev      # Install all packages with dev dependencies
 make install-local    # Install locally for development (per-package)
 make reinstall        # Clean and reinstall

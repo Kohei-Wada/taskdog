@@ -1,10 +1,19 @@
 .PHONY: help test test-core test-server test-ui test-all coverage \
         install install-dev install-core install-server install-ui \
         install-ui-only install-server-only reinstall \
-        tool-install-ui tool-install-server \
+        tool-install-ui tool-install-server check-deps \
         clean lint format typecheck check
 
 .DEFAULT_GOAL := help
+
+# Platform detection
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+    PLATFORM := linux
+endif
+ifeq ($(UNAME_S),Darwin)
+    PLATFORM := macos
+endif
 
 help: ## Show this help message
 	@echo "╔════════════════════════════════════════════════════════╗"
@@ -28,12 +37,27 @@ help: ## Show this help message
 # Installation Targets
 # ============================================================================
 
-install: ## Install all commands globally with uv tool (recommended)
+check-deps: ## Check if required tools are installed
+	@echo "Checking required dependencies..."
+	@command -v uv >/dev/null 2>&1 || { echo "❌ Error: uv is not installed. Install it from https://github.com/astral-sh/uv"; exit 1; }
+	@echo "✓ uv is installed"
+ifeq ($(PLATFORM),linux)
+	@command -v systemctl >/dev/null 2>&1 || { echo "❌ Error: systemctl is not installed"; exit 1; }
+	@echo "✓ systemctl is installed"
+else ifeq ($(PLATFORM),macos)
+	@command -v launchctl >/dev/null 2>&1 || { echo "❌ Error: launchctl is not installed"; exit 1; }
+	@echo "✓ launchctl is installed"
+endif
+	@echo "✓ All dependencies are installed"
+	@echo ""
+
+install: check-deps ## Install all commands globally with uv tool (recommended)
 	@echo "Installing taskdog-server globally..."
 	cd packages/taskdog-server && uv tool install --force --reinstall .
 	@echo "Installing taskdog globally..."
 	cd packages/taskdog-ui && uv tool install --force --reinstall .
 	@echo ""
+ifeq ($(PLATFORM),linux)
 	@echo "Setting up systemd user service..."
 	@mkdir -p ~/.config/systemd/user
 	@cp packages/taskdog-server/taskdog-server.service ~/.config/systemd/user/
@@ -53,6 +77,36 @@ install: ## Install all commands globally with uv tool (recommended)
 	@echo ""
 	@echo "See packages/taskdog-server/SYSTEMD.md for more details."
 	@echo ""
+else ifeq ($(PLATFORM),macos)
+	@echo "Setting up launchd service..."
+	@mkdir -p ~/Library/LaunchAgents
+	@mkdir -p ~/Library/Logs
+	@sed 's|%USER%|$(USER)|g' packages/taskdog-server/taskdog-server.plist > ~/Library/LaunchAgents/com.github.kohei-wada.taskdog-server.plist
+	@launchctl load ~/Library/LaunchAgents/com.github.kohei-wada.taskdog-server.plist 2>/dev/null || true
+	@echo ""
+	@echo "✓ All commands installed successfully!"
+	@echo ""
+	@echo "Available commands:"
+	@echo "  - taskdog          (CLI/TUI)"
+	@echo "  - taskdog-server   (API server)"
+	@echo ""
+	@echo "Launchd service installed and enabled:"
+	@echo "  - Start:  launchctl start com.github.kohei-wada.taskdog-server"
+	@echo "  - Stop:   launchctl stop com.github.kohei-wada.taskdog-server"
+	@echo "  - Status: launchctl list | grep taskdog-server"
+	@echo "  - Logs:   tail -f ~/Library/Logs/taskdog-server.log"
+	@echo ""
+else
+	@echo "✓ All commands installed successfully!"
+	@echo ""
+	@echo "Available commands:"
+	@echo "  - taskdog          (CLI/TUI)"
+	@echo "  - taskdog-server   (API server)"
+	@echo ""
+	@echo "Note: Automatic service management not supported on this platform."
+	@echo "Start the server manually: taskdog-server --host 127.0.0.1 --port 8000"
+	@echo ""
+endif
 
 install-dev: ## Install all packages with development dependencies (for development)
 	@echo "Installing all packages with dev dependencies..."
@@ -85,11 +139,17 @@ reinstall: clean install ## Clean and reinstall all commands globally
 
 # Uninstall
 uninstall: ## Uninstall all commands
+ifeq ($(PLATFORM),linux)
 	@echo "Stopping and disabling systemd service..."
 	-systemctl --user stop taskdog-server.service 2>/dev/null || true
 	-systemctl --user disable taskdog-server.service 2>/dev/null || true
 	-rm -f ~/.config/systemd/user/taskdog-server.service
 	-systemctl --user daemon-reload
+else ifeq ($(PLATFORM),macos)
+	@echo "Stopping and unloading launchd service..."
+	-launchctl unload ~/Library/LaunchAgents/com.github.kohei-wada.taskdog-server.plist 2>/dev/null || true
+	-rm -f ~/Library/LaunchAgents/com.github.kohei-wada.taskdog-server.plist
+endif
 	@echo "Uninstalling taskdog commands..."
 	-uv tool uninstall taskdog 2>/dev/null || true
 	-uv tool uninstall taskdog-server 2>/dev/null || true
@@ -170,6 +230,11 @@ clean: ## Clean build artifacts and cache
 	rm -rf packages/*/.ruff_cache/ packages/*/.mypy_cache/
 	find packages -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	uv cache clean
+ifeq ($(PLATFORM),linux)
 	@echo "Stopping systemd service..."
 	-systemctl --user stop taskdog-server.service 2>/dev/null || true
+else ifeq ($(PLATFORM),macos)
+	@echo "Stopping launchd service..."
+	-launchctl stop com.github.kohei-wada.taskdog-server 2>/dev/null || true
+endif
 	@echo "✓ Clean complete!"
