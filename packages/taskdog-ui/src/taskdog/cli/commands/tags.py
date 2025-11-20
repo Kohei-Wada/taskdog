@@ -12,7 +12,11 @@ from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 @click.argument("tags", nargs=-1)
 @click.pass_context
 @handle_task_errors("managing tags")
-def tags_command(ctx, task_id, tags):
+def tags_command(
+    ctx: click.Context,
+    task_id: int | None,
+    tags: tuple[str, ...],
+) -> None:
     """View or set task tags.
 
     Usage:
@@ -41,25 +45,25 @@ def tags_command(ctx, task_id, tags):
 
     # Case 2: Task ID only - show tags for that task
     if not tags:
-        # Get task via API client
-        task = ctx_obj.api_client.get_task_by_id(task_id)
-        if not task:
+        # Get task via API client (returns TaskByIdOutput with nested TaskDetailDto)
+        result = ctx_obj.api_client.get_task_by_id(task_id)
+        if not result.task:
             raise TaskNotFoundException(task_id)
 
-        if not task.tags:
+        if not result.task.tags:
             console_writer.info(f"Task {task_id} has no tags.")
         else:
             console_writer.info(f"Tags for task {task_id}:")
-            for tag in task.tags:
+            for tag in result.task.tags:
                 console_writer.print(f"  {tag}")
         return
 
     # Case 3: Task ID + tags - set tags
-    # Set tags via API client
-    task = ctx_obj.api_client.set_task_tags(task_id, list(tags))
+    # Set tags via API client (returns TaskOperationOutput)
+    updated_task = ctx_obj.api_client.set_task_tags(task_id, list(tags))
 
-    if task.tags:
-        console_writer.task_success("Set tags for", task)
-        console_writer.print(f"  Tags: {', '.join(task.tags)}")
+    if updated_task.tags:
+        console_writer.task_success("Set tags for", updated_task)
+        console_writer.print(f"  Tags: {', '.join(updated_task.tags)}")
     else:
-        console_writer.task_success("Cleared tags for", task)
+        console_writer.task_success("Cleared tags for", updated_task)

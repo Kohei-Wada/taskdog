@@ -5,16 +5,23 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import click
 
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
+from taskdog.console.console_writer import ConsoleWriter
+from taskdog.infrastructure.api_client import TaskdogApiClient
 from taskdog.utils.editor import get_editor
 from taskdog.utils.notes_template import generate_notes_template
+from taskdog_core.application.dto.task_dto import TaskDetailDto
+from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-def _read_content_from_source(content, file, console_writer):
+def _read_content_from_source(
+    content: str | None, file: str | None, console_writer: ConsoleWriter
+) -> str | None:
     """Read note content from --content, --file, or stdin.
 
     Args:
@@ -42,7 +49,13 @@ def _read_content_from_source(content, file, console_writer):
     return None
 
 
-def _save_content_directly(task_id, new_content, append, api_client, console_writer):
+def _save_content_directly(
+    task_id: int,
+    new_content: str,
+    append: bool,
+    api_client: TaskdogApiClient,
+    console_writer: ConsoleWriter,
+) -> None:
     """Save note content directly without opening editor.
 
     Args:
@@ -71,12 +84,17 @@ def _save_content_directly(task_id, new_content, append, api_client, console_wri
         console_writer.error("saving notes", e)
 
 
-def _edit_with_editor(task_id, task, api_client, console_writer):
+def _edit_with_editor(
+    task_id: int,
+    task: TaskDetailDto,
+    api_client: TaskdogApiClient,
+    console_writer: ConsoleWriter,
+) -> None:
     """Edit note using $EDITOR.
 
     Args:
         task_id: Task ID
-        task: Task object
+        task: Task detail DTO
         api_client: API client
         console_writer: Console writer
     """
@@ -140,7 +158,13 @@ def _edit_with_editor(task_id, task, api_client, console_writer):
 )
 @click.pass_context
 @handle_task_errors("editing notes")
-def note_command(ctx, task_id, content, file, append):
+def note_command(
+    ctx: click.Context,
+    task_id: int,
+    content: str | None,
+    file: str | None,
+    append: bool,
+) -> None:
     """Edit task notes in markdown.
 
     Supports multiple input methods:
@@ -164,6 +188,8 @@ def note_command(ctx, task_id, content, file, append):
 
     # Get task from API
     result = api_client.get_task_by_id(task_id)
+    if not result.task:
+        raise TaskNotFoundException(task_id)
     task = result.task
 
     # Try to read content from sources (priority: --content, --file, stdin)

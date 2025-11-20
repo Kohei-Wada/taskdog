@@ -1,5 +1,7 @@
 """Update command - Update task properties."""
 
+from datetime import datetime
+
 import click
 
 from taskdog.cli.context import CliContext
@@ -52,15 +54,15 @@ from taskdog_core.domain.entities.task import TaskStatus
 @click.pass_context
 @handle_task_errors("updating task")
 def update_command(
-    ctx,
-    task_id,
-    priority,
-    status,
-    planned_start,
-    planned_end,
-    deadline,
-    estimated_duration,
-):
+    ctx: click.Context,
+    task_id: int,
+    priority: int | None,
+    status: str | None,
+    planned_start: datetime | None,
+    planned_end: datetime | None,
+    deadline: datetime | None,
+    estimated_duration: float | None,
+) -> None:
     """Update multiple task properties at once.
 
     Usage:
