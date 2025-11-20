@@ -94,6 +94,10 @@ class TaskSorter:
         elif sort_by == "estimated_duration":
             return lambda task: self._parse_numeric_for_sort(task.estimated_duration)
 
+        else:
+            # This should never happen due to validation in sort(), but required for type checking
+            raise ValueError(f"Unsupported sort_by value: {sort_by}")
+
     def _parse_date_for_sort(self, dt: datetime | None) -> datetime:
         """Prepare datetime for sorting, with None values sorted last.
 

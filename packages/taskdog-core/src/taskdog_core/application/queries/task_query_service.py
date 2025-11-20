@@ -1,7 +1,7 @@
 """Task query service for read-optimized operations."""
 
 from datetime import date, timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
 from taskdog_core.application.dto.task_dto import GanttTaskDto, TaskRowDto
@@ -96,7 +96,7 @@ class TaskQueryService(QueryService):
         # Sort tasks
         return self.sorter.sort(tasks, sort_by, reverse)
 
-    def _extract_sql_params(self, filter_obj: TaskFilter | None) -> dict:
+    def _extract_sql_params(self, filter_obj: TaskFilter | None) -> dict[str, Any]:
         """Extract SQL-compatible filter parameters from filter object.
 
         Walks through the filter chain and extracts parameters that can be
@@ -140,11 +140,11 @@ class TaskQueryService(QueryService):
                 self._handle_composite_filter(params, current_filter)
 
             # Move to next filter in chain
-            current_filter = getattr(current_filter, "_next", None)
+            current_filter = getattr(current_filter, "_next", None)  # type: ignore[assignment]
 
         return params
 
-    def _get_default_sql_params(self) -> dict:
+    def _get_default_sql_params(self) -> dict[str, Any]:
         """Get default SQL filter parameters.
 
         Returns:
@@ -159,7 +159,7 @@ class TaskQueryService(QueryService):
             "end_date": None,
         }
 
-    def _handle_non_archived_filter(self, params: dict) -> None:
+    def _handle_non_archived_filter(self, params: dict[str, Any]) -> None:
         """Handle NonArchivedFilter by setting include_archived to False.
 
         Args:
@@ -167,7 +167,9 @@ class TaskQueryService(QueryService):
         """
         params["include_archived"] = False
 
-    def _handle_status_filter(self, params: dict, filter_obj: "StatusFilter") -> None:
+    def _handle_status_filter(
+        self, params: dict[str, Any], filter_obj: "StatusFilter"
+    ) -> None:
         """Handle StatusFilter by extracting status value.
 
         Args:
@@ -176,7 +178,9 @@ class TaskQueryService(QueryService):
         """
         params["status"] = filter_obj.status
 
-    def _handle_tag_filter(self, params: dict, filter_obj: "TagFilter") -> None:
+    def _handle_tag_filter(
+        self, params: dict[str, Any], filter_obj: "TagFilter"
+    ) -> None:
         """Handle TagFilter by extracting tags and match_all flag.
 
         Args:
@@ -187,7 +191,7 @@ class TaskQueryService(QueryService):
         params["match_all_tags"] = filter_obj.match_all
 
     def _handle_date_range_filter(
-        self, params: dict, filter_obj: "DateRangeFilter"
+        self, params: dict[str, Any], filter_obj: "DateRangeFilter"
     ) -> None:
         """Handle DateRangeFilter by extracting start_date and end_date.
 
@@ -199,7 +203,7 @@ class TaskQueryService(QueryService):
         params["end_date"] = filter_obj.end_date
 
     def _handle_composite_filter(
-        self, params: dict, filter_obj: "CompositeFilter"
+        self, params: dict[str, Any], filter_obj: "CompositeFilter"
     ) -> None:
         """Handle CompositeFilter by recursively processing sub-filters.
 
@@ -211,7 +215,9 @@ class TaskQueryService(QueryService):
             sub_params = self._extract_sql_params(sub_filter)
             self._merge_sql_params(params, sub_params)
 
-    def _merge_sql_params(self, params: dict, sub_params: dict) -> None:
+    def _merge_sql_params(
+        self, params: dict[str, Any], sub_params: dict[str, Any]
+    ) -> None:
         """Merge sub-filter parameters into main parameters.
 
         Uses the following merge logic:
@@ -273,16 +279,16 @@ class TaskQueryService(QueryService):
                 for sub_filter in current_filter.filters:
                     remaining = self._get_remaining_filter(sub_filter)
                     if remaining:
-                        complex_filters.append(remaining)
+                        complex_filters.append(remaining)  # type: ignore[arg-type]
 
-            current_filter = getattr(current_filter, "_next", None)
+            current_filter = getattr(current_filter, "_next", None)  # type: ignore[assignment]
 
         # If we have complex filters, compose them
         if complex_filters:
             if len(complex_filters) == 1:
                 return complex_filters[0]
             else:
-                return CompositeFilter(complex_filters)
+                return CompositeFilter(complex_filters)  # type: ignore[arg-type]
 
         return None
 
@@ -337,7 +343,7 @@ class TaskQueryService(QueryService):
         # Phase 3: Use SQL-based aggregation
         # Check if repository has the optimized method
         if hasattr(self.repository, "get_tag_counts"):
-            return self.repository.get_tag_counts()
+            return self.repository.get_tag_counts()  # type: ignore[no-any-return]
 
         # Fallback to old implementation for repositories without optimization
         tasks = self.repository.get_all()
@@ -429,6 +435,7 @@ class TaskQueryService(QueryService):
         for task in tasks:
             daily_hours = workload_calculator.get_task_daily_hours(task)
             if daily_hours:
+                assert task.id is not None, "Task must have ID (persisted entities)"
                 task_daily_hours[task.id] = daily_hours
 
         # Calculate daily workload totals
@@ -512,6 +519,7 @@ class TaskQueryService(QueryService):
         Returns:
             GanttTaskDto with fields needed for Gantt visualization
         """
+        assert task.id is not None, "Task must have ID (persisted entities)"
         return GanttTaskDto(
             id=task.id,
             name=task.name,

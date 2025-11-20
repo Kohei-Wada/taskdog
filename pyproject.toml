@@ -84,13 +84,9 @@ module = "sqlalchemy.*"
 ignore_missing_imports = true
 
 # Temporarily ignore complex modules with many type issues for Phase 2
-# These will be fixed in Phase 3
+# These will be fixed in Phase 3 (Tier 3: Presentation layers)
 [[tool.mypy.overrides]]
 module = [
-  "taskdog_core.application.sorters.optimization_task_sorter",
-  "taskdog_core.application.sorters.task_sorter",
-  "taskdog_core.application.queries.filters.today_filter",
-  "taskdog_core.application.queries.task_query_service",
   "taskdog.renderers.rich_renderer_base",
   "taskdog.renderers.rich_table_renderer",
   "taskdog.renderers.rich_gantt_renderer",
@@ -99,7 +95,6 @@ module = [
   "taskdog.tui.widgets.*",
   "taskdog.tui.screens.algorithm_selection_screen",
   "taskdog_core.infrastructure.persistence.database.*",
-  "taskdog_core.infrastructure.persistence.mappers.task_db_mapper",
 ]
 ignore_errors = true
 
