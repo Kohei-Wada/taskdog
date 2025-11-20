@@ -11,7 +11,9 @@ from taskdog.cli.error_handler import handle_task_errors
 @click.argument("depends_on_id", type=int)
 @click.pass_context
 @handle_task_errors("removing dependency")
-def remove_dependency_command(ctx, task_id, depends_on_id):
+def remove_dependency_command(
+    ctx: click.Context, task_id: int, depends_on_id: int
+) -> None:
     """Remove a dependency from a task.
 
     Usage:

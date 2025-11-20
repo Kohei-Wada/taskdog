@@ -10,7 +10,7 @@ from taskdog_core.shared.constants import StatusVerbs
 @click.command(name="reopen", help="Reopen completed or canceled task(s).")
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.pass_context
-def reopen_command(ctx, task_ids):
+def reopen_command(ctx: click.Context, task_ids: tuple[int, ...]) -> None:
     """Reopen completed or canceled task(s).
 
     Sets task status back to PENDING and clears time tracking.

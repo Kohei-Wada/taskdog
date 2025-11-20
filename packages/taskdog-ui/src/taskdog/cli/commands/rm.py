@@ -17,7 +17,7 @@ from taskdog.cli.context import CliContext
     help="Permanently delete the task(s) instead of archiving.",
 )
 @click.pass_context
-def rm_command(ctx, task_ids, hard):
+def rm_command(ctx: click.Context, task_ids: tuple[int, ...], hard: bool) -> None:
     """Remove task(s).
 
     By default, tasks are archived (is_archived flag set to True) and can be restored with 'taskdog restore'.

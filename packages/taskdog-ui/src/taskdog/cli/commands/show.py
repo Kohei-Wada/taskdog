@@ -12,7 +12,7 @@ from taskdog.renderers.rich_detail_renderer import RichDetailRenderer
 @click.option("--raw", is_flag=True, help="Show raw markdown instead of rendered")
 @click.pass_context
 @handle_task_errors("showing task")
-def show_command(ctx, task_id, raw):
+def show_command(ctx: click.Context, task_id: int, raw: bool) -> None:
     """Show task details and notes with rich formatting."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

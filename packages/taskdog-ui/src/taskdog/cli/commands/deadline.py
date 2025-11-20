@@ -13,7 +13,7 @@ from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 @click.argument("deadline", type=DateTimeWithDefault())
 @click.pass_context
 @handle_task_errors("setting deadline")
-def deadline_command(ctx, task_id, deadline):
+def deadline_command(ctx: click.Context, task_id: int, deadline: str) -> None:
     """Set deadline for a task.
 
     Usage:

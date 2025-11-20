@@ -12,7 +12,7 @@ from taskdog.cli.error_handler import handle_task_errors
 @click.argument("name", type=str)
 @click.pass_context
 @handle_task_errors("renaming task")
-def rename_command(ctx, task_id, name):
+def rename_command(ctx: click.Context, task_id: int, name: str) -> None:
     """Rename a task.
 
     Usage:

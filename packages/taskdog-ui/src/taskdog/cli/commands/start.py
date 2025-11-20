@@ -12,7 +12,7 @@ from taskdog_core.shared.constants import StatusVerbs
 )
 @click.argument("task_ids", nargs=-1, type=int, required=True)
 @click.pass_context
-def start_command(ctx, task_ids):
+def start_command(ctx: click.Context, task_ids: tuple[int, ...]) -> None:
     """Start working on tasks (set status to IN_PROGRESS)."""
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

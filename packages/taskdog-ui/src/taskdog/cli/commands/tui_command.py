@@ -10,7 +10,7 @@ from taskdog.tui.app import TaskdogTUI
     name="tui", help="Launch the Text User Interface for interactive task management."
 )
 @click.pass_context
-def tui_command(ctx):
+def tui_command(ctx: click.Context) -> None:
     """Launch the TUI for interactive task management.
 
     The TUI provides a full-screen interface with keyboard shortcuts:
