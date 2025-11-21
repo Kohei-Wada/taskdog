@@ -141,7 +141,7 @@ HelpScreen {
 
 /* Simulation Result Dialog */
 #simulation-result-dialog {
-    max-height: 50;  /* Accommodate schedule, task details, and workload analysis */
+    max-height: 30;  /* Compact view focusing on key information */
 }
 
 /* Task Detail Screen */

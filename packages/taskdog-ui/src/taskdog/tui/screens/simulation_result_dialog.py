@@ -102,46 +102,27 @@ class SimulationResultDialog(BaseModalDialog[bool]):
         Yields:
             Result widgets
         """
-        # Schedule section
-        yield Static("[bold]Schedule:[/bold]")
+        # Task name
+        yield Static(f"[bold]Task:[/bold] {result.virtual_task_name}")
+        yield Static("")
+
+        # Prominent schedule display
         yield Static(
-            f"  Planned Start: {DateTimeFormatter.format_datetime(result.planned_start)}"
+            f"[bold green]Start:[/bold green] [green]{DateTimeFormatter.format_datetime(result.planned_start)}[/green]"
         )
         yield Static(
-            f"  Planned End: {DateTimeFormatter.format_datetime(result.planned_end)}"
+            f"[bold cyan]End:[/bold cyan]   [cyan]{DateTimeFormatter.format_datetime(result.planned_end)}[/cyan]"
         )
-        if result.best_algorithm:
-            yield Static(
-                f"  Best Algorithm: [cyan]{result.best_algorithm}[/cyan] "
-                f"({result.successful_algorithms}/{result.total_algorithms_tested} succeeded)"
-            )
         yield Static("")
 
-        # Task details section
-        yield Static("[bold]Task Details:[/bold]")
-        yield Static(f"  Name: {result.virtual_task_name}")
-        yield Static(f"  Estimated: {result.estimated_duration} hours")
-        yield Static(f"  Priority: {result.priority}")
-        if result.deadline:
-            yield Static(
-                f"  Deadline: {DateTimeFormatter.format_datetime(result.deadline)}"
-            )
+        # Summary info
+        yield Static(
+            f"Duration: {result.estimated_duration}h  |  "
+            f"Days: {result.total_workload_days}  |  "
+            f"Avg: {result.average_workload:.1f}h/day"
+        )
         yield Static("")
 
-        # Workload analysis section
-        yield Static("[bold]Workload Analysis:[/bold]")
-        if result.peak_date:
-            yield Static(
-                f"  Peak: {result.peak_workload:.1f}h on "
-                f"{DateTimeFormatter.format_date_only(result.peak_date)}"
-            )
-        else:
-            yield Static(f"  Peak: {result.peak_workload:.1f}h")
-        yield Static(f"  Average: {result.average_workload:.1f}h/day")
-        yield Static(f"  Total Days: {result.total_workload_days}")
-        yield Static("")
-
-        yield Static("")
         yield Static("[bold]Create this task?[/bold]")
         with Horizontal(id="button-container"):
             yield Button("Yes (y)", variant="primary", id="yes-button")
@@ -156,34 +137,21 @@ class SimulationResultDialog(BaseModalDialog[bool]):
         Yields:
             Result widgets
         """
+        # Task name
+        yield Static(f"[bold]Task:[/bold] {result.virtual_task_name}")
+        yield Static("")
+
         # Failure reason
         yield Static(
-            f"[yellow]Reason:[/yellow] {result.failure_reason or 'Unknown error'}"
+            f"[bold red]Reason:[/bold red] {result.failure_reason or 'Unknown error'}"
         )
         yield Static("")
 
-        # Task details section
-        yield Static("[bold]Task Details:[/bold]")
-        yield Static(f"  Name: {result.virtual_task_name}")
-        yield Static(f"  Estimated: {result.estimated_duration} hours")
-        yield Static(f"  Priority: {result.priority}")
-        if result.deadline:
-            yield Static(
-                f"  Deadline: {DateTimeFormatter.format_datetime(result.deadline)}"
-            )
-        yield Static("")
-
-        # Algorithm testing info
-        yield Static("[bold]Algorithm Testing:[/bold]")
-        yield Static(f"  All {result.total_algorithms_tested} algorithms were tested")
-        yield Static("  None could schedule this task with the given constraints")
-        yield Static("")
-
         # Suggestions
-        yield Static("[yellow]Suggestions:[/yellow]")
+        yield Static("[bold yellow]Try:[/bold yellow]")
         yield Static("  • Adjust the deadline")
         yield Static("  • Increase max-hours-per-day")
-        yield Static("  • Complete or cancel existing tasks to free up capacity")
+        yield Static("  • Complete existing tasks")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press."""
