@@ -26,6 +26,7 @@ from taskdog.tui.events import GanttResizeRequested, TasksRefreshed
 from taskdog.tui.palette.providers import (
     ExportCommandProvider,
     ExportFormatProvider,
+    HelpCommandProvider,
     OptimizeCommandProvider,
     SortCommandProvider,
     SortOptionsProvider,
@@ -150,6 +151,13 @@ class TaskdogTUI(App):
             show=False,
             tooltip="Toggle sort direction (ascending ⇔ descending)",
         ),
+        Binding(
+            "?",
+            "show_help",
+            "Help",
+            show=True,
+            tooltip="Show help screen with keybindings and usage instructions",
+        ),
     ]
 
     # Register custom command providers
@@ -157,6 +165,7 @@ class TaskdogTUI(App):
         SortCommandProvider,
         OptimizeCommandProvider,
         ExportCommandProvider,
+        HelpCommandProvider,
     }
 
     # Load CSS from external files
@@ -449,6 +458,10 @@ class TaskdogTUI(App):
                 placeholder="Select export format…",
             ),
         )
+
+    def search_help(self) -> None:
+        """Show the help screen with keybindings and usage instructions."""
+        self.command_factory.execute("show_help")
 
     def set_sort_order(self, sort_key: str) -> None:
         """Set the sort order for Gantt chart and task list.

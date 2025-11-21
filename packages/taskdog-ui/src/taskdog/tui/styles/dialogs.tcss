@@ -9,7 +9,8 @@ AlgorithmSelectionScreen,
 SortSelectionScreen,
 ConfirmationDialog,
 TaskFormDialog,
-TaskDetailScreen {
+TaskDetailScreen,
+HelpScreen {
     align: center middle;
 }
 
@@ -134,4 +135,51 @@ TaskDetailScreen {
 /* Task Detail Screen */
 #detail-screen {
     max-height: 50;
+}
+
+/* Help Screen */
+#help-screen {
+    max-height: 50;
+}
+
+#help-content {
+    padding: 1;
+    margin: 0;
+    overflow-y: auto;
+}
+
+.help-section-title {
+    padding-top: 1;
+    padding-bottom: 0;
+}
+
+.help-category {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.help-binding-row {
+    padding: 0;
+}
+
+.help-tip {
+    padding: 0 2;
+}
+
+.help-info-block {
+    padding: 0 2;
+    color: $text-muted;
+}
+
+.help-spacer {
+    height: 1;
+}
+
+.help-spacer-small {
+    height: 0;
+}
+
+.help-footer {
+    text-align: center;
+    padding-top: 1;
 }
