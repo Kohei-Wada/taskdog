@@ -694,4 +694,7 @@ def convert_to_simulation_result(data: dict[str, Any]) -> SimulationResult:
         estimated_duration=data["estimated_duration"],
         priority=data["priority"],
         deadline=_parse_optional_datetime(data, "deadline"),
+        best_algorithm=data.get("best_algorithm"),
+        successful_algorithms=data.get("successful_algorithms", 0),
+        total_algorithms_tested=data.get("total_algorithms_tested", 9),
     )

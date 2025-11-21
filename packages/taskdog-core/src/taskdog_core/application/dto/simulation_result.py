@@ -11,6 +11,8 @@ class SimulationResult:
     Contains information about whether the virtual task can be scheduled,
     when it would be completed, and workload analysis.
 
+    System automatically tries all algorithms and returns the best result.
+
     Attributes:
         is_schedulable: Whether the virtual task can be scheduled
         planned_start: Planned start datetime (None if not schedulable)
@@ -25,6 +27,9 @@ class SimulationResult:
         estimated_duration: Estimated duration in hours
         priority: Priority of the simulated task
         deadline: Deadline of the simulated task (None if not set)
+        best_algorithm: Name of the algorithm that produced the best result (None if all failed)
+        successful_algorithms: Number of algorithms that successfully scheduled the task
+        total_algorithms_tested: Total number of algorithms tested
     """
 
     is_schedulable: bool
@@ -40,3 +45,6 @@ class SimulationResult:
     estimated_duration: float
     priority: int
     deadline: datetime | None
+    best_algorithm: str | None = None
+    successful_algorithms: int = 0
+    total_algorithms_tested: int = 9

@@ -104,27 +104,28 @@ class AnalyticsClient:
     def simulate_task(
         self,
         estimated_duration: float,
+        name: str,
         priority: int = 5,
-        name: str = "Simulated Task",
         deadline: datetime | None = None,
         depends_on: list[int] | None = None,
-        algorithm: str = "greedy",
+        tags: list[str] | None = None,
+        is_fixed: bool = False,
         max_hours_per_day: float = 6.0,
-        start_date: datetime | None = None,
-        force_override: bool = False,
     ) -> SimulationResult:
         """Simulate a virtual task without saving to database.
 
+        Uses the same interface as create_task for consistency.
+        System automatically tries all 9 algorithms and returns the best result.
+
         Args:
             estimated_duration: Estimated duration in hours (required)
+            name: Task name for display (required)
             priority: Task priority (default: 5)
-            name: Task name for display (default: "Simulated Task")
             deadline: Optional deadline
             depends_on: List of task IDs this depends on
-            algorithm: Optimization algorithm to use (default: "greedy")
+            tags: List of tags for categorization
+            is_fixed: Whether task is fixed (won't be rescheduled)
             max_hours_per_day: Maximum hours per day (default: 6.0)
-            start_date: Optimization start date (defaults to now)
-            force_override: Override existing schedules (default: False)
 
         Returns:
             SimulationResult with schedule prediction and workload analysis
@@ -138,10 +139,9 @@ class AnalyticsClient:
             "priority": priority,
             "deadline": deadline.isoformat() if deadline else None,
             "depends_on": depends_on or [],
-            "algorithm_name": algorithm,
+            "tags": tags or [],
+            "is_fixed": is_fixed,
             "max_hours_per_day": max_hours_per_day,
-            "start_date": start_date.isoformat() if start_date else None,
-            "force_override": force_override,
         }
 
         response = self._base._safe_request("post", "/api/v1/simulate", json=payload)

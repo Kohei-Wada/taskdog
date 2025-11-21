@@ -270,7 +270,11 @@ class NotesResponse(BaseModel):
 
 
 class SimulationResponse(BaseModel):
-    """Response model for task simulation."""
+    """Response model for task simulation.
+
+    System automatically tries all 9 algorithms and returns the best result
+    (earliest completion date).
+    """
 
     is_schedulable: bool
     planned_start: datetime | None = None
@@ -285,3 +289,6 @@ class SimulationResponse(BaseModel):
     estimated_duration: float
     priority: int
     deadline: datetime | None = None
+    best_algorithm: str | None = None
+    successful_algorithms: int = 0
+    total_algorithms_tested: int = 9

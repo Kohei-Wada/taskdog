@@ -1,7 +1,5 @@
 """Simulation endpoints for virtual task scheduling."""
 
-from datetime import datetime
-
 from fastapi import APIRouter, HTTPException, status
 
 from taskdog_core.application.dto.simulate_task_request import (
@@ -22,8 +20,9 @@ async def simulate_task(
 ) -> SimulationResponse:
     """Simulate a virtual task without saving to database.
 
-    This endpoint runs optimization with a virtual task to predict
-    completion dates and workload impact without modifying the database.
+    System automatically tries all 9 algorithms and returns the best result
+    (earliest completion date). This helps users understand if their virtual
+    task can be scheduled and when it would be completed.
 
     Args:
         request: Simulation parameters including virtual task details
@@ -33,7 +32,7 @@ async def simulate_task(
         SimulationResponse with schedule prediction and workload analysis
 
     Raises:
-        HTTPException: 400 if validation fails or algorithm is invalid
+        HTTPException: 400 if validation fails
     """
     try:
         # Convert Pydantic request to DTO
@@ -43,10 +42,9 @@ async def simulate_task(
             priority=request.priority,
             deadline=request.deadline,
             depends_on=request.depends_on,
-            algorithm_name=request.algorithm_name,
+            tags=request.tags,
+            is_fixed=request.is_fixed,
             max_hours_per_day=request.max_hours_per_day,
-            start_date=request.start_date or datetime.now(),
-            force_override=request.force_override,
         )
 
         # Execute simulation
@@ -73,6 +71,9 @@ async def simulate_task(
             estimated_duration=result.estimated_duration,
             priority=result.priority,
             deadline=result.deadline,
+            best_algorithm=result.best_algorithm,
+            successful_algorithms=result.successful_algorithms,
+            total_algorithms_tested=result.total_algorithms_tested,
         )
 
     except TaskValidationError as e:

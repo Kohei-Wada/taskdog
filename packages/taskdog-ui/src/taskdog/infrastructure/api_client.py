@@ -239,26 +239,24 @@ class TaskdogApiClient:
     def simulate_task(
         self,
         estimated_duration: float,
+        name: str,
         priority: int = 5,
-        name: str = "Simulated Task",
         deadline: datetime | None = None,
         depends_on: list[int] | None = None,
-        algorithm: str = "greedy",
+        tags: list[str] | None = None,
+        is_fixed: bool = False,
         max_hours_per_day: float = 6.0,
-        start_date: datetime | None = None,
-        force_override: bool = False,
     ) -> SimulationResult:
         """Simulate a virtual task without saving to database."""
         return self._analytics.simulate_task(
             estimated_duration,
-            priority,
             name,
+            priority,
             deadline,
             depends_on,
-            algorithm,
+            tags,
+            is_fixed,
             max_hours_per_day,
-            start_date,
-            force_override,
         )
 
     # Query Controller methods - delegate to QueryClient

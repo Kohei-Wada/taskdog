@@ -51,6 +51,10 @@ class SimulateTaskScheduleUseCase(UseCase[SimulateTaskRequest, SimulationResult]
     def execute(self, input_dto: SimulateTaskRequest) -> SimulationResult:
         """Execute task simulation.
 
+        Tries all available optimization algorithms and returns the best result
+        (earliest completion date). This helps users understand if their virtual
+        task can be scheduled and when it would be completed.
+
         Args:
             input_dto: Simulation parameters including virtual task details
 
@@ -58,7 +62,6 @@ class SimulateTaskScheduleUseCase(UseCase[SimulateTaskRequest, SimulationResult]
             SimulationResult containing schedule prediction and workload analysis
 
         Raises:
-            ValueError: If algorithm_name is not recognized
             TaskValidationError: If virtual task parameters are invalid
         """
         # Create virtual task with negative ID to distinguish from real tasks
@@ -77,37 +80,81 @@ class SimulateTaskScheduleUseCase(UseCase[SimulateTaskRequest, SimulationResult]
         )
         workload_calculator = WorkloadCalculator(workload_strategy)
 
-        # Get optimization strategy
-        strategy = StrategyFactory.create(
-            input_dto.algorithm_name, self.default_start_hour, self.default_end_hour
-        )
+        # Try all available algorithms and collect successful results
+        available_algorithms = StrategyFactory.list_available()
+        successful_results: list[tuple[str, Task, dict[date, float]]] = []
+        current_time = datetime.now()
 
-        # Ensure start_date is set (use current time if not provided)
-        start_date = input_dto.start_date or datetime.now()
+        for algorithm_name in available_algorithms:
+            # Get optimization strategy
+            strategy = StrategyFactory.create(
+                algorithm_name, self.default_start_hour, self.default_end_hour
+            )
 
-        # Run optimization (in-memory only, no database writes)
-        modified_tasks, daily_allocations, failed_tasks = strategy.optimize_tasks(
-            tasks=all_tasks,
-            repository=self.repository,  # Used for reference only
-            start_date=start_date,
-            max_hours_per_day=input_dto.max_hours_per_day,
-            force_override=input_dto.force_override,
-            holiday_checker=self.holiday_checker,
-            current_time=datetime.now(),
-            workload_calculator=workload_calculator,
-        )
+            # Run optimization (in-memory only, no database writes)
+            modified_tasks, daily_allocations, failed_tasks = strategy.optimize_tasks(
+                tasks=all_tasks,
+                repository=self.repository,  # Used for reference only
+                start_date=current_time,
+                max_hours_per_day=input_dto.max_hours_per_day,
+                force_override=True,  # Always override in simulation
+                holiday_checker=self.holiday_checker,
+                current_time=current_time,
+                workload_calculator=workload_calculator,
+            )
 
-        # IMPORTANT: Do NOT call repository.save_all() - this is a simulation only
+            # IMPORTANT: Do NOT call repository.save_all() - this is a simulation only
 
-        # Extract virtual task result
-        virtual_task_result = self._find_virtual_task_result(
-            modified_tasks, failed_tasks
-        )
+            # Check if virtual task was successfully scheduled
+            for task in modified_tasks:
+                if task.id == self.VIRTUAL_TASK_ID:
+                    successful_results.append((algorithm_name, task, daily_allocations))
+                    break
 
-        # Build and return simulation result
-        return self._build_simulation_result(
-            virtual_task_result, input_dto, daily_allocations
-        )
+        # Select the best result (earliest completion)
+        if successful_results:
+            best_algorithm, best_task, best_allocations = min(
+                successful_results, key=lambda x: x[1].planned_end or datetime.max
+            )
+            return self._build_simulation_result(
+                virtual_task_result=(best_task, None),
+                input_dto=input_dto,
+                daily_allocations=best_allocations,
+                best_algorithm=best_algorithm,
+                successful_algorithms=len(successful_results),
+                total_algorithms_tested=len(available_algorithms),
+            )
+        else:
+            # All algorithms failed - return failure result
+            # Get failure reason from first algorithm
+            strategy = StrategyFactory.create(
+                available_algorithms[0], self.default_start_hour, self.default_end_hour
+            )
+            _, _, failed_tasks = strategy.optimize_tasks(
+                tasks=all_tasks,
+                repository=self.repository,
+                start_date=current_time,
+                max_hours_per_day=input_dto.max_hours_per_day,
+                force_override=True,
+                holiday_checker=self.holiday_checker,
+                current_time=current_time,
+                workload_calculator=workload_calculator,
+            )
+
+            failure_reason = "No algorithm could schedule this task"
+            for failure in failed_tasks:
+                if failure.task.id == self.VIRTUAL_TASK_ID:
+                    failure_reason = failure.reason
+                    break
+
+            return self._build_simulation_result(
+                virtual_task_result=(None, failure_reason),
+                input_dto=input_dto,
+                daily_allocations={},
+                best_algorithm=None,
+                successful_algorithms=0,
+                total_algorithms_tested=len(available_algorithms),
+            )
 
     def _create_virtual_task(self, input_dto: SimulateTaskRequest) -> Task:
         """Create a virtual task from simulation request.
@@ -125,8 +172,9 @@ class SimulateTaskScheduleUseCase(UseCase[SimulateTaskRequest, SimulationResult]
             estimated_duration=input_dto.estimated_duration,
             deadline=input_dto.deadline,
             depends_on=input_dto.depends_on,
+            tags=input_dto.tags,
             status=TaskStatus.PENDING,
-            is_fixed=False,
+            is_fixed=input_dto.is_fixed,
         )
 
     def _find_virtual_task_result(
@@ -164,6 +212,9 @@ class SimulateTaskScheduleUseCase(UseCase[SimulateTaskRequest, SimulationResult]
         virtual_task_result: tuple[Task | None, str | None],
         input_dto: SimulateTaskRequest,
         daily_allocations: dict[date, float],
+        best_algorithm: str | None = None,
+        successful_algorithms: int = 0,
+        total_algorithms_tested: int = 9,
     ) -> SimulationResult:
         """Build simulation result from virtual task optimization.
 
@@ -171,6 +222,9 @@ class SimulateTaskScheduleUseCase(UseCase[SimulateTaskRequest, SimulationResult]
             virtual_task_result: Tuple of (virtual_task, failure_reason)
             input_dto: Original simulation request
             daily_allocations: Daily hour allocations from optimization
+            best_algorithm: Name of the algorithm that produced the best result
+            successful_algorithms: Number of algorithms that successfully scheduled
+            total_algorithms_tested: Total number of algorithms tested
 
         Returns:
             SimulationResult with schedule and workload information
@@ -211,4 +265,7 @@ class SimulateTaskScheduleUseCase(UseCase[SimulateTaskRequest, SimulationResult]
             estimated_duration=input_dto.estimated_duration,
             priority=input_dto.priority,
             deadline=input_dto.deadline,
+            best_algorithm=best_algorithm,
+            successful_algorithms=successful_algorithms,
+            total_algorithms_tested=total_algorithms_tested,
         )

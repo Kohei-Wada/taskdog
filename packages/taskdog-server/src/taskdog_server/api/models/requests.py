@@ -140,22 +140,33 @@ class UpdateNotesRequest(BaseModel):
 
 
 class SimulateTaskRequest(BaseModel):
-    """Request model for simulating a virtual task."""
+    """Request model for simulating a virtual task.
+
+    Uses the same interface as CreateTaskRequest for consistency.
+    System automatically tries all algorithms and returns the best result.
+    """
 
     estimated_duration: float = Field(
         ..., gt=0, description="Estimated duration in hours"
     )
-    name: str = Field(
-        "Simulated Task", min_length=1, description="Task name for display"
-    )
+    name: str = Field(..., min_length=1, description="Task name for display")
     priority: int = Field(5, gt=0, description="Task priority (default: 5)")
     deadline: datetime | None = Field(None, description="Optional deadline")
     depends_on: list[int] = Field(
         default_factory=list, description="List of task IDs this depends on"
     )
-    algorithm_name: str = Field("greedy", description="Optimization algorithm to use")
+    tags: list[str] = Field(default_factory=list, description="List of tags")
+    is_fixed: bool = Field(False, description="Whether task is fixed")
     max_hours_per_day: float = Field(
         6.0, gt=0, le=24, description="Maximum hours per day"
     )
-    start_date: datetime | None = Field(None, description="Optimization start date")
-    force_override: bool = Field(False, description="Override existing schedules")
+
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, v: list[str]) -> list[str]:
+        """Validate tags are non-empty and unique."""
+        if any(not tag.strip() for tag in v):
+            raise ValueError("Tags must be non-empty")
+        if len(v) != len(set(v)):
+            raise ValueError("Tags must be unique")
+        return v
