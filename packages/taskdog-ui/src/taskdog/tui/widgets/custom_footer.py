@@ -39,7 +39,7 @@ class CustomFooter(Static):
         with Horizontal(id="footer-container"):
             # Left side: Keybindings
             yield Static(
-                " [bold]q[/] Quit  [bold]a[/] Add  [bold]r[/] Refresh  [bold]Ctrl+P[/] Palette",
+                " [bold]q[/] Quit  [bold]a[/] Add  [bold]r[/] Refresh  [bold]?[/] Help  [bold]Ctrl+P[/] Palette",
                 id="footer-keybindings",
             )
 
