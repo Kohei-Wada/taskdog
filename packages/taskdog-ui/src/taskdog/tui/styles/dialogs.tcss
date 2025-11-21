@@ -148,35 +148,16 @@ HelpScreen {
     overflow-y: auto;
 }
 
-.help-section-title {
-    padding-top: 1;
-    padding-bottom: 0;
-}
-
-.help-category {
-    padding-top: 0;
-    padding-bottom: 0;
-}
-
-.help-binding-row {
-    padding: 0;
+.help-section {
+    padding: 0 1;
 }
 
 .help-tip {
     padding: 0 2;
 }
 
-.help-info-block {
-    padding: 0 2;
-    color: $text-muted;
-}
-
 .help-spacer {
     height: 1;
-}
-
-.help-spacer-small {
-    height: 0;
 }
 
 .help-footer {

@@ -1,182 +1,69 @@
-"""Keybinding metadata for TUI help documentation.
+"""Help content for TUI help screen.
 
-This module provides a single source of truth for all keybindings
-displayed in the help screen and footer.
+This module provides content for the help screen including
+basic usage, workflow guidance, and feature explanations.
 """
 
-from typing import TypedDict
+# Basic workflow guide
+BASIC_WORKFLOW: str = """**Getting Started with Taskdog TUI**
 
+1. **Add a Task**: Press 'a' to create a new task
+   - Set priority, deadline, estimated duration
+   - Add dependencies and tags if needed
 
-class KeyBinding(TypedDict):
-    """Type definition for a keybinding entry."""
+2. **Start Working**: Press 's' on a task to start it
+   - Status changes to IN_PROGRESS
+   - Actual start time is recorded
 
-    key: str
-    action: str
-    description: str
+3. **Complete Task**: Press 'd' when done
+   - Status changes to COMPLETED
+   - Actual end time is recorded
 
+4. **View Details**: Press 'i' to see full task information
+   - Shows schedule, actual tracking, and notes"""
 
-# Categorized keybindings for help screen
-KEYBINDINGS_BY_CATEGORY: dict[str, list[KeyBinding]] = {
-    "Navigation": [
-        {
-            "key": "j / ↓",
-            "action": "Move Down",
-            "description": "Move cursor to the next task in the list",
-        },
-        {
-            "key": "k / ↑",
-            "action": "Move Up",
-            "description": "Move cursor to the previous task in the list",
-        },
-        {
-            "key": "Ctrl+J",
-            "action": "Switch Widget Down",
-            "description": "Move focus to the next widget (table → gantt chart)",
-        },
-        {
-            "key": "Ctrl+K",
-            "action": "Switch Widget Up",
-            "description": "Move focus to the previous widget (gantt chart → table)",
-        },
-        {
-            "key": "/",
-            "action": "Search",
-            "description": "Search for tasks by name (regex supported)",
-        },
-        {
-            "key": "Escape",
-            "action": "Clear Search",
-            "description": "Clear the search filter and show all tasks",
-        },
-    ],
-    "Task Operations": [
-        {
-            "key": "a",
-            "action": "Add Task",
-            "description": "Create a new task with priority, dependencies, and tags",
-        },
-        {
-            "key": "s",
-            "action": "Start Task",
-            "description": "Start the selected task (sets status to IN_PROGRESS)",
-        },
-        {
-            "key": "d",
-            "action": "Mark Done",
-            "description": "Mark the selected task as completed",
-        },
-        {
-            "key": "P",
-            "action": "Pause Task",
-            "description": "Pause the selected task and reset to PENDING status",
-        },
-        {
-            "key": "c",
-            "action": "Cancel Task",
-            "description": "Cancel the selected task",
-        },
-        {
-            "key": "R",
-            "action": "Reopen Task",
-            "description": "Reopen a completed or canceled task",
-        },
-    ],
-    "Modification": [
-        {
-            "key": "e",
-            "action": "Edit Task",
-            "description": "Edit task properties (name, priority, deadline, etc.)",
-        },
-        {
-            "key": "v",
-            "action": "Edit Note",
-            "description": "Edit markdown notes for the selected task",
-        },
-        {
-            "key": "x",
-            "action": "Archive Task",
-            "description": "Archive the selected task (soft delete, can be restored)",
-        },
-        {
-            "key": "X",
-            "action": "Delete Task",
-            "description": "Permanently delete the selected task (cannot be undone)",
-        },
-    ],
-    "View & Display": [
-        {
-            "key": "t",
-            "action": "Toggle Completed",
-            "description": "Toggle visibility of completed and canceled tasks",
-        },
-        {
-            "key": "Ctrl+T",
-            "action": "Toggle Sort",
-            "description": "Toggle sort direction (ascending ⇔ descending)",
-        },
-        {
-            "key": "r",
-            "action": "Refresh",
-            "description": "Refresh the task list from the server",
-        },
-        {
-            "key": "i",
-            "action": "Show Details",
-            "description": "Show detailed information about the selected task",
-        },
-    ],
-    "System": [
-        {
-            "key": "?",
-            "action": "Show Help",
-            "description": "Display this help screen with keybindings",
-        },
-        {
-            "key": "Ctrl+P / Ctrl+\\",
-            "action": "Command Palette",
-            "description": "Open command palette for sort, optimize, export commands",
-        },
-        {
-            "key": "q",
-            "action": "Quit",
-            "description": "Quit the app and return to the command prompt",
-        },
-    ],
-}
+# Main features explanation
+MAIN_FEATURES: str = """**Key Features**
 
-# Quick start tips for new users
-QUICK_START_TIPS: list[str] = [
-    "Add a task with 'a', then start it with 's', and mark done with 'd'",
-    "Use Ctrl+P to access the command palette for sort, optimize, and export",
-    "Press '/' to search tasks by name (supports regex patterns)",
-    "Use Ctrl+J/K to switch between the task table and Gantt chart",
-    "Press 't' to toggle visibility of completed and canceled tasks",
-    "Hover over any keybinding in the footer for a tooltip",
-]
+• **Task Table**: Main view showing all your tasks
+  - Use j/k or arrow keys to navigate
+  - Press 't' to toggle completed/canceled tasks
+
+• **Gantt Chart**: Visual timeline of your tasks
+  - Shows task schedules and workload per day
+  - Use Ctrl+J/K to switch between table and gantt
+
+• **Search**: Press '/' to filter tasks by name
+  - Supports regex patterns
+  - Press Escape to clear search
+
+• **Notes**: Press 'v' to edit markdown notes for any task
+  - Opens your $EDITOR (vim, nano, etc.)"""
 
 # Command palette explanation
-COMMAND_PALETTE_INFO: str = """The Command Palette (Ctrl+P) provides access to additional commands:
+COMMAND_PALETTE_INFO: str = """**Command Palette (Ctrl+P or Ctrl+\\)**
 
-• Sort: Change task sorting (deadline, priority, status, name, created_at)
-• Optimize: Run schedule optimization with various algorithms
-• Export: Export tasks to JSON or CSV format
+The command palette gives you access to:
 
-Type to search for commands, then select with Enter."""
+• **Sort**: Change task sorting order
+  - Sort by deadline, priority, status, name, etc.
 
-# Search usage explanation
-SEARCH_USAGE_INFO: str = """Search (/) lets you filter tasks by name:
+• **Optimize**: Run schedule optimization
+  - Multiple algorithms available (greedy, balanced, etc.)
 
-• Type any text to filter tasks
-• Supports regex patterns (e.g., "bug.*fix" matches "bug fix", "bugfix", etc.)
-• Press Escape to clear the search and show all tasks
-• Search is case-insensitive by default"""
+• **Export**: Export tasks to JSON, CSV, or Markdown
 
+• **Keys**: View all keyboard shortcuts
+  - Complete list of keybindings with descriptions
 
-# Category display order for help screen
-CATEGORY_ORDER: list[str] = [
-    "Navigation",
-    "Task Operations",
-    "Modification",
-    "View & Display",
-    "System",
+**Tip**: Type to search, then press Enter to execute"""
+
+# Quick tips for new users
+QUICK_TIPS: list[str] = [
+    "Press Ctrl+P then type 'Keys' to see all keyboard shortcuts",
+    "Use 'a' → 's' → 'd' workflow for quick task management",
+    "Edit task details with 'e', add notes with 'v'",
+    "Archive tasks with 'x' (soft delete), restore them later",
+    "Press 'i' to see full task details including notes",
+    "Use '/' for quick search, Escape to clear",
 ]
