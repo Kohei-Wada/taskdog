@@ -121,6 +121,13 @@ class SimulationResultDialog(BaseModalDialog[bool]):
             f"Days: {result.total_workload_days}  |  "
             f"Avg: {result.average_workload:.1f}h/day"
         )
+
+        # Algorithm info
+        if result.best_algorithm:
+            yield Static(
+                f"Algorithm: [cyan]{result.best_algorithm}[/cyan] "
+                f"({result.successful_algorithms}/{result.total_algorithms_tested} succeeded)"
+            )
         yield Static("")
 
         yield Static("[bold]Create this task?[/bold]")
