@@ -75,6 +75,10 @@ class HelpScreen(BaseModalDialog[None], ViNavigationMixin):
                     "[dim]Press 'q' or Escape to close • Press Ctrl+P → 'Keys' for all keybindings[/dim]",
                     classes="help-footer",
                 )
+                yield Static(
+                    "[dim]Bug reports and feedback: https://github.com/Kohei-Wada/taskdog/issues[/dim]",
+                    classes="help-footer",
+                )
 
     def action_vi_down(self) -> None:
         """Scroll down one line (j key)."""
