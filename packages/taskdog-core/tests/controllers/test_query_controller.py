@@ -152,6 +152,68 @@ class TestQueryController(unittest.TestCase):
         self.assertEqual(result.date_range.start_date, start_date)
         self.assertEqual(result.date_range.end_date, end_date)
 
+    def test_get_gantt_data_calculates_total_estimated_duration(self):
+        """Test get_gantt_data calculates total_estimated_duration correctly."""
+        # Create test tasks with different estimated durations
+        today = date.today()
+        self.repository.create(
+            name="Task 1",
+            priority=1,
+            status=TaskStatus.PENDING,
+            planned_start=datetime.combine(today, datetime.min.time()),
+            planned_end=datetime.combine(
+                today + timedelta(days=2), datetime.min.time()
+            ),
+            estimated_duration=8.0,
+        )
+        self.repository.create(
+            name="Task 2",
+            priority=2,
+            status=TaskStatus.IN_PROGRESS,
+            planned_start=datetime.combine(today, datetime.min.time()),
+            planned_end=datetime.combine(
+                today + timedelta(days=1), datetime.min.time()
+            ),
+            estimated_duration=16.5,
+        )
+        self.repository.create(
+            name="Task 3",
+            priority=3,
+            status=TaskStatus.PENDING,
+            planned_start=datetime.combine(today, datetime.min.time()),
+            planned_end=datetime.combine(
+                today + timedelta(days=3), datetime.min.time()
+            ),
+            # No estimated_duration - should be ignored in calculation
+        )
+
+        # Get gantt data
+        result = self.controller.get_gantt_data()
+
+        # Verify total_estimated_duration (8.0 + 16.5 = 24.5)
+        self.assertEqual(result.total_estimated_duration, 24.5)
+        self.assertEqual(len(result.tasks), 3)
+
+    def test_get_gantt_data_total_estimated_duration_zero_when_no_estimates(self):
+        """Test get_gantt_data returns zero total when no tasks have estimated durations."""
+        # Create test task without estimated_duration
+        today = date.today()
+        self.repository.create(
+            name="Task",
+            priority=1,
+            status=TaskStatus.PENDING,
+            planned_start=datetime.combine(today, datetime.min.time()),
+            planned_end=datetime.combine(
+                today + timedelta(days=2), datetime.min.time()
+            ),
+        )
+
+        # Get gantt data
+        result = self.controller.get_gantt_data()
+
+        # Verify total_estimated_duration is 0.0
+        self.assertEqual(result.total_estimated_duration, 0.0)
+
     def test_get_tag_statistics_returns_output_dto(self):
         """Test get_tag_statistics returns TagStatisticsOutput."""
         # Create test tasks with tags
