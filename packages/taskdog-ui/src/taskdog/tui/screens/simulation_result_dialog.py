@@ -61,7 +61,7 @@ class SimulationResultDialog(BaseModalDialog[None]):
             title_class = "error-title"
 
         with Container(
-            id="simulation-result-dialog", classes="dialog-base dialog-large"
+            id="simulation-result-dialog", classes="dialog-base dialog-wide"
         ) as container:
             container.border_title = "Simulation Result"
 

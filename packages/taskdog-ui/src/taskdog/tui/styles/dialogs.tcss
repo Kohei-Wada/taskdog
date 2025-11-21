@@ -9,6 +9,8 @@ AlgorithmSelectionScreen,
 SortSelectionScreen,
 ConfirmationDialog,
 TaskFormDialog,
+SimulateTaskDialog,
+SimulationResultDialog,
 TaskDetailScreen,
 HelpScreen {
     align: center middle;
@@ -130,6 +132,16 @@ HelpScreen {
 #add-task-dialog,
 #edit-task-dialog {
     max-height: 50;  /* Accommodate planned_start/planned_end fields */
+}
+
+/* Simulate Task Dialog */
+#simulate-task-dialog {
+    max-height: 50;  /* Same as task form dialogs */
+}
+
+/* Simulation Result Dialog */
+#simulation-result-dialog {
+    max-height: 50;  /* Accommodate schedule, task details, and workload analysis */
 }
 
 /* Task Detail Screen */
