@@ -24,6 +24,21 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 - **Soft Delete**: Restore removed tasks
 - **SQLite Storage**: Transactional persistence with ACID guarantees
 
+## Design Philosophy
+
+Taskdog is designed for **individual task management**, following GTD (Getting Things Done) principles:
+
+- **Flat task structure** with dependencies (no parent-child hierarchy)
+- **Focus on next actions** rather than complex project structures
+- **Tags for grouping**, dependencies for ordering, notes for details
+- **Transparent algorithms** - choose from 9 scheduling strategies you can understand
+- **Privacy-first** - all data stored locally, no cloud requirements
+
+**Why no subtasks?**
+Individual users don't need complex hierarchies. Dependencies + tags cover 99% of personal task organization. This keeps the optimizer simple and your workflow focused.
+
+For detailed design rationale, see [DESIGN_PHILOSOPHY.md](DESIGN_PHILOSOPHY.md).
+
 ## Installation
 
 **Requirements**: Python 3.11+ (3.13+ for individual packages), [uv](https://github.com/astral-sh/uv)

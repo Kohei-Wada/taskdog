@@ -365,6 +365,22 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 
 ### Design Principles
 
+**Core Philosophy**: Taskdog is designed for **individual task management** following GTD principles. See [DESIGN_PHILOSOPHY.md](DESIGN_PHILOSOPHY.md) for detailed rationale.
+
+**Key Design Decisions**:
+- **No parent-child relationships**: Use dependencies + tags + notes instead (keeps data model simple, optimizer predictable)
+- **Individual over team**: No collaboration features, no cloud sync (privacy-first, local-first)
+- **Transparent algorithms**: 9 scheduling strategies you can understand (no black-box AI)
+
+**When adding new features, ask**:
+1. Does this benefit individual users? (Not teams)
+2. Does this maintain simplicity? (Every feature has a cost)
+3. Is this transparent? (No black boxes)
+4. Does this respect privacy? (No cloud requirements)
+5. Can this be achieved with existing features? (Tags, dependencies, notes)
+
+**Implementation Principles**:
+
 1. **Monorepo with UV Workspace**: Three packages with clear separation of concerns
    - `taskdog-core`: Pure business logic (no UI/API dependencies)
    - `taskdog-server`: FastAPI REST API (depends on core)
