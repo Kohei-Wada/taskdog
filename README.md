@@ -570,7 +570,12 @@ See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
+
+- Development setup and workflow
+- Coding standards and testing
+- Commit guidelines and PR process
+- Project structure and architecture
 
 **CI/CD**: All pull requests automatically run:
 - Linting (`make lint`)
