@@ -2,7 +2,6 @@
 
 from datetime import date, datetime
 
-from taskdog_core.application.dto.optimization_output import SchedulingFailure
 from taskdog_core.application.dto.simulate_task_request import SimulateTaskRequest
 from taskdog_core.application.dto.simulation_result import SimulationResult
 from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
@@ -176,36 +175,6 @@ class SimulateTaskScheduleUseCase(UseCase[SimulateTaskRequest, SimulationResult]
             status=TaskStatus.PENDING,
             is_fixed=input_dto.is_fixed,
         )
-
-    def _find_virtual_task_result(
-        self,
-        modified_tasks: list[Task],
-        failed_tasks: list[SchedulingFailure],
-    ) -> tuple[Task | None, str | None]:
-        """Find the virtual task in optimization results.
-
-        Args:
-            modified_tasks: Successfully scheduled tasks
-            failed_tasks: Tasks that failed to be scheduled
-
-        Returns:
-            Tuple of (virtual_task, failure_reason)
-            - If scheduled: (Task, None)
-            - If failed: (None, reason)
-            - If not found: (None, "Unknown error")
-        """
-        # Check if virtual task was successfully scheduled
-        for task in modified_tasks:
-            if task.id == self.VIRTUAL_TASK_ID:
-                return task, None
-
-        # Check if virtual task failed to be scheduled
-        for failure in failed_tasks:
-            if failure.task.id == self.VIRTUAL_TASK_ID:
-                return None, failure.reason
-
-        # Should not reach here, but handle gracefully
-        return None, "Virtual task not found in optimization results"
 
     def _build_simulation_result(
         self,
