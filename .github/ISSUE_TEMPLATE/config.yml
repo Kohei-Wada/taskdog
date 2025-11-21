@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/Kohei-Wada/taskdog/blob/main/README.md
+    about: Check the documentation first
+  - name: Discussions
+    url: https://github.com/Kohei-Wada/taskdog/discussions
+    about: Ask questions and discuss ideas with the community
