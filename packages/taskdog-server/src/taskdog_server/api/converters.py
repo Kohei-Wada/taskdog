@@ -4,6 +4,7 @@ This module contains all conversion functions that transform use case DTOs
 from taskdog-core into Pydantic response models for the API.
 """
 
+from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
@@ -69,6 +70,69 @@ def convert_to_update_task_response(dto: TaskUpdateOutput) -> UpdateTaskResponse
     )
 
 
+def convert_to_gantt_response(gantt_output: GanttOutput) -> GanttResponse:
+    """Convert GanttOutput DTO to Pydantic response model.
+
+    Args:
+        gantt_output: GanttOutput DTO from controller
+
+    Returns:
+        GanttResponse with all date keys converted to ISO format strings
+    """
+    # Convert tasks
+    gantt_tasks = [
+        GanttTaskResponse(
+            id=task.id,
+            name=task.name,
+            status=task.status,
+            estimated_duration=task.estimated_duration,
+            planned_start=task.planned_start,
+            planned_end=task.planned_end,
+            actual_start=task.actual_start,
+            actual_end=task.actual_end,
+            deadline=task.deadline,
+            is_fixed=False,  # Not available in GanttTaskDto
+            is_archived=False,  # Not available in GanttTaskDto
+            daily_allocations={
+                date_obj.isoformat(): hours
+                for date_obj, hours in gantt_output.task_daily_hours.get(
+                    task.id, {}
+                ).items()
+            },
+        )
+        for task in gantt_output.tasks
+    ]
+
+    # Convert task_daily_hours (nested dict with date keys)
+    task_daily_hours = {
+        task_id: {
+            date_obj.isoformat(): hours for date_obj, hours in daily_hours.items()
+        }
+        for task_id, daily_hours in gantt_output.task_daily_hours.items()
+    }
+
+    # Convert daily_workload
+    daily_workload = {
+        date_obj.isoformat(): hours
+        for date_obj, hours in gantt_output.daily_workload.items()
+    }
+
+    # Convert holidays (set of dates to list of ISO strings)
+    holidays = [holiday.isoformat() for holiday in gantt_output.holidays]
+
+    return GanttResponse(
+        date_range=GanttDateRange(
+            start_date=gantt_output.date_range.start_date,
+            end_date=gantt_output.date_range.end_date,
+        ),
+        tasks=gantt_tasks,
+        task_daily_hours=task_daily_hours,
+        daily_workload=daily_workload,
+        holidays=holidays,
+        total_estimated_duration=gantt_output.total_estimated_duration,
+    )
+
+
 def convert_to_task_list_response(
     dto: TaskListOutput, notes_repo: NotesRepository
 ) -> TaskListResponse:
@@ -109,58 +173,7 @@ def convert_to_task_list_response(
     # Convert gantt_data if present
     gantt = None
     if dto.gantt_data:
-        result = dto.gantt_data
-        gantt_tasks = [
-            GanttTaskResponse(
-                id=task.id,
-                name=task.name,
-                status=task.status,
-                estimated_duration=task.estimated_duration,
-                planned_start=task.planned_start,
-                planned_end=task.planned_end,
-                actual_start=task.actual_start,
-                actual_end=task.actual_end,
-                deadline=task.deadline,
-                is_fixed=False,  # Not available in GanttTaskDto
-                is_archived=False,  # Not available in GanttTaskDto
-                daily_allocations={
-                    date_obj.isoformat(): hours
-                    for date_obj, hours in result.task_daily_hours.get(
-                        task.id, {}
-                    ).items()
-                },
-            )
-            for task in result.tasks
-        ]
-
-        # Convert task_daily_hours (nested dict with date keys)
-        task_daily_hours = {
-            task_id: {
-                date_obj.isoformat(): hours for date_obj, hours in daily_hours.items()
-            }
-            for task_id, daily_hours in result.task_daily_hours.items()
-        }
-
-        # Convert daily_workload
-        daily_workload = {
-            date_obj.isoformat(): hours
-            for date_obj, hours in result.daily_workload.items()
-        }
-
-        # Convert holidays (set of dates to list of ISO strings)
-        holidays = [holiday.isoformat() for holiday in result.holidays]
-
-        gantt = GanttResponse(
-            date_range=GanttDateRange(
-                start_date=result.date_range.start_date,
-                end_date=result.date_range.end_date,
-            ),
-            tasks=gantt_tasks,
-            task_daily_hours=task_daily_hours,
-            daily_workload=daily_workload,
-            holidays=holidays,
-            total_estimated_duration=result.total_estimated_duration,
-        )
+        gantt = convert_to_gantt_response(dto.gantt_data)
 
     return TaskListResponse(
         tasks=tasks,
