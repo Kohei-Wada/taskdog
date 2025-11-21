@@ -60,6 +60,7 @@ class GanttOutput:
         task_daily_hours: Daily hour allocations per task (task.id -> {date: hours})
         daily_workload: Daily workload totals across all tasks
         holidays: Set of holiday dates in the chart range
+        total_estimated_duration: Sum of all estimated durations in hours
     """
 
     date_range: GanttDateRange
@@ -67,6 +68,7 @@ class GanttOutput:
     task_daily_hours: dict[int, dict[date, float]]
     daily_workload: dict[date, float]
     holidays: set[date]
+    total_estimated_duration: float = 0.0
 
     def is_empty(self) -> bool:
         """Check if the Gantt chart has any task data.

@@ -365,6 +365,7 @@ def convert_to_gantt_output(data: dict[str, Any]) -> GanttOutput:
         task_daily_hours=task_daily_hours,
         daily_workload=daily_workload,
         holidays=holidays,
+        total_estimated_duration=data.get("total_estimated_duration", 0.0),
     )
 
 

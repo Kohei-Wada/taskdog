@@ -110,15 +110,23 @@ class RichGanttRenderer(RichRendererBase):
                 gantt_view_model.holidays,
             )
 
-        # Add section divider before workload summary
+        # Add section divider before summary rows
         table.add_section()
 
-        # Add workload summary row
+        # Add workload summary row with total estimated duration
         workload_timeline = self._build_workload_summary_row(
             gantt_view_model.daily_workload, start_date, end_date
         )
+        total_est_str = (
+            f"{gantt_view_model.total_estimated_duration:.1f}"
+            if gantt_view_model.total_estimated_duration > 0
+            else "-"
+        )
         table.add_row(
-            "", "[bold yellow]Workload\\[h][/bold yellow]", "", workload_timeline
+            "",
+            "[bold yellow]Workload\\[h][/bold yellow]",
+            f"[bold yellow]{total_est_str}[/bold yellow]",
+            workload_timeline,
         )
 
         # Add legend as caption (centered by default)

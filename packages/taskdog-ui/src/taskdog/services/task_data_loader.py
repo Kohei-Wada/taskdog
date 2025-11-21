@@ -198,4 +198,5 @@ class TaskDataLoader:
             start_date=gantt_view_model.start_date,
             end_date=gantt_view_model.end_date,
             holidays=gantt_view_model.holidays,
+            total_estimated_duration=gantt_view_model.total_estimated_duration,
         )

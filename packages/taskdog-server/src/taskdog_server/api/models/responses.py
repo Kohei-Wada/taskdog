@@ -155,6 +155,7 @@ class GanttResponse(BaseModel):
     task_daily_hours: dict[int, dict[str, float]]
     daily_workload: dict[str, float]
     holidays: list[str] = Field(default_factory=list)
+    total_estimated_duration: float = 0.0
 
 
 class CompletionStatistics(BaseModel):

@@ -455,12 +455,20 @@ class TaskQueryService(QueryService):
         # Convert tasks to DTOs
         task_dtos = [self._task_to_gantt_dto(task) for task in tasks]
 
+        # Calculate total estimated duration
+        total_estimated = sum(
+            task.estimated_duration
+            for task in tasks
+            if task.estimated_duration is not None
+        )
+
         return GanttOutput(
             date_range=GanttDateRange(start_date=range_start, end_date=range_end),
             tasks=task_dtos,
             task_daily_hours=task_daily_hours,
             daily_workload=daily_workload,
             holidays=holidays,
+            total_estimated_duration=total_estimated,
         )
 
     def _calculate_date_range(

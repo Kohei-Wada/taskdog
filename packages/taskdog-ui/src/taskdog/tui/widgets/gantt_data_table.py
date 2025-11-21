@@ -128,6 +128,7 @@ class GanttDataTable(DataTable):
             gantt_view_model.daily_workload,
             gantt_view_model.start_date,
             gantt_view_model.end_date,
+            gantt_view_model.total_estimated_duration,
         )
 
     def _add_date_header_rows(
@@ -266,6 +267,7 @@ class GanttDataTable(DataTable):
         daily_workload: dict[date, float],
         start_date: date,
         end_date: date,
+        total_estimated_duration: float = 0.0,
     ):
         """Add workload summary row.
 
@@ -273,16 +275,22 @@ class GanttDataTable(DataTable):
             daily_workload: Pre-computed daily workload totals
             start_date: Start date of the chart
             end_date: End date of the chart
+            total_estimated_duration: Sum of all estimated durations
         """
         # Build workload timeline using the formatter
         workload_timeline = GanttCellFormatter.build_workload_timeline(
             daily_workload, start_date, end_date
         )
 
+        # Format total estimated duration
+        total_est_str = (
+            f"{total_estimated_duration:.1f}" if total_estimated_duration > 0 else "-"
+        )
+
         self.add_row(
             Text("", justify="center"),
             Text("Est. Workload[h]", style="bold yellow", justify="center"),
-            Text("", justify="center"),
+            Text(total_est_str, style="bold yellow", justify="center"),
             workload_timeline,
         )
 

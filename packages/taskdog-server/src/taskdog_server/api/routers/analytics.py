@@ -271,6 +271,7 @@ async def get_gantt_chart(
         task_daily_hours=task_daily_hours,
         daily_workload=daily_workload,
         holidays=holidays,
+        total_estimated_duration=result.total_estimated_duration,
     )
 
 
