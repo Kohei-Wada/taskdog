@@ -41,7 +41,7 @@ MAIN_FEATURES: str = """**Key Features**
   - Opens your $EDITOR (vim, nano, etc.)"""
 
 # Command palette explanation
-COMMAND_PALETTE_INFO: str = """**Command Palette (Ctrl+P or Ctrl+\\)**
+COMMAND_PALETTE_INFO: str = """**Command Palette (Ctrl+P)**
 
 The command palette gives you access to:
 
