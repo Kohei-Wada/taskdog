@@ -99,7 +99,7 @@ ignore_errors = true
 
 # Ruff configuration
 [tool.ruff]
-line-length = 100
+line-length = 88
 target-version = "py312"
 src = ["src", "tests"]
 
