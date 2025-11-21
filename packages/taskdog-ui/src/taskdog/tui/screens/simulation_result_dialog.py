@@ -4,15 +4,16 @@ from typing import Any, ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, VerticalScroll
-from textual.widgets import Label, Static
+from textual.containers import Container, Horizontal, VerticalScroll
+from textual.widgets import Button, Label, Static
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.screens.base_dialog import BaseModalDialog
+from taskdog.tui.screens.simulate_task_dialog import SimulateTaskFormData
 from taskdog_core.application.dto.simulation_result import SimulationResult
 
 
-class SimulationResultDialog(BaseModalDialog[None]):
+class SimulationResultDialog(BaseModalDialog[bool]):
     """Modal dialog for displaying simulation results.
 
     Shows whether a task can be scheduled and when it would be completed,
@@ -30,13 +31,16 @@ class SimulationResultDialog(BaseModalDialog[None]):
             "enter",
             "close",
             "Close",
-            tooltip="Close the simulation results",
+            tooltip="Close without creating task",
         ),
+        Binding("y", "create", "Yes", tooltip="Create the task"),
+        Binding("n", "close", "No", tooltip="Close without creating task"),
     ]
 
     def __init__(
         self,
         result: SimulationResult,
+        form_data: SimulateTaskFormData,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -44,9 +48,11 @@ class SimulationResultDialog(BaseModalDialog[None]):
 
         Args:
             result: Simulation result to display
+            form_data: Original form data used for simulation
         """
         super().__init__(*args, **kwargs)
         self.result = result
+        self.form_data = form_data
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""
@@ -65,10 +71,17 @@ class SimulationResultDialog(BaseModalDialog[None]):
         ) as container:
             container.border_title = "Simulation Result"
 
-            yield Label(
-                "[dim]Enter/Escape: close[/dim]",
-                id="dialog-hint",
-            )
+            # Show different hints based on success/failure
+            if result.is_schedulable:
+                yield Label(
+                    "[dim]Y: create task | N/Enter/Escape: close[/dim]",
+                    id="dialog-hint",
+                )
+            else:
+                yield Label(
+                    "[dim]Enter/Escape: close[/dim]",
+                    id="dialog-hint",
+                )
 
             with VerticalScroll():
                 # Title
@@ -128,9 +141,11 @@ class SimulationResultDialog(BaseModalDialog[None]):
         yield Static(f"  Total Days: {result.total_workload_days}")
         yield Static("")
 
-        yield Static(
-            "[dim]This is a simulation. Use 'taskdog add' to actually create the task.[/dim]"
-        )
+        yield Static("")
+        yield Static("[bold]Create this task?[/bold]")
+        with Horizontal(id="button-container"):
+            yield Button("Yes (y)", variant="primary", id="yes-button")
+            yield Button("No (n)", variant="default", id="no-button")
 
     def _compose_failure_result(self, result: SimulationResult) -> ComposeResult:
         """Compose failed simulation result.
@@ -170,6 +185,18 @@ class SimulationResultDialog(BaseModalDialog[None]):
         yield Static("  • Increase max-hours-per-day")
         yield Static("  • Complete or cancel existing tasks to free up capacity")
 
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button press."""
+        if event.button.id == "yes-button":
+            self.dismiss(True)
+        elif event.button.id == "no-button":
+            self.dismiss(False)
+
+    def action_create(self) -> None:
+        """Create the task (y key)."""
+        if self.result.is_schedulable:
+            self.dismiss(True)
+
     def action_close(self) -> None:
-        """Close the dialog."""
-        self.dismiss(None)
+        """Close the dialog without creating task."""
+        self.dismiss(False)

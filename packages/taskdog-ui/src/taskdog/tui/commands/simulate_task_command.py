@@ -39,12 +39,42 @@ class SimulateTaskCommand(TUICommandBase):
                 )
 
                 # Show simulation result in a new dialog
-                def handle_result_close(_: None) -> None:
-                    """Handle result dialog close."""
-                    pass
+                def handle_result_decision(should_create: bool) -> None:
+                    """Handle result dialog decision.
 
-                result_dialog = SimulationResultDialog(result=result)
-                self.app.push_screen(result_dialog, handle_result_close)
+                    Args:
+                        should_create: True if user wants to create the task
+                    """
+                    if not should_create:
+                        return  # User declined to create task
+
+                    # Create the task using the simulation form data
+                    try:
+                        task = self.context.api_client.create_task(
+                            name=form_data.name,
+                            priority=form_data.priority,
+                            deadline=form_data.get_deadline(),
+                            estimated_duration=form_data.estimated_duration,
+                            is_fixed=form_data.is_fixed,
+                            tags=form_data.tags or [],
+                        )
+
+                        # Add dependencies if specified
+                        if form_data.depends_on:
+                            for dep_id in form_data.depends_on:
+                                self.context.api_client.add_dependency(task.id, dep_id)
+
+                        self.notify_success(
+                            f"Created task: {task.name} (ID: {task.id})"
+                        )
+                        self.reload_tasks()
+                    except Exception as e:
+                        self.notify_error("Failed to create task", e)
+
+                result_dialog = SimulationResultDialog(
+                    result=result, form_data=form_data
+                )
+                self.app.push_screen(result_dialog, handle_result_decision)
 
             except Exception as e:
                 self.notify_error("Simulation failed", e)
