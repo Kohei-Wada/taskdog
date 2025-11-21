@@ -96,7 +96,7 @@ class SimulateTaskScheduleUseCase(UseCase[SimulateTaskRequest, SimulationResult]
                 repository=self.repository,  # Used for reference only
                 start_date=current_time,
                 max_hours_per_day=input_dto.max_hours_per_day,
-                force_override=True,  # Always override in simulation
+                force_override=False,  # Respect existing schedules in simulation
                 holiday_checker=self.holiday_checker,
                 current_time=current_time,
                 workload_calculator=workload_calculator,
@@ -134,7 +134,7 @@ class SimulateTaskScheduleUseCase(UseCase[SimulateTaskRequest, SimulationResult]
                 repository=self.repository,
                 start_date=current_time,
                 max_hours_per_day=input_dto.max_hours_per_day,
-                force_override=True,
+                force_override=False,  # Respect existing schedules in simulation
                 holiday_checker=self.holiday_checker,
                 current_time=current_time,
                 workload_calculator=workload_calculator,
