@@ -28,6 +28,7 @@ from taskdog.tui.palette.providers import (
     ExportFormatProvider,
     HelpCommandProvider,
     OptimizeCommandProvider,
+    SimulateCommandProvider,
     SortCommandProvider,
     SortOptionsProvider,
 )
@@ -164,6 +165,7 @@ class TaskdogTUI(App):
     COMMANDS = App.COMMANDS | {
         SortCommandProvider,
         OptimizeCommandProvider,
+        SimulateCommandProvider,
         ExportCommandProvider,
         HelpCommandProvider,
     }
@@ -446,6 +448,14 @@ class TaskdogTUI(App):
         """
         # Execute optimize command which will show AlgorithmSelectionScreen
         self.command_factory.execute("optimize", force_override=force_override)
+
+    def search_simulate(self) -> None:
+        """Show task simulation dialog.
+
+        Simulates a virtual task to predict when it can be completed
+        without actually creating the task in the database.
+        """
+        self.command_factory.execute("simulate_task")
 
     def search_export(self) -> None:
         """Show a fuzzy search command palette containing all export format options.

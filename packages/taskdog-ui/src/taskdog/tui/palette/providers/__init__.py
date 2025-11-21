@@ -11,6 +11,7 @@ from taskdog.tui.palette.providers.optimize_providers import (
     OPTIMIZE_COMMANDS,
     OptimizeCommandProvider,
 )
+from taskdog.tui.palette.providers.simulate_providers import SimulateCommandProvider
 from taskdog.tui.palette.providers.sort_providers import (
     SortCommandProvider,
     SortOptionsProvider,
@@ -24,6 +25,7 @@ __all__ = [
     "ExportFormatProvider",
     "HelpCommandProvider",
     "OptimizeCommandProvider",
+    "SimulateCommandProvider",
     "SortCommandProvider",
     "SortOptionsProvider",
 ]

@@ -23,6 +23,7 @@ _LAZY_COMMANDS = {
     "reopen_task": "taskdog.tui.commands.reopen_task_command:ReopenTaskCommand",
     "show_details": "taskdog.tui.commands.show_details_command:ShowDetailsCommand",
     "show_help": "taskdog.tui.commands.help_command:ShowHelpCommand",
+    "simulate_task": "taskdog.tui.commands.simulate_task_command:SimulateTaskCommand",
     "start_task": "taskdog.tui.commands.start_task_command:StartTaskCommand",
 }
 
