@@ -9,6 +9,7 @@ from textual.widgets import Markdown, Static
 
 from taskdog.tui.constants.keybindings import (
     BASIC_WORKFLOW,
+    BUG_REPORT_INFO,
     COMMAND_PALETTE_INFO,
     MAIN_FEATURES,
     QUICK_TIPS,
@@ -69,14 +70,14 @@ class HelpScreen(BaseModalDialog[None], ViNavigationMixin):
                 for tip in QUICK_TIPS:
                     yield Static(tip, classes="help-tip")
 
+                # Bug Reports & Feature Requests
+                yield Static("", classes="help-spacer")
+                yield Markdown(BUG_REPORT_INFO, classes="help-section")
+
                 # Footer instruction
                 yield Static("", classes="help-spacer")
                 yield Static(
                     "[dim]Press 'q' or Escape to close • Press Ctrl+P → 'Keys' for all keybindings[/dim]",
-                    classes="help-footer",
-                )
-                yield Static(
-                    "[dim]Bug reports and feedback: https://github.com/Kohei-Wada/taskdog/issues[/dim]",
                     classes="help-footer",
                 )
 

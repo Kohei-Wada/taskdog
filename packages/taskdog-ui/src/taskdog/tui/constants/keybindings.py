@@ -74,3 +74,10 @@ QUICK_TIPS: list[str] = [
     "Press [cyan]i[/cyan] to see full task details including notes",
     "Use [cyan]/[/cyan] for quick search, [cyan]Escape[/cyan] to clear",
 ]
+
+# Bug reports and feedback
+BUG_REPORT_INFO: str = """## Bug Reports & Feature Requests
+
+Found a bug or have a feature request? Please report it to:
+
+**GitHub Issues**: https://github.com/Kohei-Wada/taskdog/issues"""
