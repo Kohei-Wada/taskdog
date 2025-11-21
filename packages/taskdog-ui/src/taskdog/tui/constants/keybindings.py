@@ -60,17 +60,17 @@ Press `Ctrl+P` to open the command palette:
 
 • **Export** - Export tasks to JSON, CSV, or Markdown
 
-• **Keys** - View all keyboard shortcuts ⌨️
+• **Keys** - View all keyboard shortcuts
   - Complete list of keybindings with descriptions
 
-💡 **Tip**: Type to search, then press Enter to execute"""
+**Tip**: Type to search, then press Enter to execute"""
 
 # Quick tips for new users
 QUICK_TIPS: list[str] = [
-    "⌨️  Press [cyan]Ctrl+P[/cyan] then type [cyan]'Keys'[/cyan] to see all keyboard shortcuts",
-    "⚡ Use [cyan]a[/cyan] → [cyan]s[/cyan] → [cyan]d[/cyan] workflow for quick task management",
-    "✏️  Edit task details with [cyan]e[/cyan], add notes with [cyan]v[/cyan]",
-    "📦 Archive tasks with [cyan]x[/cyan] (soft delete), restore them later",
-    "👁️  Press [cyan]i[/cyan] to see full task details including notes",
-    "🔍 Use [cyan]/[/cyan] for quick search, [cyan]Escape[/cyan] to clear",
+    "Press [cyan]Ctrl+P[/cyan] then type [cyan]'Keys'[/cyan] to see all keyboard shortcuts",
+    "Use [cyan]a[/cyan] → [cyan]s[/cyan] → [cyan]d[/cyan] workflow for quick task management",
+    "Edit task details with [cyan]e[/cyan], add notes with [cyan]v[/cyan]",
+    "Archive tasks with [cyan]x[/cyan] (soft delete), restore them later",
+    "Press [cyan]i[/cyan] to see full task details including notes",
+    "Use [cyan]/[/cyan] for quick search, [cyan]Escape[/cyan] to clear",
 ]
