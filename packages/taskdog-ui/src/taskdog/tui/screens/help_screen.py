@@ -12,6 +12,7 @@ from taskdog.tui.constants.keybindings import (
     COMMAND_PALETTE_INFO,
     MAIN_FEATURES,
     QUICK_TIPS,
+    TASKDOG_OVERVIEW,
 )
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
@@ -41,6 +42,12 @@ class HelpScreen(BaseModalDialog[None], ViNavigationMixin):
             container.border_title = "Taskdog TUI - Getting Started"
 
             with VerticalScroll(id="help-content"):
+                # Taskdog Overview
+                yield Markdown(TASKDOG_OVERVIEW, classes="help-section")
+
+                # Spacer
+                yield Static("", classes="help-spacer")
+
                 # Basic Workflow
                 yield Markdown(BASIC_WORKFLOW, classes="help-section")
 
@@ -58,9 +65,9 @@ class HelpScreen(BaseModalDialog[None], ViNavigationMixin):
 
                 # Quick Tips
                 yield Static("", classes="help-spacer")
-                yield Markdown("**Quick Tips**", classes="help-section")
+                yield Markdown("## Quick Tips", classes="help-section")
                 for tip in QUICK_TIPS:
-                    yield Static(f"• {tip}", classes="help-tip")
+                    yield Static(tip, classes="help-tip")
 
                 # Footer instruction
                 yield Static("", classes="help-spacer")
