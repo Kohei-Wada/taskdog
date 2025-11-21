@@ -137,6 +137,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         # Run genetic algorithm to find best task order
         best_order = self._genetic_algorithm(
             schedulable_tasks,
+            tasks,  # Pass original tasks for allocation context
             start_date,
             max_hours_per_day,
             repository,
@@ -177,7 +178,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
     def _genetic_algorithm(
         self,
-        tasks: list[Task],
+        schedulable_tasks: list[Task],
+        all_tasks: list[Task],
         start_date: datetime,
         max_hours_per_day: float,
         repository: "TaskRepository",
@@ -187,7 +189,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         """Run genetic algorithm to find optimal task ordering.
 
         Args:
-            tasks: List of tasks to schedule
+            schedulable_tasks: List of tasks to schedule
+            all_tasks: All tasks (for allocation context initialization)
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
             repository: Task repository
@@ -199,7 +202,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         """
         # Generate initial population
         population = [
-            random.sample(tasks, len(tasks)) for _ in range(self.POPULATION_SIZE)
+            random.sample(schedulable_tasks, len(schedulable_tasks))
+            for _ in range(self.POPULATION_SIZE)
         ]
 
         # Track best fitness for early termination
@@ -212,6 +216,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             fitness_scores = [
                 self._evaluate_fitness_cached(
                     individual,
+                    all_tasks,
                     start_date,
                     max_hours_per_day,
                     repository,
@@ -266,6 +271,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         final_results = [
             self._evaluate_fitness_cached(
                 individual,
+                all_tasks,
                 start_date,
                 max_hours_per_day,
                 repository,
@@ -281,6 +287,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     def _evaluate_fitness_cached(
         self,
         task_order: list[Task],
+        all_tasks: list[Task],
         start_date: datetime,
         max_hours_per_day: float,
         repository: "TaskRepository",
@@ -291,6 +298,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         Args:
             task_order: Ordering of tasks to evaluate
+            all_tasks: All tasks (for allocation context initialization)
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
             repository: Task repository
@@ -310,6 +318,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         # Calculate fitness and allocation results
         fitness, daily_allocations, scheduled_tasks = self._evaluate_fitness(
             task_order,
+            all_tasks,
             start_date,
             max_hours_per_day,
             repository,
@@ -325,6 +334,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     def _evaluate_fitness(
         self,
         task_order: list[Task],
+        all_tasks: list[Task],
         start_date: datetime,
         max_hours_per_day: float,
         repository: "TaskRepository",
@@ -337,6 +347,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         Args:
             task_order: Ordering of tasks to evaluate
+            all_tasks: All tasks (for allocation context initialization)
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
             repository: Task repository
@@ -348,8 +359,10 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         """
         # Simulate scheduling with this order
         # Create a temporary context for simulation
+        # IMPORTANT: Use all_tasks (not task_order) to initialize allocations
+        # This ensures existing scheduled tasks are counted in daily_allocations
         temp_context = AllocationContext.create(
-            tasks=task_order,
+            tasks=all_tasks,
             repository=repository,
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
