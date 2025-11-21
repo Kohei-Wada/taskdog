@@ -2,6 +2,7 @@
 
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.registry import command_registry
+from taskdog.tui.forms.task_form_fields import TaskFormData
 from taskdog.tui.screens.simulate_task_dialog import (
     SimulateTaskDialog,
     SimulateTaskFormData,
@@ -16,7 +17,7 @@ class SimulateTaskCommand(TUICommandBase):
     def execute(self) -> None:
         """Execute the simulate task command."""
 
-        def handle_simulate_data(form_data: SimulateTaskFormData | None) -> None:
+        def handle_simulate_data(form_data: TaskFormData | None) -> None:
             """Handle the simulation data from the dialog.
 
             Args:
@@ -24,6 +25,9 @@ class SimulateTaskCommand(TUICommandBase):
             """
             if form_data is None:
                 return  # User cancelled
+
+            # Type narrowing: we know this is actually SimulateTaskFormData
+            assert isinstance(form_data, SimulateTaskFormData)
 
             try:
                 # Run simulation via API client
@@ -39,7 +43,7 @@ class SimulateTaskCommand(TUICommandBase):
                 )
 
                 # Show simulation result in a new dialog
-                def handle_result_decision(should_create: bool) -> None:
+                def handle_result_decision(should_create: bool | None) -> None:
                     """Handle result dialog decision.
 
                     Args:

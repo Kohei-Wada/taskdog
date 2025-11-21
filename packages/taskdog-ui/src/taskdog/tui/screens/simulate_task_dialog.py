@@ -280,4 +280,4 @@ class SimulateTaskDialog(TaskFormDialog):
         )
 
         # Close dialog and return simulate-specific form data
-        self.dismiss(form_data)
+        self.dismiss(form_data)  # type: ignore[arg-type]
