@@ -140,7 +140,7 @@ This command runs optimization with a virtual task to help you answer:
 @click.option(
     "--deadline",
     "-d",
-    type=DateTimeWithDefault("end"),
+    type=DateTimeWithDefault(),
     help="Optional deadline for the task",
 )
 @click.option(
