@@ -140,67 +140,68 @@ class SimulateTaskDialog(TaskFormDialog):
 
             with Vertical(id="form-container"):
                 # Task name field
-                yield Label("Task Name [red]*[/red]:")
+                yield Label("Task Name:", classes="field-label")
                 yield Input(
+                    placeholder="Enter task name",
                     id="task-name-input",
-                    placeholder="Enter task name (e.g., 'Fix bug #123')",
                     value="",
                 )
 
-                # Estimated duration field (REQUIRED for simulation)
-                yield Label("Estimated Duration (hours) [red]*[/red]:")
+                # Duration field (REQUIRED for simulation)
+                yield Label("Duration (hours):", classes="field-label")
                 yield Input(
+                    placeholder="Required: 4, 2.5, 8",
                     id="duration-input",
-                    placeholder="Required (e.g., '8' for 8 hours)",
                     value="",
-                    type="number",
-                )
-
-                # Priority field
-                yield Label(f"Priority (default: {default_priority}):")
-                yield Input(
-                    id="priority-input",
-                    placeholder=f"1-10, default {default_priority}",
-                    value="",
-                    type="number",
                 )
 
                 # Deadline field
-                yield Label("Deadline (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS):")
+                yield Label("Deadline:", classes="field-label")
                 yield Input(
+                    placeholder="Optional: 2025-12-31, tomorrow 6pm, next friday",
                     id="deadline-input",
-                    placeholder="Optional (e.g., '2025-12-31' or '2025-12-31 18:00:00')",
                     value="",
                 )
 
-                # Max hours per day field (simulation-specific)
-                yield Label(f"Max Hours Per Day (default: {default_max_hours}):")
+                # Priority field
+                yield Label("Priority:", classes="field-label")
                 yield Input(
-                    id="max-hours-input",
-                    placeholder=f"Maximum work hours per day, default {default_max_hours}",
+                    placeholder=f"Enter priority (default: {default_priority}, higher = more important)",
+                    id="priority-input",
+                    type="integer",
                     value="",
-                    type="number",
-                )
-
-                # Fixed checkbox
-                yield Label("Fixed Schedule:")
-                yield Checkbox(
-                    "Mark as fixed (won't be rescheduled)", id="fixed-checkbox"
                 )
 
                 # Dependencies field
-                yield Label("Depends On (comma-separated task IDs):")
+                yield Label("Dependencies:", classes="field-label")
                 yield Input(
+                    placeholder="Optional: 1,2,3 (comma-separated task IDs)",
                     id="depends-on-input",
-                    placeholder="Optional (e.g., '1,2,5' for tasks 1, 2, and 5)",
                     value="",
                 )
 
                 # Tags field
-                yield Label("Tags (comma-separated):")
+                yield Label("Tags:", classes="field-label")
                 yield Input(
+                    placeholder="Optional: work,urgent,client-a (comma-separated tags)",
                     id="tags-input",
-                    placeholder="Optional (e.g., 'backend,urgent,api')",
+                    value="",
+                )
+
+                # Fixed field (checkbox)
+                yield Label(
+                    "Fixed (won't be rescheduled by optimizer):", classes="field-label"
+                )
+                yield Checkbox(
+                    id="fixed-checkbox",
+                    value=False,
+                )
+
+                # Max hours per day field (simulation-specific, at the end)
+                yield Label("Max Hours Per Day:", classes="field-label")
+                yield Input(
+                    placeholder=f"Maximum work hours per day (default: {default_max_hours})",
+                    id="max-hours-input",
                     value="",
                 )
 
@@ -222,9 +223,7 @@ class SimulateTaskDialog(TaskFormDialog):
 
         validator = FormValidator(self)
         validator.add_field("task_name", "task-name-input", TaskNameValidator)
-        validator.add_field(
-            "priority", "priority-input", PriorityValidator, default_priority
-        )
+        validator.add_field("duration", "duration-input", DurationValidator)
         validator.add_field(
             "deadline",
             "deadline-input",
@@ -232,7 +231,9 @@ class SimulateTaskDialog(TaskFormDialog):
             "deadline",
             default_end_hour,
         )
-        validator.add_field("duration", "duration-input", DurationValidator)
+        validator.add_field(
+            "priority", "priority-input", PriorityValidator, default_priority
+        )
         validator.add_field("depends_on", "depends-on-input", DependenciesValidator)
         validator.add_field("tags", "tags-input", TagsValidator)
 
@@ -245,11 +246,11 @@ class SimulateTaskDialog(TaskFormDialog):
         if results["duration"] is None:
             duration_input = self.query_one("#duration-input", Input)
             self._show_validation_error(
-                "Estimated duration is required for simulation", duration_input
+                "Duration is required for simulation", duration_input
             )
             return
 
-        # Get and validate max hours per day
+        # Get and validate max hours per day (last field)
         max_hours_input = self.query_one("#max-hours-input", Input)
         max_hours_str = max_hours_input.value.strip()
 
