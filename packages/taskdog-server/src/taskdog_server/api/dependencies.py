@@ -5,6 +5,9 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from taskdog_core.application.use_cases.simulate_task_schedule import (
+    SimulateTaskScheduleUseCase,
+)
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -170,6 +173,25 @@ def get_holiday_checker(context: ApiContextDep) -> IHolidayChecker | None:
     return context.holiday_checker
 
 
+def get_simulate_use_case(
+    context: ApiContextDep,
+) -> SimulateTaskScheduleUseCase:
+    """Get SimulateTaskScheduleUseCase instance.
+
+    Args:
+        context: API context with repository and config
+
+    Returns:
+        SimulateTaskScheduleUseCase instance
+    """
+    return SimulateTaskScheduleUseCase(
+        repository=context.repository,
+        default_start_hour=context.config.time.default_start_hour,
+        default_end_hour=context.config.time.default_end_hour,
+        holiday_checker=context.holiday_checker,
+    )
+
+
 def get_connection_manager() -> ConnectionManager:
     """Get the global ConnectionManager instance for WebSocket connections.
 
@@ -206,3 +228,6 @@ NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
 ConfigDep = Annotated[Config, Depends(get_config)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
+SimulateUseCaseDep = Annotated[
+    SimulateTaskScheduleUseCase, Depends(get_simulate_use_case)
+]

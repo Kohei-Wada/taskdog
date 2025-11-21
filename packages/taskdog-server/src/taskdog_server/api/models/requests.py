@@ -137,3 +137,25 @@ class UpdateNotesRequest(BaseModel):
     """Request model for updating task notes."""
 
     content: str = Field(..., description="Notes content (markdown)")
+
+
+class SimulateTaskRequest(BaseModel):
+    """Request model for simulating a virtual task."""
+
+    estimated_duration: float = Field(
+        ..., gt=0, description="Estimated duration in hours"
+    )
+    name: str = Field(
+        "Simulated Task", min_length=1, description="Task name for display"
+    )
+    priority: int = Field(5, gt=0, description="Task priority (default: 5)")
+    deadline: datetime | None = Field(None, description="Optional deadline")
+    depends_on: list[int] = Field(
+        default_factory=list, description="List of task IDs this depends on"
+    )
+    algorithm_name: str = Field("greedy", description="Optimization algorithm to use")
+    max_hours_per_day: float = Field(
+        6.0, gt=0, le=24, description="Maximum hours per day"
+    )
+    start_date: datetime | None = Field(None, description="Optimization start date")
+    force_override: bool = Field(False, description="Override existing schedules")

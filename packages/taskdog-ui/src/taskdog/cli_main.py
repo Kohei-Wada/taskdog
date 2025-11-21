@@ -24,6 +24,7 @@ from taskdog.cli.commands.restore import restore_command
 from taskdog.cli.commands.rm import rm_command
 from taskdog.cli.commands.schedule import schedule_command
 from taskdog.cli.commands.show import show_command
+from taskdog.cli.commands.simulate import simulate_command
 from taskdog.cli.commands.start import start_command
 from taskdog.cli.commands.stats import stats_command
 from taskdog.cli.commands.table import table_command
@@ -141,6 +142,7 @@ cli.add_command(restore_command)
 cli.add_command(estimate_command)
 cli.add_command(schedule_command)
 cli.add_command(optimize_command)
+cli.add_command(simulate_command)
 cli.add_command(stats_command)
 cli.add_command(tags_command)
 cli.add_command(tui_command)

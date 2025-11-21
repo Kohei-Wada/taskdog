@@ -267,3 +267,21 @@ class NotesResponse(BaseModel):
     task_id: int
     content: str
     has_notes: bool
+
+
+class SimulationResponse(BaseModel):
+    """Response model for task simulation."""
+
+    is_schedulable: bool
+    planned_start: datetime | None = None
+    planned_end: datetime | None = None
+    failure_reason: str | None = None
+    daily_allocations: dict[str, float] = Field(default_factory=dict)
+    peak_workload: float
+    peak_date: date | None = None
+    average_workload: float
+    total_workload_days: int
+    virtual_task_name: str
+    estimated_duration: float
+    priority: int
+    deadline: datetime | None = None

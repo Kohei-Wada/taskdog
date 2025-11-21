@@ -15,6 +15,7 @@ from taskdog_core.application.dto.optimization_output import (
     SchedulingFailure,
 )
 from taskdog_core.application.dto.optimization_summary import OptimizationSummary
+from taskdog_core.application.dto.simulation_result import SimulationResult
 from taskdog_core.application.dto.statistics_output import (
     DeadlineComplianceStatistics,
     EstimationAccuracyStatistics,
@@ -662,4 +663,35 @@ def convert_to_tag_statistics_output(data: dict[str, Any]) -> TagStatisticsOutpu
         tag_counts=tag_counts,
         total_tags=data["total_tags"],
         total_tagged_tasks=0,  # Not available from API response
+    )
+
+
+def convert_to_simulation_result(data: dict[str, Any]) -> SimulationResult:
+    """Convert API simulation response to SimulationResult DTO.
+
+    Args:
+        data: API response data with simulation results
+
+    Returns:
+        SimulationResult with schedule prediction and workload analysis
+    """
+    # Convert date string keys back to date objects
+    daily_allocations = {}
+    for date_str, hours in data.get("daily_allocations", {}).items():
+        daily_allocations[date_type.fromisoformat(date_str)] = hours
+
+    return SimulationResult(
+        is_schedulable=data["is_schedulable"],
+        planned_start=_parse_optional_datetime(data, "planned_start"),
+        planned_end=_parse_optional_datetime(data, "planned_end"),
+        failure_reason=data.get("failure_reason"),
+        daily_allocations=daily_allocations,
+        peak_workload=data["peak_workload"],
+        peak_date=_parse_optional_date(data, "peak_date"),
+        average_workload=data["average_workload"],
+        total_workload_days=data["total_workload_days"],
+        virtual_task_name=data["virtual_task_name"],
+        estimated_duration=data["estimated_duration"],
+        priority=data["priority"],
+        deadline=_parse_optional_datetime(data, "deadline"),
     )

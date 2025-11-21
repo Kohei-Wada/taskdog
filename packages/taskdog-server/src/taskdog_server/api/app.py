@@ -14,6 +14,7 @@ from taskdog_server.api.routers import (
     lifecycle_router,
     notes_router,
     relationships_router,
+    simulation_router,
     tasks_router,
     websocket_router,
 )
@@ -77,6 +78,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(notes_router, prefix="/api/v1/tasks", tags=["notes"])
     app.include_router(analytics_router, prefix="/api/v1", tags=["analytics"])
+    app.include_router(simulation_router, prefix="/api/v1", tags=["simulation"])
     app.include_router(websocket_router, tags=["websocket"])
 
     @app.get("/")

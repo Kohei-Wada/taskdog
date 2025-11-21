@@ -17,6 +17,7 @@ from taskdog.infrastructure.api.task_client import TaskClient
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
+from taskdog_core.application.dto.simulation_result import SimulationResult
 from taskdog_core.application.dto.statistics_output import StatisticsOutput
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
@@ -234,6 +235,31 @@ class TaskdogApiClient:
     def get_algorithm_metadata(self) -> list[tuple[str, str, str]]:
         """Get available optimization algorithms."""
         return self._analytics.get_algorithm_metadata()
+
+    def simulate_task(
+        self,
+        estimated_duration: float,
+        priority: int = 5,
+        name: str = "Simulated Task",
+        deadline: datetime | None = None,
+        depends_on: list[int] | None = None,
+        algorithm: str = "greedy",
+        max_hours_per_day: float = 6.0,
+        start_date: datetime | None = None,
+        force_override: bool = False,
+    ) -> SimulationResult:
+        """Simulate a virtual task without saving to database."""
+        return self._analytics.simulate_task(
+            estimated_duration,
+            priority,
+            name,
+            deadline,
+            depends_on,
+            algorithm,
+            max_hours_per_day,
+            start_date,
+            force_override,
+        )
 
     # Query Controller methods - delegate to QueryClient
 
