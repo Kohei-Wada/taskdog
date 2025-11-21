@@ -49,12 +49,15 @@ class SimulateTaskCommand(TUICommandBase):
                         return  # User declined to create task
 
                     # Create the task using the simulation form data
+                    # and the simulation result's planned schedule
                     try:
                         task = self.context.api_client.create_task(
                             name=form_data.name,
                             priority=form_data.priority,
                             deadline=form_data.get_deadline(),
                             estimated_duration=form_data.estimated_duration,
+                            planned_start=result.planned_start,
+                            planned_end=result.planned_end,
                             is_fixed=form_data.is_fixed,
                             tags=form_data.tags or [],
                         )
