@@ -1,4 +1,4 @@
-"""Dialog for simulating task scheduling."""
+"""Dialog for simulating task scheduling - extends TaskFormDialog."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -18,8 +18,7 @@ from taskdog.tui.forms.validators import (
     TagsValidator,
     TaskNameValidator,
 )
-from taskdog.tui.screens.base_dialog import BaseModalDialog
-from taskdog.tui.utils.config_validator import require_config
+from taskdog.tui.screens.task_form_dialog import TaskFormDialog
 from taskdog_core.shared.config_manager import Config
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
@@ -67,11 +66,13 @@ class SimulateTaskFormData:
         return self.parse_datetime(self.deadline)
 
 
-class SimulateTaskDialog(BaseModalDialog[SimulateTaskFormData | None]):
+class SimulateTaskDialog(TaskFormDialog):
     """Modal dialog for simulating task scheduling.
 
-    This dialog allows users to simulate a virtual task to predict
-    when it can be completed without actually creating the task.
+    Extends TaskFormDialog to provide simulation-specific fields:
+    - Requires estimated_duration (optional in base class)
+    - Adds max_hours_per_day field (simulation parameter)
+    - Removes planned_start/end fields (not needed for simulation)
     """
 
     BINDINGS: ClassVar = [
@@ -106,19 +107,21 @@ class SimulateTaskDialog(BaseModalDialog[SimulateTaskFormData | None]):
     def __init__(
         self,
         config: Config | None = None,
-        *args: Any,
         **kwargs: Any,
     ):
-        """Initialize the dialog.
+        """Initialize the simulate dialog.
 
         Args:
             config: Application configuration
         """
-        super().__init__(*args, **kwargs)
-        self.config = require_config(config)
+        # Always initialize with task=None (simulate is always new)
+        super().__init__(task=None, config=config, **kwargs)
 
     def compose(self) -> ComposeResult:
-        """Compose the dialog layout."""
+        """Compose the dialog layout for simulation.
+
+        Overrides parent to provide simulation-specific fields.
+        """
         with Container(
             id="simulate-task-dialog", classes="dialog-base dialog-standard"
         ) as container:
@@ -131,6 +134,10 @@ class SimulateTaskDialog(BaseModalDialog[SimulateTaskFormData | None]):
             # Error message area (hidden by default)
             yield Static("", id="error-message")
 
+            # Get defaults from config
+            default_priority = self.config.task.default_priority
+            default_max_hours = self.config.optimization.max_hours_per_day
+
             with Vertical(id="form-container"):
                 # Task name field
                 yield Label("Task Name [red]*[/red]:")
@@ -140,7 +147,7 @@ class SimulateTaskDialog(BaseModalDialog[SimulateTaskFormData | None]):
                     value="",
                 )
 
-                # Estimated duration field
+                # Estimated duration field (REQUIRED for simulation)
                 yield Label("Estimated Duration (hours) [red]*[/red]:")
                 yield Input(
                     id="duration-input",
@@ -150,7 +157,6 @@ class SimulateTaskDialog(BaseModalDialog[SimulateTaskFormData | None]):
                 )
 
                 # Priority field
-                default_priority = self.config.task.default_priority
                 yield Label(f"Priority (default: {default_priority}):")
                 yield Input(
                     id="priority-input",
@@ -167,8 +173,7 @@ class SimulateTaskDialog(BaseModalDialog[SimulateTaskFormData | None]):
                     value="",
                 )
 
-                # Max hours per day field
-                default_max_hours = self.config.optimization.max_hours_per_day
+                # Max hours per day field (simulation-specific)
                 yield Label(f"Max Hours Per Day (default: {default_max_hours}):")
                 yield Input(
                     id="max-hours-input",
@@ -199,26 +204,11 @@ class SimulateTaskDialog(BaseModalDialog[SimulateTaskFormData | None]):
                     value="",
                 )
 
-    def on_mount(self) -> None:
-        """Called when dialog is mounted."""
-        # Focus on task name input
-        task_input = self.query_one("#task-name-input", Input)
-        task_input.focus()
-
-    def action_submit(self) -> None:
-        """Submit the form (Ctrl+S)."""
-        self._submit_form()
-
-    def action_focus_next(self) -> None:
-        """Move focus to the next field (Ctrl+J)."""
-        self.focus_next()
-
-    def action_focus_previous(self) -> None:
-        """Move focus to the previous field (Ctrl+K)."""
-        self.focus_previous()
-
     def _submit_form(self) -> None:
-        """Validate and submit the form data."""
+        """Validate and submit the form data for simulation.
+
+        Overrides parent to return SimulateTaskFormData instead of TaskFormData.
+        """
         # Get fixed checkbox value
         fixed_checkbox = self.query_one("#fixed-checkbox", Checkbox)
 
@@ -251,15 +241,15 @@ class SimulateTaskDialog(BaseModalDialog[SimulateTaskFormData | None]):
         if results is None:
             return  # Validation failed, error already displayed
 
-        # Check that duration is provided (required field)
+        # Check that duration is provided (REQUIRED for simulation)
         if results["duration"] is None:
             duration_input = self.query_one("#duration-input", Input)
             self._show_validation_error(
-                "Estimated duration is required", duration_input
+                "Estimated duration is required for simulation", duration_input
             )
             return
 
-        # Get max hours per day
+        # Get and validate max hours per day
         max_hours_input = self.query_one("#max-hours-input", Input)
         max_hours_str = max_hours_input.value.strip()
 
@@ -276,7 +266,7 @@ class SimulateTaskDialog(BaseModalDialog[SimulateTaskFormData | None]):
             self._show_validation_error("Invalid max hours per day", max_hours_input)
             return
 
-        # Build form data
+        # Build SimulateTaskFormData (not TaskFormData)
         form_data = SimulateTaskFormData(
             name=results["task_name"],
             estimated_duration=results["duration"],
@@ -288,5 +278,5 @@ class SimulateTaskDialog(BaseModalDialog[SimulateTaskFormData | None]):
             max_hours_per_day=max_hours_per_day,
         )
 
-        # Close dialog and return form data
+        # Close dialog and return simulate-specific form data
         self.dismiss(form_data)
