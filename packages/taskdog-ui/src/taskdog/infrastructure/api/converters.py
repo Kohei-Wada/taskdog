@@ -37,6 +37,37 @@ from taskdog_core.application.dto.task_operation_output import TaskOperationOutp
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.entities.task import TaskStatus
 
+# === Exception Classes ===
+
+
+class ConversionError(Exception):
+    """Error during API response to DTO conversion.
+
+    This exception is raised when the converter encounters invalid or
+    unexpected data in the API response that prevents proper DTO construction.
+    It provides context about which field failed and what the problematic value was.
+
+    Attributes:
+        message: Description of the conversion error
+        field: The field name that failed conversion (if applicable)
+        value: The problematic value that caused the error (if applicable)
+    """
+
+    def __init__(
+        self, message: str, field: str | None = None, value: Any | None = None
+    ):
+        """Initialize ConversionError with context.
+
+        Args:
+            message: Human-readable error description
+            field: Optional field name that failed conversion
+            value: Optional value that caused the error
+        """
+        self.field = field
+        self.value = value
+        super().__init__(message)
+
+
 # === Datetime Conversion Utilities ===
 
 
@@ -49,9 +80,22 @@ def _parse_optional_datetime(data: dict[str, Any], field: str) -> datetime | Non
 
     Returns:
         Parsed datetime or None if field is missing/None
+
+    Raises:
+        ConversionError: If datetime value is present but malformed
     """
     value = data.get(field)
-    return datetime.fromisoformat(value) if value else None
+    if value is None:
+        return None
+
+    try:
+        return datetime.fromisoformat(value)
+    except (ValueError, TypeError) as e:
+        raise ConversionError(
+            f"Failed to parse datetime field '{field}': {value}",
+            field=field,
+            value=value,
+        ) from e
 
 
 def _parse_optional_date(data: dict[str, Any], field: str) -> date_type | None:
@@ -63,9 +107,22 @@ def _parse_optional_date(data: dict[str, Any], field: str) -> date_type | None:
 
     Returns:
         Parsed date or None if field is missing/None
+
+    Raises:
+        ConversionError: If date value is present but malformed
     """
     value = data.get(field)
-    return date_type.fromisoformat(value) if value else None
+    if value is None:
+        return None
+
+    try:
+        return date_type.fromisoformat(value)
+    except (ValueError, TypeError) as e:
+        raise ConversionError(
+            f"Failed to parse date field '{field}': {value}",
+            field=field,
+            value=value,
+        ) from e
 
 
 def _parse_datetime_fields(
@@ -81,6 +138,109 @@ def _parse_datetime_fields(
         Dictionary mapping field names to parsed datetime values
     """
     return {field: _parse_optional_datetime(data, field) for field in fields}
+
+
+def _parse_required_datetime(data: dict[str, Any], field: str) -> datetime:
+    """Parse required datetime field from API response.
+
+    Args:
+        data: Dictionary containing datetime fields
+        field: Field name to extract
+
+    Returns:
+        Parsed datetime value
+
+    Raises:
+        ConversionError: If field is missing or value is malformed
+    """
+    value = data.get(field)
+    if value is None:
+        raise ConversionError(
+            f"Required datetime field '{field}' is missing or None",
+            field=field,
+            value=value,
+        )
+
+    try:
+        return datetime.fromisoformat(value)
+    except (ValueError, TypeError) as e:
+        raise ConversionError(
+            f"Failed to parse required datetime field '{field}': {value}",
+            field=field,
+            value=value,
+        ) from e
+
+
+def _parse_date_dict(data: dict[str, Any], field: str) -> dict[date_type, float]:
+    """Parse dictionary with ISO date string keys to date object keys.
+
+    Args:
+        data: Dictionary containing date dictionary field
+        field: Field name to extract
+
+    Returns:
+        Dictionary with date keys and float values
+
+    Raises:
+        ConversionError: If any date key is malformed
+    """
+    value_dict = data.get(field, {})
+    if not value_dict:
+        return {}
+
+    try:
+        return {date_type.fromisoformat(k): v for k, v in value_dict.items()}
+    except (ValueError, TypeError) as e:
+        raise ConversionError(
+            f"Failed to parse date dictionary field '{field}': {value_dict}",
+            field=field,
+            value=value_dict,
+        ) from e
+
+
+def _build_task_detail_dto(data: dict[str, Any]) -> TaskDetailDto:
+    """Build TaskDetailDto from API response data.
+
+    This is a shared method to avoid duplication between convert_to_get_task_by_id_output
+    and convert_to_get_task_detail_output.
+
+    Args:
+        data: API response data containing task fields
+
+    Returns:
+        TaskDetailDto with all task data populated
+    """
+    # Parse datetime fields with error handling
+    dt_fields = _parse_datetime_fields(
+        data, ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"]
+    )
+
+    # Build and return TaskDetailDto with safe parsing
+    return TaskDetailDto(
+        id=data["id"],
+        name=data["name"],
+        priority=data["priority"],
+        status=TaskStatus(data["status"]),
+        planned_start=dt_fields["planned_start"],
+        planned_end=dt_fields["planned_end"],
+        deadline=dt_fields["deadline"],
+        actual_start=dt_fields["actual_start"],
+        actual_end=dt_fields["actual_end"],
+        estimated_duration=data.get("estimated_duration"),
+        daily_allocations=_parse_date_dict(data, "daily_allocations"),
+        is_fixed=data.get("is_fixed", False),
+        depends_on=data.get("depends_on", []),
+        actual_daily_hours=_parse_date_dict(data, "actual_daily_hours"),
+        tags=data.get("tags", []),
+        is_archived=data.get("is_archived", False),
+        created_at=_parse_required_datetime(data, "created_at"),
+        updated_at=_parse_required_datetime(data, "updated_at"),
+        actual_duration_hours=data.get("actual_duration_hours"),
+        is_active=data.get("is_active", False),
+        is_finished=data.get("is_finished", False),
+        can_be_modified=data.get("can_be_modified", False),
+        is_schedulable=data.get("is_schedulable", False),
+    )
 
 
 def convert_to_task_operation_output(data: dict[str, Any]) -> TaskOperationOutput:
@@ -205,44 +365,7 @@ def convert_to_get_task_by_id_output(data: dict[str, Any]) -> TaskByIdOutput:
     Returns:
         TaskByIdOutput with task data
     """
-    # Parse datetime fields using utility
-    dt_fields = _parse_datetime_fields(
-        data, ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"]
-    )
-
-    # Convert task data (same as get_task_detail but without notes)
-    task = TaskDetailDto(
-        id=data["id"],
-        name=data["name"],
-        priority=data["priority"],
-        status=TaskStatus(data["status"]),
-        planned_start=dt_fields["planned_start"],
-        planned_end=dt_fields["planned_end"],
-        deadline=dt_fields["deadline"],
-        actual_start=dt_fields["actual_start"],
-        actual_end=dt_fields["actual_end"],
-        estimated_duration=data.get("estimated_duration"),
-        daily_allocations={
-            date_type.fromisoformat(k): v
-            for k, v in data.get("daily_allocations", {}).items()
-        },
-        is_fixed=data.get("is_fixed", False),
-        depends_on=data.get("depends_on", []),
-        actual_daily_hours={
-            date_type.fromisoformat(k): v
-            for k, v in data.get("actual_daily_hours", {}).items()
-        },
-        tags=data.get("tags", []),
-        is_archived=data.get("is_archived", False),
-        created_at=datetime.fromisoformat(data["created_at"]),
-        updated_at=datetime.fromisoformat(data["updated_at"]),
-        actual_duration_hours=data.get("actual_duration_hours"),
-        is_active=data.get("is_active", False),
-        is_finished=data.get("is_finished", False),
-        can_be_modified=data.get("can_be_modified", False),
-        is_schedulable=data.get("is_schedulable", False),
-    )
-
+    task = _build_task_detail_dto(data)
     return TaskByIdOutput(task=task)
 
 
@@ -255,43 +378,8 @@ def convert_to_get_task_detail_output(data: dict[str, Any]) -> TaskDetailOutput:
     Returns:
         TaskDetailOutput with task data and notes
     """
-    # Parse datetime fields using utility
-    dt_fields = _parse_datetime_fields(
-        data, ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"]
-    )
-
-    # Convert task data
-    task = TaskDetailDto(
-        id=data["id"],
-        name=data["name"],
-        priority=data["priority"],
-        status=TaskStatus(data["status"]),
-        planned_start=dt_fields["planned_start"],
-        planned_end=dt_fields["planned_end"],
-        deadline=dt_fields["deadline"],
-        actual_start=dt_fields["actual_start"],
-        actual_end=dt_fields["actual_end"],
-        estimated_duration=data.get("estimated_duration"),
-        daily_allocations={
-            date_type.fromisoformat(k): v
-            for k, v in data.get("daily_allocations", {}).items()
-        },
-        is_fixed=data.get("is_fixed", False),
-        depends_on=data.get("depends_on", []),
-        actual_daily_hours={
-            date_type.fromisoformat(k): v
-            for k, v in data.get("actual_daily_hours", {}).items()
-        },
-        tags=data.get("tags", []),
-        is_archived=data.get("is_archived", False),
-        created_at=datetime.fromisoformat(data["created_at"]),
-        updated_at=datetime.fromisoformat(data["updated_at"]),
-        actual_duration_hours=data.get("actual_duration_hours"),
-        is_active=data.get("is_active", False),
-        is_finished=data.get("is_finished", False),
-        can_be_modified=data.get("can_be_modified", False),
-        is_schedulable=data.get("is_schedulable", False),
-    )
+    # Convert task data using shared method
+    task = _build_task_detail_dto(data)
 
     # Extract notes
     notes_content = data.get("notes")
