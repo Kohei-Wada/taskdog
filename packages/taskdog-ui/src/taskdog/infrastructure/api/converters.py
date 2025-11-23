@@ -83,6 +83,57 @@ def _parse_datetime_fields(
     return {field: _parse_optional_datetime(data, field) for field in fields}
 
 
+def _build_task_detail_dto(data: dict[str, Any]) -> TaskDetailDto:
+    """Build TaskDetailDto from API response data.
+
+    This is a shared method to avoid duplication between convert_to_get_task_by_id_output
+    and convert_to_get_task_detail_output.
+
+    Args:
+        data: API response data containing task fields
+
+    Returns:
+        TaskDetailDto with all task data populated
+    """
+    # Parse datetime fields
+    dt_fields = _parse_datetime_fields(
+        data, ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"]
+    )
+
+    # Build and return TaskDetailDto
+    return TaskDetailDto(
+        id=data["id"],
+        name=data["name"],
+        priority=data["priority"],
+        status=TaskStatus(data["status"]),
+        planned_start=dt_fields["planned_start"],
+        planned_end=dt_fields["planned_end"],
+        deadline=dt_fields["deadline"],
+        actual_start=dt_fields["actual_start"],
+        actual_end=dt_fields["actual_end"],
+        estimated_duration=data.get("estimated_duration"),
+        daily_allocations={
+            date_type.fromisoformat(k): v
+            for k, v in data.get("daily_allocations", {}).items()
+        },
+        is_fixed=data.get("is_fixed", False),
+        depends_on=data.get("depends_on", []),
+        actual_daily_hours={
+            date_type.fromisoformat(k): v
+            for k, v in data.get("actual_daily_hours", {}).items()
+        },
+        tags=data.get("tags", []),
+        is_archived=data.get("is_archived", False),
+        created_at=datetime.fromisoformat(data["created_at"]),
+        updated_at=datetime.fromisoformat(data["updated_at"]),
+        actual_duration_hours=data.get("actual_duration_hours"),
+        is_active=data.get("is_active", False),
+        is_finished=data.get("is_finished", False),
+        can_be_modified=data.get("can_be_modified", False),
+        is_schedulable=data.get("is_schedulable", False),
+    )
+
+
 def convert_to_task_operation_output(data: dict[str, Any]) -> TaskOperationOutput:
     """Convert API response to TaskOperationOutput.
 
@@ -205,44 +256,7 @@ def convert_to_get_task_by_id_output(data: dict[str, Any]) -> TaskByIdOutput:
     Returns:
         TaskByIdOutput with task data
     """
-    # Parse datetime fields using utility
-    dt_fields = _parse_datetime_fields(
-        data, ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"]
-    )
-
-    # Convert task data (same as get_task_detail but without notes)
-    task = TaskDetailDto(
-        id=data["id"],
-        name=data["name"],
-        priority=data["priority"],
-        status=TaskStatus(data["status"]),
-        planned_start=dt_fields["planned_start"],
-        planned_end=dt_fields["planned_end"],
-        deadline=dt_fields["deadline"],
-        actual_start=dt_fields["actual_start"],
-        actual_end=dt_fields["actual_end"],
-        estimated_duration=data.get("estimated_duration"),
-        daily_allocations={
-            date_type.fromisoformat(k): v
-            for k, v in data.get("daily_allocations", {}).items()
-        },
-        is_fixed=data.get("is_fixed", False),
-        depends_on=data.get("depends_on", []),
-        actual_daily_hours={
-            date_type.fromisoformat(k): v
-            for k, v in data.get("actual_daily_hours", {}).items()
-        },
-        tags=data.get("tags", []),
-        is_archived=data.get("is_archived", False),
-        created_at=datetime.fromisoformat(data["created_at"]),
-        updated_at=datetime.fromisoformat(data["updated_at"]),
-        actual_duration_hours=data.get("actual_duration_hours"),
-        is_active=data.get("is_active", False),
-        is_finished=data.get("is_finished", False),
-        can_be_modified=data.get("can_be_modified", False),
-        is_schedulable=data.get("is_schedulable", False),
-    )
-
+    task = _build_task_detail_dto(data)
     return TaskByIdOutput(task=task)
 
 
@@ -255,43 +269,8 @@ def convert_to_get_task_detail_output(data: dict[str, Any]) -> TaskDetailOutput:
     Returns:
         TaskDetailOutput with task data and notes
     """
-    # Parse datetime fields using utility
-    dt_fields = _parse_datetime_fields(
-        data, ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"]
-    )
-
-    # Convert task data
-    task = TaskDetailDto(
-        id=data["id"],
-        name=data["name"],
-        priority=data["priority"],
-        status=TaskStatus(data["status"]),
-        planned_start=dt_fields["planned_start"],
-        planned_end=dt_fields["planned_end"],
-        deadline=dt_fields["deadline"],
-        actual_start=dt_fields["actual_start"],
-        actual_end=dt_fields["actual_end"],
-        estimated_duration=data.get("estimated_duration"),
-        daily_allocations={
-            date_type.fromisoformat(k): v
-            for k, v in data.get("daily_allocations", {}).items()
-        },
-        is_fixed=data.get("is_fixed", False),
-        depends_on=data.get("depends_on", []),
-        actual_daily_hours={
-            date_type.fromisoformat(k): v
-            for k, v in data.get("actual_daily_hours", {}).items()
-        },
-        tags=data.get("tags", []),
-        is_archived=data.get("is_archived", False),
-        created_at=datetime.fromisoformat(data["created_at"]),
-        updated_at=datetime.fromisoformat(data["updated_at"]),
-        actual_duration_hours=data.get("actual_duration_hours"),
-        is_active=data.get("is_active", False),
-        is_finished=data.get("is_finished", False),
-        can_be_modified=data.get("can_be_modified", False),
-        is_schedulable=data.get("is_schedulable", False),
-    )
+    # Convert task data using shared method
+    task = _build_task_detail_dto(data)
 
     # Extract notes
     notes_content = data.get("notes")
