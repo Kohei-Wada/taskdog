@@ -3,6 +3,8 @@
 import unittest
 from unittest.mock import Mock, patch
 
+from parameterized import parameterized
+
 from taskdog.infrastructure.api.lifecycle_client import LifecycleClient
 
 
@@ -14,11 +16,22 @@ class TestLifecycleClient(unittest.TestCase):
         self.mock_base = Mock()
         self.client = LifecycleClient(self.mock_base)
 
+    @parameterized.expand(
+        [
+            ("start_task", "start_task", "/api/v1/tasks/1/start"),
+            ("complete_task", "complete_task", "/api/v1/tasks/1/complete"),
+            ("pause_task", "pause_task", "/api/v1/tasks/1/pause"),
+            ("cancel_task", "cancel_task", "/api/v1/tasks/1/cancel"),
+            ("reopen_task", "reopen_task", "/api/v1/tasks/1/reopen"),
+        ]
+    )
     @patch(
         "taskdog.infrastructure.api.lifecycle_client.convert_to_task_operation_output"
     )
-    def test_start_task(self, mock_convert):
-        """Test start_task makes correct API call."""
+    def test_lifecycle_operation_makes_correct_api_call(
+        self, operation_name, method_name, expected_endpoint, mock_convert
+    ):
+        """Test lifecycle operations make correct API calls."""
         mock_response = Mock()
         mock_response.is_success = True
         mock_response.json.return_value = {"id": 1}
@@ -27,91 +40,10 @@ class TestLifecycleClient(unittest.TestCase):
         mock_output = Mock()
         mock_convert.return_value = mock_output
 
-        result = self.client.start_task(task_id=1)
+        method = getattr(self.client, method_name)
+        result = method(task_id=1)
 
-        self.mock_base._safe_request.assert_called_once_with(
-            "post", "/api/v1/tasks/1/start"
-        )
-        self.assertEqual(result, mock_output)
-
-    @patch(
-        "taskdog.infrastructure.api.lifecycle_client.convert_to_task_operation_output"
-    )
-    def test_complete_task(self, mock_convert):
-        """Test complete_task makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"id": 1}
-        self.mock_base._safe_request.return_value = mock_response
-
-        mock_output = Mock()
-        mock_convert.return_value = mock_output
-
-        result = self.client.complete_task(task_id=1)
-
-        self.mock_base._safe_request.assert_called_once_with(
-            "post", "/api/v1/tasks/1/complete"
-        )
-        self.assertEqual(result, mock_output)
-
-    @patch(
-        "taskdog.infrastructure.api.lifecycle_client.convert_to_task_operation_output"
-    )
-    def test_pause_task(self, mock_convert):
-        """Test pause_task makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"id": 1}
-        self.mock_base._safe_request.return_value = mock_response
-
-        mock_output = Mock()
-        mock_convert.return_value = mock_output
-
-        result = self.client.pause_task(task_id=1)
-
-        self.mock_base._safe_request.assert_called_once_with(
-            "post", "/api/v1/tasks/1/pause"
-        )
-        self.assertEqual(result, mock_output)
-
-    @patch(
-        "taskdog.infrastructure.api.lifecycle_client.convert_to_task_operation_output"
-    )
-    def test_cancel_task(self, mock_convert):
-        """Test cancel_task makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"id": 1}
-        self.mock_base._safe_request.return_value = mock_response
-
-        mock_output = Mock()
-        mock_convert.return_value = mock_output
-
-        result = self.client.cancel_task(task_id=1)
-
-        self.mock_base._safe_request.assert_called_once_with(
-            "post", "/api/v1/tasks/1/cancel"
-        )
-        self.assertEqual(result, mock_output)
-
-    @patch(
-        "taskdog.infrastructure.api.lifecycle_client.convert_to_task_operation_output"
-    )
-    def test_reopen_task(self, mock_convert):
-        """Test reopen_task makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"id": 1}
-        self.mock_base._safe_request.return_value = mock_response
-
-        mock_output = Mock()
-        mock_convert.return_value = mock_output
-
-        result = self.client.reopen_task(task_id=1)
-
-        self.mock_base._safe_request.assert_called_once_with(
-            "post", "/api/v1/tasks/1/reopen"
-        )
+        self.mock_base._safe_request.assert_called_once_with("post", expected_endpoint)
         self.assertEqual(result, mock_output)
 
     @patch(

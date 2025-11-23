@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import httpx
+from parameterized import parameterized
 
 from taskdog.infrastructure.api.base_client import BaseApiClient
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -50,29 +51,25 @@ class TestBaseApiClient(unittest.TestCase):
 
         mock_client_instance.close.assert_called_once()
 
-    def test_handle_error_404(self):
-        """Test _handle_error raises TaskNotFoundException for 404."""
+    @parameterized.expand(
+        [
+            ("404_error", 404, TaskNotFoundException, "Task not found"),
+            ("400_error", 400, TaskValidationError, "Validation failed"),
+        ]
+    )
+    def test_handle_error_status_codes(
+        self, scenario, status_code, expected_exception, detail_message
+    ):
+        """Test _handle_error raises appropriate exceptions for error status codes."""
         client = BaseApiClient(self.base_url, self.timeout)
         response = Mock()
-        response.status_code = 404
-        response.json.return_value = {"detail": "Task not found"}
+        response.status_code = status_code
+        response.json.return_value = {"detail": detail_message}
 
-        with self.assertRaises(TaskNotFoundException) as cm:
+        with self.assertRaises(expected_exception) as cm:
             client._handle_error(response)
 
-        self.assertIn("Task not found", str(cm.exception))
-
-    def test_handle_error_400(self):
-        """Test _handle_error raises TaskValidationError for 400."""
-        client = BaseApiClient(self.base_url, self.timeout)
-        response = Mock()
-        response.status_code = 400
-        response.json.return_value = {"detail": "Validation failed"}
-
-        with self.assertRaises(TaskValidationError) as cm:
-            client._handle_error(response)
-
-        self.assertIn("Validation failed", str(cm.exception))
+        self.assertIn(detail_message, str(cm.exception))
 
     def test_handle_error_other_status(self):
         """Test _handle_error calls raise_for_status for other errors."""
@@ -101,31 +98,25 @@ class TestBaseApiClient(unittest.TestCase):
         self.assertEqual(response, mock_response)
         mock_handle_error.assert_not_called()
 
-    def test_safe_request_connect_error(self):
-        """Test _safe_request raises ServerConnectionError on connection failure."""
+    @parameterized.expand(
+        [
+            ("connect_error", httpx.ConnectError("Connection failed"), True),
+            ("timeout_error", httpx.TimeoutException("Timeout"), False),
+            ("request_error", httpx.RequestError("Request failed"), False),
+        ]
+    )
+    def test_safe_request_connection_errors(
+        self, scenario, exception_to_raise, should_check_base_url
+    ):
+        """Test _safe_request raises ServerConnectionError on connection failures."""
         client = BaseApiClient(self.base_url, self.timeout)
-        client.client.get = Mock(side_effect=httpx.ConnectError("Connection failed"))
+        client.client.get = Mock(side_effect=exception_to_raise)
 
         with self.assertRaises(ServerConnectionError) as cm:
             client._safe_request("get", "/test")
 
-        self.assertIn(self.base_url, str(cm.exception))
-
-    def test_safe_request_timeout_error(self):
-        """Test _safe_request raises ServerConnectionError on timeout."""
-        client = BaseApiClient(self.base_url, self.timeout)
-        client.client.get = Mock(side_effect=httpx.TimeoutException("Timeout"))
-
-        with self.assertRaises(ServerConnectionError):
-            client._safe_request("get", "/test")
-
-    def test_safe_request_request_error(self):
-        """Test _safe_request raises ServerConnectionError on request error."""
-        client = BaseApiClient(self.base_url, self.timeout)
-        client.client.get = Mock(side_effect=httpx.RequestError("Request failed"))
-
-        with self.assertRaises(ServerConnectionError):
-            client._safe_request("get", "/test")
+        if should_check_base_url:
+            self.assertIn(self.base_url, str(cm.exception))
 
     def test_safe_request_calls_correct_method(self):
         """Test _safe_request calls the specified HTTP method."""

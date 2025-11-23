@@ -4,6 +4,8 @@ import unittest
 from datetime import datetime
 from unittest.mock import Mock, patch
 
+from parameterized import parameterized
+
 from taskdog.infrastructure.api.task_client import TaskClient
 from taskdog_core.domain.entities.task import TaskStatus
 
@@ -133,9 +135,17 @@ class TestTaskClient(unittest.TestCase):
         # Verify result
         self.assertEqual(result, mock_output)
 
+    @parameterized.expand(
+        [
+            ("archive_task", "archive_task", "/api/v1/tasks/1/archive"),
+            ("restore_task", "restore_task", "/api/v1/tasks/1/restore"),
+        ]
+    )
     @patch("taskdog.infrastructure.api.task_client.convert_to_task_operation_output")
-    def test_archive_task(self, mock_convert):
-        """Test archive_task makes correct API call."""
+    def test_archive_restore_operations(
+        self, operation_name, method_name, expected_endpoint, mock_convert
+    ):
+        """Test archive/restore operations make correct API calls."""
         mock_response = Mock()
         mock_response.is_success = True
         mock_response.json.return_value = {"id": 1}
@@ -144,29 +154,10 @@ class TestTaskClient(unittest.TestCase):
         mock_output = Mock()
         mock_convert.return_value = mock_output
 
-        result = self.client.archive_task(task_id=1)
+        method = getattr(self.client, method_name)
+        result = method(task_id=1)
 
-        self.mock_base._safe_request.assert_called_once_with(
-            "post", "/api/v1/tasks/1/archive"
-        )
-        self.assertEqual(result, mock_output)
-
-    @patch("taskdog.infrastructure.api.task_client.convert_to_task_operation_output")
-    def test_restore_task(self, mock_convert):
-        """Test restore_task makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"id": 1}
-        self.mock_base._safe_request.return_value = mock_response
-
-        mock_output = Mock()
-        mock_convert.return_value = mock_output
-
-        result = self.client.restore_task(task_id=1)
-
-        self.mock_base._safe_request.assert_called_once_with(
-            "post", "/api/v1/tasks/1/restore"
-        )
+        self.mock_base._safe_request.assert_called_once_with("post", expected_endpoint)
         self.assertEqual(result, mock_output)
 
     def test_remove_task(self):
