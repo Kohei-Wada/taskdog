@@ -1,6 +1,6 @@
-import unittest
 """Tests for TaskCrudController."""
 
+import unittest
 from unittest.mock import MagicMock
 
 from taskdog_core.controllers.task_crud_controller import TaskCrudController

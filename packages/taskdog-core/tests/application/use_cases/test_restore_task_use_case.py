@@ -1,5 +1,6 @@
-import unittest
 """Tests for RestoreTaskUseCase."""
+
+import unittest
 
 from taskdog_core.application.dto.restore_task_input import RestoreTaskInput
 from taskdog_core.application.use_cases.restore_task import RestoreTaskUseCase

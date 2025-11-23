@@ -1,3 +1,5 @@
+"""Tests for PauseTaskUseCase."""
+
 import unittest
 from datetime import datetime
 

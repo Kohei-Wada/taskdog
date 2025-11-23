@@ -1,5 +1,6 @@
-import unittest
 """Tests for ArchiveTaskUseCase."""
+
+import unittest
 
 from taskdog_core.application.dto.archive_task_input import ArchiveTaskInput
 from taskdog_core.application.use_cases.archive_task import ArchiveTaskUseCase

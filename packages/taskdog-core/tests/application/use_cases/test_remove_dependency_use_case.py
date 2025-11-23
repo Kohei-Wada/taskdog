@@ -1,5 +1,6 @@
-import unittest
 """Tests for RemoveDependencyUseCase."""
+
+import unittest
 
 from taskdog_core.application.dto.manage_dependencies_input import RemoveDependencyInput
 from taskdog_core.application.use_cases.remove_dependency import RemoveDependencyUseCase

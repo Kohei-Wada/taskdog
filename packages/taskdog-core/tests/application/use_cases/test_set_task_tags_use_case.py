@@ -1,5 +1,6 @@
-import unittest
 """Tests for SetTaskTagsUseCase."""
+
+import unittest
 
 from taskdog_core.application.dto.create_task_input import CreateTaskInput
 from taskdog_core.application.dto.set_task_tags_input import SetTaskTagsInput

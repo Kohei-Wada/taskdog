@@ -1,6 +1,6 @@
-import unittest
 """Tests for ReopenTaskUseCase."""
 
+import unittest
 from datetime import datetime
 
 from parameterized import parameterized

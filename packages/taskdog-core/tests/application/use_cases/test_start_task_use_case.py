@@ -1,3 +1,5 @@
+"""Tests for StartTaskUseCase."""
+
 import unittest
 
 from taskdog_core.application.dto.start_task_input import StartTaskInput

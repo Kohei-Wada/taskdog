@@ -1,6 +1,6 @@
-import unittest
 """Tests for QueryController."""
 
+import unittest
 from datetime import date, datetime, timedelta
 
 from taskdog_core.application.queries.filters.composite_filter import CompositeFilter

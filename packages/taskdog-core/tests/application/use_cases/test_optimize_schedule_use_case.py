@@ -1,6 +1,6 @@
-import unittest
 """Tests for OptimizeScheduleUseCase."""
 
+import unittest
 from datetime import date, datetime
 
 from taskdog_core.application.dto.create_task_input import CreateTaskInput

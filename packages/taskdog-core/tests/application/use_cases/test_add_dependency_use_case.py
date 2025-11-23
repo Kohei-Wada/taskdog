@@ -1,5 +1,6 @@
-import unittest
 """Tests for AddDependencyUseCase."""
+
+import unittest
 
 from taskdog_core.application.dto.manage_dependencies_input import AddDependencyInput
 from taskdog_core.application.use_cases.add_dependency import AddDependencyUseCase

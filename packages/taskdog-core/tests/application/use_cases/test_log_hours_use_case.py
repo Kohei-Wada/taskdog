@@ -1,6 +1,6 @@
-import unittest
 """Tests for LogHoursUseCase."""
 
+import unittest
 from datetime import date
 
 from taskdog_core.application.dto.log_hours_input import LogHoursInput

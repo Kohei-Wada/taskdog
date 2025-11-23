@@ -1,3 +1,5 @@
+"""Tests for CompleteTaskUseCase."""
+
 import unittest
 from datetime import datetime
 

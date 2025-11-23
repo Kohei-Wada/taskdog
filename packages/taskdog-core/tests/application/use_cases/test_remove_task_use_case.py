@@ -1,6 +1,6 @@
-import unittest
 """Tests for RemoveTaskUseCase."""
 
+import unittest
 from unittest.mock import MagicMock
 
 from taskdog_core.application.dto.remove_task_input import RemoveTaskInput
