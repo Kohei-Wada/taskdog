@@ -13,11 +13,8 @@ class XDGDirectoriesTest(unittest.TestCase):
 
     def test_get_data_home_default(self):
         """Test get_data_home with default XDG_DATA_HOME."""
-        # Use patch.dict to ensure XDG_DATA_HOME is not set
-        with patch.dict(os.environ, {}, clear=False):
-            # Remove XDG_DATA_HOME if it exists
-            os.environ.pop("XDG_DATA_HOME", None)
-
+        # Use patch.dict with clear=True to ensure complete environment isolation
+        with patch.dict(os.environ, {}, clear=True):
             data_home = XDGDirectories.get_data_home(create=False)
             expected = Path.home() / ".local" / "share" / "taskdog"
             self.assertEqual(data_home, expected)
@@ -31,11 +28,8 @@ class XDGDirectoriesTest(unittest.TestCase):
 
     def test_get_config_home_default(self):
         """Test get_config_home with default XDG_CONFIG_HOME."""
-        # Use patch.dict to ensure XDG_CONFIG_HOME is not set
-        with patch.dict(os.environ, {}, clear=False):
-            # Remove XDG_CONFIG_HOME if it exists
-            os.environ.pop("XDG_CONFIG_HOME", None)
-
+        # Use patch.dict with clear=True to ensure complete environment isolation
+        with patch.dict(os.environ, {}, clear=True):
             config_home = XDGDirectories.get_config_home(create=False)
             expected = Path.home() / ".config" / "taskdog"
             self.assertEqual(config_home, expected)
@@ -49,11 +43,8 @@ class XDGDirectoriesTest(unittest.TestCase):
 
     def test_get_cache_home_default(self):
         """Test get_cache_home with default XDG_CACHE_HOME."""
-        # Use patch.dict to ensure XDG_CACHE_HOME is not set
-        with patch.dict(os.environ, {}, clear=False):
-            # Remove XDG_CACHE_HOME if it exists
-            os.environ.pop("XDG_CACHE_HOME", None)
-
+        # Use patch.dict with clear=True to ensure complete environment isolation
+        with patch.dict(os.environ, {}, clear=True):
             cache_home = XDGDirectories.get_cache_home(create=False)
             expected = Path.home() / ".cache" / "taskdog"
             self.assertEqual(cache_home, expected)
