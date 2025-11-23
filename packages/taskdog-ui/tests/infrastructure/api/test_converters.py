@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime
 
 from taskdog.infrastructure.api.converters import (
+    ConversionError,
     convert_to_gantt_output,
     convert_to_get_task_by_id_output,
     convert_to_get_task_detail_output,
@@ -399,6 +400,233 @@ class TestConverters(unittest.TestCase):
         self.assertEqual(len(result.failed_tasks), 2)
         self.assertEqual(result.failed_tasks[0].task.id, 11)
         self.assertEqual(result.failed_tasks[0].reason, "No available time")
+
+
+class TestConverterErrorHandling(unittest.TestCase):
+    """Test cases for error handling in converters (Phase 3 refactoring)."""
+
+    def test_invalid_datetime_format_raises_conversion_error(self):
+        """Test that invalid datetime format raises ConversionError."""
+        data = {
+            "id": 1,
+            "name": "Test Task",
+            "status": "PENDING",
+            "priority": 50,
+            "deadline": "invalid-datetime-format",  # Invalid format
+            "planned_start": None,
+            "planned_end": None,
+            "actual_start": None,
+            "actual_end": None,
+        }
+
+        with self.assertRaises(ConversionError) as context:
+            convert_to_task_operation_output(data)
+
+        # Verify error contains field name and value
+        self.assertIn("deadline", str(context.exception))
+        self.assertEqual(context.exception.field, "deadline")
+        self.assertEqual(context.exception.value, "invalid-datetime-format")
+
+    def test_invalid_date_type_raises_conversion_error(self):
+        """Test that invalid date type (int instead of string) raises ConversionError."""
+        data = {
+            "id": 1,
+            "name": "Test Task",
+            "status": "PENDING",
+            "priority": 50,
+            "deadline": 12345,  # Invalid type (should be string)
+            "planned_start": None,
+            "planned_end": None,
+            "actual_start": None,
+            "actual_end": None,
+        }
+
+        with self.assertRaises(ConversionError) as context:
+            convert_to_task_operation_output(data)
+
+        self.assertEqual(context.exception.field, "deadline")
+        self.assertEqual(context.exception.value, 12345)
+
+    def test_invalid_date_dict_raises_conversion_error(self):
+        """Test that invalid date dictionary keys raise ConversionError."""
+        data = {
+            "id": 1,
+            "name": "Test Task",
+            "status": "PENDING",
+            "priority": 50,
+            "created_at": "2025-01-01T00:00:00",
+            "updated_at": "2025-01-01T00:00:00",
+            "planned_start": None,
+            "planned_end": None,
+            "deadline": None,
+            "actual_start": None,
+            "actual_end": None,
+            "estimated_duration": 5.0,
+            "is_fixed": False,
+            "depends_on": [],
+            "tags": [],
+            "is_archived": False,
+            "is_active": False,
+            "is_finished": False,
+            "can_be_modified": True,
+            "is_schedulable": True,
+            "actual_duration_hours": None,
+            "daily_allocations": {
+                "invalid-date": 2.5,  # Invalid date format
+            },
+            "actual_daily_hours": {},
+        }
+
+        with self.assertRaises(ConversionError) as context:
+            convert_to_get_task_by_id_output(data)
+
+        self.assertIn("daily_allocations", str(context.exception))
+        self.assertEqual(context.exception.field, "daily_allocations")
+
+    def test_missing_required_datetime_raises_conversion_error(self):
+        """Test that missing required datetime field raises ConversionError."""
+        data = {
+            "id": 1,
+            "name": "Test Task",
+            "status": "PENDING",
+            "priority": 50,
+            "planned_start": None,
+            "planned_end": None,
+            "deadline": None,
+            "actual_start": None,
+            "actual_end": None,
+            "estimated_duration": 5.0,
+            "is_fixed": False,
+            "depends_on": [],
+            "tags": [],
+            "is_archived": False,
+            "is_active": False,
+            "is_finished": False,
+            "can_be_modified": True,
+            "is_schedulable": True,
+            "actual_duration_hours": None,
+            "daily_allocations": {},
+            "actual_daily_hours": {},
+            # Missing "created_at" (required field)
+            "updated_at": "2025-01-01T00:00:00",
+        }
+
+        with self.assertRaises(ConversionError) as context:
+            convert_to_get_task_by_id_output(data)
+
+        self.assertIn("created_at", str(context.exception))
+        self.assertEqual(context.exception.field, "created_at")
+
+    def test_none_required_datetime_raises_conversion_error(self):
+        """Test that None value for required datetime field raises ConversionError."""
+        data = {
+            "id": 1,
+            "name": "Test Task",
+            "status": "PENDING",
+            "priority": 50,
+            "planned_start": None,
+            "planned_end": None,
+            "deadline": None,
+            "actual_start": None,
+            "actual_end": None,
+            "estimated_duration": 5.0,
+            "is_fixed": False,
+            "depends_on": [],
+            "tags": [],
+            "is_archived": False,
+            "is_active": False,
+            "is_finished": False,
+            "can_be_modified": True,
+            "is_schedulable": True,
+            "actual_duration_hours": None,
+            "daily_allocations": {},
+            "actual_daily_hours": {},
+            "created_at": None,  # Required but None
+            "updated_at": "2025-01-01T00:00:00",
+        }
+
+        with self.assertRaises(ConversionError) as context:
+            convert_to_get_task_by_id_output(data)
+
+        self.assertIn("created_at", str(context.exception))
+        self.assertEqual(context.exception.field, "created_at")
+        self.assertIsNone(context.exception.value)
+
+    def test_empty_date_dict_returns_empty_dict(self):
+        """Test that empty date dictionary is handled correctly."""
+        data = {
+            "id": 1,
+            "name": "Test Task",
+            "status": "PENDING",
+            "priority": 50,
+            "created_at": "2025-01-01T00:00:00",
+            "updated_at": "2025-01-01T00:00:00",
+            "planned_start": None,
+            "planned_end": None,
+            "deadline": None,
+            "actual_start": None,
+            "actual_end": None,
+            "estimated_duration": 5.0,
+            "is_fixed": False,
+            "depends_on": [],
+            "tags": [],
+            "is_archived": False,
+            "is_active": False,
+            "is_finished": False,
+            "can_be_modified": True,
+            "is_schedulable": True,
+            "actual_duration_hours": None,
+            "daily_allocations": {},  # Empty dict
+            "actual_daily_hours": {},  # Empty dict
+        }
+
+        result = convert_to_get_task_by_id_output(data)
+
+        self.assertEqual(result.task.daily_allocations, {})
+        self.assertEqual(result.task.actual_daily_hours, {})
+
+    def test_valid_date_dict_conversion(self):
+        """Test that valid date dictionary is converted correctly."""
+        data = {
+            "id": 1,
+            "name": "Test Task",
+            "status": "PENDING",
+            "priority": 50,
+            "created_at": "2025-01-01T00:00:00",
+            "updated_at": "2025-01-01T00:00:00",
+            "planned_start": None,
+            "planned_end": None,
+            "deadline": None,
+            "actual_start": None,
+            "actual_end": None,
+            "estimated_duration": 5.0,
+            "is_fixed": False,
+            "depends_on": [],
+            "tags": [],
+            "is_archived": False,
+            "is_active": False,
+            "is_finished": False,
+            "can_be_modified": True,
+            "is_schedulable": True,
+            "actual_duration_hours": None,
+            "daily_allocations": {
+                "2025-01-15": 2.5,
+                "2025-01-16": 3.0,
+            },
+            "actual_daily_hours": {
+                "2025-01-15": 2.0,
+            },
+        }
+
+        result = convert_to_get_task_by_id_output(data)
+
+        # Verify date keys are converted to date objects
+        from datetime import date
+
+        self.assertEqual(len(result.task.daily_allocations), 2)
+        self.assertEqual(result.task.daily_allocations[date(2025, 1, 15)], 2.5)
+        self.assertEqual(result.task.daily_allocations[date(2025, 1, 16)], 3.0)
+        self.assertEqual(result.task.actual_daily_hours[date(2025, 1, 15)], 2.0)
 
 
 if __name__ == "__main__":
