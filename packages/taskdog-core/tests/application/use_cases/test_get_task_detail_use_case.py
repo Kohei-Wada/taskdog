@@ -10,25 +10,18 @@ from taskdog_core.application.use_cases.get_task_detail import (
 )
 from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
 from taskdog_core.infrastructure.persistence.file_notes_repository import (
     FileNotesRepository,
 )
+from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestGetTaskDetailUseCase(unittest.TestCase):
+class TestGetTaskDetailUseCase(InMemoryDatabaseTestCase):
     """Test cases for GetTaskDetailUseCase"""
 
     def setUp(self):
-        """Create temporary file and initialize use case for each test"""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+        """Initialize use case for each test"""
+        super().setUp()
         self.notes_repository = FileNotesRepository()
         self.use_case = GetTaskDetailUseCase(self.repository, self.notes_repository)
 
@@ -37,11 +30,6 @@ class TestGetTaskDetailUseCase(unittest.TestCase):
 
     def tearDown(self):
         """Clean up temporary files after each test"""
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
-
         # Clean up notes directory
         if os.path.exists(self.notes_dir):
             for file in Path(self.notes_dir).glob("*.md"):

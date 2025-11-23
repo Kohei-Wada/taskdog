@@ -1,5 +1,5 @@
-import os
-import tempfile
+"""Tests for UpdateTaskUseCase."""
+
 import unittest
 from datetime import datetime, timedelta
 
@@ -7,30 +7,16 @@ from taskdog_core.application.dto.update_task_input import UpdateTaskInput
 from taskdog_core.application.use_cases.update_task import UpdateTaskUseCase
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
+from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestUpdateTaskUseCase(unittest.TestCase):
+class TestUpdateTaskUseCase(InMemoryDatabaseTestCase):
     """Test cases for UpdateTaskUseCase"""
 
     def setUp(self):
-        """Create temporary file and initialize use case for each test"""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+        """Initialize use case for each test"""
+        super().setUp()
         self.use_case = UpdateTaskUseCase(self.repository)
-
-    def tearDown(self):
-        """Clean up temporary file after each test"""
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
 
     def test_execute_update_single_field(self):
         """Test updating a single field - parameterized test"""

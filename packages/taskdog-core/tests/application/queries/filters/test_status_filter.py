@@ -41,7 +41,7 @@ class TestStatusFilter(unittest.TestCase):
         ]
 
         for status, expected_id, expected_status in test_cases:
-            with self.subTest(status=status):
+            with self.subTest(status=status.name):
                 status_filter = StatusFilter(status)
                 result = status_filter.filter(self.tasks)
 

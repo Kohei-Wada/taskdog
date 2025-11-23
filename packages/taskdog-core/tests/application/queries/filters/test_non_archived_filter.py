@@ -46,7 +46,7 @@ class TestNonArchivedFilter(unittest.TestCase):
         }
 
         for status in non_archived_statuses:
-            with self.subTest(status=status):
+            with self.subTest(status=status.name):
                 tasks = [task_map[status]]
                 result = non_archived_filter.filter(tasks)
 
