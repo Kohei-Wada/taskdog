@@ -29,7 +29,7 @@ from taskdog.cli.commands.stats import stats_command
 from taskdog.cli.commands.table import table_command
 from taskdog.cli.commands.tags import tags_command
 from taskdog.cli.commands.today import today_command
-from taskdog.cli.commands.tui_command import tui_command
+from taskdog.cli.commands.tui import tui_command
 from taskdog.cli.commands.update import update_command
 from taskdog.cli.commands.week import week_command
 from taskdog.cli.context import CliContext
