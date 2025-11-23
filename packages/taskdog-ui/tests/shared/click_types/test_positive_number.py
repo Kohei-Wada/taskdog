@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import click
 from parameterized import parameterized
 
-from taskdog_core.shared.click_types.positive_number import PositiveFloat, PositiveInt
+from taskdog.shared.click_types.positive_number import PositiveFloat, PositiveInt
 
 
 class TestPositiveFloat(unittest.TestCase):

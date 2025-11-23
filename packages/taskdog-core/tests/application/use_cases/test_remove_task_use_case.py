@@ -1,39 +1,22 @@
+import unittest
 """Tests for RemoveTaskUseCase."""
 
-import tempfile
-import unittest
 from unittest.mock import MagicMock
 
 from taskdog_core.application.dto.remove_task_input import RemoveTaskInput
 from taskdog_core.application.use_cases.remove_task import RemoveTaskUseCase
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
+from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class RemoveTaskUseCaseTest(unittest.TestCase):
+class RemoveTaskUseCaseTest(InMemoryDatabaseTestCase):
     """Test cases for RemoveTaskUseCase."""
 
     def setUp(self):
         """Set up test fixtures."""
-        self.temp_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.temp_file.close()
-
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.temp_file.name}")
+        super().setUp()
         self.notes_repository = MagicMock()
         self.use_case = RemoveTaskUseCase(self.repository, self.notes_repository)
-
-    def tearDown(self):
-        """Clean up test fixtures."""
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        import os
-
-        if os.path.exists(self.temp_file.name):
-            os.unlink(self.temp_file.name)
 
     def test_remove_task(self):
         """Test removing a task."""

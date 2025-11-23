@@ -6,7 +6,7 @@ from unittest.mock import Mock
 import click
 from parameterized import parameterized
 
-from taskdog_core.shared.click_types.field_list import FieldList
+from taskdog.shared.click_types.field_list import FieldList
 
 
 class TestFieldList(unittest.TestCase):

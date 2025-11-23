@@ -1,28 +1,19 @@
+import unittest
 """Tests for TaskCrudController."""
 
-import os
-import tempfile
-import unittest
 from unittest.mock import MagicMock
 
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
 from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
+from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestTaskCrudController(unittest.TestCase):
+class TestTaskCrudController(InMemoryDatabaseTestCase):
     """Test cases for TaskCrudController."""
 
     def setUp(self):
         """Set up test fixtures."""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+        super().setUp()
         self.notes_repository = MagicMock()
         self.config = MagicMock()
         self.config.task.default_priority = 3
@@ -31,13 +22,6 @@ class TestTaskCrudController(unittest.TestCase):
             notes_repository=self.notes_repository,
             config=self.config,
         )
-
-    def tearDown(self):
-        """Clean up temporary file after each test."""
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
 
     def test_create_task_returns_task_operation_output(self):
         """Test that create_task returns TaskOperationOutput."""

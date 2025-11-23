@@ -1,8 +1,6 @@
+import unittest
 """Tests for QueryController."""
 
-import os
-import tempfile
-import unittest
 from datetime import date, datetime, timedelta
 
 from taskdog_core.application.queries.filters.composite_filter import CompositeFilter
@@ -12,30 +10,16 @@ from taskdog_core.application.queries.filters.non_archived_filter import (
 from taskdog_core.application.queries.filters.status_filter import StatusFilter
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
+from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestQueryController(unittest.TestCase):
+class TestQueryController(InMemoryDatabaseTestCase):
     """Test cases for QueryController."""
 
     def setUp(self):
-        """Create temporary file and initialize controller for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+        """Initialize controller for each test."""
+        super().setUp()
         self.controller = QueryController(self.repository)
-
-    def tearDown(self):
-        """Clean up temporary file after each test."""
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
 
     def test_list_tasks_returns_output_dto(self):
         """Test list_tasks returns TaskListOutput with correct structure."""

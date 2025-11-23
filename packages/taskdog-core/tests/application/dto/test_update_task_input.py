@@ -157,7 +157,7 @@ class TestUpdateTaskInput(unittest.TestCase):
     def test_all_status_values_supported(self) -> None:
         """Test that all TaskStatus values can be used."""
         for status in TaskStatus:
-            with self.subTest(status=status):
+            with self.subTest(status=status.name):
                 dto = UpdateTaskInput(task_id=1, status=status)
                 self.assertEqual(dto.status, status)
 

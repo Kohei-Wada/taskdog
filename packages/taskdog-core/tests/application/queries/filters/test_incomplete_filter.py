@@ -44,7 +44,7 @@ class TestIncompleteFilter(unittest.TestCase):
         }
 
         for status, should_include in test_cases:
-            with self.subTest(status=status, should_include=should_include):
+            with self.subTest(status=status.name, should_include=should_include):
                 tasks = [task_map[status]]
                 result = incomplete_filter.filter(tasks)
 
