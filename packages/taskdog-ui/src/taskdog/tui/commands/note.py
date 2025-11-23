@@ -6,8 +6,8 @@ from taskdog.tui.messages import TUIMessageBuilder
 from taskdog.utils.note_editor import edit_task_note
 
 
-@command_registry.register("edit_note")
-class EditNoteCommand(TUICommandBase):
+@command_registry.register("note")
+class NoteCommand(TUICommandBase):
     """Command to edit the selected task's note in external editor."""
 
     def _on_note_saved(self, name: str, task_id: int) -> None:

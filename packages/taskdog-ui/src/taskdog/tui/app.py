@@ -50,44 +50,42 @@ class TaskdogTUI(App):
             show=True,
             tooltip="Quit the app and return to the command prompt",
         ),
-        Binding("a", "add_task", "Add", show=True, tooltip="Create a new task"),
-        Binding(
-            "s", "start_task", "Start", show=False, tooltip="Start the selected task"
-        ),
+        Binding("a", "add", "Add", show=True, tooltip="Create a new task"),
+        Binding("s", "start", "Start", show=False, tooltip="Start the selected task"),
         Binding(
             "P",
-            "pause_task",
+            "pause",
             "Pause",
             show=False,
             tooltip="Pause the selected task and reset to PENDING status",
         ),
         Binding(
             "d",
-            "complete_task",
+            "done",
             "Done",
             show=False,
             tooltip="Mark the selected task as completed",
         ),
         Binding(
-            "c", "cancel_task", "Cancel", show=False, tooltip="Cancel the selected task"
+            "c", "cancel", "Cancel", show=False, tooltip="Cancel the selected task"
         ),
         Binding(
             "R",
-            "reopen_task",
+            "reopen",
             "Reopen",
             show=False,
             tooltip="Reopen a completed or canceled task",
         ),
         Binding(
             "x",
-            "delete_task",
+            "rm",
             "Archive",
             show=False,
             tooltip="Archive the selected task (soft delete)",
         ),
         Binding(
             "X",
-            "hard_delete_task",
+            "hard_delete",
             "Delete",
             show=False,
             tooltip="Permanently delete the selected task",
@@ -101,21 +99,21 @@ class TaskdogTUI(App):
         ),
         Binding(
             "i",
-            "show_details",
+            "show",
             "Info",
             show=False,
             tooltip="Show detailed information about the selected task",
         ),
         Binding(
             "e",
-            "edit_task",
+            "edit",
             "Edit",
             show=False,
             tooltip="Edit the selected task's properties",
         ),
         Binding(
             "v",
-            "edit_note",
+            "note",
             "Edit Note",
             show=False,
             tooltip="Edit markdown notes for the selected task",

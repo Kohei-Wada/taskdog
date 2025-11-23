@@ -8,8 +8,8 @@ from taskdog.tui.messages import TUIMessageBuilder
 from taskdog.tui.screens.task_form_dialog import TaskFormDialog
 
 
-@command_registry.register("add_task")
-class AddTaskCommand(TUICommandBase):
+@command_registry.register("add")
+class AddCommand(TUICommandBase):
     """Command to add a new task with input dialog."""
 
     def execute(self) -> None:

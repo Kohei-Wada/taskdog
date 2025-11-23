@@ -43,17 +43,17 @@ EXPORT_FORMAT_CONFIG: dict[str, dict[str, str]] = {
 # Action to command mapping for dynamic action handling
 ACTION_TO_COMMAND_MAP: dict[str, str] = {
     "action_refresh": "refresh",
-    "action_add_task": "add_task",
-    "action_start_task": "start_task",
-    "action_pause_task": "pause_task",
-    "action_complete_task": "complete_task",
-    "action_cancel_task": "cancel_task",
-    "action_reopen_task": "reopen_task",
-    "action_delete_task": "delete_task",
-    "action_hard_delete_task": "hard_delete_task",
-    "action_show_details": "show_details",
-    "action_edit_task": "edit_task",
-    "action_edit_note": "edit_note",
+    "action_add": "add",
+    "action_start": "start",
+    "action_pause": "pause",
+    "action_done": "done",
+    "action_cancel": "cancel",
+    "action_reopen": "reopen",
+    "action_rm": "rm",
+    "action_hard_delete": "hard_delete",
+    "action_show": "show",
+    "action_edit": "edit",
+    "action_note": "note",
     "action_show_help": "show_help",
 }
 """Mapping of Textual action names to command names for __getattr__ delegation."""

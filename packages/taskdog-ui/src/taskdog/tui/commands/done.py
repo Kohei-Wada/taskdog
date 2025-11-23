@@ -1,4 +1,4 @@
-"""Start task command for TUI."""
+"""Complete task command for TUI."""
 
 from taskdog.tui.commands.batch_status_change_base import BatchStatusChangeCommandBase
 from taskdog.tui.commands.registry import command_registry
@@ -6,14 +6,14 @@ from taskdog.tui.messages import TUIMessageBuilder
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
 
-@command_registry.register("start_task")
-class StartTaskCommand(BatchStatusChangeCommandBase):
-    """Command to start the selected task(s)."""
+@command_registry.register("done")
+class DoneCommand(BatchStatusChangeCommandBase):
+    """Command to complete the selected task(s)."""
 
     def execute_single_task(self, task_id: int) -> TaskOperationOutput:
-        """Start the task via API client."""
-        return self.context.api_client.start_task(task_id)
+        """Complete the task via API client."""
+        return self.context.api_client.complete_task(task_id)
 
     def get_success_message(self, task_name: str, task_id: int) -> str:
         """Return success message."""
-        return TUIMessageBuilder.task_action("Started", task_name, task_id)
+        return TUIMessageBuilder.task_action("Completed", task_name, task_id)

@@ -5,8 +5,8 @@ from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.messages import TUIMessageBuilder
 
 
-@command_registry.register("cancel_task")
-class CancelTaskCommand(BatchConfirmationCommandBase):
+@command_registry.register("cancel")
+class CancelCommand(BatchConfirmationCommandBase):
     """Command to cancel the selected task(s)."""
 
     def get_confirmation_title(self) -> str:

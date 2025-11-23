@@ -11,8 +11,8 @@ from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
 
-@command_registry.register("edit_task")
-class EditTaskCommand(TUICommandBase):
+@command_registry.register("edit")
+class EditCommand(TUICommandBase):
     """Command to edit a task with input dialog."""
 
     @require_selected_task

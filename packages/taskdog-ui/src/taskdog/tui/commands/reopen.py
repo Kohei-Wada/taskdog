@@ -5,8 +5,8 @@ from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.messages import TUIMessageBuilder
 
 
-@command_registry.register("reopen_task")
-class ReopenTaskCommand(BatchConfirmationCommandBase):
+@command_registry.register("reopen")
+class ReopenCommand(BatchConfirmationCommandBase):
     """Command to reopen completed or canceled task(s) with confirmation."""
 
     def get_confirmation_title(self) -> str:

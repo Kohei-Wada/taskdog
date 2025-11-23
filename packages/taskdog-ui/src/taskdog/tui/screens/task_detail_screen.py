@@ -29,9 +29,7 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
     BINDINGS: ClassVar = [
         *ViNavigationMixin.VI_VERTICAL_BINDINGS,
         *ViNavigationMixin.VI_PAGE_BINDINGS,
-        Binding(
-            "v", "edit_note", "Edit Note", tooltip="Edit markdown notes for this task"
-        ),
+        Binding("v", "note", "Edit Note", tooltip="Edit markdown notes for this task"),
         Binding("q", "cancel", "Close", tooltip="Close the task detail screen"),
     ]
 
@@ -228,8 +226,8 @@ class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
         scroll_widget = self.query_one("#detail-content", VerticalScroll)
         scroll_widget.scroll_end(animate=False)
 
-    def action_edit_note(self) -> None:
+    def action_note(self) -> None:
         """Edit note (v key) - dismiss and return task ID to trigger note editing."""
         if self.task_data.id is None:
             return
-        self.dismiss(("edit_note", self.task_data.id))
+        self.dismiss(("note", self.task_data.id))

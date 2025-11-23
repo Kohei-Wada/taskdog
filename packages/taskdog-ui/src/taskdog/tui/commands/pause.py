@@ -6,8 +6,8 @@ from taskdog.tui.messages import TUIMessageBuilder
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
 
-@command_registry.register("pause_task")
-class PauseTaskCommand(BatchStatusChangeCommandBase):
+@command_registry.register("pause")
+class PauseCommand(BatchStatusChangeCommandBase):
     """Command to pause the selected task(s)."""
 
     def execute_single_task(self, task_id: int) -> TaskOperationOutput:

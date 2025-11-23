@@ -8,8 +8,8 @@ from taskdog.tui.screens.task_detail_screen import TaskDetailScreen
 from taskdog.utils.note_editor import edit_task_note
 
 
-@command_registry.register("show_details")
-class ShowDetailsCommand(TUICommandBase):
+@command_registry.register("show")
+class ShowCommand(TUICommandBase):
     """Command to show details of the selected task in a modal screen."""
 
     def execute_impl(self) -> None:
@@ -30,15 +30,15 @@ class ShowDetailsCommand(TUICommandBase):
         """Handle the result from the detail screen.
 
         Args:
-            result: Tuple of (action, task_id) if edit_note action was triggered, None otherwise
+            result: Tuple of (action, task_id) if note action was triggered, None otherwise
         """
         if result is None:
             return
 
-        # Check if edit_note action was triggered
+        # Check if note action was triggered
         if isinstance(result, tuple) and len(result) == 2:
             action, task_id = result
-            if action == "edit_note":
+            if action == "note":
                 self._edit_note(task_id)
 
     def _edit_note(self, task_id: int) -> None:

@@ -41,8 +41,8 @@ class CommandRegistry:
             Decorator function that registers the command class
 
         Example:
-            @command_registry.register("add_task")
-            class AddTaskCommand(TUICommandBase):
+            @command_registry.register("add")
+            class AddCommand(TUICommandBase):
                 ...
         """
 
@@ -69,7 +69,7 @@ class CommandRegistry:
         Args:
             name: The command name (used as action identifier)
             module_path: Module path in format "module.path:ClassName"
-                        e.g., "taskdog.tui.commands.start_task_command:StartTaskCommand"
+                        e.g., "taskdog.tui.commands.start:StartCommand"
         """
         self._lazy_commands[name] = module_path
 
