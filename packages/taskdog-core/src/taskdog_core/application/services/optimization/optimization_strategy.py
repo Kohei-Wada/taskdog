@@ -15,7 +15,6 @@ from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-    from taskdog_core.domain.repositories.task_repository import TaskRepository
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
@@ -39,8 +38,8 @@ class OptimizationStrategy(ABC):
 
     def optimize_tasks(
         self,
-        tasks: list[Task],
-        repository: "TaskRepository",
+        schedulable_tasks: list[Task],
+        all_tasks_for_context: list[Task],
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
@@ -54,8 +53,8 @@ class OptimizationStrategy(ABC):
         Subclasses customize behavior by implementing abstract methods.
 
         Args:
-            tasks: List of all tasks to consider for optimization
-            repository: Task repository for hierarchy queries
+            schedulable_tasks: List of tasks to schedule (already filtered by is_schedulable())
+            all_tasks_for_context: All tasks in the system (for calculating existing allocations)
             start_date: Starting date for schedule optimization
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
@@ -71,9 +70,9 @@ class OptimizationStrategy(ABC):
         """
         # 1. Create allocation context with initialized state
         # Pass workload_calculator from UseCase for proper strategy selection
+        # Use all_tasks_for_context to calculate existing daily allocations
         context = AllocationContext.create(
-            tasks=tasks,
-            repository=repository,
+            tasks=all_tasks_for_context,
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
             force_override=force_override,
@@ -82,15 +81,11 @@ class OptimizationStrategy(ABC):
             workload_calculator=workload_calculator,
         )
 
-        # 2. Filter tasks that need scheduling
-        schedulable_tasks = [
-            task for task in tasks if task.is_schedulable(force_override)
-        ]
-
-        # 3. Sort tasks by strategy-specific priority
+        # 2. Sort tasks by strategy-specific priority
+        # No filtering needed - schedulable_tasks is already filtered by UseCase
         sorted_tasks = self._sort_schedulable_tasks(schedulable_tasks, start_date)
 
-        # 4. Allocate time blocks for each task (strategy-specific)
+        # 3. Allocate time blocks for each task (strategy-specific)
         updated_tasks = []
         for task in sorted_tasks:
             updated_task = self._allocate_task(task, context)
@@ -100,7 +95,7 @@ class OptimizationStrategy(ABC):
                 # Record allocation failure with default reason
                 context.record_allocation_failure(task)
 
-        # 5. Return modified tasks, daily allocations, and failed tasks
+        # 4. Return modified tasks, daily allocations, and failed tasks
         return updated_tasks, context.daily_allocations, context.failed_tasks
 
     def _sort_schedulable_tasks(
@@ -132,7 +127,6 @@ class OptimizationStrategy(ABC):
         Subclasses must implement this to define their allocation logic.
         The context provides access to:
         - context.daily_allocations: Current daily allocation state
-        - context.repository: Task repository for hierarchy queries
         - context.start_date: Starting date for allocation
         - context.max_hours_per_day: Maximum hours per day constraint
         - context.holiday_checker: Holiday checker (optional)

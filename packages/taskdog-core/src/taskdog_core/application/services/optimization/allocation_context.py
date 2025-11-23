@@ -13,7 +13,6 @@ from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-    from taskdog_core.domain.repositories.task_repository import TaskRepository
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
@@ -29,11 +28,10 @@ class AllocationContext:
     Benefits:
     - Explicit dependencies (easier to understand and test)
     - Immutable context (can be frozen after initialization)
-    - Cleaner strategy classes (pass one object instead of 7 parameters)
-    - Better testability (mock one object instead of 7)
+    - Cleaner strategy classes (pass one object instead of multiple parameters)
+    - Better testability (mock one object instead of multiple)
     """
 
-    repository: "TaskRepository"
     start_date: datetime
     max_hours_per_day: float
     holiday_checker: "IHolidayChecker | None"
@@ -45,7 +43,6 @@ class AllocationContext:
     def create(
         cls,
         tasks: list[Task],
-        repository: "TaskRepository",
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
@@ -59,8 +56,7 @@ class AllocationContext:
         automatically initializes daily_allocations from existing task schedules.
 
         Args:
-            tasks: All tasks in the system
-            repository: Task repository
+            tasks: All tasks in the system (for calculating existing allocations)
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
@@ -77,7 +73,6 @@ class AllocationContext:
         daily_allocations = initializer.initialize_allocations(tasks, force_override)
 
         return cls(
-            repository=repository,
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
             holiday_checker=holiday_checker,

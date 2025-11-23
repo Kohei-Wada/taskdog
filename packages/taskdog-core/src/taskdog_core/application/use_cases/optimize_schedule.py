@@ -70,6 +70,11 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             t.id: t.planned_start for t in all_tasks if t.id is not None
         }
 
+        # Filter schedulable tasks (UseCase responsibility: what to optimize)
+        schedulable_tasks = [
+            task for task in all_tasks if task.is_schedulable(input_dto.force_override)
+        ]
+
         # Create WorkloadCalculator for optimization context
         # Factory selects appropriate strategy (WeekdayOnlyStrategy for optimization)
         # UseCase constructs the calculator with the strategy
@@ -85,9 +90,10 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         )
 
         # Run optimization with injected workload calculator
+        # Strategy responsibility: how to optimize
         modified_tasks, daily_allocations, failed_tasks = strategy.optimize_tasks(
-            tasks=all_tasks,
-            repository=self.repository,
+            schedulable_tasks=schedulable_tasks,
+            all_tasks_for_context=all_tasks,
             start_date=input_dto.start_date,
             max_hours_per_day=input_dto.max_hours_per_day,
             force_override=input_dto.force_override,
@@ -103,14 +109,10 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         # (when force_override is True, schedulable tasks that failed to schedule
         # should have their old schedules cleared to avoid phantom allocations)
         if input_dto.force_override:
-            schedulable_tasks = [
-                task
-                for task in all_tasks
-                if task.is_schedulable(input_dto.force_override)
-            ]
             scheduled_task_ids = {t.id for t in modified_tasks}
 
             # Find tasks that were schedulable but failed to schedule
+            # Use already-filtered schedulable_tasks instead of re-filtering
             tasks_to_clear = [
                 task
                 for task in schedulable_tasks
