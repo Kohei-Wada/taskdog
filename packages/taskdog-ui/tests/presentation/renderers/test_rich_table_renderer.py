@@ -4,6 +4,8 @@ import unittest
 from datetime import datetime
 from unittest.mock import MagicMock
 
+from parameterized import parameterized
+
 from taskdog.renderers.rich_table_renderer import RichTableRenderer
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.domain.entities.task import TaskStatus
@@ -74,20 +76,25 @@ class TestRichTableRenderer(unittest.TestCase):
         # Should print a table (we can't easily verify exact content, but ensure print was called)
         self.console_writer.print.assert_called_once()
 
-    def test_render_raises_value_error_for_invalid_field_name(self) -> None:
-        """Test render raises ValueError when invalid field name is provided."""
+    @parameterized.expand(
+        [
+            ("single_invalid", ["id", "invalid_field", "name"], "invalid_field"),
+            (
+                "multiple_invalid",
+                ["bad1", "bad2"],
+                "bad1, bad2",
+            ),
+        ]
+    )
+    def test_render_raises_value_error_for_invalid_field_name(
+        self, scenario, fields, expected_in_error
+    ):
+        """Test render raises ValueError when invalid field names are provided."""
         with self.assertRaises(ValueError) as cm:
-            self.renderer.render([self.task1], fields=["id", "invalid_field", "name"])
+            self.renderer.render([self.task1], fields=fields)
 
-        self.assertIn("Invalid field(s): invalid_field", str(cm.exception))
+        self.assertIn(f"Invalid field(s): {expected_in_error}", str(cm.exception))
         self.assertIn("Valid fields are:", str(cm.exception))
-
-    def test_render_raises_value_error_for_multiple_invalid_fields(self) -> None:
-        """Test render raises ValueError for multiple invalid field names."""
-        with self.assertRaises(ValueError) as cm:
-            self.renderer.render([self.task1], fields=["bad1", "bad2"])
-
-        self.assertIn("Invalid field(s): bad1, bad2", str(cm.exception))
 
     def test_render_creates_table_with_specified_fields(self) -> None:
         """Test render creates table with only specified fields."""
@@ -105,42 +112,47 @@ class TestRichTableRenderer(unittest.TestCase):
 
         self.console_writer.print.assert_called_once()
 
-    def test_get_field_value_returns_task_id_as_string(self) -> None:
-        """Test _get_field_value returns task ID as string."""
-        result = self.renderer._get_field_value(self.task1, "id")
+    @parameterized.expand(
+        [
+            ("id", "2"),
+            ("priority", "2"),
+        ]
+    )
+    def test_get_field_value_simple_fields(self, field_name, expected):
+        """Test _get_field_value returns correct string for simple fields."""
+        result = self.renderer._get_field_value(self.task2, field_name)
+        self.assertEqual(result, expected)
 
-        self.assertEqual(result, "1")
+    @parameterized.expand(
+        [
+            ("unfinished_task", "name", False, "Test Task 1", False),
+            ("finished_task", "name", True, "Completed Task", True),
+        ]
+    )
+    def test_get_field_value_name_field(
+        self, scenario, field_name, is_finished, expected_text, has_strikethrough
+    ):
+        """Test _get_field_value returns name with optional strikethrough for finished tasks."""
+        task = self.task2 if is_finished else self.task1
+        result = self.renderer._get_field_value(task, field_name)
 
-    def test_get_field_value_returns_plain_name_for_unfinished_task(self) -> None:
-        """Test _get_field_value returns plain name for unfinished task."""
-        result = self.renderer._get_field_value(self.task1, "name")
+        if has_strikethrough:
+            self.assertEqual(result, f"[strike]{expected_text}[/strike]")
+        else:
+            self.assertEqual(result, expected_text)
+            self.assertNotIn("[strike]", result)
 
-        self.assertEqual(result, "Test Task 1")
-        self.assertNotIn("[strike]", result)
-
-    def test_get_field_value_returns_strikethrough_name_for_finished_task(self) -> None:
-        """Test _get_field_value returns strikethrough name for finished task."""
-        result = self.renderer._get_field_value(self.task2, "name")
-
-        self.assertEqual(result, "[strike]Completed Task[/strike]")
-
-    def test_get_field_value_returns_note_emoji_when_has_notes(self) -> None:
-        """Test _get_field_value returns note emoji when task has notes."""
-        result = self.renderer._get_field_value(self.task2, "note")
-
-        self.assertEqual(result, "📝")
-
-    def test_get_field_value_returns_empty_string_when_no_notes(self) -> None:
-        """Test _get_field_value returns empty string when task has no notes."""
-        result = self.renderer._get_field_value(self.task1, "note")
-
-        self.assertEqual(result, "")
-
-    def test_get_field_value_returns_priority_as_string(self) -> None:
-        """Test _get_field_value returns priority as string."""
-        result = self.renderer._get_field_value(self.task2, "priority")
-
-        self.assertEqual(result, "2")
+    @parameterized.expand(
+        [
+            ("has_notes", True, "📝"),
+            ("no_notes", False, ""),
+        ]
+    )
+    def test_get_field_value_note_field(self, scenario, has_notes, expected):
+        """Test _get_field_value returns note emoji or empty string."""
+        task = self.task2 if has_notes else self.task1
+        result = self.renderer._get_field_value(task, "note")
+        self.assertEqual(result, expected)
 
     def test_get_field_value_formats_status_with_style(self) -> None:
         """Test _get_field_value formats status with Rich markup."""
@@ -150,99 +162,163 @@ class TestRichTableRenderer(unittest.TestCase):
         self.assertIn("COMPLETED", result)
         self.assertIn("[", result)  # Rich markup brackets
 
-    def test_get_field_value_returns_pin_emoji_for_fixed_task(self) -> None:
-        """Test _get_field_value returns pin emoji for fixed task."""
-        result = self.renderer._get_field_value(self.task2, "is_fixed")
+    @parameterized.expand(
+        [
+            ("fixed", True, "📌"),
+            ("not_fixed", False, ""),
+        ]
+    )
+    def test_get_field_value_is_fixed_field(self, scenario, is_fixed, expected):
+        """Test _get_field_value returns pin emoji for fixed task or empty string."""
+        task = self.task2 if is_fixed else self.task1
+        result = self.renderer._get_field_value(task, "is_fixed")
+        self.assertEqual(result, expected)
 
-        self.assertEqual(result, "📌")
+    @parameterized.expand(
+        [
+            ("empty_dependencies", [], "-"),
+            ("single_dependency", [10], "10"),
+            ("multiple_dependencies", [1, 3], "1,3"),
+        ]
+    )
+    def test_get_field_value_depends_on_field(self, scenario, depends_on, expected):
+        """Test _get_field_value formats dependencies correctly."""
+        task = TaskRowViewModel(
+            id=99,
+            name="Test",
+            priority=1,
+            status=TaskStatus.PENDING,
+            is_fixed=False,
+            depends_on=depends_on,
+            tags=[],
+            has_notes=False,
+            estimated_duration=None,
+            actual_duration_hours=None,
+            planned_start=None,
+            planned_end=None,
+            actual_start=None,
+            actual_end=None,
+            deadline=None,
+            created_at=None,
+            updated_at=None,
+            is_finished=False,
+        )
+        result = self.renderer._get_field_value(task, "depends_on")
+        self.assertEqual(result, expected)
 
-    def test_get_field_value_returns_empty_string_for_non_fixed_task(self) -> None:
-        """Test _get_field_value returns empty string for non-fixed task."""
-        result = self.renderer._get_field_value(self.task1, "is_fixed")
+    @parameterized.expand(
+        [
+            ("empty_tags", [], "-"),
+            ("single_tag", ["solo"], "solo"),
+            ("multiple_tags", ["urgent", "backend"], "urgent, backend"),
+        ]
+    )
+    def test_get_field_value_tags_field(self, scenario, tags, expected):
+        """Test _get_field_value formats tags correctly."""
+        task = TaskRowViewModel(
+            id=99,
+            name="Test",
+            priority=1,
+            status=TaskStatus.PENDING,
+            is_fixed=False,
+            depends_on=[],
+            tags=tags,
+            has_notes=False,
+            estimated_duration=None,
+            actual_duration_hours=None,
+            planned_start=None,
+            planned_end=None,
+            actual_start=None,
+            actual_end=None,
+            deadline=None,
+            created_at=None,
+            updated_at=None,
+            is_finished=False,
+        )
+        result = self.renderer._get_field_value(task, "tags")
+        self.assertEqual(result, expected)
 
-        self.assertEqual(result, "")
-
-    def test_get_field_value_returns_dash_for_empty_dependencies(self) -> None:
-        """Test _get_field_value returns '-' when task has no dependencies."""
-        result = self.renderer._get_field_value(self.task1, "depends_on")
-
-        self.assertEqual(result, "-")
-
-    def test_get_field_value_formats_dependencies_as_comma_separated(self) -> None:
-        """Test _get_field_value formats dependencies as comma-separated IDs."""
-        result = self.renderer._get_field_value(self.task2, "depends_on")
-
-        self.assertEqual(result, "1,3")
-
-    def test_get_field_value_returns_dash_for_empty_tags(self) -> None:
-        """Test _get_field_value returns '-' when task has no tags."""
-        result = self.renderer._get_field_value(self.task1, "tags")
-
-        self.assertEqual(result, "-")
-
-    def test_get_field_value_formats_tags_as_comma_separated(self) -> None:
-        """Test _get_field_value formats tags as comma-separated strings."""
-        result = self.renderer._get_field_value(self.task2, "tags")
-
-        self.assertEqual(result, "urgent, backend")
-
-    def test_get_field_value_formats_datetime_correctly(self) -> None:
-        """Test _get_field_value formats datetime in YYYY-MM-DD HH:MM format."""
-        result = self.renderer._get_field_value(self.task2, "planned_start")
-
-        self.assertEqual(result, "2025-01-01 09:00")
-
-    def test_get_field_value_returns_dash_for_none_datetime(self) -> None:
-        """Test _get_field_value returns '-' for None datetime values."""
-        result = self.renderer._get_field_value(self.task1, "deadline")
-
-        self.assertEqual(result, "-")
-
-    def test_get_field_value_formats_all_datetime_fields(self) -> None:
-        """Test _get_field_value formats all datetime fields correctly."""
-        datetime_fields = [
+    @parameterized.expand(
+        [
             ("planned_start", "2025-01-01 09:00"),
             ("planned_end", "2025-01-05 18:00"),
             ("actual_start", "2025-01-01 09:30"),
             ("actual_end", "2025-01-05 17:45"),
             ("deadline", "2025-01-10 23:59"),
         ]
+    )
+    def test_get_field_value_datetime_fields(self, field_name, expected):
+        """Test _get_field_value formats datetime fields correctly."""
+        result = self.renderer._get_field_value(self.task2, field_name)
+        self.assertEqual(result, expected)
 
-        for field_name, expected_value in datetime_fields:
-            with self.subTest(field=field_name):
-                result = self.renderer._get_field_value(self.task2, field_name)
-                self.assertEqual(result, expected_value)
-
-    def test_get_field_value_formats_estimated_duration(self) -> None:
-        """Test _get_field_value formats estimated duration with 'h' suffix."""
-        result = self.renderer._get_field_value(self.task2, "estimated_duration")
-
-        self.assertEqual(result, "10.5h")
-
-    def test_get_field_value_returns_dash_for_none_estimated_duration(self) -> None:
-        """Test _get_field_value returns '-' for None estimated duration."""
-        result = self.renderer._get_field_value(self.task1, "estimated_duration")
-
+    def test_get_field_value_returns_dash_for_none_datetime(self) -> None:
+        """Test _get_field_value returns '-' for None datetime values."""
+        result = self.renderer._get_field_value(self.task1, "deadline")
         self.assertEqual(result, "-")
 
-    def test_get_field_value_formats_actual_duration(self) -> None:
-        """Test _get_field_value formats actual duration with 'h' suffix."""
-        result = self.renderer._get_field_value(self.task2, "actual_duration")
-
-        self.assertEqual(result, "12.0h")
-
-    def test_get_field_value_returns_dash_for_none_actual_duration(self) -> None:
-        """Test _get_field_value returns '-' for None actual duration."""
-        result = self.renderer._get_field_value(self.task1, "actual_duration")
-
-        self.assertEqual(result, "-")
+    @parameterized.expand(
+        [
+            ("estimated_with_value", "estimated_duration", 10.5, "10.5h"),
+            ("estimated_none", "estimated_duration", None, "-"),
+            ("actual_with_value", "actual_duration", 12.0, "12.0h"),
+            ("actual_none", "actual_duration", None, "-"),
+        ]
+    )
+    def test_get_field_value_duration_fields(
+        self, scenario, field_name, duration_value, expected
+    ):
+        """Test _get_field_value formats duration fields with 'h' suffix or dash."""
+        if "estimated" in field_name:
+            task = TaskRowViewModel(
+                id=99,
+                name="Test",
+                priority=1,
+                status=TaskStatus.PENDING,
+                is_fixed=False,
+                depends_on=[],
+                tags=[],
+                has_notes=False,
+                estimated_duration=duration_value,
+                actual_duration_hours=None,
+                planned_start=None,
+                planned_end=None,
+                actual_start=None,
+                actual_end=None,
+                deadline=None,
+                created_at=None,
+                updated_at=None,
+                is_finished=False,
+            )
+        else:
+            task = TaskRowViewModel(
+                id=99,
+                name="Test",
+                priority=1,
+                status=TaskStatus.COMPLETED,
+                is_fixed=False,
+                depends_on=[],
+                tags=[],
+                has_notes=False,
+                estimated_duration=None,
+                actual_duration_hours=duration_value,
+                planned_start=None,
+                planned_end=None,
+                actual_start=None,
+                actual_end=None,
+                deadline=None,
+                created_at=None,
+                updated_at=None,
+                is_finished=True,
+            )
+        result = self.renderer._get_field_value(task, field_name)
+        self.assertEqual(result, expected)
 
     def test_get_field_value_returns_dash_for_elapsed_when_not_in_progress(
         self,
     ) -> None:
         """Test _get_field_value returns '-' for elapsed when task not IN_PROGRESS."""
         result = self.renderer._get_field_value(self.task1, "elapsed")
-
         self.assertEqual(result, "-")
 
     def test_get_field_value_formats_elapsed_for_in_progress_task(self) -> None:
@@ -277,31 +353,25 @@ class TestRichTableRenderer(unittest.TestCase):
         """Test _get_field_value returns '-' for unknown field names."""
         # This shouldn't happen in practice due to validation, but test the fallback
         result = self.renderer._get_field_value(self.task1, "unknown_field")
-
         self.assertEqual(result, "-")
 
-    def test_format_tags_handles_empty_list(self) -> None:
-        """Test _format_tags returns '-' for empty tag list."""
-        result = self.renderer._format_tags(self.task1)
-
-        self.assertEqual(result, "-")
-
-    def test_format_tags_joins_multiple_tags(self) -> None:
-        """Test _format_tags joins multiple tags with comma separator."""
-        result = self.renderer._format_tags(self.task2)
-
-        self.assertEqual(result, "urgent, backend")
-
-    def test_format_tags_handles_single_tag(self) -> None:
-        """Test _format_tags handles single tag."""
-        single_tag_task = TaskRowViewModel(
-            id=4,
-            name="Single Tag",
+    @parameterized.expand(
+        [
+            ("empty_list", [], "-"),
+            ("single_tag", ["solo"], "solo"),
+            ("multiple_tags", ["urgent", "backend"], "urgent, backend"),
+        ]
+    )
+    def test_format_tags(self, scenario, tags, expected):
+        """Test _format_tags returns dash for empty list or joins tags with comma."""
+        task = TaskRowViewModel(
+            id=99,
+            name="Test",
             priority=1,
             status=TaskStatus.PENDING,
             is_fixed=False,
             depends_on=[],
-            tags=["solo"],
+            tags=tags,
             has_notes=False,
             estimated_duration=None,
             actual_duration_hours=None,
@@ -314,26 +384,25 @@ class TestRichTableRenderer(unittest.TestCase):
             updated_at=None,
             is_finished=False,
         )
+        result = self.renderer._format_tags(task)
+        self.assertEqual(result, expected)
 
-        result = self.renderer._format_tags(single_tag_task)
-
-        self.assertEqual(result, "solo")
-
-    def test_format_dependencies_handles_empty_list(self) -> None:
-        """Test _format_dependencies returns '-' for empty dependencies."""
-        result = self.renderer._format_dependencies(self.task1)
-
-        self.assertEqual(result, "-")
-
-    def test_format_dependencies_formats_single_dependency(self) -> None:
-        """Test _format_dependencies formats single dependency."""
-        single_dep_task = TaskRowViewModel(
-            id=5,
-            name="Single Dep",
+    @parameterized.expand(
+        [
+            ("empty_list", [], "-"),
+            ("single_dependency", [10], "10"),
+            ("multiple_dependencies", [1, 3], "1,3"),
+        ]
+    )
+    def test_format_dependencies(self, scenario, depends_on, expected):
+        """Test _format_dependencies returns dash for empty list or formats IDs."""
+        task = TaskRowViewModel(
+            id=99,
+            name="Test",
             priority=1,
             status=TaskStatus.PENDING,
             is_fixed=False,
-            depends_on=[10],
+            depends_on=depends_on,
             tags=[],
             has_notes=False,
             estimated_duration=None,
@@ -347,36 +416,20 @@ class TestRichTableRenderer(unittest.TestCase):
             updated_at=None,
             is_finished=False,
         )
+        result = self.renderer._format_dependencies(task)
+        self.assertEqual(result, expected)
 
-        result = self.renderer._format_dependencies(single_dep_task)
-
-        self.assertEqual(result, "10")
-
-    def test_format_dependencies_formats_multiple_dependencies(self) -> None:
-        """Test _format_dependencies formats multiple dependencies."""
-        result = self.renderer._format_dependencies(self.task2)
-
-        self.assertEqual(result, "1,3")
-
-    def test_format_datetime_handles_none(self) -> None:
-        """Test _format_datetime returns '-' for None."""
-        result = self.renderer._format_datetime(None)
-
-        self.assertEqual(result, "-")
-
-    def test_format_datetime_formats_datetime_object(self) -> None:
-        """Test _format_datetime formats datetime object correctly."""
-        dt = datetime(2025, 3, 15, 14, 30, 45)
-
-        result = self.renderer._format_datetime(dt)
-
-        self.assertEqual(result, "2025-03-15 14:30")
-
-    def test_format_datetime_handles_non_datetime_object(self) -> None:
-        """Test _format_datetime converts non-datetime to string."""
-        result = self.renderer._format_datetime("2025-01-01")
-
-        self.assertEqual(result, "2025-01-01")
+    @parameterized.expand(
+        [
+            ("none", None, "-"),
+            ("datetime_object", datetime(2025, 3, 15, 14, 30, 45), "2025-03-15 14:30"),
+            ("non_datetime", "2025-01-01", "2025-01-01"),
+        ]
+    )
+    def test_format_datetime(self, scenario, dt_value, expected):
+        """Test _format_datetime handles None, datetime objects, and other types."""
+        result = self.renderer._format_datetime(dt_value)
+        self.assertEqual(result, expected)
 
     def test_render_multiple_tasks(self) -> None:
         """Test render handles multiple tasks correctly."""
