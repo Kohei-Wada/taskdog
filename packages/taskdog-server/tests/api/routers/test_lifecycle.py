@@ -3,6 +3,8 @@
 import unittest
 from datetime import datetime
 
+from parameterized import parameterized
+
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from tests.test_base import BaseApiRouterTest
 
@@ -31,17 +33,33 @@ class TestLifecycleRouter(BaseApiRouterTest):
         self.assertEqual(updated_task.status, TaskStatus.IN_PROGRESS)
         self.assertIsNotNone(updated_task.actual_start)
 
-    def test_start_task_not_found(self):
-        """Test starting non-existent task returns 404."""
-        # Act
-        response = self.client.post("/api/v1/tasks/999/start")
-
-        # Assert
+    @parameterized.expand(
+        [
+            ("start", "/api/v1/tasks/999/start"),
+            ("complete", "/api/v1/tasks/999/complete"),
+            ("pause", "/api/v1/tasks/999/pause"),
+            ("cancel", "/api/v1/tasks/999/cancel"),
+            ("reopen", "/api/v1/tasks/999/reopen"),
+        ]
+    )
+    def test_lifecycle_operation_not_found(self, operation, endpoint):
+        """Test lifecycle operations on non-existent task return 404."""
+        response = self.client.post(endpoint)
         self.assertEqual(response.status_code, 404)
         self.assertIn("detail", response.json())
 
-    def test_start_task_already_finished_returns_error(self):
-        """Test starting completed task returns 400."""
+    @parameterized.expand(
+        [
+            ("start", "/api/v1/tasks/{task_id}/start"),
+            ("complete", "/api/v1/tasks/{task_id}/complete"),
+            ("pause", "/api/v1/tasks/{task_id}/pause"),
+            ("cancel", "/api/v1/tasks/{task_id}/cancel"),
+        ]
+    )
+    def test_lifecycle_operation_already_finished_returns_error(
+        self, operation, endpoint_template
+    ):
+        """Test lifecycle operations on completed task return 400."""
         # Arrange
         task = Task(
             name="Completed Task",
@@ -54,7 +72,7 @@ class TestLifecycleRouter(BaseApiRouterTest):
         self.repository.save(task)
 
         # Act
-        response = self.client.post(f"/api/v1/tasks/{task.id}/start")
+        response = self.client.post(endpoint_template.format(task_id=task.id))
 
         # Assert
         self.assertEqual(response.status_code, 400)
@@ -85,33 +103,6 @@ class TestLifecycleRouter(BaseApiRouterTest):
         self.assertEqual(updated_task.status, TaskStatus.COMPLETED)
         self.assertIsNotNone(updated_task.actual_end)
 
-    def test_complete_task_not_found(self):
-        """Test completing non-existent task returns 404."""
-        # Act
-        response = self.client.post("/api/v1/tasks/999/complete")
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
-
-    def test_complete_task_already_finished_returns_error(self):
-        """Test completing already completed task returns 400."""
-        # Arrange
-        task = Task(
-            name="Completed Task",
-            priority=1,
-            status=TaskStatus.COMPLETED,
-            actual_start=datetime.now(),
-            actual_end=datetime.now(),
-        )
-        task.id = self._get_next_id()
-        self.repository.save(task)
-
-        # Act
-        response = self.client.post(f"/api/v1/tasks/{task.id}/complete")
-
-        # Assert
-        self.assertEqual(response.status_code, 400)
-
     def test_pause_task_success(self):
         """Test pausing an in-progress task."""
         # Arrange
@@ -139,33 +130,6 @@ class TestLifecycleRouter(BaseApiRouterTest):
         self.assertEqual(updated_task.status, TaskStatus.PENDING)
         self.assertIsNone(updated_task.actual_start)
 
-    def test_pause_task_not_found(self):
-        """Test pausing non-existent task returns 404."""
-        # Act
-        response = self.client.post("/api/v1/tasks/999/pause")
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
-
-    def test_pause_task_already_finished_returns_error(self):
-        """Test pausing completed task returns 400."""
-        # Arrange
-        task = Task(
-            name="Completed Task",
-            priority=1,
-            status=TaskStatus.COMPLETED,
-            actual_start=datetime.now(),
-            actual_end=datetime.now(),
-        )
-        task.id = self._get_next_id()
-        self.repository.save(task)
-
-        # Act
-        response = self.client.post(f"/api/v1/tasks/{task.id}/pause")
-
-        # Assert
-        self.assertEqual(response.status_code, 400)
-
     def test_cancel_task_success(self):
         """Test canceling a task."""
         # Arrange
@@ -186,33 +150,6 @@ class TestLifecycleRouter(BaseApiRouterTest):
         updated_task = self.repository.get_by_id(task.id)
         self.assertEqual(updated_task.status, TaskStatus.CANCELED)
         self.assertIsNotNone(updated_task.actual_end)
-
-    def test_cancel_task_not_found(self):
-        """Test canceling non-existent task returns 404."""
-        # Act
-        response = self.client.post("/api/v1/tasks/999/cancel")
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
-
-    def test_cancel_task_already_finished_returns_error(self):
-        """Test canceling completed task returns 400."""
-        # Arrange
-        task = Task(
-            name="Completed Task",
-            priority=1,
-            status=TaskStatus.COMPLETED,
-            actual_start=datetime.now(),
-            actual_end=datetime.now(),
-        )
-        task.id = self._get_next_id()
-        self.repository.save(task)
-
-        # Act
-        response = self.client.post(f"/api/v1/tasks/{task.id}/cancel")
-
-        # Assert
-        self.assertEqual(response.status_code, 400)
 
     def test_reopen_task_success(self):
         """Test reopening a completed task."""
@@ -242,14 +179,6 @@ class TestLifecycleRouter(BaseApiRouterTest):
         self.assertEqual(updated_task.status, TaskStatus.PENDING)
         self.assertIsNone(updated_task.actual_start)
         self.assertIsNone(updated_task.actual_end)
-
-    def test_reopen_task_not_found(self):
-        """Test reopening non-existent task returns 404."""
-        # Act
-        response = self.client.post("/api/v1/tasks/999/reopen")
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
 
     def test_reopen_canceled_task_success(self):
         """Test reopening a canceled task."""

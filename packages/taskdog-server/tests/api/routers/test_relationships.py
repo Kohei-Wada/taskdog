@@ -3,6 +3,8 @@
 import unittest
 from datetime import date
 
+from parameterized import parameterized
+
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from tests.test_base import BaseApiRouterTest
 
@@ -35,14 +37,30 @@ class TestRelationshipsRouter(BaseApiRouterTest):
         updated_task = self.repository.get_by_id(task1.id)
         self.assertIn(task2.id, updated_task.depends_on)
 
-    def test_add_dependency_not_found(self):
-        """Test adding dependency when task not found returns 404."""
-        # Act
-        response = self.client.post(
-            "/api/v1/tasks/999/dependencies", json={"depends_on_id": 1}
-        )
+    @parameterized.expand(
+        [
+            (
+                "add_dependency",
+                "POST",
+                "/api/v1/tasks/999/dependencies",
+                {"depends_on_id": 1},
+            ),
+            ("remove_dependency", "DELETE", "/api/v1/tasks/999/dependencies/1", None),
+            ("set_tags", "PUT", "/api/v1/tasks/999/tags", {"tags": ["test"]}),
+            ("log_hours", "POST", "/api/v1/tasks/999/log-hours", {"hours": 2.0}),
+        ]
+    )
+    def test_relationship_operation_not_found(
+        self, operation, method, endpoint, payload
+    ):
+        """Test relationship operations on non-existent task return 404."""
+        if method == "POST":
+            response = self.client.post(endpoint, json=payload)
+        elif method == "DELETE":
+            response = self.client.delete(endpoint)
+        elif method == "PUT":
+            response = self.client.put(endpoint, json=payload)
 
-        # Assert
         self.assertEqual(response.status_code, 404)
 
     def test_add_dependency_circular_returns_error(self):
@@ -111,14 +129,6 @@ class TestRelationshipsRouter(BaseApiRouterTest):
         # Verify in database
         updated_task = self.repository.get_by_id(task2.id)
         self.assertNotIn(task1.id, updated_task.depends_on)
-
-    def test_remove_dependency_not_found(self):
-        """Test removing dependency when task not found returns 404."""
-        # Act
-        response = self.client.delete("/api/v1/tasks/999/dependencies/1")
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
 
     def test_remove_nonexistent_dependency_returns_error(self):
         """Test removing non-existent dependency returns 400."""
@@ -194,14 +204,6 @@ class TestRelationshipsRouter(BaseApiRouterTest):
         data = response.json()
         self.assertEqual(data["tags"], [])
 
-    def test_set_task_tags_not_found(self):
-        """Test setting tags when task not found returns 404."""
-        # Act
-        response = self.client.put("/api/v1/tasks/999/tags", json={"tags": ["test"]})
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
-
     def test_set_task_tags_validation_error_empty_tag(self):
         """Test setting tags with empty tag name returns 400 or 422."""
         # Arrange
@@ -258,14 +260,6 @@ class TestRelationshipsRouter(BaseApiRouterTest):
         data = response.json()
         self.assertIn(today.isoformat(), data["actual_daily_hours"])
         self.assertEqual(data["actual_daily_hours"][today.isoformat()], 3.0)
-
-    def test_log_hours_not_found(self):
-        """Test logging hours when task not found returns 404."""
-        # Act
-        response = self.client.post("/api/v1/tasks/999/log-hours", json={"hours": 2.0})
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
 
     def test_log_hours_validation_error_negative_hours(self):
         """Test logging negative hours returns 400 or 422."""
