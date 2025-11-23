@@ -3,6 +3,8 @@
 import unittest
 from datetime import date
 
+from parameterized import parameterized
+
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from tests.test_base import BaseApiRouterTest
 
@@ -227,14 +229,30 @@ class TestTasksRouter(BaseApiRouterTest):
         self.assertEqual(data["id"], task.id)
         self.assertEqual(data["name"], "Test Task")
 
-    def test_get_task_not_found(self):
-        """Test getting non-existent task returns 404."""
-        # Act
-        response = self.client.get("/api/v1/tasks/999")
+    @parameterized.expand(
+        [
+            ("get_task", "GET", "/api/v1/tasks/999", None),
+            ("update_task", "PATCH", "/api/v1/tasks/999", {"name": "New Name"}),
+            ("archive_task", "POST", "/api/v1/tasks/999/archive", None),
+            ("delete_task", "DELETE", "/api/v1/tasks/999", None),
+        ]
+    )
+    def test_operation_not_found_returns_404(
+        self, operation, method, endpoint, payload
+    ):
+        """Test operations on non-existent task return 404."""
+        if method == "GET":
+            response = self.client.get(endpoint)
+        elif method == "POST":
+            response = self.client.post(endpoint)
+        elif method == "PATCH":
+            response = self.client.patch(endpoint, json=payload)
+        elif method == "DELETE":
+            response = self.client.delete(endpoint)
 
-        # Assert
         self.assertEqual(response.status_code, 404)
-        self.assertIn("detail", response.json())
+        if method != "DELETE":  # DELETE returns 204 with no content
+            self.assertIn("detail", response.json())
 
     def test_update_task_success(self):
         """Test updating task fields."""
@@ -256,14 +274,6 @@ class TestTasksRouter(BaseApiRouterTest):
         self.assertIn("updated_fields", data)
         self.assertIn("name", data["updated_fields"])
         self.assertIn("priority", data["updated_fields"])
-
-    def test_update_task_not_found(self):
-        """Test updating non-existent task returns 404."""
-        # Act
-        response = self.client.patch("/api/v1/tasks/999", json={"name": "New Name"})
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
 
     def test_update_task_validation_error(self):
         """Test updating task with invalid data returns 400 or 422."""
@@ -296,14 +306,6 @@ class TestTasksRouter(BaseApiRouterTest):
         # Verify in database
         updated_task = self.repository.get_by_id(task.id)
         self.assertTrue(updated_task.is_archived)
-
-    def test_archive_task_not_found(self):
-        """Test archiving non-existent task returns 404."""
-        # Act
-        response = self.client.post("/api/v1/tasks/999/archive")
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
 
     def test_restore_task_success(self):
         """Test restoring an archived task."""
@@ -356,14 +358,6 @@ class TestTasksRouter(BaseApiRouterTest):
         # Verify task is deleted
         deleted_task = self.repository.get_by_id(task.id)
         self.assertIsNone(deleted_task)
-
-    def test_delete_task_not_found(self):
-        """Test deleting non-existent task returns 404."""
-        # Act
-        response = self.client.delete("/api/v1/tasks/999")
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
 
     def test_list_tasks_with_date_range_filter(self):
         """Test filtering tasks by date range."""
