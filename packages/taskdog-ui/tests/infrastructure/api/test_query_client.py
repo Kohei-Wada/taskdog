@@ -4,6 +4,8 @@ import unittest
 from datetime import date
 from unittest.mock import Mock, patch
 
+from parameterized import parameterized
+
 from taskdog.infrastructure.api.query_client import QueryClient
 
 
@@ -58,37 +60,44 @@ class TestQueryClient(unittest.TestCase):
         self.assertEqual(result, mock_output)
         mock_convert.assert_called_once_with(mock_response.json(), self.notes_cache)
 
-    @patch("taskdog.infrastructure.api.query_client.convert_to_get_task_by_id_output")
-    def test_get_task_by_id(self, mock_convert):
-        """Test get_task_by_id makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"id": 1}
-        self.mock_base._safe_request.return_value = mock_response
+    @parameterized.expand(
+        [
+            (
+                "get_task_by_id",
+                "get_task_by_id",
+                "convert_to_get_task_by_id_output",
+                {"id": 1},
+            ),
+            (
+                "get_task_detail",
+                "get_task_detail",
+                "convert_to_get_task_detail_output",
+                {"id": 1, "notes": "Content"},
+            ),
+        ]
+    )
+    def test_get_single_task_operations(
+        self, operation_name, method_name, converter_name, mock_json
+    ):
+        """Test single task GET operations make correct API calls."""
+        with patch(
+            f"taskdog.infrastructure.api.query_client.{converter_name}"
+        ) as mock_convert:
+            mock_response = Mock()
+            mock_response.is_success = True
+            mock_response.json.return_value = mock_json
+            self.mock_base._safe_request.return_value = mock_response
 
-        mock_output = Mock()
-        mock_convert.return_value = mock_output
+            mock_output = Mock()
+            mock_convert.return_value = mock_output
 
-        result = self.client.get_task_by_id(task_id=1)
+            method = getattr(self.client, method_name)
+            result = method(task_id=1)
 
-        self.mock_base._safe_request.assert_called_once_with("get", "/api/v1/tasks/1")
-        self.assertEqual(result, mock_output)
-
-    @patch("taskdog.infrastructure.api.query_client.convert_to_get_task_detail_output")
-    def test_get_task_detail(self, mock_convert):
-        """Test get_task_detail makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"id": 1, "notes": "Content"}
-        self.mock_base._safe_request.return_value = mock_response
-
-        mock_output = Mock()
-        mock_convert.return_value = mock_output
-
-        result = self.client.get_task_detail(task_id=1)
-
-        self.mock_base._safe_request.assert_called_once_with("get", "/api/v1/tasks/1")
-        self.assertEqual(result, mock_output)
+            self.mock_base._safe_request.assert_called_once_with(
+                "get", "/api/v1/tasks/1"
+            )
+            self.assertEqual(result, mock_output)
 
     @patch("taskdog.infrastructure.api.query_client.convert_to_gantt_output")
     def test_get_gantt_data(self, mock_convert):

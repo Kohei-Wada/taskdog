@@ -3,6 +3,8 @@
 import unittest
 from datetime import datetime
 
+from parameterized import parameterized
+
 from taskdog_core.application.dto.create_task_input import CreateTaskInput
 
 
@@ -62,41 +64,44 @@ class TestCreateTaskInput(unittest.TestCase):
         self.assertIsNone(dto.planned_start)
         self.assertIsNone(dto.planned_end)
 
-    def test_create_with_empty_tags_list(self) -> None:
-        """Test creating DTO with empty tags list."""
-        dto = CreateTaskInput(name="Task", priority=1, tags=[])
+    @parameterized.expand(
+        [
+            ("empty_tags", []),
+            ("single_tag", ["solo"]),
+            ("multiple_tags", ["tag1", "tag2", "tag3"]),
+        ]
+    )
+    def test_create_with_tags(self, scenario, tags):
+        """Test creating DTO with various tag configurations."""
+        dto = CreateTaskInput(name="Task", priority=1, tags=tags)
+        self.assertEqual(dto.tags, tags)
 
-        self.assertEqual(dto.tags, [])
+    @parameterized.expand(
+        [
+            ("zero", 0.0),
+            ("fractional", 2.5),
+            ("large", 1000.0),
+        ]
+    )
+    def test_create_with_estimated_duration(self, scenario, duration):
+        """Test creating DTO with various estimated duration values."""
+        dto = CreateTaskInput(name="Task", priority=1, estimated_duration=duration)
+        self.assertEqual(dto.estimated_duration, duration)
 
-    def test_create_with_single_tag(self) -> None:
-        """Test creating DTO with single tag."""
-        dto = CreateTaskInput(name="Task", priority=1, tags=["solo"])
+    @parameterized.expand(
+        [
+            ("default", None, False),
+            ("explicit_true", True, True),
+        ]
+    )
+    def test_is_fixed_field(self, scenario, is_fixed_value, expected):
+        """Test is_fixed field with different values."""
+        if is_fixed_value is None:
+            dto = CreateTaskInput(name="Task", priority=1)
+        else:
+            dto = CreateTaskInput(name="Task", priority=1, is_fixed=is_fixed_value)
 
-        self.assertEqual(dto.tags, ["solo"])
-
-    def test_create_with_zero_estimated_duration(self) -> None:
-        """Test creating DTO with zero estimated duration."""
-        dto = CreateTaskInput(name="Task", priority=1, estimated_duration=0.0)
-
-        self.assertEqual(dto.estimated_duration, 0.0)
-
-    def test_create_with_fractional_estimated_duration(self) -> None:
-        """Test creating DTO with fractional estimated duration."""
-        dto = CreateTaskInput(name="Task", priority=1, estimated_duration=2.5)
-
-        self.assertEqual(dto.estimated_duration, 2.5)
-
-    def test_default_is_fixed_is_false(self) -> None:
-        """Test that is_fixed defaults to False."""
-        dto = CreateTaskInput(name="Task", priority=1)
-
-        self.assertFalse(dto.is_fixed)
-
-    def test_is_fixed_can_be_set_to_true(self) -> None:
-        """Test that is_fixed can be explicitly set to True."""
-        dto = CreateTaskInput(name="Task", priority=1, is_fixed=True)
-
-        self.assertTrue(dto.is_fixed)
+        self.assertEqual(dto.is_fixed, expected)
 
     def test_equality_with_same_values(self) -> None:
         """Test that two DTOs with same values are equal."""
@@ -112,17 +117,20 @@ class TestCreateTaskInput(unittest.TestCase):
 
         self.assertNotEqual(dto1, dto2)
 
-    def test_create_with_unicode_name(self) -> None:
-        """Test creating DTO with Unicode characters in name."""
-        dto = CreateTaskInput(name="タスク 🚀", priority=1)
+    @parameterized.expand(
+        [
+            ("name", "タスク 🚀", None),
+            ("tags", "Task", ["日本語", "絵文字🎯"]),
+        ]
+    )
+    def test_unicode_support(self, field, name, tags):
+        """Test Unicode character support in name and tags."""
+        dto = CreateTaskInput(name=name, priority=1, tags=tags)
 
-        self.assertEqual(dto.name, "タスク 🚀")
-
-    def test_create_with_unicode_tags(self) -> None:
-        """Test creating DTO with Unicode characters in tags."""
-        dto = CreateTaskInput(name="Task", priority=1, tags=["日本語", "絵文字🎯"])
-
-        self.assertEqual(dto.tags, ["日本語", "絵文字🎯"])
+        if field == "name":
+            self.assertEqual(dto.name, name)
+        elif field == "tags":
+            self.assertEqual(dto.tags, tags)
 
     def test_repr_includes_main_fields(self) -> None:
         """Test that repr includes main field values."""
@@ -137,12 +145,6 @@ class TestCreateTaskInput(unittest.TestCase):
         dto = CreateTaskInput(name="Task", priority=100)
 
         self.assertEqual(dto.priority, 100)
-
-    def test_create_with_large_estimated_duration(self) -> None:
-        """Test creating DTO with large estimated duration."""
-        dto = CreateTaskInput(name="Task", priority=1, estimated_duration=1000.0)
-
-        self.assertEqual(dto.estimated_duration, 1000.0)
 
     def test_tags_preserves_order(self) -> None:
         """Test that tags list preserves order."""

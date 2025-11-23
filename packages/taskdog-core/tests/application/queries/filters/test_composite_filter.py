@@ -2,6 +2,8 @@
 
 import unittest
 
+from parameterized import parameterized
+
 from taskdog_core.application.queries.filters.composite_filter import CompositeFilter
 from taskdog_core.application.queries.filters.status_filter import StatusFilter
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
@@ -55,55 +57,58 @@ class TestCompositeFilter(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0].id, 1)
 
-    def test_filter_with_multiple_filters_applies_and_logic(self):
-        """Test composite filter applies multiple filters with AND logic."""
-        # Filter for PENDING tasks
-        pending_filter = StatusFilter(TaskStatus.PENDING)
-        # Then filter with always-true (should keep PENDING tasks)
-        true_filter = MockAlwaysTrueFilter()
-
-        composite = CompositeFilter([pending_filter, true_filter])
+    @parameterized.expand(
+        [
+            (
+                "multiple_filters_and_logic",
+                lambda self: [
+                    StatusFilter(TaskStatus.PENDING),
+                    MockAlwaysTrueFilter(),
+                ],
+                1,
+                1,
+            ),
+            (
+                "contradictory_filters_empty",
+                lambda self: [
+                    StatusFilter(TaskStatus.PENDING),
+                    MockAlwaysFalseFilter(),
+                ],
+                0,
+                None,
+            ),
+            (
+                "sequential_filters_no_match",
+                lambda self: [
+                    StatusFilter(TaskStatus.PENDING),
+                    StatusFilter(TaskStatus.IN_PROGRESS),
+                ],
+                0,
+                None,
+            ),
+            (
+                "three_true_filters_all_tasks",
+                lambda self: [
+                    MockAlwaysTrueFilter(),
+                    MockAlwaysTrueFilter(),
+                    MockAlwaysTrueFilter(),
+                ],
+                4,
+                None,
+            ),
+        ]
+    )
+    def test_filter_combinations(
+        self, scenario, filter_factory, expected_count, expected_first_id
+    ):
+        """Test composite filter with various filter combinations."""
+        filters = filter_factory(self)
+        composite = CompositeFilter(filters)
         result = composite.filter(self.tasks)
 
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].id, 1)
-
-    def test_filter_with_contradictory_filters_returns_empty(self):
-        """Test composite filter with contradictory filters returns empty list."""
-        # Filter for PENDING tasks
-        pending_filter = StatusFilter(TaskStatus.PENDING)
-        # Then filter with always-false
-        false_filter = MockAlwaysFalseFilter()
-
-        composite = CompositeFilter([pending_filter, false_filter])
-        result = composite.filter(self.tasks)
-
-        self.assertEqual(len(result), 0)
-
-    def test_filter_applies_filters_in_sequence(self):
-        """Test that filters are applied in the order they are provided."""
-        # First filter: get PENDING tasks (task1)
-        pending_filter = StatusFilter(TaskStatus.PENDING)
-        # Second filter: get IN_PROGRESS tasks (should find none from task1)
-        in_progress_filter = StatusFilter(TaskStatus.IN_PROGRESS)
-
-        composite = CompositeFilter([pending_filter, in_progress_filter])
-        result = composite.filter(self.tasks)
-
-        # Should be empty because task1 is PENDING, not IN_PROGRESS
-        self.assertEqual(len(result), 0)
-
-    def test_filter_with_three_filters(self):
-        """Test composite filter with three filters."""
-        # All filters return all tasks
-        filter1 = MockAlwaysTrueFilter()
-        filter2 = MockAlwaysTrueFilter()
-        filter3 = MockAlwaysTrueFilter()
-
-        composite = CompositeFilter([filter1, filter2, filter3])
-        result = composite.filter(self.tasks)
-
-        self.assertEqual(len(result), 4)
+        self.assertEqual(len(result), expected_count)
+        if expected_first_id is not None:
+            self.assertEqual(result[0].id, expected_first_id)
 
     def test_filter_with_narrowing_filters(self):
         """Test composite filter that narrows down results progressively."""

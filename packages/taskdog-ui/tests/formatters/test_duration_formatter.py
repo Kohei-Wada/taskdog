@@ -4,6 +4,8 @@ import unittest
 from datetime import datetime
 from unittest.mock import patch
 
+from parameterized import parameterized
+
 from taskdog.formatters.duration_formatter import DurationFormatter
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.domain.entities.task import TaskStatus
@@ -12,25 +14,32 @@ from taskdog_core.domain.entities.task import TaskStatus
 class TestDurationFormatter(unittest.TestCase):
     """Test cases for DurationFormatter."""
 
-    def test_format_hours_with_value(self):
-        """Test format_hours with a valid hours value."""
-        result = DurationFormatter.format_hours(5.0)
-        self.assertEqual(result, "5.0h")
+    @parameterized.expand(
+        [
+            ("with_value", 5.0, "5.0h"),
+            ("with_none", None, "-"),
+        ]
+    )
+    def test_format_hours(self, scenario, hours, expected):
+        """Test format_hours with various input values."""
+        result = DurationFormatter.format_hours(hours)
+        self.assertEqual(result, expected)
 
-    def test_format_hours_with_none(self):
-        """Test format_hours with None returns dash."""
-        result = DurationFormatter.format_hours(None)
-        self.assertEqual(result, "-")
-
-    def test_format_estimated_duration_with_value(self):
-        """Test format_estimated_duration with estimated duration."""
+    @parameterized.expand(
+        [
+            ("with_value", 10.0, "10.0h"),
+            ("without_value", None, "-"),
+        ]
+    )
+    def test_format_estimated_duration(self, scenario, estimated_duration, expected):
+        """Test format_estimated_duration with and without duration value."""
         now = datetime.now()
         task_vm = TaskRowViewModel(
             id=1,
             name="Test Task",
             priority=1,
             status=TaskStatus.PENDING,
-            estimated_duration=10.0,
+            estimated_duration=estimated_duration,
             actual_duration_hours=None,
             deadline=None,
             planned_start=None,
@@ -46,18 +55,26 @@ class TestDurationFormatter(unittest.TestCase):
             updated_at=now,
         )
         result = DurationFormatter.format_estimated_duration(task_vm)
-        self.assertEqual(result, "10.0h")
+        self.assertEqual(result, expected)
 
-    def test_format_estimated_duration_without_value(self):
-        """Test format_estimated_duration without estimated duration."""
+    @parameterized.expand(
+        [
+            ("with_value", TaskStatus.COMPLETED, 8.5, True, "8.5h"),
+            ("without_value", TaskStatus.PENDING, None, False, "-"),
+        ]
+    )
+    def test_format_actual_duration(
+        self, scenario, status, actual_duration_hours, is_finished, expected
+    ):
+        """Test format_actual_duration with and without duration value."""
         now = datetime.now()
         task_vm = TaskRowViewModel(
             id=1,
             name="Test Task",
             priority=1,
-            status=TaskStatus.PENDING,
+            status=status,
             estimated_duration=None,
-            actual_duration_hours=None,
+            actual_duration_hours=actual_duration_hours,
             deadline=None,
             planned_start=None,
             planned_end=None,
@@ -66,106 +83,34 @@ class TestDurationFormatter(unittest.TestCase):
             depends_on=[],
             tags=[],
             is_fixed=False,
-            is_finished=False,
-            has_notes=False,
-            created_at=now,
-            updated_at=now,
-        )
-        result = DurationFormatter.format_estimated_duration(task_vm)
-        self.assertEqual(result, "-")
-
-    def test_format_actual_duration_with_value(self):
-        """Test format_actual_duration with actual duration."""
-        now = datetime.now()
-        task_vm = TaskRowViewModel(
-            id=1,
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.COMPLETED,
-            estimated_duration=None,
-            actual_duration_hours=8.5,
-            deadline=None,
-            planned_start=None,
-            planned_end=None,
-            actual_start=None,
-            actual_end=None,
-            depends_on=[],
-            tags=[],
-            is_fixed=False,
-            is_finished=True,
+            is_finished=is_finished,
             has_notes=False,
             created_at=now,
             updated_at=now,
         )
         result = DurationFormatter.format_actual_duration(task_vm)
-        self.assertEqual(result, "8.5h")
+        self.assertEqual(result, expected)
 
-    def test_format_actual_duration_without_value(self):
-        """Test format_actual_duration without actual duration."""
+    @parameterized.expand(
+        [
+            ("not_in_progress", TaskStatus.PENDING, None),
+            ("in_progress_without_actual_start", TaskStatus.IN_PROGRESS, None),
+        ]
+    )
+    def test_format_elapsed_time_returns_dash(self, scenario, status, actual_start):
+        """Test format_elapsed_time returns dash for non-elapsed cases."""
         now = datetime.now()
         task_vm = TaskRowViewModel(
             id=1,
             name="Test Task",
             priority=1,
-            status=TaskStatus.PENDING,
+            status=status,
             estimated_duration=None,
             actual_duration_hours=None,
             deadline=None,
             planned_start=None,
             planned_end=None,
-            actual_start=None,
-            actual_end=None,
-            depends_on=[],
-            tags=[],
-            is_fixed=False,
-            is_finished=False,
-            has_notes=False,
-            created_at=now,
-            updated_at=now,
-        )
-        result = DurationFormatter.format_actual_duration(task_vm)
-        self.assertEqual(result, "-")
-
-    def test_format_elapsed_time_not_in_progress(self):
-        """Test format_elapsed_time for non-IN_PROGRESS task."""
-        now = datetime.now()
-        task_vm = TaskRowViewModel(
-            id=1,
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.PENDING,
-            estimated_duration=None,
-            actual_duration_hours=None,
-            deadline=None,
-            planned_start=None,
-            planned_end=None,
-            actual_start=None,
-            actual_end=None,
-            depends_on=[],
-            tags=[],
-            is_fixed=False,
-            is_finished=False,
-            has_notes=False,
-            created_at=now,
-            updated_at=now,
-        )
-        result = DurationFormatter.format_elapsed_time(task_vm)
-        self.assertEqual(result, "-")
-
-    def test_format_elapsed_time_in_progress_without_actual_start(self):
-        """Test format_elapsed_time for IN_PROGRESS task without actual_start."""
-        now = datetime.now()
-        task_vm = TaskRowViewModel(
-            id=1,
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.IN_PROGRESS,
-            estimated_duration=None,
-            actual_duration_hours=None,
-            deadline=None,
-            planned_start=None,
-            planned_end=None,
-            actual_start=None,
+            actual_start=actual_start,
             actual_end=None,
             depends_on=[],
             tags=[],

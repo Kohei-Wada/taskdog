@@ -2,6 +2,8 @@
 
 import unittest
 
+from parameterized import parameterized
+
 from taskdog_core.domain.entities.task import Task
 from tests.test_base import BaseApiRouterTest
 
@@ -42,14 +44,32 @@ class TestNotesRouter(BaseApiRouterTest):
         self.assertEqual(data["content"], "# Test Notes\n\nSome content here.")
         self.assertEqual(data["has_notes"], True)
 
-    def test_get_notes_for_nonexistent_task(self):
-        """Test getting notes for a task that doesn't exist."""
-        # Act
-        response = self.client.get("/api/v1/tasks/999/notes")
+    @parameterized.expand(
+        [
+            ("get_notes", "GET", "/api/v1/tasks/999/notes", None),
+            (
+                "update_notes",
+                "PUT",
+                "/api/v1/tasks/999/notes",
+                {"content": "Some notes"},
+            ),
+            ("delete_notes", "DELETE", "/api/v1/tasks/999/notes", None),
+        ]
+    )
+    def test_notes_operation_not_found_returns_404(
+        self, operation, method, endpoint, payload
+    ):
+        """Test notes operations on non-existent task return 404."""
+        if method == "GET":
+            response = self.client.get(endpoint)
+        elif method == "PUT":
+            response = self.client.put(endpoint, json=payload)
+        elif method == "DELETE":
+            response = self.client.delete(endpoint)
 
-        # Assert
         self.assertEqual(response.status_code, 404)
-        self.assertIn("detail", response.json())
+        if method != "DELETE":  # DELETE returns 204 with no content on success
+            self.assertIn("detail", response.json())
 
     # ===== PUT /{task_id}/notes Tests =====
 
@@ -91,18 +111,6 @@ class TestNotesRouter(BaseApiRouterTest):
         data = response.json()
         self.assertEqual(data["content"], "")
         self.assertEqual(data["has_notes"], False)
-
-    def test_update_notes_for_nonexistent_task(self):
-        """Test updating notes for a task that doesn't exist."""
-        # Arrange
-        request_data = {"content": "Some notes"}
-
-        # Act
-        response = self.client.put("/api/v1/tasks/999/notes", json=request_data)
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
-        self.assertIn("detail", response.json())
 
     def test_update_notes_replace_existing(self):
         """Test updating notes replaces existing content."""
@@ -185,15 +193,6 @@ def hello():
 
         # Assert
         self.assertEqual(response.status_code, 204)
-
-    def test_delete_notes_for_nonexistent_task(self):
-        """Test deleting notes for a task that doesn't exist."""
-        # Act
-        response = self.client.delete("/api/v1/tasks/999/notes")
-
-        # Assert
-        self.assertEqual(response.status_code, 404)
-        self.assertIn("detail", response.json())
 
     def test_delete_notes_then_get_returns_empty(self):
         """Test that getting notes after deletion returns empty content."""
