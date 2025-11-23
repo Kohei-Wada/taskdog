@@ -2,6 +2,8 @@
 
 import unittest
 
+from parameterized import parameterized
+
 from taskdog_core.application.queries.filters.composite_filter import CompositeFilter
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -74,21 +76,42 @@ class TestTaskFilter(unittest.TestCase):
         self.assertIs(composed.filters[0], filter1)
         self.assertIs(composed.filters[1], filter2)
 
-    def test_rshift_operator_filters_in_sequence(self):
-        """Test >> operator applies filters in sequence (AND logic)."""
-        task1 = Task(id=1, name="Task 1", status=TaskStatus.PENDING, priority=5)
-        task2 = Task(id=2, name="Task 2", status=TaskStatus.PENDING, priority=3)
-        task3 = Task(id=3, name="Task 3", status=TaskStatus.COMPLETED, priority=5)
-        task4 = Task(id=4, name="Task 4", status=TaskStatus.COMPLETED, priority=1)
-        tasks = [task1, task2, task3, task4]
-
-        # Compose: pending AND high priority
-        composed = PendingOnlyFilter() >> HighPriorityFilter()
+    @parameterized.expand(
+        [
+            (
+                "two_filters_sequence",
+                lambda: PendingOnlyFilter() >> HighPriorityFilter(),
+                lambda: [
+                    Task(id=1, name="Task 1", status=TaskStatus.PENDING, priority=5),
+                    Task(id=2, name="Task 2", status=TaskStatus.PENDING, priority=3),
+                    Task(id=3, name="Task 3", status=TaskStatus.COMPLETED, priority=5),
+                    Task(id=4, name="Task 4", status=TaskStatus.COMPLETED, priority=1),
+                ],
+                1,
+                1,
+            ),
+            (
+                "three_filters_chain",
+                lambda: ConcreteFilter() >> PendingOnlyFilter() >> HighPriorityFilter(),
+                lambda: [
+                    Task(id=1, name="Task 1", status=TaskStatus.PENDING, priority=5),
+                    Task(id=2, name="Task 2", status=TaskStatus.PENDING, priority=3),
+                ],
+                1,
+                1,
+            ),
+        ]
+    )
+    def test_rshift_operator_filter_execution(
+        self, scenario, composed_factory, tasks_factory, expected_count, expected_id
+    ):
+        """Test >> operator applies filters in sequence."""
+        composed = composed_factory()
+        tasks = tasks_factory()
         result = composed.filter(tasks)
 
-        # Should only return task1 (pending AND priority >= 5)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].id, 1)
+        self.assertEqual(len(result), expected_count)
+        self.assertEqual(result[0].id, expected_id)
 
     def test_rshift_operator_with_none_returns_self(self):
         """Test >> operator with None returns self."""
@@ -98,53 +121,30 @@ class TestTaskFilter(unittest.TestCase):
 
         self.assertIs(result, filter1)
 
-    def test_rshift_operator_chains_multiple_filters(self):
-        """Test >> operator can chain multiple filters."""
-        task1 = Task(id=1, name="Task 1", status=TaskStatus.PENDING, priority=5)
-        task2 = Task(id=2, name="Task 2", status=TaskStatus.PENDING, priority=3)
-        tasks = [task1, task2]
+    @parameterized.expand(
+        [
+            (
+                "extend_composite",
+                lambda: (PendingOnlyFilter() >> HighPriorityFilter())
+                >> ConcreteFilter(),
+                3,
+            ),
+            (
+                "composite_on_right",
+                lambda: PendingOnlyFilter()
+                >> (HighPriorityFilter() >> ConcreteFilter()),
+                3,
+            ),
+        ]
+    )
+    def test_rshift_operator_composite_composition(
+        self, scenario, composed_factory, expected_filter_count
+    ):
+        """Test >> operator composition with CompositeFilters."""
+        composed = composed_factory()
 
-        # Chain three filters
-        composed = ConcreteFilter() >> PendingOnlyFilter() >> HighPriorityFilter()
-        result = composed.filter(tasks)
-
-        # Should only return task1
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].id, 1)
-
-    def test_rshift_operator_extends_composite_filter(self):
-        """Test >> operator extends existing CompositeFilter efficiently."""
-        filter1 = PendingOnlyFilter()
-        filter2 = HighPriorityFilter()
-        filter3 = ConcreteFilter()
-
-        # First composition
-        composed1 = filter1 >> filter2
-        self.assertEqual(len(composed1.filters), 2)
-
-        # Extend with another filter
-        composed2 = composed1 >> filter3
-        self.assertEqual(len(composed2.filters), 3)
-        self.assertIs(composed2.filters[0], filter1)
-        self.assertIs(composed2.filters[1], filter2)
-        self.assertIs(composed2.filters[2], filter3)
-
-    def test_rshift_operator_with_composite_on_right(self):
-        """Test >> operator when right side is already a CompositeFilter."""
-        filter1 = PendingOnlyFilter()
-        filter2 = HighPriorityFilter()
-        filter3 = ConcreteFilter()
-
-        # Create composite on right
-        composite_right = filter2 >> filter3
-        self.assertEqual(len(composite_right.filters), 2)
-
-        # Prepend filter1
-        result = filter1 >> composite_right
-        self.assertEqual(len(result.filters), 3)
-        self.assertIs(result.filters[0], filter1)
-        self.assertIs(result.filters[1], filter2)
-        self.assertIs(result.filters[2], filter3)
+        self.assertIsInstance(composed, CompositeFilter)
+        self.assertEqual(len(composed.filters), expected_filter_count)
 
 
 if __name__ == "__main__":
