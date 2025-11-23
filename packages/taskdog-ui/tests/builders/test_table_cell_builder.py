@@ -2,6 +2,7 @@
 
 import unittest
 
+from parameterized import parameterized
 from rich.text import Text
 
 from taskdog.builders.table_cell_builder import TableCellBuilder
@@ -10,51 +11,58 @@ from taskdog.builders.table_cell_builder import TableCellBuilder
 class TestTableCellBuilder(unittest.TestCase):
     """Test cases for TableCellBuilder."""
 
-    def test_build_centered_cell_with_string(self):
-        """Test build_centered_cell with a string value."""
-        result = TableCellBuilder.build_centered_cell("Test")
+    @parameterized.expand(
+        [
+            ("string_value", "Test", "Test"),
+            ("int_value", 42, "42"),
+        ]
+    )
+    def test_build_centered_cell(self, scenario, value, expected_plain):
+        """Test build_centered_cell with different value types."""
+        result = TableCellBuilder.build_centered_cell(value)
         self.assertIsInstance(result, Text)
-        self.assertEqual(result.plain, "Test")
+        self.assertEqual(result.plain, expected_plain)
         self.assertEqual(result.justify, "center")
 
-    def test_build_centered_cell_with_int(self):
-        """Test build_centered_cell with an integer value."""
-        result = TableCellBuilder.build_centered_cell(42)
-        self.assertIsInstance(result, Text)
-        self.assertEqual(result.plain, "42")
-        self.assertEqual(result.justify, "center")
+    @parameterized.expand(
+        [
+            ("without_style", "Left Text", None, False),
+            ("with_style", "Styled Text", "bold", True),
+        ]
+    )
+    def test_build_left_aligned_cell(self, scenario, text, style, should_have_style):
+        """Test build_left_aligned_cell with and without style."""
+        if style:
+            result = TableCellBuilder.build_left_aligned_cell(text, style=style)
+        else:
+            result = TableCellBuilder.build_left_aligned_cell(text)
 
-    def test_build_left_aligned_cell_without_style(self):
-        """Test build_left_aligned_cell without style."""
-        result = TableCellBuilder.build_left_aligned_cell("Left Text")
         self.assertIsInstance(result, Text)
-        self.assertEqual(result.plain, "Left Text")
+        self.assertEqual(result.plain, text)
         self.assertEqual(result.justify, "left")
 
-    def test_build_left_aligned_cell_with_style(self):
-        """Test build_left_aligned_cell with style."""
-        result = TableCellBuilder.build_left_aligned_cell("Styled Text", style="bold")
-        self.assertIsInstance(result, Text)
-        self.assertEqual(result.plain, "Styled Text")
-        self.assertEqual(result.justify, "left")
-        # Check that style was applied by checking spans
-        self.assertTrue(len(result._spans) > 0, "Style should be applied via spans")
+        if should_have_style:
+            self.assertTrue(len(result._spans) > 0, "Style should be applied via spans")
 
-    def test_build_styled_cell_default_center(self):
-        """Test build_styled_cell with default center justification."""
-        result = TableCellBuilder.build_styled_cell("Center", style="italic")
-        self.assertIsInstance(result, Text)
-        self.assertEqual(result.plain, "Center")
-        self.assertEqual(result.justify, "center")
-        # Check that style was applied by checking spans
-        self.assertTrue(len(result._spans) > 0, "Style should be applied via spans")
+    @parameterized.expand(
+        [
+            ("default_center", "Center", "italic", "center"),
+            ("right_justified", "Right", None, "right"),
+        ]
+    )
+    def test_build_styled_cell(self, scenario, text, style, justify):
+        """Test build_styled_cell with different justifications."""
+        if justify == "right":
+            result = TableCellBuilder.build_styled_cell(text, justify=justify)
+        else:
+            result = TableCellBuilder.build_styled_cell(text, style=style)
 
-    def test_build_styled_cell_right_justified(self):
-        """Test build_styled_cell with right justification."""
-        result = TableCellBuilder.build_styled_cell("Right", justify="right")
         self.assertIsInstance(result, Text)
-        self.assertEqual(result.plain, "Right")
-        self.assertEqual(result.justify, "right")
+        self.assertEqual(result.plain, text)
+        self.assertEqual(result.justify, justify)
+
+        if style:
+            self.assertTrue(len(result._spans) > 0, "Style should be applied via spans")
 
     def test_build_cell_from_formatter(self):
         """Test build_cell_from_formatter with formatter function."""

@@ -2,6 +2,8 @@
 
 import unittest
 
+from parameterized import parameterized
+
 from taskdog_core.application.dto.archive_task_input import ArchiveTaskInput
 from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.complete_task_input import CompleteTaskInput
@@ -28,35 +30,20 @@ class TestSingleTaskInput(unittest.TestCase):
 class TestTypeAliases(unittest.TestCase):
     """Test cases for type aliases of SingleTaskInput."""
 
-    def test_start_task_input_is_single_task_input(self):
-        """Test StartTaskInput is an alias of SingleTaskInput."""
-        dto = StartTaskInput(task_id=1)
+    @parameterized.expand(
+        [
+            ("start_task_input", StartTaskInput, 1),
+            ("complete_task_input", CompleteTaskInput, 2),
+            ("pause_task_input", PauseTaskInput, 3),
+            ("remove_task_input", RemoveTaskInput, 4),
+            ("archive_task_input", ArchiveTaskInput, 5),
+        ]
+    )
+    def test_alias_is_single_task_input(self, alias_name, dto_class, task_id):
+        """Test that type alias is an instance of SingleTaskInput."""
+        dto = dto_class(task_id=task_id)
         self.assertIsInstance(dto, SingleTaskInput)
-        self.assertEqual(dto.task_id, 1)
-
-    def test_complete_task_input_is_single_task_input(self):
-        """Test CompleteTaskInput is an alias of SingleTaskInput."""
-        dto = CompleteTaskInput(task_id=2)
-        self.assertIsInstance(dto, SingleTaskInput)
-        self.assertEqual(dto.task_id, 2)
-
-    def test_pause_task_input_is_single_task_input(self):
-        """Test PauseTaskInput is an alias of SingleTaskInput."""
-        dto = PauseTaskInput(task_id=3)
-        self.assertIsInstance(dto, SingleTaskInput)
-        self.assertEqual(dto.task_id, 3)
-
-    def test_remove_task_input_is_single_task_input(self):
-        """Test RemoveTaskInput is an alias of SingleTaskInput."""
-        dto = RemoveTaskInput(task_id=4)
-        self.assertIsInstance(dto, SingleTaskInput)
-        self.assertEqual(dto.task_id, 4)
-
-    def test_archive_task_input_is_single_task_input(self):
-        """Test ArchiveTaskInput is an alias of SingleTaskInput."""
-        dto = ArchiveTaskInput(task_id=5)
-        self.assertIsInstance(dto, SingleTaskInput)
-        self.assertEqual(dto.task_id, 5)
+        self.assertEqual(dto.task_id, task_id)
 
     def test_all_aliases_are_same_type(self):
         """Test all type aliases resolve to the same type."""

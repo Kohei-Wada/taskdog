@@ -4,6 +4,8 @@ import unittest
 from datetime import datetime
 from unittest.mock import MagicMock, Mock
 
+from parameterized import parameterized
+
 from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleController
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
@@ -23,110 +25,65 @@ class TestTaskLifecycleController(unittest.TestCase):
             config=self.config,
         )
 
-    def test_start_task_returns_task_operation_output(self):
-        """Test that start_task returns TaskOperationOutput."""
+    @parameterized.expand(
+        [
+            (
+                "start_task",
+                "start_task",
+                TaskStatus.PENDING,
+                None,
+                None,
+            ),
+            (
+                "complete_task",
+                "complete_task",
+                TaskStatus.IN_PROGRESS,
+                datetime(2025, 1, 1, 9, 0, 0),
+                None,
+            ),
+            (
+                "pause_task",
+                "pause_task",
+                TaskStatus.IN_PROGRESS,
+                datetime(2025, 1, 1, 9, 0, 0),
+                None,
+            ),
+            (
+                "cancel_task",
+                "cancel_task",
+                TaskStatus.IN_PROGRESS,
+                datetime(2025, 1, 1, 9, 0, 0),
+                None,
+            ),
+            (
+                "reopen_task",
+                "reopen_task",
+                TaskStatus.COMPLETED,
+                datetime(2025, 1, 1, 9, 0, 0),
+                datetime(2025, 1, 1, 17, 0, 0),
+            ),
+        ]
+    )
+    def test_lifecycle_operation_returns_task_operation_output(
+        self, operation_name, method_name, initial_status, actual_start, actual_end
+    ):
+        """Test that lifecycle operations return TaskOperationOutput."""
         # Arrange
         task_id = 1
         task = Task(
             id=task_id,
             name="Test Task",
             priority=1,
-            status=TaskStatus.PENDING,
+            status=initial_status,
+            actual_start=actual_start,
+            actual_end=actual_end,
         )
         self.repository.get_by_id.return_value = task
         self.repository.save.return_value = None
 
         # Act
-        result = self.controller.start_task(task_id)
-
-        # Assert
-        self.assertIsNotNone(result)
-        self.assertEqual(result.id, task_id)
-        self.assertEqual(result.name, "Test Task")
-
-    def test_complete_task_returns_task_operation_output(self):
-        """Test that complete_task returns TaskOperationOutput."""
-        # Arrange
-        task_id = 1
-        task = Task(
-            id=task_id,
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.IN_PROGRESS,
-            actual_start=datetime(2025, 1, 1, 9, 0, 0),
-        )
-        self.repository.get_by_id.return_value = task
-        self.repository.save.return_value = None
-
-        # Act
-        result = self.controller.complete_task(task_id)
-
-        # Assert
-        self.assertIsNotNone(result)
-        self.assertEqual(result.id, task_id)
-        self.assertEqual(result.name, "Test Task")
-
-    def test_pause_task_returns_task_operation_output(self):
-        """Test that pause_task returns TaskOperationOutput."""
-        # Arrange
-        task_id = 1
-        task = Task(
-            id=task_id,
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.IN_PROGRESS,
-            actual_start=datetime(2025, 1, 1, 9, 0, 0),
-        )
-        self.repository.get_by_id.return_value = task
-        self.repository.save.return_value = None
-
-        # Act
-        result = self.controller.pause_task(task_id)
-
-        # Assert
-        self.assertIsNotNone(result)
-        self.assertEqual(result.id, task_id)
-        self.assertEqual(result.name, "Test Task")
-
-    def test_cancel_task_returns_task_operation_output(self):
-        """Test that cancel_task returns TaskOperationOutput."""
-        # Arrange
-        task_id = 1
-        task = Task(
-            id=task_id,
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.IN_PROGRESS,
-            actual_start=datetime(2025, 1, 1, 9, 0, 0),
-        )
-        self.repository.get_by_id.return_value = task
-        self.repository.save.return_value = None
-
-        # Act
-        result = self.controller.cancel_task(task_id)
-
-        # Assert
-        self.assertIsNotNone(result)
-        self.assertEqual(result.id, task_id)
-        self.assertEqual(result.name, "Test Task")
-
-    def test_reopen_task_returns_task_operation_output(self):
-        """Test that reopen_task returns TaskOperationOutput."""
-        # Arrange
-        task_id = 1
-        task = Task(
-            id=task_id,
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.COMPLETED,
-            actual_start=datetime(2025, 1, 1, 9, 0, 0),
-            actual_end=datetime(2025, 1, 1, 17, 0, 0),
-        )
-        self.repository.get_by_id.return_value = task
-        self.repository.save.return_value = None
-
-        # Act
-        result = self.controller.reopen_task(task_id)
+        method = getattr(self.controller, method_name)
+        result = method(task_id)
 
         # Assert
         self.assertIsNotNone(result)
