@@ -7,6 +7,8 @@ clients while maintaining the same public API.
 from datetime import date, datetime
 from typing import Any
 
+import httpx  # type: ignore[import-not-found]
+
 from taskdog.infrastructure.api.analytics_client import AnalyticsClient
 from taskdog.infrastructure.api.base_client import BaseApiClient
 from taskdog.infrastructure.api.lifecycle_client import LifecycleClient
@@ -56,7 +58,7 @@ class TaskdogApiClient:
         self._notes._has_notes_cache = self._has_notes_cache
 
     @property
-    def client(self):
+    def client(self) -> httpx.Client:
         """Access underlying httpx client for backward compatibility.
 
         Returns:
