@@ -17,7 +17,7 @@ from taskdog_core.application.services.workload_calculation_strategy_factory imp
     WorkloadCalculationStrategyFactory,
 )
 from taskdog_core.application.use_cases.base import UseCase
-from taskdog_core.domain.entities.task import Task
+from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -70,6 +70,19 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             t.id: t.planned_start for t in all_tasks if t.id is not None
         }
 
+        # Filter schedulable tasks (UseCase responsibility: what to optimize)
+        schedulable_tasks = [
+            task for task in all_tasks if task.is_schedulable(input_dto.force_override)
+        ]
+
+        # Filter tasks for workload calculation (UseCase responsibility)
+        # - Exclude finished tasks (completed/archived)
+        # - If force_override=True: only include Fixed and IN_PROGRESS tasks
+        # - If force_override=False: include all active scheduled tasks
+        workload_tasks = self._filter_workload_tasks(
+            all_tasks, input_dto.force_override
+        )
+
         # Create WorkloadCalculator for optimization context
         # Factory selects appropriate strategy (WeekdayOnlyStrategy for optimization)
         # UseCase constructs the calculator with the strategy
@@ -85,9 +98,11 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         )
 
         # Run optimization with injected workload calculator
+        # Strategy responsibility: how to optimize
+        # Pass filtered workload_tasks instead of all_tasks
         modified_tasks, daily_allocations, failed_tasks = strategy.optimize_tasks(
-            tasks=all_tasks,
-            repository=self.repository,
+            schedulable_tasks=schedulable_tasks,
+            all_tasks_for_context=workload_tasks,
             start_date=input_dto.start_date,
             max_hours_per_day=input_dto.max_hours_per_day,
             force_override=input_dto.force_override,
@@ -103,14 +118,10 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         # (when force_override is True, schedulable tasks that failed to schedule
         # should have their old schedules cleared to avoid phantom allocations)
         if input_dto.force_override:
-            schedulable_tasks = [
-                task
-                for task in all_tasks
-                if task.is_schedulable(input_dto.force_override)
-            ]
             scheduled_task_ids = {t.id for t in modified_tasks}
 
             # Find tasks that were schedulable but failed to schedule
+            # Use already-filtered schedulable_tasks instead of re-filtering
             tasks_to_clear = [
                 task
                 for task in schedulable_tasks
@@ -158,3 +169,41 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         if task.id is None:
             raise ValueError("Task must have an ID")
         return TaskSummaryDto(id=task.id, name=task.name)
+
+    def _filter_workload_tasks(
+        self, all_tasks: list[Task], force_override: bool
+    ) -> list[Task]:
+        """Filter tasks that should be included in workload calculation.
+
+        Business Rules:
+        - Exclude finished tasks (completed/archived) - they don't contribute to future workload
+        - If force_override=True:
+          - Include Fixed tasks (immovable time constraints)
+          - Include IN_PROGRESS tasks (already started, should not be rescheduled)
+          - Exclude PENDING non-fixed tasks (will be rescheduled)
+        - If force_override=False:
+          - Include all active tasks with schedules
+
+        Args:
+            all_tasks: All tasks in the system
+            force_override: Whether existing schedules will be overridden
+
+        Returns:
+            List of tasks to include in workload calculation
+        """
+        filtered = []
+        for task in all_tasks:
+            # Skip finished tasks (completed/archived) - they don't contribute to future workload
+            if not task.should_count_in_workload():
+                continue
+
+            # If force_override=True, only include Fixed and IN_PROGRESS tasks
+            # (PENDING non-fixed tasks will be rescheduled, so exclude them from workload)
+            if force_override:
+                if task.is_fixed or task.status == TaskStatus.IN_PROGRESS:
+                    filtered.append(task)
+            else:
+                # If force_override=False, include all active tasks
+                filtered.append(task)
+
+        return filtered

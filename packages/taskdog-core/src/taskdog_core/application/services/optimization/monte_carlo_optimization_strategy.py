@@ -22,7 +22,6 @@ from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-    from taskdog_core.domain.repositories.task_repository import TaskRepository
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
@@ -58,11 +57,12 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self._evaluation_cache: dict[
             tuple[int | None, ...], float
         ] = {}  # Cache for evaluation results
+        self.holiday_checker: IHolidayChecker | None = None
 
     def optimize_tasks(
         self,
-        tasks: list[Task],
-        repository: "TaskRepository",
+        schedulable_tasks: list[Task],
+        all_tasks_for_context: list[Task],
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
@@ -73,8 +73,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         """Optimize task schedules using Monte Carlo simulation.
 
         Args:
-            tasks: List of all tasks to consider for optimization
-            repository: Task repository for hierarchy queries
+            schedulable_tasks: List of tasks to schedule (already filtered by is_schedulable())
+            all_tasks_for_context: All tasks in the system (for calculating existing allocations)
             start_date: Starting date for schedule optimization
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
@@ -88,21 +88,19 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             - daily_allocations: Dict mapping date strings to allocated hours
             - failed_tasks: List of tasks that could not be scheduled with reasons
         """
-        # Filter tasks that need scheduling
-        schedulable_tasks = [
-            task for task in tasks if task.is_schedulable(force_override)
-        ]
-
+        # No filtering needed - schedulable_tasks is already filtered by UseCase
         if not schedulable_tasks:
             return [], {}, []
 
+        # Store holiday_checker for use in evaluation
+        self.holiday_checker = holiday_checker
+
         # Create allocation context
+        # NOTE: all_tasks_for_context should already be filtered by UseCase
         context = AllocationContext.create(
-            tasks=tasks,
-            repository=repository,
+            tasks=all_tasks_for_context,
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
-            force_override=force_override,
             holiday_checker=holiday_checker,
             current_time=current_time,
             workload_calculator=workload_calculator,
@@ -120,11 +118,10 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         # Run Monte Carlo simulation
         best_order = self._monte_carlo_simulation(
             schedulable_tasks,
-            tasks,
+            all_tasks_for_context,
             start_date,
             max_hours_per_day,
             force_override,
-            repository,
             greedy_strategy,
             workload_calculator,
         )
@@ -149,7 +146,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-        repository: "TaskRepository",
         greedy_strategy: GreedyOptimizationStrategy,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> list[Task]:
@@ -161,7 +157,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
-            repository: Task repository
             greedy_strategy: Greedy strategy instance
             workload_calculator: Optional pre-configured calculator for workload calculation
 
@@ -191,7 +186,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
                 start_date,
                 max_hours_per_day,
                 force_override,
-                repository,
                 greedy_strategy,
                 workload_calculator,
             )
@@ -210,7 +204,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-        repository: "TaskRepository",
         greedy_strategy: GreedyOptimizationStrategy,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> float:
@@ -222,7 +215,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
-            repository: Task repository
             greedy_strategy: Greedy strategy instance
             workload_calculator: Optional pre-configured calculator for workload calculation
 
@@ -243,7 +235,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             start_date,
             max_hours_per_day,
             force_override,
-            repository,
             greedy_strategy,
             workload_calculator,
         )
@@ -260,7 +251,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool,
-        repository: "TaskRepository",
         greedy_strategy: GreedyOptimizationStrategy,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> float:
@@ -274,7 +264,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
             force_override: Whether to override existing schedules
-            repository: Task repository
             greedy_strategy: Greedy strategy instance
             workload_calculator: Optional pre-configured calculator for workload calculation
 
@@ -283,15 +272,12 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         """
         # Simulate scheduling with this order
         # Create a temporary context for simulation
+        # NOTE: all_tasks should already be filtered by caller
         temp_context = AllocationContext.create(
             tasks=all_tasks,
-            repository=repository,
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
-            force_override=force_override,
-            holiday_checker=greedy_strategy._get_holiday_checker()
-            if hasattr(greedy_strategy, "_get_holiday_checker")
-            else None,
+            holiday_checker=self.holiday_checker,
             current_time=None,
             workload_calculator=workload_calculator,
         )
