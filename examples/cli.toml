@@ -28,6 +28,28 @@ port = 8000
 # - Remote server: host = "192.168.1.100", port = 8000
 
 # =============================================================================
+# UI Appearance Settings
+# =============================================================================
+#
+# Configure TUI appearance (theme, colors).
+
+[ui]
+# TUI theme (default: "textual-dark")
+# Available themes:
+#   - textual-dark (default)
+#   - textual-light
+#   - nord
+#   - gruvbox
+#   - tokyo-night
+#   - solarized-light
+theme = "textual-dark"
+
+# Examples:
+# - Nord theme: theme = "nord"
+# - Light mode: theme = "textual-light"
+# - Gruvbox: theme = "gruvbox"
+
+# =============================================================================
 # Keybindings (Future Feature)
 # =============================================================================
 #

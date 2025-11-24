@@ -26,6 +26,17 @@ class CliApiConfig:
 
 
 @dataclass(frozen=True)
+class UiConfig:
+    """UI appearance configuration for TUI.
+
+    Attributes:
+        theme: TUI theme name (textual-dark, textual-light, nord, gruvbox, tokyo-night, solarized-light)
+    """
+
+    theme: str = "textual-dark"
+
+
+@dataclass(frozen=True)
 class CliConfig:
     """CLI/TUI configuration.
 
@@ -34,10 +45,12 @@ class CliConfig:
 
     Attributes:
         api: API connection settings
+        ui: UI appearance settings (theme, etc.)
         keybindings: Future: Custom keybindings for TUI (not yet implemented)
     """
 
     api: CliApiConfig = field(default_factory=CliApiConfig)
+    ui: UiConfig = field(default_factory=UiConfig)
     keybindings: dict[str, str] = field(default_factory=dict)
 
 
@@ -68,12 +81,13 @@ def load_cli_config() -> CliConfig:
 
     Note:
         If cli.toml doesn't exist, uses defaults.
-        Environment variables override file settings.
+        Environment variables override file settings (API settings only).
         CLI/TUI always requires API server (no standalone mode).
     """
     # Start with defaults
     api_host = "127.0.0.1"
     api_port = 8000
+    theme = "textual-dark"
     keybindings: dict[str, str] = {}
 
     # Load from cli.toml if exists
@@ -89,6 +103,11 @@ def load_cli_config() -> CliConfig:
                 api_host = api_section.get("host", api_host)
                 api_port = api_section.get("port", api_port)
 
+            # Parse [ui] section
+            if "ui" in data:
+                ui_section = data["ui"]
+                theme = ui_section.get("theme", theme)
+
             # Parse [keybindings] section (future feature)
             if "keybindings" in data:
                 keybindings = data["keybindings"]
@@ -98,7 +117,7 @@ def load_cli_config() -> CliConfig:
             # Don't raise - we want CLI to work even with broken config
             pass
 
-    # Override with environment variables (highest priority)
+    # Override with environment variables (highest priority, API settings only)
     if "TASKDOG_API_HOST" in os.environ:
         api_host = os.environ["TASKDOG_API_HOST"]
 
@@ -109,4 +128,5 @@ def load_cli_config() -> CliConfig:
 
     # Build config object
     api_config = CliApiConfig(host=api_host, port=api_port)
-    return CliConfig(api=api_config, keybindings=keybindings)
+    ui_config = UiConfig(theme=theme)
+    return CliConfig(api=api_config, ui=ui_config, keybindings=keybindings)

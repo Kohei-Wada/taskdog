@@ -41,6 +41,23 @@ port = 8000          # API server port (default: 8000)
 
 **Note**: CLI/TUI always requires the API server to be running. There is no standalone mode.
 
+### [ui] Section
+
+UI appearance settings for the TUI.
+
+```toml
+[ui]
+theme = "textual-dark"  # TUI theme (default: "textual-dark")
+```
+
+**Available themes**:
+- `textual-dark` (default) - Textual's dark theme
+- `textual-light` - Textual's light theme
+- `nord` - Nord color scheme
+- `gruvbox` - Gruvbox color scheme
+- `tokyo-night` - Tokyo Night color scheme
+- `solarized-light` - Solarized Light color scheme
+
 ### [keybindings] Section (Future Feature)
 
 Custom keybindings for the TUI. Not yet implemented.

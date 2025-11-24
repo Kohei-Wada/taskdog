@@ -9,6 +9,7 @@ from textual.command import CommandPalette
 
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
+    from taskdog.infrastructure.cli_config import CliConfig
 
 from taskdog.infrastructure.websocket import WebSocketClient
 from taskdog.presenters.gantt_presenter import GanttPresenter
@@ -176,6 +177,7 @@ class TaskdogTUI(App):
     def __init__(
         self,
         api_client: "TaskdogApiClient",
+        cli_config: "CliConfig | None" = None,
         *args,
         **kwargs,
     ):
@@ -186,9 +188,11 @@ class TaskdogTUI(App):
 
         Args:
             api_client: API client for server communication (required)
+            cli_config: CLI configuration (optional, uses defaults if not provided)
         """
         super().__init__(*args, **kwargs)
         from taskdog.infrastructure.api_client import TaskdogApiClient
+        from taskdog.infrastructure.cli_config import CliConfig
 
         if not isinstance(api_client, TaskdogApiClient):
             from typing import TYPE_CHECKING
@@ -198,6 +202,7 @@ class TaskdogTUI(App):
                 pass
 
         self.api_client = api_client
+        self.cli_config = cli_config or CliConfig()
         self.main_screen: MainScreen | None = None
 
         # Initialize TUI state (Single Source of Truth for all app state)
@@ -286,6 +291,9 @@ class TaskdogTUI(App):
 
     async def on_mount(self) -> None:
         """Called when app is mounted."""
+        # Apply theme from config
+        self.theme = self.cli_config.ui.theme
+
         self.main_screen = MainScreen(state=self.state)
         self.push_screen(self.main_screen)
         # Load tasks after screen is fully mounted

@@ -27,7 +27,8 @@ def tui_command(ctx: click.Context) -> None:
     """
     ctx_obj: CliContext = ctx.obj
     api_client = ctx_obj.api_client
+    cli_config = ctx_obj.config
 
-    # Launch the TUI application with API client
-    app = TaskdogTUI(api_client=api_client)
+    # Launch the TUI application with API client and config
+    app = TaskdogTUI(api_client=api_client, cli_config=cli_config)
     app.run()
