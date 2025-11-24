@@ -15,7 +15,6 @@ from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.constants.ui_settings import MAX_HOURS_PER_DAY
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_option_list import ViOptionList
-from taskdog_core.shared.config_manager import Config
 
 
 class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | None]):
@@ -46,7 +45,6 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
 
     def __init__(
         self,
-        config: Config,
         algorithm_metadata: list[tuple[str, str, str]],
         force_override: bool = False,
         *args: Any,
@@ -55,12 +53,10 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         """Initialize the screen.
 
         Args:
-            config: Application configuration
             algorithm_metadata: List of (algorithm_id, display_name, description) tuples
             force_override: Whether this is a force override optimization
         """
         super().__init__(*args, **kwargs)
-        self.config = config
         self.force_override = force_override
         self.algorithms = algorithm_metadata
 
@@ -94,9 +90,9 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
 
                 yield Label("Max Hours per Day:", classes="field-label")
                 yield Input(
-                    placeholder="Enter max hours per day",
+                    placeholder="Enter max hours per day (typically 6-8)",
                     id="max-hours-input",
-                    value=str(self.config.optimization.max_hours_per_day),
+                    value="",
                 )
 
                 yield Label("Start Date:", classes="field-label")
@@ -146,11 +142,12 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
 
         Returns:
             Tuple of (parsed_value, error_message).
-            If valid: (float_value, None)
+            If valid: (float_value or None, None)
             If invalid: (None, error_message)
         """
         if not value:
-            return None, "Max hours per day is required"
+            # Empty value is allowed - server will apply config default
+            return None, None
 
         try:
             hours = float(value)
@@ -212,9 +209,9 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
             self._show_validation_error(start_date_error, start_date_input)
             return
 
-        # Type narrowing: validation ensures non-None values at this point
-        assert max_hours is not None, "max_hours validated above"
+        # Type narrowing: start_date must be non-None (required field)
+        # max_hours can be None (server will apply default)
         assert start_date is not None, "start_date validated above"
 
-        # Submit algorithm, max_hours, and start_date
+        # Submit algorithm, max_hours (can be None), and start_date
         self.dismiss((selected_algo, max_hours, start_date))

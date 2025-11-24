@@ -8,9 +8,7 @@ from textual.containers import Vertical
 from textual.widgets import Checkbox, Input, Label, Static
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
-from taskdog.tui.utils.config_validator import require_config
 from taskdog_core.application.dto.task_dto import TaskDetailDto
-from taskdog_core.shared.config_manager import Config
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 
@@ -75,14 +73,11 @@ class TaskFormFields:
     """
 
     @staticmethod
-    def compose_form_fields(
-        task: TaskDetailDto | None = None, config: Config | None = None
-    ) -> ComposeResult:
+    def compose_form_fields(task: TaskDetailDto | None = None) -> ComposeResult:
         """Compose task form fields.
 
         Args:
             task: Existing task for editing (None for new task)
-            config: Application configuration
 
         Yields:
             Form field widgets
@@ -90,11 +85,9 @@ class TaskFormFields:
         # Error message area (hidden by default)
         yield Static("", id="error-message")
 
-        # Validate config parameter
-        config = require_config(config)
-
-        # Get default priority from config
-        default_priority = config.task.default_priority
+        # Hardcoded default priority for placeholder text
+        # Server will apply actual config default when creating tasks
+        default_priority = 5
 
         with Vertical(id="form-container"):
             # Task name field

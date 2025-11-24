@@ -1,0 +1,131 @@
+# Taskdog Server Configuration Example
+#
+# Copy this file to ~/.config/taskdog/config.toml (or $XDG_CONFIG_HOME/taskdog/config.toml)
+# to customize server behavior and business logic defaults.
+#
+# This config is for SERVER BUSINESS LOGIC only.
+# For CLI/TUI infrastructure settings (API connection), see cli.toml.
+
+# =============================================================================
+# API Server Settings
+# =============================================================================
+#
+# Configure the taskdog-server API server.
+
+[api]
+# Whether API server mode is enabled (default: false)
+# Note: CLI/TUI always require the server, so this should be true in practice
+enabled = true
+
+# API server host (default: "127.0.0.1")
+# Use "127.0.0.1" for localhost only, or "0.0.0.0" to listen on all interfaces
+host = "127.0.0.1"
+
+# API server port (default: 8000)
+port = 8000
+
+# CORS (Cross-Origin Resource Sharing) allowed origins
+# Used when accessing API from web browsers
+cors_origins = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+]
+
+# =============================================================================
+# Task Defaults
+# =============================================================================
+#
+# Default values applied when creating new tasks.
+
+[task]
+# Default priority for new tasks (default: 5)
+# Range: 1-10 (higher = more important)
+default_priority = 5
+
+# =============================================================================
+# Time Settings
+# =============================================================================
+#
+# Default work hours used by the server.
+
+[time]
+# Default start hour for business day (default: 9)
+# Used when parsing dates without time (e.g., "2025-12-31" → "2025-12-31 09:00:00")
+default_start_hour = 9
+
+# Default end hour for business day (default: 18)
+# Used for deadlines without time (e.g., "2025-12-31" → "2025-12-31 18:00:00")
+default_end_hour = 18
+
+# =============================================================================
+# Schedule Optimization Settings
+# =============================================================================
+#
+# Settings for the schedule optimizer.
+
+[optimization]
+# Maximum work hours per day for optimization (default: 6.0)
+# Used when auto-scheduling tasks to distribute workload
+max_hours_per_day = 6.0
+
+# Default optimization algorithm (default: "greedy")
+# Available algorithms:
+# - greedy: Fast, prioritizes high-priority tasks first
+# - balanced: Distributes workload evenly across days
+# - backward: Schedules from deadlines backward
+# - priority_first: Strictly priority-ordered scheduling
+# - earliest_deadline: Schedules tasks with nearest deadlines first
+# - round_robin: Alternates between tasks to balance progress
+# - dependency_aware: Respects task dependencies during scheduling
+# - genetic: Uses genetic algorithm for global optimization
+# - monte_carlo: Uses Monte Carlo simulation for probabilistic scheduling
+default_algorithm = "greedy"
+
+# =============================================================================
+# Region Settings
+# =============================================================================
+#
+# Regional settings for holidays and calendars.
+
+[region]
+# Country code for holiday calendar (default: none)
+# Use ISO 3166-1 alpha-2 country codes: "JP", "US", "GB", "DE", etc.
+# Set to skip holidays in schedule optimization
+# Leave commented or set to "" to disable holiday checking
+country = "JP"
+
+# Examples:
+# country = "US"  # United States holidays
+# country = "GB"  # United Kingdom holidays
+# country = "DE"  # Germany holidays
+# country = ""    # No holiday checking
+
+# =============================================================================
+# Storage Backend Settings
+# =============================================================================
+#
+# Configure where and how task data is stored.
+
+[storage]
+# Storage backend type (default: "sqlite")
+# Currently only "sqlite" is supported
+backend = "sqlite"
+
+# Database file location (default: XDG data directory)
+# If not specified, uses: ~/.local/share/taskdog/tasks.db
+# Set custom path for database file:
+# database_url = "/path/to/custom/tasks.db"
+
+# =============================================================================
+# Notes
+# =============================================================================
+#
+# 1. If this file doesn't exist, defaults are used
+# 2. Only the server reads this config (CLI/TUI read cli.toml)
+# 3. Environment variables can override some settings (check server docs)
+# 4. Changes require server restart: systemctl --user restart taskdog-server
+# 5. Optimization algorithms can be listed with: taskdog optimize --help
+#
+# For more details, see the main README.md

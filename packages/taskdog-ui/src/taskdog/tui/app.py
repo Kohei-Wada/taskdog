@@ -36,7 +36,8 @@ from taskdog.tui.services.websocket_handler import WebSocketHandler
 from taskdog.tui.state import TUIState
 from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
-from taskdog_core.shared.config_manager import Config, ConfigManager
+
+# Config no longer needed in TUI - removed to reduce Core dependency
 
 
 class TaskdogTUI(App):
@@ -175,7 +176,6 @@ class TaskdogTUI(App):
     def __init__(
         self,
         api_client: "TaskdogApiClient",
-        config: Config | None = None,
         *args,
         **kwargs,
     ):
@@ -186,7 +186,6 @@ class TaskdogTUI(App):
 
         Args:
             api_client: API client for server communication (required)
-            config: Application configuration (optional, loads from file by default)
         """
         super().__init__(*args, **kwargs)
         from taskdog.infrastructure.api_client import TaskdogApiClient
@@ -199,7 +198,6 @@ class TaskdogTUI(App):
                 pass
 
         self.api_client = api_client
-        self.config = config if config is not None else ConfigManager.load()
         self.main_screen: MainScreen | None = None
 
         # Initialize TUI state (Single Source of Truth for all app state)
@@ -213,7 +211,6 @@ class TaskdogTUI(App):
         # Initialize TUIContext with API client and state
         self.context = TUIContext(
             api_client=self.api_client,
-            config=self.config,
             state=self.state,  # Share same state instance
         )
 

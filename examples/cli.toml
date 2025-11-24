@@ -1,0 +1,84 @@
+# Taskdog CLI Configuration Example
+#
+# Copy this file to ~/.config/taskdog/cli.toml (or $XDG_CONFIG_HOME/taskdog/cli.toml)
+# to customize CLI/TUI settings.
+#
+# This config is for UI infrastructure only (API connection, keybindings).
+# Business logic settings (task defaults, optimization) are in the server's config.toml.
+
+# =============================================================================
+# API Connection Settings
+# =============================================================================
+#
+# Configure how CLI/TUI connects to the taskdog-server.
+# CLI/TUI always requires the API server to be running.
+
+[api]
+# API server hostname (default: "127.0.0.1")
+# Use "127.0.0.1" for localhost, or IP address for remote server
+host = "127.0.0.1"
+
+# API server port (default: 8000)
+# Must match the port used by taskdog-server
+port = 8000
+
+# Examples:
+# - Default local server: host = "127.0.0.1", port = 8000
+# - Custom local port: host = "127.0.0.1", port = 3000
+# - Remote server: host = "192.168.1.100", port = 8000
+
+# =============================================================================
+# Keybindings (Future Feature)
+# =============================================================================
+#
+# Custom keybindings for TUI. Not yet implemented.
+
+# [keybindings]
+# quit = "q"
+# add = "a"
+# start = "s"
+# pause = "P"
+# done = "d"
+# cancel = "c"
+# reopen = "R"
+# archive = "x"
+# delete = "X"
+# detail = "i"
+# edit = "e"
+# note = "v"
+# refresh = "r"
+# toggle_visibility = "t"
+# search = "/"
+# optimize = "o"
+
+# =============================================================================
+# Environment Variables
+# =============================================================================
+#
+# Environment variables override settings in this file:
+#
+# - TASKDOG_API_HOST: API server hostname
+# - TASKDOG_API_PORT: API server port
+#
+# Examples:
+#
+#   export TASKDOG_API_HOST=192.168.1.100
+#   export TASKDOG_API_PORT=3000
+#   taskdog table
+#
+# Or inline:
+#
+#   TASKDOG_API_HOST=192.168.1.100 taskdog table
+
+# =============================================================================
+# Notes
+# =============================================================================
+#
+# 1. If this file doesn't exist, defaults are used (127.0.0.1:8000)
+# 2. Priority: environment variables > cli.toml > defaults
+# 3. Server must be running before using CLI/TUI
+# 4. Start server with: taskdog-server
+# 5. Check server status: systemctl --user status taskdog-server
+# 6. Test connection: curl http://127.0.0.1:8000/health
+#
+# For more details, see CLI_CONFIG.md

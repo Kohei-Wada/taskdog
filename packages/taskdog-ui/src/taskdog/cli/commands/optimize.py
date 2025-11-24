@@ -101,27 +101,19 @@ def optimize_command(
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     api_client = ctx_obj.api_client
-    config = ctx_obj.config
 
-    # Use start_date or get next weekday (DateTimeWithDefault already returns datetime)
-    start_date = (
-        start_date if start_date else get_next_weekday(config.time.default_start_hour)
-    )
-
-    # Use config defaults if not provided via CLI
-    if max_hours_per_day is None:
-        max_hours_per_day = config.optimization.max_hours_per_day
-    if algorithm is None:
-        algorithm = config.optimization.default_algorithm
+    # Use start_date or get next weekday with default 9:00 AM
+    start_date = start_date if start_date else get_next_weekday(9)
 
     # Convert task_ids tuple to list (or None if empty)
     task_ids_list = list(task_ids) if task_ids else None
 
     # Execute optimization via API
+    # Server will apply config defaults for None values
     result = api_client.optimize_schedule(
-        algorithm=algorithm,
+        algorithm=algorithm,  # None if not provided, server applies default
         start_date=start_date,
-        max_hours_per_day=max_hours_per_day,
+        max_hours_per_day=max_hours_per_day,  # None if not provided, server applies default
         force_override=force,
         task_ids=task_ids_list,
     )

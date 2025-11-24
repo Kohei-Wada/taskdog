@@ -223,13 +223,24 @@ class TaskdogApiClient:
 
     def optimize_schedule(
         self,
-        algorithm: str,
+        algorithm: str | None,
         start_date: datetime,
-        max_hours_per_day: float,
+        max_hours_per_day: float | None,
         force_override: bool = True,
         task_ids: list[int] | None = None,
     ) -> OptimizationOutput:
-        """Optimize task schedules."""
+        """Optimize task schedules.
+
+        Args:
+            algorithm: Optimization algorithm (None = server default)
+            start_date: Start date for optimization
+            max_hours_per_day: Max hours per day (None = server default)
+            force_override: Force override existing schedules
+            task_ids: Specific task IDs to optimize
+
+        Returns:
+            OptimizationOutput with results
+        """
         return self._analytics.optimize_schedule(
             algorithm, start_date, max_hours_per_day, force_override, task_ids
         )

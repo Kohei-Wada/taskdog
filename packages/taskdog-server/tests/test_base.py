@@ -59,8 +59,8 @@ class BaseApiRouterTest(unittest.TestCase):
         # Mock config with default values
         cls.config = MagicMock()
         cls.config.task.default_priority = 3
-        cls.config.scheduling.max_hours_per_day = 8.0
-        cls.config.scheduling.default_algorithm = "greedy"
+        cls.config.optimization.max_hours_per_day = 8.0
+        cls.config.optimization.default_algorithm = "greedy"
         cls.config.region.country = None
         cls.config.time.default_start_hour = 9
         cls.config.time.default_end_hour = 18
