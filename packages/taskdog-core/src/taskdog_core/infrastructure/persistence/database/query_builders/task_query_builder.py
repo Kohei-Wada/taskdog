@@ -9,7 +9,6 @@ The builder supports the hybrid filtering architecture where simple filters
 """
 
 from datetime import date
-from typing import Any
 
 from sqlalchemy import or_, select
 from sqlalchemy.sql.expression import ColumnElement
@@ -47,7 +46,7 @@ class TaskQueryBuilder:
         from complex Python-only filters.
     """
 
-    def __init__(self, base_stmt: Select[Any]):
+    def __init__(self, base_stmt: Select):  # type: ignore[type-arg]
         """Initialize the builder with a base SELECT statement.
 
         Args:
@@ -163,7 +162,7 @@ class TaskQueryBuilder:
 
         return self
 
-    def build(self) -> Select[Any]:
+    def build(self) -> Select:  # type: ignore[type-arg]
         """Build and return the final SELECT statement.
 
         Returns:
@@ -215,8 +214,8 @@ class TaskQueryBuilder:
             if start_date and end_date:
                 date_conditions.append(field.between(start_date, end_date))  # type: ignore[attr-defined]
             elif start_date:
-                date_conditions.append(field >= start_date)  # type: ignore[arg-type]
+                date_conditions.append(field >= start_date)  # type: ignore[arg-type,operator]
             elif end_date:
-                date_conditions.append(field <= end_date)  # type: ignore[arg-type]
+                date_conditions.append(field <= end_date)  # type: ignore[arg-type,operator]
 
         return date_conditions
