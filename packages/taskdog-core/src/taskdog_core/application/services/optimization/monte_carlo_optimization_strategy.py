@@ -57,6 +57,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self._evaluation_cache: dict[
             tuple[int | None, ...], float
         ] = {}  # Cache for evaluation results
+        self.holiday_checker: IHolidayChecker | None = None
 
     def optimize_tasks(
         self,
@@ -90,6 +91,9 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         # No filtering needed - schedulable_tasks is already filtered by UseCase
         if not schedulable_tasks:
             return [], {}, []
+
+        # Store holiday_checker for use in evaluation
+        self.holiday_checker = holiday_checker
 
         # Create allocation context
         # NOTE: all_tasks_for_context should already be filtered by UseCase
@@ -273,9 +277,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             tasks=all_tasks,
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
-            holiday_checker=greedy_strategy._get_holiday_checker()
-            if hasattr(greedy_strategy, "_get_holiday_checker")
-            else None,
+            holiday_checker=self.holiday_checker,
             current_time=None,
             workload_calculator=workload_calculator,
         )

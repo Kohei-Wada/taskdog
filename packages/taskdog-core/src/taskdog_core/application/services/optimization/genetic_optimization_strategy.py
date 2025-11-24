@@ -74,6 +74,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         self._fitness_cache: dict[
             tuple[int | None, ...], tuple[float, dict[date, float], list[Task]]
         ] = {}
+        self.holiday_checker: IHolidayChecker | None = None
 
     def optimize_tasks(
         self,
@@ -107,6 +108,9 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         # No filtering needed - schedulable_tasks is already filtered by UseCase
         if not schedulable_tasks:
             return [], {}, []
+
+        # Store holiday_checker for use in evaluation
+        self.holiday_checker = holiday_checker
 
         # Create allocation context
         # NOTE: all_tasks_for_context should already be filtered by UseCase
@@ -337,7 +341,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             tasks=task_order,
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
-            holiday_checker=None,
+            holiday_checker=self.holiday_checker,
             current_time=None,
             workload_calculator=workload_calculator,
         )
