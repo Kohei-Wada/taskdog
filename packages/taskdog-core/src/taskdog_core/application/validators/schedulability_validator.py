@@ -1,6 +1,6 @@
 """Validator for task schedulability during optimization."""
 
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.exceptions.task_exceptions import (
     NoSchedulableTasksError,
     TaskNotFoundException,
@@ -63,39 +63,12 @@ class SchedulabilityValidator:
             if task.is_schedulable(force_override):
                 schedulable_tasks.append(task)
             elif task.id is not None:
-                # Determine why the task is not schedulable
-                reasons[task.id] = SchedulabilityValidator._get_unschedulable_reason(
-                    task, force_override
-                )
+                # Get reason from entity (domain logic)
+                reason = task.get_unschedulable_reason(force_override)
+                reasons[task.id] = reason or "Task is not schedulable"
 
         # If no tasks are schedulable, raise error with detailed reasons
         if not schedulable_tasks:
             raise NoSchedulableTasksError(task_ids=task_ids, reasons=reasons)
 
         return schedulable_tasks
-
-    @staticmethod
-    def _get_unschedulable_reason(task: Task, force_override: bool) -> str:
-        """Determine why a task is not schedulable.
-
-        Args:
-            task: Task to check
-            force_override: Whether force override is enabled
-
-        Returns:
-            Human-readable reason why the task is not schedulable
-        """
-        if task.is_archived:
-            return "Task is archived"
-        elif task.is_finished:
-            return f"Task is already {task.status.value}"
-        elif task.status == TaskStatus.IN_PROGRESS:
-            return "Task is already in progress"
-        elif task.is_fixed:
-            return "Task is fixed (cannot be rescheduled)"
-        elif not task.estimated_duration or task.estimated_duration <= 0:
-            return "Task has no estimated duration"
-        elif task.planned_start and not force_override:
-            return "Task already has a schedule (use --force to override)"
-        else:
-            return "Task is not schedulable"
