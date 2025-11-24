@@ -12,6 +12,10 @@ AUTO_REFRESH_INTERVAL_SECONDS = 1.0
 MAX_HOURS_PER_DAY = 24
 """Maximum number of hours per day for schedule optimization validation."""
 
+# Optimization display settings
+OPTIMIZATION_FAILURE_DETAIL_THRESHOLD = 5
+"""Maximum number of failed tasks to display details for in optimization results."""
+
 # Gantt chart display settings
 DEFAULT_GANTT_DISPLAY_DAYS = 28
 """Default number of days to display in Gantt chart (4 weeks)."""

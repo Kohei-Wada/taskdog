@@ -312,19 +312,18 @@ class TaskdogTUI(App):
         # Disconnect WebSocket
         await self.websocket_client.disconnect()
 
-    def _load_tasks(self, keep_scroll_position: bool = False):
+    def _load_tasks(self, keep_scroll_position: bool = False) -> None:
         """Load tasks from repository and update both gantt and table.
+
+        This method performs a complete reload cycle: fetches data from API,
+        updates internal caches, and refreshes all UI components.
 
         Args:
             keep_scroll_position: Whether to preserve scroll position during refresh
-
-        Returns:
-            List of loaded tasks
         """
         task_data = self._fetch_task_data()
         self._update_cache(task_data)
         self._refresh_ui(task_data, keep_scroll_position)
-        return task_data.filtered_tasks
 
     def _calculate_gantt_date_range(self):
         """Calculate the date range for Gantt chart display.

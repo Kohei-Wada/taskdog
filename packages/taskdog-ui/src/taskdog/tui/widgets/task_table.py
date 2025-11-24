@@ -22,6 +22,7 @@ from taskdog.constants.table_dimensions import (
     TASK_TABLE_ACTUAL_END_WIDTH,
     TASK_TABLE_ACTUAL_START_WIDTH,
     TASK_TABLE_ACTUAL_WIDTH,
+    TASK_TABLE_CHECKBOX_WIDTH,
     TASK_TABLE_DEADLINE_WIDTH,
     TASK_TABLE_DEPENDS_ON_WIDTH,
     TASK_TABLE_ELAPSED_WIDTH,
@@ -40,9 +41,6 @@ from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog.view_models.task_view_model import TaskRowViewModel
-
-# Checkbox column width
-TASK_TABLE_CHECKBOX_WIDTH = 3
 
 
 class TaskTable(DataTable, TUIWidget, ViNavigationMixin):

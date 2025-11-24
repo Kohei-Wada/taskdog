@@ -159,7 +159,7 @@ class GanttWidget(VerticalScroll, TUIWidget):
         """
         return self.tui_state.gantt_cache
 
-    def _render_gantt(self):
+    def _render_gantt(self) -> None:
         """Render the gantt chart."""
         # Check if widget is mounted and table exists
         if not self.is_mounted or not self._gantt_table:
@@ -200,11 +200,11 @@ class GanttWidget(VerticalScroll, TUIWidget):
         """
         self._display_table_message("Message", message)
 
-    def _show_empty_message(self):
+    def _show_empty_message(self) -> None:
         """Show empty message when no tasks are available."""
         self._display_table_message("Message", "[dim]No tasks to display[/dim]")
 
-    def _load_gantt_data(self):
+    def _load_gantt_data(self) -> None:
         """Load and display gantt data from the pre-computed gantt ViewModel."""
         try:
             gantt_view_model = self._get_gantt_from_state()
@@ -215,7 +215,7 @@ class GanttWidget(VerticalScroll, TUIWidget):
         except Exception as e:
             self._show_error_message(e)
 
-    def _update_title(self):
+    def _update_title(self) -> None:
         """Update title with date range and sort order."""
         if not self._title_widget:
             return
@@ -235,7 +235,7 @@ class GanttWidget(VerticalScroll, TUIWidget):
         )
         self._title_widget.update(title_text)
 
-    def _update_legend(self):
+    def _update_legend(self) -> None:
         """Update legend with gantt chart symbols."""
         if not self._legend_widget:
             return
@@ -243,7 +243,7 @@ class GanttWidget(VerticalScroll, TUIWidget):
         legend_text = self._gantt_table.get_legend_text()
         self._legend_widget.update(legend_text)
 
-    def _show_error_message(self, error: Exception):
+    def _show_error_message(self, error: Exception) -> None:
         """Show error message when rendering fails.
 
         Args:
@@ -313,7 +313,7 @@ class GanttWidget(VerticalScroll, TUIWidget):
         display_days = self._calculate_display_days(widget_width=event.size.width)
         self._recalculate_gantt_for_width(display_days)
 
-    def _recalculate_gantt_for_width(self, display_days: int):
+    def _recalculate_gantt_for_width(self, display_days: int) -> None:
         """Recalculate gantt data for new screen width.
 
         Args:
@@ -384,7 +384,9 @@ class GanttWidget(VerticalScroll, TUIWidget):
         """
         return self._calculate_display_days(widget_width)
 
-    def calculate_date_range(self, widget_width: int | None = None):
+    def calculate_date_range(
+        self, widget_width: int | None = None
+    ) -> tuple[date, date]:
         """Calculate date range for gantt display based on widget width.
 
         Convenience method that combines display day calculation and date range calculation.

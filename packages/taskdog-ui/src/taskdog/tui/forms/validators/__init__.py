@@ -7,6 +7,10 @@ from taskdog.tui.forms.validators.collection_validators import (
 )
 from taskdog.tui.forms.validators.datetime_validator import DateTimeValidator
 from taskdog.tui.forms.validators.duration_validator import DurationValidator
+from taskdog.tui.forms.validators.optimization_validators import (
+    MaxHoursValidator,
+    StartDateValidator,
+)
 from taskdog.tui.forms.validators.task_validators import (
     PriorityValidator,
     TaskNameValidator,
@@ -17,7 +21,9 @@ __all__ = [
     "DateTimeValidator",
     "DependenciesValidator",
     "DurationValidator",
+    "MaxHoursValidator",
     "PriorityValidator",
+    "StartDateValidator",
     "TagsValidator",
     "TaskNameValidator",
     "ValidationResult",

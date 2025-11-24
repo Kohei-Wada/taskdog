@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.registry import command_registry
+from taskdog.tui.constants.ui_settings import OPTIMIZATION_FAILURE_DETAIL_THRESHOLD
 from taskdog.tui.context import TUIContext
 from taskdog.tui.screens.algorithm_selection_screen import AlgorithmSelectionScreen
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
@@ -50,9 +51,8 @@ class OptimizeCommand(TUICommandBase):
             Formatted message string with task details or summary
         """
         failed_count = len(result.failed_tasks)
-        detail_threshold = 5
 
-        if failed_count <= detail_threshold:
+        if failed_count <= OPTIMIZATION_FAILURE_DETAIL_THRESHOLD:
             # Show detailed list for few failures
             failure_lines = [
                 f"#{f.task.id} {f.task.name}: {f.reason}" for f in result.failed_tasks

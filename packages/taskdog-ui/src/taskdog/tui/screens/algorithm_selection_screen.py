@@ -3,8 +3,6 @@
 from datetime import datetime
 from typing import Any, ClassVar
 
-from dateutil import parser as dateutil_parser
-from dateutil.parser import ParserError
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
@@ -12,7 +10,7 @@ from textual.widgets import Input, Label, Static
 from textual.widgets.option_list import Option
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
-from taskdog.tui.constants.ui_settings import MAX_HOURS_PER_DAY
+from taskdog.tui.forms.validators import MaxHoursValidator, StartDateValidator
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_option_list import ViOptionList
 
@@ -134,50 +132,6 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         """Move focus to the previous field (Ctrl+K)."""
         self.focus_previous()
 
-    def _validate_max_hours(self, value: str) -> tuple[float | None, str | None]:
-        """Validate and parse max hours input.
-
-        Args:
-            value: Input value to validate
-
-        Returns:
-            Tuple of (parsed_value, error_message).
-            If valid: (float_value or None, None)
-            If invalid: (None, error_message)
-        """
-        if not value:
-            # Empty value is allowed - server will apply config default
-            return None, None
-
-        try:
-            hours = float(value)
-            if hours <= 0:
-                return None, "Max hours must be greater than 0"
-            if hours > MAX_HOURS_PER_DAY:
-                return None, f"Max hours cannot exceed {MAX_HOURS_PER_DAY}"
-            return hours, None
-        except ValueError:
-            return None, "Max hours must be a valid number"
-
-    def _validate_start_date(self, value: str) -> tuple[datetime | None, str | None]:
-        """Validate and parse start date input.
-
-        Args:
-            value: Input value to validate
-
-        Returns:
-            Tuple of (parsed_value, error_message).
-            If valid: (datetime_value, None)
-            If invalid: (None, error_message)
-        """
-        if not value:
-            return None, "Start date is required"
-
-        try:
-            return dateutil_parser.parse(value, fuzzy=True), None
-        except (ValueError, TypeError, OverflowError, ParserError):
-            return None, "Invalid date format. Examples: today, tomorrow, 2025-12-01"
-
     def action_submit(self) -> None:
         """Submit the form."""
         option_list = self.query_one("#algorithm-list", ViOptionList)
@@ -194,24 +148,22 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
         selected_algo = self.algorithms[option_list.highlighted][0]
 
         # Validate max hours
-        max_hours, max_hours_error = self._validate_max_hours(
-            max_hours_input.value.strip()
-        )
-        if max_hours_error:
-            self._show_validation_error(max_hours_error, max_hours_input)
+        max_hours_result = MaxHoursValidator.validate(max_hours_input.value.strip())
+        if not max_hours_result.is_valid:
+            self._show_validation_error(max_hours_result.error_message, max_hours_input)
             return
 
         # Validate start date
-        start_date, start_date_error = self._validate_start_date(
-            start_date_input.value.strip()
-        )
-        if start_date_error:
-            self._show_validation_error(start_date_error, start_date_input)
+        start_date_result = StartDateValidator.validate(start_date_input.value.strip())
+        if not start_date_result.is_valid:
+            self._show_validation_error(
+                start_date_result.error_message, start_date_input
+            )
             return
 
         # Type narrowing: start_date must be non-None (required field)
         # max_hours can be None (server will apply default)
-        assert start_date is not None, "start_date validated above"
+        assert start_date_result.value is not None, "start_date validated above"
 
         # Submit algorithm, max_hours (can be None), and start_date
-        self.dismiss((selected_algo, max_hours, start_date))
+        self.dismiss((selected_algo, max_hours_result.value, start_date_result.value))

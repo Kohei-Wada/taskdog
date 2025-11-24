@@ -1,6 +1,7 @@
 """Table and UI dimension constants for presentation layer."""
 
 # Task Table Column Widths (TUI)
+TASK_TABLE_CHECKBOX_WIDTH = 3  # Width for multi-selection checkbox column
 TASK_TABLE_ID_WIDTH = 6
 TASK_TABLE_NAME_WIDTH = 30
 TASK_TABLE_PRIORITY_WIDTH = 5
