@@ -4,53 +4,23 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, ClassVar, cast
+from typing import TYPE_CHECKING, ClassVar
 
-from textual.command import DiscoveryHit, Hit, Hits, Provider
-
-from taskdog.tui.palette.providers.base import BaseListProvider
+from taskdog.tui.palette.providers.base import (
+    BaseListProvider,
+    SimpleSingleCommandProvider,
+)
 
 if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
 
 
-class SortCommandProvider(Provider):
+class SortCommandProvider(SimpleSingleCommandProvider):
     """Command provider for the main 'Sort' command."""
 
-    async def discover(self) -> Hits:
-        """Return the main Sort command.
-
-        Yields:
-            DiscoveryHit for the Sort command
-        """
-        app = cast("TaskdogTUI", self.app)
-        yield DiscoveryHit(
-            "Sort",
-            app.search_sort,
-            help="Change sort order for tasks and Gantt chart",
-        )
-
-    async def search(self, query: str) -> Hits:
-        """Search for the Sort command.
-
-        Args:
-            query: User's search query
-
-        Yields:
-            Hit object if query matches "Sort"
-        """
-        matcher = self.matcher(query)
-        app = cast("TaskdogTUI", self.app)
-
-        command_name = "Sort"
-        score = matcher.match(command_name)
-        if score > 0:
-            yield Hit(
-                score,
-                matcher.highlight(command_name),
-                app.search_sort,
-                help="Change sort order for tasks and Gantt chart",
-            )
+    COMMAND_NAME = "Sort"
+    COMMAND_HELP = "Change sort order for tasks and Gantt chart"
+    COMMAND_CALLBACK_NAME = "search_sort"
 
 
 class SortOptionsProvider(BaseListProvider):

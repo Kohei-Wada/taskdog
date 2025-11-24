@@ -12,6 +12,63 @@ if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
 
 
+class SimpleSingleCommandProvider(Provider):
+    """Base provider for single command entries (no options).
+
+    Eliminates code duplication for providers that only expose one command
+    with a fixed name and callback. Subclasses must define class attributes:
+    - COMMAND_NAME: str - Display name of the command
+    - COMMAND_HELP: str - Help text for the command
+    - COMMAND_CALLBACK_NAME: str - Method name on TaskdogTUI to call
+
+    Example:
+        class ExportCommandProvider(SimpleSingleCommandProvider):
+            COMMAND_NAME = "Export"
+            COMMAND_HELP = "Export all tasks to file"
+            COMMAND_CALLBACK_NAME = "search_export"
+    """
+
+    COMMAND_NAME: str
+    COMMAND_HELP: str
+    COMMAND_CALLBACK_NAME: str
+
+    async def discover(self) -> Hits:
+        """Return the single command.
+
+        Yields:
+            DiscoveryHit for the command
+        """
+        app = cast("TaskdogTUI", self.app)
+        callback = getattr(app, self.COMMAND_CALLBACK_NAME)
+        yield DiscoveryHit(
+            self.COMMAND_NAME,
+            callback,
+            help=self.COMMAND_HELP,
+        )
+
+    async def search(self, query: str) -> Hits:
+        """Search for the command.
+
+        Args:
+            query: User's search query
+
+        Yields:
+            Hit object if query matches the command name
+        """
+        matcher = self.matcher(query)
+        app = cast("TaskdogTUI", self.app)
+
+        score = matcher.match(self.COMMAND_NAME)
+        if score > 0:
+            callback = getattr(app, self.COMMAND_CALLBACK_NAME)
+            yield Hit(
+                score,
+                matcher.highlight(self.COMMAND_NAME),
+                callback,
+                help=self.COMMAND_HELP,
+            )
+
+
 class BaseListProvider(Provider):
     """Base provider for list-based command palettes.
 

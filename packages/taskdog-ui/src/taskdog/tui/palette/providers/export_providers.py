@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-from textual.command import DiscoveryHit, Hit, Hits, Provider
-
-from taskdog.tui.palette.providers.base import BaseListProvider
+from taskdog.tui.palette.providers.base import (
+    BaseListProvider,
+    SimpleSingleCommandProvider,
+)
 
 if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
@@ -22,43 +23,12 @@ EXPORT_FORMATS: list[tuple[str, str, str]] = [
 ]
 
 
-class ExportCommandProvider(Provider):
+class ExportCommandProvider(SimpleSingleCommandProvider):
     """Command provider for the main 'Export' command."""
 
-    async def discover(self) -> Hits:
-        """Return the main Export command.
-
-        Yields:
-            DiscoveryHit for the Export command
-        """
-        app = cast("TaskdogTUI", self.app)
-        yield DiscoveryHit(
-            "Export",
-            app.search_export,
-            help="Export all tasks to file",
-        )
-
-    async def search(self, query: str) -> Hits:
-        """Search for the Export command.
-
-        Args:
-            query: User's search query
-
-        Yields:
-            Hit object if query matches "Export"
-        """
-        matcher = self.matcher(query)
-        app = cast("TaskdogTUI", self.app)
-
-        command_name = "Export"
-        score = matcher.match(command_name)
-        if score > 0:
-            yield Hit(
-                score,
-                matcher.highlight(command_name),
-                app.search_export,
-                help="Export all tasks to file",
-            )
+    COMMAND_NAME = "Export"
+    COMMAND_HELP = "Export all tasks to file"
+    COMMAND_CALLBACK_NAME = "search_export"
 
 
 class ExportFormatProvider(BaseListProvider):
