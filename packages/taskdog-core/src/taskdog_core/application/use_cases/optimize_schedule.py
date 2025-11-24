@@ -17,11 +17,10 @@ from taskdog_core.application.services.workload_calculation_strategy_factory imp
     WorkloadCalculationStrategyFactory,
 )
 from taskdog_core.application.use_cases.base import UseCase
-from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_core.domain.exceptions.task_exceptions import (
-    NoSchedulableTasksError,
-    TaskNotFoundException,
+from taskdog_core.application.validators.schedulability_validator import (
+    SchedulabilityValidator,
 )
+from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -76,49 +75,23 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             t.id: t.planned_start for t in all_tasks if t.id is not None
         }
 
-        # If specific task IDs are provided, validate and filter them first
+        # Validate and filter schedulable tasks
         if input_dto.task_ids:
-            # Build task ID map for efficient lookup
-            task_map = {t.id: t for t in all_tasks if t.id is not None}
-
-            # Validate that all requested task IDs exist
-            missing_ids = [tid for tid in input_dto.task_ids if tid not in task_map]
-            if missing_ids:
-                if len(missing_ids) == 1:
-                    raise TaskNotFoundException(missing_ids[0])
-                raise TaskNotFoundException(
-                    f"Tasks with IDs {', '.join(map(str, missing_ids))} not found"
+            # Use validator for task ID validation and schedulability check
+            schedulable_tasks = (
+                SchedulabilityValidator.validate_and_filter_schedulable_tasks(
+                    task_ids=input_dto.task_ids,
+                    all_tasks=all_tasks,
+                    force_override=input_dto.force_override,
                 )
-
-            # Get the requested tasks
-            requested_tasks = [task_map[tid] for tid in input_dto.task_ids]
-
-            # Check which tasks are schedulable and build reasons for non-schedulable ones
-            schedulable_tasks = []
-            reasons: dict[int, str] = {}
-
-            for task in requested_tasks:
-                if task.is_schedulable(input_dto.force_override):
-                    schedulable_tasks.append(task)
-                elif task.id is not None:
-                    # Determine why the task is not schedulable
-                    reasons[task.id] = self._get_unschedulable_reason(
-                        task, input_dto.force_override
-                    )
-
-            # If no tasks are schedulable, raise error with detailed reasons
-            if not schedulable_tasks:
-                raise NoSchedulableTasksError(
-                    task_ids=input_dto.task_ids, reasons=reasons
-                )
+            )
         else:
-            # Filter schedulable tasks (UseCase responsibility: what to optimize)
+            # Filter all schedulable tasks (UseCase responsibility: what to optimize)
             schedulable_tasks = [
                 task
                 for task in all_tasks
                 if task.is_schedulable(input_dto.force_override)
             ]
-
             # Don't raise error if no tasks are schedulable when task_ids is not specified
             # This maintains backward compatibility with existing behavior
 
@@ -216,31 +189,6 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         if task.id is None:
             raise ValueError("Task must have an ID")
         return TaskSummaryDto(id=task.id, name=task.name)
-
-    def _get_unschedulable_reason(self, task: Task, force_override: bool) -> str:
-        """Determine why a task is not schedulable.
-
-        Args:
-            task: Task to check
-            force_override: Whether force override is enabled
-
-        Returns:
-            Human-readable reason why the task is not schedulable
-        """
-        if task.is_archived:
-            return "Task is archived"
-        elif task.is_finished:
-            return f"Task is already {task.status.value}"
-        elif task.status == TaskStatus.IN_PROGRESS:
-            return "Task is already in progress"
-        elif task.is_fixed:
-            return "Task is fixed (cannot be rescheduled)"
-        elif not task.estimated_duration or task.estimated_duration <= 0:
-            return "Task has no estimated duration"
-        elif task.planned_start and not force_override:
-            return "Task already has a schedule (use --force to override)"
-        else:
-            return "Task is not schedulable"
 
     def _filter_workload_tasks(
         self, all_tasks: list[Task], force_override: bool

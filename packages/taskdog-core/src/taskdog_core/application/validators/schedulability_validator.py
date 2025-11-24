@@ -1,0 +1,101 @@
+"""Validator for task schedulability during optimization."""
+
+from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import (
+    NoSchedulableTasksError,
+    TaskNotFoundException,
+)
+
+
+class SchedulabilityValidator:
+    """Validator for task schedulability constraints.
+
+    Business Rules:
+    - Tasks must exist in the repository
+    - Tasks must not be archived
+    - Tasks must not be finished (COMPLETED or CANCELED)
+    - Tasks must not be in progress
+    - Tasks must have estimated_duration set
+    - Tasks must not be fixed
+    - If not force_override, tasks must not have existing schedules
+    """
+
+    @staticmethod
+    def validate_and_filter_schedulable_tasks(
+        task_ids: list[int],
+        all_tasks: list[Task],
+        force_override: bool,
+    ) -> list[Task]:
+        """Validate task IDs and return schedulable tasks.
+
+        Args:
+            task_ids: List of task IDs to validate
+            all_tasks: All tasks from repository
+            force_override: Whether to allow overriding existing schedules
+
+        Returns:
+            List of schedulable tasks
+
+        Raises:
+            TaskNotFoundException: If any task_id doesn't exist
+            NoSchedulableTasksError: If no tasks are schedulable
+        """
+        # Build task ID map for efficient lookup
+        task_map = {t.id: t for t in all_tasks if t.id is not None}
+
+        # Validate that all requested task IDs exist
+        missing_ids = [tid for tid in task_ids if tid not in task_map]
+        if missing_ids:
+            if len(missing_ids) == 1:
+                raise TaskNotFoundException(missing_ids[0])
+            raise TaskNotFoundException(
+                f"Tasks with IDs {', '.join(map(str, missing_ids))} not found"
+            )
+
+        # Get the requested tasks
+        requested_tasks = [task_map[tid] for tid in task_ids]
+
+        # Check which tasks are schedulable and build reasons for non-schedulable ones
+        schedulable_tasks = []
+        reasons: dict[int, str] = {}
+
+        for task in requested_tasks:
+            if task.is_schedulable(force_override):
+                schedulable_tasks.append(task)
+            elif task.id is not None:
+                # Determine why the task is not schedulable
+                reasons[task.id] = SchedulabilityValidator._get_unschedulable_reason(
+                    task, force_override
+                )
+
+        # If no tasks are schedulable, raise error with detailed reasons
+        if not schedulable_tasks:
+            raise NoSchedulableTasksError(task_ids=task_ids, reasons=reasons)
+
+        return schedulable_tasks
+
+    @staticmethod
+    def _get_unschedulable_reason(task: Task, force_override: bool) -> str:
+        """Determine why a task is not schedulable.
+
+        Args:
+            task: Task to check
+            force_override: Whether force override is enabled
+
+        Returns:
+            Human-readable reason why the task is not schedulable
+        """
+        if task.is_archived:
+            return "Task is archived"
+        elif task.is_finished:
+            return f"Task is already {task.status.value}"
+        elif task.status == TaskStatus.IN_PROGRESS:
+            return "Task is already in progress"
+        elif task.is_fixed:
+            return "Task is fixed (cannot be rescheduled)"
+        elif not task.estimated_duration or task.estimated_duration <= 0:
+            return "Task has no estimated duration"
+        elif task.planned_start and not force_override:
+            return "Task already has a schedule (use --force to override)"
+        else:
+            return "Task is not schedulable"
