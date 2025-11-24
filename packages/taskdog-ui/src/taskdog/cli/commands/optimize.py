@@ -48,8 +48,14 @@ def _show_no_tasks_message(console_writer: ConsoleWriter) -> None:
 
 Schedules tasks with estimated_duration across weekdays, respecting max hours/day.
 Use --force to override existing schedules.
+
+Examples:
+  taskdog optimize                    # Optimize all schedulable tasks
+  taskdog optimize 1 2 3              # Optimize only tasks 1, 2, and 3
+  taskdog optimize 5 --force          # Force optimize task 5
 """,
 )
+@click.argument("task_ids", nargs=-1, type=int, required=False)
 @click.option(
     "--start-date",
     type=DateTimeWithDefault("start"),
@@ -85,6 +91,7 @@ Use --force to override existing schedules.
 @handle_command_errors("optimizing schedules")
 def optimize_command(
     ctx: click.Context,
+    task_ids: tuple[int, ...],
     start_date: datetime | None,
     max_hours_per_day: float | None,
     algorithm: str | None,
@@ -107,12 +114,16 @@ def optimize_command(
     if algorithm is None:
         algorithm = config.optimization.default_algorithm
 
+    # Convert task_ids tuple to list (or None if empty)
+    task_ids_list = list(task_ids) if task_ids else None
+
     # Execute optimization via API
     result = api_client.optimize_schedule(
         algorithm=algorithm,
         start_date=start_date,
         max_hours_per_day=max_hours_per_day,
         force_override=force,
+        task_ids=task_ids_list,
     )
 
     # Handle empty result (no tasks to optimize)

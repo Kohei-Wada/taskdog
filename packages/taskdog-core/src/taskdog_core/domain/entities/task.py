@@ -181,6 +181,70 @@ class Task:
         # Allow scheduling if no existing schedule OR if force_override is True
         return not (self.planned_start and not force_override)
 
+    def get_unschedulable_reason(self, force_override: bool = False) -> str | None:
+        """Get the reason why a task is not schedulable.
+
+        Args:
+            force_override: Whether to allow rescheduling of already-scheduled tasks
+
+        Returns:
+            Human-readable reason if task is not schedulable, None if schedulable
+
+        Note:
+            This method mirrors the logic in is_schedulable() to provide
+            detailed feedback for validation errors.
+        """
+        if self.is_archived:
+            return "Task is archived"
+
+        if self.is_finished:
+            return f"Task is already {self.status.value}"
+
+        if self.status == TaskStatus.IN_PROGRESS:
+            return "Task is already in progress"
+
+        if not self.estimated_duration or self.estimated_duration <= 0:
+            return "Task has no estimated duration"
+
+        if self.is_fixed:
+            return "Task is fixed (cannot be rescheduled)"
+
+        if self.planned_start and not force_override:
+            return "Task already has a schedule (use --force to override)"
+
+        # Task is schedulable
+        return None
+
+    def validate_schedulable(self, force_override: bool = False) -> None:
+        """Validate that this task can be scheduled.
+
+        Args:
+            force_override: Whether to allow rescheduling of already-scheduled tasks
+
+        Raises:
+            TaskNotSchedulableError: If task cannot be scheduled, with detailed reason
+            TaskValidationError: If task.id is None (should never happen after persistence)
+
+        Note:
+            This method enforces the same business rules as is_schedulable(),
+            but throws an exception instead of returning a boolean.
+        """
+        from taskdog_core.domain.exceptions.task_exceptions import (
+            TaskNotSchedulableError,
+            TaskValidationError,
+        )
+
+        # Ensure task has ID (should always be true after persistence)
+        if self.id is None:
+            raise TaskValidationError(
+                "Task ID must not be None for schedulability validation"
+            )
+
+        # Check if schedulable and get reason if not
+        reason = self.get_unschedulable_reason(force_override)
+        if reason is not None:
+            raise TaskNotSchedulableError(self.id, reason)
+
     def should_count_in_workload(self) -> bool:
         """Check if task should be counted in workload calculations.
 

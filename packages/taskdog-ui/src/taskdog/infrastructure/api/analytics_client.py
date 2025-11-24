@@ -55,6 +55,7 @@ class AnalyticsClient:
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool = True,
+        task_ids: list[int] | None = None,
     ) -> OptimizationOutput:
         """Optimize task schedules.
 
@@ -63,12 +64,15 @@ class AnalyticsClient:
             start_date: Optimization start date
             max_hours_per_day: Maximum hours per day
             force_override: Force override existing schedules
+            task_ids: Specific task IDs to optimize (None means all schedulable tasks)
 
         Returns:
             OptimizationOutput with optimization results
 
         Raises:
             TaskValidationError: If validation fails
+            TaskNotFoundException: If any specified task_id does not exist
+            NoSchedulableTasksError: If no tasks can be scheduled
         """
         payload = {
             "algorithm": algorithm,
@@ -76,6 +80,10 @@ class AnalyticsClient:
             "max_hours_per_day": max_hours_per_day,
             "force_override": force_override,
         }
+
+        # Only include task_ids if it's not None
+        if task_ids is not None:
+            payload["task_ids"] = task_ids
 
         response = self._base._safe_request("post", "/api/v1/optimize", json=payload)
         if not response.is_success:

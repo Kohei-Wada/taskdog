@@ -18,6 +18,11 @@ from taskdog_core.application.services.workload_calculation_strategy_factory imp
 )
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import (
+    NoSchedulableTasksError,
+    TaskNotFoundException,
+    TaskNotSchedulableError,
+)
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -62,6 +67,8 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
 
         Raises:
             ValueError: If algorithm_name is not recognized
+            TaskNotFoundException: If any specified task_id does not exist
+            NoSchedulableTasksError: If no tasks can be scheduled
             Exception: If optimization fails
         """
         # Get all tasks and backup their states before optimization
@@ -70,10 +77,38 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             t.id: t.planned_start for t in all_tasks if t.id is not None
         }
 
-        # Filter schedulable tasks (UseCase responsibility: what to optimize)
-        schedulable_tasks = [
-            task for task in all_tasks if task.is_schedulable(input_dto.force_override)
-        ]
+        # Determine target tasks for optimization
+        if input_dto.task_ids:
+            # Specific tasks requested: validate that all task IDs exist
+            task_map = {t.id: t for t in all_tasks if t.id is not None}
+            missing_ids = [tid for tid in input_dto.task_ids if tid not in task_map]
+            if missing_ids:
+                if len(missing_ids) == 1:
+                    raise TaskNotFoundException(missing_ids[0])
+                raise TaskNotFoundException(
+                    f"Tasks with IDs {', '.join(map(str, missing_ids))} not found"
+                )
+            target_tasks = [task_map[tid] for tid in input_dto.task_ids]
+        else:
+            # All tasks are candidates
+            target_tasks = all_tasks
+
+        # Validate and filter schedulable tasks (common logic for both cases)
+        schedulable_tasks = []
+        reasons: dict[int, str] = {}
+        for task in target_tasks:
+            try:
+                # Delegate validation to entity (domain logic)
+                task.validate_schedulable(input_dto.force_override)
+                schedulable_tasks.append(task)
+            except TaskNotSchedulableError as e:
+                # Collect failure reason from exception
+                reasons[e.task_id] = e.reason
+
+        # Only raise error when specific tasks were requested but none are schedulable
+        # When no task_ids specified, empty result is acceptable (backward compatibility)
+        if input_dto.task_ids and not schedulable_tasks:
+            raise NoSchedulableTasksError(task_ids=input_dto.task_ids, reasons=reasons)
 
         # Filter tasks for workload calculation (UseCase responsibility)
         # - Exclude finished tasks (completed/archived)
@@ -142,7 +177,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
 
         # Convert Tasks to DTOs
         successful_tasks_dto = [
-            self._task_to_summary_dto(task) for task in modified_tasks
+            TaskSummaryDto.from_entity(task) for task in modified_tasks
         ]
         # failed_tasks is already list[SchedulingFailure] with TaskSummaryDto from strategy
         failed_tasks_dto = failed_tasks
@@ -155,20 +190,6 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             summary=summary,
             task_states_before=task_states_before,
         )
-
-    def _task_to_summary_dto(self, task: Task) -> TaskSummaryDto:
-        """Convert Task entity to TaskSummaryDto.
-
-        Args:
-            task: Task entity
-
-        Returns:
-            TaskSummaryDto with basic task information
-        """
-        # Tasks from repository must have an ID
-        if task.id is None:
-            raise ValueError("Task must have an ID")
-        return TaskSummaryDto(id=task.id, name=task.name)
 
     def _filter_workload_tasks(
         self, all_tasks: list[Task], force_override: bool

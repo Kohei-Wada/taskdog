@@ -4,10 +4,16 @@ This module contains DTOs that represent task data without exposing
 the Task entity directly to the presentation layer.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
 from taskdog_core.domain.entities.task import TaskStatus
+
+if TYPE_CHECKING:
+    from taskdog_core.domain.entities.task import Task
 
 
 @dataclass(frozen=True)
@@ -19,6 +25,23 @@ class TaskSummaryDto:
 
     id: int
     name: str
+
+    @classmethod
+    def from_entity(cls, task: Task) -> TaskSummaryDto:
+        """Convert Task entity to TaskSummaryDto.
+
+        Args:
+            task: Task entity to convert
+
+        Returns:
+            TaskSummaryDto with id and name
+
+        Raises:
+            ValueError: If task.id is None
+        """
+        if task.id is None:
+            raise ValueError("Task must have an ID")
+        return cls(id=task.id, name=task.name)
 
 
 @dataclass(frozen=True)
@@ -38,6 +61,35 @@ class GanttTaskDto:
     actual_end: datetime | None
     deadline: datetime | None
     is_finished: bool
+
+    @classmethod
+    def from_entity(cls, task: Task) -> GanttTaskDto:
+        """Convert Task entity to GanttTaskDto.
+
+        Args:
+            task: Task entity to convert
+
+        Returns:
+            GanttTaskDto with fields needed for Gantt visualization
+
+        Raises:
+            ValueError: If task.id is None
+        """
+        if task.id is None:
+            raise ValueError("Task must have an ID")
+
+        return cls(
+            id=task.id,
+            name=task.name,
+            status=task.status,
+            estimated_duration=task.estimated_duration,
+            planned_start=task.planned_start,
+            planned_end=task.planned_end,
+            actual_start=task.actual_start,
+            actual_end=task.actual_end,
+            deadline=task.deadline,
+            is_finished=task.is_finished,
+        )
 
 
 @dataclass(frozen=True)
@@ -65,6 +117,43 @@ class TaskRowDto:
     is_finished: bool
     created_at: datetime
     updated_at: datetime
+
+    @classmethod
+    def from_entity(cls, task: Task) -> TaskRowDto:
+        """Convert Task entity to TaskRowDto.
+
+        Args:
+            task: Task entity to convert
+
+        Returns:
+            TaskRowDto with fields needed for table display
+
+        Raises:
+            ValueError: If task.id is None
+        """
+        if task.id is None:
+            raise ValueError("Task must have an ID")
+
+        return cls(
+            id=task.id,
+            name=task.name,
+            priority=task.priority,
+            status=task.status,
+            planned_start=task.planned_start,
+            planned_end=task.planned_end,
+            deadline=task.deadline,
+            actual_start=task.actual_start,
+            actual_end=task.actual_end,
+            estimated_duration=task.estimated_duration,
+            actual_duration_hours=task.actual_duration_hours,
+            is_fixed=task.is_fixed,
+            depends_on=task.depends_on,
+            tags=task.tags,
+            is_archived=task.is_archived,
+            is_finished=task.is_finished,
+            created_at=task.created_at,
+            updated_at=task.updated_at,
+        )
 
     def to_dict(self) -> dict[str, object]:
         """Convert DTO to dictionary for export purposes.
@@ -131,3 +220,46 @@ class TaskDetailDto:
     is_finished: bool
     can_be_modified: bool
     is_schedulable: bool
+
+    @classmethod
+    def from_entity(cls, task: Task, force_override: bool = False) -> TaskDetailDto:
+        """Convert Task entity to TaskDetailDto.
+
+        Args:
+            task: Task entity to convert
+            force_override: Whether to allow rescheduling for is_schedulable check
+
+        Returns:
+            TaskDetailDto with all task data and computed properties
+
+        Raises:
+            ValueError: If task.id is None
+        """
+        if task.id is None:
+            raise ValueError("Task must have an ID")
+
+        return cls(
+            id=task.id,
+            name=task.name,
+            priority=task.priority,
+            status=task.status,
+            planned_start=task.planned_start,
+            planned_end=task.planned_end,
+            deadline=task.deadline,
+            actual_start=task.actual_start,
+            actual_end=task.actual_end,
+            estimated_duration=task.estimated_duration,
+            daily_allocations=task.daily_allocations,
+            is_fixed=task.is_fixed,
+            depends_on=task.depends_on,
+            actual_daily_hours=task.actual_daily_hours,
+            tags=task.tags,
+            is_archived=task.is_archived,
+            created_at=task.created_at,
+            updated_at=task.updated_at,
+            actual_duration_hours=task.actual_duration_hours,
+            is_active=task.is_active,
+            is_finished=task.is_finished,
+            can_be_modified=task.can_be_modified,
+            is_schedulable=task.is_schedulable(force_override=force_override),
+        )

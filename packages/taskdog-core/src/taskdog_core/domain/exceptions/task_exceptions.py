@@ -119,3 +119,53 @@ class ServerConnectionError(TaskError):
         super().__init__(
             f"Cannot connect to server at {base_url}: {type(original_error).__name__}: {original_error}"
         )
+
+
+class TaskNotSchedulableError(TaskValidationError):
+    """Raised when a single task cannot be scheduled."""
+
+    def __init__(self, task_id: int, reason: str) -> None:
+        """Initialize with task ID and reason.
+
+        Args:
+            task_id: ID of the task that cannot be scheduled
+            reason: Human-readable reason why the task is not schedulable
+        """
+        self.task_id = task_id
+        self.reason = reason
+        super().__init__(f"Cannot schedule task {task_id}: {reason}")
+
+
+class NoSchedulableTasksError(TaskValidationError):
+    """Raised when no tasks can be scheduled during optimization."""
+
+    def __init__(
+        self, task_ids: list[int] | None = None, reasons: dict[int, str] | None = None
+    ) -> None:
+        """Initialize with optional task IDs and reasons.
+
+        Args:
+            task_ids: Specific task IDs that were requested (None if all tasks)
+            reasons: Dict mapping task ID to reason why it's not schedulable
+        """
+        self.task_ids = task_ids
+        self.reasons = reasons or {}
+
+        if task_ids:
+            # Specific tasks were requested
+            if len(task_ids) == 1:
+                task_id = task_ids[0]
+                reason = self.reasons.get(task_id, "Task is not schedulable")
+                super().__init__(f"Cannot optimize task {task_id}: {reason}")
+            else:
+                # Build detailed message for multiple tasks
+                lines = ["Cannot optimize the specified tasks:"]
+                for task_id in task_ids:
+                    reason = self.reasons.get(task_id, "Task is not schedulable")
+                    lines.append(f"  - Task {task_id}: {reason}")
+                super().__init__("\n".join(lines))
+        else:
+            # No specific tasks requested (all tasks)
+            super().__init__(
+                "No schedulable tasks found. All tasks are either completed, in progress, fixed, or already scheduled."
+            )

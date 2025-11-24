@@ -108,6 +108,10 @@ class OptimizeScheduleRequest(BaseModel):
     force_override: bool = Field(
         True, description="Whether to override existing schedules for non-fixed tasks"
     )
+    task_ids: list[int] | None = Field(
+        None,
+        description="Specific task IDs to optimize (None means all schedulable tasks)",
+    )
 
 
 class TaskFilterParams(BaseModel):

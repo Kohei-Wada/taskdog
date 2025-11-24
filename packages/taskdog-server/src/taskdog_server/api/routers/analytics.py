@@ -12,7 +12,11 @@ from taskdog_core.application.queries.filters.non_archived_filter import (
 from taskdog_core.application.queries.filters.status_filter import StatusFilter
 from taskdog_core.application.queries.filters.tag_filter import TagFilter
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
-from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
+from taskdog_core.domain.exceptions.task_exceptions import (
+    NoSchedulableTasksError,
+    TaskNotFoundException,
+    TaskValidationError,
+)
 from taskdog_server.api.converters import convert_to_gantt_response
 from taskdog_server.api.dependencies import (
     AnalyticsControllerDep,
@@ -234,6 +238,7 @@ def run_optimization(
     start_date: datetime,
     max_hours_per_day: float,
     force_override: bool,
+    task_ids: list[int] | None = None,
 ) -> None:
     """Background task to run schedule optimization.
 
@@ -243,6 +248,7 @@ def run_optimization(
         start_date: Optimization start date
         max_hours_per_day: Maximum hours per day
         force_override: Force override existing schedules
+        task_ids: Specific task IDs to optimize
     """
     # This runs in the background
     controller.optimize_schedule(
@@ -250,6 +256,7 @@ def run_optimization(
         start_date=start_date,
         max_hours_per_day=max_hours_per_day,
         force_override=force_override,
+        task_ids=task_ids,
     )
 
 
@@ -293,6 +300,7 @@ async def optimize_schedule(
                 start_date,
                 max_hours,
                 request.force_override,
+                request.task_ids,
             )
             return OptimizationResponse(
                 summary=OptimizationSummary(
@@ -314,6 +322,7 @@ async def optimize_schedule(
             start_date=start_date,
             max_hours_per_day=max_hours,
             force_override=request.force_override,
+            task_ids=request.task_ids,
         )
 
         # Broadcast WebSocket event in background (exclude the requester)
@@ -364,6 +373,12 @@ async def optimize_schedule(
             failures=failures,
             message=message,
         )
+    except TaskNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except NoSchedulableTasksError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
     except TaskValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
