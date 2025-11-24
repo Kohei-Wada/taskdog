@@ -83,6 +83,7 @@ class TaskAnalyticsController(BaseTaskController):
         start_date: datetime,
         max_hours_per_day: float,
         force_override: bool = True,
+        task_ids: list[int] | None = None,
     ) -> OptimizationOutput:
         """Optimize task schedules.
 
@@ -91,12 +92,15 @@ class TaskAnalyticsController(BaseTaskController):
             start_date: Start date for optimization
             max_hours_per_day: Maximum hours per day
             force_override: Force override existing schedules (default: True)
+            task_ids: Specific task IDs to optimize (None means all schedulable tasks)
 
         Returns:
             OptimizationOutput containing successful/failed tasks and summary
 
         Raises:
             ValidationError: If algorithm is invalid or parameters are invalid
+            TaskNotFoundException: If any specified task_id does not exist
+            NoSchedulableTasksError: If no tasks can be scheduled
         """
         optimize_input = OptimizeScheduleInput(
             start_date=start_date,
@@ -104,6 +108,7 @@ class TaskAnalyticsController(BaseTaskController):
             force_override=force_override,
             algorithm_name=algorithm,
             current_time=datetime.now(),
+            task_ids=task_ids,
         )
 
         use_case = OptimizeScheduleUseCase(
