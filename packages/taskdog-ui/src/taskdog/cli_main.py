@@ -34,7 +34,7 @@ from taskdog.cli.commands.update import update_command
 from taskdog.cli.commands.week import week_command
 from taskdog.cli.context import CliContext
 from taskdog.console.rich_console_writer import RichConsoleWriter
-from taskdog_core.shared.config_manager import ConfigManager
+from taskdog.infrastructure.cli_config import load_cli_config
 
 
 class TaskdogGroup(click.Group):
@@ -74,20 +74,9 @@ def cli(ctx: click.Context) -> None:
     # Initialize shared dependencies
     console = Console()
     console_writer = RichConsoleWriter(console)
-    config = ConfigManager.load()
+    config = load_cli_config()
 
-    # API client is now required for all CLI commands
-    # Check if API mode is enabled in config
-    if not config.api.enabled:
-        console_writer.error(
-            "initializing CLI",
-            Exception(
-                "API mode is required. Please enable it in config file or set TASKDOG_API_URL environment variable."
-            ),
-        )
-        ctx.exit(1)
-
-    # Initialize API client (required)
+    # Initialize API client (required for all CLI commands)
     from taskdog.infrastructure.api_client import TaskdogApiClient
 
     try:

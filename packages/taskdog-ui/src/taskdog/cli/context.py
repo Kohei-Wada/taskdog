@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from taskdog.console.console_writer import ConsoleWriter
-from taskdog_core.shared.config_manager import Config
+from taskdog.infrastructure.cli_config import CliConfig
 
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
@@ -20,7 +20,7 @@ class CliContext:
     Attributes:
         console_writer: Console writer for output
         api_client: API client for server communication (required)
-        config: Application configuration (used ONLY for API connection setup in cli_main.py)
+        config: CLI configuration (used ONLY for API connection setup in cli_main.py)
                 NOT for business logic - server applies all business defaults via controllers
 
     Note:
@@ -31,4 +31,4 @@ class CliContext:
 
     console_writer: ConsoleWriter
     api_client: "TaskdogApiClient"
-    config: Config  # Infrastructure only - API connection settings
+    config: CliConfig  # Infrastructure only - API connection settings
