@@ -12,6 +12,7 @@ from datetime import date
 from typing import Any
 
 from sqlalchemy import or_, select
+from sqlalchemy.sql.expression import ColumnElement
 from sqlalchemy.sql.selectable import Select
 
 from taskdog_core.domain.entities.task import TaskStatus
@@ -46,7 +47,7 @@ class TaskQueryBuilder:
         from complex Python-only filters.
     """
 
-    def __init__(self, base_stmt: Select):
+    def __init__(self, base_stmt: Select[Any]):
         """Initialize the builder with a base SELECT statement.
 
         Args:
@@ -162,7 +163,7 @@ class TaskQueryBuilder:
 
         return self
 
-    def build(self) -> Select:
+    def build(self) -> Select[Any]:
         """Build and return the final SELECT statement.
 
         Returns:
@@ -177,7 +178,7 @@ class TaskQueryBuilder:
 
     def _build_date_filter_conditions(
         self, start_date: date | None, end_date: date | None
-    ) -> list[Any]:
+    ) -> list[ColumnElement[bool]]:
         """Build SQL date filter conditions for multiple date fields.
 
         This helper method creates SQLAlchemy filter conditions for date range
@@ -198,7 +199,7 @@ class TaskQueryBuilder:
             The returned conditions should be combined with OR logic, as we want
             to match tasks where ANY of the date fields fall within the range.
         """
-        date_conditions = []
+        date_conditions: list[ColumnElement[bool]] = []
 
         # Define all date fields to check
         date_fields = [
@@ -214,8 +215,8 @@ class TaskQueryBuilder:
             if start_date and end_date:
                 date_conditions.append(field.between(start_date, end_date))  # type: ignore[attr-defined]
             elif start_date:
-                date_conditions.append(field >= start_date)  # type: ignore[operator]
+                date_conditions.append(field >= start_date)  # type: ignore[arg-type]
             elif end_date:
-                date_conditions.append(field <= end_date)  # type: ignore[operator]
+                date_conditions.append(field <= end_date)  # type: ignore[arg-type]
 
         return date_conditions

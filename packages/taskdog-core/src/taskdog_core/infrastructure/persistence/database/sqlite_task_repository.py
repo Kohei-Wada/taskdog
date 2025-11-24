@@ -282,7 +282,10 @@ class SqliteTaskRepository(TaskRepository):
                 existing_models = {m.id: m for m in session.scalars(stmt).all()}
 
             for task in tasks:
-                existing_model = existing_models.get(task.id)
+                # Check for existing task only if task has an ID
+                existing_model = (
+                    existing_models.get(task.id) if task.id is not None else None
+                )
 
                 if existing_model:
                     # Update existing task
