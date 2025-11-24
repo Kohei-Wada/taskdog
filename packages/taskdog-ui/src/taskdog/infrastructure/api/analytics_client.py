@@ -51,18 +51,18 @@ class AnalyticsClient:
 
     def optimize_schedule(
         self,
-        algorithm: str,
+        algorithm: str | None,
         start_date: datetime,
-        max_hours_per_day: float,
+        max_hours_per_day: float | None,
         force_override: bool = True,
         task_ids: list[int] | None = None,
     ) -> OptimizationOutput:
         """Optimize task schedules.
 
         Args:
-            algorithm: Algorithm name
+            algorithm: Algorithm name (None = server default)
             start_date: Optimization start date
-            max_hours_per_day: Maximum hours per day
+            max_hours_per_day: Maximum hours per day (None = server default)
             force_override: Force override existing schedules
             task_ids: Specific task IDs to optimize (None means all schedulable tasks)
 
@@ -74,7 +74,7 @@ class AnalyticsClient:
             TaskNotFoundException: If any specified task_id does not exist
             NoSchedulableTasksError: If no tasks can be scheduled
         """
-        payload = {
+        payload: dict[str, str | float | bool | list[int] | None] = {
             "algorithm": algorithm,
             "start_date": start_date.isoformat(),
             "max_hours_per_day": max_hours_per_day,

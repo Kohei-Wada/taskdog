@@ -234,9 +234,9 @@ async def get_gantt_chart(
 
 def run_optimization(
     controller: AnalyticsControllerDep,
-    algorithm: str,
+    algorithm: str | None,
     start_date: datetime,
-    max_hours_per_day: float,
+    max_hours_per_day: float | None,
     force_override: bool,
     task_ids: list[int] | None = None,
 ) -> None:
@@ -244,15 +244,15 @@ def run_optimization(
 
     Args:
         controller: Analytics controller
-        algorithm: Algorithm name
+        algorithm: Algorithm name (None = controller applies default)
         start_date: Optimization start date
-        max_hours_per_day: Maximum hours per day
+        max_hours_per_day: Maximum hours per day (None = controller applies default)
         force_override: Force override existing schedules
         task_ids: Specific task IDs to optimize
     """
     # This runs in the background
     controller.optimize_schedule(
-        algorithm=algorithm,
+        algorithm=algorithm or "greedy",  # Provide default if None
         start_date=start_date,
         max_hours_per_day=max_hours_per_day,
         force_override=force_override,
@@ -288,9 +288,6 @@ async def optimize_schedule(
         # Use current date if not specified
         start_date = request.start_date if request.start_date else datetime.now()
 
-        # Use config default if not specified
-        max_hours = request.max_hours_per_day if request.max_hours_per_day else 8.0
-
         if run_async:
             # Add to background tasks
             background_tasks.add_task(
@@ -298,7 +295,7 @@ async def optimize_schedule(
                 controller,
                 request.algorithm,
                 start_date,
-                max_hours,
+                request.max_hours_per_day,
                 request.force_override,
                 request.task_ids,
             )
@@ -320,7 +317,7 @@ async def optimize_schedule(
         result = controller.optimize_schedule(
             algorithm=request.algorithm,
             start_date=start_date,
-            max_hours_per_day=max_hours,
+            max_hours_per_day=request.max_hours_per_day,
             force_override=request.force_override,
             task_ids=request.task_ids,
         )

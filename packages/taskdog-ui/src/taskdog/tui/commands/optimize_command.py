@@ -67,12 +67,13 @@ class OptimizeCommand(TUICommandBase):
         """Execute the optimize command."""
 
         def handle_optimization_settings(
-            settings: tuple[str, float, datetime] | None,
+            settings: tuple[str, float | None, datetime] | None,
         ) -> None:
             """Handle the optimization settings from the dialog.
 
             Args:
                 settings: Tuple of (algorithm_name, max_hours_per_day, start_date), or None if cancelled
+                         max_hours_per_day can be None (server will apply config default)
             """
             if settings is None:
                 return  # User cancelled
@@ -80,6 +81,7 @@ class OptimizeCommand(TUICommandBase):
             algorithm, max_hours, start_date = settings
 
             # Use API client to optimize schedules
+            # max_hours can be None - server will apply config default
             result = self.context.api_client.optimize_schedule(
                 algorithm=algorithm,
                 start_date=start_date,
@@ -103,9 +105,10 @@ class OptimizeCommand(TUICommandBase):
                 self.notify_warning(message)
             elif len(result.successful_tasks) > 0:
                 task_count = len(result.successful_tasks)
+                max_hours_text = f"{max_hours}h/day" if max_hours else "default"
                 self.notify_success(
                     f"Optimized {task_count} task(s) using '{algorithm}' "
-                    f"(max {max_hours}h/day). Check gantt chart."
+                    f"(max {max_hours_text}). Check gantt chart."
                 )
             else:
                 self.notify_warning("No tasks were optimized. Check task requirements.")
@@ -117,7 +120,6 @@ class OptimizeCommand(TUICommandBase):
         # Wrap callback with error handling from base class
         self.app.push_screen(
             AlgorithmSelectionScreen(
-                self.context.config,
                 algorithm_metadata,
                 force_override=self.force_override,
             ),

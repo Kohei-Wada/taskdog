@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from taskdog.tui.state import TUIState
-from taskdog_core.shared.config_manager import Config
 
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
@@ -22,10 +21,8 @@ class TUIContext:
 
     Attributes:
         api_client: API client for server communication (required)
-        config: Application configuration
         state: TUI application state (shared with app instance)
     """
 
     api_client: "TaskdogApiClient"
-    config: Config
     state: TUIState

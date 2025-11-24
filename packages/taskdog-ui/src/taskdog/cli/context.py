@@ -20,9 +20,15 @@ class CliContext:
     Attributes:
         console_writer: Console writer for output
         api_client: API client for server communication (required)
-        config: Application configuration (loaded from local file)
+        config: Application configuration (used ONLY for API connection setup in cli_main.py)
+                NOT for business logic - server applies all business defaults via controllers
+
+    Note:
+        Config in CliContext is infrastructure-only (API host/port settings).
+        Business logic defaults (priority, max_hours_per_day, etc.) are handled by
+        the server's controllers, not by the CLI layer.
     """
 
     console_writer: ConsoleWriter
     api_client: "TaskdogApiClient"
-    config: Config
+    config: Config  # Infrastructure only - API connection settings
