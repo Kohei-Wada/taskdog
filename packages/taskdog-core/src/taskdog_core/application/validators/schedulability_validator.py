@@ -4,6 +4,7 @@ from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.exceptions.task_exceptions import (
     NoSchedulableTasksError,
     TaskNotFoundException,
+    TaskNotSchedulableError,
 )
 
 
@@ -55,17 +56,18 @@ class SchedulabilityValidator:
         # Get the requested tasks
         requested_tasks = [task_map[tid] for tid in task_ids]
 
-        # Check which tasks are schedulable and build reasons for non-schedulable ones
+        # Validate each task's schedulability and collect reasons for failures
         schedulable_tasks = []
         reasons: dict[int, str] = {}
 
         for task in requested_tasks:
-            if task.is_schedulable(force_override):
+            try:
+                # Delegate validation to entity (domain logic)
+                task.validate_schedulable(force_override)
                 schedulable_tasks.append(task)
-            elif task.id is not None:
-                # Get reason from entity (domain logic)
-                reason = task.get_unschedulable_reason(force_override)
-                reasons[task.id] = reason or "Task is not schedulable"
+            except TaskNotSchedulableError as e:
+                # Collect failure reason from exception
+                reasons[e.task_id] = e.reason
 
         # If no tasks are schedulable, raise error with detailed reasons
         if not schedulable_tasks:

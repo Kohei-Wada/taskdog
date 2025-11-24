@@ -121,6 +121,21 @@ class ServerConnectionError(TaskError):
         )
 
 
+class TaskNotSchedulableError(TaskValidationError):
+    """Raised when a single task cannot be scheduled."""
+
+    def __init__(self, task_id: int, reason: str) -> None:
+        """Initialize with task ID and reason.
+
+        Args:
+            task_id: ID of the task that cannot be scheduled
+            reason: Human-readable reason why the task is not schedulable
+        """
+        self.task_id = task_id
+        self.reason = reason
+        super().__init__(f"Cannot schedule task {task_id}: {reason}")
+
+
 class NoSchedulableTasksError(TaskValidationError):
     """Raised when no tasks can be scheduled during optimization."""
 
