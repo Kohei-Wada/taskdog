@@ -177,7 +177,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
 
         # Convert Tasks to DTOs
         successful_tasks_dto = [
-            self._task_to_summary_dto(task) for task in modified_tasks
+            TaskSummaryDto.from_entity(task) for task in modified_tasks
         ]
         # failed_tasks is already list[SchedulingFailure] with TaskSummaryDto from strategy
         failed_tasks_dto = failed_tasks
@@ -190,20 +190,6 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             summary=summary,
             task_states_before=task_states_before,
         )
-
-    def _task_to_summary_dto(self, task: Task) -> TaskSummaryDto:
-        """Convert Task entity to TaskSummaryDto.
-
-        Args:
-            task: Task entity
-
-        Returns:
-            TaskSummaryDto with basic task information
-        """
-        # Tasks from repository must have an ID
-        if task.id is None:
-            raise ValueError("Task must have an ID")
-        return TaskSummaryDto(id=task.id, name=task.name)
 
     def _filter_workload_tasks(
         self, all_tasks: list[Task], force_override: bool
