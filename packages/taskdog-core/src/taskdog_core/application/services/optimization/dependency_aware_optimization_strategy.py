@@ -9,65 +9,50 @@ from taskdog_core.domain.entities.task import Task
 
 
 class DependencyAwareOptimizationStrategy(GreedyOptimizationStrategy):
-    """Dependency-aware algorithm using Critical Path Method (CPM).
+    """Deadline and priority-based optimization strategy.
 
-    This strategy schedules tasks while respecting parent-child dependencies:
-    1. Calculate dependency depth for each task (children are scheduled before parents)
-    2. Sort by dependency depth (leaf tasks first, then their parents)
-    3. Within same depth, use priority and deadline as secondary sort
-    4. Allocate time blocks respecting the dependency order using greedy allocation
+    This strategy schedules tasks by deadline urgency and priority:
+    1. Sort tasks by deadline (earlier deadlines first)
+    2. Secondary sort by priority (higher priority first)
+    3. Allocate time blocks using greedy forward allocation
+
+    Note: Despite the name "Dependency Aware", this strategy currently only
+    considers deadline and priority. Parent-child relationships were removed
+    from the task model. The name is kept for backward compatibility.
 
     The allocation uses greedy forward allocation (inherited from GreedyOptimizationStrategy),
     filling each day to maximum capacity before moving to the next day.
     """
 
     DISPLAY_NAME = "Dependency Aware"
-    DESCRIPTION = "Critical Path Method"
+    DESCRIPTION = "Deadline + Priority"
 
     def _sort_schedulable_tasks(
         self, tasks: list[Task], start_date: datetime
     ) -> list[Task]:
-        """Sort tasks by dependency depth, then by priority/deadline.
+        """Sort tasks by deadline and priority.
 
-        Calculate dependency depth for each task and sort with multiple criteria:
-        - Primary: Dependency depth (lower depth = scheduled first)
-        - Secondary: Deadline (earlier deadline = scheduled first)
-        - Tertiary: Priority (higher priority = scheduled first)
+        Since parent-child relationships were removed, this strategy now
+        sorts by deadline urgency and priority only.
+
+        Sort criteria:
+        - Primary: Deadline (earlier deadline = scheduled first)
+        - Secondary: Priority (higher priority = scheduled first)
 
         Args:
             tasks: Filtered schedulable tasks
             start_date: Starting date for schedule optimization
 
         Returns:
-            Tasks sorted by dependency depth, deadline, and priority
+            Tasks sorted by deadline and priority
         """
-        # Calculate dependency depth for each task
-        task_depths = self._calculate_dependency_depths(tasks)
-
-        # Sort by dependency depth (leaf tasks first), then by priority/deadline
+        # Sort by deadline (earlier first), then by priority (higher first)
         return sorted(
             tasks,
             key=lambda t: (
-                task_depths.get(
-                    t.id if t.id is not None else 0, 0
-                ),  # Lower depth = scheduled first
-                # Secondary sort: deadline urgency
+                # Primary sort: deadline urgency (earlier = scheduled first)
                 (t.deadline if t.deadline else datetime(9999, 12, 31, 23, 59, 59)),
-                # Tertiary sort: priority (higher = scheduled first, so negate)
+                # Secondary sort: priority (higher = scheduled first, so negate)
                 -(t.priority if t.priority is not None else 0),
             ),
         )
-
-    def _calculate_dependency_depths(self, tasks: list[Task]) -> dict[int, int]:
-        """Calculate dependency depth for each task.
-
-        Since parent-child relationships have been removed, all tasks have depth 0.
-
-        Args:
-            tasks: List of tasks to analyze
-
-        Returns:
-            Dict mapping task_id to dependency depth (always 0)
-        """
-        # All tasks have depth 0 now (no hierarchy)
-        return {task.id: 0 for task in tasks if task.id is not None}
