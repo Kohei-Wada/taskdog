@@ -5,6 +5,7 @@ from typing import Any
 
 import click
 
+from taskdog.constants.ui_defaults import DEFAULT_END_HOUR, DEFAULT_START_HOUR
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 
@@ -19,9 +20,9 @@ class DateTimeWithDefault(click.DateTime):
 
     Args:
         default_hour: Default hour to use when only date is provided.
-                     If None, uses config.time.default_end_hour
-                     If "start", uses config.time.default_start_hour
-                     If int, uses that specific hour
+                     If None, uses business hour default (18 = 6 PM)
+                     If "start", uses business hour default (9 = 9 AM)
+                     If int, uses that specific hour (0-23)
     """
 
     def __init__(self, default_hour: int | str | None = None):
@@ -29,18 +30,18 @@ class DateTimeWithDefault(click.DateTime):
 
         Args:
             default_hour: Hour to use as default when only date provided
-                         - None: loads from config (default_end_hour = 18)
-                         - "start": loads from config (default_start_hour = 9)
+                         - None: uses business hour default (18 = 6 PM)
+                         - "start": uses business hour default (9 = 9 AM)
                          - int (0-23): uses specific hour
         """
         super().__init__(formats=[DATETIME_FORMAT, "%Y-%m-%d", "%m-%d", "%m/%d"])
 
-        # Use hardcoded business hour defaults for date parsing convenience
-        # These match DEFAULT_START_HOUR=9 and DEFAULT_END_HOUR=18 from config_defaults.py
+        # Use UI default constants for date parsing convenience
+        # These match the common business hour defaults for better UX
         if default_hour is None:
-            self.default_hour = 18  # Business day end (6 PM)
+            self.default_hour = DEFAULT_END_HOUR  # Business day end (6 PM)
         elif default_hour == "start":
-            self.default_hour = 9  # Business day start (9 AM)
+            self.default_hour = DEFAULT_START_HOUR  # Business day start (9 AM)
         else:
             self.default_hour = int(default_hour)
 

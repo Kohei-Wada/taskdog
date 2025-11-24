@@ -7,6 +7,7 @@ from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.widgets import Checkbox, Input, Label, Static
 
+from taskdog.constants.ui_defaults import DEFAULT_PRIORITY
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
@@ -85,9 +86,9 @@ class TaskFormFields:
         # Error message area (hidden by default)
         yield Static("", id="error-message")
 
-        # Hardcoded default priority for placeholder text
+        # Use UI default constant for placeholder text
         # Server will apply actual config default when creating tasks
-        default_priority = 5
+        default_priority = DEFAULT_PRIORITY
 
         with Vertical(id="form-container"):
             # Task name field

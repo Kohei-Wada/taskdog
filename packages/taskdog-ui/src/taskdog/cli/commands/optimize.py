@@ -7,6 +7,7 @@ import click
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
 from taskdog.console.console_writer import ConsoleWriter
+from taskdog.constants.ui_defaults import DEFAULT_START_HOUR
 from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.shared.utils.date_utils import get_next_weekday
@@ -102,8 +103,8 @@ def optimize_command(
     console_writer = ctx_obj.console_writer
     api_client = ctx_obj.api_client
 
-    # Use start_date or get next weekday with default 9:00 AM
-    start_date = start_date if start_date else get_next_weekday(9)
+    # Use start_date or get next weekday with default business start hour
+    start_date = start_date if start_date else get_next_weekday(DEFAULT_START_HOUR)
 
     # Convert task_ids tuple to list (or None if empty)
     task_ids_list = list(task_ids) if task_ids else None
