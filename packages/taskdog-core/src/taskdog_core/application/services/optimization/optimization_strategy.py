@@ -70,12 +70,12 @@ class OptimizationStrategy(ABC):
         """
         # 1. Create allocation context with initialized state
         # Pass workload_calculator from UseCase for proper strategy selection
-        # Use all_tasks_for_context to calculate existing daily allocations
+        # NOTE: all_tasks_for_context should already be filtered by UseCase
+        # to include only tasks that should count in workload calculation
         context = AllocationContext.create(
             tasks=all_tasks_for_context,
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
-            force_override=force_override,
             holiday_checker=holiday_checker,
             current_time=current_time,
             workload_calculator=workload_calculator,

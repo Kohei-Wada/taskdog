@@ -3,7 +3,7 @@
 from datetime import date
 
 from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import Task
 
 
 class AllocationInitializer:
@@ -23,22 +23,18 @@ class AllocationInitializer:
         """
         self.calculator = workload_calculator or WorkloadCalculator()
 
-    def initialize_allocations(
-        self, tasks: list[Task], force_override: bool
-    ) -> dict[date, float]:
+    def initialize_allocations(self, tasks: list[Task]) -> dict[date, float]:
         """Initialize daily allocations from existing scheduled tasks.
 
         This method pre-populates daily allocations with hours from tasks
         that already have schedules. This ensures that when we optimize new tasks,
         we account for existing workload commitments.
 
-        Fixed tasks are ALWAYS included in daily allocations, regardless of force_override,
-        because they represent immovable time constraints (meetings, deadlines, etc.) that
-        must be respected when scheduling other tasks.
+        NOTE: The caller is responsible for filtering which tasks should be included
+        in workload calculation (e.g., excluding tasks that will be rescheduled).
 
         Args:
-            tasks: All tasks in the system
-            force_override: Whether existing schedules will be overridden
+            tasks: Tasks to include in workload calculation (already filtered by caller)
 
         Returns:
             Dictionary mapping dates to allocated hours
@@ -46,22 +42,8 @@ class AllocationInitializer:
         daily_allocations: dict[date, float] = {}
 
         for task in tasks:
-            # Skip finished tasks (completed/archived) - they don't contribute to future workload
-            if not task.should_count_in_workload():
-                continue
-
             # Skip tasks without schedules
             if not (task.planned_start and task.estimated_duration):
-                continue
-
-            # ALWAYS include fixed tasks in daily_allocations (they cannot be rescheduled)
-            # Also include IN_PROGRESS tasks (they should not be rescheduled)
-            # If force_override, skip PENDING non-fixed tasks (they will be rescheduled)
-            if (
-                force_override
-                and not task.is_fixed
-                and task.status != TaskStatus.IN_PROGRESS
-            ):
                 continue
 
             # Get daily allocations for this task

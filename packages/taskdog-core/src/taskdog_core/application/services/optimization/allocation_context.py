@@ -45,7 +45,6 @@ class AllocationContext:
         tasks: list[Task],
         start_date: datetime,
         max_hours_per_day: float,
-        force_override: bool,
         holiday_checker: "IHolidayChecker | None" = None,
         current_time: "datetime | None" = None,
         workload_calculator: "WorkloadCalculator | None" = None,
@@ -55,11 +54,13 @@ class AllocationContext:
         This is the recommended way to create an AllocationContext, as it
         automatically initializes daily_allocations from existing task schedules.
 
+        NOTE: The caller is responsible for filtering which tasks to include
+        in workload calculation (e.g., excluding tasks that will be rescheduled).
+
         Args:
-            tasks: All tasks in the system (for calculating existing allocations)
+            tasks: Tasks to include in workload calculation (already filtered by caller)
             start_date: Starting date for scheduling
             max_hours_per_day: Maximum work hours per day
-            force_override: Whether to override existing schedules
             holiday_checker: Optional holiday checker
             current_time: Optional current time for time-aware operations
             workload_calculator: Optional pre-configured calculator (injected from UseCase)
@@ -70,7 +71,7 @@ class AllocationContext:
         # Initialize allocations from existing tasks
         # Inject workload calculator from UseCase for proper strategy selection
         initializer = AllocationInitializer(workload_calculator=workload_calculator)
-        daily_allocations = initializer.initialize_allocations(tasks, force_override)
+        daily_allocations = initializer.initialize_allocations(tasks)
 
         return cls(
             start_date=start_date,

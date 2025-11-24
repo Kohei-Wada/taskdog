@@ -109,11 +109,11 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             return [], {}, []
 
         # Create allocation context
+        # NOTE: all_tasks_for_context should already be filtered by UseCase
         context = AllocationContext.create(
             tasks=all_tasks_for_context,
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
-            force_override=force_override,
             holiday_checker=holiday_checker,
             current_time=current_time,
             workload_calculator=workload_calculator,
@@ -332,11 +332,11 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         """
         # Simulate scheduling with this order
         # Create a temporary context for simulation
+        # NOTE: task_order is already the filtered schedulable tasks
         temp_context = AllocationContext.create(
             tasks=task_order,
             start_date=start_date,
             max_hours_per_day=max_hours_per_day,
-            force_override=False,
             holiday_checker=None,
             current_time=None,
             workload_calculator=workload_calculator,
