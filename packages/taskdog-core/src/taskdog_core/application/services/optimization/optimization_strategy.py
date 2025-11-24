@@ -1,5 +1,6 @@
 """Abstract base class for optimization strategies using Template Method Pattern."""
 
+import copy
 from abc import ABC, abstractmethod
 from datetime import date, datetime
 from typing import TYPE_CHECKING
@@ -150,6 +151,37 @@ class OptimizationStrategy(ABC):
             Copy of task with updated schedule, or None if allocation fails
         """
         pass
+
+    def _prepare_task_for_allocation(self, task: Task) -> Task | None:
+        """Validate and prepare task copy for allocation.
+
+        Protected helper method that validates task duration and creates
+        a deep copy for allocation. This eliminates code duplication across
+        strategy implementations.
+
+        Args:
+            task: Task to validate and copy
+
+        Returns:
+            Deep copy of task if valid, None if task cannot be allocated
+            (e.g., no estimated_duration or duration <= 0)
+
+        Raises:
+            ValueError: If deep copied task has None estimated_duration
+                       (defensive check, should not happen in practice)
+        """
+        # Validate task has positive estimated duration
+        if not task.estimated_duration or task.estimated_duration <= 0:
+            return None
+
+        # Create deep copy for modification
+        task_copy = copy.deepcopy(task)
+
+        # Defensive check: ensure copy preserved estimated_duration
+        if task_copy.estimated_duration is None:
+            raise ValueError("Cannot allocate task without estimated duration")
+
+        return task_copy
 
     def _calculate_available_hours(
         self,

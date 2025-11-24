@@ -1,6 +1,5 @@
 """Balanced optimization strategy implementation."""
 
-import copy
 from datetime import date, timedelta
 
 from taskdog_core.application.services.optimization.allocation_context import (
@@ -53,13 +52,14 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
             Copy of task with updated schedule, or None if allocation fails
         """
         # Validate and prepare task
-        if not task.estimated_duration or task.estimated_duration <= 0:
+        task_copy = self._prepare_task_for_allocation(task)
+        if task_copy is None:
             return None
 
-        task_copy = copy.deepcopy(task)
-        if task_copy.estimated_duration is None:
-            raise ValueError("Cannot allocate task without estimated duration")
         effective_deadline = task_copy.deadline
+        assert (
+            task_copy.estimated_duration is not None
+        )  # Guaranteed by _prepare_task_for_allocation
 
         # Calculate end date for distribution
         # If no deadline, use a reasonable period (2 weeks = 10 weekdays)

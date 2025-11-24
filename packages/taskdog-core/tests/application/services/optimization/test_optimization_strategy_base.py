@@ -263,6 +263,57 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
         self.assertEqual(daily_allocations[date(2025, 10, 20)], 5.0)
         self.assertEqual(daily_allocations[date(2025, 10, 21)], 8.0)
 
+    def test_prepare_task_for_allocation_valid_task(self):
+        """Test _prepare_task_for_allocation with valid task."""
+        task = Task(
+            id=1,
+            name="Test Task",
+            priority=100,
+            estimated_duration=10.0,
+        )
+
+        result = self.strategy._prepare_task_for_allocation(task)
+
+        # Verify task copy is returned
+        self.assertIsNotNone(result)
+        self.assertIsNot(result, task)  # Should be a different object (deep copy)
+        self.assertEqual(result.id, task.id)
+        self.assertEqual(result.name, task.name)
+        self.assertEqual(result.estimated_duration, task.estimated_duration)
+
+    def test_prepare_task_for_allocation_none_duration(self):
+        """Test _prepare_task_for_allocation with None duration."""
+        task = Task(
+            id=1,
+            name="Test Task",
+            priority=100,
+            estimated_duration=None,
+        )
+
+        result = self.strategy._prepare_task_for_allocation(task)
+
+        # Should return None for None duration
+        self.assertIsNone(result)
+
+    def test_prepare_task_for_allocation_is_deep_copy(self):
+        """Test that _prepare_task_for_allocation returns deep copy."""
+        task = Task(
+            id=1,
+            name="Original Task",
+            priority=100,
+            estimated_duration=10.0,
+        )
+
+        result = self.strategy._prepare_task_for_allocation(task)
+
+        # Modify the copy
+        result.name = "Modified Task"
+        result.priority = 200
+
+        # Original should be unchanged
+        self.assertEqual(task.name, "Original Task")
+        self.assertEqual(task.priority, 100)
+
 
 if __name__ == "__main__":
     unittest.main()

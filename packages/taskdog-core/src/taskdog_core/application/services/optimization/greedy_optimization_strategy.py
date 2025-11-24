@@ -1,6 +1,5 @@
 """Greedy optimization strategy implementation."""
 
-import copy
 from datetime import date, timedelta
 from typing import TYPE_CHECKING
 
@@ -50,17 +49,16 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
             Copy of task with updated schedule, or None if allocation fails
         """
         # Validate and prepare task
-        if not task.estimated_duration or task.estimated_duration <= 0:
+        task_copy = self._prepare_task_for_allocation(task)
+        if task_copy is None:
             return None
 
-        task_copy = copy.deepcopy(task)
-        if task_copy.estimated_duration is None:
-            raise ValueError("Cannot allocate task without estimated duration")
         effective_deadline = task_copy.deadline
 
         # Find earliest available start date
         current_date = context.start_date
         remaining_hours = task_copy.estimated_duration
+        assert remaining_hours is not None  # Guaranteed by _prepare_task_for_allocation
         schedule_start = None
         schedule_end = None
         task_daily_allocations: dict[date, float] = {}
