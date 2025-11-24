@@ -25,7 +25,7 @@ Or, if `XDG_CONFIG_HOME` is set:
 $XDG_CONFIG_HOME/taskdog/cli.toml
 ```
 
-**Example**: See `examples/cli.toml` for a fully documented example configuration.
+**Example**: See `../../examples/cli.toml` for a fully documented example configuration.
 
 ## Configuration Structure
 
