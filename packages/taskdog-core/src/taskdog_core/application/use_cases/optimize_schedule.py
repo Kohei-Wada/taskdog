@@ -17,10 +17,12 @@ from taskdog_core.application.services.workload_calculation_strategy_factory imp
     WorkloadCalculationStrategyFactory,
 )
 from taskdog_core.application.use_cases.base import UseCase
-from taskdog_core.application.validators.schedulability_validator import (
-    SchedulabilityValidator,
-)
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import (
+    NoSchedulableTasksError,
+    TaskNotFoundException,
+    TaskNotSchedulableError,
+)
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -75,25 +77,38 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             t.id: t.planned_start for t in all_tasks if t.id is not None
         }
 
-        # Validate and filter schedulable tasks
+        # Determine target tasks for optimization
         if input_dto.task_ids:
-            # Use validator for task ID validation and schedulability check
-            schedulable_tasks = (
-                SchedulabilityValidator.validate_and_filter_schedulable_tasks(
-                    task_ids=input_dto.task_ids,
-                    all_tasks=all_tasks,
-                    force_override=input_dto.force_override,
+            # Specific tasks requested: validate that all task IDs exist
+            task_map = {t.id: t for t in all_tasks if t.id is not None}
+            missing_ids = [tid for tid in input_dto.task_ids if tid not in task_map]
+            if missing_ids:
+                if len(missing_ids) == 1:
+                    raise TaskNotFoundException(missing_ids[0])
+                raise TaskNotFoundException(
+                    f"Tasks with IDs {', '.join(map(str, missing_ids))} not found"
                 )
-            )
+            target_tasks = [task_map[tid] for tid in input_dto.task_ids]
         else:
-            # Filter all schedulable tasks (UseCase responsibility: what to optimize)
-            schedulable_tasks = [
-                task
-                for task in all_tasks
-                if task.is_schedulable(input_dto.force_override)
-            ]
-            # Don't raise error if no tasks are schedulable when task_ids is not specified
-            # This maintains backward compatibility with existing behavior
+            # All tasks are candidates
+            target_tasks = all_tasks
+
+        # Validate and filter schedulable tasks (common logic for both cases)
+        schedulable_tasks = []
+        reasons: dict[int, str] = {}
+        for task in target_tasks:
+            try:
+                # Delegate validation to entity (domain logic)
+                task.validate_schedulable(input_dto.force_override)
+                schedulable_tasks.append(task)
+            except TaskNotSchedulableError as e:
+                # Collect failure reason from exception
+                reasons[e.task_id] = e.reason
+
+        # Only raise error when specific tasks were requested but none are schedulable
+        # When no task_ids specified, empty result is acceptable (backward compatibility)
+        if input_dto.task_ids and not schedulable_tasks:
+            raise NoSchedulableTasksError(task_ids=input_dto.task_ids, reasons=reasons)
 
         # Filter tasks for workload calculation (UseCase responsibility)
         # - Exclude finished tasks (completed/archived)
