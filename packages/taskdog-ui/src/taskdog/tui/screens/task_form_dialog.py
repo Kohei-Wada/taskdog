@@ -113,23 +113,25 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         self._clear_validation_error()
 
         # Build validation chain using FormValidator
-        # Use hardcoded business hour defaults
+        # Use centralized UI defaults for form validation
         # Server will apply actual config defaults when creating/updating tasks
-        default_priority = 5
-        default_start_hour = 9  # Business day start (9 AM)
-        default_end_hour = 18  # Business day end (6 PM)
+        from taskdog.tui.constants.ui_settings import (
+            DEFAULT_BUSINESS_END_HOUR,
+            DEFAULT_BUSINESS_START_HOUR,
+            DEFAULT_TASK_PRIORITY,
+        )
 
         validator = FormValidator(self)
         validator.add_field("task_name", "task-name-input", TaskNameValidator)
         validator.add_field(
-            "priority", "priority-input", PriorityValidator, default_priority
+            "priority", "priority-input", PriorityValidator, DEFAULT_TASK_PRIORITY
         )
         validator.add_field(
             "deadline",
             "deadline-input",
             DateTimeValidator,
             "deadline",
-            default_end_hour,
+            DEFAULT_BUSINESS_END_HOUR,
         )
         validator.add_field("duration", "duration-input", DurationValidator)
         validator.add_field(
@@ -137,14 +139,14 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             "planned-start-input",
             DateTimeValidator,
             "planned start",
-            default_start_hour,
+            DEFAULT_BUSINESS_START_HOUR,
         )
         validator.add_field(
             "planned_end",
             "planned-end-input",
             DateTimeValidator,
             "planned end",
-            default_end_hour,
+            DEFAULT_BUSINESS_END_HOUR,
         )
         validator.add_field("dependencies", "dependencies-input", DependenciesValidator)
         validator.add_field("tags", "tags-input", TagsValidator)

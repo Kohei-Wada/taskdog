@@ -57,3 +57,13 @@ ACTION_TO_COMMAND_MAP: dict[str, str] = {
     "action_show_help": "show_help",
 }
 """Mapping of Textual action names to command names for __getattr__ delegation."""
+
+# Task form default values
+DEFAULT_TASK_PRIORITY = 5
+"""Default priority for new tasks in the form dialog."""
+
+DEFAULT_BUSINESS_START_HOUR = 9
+"""Default business day start hour (9 AM) for task scheduling."""
+
+DEFAULT_BUSINESS_END_HOUR = 18
+"""Default business day end hour (6 PM) for task scheduling."""

@@ -131,13 +131,8 @@ class BatchConfirmationCommandBase(TUICommandBase):
                 try:
                     self.execute_confirmed_action(task_id)
                     success_count += 1
-                except TaskNotFoundException as e:
-                    self.notify_error(f"Task {task_id}", e)
-                    failure_count += 1
-                except TaskValidationError as e:
-                    self.notify_error(f"Task {task_id}", e)
-                    failure_count += 1
-                except Exception as e:
+                except (TaskNotFoundException, TaskValidationError, Exception) as e:
+                    # All exceptions handled uniformly
                     self.notify_error(f"Task {task_id}", e)
                     failure_count += 1
 
