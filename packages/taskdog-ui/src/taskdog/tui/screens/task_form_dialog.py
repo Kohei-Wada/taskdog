@@ -7,16 +7,8 @@ from textual.binding import Binding
 from textual.containers import Container
 from textual.widgets import Checkbox, Input, Label
 
-from taskdog.tui.forms import FormValidator
 from taskdog.tui.forms.task_form_fields import TaskFormData, TaskFormFields
-from taskdog.tui.forms.validators import (
-    DateTimeValidator,
-    DependenciesValidator,
-    DurationValidator,
-    PriorityValidator,
-    TagsValidator,
-    TaskNameValidator,
-)
+from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 
@@ -106,67 +98,78 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
 
     def _submit_form(self) -> None:
         """Validate and submit the form data."""
-        # Get fixed checkbox value
+        # Get widget values directly (validated by Textual built-in validators)
+        task_name_input = self.query_one("#task-name-input", Input)
+        priority_input = self.query_one("#priority-input", Input)
+        duration_input = self.query_one("#duration-input", Input)
+        deadline_input = self.query_one("#deadline-input", Input)
+        planned_start_input = self.query_one("#planned-start-input", Input)
+        planned_end_input = self.query_one("#planned-end-input", Input)
+        dependencies_input = self.query_one("#dependencies-input", Input)
+        tags_input = self.query_one("#tags-input", Input)
         fixed_checkbox = self.query_one("#fixed-checkbox", Checkbox)
 
         # Clear previous error
         self._clear_validation_error()
 
-        # Build validation chain using FormValidator
-        # Use centralized UI defaults for form validation
-        # Server will apply actual config defaults when creating/updating tasks
+        # Validate task name (required field)
+        task_name = task_name_input.value.strip()
+        if not task_name:
+            self._show_validation_error("Task name is required", task_name_input)
+            return
+
+        # Parse priority (optional, defaults to config value)
+        # Validation is handled by Textual's Number validator
         from taskdog.tui.constants.ui_settings import (
             DEFAULT_BUSINESS_END_HOUR,
             DEFAULT_BUSINESS_START_HOUR,
             DEFAULT_TASK_PRIORITY,
         )
 
-        validator = FormValidator(self)
-        validator.add_field("task_name", "task-name-input", TaskNameValidator)
-        validator.add_field(
-            "priority", "priority-input", PriorityValidator, DEFAULT_TASK_PRIORITY
-        )
-        validator.add_field(
-            "deadline",
-            "deadline-input",
-            DateTimeValidator,
-            "deadline",
-            DEFAULT_BUSINESS_END_HOUR,
-        )
-        validator.add_field("duration", "duration-input", DurationValidator)
-        validator.add_field(
-            "planned_start",
-            "planned-start-input",
-            DateTimeValidator,
-            "planned start",
-            DEFAULT_BUSINESS_START_HOUR,
-        )
-        validator.add_field(
-            "planned_end",
-            "planned-end-input",
-            DateTimeValidator,
-            "planned end",
-            DEFAULT_BUSINESS_END_HOUR,
-        )
-        validator.add_field("dependencies", "dependencies-input", DependenciesValidator)
-        validator.add_field("tags", "tags-input", TagsValidator)
+        priority_str = priority_input.value.strip()
+        priority = int(priority_str) if priority_str else DEFAULT_TASK_PRIORITY
 
-        # Run validations
-        results = validator.validate_all()
-        if results is None:
-            return  # Validation failed, error already displayed
+        # Parse duration (optional, validated by Textual's Number validator)
+        duration_str = duration_input.value.strip()
+        duration = float(duration_str) if duration_str else None
+
+        # Parse datetime fields using DateTimeValidator.parse()
+        deadline_validator = DateTimeValidator("deadline", DEFAULT_BUSINESS_END_HOUR)
+        planned_start_validator = DateTimeValidator(
+            "planned start", DEFAULT_BUSINESS_START_HOUR
+        )
+        planned_end_validator = DateTimeValidator(
+            "planned end", DEFAULT_BUSINESS_END_HOUR
+        )
+
+        deadline = deadline_validator.parse(deadline_input.value)
+        planned_start = planned_start_validator.parse(planned_start_input.value)
+        planned_end = planned_end_validator.parse(planned_end_input.value)
+
+        # Parse dependencies (optional, validated by Textual's Regex validator)
+        dependencies_str = dependencies_input.value.strip()
+        if dependencies_str:
+            dependencies = [
+                int(x.strip()) for x in dependencies_str.split(",") if x.strip()
+            ]
+        else:
+            dependencies = []
+
+        # Parse tags (optional, validated by Textual's Regex validator)
+        tags_str = tags_input.value.strip()
+        tags = [x.strip() for x in tags_str.split(",") if x.strip()] if tags_str else []
 
         # All validations passed - create form data
         form_data = TaskFormData(
-            name=results["task_name"],
-            priority=results["priority"],
-            deadline=results["deadline"],
-            estimated_duration=results["duration"],
-            planned_start=results["planned_start"],
-            planned_end=results["planned_end"],
+            name=task_name,
+            priority=priority,
+            deadline=deadline,
+            estimated_duration=duration,
+            planned_start=planned_start,
+            planned_end=planned_end,
             is_fixed=fixed_checkbox.value,
-            depends_on=results["dependencies"],
-            tags=results["tags"],
+            depends_on=dependencies,
+            tags=tags,
         )
 
         # Submit the form data

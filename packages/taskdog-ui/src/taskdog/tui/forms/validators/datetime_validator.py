@@ -2,32 +2,39 @@
 
 from dateutil import parser as dateutil_parser
 from dateutil.parser import ParserError
+from textual.validation import ValidationResult, Validator
 
-from taskdog.constants.validation_messages import ValidationMessages
-from taskdog.tui.forms.validators.base import BaseValidator, ValidationResult
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 
-class DateTimeValidator(BaseValidator):
-    """Generic validator for date/time fields."""
+class DateTimeValidator(Validator):
+    """Textual-compatible validator for date/time fields with fuzzy parsing."""
 
-    @staticmethod
-    def validate(value: str, field_name: str, default_hour: int) -> ValidationResult:
+    def __init__(self, field_name: str, default_hour: int) -> None:
+        """Initialize the validator.
+
+        Args:
+            field_name: Name of the field for error messages
+            default_hour: Default hour to use when only date is provided
+        """
+        super().__init__()
+        self.field_name = field_name
+        self.default_hour = default_hour
+
+    def validate(self, value: str) -> ValidationResult:
         """Validate a date/time string.
 
         Args:
             value: Date/time string to validate (can be empty for no value)
-            field_name: Name of the field for error messages
-            default_hour: Default hour to use when only date is provided (from config)
 
         Returns:
-            ValidationResult with validation status, error_message, and formatted date/time
+            ValidationResult indicating success or failure
         """
         datetime_str = value.strip()
 
-        # Empty string means no value
+        # Empty string is valid (optional field)
         if not datetime_str:
-            return DateTimeValidator._success(None)
+            return self.success()
 
         # Check if input contains time component (look for colon)
         has_time = ":" in datetime_str
@@ -38,14 +45,37 @@ class DateTimeValidator(BaseValidator):
 
             # If no time was provided and parsed time is midnight, apply default hour
             if not has_time and parsed_date.hour == 0 and parsed_date.minute == 0:
-                parsed_date = parsed_date.replace(hour=default_hour, minute=0, second=0)
-
-            # Convert to the standard format YYYY-MM-DD HH:MM:SS
-            formatted_datetime = parsed_date.strftime(DATETIME_FORMAT)
-            return DateTimeValidator._success(formatted_datetime)
-        except (ValueError, TypeError, OverflowError, ParserError):
-            return DateTimeValidator._error(
-                ValidationMessages.invalid_date_format(
-                    field_name, "2025-12-31, tomorrow 6pm"
+                parsed_date = parsed_date.replace(
+                    hour=self.default_hour, minute=0, second=0
                 )
+
+            # Validate successful - the actual parsing for form submission
+            # will be done separately
+            return self.success()
+        except (ValueError, TypeError, OverflowError, ParserError):
+            return self.failure(
+                f"Invalid {self.field_name} format. Examples: 2025-12-31, tomorrow 6pm"
             )
+
+    def parse(self, value: str) -> str | None:
+        """Parse datetime string to formatted string.
+
+        Args:
+            value: Date/time string to parse
+
+        Returns:
+            Formatted datetime string (YYYY-MM-DD HH:MM:SS) or None if empty
+        """
+        datetime_str = value.strip()
+        if not datetime_str:
+            return None
+
+        has_time = ":" in datetime_str
+        parsed_date = dateutil_parser.parse(datetime_str, fuzzy=True)
+
+        if not has_time and parsed_date.hour == 0 and parsed_date.minute == 0:
+            parsed_date = parsed_date.replace(
+                hour=self.default_hour, minute=0, second=0
+            )
+
+        return str(parsed_date.strftime(DATETIME_FORMAT))

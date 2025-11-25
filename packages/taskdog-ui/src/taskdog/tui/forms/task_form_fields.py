@@ -5,10 +5,16 @@ from datetime import datetime
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
+from textual.validation import Length, Number, Regex
 from textual.widgets import Checkbox, Input, Label, Static
 
-from taskdog.constants.ui_defaults import DEFAULT_PRIORITY
+from taskdog.constants.ui_defaults import (
+    DEFAULT_END_HOUR,
+    DEFAULT_PRIORITY,
+    DEFAULT_START_HOUR,
+)
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
+from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
@@ -91,12 +97,13 @@ class TaskFormFields:
         default_priority = DEFAULT_PRIORITY
 
         with Vertical(id="form-container"):
-            # Task name field
-            yield Label("Task Name:", classes="field-label")
+            # Task name field (required)
+            yield Label("Task Name [red]*[/red]:", classes="field-label", markup=True)
             yield Input(
                 placeholder="Enter task name",
                 id="task-name-input",
                 value=task.name if task else "",
+                validators=[Length(minimum=1)],
             )
 
             # Duration field
@@ -107,6 +114,8 @@ class TaskFormFields:
                 value=str(task.estimated_duration)
                 if task and task.estimated_duration
                 else "",
+                valid_empty=True,
+                validators=[Number(minimum=0.1)],
             )
 
             # Deadline field
@@ -117,6 +126,8 @@ class TaskFormFields:
                 value=DateTimeFormatter.format_datetime_for_export(task.deadline)
                 if task and task.deadline
                 else "",
+                valid_empty=True,
+                validators=[DateTimeValidator("deadline", DEFAULT_END_HOUR)],
             )
 
             # Planned Start field
@@ -127,6 +138,8 @@ class TaskFormFields:
                 value=DateTimeFormatter.format_datetime_for_export(task.planned_start)
                 if task and task.planned_start
                 else "",
+                valid_empty=True,
+                validators=[DateTimeValidator("planned start", DEFAULT_START_HOUR)],
             )
 
             # Planned End field
@@ -137,6 +150,8 @@ class TaskFormFields:
                 value=DateTimeFormatter.format_datetime_for_export(task.planned_end)
                 if task and task.planned_end
                 else "",
+                valid_empty=True,
+                validators=[DateTimeValidator("planned end", DEFAULT_END_HOUR)],
             )
 
             # Priority field
@@ -146,8 +161,9 @@ class TaskFormFields:
                     default_priority
                 }, higher = more important)",
                 id="priority-input",
-                type="integer",
                 value=str(task.priority) if task else "",
+                valid_empty=True,
+                validators=[Number(minimum=1)],
             )
 
             # Dependencies field
@@ -160,6 +176,8 @@ class TaskFormFields:
                 placeholder="Optional: 1,2,3 (comma-separated task IDs)",
                 id="dependencies-input",
                 value=depends_on_str,
+                valid_empty=True,
+                validators=[Regex(r"^(\d+\s*,\s*)*\d+$")],
             )
 
             # Tags field
@@ -172,6 +190,8 @@ class TaskFormFields:
                 placeholder="Optional: work,urgent,client-a (comma-separated tags)",
                 id="tags-input",
                 value=tags_str,
+                valid_empty=True,
+                validators=[Regex(r"^([a-zA-Z0-9_-]+\s*,\s*)*[a-zA-Z0-9_-]+$")],
             )
 
             # Fixed field (checkbox)
