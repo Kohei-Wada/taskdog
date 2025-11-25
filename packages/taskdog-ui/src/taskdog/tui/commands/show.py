@@ -4,7 +4,7 @@ from typing import Any
 
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.registry import command_registry
-from taskdog.tui.screens.task_detail_screen import TaskDetailScreen
+from taskdog.tui.dialogs.task_detail_dialog import TaskDetailDialog
 from taskdog.utils.note_editor import edit_task_note
 
 
@@ -22,9 +22,9 @@ class ShowCommand(TUICommandBase):
         # Get task detail with notes via API client
         detail = self.context.api_client.get_task_detail(task_id)
 
-        # Show task detail screen with notes
-        detail_screen = TaskDetailScreen(detail)
-        self.app.push_screen(detail_screen, callback=self._handle_detail_screen_result)
+        # Show task detail dialog with notes
+        detail_dialog = TaskDetailDialog(detail)
+        self.app.push_screen(detail_dialog, callback=self._handle_detail_screen_result)
 
     def _handle_detail_screen_result(self, result: Any) -> None:
         """Handle the result from the detail screen.

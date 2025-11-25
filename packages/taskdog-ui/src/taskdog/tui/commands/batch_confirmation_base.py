@@ -7,7 +7,7 @@ before executing on multiple tasks (delete, hard delete, etc.).
 from abc import abstractmethod
 
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog.tui.screens.confirmation_dialog import ConfirmationDialog
+from taskdog.tui.dialogs.confirmation_dialog import ConfirmationDialog
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,

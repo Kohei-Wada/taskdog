@@ -7,7 +7,7 @@ from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.constants.ui_settings import OPTIMIZATION_FAILURE_DETAIL_THRESHOLD
 from taskdog.tui.context import TUIContext
-from taskdog.tui.screens.algorithm_selection_screen import AlgorithmSelectionScreen
+from taskdog.tui.dialogs.algorithm_selection_dialog import AlgorithmSelectionDialog
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
 
 if TYPE_CHECKING:
@@ -119,7 +119,7 @@ class OptimizeCommand(TUICommandBase):
         # Show optimization settings screen
         # Wrap callback with error handling from base class
         self.app.push_screen(
-            AlgorithmSelectionScreen(
+            AlgorithmSelectionDialog(
                 algorithm_metadata,
                 force_override=self.force_override,
             ),

@@ -5,12 +5,12 @@
    ============================================================================= */
 
 /* All dialog screens use center alignment */
-AlgorithmSelectionScreen,
+AlgorithmSelectionDialog,
 SortSelectionScreen,
 ConfirmationDialog,
 TaskFormDialog,
-TaskDetailScreen,
-HelpScreen {
+TaskDetailDialog,
+HelpDialog {
     align: center middle;
 }
 

@@ -1,4 +1,4 @@
-"""Task detail screen for TUI."""
+"""Task detail dialog for TUI."""
 
 from typing import Any, ClassVar
 
@@ -9,14 +9,14 @@ from textual.widgets import Label, Markdown, Static
 
 from taskdog.constants.colors import STATUS_COLORS_BOLD
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
-from taskdog.tui.screens.base_dialog import BaseModalDialog
+from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 
-class TaskDetailScreen(BaseModalDialog[tuple[str, int] | None], ViNavigationMixin):
+class TaskDetailDialog(BaseModalDialog[tuple[str, int] | None], ViNavigationMixin):
     """Modal screen for displaying task details.
 
     Shows comprehensive information about a task including:

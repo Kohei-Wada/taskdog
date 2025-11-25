@@ -2,7 +2,7 @@
 
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.registry import command_registry
-from taskdog.tui.screens.help_screen import HelpScreen
+from taskdog.tui.dialogs.help_dialog import HelpDialog
 
 
 @command_registry.register("show_help")
@@ -11,6 +11,6 @@ class ShowHelpCommand(TUICommandBase):
 
     def execute_impl(self) -> None:
         """Execute the show help command."""
-        # Push help screen modal
-        help_screen = HelpScreen()
-        self.app.push_screen(help_screen)
+        # Push help dialog modal
+        help_dialog = HelpDialog()
+        self.app.push_screen(help_dialog)

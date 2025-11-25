@@ -1,4 +1,4 @@
-"""Help screen displaying usage instructions and feature guide."""
+"""Help dialog displaying usage instructions and feature guide."""
 
 from typing import ClassVar
 
@@ -15,11 +15,11 @@ from taskdog.tui.constants.keybindings import (
     QUICK_TIPS,
     TASKDOG_OVERVIEW,
 )
-from taskdog.tui.screens.base_dialog import BaseModalDialog
+from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 
 
-class HelpScreen(BaseModalDialog[None], ViNavigationMixin):
+class HelpDialog(BaseModalDialog[None], ViNavigationMixin):
     """Modal screen displaying help information and usage guide.
 
     Shows:

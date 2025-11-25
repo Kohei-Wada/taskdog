@@ -53,6 +53,7 @@ packages = [
     "taskdog.tui.services",
     "taskdog.tui.utils",
     "taskdog.tui.screens",
+    "taskdog.tui.dialogs",
     "taskdog.tui.widgets",
     "taskdog.tui.forms",
     "taskdog.tui.forms.validators",

@@ -7,9 +7,9 @@ from textual.binding import Binding
 from textual.containers import Container
 from textual.widgets import Checkbox, Input, Label
 
+from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from taskdog.tui.forms.validators import DateTimeValidator
-from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 

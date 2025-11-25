@@ -1,4 +1,4 @@
-"""Algorithm selection screen for optimization."""
+"""Algorithm selection dialog for optimization."""
 
 from datetime import datetime
 from typing import Any, ClassVar
@@ -11,12 +11,14 @@ from textual.widgets import Input, Label, Static
 from textual.widgets.option_list import Option
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
+from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.forms.validators import StartDateTextualValidator
-from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_option_list import ViOptionList
 
 
-class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | None]):
+class AlgorithmSelectionDialog(
+    BaseModalDialog[tuple[str, float | None, datetime] | None]
+):
     """Modal screen for selecting optimization algorithm, max hours, and start date."""
 
     BINDINGS: ClassVar = [

@@ -7,7 +7,7 @@ from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.widgets import Button, Label
 
-from taskdog.tui.screens.base_dialog import BaseModalDialog
+from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 
 
 class ConfirmationDialog(BaseModalDialog[bool]):

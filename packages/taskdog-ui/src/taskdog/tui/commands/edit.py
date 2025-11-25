@@ -3,10 +3,10 @@
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.decorators import require_selected_task
 from taskdog.tui.commands.registry import command_registry
+from taskdog.tui.dialogs.task_form_dialog import TaskFormDialog
 from taskdog.tui.events import TaskUpdated
 from taskdog.tui.forms.task_form_fields import TaskFormData
 from taskdog.tui.messages import TUIMessageBuilder
-from taskdog.tui.screens.task_form_dialog import TaskFormDialog
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
