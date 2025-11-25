@@ -1,13 +1,33 @@
 # Taskdog
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
+
 A task management system with CLI/TUI interfaces and REST API server, featuring time tracking, schedule optimization, and beautiful terminal output.
+
+**Note**: Designed for individual use. Stores tasks locally in SQLite database.
+
+![TUI Screenshot](docs/images/TaskdogTUI_half.svg)
 
 **Architecture**: UV workspace monorepo with three packages:
 - **taskdog-core**: Core business logic and SQLite persistence
 - **taskdog-server**: FastAPI REST API server
 - **taskdog-ui**: CLI and TUI interfaces
 
-**Note**: Designed for individual use. Stores tasks locally in SQLite database.
+## Table of Contents
+
+- [Features](#features)
+- [Design Philosophy](#design-philosophy)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Interactive TUI](#interactive-tui)
+- [Themes](#themes)
+- [API Server](#api-server)
+- [Commands](#commands)
+- [Configuration](#configuration)
+- [Workflow](#workflow)
+- [Development](#development)
+- [Contributing](#contributing)
 
 ## Features
 
@@ -96,24 +116,13 @@ make uninstall        # Remove global installations
 
 ## Quick Start
 
-### Step 1: Start the API Server (Required)
-
-Before using the CLI or TUI, start the API server:
-
+**1. Start the API server** (required for all operations):
 ```bash
-# Start the server (runs on http://127.0.0.1:8000 by default)
 taskdog-server
-
-# Or with custom configuration
-taskdog-server --host 127.0.0.1 --port 8000
+# Runs on http://127.0.0.1:8000 by default
 ```
 
-The server must be running for all CLI and TUI commands to work. See [API Server](#api-server) section for more options.
-
-### Step 2: Configure API Connection
-
-Edit `~/.config/taskdog/config.toml`:
-
+**2. Configure API connection** in `~/.config/taskdog/config.toml`:
 ```toml
 [api]
 enabled = true
@@ -121,76 +130,32 @@ host = "127.0.0.1"
 port = 8000
 ```
 
-Or use environment variable:
+**3. Start managing tasks**:
 ```bash
-export TASKDOG_API_URL=http://127.0.0.1:8000
-```
-
-### Step 3: Use CLI Commands
-
-```bash
-# Add tasks with priorities and estimates
+# Create tasks
 taskdog add "Design phase" -p 150
-taskdog add "Implementation" -p 100
+taskdog add "Implementation" -p 100 -d 1    # Depends on task 1
+
+# Set deadlines and estimates
 taskdog deadline 1 2025-10-20
 taskdog est 1 16
 
-# Add fixed task (won't be rescheduled)
-taskdog add "Team meeting" --fixed
-taskdog schedule 2 "2025-10-22 10:00" "2025-10-22 11:00"
-
-# Add dependencies and optimize
-taskdog add-dependency 2 1          # Task 2 depends on task 1
-taskdog optimize                    # Auto-generate schedule
+# Auto-schedule with optimization
+taskdog optimize
 
 # Manage tasks
-taskdog start 1                     # Start task
-taskdog done 1                      # Complete task
-taskdog start 2 3 4                 # Batch operations
-taskdog note 1                      # Edit notes
-
-# Visualize
-taskdog table                       # Table view
-taskdog gantt                       # Gantt chart
-taskdog today                       # Today's tasks
-taskdog tui                         # Interactive TUI
+taskdog start 1        # Start task
+taskdog done 1         # Complete task
+taskdog table          # View all tasks
+taskdog gantt          # Timeline view
+taskdog tui            # Interactive TUI
 ```
 
-### API Server Usage
-
-```bash
-# Start the server
-taskdog-server                      # Default: http://127.0.0.1:8000
-
-# With custom configuration
-taskdog-server --host 0.0.0.0 --port 3000 --reload
-
-# Access API documentation
-# Open http://localhost:8000/docs in your browser
-```
-
-**API Examples:**
-```bash
-# Create task via API
-curl -X POST http://localhost:8000/api/v1/tasks/ \
-  -H "Content-Type: application/json" \
-  -d '{"name": "API Task", "priority": 100}'
-
-# List tasks
-curl http://localhost:8000/api/v1/tasks/
-
-# Start task
-curl -X POST http://localhost:8000/api/v1/tasks/1/start
-
-# Get Gantt data
-curl http://localhost:8000/api/v1/gantt
-```
+**See [Commands](#commands) for full reference and [API Server](#api-server) for HTTP API details.**
 
 ## Interactive TUI
 
 Taskdog includes a full-screen terminal user interface (TUI) for managing tasks interactively.
-
-![TUI Screenshot](docs/images/TaskdogTUI_half.svg)
 
 **Features:**
 - Real-time task search and filtering
@@ -224,6 +189,40 @@ Launch the TUI with:
 taskdog tui
 ```
 
+## Themes
+
+Taskdog supports multiple beautiful themes out of the box. Configure your preferred theme in `~/.config/taskdog/config.toml`:
+
+```toml
+[ui]
+theme = "tokyo-night"  # Options: textual-dark, textual-light, tokyo-night, dracula, catppuccin-mocha
+```
+
+<table>
+  <tr>
+    <td align="center">
+      <b>Tokyo Night</b><br/>
+      <img src="docs/images/theme-tokyo-night.svg" width="400" alt="Tokyo Night theme"/>
+    </td>
+    <td align="center">
+      <b>Dracula</b><br/>
+      <img src="docs/images/theme-dracula.svg" width="400" alt="Dracula theme"/>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <b>Catppuccin Mocha</b><br/>
+      <img src="docs/images/theme-catppuccin-mocha.svg" width="400" alt="Catppuccin Mocha theme"/>
+    </td>
+    <td align="center">
+      <b>Textual Light</b><br/>
+      <img src="docs/images/theme-textual-light.svg" width="400" alt="Textual Light theme"/>
+    </td>
+  </tr>
+</table>
+
+**Default theme**: `textual-dark` (shown at the top of this README)
+
 ## API Server
 
 The FastAPI server provides a comprehensive REST API for all task management operations.
@@ -236,6 +235,26 @@ taskdog-server --host 0.0.0.0            # Bind to all interfaces
 taskdog-server --port 3000               # Custom port
 taskdog-server --reload                  # Auto-reload for development
 taskdog-server --workers 4               # Production with multiple workers
+```
+
+**Access API documentation**: Open `http://localhost:8000/docs` in your browser for interactive Swagger UI.
+
+### API Examples
+
+```bash
+# Create task
+curl -X POST http://localhost:8000/api/v1/tasks/ \
+  -H "Content-Type: application/json" \
+  -d '{"name": "API Task", "priority": 100}'
+
+# List tasks
+curl http://localhost:8000/api/v1/tasks/
+
+# Start task
+curl -X POST http://localhost:8000/api/v1/tasks/1/start
+
+# Get Gantt chart data
+curl http://localhost:8000/api/v1/gantt
 ```
 
 ### API Endpoints
@@ -395,7 +414,7 @@ taskdog table --tag api --tag db  # OR logic: tasks with 'api' OR 'db'
 
 **Config**: `$XDG_CONFIG_HOME/taskdog/config.toml` (fallback: `~/.config/taskdog/config.toml`)
 
-### Configuration
+## Configuration
 
 TOML configuration file with the following sections. The `[api]` section is required; all other sections are optional.
 
