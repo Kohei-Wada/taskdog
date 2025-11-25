@@ -158,6 +158,13 @@ class TaskdogTUI(App):
             show=True,
             tooltip="Show help screen with keybindings and usage instructions",
         ),
+        Binding(
+            "z",
+            "toggle_maximize",
+            "Zoom",
+            show=False,
+            tooltip="Zoom: Toggle maximize/minimize for the focused widget",
+        ),
     ]
 
     # Register custom command providers
@@ -517,6 +524,16 @@ class TaskdogTUI(App):
         sort_label = SORT_KEY_LABELS.get(self.state.sort_by, self.state.sort_by)
         arrow = "↓" if self.state.sort_reverse else "↑"
         self.notify(f"Sort direction toggled: {sort_label} {arrow} ({direction})")
+
+    def action_toggle_maximize(self) -> None:
+        """Toggle maximize/minimize for the focused widget."""
+        screen = self.screen
+        if screen.maximized:
+            screen.minimize()
+        else:
+            focused = self.focused
+            if focused and getattr(focused, "allow_maximize", False):
+                screen.maximize(focused)
 
     def action_command_palette(self) -> None:
         """Show the command palette."""

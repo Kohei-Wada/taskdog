@@ -36,6 +36,9 @@ class GanttWidget(VerticalScroll, TUIWidget):
     based on available screen width.
     """
 
+    # Allow maximize for this widget (same as TaskTable)
+    allow_maximize = True
+
     # Add Vi-style bindings for scrolling
     BINDINGS: ClassVar = [
         Binding(
