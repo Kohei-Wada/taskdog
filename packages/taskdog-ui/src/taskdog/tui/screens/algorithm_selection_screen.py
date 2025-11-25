@@ -6,11 +6,12 @@ from typing import Any, ClassVar
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
+from textual.validation import Number
 from textual.widgets import Input, Label, Static
 from textual.widgets.option_list import Option
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
-from taskdog.tui.forms.validators import MaxHoursValidator, StartDateValidator
+from taskdog.tui.forms.validators import StartDateTextualValidator
 from taskdog.tui.screens.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_option_list import ViOptionList
 
@@ -91,13 +92,18 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
                     placeholder="Enter max hours per day (typically 6-8)",
                     id="max-hours-input",
                     value="",
+                    valid_empty=True,
+                    validators=[Number(minimum=0.1, maximum=24)],
                 )
 
-                yield Label("Start Date:", classes="field-label")
+                yield Label(
+                    "Start Date [red]*[/red]:", classes="field-label", markup=True
+                )
                 yield Input(
                     placeholder="Enter start date (e.g., today, tomorrow, 2025-12-01)",
                     id="start-date-input",
                     value=self._get_default_start_date(),
+                    validators=[StartDateTextualValidator()],
                 )
 
     def on_mount(self) -> None:
@@ -147,23 +153,18 @@ class AlgorithmSelectionScreen(BaseModalDialog[tuple[str, float, datetime] | Non
             return
         selected_algo = self.algorithms[option_list.highlighted][0]
 
-        # Validate max hours
-        max_hours_result = MaxHoursValidator.validate(max_hours_input.value.strip())
-        if not max_hours_result.is_valid:
-            self._show_validation_error(max_hours_result.error_message, max_hours_input)
+        # Validate start date (required)
+        start_date_str = start_date_input.value.strip()
+        if not start_date_str:
+            self._show_validation_error("Start date is required", start_date_input)
             return
 
-        # Validate start date
-        start_date_result = StartDateValidator.validate(start_date_input.value.strip())
-        if not start_date_result.is_valid:
-            self._show_validation_error(
-                start_date_result.error_message, start_date_input
-            )
-            return
+        # Parse values (validation handled by Textual validators)
+        max_hours_str = max_hours_input.value.strip()
+        max_hours = float(max_hours_str) if max_hours_str else None
 
-        # Type narrowing: start_date must be non-None (required field)
-        # max_hours can be None (server will apply default)
-        assert start_date_result.value is not None, "start_date validated above"
+        start_date_validator = StartDateTextualValidator()
+        start_date = start_date_validator.parse(start_date_str)
 
         # Submit algorithm, max_hours (can be None), and start_date
-        self.dismiss((selected_algo, max_hours_result.value, start_date_result.value))
+        self.dismiss((selected_algo, max_hours, start_date))
