@@ -7,7 +7,7 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 
 **Note**: Designed for individual use. Stores tasks locally in SQLite database.
 
-![TUI Screenshot](docs/images/TaskdogTUI_half.svg)
+![TUI Screenshot](docs/images/theme-textual-dark.svg)
 
 **Architecture**: UV workspace monorepo with three packages:
 - **taskdog-core**: Core business logic and SQLite persistence
