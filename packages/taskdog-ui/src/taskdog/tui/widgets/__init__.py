@@ -6,6 +6,7 @@ from taskdog.tui.widgets.gantt_data_table import GanttDataTable
 from taskdog.tui.widgets.gantt_widget import GanttWidget
 from taskdog.tui.widgets.task_table import TaskTable
 from taskdog.tui.widgets.vi_option_list import ViOptionList
+from taskdog.tui.widgets.vi_select import ViSelect
 
 __all__ = [
     "ConnectionStatus",
@@ -14,4 +15,5 @@ __all__ = [
     "GanttWidget",
     "TaskTable",
     "ViOptionList",
+    "ViSelect",
 ]

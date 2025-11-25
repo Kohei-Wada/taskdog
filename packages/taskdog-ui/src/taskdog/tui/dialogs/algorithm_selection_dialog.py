@@ -7,13 +7,12 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.validation import Number
-from textual.widgets import Input, Label, Static
-from textual.widgets.option_list import Option
+from textual.widgets import Input, Label, Select, Static
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.forms.validators import StartDateTextualValidator
-from taskdog.tui.widgets.vi_option_list import ViOptionList
+from taskdog.tui.widgets.vi_select import ViSelect
 
 
 class AlgorithmSelectionDialog(
@@ -84,10 +83,10 @@ class AlgorithmSelectionDialog(
             with Vertical(id="form-container"):
                 yield Label("Algorithm:", classes="field-label")
                 options = [
-                    Option(f"{name}: {desc}", id=algo_id)
+                    (f"{name}: {desc}", algo_id)
                     for algo_id, name, desc in self.algorithms
                 ]
-                yield ViOptionList(*options, id="algorithm-list", classes="dialog-list")
+                yield ViSelect(options, id="algorithm-select", allow_blank=False)
 
                 yield Label("Max Hours per Day:", classes="field-label")
                 yield Input(
@@ -110,10 +109,9 @@ class AlgorithmSelectionDialog(
 
     def on_mount(self) -> None:
         """Called when screen is mounted."""
-        # Highlight first option by default
-        option_list = self.query_one("#algorithm-list", ViOptionList)
-        option_list.highlighted = 0
-        option_list.focus()
+        # Focus the algorithm select (first option is auto-selected with allow_blank=False)
+        algorithm_select = self.query_one("#algorithm-select", ViSelect)
+        algorithm_select.focus()
 
     def _get_default_start_date(self) -> str:
         """Calculate default start date (today if weekday, otherwise next Monday).
@@ -142,7 +140,7 @@ class AlgorithmSelectionDialog(
 
     def action_submit(self) -> None:
         """Submit the form."""
-        option_list = self.query_one("#algorithm-list", ViOptionList)
+        algorithm_select = self.query_one("#algorithm-select", ViSelect)
         max_hours_input = self.query_one("#max-hours-input", Input)
         start_date_input = self.query_one("#start-date-input", Input)
 
@@ -150,10 +148,10 @@ class AlgorithmSelectionDialog(
         self._clear_validation_error()
 
         # Validate algorithm selection
-        if option_list.highlighted is None:
-            self._show_validation_error("Please select an algorithm", option_list)
+        if algorithm_select.value is Select.BLANK:
+            self._show_validation_error("Please select an algorithm", algorithm_select)
             return
-        selected_algo = self.algorithms[option_list.highlighted][0]
+        selected_algo = str(algorithm_select.value)
 
         # Validate start date (required)
         start_date_str = start_date_input.value.strip()
