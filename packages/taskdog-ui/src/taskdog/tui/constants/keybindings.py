@@ -15,36 +15,36 @@ locally in SQLite for privacy and speed."""
 BASIC_WORKFLOW: str = """## Getting Started
 
 **1. Add a Task** - Press `a` to create a new task
-   • Set priority, deadline, estimated duration
-   • Add dependencies and tags if needed
+  - Set priority, deadline, estimated duration
+  - Add dependencies and tags if needed
 
 **2. Start Working** - Press `s` on a task to start it
-   • Status changes to **IN_PROGRESS**
-   • Actual start time is recorded
+  - Status changes to **IN_PROGRESS**
+  - Actual start time is recorded
 
 **3. Complete Task** - Press `d` when done
-   • Status changes to **COMPLETED**
-   • Actual end time is recorded
+  - Status changes to **COMPLETED**
+  - Actual end time is recorded
 
 **4. View Details** - Press `i` to see full task information
-   • Shows schedule, actual tracking, and notes"""
+  - Shows schedule, actual tracking, and notes"""
 
 # Main features explanation
 MAIN_FEATURES: str = """## Key Features
 
-• **Task Table** - Main view showing all your tasks
+- **Task Table** - Main view showing all your tasks
   - Use `j`/`k` or arrow keys to navigate
   - Press `t` to toggle completed/canceled tasks
 
-• **Gantt Chart** - Visual timeline of your tasks
+- **Gantt Chart** - Visual timeline of your tasks
   - Shows task schedules and workload per day
   - Use `Ctrl+J`/`Ctrl+K` to switch between table and gantt
 
-• **Search** - Press `/` to filter tasks by name
+- **Search** - Press `/` to filter tasks by name
   - Supports regex patterns
   - Press `Escape` to clear search
 
-• **Notes** - Press `v` to edit markdown notes for any task
+- **Notes** - Press `v` to edit markdown notes for any task
   - Opens your `$EDITOR` (vim, nano, etc.)"""
 
 # Command palette explanation
@@ -52,15 +52,15 @@ COMMAND_PALETTE_INFO: str = """## Command Palette
 
 Press `Ctrl+P` to open the command palette:
 
-• **Sort** - Change task sorting order
+- **Sort** - Change task sorting order
   - Sort by deadline, priority, status, name, etc.
 
-• **Optimize** - Run schedule optimization
+- **Optimize** - Run schedule optimization
   - Multiple algorithms available (greedy, balanced, etc.)
 
-• **Export** - Export tasks to JSON, CSV, or Markdown
+- **Export** - Export tasks to JSON, CSV, or Markdown
 
-• **Keys** - View all keyboard shortcuts
+- **Keys** - View all keyboard shortcuts
   - Complete list of keybindings with descriptions
 
 **Tip**: Type to search, then press Enter to execute"""
