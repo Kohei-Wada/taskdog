@@ -53,7 +53,7 @@ class TaskCrudController(BaseTaskController):
         repository: TaskRepository,
         notes_repository: NotesRepository,
         config: Config,
-        logger: Logger | None = None,
+        logger: Logger,
     ):
         """Initialize the CRUD controller.
 
@@ -61,7 +61,7 @@ class TaskCrudController(BaseTaskController):
             repository: Task repository
             notes_repository: Notes repository
             config: Application configuration
-            logger: Optional logger for operation tracking
+            logger: Logger for operation tracking
         """
         super().__init__(repository, config, logger)
         self.notes_repository = notes_repository
@@ -95,8 +95,7 @@ class TaskCrudController(BaseTaskController):
         Raises:
             TaskValidationError: If task validation fails
         """
-        if self.logger:
-            self.logger.info(f"Creating task: name='{name}'", priority=priority)
+        self.logger.info(f"Creating task: name='{name}'", priority=priority)
 
         use_case = CreateTaskUseCase(self.repository)
         request = CreateTaskInput(
@@ -111,10 +110,9 @@ class TaskCrudController(BaseTaskController):
         )
         result = use_case.execute(request)
 
-        if self.logger:
-            self.logger.info(
-                f"Task created successfully: id={result.id}", task_id=result.id
-            )
+        self.logger.info(
+            f"Task created successfully: id={result.id}", task_id=result.id
+        )
 
         return result
 
@@ -152,8 +150,7 @@ class TaskCrudController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails for any field
         """
-        if self.logger:
-            self.logger.info(f"Updating task: task_id={task_id}", task_id=task_id)
+        self.logger.info(f"Updating task: task_id={task_id}", task_id=task_id)
 
         use_case = UpdateTaskUseCase(self.repository)
         request = UpdateTaskInput(
@@ -170,12 +167,11 @@ class TaskCrudController(BaseTaskController):
         )
         result = use_case.execute(request)
 
-        if self.logger:
-            self.logger.info(
-                f"Task updated successfully: task_id={task_id}, fields={result.updated_fields}",
-                task_id=task_id,
-                updated_fields=result.updated_fields,
-            )
+        self.logger.info(
+            f"Task updated successfully: task_id={task_id}, fields={result.updated_fields}",
+            task_id=task_id,
+            updated_fields=result.updated_fields,
+        )
 
         return result
 
@@ -194,17 +190,15 @@ class TaskCrudController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be archived
         """
-        if self.logger:
-            self.logger.info(f"Archiving task: task_id={task_id}", task_id=task_id)
+        self.logger.info(f"Archiving task: task_id={task_id}", task_id=task_id)
 
         use_case = ArchiveTaskUseCase(self.repository)
         request = ArchiveTaskInput(task_id=task_id)
         result = use_case.execute(request)
 
-        if self.logger:
-            self.logger.info(
-                f"Task archived successfully: task_id={task_id}", task_id=task_id
-            )
+        self.logger.info(
+            f"Task archived successfully: task_id={task_id}", task_id=task_id
+        )
 
         return result
 
@@ -223,17 +217,15 @@ class TaskCrudController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be restored
         """
-        if self.logger:
-            self.logger.info(f"Restoring task: task_id={task_id}", task_id=task_id)
+        self.logger.info(f"Restoring task: task_id={task_id}", task_id=task_id)
 
         use_case = RestoreTaskUseCase(self.repository)
         request = RestoreTaskInput(task_id=task_id)
         result = use_case.execute(request)
 
-        if self.logger:
-            self.logger.info(
-                f"Task restored successfully: task_id={task_id}", task_id=task_id
-            )
+        self.logger.info(
+            f"Task restored successfully: task_id={task_id}", task_id=task_id
+        )
 
         return result
 
@@ -248,16 +240,14 @@ class TaskCrudController(BaseTaskController):
         Raises:
             TaskNotFoundException: If task not found
         """
-        if self.logger:
-            self.logger.info(
-                f"Removing task permanently: task_id={task_id}", task_id=task_id
-            )
+        self.logger.info(
+            f"Removing task permanently: task_id={task_id}", task_id=task_id
+        )
 
         use_case = RemoveTaskUseCase(self.repository, self.notes_repository)
         request = RemoveTaskInput(task_id=task_id)
         use_case.execute(request)
 
-        if self.logger:
-            self.logger.info(
-                f"Task removed successfully: task_id={task_id}", task_id=task_id
-            )
+        self.logger.info(
+            f"Task removed successfully: task_id={task_id}", task_id=task_id
+        )

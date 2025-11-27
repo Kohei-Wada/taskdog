@@ -2,6 +2,7 @@
 
 import unittest
 from datetime import date, datetime, timedelta
+from unittest.mock import Mock
 
 from taskdog_core.application.queries.filters.composite_filter import CompositeFilter
 from taskdog_core.application.queries.filters.non_archived_filter import (
@@ -10,6 +11,7 @@ from taskdog_core.application.queries.filters.non_archived_filter import (
 from taskdog_core.application.queries.filters.status_filter import StatusFilter
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.domain.services.logger import Logger
 from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
@@ -19,7 +21,8 @@ class TestQueryController(InMemoryDatabaseTestCase):
     def setUp(self):
         """Initialize controller for each test."""
         super().setUp()
-        self.controller = QueryController(self.repository)
+        self.logger = Mock(spec=Logger)
+        self.controller = QueryController(self.repository, None, self.logger)
 
     def test_list_tasks_returns_output_dto(self):
         """Test list_tasks returns TaskListOutput with correct structure."""

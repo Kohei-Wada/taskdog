@@ -44,8 +44,8 @@ class TaskAnalyticsController(BaseTaskController):
         self,
         repository: TaskRepository,
         config: Config,
-        holiday_checker: IHolidayChecker | None = None,
-        logger: Logger | None = None,
+        holiday_checker: IHolidayChecker | None,
+        logger: Logger,
     ):
         """Initialize the analytics controller.
 
@@ -53,7 +53,7 @@ class TaskAnalyticsController(BaseTaskController):
             repository: Task repository
             config: Application configuration
             holiday_checker: Holiday checker for workday validation (optional)
-            logger: Optional logger for operation tracking
+            logger: Logger for operation tracking
         """
         super().__init__(repository, config, logger)
         self.holiday_checker = holiday_checker

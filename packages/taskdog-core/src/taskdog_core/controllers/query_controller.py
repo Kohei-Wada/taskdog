@@ -50,15 +50,15 @@ class QueryController:
     def __init__(
         self,
         repository: TaskRepository,
-        notes_repository: NotesRepository | None = None,
-        logger: Logger | None = None,
+        notes_repository: NotesRepository | None,
+        logger: Logger,
     ):
         """Initialize the query controller.
 
         Args:
             repository: Task repository
             notes_repository: Notes repository (optional, required for get_task_detail)
-            logger: Optional logger for operation tracking
+            logger: Logger for operation tracking
         """
         self.repository = repository
         self.notes_repository = notes_repository

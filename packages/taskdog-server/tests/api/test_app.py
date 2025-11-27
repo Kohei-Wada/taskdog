@@ -1,7 +1,7 @@
 """Tests for FastAPI application factory and configuration."""
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 from fastapi.testclient import TestClient
 
@@ -12,6 +12,7 @@ from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleCont
 from taskdog_core.controllers.task_relationship_controller import (
     TaskRelationshipController,
 )
+from taskdog_core.domain.services.logger import Logger
 from taskdog_server.api.context import ApiContext
 from taskdog_server.api.dependencies import set_api_context
 
@@ -35,21 +36,27 @@ class TestApp(unittest.TestCase):
         cls.mock_config.scheduling.default_algorithm = "greedy"
         cls.mock_config.region.country = None
 
+        # Create mock logger for controllers
+        cls.mock_logger = Mock(spec=Logger)
+
         # Create controllers with mocked dependencies
         query_controller = QueryController(
-            cls.mock_repository, cls.mock_notes_repository
+            cls.mock_repository, cls.mock_notes_repository, cls.mock_logger
         )
         lifecycle_controller = TaskLifecycleController(
-            cls.mock_repository, cls.mock_config
+            cls.mock_repository, cls.mock_config, cls.mock_logger
         )
         relationship_controller = TaskRelationshipController(
-            cls.mock_repository, cls.mock_config
+            cls.mock_repository, cls.mock_config, cls.mock_logger
         )
         analytics_controller = TaskAnalyticsController(
-            cls.mock_repository, cls.mock_config, None
+            cls.mock_repository, cls.mock_config, None, cls.mock_logger
         )
         crud_controller = TaskCrudController(
-            cls.mock_repository, cls.mock_notes_repository, cls.mock_config
+            cls.mock_repository,
+            cls.mock_notes_repository,
+            cls.mock_config,
+            cls.mock_logger,
         )
 
         # Create and set API context

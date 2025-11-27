@@ -6,7 +6,7 @@ fixtures across tests (~50% speedup).
 """
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -18,6 +18,7 @@ from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleCont
 from taskdog_core.controllers.task_relationship_controller import (
     TaskRelationshipController,
 )
+from taskdog_core.domain.services.logger import Logger
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
@@ -65,13 +66,24 @@ class BaseApiRouterTest(unittest.TestCase):
         cls.config.time.default_start_hour = 9
         cls.config.time.default_end_hour = 18
 
+        # Create mock logger for controllers
+        cls.logger = Mock(spec=Logger)
+
         # Create controllers once (reused across all tests)
-        query_controller = QueryController(cls.repository, cls.notes_repository)
-        lifecycle_controller = TaskLifecycleController(cls.repository, cls.config)
-        relationship_controller = TaskRelationshipController(cls.repository, cls.config)
-        analytics_controller = TaskAnalyticsController(cls.repository, cls.config, None)
+        query_controller = QueryController(
+            cls.repository, cls.notes_repository, cls.logger
+        )
+        lifecycle_controller = TaskLifecycleController(
+            cls.repository, cls.config, cls.logger
+        )
+        relationship_controller = TaskRelationshipController(
+            cls.repository, cls.config, cls.logger
+        )
+        analytics_controller = TaskAnalyticsController(
+            cls.repository, cls.config, None, cls.logger
+        )
         crud_controller = TaskCrudController(
-            cls.repository, cls.notes_repository, cls.config
+            cls.repository, cls.notes_repository, cls.config, cls.logger
         )
 
         # Create API context once

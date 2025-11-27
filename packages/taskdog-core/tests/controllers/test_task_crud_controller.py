@@ -1,10 +1,11 @@
 """Tests for TaskCrudController."""
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, Mock
 
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.services.logger import Logger
 from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
@@ -17,10 +18,12 @@ class TestTaskCrudController(InMemoryDatabaseTestCase):
         self.notes_repository = MagicMock()
         self.config = MagicMock()
         self.config.task.default_priority = 3
+        self.logger = Mock(spec=Logger)
         self.controller = TaskCrudController(
             repository=self.repository,
             notes_repository=self.notes_repository,
             config=self.config,
+            logger=self.logger,
         )
 
     def test_create_task_returns_task_operation_output(self):

@@ -47,14 +47,14 @@ class TaskLifecycleController(BaseTaskController):
         self,
         repository: TaskRepository,
         config: Config,
-        logger: Logger | None = None,
+        logger: Logger,
     ):
         """Initialize the lifecycle controller.
 
         Args:
             repository: Task repository
             config: Application configuration
-            logger: Optional logger for operation tracking
+            logger: Logger for operation tracking
         """
         super().__init__(repository, config, logger)
 

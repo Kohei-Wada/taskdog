@@ -40,15 +40,13 @@ class TaskRelationshipController(BaseTaskController):
         logger: Optional logger (inherited from BaseTaskController)
     """
 
-    def __init__(
-        self, repository: TaskRepository, config: Config, logger: Logger | None = None
-    ):
+    def __init__(self, repository: TaskRepository, config: Config, logger: Logger):
         """Initialize the relationship controller.
 
         Args:
             repository: Task repository
             config: Application configuration
-            logger: Optional logger for operation tracking
+            logger: Logger for operation tracking
         """
         super().__init__(repository, config, logger)
 
