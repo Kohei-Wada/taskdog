@@ -1,9 +1,11 @@
 """Tests for ConfigManager."""
 
+import os
 import tempfile
 import unittest
 from dataclasses import FrozenInstanceError
 from pathlib import Path
+from unittest.mock import patch
 
 from parameterized import parameterized
 
@@ -108,6 +110,161 @@ max_hours_per_day = 7.5
 
         with self.assertRaises(FrozenInstanceError):
             config.task.default_priority = 1
+
+
+class ConfigManagerEnvVarsTest(unittest.TestCase):
+    """Test cases for environment variable support in ConfigManager."""
+
+    def test_env_vars_override_defaults(self):
+        """Test that environment variables override default values."""
+        env_vars = {
+            "TASKDOG_API_PORT": "3000",
+            "TASKDOG_API_HOST": "0.0.0.0",
+            "TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY": "10.5",
+            "TASKDOG_TASK_DEFAULT_PRIORITY": "1",
+        }
+
+        with patch.dict(os.environ, env_vars, clear=False):
+            config = ConfigManager.load(Path("/nonexistent/config.toml"))
+
+        self.assertEqual(config.api.port, 3000)
+        self.assertEqual(config.api.host, "0.0.0.0")
+        self.assertEqual(config.optimization.max_hours_per_day, 10.5)
+        self.assertEqual(config.task.default_priority, 1)
+
+    def test_env_vars_override_toml(self):
+        """Test that environment variables take precedence over TOML values."""
+        toml_content = """
+[api]
+port = 8080
+host = "localhost"
+
+[optimization]
+max_hours_per_day = 6.0
+"""
+        env_vars = {
+            "TASKDOG_API_PORT": "9000",
+            "TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY": "12.0",
+        }
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+            f.write(toml_content)
+            config_path = Path(f.name)
+
+        try:
+            with patch.dict(os.environ, env_vars, clear=False):
+                config = ConfigManager.load(config_path)
+
+            # Environment variables should override TOML
+            self.assertEqual(config.api.port, 9000)
+            self.assertEqual(config.optimization.max_hours_per_day, 12.0)
+            # TOML value should be used when no env var is set
+            self.assertEqual(config.api.host, "localhost")
+        finally:
+            config_path.unlink()
+
+    @parameterized.expand(
+        [
+            ("true", True),
+            ("True", True),
+            ("TRUE", True),
+            ("1", True),
+            ("yes", True),
+            ("Yes", True),
+            ("false", False),
+            ("False", False),
+            ("0", False),
+            ("no", False),
+            ("anything_else", False),
+        ]
+    )
+    def test_env_var_bool_parsing(self, env_value, expected):
+        """Test boolean parsing for environment variables."""
+        with patch.dict(os.environ, {"TASKDOG_API_ENABLED": env_value}, clear=False):
+            config = ConfigManager.load(Path("/nonexistent/config.toml"))
+
+        self.assertEqual(config.api.enabled, expected)
+
+    def test_env_var_list_parsing(self):
+        """Test comma-separated list parsing for environment variables."""
+        env_vars = {
+            "TASKDOG_API_CORS_ORIGINS": "http://localhost:3000, http://example.com, http://test.com",
+        }
+
+        with patch.dict(os.environ, env_vars, clear=False):
+            config = ConfigManager.load(Path("/nonexistent/config.toml"))
+
+        self.assertEqual(
+            config.api.cors_origins,
+            ["http://localhost:3000", "http://example.com", "http://test.com"],
+        )
+
+    def test_env_var_list_with_empty_items(self):
+        """Test that empty items are filtered out from list parsing."""
+        env_vars = {
+            "TASKDOG_API_CORS_ORIGINS": "http://localhost:3000, , http://example.com, ",
+        }
+
+        with patch.dict(os.environ, env_vars, clear=False):
+            config = ConfigManager.load(Path("/nonexistent/config.toml"))
+
+        self.assertEqual(
+            config.api.cors_origins,
+            ["http://localhost:3000", "http://example.com"],
+        )
+
+    @parameterized.expand(
+        [
+            ("TASKDOG_TIME_DEFAULT_START_HOUR", "10", "time", "default_start_hour", 10),
+            ("TASKDOG_TIME_DEFAULT_END_HOUR", "20", "time", "default_end_hour", 20),
+            ("TASKDOG_REGION_COUNTRY", "US", "region", "country", "US"),
+            ("TASKDOG_STORAGE_BACKEND", "postgres", "storage", "backend", "postgres"),
+            (
+                "TASKDOG_STORAGE_DATABASE_URL",
+                "sqlite:///test.db",
+                "storage",
+                "database_url",
+                "sqlite:///test.db",
+            ),
+            (
+                "TASKDOG_OPTIMIZATION_DEFAULT_ALGORITHM",
+                "balanced",
+                "optimization",
+                "default_algorithm",
+                "balanced",
+            ),
+        ]
+    )
+    def test_all_env_vars(self, env_key, env_value, section, field, expected):
+        """Test all supported environment variables."""
+        with patch.dict(os.environ, {env_key: env_value}, clear=False):
+            config = ConfigManager.load(Path("/nonexistent/config.toml"))
+
+        section_obj = getattr(config, section)
+        actual = getattr(section_obj, field)
+        self.assertEqual(actual, expected)
+
+    def test_no_env_vars_uses_defaults(self):
+        """Test that defaults are used when no environment variables are set."""
+        # Ensure no TASKDOG_ env vars are set
+        taskdog_vars = [k for k in os.environ if k.startswith("TASKDOG_")]
+
+        with patch.dict(os.environ, {k: "" for k in taskdog_vars}, clear=False):
+            # Remove the vars we just blanked
+            for k in taskdog_vars:
+                os.environ.pop(k, None)
+
+            config = ConfigManager.load(Path("/nonexistent/config.toml"))
+
+        # Should use defaults
+        self.assertEqual(config.optimization.max_hours_per_day, 6.0)
+        self.assertEqual(config.optimization.default_algorithm, "greedy")
+        self.assertEqual(config.task.default_priority, 5)
+        self.assertEqual(config.time.default_start_hour, 9)
+        self.assertEqual(config.time.default_end_hour, 18)
+        self.assertEqual(config.api.port, 8000)
+        self.assertEqual(config.api.host, "127.0.0.1")
+        self.assertEqual(config.api.enabled, False)
 
 
 if __name__ == "__main__":
