@@ -118,8 +118,6 @@ class ConfigManagerEnvVarsTest(unittest.TestCase):
     def test_env_vars_override_defaults(self):
         """Test that environment variables override default values."""
         env_vars = {
-            "TASKDOG_API_PORT": "3000",
-            "TASKDOG_API_HOST": "0.0.0.0",
             "TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY": "10.5",
             "TASKDOG_TASK_DEFAULT_PRIORITY": "1",
         }
@@ -127,23 +125,17 @@ class ConfigManagerEnvVarsTest(unittest.TestCase):
         with patch.dict(os.environ, env_vars, clear=False):
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
-        self.assertEqual(config.api.port, 3000)
-        self.assertEqual(config.api.host, "0.0.0.0")
         self.assertEqual(config.optimization.max_hours_per_day, 10.5)
         self.assertEqual(config.task.default_priority, 1)
 
     def test_env_vars_override_toml(self):
         """Test that environment variables take precedence over TOML values."""
         toml_content = """
-[api]
-port = 8080
-host = "localhost"
-
 [optimization]
 max_hours_per_day = 6.0
+default_algorithm = "balanced"
 """
         env_vars = {
-            "TASKDOG_API_PORT": "9000",
             "TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY": "12.0",
         }
 
@@ -156,34 +148,11 @@ max_hours_per_day = 6.0
                 config = ConfigManager.load(config_path)
 
             # Environment variables should override TOML
-            self.assertEqual(config.api.port, 9000)
             self.assertEqual(config.optimization.max_hours_per_day, 12.0)
             # TOML value should be used when no env var is set
-            self.assertEqual(config.api.host, "localhost")
+            self.assertEqual(config.optimization.default_algorithm, "balanced")
         finally:
             config_path.unlink()
-
-    @parameterized.expand(
-        [
-            ("true", True),
-            ("True", True),
-            ("TRUE", True),
-            ("1", True),
-            ("yes", True),
-            ("Yes", True),
-            ("false", False),
-            ("False", False),
-            ("0", False),
-            ("no", False),
-            ("anything_else", False),
-        ]
-    )
-    def test_env_var_bool_parsing(self, env_value, expected):
-        """Test boolean parsing for environment variables."""
-        with patch.dict(os.environ, {"TASKDOG_API_ENABLED": env_value}, clear=False):
-            config = ConfigManager.load(Path("/nonexistent/config.toml"))
-
-        self.assertEqual(config.api.enabled, expected)
 
     def test_env_var_list_parsing(self):
         """Test comma-separated list parsing for environment variables."""
@@ -262,9 +231,6 @@ max_hours_per_day = 6.0
         self.assertEqual(config.task.default_priority, 5)
         self.assertEqual(config.time.default_start_hour, 9)
         self.assertEqual(config.time.default_end_hour, 18)
-        self.assertEqual(config.api.port, 8000)
-        self.assertEqual(config.api.host, "127.0.0.1")
-        self.assertEqual(config.api.enabled, False)
 
 
 if __name__ == "__main__":

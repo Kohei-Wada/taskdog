@@ -88,16 +88,13 @@ class StorageConfig:
 class ApiConfig:
     """API server configuration.
 
+    Note: host and port are configured via CLI arguments, not here.
+    This config only contains settings that affect server behavior.
+
     Attributes:
-        enabled: Whether to use API mode (client-server communication)
-        host: API server host
-        port: API server port
-        cors_origins: List of allowed CORS origins for API requests
+        cors_origins: List of allowed CORS origins for API requests (for future Web UI)
     """
 
-    enabled: bool = False
-    host: str = "127.0.0.1"
-    port: int = 8000
     cors_origins: list[str] = field(default_factory=lambda: DEFAULT_CORS_ORIGINS.copy())
 
 
@@ -212,21 +209,6 @@ class ConfigManager:
                 ),
             ),
             api=ApiConfig(
-                enabled=cls._get_env_or(
-                    "API_ENABLED",
-                    api_data.get("enabled", False),
-                    bool,
-                ),
-                host=cls._get_env_or(
-                    "API_HOST",
-                    api_data.get("host", "127.0.0.1"),
-                    str,
-                ),
-                port=cls._get_env_or(
-                    "API_PORT",
-                    api_data.get("port", 8000),
-                    int,
-                ),
                 cors_origins=cls._get_env_list_or(
                     "API_CORS_ORIGINS",
                     api_data.get("cors_origins", DEFAULT_CORS_ORIGINS),
