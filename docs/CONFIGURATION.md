@@ -198,17 +198,51 @@ Task notes are stored as separate markdown files:
 
 ## Environment Variables
 
-Environment variables take precedence over config file settings.
+Environment variables take precedence over config file settings. This is useful for Docker/Kubernetes deployments where configuration is managed externally.
 
-### TASKDOG_API_URL
+### Server Configuration Variables
 
-Override API connection settings:
+These variables override server configuration (config.toml):
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY` | float | `6.0` | Maximum work hours per day |
+| `TASKDOG_OPTIMIZATION_DEFAULT_ALGORITHM` | string | `"greedy"` | Default scheduling algorithm |
+| `TASKDOG_TASK_DEFAULT_PRIORITY` | int | `5` | Default priority for new tasks |
+| `TASKDOG_TIME_DEFAULT_START_HOUR` | int | `9` | Business day start hour |
+| `TASKDOG_TIME_DEFAULT_END_HOUR` | int | `18` | Business day end hour |
+| `TASKDOG_REGION_COUNTRY` | string | `None` | ISO 3166-1 alpha-2 country code |
+| `TASKDOG_STORAGE_BACKEND` | string | `"sqlite"` | Storage backend type |
+| `TASKDOG_STORAGE_DATABASE_URL` | string | XDG path | Database file location |
+| `TASKDOG_API_CORS_ORIGINS` | string | localhost | Comma-separated CORS origins |
+
+**Example:**
 
 ```bash
-export TASKDOG_API_URL=http://127.0.0.1:8000
+# Production settings
+export TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY=8.0
+export TASKDOG_TASK_DEFAULT_PRIORITY=3
+export TASKDOG_REGION_COUNTRY=US
+export TASKDOG_API_CORS_ORIGINS="http://localhost:3000,http://app.example.com"
 ```
 
-This is equivalent to setting `[api]` section in config file, but with higher priority.
+**Note:** Invalid values are logged as warnings and fall back to defaults.
+
+### CLI/TUI Connection Variables
+
+These variables configure how CLI/TUI connect to the API server:
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `TASKDOG_API_HOST` | string | `"127.0.0.1"` | API server host |
+| `TASKDOG_API_PORT` | int | `8000` | API server port |
+
+**Example:**
+
+```bash
+export TASKDOG_API_HOST=192.168.1.100
+export TASKDOG_API_PORT=8000
+```
 
 ### XDG_CONFIG_HOME
 

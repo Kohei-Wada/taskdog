@@ -232,6 +232,60 @@ default_algorithm = "balanced"
         self.assertEqual(config.time.default_start_hour, 9)
         self.assertEqual(config.time.default_end_hour, 18)
 
+    @parameterized.expand(
+        [
+            # (env_key, invalid_value, section, field, expected_default)
+            (
+                "TASKDOG_TASK_DEFAULT_PRIORITY",
+                "not_a_number",
+                "task",
+                "default_priority",
+                5,
+            ),
+            (
+                "TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY",
+                "invalid",
+                "optimization",
+                "max_hours_per_day",
+                6.0,
+            ),
+            ("TASKDOG_TIME_DEFAULT_START_HOUR", "abc", "time", "default_start_hour", 9),
+            ("TASKDOG_TIME_DEFAULT_END_HOUR", "xyz", "time", "default_end_hour", 18),
+        ]
+    )
+    def test_invalid_env_var_falls_back_to_default(
+        self, env_key, invalid_value, section, field, expected_default
+    ):
+        """Test that invalid environment variable values fall back to defaults."""
+        with patch.dict(os.environ, {env_key: invalid_value}, clear=False):
+            config = ConfigManager.load(Path("/nonexistent/config.toml"))
+
+        section_obj = getattr(config, section)
+        actual = getattr(section_obj, field)
+        self.assertEqual(actual, expected_default)
+
+    def test_invalid_env_var_logs_warning(self):
+        """Test that invalid environment variable values log a warning."""
+        import logging
+
+        with (
+            self.assertLogs(
+                "taskdog_core.shared.config_manager", level=logging.WARNING
+            ) as cm,
+            patch.dict(
+                os.environ,
+                {"TASKDOG_TASK_DEFAULT_PRIORITY": "not_a_number"},
+                clear=False,
+            ),
+        ):
+            ConfigManager.load(Path("/nonexistent/config.toml"))
+
+        # Check that warning was logged
+        self.assertEqual(len(cm.output), 1)
+        self.assertIn("Invalid value for environment variable", cm.output[0])
+        self.assertIn("TASKDOG_TASK_DEFAULT_PRIORITY", cm.output[0])
+        self.assertIn("not_a_number", cm.output[0])
+
 
 if __name__ == "__main__":
     unittest.main()

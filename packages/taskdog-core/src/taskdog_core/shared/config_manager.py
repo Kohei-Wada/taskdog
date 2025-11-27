@@ -4,6 +4,7 @@ Loads configuration from TOML file and environment variables with fallback to de
 Priority: Environment variables > TOML file > Default values
 """
 
+import logging
 import os
 import tomllib
 from dataclasses import dataclass, field
@@ -19,6 +20,8 @@ from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_START_HOUR,
 )
 from taskdog_core.shared.xdg_utils import XDGDirectories
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -250,7 +253,8 @@ class ConfigManager:
             type_: Type to convert the value to
 
         Returns:
-            Environment variable value converted to type_, or default if not set
+            Environment variable value converted to type_, or default if not set.
+            If conversion fails, logs a warning and returns the default value.
         """
         env_key = f"{cls.ENV_PREFIX}{key}"
         value = os.environ.get(env_key)
@@ -258,13 +262,24 @@ class ConfigManager:
         if value is None:
             return default
 
-        if type_ is bool:
-            return value.lower() in ("true", "1", "yes")
-        if type_ is int:
-            return int(value)
-        if type_ is float:
-            return float(value)
-        return value
+        try:
+            if type_ is bool:
+                return value.lower() in ("true", "1", "yes")
+            if type_ is int:
+                return int(value)
+            if type_ is float:
+                return float(value)
+            return value
+        except ValueError:
+            logger.warning(
+                "Invalid value for environment variable %s: '%s'. "
+                "Expected %s, using default: %s",
+                env_key,
+                value,
+                type_.__name__,
+                default,
+            )
+            return default
 
     @classmethod
     def _get_env_list_or(cls, key: str, default: list[str]) -> list[str]:
