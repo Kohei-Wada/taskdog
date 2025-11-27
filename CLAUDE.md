@@ -35,15 +35,17 @@ The repository uses UV workspace with three packages:
 **Tasks**: Stored in SQLite database `tasks.db` at `$XDG_DATA_HOME/taskdog/tasks.db` (fallback: `~/.local/share/taskdog/tasks.db`)
 
 **Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/config.toml` (fallback: `~/.config/taskdog/config.toml`)
-- Sections: `[api]` (required), `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
+- Sections: `[api]`, `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
 - Settings:
-  - API: enabled, host, port
+  - API: cors_origins (for future Web UI)
   - Optimization: max_hours_per_day, default_algorithm
   - Task: default_priority
   - Time: default_start_hour, default_end_hour
   - Region: country (ISO 3166-1 alpha-2: "JP", "US", "GB", "DE", etc.)
   - Storage: database_url, backend
 - Priority: Environment vars > CLI args > Config file > Defaults
+- Server host/port: CLI arguments (`taskdog-server --host --port`)
+- CLI/TUI connection: `cli.toml` or `TASKDOG_API_HOST`/`TASKDOG_API_PORT` env vars
 - Access via `ctx.obj.config` (CLI) or `context.config` (TUI)
 
 ## Development Commands

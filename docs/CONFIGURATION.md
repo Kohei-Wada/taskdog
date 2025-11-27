@@ -42,27 +42,22 @@ Settings are resolved in the following order (highest to lowest priority):
 
 ## Configuration Sections
 
-### API Settings (REQUIRED)
+### API Settings
 
-The `[api]` section is **required** for CLI and TUI to work. The API server must be running and accessible.
+The `[api]` section configures API server behavior. Note that connection settings (host/port) are configured separately:
+
+- **Server startup**: Use CLI arguments (`taskdog-server --host 0.0.0.0 --port 3000`)
+- **CLI/TUI connection**: Use `cli.toml` or environment variables (see [CLI Configuration](../packages/taskdog-ui/CLI_CONFIG.md))
 
 ```toml
 [api]
-enabled = true                 # Must be true for CLI/TUI to work (default: false)
-host = "127.0.0.1"            # API server host (default: "127.0.0.1")
-port = 8000                   # API server port (default: 8000)
+cors_origins = ["http://localhost:3000", "http://localhost:8000"]
 ```
 
 **Fields:**
-- `enabled` (boolean) - Enable API connection. Must be `true` for CLI/TUI operations.
-- `host` (string) - API server hostname or IP address.
-- `port` (integer) - API server port number.
+- `cors_origins` (list of strings) - Allowed CORS origins for web browser access. Used for future Web UI support.
 
-**Alternative:** Use environment variable `TASKDOG_API_URL` (takes precedence over config file):
-
-```bash
-export TASKDOG_API_URL=http://127.0.0.1:8000
-```
+**Environment variable:** `TASKDOG_API_CORS_ORIGINS` (comma-separated list)
 
 ### UI Settings
 
@@ -203,17 +198,51 @@ Task notes are stored as separate markdown files:
 
 ## Environment Variables
 
-Environment variables take precedence over config file settings.
+Environment variables take precedence over config file settings. This is useful for Docker/Kubernetes deployments where configuration is managed externally.
 
-### TASKDOG_API_URL
+### Server Configuration Variables
 
-Override API connection settings:
+These variables override server configuration (config.toml):
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY` | float | `6.0` | Maximum work hours per day |
+| `TASKDOG_OPTIMIZATION_DEFAULT_ALGORITHM` | string | `"greedy"` | Default scheduling algorithm |
+| `TASKDOG_TASK_DEFAULT_PRIORITY` | int | `5` | Default priority for new tasks |
+| `TASKDOG_TIME_DEFAULT_START_HOUR` | int | `9` | Business day start hour |
+| `TASKDOG_TIME_DEFAULT_END_HOUR` | int | `18` | Business day end hour |
+| `TASKDOG_REGION_COUNTRY` | string | `None` | ISO 3166-1 alpha-2 country code |
+| `TASKDOG_STORAGE_BACKEND` | string | `"sqlite"` | Storage backend type |
+| `TASKDOG_STORAGE_DATABASE_URL` | string | XDG path | Database file location |
+| `TASKDOG_API_CORS_ORIGINS` | string | localhost | Comma-separated CORS origins |
+
+**Example:**
 
 ```bash
-export TASKDOG_API_URL=http://127.0.0.1:8000
+# Production settings
+export TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY=8.0
+export TASKDOG_TASK_DEFAULT_PRIORITY=3
+export TASKDOG_REGION_COUNTRY=US
+export TASKDOG_API_CORS_ORIGINS="http://localhost:3000,http://app.example.com"
 ```
 
-This is equivalent to setting `[api]` section in config file, but with higher priority.
+**Note:** Invalid values are logged as warnings and fall back to defaults.
+
+### CLI/TUI Connection Variables
+
+These variables configure how CLI/TUI connect to the API server:
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `TASKDOG_API_HOST` | string | `"127.0.0.1"` | API server host |
+| `TASKDOG_API_PORT` | int | `8000` | API server port |
+
+**Example:**
+
+```bash
+export TASKDOG_API_HOST=192.168.1.100
+export TASKDOG_API_PORT=8000
+```
 
 ### XDG_CONFIG_HOME
 
@@ -250,13 +279,12 @@ export EDITOR="code --wait"  # VS Code
 
 ### Minimal Configuration
 
-Bare minimum to get started (API connection only):
+Bare minimum to get started (most settings have sensible defaults):
 
 ```toml
-[api]
-enabled = true
-host = "127.0.0.1"
-port = 8000
+# No configuration needed for basic usage!
+# Server: taskdog-server (uses default 127.0.0.1:8000)
+# CLI/TUI: Connects to default server automatically
 ```
 
 ### Full Configuration
@@ -264,11 +292,9 @@ port = 8000
 Complete configuration with all options:
 
 ```toml
-# API Server Settings (REQUIRED)
+# API Server Settings (optional)
 [api]
-enabled = true
-host = "127.0.0.1"
-port = 8000
+cors_origins = ["http://localhost:3000", "http://localhost:8000"]
 
 # UI Settings
 [ui]
@@ -300,19 +326,20 @@ backend = "sqlite"
 
 ### Remote API Server
 
-Connect to API server on different host:
+Connect CLI/TUI to API server on different host. Configure in `cli.toml`:
 
 ```toml
+# ~/.config/taskdog/cli.toml
 [api]
-enabled = true
 host = "192.168.1.100"
 port = 8000
 ```
 
-Or use environment variable:
+Or use environment variables:
 
 ```bash
-export TASKDOG_API_URL=http://192.168.1.100:8000
+export TASKDOG_API_HOST=192.168.1.100
+export TASKDOG_API_PORT=8000
 ```
 
 ### Work Schedule Configuration
@@ -320,11 +347,6 @@ export TASKDOG_API_URL=http://192.168.1.100:8000
 Configure for 8-hour work days with strict 9-18 schedule:
 
 ```toml
-[api]
-enabled = true
-host = "127.0.0.1"
-port = 8000
-
 [optimization]
 max_hours_per_day = 8.0
 default_algorithm = "balanced"
@@ -339,14 +361,10 @@ country = "US"  # Avoid US holidays
 
 ### Custom Theme
 
-Use a specific theme for TUI:
+Use a specific theme for TUI (configure in `cli.toml`):
 
 ```toml
-[api]
-enabled = true
-host = "127.0.0.1"
-port = 8000
-
+# ~/.config/taskdog/cli.toml
 [ui]
 theme = "dracula"
 ```
@@ -356,11 +374,6 @@ theme = "dracula"
 Store database in custom location:
 
 ```toml
-[api]
-enabled = true
-host = "127.0.0.1"
-port = 8000
-
 [storage]
 database_url = "~/Documents/taskdog/my-tasks.db"
 backend = "sqlite"
@@ -373,10 +386,10 @@ backend = "sqlite"
 **Error:** "API connection error" or "Cannot connect to server"
 
 **Solution:**
-1. Ensure `[api]` section is configured with `enabled = true`
-2. Start the API server: `taskdog-server`
-3. Verify server is running: `curl http://localhost:8000/health`
-4. Check host and port match in config file
+1. Start the API server: `taskdog-server`
+2. Verify server is running: `curl http://localhost:8000/health`
+3. Check host and port in `cli.toml` match the running server
+4. If using non-default port: `taskdog-server --port 3000` and update `cli.toml`
 
 ### Theme Not Applied
 
