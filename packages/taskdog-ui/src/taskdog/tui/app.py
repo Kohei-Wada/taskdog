@@ -16,8 +16,8 @@ from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
 from taskdog.services.task_data_loader import TaskDataLoader
 from taskdog.tui.commands.factory import CommandFactory
+from taskdog.tui.constants.command_mapping import ACTION_TO_COMMAND_MAP
 from taskdog.tui.constants.ui_settings import (
-    ACTION_TO_COMMAND_MAP,
     AUTO_REFRESH_INTERVAL_SECONDS,
     DEFAULT_GANTT_DISPLAY_DAYS,
     SORT_KEY_LABELS,
@@ -38,7 +38,7 @@ from taskdog.tui.state import TUIState
 from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 
-# Config no longer needed in TUI - removed to reduce Core dependency
+# CliConfig is used only for theme setting, not passed to TUIContext
 
 
 class TaskdogTUI(App):
@@ -209,7 +209,8 @@ class TaskdogTUI(App):
                 pass
 
         self.api_client = api_client
-        self.cli_config = cli_config or CliConfig()
+        _cli_config = cli_config or CliConfig()
+        self._theme = _cli_config.ui.theme
         self.main_screen: MainScreen | None = None
 
         # Initialize TUI state (Single Source of Truth for all app state)
@@ -299,7 +300,7 @@ class TaskdogTUI(App):
     async def on_mount(self) -> None:
         """Called when app is mounted."""
         # Apply theme from config
-        self.theme = self.cli_config.ui.theme
+        self.theme = self._theme
 
         self.main_screen = MainScreen(state=self.state)
         self.push_screen(self.main_screen)

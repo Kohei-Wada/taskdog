@@ -11,7 +11,7 @@ from taskdog.exporters import (
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.registry import command_registry
-from taskdog.tui.constants.ui_settings import EXPORT_FORMAT_CONFIG
+from taskdog.tui.constants.export_config import EXPORT_FORMAT_CONFIG
 from taskdog.tui.context import TUIContext
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 

@@ -5,7 +5,7 @@ from typing import Any
 
 import click
 
-from taskdog.constants.ui_defaults import DEFAULT_END_HOUR, DEFAULT_START_HOUR
+from taskdog.tui.constants.ui_settings import DEFAULT_END_HOUR, DEFAULT_START_HOUR
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 

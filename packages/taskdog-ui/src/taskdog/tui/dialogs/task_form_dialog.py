@@ -121,8 +121,8 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         # Parse priority (optional, defaults to config value)
         # Validation is handled by Textual's Number validator
         from taskdog.tui.constants.ui_settings import (
-            DEFAULT_BUSINESS_END_HOUR,
-            DEFAULT_BUSINESS_START_HOUR,
+            DEFAULT_END_HOUR,
+            DEFAULT_START_HOUR,
             DEFAULT_TASK_PRIORITY,
         )
 
@@ -134,13 +134,9 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         duration = float(duration_str) if duration_str else None
 
         # Parse datetime fields using DateTimeValidator.parse()
-        deadline_validator = DateTimeValidator("deadline", DEFAULT_BUSINESS_END_HOUR)
-        planned_start_validator = DateTimeValidator(
-            "planned start", DEFAULT_BUSINESS_START_HOUR
-        )
-        planned_end_validator = DateTimeValidator(
-            "planned end", DEFAULT_BUSINESS_END_HOUR
-        )
+        deadline_validator = DateTimeValidator("deadline", DEFAULT_END_HOUR)
+        planned_start_validator = DateTimeValidator("planned start", DEFAULT_START_HOUR)
+        planned_end_validator = DateTimeValidator("planned end", DEFAULT_END_HOUR)
 
         deadline = deadline_validator.parse(deadline_input.value)
         planned_start = planned_start_validator.parse(planned_start_input.value)

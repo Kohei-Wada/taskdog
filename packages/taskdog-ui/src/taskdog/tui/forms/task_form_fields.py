@@ -8,12 +8,12 @@ from textual.containers import Vertical
 from textual.validation import Length, Number, Regex
 from textual.widgets import Checkbox, Input, Label, Static
 
-from taskdog.constants.ui_defaults import (
-    DEFAULT_END_HOUR,
-    DEFAULT_PRIORITY,
-    DEFAULT_START_HOUR,
-)
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
+from taskdog.tui.constants.ui_settings import (
+    DEFAULT_END_HOUR,
+    DEFAULT_START_HOUR,
+    DEFAULT_TASK_PRIORITY,
+)
 from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
@@ -94,7 +94,7 @@ class TaskFormFields:
 
         # Use UI default constant for placeholder text
         # Server will apply actual config default when creating tasks
-        default_priority = DEFAULT_PRIORITY
+        default_priority = DEFAULT_TASK_PRIORITY
 
         with Vertical(id="form-container"):
             # Task name field (required)

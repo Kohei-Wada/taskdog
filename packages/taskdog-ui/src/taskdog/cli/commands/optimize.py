@@ -7,8 +7,8 @@ import click
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
 from taskdog.console.console_writer import ConsoleWriter
-from taskdog.constants.ui_defaults import DEFAULT_START_HOUR
 from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
+from taskdog.tui.constants.ui_settings import DEFAULT_START_HOUR
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.shared.utils.date_utils import get_next_weekday
 
