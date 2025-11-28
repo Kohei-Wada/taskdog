@@ -36,4 +36,5 @@ class NoteCommand(TUICommandBase):
             app=self.app,
             on_success=lambda name, id_: self._on_note_saved(name, id_),
             on_error=self.notify_error,
+            config=self.context.config,
         )

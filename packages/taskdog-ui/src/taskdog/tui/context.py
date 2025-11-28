@@ -7,6 +7,7 @@ from taskdog.tui.state import TUIState
 
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
+    from taskdog.infrastructure.cli_config import CliConfig
 
 
 @dataclass
@@ -22,7 +23,9 @@ class TUIContext:
     Attributes:
         api_client: API client for server communication (required)
         state: TUI application state (shared with app instance)
+        config: CLI configuration (optional, for custom templates etc.)
     """
 
     api_client: "TaskdogApiClient"
     state: TUIState
+    config: "CliConfig | None" = None

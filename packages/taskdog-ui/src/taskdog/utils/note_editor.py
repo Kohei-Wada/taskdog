@@ -8,8 +8,9 @@ from typing import Any, Protocol
 
 from textual.app import App
 
+from taskdog.infrastructure.cli_config import CliConfig
 from taskdog.utils.editor import get_editor
-from taskdog.utils.notes_template import generate_notes_template
+from taskdog.utils.notes_template import get_note_template
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 
@@ -37,19 +38,24 @@ class NotesProvider(Protocol):
         ...
 
 
-def _create_temp_notes_file(task: TaskDetailDto, notes_provider: NotesProvider) -> Path:
+def _create_temp_notes_file(
+    task: TaskDetailDto,
+    notes_provider: NotesProvider,
+    config: CliConfig | None = None,
+) -> Path:
     """Create temporary notes file with existing content or template.
 
     Args:
         task: Task DTO whose notes to prepare
         notes_provider: Notes provider for reading existing content
+        config: CLI configuration for custom template (optional)
 
     Returns:
         Path to the temporary notes file
     """
     # task.id is guaranteed to be int in TaskDetailDto (not Optional)
     existing_content, _ = notes_provider.get_task_notes(task.id)
-    content = existing_content if existing_content else generate_notes_template(task)
+    content = existing_content if existing_content else get_note_template(task, config)
 
     # Create temporary file with .md suffix
     with tempfile.NamedTemporaryFile(
@@ -100,6 +106,7 @@ def _prepare_temp_file(
     task: TaskDetailDto,
     notes_provider: NotesProvider,
     on_error: Callable[[str, Exception], None] | None,
+    config: CliConfig | None = None,
 ) -> Path | None:
     """Prepare temporary file, returning None on error.
 
@@ -107,12 +114,13 @@ def _prepare_temp_file(
         task: Task DTO to prepare notes for
         notes_provider: Notes provider
         on_error: Error callback
+        config: CLI configuration for custom template (optional)
 
     Returns:
         Path to temp file, or None on error
     """
     try:
-        return _create_temp_notes_file(task, notes_provider)
+        return _create_temp_notes_file(task, notes_provider, config)
     except Exception as e:
         if on_error:
             on_error("preparing notes file", e)
@@ -161,6 +169,7 @@ def edit_task_note(
     app: App[Any],
     on_success: Callable[[str, int], None] | None = None,
     on_error: Callable[[str, Exception], None] | None = None,
+    config: CliConfig | None = None,
 ) -> None:
     """Open editor for the task's note using temporary file.
 
@@ -173,11 +182,12 @@ def edit_task_note(
         app: Textual app instance (for suspend)
         on_success: Optional callback (task_name, task_id) on successful edit
         on_error: Optional callback (action, exception) on error
+        config: CLI configuration for custom template (optional)
     """
     # task.id is guaranteed to be int in TaskDetailDto (not Optional)
 
     # Prepare temporary file
-    temp_path = _prepare_temp_file(task, notes_provider, on_error)
+    temp_path = _prepare_temp_file(task, notes_provider, on_error, config)
     if temp_path is None:
         return
 
