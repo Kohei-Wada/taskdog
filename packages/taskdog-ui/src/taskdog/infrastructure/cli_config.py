@@ -37,6 +37,19 @@ class UiConfig:
 
 
 @dataclass(frozen=True)
+class NotesConfig:
+    """Notes-related configuration.
+
+    Attributes:
+        template: Path to custom note template file.
+                  Supports ~ expansion. If None or file doesn't exist,
+                  system default template is used.
+    """
+
+    template: str | None = None
+
+
+@dataclass(frozen=True)
 class CliConfig:
     """CLI/TUI configuration.
 
@@ -46,11 +59,13 @@ class CliConfig:
     Attributes:
         api: API connection settings
         ui: UI appearance settings (theme, etc.)
+        notes: Notes settings (template path, etc.)
         keybindings: Future: Custom keybindings for TUI (not yet implemented)
     """
 
     api: CliApiConfig = field(default_factory=CliApiConfig)
     ui: UiConfig = field(default_factory=UiConfig)
+    notes: NotesConfig = field(default_factory=NotesConfig)
     keybindings: dict[str, str] = field(default_factory=dict)
 
 
@@ -88,6 +103,7 @@ def load_cli_config() -> CliConfig:
     api_host = "127.0.0.1"
     api_port = 8000
     theme = "textual-dark"
+    notes_template: str | None = None
     keybindings: dict[str, str] = {}
 
     # Load from cli.toml if exists
@@ -107,6 +123,11 @@ def load_cli_config() -> CliConfig:
             if "ui" in data:
                 ui_section = data["ui"]
                 theme = ui_section.get("theme", theme)
+
+            # Parse [notes] section
+            if "notes" in data:
+                notes_section = data["notes"]
+                notes_template = notes_section.get("template", notes_template)
 
             # Parse [keybindings] section (future feature)
             if "keybindings" in data:
@@ -129,4 +150,7 @@ def load_cli_config() -> CliConfig:
     # Build config object
     api_config = CliApiConfig(host=api_host, port=api_port)
     ui_config = UiConfig(theme=theme)
-    return CliConfig(api=api_config, ui=ui_config, keybindings=keybindings)
+    notes_config = NotesConfig(template=notes_template)
+    return CliConfig(
+        api=api_config, ui=ui_config, notes=notes_config, keybindings=keybindings
+    )

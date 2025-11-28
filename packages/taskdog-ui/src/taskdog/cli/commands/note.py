@@ -12,8 +12,9 @@ from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
 from taskdog.console.console_writer import ConsoleWriter
 from taskdog.infrastructure.api_client import TaskdogApiClient
+from taskdog.infrastructure.cli_config import CliConfig
 from taskdog.utils.editor import get_editor
-from taskdog.utils.notes_template import generate_notes_template
+from taskdog.utils.notes_template import get_note_template
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
@@ -88,6 +89,7 @@ def _edit_with_editor(
     task: TaskDetailDto,
     api_client: TaskdogApiClient,
     console_writer: ConsoleWriter,
+    config: CliConfig | None = None,
 ) -> None:
     """Edit note using $EDITOR.
 
@@ -96,10 +98,11 @@ def _edit_with_editor(
         task: Task detail DTO
         api_client: API client
         console_writer: Console writer
+        config: CLI configuration for custom template (optional)
     """
     existing_content, _ = api_client.get_task_notes(task_id)
     editor_content = (
-        existing_content if existing_content else generate_notes_template(task)
+        existing_content if existing_content else get_note_template(task, config)
     )
 
     with tempfile.NamedTemporaryFile(
@@ -199,4 +202,4 @@ def note_command(
         _save_content_directly(task_id, new_content, append, api_client, console_writer)
     else:
         # No input source, use editor mode
-        _edit_with_editor(task_id, task, api_client, console_writer)
+        _edit_with_editor(task_id, task, api_client, console_writer, ctx_obj.config)

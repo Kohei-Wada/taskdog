@@ -209,8 +209,8 @@ class TaskdogTUI(App):
                 pass
 
         self.api_client = api_client
-        _cli_config = cli_config or CliConfig()
-        self._theme = _cli_config.ui.theme
+        self._cli_config = cli_config or CliConfig()
+        self._theme = self._cli_config.ui.theme
         self.main_screen: MainScreen | None = None
 
         # Initialize TUI state (Single Source of Truth for all app state)
@@ -221,10 +221,11 @@ class TaskdogTUI(App):
         # - _all_tasks, _gantt_view_model → state (Step 4)
         # - viewmodels → state (Step 5)
 
-        # Initialize TUIContext with API client and state
+        # Initialize TUIContext with API client, state, and config
         self.context = TUIContext(
             api_client=self.api_client,
             state=self.state,  # Share same state instance
+            config=self._cli_config,
         )
 
         # Initialize presenters for view models (will be updated to not use notes_repository)

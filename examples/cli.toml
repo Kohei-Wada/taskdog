@@ -50,6 +50,30 @@ theme = "textual-dark"
 # - Gruvbox: theme = "gruvbox"
 
 # =============================================================================
+# Notes Settings
+# =============================================================================
+#
+# Configure note template for new task notes.
+
+[notes]
+# Custom note template file path (default: none, uses system default)
+# Supports ~ expansion for home directory.
+# If the file doesn't exist, falls back to system default template.
+#
+# Template variables (use {{variable}} syntax):
+#   - {{task_id}}           - Task ID
+#   - {{task_name}}         - Task name
+#   - {{priority}}          - Priority value
+#   - {{status}}            - Task status (PENDING, IN_PROGRESS, etc.)
+#   - {{deadline}}          - Deadline date (empty if not set)
+#   - {{estimated_duration}} - Estimated hours (empty if not set)
+#   - {{tags}}              - Comma-separated tags (empty if none)
+#   - {{created_at}}        - Current datetime
+#
+# Example: template = "~/.config/taskdog/note_template.md"
+# template = "~/.config/taskdog/note_template.md"
+
+# =============================================================================
 # Keybindings (Future Feature)
 # =============================================================================
 #
