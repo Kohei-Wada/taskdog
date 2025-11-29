@@ -2,17 +2,16 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, status
+from fastapi import APIRouter, Header, HTTPException, status
 
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import (
-    ConnectionManagerDep,
+    BroadcastHelperDep,
     NotesRepositoryDep,
     RepositoryDep,
 )
 from taskdog_server.api.models.requests import UpdateNotesRequest
 from taskdog_server.api.models.responses import NotesResponse
-from taskdog_server.websocket.broadcaster import broadcast_task_notes_updated
 
 router = APIRouter()
 
@@ -55,8 +54,7 @@ async def update_task_notes(
     request: UpdateNotesRequest,
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
-    manager: ConnectionManagerDep,
-    background_tasks: BackgroundTasks,
+    broadcast: BroadcastHelperDep,
     x_client_id: Annotated[str | None, Header()] = None,
 ) -> NotesResponse:
     """Update task notes.
@@ -66,7 +64,7 @@ async def update_task_notes(
         request: Notes content
         repository: Task repository dependency
         notes_repo: Notes repository dependency
-        background_tasks: Background tasks for WebSocket notifications
+        broadcast: Broadcast helper dependency
         x_client_id: Optional client ID from WebSocket connection
 
     Returns:
@@ -86,9 +84,7 @@ async def update_task_notes(
         has_notes = notes_repo.has_notes(task_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        background_tasks.add_task(
-            broadcast_task_notes_updated, manager, task_id, task.name, x_client_id
-        )
+        broadcast.task_notes_updated(task_id, task.name, x_client_id)
 
         return NotesResponse(
             task_id=task_id, content=request.content, has_notes=has_notes
@@ -102,8 +98,7 @@ async def delete_task_notes(
     task_id: int,
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
-    manager: ConnectionManagerDep,
-    background_tasks: BackgroundTasks,
+    broadcast: BroadcastHelperDep,
     x_client_id: Annotated[str | None, Header()] = None,
 ) -> None:
     """Delete task notes.
@@ -112,7 +107,7 @@ async def delete_task_notes(
         task_id: Task ID
         repository: Task repository dependency
         notes_repo: Notes repository dependency
-        background_tasks: Background tasks for WebSocket notifications
+        broadcast: Broadcast helper dependency
         x_client_id: Optional client ID from WebSocket connection
 
     Raises:
@@ -128,8 +123,6 @@ async def delete_task_notes(
         notes_repo.write_notes(task_id, "")
 
         # Broadcast WebSocket event in background (exclude the requester)
-        background_tasks.add_task(
-            broadcast_task_notes_updated, manager, task_id, task.name, x_client_id
-        )
+        broadcast.task_notes_updated(task_id, task.name, x_client_id)
     except TaskNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
