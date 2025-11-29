@@ -200,7 +200,7 @@ async def get_gantt_chart(
     )
 
     # Query gantt data using Use Case pattern
-    result = controller.get_gantt_data_by_input(
+    result = controller.get_gantt_data(
         input_dto=input_dto,
         holiday_checker=holiday_checker,
     )

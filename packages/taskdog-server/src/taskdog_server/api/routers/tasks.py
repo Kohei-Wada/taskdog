@@ -154,7 +154,7 @@ async def list_tasks(
     )
 
     # Query tasks using Use Case pattern
-    result = controller.list_tasks_by_input(
+    result = controller.list_tasks(
         input_dto=input_dto,
         include_gantt=include_gantt,
         gantt_start_date=gantt_start,
@@ -203,7 +203,7 @@ async def list_today_tasks(
     )
 
     # Query tasks using Use Case pattern
-    result = controller.list_tasks_by_input(input_dto=input_dto)
+    result = controller.list_tasks(input_dto=input_dto)
     return convert_to_task_list_response(result, notes_repo)
 
 
@@ -246,7 +246,7 @@ async def list_week_tasks(
     )
 
     # Query tasks using Use Case pattern
-    result = controller.list_tasks_by_input(input_dto=input_dto)
+    result = controller.list_tasks(input_dto=input_dto)
     return convert_to_task_list_response(result, notes_repo)
 
 

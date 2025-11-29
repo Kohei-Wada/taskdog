@@ -4,11 +4,10 @@ import unittest
 from datetime import date, datetime, timedelta
 from unittest.mock import Mock
 
-from taskdog_core.application.queries.filters.composite_filter import CompositeFilter
-from taskdog_core.application.queries.filters.non_archived_filter import (
-    NonArchivedFilter,
+from taskdog_core.application.dto.query_inputs import (
+    GetGanttDataInput,
+    ListTasksInput,
 )
-from taskdog_core.application.queries.filters.status_filter import StatusFilter
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.services.logger import Logger
@@ -30,8 +29,9 @@ class TestQueryController(InMemoryDatabaseTestCase):
         self.repository.create(name="Task 1", priority=1, status=TaskStatus.PENDING)
         self.repository.create(name="Task 2", priority=2, status=TaskStatus.IN_PROGRESS)
 
-        # Get task list
-        result = self.controller.list_tasks()
+        # Get task list using Input DTO
+        input_dto = ListTasksInput(include_archived=True)
+        result = self.controller.list_tasks(input_dto)
 
         # Verify result structure
         self.assertEqual(len(result.tasks), 2)
@@ -45,9 +45,9 @@ class TestQueryController(InMemoryDatabaseTestCase):
         self.repository.create(name="Task 2", priority=2, status=TaskStatus.IN_PROGRESS)
         self.repository.create(name="Task 3", priority=3, status=TaskStatus.COMPLETED)
 
-        # Filter for PENDING tasks only
-        filter_obj = StatusFilter(TaskStatus.PENDING)
-        result = self.controller.list_tasks(filter_obj=filter_obj)
+        # Filter for PENDING tasks only using Input DTO
+        input_dto = ListTasksInput(include_archived=True, status="PENDING")
+        result = self.controller.list_tasks(input_dto)
 
         # Verify filtering
         self.assertEqual(len(result.tasks), 1)
@@ -62,8 +62,11 @@ class TestQueryController(InMemoryDatabaseTestCase):
         self.repository.create(name="High", priority=10, status=TaskStatus.PENDING)
         self.repository.create(name="Medium", priority=5, status=TaskStatus.PENDING)
 
-        # Sort by priority (default is descending for priority - higher priority first)
-        result = self.controller.list_tasks(sort_by="priority", reverse=False)
+        # Sort by priority using Input DTO (higher priority first)
+        input_dto = ListTasksInput(
+            include_archived=True, sort_by="priority", reverse=False
+        )
+        result = self.controller.list_tasks(input_dto)
 
         # Verify sorting (High=10, Medium=5, Low=1)
         self.assertEqual(result.tasks[0].name, "High")
@@ -71,7 +74,7 @@ class TestQueryController(InMemoryDatabaseTestCase):
         self.assertEqual(result.tasks[2].name, "Low")
 
     def test_list_tasks_with_composite_filter(self):
-        """Test list_tasks with composite filter."""
+        """Test list_tasks with combined filters via Input DTO."""
         # Create test tasks
         self.repository.create(
             name="Active", priority=1, status=TaskStatus.PENDING, is_archived=False
@@ -80,11 +83,9 @@ class TestQueryController(InMemoryDatabaseTestCase):
             name="Archived", priority=2, status=TaskStatus.PENDING, is_archived=True
         )
 
-        # Use composite filter
-        filter_obj = CompositeFilter(
-            [StatusFilter(TaskStatus.PENDING), NonArchivedFilter()]
-        )
-        result = self.controller.list_tasks(filter_obj=filter_obj)
+        # Use Input DTO with status and non-archived filter
+        input_dto = ListTasksInput(include_archived=False, status="PENDING")
+        result = self.controller.list_tasks(input_dto)
 
         # Verify filtering
         self.assertEqual(len(result.tasks), 1)
@@ -105,8 +106,9 @@ class TestQueryController(InMemoryDatabaseTestCase):
             estimated_duration=16.0,
         )
 
-        # Get gantt data
-        result = self.controller.get_gantt_data()
+        # Get gantt data using Input DTO
+        input_dto = GetGanttDataInput(include_archived=True)
+        result = self.controller.get_gantt_data(input_dto)
 
         # Verify result structure
         self.assertIsNotNone(result)
@@ -128,12 +130,15 @@ class TestQueryController(InMemoryDatabaseTestCase):
             ),
         )
 
-        # Get gantt data with date range
+        # Get gantt data with date range using Input DTO
         start_date = today
         end_date = today + timedelta(days=5)
-        result = self.controller.get_gantt_data(
-            start_date=start_date, end_date=end_date
+        input_dto = GetGanttDataInput(
+            include_archived=True,
+            chart_start_date=start_date,
+            chart_end_date=end_date,
         )
+        result = self.controller.get_gantt_data(input_dto)
 
         # Verify date range
         self.assertEqual(result.date_range.start_date, start_date)
@@ -174,8 +179,9 @@ class TestQueryController(InMemoryDatabaseTestCase):
             # No estimated_duration - should be ignored in calculation
         )
 
-        # Get gantt data
-        result = self.controller.get_gantt_data()
+        # Get gantt data using Input DTO
+        input_dto = GetGanttDataInput(include_archived=True)
+        result = self.controller.get_gantt_data(input_dto)
 
         # Verify total_estimated_duration (8.0 + 16.5 = 24.5)
         self.assertEqual(result.total_estimated_duration, 24.5)
@@ -195,8 +201,9 @@ class TestQueryController(InMemoryDatabaseTestCase):
             ),
         )
 
-        # Get gantt data
-        result = self.controller.get_gantt_data()
+        # Get gantt data using Input DTO
+        input_dto = GetGanttDataInput(include_archived=True)
+        result = self.controller.get_gantt_data(input_dto)
 
         # Verify total_estimated_duration is 0.0
         self.assertEqual(result.total_estimated_duration, 0.0)
