@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
+from taskdog_core.application.dto.query_inputs import GetGanttDataInput, ListTasksInput
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
@@ -19,10 +20,12 @@ from taskdog_core.application.queries.task_query_service import TaskQueryService
 from taskdog_core.application.services.optimization.strategy_factory import (
     StrategyFactory,
 )
+from taskdog_core.application.use_cases.get_gantt_data import GetGanttDataUseCase
 from taskdog_core.application.use_cases.get_task_detail import (
     GetTaskDetailInput,
     GetTaskDetailUseCase,
 )
+from taskdog_core.application.use_cases.list_tasks import ListTasksUseCase
 from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
@@ -119,6 +122,82 @@ class QueryController:
             filtered_count=len(filtered_task_dtos),
             gantt_data=gantt_data,
         )
+
+    def list_tasks_by_input(
+        self,
+        input_dto: ListTasksInput,
+        include_gantt: bool = False,
+        gantt_start_date: date | None = None,
+        gantt_end_date: date | None = None,
+        holiday_checker: "IHolidayChecker | None" = None,
+    ) -> TaskListOutput:
+        """Get filtered and sorted task list using Input DTO.
+
+        This method uses the ListTasksUseCase pattern, where filter construction
+        is handled in the Application layer instead of the Presentation layer.
+
+        Args:
+            input_dto: Query parameters (filters, sorting) as Input DTO
+            include_gantt: If True, include Gantt chart data in the output (default: False)
+            gantt_start_date: Start date for Gantt chart (used when include_gantt=True)
+            gantt_end_date: End date for Gantt chart (used when include_gantt=True)
+            holiday_checker: Holiday checker for Gantt chart (used when include_gantt=True)
+
+        Returns:
+            TaskListOutput with filtered tasks, counts, and optionally Gantt data
+        """
+        use_case = ListTasksUseCase(
+            repository=self.repository,
+            query_service=self.query_service,
+        )
+        result = use_case.execute(input_dto)
+
+        # Optionally include Gantt chart data
+        if include_gantt:
+            from taskdog_core.application.dto.query_inputs import GetGanttDataInput
+
+            gantt_input = GetGanttDataInput(
+                include_archived=input_dto.include_archived,
+                status=input_dto.status,
+                tags=input_dto.tags,
+                match_all_tags=input_dto.match_all_tags,
+                start_date=input_dto.start_date,
+                end_date=input_dto.end_date,
+                time_range=input_dto.time_range,
+                sort_by=input_dto.sort_by,
+                reverse=input_dto.reverse,
+                chart_start_date=gantt_start_date,
+                chart_end_date=gantt_end_date,
+            )
+            result.gantt_data = self.get_gantt_data_by_input(
+                input_dto=gantt_input,
+                holiday_checker=holiday_checker,
+            )
+
+        return result
+
+    def get_gantt_data_by_input(
+        self,
+        input_dto: GetGanttDataInput,
+        holiday_checker: "IHolidayChecker | None" = None,
+    ) -> GanttOutput:
+        """Get Gantt chart data using Input DTO.
+
+        This method uses the GetGanttDataUseCase pattern, where filter construction
+        is handled in the Application layer instead of the Presentation layer.
+
+        Args:
+            input_dto: Query parameters (filters, sorting, chart dates) as Input DTO
+            holiday_checker: Optional holiday checker for rendering holidays
+
+        Returns:
+            GanttOutput with chart data and workload information
+        """
+        use_case = GetGanttDataUseCase(
+            query_service=self.query_service,
+            holiday_checker=holiday_checker,
+        )
+        return use_case.execute(input_dto)
 
     def get_gantt_data(
         self,
