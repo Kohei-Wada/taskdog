@@ -270,8 +270,8 @@ async def optimize_schedule(
         start_date = request.start_date if request.start_date else datetime.now()
 
         if run_async:
-            # Add to background tasks (use internal background_tasks from broadcast helper)
-            broadcast._background_tasks.add_task(
+            # Add optimization to background tasks
+            broadcast.add_background_task(
                 run_optimization,
                 controller,
                 request.algorithm,

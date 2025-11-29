@@ -4,6 +4,9 @@ This module provides a helper class to standardize the pattern of scheduling
 WebSocket broadcasts as background tasks in FastAPI routers.
 """
 
+from collections.abc import Callable
+from typing import Any
+
 from fastapi import BackgroundTasks
 
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
@@ -36,6 +39,21 @@ class BroadcastHelper:
         """
         self._manager = manager
         self._background_tasks = background_tasks
+
+    def add_background_task(
+        self, func: Callable[..., Any], *args: object, **kwargs: object
+    ) -> None:
+        """Add a task to run in the background.
+
+        This method provides public access to schedule background tasks,
+        useful for non-broadcast operations that still need background execution.
+
+        Args:
+            func: The function to run in the background
+            *args: Positional arguments to pass to the function
+            **kwargs: Keyword arguments to pass to the function
+        """
+        self._background_tasks.add_task(func, *args, **kwargs)
 
     def task_created(
         self,

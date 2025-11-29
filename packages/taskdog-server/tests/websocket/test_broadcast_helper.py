@@ -298,6 +298,36 @@ class TestBroadcastHelper(unittest.TestCase):
         self.assertEqual(self.helper._manager, self.mock_manager)
         self.assertEqual(self.helper._background_tasks, self.mock_background_tasks)
 
+    def test_add_background_task_schedules_task(self):
+        """Test add_background_task schedules a generic background task."""
+
+        # Arrange
+        def sample_task(arg1: str, arg2: int) -> None:
+            pass
+
+        # Act
+        self.helper.add_background_task(sample_task, "test", 123)
+
+        # Assert
+        self.mock_background_tasks.add_task.assert_called_once_with(
+            sample_task, "test", 123
+        )
+
+    def test_add_background_task_with_kwargs(self):
+        """Test add_background_task with keyword arguments."""
+
+        # Arrange
+        def sample_task(name: str, value: int) -> None:
+            pass
+
+        # Act
+        self.helper.add_background_task(sample_task, name="test", value=456)
+
+        # Assert
+        self.mock_background_tasks.add_task.assert_called_once_with(
+            sample_task, name="test", value=456
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
