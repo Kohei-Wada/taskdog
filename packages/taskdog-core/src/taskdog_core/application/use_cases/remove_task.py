@@ -1,6 +1,6 @@
 """Use case for removing a task."""
 
-from taskdog_core.application.dto.remove_task_input import RemoveTaskInput
+from taskdog_core.application.dto.single_task_inputs import RemoveTaskInput
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository

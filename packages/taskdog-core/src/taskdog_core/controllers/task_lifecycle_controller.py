@@ -8,11 +8,13 @@ This controller handles all task lifecycle operations (status changes with time 
 - reopen_task: Reset finished task to PENDING, clear timestamps
 """
 
-from taskdog_core.application.dto.cancel_task_input import CancelTaskInput
-from taskdog_core.application.dto.complete_task_input import CompleteTaskInput
-from taskdog_core.application.dto.pause_task_input import PauseTaskInput
-from taskdog_core.application.dto.reopen_task_input import ReopenTaskInput
-from taskdog_core.application.dto.start_task_input import StartTaskInput
+from taskdog_core.application.dto.single_task_inputs import (
+    CancelTaskInput,
+    CompleteTaskInput,
+    PauseTaskInput,
+    ReopenTaskInput,
+    StartTaskInput,
+)
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.use_cases.cancel_task import CancelTaskUseCase
 from taskdog_core.application.use_cases.complete_task import CompleteTaskUseCase

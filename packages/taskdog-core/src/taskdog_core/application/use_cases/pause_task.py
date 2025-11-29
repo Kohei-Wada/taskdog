@@ -1,6 +1,6 @@
 """Use case for pausing a task."""
 
-from taskdog_core.application.dto.pause_task_input import PauseTaskInput
+from taskdog_core.application.dto.single_task_inputs import PauseTaskInput
 from taskdog_core.application.use_cases.status_change_use_case import (
     StatusChangeUseCase,
 )

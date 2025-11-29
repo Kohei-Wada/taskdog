@@ -5,14 +5,16 @@ from datetime import datetime
 
 from parameterized import parameterized
 
-from taskdog_core.application.dto.archive_task_input import ArchiveTaskInput
 from taskdog_core.application.dto.log_hours_input import LogHoursInput
 from taskdog_core.application.dto.manage_dependencies_input import (
     AddDependencyInput,
     RemoveDependencyInput,
 )
-from taskdog_core.application.dto.restore_task_input import RestoreTaskInput
 from taskdog_core.application.dto.set_task_tags_input import SetTaskTagsInput
+from taskdog_core.application.dto.single_task_inputs import (
+    ArchiveTaskInput,
+    RestoreTaskInput,
+)
 
 
 class TestSimpleTaskManagementInputs(unittest.TestCase):

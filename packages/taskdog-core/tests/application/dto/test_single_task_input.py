@@ -4,12 +4,14 @@ import unittest
 
 from parameterized import parameterized
 
-from taskdog_core.application.dto.archive_task_input import ArchiveTaskInput
 from taskdog_core.application.dto.base import SingleTaskInput
-from taskdog_core.application.dto.complete_task_input import CompleteTaskInput
-from taskdog_core.application.dto.pause_task_input import PauseTaskInput
-from taskdog_core.application.dto.remove_task_input import RemoveTaskInput
-from taskdog_core.application.dto.start_task_input import StartTaskInput
+from taskdog_core.application.dto.single_task_inputs import (
+    ArchiveTaskInput,
+    CompleteTaskInput,
+    PauseTaskInput,
+    RemoveTaskInput,
+    StartTaskInput,
+)
 
 
 class TestSingleTaskInput(unittest.TestCase):

@@ -1,6 +1,6 @@
 """Use case for restoring an archived task."""
 
-from taskdog_core.application.dto.restore_task_input import RestoreTaskInput
+from taskdog_core.application.dto.single_task_inputs import RestoreTaskInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError

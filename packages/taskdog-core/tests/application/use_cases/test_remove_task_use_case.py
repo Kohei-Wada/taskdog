@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from taskdog_core.application.dto.remove_task_input import RemoveTaskInput
+from taskdog_core.application.dto.single_task_inputs import RemoveTaskInput
 from taskdog_core.application.use_cases.remove_task import RemoveTaskUseCase
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from tests.test_fixtures import InMemoryDatabaseTestCase

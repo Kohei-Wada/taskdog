@@ -2,7 +2,7 @@
 
 import unittest
 
-from taskdog_core.application.dto.start_task_input import StartTaskInput
+from taskdog_core.application.dto.single_task_inputs import StartTaskInput
 from taskdog_core.application.use_cases.start_task import StartTaskUseCase
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from tests.application.use_cases.status_change_test_base import (
