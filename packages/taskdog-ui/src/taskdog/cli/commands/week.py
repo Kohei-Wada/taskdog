@@ -1,7 +1,5 @@
 """Week command - Display tasks for this week."""
 
-from datetime import date, timedelta
-
 import click
 
 from taskdog.cli.commands.common_options import filter_options, sort_options
@@ -52,17 +50,10 @@ def week_command(
     """
     ctx_obj: CliContext = ctx.obj
 
-    # Get this week's date range for filtering (Monday to Sunday)
-    today = date.today()
-    week_start = today - timedelta(days=today.weekday())
-    week_end = week_start + timedelta(days=6)
-
-    # Get filtered and sorted tasks via API client
-    result = ctx_obj.api_client.list_tasks(
+    # Get filtered and sorted tasks via dedicated /week endpoint
+    result = ctx_obj.api_client.list_week_tasks(
         all=all,
         status=status,
-        start_date=week_start,
-        end_date=week_end,
         sort_by=sort,
         reverse=reverse,
     )
