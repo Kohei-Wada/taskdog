@@ -98,8 +98,6 @@ class QueryController:
 
         # Optionally include Gantt chart data
         if include_gantt:
-            from taskdog_core.application.dto.query_inputs import GetGanttDataInput
-
             gantt_input = GetGanttDataInput(
                 include_archived=input_dto.include_archived,
                 status=input_dto.status,

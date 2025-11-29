@@ -133,14 +133,22 @@ async def list_tasks(
         List of tasks with metadata, optionally including Gantt data
     """
     # Parse date strings to date objects
-    start = datetime.fromisoformat(start_date).date() if start_date else None
-    end = datetime.fromisoformat(end_date).date() if end_date else None
-    gantt_start = (
-        datetime.fromisoformat(gantt_start_date).date() if gantt_start_date else None
-    )
-    gantt_end = (
-        datetime.fromisoformat(gantt_end_date).date() if gantt_end_date else None
-    )
+    try:
+        start = datetime.fromisoformat(start_date).date() if start_date else None
+        end = datetime.fromisoformat(end_date).date() if end_date else None
+        gantt_start = (
+            datetime.fromisoformat(gantt_start_date).date()
+            if gantt_start_date
+            else None
+        )
+        gantt_end = (
+            datetime.fromisoformat(gantt_end_date).date() if gantt_end_date else None
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid date format: {e}",
+        ) from e
 
     # Create Input DTO (filter building is done in Use Case)
     input_dto = ListTasksInput(

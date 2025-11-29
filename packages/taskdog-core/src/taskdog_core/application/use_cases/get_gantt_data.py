@@ -35,7 +35,6 @@ class GetGanttDataUseCase(UseCase[GetGanttDataInput, GanttOutput]):
         """
         self.query_service = query_service
         self.holiday_checker = holiday_checker
-        self.filter_builder = TaskFilterBuilder()
 
     def execute(self, input_dto: GetGanttDataInput) -> GanttOutput:
         """Execute the Gantt data query.
@@ -50,7 +49,7 @@ class GetGanttDataUseCase(UseCase[GetGanttDataInput, GanttOutput]):
             GanttOutput with tasks, daily hours, workload, and holidays
         """
         # Build filter from input DTO
-        filter_obj = self.filter_builder.build(input_dto)
+        filter_obj = TaskFilterBuilder.build(input_dto)
 
         # Execute Gantt data query
         return self.query_service.get_gantt_data(

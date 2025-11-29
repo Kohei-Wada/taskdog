@@ -35,7 +35,6 @@ class ListTasksUseCase(UseCase[ListTasksInput, TaskListOutput]):
         """
         self.repository = repository
         self.query_service = query_service
-        self.filter_builder = TaskFilterBuilder()
 
     def execute(self, input_dto: ListTasksInput) -> TaskListOutput:
         """Execute the list tasks query.
@@ -50,7 +49,7 @@ class ListTasksUseCase(UseCase[ListTasksInput, TaskListOutput]):
             TaskListOutput with filtered tasks and count metadata
         """
         # Build filter from input DTO
-        filter_obj = self.filter_builder.build(input_dto)
+        filter_obj = TaskFilterBuilder.build(input_dto)
 
         # Get total count (before filtering)
         total_count = self.repository.count_tasks()

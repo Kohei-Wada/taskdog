@@ -60,8 +60,14 @@ class TaskFilterBuilder:
 
         # Status filter
         if input_dto.status:
-            status_filter = StatusFilter(status=TaskStatus[input_dto.status.upper()])
-            filter_obj = TaskFilterBuilder._compose(filter_obj, status_filter)
+            try:
+                status_filter = StatusFilter(
+                    status=TaskStatus[input_dto.status.upper()]
+                )
+                filter_obj = TaskFilterBuilder._compose(filter_obj, status_filter)
+            except KeyError:
+                # Invalid status value - skip status filter
+                pass
 
         # Tag filter
         if input_dto.tags:
