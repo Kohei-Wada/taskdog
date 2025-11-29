@@ -1,17 +1,11 @@
 """Analytics endpoints (statistics, optimization, gantt chart)."""
 
-from datetime import date, datetime
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, status
 
-from taskdog_core.application.queries.filters.date_range_filter import DateRangeFilter
-from taskdog_core.application.queries.filters.non_archived_filter import (
-    NonArchivedFilter,
-)
-from taskdog_core.application.queries.filters.status_filter import StatusFilter
-from taskdog_core.application.queries.filters.tag_filter import TagFilter
-from taskdog_core.application.queries.filters.task_filter import TaskFilter
+from taskdog_core.application.dto.query_inputs import GetGanttDataInput
 from taskdog_core.domain.exceptions.task_exceptions import (
     NoSchedulableTasksError,
     TaskNotFoundException,
@@ -188,43 +182,32 @@ async def get_gantt_chart(
     Returns:
         Gantt chart data with tasks, daily hours, workload, and holidays
     """
-    # Build filter using >> operator to compose filters
-    filter_obj: TaskFilter | None = None
-
-    # Archive filter (unless --all is specified)
-    if not all:
-        filter_obj = NonArchivedFilter()
-
-    # Status filter
-    if status_filter:
-        from taskdog_core.domain.entities.task import TaskStatus
-
-        status_f = StatusFilter(status=TaskStatus[status_filter.upper()])
-        filter_obj = filter_obj >> status_f if filter_obj else status_f
-
-    # Tag filter
-    if tags:
-        tag_f = TagFilter(tags=tags, match_all=False)
-        filter_obj = filter_obj >> tag_f if filter_obj else tag_f
-
-    # Date range filter
-    if start_date or end_date:
+    # Parse date strings to date objects
+    try:
         start = datetime.fromisoformat(start_date).date() if start_date else None
         end = datetime.fromisoformat(end_date).date() if end_date else None
-        date_f = DateRangeFilter(start_date=start, end_date=end)
-        filter_obj = filter_obj >> date_f if filter_obj else date_f
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid date format: {e}",
+        ) from e
 
-    # Parse dates
-    start_date_obj = date.fromisoformat(start_date) if start_date else None
-    end_date_obj = date.fromisoformat(end_date) if end_date else None
-
-    # Query gantt data
-    result = controller.get_gantt_data(
-        filter_obj=filter_obj,
+    # Create Input DTO (filter building is done in Use Case)
+    input_dto = GetGanttDataInput(
+        include_archived=all,
+        status=status_filter,
+        tags=tags or [],
+        start_date=start,
+        end_date=end,
         sort_by=sort,
         reverse=reverse,
-        start_date=start_date_obj,
-        end_date=end_date_obj,
+        chart_start_date=start,
+        chart_end_date=end,
+    )
+
+    # Query gantt data using Use Case pattern
+    result = controller.get_gantt_data(
+        input_dto=input_dto,
         holiday_checker=holiday_checker,
     )
 

@@ -5,16 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, status
 
-from taskdog_core.application.queries.filters.date_range_filter import DateRangeFilter
-from taskdog_core.application.queries.filters.non_archived_filter import (
-    NonArchivedFilter,
-)
-from taskdog_core.application.queries.filters.status_filter import StatusFilter
-from taskdog_core.application.queries.filters.tag_filter import TagFilter
-from taskdog_core.application.queries.filters.task_filter import TaskFilter
-from taskdog_core.application.queries.filters.this_week_filter import ThisWeekFilter
-from taskdog_core.application.queries.filters.today_filter import TodayFilter
-from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.application.dto.query_inputs import ListTasksInput, TimeRange
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
@@ -141,43 +132,38 @@ async def list_tasks(
     Returns:
         List of tasks with metadata, optionally including Gantt data
     """
-    # Build filter using >> operator to compose filters
-    filter_obj: TaskFilter | None = None
-
-    # Archive filter (unless --all is specified)
-    if not all:
-        filter_obj = NonArchivedFilter()
-
-    # Status filter
-    if status_filter:
-        status_f = StatusFilter(status=TaskStatus[status_filter.upper()])
-        filter_obj = filter_obj >> status_f if filter_obj else status_f
-
-    # Tag filter
-    if tags:
-        tag_f = TagFilter(tags=tags, match_all=False)
-        filter_obj = filter_obj >> tag_f if filter_obj else tag_f
-
-    # Date range filter
-    if start_date or end_date:
+    # Parse date strings to date objects
+    try:
         start = datetime.fromisoformat(start_date).date() if start_date else None
         end = datetime.fromisoformat(end_date).date() if end_date else None
-        date_f = DateRangeFilter(start_date=start, end_date=end)
-        filter_obj = filter_obj >> date_f if filter_obj else date_f
+        gantt_start = (
+            datetime.fromisoformat(gantt_start_date).date()
+            if gantt_start_date
+            else None
+        )
+        gantt_end = (
+            datetime.fromisoformat(gantt_end_date).date() if gantt_end_date else None
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid date format: {e}",
+        ) from e
 
-    # Parse Gantt date range
-    gantt_start = (
-        datetime.fromisoformat(gantt_start_date).date() if gantt_start_date else None
-    )
-    gantt_end = (
-        datetime.fromisoformat(gantt_end_date).date() if gantt_end_date else None
-    )
-
-    # Query tasks with optional Gantt data
-    result = controller.list_tasks(
-        filter_obj=filter_obj,
+    # Create Input DTO (filter building is done in Use Case)
+    input_dto = ListTasksInput(
+        include_archived=all,
+        status=status_filter,
+        tags=tags or [],
+        start_date=start,
+        end_date=end,
         sort_by=sort,
         reverse=reverse,
+    )
+
+    # Query tasks using Use Case pattern
+    result = controller.list_tasks(
+        input_dto=input_dto,
         include_gantt=include_gantt,
         gantt_start_date=gantt_start,
         gantt_end_date=gantt_end,
@@ -215,28 +201,17 @@ async def list_today_tasks(
     Returns:
         List of tasks relevant for today
     """
-    # Build filter using >> operator to compose filters
-    filter_obj: TaskFilter | None = None
-
-    # Archive filter (unless --all is specified)
-    if not all:
-        filter_obj = NonArchivedFilter()
-
-    # Status filter
-    if status_filter:
-        status_f = StatusFilter(status=TaskStatus[status_filter.upper()])
-        filter_obj = filter_obj >> status_f if filter_obj else status_f
-
-    # Apply TodayFilter
-    today_f = TodayFilter()
-    filter_obj = filter_obj >> today_f if filter_obj else today_f
-
-    # Query tasks
-    result = controller.list_tasks(
-        filter_obj=filter_obj,
+    # Create Input DTO with TODAY time range (filter building is done in Use Case)
+    input_dto = ListTasksInput(
+        include_archived=all,
+        status=status_filter,
+        time_range=TimeRange.TODAY,
         sort_by=sort,
         reverse=reverse,
     )
+
+    # Query tasks using Use Case pattern
+    result = controller.list_tasks(input_dto=input_dto)
     return convert_to_task_list_response(result, notes_repo)
 
 
@@ -269,28 +244,17 @@ async def list_week_tasks(
     Returns:
         List of tasks relevant for this week
     """
-    # Build filter using >> operator to compose filters
-    filter_obj: TaskFilter | None = None
-
-    # Archive filter (unless --all is specified)
-    if not all:
-        filter_obj = NonArchivedFilter()
-
-    # Status filter
-    if status_filter:
-        status_f = StatusFilter(status=TaskStatus[status_filter.upper()])
-        filter_obj = filter_obj >> status_f if filter_obj else status_f
-
-    # Apply ThisWeekFilter
-    week_f = ThisWeekFilter()
-    filter_obj = filter_obj >> week_f if filter_obj else week_f
-
-    # Query tasks
-    result = controller.list_tasks(
-        filter_obj=filter_obj,
+    # Create Input DTO with THIS_WEEK time range (filter building is done in Use Case)
+    input_dto = ListTasksInput(
+        include_archived=all,
+        status=status_filter,
+        time_range=TimeRange.THIS_WEEK,
         sort_by=sort,
         reverse=reverse,
     )
+
+    # Query tasks using Use Case pattern
+    result = controller.list_tasks(input_dto=input_dto)
     return convert_to_task_list_response(result, notes_repo)
 
 
