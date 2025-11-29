@@ -1,6 +1,6 @@
 """Use case for starting a task."""
 
-from taskdog_core.application.dto.start_task_input import StartTaskInput
+from taskdog_core.application.dto.single_task_inputs import StartTaskInput
 from taskdog_core.application.use_cases.status_change_use_case import (
     StatusChangeUseCase,
 )

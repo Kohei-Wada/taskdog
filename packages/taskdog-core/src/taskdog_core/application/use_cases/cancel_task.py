@@ -1,6 +1,6 @@
 """Use case for canceling a task."""
 
-from taskdog_core.application.dto.cancel_task_input import CancelTaskInput
+from taskdog_core.application.dto.single_task_inputs import CancelTaskInput
 from taskdog_core.application.use_cases.status_change_use_case import (
     StatusChangeUseCase,
 )

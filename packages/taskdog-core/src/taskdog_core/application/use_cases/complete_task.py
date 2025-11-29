@@ -1,6 +1,6 @@
 """Use case for completing a task."""
 
-from taskdog_core.application.dto.complete_task_input import CompleteTaskInput
+from taskdog_core.application.dto.single_task_inputs import CompleteTaskInput
 from taskdog_core.application.use_cases.status_change_use_case import (
     StatusChangeUseCase,
 )

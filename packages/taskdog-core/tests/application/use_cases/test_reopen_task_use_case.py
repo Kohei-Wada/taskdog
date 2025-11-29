@@ -5,7 +5,7 @@ from datetime import datetime
 
 from parameterized import parameterized
 
-from taskdog_core.application.dto.reopen_task_input import ReopenTaskInput
+from taskdog_core.application.dto.single_task_inputs import ReopenTaskInput
 from taskdog_core.application.use_cases.reopen_task import ReopenTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (

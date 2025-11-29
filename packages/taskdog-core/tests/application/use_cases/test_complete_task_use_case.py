@@ -3,7 +3,7 @@
 import unittest
 from datetime import datetime
 
-from taskdog_core.application.dto.complete_task_input import CompleteTaskInput
+from taskdog_core.application.dto.single_task_inputs import CompleteTaskInput
 from taskdog_core.application.use_cases.complete_task import CompleteTaskUseCase
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotStartedError

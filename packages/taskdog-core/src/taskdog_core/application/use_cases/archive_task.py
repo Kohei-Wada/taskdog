@@ -1,6 +1,6 @@
 """Use case for archiving a task."""
 
-from taskdog_core.application.dto.archive_task_input import ArchiveTaskInput
+from taskdog_core.application.dto.single_task_inputs import ArchiveTaskInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.repositories.task_repository import TaskRepository

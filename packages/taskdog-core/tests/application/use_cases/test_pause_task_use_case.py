@@ -3,7 +3,7 @@
 import unittest
 from datetime import datetime
 
-from taskdog_core.application.dto.pause_task_input import PauseTaskInput
+from taskdog_core.application.dto.single_task_inputs import PauseTaskInput
 from taskdog_core.application.use_cases.pause_task import PauseTaskUseCase
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from tests.application.use_cases.status_change_test_base import (

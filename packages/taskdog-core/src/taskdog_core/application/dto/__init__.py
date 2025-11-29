@@ -6,6 +6,16 @@ from taskdog_core.application.dto.query_inputs import (
     ListTasksInput,
     TimeRange,
 )
+from taskdog_core.application.dto.single_task_inputs import (
+    ArchiveTaskInput,
+    CancelTaskInput,
+    CompleteTaskInput,
+    PauseTaskInput,
+    RemoveTaskInput,
+    ReopenTaskInput,
+    RestoreTaskInput,
+    StartTaskInput,
+)
 from taskdog_core.application.dto.statistics_output import (
     CalculateStatisticsInput,
     DeadlineComplianceStatistics,
@@ -19,14 +29,22 @@ from taskdog_core.application.dto.statistics_output import (
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 
 __all__ = [
+    "ArchiveTaskInput",
     "CalculateStatisticsInput",
+    "CancelTaskInput",
+    "CompleteTaskInput",
     "DeadlineComplianceStatistics",
     "EstimationAccuracyStatistics",
     "GanttDateRange",
     "GanttOutput",
     "GetGanttDataInput",
     "ListTasksInput",
+    "PauseTaskInput",
     "PriorityDistributionStatistics",
+    "RemoveTaskInput",
+    "ReopenTaskInput",
+    "RestoreTaskInput",
+    "StartTaskInput",
     "StatisticsOutput",
     "TaskDetailOutput",
     "TaskStatistics",

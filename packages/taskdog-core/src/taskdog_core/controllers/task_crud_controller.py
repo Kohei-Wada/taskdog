@@ -10,10 +10,12 @@ This controller handles standard CRUD operations:
 
 from datetime import datetime
 
-from taskdog_core.application.dto.archive_task_input import ArchiveTaskInput
 from taskdog_core.application.dto.create_task_input import CreateTaskInput
-from taskdog_core.application.dto.remove_task_input import RemoveTaskInput
-from taskdog_core.application.dto.restore_task_input import RestoreTaskInput
+from taskdog_core.application.dto.single_task_inputs import (
+    ArchiveTaskInput,
+    RemoveTaskInput,
+    RestoreTaskInput,
+)
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_input import UpdateTaskInput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput

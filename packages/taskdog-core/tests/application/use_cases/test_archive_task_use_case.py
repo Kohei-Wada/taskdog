@@ -2,7 +2,7 @@
 
 import unittest
 
-from taskdog_core.application.dto.archive_task_input import ArchiveTaskInput
+from taskdog_core.application.dto.single_task_inputs import ArchiveTaskInput
 from taskdog_core.application.use_cases.archive_task import ArchiveTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException

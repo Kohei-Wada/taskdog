@@ -2,7 +2,7 @@
 
 import unittest
 
-from taskdog_core.application.dto.restore_task_input import RestoreTaskInput
+from taskdog_core.application.dto.single_task_inputs import RestoreTaskInput
 from taskdog_core.application.use_cases.restore_task import RestoreTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (

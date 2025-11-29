@@ -4,11 +4,13 @@ import unittest
 
 from parameterized import parameterized
 
-from taskdog_core.application.dto.cancel_task_input import CancelTaskInput
-from taskdog_core.application.dto.complete_task_input import CompleteTaskInput
-from taskdog_core.application.dto.pause_task_input import PauseTaskInput
-from taskdog_core.application.dto.reopen_task_input import ReopenTaskInput
-from taskdog_core.application.dto.start_task_input import StartTaskInput
+from taskdog_core.application.dto.single_task_inputs import (
+    CancelTaskInput,
+    CompleteTaskInput,
+    PauseTaskInput,
+    ReopenTaskInput,
+    StartTaskInput,
+)
 
 
 class TestStatusChangeInputs(unittest.TestCase):

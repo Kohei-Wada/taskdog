@@ -1,6 +1,6 @@
 """Use case for reopening a completed or canceled task."""
 
-from taskdog_core.application.dto.reopen_task_input import ReopenTaskInput
+from taskdog_core.application.dto.single_task_inputs import ReopenTaskInput
 from taskdog_core.application.use_cases.status_change_use_case import (
     StatusChangeUseCase,
 )
