@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, status
+from fastapi import APIRouter, Header, HTTPException, Query, status
 
 from taskdog_core.application.dto.query_inputs import GetGanttDataInput
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -14,7 +14,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 from taskdog_server.api.converters import convert_to_gantt_response
 from taskdog_server.api.dependencies import (
     AnalyticsControllerDep,
-    ConnectionManagerDep,
+    BroadcastHelperDep,
     HolidayCheckerDep,
     QueryControllerDep,
 )
@@ -34,7 +34,6 @@ from taskdog_server.api.models.responses import (
     TimeStatistics,
     TrendData,
 )
-from taskdog_server.websocket.broadcaster import broadcast_schedule_optimized
 
 router = APIRouter()
 
@@ -247,8 +246,7 @@ def run_optimization(
 async def optimize_schedule(
     request: OptimizeScheduleRequest,
     controller: AnalyticsControllerDep,
-    manager: ConnectionManagerDep,
-    background_tasks: BackgroundTasks,
+    broadcast: BroadcastHelperDep,
     run_async: bool = Query(False, description="Run optimization in background"),
     x_client_id: Annotated[str | None, Header()] = None,
 ) -> OptimizationResponse:
@@ -257,7 +255,7 @@ async def optimize_schedule(
     Args:
         request: Optimization parameters
         controller: Analytics controller dependency
-        background_tasks: FastAPI background tasks
+        broadcast: Broadcast helper dependency
         run_async: If True, run in background and return immediately
         x_client_id: Optional client ID from WebSocket connection
 
@@ -272,8 +270,8 @@ async def optimize_schedule(
         start_date = request.start_date if request.start_date else datetime.now()
 
         if run_async:
-            # Add to background tasks
-            background_tasks.add_task(
+            # Add to background tasks (use internal background_tasks from broadcast helper)
+            broadcast._background_tasks.add_task(
                 run_optimization,
                 controller,
                 request.algorithm,
@@ -306,9 +304,7 @@ async def optimize_schedule(
         )
 
         # Broadcast WebSocket event in background (exclude the requester)
-        background_tasks.add_task(
-            broadcast_schedule_optimized,
-            manager,
+        broadcast.schedule_optimized(
             len(result.successful_tasks),
             len(result.failed_tasks),
             request.algorithm,

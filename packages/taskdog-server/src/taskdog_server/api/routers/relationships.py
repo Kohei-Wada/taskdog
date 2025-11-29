@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, status
+from fastapi import APIRouter, Header, HTTPException, status
 
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
@@ -11,7 +11,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 )
 from taskdog_server.api.converters import convert_to_task_operation_response
 from taskdog_server.api.dependencies import (
-    ConnectionManagerDep,
+    BroadcastHelperDep,
     RelationshipControllerDep,
 )
 from taskdog_server.api.models.requests import (
@@ -20,7 +20,6 @@ from taskdog_server.api.models.requests import (
     SetTaskTagsRequest,
 )
 from taskdog_server.api.models.responses import TaskOperationResponse
-from taskdog_server.websocket.broadcaster import broadcast_task_updated
 
 router = APIRouter()
 
@@ -30,8 +29,7 @@ async def add_dependency(
     task_id: int,
     request: AddDependencyRequest,
     controller: RelationshipControllerDep,
-    manager: ConnectionManagerDep,
-    background_tasks: BackgroundTasks,
+    broadcast: BroadcastHelperDep,
     x_client_id: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Add a dependency to a task.
@@ -40,7 +38,7 @@ async def add_dependency(
         task_id: Task ID that will depend on another task
         request: Dependency data (ID of task to depend on)
         controller: Relationship controller dependency
-        background_tasks: Background tasks for WebSocket notifications
+        broadcast: Broadcast helper dependency
         x_client_id: Optional client ID from WebSocket connection
 
     Returns:
@@ -53,9 +51,7 @@ async def add_dependency(
         result = controller.add_dependency(task_id, request.depends_on_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        background_tasks.add_task(
-            broadcast_task_updated, manager, result, ["depends_on"], x_client_id
-        )
+        broadcast.task_updated(result, ["depends_on"], x_client_id)
 
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
@@ -73,8 +69,7 @@ async def remove_dependency(
     task_id: int,
     depends_on_id: int,
     controller: RelationshipControllerDep,
-    manager: ConnectionManagerDep,
-    background_tasks: BackgroundTasks,
+    broadcast: BroadcastHelperDep,
     x_client_id: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Remove a dependency from a task.
@@ -83,7 +78,7 @@ async def remove_dependency(
         task_id: Task ID
         depends_on_id: ID of dependency to remove
         controller: Relationship controller dependency
-        background_tasks: Background tasks for WebSocket notifications
+        broadcast: Broadcast helper dependency
         x_client_id: Optional client ID from WebSocket connection
 
     Returns:
@@ -96,9 +91,7 @@ async def remove_dependency(
         result = controller.remove_dependency(task_id, depends_on_id)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        background_tasks.add_task(
-            broadcast_task_updated, manager, result, ["depends_on"], x_client_id
-        )
+        broadcast.task_updated(result, ["depends_on"], x_client_id)
 
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
@@ -114,8 +107,7 @@ async def set_task_tags(
     task_id: int,
     request: SetTaskTagsRequest,
     controller: RelationshipControllerDep,
-    manager: ConnectionManagerDep,
-    background_tasks: BackgroundTasks,
+    broadcast: BroadcastHelperDep,
     x_client_id: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Set task tags (replaces existing tags).
@@ -124,7 +116,7 @@ async def set_task_tags(
         task_id: Task ID
         request: New tags list
         controller: Relationship controller dependency
-        background_tasks: Background tasks for WebSocket notifications
+        broadcast: Broadcast helper dependency
         x_client_id: Optional client ID from WebSocket connection
 
     Returns:
@@ -137,9 +129,7 @@ async def set_task_tags(
         result = controller.set_task_tags(task_id, request.tags)
 
         # Broadcast WebSocket event in background (exclude the requester)
-        background_tasks.add_task(
-            broadcast_task_updated, manager, result, ["tags"], x_client_id
-        )
+        broadcast.task_updated(result, ["tags"], x_client_id)
 
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:
@@ -155,8 +145,7 @@ async def log_hours(
     task_id: int,
     request: LogHoursRequest,
     controller: RelationshipControllerDep,
-    manager: ConnectionManagerDep,
-    background_tasks: BackgroundTasks,
+    broadcast: BroadcastHelperDep,
     x_client_id: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Log actual hours worked on a task for a specific date.
@@ -165,7 +154,7 @@ async def log_hours(
         task_id: Task ID
         request: Hours and date data
         controller: Relationship controller dependency
-        background_tasks: Background tasks for WebSocket notifications
+        broadcast: Broadcast helper dependency
         x_client_id: Optional client ID from WebSocket connection
 
     Returns:
@@ -179,9 +168,7 @@ async def log_hours(
         result = controller.log_hours(task_id, request.hours, log_date.isoformat())
 
         # Broadcast WebSocket event in background (exclude the requester)
-        background_tasks.add_task(
-            broadcast_task_updated, manager, result, ["actual_daily_hours"], x_client_id
-        )
+        broadcast.task_updated(result, ["actual_daily_hours"], x_client_id)
 
         return convert_to_task_operation_response(result)
     except TaskNotFoundException as e:

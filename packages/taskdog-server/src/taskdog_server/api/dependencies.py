@@ -3,7 +3,7 @@
 from contextlib import suppress
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import BackgroundTasks, Depends
 
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
@@ -23,6 +23,7 @@ from taskdog_core.infrastructure.persistence.repository_factory import Repositor
 from taskdog_core.shared.config_manager import Config, ConfigManager
 from taskdog_server.api.context import ApiContext
 from taskdog_server.infrastructure.logging.standard_logger import StandardLogger
+from taskdog_server.websocket.broadcast_helper import BroadcastHelper
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
 # Global context instance
@@ -206,3 +207,22 @@ NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
 ConfigDep = Annotated[Config, Depends(get_config)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
+
+
+def get_broadcast_helper(
+    manager: ConnectionManagerDep,
+    background_tasks: BackgroundTasks,
+) -> BroadcastHelper:
+    """Get a BroadcastHelper instance for scheduling WebSocket broadcasts.
+
+    Args:
+        manager: ConnectionManager instance
+        background_tasks: FastAPI background tasks
+
+    Returns:
+        BroadcastHelper: Helper for scheduling broadcasts
+    """
+    return BroadcastHelper(manager, background_tasks)
+
+
+BroadcastHelperDep = Annotated[BroadcastHelper, Depends(get_broadcast_helper)]
