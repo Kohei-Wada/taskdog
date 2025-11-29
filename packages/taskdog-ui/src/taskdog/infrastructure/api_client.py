@@ -278,6 +278,26 @@ class TaskdogApiClient:
             gantt_end_date,
         )
 
+    def list_today_tasks(
+        self,
+        all: bool = False,
+        status: str | None = None,
+        sort_by: str = "deadline",
+        reverse: bool = False,
+    ) -> TaskListOutput:
+        """List tasks relevant for today."""
+        return self._queries.list_today_tasks(all, status, sort_by, reverse)
+
+    def list_week_tasks(
+        self,
+        all: bool = False,
+        status: str | None = None,
+        sort_by: str = "deadline",
+        reverse: bool = False,
+    ) -> TaskListOutput:
+        """List tasks relevant for this week."""
+        return self._queries.list_week_tasks(all, status, sort_by, reverse)
+
     def get_task_by_id(self, task_id: int) -> TaskByIdOutput:
         """Get task by ID."""
         return self._queries.get_task_by_id(task_id)

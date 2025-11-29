@@ -98,6 +98,84 @@ class QueryClient:
         data = response.json()
         return convert_to_task_list_output(data, self._has_notes_cache)
 
+    def list_today_tasks(
+        self,
+        all: bool = False,
+        status: str | None = None,
+        sort_by: str = "deadline",
+        reverse: bool = False,
+    ) -> TaskListOutput:
+        """List tasks relevant for today.
+
+        Includes tasks that:
+        - Have deadline today
+        - Have planned period including today
+        - Are IN_PROGRESS (regardless of dates)
+
+        Args:
+            all: Include archived tasks (default: False)
+            status: Filter by status
+            sort_by: Sort field (default: deadline)
+            reverse: Reverse sort order
+
+        Returns:
+            TaskListOutput with today's tasks
+        """
+        params: dict[str, Any] = {
+            "all": str(all).lower(),
+            "sort": sort_by,
+            "reverse": str(reverse).lower(),
+        }
+
+        if status:
+            params["status"] = status.lower()
+
+        response = self._base._safe_request("get", "/api/v1/tasks/today", params=params)
+        if not response.is_success:
+            self._base._handle_error(response)
+
+        data = response.json()
+        return convert_to_task_list_output(data, self._has_notes_cache)
+
+    def list_week_tasks(
+        self,
+        all: bool = False,
+        status: str | None = None,
+        sort_by: str = "deadline",
+        reverse: bool = False,
+    ) -> TaskListOutput:
+        """List tasks relevant for this week.
+
+        Includes tasks that:
+        - Have deadline within this week (Monday to Sunday)
+        - Have planned period overlapping this week
+        - Are IN_PROGRESS (regardless of dates)
+
+        Args:
+            all: Include archived tasks (default: False)
+            status: Filter by status
+            sort_by: Sort field (default: deadline)
+            reverse: Reverse sort order
+
+        Returns:
+            TaskListOutput with this week's tasks
+        """
+        params: dict[str, Any] = {
+            "all": str(all).lower(),
+            "sort": sort_by,
+            "reverse": str(reverse).lower(),
+        }
+
+        if status:
+            params["status"] = status.lower()
+
+        response = self._base._safe_request("get", "/api/v1/tasks/week", params=params)
+        if not response.is_success:
+            self._base._handle_error(response)
+
+        data = response.json()
+        return convert_to_task_list_output(data, self._has_notes_cache)
+
     def get_task_by_id(self, task_id: int) -> TaskByIdOutput:
         """Get task by ID.
 

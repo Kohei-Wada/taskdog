@@ -1,7 +1,5 @@
 """Today command - Display tasks for today."""
 
-from datetime import date
-
 import click
 
 from taskdog.cli.commands.common_options import filter_options, sort_options
@@ -46,15 +44,10 @@ def today_command(
     """
     ctx_obj: CliContext = ctx.obj
 
-    # Get today's date for filtering
-    today = date.today()
-
-    # Get filtered and sorted tasks via API client
-    result = ctx_obj.api_client.list_tasks(
+    # Get filtered and sorted tasks via dedicated /today endpoint
+    result = ctx_obj.api_client.list_today_tasks(
         all=all,
         status=status,
-        start_date=today,
-        end_date=today,
         sort_by=sort,
         reverse=reverse,
     )

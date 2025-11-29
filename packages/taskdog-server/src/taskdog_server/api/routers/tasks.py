@@ -1,5 +1,6 @@
 """CRUD endpoints for task management."""
 
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, status
@@ -11,6 +12,9 @@ from taskdog_core.application.queries.filters.non_archived_filter import (
 from taskdog_core.application.queries.filters.status_filter import StatusFilter
 from taskdog_core.application.queries.filters.tag_filter import TagFilter
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
+from taskdog_core.application.queries.filters.this_week_filter import ThisWeekFilter
+from taskdog_core.application.queries.filters.today_filter import TodayFilter
+from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
@@ -137,8 +141,6 @@ async def list_tasks(
     Returns:
         List of tasks with metadata, optionally including Gantt data
     """
-    from datetime import datetime
-
     # Build filter using >> operator to compose filters
     filter_obj: TaskFilter | None = None
 
@@ -148,8 +150,6 @@ async def list_tasks(
 
     # Status filter
     if status_filter:
-        from taskdog_core.domain.entities.task import TaskStatus
-
         status_f = StatusFilter(status=TaskStatus[status_filter.upper()])
         filter_obj = filter_obj >> status_f if filter_obj else status_f
 
@@ -182,6 +182,114 @@ async def list_tasks(
         gantt_start_date=gantt_start,
         gantt_end_date=gantt_end,
         holiday_checker=holiday_checker if include_gantt else None,
+    )
+    return convert_to_task_list_response(result, notes_repo)
+
+
+@router.get("/today", response_model=TaskListResponse)
+async def list_today_tasks(
+    controller: QueryControllerDep,
+    notes_repo: NotesRepositoryDep,
+    all: Annotated[bool, Query(description="Include archived tasks")] = False,
+    status_filter: Annotated[
+        str | None, Query(alias="status", description="Filter by status")
+    ] = None,
+    sort: Annotated[str, Query(description="Sort field")] = "deadline",
+    reverse: Annotated[bool, Query(description="Reverse sort order")] = False,
+) -> TaskListResponse:
+    """List tasks relevant for today.
+
+    Includes tasks that meet any of these criteria:
+    - Deadline is today
+    - Planned period includes today (planned_start <= today <= planned_end)
+    - Status is IN_PROGRESS (regardless of dates)
+
+    Args:
+        controller: Query controller dependency
+        notes_repo: Notes repository dependency
+        all: Include archived tasks
+        status_filter: Filter by task status
+        sort: Sort field name
+        reverse: Reverse sort order
+
+    Returns:
+        List of tasks relevant for today
+    """
+    # Build filter using >> operator to compose filters
+    filter_obj: TaskFilter | None = None
+
+    # Archive filter (unless --all is specified)
+    if not all:
+        filter_obj = NonArchivedFilter()
+
+    # Status filter
+    if status_filter:
+        status_f = StatusFilter(status=TaskStatus[status_filter.upper()])
+        filter_obj = filter_obj >> status_f if filter_obj else status_f
+
+    # Apply TodayFilter
+    today_f = TodayFilter()
+    filter_obj = filter_obj >> today_f if filter_obj else today_f
+
+    # Query tasks
+    result = controller.list_tasks(
+        filter_obj=filter_obj,
+        sort_by=sort,
+        reverse=reverse,
+    )
+    return convert_to_task_list_response(result, notes_repo)
+
+
+@router.get("/week", response_model=TaskListResponse)
+async def list_week_tasks(
+    controller: QueryControllerDep,
+    notes_repo: NotesRepositoryDep,
+    all: Annotated[bool, Query(description="Include archived tasks")] = False,
+    status_filter: Annotated[
+        str | None, Query(alias="status", description="Filter by status")
+    ] = None,
+    sort: Annotated[str, Query(description="Sort field")] = "deadline",
+    reverse: Annotated[bool, Query(description="Reverse sort order")] = False,
+) -> TaskListResponse:
+    """List tasks relevant for this week.
+
+    Includes tasks that meet any of these criteria:
+    - Deadline is within this week (Monday to Sunday)
+    - Planned period overlaps with this week
+    - Status is IN_PROGRESS (regardless of dates)
+
+    Args:
+        controller: Query controller dependency
+        notes_repo: Notes repository dependency
+        all: Include archived tasks
+        status_filter: Filter by task status
+        sort: Sort field name
+        reverse: Reverse sort order
+
+    Returns:
+        List of tasks relevant for this week
+    """
+    # Build filter using >> operator to compose filters
+    filter_obj: TaskFilter | None = None
+
+    # Archive filter (unless --all is specified)
+    if not all:
+        filter_obj = NonArchivedFilter()
+
+    # Status filter
+    if status_filter:
+        status_f = StatusFilter(status=TaskStatus[status_filter.upper()])
+        filter_obj = filter_obj >> status_f if filter_obj else status_f
+
+    # Apply ThisWeekFilter
+    week_f = ThisWeekFilter()
+    filter_obj = filter_obj >> week_f if filter_obj else week_f
+
+    # Query tasks
+    result = controller.list_tasks(
+        filter_obj=filter_obj,
+        sort_by=sort,
+        reverse=reverse,
     )
     return convert_to_task_list_response(result, notes_repo)
 
