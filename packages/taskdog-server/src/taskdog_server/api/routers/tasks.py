@@ -1,5 +1,6 @@
 """CRUD endpoints for task management."""
 
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Query, status
@@ -13,6 +14,7 @@ from taskdog_core.application.queries.filters.tag_filter import TagFilter
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.application.queries.filters.this_week_filter import ThisWeekFilter
 from taskdog_core.application.queries.filters.today_filter import TodayFilter
+from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
@@ -139,8 +141,6 @@ async def list_tasks(
     Returns:
         List of tasks with metadata, optionally including Gantt data
     """
-    from datetime import datetime
-
     # Build filter using >> operator to compose filters
     filter_obj: TaskFilter | None = None
 
@@ -150,8 +150,6 @@ async def list_tasks(
 
     # Status filter
     if status_filter:
-        from taskdog_core.domain.entities.task import TaskStatus
-
         status_f = StatusFilter(status=TaskStatus[status_filter.upper()])
         filter_obj = filter_obj >> status_f if filter_obj else status_f
 
@@ -217,8 +215,6 @@ async def list_today_tasks(
     Returns:
         List of tasks relevant for today
     """
-    from taskdog_core.domain.entities.task import TaskStatus
-
     # Build filter using >> operator to compose filters
     filter_obj: TaskFilter | None = None
 
@@ -273,8 +269,6 @@ async def list_week_tasks(
     Returns:
         List of tasks relevant for this week
     """
-    from taskdog_core.domain.entities.task import TaskStatus
-
     # Build filter using >> operator to compose filters
     filter_obj: TaskFilter | None = None
 
