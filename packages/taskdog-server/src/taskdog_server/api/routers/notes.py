@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, status
+from fastapi import APIRouter, Header, status
 
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import (
@@ -10,6 +10,7 @@ from taskdog_server.api.dependencies import (
     NotesRepositoryDep,
     RepositoryDep,
 )
+from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import UpdateNotesRequest
 from taskdog_server.api.models.responses import NotesResponse
 
@@ -17,6 +18,7 @@ router = APIRouter()
 
 
 @router.get("/{task_id}/notes", response_model=NotesResponse)
+@handle_task_errors
 async def get_task_notes(
     task_id: int, repository: RepositoryDep, notes_repo: NotesRepositoryDep
 ) -> NotesResponse:
@@ -33,22 +35,20 @@ async def get_task_notes(
     Raises:
         HTTPException: 404 if task not found
     """
-    try:
-        # Verify task exists
-        task = repository.get_by_id(task_id)
-        if task is None:
-            raise TaskNotFoundException(task_id)
+    # Verify task exists
+    task = repository.get_by_id(task_id)
+    if task is None:
+        raise TaskNotFoundException(task_id)
 
-        # Get notes
-        has_notes = notes_repo.has_notes(task_id)
-        content = notes_repo.read_notes(task_id) or ""
+    # Get notes
+    has_notes = notes_repo.has_notes(task_id)
+    content = notes_repo.read_notes(task_id) or ""
 
-        return NotesResponse(task_id=task_id, content=content, has_notes=has_notes)
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    return NotesResponse(task_id=task_id, content=content, has_notes=has_notes)
 
 
 @router.put("/{task_id}/notes", response_model=NotesResponse)
+@handle_task_errors
 async def update_task_notes(
     task_id: int,
     request: UpdateNotesRequest,
@@ -73,27 +73,23 @@ async def update_task_notes(
     Raises:
         HTTPException: 404 if task not found
     """
-    try:
-        # Verify task exists
-        task = repository.get_by_id(task_id)
-        if task is None:
-            raise TaskNotFoundException(task_id)
+    # Verify task exists
+    task = repository.get_by_id(task_id)
+    if task is None:
+        raise TaskNotFoundException(task_id)
 
-        # Update notes
-        notes_repo.write_notes(task_id, request.content)
-        has_notes = notes_repo.has_notes(task_id)
+    # Update notes
+    notes_repo.write_notes(task_id, request.content)
+    has_notes = notes_repo.has_notes(task_id)
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_notes_updated(task_id, task.name, x_client_id)
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_notes_updated(task_id, task.name, x_client_id)
 
-        return NotesResponse(
-            task_id=task_id, content=request.content, has_notes=has_notes
-        )
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    return NotesResponse(task_id=task_id, content=request.content, has_notes=has_notes)
 
 
 @router.delete("/{task_id}/notes", status_code=status.HTTP_204_NO_CONTENT)
+@handle_task_errors
 async def delete_task_notes(
     task_id: int,
     repository: RepositoryDep,
@@ -113,16 +109,13 @@ async def delete_task_notes(
     Raises:
         HTTPException: 404 if task not found
     """
-    try:
-        # Verify task exists
-        task = repository.get_by_id(task_id)
-        if task is None:
-            raise TaskNotFoundException(task_id)
+    # Verify task exists
+    task = repository.get_by_id(task_id)
+    if task is None:
+        raise TaskNotFoundException(task_id)
 
-        # Delete notes by writing empty content
-        notes_repo.write_notes(task_id, "")
+    # Delete notes by writing empty content
+    notes_repo.write_notes(task_id, "")
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_notes_updated(task_id, task.name, x_client_id)
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_notes_updated(task_id, task.name, x_client_id)

@@ -6,11 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Header, HTTPException, Query, status
 
 from taskdog_core.application.dto.query_inputs import ListTasksInput, TimeRange
-from taskdog_core.domain.exceptions.task_exceptions import (
-    TaskAlreadyFinishedError,
-    TaskNotFoundException,
-    TaskValidationError,
-)
+from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.converters import (
     convert_to_task_detail_response,
     convert_to_task_list_response,
@@ -24,6 +20,7 @@ from taskdog_server.api.dependencies import (
     NotesRepositoryDep,
     QueryControllerDep,
 )
+from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import CreateTaskRequest, UpdateTaskRequest
 from taskdog_server.api.models.responses import (
     TaskDetailResponse,
@@ -38,6 +35,7 @@ router = APIRouter()
 @router.post(
     "", response_model=TaskOperationResponse, status_code=status.HTTP_201_CREATED
 )
+@handle_task_errors
 async def create_task(
     request: CreateTaskRequest,
     controller: CrudControllerDep,
@@ -58,26 +56,21 @@ async def create_task(
     Raises:
         HTTPException: 400 if validation fails
     """
-    try:
-        result = controller.create_task(
-            name=request.name,
-            priority=request.priority,
-            planned_start=request.planned_start,
-            planned_end=request.planned_end,
-            deadline=request.deadline,
-            estimated_duration=request.estimated_duration,
-            is_fixed=request.is_fixed,
-            tags=request.tags,
-        )
+    result = controller.create_task(
+        name=request.name,
+        priority=request.priority,
+        planned_start=request.planned_start,
+        planned_end=request.planned_end,
+        deadline=request.deadline,
+        estimated_duration=request.estimated_duration,
+        is_fixed=request.is_fixed,
+        tags=request.tags,
+    )
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_created(result, x_client_id)
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_created(result, x_client_id)
 
-        return convert_to_task_operation_response(result)
-    except TaskValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    return convert_to_task_operation_response(result)
 
 
 @router.get("", response_model=TaskListResponse)
@@ -252,6 +245,7 @@ async def list_week_tasks(
 
 
 @router.get("/{task_id}", response_model=TaskDetailResponse)
+@handle_task_errors
 async def get_task(task_id: int, controller: QueryControllerDep) -> TaskDetailResponse:
     """Get task details by ID.
 
@@ -265,14 +259,12 @@ async def get_task(task_id: int, controller: QueryControllerDep) -> TaskDetailRe
     Raises:
         HTTPException: 404 if task not found
     """
-    try:
-        result = controller.get_task_detail(task_id)
-        return convert_to_task_detail_response(result)
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    result = controller.get_task_detail(task_id)
+    return convert_to_task_detail_response(result)
 
 
 @router.patch("/{task_id}", response_model=UpdateTaskResponse)
+@handle_task_errors
 async def update_task(
     task_id: int,
     request: UpdateTaskRequest,
@@ -295,33 +287,27 @@ async def update_task(
     Raises:
         HTTPException: 404 if task not found, 400 if validation fails
     """
-    try:
-        result = controller.update_task(
-            task_id=task_id,
-            name=request.name,
-            priority=request.priority,
-            status=request.status,
-            planned_start=request.planned_start,
-            planned_end=request.planned_end,
-            deadline=request.deadline,
-            estimated_duration=request.estimated_duration,
-            is_fixed=request.is_fixed,
-            tags=request.tags,
-        )
+    result = controller.update_task(
+        task_id=task_id,
+        name=request.name,
+        priority=request.priority,
+        status=request.status,
+        planned_start=request.planned_start,
+        planned_end=request.planned_end,
+        deadline=request.deadline,
+        estimated_duration=request.estimated_duration,
+        is_fixed=request.is_fixed,
+        tags=request.tags,
+    )
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_updated(result.task, result.updated_fields, x_client_id)
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_updated(result.task, result.updated_fields, x_client_id)
 
-        return convert_to_update_task_response(result)
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except (TaskValidationError, TaskAlreadyFinishedError) as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    return convert_to_update_task_response(result)
 
 
 @router.post("/{task_id}/archive", response_model=TaskOperationResponse)
+@handle_task_errors
 async def archive_task(
     task_id: int,
     controller: CrudControllerDep,
@@ -342,18 +328,16 @@ async def archive_task(
     Raises:
         HTTPException: 404 if task not found
     """
-    try:
-        result = controller.archive_task(task_id)
+    result = controller.archive_task(task_id)
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_updated(result, ["is_archived"], x_client_id)
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_updated(result, ["is_archived"], x_client_id)
 
-        return convert_to_task_operation_response(result)
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    return convert_to_task_operation_response(result)
 
 
 @router.post("/{task_id}/restore", response_model=TaskOperationResponse)
+@handle_task_errors
 async def restore_task(
     task_id: int,
     controller: CrudControllerDep,
@@ -374,22 +358,16 @@ async def restore_task(
     Raises:
         HTTPException: 404 if task not found, 400 if not archived
     """
-    try:
-        result = controller.restore_task(task_id)
+    result = controller.restore_task(task_id)
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_updated(result, ["is_archived"], x_client_id)
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_updated(result, ["is_archived"], x_client_id)
 
-        return convert_to_task_operation_response(result)
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except TaskValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    return convert_to_task_operation_response(result)
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@handle_task_errors
 async def delete_task(
     task_id: int,
     controller: CrudControllerDep,
@@ -409,18 +387,14 @@ async def delete_task(
     Raises:
         HTTPException: 404 if task not found
     """
-    try:
-        # Get task name before deletion for notification
-        task_output = query_controller.get_task_by_id(task_id)
-        if task_output is None or task_output.task is None:
-            raise TaskNotFoundException(f"Task {task_id} not found")
-        task_name = task_output.task.name
+    # Get task name before deletion for notification
+    task_output = query_controller.get_task_by_id(task_id)
+    if task_output is None or task_output.task is None:
+        raise TaskNotFoundException(f"Task {task_id} not found")
+    task_name = task_output.task.name
 
-        # Delete task
-        controller.remove_task(task_id)
+    # Delete task
+    controller.remove_task(task_id)
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_deleted(task_id, task_name, x_client_id)
-
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_deleted(task_id, task_name, x_client_id)
