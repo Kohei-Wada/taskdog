@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from taskdog_core.shared.config_manager import ConfigManager
-from taskdog_server.api.dependencies import initialize_api_context, set_api_context
+from taskdog_server.api.dependencies import initialize_api_context
 from taskdog_server.api.middleware import LoggingMiddleware
 from taskdog_server.api.routers import (
     analytics_router,
@@ -18,6 +18,7 @@ from taskdog_server.api.routers import (
     websocket_router,
 )
 from taskdog_server.infrastructure.logging.config import configure_logging
+from taskdog_server.websocket.connection_manager import ConnectionManager
 
 
 def create_app() -> FastAPI:
@@ -33,14 +34,18 @@ def create_app() -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         """FastAPI lifespan context manager.
 
-        Initializes logging and API context on startup and cleans up on shutdown.
+        Initializes logging, API context, and connection manager on startup.
+        Stores all state in app.state for proper scoping.
         """
         # Startup: Configure logging first
         configure_logging()
 
-        # Initialize API context with pre-loaded config
+        # Initialize API context and store in app.state
         api_context = initialize_api_context(config)
-        set_api_context(api_context)
+        app.state.api_context = api_context
+
+        # Initialize ConnectionManager in app.state (for WebSocket)
+        app.state.connection_manager = ConnectionManager()
 
         yield
 

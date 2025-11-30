@@ -3,7 +3,7 @@
 from contextlib import suppress
 from typing import Annotated
 
-from fastapi import BackgroundTasks, Depends
+from fastapi import BackgroundTasks, Depends, FastAPI, Request
 
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
@@ -25,12 +25,6 @@ from taskdog_server.api.context import ApiContext
 from taskdog_server.infrastructure.logging.standard_logger import StandardLogger
 from taskdog_server.websocket.broadcast_helper import BroadcastHelper
 from taskdog_server.websocket.connection_manager import ConnectionManager
-
-# Global context instance
-_api_context: ApiContext | None = None
-
-# Global connection manager instance
-_connection_manager: ConnectionManager | None = None
 
 
 def initialize_api_context(config: Config | None = None) -> ApiContext:
@@ -97,32 +91,50 @@ def initialize_api_context(config: Config | None = None) -> ApiContext:
     )
 
 
-def get_api_context() -> ApiContext:
-    """Get the API context instance.
+def get_api_context(request: Request) -> ApiContext:
+    """Get the API context from app.state.
 
     This is the main dependency function used by FastAPI endpoints.
 
+    Args:
+        request: FastAPI request object (injected automatically)
+
     Returns:
-        ApiContext: The global API context instance
+        ApiContext: The API context instance from app.state
 
     Raises:
         RuntimeError: If context has not been initialized
     """
-    if _api_context is None:
+    context: ApiContext | None = getattr(request.app.state, "api_context", None)
+    if context is None:
         raise RuntimeError(
-            "API context not initialized. Call initialize_api_context() first."
+            "API context not initialized. Ensure lifespan sets app.state.api_context."
         )
-    return _api_context
+    return context
 
 
-def set_api_context(context: ApiContext) -> None:
-    """Set the global API context instance.
+def set_api_context(app: FastAPI, context: ApiContext) -> None:
+    """Set the API context on app.state.
+
+    This is primarily used for testing to inject mock contexts.
 
     Args:
-        context: ApiContext instance to set globally
+        app: FastAPI application instance
+        context: ApiContext instance to store in app.state
     """
-    global _api_context
-    _api_context = context
+    app.state.api_context = context
+
+
+def reset_app_state(app: FastAPI) -> None:
+    """Reset app.state for testing.
+
+    Args:
+        app: FastAPI application instance
+    """
+    if hasattr(app.state, "api_context"):
+        delattr(app.state, "api_context")
+    if hasattr(app.state, "connection_manager"):
+        delattr(app.state, "connection_manager")
 
 
 # Dependency type aliases for cleaner endpoint signatures
@@ -175,23 +187,26 @@ def get_holiday_checker(context: ApiContextDep) -> IHolidayChecker | None:
     return context.holiday_checker
 
 
-def get_connection_manager() -> ConnectionManager:
-    """Get the global ConnectionManager instance for WebSocket connections.
+def get_connection_manager(request: Request) -> ConnectionManager:
+    """Get the ConnectionManager instance from app.state.
 
-    This function provides a singleton ConnectionManager instance that manages
+    This function provides access to the ConnectionManager instance that manages
     all active WebSocket connections and handles broadcasting events.
 
+    Args:
+        request: FastAPI request object (injected automatically)
+
     Returns:
-        ConnectionManager: The global connection manager instance
+        ConnectionManager: The connection manager instance from app.state
 
     Note:
-        The instance is lazily initialized on first access and reused
-        for all subsequent calls.
+        The instance is lazily initialized on first access if not already
+        set in app.state (e.g., by lifespan).
     """
-    global _connection_manager
-    if _connection_manager is None:
-        _connection_manager = ConnectionManager()
-    return _connection_manager
+    if not hasattr(request.app.state, "connection_manager"):
+        request.app.state.connection_manager = ConnectionManager()
+    manager: ConnectionManager = request.app.state.connection_manager
+    return manager
 
 
 # Typed dependencies for endpoint signatures

@@ -14,7 +14,7 @@ from taskdog_core.controllers.task_relationship_controller import (
 )
 from taskdog_core.domain.services.logger import Logger
 from taskdog_server.api.context import ApiContext
-from taskdog_server.api.dependencies import set_api_context
+from taskdog_server.websocket.connection_manager import ConnectionManager
 
 
 class TestApp(unittest.TestCase):
@@ -59,7 +59,7 @@ class TestApp(unittest.TestCase):
             cls.mock_logger,
         )
 
-        # Create and set API context
+        # Create API context
         api_context = ApiContext(
             repository=cls.mock_repository,
             config=cls.mock_config,
@@ -71,12 +71,16 @@ class TestApp(unittest.TestCase):
             crud_controller=crud_controller,
             holiday_checker=None,
         )
-        set_api_context(api_context)
 
-        # Now create app - only once for all tests
+        # Create app using create_app (lifespan will set its own context)
         from taskdog_server.api.app import create_app
 
         cls.app = create_app()
+
+        # Override context on app.state for testing with our mock objects
+        cls.app.state.api_context = api_context
+        cls.app.state.connection_manager = ConnectionManager()
+
         cls.client = TestClient(cls.app)
 
     def test_app_creation(self):
@@ -159,34 +163,21 @@ class TestAppWithoutContext(unittest.TestCase):
 
     def test_endpoints_fail_without_context(self):
         """Test that endpoints fail gracefully when context is not initialized."""
-        # Reset global context
-        from taskdog_server.api import dependencies
+        from fastapi import FastAPI
 
-        # Save the current context
-        saved_context = dependencies._api_context
+        from taskdog_server.api.routers import tasks_router
 
-        try:
-            # Clear the context
-            dependencies._api_context = None
+        # Create app WITHOUT setting app.state.api_context
+        app = FastAPI()
+        app.include_router(tasks_router, prefix="/api/v1/tasks")
 
-            # Create app without setting context
-            from fastapi import FastAPI
+        client = TestClient(app, raise_server_exceptions=False)
 
-            from taskdog_server.api.routers import tasks_router
+        # Act - try to call an endpoint that requires context
+        response = client.get("/api/v1/tasks")
 
-            app = FastAPI()
-            app.include_router(tasks_router, prefix="/api/v1/tasks")
-
-            client = TestClient(app, raise_server_exceptions=False)
-
-            # Act - try to call an endpoint that requires context
-            response = client.get("/api/v1/tasks")
-
-            # Assert - should get 500 error due to uninitialized context
-            self.assertEqual(response.status_code, 500)
-        finally:
-            # Restore the original context
-            dependencies._api_context = saved_context
+        # Assert - should get 500 error due to uninitialized context
+        self.assertEqual(response.status_code, 500)
 
 
 if __name__ == "__main__":

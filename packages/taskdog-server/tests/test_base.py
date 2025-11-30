@@ -26,7 +26,7 @@ from taskdog_core.infrastructure.persistence.file_notes_repository import (
     FileNotesRepository,
 )
 from taskdog_server.api.context import ApiContext
-from taskdog_server.api.dependencies import set_api_context
+from taskdog_server.websocket.connection_manager import ConnectionManager
 
 
 class BaseApiRouterTest(unittest.TestCase):
@@ -98,7 +98,6 @@ class BaseApiRouterTest(unittest.TestCase):
             crud_controller=crud_controller,
             holiday_checker=None,
         )
-        set_api_context(api_context)
 
         # Create FastAPI app once with all routers
         app = FastAPI(
@@ -106,6 +105,10 @@ class BaseApiRouterTest(unittest.TestCase):
             description="Test instance",
             version="1.0.0",
         )
+
+        # Set context on app.state BEFORE creating TestClient
+        app.state.api_context = api_context
+        app.state.connection_manager = ConnectionManager()
 
         # Import and register all routers
         from taskdog_server.api.routers import (

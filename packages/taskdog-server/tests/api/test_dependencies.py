@@ -6,11 +6,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from fastapi import FastAPI
+
 from taskdog_server.api.context import ApiContext
 from taskdog_server.api.dependencies import (
     get_analytics_controller,
     get_api_context,
     get_config,
+    get_connection_manager,
     get_crud_controller,
     get_holiday_checker,
     get_lifecycle_controller,
@@ -19,6 +22,7 @@ from taskdog_server.api.dependencies import (
     get_relationship_controller,
     get_repository,
     initialize_api_context,
+    reset_app_state,
     set_api_context,
 )
 
@@ -28,37 +32,39 @@ class TestDependencyInjection(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        # Reset global context before each test
-        from taskdog_server import api
-
-        if hasattr(api, "dependencies"):
-            api.dependencies._api_context = None
+        self.app = FastAPI()
 
     def tearDown(self):
         """Clean up after tests."""
-        # Reset global context
-        from taskdog_server import api
+        reset_app_state(self.app)
 
-        if hasattr(api, "dependencies"):
-            api.dependencies._api_context = None
+    def _create_mock_request(self) -> MagicMock:
+        """Create a mock request with app reference."""
+        mock_request = MagicMock()
+        mock_request.app = self.app
+        return mock_request
 
     def test_set_and_get_api_context(self):
-        """Test setting and getting API context."""
+        """Test setting and getting API context via app.state."""
         # Arrange - create mock context
         mock_context = MagicMock(spec=ApiContext)
 
         # Act
-        set_api_context(mock_context)
-        retrieved_context = get_api_context()
+        set_api_context(self.app, mock_context)
+        mock_request = self._create_mock_request()
+        retrieved_context = get_api_context(mock_request)
 
         # Assert
         self.assertEqual(retrieved_context, mock_context)
 
     def test_get_api_context_raises_when_not_initialized(self):
         """Test that get_api_context raises error when not initialized."""
+        # Arrange
+        mock_request = self._create_mock_request()
+
         # Act & Assert
         with self.assertRaises(RuntimeError) as context:
-            get_api_context()
+            get_api_context(mock_request)
 
         self.assertIn("not initialized", str(context.exception))
 
@@ -104,7 +110,6 @@ class TestDependencyInjection(unittest.TestCase):
         mock_controller = MagicMock()
         mock_context = MagicMock(spec=ApiContext)
         mock_context.query_controller = mock_controller
-        set_api_context(mock_context)
 
         # Act
         controller = get_query_controller(mock_context)
@@ -118,7 +123,6 @@ class TestDependencyInjection(unittest.TestCase):
         mock_controller = MagicMock()
         mock_context = MagicMock(spec=ApiContext)
         mock_context.lifecycle_controller = mock_controller
-        set_api_context(mock_context)
 
         # Act
         controller = get_lifecycle_controller(mock_context)
@@ -132,7 +136,6 @@ class TestDependencyInjection(unittest.TestCase):
         mock_controller = MagicMock()
         mock_context = MagicMock(spec=ApiContext)
         mock_context.relationship_controller = mock_controller
-        set_api_context(mock_context)
 
         # Act
         controller = get_relationship_controller(mock_context)
@@ -146,7 +149,6 @@ class TestDependencyInjection(unittest.TestCase):
         mock_controller = MagicMock()
         mock_context = MagicMock(spec=ApiContext)
         mock_context.analytics_controller = mock_controller
-        set_api_context(mock_context)
 
         # Act
         controller = get_analytics_controller(mock_context)
@@ -160,7 +162,6 @@ class TestDependencyInjection(unittest.TestCase):
         mock_controller = MagicMock()
         mock_context = MagicMock(spec=ApiContext)
         mock_context.crud_controller = mock_controller
-        set_api_context(mock_context)
 
         # Act
         controller = get_crud_controller(mock_context)
@@ -174,7 +175,6 @@ class TestDependencyInjection(unittest.TestCase):
         mock_repository = MagicMock()
         mock_context = MagicMock(spec=ApiContext)
         mock_context.repository = mock_repository
-        set_api_context(mock_context)
 
         # Act
         repository = get_repository(mock_context)
@@ -188,7 +188,6 @@ class TestDependencyInjection(unittest.TestCase):
         mock_notes_repo = MagicMock()
         mock_context = MagicMock(spec=ApiContext)
         mock_context.notes_repository = mock_notes_repo
-        set_api_context(mock_context)
 
         # Act
         notes_repo = get_notes_repository(mock_context)
@@ -202,7 +201,6 @@ class TestDependencyInjection(unittest.TestCase):
         mock_config = MagicMock()
         mock_context = MagicMock(spec=ApiContext)
         mock_context.config = mock_config
-        set_api_context(mock_context)
 
         # Act
         config = get_config(mock_context)
@@ -215,7 +213,6 @@ class TestDependencyInjection(unittest.TestCase):
         # Arrange
         mock_context = MagicMock(spec=ApiContext)
         mock_context.holiday_checker = None
-        set_api_context(mock_context)
 
         # Act
         checker = get_holiday_checker(mock_context)
@@ -229,7 +226,6 @@ class TestDependencyInjection(unittest.TestCase):
         mock_checker = MagicMock()
         mock_context = MagicMock(spec=ApiContext)
         mock_context.holiday_checker = mock_checker
-        set_api_context(mock_context)
 
         # Act
         checker = get_holiday_checker(mock_context)
@@ -237,37 +233,69 @@ class TestDependencyInjection(unittest.TestCase):
         # Assert
         self.assertEqual(checker, mock_checker)
 
-    def test_context_is_global_singleton(self):
-        """Test that context is shared globally."""
+    def test_context_stored_in_app_state(self):
+        """Test that context is stored in app.state."""
         # Arrange
         mock_context = MagicMock(spec=ApiContext)
 
         # Act
-        set_api_context(mock_context)
-        context1 = get_api_context()
-        context2 = get_api_context()
+        set_api_context(self.app, mock_context)
+        mock_request = self._create_mock_request()
+        context1 = get_api_context(mock_request)
+        context2 = get_api_context(mock_request)
 
         # Assert
         self.assertIs(context1, context2)
         self.assertIs(context1, mock_context)
+        self.assertIs(self.app.state.api_context, mock_context)
 
     def test_setting_new_context_replaces_old(self):
         """Test that setting new context replaces the old one."""
         # Arrange
         mock_context1 = MagicMock(spec=ApiContext)
         mock_context2 = MagicMock(spec=ApiContext)
+        mock_request = self._create_mock_request()
 
         # Act
-        set_api_context(mock_context1)
-        context1 = get_api_context()
+        set_api_context(self.app, mock_context1)
+        context1 = get_api_context(mock_request)
 
-        set_api_context(mock_context2)
-        context2 = get_api_context()
+        set_api_context(self.app, mock_context2)
+        context2 = get_api_context(mock_request)
 
         # Assert
         self.assertEqual(context1, mock_context1)
         self.assertEqual(context2, mock_context2)
         self.assertNotEqual(context1, context2)
+
+    def test_get_connection_manager_lazy_init(self):
+        """Test that connection manager is lazily initialized."""
+        # Arrange
+        mock_request = self._create_mock_request()
+
+        # Act - first call should initialize
+        manager1 = get_connection_manager(mock_request)
+        manager2 = get_connection_manager(mock_request)
+
+        # Assert
+        self.assertIsNotNone(manager1)
+        self.assertIs(manager1, manager2)
+        self.assertIs(self.app.state.connection_manager, manager1)
+
+    def test_reset_app_state(self):
+        """Test that reset_app_state clears all state."""
+        # Arrange
+        mock_context = MagicMock(spec=ApiContext)
+        set_api_context(self.app, mock_context)
+        mock_request = self._create_mock_request()
+        get_connection_manager(mock_request)  # Initialize connection manager
+
+        # Act
+        reset_app_state(self.app)
+
+        # Assert
+        self.assertFalse(hasattr(self.app.state, "api_context"))
+        self.assertFalse(hasattr(self.app.state, "connection_manager"))
 
 
 class TestInitializeApiContext(unittest.TestCase):
