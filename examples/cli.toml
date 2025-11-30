@@ -22,6 +22,10 @@ host = "127.0.0.1"
 # Must match the port used by taskdog-server
 port = 8000
 
+# API key for authentication (REQUIRED)
+# Must match the api_key in server's config.toml
+api_key = "your-secret-api-key-here"
+
 # Examples:
 # - Default local server: host = "127.0.0.1", port = 8000
 # - Custom local port: host = "127.0.0.1", port = 3000
