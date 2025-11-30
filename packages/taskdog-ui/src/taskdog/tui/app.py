@@ -490,53 +490,14 @@ class TaskdogTUI(App):
     def on_gantt_resize_requested(self, event: GanttResizeRequested) -> None:
         """Handle gantt resize event.
 
-        Recalculates gantt data for the new display width and updates the widget.
+        Delegates to TaskUIManager for recalculating gantt data
+        with the new date range.
 
         Args:
             event: GanttResizeRequested event containing display parameters
         """
-        if not self.main_screen or not self.main_screen.gantt_widget:
-            return
-
-        gantt_widget = self.main_screen.gantt_widget
-
-        try:
-            # Use public API to get current filter and sort order
-            all = gantt_widget.get_filter_all()
-            sort_by = gantt_widget.get_sort_by()
-
-            # Use integrated API to get tasks + gantt data in single request
-            task_list_output = self.api_client.list_tasks(
-                all=all,
-                sort_by=sort_by,
-                reverse=self.state.sort_reverse,
-                include_gantt=True,
-                gantt_start_date=event.start_date,
-                gantt_end_date=event.end_date,
-            )
-
-            # Convert gantt data to ViewModel
-            if task_list_output.gantt_data:
-                gantt_view_model = self.gantt_presenter.present(
-                    task_list_output.gantt_data
-                )
-
-                # Apply display filter based on hide_completed setting
-                if self.state.hide_completed:
-                    filtered_tasks = self.task_data_loader.apply_display_filter(
-                        task_list_output.tasks, self.state.hide_completed
-                    )
-                    gantt_view_model = self.task_data_loader.filter_gantt_by_tasks(
-                        gantt_view_model, filtered_tasks
-                    )
-
-                # Use public API to update view model and trigger re-render
-                gantt_widget.update_view_model_and_render(gantt_view_model)
-        except ServerConnectionError as e:
-            self.notify(
-                f"Server connection failed: {e.original_error.__class__.__name__}",
-                severity="error",
-            )
+        if self.task_ui_manager:
+            self.task_ui_manager.recalculate_gantt(event.start_date, event.end_date)
 
     def _check_connection_status(self) -> None:
         """Check API and WebSocket connection status.

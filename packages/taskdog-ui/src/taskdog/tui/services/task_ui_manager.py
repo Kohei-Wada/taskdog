@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from taskdog.services.task_data_loader import TaskData, TaskDataLoader
 from taskdog.tui.constants.ui_settings import DEFAULT_GANTT_DISPLAY_DAYS
 from taskdog.tui.state import TUIState
+from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 
@@ -151,3 +152,80 @@ class TaskUIManager:
                 task_data.table_view_models,
                 keep_scroll_position=keep_scroll_position,
             )
+
+    def recalculate_gantt(self, start_date: date, end_date: date) -> None:
+        """Recalculate gantt data for a new date range.
+
+        Called when gantt widget is resized and needs recalculation
+        with a different date range.
+
+        Args:
+            start_date: New start date for gantt range
+            end_date: New end date for gantt range
+        """
+        try:
+            gantt_view_model = self._fetch_gantt_for_range(start_date, end_date)
+            self._update_gantt_ui(gantt_view_model)
+        except ServerConnectionError as e:
+            if self._on_connection_error:
+                self._on_connection_error(e)
+
+    def _fetch_gantt_for_range(
+        self, start_date: date, end_date: date
+    ) -> GanttViewModel | None:
+        """Fetch gantt data for specific date range.
+
+        Args:
+            start_date: Start date for gantt range
+            end_date: End date for gantt range
+
+        Returns:
+            GanttViewModel or None if no data
+        """
+        # Get current filter/sort state from gantt widget if available
+        all_tasks = False  # Default to non-archived
+        sort_by = self.state.sort_by
+        main_screen = self._get_main_screen()
+        if main_screen and main_screen.gantt_widget:
+            all_tasks = main_screen.gantt_widget.get_filter_all()
+            sort_by = main_screen.gantt_widget.get_sort_by()
+
+        task_list_output = self.task_data_loader.api_client.list_tasks(
+            all=all_tasks,
+            sort_by=sort_by,
+            reverse=self.state.sort_reverse,
+            include_gantt=True,
+            gantt_start_date=start_date,
+            gantt_end_date=end_date,
+        )
+
+        if not task_list_output.gantt_data:
+            return None
+
+        gantt_view_model = self.task_data_loader.gantt_presenter.present(
+            task_list_output.gantt_data
+        )
+
+        # Apply display filter based on hide_completed setting
+        if self.state.hide_completed:
+            filtered_tasks = self.task_data_loader.apply_display_filter(
+                task_list_output.tasks, self.state.hide_completed
+            )
+            gantt_view_model = self.task_data_loader.filter_gantt_by_tasks(
+                gantt_view_model, filtered_tasks
+            )
+
+        return gantt_view_model
+
+    def _update_gantt_ui(self, gantt_view_model: GanttViewModel | None) -> None:
+        """Update gantt widget with new view model.
+
+        Args:
+            gantt_view_model: New gantt view model to display
+        """
+        main_screen = self._get_main_screen()
+        if not main_screen or not main_screen.gantt_widget:
+            return
+
+        if gantt_view_model:
+            main_screen.gantt_widget.update_view_model_and_render(gantt_view_model)
