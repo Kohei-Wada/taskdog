@@ -136,11 +136,16 @@ class GanttDataTable(DataTable):
 
     def _clear_all_rows(self):
         """Clear all rows while preserving column structure."""
-        while self.row_count > 0:
-            row_key, _ = self.coordinate_to_cell_key((self.row_count - 1, 0))
-            self.remove_row(row_key)
-        self._task_map.clear()
-        self._workload_row_exists = False
+        try:
+            while self.row_count > 0:
+                row_key, _ = self.coordinate_to_cell_key((self.row_count - 1, 0))
+                self.remove_row(row_key)
+        except Exception:
+            # If row removal fails, force clear the table
+            self.clear(columns=False)
+        finally:
+            self._task_map.clear()
+            self._workload_row_exists = False
 
     def _full_rebuild(self, gantt_view_model: GanttViewModel):
         """Perform full table rebuild (after column structure change).
@@ -251,9 +256,11 @@ class GanttDataTable(DataTable):
         Args:
             new_count: The desired number of task rows
         """
-        while self._get_task_row_count() > new_count:
+        # Cache the count to avoid O(n²) complexity from repeated calculations
+        current_count = self._get_task_row_count()
+        while current_count > new_count:
             # Calculate the index of the last task row
-            task_row_idx = GANTT_HEADER_ROW_COUNT + self._get_task_row_count() - 1
+            task_row_idx = GANTT_HEADER_ROW_COUNT + current_count - 1
 
             # Remove from _task_map first
             if task_row_idx in self._task_map:
@@ -262,6 +269,7 @@ class GanttDataTable(DataTable):
             # Get the row key and remove it
             row_key, _ = self.coordinate_to_cell_key((task_row_idx, 0))
             self.remove_row(row_key)
+            current_count -= 1
 
     def _add_date_header_rows(
         self, start_date: date, end_date: date, holidays: set[date]
@@ -312,6 +320,12 @@ class GanttDataTable(DataTable):
         month_line, today_line, day_line = GanttCellFormatter.build_date_header_lines(
             start_date, end_date, holidays
         )
+
+        # Validate header rows exist before updating
+        if self.row_count < GANTT_HEADER_ROW_COUNT:
+            # Fallback to full rebuild if header structure is corrupted
+            self._add_date_header_rows(start_date, end_date, holidays)
+            return
 
         # Update the three header rows (indices 0, 1, 2)
         # Row 0: Month header
