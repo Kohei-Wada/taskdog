@@ -9,7 +9,10 @@ import contextlib
 import os
 import tomllib
 from dataclasses import dataclass, field
-from pathlib import Path
+
+from taskdog_core.shared.xdg_utils import XDGDirectories
+
+CLI_CONFIG_FILENAME = "cli.toml"
 
 
 @dataclass(frozen=True)
@@ -69,21 +72,6 @@ class CliConfig:
     keybindings: dict[str, str] = field(default_factory=dict)
 
 
-def get_cli_config_path() -> Path:
-    """Get the CLI config file path using XDG specification.
-
-    Returns:
-        Path to cli.toml config file
-    """
-    xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
-    if xdg_config_home:
-        config_dir = Path(xdg_config_home) / "taskdog"
-    else:
-        config_dir = Path.home() / ".config" / "taskdog"
-
-    return config_dir / "cli.toml"
-
-
 def load_cli_config() -> CliConfig:
     """Load CLI configuration with priority: env vars > cli.toml > defaults.
 
@@ -107,7 +95,7 @@ def load_cli_config() -> CliConfig:
     keybindings: dict[str, str] = {}
 
     # Load from cli.toml if exists
-    config_path = get_cli_config_path()
+    config_path = XDGDirectories.get_config_home() / CLI_CONFIG_FILENAME
     if config_path.exists():
         try:
             with open(config_path, "rb") as f:
