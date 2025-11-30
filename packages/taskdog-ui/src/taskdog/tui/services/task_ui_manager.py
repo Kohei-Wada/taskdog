@@ -182,9 +182,17 @@ class TaskUIManager:
         Returns:
             GanttViewModel or None if no data
         """
+        # Get current filter/sort state from gantt widget if available
+        all_tasks = False  # Default to non-archived
+        sort_by = self.state.sort_by
+        main_screen = self._get_main_screen()
+        if main_screen and main_screen.gantt_widget:
+            all_tasks = main_screen.gantt_widget.get_filter_all()
+            sort_by = main_screen.gantt_widget.get_sort_by()
+
         task_list_output = self.task_data_loader.api_client.list_tasks(
-            all=False,  # Non-archived by default
-            sort_by=self.state.sort_by,
+            all=all_tasks,
+            sort_by=sort_by,
             reverse=self.state.sort_reverse,
             include_gantt=True,
             gantt_start_date=start_date,

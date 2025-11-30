@@ -323,6 +323,9 @@ class TestRecalculateGantt(unittest.TestCase):
         self.task_data_loader = MagicMock(spec=TaskDataLoader)
         self.main_screen = MagicMock()
         self.main_screen.gantt_widget = MagicMock()
+        # Setup default return values for gantt_widget methods
+        self.main_screen.gantt_widget.get_filter_all.return_value = False
+        self.main_screen.gantt_widget.get_sort_by.return_value = "deadline"
         self.on_connection_error = MagicMock()
 
         # Setup mock API client and presenter on task_data_loader
@@ -355,10 +358,10 @@ class TestRecalculateGantt(unittest.TestCase):
         # Execute
         self.manager.recalculate_gantt(start_date, end_date)
 
-        # Verify API was called with correct parameters
+        # Verify API was called with parameters from gantt_widget
         self.task_data_loader.api_client.list_tasks.assert_called_once_with(
-            all=False,
-            sort_by=self.state.sort_by,
+            all=False,  # from gantt_widget.get_filter_all()
+            sort_by="deadline",  # from gantt_widget.get_sort_by()
             reverse=self.state.sort_reverse,
             include_gantt=True,
             gantt_start_date=start_date,
@@ -372,6 +375,32 @@ class TestRecalculateGantt(unittest.TestCase):
         self.main_screen.gantt_widget.update_view_model_and_render.assert_called_once_with(
             gantt
         )
+
+    def test_recalculate_gantt_respects_gantt_widget_filter_state(self):
+        """Test recalculate_gantt uses filter/sort state from gantt_widget."""
+        # Setup - gantt_widget has "all tasks" filter enabled
+        self.main_screen.gantt_widget.get_filter_all.return_value = True
+        self.main_screen.gantt_widget.get_sort_by.return_value = "priority"
+
+        gantt = create_gantt_viewmodel()
+        task_list_output = TaskListOutput(
+            tasks=[],
+            total_count=0,
+            filtered_count=0,
+            gantt_data=MagicMock(),
+        )
+        self.task_data_loader.api_client.list_tasks.return_value = task_list_output
+        self.task_data_loader.gantt_presenter.present.return_value = gantt
+
+        # Execute
+        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
+
+        # Verify API was called with filter state from gantt_widget
+        call_kwargs = self.task_data_loader.api_client.list_tasks.call_args[1]
+        self.assertTrue(call_kwargs["all"])  # Respects gantt_widget.get_filter_all()
+        self.assertEqual(
+            call_kwargs["sort_by"], "priority"
+        )  # Respects gantt_widget.get_sort_by()
 
     def test_recalculate_gantt_applies_hide_completed_filter(self):
         """Test recalculate_gantt respects hide_completed setting."""
