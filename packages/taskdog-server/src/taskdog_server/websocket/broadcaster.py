@@ -38,9 +38,10 @@ class EventBroadcaster:
             payload: Event-specific data to broadcast
             exclude_client_id: Optional client ID to exclude from broadcast
         """
-        payload["type"] = event_type
-        payload["source_client_id"] = exclude_client_id
-        await self._manager.broadcast(payload, exclude_client_id)
+        broadcast_payload = payload.copy()
+        broadcast_payload["type"] = event_type
+        broadcast_payload["source_client_id"] = exclude_client_id
+        await self._manager.broadcast(broadcast_payload, exclude_client_id)
 
 
 async def broadcast_task_created(
