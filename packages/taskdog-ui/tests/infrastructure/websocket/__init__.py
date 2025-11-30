@@ -1,0 +1,1 @@
+"""WebSocket infrastructure tests."""
