@@ -29,7 +29,7 @@ class GreedyOptimizationStrategy(OptimizationStrategy):
     """
 
     DISPLAY_NAME = "Greedy"
-    DESCRIPTION = "Front-loads tasks (default)"
+    DESCRIPTION = "Front-loads tasks"
 
     def _allocate_task(self, task: Task, context: AllocationContext) -> Task | None:
         """Allocate task using greedy forward allocation.

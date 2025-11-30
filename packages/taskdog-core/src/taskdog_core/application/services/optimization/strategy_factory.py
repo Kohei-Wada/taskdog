@@ -117,7 +117,7 @@ class StrategyFactory:
         Example:
             >>> metadata = StrategyFactory.get_algorithm_metadata()
             >>> metadata[0]
-            ('greedy', 'Greedy', 'Front-loads tasks (default)')
+            ('greedy', 'Greedy', 'Front-loads tasks')
         """
         metadata = []
         for algo_id, strategy_class in cls._strategies.items():

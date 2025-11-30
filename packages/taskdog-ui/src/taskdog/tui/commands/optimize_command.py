@@ -26,17 +26,14 @@ class OptimizeCommand(TUICommandBase):
         self,
         app: "TaskdogTUI",
         context: TUIContext,
-        force_override: bool = False,
     ) -> None:
         """Initialize the command.
 
         Args:
             app: The TaskdogTUI application instance
             context: TUI context with dependencies
-            force_override: Whether to force override existing schedules
         """
         super().__init__(app, context)
-        self.force_override = force_override
 
     def _format_failed_tasks_message(
         self, result: OptimizationOutput, prefix: str = ""
@@ -67,18 +64,19 @@ class OptimizeCommand(TUICommandBase):
         """Execute the optimize command."""
 
         def handle_optimization_settings(
-            settings: tuple[str, float | None, datetime] | None,
+            settings: tuple[str, float | None, datetime, bool] | None,
         ) -> None:
             """Handle the optimization settings from the dialog.
 
             Args:
-                settings: Tuple of (algorithm_name, max_hours_per_day, start_date), or None if cancelled
+                settings: Tuple of (algorithm_name, max_hours_per_day, start_date, force_override),
+                         or None if cancelled.
                          max_hours_per_day can be None (server will apply config default)
             """
             if settings is None:
                 return  # User cancelled
 
-            algorithm, max_hours, start_date = settings
+            algorithm, max_hours, start_date, force_override = settings
 
             # Use API client to optimize schedules
             # max_hours can be None - server will apply config default
@@ -86,7 +84,7 @@ class OptimizeCommand(TUICommandBase):
                 algorithm=algorithm,
                 start_date=start_date,
                 max_hours_per_day=max_hours,
-                force_override=self.force_override,
+                force_override=force_override,
             )
 
             # Reload tasks to show updated schedules
@@ -119,9 +117,6 @@ class OptimizeCommand(TUICommandBase):
         # Show optimization settings screen
         # Wrap callback with error handling from base class
         self.app.push_screen(
-            AlgorithmSelectionDialog(
-                algorithm_metadata,
-                force_override=self.force_override,
-            ),
+            AlgorithmSelectionDialog(algorithm_metadata),
             self.handle_error(handle_optimization_settings),
         )

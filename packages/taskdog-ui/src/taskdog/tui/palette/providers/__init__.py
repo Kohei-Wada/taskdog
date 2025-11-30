@@ -7,10 +7,7 @@ from taskdog.tui.palette.providers.export_providers import (
     ExportFormatProvider,
 )
 from taskdog.tui.palette.providers.help_provider import HelpCommandProvider
-from taskdog.tui.palette.providers.optimize_providers import (
-    OPTIMIZE_COMMANDS,
-    OptimizeCommandProvider,
-)
+from taskdog.tui.palette.providers.optimize_providers import OptimizeCommandProvider
 from taskdog.tui.palette.providers.sort_providers import (
     SortCommandProvider,
     SortOptionsProvider,
@@ -18,7 +15,6 @@ from taskdog.tui.palette.providers.sort_providers import (
 
 __all__ = [
     "EXPORT_FORMATS",
-    "OPTIMIZE_COMMANDS",
     "BaseListProvider",
     "ExportCommandProvider",
     "ExportFormatProvider",
