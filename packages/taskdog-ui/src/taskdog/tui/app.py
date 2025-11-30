@@ -33,7 +33,7 @@ from taskdog.tui.palette.providers import (
 )
 from taskdog.tui.screens.main_screen import MainScreen
 from taskdog.tui.services import TaskUIManager, WebSocketHandler
-from taskdog.tui.state import TUIState
+from taskdog.tui.state import ConnectionStatusManager, TUIState
 from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 
@@ -214,6 +214,9 @@ class TaskdogTUI(App):
 
         # Initialize TUI state (Single Source of Truth for all app state)
         self.state = TUIState()
+
+        # Initialize connection status manager (observer pattern)
+        self.connection_manager = ConnectionStatusManager()
 
         # NOTE: All legacy state fields migrated to self.state (Phase 2 complete)
         # - _gantt_sort_by, _gantt_reverse, _hide_completed → state (Step 2-3)
@@ -502,8 +505,8 @@ class TaskdogTUI(App):
     def _check_connection_status(self) -> None:
         """Check API and WebSocket connection status.
 
-        Updates TUIState with current connection status and refreshes
-        the CustomFooter widget display.
+        Updates ConnectionStatusManager which notifies subscribed widgets
+        via observer pattern.
         """
         # Check API connection via health endpoint
         api_connected = self.api_client.check_health()
@@ -511,9 +514,5 @@ class TaskdogTUI(App):
         # Check WebSocket connection
         ws_connected = self.websocket_client.is_connected()
 
-        # Update state
-        self.state.update_connection_status(api_connected, ws_connected)
-
-        # Refresh CustomFooter widget if available
-        if self.main_screen and self.main_screen.custom_footer:
-            self.main_screen.custom_footer.refresh_from_state()
+        # Update connection manager (observers will be notified automatically)
+        self.connection_manager.update(api_connected, ws_connected)

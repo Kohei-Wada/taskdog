@@ -20,7 +20,6 @@ class TUIState:
     duplication and synchronization issues.
 
     State Categories:
-    - Connection Status: is_api_connected, is_websocket_connected
     - Filter Settings: hide_completed
     - Sort Settings: sort_by, sort_reverse
     - Data Caches: tasks_cache, viewmodels_cache, gantt_cache
@@ -29,13 +28,6 @@ class TUIState:
     application state, replacing scattered state fields across
     TaskdogTUI, GanttWidget, and TaskTable.
     """
-
-    # === Connection Status ===
-    is_api_connected: bool = False
-    """Whether API server is connected and reachable."""
-
-    is_websocket_connected: bool = False
-    """Whether WebSocket connection is active."""
 
     # === Filter Settings ===
     hide_completed: bool = False
@@ -137,13 +129,3 @@ class TUIState:
         without reloading all task data.
         """
         self.gantt_cache = None
-
-    def update_connection_status(self, api_connected: bool, ws_connected: bool) -> None:
-        """Update connection status for both API and WebSocket.
-
-        Args:
-            api_connected: True if API server is reachable
-            ws_connected: True if WebSocket connection is active
-        """
-        self.is_api_connected = api_connected
-        self.is_websocket_connected = ws_connected
