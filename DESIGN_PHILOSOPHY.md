@@ -9,6 +9,7 @@ Taskdog is a **personal task management system** designed for individual users w
 ### The Design Journey
 
 Early versions of Taskdog attempted to support parent-child task hierarchies. However, I discovered that this feature:
+
 - Made schedule optimization algorithms unpredictable and complex
 - Introduced numerous edge cases in business logic (similar to Redmine's challenges)
 - Added implementation complexity without proportional value for individual users
@@ -43,6 +44,7 @@ Taskdog is **NOT** designed for:
 **Decision**: Focus exclusively on personal task management.
 
 **Why**:
+
 - Individual users have different needs than teams
 - Personal tasks don't require approval workflows, role-based permissions, or team synchronization
 - Simpler data models lead to faster performance and easier customization
@@ -53,6 +55,7 @@ Taskdog is **NOT** designed for:
 **Decision**: Use dependencies instead of parent-child relationships (no subtasks).
 
 **Why**:
+
 - Follows GTD philosophy: "Use outlines for planning, plain lists for doing"
 - Individual users can mentally track hierarchies without explicit data structures
 - Dependencies + tags + notes cover 99% of personal task organization needs
@@ -80,6 +83,7 @@ taskdog gantt --tag web  # Visualize dependencies
 ```
 
 **Result**:
+
 - Grouping via tags
 - Ordering via dependencies
 - Context via markdown notes
@@ -90,18 +94,21 @@ taskdog gantt --tag web  # Visualize dependencies
 **Decision**: Implement only features that benefit individual task management.
 
 **Why**:
+
 - Feature bloat increases complexity and maintenance burden
 - Every feature adds cognitive load for users
 - Saying "no" to features is harder but more important than saying "yes"
 - Focus creates better user experience for the target audience
 
 **We prioritize**:
+
 - Core task operations (CRUD, status changes)
 - Powerful scheduling (9 optimization algorithms)
 - Multiple interfaces (CLI, TUI, API)
 - Privacy and offline operation
 
 **We explicitly avoid**:
+
 - Team collaboration features
 - Complex permission systems
 - Cloud synchronization (use git if needed)
@@ -112,12 +119,14 @@ taskdog gantt --tag web  # Visualize dependencies
 **Decision**: Provide 9 different scheduling algorithms users can understand and choose from.
 
 **Why**:
+
 - Users should understand how their schedule is optimized
 - Different situations call for different strategies
 - Algorithm selection is a learning opportunity
 - No vendor lock-in to proprietary AI
 
 **Available algorithms**:
+
 1. `greedy` - Schedule tasks as early as possible
 2. `balanced` - Distribute workload evenly across days
 3. `backward` - Schedule from deadlines backward
@@ -135,6 +144,7 @@ Compare this to Motion/Reclaim: "Our AI schedules your tasks" (black box, no con
 **Decision**: All data stored locally in SQLite, no cloud synchronization.
 
 **Why**:
+
 - Your tasks are your private information
 - No dependency on external services
 - Works completely offline
@@ -142,6 +152,7 @@ Compare this to Motion/Reclaim: "Our AI schedules your tasks" (black box, no con
 - Full control over your data
 
 **Synchronization options**:
+
 - Git (recommended): Version control for your tasks.db
 - File sync: Dropbox, Google Drive, etc. (manual)
 - Future: Consider DAT/IPFS for decentralized sync
@@ -187,6 +198,7 @@ See the Redmine example in section "Business Logic Complexity" below. I faced th
 **3. Individual Users Didn't Need It**
 
 After removing parent-child relationships, I tested with real workflows. Turns out:
+
 - Dependencies + tags cover 99% of organization needs
 - With only 1-3 concurrent tasks, mental hierarchy is sufficient
 - The complexity wasn't worth it
@@ -204,12 +216,14 @@ These observations align with broader industry patterns:
 > — Getting Things Done Forums
 
 David Allen's GTD approach emphasizes:
+
 - **Planning phase**: Use hierarchical outlines (mental or on paper)
 - **Execution phase**: Flat list of "next actions"
 - Parent tasks are planning artifacts, not execution items
 
 **Taskwarrior's Approach**:
 Taskwarrior, the most successful terminal-based task manager, uses **dependencies only**:
+
 - No native subtask feature
 - Community plugins exist but aren't mainstream
 - Proven to work for thousands of users over 15+ years
@@ -221,6 +235,7 @@ Our experience confirmed what these established approaches already knew: for ind
 **1. Data Model Complexity**
 
 With parent-child relationships:
+
 ```python
 class Task:
     parent_id: Optional[int]
@@ -235,6 +250,7 @@ class Task:
 ```
 
 With dependencies only:
+
 ```python
 class Task:
     depends_on: list[int]
@@ -245,12 +261,14 @@ class Task:
 **2. Optimization Algorithm Complexity**
 
 Scheduling with hierarchies:
+
 - Do we schedule parent tasks? If so, when?
 - Are parent durations fixed or computed from children?
 - Can children be scheduled independently?
 - How to handle partial parent completion?
 
 Scheduling with dependencies:
+
 - Clear: schedule tasks whose dependencies are met
 - Predictable: algorithms behave consistently
 - Testable: easy to verify correctness
@@ -258,12 +276,14 @@ Scheduling with dependencies:
 **3. UI Complexity**
 
 TUI with hierarchies requires:
+
 - Tree view with expand/collapse
 - Indentation management
 - Parent-child navigation keybindings
 - Filtering becomes complex (show parents without children?)
 
 TUI with flat list:
+
 - Simple table view
 - Fast navigation
 - Easy filtering and searching
@@ -276,6 +296,7 @@ Parent-child relationships create numerous edge cases and ambiguous behaviors:
 **Real-world example: Redmine (team project management tool)**
 
 Redmine supports task hierarchies but faces these issues:
+
 - **Auto-start dilemma**: When you start a child task, should the parent auto-start? If yes, how many levels up?
 - **Chain deletion**: If you delete a task in the middle of an IN_PROGRESS chain, what happens to parent and siblings?
 - **Orphaned children**: What if parent is deleted but children remain?
@@ -285,11 +306,13 @@ Redmine supports task hierarchies but faces these issues:
 - **Assignment**: Can you assign parent without children? Vice versa?
 
 **Each question requires a design decision**, and different tools solve them differently:
+
 - Redmine: Parent doesn't auto-start when children start (surprising to users)
 - Jira: Complex permission rules for subtask operations
 - Asana: Circular reference detection with multiple algorithms
 
 **With dependencies only**, these questions don't exist:
+
 - Tasks are independent entities
 - Dependencies define order, not ownership
 - No automatic status propagation
@@ -299,6 +322,7 @@ Redmine supports task hierarchies but faces these issues:
 **5. Concurrent Task Reality**
 
 **Individual users typically work on 1-3 tasks simultaneously at most**:
+
 - Primary task (currently focused on)
 - 1-2 background tasks (waiting, paused, or context-switched)
 
@@ -312,7 +336,8 @@ This is fundamentally different from team projects:
 | Context switching | You decide | Coordinated handoffs |
 
 **Example: Individual developer's day**
-```
+
+```text
 9:00  - Start "Implement login API" (IN_PROGRESS)
 10:30 - Blocked, waiting for design review
       - Pause, start "Fix bug #123" (IN_PROGRESS)
@@ -325,7 +350,8 @@ This is fundamentally different from team projects:
 Only 1-2 tasks active at any moment. **No need for complex hierarchy to track this.**
 
 **Example: Team project (50+ concurrent tasks)**
-```
+
+```text
 Epic: User Authentication System
 ├── Story: Login UI
 │   ├── Task: Design mockup (Designer, IN_PROGRESS)
@@ -361,6 +387,7 @@ For individuals, **mental hierarchy + dependency tracking** is sufficient.
 **Use case**: Break down "Write blog post" into steps.
 
 **Solution 1: Dependencies + Tags**
+
 ```bash
 taskdog add "Blog: Research topic" --tag blog --priority 8
 taskdog add "Blog: Outline" --tag blog --priority 7 --depends-on 1
@@ -371,6 +398,7 @@ taskdog table --tag blog  # See all related tasks
 ```
 
 **Solution 2: Checklist in Notes**
+
 ```bash
 taskdog add "Write blog post" --priority 8
 taskdog note 1
@@ -393,6 +421,7 @@ taskdog note 1
 ```
 
 **Solution 3: Granular Tasks**
+
 ```bash
 # Just create 6 tasks, it's fine!
 # You're not managing 100 tasks per project
@@ -408,6 +437,7 @@ All three approaches work perfectly without parent-child relationships.
 ### vs. Taskwarrior
 
 **Similarities**:
+
 - Individual focus
 - Dependencies instead of hierarchies
 - Terminal-first interface
@@ -415,6 +445,7 @@ All three approaches work perfectly without parent-child relationships.
 - Powerful filtering and reporting
 
 **Taskdog advantages**:
+
 - Modern Python codebase (Taskwarrior is C++)
 - Multiple optimization algorithms (9 choices)
 - Full-featured TUI (taskwarrior-tui is separate project)
@@ -422,6 +453,7 @@ All three approaches work perfectly without parent-child relationships.
 - Simpler data format (SQLite vs. custom format)
 
 **Taskwarrior advantages**:
+
 - Mature ecosystem (15+ years)
 - Extensive third-party tools
 - Mobile apps (via Taskwarrior Server)
@@ -432,6 +464,7 @@ All three approaches work perfectly without parent-child relationships.
 ### vs. Motion / Reclaim.ai
 
 **Motion/Reclaim approach**:
+
 - Black-box AI scheduling
 - Cloud-based SaaS ($19-34/month)
 - Requires calendar integration
@@ -439,6 +472,7 @@ All three approaches work perfectly without parent-child relationships.
 - No algorithm transparency
 
 **Taskdog approach**:
+
 - 9 transparent algorithms you can understand
 - Free and open-source
 - Fully offline capable
@@ -446,10 +480,12 @@ All three approaches work perfectly without parent-child relationships.
 - Full API for custom AI integration
 
 **Trade-off**:
+
 - Motion: "Just works" but expensive and opaque
 - Taskdog: Requires learning but free and transparent
 
 **Why Taskdog is better for engineers**:
+
 1. You can integrate YOUR choice of AI (ChatGPT, Claude, local LLMs)
 2. You understand exactly how scheduling works
 3. Your data stays on your machine
@@ -459,6 +495,7 @@ All three approaches work perfectly without parent-child relationships.
 ### vs. Asana / Jira / ClickUp
 
 **Team tools approach**:
+
 - Rich parent-child task hierarchies
 - Team collaboration features
 - Complex permission systems
@@ -466,6 +503,7 @@ All three approaches work perfectly without parent-child relationships.
 - Heavy UI
 
 **Taskdog approach**:
+
 - Flat structure with dependencies
 - Individual focus
 - Simple data model
@@ -473,6 +511,7 @@ All three approaches work perfectly without parent-child relationships.
 - Lightweight TUI
 
 **When to use which**:
+
 - **Asana/Jira**: Managing team projects with 5+ people
 - **Taskdog**: Managing your personal tasks and projects
 
@@ -483,6 +522,7 @@ They serve completely different markets.
 Features that align with our philosophy:
 
 ### Near-term (v0.5-v0.6)
+
 - **Recurring tasks**: Daily/weekly/monthly patterns
 - **Task templates**: Quick creation from saved configurations
 - **Calendar integration**: iCal export, sync with Google Calendar (read-only)
@@ -490,12 +530,14 @@ Features that align with our philosophy:
 - **MCP server**: Claude Desktop integration
 
 ### Medium-term (v0.7-v0.8)
+
 - **Git integration**: Link tasks to commits/branches
 - **Import/export**: From Taskwarrior, org-mode, todo.txt
 - **Custom fields**: User-defined attributes
 - **Hooks system**: Run scripts on task events
 
 ### Long-term (v1.0+)
+
 - **PostgreSQL support**: For power users with massive task counts
 - **Plugin system**: Extend functionality without forking
 - **Mobile TUI**: Optimized for smaller terminals
@@ -508,6 +550,7 @@ All future features will be evaluated against our core principles.
 Features that violate our philosophy:
 
 ### Never
+
 - **Parent-child task hierarchies**: Use dependencies + tags + notes instead
 - **Team collaboration**: Use Asana/Jira for teams
 - **Cloud synchronization**: Use git or file sync
@@ -517,7 +560,9 @@ Features that violate our philosophy:
 - **Built-in Pomodoro timer**: Use dedicated tools (e.g., `pomo`)
 
 ### Rationale
+
 These features would:
+
 1. Increase complexity beyond individual needs
 2. Blur the focus on personal task management
 3. Require cloud infrastructure (against privacy principle)
@@ -540,6 +585,7 @@ pip install taskdog taskdog-server
 ```
 
 The repository provides:
+
 - Python packages (taskdog-core, taskdog-server, taskdog-ui)
 - systemd/launchd service files for auto-start
 - Configuration examples
@@ -569,11 +615,13 @@ If you need Docker, authentication, reverse proxy, or backup automation, conside
 - Sets up backup automation (restic, borg, etc.)
 
 This separation keeps:
+
 - **taskdog**: Simple, focused on the application
 - **taskdog-stack**: Infrastructure concerns, customizable per deployment
 
 **Example structure for taskdog-stack**:
-```
+
+```text
 taskdog-stack/
 ├── docker-compose.yml
 ├── .env.example
@@ -600,6 +648,7 @@ If you want to contribute to Taskdog, ask yourself:
 Examples:
 
 **Good contributions**:
+
 - New optimization algorithm (transparent, individual-focused)
 - Better TUI keybindings (improves core experience)
 - Import from other task managers (helps migration)
@@ -607,6 +656,7 @@ Examples:
 - Bug fixes (always welcome)
 
 **Contributions we'd decline**:
+
 - "Add subtasks/parent-child relationships" (violates flat structure principle)
 - "Add real-time team collaboration" (not for individuals)
 - "Add cloud sync service" (privacy violation)
@@ -621,6 +671,7 @@ Taskdog's design philosophy can be summarized in one sentence:
 > **A transparent, privacy-respecting task manager for individuals who want to understand and control how their time is optimized.**
 
 We believe that:
+
 - Individuals deserve tools designed for them, not dumbed-down team tools
 - Transparency beats black-box AI for users who want to learn
 - Simplicity and focus create better experiences than feature bloat

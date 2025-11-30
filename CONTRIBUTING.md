@@ -62,7 +62,7 @@ make install
 
 Taskdog is a **UV workspace monorepo** with three packages:
 
-```
+```text
 taskdog/
 ├── packages/
 │   ├── taskdog-core/      # Core business logic and infrastructure
@@ -97,7 +97,7 @@ taskdog/
 
 ### Communication Flow
 
-```
+```text
 CLI/TUI (taskdog-ui) → HTTP API → FastAPI (taskdog-server) → Controllers/Repository (taskdog-core)
 ```
 
@@ -200,7 +200,7 @@ cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest tests.test_
 
 This project uses **Conventional Commits** format:
 
-```
+```text
 <type>: <description>
 
 [optional body]

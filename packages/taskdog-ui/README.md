@@ -7,12 +7,14 @@ Command-line interface and terminal user interface for Taskdog task management s
 This package provides two user interfaces for Taskdog:
 
 ### CLI (Command-Line Interface)
+
 - 30+ commands for task management
 - Rich terminal output with colors and formatting
 - Batch operations support
 - Export capabilities (JSON, CSV, Markdown)
 
 ### TUI (Terminal User Interface)
+
 - Full-screen interactive interface powered by Textual
 - Real-time task table with filtering and search
 - Gantt chart visualization
@@ -74,6 +76,7 @@ port = 8000
 ```
 
 Or set environment variable:
+
 ```bash
 export TASKDOG_API_URL=http://127.0.0.1:8000
 ```
@@ -116,6 +119,7 @@ taskdog tui
 ```
 
 Keyboard shortcuts:
+
 - `a`: Add task
 - `s`: Start task
 - `d`: Complete task

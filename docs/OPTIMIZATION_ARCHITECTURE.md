@@ -55,6 +55,7 @@ class OptimizationStrategy(ABC):
 ```
 
 **Benefits:**
+
 - Eliminates code duplication across 9 strategies
 - Ensures consistent behavior (initialization, failure recording, etc.)
 - Clear extension points via abstract methods
@@ -100,6 +101,7 @@ class AllocationContext:
 ```
 
 **Benefits:**
+
 - Reduces parameter explosion (7 → 2 parameters per method)
 - Groups related constraints and state
 - Supports nested method calls (Genetic/Monte Carlo strategies)
@@ -112,6 +114,7 @@ class AllocationContext:
 **Location:** `packages/taskdog-core/src/taskdog_core/application/services/optimization/optimization_strategy.py`
 
 **Responsibilities:**
+
 - Defines template method `optimize_tasks()`
 - Provides protected helper methods for common operations
 - Enforces consistent workflow across all strategies
@@ -190,6 +193,7 @@ Supported algorithms: `greedy`, `balanced`, `backward`, `priority_first`, `earli
 **Location:** `packages/taskdog-core/src/taskdog_core/application/use_cases/optimize_schedule.py`
 
 Entry point that:
+
 1. Filters schedulable tasks (`is_schedulable()`)
 2. Creates strategy via StrategyFactory
 3. Calls `strategy.optimize_tasks()`
@@ -214,15 +218,18 @@ Entry point that:
 ### 1. Greedy (Default)
 
 **Sorting:**
+
 - Primary: Days until deadline (earlier first)
 - Secondary: Priority (higher first)
 - Tertiary: Task ID
 
 **Allocation:**
+
 - Forward from start_date
 - Fills each day to maximum before moving to next
 
 **Characteristics:**
+
 - Fast completion (front-loading)
 - Simple and predictable
 - Good for tight deadlines
@@ -230,14 +237,17 @@ Entry point that:
 ### 2. Balanced
 
 **Sorting:**
+
 - Same as Greedy (deadline, priority)
 
 **Allocation:**
+
 - Distributes hours evenly across available days
 - Target hours per day = total_duration / available_weekdays
 - Prevents burnout from front-loading
 
 **Characteristics:**
+
 - Better work-life balance
 - More realistic workload
 - Good for long-term projects
@@ -245,14 +255,17 @@ Entry point that:
 ### 3. Backward (Just-In-Time)
 
 **Sorting:**
+
 - Tasks without deadlines first
 - Then by deadline (furthest first)
 
 **Allocation:**
+
 - Backward from deadline
 - Allocates as late as possible
 
 **Characteristics:**
+
 - Maximum flexibility
 - Just-In-Time delivery
 - Good when requirements may change
@@ -260,13 +273,16 @@ Entry point that:
 ### 4. PriorityFirst
 
 **Sorting:**
+
 - Priority only (high to low)
 - Ignores deadlines completely
 
 **Allocation:**
+
 - Inherits from Greedy (front-loads)
 
 **Characteristics:**
+
 - Pure priority-based
 - Good for tasks without deadlines
 - Focuses on importance over urgency
@@ -274,13 +290,16 @@ Entry point that:
 ### 5. EarliestDeadline (EDF)
 
 **Sorting:**
+
 - Deadline only (earliest first)
 - Ignores priority completely
 
 **Allocation:**
+
 - Inherits from Greedy (front-loads)
 
 **Characteristics:**
+
 - Pure deadline-based
 - Minimizes deadline misses
 - Good for time-critical work
@@ -288,20 +307,24 @@ Entry point that:
 ### 6. DependencyAware (Critical Path Method)
 
 **Sorting:**
+
 - Primary: Blocking count (tasks that block others first)
 - Secondary: Deadline
 - Tertiary: Priority
 
 **Allocation:**
+
 - Inherits from Greedy (front-loads)
 
 **Characteristics:**
+
 - Schedules bottleneck tasks first
 - Minimizes overall project duration
 - Uses task.depends_on relationships
 
 **Example:**
-```
+
+```text
 Task A depends on Task B and Task C
 → Task B blocks Task A (blocking count = 1)
 → Task C blocks Task A (blocking count = 1)
@@ -311,13 +334,16 @@ Task A depends on Task B and Task C
 ### 7. RoundRobin
 
 **Sorting:**
+
 - None (uses iteration order)
 
 **Allocation:**
+
 - Cycles through tasks, allocating small chunks
 - Distributes time fairly across all tasks
 
 **Characteristics:**
+
 - Fair time distribution
 - No starvation (all tasks get time)
 - Good for parallel work
@@ -325,19 +351,23 @@ Task A depends on Task B and Task C
 ### 8. Genetic
 
 **Sorting:**
+
 - Fitness-based (evolutionary)
 - Evolves task orderings over generations
 
 **Allocation:**
+
 - Best ordering found after N generations
 - Uses Greedy allocation for each ordering
 
 **Characteristics:**
+
 - Finds near-optimal solutions
 - Computationally expensive (50 generations × 20 population)
 - Good for complex scheduling problems
 
 **Parameters:**
+
 - Population: 20
 - Generations: 50
 - Crossover rate: 0.8
@@ -346,14 +376,17 @@ Task A depends on Task B and Task C
 ### 9. MonteCarlo
 
 **Sorting:**
+
 - Random sampling of orderings
 - Evaluates fitness of each sample
 
 **Allocation:**
+
 - Best ordering found after N simulations
 - Uses Greedy allocation for each ordering
 
 **Characteristics:**
+
 - Probabilistic optimization
 - Computationally expensive (100 simulations)
 - Good for exploring solution space
@@ -362,7 +395,7 @@ Task A depends on Task B and Task C
 
 ### Optimization Workflow
 
-```
+```text
 OptimizeScheduleUseCase
   ↓
   ├─ Filter schedulable tasks (is_schedulable())
@@ -441,6 +474,7 @@ def _prepare_task_for_allocation(self, task: Task) -> Task | None:
 ```
 
 **Usage:**
+
 ```python
 task_copy = self._prepare_task_for_allocation(task)
 if task_copy is None:
@@ -474,6 +508,7 @@ def _calculate_available_hours(
 ```
 
 **Handles:**
+
 - Maximum hours per day constraint
 - Already allocated hours
 - Remaining hours for today (if current_time provided)
@@ -519,6 +554,7 @@ def _rollback_allocations(
 ```
 
 **Usage:**
+
 ```python
 task_daily_allocations = {}
 # ... allocation logic ...
@@ -631,6 +667,7 @@ class TestMyStrategy(BaseOptimizationStrategyTest):
 **Problem:** GeneticOptimizationStrategy and MonteCarloOptimizationStrategy called non-existent `greedy_strategy._get_holiday_checker()`, causing `holiday_checker` to always be `None`.
 
 **Solution:**
+
 - Added `self.holiday_checker` instance variable
 - Store `holiday_checker` in `optimize_tasks()`
 - Pass `self.holiday_checker` to temporary contexts
@@ -642,6 +679,7 @@ class TestMyStrategy(BaseOptimizationStrategyTest):
 **Problem:** Greedy, Balanced, and Backward had identical validation logic (6 lines × 3 = 18 lines duplication).
 
 **Solution:**
+
 - Extracted `_prepare_task_for_allocation()` to base class
 - Validates task, creates deep copy, defensive check
 - Returns `Task | None`
@@ -653,6 +691,7 @@ class TestMyStrategy(BaseOptimizationStrategyTest):
 **Problem:** DependencyAwareOptimizationStrategy had `_calculate_dependency_depths()` that always returned 0 (vestigial from removed parent-child relationships).
 
 **Solution:**
+
 - Removed `_calculate_dependency_depths()` method
 - Simplified sorting logic to direct deadline/priority sort
 
@@ -663,6 +702,7 @@ class TestMyStrategy(BaseOptimizationStrategyTest):
 **Problem:** DependencyAwareOptimizationStrategy was functionally identical to Greedy (sorted by deadline/priority, ignored `depends_on` field).
 
 **Solution:**
+
 - Implemented true Critical Path Method
 - Calculate blocking count (how many tasks depend on each task)
 - Sort by: blocking count (desc), deadline (asc), priority (desc)
@@ -671,6 +711,7 @@ class TestMyStrategy(BaseOptimizationStrategyTest):
 **Impact:** DependencyAware now provides unique value, uses `depends_on` field.
 
 **Example:**
+
 ```python
 # Before: deadline/priority sort (same as Greedy)
 sorted(tasks, key=lambda t: (t.deadline or MAX, -t.priority))

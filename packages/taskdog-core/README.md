@@ -27,7 +27,7 @@ pip install -e ".[dev]"
 
 Follows Clean Architecture principles:
 
-```
+```text
 Domain (entities, services, repositories)
   ↑
 Application (use cases, queries, DTOs)

@@ -15,13 +15,13 @@ The CLI/TUI is a thin client that delegates all business logic to the server. Al
 
 The CLI configuration file is located at:
 
-```
+```text
 ~/.config/taskdog/cli.toml
 ```
 
 Or, if `XDG_CONFIG_HOME` is set:
 
-```
+```text
 $XDG_CONFIG_HOME/taskdog/cli.toml
 ```
 
@@ -51,6 +51,7 @@ theme = "textual-dark"  # TUI theme (default: "textual-dark")
 ```
 
 **Available themes**:
+
 - `textual-dark` (default) - Textual's dark theme
 - `textual-light` - Textual's light theme
 - `nord` - Nord color scheme
@@ -184,6 +185,7 @@ The separation means:
 **Solutions**:
 
 1. Check if server is running:
+
    ```bash
    systemctl --user status taskdog-server
    # Or manually:
@@ -191,17 +193,20 @@ The separation means:
    ```
 
 2. Check server host/port:
+
    ```bash
    # Server default: 127.0.0.1:8000
    # CLI default: 127.0.0.1:8000
    ```
 
 3. Verify CLI config matches server config:
+
    ```bash
    cat ~/.config/taskdog/cli.toml
    ```
 
 4. Test connection manually:
+
    ```bash
    curl http://127.0.0.1:8000/health
    # Should return: {"status":"healthy"}
@@ -214,6 +219,7 @@ The separation means:
 **Solution**:
 
 1. Check TOML syntax:
+
    ```bash
    cat ~/.config/taskdog/cli.toml
    ```
@@ -224,6 +230,7 @@ The separation means:
    - Invalid port (must be integer)
 
 3. Start fresh with minimal config:
+
    ```toml
    [api]
    host = "127.0.0.1"

@@ -19,6 +19,7 @@ make install
 ```
 
 This installs two commands:
+
 - `taskdog` - CLI and TUI interface
 - `taskdog-server` - API server (required for taskdog to work)
 
@@ -66,6 +67,7 @@ systemctl --user status taskdog-server
 ```
 
 The server will now:
+
 - Start automatically when you log in
 - Restart automatically if it crashes
 - Run in the background
@@ -100,6 +102,7 @@ taskdog tui
 ### TUI Keyboard Shortcuts
 
 Once in the TUI (`taskdog tui`):
+
 - `a` - Add new task
 - `s` - Start selected task
 - `d` - Complete (done) task
@@ -115,6 +118,7 @@ Once in the TUI (`taskdog tui`):
 **Problem**: Config file missing or `enabled = false`
 
 **Solution**:
+
 ```bash
 # Check if config exists
 cat ~/.config/taskdog/config.toml
@@ -127,6 +131,7 @@ cat ~/.config/taskdog/config.toml
 **Problem**: Server is not running
 
 **Solution**:
+
 ```bash
 # Check if server is running
 systemctl --user status taskdog-server
@@ -143,6 +148,7 @@ taskdog-server
 **Problem**: Port mismatch between config and server
 
 **Solution**:
+
 ```bash
 # Check what port the server is using
 systemctl --user status taskdog-server  # Look for --port in the command
@@ -159,6 +165,7 @@ nano ~/.config/taskdog/config.toml
 **Problem**: Port already in use
 
 **Solution**:
+
 ```bash
 # Check what's using port 8000
 ss -tlnp | grep 8000

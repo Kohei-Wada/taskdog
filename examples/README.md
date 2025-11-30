@@ -15,6 +15,7 @@ Taskdog uses **two separate configuration files** for clear separation of concer
 **Location**: `~/.config/taskdog/config.toml`
 
 **Contains**:
+
 - Task defaults (default priority)
 - Optimization settings (max hours per day, default algorithm)
 - Time settings (default start/end hours)
@@ -33,6 +34,7 @@ Taskdog uses **two separate configuration files** for clear separation of concer
 **Location**: `~/.config/taskdog/cli.toml`
 
 **Contains**:
+
 - API connection settings (host, port)
 - Future: Keybindings customization
 - Future: Theme/color preferences
@@ -58,6 +60,7 @@ No configuration needed!
 ### Custom Setup
 
 1. **Copy example files**:
+
    ```bash
    mkdir -p ~/.config/taskdog
    cp examples/config.toml ~/.config/taskdog/
@@ -65,6 +68,7 @@ No configuration needed!
    ```
 
 2. **Edit as needed**:
+
    ```bash
    # Server config (business logic)
    $EDITOR ~/.config/taskdog/config.toml
@@ -74,13 +78,14 @@ No configuration needed!
    ```
 
 3. **Restart server** (if config.toml changed):
+
    ```bash
    systemctl --user restart taskdog-server
    ```
 
 ## Configuration File Relationship
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                         User                                │
 └────────┬───────────────────────────────────┬────────────────┘
@@ -128,6 +133,7 @@ This separation provides several benefits:
 ## Common Scenarios
 
 ### Scenario 1: Default Local Setup
+
 **No config files needed!**
 
 ```bash
@@ -136,7 +142,9 @@ taskdog table   # Uses defaults
 ```
 
 ### Scenario 2: Custom Server Port
+
 **Server** (`~/.config/taskdog/config.toml`):
+
 ```toml
 [api]
 enabled = true
@@ -144,13 +152,16 @@ port = 3000
 ```
 
 **CLI** (`~/.config/taskdog/cli.toml`):
+
 ```toml
 [api]
 port = 3000
 ```
 
 ### Scenario 3: Remote Server
+
 **Server** (on remote machine):
+
 ```toml
 [api]
 enabled = true
@@ -159,6 +170,7 @@ port = 8000
 ```
 
 **CLI** (on local machine):
+
 ```toml
 [api]
 host = "192.168.1.100"  # Remote server IP
@@ -166,7 +178,9 @@ port = 8000
 ```
 
 ### Scenario 4: Custom Business Logic
+
 **Only edit config.toml**:
+
 ```toml
 [task]
 default_priority = 7  # Higher default priority
@@ -186,6 +200,7 @@ CLI needs no changes - it automatically uses server's settings.
 Both configs support environment variable overrides:
 
 ### CLI (`cli.toml`)
+
 ```bash
 export TASKDOG_API_HOST=192.168.1.100
 export TASKDOG_API_PORT=3000
@@ -193,7 +208,9 @@ taskdog table
 ```
 
 ### Server (`config.toml`)
+
 No environment variables currently supported. Use config file or command-line args:
+
 ```bash
 taskdog-server --host 0.0.0.0 --port 3000
 ```
@@ -211,31 +228,38 @@ The old single-config approach still works for the server. CLI just gained its o
 ## Troubleshooting
 
 ### "Cannot connect to API server"
+
 **Problem**: CLI can't reach server
 
 **Check**:
+
 1. Is server running? `systemctl --user status taskdog-server`
 2. Check CLI config: `cat ~/.config/taskdog/cli.toml`
 3. Check server config: `cat ~/.config/taskdog/config.toml`
 4. Test connection: `curl http://127.0.0.1:8000/health`
 
 **Common fixes**:
+
 - Start server: `systemctl --user start taskdog-server`
 - Match ports in both configs
 - Use `127.0.0.1` (not `0.0.0.0`) in CLI config
 
 ### "Invalid configuration"
+
 **Problem**: Config file has syntax errors
 
 **Fix**:
+
 1. Validate TOML syntax: Copy example file and edit carefully
 2. Check for typos in section names: `[api]`, `[task]`, etc.
 3. Ensure correct types: numbers without quotes, strings with quotes
 
 ### Server doesn't use my defaults
+
 **Problem**: Custom priority/algorithm not applied
 
 **Check**:
+
 1. Are you editing the right file? Server uses `config.toml`, not `cli.toml`
 2. Did you restart server? `systemctl --user restart taskdog-server`
 3. Check file location: `~/.config/taskdog/config.toml`

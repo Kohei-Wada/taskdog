@@ -1,0 +1,38 @@
+# Markdownlint configuration
+# See: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+
+# Line length - disabled (code blocks, tables often exceed)
+MD013: false
+
+# Inline HTML - disabled (badges, details/summary tags)
+MD033: false
+
+# First line should be top-level heading - disabled (CLAUDE.md, etc.)
+MD041: false
+
+# Emphasis as heading - disabled (stylistic choice in docs)
+MD036: false
+
+# Trailing punctuation in heading - allow Japanese punctuation
+MD026:
+  punctuation: ".,;:!"
+
+# Code block style
+MD046:
+  style: fenced
+
+# Fenced code should have a language specified
+MD040: true
+
+# Unordered list style - consistent dashes
+MD004:
+  style: dash
+
+# Ordered list item prefix - disabled (1. 2. 3. style is intentional)
+MD029: false
+
+# No bare URLs - disabled (often useful in docs)
+MD034: false
+
+# Link fragments - disabled (some generated anchors differ)
+MD051: false
