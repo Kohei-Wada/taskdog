@@ -20,31 +20,33 @@ from taskdog_server.api.routers import (
 from taskdog_server.infrastructure.logging.config import configure_logging
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """FastAPI lifespan context manager.
-
-    Initializes logging and API context on startup and cleans up on shutdown.
-    """
-    # Startup: Configure logging first
-    configure_logging()
-
-    # Initialize API context
-    api_context = initialize_api_context()
-    set_api_context(api_context)
-
-    yield
-
-    # Shutdown: Cleanup (if needed in the future)
-    pass
-
-
 def create_app() -> FastAPI:
     """Create and configure FastAPI application.
 
     Returns:
         FastAPI: Configured FastAPI application instance
     """
+    # Load configuration once for the entire app
+    config = ConfigManager.load()
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        """FastAPI lifespan context manager.
+
+        Initializes logging and API context on startup and cleans up on shutdown.
+        """
+        # Startup: Configure logging first
+        configure_logging()
+
+        # Initialize API context with pre-loaded config
+        api_context = initialize_api_context(config)
+        set_api_context(api_context)
+
+        yield
+
+        # Shutdown: Cleanup (if needed in the future)
+        pass
+
     app = FastAPI(
         title="Taskdog API",
         description="Task management API with scheduling, dependencies, and analytics",
@@ -54,9 +56,6 @@ def create_app() -> FastAPI:
 
     # Add logging middleware (should be first to log all requests)
     app.add_middleware(LoggingMiddleware)
-
-    # Load configuration to get CORS settings
-    config = ConfigManager.load()
 
     # Configure CORS with settings from config file or defaults
     # Default origins: localhost:3000, localhost:8000, 127.0.0.1:3000, 127.0.0.1:8000
