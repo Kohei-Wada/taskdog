@@ -96,9 +96,11 @@ class ApiConfig:
 
     Attributes:
         cors_origins: List of allowed CORS origins for API requests (for future Web UI)
+        api_key: API key for authentication (required for server startup)
     """
 
     cors_origins: list[str] = field(default_factory=lambda: DEFAULT_CORS_ORIGINS.copy())
+    api_key: str | None = None
 
 
 @dataclass(frozen=True)
@@ -215,6 +217,11 @@ class ConfigManager:
                 cors_origins=cls._get_env_list_or(
                     "API_CORS_ORIGINS",
                     api_data.get("cors_origins", DEFAULT_CORS_ORIGINS),
+                ),
+                api_key=cls._get_env_or(
+                    "API_KEY",
+                    api_data.get("api_key"),
+                    str,
                 ),
             ),
         )

@@ -3,11 +3,15 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from taskdog_core.shared.config_manager import ConfigManager
-from taskdog_server.api.dependencies import initialize_api_context, set_api_context
+from taskdog_server.api.dependencies import (
+    initialize_api_context,
+    set_api_context,
+    verify_api_key,
+)
 from taskdog_server.api.middleware import LoggingMiddleware
 from taskdog_server.api.routers import (
     analytics_router,
@@ -25,12 +29,23 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """FastAPI lifespan context manager.
 
     Initializes logging and API context on startup and cleans up on shutdown.
+
+    Raises:
+        RuntimeError: If API key is not configured
     """
     # Startup: Configure logging first
     configure_logging()
 
     # Initialize API context
     api_context = initialize_api_context()
+
+    # Validate API key is configured
+    if not api_context.config.api.api_key:
+        raise RuntimeError(
+            "API key is required. Set TASKDOG_API_KEY environment variable "
+            "or api_key in [api] section of config.toml"
+        )
+
     set_api_context(api_context)
 
     yield
@@ -69,15 +84,45 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Register routers
-    app.include_router(tasks_router, prefix="/api/v1/tasks", tags=["tasks"])
-    app.include_router(lifecycle_router, prefix="/api/v1/tasks", tags=["lifecycle"])
+    # API key authentication dependency for protected routes
+    api_key_deps = [Depends(verify_api_key)]
+
+    # Register routers with API key authentication
     app.include_router(
-        relationships_router, prefix="/api/v1/tasks", tags=["relationships"]
+        tasks_router,
+        prefix="/api/v1/tasks",
+        tags=["tasks"],
+        dependencies=api_key_deps,
     )
-    app.include_router(notes_router, prefix="/api/v1/tasks", tags=["notes"])
-    app.include_router(analytics_router, prefix="/api/v1", tags=["analytics"])
-    app.include_router(websocket_router, tags=["websocket"])
+    app.include_router(
+        lifecycle_router,
+        prefix="/api/v1/tasks",
+        tags=["lifecycle"],
+        dependencies=api_key_deps,
+    )
+    app.include_router(
+        relationships_router,
+        prefix="/api/v1/tasks",
+        tags=["relationships"],
+        dependencies=api_key_deps,
+    )
+    app.include_router(
+        notes_router,
+        prefix="/api/v1/tasks",
+        tags=["notes"],
+        dependencies=api_key_deps,
+    )
+    app.include_router(
+        analytics_router,
+        prefix="/api/v1",
+        tags=["analytics"],
+        dependencies=api_key_deps,
+    )
+    app.include_router(
+        websocket_router,
+        tags=["websocket"],
+        dependencies=api_key_deps,
+    )
 
     @app.get("/")
     async def root() -> dict[str, str]:

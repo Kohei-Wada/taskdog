@@ -65,6 +65,7 @@ class BaseApiRouterTest(unittest.TestCase):
         cls.config.region.country = None
         cls.config.time.default_start_hour = 9
         cls.config.time.default_end_hour = 18
+        cls.config.api.api_key = "test-api-key"
 
         # Create mock logger for controllers
         cls.logger = Mock(spec=Logger)

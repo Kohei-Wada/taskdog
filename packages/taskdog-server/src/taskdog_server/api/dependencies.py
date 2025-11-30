@@ -3,7 +3,8 @@
 from contextlib import suppress
 from typing import Annotated
 
-from fastapi import BackgroundTasks, Depends
+from fastapi import BackgroundTasks, Depends, HTTPException, Security
+from fastapi.security import APIKeyHeader
 
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
@@ -123,6 +124,37 @@ def set_api_context(context: ApiContext) -> None:
 
 # Dependency type aliases for cleaner endpoint signatures
 ApiContextDep = Annotated[ApiContext, Depends(get_api_context)]
+
+# API Key authentication
+_api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def verify_api_key(
+    api_key: Annotated[str | None, Security(_api_key_header)],
+    context: ApiContextDep,
+) -> str:
+    """Verify API key from request header.
+
+    Args:
+        api_key: API key from X-API-Key header
+        context: API context containing configuration
+
+    Returns:
+        The validated API key
+
+    Raises:
+        HTTPException: 401 if API key is missing or invalid
+    """
+    expected_key = context.config.api.api_key
+    if not api_key or api_key != expected_key:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key",
+        )
+    return api_key
+
+
+ApiKeyDep = Annotated[str, Depends(verify_api_key)]
 
 
 # Individual controller dependencies

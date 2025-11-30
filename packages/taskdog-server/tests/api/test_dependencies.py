@@ -6,6 +6,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from fastapi import HTTPException
+
 from taskdog_server.api.context import ApiContext
 from taskdog_server.api.dependencies import (
     get_analytics_controller,
@@ -20,6 +22,7 @@ from taskdog_server.api.dependencies import (
     get_repository,
     initialize_api_context,
     set_api_context,
+    verify_api_key,
 )
 
 
@@ -354,6 +357,68 @@ class TestInitializeApiContext(unittest.TestCase):
         finally:
             if os.path.exists(config_path):
                 os.unlink(config_path)
+
+
+class TestVerifyApiKey(unittest.TestCase):
+    """Test cases for API key verification."""
+
+    def test_verify_api_key_success(self):
+        """Test that valid API key passes verification."""
+        # Arrange
+        mock_config = MagicMock()
+        mock_config.api.api_key = "test-secret-key"
+        mock_context = MagicMock(spec=ApiContext)
+        mock_context.config = mock_config
+
+        # Act
+        result = verify_api_key("test-secret-key", mock_context)
+
+        # Assert
+        self.assertEqual(result, "test-secret-key")
+
+    def test_verify_api_key_missing_key(self):
+        """Test that missing API key raises 401."""
+        # Arrange
+        mock_config = MagicMock()
+        mock_config.api.api_key = "test-secret-key"
+        mock_context = MagicMock(spec=ApiContext)
+        mock_context.config = mock_config
+
+        # Act & Assert
+        with self.assertRaises(HTTPException) as context:
+            verify_api_key(None, mock_context)
+
+        self.assertEqual(context.exception.status_code, 401)
+        self.assertIn("Invalid or missing API key", context.exception.detail)
+
+    def test_verify_api_key_invalid_key(self):
+        """Test that invalid API key raises 401."""
+        # Arrange
+        mock_config = MagicMock()
+        mock_config.api.api_key = "test-secret-key"
+        mock_context = MagicMock(spec=ApiContext)
+        mock_context.config = mock_config
+
+        # Act & Assert
+        with self.assertRaises(HTTPException) as context:
+            verify_api_key("wrong-key", mock_context)
+
+        self.assertEqual(context.exception.status_code, 401)
+        self.assertIn("Invalid or missing API key", context.exception.detail)
+
+    def test_verify_api_key_empty_string(self):
+        """Test that empty string API key raises 401."""
+        # Arrange
+        mock_config = MagicMock()
+        mock_config.api.api_key = "test-secret-key"
+        mock_context = MagicMock(spec=ApiContext)
+        mock_context.config = mock_config
+
+        # Act & Assert
+        with self.assertRaises(HTTPException) as context:
+            verify_api_key("", mock_context)
+
+        self.assertEqual(context.exception.status_code, 401)
 
 
 if __name__ == "__main__":
