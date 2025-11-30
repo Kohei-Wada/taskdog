@@ -21,12 +21,14 @@ Each pattern serves a specific purpose and should be used in the appropriate con
 **Purpose**: Single Source of Truth (SSoT) for all shared application state.
 
 **What goes in TUIState**:
+
 - Filter settings (e.g., `hide_completed`)
 - Sort settings (e.g., `sort_by`, `sort_reverse`)
 - Data caches (e.g., `tasks_cache`, `viewmodels_cache`, `gantt_cache`)
 - Any state accessed by multiple widgets
 
 **Access pattern**:
+
 ```python
 # In widgets
 from taskdog.tui.app import TaskdogTUI
@@ -37,12 +39,14 @@ value = app.state.hide_completed
 ```
 
 **Key characteristics**:
+
 - Centralized: All widgets access the same state instance
 - Pull-based: Widgets read from state when needed
 - Explicit updates: State changes don't automatically trigger UI updates
 - Framework-agnostic: Not tied to Textual's reactive system
 
 **When to use**:
+
 - State needs to be accessed by multiple widgets
 - State represents application-level configuration
 - State needs to survive widget lifecycle
@@ -57,6 +61,7 @@ value = app.state.hide_completed
 **Purpose**: Notify components about events that occurred elsewhere.
 
 **Current events**:
+
 - `TaskCreated(task_id)` - Task was created
 - `TaskUpdated(task_id)` - Task was modified
 - `TaskDeleted(task_id)` - Task was removed
@@ -66,6 +71,7 @@ value = app.state.hide_completed
 - `GanttResizeRequested(...)` - Gantt recalculation needed
 
 **Usage pattern**:
+
 ```python
 # Post message
 self.post_message(TaskUpdated(task.id))
@@ -76,12 +82,14 @@ def on_task_updated(self, event: TaskUpdated) -> None:
 ```
 
 **Key characteristics**:
+
 - Decoupled: Sender doesn't know about receivers
 - Bubbling: Messages travel up the widget hierarchy
 - Multi-listener: Multiple widgets can handle the same message
 - Asynchronous: Messages processed via event queue
 
 **When to use**:
+
 - Notifying parent widgets about child events
 - Broadcasting events to multiple listeners
 - Decoupling components (child doesn't need parent reference)
@@ -94,12 +102,14 @@ def on_task_updated(self, event: TaskUpdated) -> None:
 **Purpose**: Manage widget-internal UI state with automatic updates.
 
 **What goes in reactive variables**:
+
 - Search query in SearchInput
 - Selection count in TaskTable
 - Expanded/collapsed state in widgets
 - Any state that only affects one widget's display
 
 **Usage pattern**:
+
 ```python
 from textual.reactive import reactive
 
@@ -112,12 +122,14 @@ class MyWidget(Widget):
 ```
 
 **Key characteristics**:
+
 - Widget-scoped: State belongs to single widget
 - Push-based: Changes automatically trigger watch methods
 - Implicit updates: No manual notification needed
 - Textual-native: Uses framework's built-in reactivity
 
 **When to use**:
+
 - State only affects one widget
 - Want automatic UI updates on state change
 - State is purely UI-related (not business logic)
@@ -145,6 +157,7 @@ class MyWidget(Widget):
 **State**: `TUIState.hide_completed` (shared across app)
 
 **Why TUIState**:
+
 - Multiple widgets need this (TaskTable, GanttWidget)
 - Application-level setting
 - Needs to survive widget recreation
@@ -161,6 +174,7 @@ def action_toggle_completed(self) -> None:
 **Event**: `TaskUpdated` message
 
 **Why Messages**:
+
 - Command executed → notify app → reload data
 - Decouples command from app
 - App can handle update without command knowing implementation
@@ -179,6 +193,7 @@ def on_task_updated(self, event: TaskUpdated) -> None:
 **State**: `SearchInput.query` reactive variable
 
 **Why Reactive**:
+
 - Only SearchInput cares about this
 - Want automatic event posting on change
 - Widget-internal UI state
@@ -197,6 +212,7 @@ class SearchInput(Container):
 **State**: `TaskTable.selection_count` reactive variable
 
 **Why Reactive**:
+
 - Only TaskTable displays this
 - Want automatic footer update
 - Widget-internal UI state
@@ -215,6 +231,7 @@ class TaskTable(DataTable):
 ## Anti-Patterns to Avoid
 
 ### ❌ Don't use reactive for shared state
+
 ```python
 # BAD: Other widgets can't access this
 class TaskdogTUI(App):
@@ -222,6 +239,7 @@ class TaskdogTUI(App):
 ```
 
 ### ❌ Don't use TUIState for widget-internal state
+
 ```python
 # BAD: Pollutes global state
 class TUIState:
@@ -229,12 +247,14 @@ class TUIState:
 ```
 
 ### ❌ Don't use Messages for return values
+
 ```python
 # BAD: Messages are for notifications, not data transfer
 self.post_message(GetTaskResult(task))  # Use direct method call instead
 ```
 
 ### ❌ Don't bypass TUIState
+
 ```python
 # BAD: State duplication
 class TaskTable(DataTable):
@@ -246,16 +266,19 @@ class TaskTable(DataTable):
 ## Architecture Evolution
 
 ### Phase 1: Scattered State (Before)
+
 - State duplicated across 8+ locations
 - Manual synchronization required
 - High bug risk
 
 ### Phase 2: Centralized State (Current)
+
 - TUIState as Single Source of Truth
 - Messages for event notifications
 - Eliminated state duplication
 
 ### Phase 3: Selective Reactive (Now)
+
 - Widget-internal state uses reactive
 - Shared state remains in TUIState
 - Hybrid approach for optimal balance

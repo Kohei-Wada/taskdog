@@ -11,6 +11,7 @@ make install
 ```
 
 This will:
+
 1. Install the `taskdog-server` command globally
 2. Copy the systemd service file to `~/.config/systemd/user/taskdog-server.service`
 3. Enable the service for automatic startup
@@ -66,10 +67,12 @@ taskdog table
 ### Common Issues
 
 **Error: "Cannot connect to API server"**
+
 - Check if server is running: `systemctl --user status taskdog-server`
 - Start the server: `systemctl --user start taskdog-server`
 
 **Error: "API mode is required"**
+
 - Set `enabled = true` in config file (see Method A above)
 - Or set TASKDOG_API_URL environment variable (see Method B above)
 
@@ -129,6 +132,7 @@ systemctl --user enable taskdog-server
 ## Configuration
 
 The default service configuration:
+
 - **Host**: 127.0.0.1 (local only)
 - **Port**: 8000
 - **Workers**: 1 (required for WebSocket real-time sync)
@@ -155,16 +159,19 @@ systemctl --user restart taskdog-server
 Example modifications:
 
 **Change host and port (listen on all interfaces):**
+
 ```ini
 ExecStart=%h/.local/bin/taskdog-server --host 0.0.0.0 --port 9000 --workers 1
 ```
 
 **Enable development mode with auto-reload:**
+
 ```ini
 ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
 ```
 
 **WARNING: Multiple workers not supported with WebSocket**
+
 ```ini
 # This will NOT work for WebSocket real-time sync:
 # ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --workers 4
@@ -176,16 +183,19 @@ ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
 ### Service Won't Start
 
 1. Check logs:
+
    ```bash
    journalctl --user -u taskdog-server -n 50
    ```
 
 2. Verify the command works manually:
+
    ```bash
    ~/.local/bin/taskdog-server --help
    ```
 
 3. Check if the port is already in use:
+
    ```bash
    ss -tlnp | grep 8000
    ```
@@ -193,11 +203,13 @@ ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
 ### Service Crashes on Startup
 
 - Check permissions on the data directory:
+
   ```bash
   ls -ld ~/.local/share/taskdog/
   ```
 
 - Ensure the database file is not corrupted:
+
   ```bash
   sqlite3 ~/.local/share/taskdog/tasks.db "PRAGMA integrity_check;"
   ```
@@ -205,11 +217,13 @@ ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
 ### Logs Not Appearing
 
 - Ensure journald is running:
+
   ```bash
   systemctl --user status
   ```
 
 - Check systemd user service status:
+
   ```bash
   loginctl user-status
   ```
@@ -231,6 +245,7 @@ make uninstall
 ```
 
 This will:
+
 1. Stop the service
 2. Disable auto-start
 3. Remove the service file
@@ -257,6 +272,7 @@ systemctl --user start taskdog-server
 ## Security Considerations
 
 The default service configuration includes security hardening:
+
 - `NoNewPrivileges=true`: Prevents privilege escalation
 - `PrivateTmp=true`: Uses private /tmp directory
 - `ProtectSystem=strict`: Makes most of the filesystem read-only

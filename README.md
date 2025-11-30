@@ -10,6 +10,7 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 ![TUI Screenshot](docs/images/theme-textual-dark.svg)
 
 **Architecture**: UV workspace monorepo with three packages:
+
 - **taskdog-core**: Core business logic and SQLite persistence
 - **taskdog-server**: FastAPI REST API server
 - **taskdog-ui**: CLI and TUI interfaces
@@ -90,6 +91,7 @@ make install-local
 ```
 
 **What gets installed:**
+
 - `taskdog` - CLI and TUI interface
 - `taskdog-server` - FastAPI REST API server
 - **Linux**: systemd user service for automatic startup
@@ -98,6 +100,7 @@ make install-local
 **Platform-Specific Service Management:**
 
 **Linux (systemd):**
+
 ```bash
 systemctl --user start taskdog-server    # Start server
 systemctl --user status taskdog-server   # Check status
@@ -106,6 +109,7 @@ journalctl --user -u taskdog-server -f   # View logs
 ```
 
 **macOS (launchd):**
+
 ```bash
 launchctl start com.github.kohei-wada.taskdog-server   # Start server
 launchctl stop com.github.kohei-wada.taskdog-server    # Stop server
@@ -114,6 +118,7 @@ tail -f ~/Library/Logs/taskdog-server.log              # View logs
 ```
 
 **Common Make targets:**
+
 ```bash
 make install          # Install as global commands via uv tool
 make check-deps       # Check if required tools are installed
@@ -126,12 +131,14 @@ make uninstall        # Remove global installations
 ## Quick Start
 
 **1. Start the API server** (required for all operations):
+
 ```bash
 taskdog-server
 # Runs on http://127.0.0.1:8000 by default
 ```
 
 **2. Configure API connection** in `~/.config/taskdog/config.toml`:
+
 ```toml
 [api]
 enabled = true
@@ -140,6 +147,7 @@ port = 8000
 ```
 
 **3. Start managing tasks**:
+
 ```bash
 # Create tasks
 taskdog add "Design phase" -p 150
@@ -167,6 +175,7 @@ taskdog tui            # Interactive TUI
 Taskdog includes a full-screen terminal user interface (TUI) for managing tasks interactively.
 
 **Features:**
+
 - Real-time task search and filtering
 - Keyboard shortcuts for quick operations
 - Sort by deadline, priority, planned start, or ID
@@ -174,6 +183,7 @@ Taskdog includes a full-screen terminal user interface (TUI) for managing tasks 
 - Task details panel with dependencies
 
 **Keyboard Shortcuts:**
+
 - `a` - Add new task
 - `s` - Start selected task
 - `P` - Pause selected task
@@ -194,6 +204,7 @@ Taskdog includes a full-screen terminal user interface (TUI) for managing tasks 
 - `q` - Quit
 
 Launch the TUI with:
+
 ```bash
 taskdog tui
 ```
@@ -247,6 +258,7 @@ taskdog-server --workers 4               # Production with multiple workers
 ```
 
 **Quick API Examples:**
+
 ```bash
 # Create task
 curl -X POST http://localhost:8000/api/v1/tasks/ \
@@ -265,6 +277,7 @@ curl -X POST http://localhost:8000/api/v1/tasks/1/start
 ## Commands
 
 **Common Commands:**
+
 ```bash
 # Task management
 taskdog add "Task name" -p 150           # Create task with priority
@@ -294,6 +307,7 @@ taskdog optimize -a balanced             # Use balanced algorithm
 **Config file**: `~/.config/taskdog/config.toml`
 
 **Minimal configuration:**
+
 ```toml
 [api]
 enabled = true
@@ -302,6 +316,7 @@ port = 8000
 ```
 
 **With theme and optimization:**
+
 ```toml
 [api]
 enabled = true
@@ -331,6 +346,7 @@ default_algorithm = "balanced"
 **Requirements**: Python 3.11+, [uv](https://github.com/astral-sh/uv)
 
 **Quick start:**
+
 ```bash
 # Setup
 make install-dev                    # Install with dev dependencies
@@ -346,6 +362,7 @@ make check                          # Lint + typecheck
 ```
 
 **Architecture**: UV workspace monorepo with Clean Architecture principles.
+
 - **taskdog-core**: Domain, Application, Infrastructure layers
 - **taskdog-server**: FastAPI REST API (Presentation layer)
 - **taskdog-ui**: CLI/TUI interfaces (Presentation layer)
@@ -362,6 +379,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for det
 - Project structure and architecture
 
 **CI/CD**: All pull requests automatically run:
+
 - Linting (`make lint`)
 - Type checking (`make typecheck`)
 - Tests with coverage (`make coverage`)

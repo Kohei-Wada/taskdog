@@ -33,11 +33,13 @@ Please delete options that are not relevant.
 <!-- Describe the tests you ran to verify your changes -->
 
 ### Test Environment
+
 - OS:
 - Python version:
 - UV version:
 
 ### Tests Performed
+
 - [ ] Unit tests pass (`make test`)
 - [ ] Added new tests for new features
 - [ ] Manual testing completed
@@ -80,12 +82,12 @@ Please check all that apply:
 
 <!-- If applicable, add screenshots or command output to demonstrate your changes -->
 
-```
+```text
 Before:
 
 ```
 
-```
+```text
 After:
 
 ```
@@ -107,6 +109,7 @@ After:
 ---
 
 **For Maintainers:**
+
 - [ ] Reviewed for security implications
 - [ ] Verified test coverage
 - [ ] Checked for breaking changes

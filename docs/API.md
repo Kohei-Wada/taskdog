@@ -71,6 +71,7 @@ All API endpoints are prefixed with `/api/v1/` unless otherwise noted.
 ```
 
 HTTP status codes follow REST conventions:
+
 - `200` - Success
 - `201` - Created
 - `204` - No Content (successful deletion)
@@ -84,15 +85,19 @@ HTTP status codes follow REST conventions:
 ### Documentation
 
 #### GET /docs
+
 Interactive Swagger UI documentation
 
 #### GET /redoc
+
 Alternative ReDoc documentation
 
 #### GET /health
+
 Health check endpoint
 
 **Response:**
+
 ```json
 {
   "status": "healthy"
@@ -104,9 +109,11 @@ Health check endpoint
 Base path: `/api/v1/tasks/`
 
 #### GET /api/v1/tasks/
+
 List tasks with filtering
 
 **Query Parameters:**
+
 - `status` (string, optional) - Filter by status: pending, in_progress, completed, canceled
 - `tags` (string[], optional) - Filter by tags (OR logic)
 - `start_date` (string, optional) - Filter by planned start date (YYYY-MM-DD)
@@ -116,6 +123,7 @@ List tasks with filtering
 - `reverse` (boolean, optional) - Reverse sort order (default: false)
 
 **Response:**
+
 ```json
 [
   {
@@ -140,9 +148,11 @@ List tasks with filtering
 ```
 
 #### POST /api/v1/tasks/
+
 Create a new task
 
 **Request Body:**
+
 ```json
 {
   "name": "Task name",
@@ -160,14 +170,17 @@ Create a new task
 **Response:** 201 Created with task object
 
 #### GET /api/v1/tasks/{task_id}
+
 Get task details
 
 **Response:** Task object (same structure as list)
 
 #### PATCH /api/v1/tasks/{task_id}
+
 Update task fields
 
 **Request Body:**
+
 ```json
 {
   "name": "Updated name",
@@ -179,9 +192,11 @@ Update task fields
 **Response:** Updated task object
 
 #### DELETE /api/v1/tasks/{task_id}
+
 Delete task
 
 **Query Parameters:**
+
 - `hard` (boolean, optional) - Permanent deletion if true, soft delete if false (default: false)
 
 **Response:** 204 No Content
@@ -191,6 +206,7 @@ Delete task
 Base path: `/api/v1/tasks/{task_id}/`
 
 #### POST /api/v1/tasks/{task_id}/start
+
 Start a task
 
 Records actual start time and changes status to IN_PROGRESS.
@@ -198,6 +214,7 @@ Records actual start time and changes status to IN_PROGRESS.
 **Response:** Updated task object
 
 #### POST /api/v1/tasks/{task_id}/complete
+
 Complete a task
 
 Records actual end time and changes status to COMPLETED.
@@ -205,6 +222,7 @@ Records actual end time and changes status to COMPLETED.
 **Response:** Updated task object
 
 #### POST /api/v1/tasks/{task_id}/pause
+
 Pause a task
 
 Resets status to PENDING and clears timestamps.
@@ -212,6 +230,7 @@ Resets status to PENDING and clears timestamps.
 **Response:** Updated task object
 
 #### POST /api/v1/tasks/{task_id}/cancel
+
 Cancel a task
 
 Changes status to CANCELED.
@@ -219,6 +238,7 @@ Changes status to CANCELED.
 **Response:** Updated task object
 
 #### POST /api/v1/tasks/{task_id}/reopen
+
 Reopen a completed or canceled task
 
 Resets status to PENDING.
@@ -226,9 +246,11 @@ Resets status to PENDING.
 **Response:** Updated task object
 
 #### POST /api/v1/tasks/{task_id}/log-hours
+
 Log actual hours worked
 
 **Request Body:**
+
 ```json
 {
   "hours": 8.0,
@@ -242,6 +264,7 @@ Log actual hours worked
 **Response:** Updated task object
 
 #### POST /api/v1/tasks/{task_id}/archive
+
 Archive a task (soft delete)
 
 Sets `is_archived` to true. Task can be restored later.
@@ -249,6 +272,7 @@ Sets `is_archived` to true. Task can be restored later.
 **Response:** 204 No Content
 
 #### POST /api/v1/tasks/{task_id}/restore
+
 Restore an archived task
 
 Sets `is_archived` to false.
@@ -260,9 +284,11 @@ Sets `is_archived` to false.
 Base path: `/api/v1/tasks/{task_id}/`
 
 #### POST /api/v1/tasks/{task_id}/dependencies
+
 Add a dependency
 
 **Request Body:**
+
 ```json
 {
   "depends_on_id": 2
@@ -276,14 +302,17 @@ Creates a dependency: task {task_id} depends on task {depends_on_id}.
 **Error:** 400 if circular dependency detected
 
 #### DELETE /api/v1/tasks/{task_id}/dependencies/{dep_id}
+
 Remove a dependency
 
 **Response:** Updated task object
 
 #### PUT /api/v1/tasks/{task_id}/tags
+
 Set task tags (replaces existing)
 
 **Request Body:**
+
 ```json
 {
   "tags": ["backend", "api", "urgent"]
@@ -297,9 +326,11 @@ Set task tags (replaces existing)
 Base path: `/api/v1/tasks/{task_id}/notes/`
 
 #### GET /api/v1/tasks/{task_id}/notes
+
 Get task notes
 
 **Response:**
+
 ```json
 {
   "content": "# Notes\n\nMarkdown content here..."
@@ -307,9 +338,11 @@ Get task notes
 ```
 
 #### PUT /api/v1/tasks/{task_id}/notes
+
 Update task notes
 
 **Request Body:**
+
 ```json
 {
   "content": "# Updated Notes\n\nNew markdown content..."
@@ -319,6 +352,7 @@ Update task notes
 **Response:** 204 No Content
 
 #### DELETE /api/v1/tasks/{task_id}/notes
+
 Delete task notes
 
 **Response:** 204 No Content
@@ -328,13 +362,16 @@ Delete task notes
 Base path: `/api/v1/`
 
 #### GET /api/v1/statistics
+
 Get task statistics
 
 **Query Parameters:**
+
 - `period` (string, optional) - all, 7d, 30d (default: all)
 - `focus` (string, optional) - all, basic, time, estimation, deadline, priority, trends (default: all)
 
 **Response:**
+
 ```json
 {
   "total_tasks": 10,
@@ -350,14 +387,17 @@ Get task statistics
 ```
 
 #### GET /api/v1/gantt
+
 Get Gantt chart data
 
 **Query Parameters:**
+
 - Same filtering options as GET /api/v1/tasks/
 - `start_date` (string, optional) - Chart start date
 - `end_date` (string, optional) - Chart end date
 
 **Response:**
+
 ```json
 {
   "tasks": [...],
@@ -373,9 +413,11 @@ Get Gantt chart data
 ```
 
 #### GET /api/v1/tags/statistics
+
 Get tag statistics
 
 **Response:**
+
 ```json
 {
   "backend": 5,
@@ -389,9 +431,11 @@ Get tag statistics
 Base path: `/api/v1/`
 
 #### POST /api/v1/optimize
+
 Run schedule optimization
 
 **Request Body:**
+
 ```json
 {
   "start_date": "2025-10-22",
@@ -402,12 +446,14 @@ Run schedule optimization
 ```
 
 **All fields optional:**
+
 - `start_date` - Optimization start date (default: today)
 - `max_hours_per_day` - Daily hour limit (default: from config or 6.0)
 - `algorithm` - Algorithm to use (default: greedy)
 - `force` - Force re-optimization even if tasks already scheduled
 
 **Available algorithms:**
+
 - `greedy` - Schedule highest priority tasks first
 - `balanced` - Distribute workload evenly
 - `backward` - Schedule from deadline backwards
@@ -419,6 +465,7 @@ Run schedule optimization
 - `monte_carlo` - Monte Carlo simulation
 
 **Response:**
+
 ```json
 {
   "scheduled_count": 8,
@@ -432,9 +479,11 @@ Run schedule optimization
 ```
 
 #### GET /api/v1/algorithms
+
 List available optimization algorithms
 
 **Response:**
+
 ```json
 {
   "algorithms": [
@@ -450,6 +499,7 @@ List available optimization algorithms
 ### Real-time Updates
 
 #### WebSocket /ws
+
 Real-time task notifications
 
 Connect to WebSocket endpoint for real-time updates:
@@ -465,6 +515,7 @@ ws.onmessage = (event) => {
 ```
 
 **Event types:**
+
 - `task_created` - New task created
 - `task_updated` - Task fields updated
 - `task_deleted` - Task deleted
@@ -558,6 +609,7 @@ done
 ### Common Errors
 
 **404 Not Found**
+
 ```json
 {
   "detail": "Task with ID 999 not found"
@@ -565,6 +617,7 @@ done
 ```
 
 **400 Bad Request**
+
 ```json
 {
   "detail": "Cannot start task: Task is already completed"
@@ -572,6 +625,7 @@ done
 ```
 
 **422 Validation Error**
+
 ```json
 {
   "detail": [

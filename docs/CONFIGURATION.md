@@ -55,6 +55,7 @@ cors_origins = ["http://localhost:3000", "http://localhost:8000"]
 ```
 
 **Fields:**
+
 - `cors_origins` (list of strings) - Allowed CORS origins for web browser access. Used for future Web UI support.
 
 **Environment variable:** `TASKDOG_API_CORS_ORIGINS` (comma-separated list)
@@ -69,6 +70,7 @@ theme = "textual-dark"        # TUI theme (default: "textual-dark")
 ```
 
 **Fields:**
+
 - `theme` (string) - TUI color theme. Available options:
   - `textual-dark` - Default dark theme
   - `textual-light` - Light theme
@@ -87,6 +89,7 @@ default_algorithm = "greedy"   # Default scheduling algorithm (default: "greedy"
 ```
 
 **Fields:**
+
 - `max_hours_per_day` (float) - Maximum hours to schedule per day. Used by optimizer to distribute workload.
 - `default_algorithm` (string) - Default optimization algorithm. Available options:
   - `greedy` - Schedule highest priority tasks first
@@ -100,6 +103,7 @@ default_algorithm = "greedy"   # Default scheduling algorithm (default: "greedy"
   - `monte_carlo` - Use Monte Carlo simulation
 
 **CLI Override:**
+
 ```bash
 taskdog optimize --max-hours-per-day 8 -a balanced
 ```
@@ -114,9 +118,11 @@ default_priority = 5           # Default task priority (default: 5)
 ```
 
 **Fields:**
+
 - `default_priority` (integer) - Default priority for new tasks. Higher values = higher priority.
 
 **CLI Override:**
+
 ```bash
 taskdog add "Task name" -p 150
 ```
@@ -132,6 +138,7 @@ default_end_hour = 18          # Business day end hour (default: 18)
 ```
 
 **Fields:**
+
 - `default_start_hour` (integer) - Business day start hour (0-23). Used when scheduling tasks without specific times.
 - `default_end_hour` (integer) - Business day end hour (0-23). Used for workload calculations.
 
@@ -147,11 +154,13 @@ country = "JP"                 # ISO 3166-1 alpha-2 country code
 ```
 
 **Fields:**
+
 - `country` (string, optional) - ISO 3166-1 alpha-2 country code for holiday checking.
   - Examples: `"JP"` (Japan), `"US"` (United States), `"GB"` (United Kingdom), `"DE"` (Germany)
   - Default: `None` (no holiday checking)
 
 **Behavior:**
+
 - When set, the optimizer will avoid scheduling tasks on national holidays for the specified country.
 - Requires internet connection to fetch holiday data on first use (cached locally).
 
@@ -166,6 +175,7 @@ backend = "sqlite"             # Storage backend (default: "sqlite")
 ```
 
 **Fields:**
+
 - `database_url` (string) - Path to SQLite database file. Supports `~` expansion.
 - `backend` (string) - Storage backend type. Currently only `"sqlite"` is supported.
 
@@ -178,12 +188,14 @@ backend = "sqlite"             # Storage backend (default: "sqlite")
 **Location:** `$XDG_DATA_HOME/taskdog/tasks.db` (fallback: `~/.local/share/taskdog/tasks.db`)
 
 **Features:**
+
 - Transactional writes with ACID guarantees
 - Automatic rollback on errors
 - Indexed queries for efficient filtering
 - Connection pooling and proper resource management
 
 **Backup:**
+
 ```bash
 cp ~/.local/share/taskdog/tasks.db ~/.local/share/taskdog/tasks.db.backup
 ```
@@ -386,6 +398,7 @@ backend = "sqlite"
 **Error:** "API connection error" or "Cannot connect to server"
 
 **Solution:**
+
 1. Start the API server: `taskdog-server`
 2. Verify server is running: `curl http://localhost:8000/health`
 3. Check host and port in `cli.toml` match the running server
@@ -396,6 +409,7 @@ backend = "sqlite"
 **Error:** TUI still uses default theme
 
 **Solution:**
+
 1. Ensure `[ui]` section is present in `~/.config/taskdog/config.toml`
 2. Restart TUI: `taskdog tui`
 3. Check theme name spelling (must match exactly)
@@ -405,6 +419,7 @@ backend = "sqlite"
 **Error:** Tasks scheduled for more hours than max_hours_per_day
 
 **Solution:**
+
 1. Fixed tasks (`is_fixed = true`) count towards daily limit but cannot be moved
 2. Check if multiple tasks overlap in schedule
 3. Increase `max_hours_per_day` if needed
@@ -415,6 +430,7 @@ backend = "sqlite"
 **Error:** "Database file not found" or "No such file or directory"
 
 **Solution:**
+
 1. Database is created automatically on first use
 2. Ensure parent directory exists: `mkdir -p ~/.local/share/taskdog`
 3. Check `database_url` path in config file
