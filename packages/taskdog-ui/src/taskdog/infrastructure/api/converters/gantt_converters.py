@@ -1,34 +1,60 @@
 """Gantt chart data converters."""
 
-from datetime import datetime
+from datetime import date
 from typing import Any
 
 from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
 from taskdog_core.application.dto.task_dto import GanttTaskDto
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.shared.utils.datetime_parser import parse_iso_date
 
 from .datetime_utils import _parse_datetime_fields
+from .exceptions import ConversionError
 
 
-def convert_to_gantt_output(data: dict[str, Any]) -> GanttOutput:
-    """Convert API response to GanttOutput.
+def _parse_date_range(data: dict[str, Any]) -> GanttDateRange:
+    """Parse date_range from API response.
 
     Args:
-        data: API response data
+        data: API response data containing date_range
 
     Returns:
-        GanttOutput with Gantt chart data
-    """
-    # Convert date_range
-    date_range = GanttDateRange(
-        start_date=datetime.fromisoformat(data["date_range"]["start_date"]).date(),
-        end_date=datetime.fromisoformat(data["date_range"]["end_date"]).date(),
-    )
+        GanttDateRange with parsed dates
 
-    # Convert tasks (list[GanttTaskResponse] -> list[GanttTaskDto])
+    Raises:
+        ConversionError: If date parsing fails
+    """
+    try:
+        start_date = parse_iso_date(data["date_range"]["start_date"])
+        end_date = parse_iso_date(data["date_range"]["end_date"])
+
+        if start_date is None or end_date is None:
+            raise ConversionError(
+                "date_range start_date or end_date is missing",
+                field="date_range",
+                value=data["date_range"],
+            )
+
+        return GanttDateRange(start_date=start_date, end_date=end_date)
+    except (ValueError, KeyError) as e:
+        raise ConversionError(
+            f"Failed to parse date_range: {e}",
+            field="date_range",
+            value=data.get("date_range"),
+        ) from e
+
+
+def _parse_gantt_tasks(data: dict[str, Any]) -> list[GanttTaskDto]:
+    """Parse tasks from API response.
+
+    Args:
+        data: API response data containing tasks
+
+    Returns:
+        List of GanttTaskDto
+    """
     tasks = []
     for task in data["tasks"]:
-        # Parse datetime fields using utility
         dt_fields = _parse_datetime_fields(
             task,
             ["planned_start", "planned_end", "actual_start", "actual_end", "deadline"],
@@ -48,32 +74,114 @@ def convert_to_gantt_output(data: dict[str, Any]) -> GanttOutput:
                 is_finished=task["status"].upper() in ["COMPLETED", "CANCELED"],
             )
         )
+    return tasks
 
-    # Convert task_daily_hours: dict[str, dict[str, float]] -> dict[int, dict[date, float]]
-    task_daily_hours = {
-        int(task_id): {
-            datetime.fromisoformat(date_str).date(): hours
-            for date_str, hours in daily_hours.items()
-        }
-        for task_id, daily_hours in data["task_daily_hours"].items()
-    }
 
-    # Convert daily_workload: dict[str, float] -> dict[date, float]
-    daily_workload = {
-        datetime.fromisoformat(date_str).date(): hours
-        for date_str, hours in data["daily_workload"].items()
-    }
+def _parse_task_daily_hours(
+    data: dict[str, Any],
+) -> dict[int, dict[date, float]]:
+    """Parse task_daily_hours from API response.
 
-    # Convert holidays: list[str] -> set[date]
-    holidays = {
-        datetime.fromisoformat(date_str).date() for date_str in data["holidays"]
-    }
+    Args:
+        data: API response data containing task_daily_hours
 
+    Returns:
+        Dict mapping task_id to daily hours dict
+
+    Raises:
+        ConversionError: If date parsing fails
+    """
+    try:
+        result: dict[int, dict[date, float]] = {}
+        for task_id, daily_hours in data["task_daily_hours"].items():
+            result[int(task_id)] = {}
+            for date_str, hours in daily_hours.items():
+                parsed = parse_iso_date(date_str)
+                if parsed is None:
+                    raise ValueError("Empty date string in task_daily_hours")
+                result[int(task_id)][parsed] = hours
+        return result
+    except (ValueError, KeyError) as e:
+        raise ConversionError(
+            f"Failed to parse task_daily_hours: {e}",
+            field="task_daily_hours",
+            value=data.get("task_daily_hours"),
+        ) from e
+
+
+def _parse_daily_workload(data: dict[str, Any]) -> dict[date, float]:
+    """Parse daily_workload from API response.
+
+    Args:
+        data: API response data containing daily_workload
+
+    Returns:
+        Dict mapping date to hours
+
+    Raises:
+        ConversionError: If date parsing fails
+    """
+    try:
+        result: dict[date, float] = {}
+        for date_str, hours in data["daily_workload"].items():
+            parsed = parse_iso_date(date_str)
+            if parsed is None:
+                raise ValueError("Empty date string in daily_workload")
+            result[parsed] = hours
+        return result
+    except (ValueError, KeyError) as e:
+        raise ConversionError(
+            f"Failed to parse daily_workload: {e}",
+            field="daily_workload",
+            value=data.get("daily_workload"),
+        ) from e
+
+
+def _parse_holidays(data: dict[str, Any]) -> set[date]:
+    """Parse holidays from API response.
+
+    Args:
+        data: API response data containing holidays
+
+    Returns:
+        Set of holiday dates
+
+    Raises:
+        ConversionError: If date parsing fails
+    """
+    try:
+        result: set[date] = set()
+        for date_str in data["holidays"]:
+            parsed = parse_iso_date(date_str)
+            if parsed is None:
+                raise ValueError("Empty date string in holidays")
+            result.add(parsed)
+        return result
+    except (ValueError, KeyError) as e:
+        raise ConversionError(
+            f"Failed to parse holidays: {e}",
+            field="holidays",
+            value=data.get("holidays"),
+        ) from e
+
+
+def convert_to_gantt_output(data: dict[str, Any]) -> GanttOutput:
+    """Convert API response to GanttOutput.
+
+    Args:
+        data: API response data
+
+    Returns:
+        GanttOutput with Gantt chart data
+
+    Raises:
+        ConversionError: If date parsing fails
+    """
     return GanttOutput(
-        date_range=date_range,
-        tasks=tasks,
-        task_daily_hours=task_daily_hours,
-        daily_workload=daily_workload,
-        holidays=holidays,
+        date_range=_parse_date_range(data),
+        tasks=_parse_gantt_tasks(data),
+        task_daily_hours=_parse_task_daily_hours(data),
+        daily_workload=_parse_daily_workload(data),
+        holidays=_parse_holidays(data),
         total_estimated_duration=data.get("total_estimated_duration", 0.0),
     )

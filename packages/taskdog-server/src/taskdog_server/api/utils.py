@@ -1,8 +1,12 @@
 """API utility functions."""
 
-from datetime import date, datetime
+from datetime import date
 
 from fastapi import HTTPException, status
+
+from taskdog_core.shared.utils.datetime_parser import (
+    parse_iso_date as _parse_iso_date,
+)
 
 
 def parse_iso_date(date_string: str | None) -> date | None:
@@ -17,10 +21,8 @@ def parse_iso_date(date_string: str | None) -> date | None:
     Raises:
         HTTPException: 400 if date format is invalid
     """
-    if not date_string:
-        return None
     try:
-        return datetime.fromisoformat(date_string).date()
+        return _parse_iso_date(date_string)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

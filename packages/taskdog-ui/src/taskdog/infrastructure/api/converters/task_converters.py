@@ -1,6 +1,5 @@
 """Task-related converters."""
 
-from datetime import datetime
 from typing import Any
 
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
@@ -159,8 +158,8 @@ def convert_to_task_list_output(
                 tags=task.get("tags", []),
                 is_archived=task.get("is_archived", False),
                 is_finished=task.get("is_finished", False),
-                created_at=datetime.fromisoformat(task["created_at"]),
-                updated_at=datetime.fromisoformat(task["updated_at"]),
+                created_at=_parse_required_datetime(task, "created_at"),
+                updated_at=_parse_required_datetime(task, "updated_at"),
             )
         )
 
