@@ -4,6 +4,13 @@ from datetime import date as date_type
 from datetime import datetime
 from typing import Any
 
+from taskdog_core.shared.utils.datetime_parser import (
+    parse_iso_date as _core_parse_date,
+)
+from taskdog_core.shared.utils.datetime_parser import (
+    parse_iso_datetime as _core_parse_datetime,
+)
+
 from .exceptions import ConversionError
 
 
@@ -25,7 +32,7 @@ def _parse_optional_datetime(data: dict[str, Any], field: str) -> datetime | Non
         return None
 
     try:
-        return datetime.fromisoformat(value)
+        return _core_parse_datetime(value)
     except (ValueError, TypeError) as e:
         raise ConversionError(
             f"Failed to parse datetime field '{field}': {value}",
@@ -52,7 +59,7 @@ def _parse_optional_date(data: dict[str, Any], field: str) -> date_type | None:
         return None
 
     try:
-        return date_type.fromisoformat(value)
+        return _core_parse_date(value)
     except (ValueError, TypeError) as e:
         raise ConversionError(
             f"Failed to parse date field '{field}': {value}",
@@ -98,7 +105,14 @@ def _parse_required_datetime(data: dict[str, Any], field: str) -> datetime:
         )
 
     try:
-        return datetime.fromisoformat(value)
+        result = _core_parse_datetime(value)
+        if result is None:
+            raise ConversionError(
+                f"Required datetime field '{field}' parsed to None",
+                field=field,
+                value=value,
+            )
+        return result
     except (ValueError, TypeError) as e:
         raise ConversionError(
             f"Failed to parse required datetime field '{field}': {value}",
@@ -125,7 +139,13 @@ def _parse_date_dict(data: dict[str, Any], field: str) -> dict[date_type, float]
         return {}
 
     try:
-        return {date_type.fromisoformat(k): v for k, v in value_dict.items()}
+        result = {}
+        for k, v in value_dict.items():
+            parsed_date = _core_parse_date(k)
+            if parsed_date is None:
+                raise ValueError(f"Empty date key in {field}")
+            result[parsed_date] = v
+        return result
     except (ValueError, TypeError) as e:
         raise ConversionError(
             f"Failed to parse date dictionary field '{field}': {value_dict}",

@@ -10,6 +10,9 @@ from taskdog_core.application.dto.optimization_output import (
 )
 from taskdog_core.application.dto.optimization_summary import OptimizationSummary
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
+from taskdog_core.shared.utils.datetime_parser import parse_iso_date
+
+from .exceptions import ConversionError
 
 
 def _parse_optimization_summary(
@@ -23,11 +26,29 @@ def _parse_optimization_summary(
 
     Returns:
         OptimizationSummary object
+
+    Raises:
+        ConversionError: If date parsing fails
     """
     # Calculate days span from start_date and end_date
-    start_date = date_type.fromisoformat(summary_data["start_date"])
-    end_date = date_type.fromisoformat(summary_data["end_date"])
-    days_span = (end_date - start_date).days + 1
+    try:
+        start_date = parse_iso_date(summary_data["start_date"])
+        end_date = parse_iso_date(summary_data["end_date"])
+
+        if start_date is None or end_date is None:
+            raise ConversionError(
+                "start_date or end_date is missing in optimization summary",
+                field="summary",
+                value=summary_data,
+            )
+
+        days_span = (end_date - start_date).days + 1
+    except ValueError as e:
+        raise ConversionError(
+            f"Failed to parse optimization summary dates: {e}",
+            field="summary",
+            value=summary_data,
+        ) from e
 
     # Create TaskSummaryDto objects for unscheduled tasks from failures
     unscheduled_tasks = [

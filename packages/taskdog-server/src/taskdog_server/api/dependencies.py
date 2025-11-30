@@ -3,7 +3,7 @@
 from contextlib import suppress
 from typing import Annotated
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
@@ -188,7 +188,7 @@ def get_holiday_checker(context: ApiContextDep) -> IHolidayChecker | None:
 
 
 def get_connection_manager(request: Request) -> ConnectionManager:
-    """Get the ConnectionManager instance from app.state.
+    """Get the ConnectionManager instance from app.state for HTTP endpoints.
 
     This function provides access to the ConnectionManager instance that manages
     all active WebSocket connections and handles broadcasting events.
@@ -209,6 +209,28 @@ def get_connection_manager(request: Request) -> ConnectionManager:
     return manager
 
 
+def get_connection_manager_ws(websocket: WebSocket) -> ConnectionManager:
+    """Get the ConnectionManager instance from app.state for WebSocket endpoints.
+
+    This is the WebSocket-specific version of get_connection_manager.
+    WebSocket endpoints cannot use Request, so we access app.state via websocket.app.
+
+    Args:
+        websocket: FastAPI WebSocket object (injected automatically)
+
+    Returns:
+        ConnectionManager: The connection manager instance from app.state
+
+    Note:
+        The instance is lazily initialized on first access if not already
+        set in app.state (e.g., by lifespan).
+    """
+    if not hasattr(websocket.app.state, "connection_manager"):
+        websocket.app.state.connection_manager = ConnectionManager()
+    manager: ConnectionManager = websocket.app.state.connection_manager
+    return manager
+
+
 # Typed dependencies for endpoint signatures
 QueryControllerDep = Annotated[QueryController, Depends(get_query_controller)]
 LifecycleControllerDep = Annotated[
@@ -226,6 +248,9 @@ NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
 ConfigDep = Annotated[Config, Depends(get_config)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
+ConnectionManagerWsDep = Annotated[
+    ConnectionManager, Depends(get_connection_manager_ws)
+]
 
 
 def get_broadcast_helper(
