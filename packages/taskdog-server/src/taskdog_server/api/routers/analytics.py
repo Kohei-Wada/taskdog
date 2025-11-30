@@ -34,6 +34,7 @@ from taskdog_server.api.models.responses import (
     TimeStatistics,
     TrendData,
 )
+from taskdog_server.api.utils import parse_iso_date
 
 router = APIRouter()
 
@@ -182,14 +183,8 @@ async def get_gantt_chart(
         Gantt chart data with tasks, daily hours, workload, and holidays
     """
     # Parse date strings to date objects
-    try:
-        start = datetime.fromisoformat(start_date).date() if start_date else None
-        end = datetime.fromisoformat(end_date).date() if end_date else None
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid date format: {e}",
-        ) from e
+    start = parse_iso_date(start_date)
+    end = parse_iso_date(end_date)
 
     # Create Input DTO (filter building is done in Use Case)
     input_dto = GetGanttDataInput(
