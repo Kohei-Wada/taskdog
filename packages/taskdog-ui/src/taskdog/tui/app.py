@@ -36,7 +36,10 @@ from taskdog.tui.screens.main_screen import MainScreen
 from taskdog.tui.services.websocket_handler import WebSocketHandler
 from taskdog.tui.state import TUIState
 from taskdog.tui.utils.css_loader import get_css_paths
-from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
+from taskdog_core.domain.exceptions.task_exceptions import (
+    ServerConnectionError,
+    TaskValidationError,
+)
 
 # CliConfig is used only for theme setting, not passed to TUIContext
 
@@ -376,25 +379,35 @@ class TaskdogTUI(App):
                 severity="error",
                 timeout=10,
             )
-            # Return empty task data to avoid crash
-            from taskdog.services.task_data_loader import TaskData
-            from taskdog_core.application.dto.task_list_output import TaskListOutput
-
-            empty_task_list_output = TaskListOutput(
-                tasks=[],
-                total_count=0,
-                filtered_count=0,
-                gantt_data=None,
+            return self._empty_task_data()
+        except TaskValidationError as e:
+            self.notify(
+                f"Authentication failed: {e}",
+                severity="error",
+                timeout=10,
             )
+            return self._empty_task_data()
 
-            return TaskData(
-                all_tasks=[],
-                filtered_tasks=[],
-                task_list_output=empty_task_list_output,
-                table_view_models=[],
-                gantt_view_model=None,
-                filtered_gantt_view_model=None,
-            )
+    def _empty_task_data(self):
+        """Return empty TaskData to avoid crash on errors."""
+        from taskdog.services.task_data_loader import TaskData
+        from taskdog_core.application.dto.task_list_output import TaskListOutput
+
+        empty_task_list_output = TaskListOutput(
+            tasks=[],
+            total_count=0,
+            filtered_count=0,
+            gantt_data=None,
+        )
+
+        return TaskData(
+            all_tasks=[],
+            filtered_tasks=[],
+            task_list_output=empty_task_list_output,
+            table_view_models=[],
+            gantt_view_model=None,
+            filtered_gantt_view_model=None,
+        )
 
     def _update_cache(self, task_data) -> None:
         """Update internal cache with task data.
