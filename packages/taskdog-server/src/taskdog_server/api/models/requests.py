@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_server.api.validators import validate_tags as _validate_tags
 
 
 class CreateTaskRequest(BaseModel):
@@ -29,10 +30,7 @@ class CreateTaskRequest(BaseModel):
     def validate_tags(cls, v: list[str] | None) -> list[str] | None:
         """Validate tags are non-empty and unique."""
         if v is not None:
-            if any(not tag.strip() for tag in v):
-                raise ValueError("Tags must be non-empty")
-            if len(v) != len(set(v)):
-                raise ValueError("Tags must be unique")
+            return _validate_tags(v)
         return v
 
 
@@ -59,10 +57,7 @@ class UpdateTaskRequest(BaseModel):
     def validate_tags(cls, v: list[str] | None) -> list[str] | None:
         """Validate tags are non-empty and unique."""
         if v is not None:
-            if any(not tag.strip() for tag in v):
-                raise ValueError("Tags must be non-empty")
-            if len(v) != len(set(v)):
-                raise ValueError("Tags must be unique")
+            return _validate_tags(v)
         return v
 
 
@@ -81,11 +76,7 @@ class SetTaskTagsRequest(BaseModel):
     @classmethod
     def validate_tags(cls, v: list[str]) -> list[str]:
         """Validate tags are non-empty and unique."""
-        if any(not tag.strip() for tag in v):
-            raise ValueError("Tags must be non-empty")
-        if len(v) != len(set(v)):
-            raise ValueError("Tags must be unique")
-        return v
+        return _validate_tags(v)
 
 
 class LogHoursRequest(BaseModel):
