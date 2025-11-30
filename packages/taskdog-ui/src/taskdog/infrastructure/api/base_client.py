@@ -22,16 +22,23 @@ class BaseApiClient:
     - Safe request execution with connection handling
     """
 
-    def __init__(self, base_url: str = "http://127.0.0.1:8000", timeout: float = 30.0):
+    def __init__(
+        self,
+        base_url: str = "http://127.0.0.1:8000",
+        timeout: float = 30.0,
+        api_key: str | None = None,
+    ):
         """Initialize base API client.
 
         Args:
             base_url: Base URL of the API server
             timeout: Request timeout in seconds
+            api_key: API key for authentication
         """
         self.base_url = base_url.rstrip("/")
         self.client = httpx.Client(base_url=self.base_url, timeout=timeout)
         self.client_id: str | None = None  # Set by WebSocket connection
+        self.api_key = api_key
 
     def close(self) -> None:
         """Close the HTTP client."""
@@ -83,10 +90,13 @@ class BaseApiClient:
             Exception: For other errors
         """
         try:
-            # Add X-Client-ID header if client_id is set
+            # Build headers
+            headers = kwargs.get("headers", {})
             if self.client_id:
-                headers = kwargs.get("headers", {})
                 headers["X-Client-ID"] = self.client_id
+            if self.api_key:
+                headers["X-API-Key"] = self.api_key
+            if headers:
                 kwargs["headers"] = headers
 
             request_method: Callable[..., httpx.Response] = getattr(self.client, method)

@@ -81,7 +81,8 @@ def cli(ctx: click.Context) -> None:
 
     try:
         api_client = TaskdogApiClient(
-            base_url=f"http://{config.api.host}:{config.api.port}"
+            base_url=f"http://{config.api.host}:{config.api.port}",
+            api_key=config.api.api_key,
         )
         # Test connection
         api_client.client.get("/health")
