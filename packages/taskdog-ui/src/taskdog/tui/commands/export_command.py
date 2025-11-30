@@ -10,7 +10,6 @@ from taskdog.exporters import (
 )
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.constants.export_config import EXPORT_FORMAT_CONFIG
 from taskdog.tui.context import TUIContext
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
@@ -19,7 +18,6 @@ if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
 
 
-@command_registry.register("export")
 class ExportCommand(TUICommandBase):
     """Command to export tasks to various formats.
 

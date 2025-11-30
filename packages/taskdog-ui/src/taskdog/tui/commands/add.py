@@ -1,14 +1,12 @@
 """Add task command for TUI."""
 
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.dialogs.task_form_dialog import TaskFormDialog
 from taskdog.tui.events import TaskCreated
 from taskdog.tui.forms.task_form_fields import TaskFormData
 from taskdog.tui.messages import TUIMessageBuilder
 
 
-@command_registry.register("add")
 class AddCommand(TUICommandBase):
     """Command to add a new task with input dialog."""
 

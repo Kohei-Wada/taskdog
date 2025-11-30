@@ -1,10 +1,8 @@
 """Refresh command for TUI."""
 
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog.tui.commands.registry import command_registry
 
 
-@command_registry.register("refresh")
 class RefreshCommand(TUICommandBase):
     """Command to refresh the task list."""
 

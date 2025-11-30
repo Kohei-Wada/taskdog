@@ -1,11 +1,9 @@
 """Delete task command for TUI."""
 
 from taskdog.tui.commands.batch_confirmation_base import BatchConfirmationCommandBase
-from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.messages import TUIMessageBuilder
 
 
-@command_registry.register("rm")
 class RmCommand(BatchConfirmationCommandBase):
     """Command to delete selected task(s) with confirmation (soft delete)."""
 

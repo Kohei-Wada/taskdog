@@ -1,11 +1,9 @@
 """Hard delete task command for TUI."""
 
 from taskdog.tui.commands.batch_confirmation_base import BatchConfirmationCommandBase
-from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.messages import TUIMessageBuilder
 
 
-@command_registry.register("hard_delete")
 class HardDeleteCommand(BatchConfirmationCommandBase):
     """Command to permanently delete selected task(s) (hard delete)."""
 

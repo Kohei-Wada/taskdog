@@ -1,12 +1,10 @@
 """Pause task command for TUI."""
 
 from taskdog.tui.commands.batch_status_change_base import BatchStatusChangeCommandBase
-from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.messages import TUIMessageBuilder
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
 
-@command_registry.register("pause")
 class PauseCommand(BatchStatusChangeCommandBase):
     """Command to pause the selected task(s)."""
 

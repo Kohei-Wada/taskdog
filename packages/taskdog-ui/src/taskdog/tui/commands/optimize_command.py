@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.constants.ui_settings import OPTIMIZATION_FAILURE_DETAIL_THRESHOLD
 from taskdog.tui.context import TUIContext
 from taskdog.tui.dialogs.algorithm_selection_dialog import AlgorithmSelectionDialog
@@ -14,7 +13,6 @@ if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
 
 
-@command_registry.register("optimize")
 class OptimizeCommand(TUICommandBase):
     """Command to optimize task schedules.
 

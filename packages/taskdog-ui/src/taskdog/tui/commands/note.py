@@ -1,12 +1,10 @@
 """Edit note command for TUI."""
 
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.messages import TUIMessageBuilder
 from taskdog.utils.note_editor import edit_task_note
 
 
-@command_registry.register("note")
 class NoteCommand(TUICommandBase):
     """Command to edit the selected task's note in external editor."""
 
