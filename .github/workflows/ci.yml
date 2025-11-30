@@ -6,21 +6,44 @@ on:
   pull_request:
     branches: [main]
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.13"]
+env:
+  PYTHON_VERSION: "3.13"
 
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run linter
+        run: make lint
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -30,20 +53,59 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --all-extras --dev
-          # Install workspace packages in editable mode for type checking
           uv pip install -e packages/taskdog-core
           uv pip install -e packages/taskdog-server
           uv pip install -e packages/taskdog-ui
-          # Install dev dependencies for each package (needed for parameterized tests)
-          uv pip install -e "packages/taskdog-core[dev]"
-          uv pip install -e "packages/taskdog-server[dev]"
-          uv pip install -e "packages/taskdog-ui[dev]"
-
-      - name: Run linter
-        run: make lint
 
       - name: Run type checker
         run: make typecheck
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras --dev
+          uv pip install -e "packages/taskdog-core[dev]"
+          uv pip install -e "packages/taskdog-server[dev]"
+          uv pip install -e "packages/taskdog-ui[dev]"
+
       - name: Run tests with coverage
         run: make coverage
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run security audit
+        run: uv tool run pip-audit --skip-editable --progress-spinner off
