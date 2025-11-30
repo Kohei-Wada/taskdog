@@ -157,7 +157,16 @@ class AlgorithmSelectionDialog(
             self._show_validation_error("Start date is required", start_date_input)
             return
 
-        # Parse values (validation handled by Textual validators)
+        # Check if inputs are valid (Textual shows validation error automatically)
+        if not max_hours_input.is_valid:
+            max_hours_input.focus()
+            return
+
+        if not start_date_input.is_valid:
+            start_date_input.focus()
+            return
+
+        # Parse values
         max_hours_str = max_hours_input.value.strip()
         max_hours = float(max_hours_str) if max_hours_str else None
 

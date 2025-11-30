@@ -119,19 +119,40 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             return
 
         # Parse priority (optional, defaults to config value)
-        # Validation is handled by Textual's Number validator
         from taskdog.tui.constants.ui_settings import (
             DEFAULT_END_HOUR,
             DEFAULT_START_HOUR,
             DEFAULT_TASK_PRIORITY,
         )
 
+        # Validate numeric fields before parsing (Textual shows validation error automatically)
+        if not priority_input.is_valid:
+            priority_input.focus()
+            return
+
+        if not duration_input.is_valid:
+            duration_input.focus()
+            return
+
         priority_str = priority_input.value.strip()
         priority = int(priority_str) if priority_str else DEFAULT_TASK_PRIORITY
 
-        # Parse duration (optional, validated by Textual's Number validator)
+        # Parse duration (optional)
         duration_str = duration_input.value.strip()
         duration = float(duration_str) if duration_str else None
+
+        # Validate datetime fields before parsing (Textual shows validation error automatically)
+        if not deadline_input.is_valid:
+            deadline_input.focus()
+            return
+
+        if not planned_start_input.is_valid:
+            planned_start_input.focus()
+            return
+
+        if not planned_end_input.is_valid:
+            planned_end_input.focus()
+            return
 
         # Parse datetime fields using DateTimeValidator.parse()
         deadline_validator = DateTimeValidator("deadline", DEFAULT_END_HOUR)
@@ -142,7 +163,16 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         planned_start = planned_start_validator.parse(planned_start_input.value)
         planned_end = planned_end_validator.parse(planned_end_input.value)
 
-        # Parse dependencies (optional, validated by Textual's Regex validator)
+        # Validate dependencies and tags before parsing
+        if not dependencies_input.is_valid:
+            dependencies_input.focus()
+            return
+
+        if not tags_input.is_valid:
+            tags_input.focus()
+            return
+
+        # Parse dependencies (optional)
         dependencies_str = dependencies_input.value.strip()
         if dependencies_str:
             dependencies = [
@@ -151,7 +181,7 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         else:
             dependencies = []
 
-        # Parse tags (optional, validated by Textual's Regex validator)
+        # Parse tags (optional)
         tags_str = tags_input.value.strip()
         tags = [x.strip() for x in tags_str.split(",") if x.strip()] if tags_str else []
 
