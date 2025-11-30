@@ -8,10 +8,11 @@ Phase 2 (Issue 228): Tags are now stored in normalized tables (tags/task_tags).
 The repository uses TagResolver to manage tag relationships when saving tasks.
 """
 
+import warnings
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import create_engine, event, func, select
 from sqlalchemy.orm import sessionmaker
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -62,6 +63,20 @@ class SqliteTaskRepository(TaskRepository):
             # SQLite-specific settings
             connect_args={"check_same_thread": False},  # Allow multi-threading
         )
+
+        # Configure SQLite pragmas for concurrency (Issue #226)
+        @event.listens_for(self.engine, "connect")  # type: ignore[no-untyped-call]
+        def set_sqlite_pragma(dbapi_connection: Any, connection_record: Any) -> None:
+            cursor = dbapi_connection.cursor()
+            try:
+                # WAL mode enables concurrent readers during writes
+                cursor.execute("PRAGMA journal_mode=WAL")
+                # 30 second timeout for lock acquisition
+                cursor.execute("PRAGMA busy_timeout=30000")
+                # Good balance between safety and performance with WAL
+                cursor.execute("PRAGMA synchronous=NORMAL")
+            finally:
+                cursor.close()
 
         # Create sessionmaker for managing database sessions
         self.Session = sessionmaker(bind=self.engine)
@@ -315,9 +330,19 @@ class SqliteTaskRepository(TaskRepository):
     def generate_next_id(self) -> int:
         """Generate the next available task ID.
 
+        .. deprecated::
+            This method has a race condition in concurrent scenarios.
+            Use create() which uses database AUTOINCREMENT instead.
+
         Returns:
             The next available ID (max_id + 1, or 1 if no tasks exist)
         """
+        warnings.warn(
+            "generate_next_id() is deprecated due to race conditions. "
+            "Use create() method instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         with self.Session() as session:
             stmt = select(TaskModel.id).order_by(TaskModel.id.desc()).limit(1)  # type: ignore[attr-defined]
             result = session.scalar(stmt)
@@ -326,19 +351,22 @@ class SqliteTaskRepository(TaskRepository):
     def create(self, name: str, priority: int, **kwargs: Any) -> Task:
         """Create a new task with auto-generated ID and save it.
 
+        Uses SQLite AUTOINCREMENT to assign IDs atomically, avoiding race
+        conditions in concurrent scenarios (Issue #226).
+
         Args:
             name: Task name
             priority: Task priority
             **kwargs: Additional task fields
 
         Returns:
-            Created task with ID assigned
+            Created task with database-assigned ID
         """
-        task_id = self.generate_next_id()
         now = datetime.now()
 
+        # Create task without ID - database will assign via AUTOINCREMENT
         task = Task(
-            id=task_id,
+            id=None,
             name=name,
             priority=priority,
             created_at=now,
@@ -346,8 +374,22 @@ class SqliteTaskRepository(TaskRepository):
             **kwargs,
         )
 
-        self.save(task)
-        return task
+        with self.Session() as session:
+            # Create builders for this session
+            tag_resolver = TagResolver(session)
+            insert_builder = TaskInsertBuilder(session, self.mapper)
+            tag_builder = TaskTagRelationshipBuilder(session, tag_resolver)
+
+            # Insert task (flush assigns ID via AUTOINCREMENT)
+            model = insert_builder.insert_task(task)
+
+            # Sync tag relationships
+            tag_builder.sync_task_tags(model, task.tags)
+
+            session.commit()
+
+            # Return task with assigned ID
+            return self.mapper.from_model(model)
 
     def get_tag_counts(self) -> dict[str, int]:
         """Get all tags with their task counts using SQL aggregation.

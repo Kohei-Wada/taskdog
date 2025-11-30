@@ -76,6 +76,9 @@ class TaskFactory:
     ) -> Task:
         """Create and save a task with auto-generated name if not provided.
 
+        Uses repository.create() with database AUTOINCREMENT for ID assignment
+        to avoid race conditions in concurrent scenarios (Issue #226).
+
         Args:
             name: Task name (auto-generated if None)
             priority: Task priority (default: 1)
@@ -90,25 +93,17 @@ class TaskFactory:
             name = f"Test Task {self._task_counter}"
             self._task_counter += 1
 
-        # Generate ID
-        task_id = self.repository.generate_next_id()
+        # Build kwargs for repository.create()
+        create_kwargs = {**kwargs, "status": status}
+        if estimated_duration is not None:
+            create_kwargs["estimated_duration"] = estimated_duration
 
-        # Create task
-        task = Task(
-            id=task_id,
+        # Use repository.create() for atomic ID assignment
+        return self.repository.create(
             name=name,
             priority=priority,
-            status=status,
-            **kwargs,
+            **create_kwargs,
         )
-
-        # Set optional fields
-        if estimated_duration is not None:
-            task.estimated_duration = estimated_duration
-
-        # Save and return
-        self.repository.save(task)
-        return task
 
     def create_batch(self, count: int, **kwargs) -> list[Task]:
         """Create multiple tasks with shared properties.
