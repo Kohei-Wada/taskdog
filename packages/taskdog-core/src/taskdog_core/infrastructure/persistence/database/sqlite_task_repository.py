@@ -65,7 +65,7 @@ class SqliteTaskRepository(TaskRepository):
         )
 
         # Configure SQLite pragmas for concurrency (Issue #226)
-        @event.listens_for(self.engine, "connect")
+        @event.listens_for(self.engine, "connect")  # type: ignore[no-untyped-call]
         def set_sqlite_pragma(dbapi_connection: Any, connection_record: Any) -> None:
             cursor = dbapi_connection.cursor()
             # WAL mode enables concurrent readers during writes
