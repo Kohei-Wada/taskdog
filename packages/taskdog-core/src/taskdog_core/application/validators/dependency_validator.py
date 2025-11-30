@@ -1,7 +1,10 @@
 """Validator for task dependencies."""
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_core.domain.exceptions.task_exceptions import DependencyNotMetError
+from taskdog_core.domain.exceptions.task_exceptions import (
+    DependencyNotMetError,
+    TaskValidationError,
+)
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 
@@ -27,10 +30,6 @@ class DependencyValidator:
         """
         # task.id should always be set when this validator is called
         if task.id is None:
-            from taskdog_core.domain.exceptions.task_exceptions import (
-                TaskValidationError,
-            )
-
             raise TaskValidationError(
                 "Task ID must not be None for dependency validation"
             )
