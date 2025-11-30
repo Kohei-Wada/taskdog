@@ -4,8 +4,44 @@ This module provides helper functions to broadcast task change events
 to all connected WebSocket clients.
 """
 
+from typing import Any
+
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_server.websocket.connection_manager import ConnectionManager
+
+
+class EventBroadcaster:
+    """Centralized event broadcaster for WebSocket notifications.
+
+    Reduces code duplication by providing a common method for broadcasting
+    events with standard fields (type, source_client_id).
+    """
+
+    def __init__(self, manager: ConnectionManager) -> None:
+        """Initialize event broadcaster.
+
+        Args:
+            manager: ConnectionManager instance for WebSocket communication
+        """
+        self._manager = manager
+
+    async def broadcast_event(
+        self,
+        event_type: str,
+        payload: dict[str, Any],
+        exclude_client_id: str | None = None,
+    ) -> None:
+        """Broadcast an event with common fields.
+
+        Args:
+            event_type: The type of event (e.g., "task_created", "task_updated")
+            payload: Event-specific data to broadcast
+            exclude_client_id: Optional client ID to exclude from broadcast
+        """
+        broadcast_payload = payload.copy()
+        broadcast_payload["type"] = event_type
+        broadcast_payload["source_client_id"] = exclude_client_id
+        await self._manager.broadcast(broadcast_payload, exclude_client_id)
 
 
 async def broadcast_task_created(
@@ -20,16 +56,16 @@ async def broadcast_task_created(
         task: The created task DTO
         exclude_client_id: Optional client ID to exclude from broadcast
     """
-    await manager.broadcast(
+    broadcaster = EventBroadcaster(manager)
+    await broadcaster.broadcast_event(
+        "task_created",
         {
-            "type": "task_created",
             "task_id": task.id,
             "task_name": task.name,
             "priority": task.priority,
             "status": task.status.value,
-            "source_client_id": exclude_client_id,
         },
-        exclude_client_id=exclude_client_id,
+        exclude_client_id,
     )
 
 
@@ -47,16 +83,16 @@ async def broadcast_task_updated(
         fields: List of updated field names
         exclude_client_id: Optional client ID to exclude from broadcast
     """
-    await manager.broadcast(
+    broadcaster = EventBroadcaster(manager)
+    await broadcaster.broadcast_event(
+        "task_updated",
         {
-            "type": "task_updated",
             "task_id": task.id,
             "task_name": task.name,
             "updated_fields": fields,
             "status": task.status.value,
-            "source_client_id": exclude_client_id,
         },
-        exclude_client_id=exclude_client_id,
+        exclude_client_id,
     )
 
 
@@ -74,14 +110,14 @@ async def broadcast_task_deleted(
         task_name: The deleted task name
         exclude_client_id: Optional client ID to exclude from broadcast
     """
-    await manager.broadcast(
+    broadcaster = EventBroadcaster(manager)
+    await broadcaster.broadcast_event(
+        "task_deleted",
         {
-            "type": "task_deleted",
             "task_id": task_id,
             "task_name": task_name,
-            "source_client_id": exclude_client_id,
         },
-        exclude_client_id=exclude_client_id,
+        exclude_client_id,
     )
 
 
@@ -99,16 +135,16 @@ async def broadcast_task_status_changed(
         old_status: The previous status value
         exclude_client_id: Optional client ID to exclude from broadcast
     """
-    await manager.broadcast(
+    broadcaster = EventBroadcaster(manager)
+    await broadcaster.broadcast_event(
+        "task_status_changed",
         {
-            "type": "task_status_changed",
             "task_id": task.id,
             "task_name": task.name,
             "old_status": old_status,
             "new_status": task.status.value,
-            "source_client_id": exclude_client_id,
         },
-        exclude_client_id=exclude_client_id,
+        exclude_client_id,
     )
 
 
@@ -126,15 +162,15 @@ async def broadcast_task_notes_updated(
         task_name: The task name
         exclude_client_id: Optional client ID to exclude from broadcast
     """
-    await manager.broadcast(
+    broadcaster = EventBroadcaster(manager)
+    await broadcaster.broadcast_event(
+        "task_updated",
         {
-            "type": "task_updated",
             "task_id": task_id,
             "task_name": task_name,
             "updated_fields": ["notes"],
-            "source_client_id": exclude_client_id,
         },
-        exclude_client_id=exclude_client_id,
+        exclude_client_id,
     )
 
 
@@ -154,13 +190,13 @@ async def broadcast_schedule_optimized(
         algorithm: Algorithm used for optimization
         exclude_client_id: Optional client ID to exclude from broadcast
     """
-    await manager.broadcast(
+    broadcaster = EventBroadcaster(manager)
+    await broadcaster.broadcast_event(
+        "schedule_optimized",
         {
-            "type": "schedule_optimized",
             "scheduled_count": scheduled_count,
             "failed_count": failed_count,
             "algorithm": algorithm,
-            "source_client_id": exclude_client_id,
         },
-        exclude_client_id=exclude_client_id,
+        exclude_client_id,
     )
