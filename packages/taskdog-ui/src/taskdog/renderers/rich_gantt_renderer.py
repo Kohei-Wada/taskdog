@@ -60,11 +60,27 @@ class RichGanttRenderer(RichRendererBase):
         if gantt_view_model.is_empty():
             return None
 
+        table = self._create_table(gantt_view_model)
+        self._add_columns(table)
+        self._add_date_header_row(table, gantt_view_model)
+        self._add_task_rows(table, gantt_view_model)
+        self._add_summary_section(table, gantt_view_model)
+
+        return table
+
+    def _create_table(self, gantt_view_model: GanttViewModel) -> Table:
+        """Create and configure the base Table object.
+
+        Args:
+            gantt_view_model: Gantt data for title generation
+
+        Returns:
+            Configured Rich Table object
+        """
         start_date = gantt_view_model.start_date
         end_date = gantt_view_model.end_date
 
-        # Create Rich table
-        table = Table(
+        return Table(
             title=format_table_title(f"Gantt Chart ({start_date} to {end_date})"),
             show_header=True,
             header_style=TABLE_HEADER_STYLE,
@@ -72,7 +88,12 @@ class RichGanttRenderer(RichRendererBase):
             padding=TABLE_PADDING,
         )
 
-        # Add columns
+    def _add_columns(self, table: Table) -> None:
+        """Add column definitions to the table.
+
+        Args:
+            table: Rich Table object to add columns to
+        """
         table.add_column(
             "ID",
             justify="right",
@@ -92,30 +113,55 @@ class RichGanttRenderer(RichRendererBase):
         )
         table.add_column("Timeline", style=COLUMN_NAME_STYLE)
 
-        # Add date header row
+    def _add_date_header_row(
+        self, table: Table, gantt_view_model: GanttViewModel
+    ) -> None:
+        """Add the date header row to the table.
+
+        Args:
+            table: Rich Table object
+            gantt_view_model: Gantt data containing date range and holidays
+        """
         date_header = self._build_date_header(
-            start_date, end_date, gantt_view_model.holidays
+            gantt_view_model.start_date,
+            gantt_view_model.end_date,
+            gantt_view_model.holidays,
         )
         table.add_row("", "[dim]Date[/dim]", "", date_header)
 
-        # Display all tasks in sort order
+    def _add_task_rows(self, table: Table, gantt_view_model: GanttViewModel) -> None:
+        """Add all task rows to the table.
+
+        Args:
+            table: Rich Table object
+            gantt_view_model: Gantt data containing tasks and daily hours
+        """
         for task_vm in gantt_view_model.tasks:
             task_daily_hours = gantt_view_model.task_daily_hours.get(task_vm.id, {})
             self._add_task_to_gantt(
                 task_vm,
                 task_daily_hours,
                 table,
-                start_date,
-                end_date,
+                gantt_view_model.start_date,
+                gantt_view_model.end_date,
                 gantt_view_model.holidays,
             )
 
-        # Add section divider before summary rows
+    def _add_summary_section(
+        self, table: Table, gantt_view_model: GanttViewModel
+    ) -> None:
+        """Add section divider, workload row, and legend.
+
+        Args:
+            table: Rich Table object
+            gantt_view_model: Gantt data containing workload and totals
+        """
         table.add_section()
 
-        # Add workload summary row with total estimated duration
         workload_timeline = self._build_workload_summary_row(
-            gantt_view_model.daily_workload, start_date, end_date
+            gantt_view_model.daily_workload,
+            gantt_view_model.start_date,
+            gantt_view_model.end_date,
         )
         total_est_str = (
             f"{gantt_view_model.total_estimated_duration:.1f}"
@@ -129,12 +175,9 @@ class RichGanttRenderer(RichRendererBase):
             workload_timeline,
         )
 
-        # Add legend as caption (centered by default)
         legend_text = self._build_legend()
         table.caption = legend_text
         table.caption_justify = "center"
-
-        return table
 
     def render(self, gantt_view_model: GanttViewModel) -> None:
         """Render and print Gantt chart from GanttViewModel.
