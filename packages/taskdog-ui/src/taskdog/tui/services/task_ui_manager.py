@@ -146,12 +146,11 @@ class TaskUIManager:
                 all=False,  # Non-archived by default
             )
 
-        # Update Table widget
-        if main_screen.task_table:
-            main_screen.task_table.refresh_tasks(
-                task_data.table_view_models,
-                keep_scroll_position=keep_scroll_position,
-            )
+        # Update Table widget (via main_screen to update search result count)
+        main_screen.refresh_tasks(
+            task_data.table_view_models,
+            keep_scroll_position=keep_scroll_position,
+        )
 
     def recalculate_gantt(self, start_date: date, end_date: date) -> None:
         """Recalculate gantt data for a new date range.
