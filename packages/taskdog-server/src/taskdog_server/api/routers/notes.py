@@ -6,7 +6,7 @@ from fastapi import APIRouter, Header, status
 
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import (
-    BroadcastHelperDep,
+    EventBroadcasterDep,
     NotesRepositoryDep,
     RepositoryDep,
 )
@@ -54,7 +54,7 @@ async def update_task_notes(
     request: UpdateNotesRequest,
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
-    broadcast: BroadcastHelperDep,
+    broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
 ) -> NotesResponse:
     """Update task notes.
@@ -64,7 +64,7 @@ async def update_task_notes(
         request: Notes content
         repository: Task repository dependency
         notes_repo: Notes repository dependency
-        broadcast: Broadcast helper dependency
+        broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
 
     Returns:
@@ -83,7 +83,7 @@ async def update_task_notes(
     has_notes = notes_repo.has_notes(task_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcast.task_notes_updated(task_id, task.name, x_client_id)
+    broadcaster.task_notes_updated(task_id, task.name, x_client_id)
 
     return NotesResponse(task_id=task_id, content=request.content, has_notes=has_notes)
 
@@ -94,7 +94,7 @@ async def delete_task_notes(
     task_id: int,
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
-    broadcast: BroadcastHelperDep,
+    broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
 ) -> None:
     """Delete task notes.
@@ -103,7 +103,7 @@ async def delete_task_notes(
         task_id: Task ID
         repository: Task repository dependency
         notes_repo: Notes repository dependency
-        broadcast: Broadcast helper dependency
+        broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
 
     Raises:
@@ -118,4 +118,4 @@ async def delete_task_notes(
     notes_repo.write_notes(task_id, "")
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcast.task_notes_updated(task_id, task.name, x_client_id)
+    broadcaster.task_notes_updated(task_id, task.name, x_client_id)

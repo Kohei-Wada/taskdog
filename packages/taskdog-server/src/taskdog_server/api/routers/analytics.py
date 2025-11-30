@@ -14,7 +14,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 from taskdog_server.api.converters import convert_to_gantt_response
 from taskdog_server.api.dependencies import (
     AnalyticsControllerDep,
-    BroadcastHelperDep,
+    EventBroadcasterDep,
     HolidayCheckerDep,
     QueryControllerDep,
 )
@@ -241,7 +241,7 @@ def run_optimization(
 async def optimize_schedule(
     request: OptimizeScheduleRequest,
     controller: AnalyticsControllerDep,
-    broadcast: BroadcastHelperDep,
+    broadcaster: EventBroadcasterDep,
     run_async: bool = Query(False, description="Run optimization in background"),
     x_client_id: Annotated[str | None, Header()] = None,
 ) -> OptimizationResponse:
@@ -250,7 +250,7 @@ async def optimize_schedule(
     Args:
         request: Optimization parameters
         controller: Analytics controller dependency
-        broadcast: Broadcast helper dependency
+        broadcaster: Event broadcaster dependency
         run_async: If True, run in background and return immediately
         x_client_id: Optional client ID from WebSocket connection
 
@@ -266,7 +266,7 @@ async def optimize_schedule(
 
         if run_async:
             # Add optimization to background tasks
-            broadcast.add_background_task(
+            broadcaster.add_background_task(
                 run_optimization,
                 controller,
                 request.algorithm,
@@ -299,7 +299,7 @@ async def optimize_schedule(
         )
 
         # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.schedule_optimized(
+        broadcaster.schedule_optimized(
             len(result.successful_tasks),
             len(result.failed_tasks),
             request.algorithm,
