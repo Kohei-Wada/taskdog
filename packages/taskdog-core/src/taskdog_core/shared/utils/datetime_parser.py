@@ -10,6 +10,7 @@ Error Handling:
 - Raises ValueError for malformed input (consumers handle translation)
 """
 
+from collections.abc import Iterable
 from datetime import date, datetime
 
 
@@ -75,3 +76,43 @@ def format_iso_date(d: date | None) -> str | None:
     if d is None:
         return None
     return d.isoformat()
+
+
+def parse_date_keyed_dict[T](str_dict: dict[str, T]) -> dict[date, T]:
+    """Parse dict with ISO date string keys to date object keys.
+
+    Args:
+        str_dict: Dictionary with ISO date string keys
+
+    Returns:
+        Dictionary with date object keys and original values
+
+    Raises:
+        ValueError: If any date key is malformed or empty
+    """
+    result: dict[date, T] = {}
+    for date_str, value in str_dict.items():
+        if not date_str:
+            raise ValueError("Empty date key")
+        result[datetime.fromisoformat(date_str).date()] = value
+    return result
+
+
+def parse_date_set(date_strings: Iterable[str]) -> set[date]:
+    """Parse iterable of ISO date strings to set of date objects.
+
+    Args:
+        date_strings: Iterable of ISO date strings
+
+    Returns:
+        Set of date objects
+
+    Raises:
+        ValueError: If any date string is malformed or empty
+    """
+    result: set[date] = set()
+    for date_str in date_strings:
+        if not date_str:
+            raise ValueError("Empty date string")
+        result.add(datetime.fromisoformat(date_str).date())
+    return result

@@ -8,7 +8,7 @@ from taskdog_core.application.dto.task_dto import GanttTaskDto
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.shared.utils.datetime_parser import parse_iso_date
 
-from .datetime_utils import _parse_datetime_fields
+from .datetime_utils import _parse_date_dict, _parse_date_set, _parse_datetime_fields
 from .exceptions import ConversionError
 
 
@@ -94,12 +94,9 @@ def _parse_task_daily_hours(
     try:
         result: dict[int, dict[date, float]] = {}
         for task_id, daily_hours in data["task_daily_hours"].items():
-            result[int(task_id)] = {}
-            for date_str, hours in daily_hours.items():
-                parsed = parse_iso_date(date_str)
-                if parsed is None:
-                    raise ValueError("Empty date string in task_daily_hours")
-                result[int(task_id)][parsed] = hours
+            result[int(task_id)] = _parse_date_dict(
+                {"daily_hours": daily_hours}, "daily_hours"
+            )
         return result
     except (ValueError, KeyError) as e:
         raise ConversionError(
@@ -121,20 +118,7 @@ def _parse_daily_workload(data: dict[str, Any]) -> dict[date, float]:
     Raises:
         ConversionError: If date parsing fails
     """
-    try:
-        result: dict[date, float] = {}
-        for date_str, hours in data["daily_workload"].items():
-            parsed = parse_iso_date(date_str)
-            if parsed is None:
-                raise ValueError("Empty date string in daily_workload")
-            result[parsed] = hours
-        return result
-    except (ValueError, KeyError) as e:
-        raise ConversionError(
-            f"Failed to parse daily_workload: {e}",
-            field="daily_workload",
-            value=data.get("daily_workload"),
-        ) from e
+    return _parse_date_dict(data, "daily_workload")
 
 
 def _parse_holidays(data: dict[str, Any]) -> set[date]:
@@ -149,20 +133,7 @@ def _parse_holidays(data: dict[str, Any]) -> set[date]:
     Raises:
         ConversionError: If date parsing fails
     """
-    try:
-        result: set[date] = set()
-        for date_str in data["holidays"]:
-            parsed = parse_iso_date(date_str)
-            if parsed is None:
-                raise ValueError("Empty date string in holidays")
-            result.add(parsed)
-        return result
-    except (ValueError, KeyError) as e:
-        raise ConversionError(
-            f"Failed to parse holidays: {e}",
-            field="holidays",
-            value=data.get("holidays"),
-        ) from e
+    return _parse_date_set(data, "holidays")
 
 
 def convert_to_gantt_output(data: dict[str, Any]) -> GanttOutput:
