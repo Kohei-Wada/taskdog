@@ -11,17 +11,17 @@ class DurationFormatter:
 
     @staticmethod
     def format_hours(hours: float | None) -> str:
-        """Format hours as a string with 'h' suffix.
+        """Format hours as a string.
 
         Args:
             hours: Hours value or None
 
         Returns:
-            Formatted string (e.g., "5h") or "-" if None
+            Formatted string (e.g., "5") or "-" if None
         """
         if hours is None:
             return "-"
-        return f"{hours}h"
+        return str(hours)
 
     @staticmethod
     def format_estimated_duration(task_vm: TaskRowViewModel) -> str:
@@ -31,7 +31,7 @@ class DurationFormatter:
             task_vm: TaskRowViewModel to format estimated duration for
 
         Returns:
-            Formatted estimated duration string (e.g., "5h" or "-")
+            Formatted estimated duration string (e.g., "5" or "-")
         """
         return DurationFormatter.format_hours(task_vm.estimated_duration)
 
@@ -43,7 +43,7 @@ class DurationFormatter:
             task_vm: TaskRowViewModel to format actual duration for
 
         Returns:
-            Formatted actual duration string (e.g., "3h" or "-")
+            Formatted actual duration string (e.g., "3" or "-")
         """
         return DurationFormatter.format_hours(task_vm.actual_duration_hours)
 

@@ -17,24 +17,7 @@ from textual.widgets import DataTable
 if TYPE_CHECKING:
     pass
 
-from taskdog.constants.table_dimensions import (
-    PAGE_SCROLL_SIZE,
-    TASK_TABLE_ACTUAL_END_WIDTH,
-    TASK_TABLE_ACTUAL_START_WIDTH,
-    TASK_TABLE_ACTUAL_WIDTH,
-    TASK_TABLE_CHECKBOX_WIDTH,
-    TASK_TABLE_DEADLINE_WIDTH,
-    TASK_TABLE_DEPENDS_ON_WIDTH,
-    TASK_TABLE_ELAPSED_WIDTH,
-    TASK_TABLE_EST_WIDTH,
-    TASK_TABLE_FLAGS_WIDTH,
-    TASK_TABLE_ID_WIDTH,
-    TASK_TABLE_NAME_WIDTH,
-    TASK_TABLE_PLANNED_END_WIDTH,
-    TASK_TABLE_PLANNED_START_WIDTH,
-    TASK_TABLE_PRIORITY_WIDTH,
-    TASK_TABLE_STATUS_WIDTH,
-)
+from taskdog.constants.table_dimensions import PAGE_SCROLL_SIZE
 from taskdog.tui.events import TaskSelected
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
@@ -135,38 +118,22 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
 
     def setup_columns(self):
         """Set up table columns."""
-        self.add_column(Text("", justify="center"), width=TASK_TABLE_CHECKBOX_WIDTH)
-        self.add_column(Text("ID", justify="center"), width=TASK_TABLE_ID_WIDTH)
-        self.add_column(Text("Name", justify="center"), width=TASK_TABLE_NAME_WIDTH)
-        self.add_column(Text("Status", justify="center"), width=TASK_TABLE_STATUS_WIDTH)
-        self.add_column(Text("Pri", justify="center"), width=TASK_TABLE_PRIORITY_WIDTH)
-        self.add_column(
-            Text("Flag", justify="center"), width=TASK_TABLE_FLAGS_WIDTH
-        )  # Flags (Fixed + Note)
-        self.add_column(Text("Est", justify="center"), width=TASK_TABLE_EST_WIDTH)
-        self.add_column(Text("Actual", justify="center"), width=TASK_TABLE_ACTUAL_WIDTH)
-        self.add_column(
-            Text("Deadline", justify="center"), width=TASK_TABLE_DEADLINE_WIDTH
-        )
-        self.add_column(
-            Text("Plan Start", justify="center"), width=TASK_TABLE_PLANNED_START_WIDTH
-        )
-        self.add_column(
-            Text("Plan End", justify="center"), width=TASK_TABLE_PLANNED_END_WIDTH
-        )
-        self.add_column(
-            Text("Actual Start", justify="center"), width=TASK_TABLE_ACTUAL_START_WIDTH
-        )
-        self.add_column(
-            Text("Actual End", justify="center"), width=TASK_TABLE_ACTUAL_END_WIDTH
-        )
-        self.add_column(
-            Text("Elapsed", justify="center"), width=TASK_TABLE_ELAPSED_WIDTH
-        )
-        self.add_column(
-            Text("Deps", justify="center"), width=TASK_TABLE_DEPENDS_ON_WIDTH
-        )
-        self.add_column(Text("Tags", justify="center"), width=None)
+        self.add_column(Text("", justify="center"))
+        self.add_column(Text("ID", justify="center"))
+        self.add_column(Text("Name", justify="center"))
+        self.add_column(Text("Status", justify="center"))
+        self.add_column(Text("Priority", justify="center"))
+        self.add_column(Text("Flags", justify="center"))
+        self.add_column(Text("Estimated[h]", justify="center"))
+        self.add_column(Text("Actual[h]", justify="center"))
+        self.add_column(Text("Deadline", justify="center"))
+        self.add_column(Text("Planned Start", justify="center"))
+        self.add_column(Text("Planned End", justify="center"))
+        self.add_column(Text("Actual Start", justify="center"))
+        self.add_column(Text("Actual End", justify="center"))
+        self.add_column(Text("Elapsed", justify="center"))
+        self.add_column(Text("Dependencies", justify="center"))
+        self.add_column(Text("Tags", justify="center"))
 
     def load_tasks(self, view_models: list[TaskRowViewModel]):
         """Load task ViewModels into the table.

@@ -16,7 +16,7 @@ class TestDurationFormatter(unittest.TestCase):
 
     @parameterized.expand(
         [
-            ("with_value", 5.0, "5.0h"),
+            ("with_value", 5.0, "5.0"),
             ("with_none", None, "-"),
         ]
     )
@@ -27,7 +27,7 @@ class TestDurationFormatter(unittest.TestCase):
 
     @parameterized.expand(
         [
-            ("with_value", 10.0, "10.0h"),
+            ("with_value", 10.0, "10.0"),
             ("without_value", None, "-"),
         ]
     )
@@ -59,7 +59,7 @@ class TestDurationFormatter(unittest.TestCase):
 
     @parameterized.expand(
         [
-            ("with_value", TaskStatus.COMPLETED, 8.5, True, "8.5h"),
+            ("with_value", TaskStatus.COMPLETED, 8.5, True, "8.5"),
             ("without_value", TaskStatus.PENDING, None, False, "-"),
         ]
     )
