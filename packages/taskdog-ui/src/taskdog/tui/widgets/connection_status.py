@@ -1,40 +1,53 @@
 """Connection status indicator widget for TUI header."""
 
+from typing import TYPE_CHECKING
+
 from textual.reactive import reactive
 from textual.widgets import Static
 
-from taskdog.tui.state import TUIState
+if TYPE_CHECKING:
+    from taskdog.tui.state import ConnectionStatus as ConnectionStatusData
 
 
-class ConnectionStatus(Static):
+class ConnectionStatusWidget(Static):
     """Display server connection status in the TUI header.
 
     Shows one of three states:
     - 🟢 Online: Both API and WebSocket are connected
     - 🟡 Partial: Only one connection is active
     - 🔴 Offline: Both connections are down
+
+    Subscribes to ConnectionStatusManager for automatic updates via observer pattern.
     """
 
     # Reactive properties that trigger update when changed
     is_api_connected: reactive[bool] = reactive(False)
     is_websocket_connected: reactive[bool] = reactive(False)
 
-    def __init__(self, state: TUIState, *args, **kwargs) -> None:
-        """Initialize the connection status widget.
-
-        Args:
-            state: TUI state containing connection status
-        """
+    def __init__(self, *args, **kwargs) -> None:
+        """Initialize the connection status widget."""
         super().__init__(*args, **kwargs)
-        self.state = state
         self.add_class("connection-status")
 
     def on_mount(self) -> None:
         """Called when widget is mounted to the DOM."""
-        # Initialize from current state
-        self.is_api_connected = self.state.is_api_connected
-        self.is_websocket_connected = self.state.is_websocket_connected
+        # Subscribe to connection status changes via observer pattern
+        self.app.connection_manager.subscribe(self._on_connection_status_changed)
+
+        # Initialize from current status
+        status = self.app.connection_manager.status
+        self.is_api_connected = status.is_api_connected
+        self.is_websocket_connected = status.is_websocket_connected
         self._update_display()
+
+    def _on_connection_status_changed(self, status: "ConnectionStatusData") -> None:
+        """Handle connection status change from ConnectionStatusManager.
+
+        Args:
+            status: New connection status
+        """
+        self.is_api_connected = status.is_api_connected
+        self.is_websocket_connected = status.is_websocket_connected
 
     def watch_is_api_connected(self, new_value: bool) -> None:
         """Watch for changes to API connection status.
@@ -71,11 +84,3 @@ class ConnectionStatus(Static):
         # Remove all status classes and add the current one
         self.remove_class("status-online", "status-partial", "status-offline")
         self.add_class(status_class)
-
-    def refresh_from_state(self) -> None:
-        """Refresh connection status from TUIState.
-
-        Call this method to manually update the display based on current state.
-        """
-        self.is_api_connected = self.state.is_api_connected
-        self.is_websocket_connected = self.state.is_websocket_connected

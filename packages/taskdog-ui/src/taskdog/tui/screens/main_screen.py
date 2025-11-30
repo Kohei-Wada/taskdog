@@ -77,9 +77,8 @@ class MainScreen(Screen[None]):
             yield self.search_input
 
         # Custom footer with keybindings and connection status
-        if self.state:
-            self.custom_footer = CustomFooter(self.state, id="custom-footer")
-            yield self.custom_footer
+        self.custom_footer = CustomFooter(id="custom-footer")
+        yield self.custom_footer
 
     def on_mount(self) -> None:
         """Called when screen is mounted."""
