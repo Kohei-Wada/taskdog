@@ -1,9 +1,8 @@
 """CRUD endpoints for task management."""
 
-from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, Query, status
+from fastapi import APIRouter, Header, Query, status
 
 from taskdog_core.application.dto.query_inputs import ListTasksInput, TimeRange
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
@@ -28,6 +27,7 @@ from taskdog_server.api.models.responses import (
     TaskOperationResponse,
     UpdateTaskResponse,
 )
+from taskdog_server.api.utils import parse_iso_date
 
 router = APIRouter()
 
@@ -119,22 +119,10 @@ async def list_tasks(
         List of tasks with metadata, optionally including Gantt data
     """
     # Parse date strings to date objects
-    try:
-        start = datetime.fromisoformat(start_date).date() if start_date else None
-        end = datetime.fromisoformat(end_date).date() if end_date else None
-        gantt_start = (
-            datetime.fromisoformat(gantt_start_date).date()
-            if gantt_start_date
-            else None
-        )
-        gantt_end = (
-            datetime.fromisoformat(gantt_end_date).date() if gantt_end_date else None
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid date format: {e}",
-        ) from e
+    start = parse_iso_date(start_date)
+    end = parse_iso_date(end_date)
+    gantt_start = parse_iso_date(gantt_start_date)
+    gantt_end = parse_iso_date(gantt_end_date)
 
     # Create Input DTO (filter building is done in Use Case)
     input_dto = ListTasksInput(
