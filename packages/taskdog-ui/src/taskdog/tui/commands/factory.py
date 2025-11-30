@@ -7,8 +7,8 @@ command creation logic.
 
 from typing import TYPE_CHECKING, Any
 
+from taskdog.tui.commands import COMMANDS
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.context import TUIContext
 
 if TYPE_CHECKING:
@@ -51,7 +51,7 @@ class CommandFactory:
         Returns:
             Command instance, or None if command not found
         """
-        command_class = command_registry.get(command_name)
+        command_class = COMMANDS.get(command_name)
         if command_class is None:
             return None
 

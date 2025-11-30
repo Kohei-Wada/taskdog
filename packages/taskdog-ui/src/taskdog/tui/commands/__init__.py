@@ -1,35 +1,38 @@
-"""TUI command classes for action handling.
+"""TUI command classes for action handling."""
 
-This module uses lazy registration to defer command imports until they are
-actually needed, significantly improving TUI startup performance.
-"""
+from taskdog.tui.commands.add import AddCommand
+from taskdog.tui.commands.base import TUICommandBase
+from taskdog.tui.commands.cancel import CancelCommand
+from taskdog.tui.commands.done import DoneCommand
+from taskdog.tui.commands.edit import EditCommand
+from taskdog.tui.commands.export_command import ExportCommand
+from taskdog.tui.commands.hard_delete import HardDeleteCommand
+from taskdog.tui.commands.help_command import ShowHelpCommand
+from taskdog.tui.commands.note import NoteCommand
+from taskdog.tui.commands.optimize_command import OptimizeCommand
+from taskdog.tui.commands.pause import PauseCommand
+from taskdog.tui.commands.refresh_command import RefreshCommand
+from taskdog.tui.commands.reopen import ReopenCommand
+from taskdog.tui.commands.rm import RmCommand
+from taskdog.tui.commands.show import ShowCommand
+from taskdog.tui.commands.start import StartCommand
 
-from taskdog.tui.commands.registry import command_registry
-
-# Lazy command registration - modules are imported only when commands are first used
-# Format: "command_name": "module.path:ClassName"
-_LAZY_COMMANDS = {
-    "add": "taskdog.tui.commands.add:AddCommand",
-    "cancel": "taskdog.tui.commands.cancel:CancelCommand",
-    "done": "taskdog.tui.commands.done:DoneCommand",
-    "edit": "taskdog.tui.commands.edit:EditCommand",
-    "export": "taskdog.tui.commands.export_command:ExportCommand",
-    "hard_delete": "taskdog.tui.commands.hard_delete:HardDeleteCommand",
-    "note": "taskdog.tui.commands.note:NoteCommand",
-    "optimize": "taskdog.tui.commands.optimize_command:OptimizeCommand",
-    "pause": "taskdog.tui.commands.pause:PauseCommand",
-    "refresh": "taskdog.tui.commands.refresh_command:RefreshCommand",
-    "reopen": "taskdog.tui.commands.reopen:ReopenCommand",
-    "rm": "taskdog.tui.commands.rm:RmCommand",
-    "show": "taskdog.tui.commands.show:ShowCommand",
-    "show_help": "taskdog.tui.commands.help_command:ShowHelpCommand",
-    "start": "taskdog.tui.commands.start:StartCommand",
+COMMANDS: dict[str, type[TUICommandBase]] = {
+    "add": AddCommand,
+    "cancel": CancelCommand,
+    "done": DoneCommand,
+    "edit": EditCommand,
+    "export": ExportCommand,
+    "hard_delete": HardDeleteCommand,
+    "show_help": ShowHelpCommand,
+    "note": NoteCommand,
+    "optimize": OptimizeCommand,
+    "pause": PauseCommand,
+    "refresh": RefreshCommand,
+    "reopen": ReopenCommand,
+    "rm": RmCommand,
+    "show": ShowCommand,
+    "start": StartCommand,
 }
 
-# Register all commands for lazy loading
-for command_name, module_path in _LAZY_COMMANDS.items():
-    command_registry.register_lazy(command_name, module_path)
-
-__all__ = [
-    "command_registry",
-]
+__all__ = ["COMMANDS"]

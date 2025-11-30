@@ -1,11 +1,9 @@
 """Cancel task command for TUI."""
 
 from taskdog.tui.commands.batch_confirmation_base import BatchConfirmationCommandBase
-from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.messages import TUIMessageBuilder
 
 
-@command_registry.register("cancel")
 class CancelCommand(BatchConfirmationCommandBase):
     """Command to cancel the selected task(s)."""
 

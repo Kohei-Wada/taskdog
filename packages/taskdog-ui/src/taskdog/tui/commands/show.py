@@ -3,12 +3,10 @@
 from typing import Any
 
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog.tui.commands.registry import command_registry
 from taskdog.tui.dialogs.task_detail_dialog import TaskDetailDialog
 from taskdog.utils.note_editor import edit_task_note
 
 
-@command_registry.register("show")
 class ShowCommand(TUICommandBase):
     """Command to show details of the selected task in a modal screen."""
 
