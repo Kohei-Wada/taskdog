@@ -1,0 +1,279 @@
+{
+  "projects": [
+    {
+      "name": "Web Application Development",
+      "tasks": [
+        {
+          "id": "T1",
+          "name": "Project kickoff meeting",
+          "priority": 4,
+          "tags": ["work", "planning"],
+          "deadline_days": 1,
+          "estimate": 2,
+          "note": "Gather all stakeholders to discuss project scope, timeline, and deliverables. Prepare agenda: goals, tech stack, roles & responsibilities."
+        },
+        {
+          "id": "T2",
+          "name": "Define API specifications",
+          "priority": 4,
+          "tags": ["work", "backend", "docs"],
+          "deadline_days": 3,
+          "estimate": 4,
+          "note": "Document all REST API endpoints with request/response schemas. Use OpenAPI 3.0 format. Include authentication flow and error codes."
+        },
+        {
+          "id": "T3",
+          "name": "Design database schema",
+          "priority": 5,
+          "tags": ["work", "backend", "urgent"],
+          "deadline_days": 3,
+          "estimate": 6,
+          "note": "Create ER diagram for core entities: users, tasks, projects. Define indexes, foreign keys, and constraints. Consider normalization and query performance."
+        },
+        {
+          "id": "T4",
+          "name": "Create UI/UX mockups",
+          "priority": 3,
+          "tags": ["work", "frontend", "design"],
+          "deadline_days": 5,
+          "estimate": 8,
+          "note": "Design wireframes for main pages: dashboard, task list, task details. Use Figma. Focus on mobile-first responsive design."
+        },
+        {
+          "id": "T5",
+          "name": "Setup development environment",
+          "priority": 5,
+          "tags": ["work", "backend", "devops"],
+          "deadline_days": 5,
+          "estimate": 3,
+          "note": "Configure Docker containers for local dev. Setup PostgreSQL, Redis. Create docker-compose.yml with hot-reload support."
+        },
+        {
+          "id": "T6",
+          "name": "Implement user authentication",
+          "priority": 5,
+          "tags": ["work", "backend", "security"],
+          "deadline_days": 7,
+          "estimate": 8,
+          "note": "Implement JWT-based auth with refresh tokens. Add password hashing (bcrypt). Include email verification and password reset flows.",
+          "depends_on": ["T3"]
+        },
+        {
+          "id": "T7",
+          "name": "Create REST API endpoints",
+          "priority": 4,
+          "tags": ["work", "backend"],
+          "deadline_days": 10,
+          "estimate": 12,
+          "note": "Build CRUD endpoints for tasks, projects, users. Implement filtering, sorting, pagination. Add input validation and error handling.",
+          "depends_on": ["T2", "T5"]
+        },
+        {
+          "id": "T8",
+          "name": "Setup React project structure",
+          "priority": 4,
+          "tags": ["work", "frontend"],
+          "deadline_days": 7,
+          "estimate": 3,
+          "note": "Initialize Vite + React + TypeScript project. Setup ESLint, Prettier. Configure routing (React Router), state management (Zustand), and API client (Axios)."
+        },
+        {
+          "id": "T9",
+          "name": "Implement login/signup pages",
+          "priority": 5,
+          "tags": ["work", "frontend"],
+          "deadline_days": 10,
+          "estimate": 6,
+          "note": "Create forms with validation (react-hook-form + zod). Handle JWT storage. Add social login buttons (Google, GitHub). Show error messages.",
+          "depends_on": ["T4", "T6"]
+        },
+        {
+          "id": "T10",
+          "name": "Build dashboard components",
+          "priority": 4,
+          "tags": ["work", "frontend"],
+          "deadline_days": 14,
+          "estimate": 10,
+          "note": "Create reusable components: TaskCard, TaskList, ProjectCard, StatisticsWidget. Implement drag-and-drop for task ordering. Add real-time updates via WebSocket.",
+          "depends_on": ["T7"]
+        },
+        {
+          "id": "T11",
+          "name": "Add responsive design",
+          "priority": 3,
+          "tags": ["work", "frontend", "design"],
+          "deadline_days": 14,
+          "estimate": 8,
+          "note": "Apply Tailwind CSS breakpoints for mobile/tablet/desktop. Test on different screen sizes. Ensure touch-friendly UI on mobile devices.",
+          "depends_on": ["T10"]
+        },
+        {
+          "id": "T12",
+          "name": "Write unit tests",
+          "priority": 4,
+          "tags": ["work", "testing"],
+          "deadline_days": 14,
+          "estimate": 8,
+          "note": "Write Jest tests for backend services and API routes. Aim for 80% code coverage. Mock database and external services. Test edge cases and error handling.",
+          "depends_on": ["T7"]
+        },
+        {
+          "id": "T13",
+          "name": "Perform integration testing",
+          "priority": 5,
+          "tags": ["work", "testing", "urgent"],
+          "deadline_days": 21,
+          "estimate": 6,
+          "note": "Test end-to-end user flows with Playwright. Cover auth, CRUD operations, real-time updates. Test on Chrome, Firefox, Safari.",
+          "depends_on": ["T12", "T10"]
+        },
+        {
+          "id": "T14",
+          "name": "Setup CI/CD pipeline",
+          "priority": 3,
+          "tags": ["work", "devops"],
+          "deadline_days": 21,
+          "estimate": 5,
+          "note": "Configure GitHub Actions for automated testing and deployment. Run tests on PR. Auto-deploy to staging on merge to main. Manual approval for prod."
+        },
+        {
+          "id": "T15",
+          "name": "Deploy to production",
+          "priority": 5,
+          "tags": ["work", "devops", "urgent"],
+          "deadline_days": 30,
+          "estimate": 4,
+          "note": "Deploy to AWS ECS with load balancer. Configure SSL certificates. Setup database backups. Monitor logs and metrics with CloudWatch.",
+          "depends_on": ["T13", "T14"]
+        }
+      ]
+    },
+    {
+      "name": "Bug Fixes & Improvements",
+      "tasks": [
+        {
+          "id": "T16",
+          "name": "Fix login page CSS issues",
+          "priority": 4,
+          "tags": ["work", "bugfix", "frontend", "urgent"],
+          "deadline_days": 1,
+          "estimate": 2,
+          "note": "Login button is misaligned on mobile. Form labels are cut off on narrow screens. Fix z-index issues with password visibility toggle.",
+          "depends_on": ["T9"]
+        },
+        {
+          "id": "T17",
+          "name": "Optimize database queries",
+          "priority": 3,
+          "tags": ["work", "backend", "performance"],
+          "deadline_days": 7,
+          "estimate": 4,
+          "note": "Add indexes on frequently queried columns (user_id, created_at). Implement connection pooling. Use EXPLAIN ANALYZE to identify slow queries. Consider adding Redis cache."
+        }
+      ]
+    },
+    {
+      "name": "Documentation & Maintenance",
+      "tasks": [
+        {
+          "id": "T18",
+          "name": "Update README.md",
+          "priority": 2,
+          "tags": ["work", "docs"],
+          "deadline_days": 14,
+          "estimate": 2,
+          "note": "Add setup instructions, environment variables, and deployment guide. Include screenshots. Update API examples. Add troubleshooting section."
+        }
+      ]
+    },
+    {
+      "name": "Long-term Projects",
+      "tasks": [
+        {
+          "id": "T19",
+          "name": "Plan version 2.0 features",
+          "priority": 3,
+          "tags": ["work", "planning", "v2"],
+          "deadline_days": 42,
+          "estimate": 8,
+          "note": "Gather user feedback from v1.0. Prioritize features: advanced filters, custom views, team collaboration, mobile app. Create product roadmap."
+        },
+        {
+          "id": "T20",
+          "name": "Research new technology stack",
+          "priority": 2,
+          "tags": ["work", "research", "v2"],
+          "deadline_days": 60,
+          "estimate": 12,
+          "note": "Evaluate alternatives: Remix vs Next.js 14, tRPC vs GraphQL, Prisma vs Drizzle ORM. Consider serverless architecture. Create comparison matrix."
+        },
+        {
+          "id": "T21",
+          "name": "Conduct security audit",
+          "priority": 4,
+          "tags": ["work", "security", "audit"],
+          "deadline_days": 42,
+          "estimate": 10,
+          "note": "Run OWASP ZAP scan. Review authentication flows. Check for SQL injection, XSS vulnerabilities. Test rate limiting. Perform penetration testing.",
+          "depends_on": ["T15"]
+        },
+        {
+          "id": "T22",
+          "name": "Setup monitoring and alerts",
+          "priority": 4,
+          "tags": ["work", "devops", "monitoring"],
+          "deadline_days": 60,
+          "estimate": 8,
+          "note": "Configure Datadog/New Relic for APM. Setup alerts for error rates, response times, CPU/memory usage. Create dashboards for key metrics. Setup PagerDuty integration."
+        }
+      ]
+    },
+    {
+      "name": "Weekend Fixed Tasks",
+      "tasks": [
+        {
+          "id": "T23",
+          "name": "Weekend side project coding",
+          "priority": 2,
+          "tags": ["personal", "weekend", "coding"],
+          "weekend": true,
+          "weekend_offset": 0,
+          "estimate": 6,
+          "is_fixed": true,
+          "note": "Work on personal Rust project. Focus on implementing async runtime and improving error handling. Goal: Complete 2-3 modules."
+        },
+        {
+          "id": "T24",
+          "name": "Sunday family time",
+          "priority": 5,
+          "tags": ["personal", "family", "weekend"],
+          "weekend": true,
+          "weekend_offset": 0,
+          "weekend_day": "sunday",
+          "estimate": 4,
+          "is_fixed": true,
+          "note": "Quality time with family. Visit the park, have lunch together, play board games. No work-related activities."
+        },
+        {
+          "id": "T25",
+          "name": "Weekend on-call duty",
+          "priority": 4,
+          "tags": ["work", "oncall", "weekend"],
+          "weekend": true,
+          "weekend_offset": 1,
+          "estimate": 8,
+          "is_fixed": true,
+          "note": "On-call rotation for production systems. Monitor alerts, respond to incidents. Keep laptop and phone nearby. Escalate if needed."
+        }
+      ]
+    }
+  ],
+  "progress": {
+    "completed": ["T1", "T2", "T3"],
+    "in_progress": ["T5", "T6"]
+  },
+  "optimization": {
+    "algorithm": "greedy",
+    "max_hours_per_day": 8
+  }
+}
