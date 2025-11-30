@@ -7,7 +7,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.validation import Number
-from textual.widgets import Input, Label, Select, Static
+from textual.widgets import Checkbox, Input, Label, Select, Static
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
@@ -16,7 +16,7 @@ from taskdog.tui.widgets.vi_select import ViSelect
 
 
 class AlgorithmSelectionDialog(
-    BaseModalDialog[tuple[str, float | None, datetime] | None]
+    BaseModalDialog[tuple[str, float | None, datetime, bool] | None]
 ):
     """Modal screen for selecting optimization algorithm, max hours, and start date."""
 
@@ -46,7 +46,6 @@ class AlgorithmSelectionDialog(
     def __init__(
         self,
         algorithm_metadata: list[tuple[str, str, str]],
-        force_override: bool = False,
         *args: Any,
         **kwargs: Any,
     ):
@@ -54,24 +53,16 @@ class AlgorithmSelectionDialog(
 
         Args:
             algorithm_metadata: List of (algorithm_id, display_name, description) tuples
-            force_override: Whether this is a force override optimization
         """
         super().__init__(*args, **kwargs)
-        self.force_override = force_override
         self.algorithms = algorithm_metadata
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
-        # Dynamic title based on force_override mode
-        title = (
-            "Force Optimize Schedule Settings"
-            if self.force_override
-            else "Optimize Schedule Settings"
-        )
         with Container(
             id="algorithm-dialog", classes="dialog-base dialog-standard"
         ) as container:
-            container.border_title = title
+            container.border_title = "Optimize Schedule Settings"
             yield Label(
                 "[dim]Ctrl+S: submit | Esc: cancel | Tab/Ctrl-j: next | Shift+Tab/Ctrl-k: previous[/dim]",
                 id="dialog-hint",
@@ -106,6 +97,8 @@ class AlgorithmSelectionDialog(
                     value=self._get_default_start_date(),
                     validators=[StartDateTextualValidator()],
                 )
+
+                yield Checkbox("Force override existing schedules", id="force-checkbox")
 
     def on_mount(self) -> None:
         """Called when screen is mounted."""
@@ -143,6 +136,7 @@ class AlgorithmSelectionDialog(
         algorithm_select = self.query_one("#algorithm-select", ViSelect)
         max_hours_input = self.query_one("#max-hours-input", Input)
         start_date_input = self.query_one("#start-date-input", Input)
+        force_checkbox = self.query_one("#force-checkbox", Checkbox)
 
         # Clear previous error
         self._clear_validation_error()
@@ -166,5 +160,8 @@ class AlgorithmSelectionDialog(
         start_date_validator = StartDateTextualValidator()
         start_date = start_date_validator.parse(start_date_str)
 
-        # Submit algorithm, max_hours (can be None), and start_date
-        self.dismiss((selected_algo, max_hours, start_date))
+        # Get force override value
+        force_override = force_checkbox.value
+
+        # Submit algorithm, max_hours (can be None), start_date, and force_override
+        self.dismiss((selected_algo, max_hours, start_date, force_override))

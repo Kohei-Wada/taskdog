@@ -3,8 +3,6 @@
 import unittest
 from unittest.mock import Mock
 
-from parameterized import parameterized
-
 from taskdog.tui.palette.providers.optimize_providers import OptimizeCommandProvider
 
 
@@ -21,39 +19,30 @@ class TestOptimizeCommandProvider(unittest.TestCase):
             screen=self.mock_screen, match_style=None
         )
 
-    def test_get_options_returns_two_commands(self):
-        """Test that get_options returns both optimize commands."""
+    def test_get_options_returns_single_command(self):
+        """Test that get_options returns single optimize command."""
         options = self.provider.get_options(self.mock_app)
 
-        self.assertEqual(len(options), 2)
+        self.assertEqual(len(options), 1)
 
-        # Verify option names
+        # Verify option name
         option_names = [opt[0] for opt in options]
         self.assertIn("Optimize", option_names)
-        self.assertIn("Optimize (force)", option_names)
 
-    @parameterized.expand(
-        [
-            ("optimize_normal", "Optimize", False),
-            ("optimize_force", "Optimize (force)", True),
-        ]
-    )
-    def test_option_callback_calls_search_optimize(
-        self, scenario, option_name, expected_force
-    ):
-        """Test that selecting an option calls search_optimize with correct force flag."""
+    def test_option_callback_calls_search_optimize(self):
+        """Test that selecting the option calls search_optimize."""
         options = self.provider.get_options(self.mock_app)
 
-        # Find the option by name
-        option = next((opt for opt in options if opt[0] == option_name), None)
+        # Find the Optimize option
+        option = next((opt for opt in options if opt[0] == "Optimize"), None)
         self.assertIsNotNone(option)
 
         # Get callback and invoke it
         callback = option[1]
         callback()
 
-        # Verify search_optimize was called with correct force_override
-        self.mock_app.search_optimize.assert_called_once_with(expected_force)
+        # Verify search_optimize was called (no args, force is now in dialog)
+        self.mock_app.search_optimize.assert_called_once_with()
 
     def test_options_have_descriptions(self):
         """Test that all options have help text."""

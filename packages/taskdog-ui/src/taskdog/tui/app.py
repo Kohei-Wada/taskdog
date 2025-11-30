@@ -449,14 +449,10 @@ class TaskdogTUI(App):
             ),
         )
 
-    def search_optimize(self, force_override: bool = False) -> None:
-        """Show optimization algorithm selection dialog.
-
-        Args:
-            force_override: Whether to force override existing schedules
-        """
+    def search_optimize(self) -> None:
+        """Show optimization algorithm selection dialog."""
         # Execute optimize command which will show AlgorithmSelectionScreen
-        self.command_factory.execute("optimize", force_override=force_override)
+        self.command_factory.execute("optimize")
 
     def search_export(self) -> None:
         """Show a fuzzy search command palette containing all export format options.
