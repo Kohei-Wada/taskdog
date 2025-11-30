@@ -3,17 +3,14 @@
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, status
+from fastapi import APIRouter, Header
 
-from taskdog_core.domain.exceptions.task_exceptions import (
-    TaskNotFoundException,
-    TaskValidationError,
-)
 from taskdog_server.api.converters import convert_to_task_operation_response
 from taskdog_server.api.dependencies import (
     BroadcastHelperDep,
     RelationshipControllerDep,
 )
+from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import (
     AddDependencyRequest,
     LogHoursRequest,
@@ -25,6 +22,7 @@ router = APIRouter()
 
 
 @router.post("/{task_id}/dependencies", response_model=TaskOperationResponse)
+@handle_task_errors
 async def add_dependency(
     task_id: int,
     request: AddDependencyRequest,
@@ -47,24 +45,18 @@ async def add_dependency(
     Raises:
         HTTPException: 404 if task not found, 400 if validation fails (e.g., circular dependency)
     """
-    try:
-        result = controller.add_dependency(task_id, request.depends_on_id)
+    result = controller.add_dependency(task_id, request.depends_on_id)
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_updated(result, ["depends_on"], x_client_id)
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_updated(result, ["depends_on"], x_client_id)
 
-        return convert_to_task_operation_response(result)
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except TaskValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    return convert_to_task_operation_response(result)
 
 
 @router.delete(
     "/{task_id}/dependencies/{depends_on_id}", response_model=TaskOperationResponse
 )
+@handle_task_errors
 async def remove_dependency(
     task_id: int,
     depends_on_id: int,
@@ -87,22 +79,16 @@ async def remove_dependency(
     Raises:
         HTTPException: 404 if task not found, 400 if validation fails
     """
-    try:
-        result = controller.remove_dependency(task_id, depends_on_id)
+    result = controller.remove_dependency(task_id, depends_on_id)
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_updated(result, ["depends_on"], x_client_id)
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_updated(result, ["depends_on"], x_client_id)
 
-        return convert_to_task_operation_response(result)
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except TaskValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    return convert_to_task_operation_response(result)
 
 
 @router.put("/{task_id}/tags", response_model=TaskOperationResponse)
+@handle_task_errors
 async def set_task_tags(
     task_id: int,
     request: SetTaskTagsRequest,
@@ -125,22 +111,16 @@ async def set_task_tags(
     Raises:
         HTTPException: 404 if task not found, 400 if validation fails
     """
-    try:
-        result = controller.set_task_tags(task_id, request.tags)
+    result = controller.set_task_tags(task_id, request.tags)
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_updated(result, ["tags"], x_client_id)
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_updated(result, ["tags"], x_client_id)
 
-        return convert_to_task_operation_response(result)
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except TaskValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    return convert_to_task_operation_response(result)
 
 
 @router.post("/{task_id}/log-hours", response_model=TaskOperationResponse)
+@handle_task_errors
 async def log_hours(
     task_id: int,
     request: LogHoursRequest,
@@ -163,17 +143,10 @@ async def log_hours(
     Raises:
         HTTPException: 404 if task not found, 400 if validation fails
     """
-    try:
-        log_date = request.date if request.date else date.today()
-        result = controller.log_hours(task_id, request.hours, log_date.isoformat())
+    log_date = request.date if request.date else date.today()
+    result = controller.log_hours(task_id, request.hours, log_date.isoformat())
 
-        # Broadcast WebSocket event in background (exclude the requester)
-        broadcast.task_updated(result, ["actual_daily_hours"], x_client_id)
+    # Broadcast WebSocket event in background (exclude the requester)
+    broadcast.task_updated(result, ["actual_daily_hours"], x_client_id)
 
-        return convert_to_task_operation_response(result)
-    except TaskNotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-    except TaskValidationError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+    return convert_to_task_operation_response(result)
