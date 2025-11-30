@@ -19,7 +19,6 @@ from taskdog.tui.commands.factory import CommandFactory
 from taskdog.tui.constants.command_mapping import ACTION_TO_COMMAND_MAP
 from taskdog.tui.constants.ui_settings import (
     AUTO_REFRESH_INTERVAL_SECONDS,
-    DEFAULT_GANTT_DISPLAY_DAYS,
     SORT_KEY_LABELS,
 )
 from taskdog.tui.context import TUIContext
@@ -33,7 +32,7 @@ from taskdog.tui.palette.providers import (
     SortOptionsProvider,
 )
 from taskdog.tui.screens.main_screen import MainScreen
-from taskdog.tui.services.websocket_handler import WebSocketHandler
+from taskdog.tui.services import TaskUIManager, WebSocketHandler
 from taskdog.tui.state import TUIState
 from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
@@ -245,6 +244,9 @@ class TaskdogTUI(App):
         # Initialize WebSocket handler for message processing
         self.websocket_handler = WebSocketHandler(self)
 
+        # TaskUIManager will be initialized in on_mount (needs MainScreen)
+        self.task_ui_manager: TaskUIManager | None = None
+
         # Initialize WebSocket client for real-time updates
         ws_url = self._get_websocket_url()
         self.websocket_client = WebSocketClient(ws_url, self._handle_websocket_message)
@@ -305,8 +307,19 @@ class TaskdogTUI(App):
 
         self.main_screen = MainScreen(state=self.state)
         self.push_screen(self.main_screen)
+
+        # Initialize TaskUIManager (needs MainScreen to be available)
+        self.task_ui_manager = TaskUIManager(
+            state=self.state,
+            task_data_loader=self.task_data_loader,
+            main_screen_provider=lambda: self.main_screen,
+            on_connection_error=self._handle_connection_error,
+        )
+
         # Load tasks after screen is fully mounted
-        self.call_after_refresh(self._load_tasks)
+        self.call_after_refresh(
+            lambda: self.task_ui_manager and self.task_ui_manager.load_tasks()
+        )
         # Start auto-refresh timer for elapsed time updates
         self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
         # Start connection monitoring timer (check every 3 seconds)
@@ -321,121 +334,19 @@ class TaskdogTUI(App):
         # Disconnect WebSocket
         await self.websocket_client.disconnect()
 
-    def _load_tasks(self, keep_scroll_position: bool = False) -> None:
-        """Load tasks from repository and update both gantt and table.
-
-        This method performs a complete reload cycle: fetches data from API,
-        updates internal caches, and refreshes all UI components.
+    def _handle_connection_error(self, error: ServerConnectionError) -> None:
+        """Handle connection errors from TaskUIManager.
 
         Args:
-            keep_scroll_position: Whether to preserve scroll position during refresh
+            error: ServerConnectionError from API call
         """
-        task_data = self._fetch_task_data()
-        self._update_cache(task_data)
-        self._refresh_ui(task_data, keep_scroll_position)
-
-    def _calculate_gantt_date_range(self):
-        """Calculate the date range for Gantt chart display.
-
-        Returns:
-            Tuple of (start_date, end_date) for Gantt chart
-        """
-        if self.main_screen and self.main_screen.gantt_widget:
-            # Use GanttWidget's public API instead of private method access
-            return self.main_screen.gantt_widget.calculate_date_range()
-
-        # Fallback when gantt_widget is not available
-        from datetime import date, timedelta
-
-        today = date.today()
-        start_date = today - timedelta(days=today.weekday())
-        end_date = start_date + timedelta(days=DEFAULT_GANTT_DISPLAY_DAYS - 1)
-        return (start_date, end_date)
-
-    def _fetch_task_data(self):
-        """Fetch task data using TaskDataLoader.
-
-        Returns:
-            TaskData object containing all task information, or None if connection fails
-        """
-        try:
-            date_range = self._calculate_gantt_date_range()
-
-            return self.task_data_loader.load_tasks(
-                all=False,  # Non-archived by default
-                sort_by=self.state.sort_by,
-                reverse=self.state.sort_reverse,
-                hide_completed=self.state.hide_completed,
-                date_range=date_range,
-            )
-        except ServerConnectionError as e:
-            self.notify(
-                f"Server connection failed: {
-                    e.original_error.__class__.__name__
-                }. Press 'r' to retry.",
-                severity="error",
-                timeout=10,
-            )
-            # Return empty task data to avoid crash
-            from taskdog.services.task_data_loader import TaskData
-            from taskdog_core.application.dto.task_list_output import TaskListOutput
-
-            empty_task_list_output = TaskListOutput(
-                tasks=[],
-                total_count=0,
-                filtered_count=0,
-                gantt_data=None,
-            )
-
-            return TaskData(
-                all_tasks=[],
-                filtered_tasks=[],
-                task_list_output=empty_task_list_output,
-                table_view_models=[],
-                gantt_view_model=None,
-                filtered_gantt_view_model=None,
-            )
-
-    def _update_cache(self, task_data) -> None:
-        """Update internal cache with task data.
-
-        Args:
-            task_data: TaskData object to cache
-        """
-        # Update TUIState cache (Phase 2 complete: Steps 4 + 5)
-        self.state.update_caches(
-            tasks=task_data.all_tasks,
-            viewmodels=task_data.table_view_models,
-            gantt=task_data.gantt_view_model,
+        self.notify(
+            f"Server connection failed: {
+                error.original_error.__class__.__name__
+            }. Press 'r' to retry.",
+            severity="error",
+            timeout=10,
         )
-
-    def _refresh_ui(self, task_data, keep_scroll_position: bool) -> None:
-        """Refresh UI widgets with task data.
-
-        Args:
-            task_data: TaskData object containing view models
-            keep_scroll_position: Whether to preserve scroll position
-        """
-        if not self.main_screen:
-            return
-
-        # Update Gantt widget
-        if self.main_screen.gantt_widget and task_data.filtered_gantt_view_model:
-            task_ids = [t.id for t in task_data.filtered_tasks]
-            self.main_screen.gantt_widget.update_gantt(
-                task_ids=task_ids,
-                gantt_view_model=task_data.filtered_gantt_view_model,
-                sort_by=self.state.sort_by,
-                reverse=self.state.sort_reverse,
-                all=False,  # Non-archived by default
-            )
-
-        # Update Table widget
-        if self.main_screen.task_table:
-            self.main_screen.task_table.refresh_tasks(
-                task_data.table_view_models,
-                keep_scroll_position=keep_scroll_position,
-            )
 
     def search_sort(self) -> None:
         """Show a fuzzy search command palette containing all sort options.
@@ -504,7 +415,8 @@ class TaskdogTUI(App):
         self.state.hide_completed = not self.state.hide_completed
 
         # Reload tasks with new filter to recalculate gantt date range
-        self._load_tasks(keep_scroll_position=True)
+        if self.task_ui_manager:
+            self.task_ui_manager.load_tasks(keep_scroll_position=True)
 
         # Show notification
         status = "hidden" if self.state.hide_completed else "shown"
@@ -515,7 +427,8 @@ class TaskdogTUI(App):
         self.state.sort_reverse = not self.state.sort_reverse
 
         # Reload tasks with new sort direction
-        self._load_tasks(keep_scroll_position=True)
+        if self.task_ui_manager:
+            self.task_ui_manager.load_tasks(keep_scroll_position=True)
 
         # Show notification with current direction
         direction = "descending" if self.state.sort_reverse else "ascending"
@@ -565,7 +478,8 @@ class TaskdogTUI(App):
         Args:
             event: Task change event (TaskCreated/Updated/Deleted/Refreshed)
         """
-        self._load_tasks(keep_scroll_position=True)
+        if self.task_ui_manager:
+            self.task_ui_manager.load_tasks(keep_scroll_position=True)
 
     # Alias all task change event handlers to the generic handler
     on_task_created = _handle_task_change_event

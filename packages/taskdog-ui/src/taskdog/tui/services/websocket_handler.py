@@ -73,8 +73,11 @@ class WebSocketHandler:
         """
         from taskdog.tui.messages import TUIMessageBuilder
 
-        # Reload tasks on any task change
-        self.app.call_later(self.app._load_tasks, keep_scroll_position=True)
+        # Reload tasks on any task change via TaskUIManager
+        if self.app.task_ui_manager:
+            self.app.call_later(
+                self.app.task_ui_manager.load_tasks, keep_scroll_position=True
+            )
 
         # Show notification with source client ID if available
         task_name = message.get("task_name", "Unknown")
@@ -130,8 +133,11 @@ class WebSocketHandler:
         """
         from taskdog.tui.messages import TUIMessageBuilder
 
-        # Reload tasks on schedule optimization
-        self.app.call_later(self.app._load_tasks, keep_scroll_position=True)
+        # Reload tasks on schedule optimization via TaskUIManager
+        if self.app.task_ui_manager:
+            self.app.call_later(
+                self.app.task_ui_manager.load_tasks, keep_scroll_position=True
+            )
 
         # Show notification
         scheduled_count = message.get("scheduled_count", 0)
