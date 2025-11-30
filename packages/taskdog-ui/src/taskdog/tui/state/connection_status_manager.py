@@ -1,9 +1,12 @@
 """Connection status manager with observer pattern."""
 
+import logging
 from collections.abc import Callable
 from datetime import datetime
 
 from .connection_status import ConnectionStatus
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionStatusManager:
@@ -69,6 +72,13 @@ class ConnectionStatusManager:
         self._notify_observers()
 
     def _notify_observers(self) -> None:
-        """Notify all observers of the current status."""
+        """Notify all observers of the current status.
+
+        Exceptions in individual callbacks are caught and logged
+        to ensure all observers receive notifications.
+        """
         for callback in self._observers:
-            callback(self._status)
+            try:
+                callback(self._status)
+            except Exception:
+                logger.exception("Error in connection status observer callback")

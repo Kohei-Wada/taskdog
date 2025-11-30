@@ -147,6 +147,31 @@ class TestConnectionStatusManager(unittest.TestCase):
         self.assertTrue(received_statuses[1].is_api_connected)
         self.assertTrue(received_statuses[2].is_websocket_connected)
 
+    def test_exception_in_callback_does_not_break_chain(self):
+        """Test that exception in one callback doesn't prevent others from being called."""
+        call_counts = {"cb1": 0, "cb2": 0, "cb3": 0}
+
+        def callback1(status: ConnectionStatus) -> None:
+            call_counts["cb1"] += 1
+
+        def callback2_raises(status: ConnectionStatus) -> None:
+            call_counts["cb2"] += 1
+            raise ValueError("Test exception")
+
+        def callback3(status: ConnectionStatus) -> None:
+            call_counts["cb3"] += 1
+
+        self.manager.subscribe(callback1)
+        self.manager.subscribe(callback2_raises)
+        self.manager.subscribe(callback3)
+
+        # Should not raise, and all callbacks should be attempted
+        self.manager.update(api_connected=True, ws_connected=True)
+
+        self.assertEqual(call_counts["cb1"], 1)
+        self.assertEqual(call_counts["cb2"], 1)  # Called but raised
+        self.assertEqual(call_counts["cb3"], 1)  # Still called despite cb2 exception
+
 
 if __name__ == "__main__":
     unittest.main()

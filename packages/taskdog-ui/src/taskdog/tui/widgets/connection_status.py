@@ -40,6 +40,11 @@ class ConnectionStatusWidget(Static):
         self.is_websocket_connected = status.is_websocket_connected
         self._update_display()
 
+    def on_unmount(self) -> None:
+        """Called when widget is unmounted from the DOM."""
+        # Unsubscribe to prevent memory leaks
+        self.app.connection_manager.unsubscribe(self._on_connection_status_changed)
+
     def _on_connection_status_changed(self, status: "ConnectionStatusData") -> None:
         """Handle connection status change from ConnectionStatusManager.
 
