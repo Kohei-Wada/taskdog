@@ -41,11 +41,21 @@ MAIN_FEATURES: str = """## Key Features
   - Use `Ctrl+J`/`Ctrl+K` to switch between table and gantt
 
 - **Search** - Press `/` to filter tasks by name
-  - Supports regex patterns
+  - Smart case: case-insensitive unless query contains uppercase
   - Press `Escape` to clear search
 
 - **Notes** - Press `v` to edit markdown notes for any task
-  - Opens your `$EDITOR` (vim, nano, etc.)"""
+  - Opens your `$EDITOR` (vim, nano, etc.)
+
+- **Schedule Optimization** - Auto-schedule tasks based on deadlines
+  - Access via `Ctrl+P` → Optimize
+  - Assigns `planned_start` and `planned_end` dates
+  - Respects `max_hours_per_day` limit and task dependencies
+
+- **Fixed Tasks** - Tasks excluded from schedule optimization
+  - Set `is_fixed` when creating or editing a task
+  - Use for recurring meetings, standups, or time-blocked events
+  - Fixed tasks keep their schedule; optimizer works around them"""
 
 # Command palette explanation
 COMMAND_PALETTE_INFO: str = """## Command Palette
