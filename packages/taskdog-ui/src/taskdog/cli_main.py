@@ -79,12 +79,18 @@ def cli(ctx: click.Context) -> None:
     # Initialize API client (required for all CLI commands)
     from taskdog.infrastructure.api_client import TaskdogApiClient
 
+    # Warn if API key is not configured
+    if not config.api.api_key:
+        console_writer.warning(
+            "API key not configured. Set api_key in ~/.config/taskdog/cli.toml [api] section."
+        )
+
     try:
         api_client = TaskdogApiClient(
             base_url=f"http://{config.api.host}:{config.api.port}",
             api_key=config.api.api_key,
         )
-        # Test connection
+        # Test connection (health endpoint doesn't require auth)
         api_client.client.get("/health")
     except Exception as e:
         console_writer.error(

@@ -60,7 +60,7 @@ class BaseApiClient:
 
         Raises:
             TaskNotFoundException: If status is 404
-            TaskValidationError: If status is 400
+            TaskValidationError: If status is 400 or 401
             Exception: For other errors
         """
         if response.status_code == 404:
@@ -69,6 +69,10 @@ class BaseApiClient:
         elif response.status_code == 400:
             detail = response.json().get("detail", "Validation error")
             raise TaskValidationError(detail)
+        elif response.status_code == 401:
+            raise TaskValidationError(
+                "Authentication failed. Check api_key in ~/.config/taskdog/cli.toml"
+            )
         else:
             response.raise_for_status()
 
