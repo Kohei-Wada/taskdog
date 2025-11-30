@@ -107,7 +107,7 @@ systemctl --user stop taskdog-server     # Stop the service
 systemctl --user status taskdog-server   # Check service status
 systemctl --user restart taskdog-server  # Restart the service
 journalctl --user -u taskdog-server -f   # View logs in real-time
-# See packages/taskdog-server/SYSTEMD.md for detailed documentation
+# See contrib/README.md for detailed documentation
 ```
 
 **Testing**: Uses `unittest` framework. Tests mirror package structure under `packages/*/tests/`. Use `unittest.mock` for dependencies.

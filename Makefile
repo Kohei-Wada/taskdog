@@ -60,7 +60,7 @@ install: check-deps ## Install all commands globally with uv tool (recommended)
 ifeq ($(PLATFORM),linux)
 	@echo "Setting up systemd user service..."
 	@mkdir -p ~/.config/systemd/user
-	@cp packages/taskdog-server/taskdog-server.service ~/.config/systemd/user/
+	@cp contrib/systemd/taskdog-server.service ~/.config/systemd/user/
 	@systemctl --user daemon-reload
 	@systemctl --user enable taskdog-server.service
 	@echo ""
@@ -75,13 +75,13 @@ ifeq ($(PLATFORM),linux)
 	@echo "  - Status: systemctl --user status taskdog-server"
 	@echo "  - Logs:   journalctl --user -u taskdog-server -f"
 	@echo ""
-	@echo "See packages/taskdog-server/SYSTEMD.md for more details."
+	@echo "See contrib/README.md for more details."
 	@echo ""
 else ifeq ($(PLATFORM),macos)
 	@echo "Setting up launchd service..."
 	@mkdir -p ~/Library/LaunchAgents
 	@mkdir -p ~/Library/Logs
-	@sed 's|%USER%|$(USER)|g' packages/taskdog-server/taskdog-server.plist > ~/Library/LaunchAgents/com.github.kohei-wada.taskdog-server.plist
+	@sed 's|%USER%|$(USER)|g' contrib/launchd/taskdog-server.plist > ~/Library/LaunchAgents/com.github.kohei-wada.taskdog-server.plist
 	@launchctl load ~/Library/LaunchAgents/com.github.kohei-wada.taskdog-server.plist 2>/dev/null || true
 	@echo ""
 	@echo "✓ All commands installed successfully!"
