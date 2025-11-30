@@ -98,7 +98,11 @@ class AlgorithmSelectionDialog(
                     validators=[StartDateTextualValidator()],
                 )
 
-                yield Checkbox("Force override existing schedules", id="force-checkbox")
+                yield Label("Force:", classes="field-label")
+                yield Checkbox(
+                    "Override existing schedules (reschedule already scheduled tasks)",
+                    id="force-checkbox",
+                )
 
     def on_mount(self) -> None:
         """Called when screen is mounted."""
