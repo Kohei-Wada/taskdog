@@ -33,16 +33,20 @@ _api_context: ApiContext | None = None
 _connection_manager: ConnectionManager | None = None
 
 
-def initialize_api_context() -> ApiContext:
+def initialize_api_context(config: Config | None = None) -> ApiContext:
     """Initialize API context with all dependencies.
 
     This should be called once during application startup.
 
+    Args:
+        config: Optional pre-loaded configuration. If None, loads from file.
+
     Returns:
         ApiContext: Initialized context with all controllers
     """
-    # Load configuration
-    config = ConfigManager.load()
+    # Load configuration if not provided
+    if config is None:
+        config = ConfigManager.load()
     notes_repository = FileNotesRepository()
 
     # Initialize HolidayChecker if country is configured
