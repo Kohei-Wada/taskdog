@@ -23,7 +23,7 @@ from taskdog_core.infrastructure.persistence.repository_factory import Repositor
 from taskdog_core.shared.config_manager import Config, ConfigManager
 from taskdog_server.api.context import ApiContext
 from taskdog_server.infrastructure.logging.standard_logger import StandardLogger
-from taskdog_server.websocket.broadcast_helper import BroadcastHelper
+from taskdog_server.websocket.broadcaster import WebSocketEventBroadcaster
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
 
@@ -253,20 +253,22 @@ ConnectionManagerWsDep = Annotated[
 ]
 
 
-def get_broadcast_helper(
+def get_event_broadcaster(
     manager: ConnectionManagerDep,
     background_tasks: BackgroundTasks,
-) -> BroadcastHelper:
-    """Get a BroadcastHelper instance for scheduling WebSocket broadcasts.
+) -> WebSocketEventBroadcaster:
+    """Get a WebSocketEventBroadcaster instance for scheduling WebSocket broadcasts.
 
     Args:
         manager: ConnectionManager instance
         background_tasks: FastAPI background tasks
 
     Returns:
-        BroadcastHelper: Helper for scheduling broadcasts
+        WebSocketEventBroadcaster: Broadcaster for scheduling WebSocket events
     """
-    return BroadcastHelper(manager, background_tasks)
+    return WebSocketEventBroadcaster(manager, background_tasks)
 
 
-BroadcastHelperDep = Annotated[BroadcastHelper, Depends(get_broadcast_helper)]
+EventBroadcasterDep = Annotated[
+    WebSocketEventBroadcaster, Depends(get_event_broadcaster)
+]
