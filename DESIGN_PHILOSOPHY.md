@@ -524,6 +524,69 @@ These features would:
 4. Compete poorly with specialized tools
 5. Dilute what makes Taskdog unique
 
+## Deployment Philosophy
+
+### Package-First Approach
+
+Taskdog focuses on being a **simple, installable package**:
+
+```bash
+# Primary installation method
+uv tool install taskdog
+uv tool install taskdog-server
+
+# Or via pip
+pip install taskdog taskdog-server
+```
+
+The repository provides:
+- Python packages (taskdog-core, taskdog-server, taskdog-ui)
+- systemd/launchd service files for auto-start
+- Configuration examples
+
+### What This Repository Does NOT Include
+
+- Docker/container configurations
+- Kubernetes manifests
+- Reverse proxy configurations
+- Authentication/authorization infrastructure
+- Backup automation
+
+### Why No Docker in This Repository?
+
+1. **Simplicity**: Individual users don't need containerization for a personal tool
+2. **Separation of concerns**: Package distribution ≠ infrastructure management
+3. **Avoid over-engineering**: `taskdog-server` runs fine as a simple process
+
+### For Users Who Need Infrastructure
+
+If you need Docker, authentication, reverse proxy, or backup automation, consider creating a separate **taskdog-stack** repository that:
+
+- References taskdog as a dependency
+- Adds docker-compose.yml with your preferred setup
+- Includes authentication (Authelia, OAuth2 Proxy, etc.)
+- Configures reverse proxy (Traefik, Caddy, nginx)
+- Sets up backup automation (restic, borg, etc.)
+
+This separation keeps:
+- **taskdog**: Simple, focused on the application
+- **taskdog-stack**: Infrastructure concerns, customizable per deployment
+
+**Example structure for taskdog-stack**:
+```
+taskdog-stack/
+├── docker-compose.yml
+├── .env.example
+├── traefik/
+│   └── config.yml
+├── authelia/
+│   └── configuration.yml
+└── backup/
+    └── restic.sh
+```
+
+This approach follows the Unix philosophy: do one thing well.
+
 ## Contributing Within the Philosophy
 
 If you want to contribute to Taskdog, ask yourself:
