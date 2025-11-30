@@ -11,11 +11,6 @@ from typing import ClassVar
 from rich.text import Text
 from textual.widgets import DataTable
 
-from taskdog.constants.table_dimensions import (
-    GANTT_TABLE_EST_HOURS_WIDTH,
-    GANTT_TABLE_ID_WIDTH,
-    GANTT_TABLE_TASK_MIN_WIDTH,
-)
 from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 
@@ -86,13 +81,9 @@ class GanttDataTable(DataTable):
         self._workload_row_exists = False
 
         # Add fixed columns with centered headers
-        self.add_column(Text("ID", justify="center"), width=GANTT_TABLE_ID_WIDTH)
-        self.add_column(
-            Text("Task", justify="center"), width=GANTT_TABLE_TASK_MIN_WIDTH
-        )
-        self.add_column(
-            Text("Est[h]", justify="center"), width=GANTT_TABLE_EST_HOURS_WIDTH
-        )
+        self.add_column(Text("ID", justify="center"))
+        self.add_column(Text("Task", justify="center"))
+        self.add_column(Text("Estimated[h]", justify="center"))
 
         # Add single Timeline column (contains all dates)
         # Store date range for later use
