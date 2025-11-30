@@ -10,7 +10,7 @@ This is part of Phase 1 implementation for Issue 228 (tag entity separation).
 from datetime import datetime
 
 from sqlalchemy import ForeignKey, Index, Integer, String
-from sqlalchemy.orm import (  # type: ignore[attr-defined]  # SQLAlchemy 2.0 type stubs limitation
+from sqlalchemy.orm import (  # type: ignore[attr-defined]
     Mapped,
     mapped_column,
     relationship,

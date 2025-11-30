@@ -50,10 +50,9 @@ taskdog_server = ["py.typed"]
 
 [tool.mypy]
 python_version = "3.13"
-strict = false
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = false
+strict = true
+# Disable unused-ignore warnings (environment-dependent)
+warn_unused_ignores = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

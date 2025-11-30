@@ -64,10 +64,7 @@ taskdog_core = ["py.typed"]
 
 [tool.mypy]
 python_version = "3.13"
-strict = false
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = false
+strict = true
 # Disable unused-ignore warnings (SQLAlchemy attr-defined errors are environment-dependent)
 warn_unused_ignores = false
 

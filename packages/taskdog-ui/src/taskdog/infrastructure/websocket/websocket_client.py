@@ -146,7 +146,7 @@ class WebSocketClient:
 
         while self._state != ConnectionState.DISCONNECTED:
             try:
-                async with websockets.connect(self.ws_url) as websocket:  # type: ignore
+                async with websockets.connect(self.ws_url) as websocket:  # type: ignore[attr-defined]
                     self._websocket = websocket
                     async with self._lock:
                         # State may have changed to DISCONNECTED during connection
