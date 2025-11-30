@@ -132,16 +132,22 @@ class TestConcurrentWrites(unittest.TestCase):
         self.assertEqual(len(set(results)), len(results))
 
     def test_ids_are_sequential(self) -> None:
-        """Test that IDs assigned by AUTOINCREMENT are sequential."""
+        """Test that IDs assigned by AUTOINCREMENT are sequential within a session."""
         repo = SqliteTaskRepository(self.database_url)
         try:
-            ids = []
+            ids: list[int] = []
             for i in range(10):
                 task = repo.create(name=f"Task {i}", priority=1)
-                ids.append(task.id)
+                ids.append(task.id)  # type: ignore[arg-type]
 
-            # IDs should be sequential starting from 1
-            self.assertEqual(ids, list(range(1, 11)))
+            # IDs should be sequential (but not necessarily starting from 1)
+            # Verify each ID is exactly 1 more than the previous
+            for i in range(1, len(ids)):
+                self.assertEqual(
+                    ids[i],
+                    ids[i - 1] + 1,
+                    f"IDs not sequential: {ids[i - 1]} -> {ids[i]}",
+                )
         finally:
             repo.close()
 

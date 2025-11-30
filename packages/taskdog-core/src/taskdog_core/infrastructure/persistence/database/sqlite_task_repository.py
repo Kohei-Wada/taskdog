@@ -68,13 +68,15 @@ class SqliteTaskRepository(TaskRepository):
         @event.listens_for(self.engine, "connect")  # type: ignore[no-untyped-call]
         def set_sqlite_pragma(dbapi_connection: Any, connection_record: Any) -> None:
             cursor = dbapi_connection.cursor()
-            # WAL mode enables concurrent readers during writes
-            cursor.execute("PRAGMA journal_mode=WAL")
-            # 30 second timeout for lock acquisition
-            cursor.execute("PRAGMA busy_timeout=30000")
-            # Good balance between safety and performance with WAL
-            cursor.execute("PRAGMA synchronous=NORMAL")
-            cursor.close()
+            try:
+                # WAL mode enables concurrent readers during writes
+                cursor.execute("PRAGMA journal_mode=WAL")
+                # 30 second timeout for lock acquisition
+                cursor.execute("PRAGMA busy_timeout=30000")
+                # Good balance between safety and performance with WAL
+                cursor.execute("PRAGMA synchronous=NORMAL")
+            finally:
+                cursor.close()
 
         # Create sessionmaker for managing database sessions
         self.Session = sessionmaker(bind=self.engine)
