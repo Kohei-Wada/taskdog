@@ -43,6 +43,7 @@ class TestParseIsoDate(unittest.TestCase):
         with self.assertRaises(HTTPException) as cm:
             parse_iso_date("2025-02-30")
         self.assertEqual(cm.exception.status_code, 400)
+        self.assertIn("Invalid date format", cm.exception.detail)
 
 
 if __name__ == "__main__":
