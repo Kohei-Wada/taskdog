@@ -36,7 +36,7 @@ def _parse_date_range(data: dict[str, Any]) -> GanttDateRange:
             )
 
         return GanttDateRange(start_date=start_date, end_date=end_date)
-    except ValueError as e:
+    except (ValueError, KeyError) as e:
         raise ConversionError(
             f"Failed to parse date_range: {e}",
             field="date_range",
@@ -101,7 +101,7 @@ def _parse_task_daily_hours(
                     raise ValueError("Empty date string in task_daily_hours")
                 result[int(task_id)][parsed] = hours
         return result
-    except ValueError as e:
+    except (ValueError, KeyError) as e:
         raise ConversionError(
             f"Failed to parse task_daily_hours: {e}",
             field="task_daily_hours",
@@ -129,7 +129,7 @@ def _parse_daily_workload(data: dict[str, Any]) -> dict[date, float]:
                 raise ValueError("Empty date string in daily_workload")
             result[parsed] = hours
         return result
-    except ValueError as e:
+    except (ValueError, KeyError) as e:
         raise ConversionError(
             f"Failed to parse daily_workload: {e}",
             field="daily_workload",
@@ -157,7 +157,7 @@ def _parse_holidays(data: dict[str, Any]) -> set[date]:
                 raise ValueError("Empty date string in holidays")
             result.add(parsed)
         return result
-    except ValueError as e:
+    except (ValueError, KeyError) as e:
         raise ConversionError(
             f"Failed to parse holidays: {e}",
             field="holidays",

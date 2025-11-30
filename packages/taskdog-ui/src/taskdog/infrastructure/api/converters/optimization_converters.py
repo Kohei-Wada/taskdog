@@ -43,7 +43,7 @@ def _parse_optimization_summary(
             )
 
         days_span = (end_date - start_date).days + 1
-    except ValueError as e:
+    except (ValueError, KeyError) as e:
         raise ConversionError(
             f"Failed to parse optimization summary dates: {e}",
             field="summary",

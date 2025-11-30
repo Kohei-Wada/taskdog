@@ -32,7 +32,10 @@ def _parse_optional_datetime(data: dict[str, Any], field: str) -> datetime | Non
         return None
 
     try:
-        return _core_parse_datetime(value)
+        result = _core_parse_datetime(value)
+        if result is None and value:
+            raise ValueError(f"Failed to parse non-empty datetime value: {value}")
+        return result
     except (ValueError, TypeError) as e:
         raise ConversionError(
             f"Failed to parse datetime field '{field}': {value}",
@@ -59,7 +62,10 @@ def _parse_optional_date(data: dict[str, Any], field: str) -> date_type | None:
         return None
 
     try:
-        return _core_parse_date(value)
+        result = _core_parse_date(value)
+        if result is None and value:
+            raise ValueError(f"Failed to parse non-empty date value: {value}")
+        return result
     except (ValueError, TypeError) as e:
         raise ConversionError(
             f"Failed to parse date field '{field}': {value}",
