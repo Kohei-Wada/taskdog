@@ -314,6 +314,163 @@ class TestTaskUIManager(unittest.TestCase):
         )
 
 
+class TestRecalculateGantt(unittest.TestCase):
+    """Test cases for recalculate_gantt method."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.state = TUIState()
+        self.task_data_loader = MagicMock(spec=TaskDataLoader)
+        self.main_screen = MagicMock()
+        self.main_screen.gantt_widget = MagicMock()
+        self.on_connection_error = MagicMock()
+
+        # Setup mock API client and presenter on task_data_loader
+        self.task_data_loader.api_client = MagicMock()
+        self.task_data_loader.gantt_presenter = MagicMock()
+
+        self.manager = TaskUIManager(
+            state=self.state,
+            task_data_loader=self.task_data_loader,
+            main_screen_provider=lambda: self.main_screen,
+            on_connection_error=self.on_connection_error,
+        )
+
+    def test_recalculate_gantt_fetches_and_updates_widget(self):
+        """Test recalculate_gantt fetches data and updates widget."""
+        # Setup
+        gantt = create_gantt_viewmodel()
+        task_list_output = TaskListOutput(
+            tasks=[],
+            total_count=0,
+            filtered_count=0,
+            gantt_data=MagicMock(),
+        )
+        self.task_data_loader.api_client.list_tasks.return_value = task_list_output
+        self.task_data_loader.gantt_presenter.present.return_value = gantt
+
+        start_date = date(2024, 1, 1)
+        end_date = date(2024, 1, 31)
+
+        # Execute
+        self.manager.recalculate_gantt(start_date, end_date)
+
+        # Verify API was called with correct parameters
+        self.task_data_loader.api_client.list_tasks.assert_called_once_with(
+            all=False,
+            sort_by=self.state.sort_by,
+            reverse=self.state.sort_reverse,
+            include_gantt=True,
+            gantt_start_date=start_date,
+            gantt_end_date=end_date,
+        )
+
+        # Verify presenter was called
+        self.task_data_loader.gantt_presenter.present.assert_called_once()
+
+        # Verify widget was updated
+        self.main_screen.gantt_widget.update_view_model_and_render.assert_called_once_with(
+            gantt
+        )
+
+    def test_recalculate_gantt_applies_hide_completed_filter(self):
+        """Test recalculate_gantt respects hide_completed setting."""
+        # Setup
+        self.state.hide_completed = True
+
+        task = create_task_dto(1, "Test Task", TaskStatus.PENDING)
+        gantt = create_gantt_viewmodel()
+        filtered_gantt = create_gantt_viewmodel()
+
+        task_list_output = TaskListOutput(
+            tasks=[task],
+            total_count=1,
+            filtered_count=1,
+            gantt_data=MagicMock(),
+        )
+        self.task_data_loader.api_client.list_tasks.return_value = task_list_output
+        self.task_data_loader.gantt_presenter.present.return_value = gantt
+        self.task_data_loader.apply_display_filter.return_value = [task]
+        self.task_data_loader.filter_gantt_by_tasks.return_value = filtered_gantt
+
+        # Execute
+        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
+
+        # Verify filter methods were called
+        self.task_data_loader.apply_display_filter.assert_called_once_with([task], True)
+        self.task_data_loader.filter_gantt_by_tasks.assert_called_once_with(
+            gantt, [task]
+        )
+
+        # Verify widget was updated with filtered gantt
+        self.main_screen.gantt_widget.update_view_model_and_render.assert_called_once_with(
+            filtered_gantt
+        )
+
+    def test_recalculate_gantt_handles_connection_error(self):
+        """Test recalculate_gantt calls error callback on failure."""
+        # Setup
+        original_error = ConnectionError("Connection refused")
+        self.task_data_loader.api_client.list_tasks.side_effect = ServerConnectionError(
+            original_error=original_error
+        )
+
+        # Execute
+        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
+
+        # Verify error callback was called
+        self.on_connection_error.assert_called_once()
+
+        # Verify widget was NOT updated
+        self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
+
+    def test_recalculate_gantt_without_main_screen(self):
+        """Test recalculate_gantt handles missing main_screen gracefully."""
+        # Setup - no main_screen
+        manager = TaskUIManager(
+            state=self.state,
+            task_data_loader=self.task_data_loader,
+            main_screen_provider=lambda: None,
+            on_connection_error=self.on_connection_error,
+        )
+
+        gantt = create_gantt_viewmodel()
+        task_list_output = TaskListOutput(
+            tasks=[],
+            total_count=0,
+            filtered_count=0,
+            gantt_data=MagicMock(),
+        )
+        self.task_data_loader.api_client.list_tasks.return_value = task_list_output
+        self.task_data_loader.gantt_presenter.present.return_value = gantt
+
+        # Execute - should not raise
+        manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
+
+        # Verify no error was raised and API was still called
+        self.task_data_loader.api_client.list_tasks.assert_called_once()
+
+    def test_recalculate_gantt_without_gantt_data(self):
+        """Test recalculate_gantt handles None gantt_data gracefully."""
+        # Setup - no gantt_data in response
+        task_list_output = TaskListOutput(
+            tasks=[],
+            total_count=0,
+            filtered_count=0,
+            gantt_data=None,
+        )
+        self.task_data_loader.api_client.list_tasks.return_value = task_list_output
+
+        # Execute - should not raise
+        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
+
+        # Verify presenter was NOT called
+        self.task_data_loader.gantt_presenter.present.assert_not_called()
+
+        # Verify widget was NOT updated
+        self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
+
+
 class TestTaskUIManagerWithoutErrorCallback(unittest.TestCase):
     """Test TaskUIManager behavior without error callback."""
 
