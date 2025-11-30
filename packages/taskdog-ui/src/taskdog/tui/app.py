@@ -317,7 +317,9 @@ class TaskdogTUI(App):
         )
 
         # Load tasks after screen is fully mounted
-        self.call_after_refresh(self.task_ui_manager.load_tasks)
+        self.call_after_refresh(
+            lambda: self.task_ui_manager and self.task_ui_manager.load_tasks()
+        )
         # Start auto-refresh timer for elapsed time updates
         self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
         # Start connection monitoring timer (check every 3 seconds)
