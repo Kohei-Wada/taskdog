@@ -1,0 +1,153 @@
+"""Task UI Manager for orchestrating data lifecycle in TUI."""
+
+from collections.abc import Callable
+from datetime import date, timedelta
+from typing import TYPE_CHECKING
+
+from taskdog.services.task_data_loader import TaskData, TaskDataLoader
+from taskdog.tui.constants.ui_settings import DEFAULT_GANTT_DISPLAY_DAYS
+from taskdog.tui.state import TUIState
+from taskdog_core.application.dto.task_list_output import TaskListOutput
+from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
+
+if TYPE_CHECKING:
+    from taskdog.tui.screens.main_screen import MainScreen
+
+
+class TaskUIManager:
+    """Manages task data lifecycle for TUI.
+
+    Orchestrates data fetching, caching, and UI updates.
+    Separates data management concerns from the App class.
+
+    Attributes:
+        state: Shared TUIState instance (Single Source of Truth)
+        task_data_loader: Service for loading task data from API
+    """
+
+    def __init__(
+        self,
+        state: TUIState,
+        task_data_loader: TaskDataLoader,
+        main_screen_provider: Callable[[], "MainScreen | None"],
+        on_connection_error: Callable[[ServerConnectionError], None] | None = None,
+    ):
+        """Initialize TaskUIManager.
+
+        Args:
+            state: Shared TUIState instance
+            task_data_loader: Service for loading task data
+            main_screen_provider: Callable that returns current MainScreen (lazy access)
+            on_connection_error: Optional callback for connection errors
+        """
+        self.state = state
+        self.task_data_loader = task_data_loader
+        self._get_main_screen = main_screen_provider
+        self._on_connection_error = on_connection_error
+
+    def load_tasks(self, keep_scroll_position: bool = False) -> None:
+        """Load tasks and update UI.
+
+        Performs a complete reload cycle: fetches data from API,
+        updates internal caches, and refreshes all UI components.
+
+        Args:
+            keep_scroll_position: Whether to preserve scroll position during refresh
+        """
+        task_data = self._fetch_task_data()
+        self._update_cache(task_data)
+        self._refresh_ui(task_data, keep_scroll_position)
+
+    def _calculate_gantt_date_range(self) -> tuple[date, date]:
+        """Calculate the date range for Gantt chart display.
+
+        Returns:
+            Tuple of (start_date, end_date) for Gantt chart
+        """
+        main_screen = self._get_main_screen()
+        if main_screen and main_screen.gantt_widget:
+            return main_screen.gantt_widget.calculate_date_range()
+
+        # Fallback when gantt_widget is not available
+        today = date.today()
+        start_date = today - timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=DEFAULT_GANTT_DISPLAY_DAYS - 1)
+        return (start_date, end_date)
+
+    def _fetch_task_data(self) -> TaskData:
+        """Fetch task data using TaskDataLoader.
+
+        Returns:
+            TaskData object containing all task information
+        """
+        try:
+            date_range = self._calculate_gantt_date_range()
+
+            return self.task_data_loader.load_tasks(
+                all=False,  # Non-archived by default
+                sort_by=self.state.sort_by,
+                reverse=self.state.sort_reverse,
+                hide_completed=self.state.hide_completed,
+                date_range=date_range,
+            )
+        except ServerConnectionError as e:
+            if self._on_connection_error:
+                self._on_connection_error(e)
+
+            # Return empty task data to avoid crash
+            empty_task_list_output = TaskListOutput(
+                tasks=[],
+                total_count=0,
+                filtered_count=0,
+                gantt_data=None,
+            )
+
+            return TaskData(
+                all_tasks=[],
+                filtered_tasks=[],
+                task_list_output=empty_task_list_output,
+                table_view_models=[],
+                gantt_view_model=None,
+                filtered_gantt_view_model=None,
+            )
+
+    def _update_cache(self, task_data: TaskData) -> None:
+        """Update internal cache with task data.
+
+        Args:
+            task_data: TaskData object to cache
+        """
+        self.state.update_caches(
+            tasks=task_data.all_tasks,
+            viewmodels=task_data.table_view_models,
+            gantt=task_data.gantt_view_model,
+        )
+
+    def _refresh_ui(self, task_data: TaskData, keep_scroll_position: bool) -> None:
+        """Refresh UI widgets with task data.
+
+        Args:
+            task_data: TaskData object containing view models
+            keep_scroll_position: Whether to preserve scroll position
+        """
+        main_screen = self._get_main_screen()
+        if not main_screen:
+            return
+
+        # Update Gantt widget
+        if main_screen.gantt_widget and task_data.filtered_gantt_view_model:
+            task_ids = [t.id for t in task_data.filtered_tasks]
+            main_screen.gantt_widget.update_gantt(
+                task_ids=task_ids,
+                gantt_view_model=task_data.filtered_gantt_view_model,
+                sort_by=self.state.sort_by,
+                reverse=self.state.sort_reverse,
+                all=False,  # Non-archived by default
+            )
+
+        # Update Table widget
+        if main_screen.task_table:
+            main_screen.task_table.refresh_tasks(
+                task_data.table_view_models,
+                keep_scroll_position=keep_scroll_position,
+            )
