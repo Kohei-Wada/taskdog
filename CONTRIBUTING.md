@@ -350,7 +350,7 @@ PYTHONPATH=src uv run python -m taskdog_server.main --help
 
 ## Design Philosophy
 
-Before adding new features, please review [DESIGN_PHILOSOPHY.md](DESIGN_PHILOSOPHY.md).
+Before adding new features, please review [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md).
 
 Taskdog is designed for **individual task management**, following GTD principles:
 
@@ -405,7 +405,7 @@ By contributing to Taskdog, you agree that your contributions will be licensed u
 ## Additional Resources
 
 - [CLAUDE.md](CLAUDE.md) - Detailed architecture and development guide
-- [DESIGN_PHILOSOPHY.md](DESIGN_PHILOSOPHY.md) - Design principles and rationale
+- [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md) - Design principles and rationale
 - [README.md](README.md) - User documentation and features
 - [Conventional Commits](https://www.conventionalcommits.org/) - Commit message format
 - [UV Documentation](https://github.com/astral-sh/uv) - Package manager guide
