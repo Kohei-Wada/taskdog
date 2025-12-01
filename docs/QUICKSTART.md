@@ -34,13 +34,12 @@ mkdir -p ~/.config/taskdog
 # Create config file
 cat > ~/.config/taskdog/config.toml << 'EOF'
 [api]
-enabled = true
 host = "127.0.0.1"
 port = 8000
 EOF
 ```
 
-**Important**: The `[api]` section is required. Without it, the CLI/TUI will not work.
+**Note**: Default is `127.0.0.1:8000`. Only needed if using a different host/port.
 
 ## Step 3: Start the Server (1 minute)
 
@@ -113,19 +112,6 @@ Once in the TUI (`taskdog tui`):
 
 ## Common Issues & Solutions
 
-### Error: "API mode is required"
-
-**Problem**: Config file missing or `enabled = false`
-
-**Solution**:
-
-```bash
-# Check if config exists
-cat ~/.config/taskdog/config.toml
-
-# If missing or wrong, recreate it (see Step 2)
-```
-
 ### Error: "Cannot connect to API server"
 
 **Problem**: Server is not running
@@ -179,8 +165,8 @@ taskdog-server --port 8001
 
 ## Next Steps
 
-- Read the [full README](README.md) for all features
-- Check [CLAUDE.md](CLAUDE.md) for architecture details
+- Read the [full README](../README.md) for all features
+- Check [CLAUDE.md](../CLAUDE.md) for architecture details
 - Explore optimization algorithms: `taskdog optimize --help`
 - Try the Gantt chart: `taskdog gantt`
 - Add dependencies: `taskdog add-dependency TASK_ID DEPENDS_ON_ID`
@@ -221,6 +207,6 @@ rm -rf ~/.config/taskdog
 ## Getting Help
 
 - Issues: https://github.com/Kohei-Wada/taskdog/issues
-- Documentation: See [README.md](README.md)
+- Documentation: See [README.md](../README.md)
 - CLI help: `taskdog --help`
 - Command help: `taskdog <command> --help`

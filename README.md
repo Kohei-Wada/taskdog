@@ -34,6 +34,7 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 
 ## Documentation
 
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Step-by-step setup in 5 minutes
 - **[CLI Commands Reference](docs/COMMANDS.md)** - Complete command documentation
 - **[API Reference](docs/API.md)** - REST API endpoints and examples
 - **[Configuration Guide](docs/CONFIGURATION.md)** - All configuration options
@@ -132,45 +133,20 @@ make uninstall        # Remove global installations
 
 ## Quick Start
 
-**1. Start the API server** (required for all operations):
-
 ```bash
+# Install
+make install
+
+# Start server (required)
 taskdog-server
-# Runs on http://127.0.0.1:8000 by default
+
+# Try it
+taskdog add "My first task" --priority 10
+taskdog table
+taskdog tui
 ```
 
-**2. Configure API connection** in `~/.config/taskdog/config.toml`:
-
-```toml
-[api]
-enabled = true
-host = "127.0.0.1"
-port = 8000
-```
-
-**3. Start managing tasks**:
-
-```bash
-# Create tasks
-taskdog add "Design phase" -p 150
-taskdog add "Implementation" -p 100 -d 1    # Depends on task 1
-
-# Set deadlines and estimates
-taskdog deadline 1 2025-10-20
-taskdog est 1 16
-
-# Auto-schedule with optimization
-taskdog optimize
-
-# Manage tasks
-taskdog start 1        # Start task
-taskdog done 1         # Complete task
-taskdog table          # View all tasks
-taskdog gantt          # Timeline view
-taskdog tui            # Interactive TUI
-```
-
-**See [Commands](#commands) for full reference and [API Server](#api-server) for HTTP API details.**
+For detailed setup and troubleshooting, see **[Quick Start Guide](docs/QUICKSTART.md)**.
 
 ## Interactive TUI
 
@@ -308,11 +284,10 @@ taskdog optimize -a balanced             # Use balanced algorithm
 
 **Config file**: `~/.config/taskdog/config.toml`
 
-**Minimal configuration:**
+**Minimal configuration** (only needed if using non-default host/port):
 
 ```toml
 [api]
-enabled = true
 host = "127.0.0.1"
 port = 8000
 ```
@@ -321,7 +296,6 @@ port = 8000
 
 ```toml
 [api]
-enabled = true
 host = "127.0.0.1"
 port = 8000
 
