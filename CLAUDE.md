@@ -74,9 +74,9 @@ make coverage                    # Run all tests with coverage report (sorted by
                                  # Used in CI - test failure will stop execution
 
 # Single test file (run from package directory)
-cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest tests/test_module.py
+cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/test_module.py -v
 # Specific test method
-cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest tests.test_module.TestClass.test_method
+cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/test_module.py::TestClass::test_method -v
 
 # Code Quality
 make lint                        # Ruff linter on all packages
@@ -114,7 +114,7 @@ journalctl --user -u taskdog-server -f   # View logs in real-time
 # See contrib/README.md for detailed documentation
 ```
 
-**Testing**: Uses `unittest` framework. Tests mirror package structure under `packages/*/tests/`. Use `unittest.mock` for dependencies.
+**Testing**: Uses `pytest` framework (can run both pytest and unittest style tests). Tests mirror package structure under `packages/*/tests/`. Use `unittest.mock` for dependencies.
 
 ## Working with the Monorepo
 

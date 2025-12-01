@@ -738,6 +738,8 @@ dependencies = [
 dev = [
     { name = "mypy" },
     { name = "parameterized" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
     { name = "ruff" },
 ]
 
@@ -746,6 +748,8 @@ requires-dist = [
     { name = "holidays", specifier = ">=0.60.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "parameterized", marker = "extra == 'dev'", specifier = ">=0.9.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "python-dateutil", specifier = ">=2.8.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7.0" },
     { name = "sqlalchemy", specifier = ">=2.0.0" },
@@ -837,9 +841,10 @@ source = { editable = "." }
 
 [package.optional-dependencies]
 dev = [
-    { name = "coverage" },
     { name = "mypy" },
     { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
     { name = "ruff" },
     { name = "types-python-dateutil" },
     { name = "types-sqlalchemy" },
@@ -847,9 +852,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "coverage", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.6.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.3.0" },
     { name = "types-python-dateutil", marker = "extra == 'dev'", specifier = ">=2.8.0" },
     { name = "types-sqlalchemy", marker = "extra == 'dev'" },

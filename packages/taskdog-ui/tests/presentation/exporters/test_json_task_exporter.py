@@ -22,7 +22,6 @@ class TestJsonTaskExporter(unittest.TestCase):
             is_fixed=False,
             depends_on=[],
             tags=[],
-            has_notes=False,
             estimated_duration=None,
             actual_duration_hours=None,
             planned_start=None,
@@ -30,11 +29,10 @@ class TestJsonTaskExporter(unittest.TestCase):
             actual_start=None,
             actual_end=None,
             deadline=None,
-            daily_allocations={},
-            actual_daily_hours={},
-            created_at=None,
-            updated_at=None,
+            created_at=datetime(2024, 12, 20, 10, 0),
+            updated_at=datetime(2024, 12, 20, 10, 0),
             is_archived=False,
+            is_finished=False,
         )
 
         self.task2 = TaskRowDto(
@@ -45,7 +43,6 @@ class TestJsonTaskExporter(unittest.TestCase):
             is_fixed=True,
             depends_on=[1],
             tags=["urgent", "backend"],
-            has_notes=True,
             estimated_duration=10.5,
             actual_duration_hours=12.0,
             planned_start=datetime(2025, 1, 1, 9, 0),
@@ -53,11 +50,10 @@ class TestJsonTaskExporter(unittest.TestCase):
             actual_start=datetime(2025, 1, 1, 9, 30),
             actual_end=datetime(2025, 1, 5, 17, 45),
             deadline=datetime(2025, 1, 10, 23, 59),
-            daily_allocations={"2025-01-01": 5.0, "2025-01-02": 5.5},
-            actual_daily_hours={"2025-01-01": 5.5},
             created_at=datetime(2024, 12, 20, 10, 0),
             updated_at=datetime(2025, 1, 5, 18, 0),
             is_archived=False,
+            is_finished=True,
         )
 
     def test_export_returns_json_string(self) -> None:
@@ -113,7 +109,6 @@ class TestJsonTaskExporter(unittest.TestCase):
             is_fixed=False,
             depends_on=[],
             tags=["日本語"],
-            has_notes=False,
             estimated_duration=None,
             actual_duration_hours=None,
             planned_start=None,
@@ -121,11 +116,10 @@ class TestJsonTaskExporter(unittest.TestCase):
             actual_start=None,
             actual_end=None,
             deadline=None,
-            daily_allocations={},
-            actual_daily_hours={},
-            created_at=None,
-            updated_at=None,
+            created_at=datetime(2024, 12, 20, 10, 0),
+            updated_at=datetime(2024, 12, 20, 10, 0),
             is_archived=False,
+            is_finished=False,
         )
         exporter = JsonTaskExporter()
 
@@ -149,16 +143,17 @@ class TestJsonTaskExporter(unittest.TestCase):
         self.assertIn("2025-01-01", task_data["planned_start"])
         self.assertIn("2025-01-05", task_data["actual_end"])
 
-    def test_export_handles_dict_fields(self) -> None:
-        """Test export preserves dictionary fields like daily_allocations."""
+    def test_export_handles_numeric_fields(self) -> None:
+        """Test export preserves numeric fields correctly."""
         exporter = JsonTaskExporter()
 
         result = exporter.export([self.task2])
 
         parsed = json.loads(result)
         task_data = parsed[0]
-        self.assertEqual(task_data["daily_allocations"]["2025-01-01"], 5.0)
-        self.assertEqual(task_data["daily_allocations"]["2025-01-02"], 5.5)
+        self.assertEqual(task_data["estimated_duration"], 10.5)
+        self.assertEqual(task_data["actual_duration_hours"], 12.0)
+        self.assertEqual(task_data["priority"], 2)
 
     def test_export_handles_list_fields(self) -> None:
         """Test export preserves list fields like tags and depends_on."""
@@ -232,7 +227,7 @@ class TestJsonTaskExporter(unittest.TestCase):
         parsed = json.loads(result)
         task_data = parsed[0]
         self.assertTrue(task_data["is_fixed"])
-        self.assertTrue(task_data["has_notes"])
+        self.assertTrue(task_data["is_finished"])
         self.assertFalse(task_data["is_archived"])
 
     def test_export_preserves_float_fields(self) -> None:
@@ -280,7 +275,6 @@ class TestJsonTaskExporter(unittest.TestCase):
         task_data = parsed[0]
         self.assertEqual(task_data["depends_on"], [])
         self.assertEqual(task_data["tags"], [])
-        self.assertEqual(task_data["daily_allocations"], {})
 
 
 if __name__ == "__main__":
