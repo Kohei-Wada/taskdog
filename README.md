@@ -133,45 +133,7 @@ make uninstall        # Remove global installations
 
 ## Quick Start
 
-**1. Start the API server** (required for all operations):
-
-```bash
-taskdog-server
-# Runs on http://127.0.0.1:8000 by default
-```
-
-**2. Configure API connection** in `~/.config/taskdog/config.toml`:
-
-```toml
-[api]
-enabled = true
-host = "127.0.0.1"
-port = 8000
-```
-
-**3. Start managing tasks**:
-
-```bash
-# Create tasks
-taskdog add "Design phase" -p 150
-taskdog add "Implementation" -p 100 -d 1    # Depends on task 1
-
-# Set deadlines and estimates
-taskdog deadline 1 2025-10-20
-taskdog est 1 16
-
-# Auto-schedule with optimization
-taskdog optimize
-
-# Manage tasks
-taskdog start 1        # Start task
-taskdog done 1         # Complete task
-taskdog table          # View all tasks
-taskdog gantt          # Timeline view
-taskdog tui            # Interactive TUI
-```
-
-**For detailed setup with troubleshooting, see [Quick Start Guide](docs/QUICKSTART.md).**
+See **[Quick Start Guide](docs/QUICKSTART.md)** for step-by-step setup instructions with troubleshooting.
 
 ## Interactive TUI
 
