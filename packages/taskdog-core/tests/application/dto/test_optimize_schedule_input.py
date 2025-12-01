@@ -1,12 +1,13 @@
 """Tests for OptimizeScheduleInput DTO."""
 
-import unittest
 from datetime import datetime
+
+import pytest
 
 from taskdog_core.application.dto.optimize_schedule_input import OptimizeScheduleInput
 
 
-class TestOptimizeScheduleInput(unittest.TestCase):
+class TestOptimizeScheduleInput:
     """Test suite for OptimizeScheduleInput DTO."""
 
     def test_create_with_required_fields(self) -> None:
@@ -20,11 +21,11 @@ class TestOptimizeScheduleInput(unittest.TestCase):
             algorithm_name="greedy",
         )
 
-        self.assertEqual(dto.start_date, start_date)
-        self.assertEqual(dto.max_hours_per_day, 8.0)
-        self.assertFalse(dto.force_override)
-        self.assertEqual(dto.algorithm_name, "greedy")
-        self.assertIsNone(dto.current_time)
+        assert dto.start_date == start_date
+        assert dto.max_hours_per_day == 8.0
+        assert dto.force_override is False
+        assert dto.algorithm_name == "greedy"
+        assert dto.current_time is None
 
     def test_create_with_current_time(self) -> None:
         """Test creating DTO with current_time specified."""
@@ -39,7 +40,7 @@ class TestOptimizeScheduleInput(unittest.TestCase):
             current_time=current_time,
         )
 
-        self.assertEqual(dto.current_time, current_time)
+        assert dto.current_time == current_time
 
     def test_create_with_force_override_true(self) -> None:
         """Test creating DTO with force_override=True."""
@@ -50,25 +51,22 @@ class TestOptimizeScheduleInput(unittest.TestCase):
             algorithm_name="greedy",
         )
 
-        self.assertTrue(dto.force_override)
+        assert dto.force_override is True
 
-    def test_create_with_different_max_hours(self) -> None:
+    @pytest.mark.parametrize("hours", [4.0, 6.5, 8.0, 10.0, 12.5])
+    def test_create_with_different_max_hours(self, hours) -> None:
         """Test creating DTO with different max_hours_per_day values."""
-        test_cases = [4.0, 6.5, 8.0, 10.0, 12.5]
+        dto = OptimizeScheduleInput(
+            start_date=datetime(2025, 1, 1),
+            max_hours_per_day=hours,
+            force_override=False,
+            algorithm_name="greedy",
+        )
+        assert dto.max_hours_per_day == hours
 
-        for hours in test_cases:
-            with self.subTest(hours=hours):
-                dto = OptimizeScheduleInput(
-                    start_date=datetime(2025, 1, 1),
-                    max_hours_per_day=hours,
-                    force_override=False,
-                    algorithm_name="greedy",
-                )
-                self.assertEqual(dto.max_hours_per_day, hours)
-
-    def test_create_with_different_algorithms(self) -> None:
-        """Test creating DTO with different algorithm names."""
-        algorithms = [
+    @pytest.mark.parametrize(
+        "algorithm",
+        [
             "greedy",
             "balanced",
             "backward",
@@ -78,17 +76,17 @@ class TestOptimizeScheduleInput(unittest.TestCase):
             "dependency_aware",
             "genetic",
             "monte_carlo",
-        ]
-
-        for algorithm in algorithms:
-            with self.subTest(algorithm=algorithm):
-                dto = OptimizeScheduleInput(
-                    start_date=datetime(2025, 1, 1),
-                    max_hours_per_day=8.0,
-                    force_override=False,
-                    algorithm_name=algorithm,
-                )
-                self.assertEqual(dto.algorithm_name, algorithm)
+        ],
+    )
+    def test_create_with_different_algorithms(self, algorithm) -> None:
+        """Test creating DTO with different algorithm names."""
+        dto = OptimizeScheduleInput(
+            start_date=datetime(2025, 1, 1),
+            max_hours_per_day=8.0,
+            force_override=False,
+            algorithm_name=algorithm,
+        )
+        assert dto.algorithm_name == algorithm
 
     def test_equality(self) -> None:
         """Test equality comparison."""
@@ -107,7 +105,7 @@ class TestOptimizeScheduleInput(unittest.TestCase):
             algorithm_name="greedy",
         )
 
-        self.assertEqual(dto1, dto2)
+        assert dto1 == dto2
 
     def test_inequality_with_different_algorithm(self) -> None:
         """Test inequality when algorithm differs."""
@@ -126,7 +124,7 @@ class TestOptimizeScheduleInput(unittest.TestCase):
             algorithm_name="balanced",
         )
 
-        self.assertNotEqual(dto1, dto2)
+        assert dto1 != dto2
 
     def test_inequality_with_different_max_hours(self) -> None:
         """Test inequality when max_hours_per_day differs."""
@@ -143,7 +141,7 @@ class TestOptimizeScheduleInput(unittest.TestCase):
             algorithm_name="greedy",
         )
 
-        self.assertNotEqual(dto1, dto2)
+        assert dto1 != dto2
 
     def test_repr_includes_main_fields(self) -> None:
         """Test that repr includes main field values."""
@@ -155,8 +153,8 @@ class TestOptimizeScheduleInput(unittest.TestCase):
         )
         repr_str = repr(dto)
 
-        self.assertIn("max_hours_per_day=8.0", repr_str)
-        self.assertIn("algorithm_name='greedy'", repr_str)
+        assert "max_hours_per_day=8.0" in repr_str
+        assert "algorithm_name='greedy'" in repr_str
 
     def test_start_date_with_time_component(self) -> None:
         """Test that start_date can include time component."""
@@ -169,8 +167,8 @@ class TestOptimizeScheduleInput(unittest.TestCase):
             algorithm_name="greedy",
         )
 
-        self.assertEqual(dto.start_date.hour, 14)
-        self.assertEqual(dto.start_date.minute, 30)
+        assert dto.start_date.hour == 14
+        assert dto.start_date.minute == 30
 
     def test_current_time_after_start_date(self) -> None:
         """Test current_time can be after start_date (for same-day start)."""
@@ -185,7 +183,7 @@ class TestOptimizeScheduleInput(unittest.TestCase):
             current_time=current_time,
         )
 
-        self.assertGreater(dto.current_time, dto.start_date)
+        assert dto.current_time > dto.start_date
 
     def test_fractional_max_hours(self) -> None:
         """Test fractional max_hours_per_day values."""
@@ -196,8 +194,4 @@ class TestOptimizeScheduleInput(unittest.TestCase):
             algorithm_name="greedy",
         )
 
-        self.assertEqual(dto.max_hours_per_day, 7.5)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert dto.max_hours_per_day == 7.5

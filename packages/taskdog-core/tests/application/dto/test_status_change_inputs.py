@@ -1,8 +1,6 @@
 """Tests for status change Input DTOs."""
 
-import unittest
-
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.dto.single_task_inputs import (
     CancelTaskInput,
@@ -13,49 +11,49 @@ from taskdog_core.application.dto.single_task_inputs import (
 )
 
 
-class TestStatusChangeInputs(unittest.TestCase):
+class TestStatusChangeInputs:
     """Test suite for all status change Input DTOs."""
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "dto_class",
         [
-            ("start", StartTaskInput),
-            ("complete", CompleteTaskInput),
-            ("pause", PauseTaskInput),
-            ("cancel", CancelTaskInput),
-            ("reopen", ReopenTaskInput),
-        ]
+            StartTaskInput,
+            CompleteTaskInput,
+            PauseTaskInput,
+            CancelTaskInput,
+            ReopenTaskInput,
+        ],
+        ids=["start", "complete", "pause", "cancel", "reopen"],
     )
-    def test_create_with_task_id(self, operation_name, dto_class):
+    def test_create_with_task_id(self, dto_class):
         """Test creating DTO with task_id."""
         dto = dto_class(task_id=1)
 
-        self.assertEqual(dto.task_id, 1)
+        assert dto.task_id == 1
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "dto_class",
         [
-            ("start", StartTaskInput),
-            ("complete", CompleteTaskInput),
-            ("pause", PauseTaskInput),
-            ("cancel", CancelTaskInput),
-            ("reopen", ReopenTaskInput),
-        ]
+            StartTaskInput,
+            CompleteTaskInput,
+            PauseTaskInput,
+            CancelTaskInput,
+            ReopenTaskInput,
+        ],
+        ids=["start", "complete", "pause", "cancel", "reopen"],
     )
-    def test_equality(self, operation_name, dto_class):
+    def test_equality(self, dto_class):
         """Test equality comparison."""
         dto1 = dto_class(task_id=1)
         dto2 = dto_class(task_id=1)
         dto3 = dto_class(task_id=2)
 
-        self.assertEqual(dto1, dto2)
-        self.assertNotEqual(dto1, dto3)
+        assert dto1 == dto2
+        assert dto1 != dto3
 
     def test_start_task_input_repr(self) -> None:
         """Test repr includes task_id for StartTaskInput."""
         dto = StartTaskInput(task_id=42)
         repr_str = repr(dto)
 
-        self.assertIn("task_id=42", repr_str)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert "task_id=42" in repr_str

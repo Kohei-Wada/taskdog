@@ -1,8 +1,6 @@
 """Tests for Task entity business logic methods."""
 
-import unittest
-
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -11,21 +9,27 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 )
 
 
-class TestTaskIsSchedulable(unittest.TestCase):
+class TestTaskIsSchedulable:
     """Test cases for Task.is_schedulable() method."""
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "status,duration,expected",
         [
-            ("pending_with_duration", TaskStatus.PENDING, 4.0, True),
-            ("completed_task", TaskStatus.COMPLETED, 4.0, False),
-            ("in_progress_task", TaskStatus.IN_PROGRESS, 4.0, False),
-            ("canceled_task", TaskStatus.CANCELED, 4.0, False),
-            ("pending_no_duration", TaskStatus.PENDING, None, False),
-        ]
+            (TaskStatus.PENDING, 4.0, True),
+            (TaskStatus.COMPLETED, 4.0, False),
+            (TaskStatus.IN_PROGRESS, 4.0, False),
+            (TaskStatus.CANCELED, 4.0, False),
+            (TaskStatus.PENDING, None, False),
+        ],
+        ids=[
+            "pending_with_duration",
+            "completed_task",
+            "in_progress_task",
+            "canceled_task",
+            "pending_no_duration",
+        ],
     )
-    def test_is_schedulable_by_status_and_duration(
-        self, _scenario, status, duration, expected
-    ):
+    def test_is_schedulable_by_status_and_duration(self, status, duration, expected):
         """Test schedulability based on status and estimated_duration."""
         task = Task(
             name="Test Task",
@@ -34,7 +38,7 @@ class TestTaskIsSchedulable(unittest.TestCase):
             estimated_duration=duration,
         )
         result = task.is_schedulable(force_override=False)
-        self.assertEqual(result, expected)
+        assert result == expected
 
     def test_is_not_schedulable_with_existing_schedule_by_default(self):
         """Test that tasks with existing schedules are not schedulable by default."""
@@ -48,7 +52,7 @@ class TestTaskIsSchedulable(unittest.TestCase):
 
         result = task.is_schedulable(force_override=False)
 
-        self.assertFalse(result)
+        assert result is False
 
     def test_is_schedulable_with_existing_schedule_when_forced(self):
         """Test that tasks with existing schedules are schedulable with force_override."""
@@ -62,7 +66,7 @@ class TestTaskIsSchedulable(unittest.TestCase):
 
         result = task.is_schedulable(force_override=True)
 
-        self.assertTrue(result)
+        assert result is True
 
     def test_is_not_schedulable_when_archived(self):
         """Test that archived tasks are never schedulable."""
@@ -75,11 +79,11 @@ class TestTaskIsSchedulable(unittest.TestCase):
         )
 
         # Archived tasks should not be schedulable, even with force_override
-        self.assertFalse(task.is_schedulable(force_override=False))
-        self.assertFalse(task.is_schedulable(force_override=True))
+        assert task.is_schedulable(force_override=False) is False
+        assert task.is_schedulable(force_override=True) is False
 
 
-class TestTaskValidateSchedulable(unittest.TestCase):
+class TestTaskValidateSchedulable:
     """Test cases for Task.validate_schedulable() method."""
 
     def test_validate_schedulable_success(self):
@@ -104,38 +108,37 @@ class TestTaskValidateSchedulable(unittest.TestCase):
             estimated_duration=4.0,
         )
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             task.validate_schedulable(force_override=False)
 
-        self.assertIn("Task ID must not be None", str(context.exception))
+        assert "Task ID must not be None" in str(exc_info.value)
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "task_kwargs,reason_keyword",
         [
+            ({"is_archived": True, "estimated_duration": 4.0}, "archived"),
+            ({"status": TaskStatus.COMPLETED}, "COMPLETED"),
+            ({"status": TaskStatus.CANCELED}, "CANCELED"),
             (
-                "archived_task",
-                {"is_archived": True, "estimated_duration": 4.0},
-                "archived",
-            ),
-            ("completed_task", {"status": TaskStatus.COMPLETED}, "COMPLETED"),
-            ("canceled_task", {"status": TaskStatus.CANCELED}, "CANCELED"),
-            (
-                "in_progress_task",
                 {"status": TaskStatus.IN_PROGRESS, "estimated_duration": 4.0},
                 "in progress",
             ),
-            ("no_duration", {"estimated_duration": None}, "duration"),
-            (
-                "fixed_task",
-                {"is_fixed": True, "estimated_duration": 4.0},
-                "fixed",
-            ),
-        ]
+            ({"estimated_duration": None}, "duration"),
+            ({"is_fixed": True, "estimated_duration": 4.0}, "fixed"),
+        ],
+        ids=[
+            "archived_task",
+            "completed_task",
+            "canceled_task",
+            "in_progress_task",
+            "no_duration",
+            "fixed_task",
+        ],
     )
     def test_validate_schedulable_raises_for_unschedulable_tasks(
-        self, _scenario, task_kwargs, reason_keyword
+        self, task_kwargs, reason_keyword
     ):
         """Test that validation raises for various unschedulable tasks."""
-        # Base task config
         base_config = {
             "id": 1,
             "name": "Test Task",
@@ -146,11 +149,11 @@ class TestTaskValidateSchedulable(unittest.TestCase):
 
         task = Task(**base_config)
 
-        with self.assertRaises(TaskNotSchedulableError) as context:
+        with pytest.raises(TaskNotSchedulableError) as exc_info:
             task.validate_schedulable(force_override=False)
 
-        self.assertEqual(context.exception.task_id, 1)
-        self.assertIn(reason_keyword.lower(), context.exception.reason.lower())
+        assert exc_info.value.task_id == 1
+        assert reason_keyword.lower() in exc_info.value.reason.lower()
 
     def test_validate_schedulable_raises_for_scheduled_task_without_force(self):
         """Test that validation raises for already-scheduled task without force_override."""
@@ -163,12 +166,12 @@ class TestTaskValidateSchedulable(unittest.TestCase):
             planned_start="2025-01-06 09:00:00",
         )
 
-        with self.assertRaises(TaskNotSchedulableError) as context:
+        with pytest.raises(TaskNotSchedulableError) as exc_info:
             task.validate_schedulable(force_override=False)
 
-        self.assertEqual(context.exception.task_id, 1)
-        self.assertIn("schedule", context.exception.reason.lower())
-        self.assertIn("force", context.exception.reason.lower())
+        assert exc_info.value.task_id == 1
+        assert "schedule" in exc_info.value.reason.lower()
+        assert "force" in exc_info.value.reason.lower()
 
     def test_validate_schedulable_passes_for_scheduled_task_with_force(self):
         """Test that validation passes for already-scheduled task with force_override."""
@@ -195,14 +198,14 @@ class TestTaskValidateSchedulable(unittest.TestCase):
             is_fixed=True,
         )
 
-        with self.assertRaises(TaskNotSchedulableError) as context:
+        with pytest.raises(TaskNotSchedulableError) as exc_info:
             task.validate_schedulable(force_override=True)
 
-        self.assertEqual(context.exception.task_id, 1)
-        self.assertIn("fixed", context.exception.reason.lower())
+        assert exc_info.value.task_id == 1
+        assert "fixed" in exc_info.value.reason.lower()
 
 
-class TestTaskGetUnschedulableReason(unittest.TestCase):
+class TestTaskGetUnschedulableReason:
     """Test cases for Task.get_unschedulable_reason() method."""
 
     def test_get_unschedulable_reason_returns_none_for_schedulable(self):
@@ -216,19 +219,27 @@ class TestTaskGetUnschedulableReason(unittest.TestCase):
         )
 
         reason = task.get_unschedulable_reason(force_override=False)
-        self.assertIsNone(reason)
+        assert reason is None
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "task_kwargs,expected_keyword",
         [
-            ("archived_task", {"is_archived": True}, "archived"),
-            ("completed_task", {"status": TaskStatus.COMPLETED}, "COMPLETED"),
-            ("in_progress_task", {"status": TaskStatus.IN_PROGRESS}, "in progress"),
-            ("no_duration", {"estimated_duration": None}, "duration"),
-            ("fixed_task", {"is_fixed": True}, "fixed"),
-        ]
+            ({"is_archived": True}, "archived"),
+            ({"status": TaskStatus.COMPLETED}, "COMPLETED"),
+            ({"status": TaskStatus.IN_PROGRESS}, "in progress"),
+            ({"estimated_duration": None}, "duration"),
+            ({"is_fixed": True}, "fixed"),
+        ],
+        ids=[
+            "archived_task",
+            "completed_task",
+            "in_progress_task",
+            "no_duration",
+            "fixed_task",
+        ],
     )
     def test_get_unschedulable_reason_returns_reason(
-        self, _scenario, task_kwargs, expected_keyword
+        self, task_kwargs, expected_keyword
     ):
         """Test that unschedulable task returns appropriate reason."""
         base_config = {
@@ -243,26 +254,33 @@ class TestTaskGetUnschedulableReason(unittest.TestCase):
         task = Task(**base_config)
 
         reason = task.get_unschedulable_reason(force_override=False)
-        self.assertIsNotNone(reason)
-        self.assertIn(expected_keyword.lower(), reason.lower())
+        assert reason is not None
+        assert expected_keyword.lower() in reason.lower()
 
 
-class TestTaskShouldCountInWorkload(unittest.TestCase):
+class TestTaskShouldCountInWorkload:
     """Test cases for Task.should_count_in_workload() method."""
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "status,expected",
         [
-            ("pending_task", TaskStatus.PENDING, True),
-            ("in_progress_task", TaskStatus.IN_PROGRESS, True),
-            ("completed_task", TaskStatus.COMPLETED, False),
-            ("canceled_task", TaskStatus.CANCELED, False),
-        ]
+            (TaskStatus.PENDING, True),
+            (TaskStatus.IN_PROGRESS, True),
+            (TaskStatus.COMPLETED, False),
+            (TaskStatus.CANCELED, False),
+        ],
+        ids=[
+            "pending_task",
+            "in_progress_task",
+            "completed_task",
+            "canceled_task",
+        ],
     )
-    def test_should_count_in_workload_by_status(self, _scenario, status, expected):
+    def test_should_count_in_workload_by_status(self, status, expected):
         """Test workload counting based on task status."""
         task = Task(name="Test task", priority=100, status=status)
         result = task.should_count_in_workload()
-        self.assertEqual(result, expected)
+        assert result == expected
 
     def test_should_count_in_workload_excludes_archived(self):
         """Test that archived tasks are not counted in workload."""
@@ -270,7 +288,7 @@ class TestTaskShouldCountInWorkload(unittest.TestCase):
         task = Task(
             name="Test task", priority=100, status=TaskStatus.PENDING, is_archived=True
         )
-        self.assertFalse(task.should_count_in_workload())
+        assert task.should_count_in_workload() is False
 
         # Archived task with IN_PROGRESS status should not be counted
         task = Task(
@@ -279,8 +297,4 @@ class TestTaskShouldCountInWorkload(unittest.TestCase):
             status=TaskStatus.IN_PROGRESS,
             is_archived=True,
         )
-        self.assertFalse(task.should_count_in_workload())
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert task.should_count_in_workload() is False
