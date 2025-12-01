@@ -34,6 +34,7 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 
 ## Documentation
 
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Step-by-step setup in 5 minutes
 - **[CLI Commands Reference](docs/COMMANDS.md)** - Complete command documentation
 - **[API Reference](docs/API.md)** - REST API endpoints and examples
 - **[Configuration Guide](docs/CONFIGURATION.md)** - All configuration options
@@ -170,7 +171,7 @@ taskdog gantt          # Timeline view
 taskdog tui            # Interactive TUI
 ```
 
-**See [Commands](#commands) for full reference and [API Server](#api-server) for HTTP API details.**
+**For detailed setup with troubleshooting, see [Quick Start Guide](docs/QUICKSTART.md).**
 
 ## Interactive TUI
 

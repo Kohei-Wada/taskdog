@@ -179,8 +179,8 @@ taskdog-server --port 8001
 
 ## Next Steps
 
-- Read the [full README](README.md) for all features
-- Check [CLAUDE.md](CLAUDE.md) for architecture details
+- Read the [full README](../README.md) for all features
+- Check [CLAUDE.md](../CLAUDE.md) for architecture details
 - Explore optimization algorithms: `taskdog optimize --help`
 - Try the Gantt chart: `taskdog gantt`
 - Add dependencies: `taskdog add-dependency TASK_ID DEPENDS_ON_ID`
@@ -221,6 +221,6 @@ rm -rf ~/.config/taskdog
 ## Getting Help
 
 - Issues: https://github.com/Kohei-Wada/taskdog/issues
-- Documentation: See [README.md](README.md)
+- Documentation: See [README.md](../README.md)
 - CLI help: `taskdog --help`
 - Command help: `taskdog <command> --help`
