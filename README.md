@@ -133,7 +133,20 @@ make uninstall        # Remove global installations
 
 ## Quick Start
 
-See **[Quick Start Guide](docs/QUICKSTART.md)** for step-by-step setup instructions with troubleshooting.
+```bash
+# Install
+make install
+
+# Start server (required)
+taskdog-server
+
+# Try it
+taskdog add "My first task" --priority 10
+taskdog table
+taskdog tui
+```
+
+For detailed setup and troubleshooting, see **[Quick Start Guide](docs/QUICKSTART.md)**.
 
 ## Interactive TUI
 
