@@ -266,11 +266,269 @@
           "note": "On-call rotation for production systems. Monitor alerts, respond to incidents. Keep laptop and phone nearby. Escalate if needed."
         }
       ]
+    },
+    {
+      "name": "Mobile App Development",
+      "tasks": [
+        {
+          "id": "T26",
+          "name": "Mobile app UI design",
+          "priority": 4,
+          "tags": ["work", "mobile", "design"],
+          "deadline_days": 7,
+          "estimate": 10,
+          "note": "Design mobile app screens in Figma. Include: splash screen, onboarding, task list, task detail, settings. Follow iOS/Android design guidelines."
+        },
+        {
+          "id": "T27",
+          "name": "Setup React Native project",
+          "priority": 5,
+          "tags": ["work", "mobile", "setup"],
+          "deadline_days": 5,
+          "estimate": 4,
+          "note": "Initialize React Native project with Expo. Configure TypeScript, ESLint, Prettier. Setup navigation (React Navigation). Add essential dependencies."
+        },
+        {
+          "id": "T28",
+          "name": "Implement navigation structure",
+          "priority": 4,
+          "tags": ["work", "mobile"],
+          "deadline_days": 10,
+          "estimate": 5,
+          "note": "Create tab navigator for main screens. Implement stack navigation for detail views. Add deep linking support. Handle authentication flow navigation.",
+          "depends_on": ["T27"]
+        },
+        {
+          "id": "T29",
+          "name": "Create mobile login/signup screens",
+          "priority": 5,
+          "tags": ["work", "mobile", "auth"],
+          "deadline_days": 14,
+          "estimate": 8,
+          "note": "Build login and signup forms with validation. Implement biometric authentication (Face ID/Touch ID). Add social login (Google, Apple). Handle secure token storage.",
+          "depends_on": ["T27", "T26"]
+        },
+        {
+          "id": "T30",
+          "name": "Build mobile task list view",
+          "priority": 4,
+          "tags": ["work", "mobile", "feature"],
+          "deadline_days": 21,
+          "estimate": 12,
+          "note": "Create scrollable task list with pull-to-refresh. Add filtering and sorting options. Implement swipe actions (complete, delete). Support dark mode.",
+          "depends_on": ["T28"]
+        },
+        {
+          "id": "T31",
+          "name": "Add offline sync capability",
+          "priority": 3,
+          "tags": ["work", "mobile", "sync"],
+          "deadline_days": 35,
+          "estimate": 15,
+          "note": "Implement local SQLite database for offline storage. Add background sync with conflict resolution. Show sync status indicator. Handle network state changes.",
+          "depends_on": ["T30"]
+        },
+        {
+          "id": "T32",
+          "name": "Push notification setup",
+          "priority": 3,
+          "tags": ["work", "mobile", "notifications"],
+          "deadline_days": 28,
+          "estimate": 6,
+          "note": "Configure Firebase Cloud Messaging (FCM) for Android and APNs for iOS. Implement notification handlers. Add notification preferences. Support scheduled reminders."
+        },
+        {
+          "id": "T33",
+          "name": "App store submission preparation",
+          "priority": 4,
+          "tags": ["work", "mobile", "release"],
+          "deadline_days": 45,
+          "estimate": 8,
+          "note": "Prepare app store listings (screenshots, descriptions). Create privacy policy. Setup TestFlight for iOS beta. Configure Google Play internal testing. Handle app signing.",
+          "depends_on": ["T31", "T32"]
+        }
+      ]
+    },
+    {
+      "name": "Data Analytics Platform",
+      "tasks": [
+        {
+          "id": "T34",
+          "name": "Design data pipeline architecture",
+          "priority": 4,
+          "tags": ["work", "analytics", "architecture"],
+          "deadline_days": 10,
+          "estimate": 8,
+          "note": "Design end-to-end data pipeline: ingestion, transformation, storage, visualization. Choose tools: Apache Kafka, Spark, or cloud-native (AWS Kinesis, Glue). Document data flow."
+        },
+        {
+          "id": "T35",
+          "name": "Setup ETL workflows",
+          "priority": 4,
+          "tags": ["work", "analytics", "etl"],
+          "deadline_days": 21,
+          "estimate": 12,
+          "note": "Implement ETL jobs with Apache Airflow. Create DAGs for daily/hourly data processing. Add data validation and quality checks. Setup alerting for pipeline failures."
+        },
+        {
+          "id": "T36",
+          "name": "Build data warehouse schema",
+          "priority": 5,
+          "tags": ["work", "analytics", "database"],
+          "deadline_days": 14,
+          "estimate": 10,
+          "note": "Design star schema for analytics queries. Create fact and dimension tables. Implement slowly changing dimensions (SCD Type 2). Optimize for OLAP workloads.",
+          "depends_on": ["T34"]
+        },
+        {
+          "id": "T37",
+          "name": "Create analytics dashboard",
+          "priority": 3,
+          "tags": ["work", "analytics", "visualization"],
+          "deadline_days": 35,
+          "estimate": 14,
+          "note": "Build interactive dashboards with Metabase or Superset. Create key metrics: DAU/MAU, retention, conversion. Add drill-down capabilities. Implement row-level security.",
+          "depends_on": ["T36"]
+        },
+        {
+          "id": "T38",
+          "name": "Implement reporting API",
+          "priority": 4,
+          "tags": ["work", "analytics", "api"],
+          "deadline_days": 28,
+          "estimate": 8,
+          "note": "Build REST API for programmatic report access. Support custom date ranges and filters. Implement caching for expensive queries. Add rate limiting.",
+          "depends_on": ["T36"]
+        },
+        {
+          "id": "T39",
+          "name": "Add data export functionality",
+          "priority": 3,
+          "tags": ["work", "analytics", "export"],
+          "deadline_days": 42,
+          "estimate": 6,
+          "note": "Export reports to CSV, Excel, PDF formats. Support scheduled email reports. Add data download endpoints. Implement large dataset streaming.",
+          "depends_on": ["T37", "T38"]
+        },
+        {
+          "id": "T40",
+          "name": "Analytics performance tuning",
+          "priority": 3,
+          "tags": ["work", "analytics", "performance"],
+          "deadline_days": 50,
+          "estimate": 10,
+          "note": "Optimize slow queries with query plans analysis. Add materialized views for common aggregations. Implement query result caching. Consider columnar storage for large tables."
+        }
+      ]
+    },
+    {
+      "name": "DevOps & Infrastructure",
+      "tasks": [
+        {
+          "id": "T41",
+          "name": "Kubernetes cluster setup",
+          "priority": 5,
+          "tags": ["work", "devops", "k8s"],
+          "deadline_days": 14,
+          "estimate": 12,
+          "note": "Setup EKS cluster with Terraform. Configure node pools for different workloads. Setup cluster autoscaler. Implement network policies. Configure RBAC."
+        },
+        {
+          "id": "T42",
+          "name": "Implement GitOps with ArgoCD",
+          "priority": 4,
+          "tags": ["work", "devops", "gitops"],
+          "deadline_days": 21,
+          "estimate": 8,
+          "note": "Deploy ArgoCD to cluster. Configure application manifests in Git. Setup sync policies and health checks. Implement progressive delivery with Argo Rollouts.",
+          "depends_on": ["T41"]
+        },
+        {
+          "id": "T43",
+          "name": "Setup monitoring stack",
+          "priority": 4,
+          "tags": ["work", "devops", "monitoring"],
+          "deadline_days": 28,
+          "estimate": 10,
+          "note": "Deploy Prometheus and Grafana. Configure service monitors for key metrics. Create alerting rules. Build dashboards for infrastructure and application metrics.",
+          "depends_on": ["T41"]
+        },
+        {
+          "id": "T44",
+          "name": "Configure log aggregation",
+          "priority": 3,
+          "tags": ["work", "devops", "logging"],
+          "deadline_days": 35,
+          "estimate": 8,
+          "note": "Deploy Loki or ELK stack for centralized logging. Configure log shipping from all services. Create log-based alerts. Implement log retention policies."
+        },
+        {
+          "id": "T45",
+          "name": "Disaster recovery planning",
+          "priority": 4,
+          "tags": ["work", "devops", "dr"],
+          "deadline_days": 45,
+          "estimate": 10,
+          "note": "Document RTO/RPO requirements. Implement cross-region database replication. Create backup and restore procedures. Test disaster recovery runbooks quarterly."
+        }
+      ]
+    },
+    {
+      "name": "Learning & Skill Development",
+      "tasks": [
+        {
+          "id": "T46",
+          "name": "Complete Rust programming course",
+          "priority": 2,
+          "tags": ["personal", "learning", "rust"],
+          "deadline_days": 60,
+          "estimate": 30,
+          "note": "Finish Rustlings exercises. Read 'The Rust Programming Language' book. Build a CLI tool project. Focus on ownership, lifetimes, and async programming."
+        },
+        {
+          "id": "T47",
+          "name": "AWS Solutions Architect study",
+          "priority": 3,
+          "tags": ["personal", "learning", "aws", "certification"],
+          "deadline_days": 75,
+          "estimate": 40,
+          "note": "Study for AWS SAA-C03 exam. Complete practice tests. Review: VPC, IAM, S3, EC2, RDS, Lambda. Use hands-on labs for practical experience."
+        },
+        {
+          "id": "T48",
+          "name": "GraphQL deep dive workshop",
+          "priority": 2,
+          "tags": ["personal", "learning", "graphql"],
+          "deadline_days": 30,
+          "estimate": 12,
+          "note": "Complete online GraphQL workshop. Build sample API with Apollo Server. Learn schema design, resolvers, subscriptions. Implement caching and batching."
+        },
+        {
+          "id": "T49",
+          "name": "Kubernetes CKA exam preparation",
+          "priority": 3,
+          "tags": ["personal", "learning", "k8s", "certification"],
+          "deadline_days": 90,
+          "estimate": 35,
+          "note": "Prepare for Certified Kubernetes Administrator exam. Practice with killer.sh. Master: cluster setup, networking, storage, troubleshooting. Time management is key."
+        },
+        {
+          "id": "T50",
+          "name": "Technical blog writing",
+          "priority": 2,
+          "tags": ["personal", "writing", "weekend"],
+          "weekend": true,
+          "weekend_offset": 2,
+          "estimate": 4,
+          "is_fixed": true,
+          "note": "Write technical blog post about recent learnings. Topics: Rust async patterns, K8s networking, or GraphQL best practices. Publish on dev.to or personal blog."
+        }
+      ]
     }
   ],
   "progress": {
-    "completed": ["T1", "T2", "T3"],
-    "in_progress": ["T5", "T6"]
+    "completed": ["T1", "T2", "T3", "T27", "T34"],
+    "in_progress": ["T5", "T6", "T28", "T35", "T41"]
   },
   "optimization": {
     "algorithm": "greedy",

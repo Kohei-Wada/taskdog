@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
 """Demo data script for Taskdog - creates sample tasks via REST API.
 
-This script creates ~25 sample tasks with realistic deadlines, estimates,
+This script creates ~50 sample tasks with realistic deadlines, estimates,
 tags, dependencies, and notes. It uses the REST API directly for better
 performance compared to CLI commands.
+
+Projects included:
+- Web Application Development (15 tasks)
+- Bug Fixes & Improvements (2 tasks)
+- Documentation & Maintenance (1 task)
+- Long-term Projects (4 tasks)
+- Weekend Fixed Tasks (3 tasks)
+- Mobile App Development (8 tasks)
+- Data Analytics Platform (7 tasks)
+- DevOps & Infrastructure (5 tasks)
+- Learning & Skill Development (5 tasks)
 
 Usage:
     python demo_data.py [--api-url URL] [--no-confirm] [--workers N]
@@ -498,7 +509,7 @@ def main() -> int:
     print(f"{BLUE}  Taskdog Demo Data Script{NC}")
     print(f"{BLUE}{'═' * 55}{NC}")
     print()
-    print("This will create ~25 sample tasks with:")
+    print("This will create ~50 sample tasks with:")
     print("  • Realistic deadlines (from tomorrow to 3 months ahead)")
     print("  • Various estimates (2-30 hours)")
     print("  • Various tags (work, personal, urgent, etc.)")
