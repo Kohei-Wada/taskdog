@@ -40,7 +40,7 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 - **[Configuration Guide](docs/CONFIGURATION.md)** - All configuration options
 - **[Development Guide](CLAUDE.md)** - Architecture and development workflow
 - **[Contributing Guide](CONTRIBUTING.md)** - How to contribute
-- **[Design Philosophy](DESIGN_PHILOSOPHY.md)** - Why Taskdog works this way
+- **[Design Philosophy](docs/DESIGN_PHILOSOPHY.md)** - Why Taskdog works this way
 
 ## Features
 
@@ -70,7 +70,7 @@ Taskdog is designed for **individual task management**, following GTD (Getting T
 **Why no subtasks?**
 Individual users don't need complex hierarchies. Dependencies + tags cover 99% of personal task organization. This keeps the optimizer simple and your workflow focused.
 
-For detailed design rationale, see [DESIGN_PHILOSOPHY.md](DESIGN_PHILOSOPHY.md).
+For detailed design rationale, see [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md).
 
 ## Installation
 

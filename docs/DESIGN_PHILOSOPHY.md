@@ -159,15 +159,9 @@ Compare this to Motion/Reclaim: "Our AI schedules your tasks" (black box, no con
 
 ## Why No Parent-Child Relationships?
 
-**TL;DR**: I tried. It didn't work well for individual task management.
+**TL;DR**: I tried. It didn't work well for individual task management. See "The Design Journey" section above for details.
 
-Early versions of Taskdog attempted to support parent-child task hierarchies. However, I found that this feature added significant complexity without proportional value for individual users.
-
-### The Attempt and Why I Abandoned It
-
-When I tried to implement parent-child relationships, I encountered three major problems:
-
-**1. Optimization Algorithms Became Unpredictable**
+### Why Optimization Became Unpredictable
 
 The core feature of Taskdog is schedule optimization. Parent-child relationships broke this:
 
@@ -190,45 +184,6 @@ The core feature of Taskdog is schedule optimization. Parent-child relationships
 ```
 
 Every optimization algorithm would need special handling for hierarchies. This made the codebase unmaintainable.
-
-**2. Business Logic Exploded in Complexity**
-
-See the Redmine example in section "Business Logic Complexity" below. I faced the same issues and realized I'd need to make arbitrary decisions for edge cases that had no clear right answer.
-
-**3. Individual Users Didn't Need It**
-
-After removing parent-child relationships, I tested with real workflows. Turns out:
-
-- Dependencies + tags cover 99% of organization needs
-- With only 1-3 concurrent tasks, mental hierarchy is sufficient
-- The complexity wasn't worth it
-
-**So I made a deliberate choice**: Optimize for individual task management, where parent-child relationships add complexity without value.
-
-This decision led to Taskdog's current positioning: **a tool for individuals, not teams**.
-
-### Additional Context
-
-These observations align with broader industry patterns:
-
-**GTD Philosophy**:
-> "The GTD methodology identifies multi-step projects with a desired outcome and a single 'next action' rather than mapping out all dependencies upfront."
-> — Getting Things Done Forums
-
-David Allen's GTD approach emphasizes:
-
-- **Planning phase**: Use hierarchical outlines (mental or on paper)
-- **Execution phase**: Flat list of "next actions"
-- Parent tasks are planning artifacts, not execution items
-
-**Taskwarrior's Approach**:
-Taskwarrior, the most successful terminal-based task manager, uses **dependencies only**:
-
-- No native subtask feature
-- Community plugins exist but aren't mainstream
-- Proven to work for thousands of users over 15+ years
-
-Our experience confirmed what these established approaches already knew: for individual task management, flat structure with dependencies is sufficient.
 
 ### Technical Details
 
@@ -258,22 +213,7 @@ class Task:
     # Simple, clear, no edge cases
 ```
 
-**2. Optimization Algorithm Complexity**
-
-Scheduling with hierarchies:
-
-- Do we schedule parent tasks? If so, when?
-- Are parent durations fixed or computed from children?
-- Can children be scheduled independently?
-- How to handle partial parent completion?
-
-Scheduling with dependencies:
-
-- Clear: schedule tasks whose dependencies are met
-- Predictable: algorithms behave consistently
-- Testable: easy to verify correctness
-
-**3. UI Complexity**
+**2. UI Complexity**
 
 TUI with hierarchies requires:
 
@@ -368,19 +308,6 @@ Epic: User Authentication System
 7+ people, 10+ concurrent tasks. **Hierarchy is necessary for coordination.**
 
 For personal task management with 1-3 concurrent tasks, parent-child relationships add complexity without benefit.
-
-**6. Individual vs. Team Needs**
-
-| Use Case | Individual | Team |
-|----------|-----------|------|
-| Task hierarchy depth | 1-2 levels | 3-5 levels |
-| Who creates subtasks? | Same person | Different people |
-| Parent meaning | Mental grouping | Milestone/deliverable |
-| Subtask reassignment | N/A | Common |
-| Need for structure | Low (in your head) | High (shared understanding) |
-| Concurrent tasks | 1-3 tasks | 10-100+ tasks |
-
-For individuals, **mental hierarchy + dependency tracking** is sufficient.
 
 ### How to Handle "But I Want Subtasks!"
 

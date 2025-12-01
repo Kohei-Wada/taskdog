@@ -403,7 +403,7 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 
 ### Design Principles
 
-**Core Philosophy**: Taskdog is designed for **individual task management** following GTD principles. See [DESIGN_PHILOSOPHY.md](DESIGN_PHILOSOPHY.md) for detailed rationale.
+**Core Philosophy**: Taskdog is designed for **individual task management** following GTD principles. See [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md) for detailed rationale.
 
 **Key Design Decisions**:
 
