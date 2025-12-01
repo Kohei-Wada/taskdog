@@ -284,11 +284,10 @@ taskdog optimize -a balanced             # Use balanced algorithm
 
 **Config file**: `~/.config/taskdog/config.toml`
 
-**Minimal configuration:**
+**Minimal configuration** (only needed if using non-default host/port):
 
 ```toml
 [api]
-enabled = true
 host = "127.0.0.1"
 port = 8000
 ```
@@ -297,7 +296,6 @@ port = 8000
 
 ```toml
 [api]
-enabled = true
 host = "127.0.0.1"
 port = 8000
 

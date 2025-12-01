@@ -34,13 +34,12 @@ mkdir -p ~/.config/taskdog
 # Create config file
 cat > ~/.config/taskdog/config.toml << 'EOF'
 [api]
-enabled = true
 host = "127.0.0.1"
 port = 8000
 EOF
 ```
 
-**Important**: The `[api]` section is required. Without it, the CLI/TUI will not work.
+**Note**: Default is `127.0.0.1:8000`. Only needed if using a different host/port.
 
 ## Step 3: Start the Server (1 minute)
 
@@ -112,19 +111,6 @@ Once in the TUI (`taskdog tui`):
 - `S` - Change sort order
 
 ## Common Issues & Solutions
-
-### Error: "API mode is required"
-
-**Problem**: Config file missing or `enabled = false`
-
-**Solution**:
-
-```bash
-# Check if config exists
-cat ~/.config/taskdog/config.toml
-
-# If missing or wrong, recreate it (see Step 2)
-```
 
 ### Error: "Cannot connect to API server"
 
