@@ -168,30 +168,27 @@ test-all: test ## Run all tests (alias for test)
 
 test-core: ## Run tests for taskdog-core only
 	@echo "Running taskdog-core tests..."
-	cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
+	cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/ -v
 
 test-server: ## Run tests for taskdog-server only
 	@echo "Running taskdog-server tests..."
-	cd packages/taskdog-server && PYTHONPATH=src PYTHONWARNINGS="ignore::ResourceWarning" uv run python -m unittest discover -s tests/ -t .
+	cd packages/taskdog-server && PYTHONPATH=src uv run python -m pytest tests/ -v
 
 test-ui: ## Run tests for taskdog-ui only
 	@echo "Running taskdog-ui tests..."
-	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m unittest discover -s tests/ -t .
+	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ -v
 
 coverage: ## Run tests with coverage and show report in terminal (sorted by coverage, low to high)
 	@echo "Running tests with coverage..."
 	@echo ""
 	@echo "📊 taskdog-core coverage (sorted: low → high):"
-	cd packages/taskdog-core && PYTHONPATH=src uv run coverage run -m unittest discover -s tests/ -t .
-	cd packages/taskdog-core && uv run coverage report --show-missing --sort=Cover
+	cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_core --cov-report=term-missing:skip-covered
 	@echo ""
 	@echo "📊 taskdog-server coverage (sorted: low → high):"
-	cd packages/taskdog-server && PYTHONPATH=src PYTHONWARNINGS="ignore::ResourceWarning" uv run coverage run -m unittest discover -s tests/ -t .
-	cd packages/taskdog-server && uv run coverage report --show-missing --sort=Cover
+	cd packages/taskdog-server && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_server --cov-report=term-missing:skip-covered
 	@echo ""
 	@echo "📊 taskdog-ui coverage (sorted: low → high):"
-	cd packages/taskdog-ui && PYTHONPATH=src uv run coverage run -m unittest discover -s tests/ -t .
-	cd packages/taskdog-ui && uv run coverage report --show-missing --sort=Cover
+	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog --cov-report=term-missing:skip-covered
 	@echo ""
 	@echo "✓ Coverage report complete!"
 	@echo ""

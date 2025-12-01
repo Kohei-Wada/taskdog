@@ -4,16 +4,58 @@ import unittest
 from datetime import date, datetime
 
 from taskdog.exporters.markdown_table_exporter import MarkdownTableExporter
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.application.dto.task_dto import TaskRowDto
+from taskdog_core.domain.entities.task import TaskStatus
 
 
 class TestMarkdownTableExporter(unittest.TestCase):
     """Tests for MarkdownTableExporter class."""
 
+    def _create_task_dto(
+        self,
+        id: int,
+        name: str,
+        priority: int,
+        status: TaskStatus,
+        deadline: datetime | None = None,
+        estimated_duration: float | None = None,
+        planned_start: datetime | None = None,
+        planned_end: datetime | None = None,
+        actual_start: datetime | None = None,
+        actual_end: datetime | None = None,
+        actual_duration_hours: float | None = None,
+        is_fixed: bool = False,
+        depends_on: list[int] | None = None,
+        tags: list[str] | None = None,
+        is_archived: bool = False,
+        is_finished: bool = False,
+    ) -> TaskRowDto:
+        """Helper to create TaskRowDto with default values."""
+        return TaskRowDto(
+            id=id,
+            name=name,
+            priority=priority,
+            status=status,
+            deadline=deadline,
+            estimated_duration=estimated_duration,
+            planned_start=planned_start,
+            planned_end=planned_end,
+            actual_start=actual_start,
+            actual_end=actual_end,
+            actual_duration_hours=actual_duration_hours,
+            is_fixed=is_fixed,
+            depends_on=depends_on or [],
+            tags=tags or [],
+            is_archived=is_archived,
+            is_finished=is_finished,
+            created_at=datetime(2024, 12, 20, 10, 0),
+            updated_at=datetime(2024, 12, 20, 10, 0),
+        )
+
     def test_export_creates_markdown_table(self):
         """Test basic markdown table export."""
         tasks = [
-            Task(
+            self._create_task_dto(
                 id=1,
                 name="Task 1",
                 priority=5,
@@ -21,13 +63,14 @@ class TestMarkdownTableExporter(unittest.TestCase):
                 deadline=datetime(2025, 11, 1, 18, 0, 0),
                 estimated_duration=8.0,
             ),
-            Task(
+            self._create_task_dto(
                 id=2,
                 name="Task 2",
                 priority=3,
                 status=TaskStatus.COMPLETED,
                 deadline=datetime(2025, 11, 2, 18, 0, 0),
                 estimated_duration=4.0,
+                is_finished=True,
             ),
         ]
 
@@ -47,7 +90,7 @@ class TestMarkdownTableExporter(unittest.TestCase):
     def test_export_with_specific_fields(self):
         """Test markdown export with specific fields."""
         tasks = [
-            Task(
+            self._create_task_dto(
                 id=1,
                 name="Task 1",
                 priority=5,
@@ -68,7 +111,7 @@ class TestMarkdownTableExporter(unittest.TestCase):
     def test_export_handles_none_values(self):
         """Test that None values are displayed as '-'."""
         tasks = [
-            Task(
+            self._create_task_dto(
                 id=1,
                 name="Task 1",
                 priority=5,
@@ -89,7 +132,7 @@ class TestMarkdownTableExporter(unittest.TestCase):
     def test_export_formats_datetime_correctly(self):
         """Test datetime formatting in export."""
         tasks = [
-            Task(
+            self._create_task_dto(
                 id=1,
                 name="Task 1",
                 priority=5,
@@ -108,7 +151,7 @@ class TestMarkdownTableExporter(unittest.TestCase):
 
     def test_export_handles_empty_task_list(self):
         """Test exporting empty task list."""
-        tasks = []
+        tasks: list[TaskRowDto] = []
 
         exporter = MarkdownTableExporter()
         result = exporter.export(tasks)
@@ -118,24 +161,6 @@ class TestMarkdownTableExporter(unittest.TestCase):
         self.assertEqual(len(lines), 2)  # Only header and separator
         self.assertIn("|Id|Name|Priority|", lines[0])
         self.assertIn("|--|--|--|", lines[1])
-
-    def test_export_handles_daily_allocations(self):
-        """Test that daily_allocations dict is formatted properly."""
-        tasks = [
-            Task(
-                id=1,
-                name="Task 1",
-                priority=5,
-                status=TaskStatus.PENDING,
-                daily_allocations={date(2025, 10, 31): 4.0, date(2025, 11, 1): 4.0},
-            ),
-        ]
-
-        exporter = MarkdownTableExporter(field_list=["id", "name", "daily_allocations"])
-        result = exporter.export(tasks)
-
-        # Check that daily_allocations is formatted (should show some dates)
-        self.assertIn("2025-10-31", result)
 
     def test_format_field_name_converts_snake_case(self):
         """Test field name formatting."""

@@ -2,7 +2,6 @@
 
 import csv
 import io
-import json
 import unittest
 from datetime import datetime
 
@@ -24,7 +23,6 @@ class TestCsvTaskExporter(unittest.TestCase):
             is_fixed=False,
             depends_on=[],
             tags=[],
-            has_notes=False,
             estimated_duration=None,
             actual_duration_hours=None,
             planned_start=None,
@@ -32,11 +30,10 @@ class TestCsvTaskExporter(unittest.TestCase):
             actual_start=None,
             actual_end=None,
             deadline=None,
-            daily_allocations={},
-            actual_daily_hours={},
-            created_at=None,
-            updated_at=None,
+            created_at=datetime(2024, 12, 20, 10, 0),
+            updated_at=datetime(2024, 12, 20, 10, 0),
             is_archived=False,
+            is_finished=False,
         )
 
         self.task2 = TaskRowDto(
@@ -47,7 +44,6 @@ class TestCsvTaskExporter(unittest.TestCase):
             is_fixed=True,
             depends_on=[1],
             tags=["urgent", "backend"],
-            has_notes=True,
             estimated_duration=10.5,
             actual_duration_hours=12.0,
             planned_start=datetime(2025, 1, 1, 9, 0),
@@ -55,11 +51,10 @@ class TestCsvTaskExporter(unittest.TestCase):
             actual_start=datetime(2025, 1, 1, 9, 30),
             actual_end=datetime(2025, 1, 5, 17, 45),
             deadline=datetime(2025, 1, 10, 23, 59),
-            daily_allocations={"2025-01-01": 5.0, "2025-01-02": 5.5},
-            actual_daily_hours={"2025-01-01": 5.5},
             created_at=datetime(2024, 12, 20, 10, 0),
             updated_at=datetime(2025, 1, 5, 18, 0),
             is_archived=False,
+            is_finished=True,
         )
 
     def test_export_returns_csv_string(self) -> None:
@@ -89,24 +84,24 @@ class TestCsvTaskExporter(unittest.TestCase):
 
     def test_export_uses_default_fields_when_not_specified(self) -> None:
         """Test export uses DEFAULT_CSV_FIELDS when no fields specified."""
-        from presentation.exporters.csv_task_exporter import DEFAULT_CSV_FIELDS
+        from taskdog.exporters.csv_task_exporter import DEFAULT_CSV_FIELDS
 
         exporter = CsvTaskExporter()
 
         result = exporter.export([self.task1])
 
         reader = csv.DictReader(io.StringIO(result))
-        self.assertEqual(reader.fieldnames, DEFAULT_CSV_FIELDS)
+        self.assertEqual(list(reader.fieldnames), list(DEFAULT_CSV_FIELDS))
 
     def test_export_uses_specified_fields(self) -> None:
         """Test export uses custom field list when provided."""
         custom_fields = ["id", "name", "priority"]
         exporter = CsvTaskExporter(field_list=custom_fields)
 
-        result = exporter.export([custom_fields])
+        result = exporter.export([self.task1])
 
         reader = csv.DictReader(io.StringIO(result))
-        self.assertEqual(reader.fieldnames, custom_fields)
+        self.assertEqual(list(reader.fieldnames), custom_fields)
 
     def test_export_includes_all_tasks(self) -> None:
         """Test export includes all provided tasks."""
@@ -146,18 +141,17 @@ class TestCsvTaskExporter(unittest.TestCase):
         self.assertIn("2025-01-01", row["planned_start"])
         self.assertIn("2025-01-05", row["actual_end"])
 
-    def test_export_converts_daily_allocations_to_json_string(self) -> None:
-        """Test export converts daily_allocations dict to JSON string."""
-        exporter = CsvTaskExporter(field_list=["id", "daily_allocations"])
+    def test_export_handles_list_fields(self) -> None:
+        """Test export handles list fields."""
+        exporter = CsvTaskExporter(field_list=["id", "tags", "depends_on"])
 
         result = exporter.export([self.task2])
 
         reader = csv.DictReader(io.StringIO(result))
         row = next(reader)
-        # Should be JSON string
-        allocations = json.loads(row["daily_allocations"])
-        self.assertEqual(allocations["2025-01-01"], 5.0)
-        self.assertEqual(allocations["2025-01-02"], 5.5)
+        # Lists should be present in some string representation
+        self.assertIsInstance(row["tags"], str)
+        self.assertIsInstance(row["depends_on"], str)
 
     def test_export_handles_empty_task_list(self) -> None:
         """Test export handles empty task list gracefully."""
@@ -190,7 +184,6 @@ class TestCsvTaskExporter(unittest.TestCase):
             is_fixed=False,
             depends_on=[],
             tags=[],
-            has_notes=False,
             estimated_duration=None,
             actual_duration_hours=None,
             planned_start=None,
@@ -198,11 +191,10 @@ class TestCsvTaskExporter(unittest.TestCase):
             actual_start=None,
             actual_end=None,
             deadline=None,
-            daily_allocations={},
-            actual_daily_hours={},
-            created_at=None,
-            updated_at=None,
+            created_at=datetime(2024, 12, 20, 10, 0),
+            updated_at=datetime(2024, 12, 20, 10, 0),
             is_archived=False,
+            is_finished=False,
         )
         exporter = CsvTaskExporter(field_list=["id", "name"])
 
@@ -212,18 +204,6 @@ class TestCsvTaskExporter(unittest.TestCase):
         reader = csv.DictReader(io.StringIO(result))
         row = next(reader)
         self.assertEqual(row["name"], 'Task with comma, quote" and newline\n')
-
-    def test_export_handles_list_fields(self) -> None:
-        """Test export handles list fields like tags and depends_on."""
-        exporter = CsvTaskExporter(field_list=["id", "tags", "depends_on"])
-
-        result = exporter.export([self.task2])
-
-        reader = csv.DictReader(io.StringIO(result))
-        row = next(reader)
-        # Lists should be serialized
-        self.assertIsInstance(row["tags"], str)
-        self.assertIsInstance(row["depends_on"], str)
 
     def test_export_ignores_extra_fields_in_task_dict(self) -> None:
         """Test export ignores fields not in the specified field list."""
@@ -259,14 +239,14 @@ class TestCsvTaskExporter(unittest.TestCase):
             "estimated_duration",
             "actual_start",
             "actual_end",
+            "actual_duration_hours",
             "created_at",
             "updated_at",
             "is_fixed",
             "depends_on",
             "tags",
-            "daily_allocations",
-            "actual_daily_hours",
             "is_archived",
+            "is_finished",
         ]
         exporter = CsvTaskExporter(field_list=all_fields)
 
