@@ -153,13 +153,13 @@ class WebSocketClient:
 
         while self._state != ConnectionState.DISCONNECTED:
             try:
-                # Build extra headers for authentication
-                extra_headers = {}
+                # Build additional headers for authentication
+                additional_headers = {}
                 if self.api_key:
-                    extra_headers["X-Api-Key"] = self.api_key
+                    additional_headers["X-Api-Key"] = self.api_key
 
                 async with websockets.connect(
-                    self.ws_url, extra_headers=extra_headers or None
+                    self.ws_url, additional_headers=additional_headers or None
                 ) as websocket:  # type: ignore[attr-defined]
                     self._websocket = websocket
                     async with self._lock:
