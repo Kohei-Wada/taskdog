@@ -143,14 +143,20 @@ class EventHandlerRegistry:
             )
 
     def _get_display_source(self, message: dict[str, Any]) -> str | None:
-        """Get display source client ID if different from this client.
+        """Get display source (user name or client ID) if different from this client.
 
         Args:
-            message: Message containing source_client_id
+            message: Message containing source_user_name and/or source_client_id
 
         Returns:
-            Source client ID if different from this client, None otherwise
+            User name if available, otherwise client ID if different from this client
         """
+        # Prefer user name over client ID
+        source_user_name = message.get("source_user_name")
+        if isinstance(source_user_name, str) and source_user_name:
+            return source_user_name
+
+        # Fall back to client ID
         source_client_id = message.get("source_client_id")
         if (
             isinstance(source_client_id, str)

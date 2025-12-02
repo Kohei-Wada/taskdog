@@ -19,6 +19,7 @@ async def start_task(
     controller: LifecycleControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Start a task (change status to IN_PROGRESS and record start time).
 
@@ -27,6 +28,7 @@ async def start_task(
         controller: Lifecycle controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Updated task data with actual_start timestamp
@@ -37,7 +39,7 @@ async def start_task(
     result = controller.start_task(task_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_status_changed(result, "PENDING", x_client_id)
+    broadcaster.task_status_changed(result, "PENDING", x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
 
@@ -49,6 +51,7 @@ async def complete_task(
     controller: LifecycleControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Complete a task (change status to COMPLETED and record end time).
 
@@ -57,6 +60,7 @@ async def complete_task(
         controller: Lifecycle controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Updated task data with actual_end timestamp
@@ -67,7 +71,7 @@ async def complete_task(
     result = controller.complete_task(task_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_status_changed(result, "IN_PROGRESS", x_client_id)
+    broadcaster.task_status_changed(result, "IN_PROGRESS", x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
 
@@ -79,6 +83,7 @@ async def pause_task(
     controller: LifecycleControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Pause a task (change status to PENDING and clear timestamps).
 
@@ -87,6 +92,7 @@ async def pause_task(
         controller: Lifecycle controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Updated task data with cleared timestamps
@@ -97,7 +103,7 @@ async def pause_task(
     result = controller.pause_task(task_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_status_changed(result, "IN_PROGRESS", x_client_id)
+    broadcaster.task_status_changed(result, "IN_PROGRESS", x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
 
@@ -109,6 +115,7 @@ async def cancel_task(
     controller: LifecycleControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Cancel a task (change status to CANCELED and record end time).
 
@@ -117,6 +124,7 @@ async def cancel_task(
         controller: Lifecycle controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Updated task data with actual_end timestamp
@@ -127,7 +135,7 @@ async def cancel_task(
     result = controller.cancel_task(task_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_status_changed(result, "IN_PROGRESS", x_client_id)
+    broadcaster.task_status_changed(result, "IN_PROGRESS", x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
 
@@ -139,6 +147,7 @@ async def reopen_task(
     controller: LifecycleControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Reopen a task (change status to PENDING and clear timestamps).
 
@@ -147,6 +156,7 @@ async def reopen_task(
         controller: Lifecycle controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Updated task data with cleared timestamps
@@ -157,6 +167,6 @@ async def reopen_task(
     result = controller.reopen_task(task_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_status_changed(result, "COMPLETED", x_client_id)
+    broadcaster.task_status_changed(result, "COMPLETED", x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
