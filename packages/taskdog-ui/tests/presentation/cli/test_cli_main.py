@@ -24,6 +24,7 @@ class TestCliGlobalOptions:
         mock_config = MagicMock()
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
+        mock_config.api.api_key = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -34,7 +35,9 @@ class TestCliGlobalOptions:
         self.runner.invoke(cli, ["table", "--help"])
 
         # Verify
-        mock_api_client.assert_called_once_with(base_url="http://127.0.0.1:8000")
+        mock_api_client.assert_called_once_with(
+            base_url="http://127.0.0.1:8000", api_key=None
+        )
 
     @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
@@ -44,6 +47,7 @@ class TestCliGlobalOptions:
         mock_config = MagicMock()
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
+        mock_config.api.api_key = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -53,7 +57,9 @@ class TestCliGlobalOptions:
         self.runner.invoke(cli, ["--host", "192.168.1.100", "table", "--help"])
 
         # Verify - host should be overridden, port should use config
-        mock_api_client.assert_called_once_with(base_url="http://192.168.1.100:8000")
+        mock_api_client.assert_called_once_with(
+            base_url="http://192.168.1.100:8000", api_key=None
+        )
 
     @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
@@ -63,6 +69,7 @@ class TestCliGlobalOptions:
         mock_config = MagicMock()
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
+        mock_config.api.api_key = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -72,7 +79,9 @@ class TestCliGlobalOptions:
         self.runner.invoke(cli, ["--port", "3000", "table", "--help"])
 
         # Verify - port should be overridden, host should use config
-        mock_api_client.assert_called_once_with(base_url="http://127.0.0.1:3000")
+        mock_api_client.assert_called_once_with(
+            base_url="http://127.0.0.1:3000", api_key=None
+        )
 
     @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
@@ -82,6 +91,7 @@ class TestCliGlobalOptions:
         mock_config = MagicMock()
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
+        mock_config.api.api_key = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -93,7 +103,9 @@ class TestCliGlobalOptions:
         )
 
         # Verify
-        mock_api_client.assert_called_once_with(base_url="http://192.168.1.100:3000")
+        mock_api_client.assert_called_once_with(
+            base_url="http://192.168.1.100:3000", api_key=None
+        )
 
     def test_help_shows_global_options(self):
         """Test that --help displays --host and --port options."""
@@ -158,6 +170,7 @@ class TestCliGlobalOptions:
         mock_config = MagicMock()
         mock_config.api.host = "127.0.0.1"
         mock_config.api.port = 8000
+        mock_config.api.api_key = None
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
@@ -165,11 +178,67 @@ class TestCliGlobalOptions:
 
         # Execute - test port 1
         self.runner.invoke(cli, ["--port", "1", "table", "--help"])
-        mock_api_client.assert_called_with(base_url="http://127.0.0.1:1")
+        mock_api_client.assert_called_with(base_url="http://127.0.0.1:1", api_key=None)
 
         # Reset mock
         mock_api_client.reset_mock()
 
         # Execute - test port 65535
         self.runner.invoke(cli, ["--port", "65535", "table", "--help"])
-        mock_api_client.assert_called_with(base_url="http://127.0.0.1:65535")
+        mock_api_client.assert_called_with(
+            base_url="http://127.0.0.1:65535", api_key=None
+        )
+
+    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog.cli_main.load_cli_config")
+    def test_api_key_option_override(self, mock_load_config, mock_api_client):
+        """Test --api-key option overrides config."""
+        # Setup
+        mock_config = MagicMock()
+        mock_config.api.host = "127.0.0.1"
+        mock_config.api.port = 8000
+        mock_config.api.api_key = "config-key"
+        mock_load_config.return_value = mock_config
+
+        mock_client_instance = MagicMock()
+        mock_api_client.return_value = mock_client_instance
+
+        # Execute
+        self.runner.invoke(cli, ["--api-key", "cli-key", "table", "--help"])
+
+        # Verify - api_key should be overridden
+        mock_api_client.assert_called_once_with(
+            base_url="http://127.0.0.1:8000", api_key="cli-key"
+        )
+
+    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog.cli_main.load_cli_config")
+    def test_api_key_from_config(self, mock_load_config, mock_api_client):
+        """Test api_key from config is used when --api-key not provided."""
+        # Setup
+        mock_config = MagicMock()
+        mock_config.api.host = "127.0.0.1"
+        mock_config.api.port = 8000
+        mock_config.api.api_key = "config-key"
+        mock_load_config.return_value = mock_config
+
+        mock_client_instance = MagicMock()
+        mock_api_client.return_value = mock_client_instance
+
+        # Execute
+        self.runner.invoke(cli, ["table", "--help"])
+
+        # Verify - api_key from config should be used
+        mock_api_client.assert_called_once_with(
+            base_url="http://127.0.0.1:8000", api_key="config-key"
+        )
+
+    def test_help_shows_api_key_option(self):
+        """Test that --help displays --api-key option."""
+        # Execute
+        result = self.runner.invoke(cli, ["--help"])
+
+        # Verify
+        assert result.exit_code == 0
+        assert "--api-key" in result.output
+        assert "API key for authentication" in result.output

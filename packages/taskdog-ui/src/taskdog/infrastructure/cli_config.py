@@ -22,10 +22,12 @@ class CliApiConfig:
     Attributes:
         host: API server hostname
         port: API server port
+        api_key: API key for authentication (used with reverse proxies like Kong)
     """
 
     host: str = "127.0.0.1"
     port: int = 8000
+    api_key: str | None = None
 
 
 @dataclass(frozen=True)
@@ -78,6 +80,7 @@ def load_cli_config() -> CliConfig:
     Environment variables:
         TASKDOG_API_HOST: API server hostname
         TASKDOG_API_PORT: API server port
+        TASKDOG_API_KEY: API key for authentication
 
     Returns:
         CliConfig with merged settings
@@ -90,6 +93,7 @@ def load_cli_config() -> CliConfig:
     # Start with defaults
     api_host = "127.0.0.1"
     api_port = 8000
+    api_key: str | None = None
     theme = "textual-dark"
     notes_template: str | None = None
     keybindings: dict[str, str] = {}
@@ -106,6 +110,7 @@ def load_cli_config() -> CliConfig:
                 api_section = data["api"]
                 api_host = api_section.get("host", api_host)
                 api_port = api_section.get("port", api_port)
+                api_key = api_section.get("api_key", api_key)
 
             # Parse [ui] section
             if "ui" in data:
@@ -135,8 +140,11 @@ def load_cli_config() -> CliConfig:
             # Invalid port will be ignored, keep default
             api_port = int(os.environ["TASKDOG_API_PORT"])
 
+    if "TASKDOG_API_KEY" in os.environ:
+        api_key = os.environ["TASKDOG_API_KEY"]
+
     # Build config object
-    api_config = CliApiConfig(host=api_host, port=api_port)
+    api_config = CliApiConfig(host=api_host, port=api_port, api_key=api_key)
     ui_config = UiConfig(theme=theme)
     notes_config = NotesConfig(template=notes_template)
     return CliConfig(

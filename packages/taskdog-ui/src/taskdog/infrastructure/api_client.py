@@ -35,15 +35,21 @@ class TaskdogApiClient:
     public API for backward compatibility.
     """
 
-    def __init__(self, base_url: str = "http://127.0.0.1:8000", timeout: float = 30.0):
+    def __init__(
+        self,
+        base_url: str = "http://127.0.0.1:8000",
+        timeout: float = 30.0,
+        api_key: str | None = None,
+    ):
         """Initialize API client.
 
         Args:
             base_url: Base URL of the API server
             timeout: Request timeout in seconds
+            api_key: API key for authentication (sent as X-Api-Key header)
         """
         self.base_url = base_url
-        self._base = BaseApiClient(base_url, timeout)
+        self._base = BaseApiClient(base_url, timeout, api_key=api_key)
         self._has_notes_cache: dict[int, bool] = {}
 
         # Initialize specialized clients
