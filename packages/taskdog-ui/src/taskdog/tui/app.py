@@ -255,7 +255,10 @@ class TaskdogTUI(App):
 
         # Initialize WebSocket client for real-time updates
         ws_url = self._get_websocket_url()
-        self.websocket_client = WebSocketClient(ws_url, self._handle_websocket_message)
+        api_key = self.api_client._base.api_key
+        self.websocket_client = WebSocketClient(
+            ws_url, self._handle_websocket_message, api_key
+        )
 
     def _get_websocket_url(self) -> str:
         """Get WebSocket URL from API client configuration.
