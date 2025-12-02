@@ -1,18 +1,19 @@
 """Tests for remove-dependency command."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.remove_dependency import remove_dependency_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-class TestRemoveDependencyCommand(unittest.TestCase):
+class TestRemoveDependencyCommand:
     """Test cases for remove-dependency command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -34,7 +35,7 @@ class TestRemoveDependencyCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.remove_dependency.assert_called_once_with(5, 3)
         self.console_writer.success.assert_called_once()
         self.console_writer.info.assert_called_once()
@@ -50,7 +51,7 @@ class TestRemoveDependencyCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -65,7 +66,7 @@ class TestRemoveDependencyCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("removing dependency", error)
 
     def test_missing_task_id(self):
@@ -73,15 +74,11 @@ class TestRemoveDependencyCommand(unittest.TestCase):
         result = self.runner.invoke(
             remove_dependency_command, ["3"], obj=self.cli_context
         )
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_missing_depends_on_id(self):
         """Test remove-dependency without depends_on_id argument."""
         result = self.runner.invoke(
             remove_dependency_command, ["5"], obj=self.cli_context
         )
-        self.assertNotEqual(result.exit_code, 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code != 0

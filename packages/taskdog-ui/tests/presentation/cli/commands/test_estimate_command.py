@@ -1,18 +1,19 @@
 """Tests for estimate command."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.estimate import estimate_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-class TestEstimateCommand(unittest.TestCase):
+class TestEstimateCommand:
     """Test cases for estimate command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -35,7 +36,7 @@ class TestEstimateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.update_task.assert_called_once_with(
             task_id=1, estimated_duration=2.5
         )
@@ -53,7 +54,7 @@ class TestEstimateCommand(unittest.TestCase):
         result = self.runner.invoke(estimate_command, ["1", "8"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.update_task.assert_called_once_with(
             task_id=1, estimated_duration=8.0
         )
@@ -72,15 +73,15 @@ class TestEstimateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         # Check that update_success was called with a formatter
         call_args = self.console_writer.update_success.call_args
-        self.assertEqual(call_args[0][0], mock_task)
-        self.assertEqual(call_args[0][1], "estimated duration")
-        self.assertEqual(call_args[0][2], 2.5)
+        assert call_args[0][0] == mock_task
+        assert call_args[0][1] == "estimated duration"
+        assert call_args[0][2] == 2.5
         # Fourth argument should be the formatter callable
         formatter = call_args[0][3]
-        self.assertEqual(formatter(2.5), "2.5h")
+        assert formatter(2.5) == "2.5h"
 
     def test_task_not_found(self):
         """Test estimate with non-existent task."""
@@ -93,7 +94,7 @@ class TestEstimateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -108,39 +109,35 @@ class TestEstimateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("setting estimate", error)
 
     def test_missing_task_id(self):
         """Test estimate without task_id argument."""
         result = self.runner.invoke(estimate_command, ["2.5"], obj=self.cli_context)
         # Click shows usage error for missing argument
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_missing_hours(self):
         """Test estimate without hours argument."""
         result = self.runner.invoke(estimate_command, ["1"], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_zero_hours_rejected(self):
         """Test that zero hours is rejected by PositiveFloat."""
         result = self.runner.invoke(estimate_command, ["1", "0"], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_negative_hours_rejected(self):
         """Test that negative hours is rejected by PositiveFloat."""
         result = self.runner.invoke(
             estimate_command, ["1", "-1.5"], obj=self.cli_context
         )
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_non_numeric_hours_rejected(self):
         """Test that non-numeric hours is rejected."""
         result = self.runner.invoke(
             estimate_command, ["1", "abc"], obj=self.cli_context
         )
-        self.assertNotEqual(result.exit_code, 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code != 0

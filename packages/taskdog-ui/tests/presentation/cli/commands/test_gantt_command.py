@@ -1,17 +1,18 @@
 """Tests for gantt command."""
 
-import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.gantt import gantt_command
 
 
-class TestGanttCommand(unittest.TestCase):
+class TestGanttCommand:
     """Test cases for gantt command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -40,7 +41,7 @@ class TestGanttCommand(unittest.TestCase):
         result = self.runner.invoke(gantt_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.get_gantt_data.assert_called_once()
         mock_presenter.present.assert_called_once_with(mock_gantt_result)
         mock_renderer.render.assert_called_once_with(mock_view_model)
@@ -58,9 +59,9 @@ class TestGanttCommand(unittest.TestCase):
         result = self.runner.invoke(gantt_command, ["--all"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.get_gantt_data.call_args[1]
-        self.assertTrue(call_kwargs["all"])
+        assert call_kwargs["all"] is True
 
     @patch("taskdog.cli.commands.gantt.RichGanttRenderer")
     @patch("taskdog.cli.commands.gantt.GanttPresenter")
@@ -77,9 +78,9 @@ class TestGanttCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.get_gantt_data.call_args[1]
-        self.assertEqual(call_kwargs["status"], "completed")
+        assert call_kwargs["status"] == "completed"
 
     @patch("taskdog.cli.commands.gantt.RichGanttRenderer")
     @patch("taskdog.cli.commands.gantt.GanttPresenter")
@@ -96,9 +97,9 @@ class TestGanttCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.get_gantt_data.call_args[1]
-        self.assertEqual(call_kwargs["tags"], ["work", "urgent"])
+        assert call_kwargs["tags"] == ["work", "urgent"]
 
     @patch("taskdog.cli.commands.gantt.RichGanttRenderer")
     @patch("taskdog.cli.commands.gantt.GanttPresenter")
@@ -115,10 +116,10 @@ class TestGanttCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.get_gantt_data.call_args[1]
-        self.assertEqual(call_kwargs["sort_by"], "priority")
-        self.assertTrue(call_kwargs["reverse"])
+        assert call_kwargs["sort_by"] == "priority"
+        assert call_kwargs["reverse"] is True
 
     @patch("taskdog.cli.commands.gantt.RichGanttRenderer")
     @patch("taskdog.cli.commands.gantt.GanttPresenter")
@@ -137,10 +138,10 @@ class TestGanttCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.get_gantt_data.call_args[1]
-        self.assertIsNotNone(call_kwargs["start_date"])
-        self.assertIsNotNone(call_kwargs["end_date"])
+        assert call_kwargs["start_date"] is not None
+        assert call_kwargs["end_date"] is not None
 
     def test_general_exception(self):
         """Test handling of general exception."""
@@ -152,11 +153,7 @@ class TestGanttCommand(unittest.TestCase):
         result = self.runner.invoke(gantt_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with(
             "displaying Gantt chart", error
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

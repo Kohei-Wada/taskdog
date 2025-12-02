@@ -1,18 +1,19 @@
 """Tests for rm command."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.rm import rm_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-class TestRmCommand(unittest.TestCase):
+class TestRmCommand:
     """Test cases for rm command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -32,7 +33,7 @@ class TestRmCommand(unittest.TestCase):
         result = self.runner.invoke(rm_command, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.archive_task.assert_called_once_with(1)
         self.api_client.remove_task.assert_not_called()
         self.console_writer.task_success.assert_called_once()
@@ -47,7 +48,7 @@ class TestRmCommand(unittest.TestCase):
         result = self.runner.invoke(rm_command, ["1", "--hard"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.remove_task.assert_called_once_with(1)
         self.api_client.archive_task.assert_not_called()
         self.console_writer.success.assert_called_once()
@@ -65,11 +66,11 @@ class TestRmCommand(unittest.TestCase):
         result = self.runner.invoke(rm_command, ["1", "2"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
-        self.assertEqual(self.api_client.archive_task.call_count, 2)
-        self.assertEqual(self.console_writer.task_success.call_count, 2)
+        assert result.exit_code == 0
+        assert self.api_client.archive_task.call_count == 2
+        assert self.console_writer.task_success.call_count == 2
         # Spacing added for multiple tasks
-        self.assertEqual(self.console_writer.empty_line.call_count, 2)
+        assert self.console_writer.empty_line.call_count == 2
 
     def test_multiple_tasks_hard_delete(self):
         """Test hard deleting multiple tasks."""
@@ -82,9 +83,9 @@ class TestRmCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
-        self.assertEqual(self.api_client.remove_task.call_count, 2)
-        self.assertEqual(self.console_writer.success.call_count, 2)
+        assert result.exit_code == 0
+        assert self.api_client.remove_task.call_count == 2
+        assert self.console_writer.success.call_count == 2
 
     def test_task_not_found_archive(self):
         """Test archive with non-existent task."""
@@ -95,7 +96,7 @@ class TestRmCommand(unittest.TestCase):
         result = self.runner.invoke(rm_command, ["999"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_task_not_found_hard_delete(self):
@@ -107,7 +108,7 @@ class TestRmCommand(unittest.TestCase):
         result = self.runner.invoke(rm_command, ["999", "--hard"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -120,14 +121,10 @@ class TestRmCommand(unittest.TestCase):
         result = self.runner.invoke(rm_command, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("removing task", error)
 
     def test_no_task_id_provided(self):
         """Test rm without providing task ID."""
         result = self.runner.invoke(rm_command, [], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code != 0

@@ -1,18 +1,19 @@
 """Tests for rename command."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.rename import rename_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-class TestRenameCommand(unittest.TestCase):
+class TestRenameCommand:
     """Test cases for rename command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -35,7 +36,7 @@ class TestRenameCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.update_task.assert_called_once_with(
             task_id=1, name="New Task Name"
         )
@@ -57,7 +58,7 @@ class TestRenameCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.update_task.assert_called_once()
 
     def test_task_not_found(self):
@@ -71,7 +72,7 @@ class TestRenameCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -86,20 +87,16 @@ class TestRenameCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("renaming task", error)
 
     def test_missing_task_id(self):
         """Test rename without task_id argument."""
         result = self.runner.invoke(rename_command, ["New Name"], obj=self.cli_context)
         # Click shows usage error for missing argument
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_missing_name(self):
         """Test rename without name argument."""
         result = self.runner.invoke(rename_command, ["1"], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code != 0

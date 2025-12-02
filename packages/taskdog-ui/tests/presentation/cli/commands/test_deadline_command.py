@@ -1,19 +1,20 @@
 """Tests for deadline command."""
 
-import unittest
 from datetime import datetime
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.deadline import deadline_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-class TestDeadlineCommand(unittest.TestCase):
+class TestDeadlineCommand:
     """Test cases for deadline command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -36,11 +37,11 @@ class TestDeadlineCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.update_task.assert_called_once()
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertEqual(call_kwargs["task_id"], 1)
-        self.assertIsInstance(call_kwargs["deadline"], datetime)
+        assert call_kwargs["task_id"] == 1
+        assert isinstance(call_kwargs["deadline"], datetime)
         self.console_writer.update_success.assert_called_once()
 
     def test_success_with_time(self):
@@ -57,9 +58,9 @@ class TestDeadlineCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertIsInstance(call_kwargs["deadline"], datetime)
+        assert isinstance(call_kwargs["deadline"], datetime)
 
     def test_task_not_found(self):
         """Test deadline with non-existent task."""
@@ -72,7 +73,7 @@ class TestDeadlineCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -87,7 +88,7 @@ class TestDeadlineCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("setting deadline", error)
 
     def test_missing_task_id(self):
@@ -96,20 +97,16 @@ class TestDeadlineCommand(unittest.TestCase):
             deadline_command, ["2025-12-31"], obj=self.cli_context
         )
         # Click shows usage error for missing argument
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_missing_deadline(self):
         """Test deadline without deadline argument."""
         result = self.runner.invoke(deadline_command, ["1"], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_invalid_date_format(self):
         """Test deadline with invalid date format."""
         result = self.runner.invoke(
             deadline_command, ["1", "invalid-date"], obj=self.cli_context
         )
-        self.assertNotEqual(result.exit_code, 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code != 0

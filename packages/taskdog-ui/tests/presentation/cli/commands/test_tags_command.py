@@ -1,18 +1,19 @@
 """Tests for tags command."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.tags import tags_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-class TestTagsCommand(unittest.TestCase):
+class TestTagsCommand:
     """Test cases for tags command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -32,11 +33,11 @@ class TestTagsCommand(unittest.TestCase):
         result = self.runner.invoke(tags_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.get_tag_statistics.assert_called_once()
         self.console_writer.info.assert_called_once_with("All tags:")
         # 3 tags should be printed
-        self.assertEqual(self.console_writer.print.call_count, 3)
+        assert self.console_writer.print.call_count == 3
 
     def test_list_all_tags_empty(self):
         """Test listing all tags when no tags exist."""
@@ -49,7 +50,7 @@ class TestTagsCommand(unittest.TestCase):
         result = self.runner.invoke(tags_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.info.assert_called_once_with("No tags found.")
 
     def test_show_task_tags(self):
@@ -65,10 +66,10 @@ class TestTagsCommand(unittest.TestCase):
         result = self.runner.invoke(tags_command, ["5"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.get_task_by_id.assert_called_once_with(5)
         self.console_writer.info.assert_called_once_with("Tags for task 5:")
-        self.assertEqual(self.console_writer.print.call_count, 2)
+        assert self.console_writer.print.call_count == 2
 
     def test_show_task_tags_empty(self):
         """Test showing tags for a task with no tags."""
@@ -83,7 +84,7 @@ class TestTagsCommand(unittest.TestCase):
         result = self.runner.invoke(tags_command, ["5"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.info.assert_called_once_with("Task 5 has no tags.")
 
     def test_show_task_tags_not_found(self):
@@ -97,7 +98,7 @@ class TestTagsCommand(unittest.TestCase):
         result = self.runner.invoke(tags_command, ["999"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_set_tags(self):
@@ -113,7 +114,7 @@ class TestTagsCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.set_task_tags.assert_called_once_with(5, ["work", "urgent"])
         self.console_writer.task_success.assert_called_once_with(
             "Set tags for", mock_task
@@ -132,7 +133,7 @@ class TestTagsCommand(unittest.TestCase):
         )
 
         # Verify - mock simulates the task having no tags after operation
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.task_success.assert_called_once_with(
             "Cleared tags for", mock_task
         )
@@ -146,7 +147,7 @@ class TestTagsCommand(unittest.TestCase):
         result = self.runner.invoke(tags_command, ["999", "work"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -159,9 +160,5 @@ class TestTagsCommand(unittest.TestCase):
         result = self.runner.invoke(tags_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("managing tags", error)
-
-
-if __name__ == "__main__":
-    unittest.main()

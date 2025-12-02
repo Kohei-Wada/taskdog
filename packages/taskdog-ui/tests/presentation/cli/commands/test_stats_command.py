@@ -1,17 +1,18 @@
 """Tests for stats command."""
 
-import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.stats import stats_command
 
 
-class TestStatsCommand(unittest.TestCase):
+class TestStatsCommand:
     """Test cases for stats command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -39,7 +40,7 @@ class TestStatsCommand(unittest.TestCase):
         result = self.runner.invoke(stats_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.calculate_statistics.assert_called_once_with(period="all")
         mock_mapper_class.from_statistics_result.assert_called_once_with(mock_result)
         mock_renderer.render.assert_called_once_with(mock_view_model, focus="all")
@@ -60,7 +61,7 @@ class TestStatsCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.calculate_statistics.assert_called_once_with(period="7d")
 
     @patch("taskdog.cli.commands.stats.RichStatisticsRenderer")
@@ -82,10 +83,10 @@ class TestStatsCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         mock_renderer.render.assert_called_once()
         call_kwargs = mock_renderer.render.call_args[1]
-        self.assertEqual(call_kwargs["focus"], "time")
+        assert call_kwargs["focus"] == "time"
 
     def test_no_tasks_warning(self):
         """Test stats when no tasks found."""
@@ -98,7 +99,7 @@ class TestStatsCommand(unittest.TestCase):
         result = self.runner.invoke(stats_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.warning.assert_called_once_with(
             "No tasks found to analyze."
         )
@@ -113,7 +114,7 @@ class TestStatsCommand(unittest.TestCase):
         result = self.runner.invoke(stats_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with(
             "calculating statistics", error
         )
@@ -134,40 +135,31 @@ class TestStatsCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.calculate_statistics.assert_called_once_with(period="30d")
 
+    @pytest.mark.parametrize(
+        "focus",
+        ["basic", "time", "estimation", "deadline", "priority", "trends"],
+        ids=["basic", "time", "estimation", "deadline", "priority", "trends"],
+    )
     @patch("taskdog.cli.commands.stats.RichStatisticsRenderer")
     @patch("taskdog.cli.commands.stats.StatisticsMapper")
-    def test_focus_options(self, mock_mapper_class, mock_renderer_class):
+    def test_focus_options(self, mock_mapper_class, mock_renderer_class, focus):
         """Test different focus options."""
-        focus_options = [
-            "basic",
-            "time",
-            "estimation",
-            "deadline",
-            "priority",
-            "trends",
-        ]
+        # Setup
+        mock_result = MagicMock()
+        mock_result.task_stats.total_tasks = 10
+        self.api_client.calculate_statistics.return_value = mock_result
+        mock_mapper_class.from_statistics_result.return_value = MagicMock()
 
-        for focus in focus_options:
-            # Setup
-            mock_result = MagicMock()
-            mock_result.task_stats.total_tasks = 10
-            self.api_client.calculate_statistics.return_value = mock_result
-            mock_mapper_class.from_statistics_result.return_value = MagicMock()
+        mock_renderer = MagicMock()
+        mock_renderer_class.return_value = mock_renderer
 
-            mock_renderer = MagicMock()
-            mock_renderer_class.return_value = mock_renderer
+        # Execute
+        result = self.runner.invoke(
+            stats_command, ["--focus", focus], obj=self.cli_context
+        )
 
-            # Execute
-            result = self.runner.invoke(
-                stats_command, ["--focus", focus], obj=self.cli_context
-            )
-
-            # Verify
-            self.assertEqual(result.exit_code, 0, f"Failed for focus={focus}")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        # Verify
+        assert result.exit_code == 0
