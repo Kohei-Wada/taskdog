@@ -1,101 +1,111 @@
 """Tests for Task entity invariant validation."""
 
-import unittest
-
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
 
-class TaskValidationTest(unittest.TestCase):
+class TestTaskValidation:
     """Test Task entity invariant validation in __post_init__."""
 
-    def setUp(self):
-        """Set up test fixtures."""
-        self.mapper = TaskDbMapper()
+    @pytest.fixture
+    def mapper(self):
+        """Create TaskDbMapper instance."""
+        return TaskDbMapper()
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "task_kwargs,attr_name,expected_value",
         [
-            ("basic_task", {"name": "Test Task", "priority": 5}, "name", "Test Task"),
-            ("basic_task", {"name": "Test Task", "priority": 5}, "priority", 5),
+            ({"name": "Test Task", "priority": 5}, "name", "Test Task"),
+            ({"name": "Test Task", "priority": 5}, "priority", 5),
             (
-                "with_estimated_duration",
                 {"name": "Test Task", "priority": 5, "estimated_duration": 10.0},
                 "estimated_duration",
                 10.0,
             ),
             (
-                "with_tags",
                 {"name": "Test Task", "priority": 5, "tags": ["work", "urgent"]},
                 "tags",
                 ["work", "urgent"],
             ),
             (
-                "with_none_estimated_duration",
                 {"name": "Test Task", "priority": 5, "estimated_duration": None},
                 "estimated_duration",
                 None,
             ),
-        ]
+        ],
+        ids=[
+            "basic_task_name",
+            "basic_task_priority",
+            "with_estimated_duration",
+            "with_tags",
+            "with_none_estimated_duration",
+        ],
     )
-    def test_valid_task_creation(
-        self, scenario_name, task_kwargs, attr_name, expected_value
-    ):
+    def test_valid_task_creation(self, task_kwargs, attr_name, expected_value):
         """Test creating tasks with valid values."""
         task = Task(**task_kwargs)
-        self.assertEqual(getattr(task, attr_name), expected_value)
+        assert getattr(task, attr_name) == expected_value
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "tags,expected_error",
         [
-            ("empty_tag", ["work", "", "urgent"], "Tag cannot be empty"),
-            ("duplicate_tags", ["work", "urgent", "work"], "Tags must be unique"),
-        ]
+            (["work", "", "urgent"], "Tag cannot be empty"),
+            (["work", "urgent", "work"], "Tags must be unique"),
+        ],
+        ids=["empty_tag", "duplicate_tags"],
     )
-    def test_invalid_tags(self, scenario_name, tags, expected_error):
+    def test_invalid_tags(self, tags, expected_error):
         """Test that invalid tags raise TaskValidationError."""
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             Task(name="Test Task", priority=5, tags=tags)
-        self.assertIn(expected_error, str(context.exception))
+        assert expected_error in str(exc_info.value)
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "name,expected_error",
         [
-            ("empty_name", "", "Task name cannot be empty"),
-            ("whitespace_only_name", "   ", "Task name cannot be empty"),
-        ]
+            ("", "Task name cannot be empty"),
+            ("   ", "Task name cannot be empty"),
+        ],
+        ids=["empty_name", "whitespace_only_name"],
     )
-    def test_invalid_name(self, scenario_name, name, expected_error):
+    def test_invalid_name(self, name, expected_error):
         """Test that invalid task names raise TaskValidationError."""
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             Task(name=name, priority=5)
-        self.assertIn(expected_error, str(context.exception))
+        assert expected_error in str(exc_info.value)
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "priority,expected_error",
         [
-            ("zero_priority", 0, "Priority must be greater than 0"),
-            ("negative_priority", -1, "Priority must be greater than 0"),
-        ]
+            (0, "Priority must be greater than 0"),
+            (-1, "Priority must be greater than 0"),
+        ],
+        ids=["zero_priority", "negative_priority"],
     )
-    def test_invalid_priority(self, scenario_name, priority, expected_error):
+    def test_invalid_priority(self, priority, expected_error):
         """Test that invalid priority values raise TaskValidationError."""
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             Task(name="Test Task", priority=priority)
-        self.assertIn(expected_error, str(context.exception))
+        assert expected_error in str(exc_info.value)
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "duration,expected_error",
         [
-            ("zero_duration", 0.0, "Estimated duration must be greater than 0"),
-            ("negative_duration", -5.0, "Estimated duration must be greater than 0"),
-        ]
+            (0.0, "Estimated duration must be greater than 0"),
+            (-5.0, "Estimated duration must be greater than 0"),
+        ],
+        ids=["zero_duration", "negative_duration"],
     )
-    def test_invalid_estimated_duration(self, scenario_name, duration, expected_error):
+    def test_invalid_estimated_duration(self, duration, expected_error):
         """Test that invalid estimated_duration values raise TaskValidationError."""
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             Task(name="Test Task", priority=5, estimated_duration=duration)
-        self.assertIn(expected_error, str(context.exception))
+        assert expected_error in str(exc_info.value)
 
-    def test_from_dict_with_valid_data(self):
+    def test_from_dict_with_valid_data(self, mapper):
         """Test that from_dict works with valid data."""
         data = {
             "id": 1,
@@ -106,32 +116,29 @@ class TaskValidationTest(unittest.TestCase):
             "created_at": "2025-01-01T00:00:00",
             "updated_at": "2025-01-01T00:00:00",
         }
-        task = self.mapper.from_dict(data)
-        self.assertEqual(task.id, 1)
-        self.assertEqual(task.name, "Test Task")
-        self.assertEqual(task.priority, 5)
-        self.assertEqual(task.status, TaskStatus.PENDING)
-        self.assertEqual(task.estimated_duration, 10.0)
+        task = mapper.from_dict(data)
+        assert task.id == 1
+        assert task.name == "Test Task"
+        assert task.priority == 5
+        assert task.status == TaskStatus.PENDING
+        assert task.estimated_duration == 10.0
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "task_dict,expected_error",
         [
             (
-                "empty_name",
                 {"id": 1, "name": "", "priority": 5, "status": "PENDING"},
                 "Task name cannot be empty",
             ),
             (
-                "zero_priority",
                 {"id": 1, "name": "Test Task", "priority": 0, "status": "PENDING"},
                 "Priority must be greater than 0",
             ),
             (
-                "negative_priority",
                 {"id": 1, "name": "Test Task", "priority": -100, "status": "PENDING"},
                 "Priority must be greater than 0",
             ),
             (
-                "zero_estimated_duration",
                 {
                     "id": 1,
                     "name": "Test Task",
@@ -142,7 +149,6 @@ class TaskValidationTest(unittest.TestCase):
                 "Estimated duration must be greater than 0",
             ),
             (
-                "negative_estimated_duration",
                 {
                     "id": 1,
                     "name": "Test Task",
@@ -152,11 +158,16 @@ class TaskValidationTest(unittest.TestCase):
                 },
                 "Estimated duration must be greater than 0",
             ),
-        ]
+        ],
+        ids=[
+            "empty_name",
+            "zero_priority",
+            "negative_priority",
+            "zero_estimated_duration",
+            "negative_estimated_duration",
+        ],
     )
-    def test_from_dict_validation_errors(
-        self, scenario_name, task_dict, expected_error
-    ):
+    def test_from_dict_validation_errors(self, mapper, task_dict, expected_error):
         """Test that from_dict raises validation errors for invalid fields."""
         # Add required timestamp fields
         data = {
@@ -164,10 +175,6 @@ class TaskValidationTest(unittest.TestCase):
             "created_at": "2025-01-01T00:00:00",
             "updated_at": "2025-01-01T00:00:00",
         }
-        with self.assertRaises(TaskValidationError) as context:
-            self.mapper.from_dict(data)
-        self.assertIn(expected_error, str(context.exception))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        with pytest.raises(TaskValidationError) as exc_info:
+            mapper.from_dict(data)
+        assert expected_error in str(exc_info.value)

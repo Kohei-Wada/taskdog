@@ -1,10 +1,9 @@
 """Tests for TaskLifecycleController."""
 
-import unittest
 from datetime import datetime
 from unittest.mock import MagicMock, Mock
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleController
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -14,10 +13,11 @@ from taskdog_core.infrastructure.persistence.database.sqlite_task_repository imp
 )
 
 
-class TestTaskLifecycleController(unittest.TestCase):
+class TestTaskLifecycleController:
     """Test cases for TaskLifecycleController."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.repository = Mock(spec=SqliteTaskRepository)
         self.config = MagicMock()
@@ -28,7 +28,8 @@ class TestTaskLifecycleController(unittest.TestCase):
             logger=self.logger,
         )
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "operation_name,method_name,initial_status,actual_start,actual_end",
         [
             (
                 "start_task",
@@ -65,7 +66,7 @@ class TestTaskLifecycleController(unittest.TestCase):
                 datetime(2025, 1, 1, 9, 0, 0),
                 datetime(2025, 1, 1, 17, 0, 0),
             ),
-        ]
+        ],
     )
     def test_lifecycle_operation_returns_task_operation_output(
         self, operation_name, method_name, initial_status, actual_start, actual_end
@@ -89,17 +90,13 @@ class TestTaskLifecycleController(unittest.TestCase):
         result = method(task_id)
 
         # Assert
-        self.assertIsNotNone(result)
-        self.assertEqual(result.id, task_id)
-        self.assertEqual(result.name, "Test Task")
+        assert result is not None
+        assert result.id == task_id
+        assert result.name == "Test Task"
 
     def test_controller_inherits_from_base_controller(self):
         """Test that controller has repository and config from base class."""
-        self.assertIsNotNone(self.controller.repository)
-        self.assertIsNotNone(self.controller.config)
-        self.assertEqual(self.controller.repository, self.repository)
-        self.assertEqual(self.controller.config, self.config)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert self.controller.repository is not None
+        assert self.controller.config is not None
+        assert self.controller.repository == self.repository
+        assert self.controller.config == self.config

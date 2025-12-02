@@ -1,21 +1,22 @@
 """Tests for GetGanttDataUseCase."""
 
-import unittest
 from datetime import date, datetime, timedelta
+
+import pytest
 
 from taskdog_core.application.dto.query_inputs import GetGanttDataInput, TimeRange
 from taskdog_core.application.queries.task_query_service import TaskQueryService
 from taskdog_core.application.use_cases.get_gantt_data import GetGanttDataUseCase
 from taskdog_core.domain.entities.task import TaskStatus
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestGetGanttDataUseCase(InMemoryDatabaseTestCase):
+class TestGetGanttDataUseCase:
     """Test cases for GetGanttDataUseCase."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
         """Initialize use case for each test."""
-        super().setUp()
+        self.repository = repository
         self.query_service = TaskQueryService(self.repository)
         self.use_case = GetGanttDataUseCase(self.query_service)
 
@@ -36,10 +37,10 @@ class TestGetGanttDataUseCase(InMemoryDatabaseTestCase):
         input_dto = GetGanttDataInput(include_archived=True)
         result = self.use_case.execute(input_dto)
 
-        self.assertIsNotNone(result)
-        self.assertIsNotNone(result.date_range)
-        self.assertIsNotNone(result.tasks)
-        self.assertEqual(len(result.tasks), 1)
+        assert result is not None
+        assert result.date_range is not None
+        assert result.tasks is not None
+        assert len(result.tasks) == 1
 
     def test_execute_with_chart_date_range(self):
         """Test execute respects chart date range."""
@@ -64,8 +65,8 @@ class TestGetGanttDataUseCase(InMemoryDatabaseTestCase):
         )
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.date_range.start_date, start_date)
-        self.assertEqual(result.date_range.end_date, end_date)
+        assert result.date_range.start_date == start_date
+        assert result.date_range.end_date == end_date
 
     def test_execute_filters_by_status(self):
         """Test execute filters tasks by status."""
@@ -92,8 +93,8 @@ class TestGetGanttDataUseCase(InMemoryDatabaseTestCase):
         input_dto = GetGanttDataInput(include_archived=True, status="PENDING")
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(len(result.tasks), 1)
-        self.assertEqual(result.tasks[0].name, "Pending")
+        assert len(result.tasks) == 1
+        assert result.tasks[0].name == "Pending"
 
     def test_execute_filters_archived(self):
         """Test execute excludes archived tasks by default."""
@@ -121,8 +122,8 @@ class TestGetGanttDataUseCase(InMemoryDatabaseTestCase):
         input_dto = GetGanttDataInput(include_archived=False)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(len(result.tasks), 1)
-        self.assertEqual(result.tasks[0].name, "Active")
+        assert len(result.tasks) == 1
+        assert result.tasks[0].name == "Active"
 
     def test_execute_filters_by_tags(self):
         """Test execute filters tasks by tags."""
@@ -151,8 +152,8 @@ class TestGetGanttDataUseCase(InMemoryDatabaseTestCase):
         input_dto = GetGanttDataInput(include_archived=True, tags=["work"])
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(len(result.tasks), 1)
-        self.assertEqual(result.tasks[0].name, "Work task")
+        assert len(result.tasks) == 1
+        assert result.tasks[0].name == "Work task"
 
     def test_execute_calculates_total_estimated_duration(self):
         """Test execute calculates total estimated duration correctly."""
@@ -192,7 +193,7 @@ class TestGetGanttDataUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         # 8.0 + 16.5 = 24.5
-        self.assertEqual(result.total_estimated_duration, 24.5)
+        assert result.total_estimated_duration == 24.5
 
     def test_execute_sorts_by_deadline(self):
         """Test execute sorts tasks by deadline."""
@@ -221,8 +222,8 @@ class TestGetGanttDataUseCase(InMemoryDatabaseTestCase):
         )
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.tasks[0].name, "Sooner")
-        self.assertEqual(result.tasks[1].name, "Later")
+        assert result.tasks[0].name == "Sooner"
+        assert result.tasks[1].name == "Later"
 
     def test_execute_with_today_time_range(self):
         """Test execute filters for today's tasks."""
@@ -258,17 +259,17 @@ class TestGetGanttDataUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         names = [t.name for t in result.tasks]
-        self.assertIn("Due today", names)
-        self.assertIn("In progress", names)
-        self.assertNotIn("Due tomorrow", names)
+        assert "Due today" in names
+        assert "In progress" in names
+        assert "Due tomorrow" not in names
 
     def test_execute_returns_empty_for_no_tasks(self):
         """Test execute returns empty result when no tasks exist."""
         input_dto = GetGanttDataInput(include_archived=True)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(len(result.tasks), 0)
-        self.assertEqual(result.total_estimated_duration, 0.0)
+        assert len(result.tasks) == 0
+        assert result.total_estimated_duration == 0.0
 
     def test_execute_combines_multiple_filters(self):
         """Test execute combines status and tag filters."""
@@ -309,9 +310,5 @@ class TestGetGanttDataUseCase(InMemoryDatabaseTestCase):
         )
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(len(result.tasks), 1)
-        self.assertEqual(result.tasks[0].name, "Match both")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(result.tasks) == 1
+        assert result.tasks[0].name == "Match both"

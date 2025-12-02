@@ -1,36 +1,20 @@
 """Tests for DependencyGraphService."""
 
-import os
-import tempfile
-import unittest
+import pytest
 
 from taskdog_core.application.services.dependency_graph_service import (
     DependencyGraphService,
 )
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
 
 
-class TestDependencyGraphService(unittest.TestCase):
+class TestDependencyGraphService:
     """Test cases for DependencyGraphService."""
 
-    def setUp(self):
-        """Create temporary file and initialize service for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
+        """Set up test fixtures."""
+        self.repository = repository
         self.service = DependencyGraphService(self.repository)
-
-    def tearDown(self):
-        """Clean up temporary file after each test."""
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
 
     def test_detect_cycle_no_cycle_returns_none(self):
         """Test detect_cycle returns None when no cycle exists."""
@@ -40,7 +24,7 @@ class TestDependencyGraphService(unittest.TestCase):
         # No dependencies at all
         result = self.service.detect_cycle(task1.id, task2.id)
 
-        self.assertIsNone(result)
+        assert result is None
 
     def test_detect_cycle_direct_cycle(self):
         """Test detect_cycle detects direct cycle (A→B, B→A)."""
@@ -54,8 +38,8 @@ class TestDependencyGraphService(unittest.TestCase):
         # Try to make task2 depend on task1 (would create cycle 2→1→2)
         result = self.service.detect_cycle(task2.id, task1.id)
 
-        self.assertIsNotNone(result)
-        self.assertEqual(result, [task1.id, task2.id])
+        assert result is not None
+        assert result == [task1.id, task2.id]
 
     def test_detect_cycle_indirect_three_node_cycle(self):
         """Test detect_cycle detects 3-node cycle (A→B→C, C→A)."""
@@ -72,8 +56,8 @@ class TestDependencyGraphService(unittest.TestCase):
         # Try to make task3 depend on task1 (would create 3→1→2→3)
         result = self.service.detect_cycle(task3.id, task1.id)
 
-        self.assertIsNotNone(result)
-        self.assertEqual(result, [task1.id, task2.id, task3.id])
+        assert result is not None
+        assert result == [task1.id, task2.id, task3.id]
 
     def test_detect_cycle_long_chain_cycle(self):
         """Test detect_cycle detects cycle in long dependency chain."""
@@ -96,8 +80,8 @@ class TestDependencyGraphService(unittest.TestCase):
         # Try to make task5 depend on task1 (would create 5→1→2→3→4→5)
         result = self.service.detect_cycle(task5.id, task1.id)
 
-        self.assertIsNotNone(result)
-        self.assertEqual(result, [task1.id, task2.id, task3.id, task4.id, task5.id])
+        assert result is not None
+        assert result == [task1.id, task2.id, task3.id, task4.id, task5.id]
 
     def test_detect_cycle_allows_diamond_pattern(self):
         """Test detect_cycle allows diamond pattern (A→B,C; B,C→D)."""
@@ -117,7 +101,7 @@ class TestDependencyGraphService(unittest.TestCase):
         # This should not create a cycle
         result = self.service.detect_cycle(task1.id, task2.id)
 
-        self.assertIsNone(result)
+        assert result is None
 
     def test_detect_cycle_allows_parallel_chains(self):
         """Test detect_cycle allows parallel independent chains."""
@@ -135,7 +119,7 @@ class TestDependencyGraphService(unittest.TestCase):
         # Connecting chains should be fine if no cycle
         result = self.service.detect_cycle(task1.id, task3.id)
 
-        self.assertIsNone(result)
+        assert result is None
 
     def test_detect_cycle_self_loop(self):
         """Test detect_cycle detects self-loop (A→A)."""
@@ -144,8 +128,8 @@ class TestDependencyGraphService(unittest.TestCase):
         # Try to make task1 depend on itself
         result = self.service.detect_cycle(task1.id, task1.id)
 
-        self.assertIsNotNone(result)
-        self.assertEqual(result, [task1.id])
+        assert result is not None
+        assert result == [task1.id]
 
     def test_detect_cycle_cycle_in_middle_of_chain(self):
         """Test detect_cycle detects cycle connecting to middle of chain."""
@@ -162,8 +146,8 @@ class TestDependencyGraphService(unittest.TestCase):
         # Try to make task3 depend on task2 (would create 3→2→3)
         result = self.service.detect_cycle(task3.id, task2.id)
 
-        self.assertIsNotNone(result)
-        self.assertEqual(result, [task2.id, task3.id])
+        assert result is not None
+        assert result == [task2.id, task3.id]
 
     def test_detect_cycle_with_multiple_dependencies(self):
         """Test detect_cycle with task having multiple dependencies."""
@@ -185,10 +169,10 @@ class TestDependencyGraphService(unittest.TestCase):
         # Try to make task4 depend on task1 (would create cycle)
         result = self.service.detect_cycle(task4.id, task1.id)
 
-        self.assertIsNotNone(result)
+        assert result is not None
         # Cycle should be detected through one of the paths
-        self.assertIn(task1.id, result)
-        self.assertIn(task4.id, result)
+        assert task1.id in result
+        assert task4.id in result
 
     def test_detect_cycle_visited_node_optimization(self):
         """Test that visited nodes are not re-explored."""
@@ -209,7 +193,7 @@ class TestDependencyGraphService(unittest.TestCase):
         task5 = self.repository.create(name="Task 5", priority=1)
         result = self.service.detect_cycle(task4.id, task5.id)
 
-        self.assertIsNone(result)
+        assert result is None
 
     def test_detect_cycle_with_nonexistent_dependency(self):
         """Test detect_cycle handles nonexistent dependency gracefully."""
@@ -222,7 +206,7 @@ class TestDependencyGraphService(unittest.TestCase):
         # Should not crash, should return None (no cycle found)
         result = self.service.detect_cycle(task1.id, 998)
 
-        self.assertIsNone(result)
+        assert result is None
 
     def test_detect_cycle_empty_depends_on(self):
         """Test detect_cycle with task having empty depends_on."""
@@ -235,7 +219,7 @@ class TestDependencyGraphService(unittest.TestCase):
 
         result = self.service.detect_cycle(task2.id, task1.id)
 
-        self.assertIsNone(result)
+        assert result is None
 
     def test_detect_cycle_complex_graph_with_cycle(self):
         """Test detect_cycle in complex graph with multiple branches."""
@@ -262,10 +246,6 @@ class TestDependencyGraphService(unittest.TestCase):
         # Try to make task6 depend on task3 (creates cycle through convergent paths)
         result = self.service.detect_cycle(task6.id, task3.id)
 
-        self.assertIsNotNone(result)
-        self.assertIn(task3.id, result)
-        self.assertIn(task6.id, result)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result is not None
+        assert task3.id in result
+        assert task6.id in result

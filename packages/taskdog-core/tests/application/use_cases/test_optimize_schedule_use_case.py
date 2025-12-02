@@ -1,7 +1,8 @@
 """Tests for OptimizeScheduleUseCase."""
 
-import unittest
 from datetime import date, datetime
+
+import pytest
 
 from taskdog_core.application.dto.create_task_input import CreateTaskInput
 from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
@@ -15,15 +16,15 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
 )
 from taskdog_core.shared.config_manager import ConfigManager
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
+class TestOptimizeScheduleUseCase:
     """Test cases for OptimizeScheduleUseCase."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
         """Initialize use cases for each test."""
-        super().setUp()
+        self.repository = repository
         self.create_use_case = CreateTaskUseCase(self.repository)
         config = ConfigManager.load()
         self.optimize_use_case = OptimizeScheduleUseCase(
@@ -49,21 +50,21 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # Verify
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Re-fetch task from repository to verify scheduling
         task = self.repository.get_by_id(result.successful_tasks[0].id)
         assert task is not None
-        self.assertIsNotNone(task.planned_start)
-        self.assertIsNotNone(task.planned_end)
+        assert task.planned_start is not None
+        assert task.planned_end is not None
 
         # Task should be scheduled on the start date
-        self.assertEqual(task.planned_start, datetime(2025, 10, 15, 9, 0, 0))
-        self.assertEqual(task.planned_end, datetime(2025, 10, 15, 18, 0, 0))
+        assert task.planned_start == datetime(2025, 10, 15, 9, 0, 0)
+        assert task.planned_end == datetime(2025, 10, 15, 18, 0, 0)
 
         # Verify daily_allocations
-        self.assertIsNotNone(task.daily_allocations)
-        self.assertEqual(task.daily_allocations[date(2025, 10, 15)], 4.0)
+        assert task.daily_allocations is not None
+        assert task.daily_allocations[date(2025, 10, 15)] == 4.0
 
     def test_optimize_multiple_tasks_same_day(self):
         """Test optimizing multiple tasks that fit in one day."""
@@ -85,13 +86,13 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # All 3 tasks (6h total) should fit in one day
-        self.assertEqual(len(result.successful_tasks), 3)
+        assert len(result.successful_tasks) == 3
         for task_dto in result.successful_tasks:
             # Re-fetch task from repository to verify scheduling
             task = self.repository.get_by_id(task_dto.id)
             assert task is not None
-            self.assertEqual(task.planned_start, datetime(2025, 10, 15, 9, 0, 0))
-            self.assertEqual(task.planned_end, datetime(2025, 10, 15, 18, 0, 0))
+            assert task.planned_start == datetime(2025, 10, 15, 9, 0, 0)
+            assert task.planned_end == datetime(2025, 10, 15, 18, 0, 0)
 
     def test_optimize_tasks_spanning_multiple_days(self):
         """Test optimizing tasks that span multiple days."""
@@ -121,7 +122,7 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # Tasks should span multiple days
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # Re-fetch tasks from repository to verify scheduling
         task1 = self.repository.get_by_id(result1.id)
@@ -129,17 +130,17 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         assert task1 is not None and task2 is not None
 
         # First task (priority 200, 5h) starts on start date and fits in one day
-        self.assertEqual(task1.planned_start, datetime(2025, 10, 15, 9, 0, 0))
-        self.assertEqual(task1.planned_end, datetime(2025, 10, 15, 18, 0, 0))
+        assert task1.planned_start == datetime(2025, 10, 15, 9, 0, 0)
+        assert task1.planned_end == datetime(2025, 10, 15, 18, 0, 0)
         # Verify daily_allocations for task1
-        self.assertEqual(task1.daily_allocations[date(2025, 10, 15)], 5.0)
+        assert task1.daily_allocations[date(2025, 10, 15)] == 5.0
 
         # Second task (priority 100, 5h) starts on same day (1h left) and spans to next day
-        self.assertEqual(task2.planned_start, datetime(2025, 10, 15, 9, 0, 0))
-        self.assertEqual(task2.planned_end, datetime(2025, 10, 16, 18, 0, 0))
+        assert task2.planned_start == datetime(2025, 10, 15, 9, 0, 0)
+        assert task2.planned_end == datetime(2025, 10, 16, 18, 0, 0)
         # Verify daily_allocations for task2: 1h on first day, 4h on second day
-        self.assertEqual(task2.daily_allocations[date(2025, 10, 15)], 1.0)
-        self.assertEqual(task2.daily_allocations[date(2025, 10, 16)], 4.0)
+        assert task2.daily_allocations[date(2025, 10, 15)] == 1.0
+        assert task2.daily_allocations[date(2025, 10, 16)] == 4.0
 
     def test_optimize_skips_weekends(self):
         """Test that optimization skips weekends."""
@@ -164,10 +165,10 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         assert task is not None
 
         # Task should start on Friday
-        self.assertEqual(task.planned_start, datetime(2025, 10, 17, 9, 0, 0))
+        assert task.planned_start == datetime(2025, 10, 17, 9, 0, 0)
         # And end on Monday (skipping weekend)
         # Friday: 5h allocated
-        self.assertEqual(task.planned_end, datetime(2025, 10, 17, 18, 0, 0))
+        assert task.planned_end == datetime(2025, 10, 17, 18, 0, 0)
 
     def test_optimize_respects_priority(self):
         """Test that high priority tasks are scheduled first."""
@@ -192,12 +193,12 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # Both tasks should be scheduled on same day (6h total)
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
         for task_dto in result.successful_tasks:
             # Re-fetch task from repository to verify scheduling
             task = self.repository.get_by_id(task_dto.id)
             assert task is not None
-            self.assertEqual(task.planned_start, datetime(2025, 10, 15, 9, 0, 0))
+            assert task.planned_start == datetime(2025, 10, 15, 9, 0, 0)
 
     def test_optimize_respects_deadline(self):
         """Test that tasks with closer deadlines are prioritized."""
@@ -228,13 +229,13 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # Both should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
         # All tasks fit in one day
         for task_dto in result.successful_tasks:
             # Re-fetch task from repository to verify scheduling
             task = self.repository.get_by_id(task_dto.id)
             assert task is not None
-            self.assertEqual(task.planned_start, datetime(2025, 10, 15, 9, 0, 0))
+            assert task.planned_start == datetime(2025, 10, 15, 9, 0, 0)
 
     def test_optimize_skips_completed_tasks(self):
         """Test that completed tasks are not scheduled."""
@@ -259,7 +260,7 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # No tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 0)
+        assert len(result.successful_tasks) == 0
 
     def test_optimize_skips_archived_tasks(self):
         """Test that archived tasks are not scheduled."""
@@ -284,7 +285,7 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # No tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 0)
+        assert len(result.successful_tasks) == 0
 
     def test_optimize_skips_tasks_without_duration(self):
         """Test that tasks without estimated duration are not scheduled."""
@@ -305,7 +306,7 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # No tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 0)
+        assert len(result.successful_tasks) == 0
 
     def test_optimize_skips_existing_schedules_by_default(self):
         """Test that tasks with existing schedules are skipped unless force=True."""
@@ -330,7 +331,7 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # No tasks should be modified
-        self.assertEqual(len(result.successful_tasks), 0)
+        assert len(result.successful_tasks) == 0
 
     def test_optimize_force_overrides_existing_schedules(self):
         """Test that force=True overrides existing schedules."""
@@ -356,13 +357,13 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # Task should be rescheduled
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Re-fetch task from repository to verify scheduling
         task = self.repository.get_by_id(task_result.id)
         assert task is not None
-        self.assertNotEqual(task.planned_start, old_start)
-        self.assertEqual(task.planned_start, datetime(2025, 10, 15, 9, 0, 0))
+        assert task.planned_start != old_start
+        assert task.planned_start == datetime(2025, 10, 15, 9, 0, 0)
 
     def test_optimize_specific_tasks_only(self):
         """Test optimizing only specific task IDs."""
@@ -387,22 +388,22 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # Only 2 tasks should be optimized
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
         optimized_ids = {task.id for task in result.successful_tasks}
-        self.assertEqual(optimized_ids, {task_ids[0], task_ids[2]})
+        assert optimized_ids == {task_ids[0], task_ids[2]}
 
         # Verify that tasks 1 and 3 have schedules
         task1 = self.repository.get_by_id(task_ids[0])
         task3 = self.repository.get_by_id(task_ids[2])
         assert task1 is not None and task3 is not None
-        self.assertIsNotNone(task1.planned_start)
-        self.assertIsNotNone(task3.planned_start)
+        assert task1.planned_start is not None
+        assert task3.planned_start is not None
 
         # Verify that other tasks don't have schedules
         for i in [1, 3, 4]:
             task = self.repository.get_by_id(task_ids[i])
             assert task is not None
-            self.assertIsNone(task.planned_start)
+            assert task.planned_start is None
 
     def test_optimize_nonexistent_task_id(self):
         """Test that optimizing a nonexistent task ID raises TaskNotFoundException."""
@@ -420,10 +421,10 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
             task_ids=[999],
         )
 
-        with self.assertRaises(TaskNotFoundException) as context:
+        with pytest.raises(TaskNotFoundException) as exc_info:
             self.optimize_use_case.execute(optimize_input)
 
-        self.assertIn("999", str(context.exception))
+        assert "999" in str(exc_info.value)
 
     def test_optimize_unschedulable_task(self):
         """Test that optimizing an unschedulable task raises NoSchedulableTasksError."""
@@ -456,11 +457,11 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
             task_ids=[result.id],
         )
 
-        with self.assertRaises(NoSchedulableTasksError) as context:
+        with pytest.raises(NoSchedulableTasksError) as exc_info:
             self.optimize_use_case.execute(optimize_input)
 
         # Verify error message mentions the status
-        self.assertIn("COMPLETED", str(context.exception))
+        assert "COMPLETED" in str(exc_info.value)
 
     def test_optimize_fixed_task(self):
         """Test that optimizing a fixed task raises NoSchedulableTasksError."""
@@ -485,11 +486,11 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
             task_ids=[result.id],
         )
 
-        with self.assertRaises(NoSchedulableTasksError) as context:
+        with pytest.raises(NoSchedulableTasksError) as exc_info:
             self.optimize_use_case.execute(optimize_input)
 
         # Verify error message mentions fixed
-        self.assertIn("fixed", str(context.exception).lower())
+        assert "fixed" in str(exc_info.value).lower()
 
     def test_optimize_mixed_schedulable_and_unschedulable_tasks(self):
         """Test optimizing a mix of schedulable and unschedulable tasks.
@@ -537,13 +538,9 @@ class TestOptimizeScheduleUseCase(InMemoryDatabaseTestCase):
         result = self.optimize_use_case.execute(optimize_input)
 
         # But unschedulable task should be in failed_tasks
-        self.assertEqual(len(result.successful_tasks), 1)
-        self.assertEqual(result.successful_tasks[0].id, result1.id)
+        assert len(result.successful_tasks) == 1
+        assert result.successful_tasks[0].id == result1.id
 
         # Note: The current implementation doesn't track "unschedulable" as failures
         # They are simply not included in schedulable_tasks
         # This is OK - we just schedule what we can
-
-
-if __name__ == "__main__":
-    unittest.main()

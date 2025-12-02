@@ -5,18 +5,18 @@ across StartTaskUseCase, CompleteTaskUseCase, PauseTaskUseCase, and CancelTaskUs
 """
 
 import contextlib
-import unittest
 from datetime import datetime
+
+import pytest
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
 )
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class BaseStatusChangeUseCaseTest(InMemoryDatabaseTestCase):
+class BaseStatusChangeUseCaseTest:
     """Base test class for status change use cases.
 
     Subclasses must override:
@@ -45,19 +45,10 @@ class BaseStatusChangeUseCaseTest(InMemoryDatabaseTestCase):
     # Additional error tests
     test_not_started_error = False  # Only for CompleteTaskUseCase
 
-    @classmethod
-    def setUpClass(cls):
-        """Skip test execution for the base class itself and create in-memory DB."""
-        if cls is BaseStatusChangeUseCaseTest:
-            raise unittest.SkipTest("Skipping base test class")
-        # Call parent to create in-memory database
-        super().setUpClass()
-
-    def setUp(self):
-        """Clear database and initialize use case for each test."""
-        # Call parent to clear database
-        super().setUp()
-        # Initialize use case
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
+        """Initialize use case for each test."""
+        self.repository = repository
         self.use_case = self.use_case_class(self.repository)
 
     def test_execute_sets_correct_status(self):
@@ -71,7 +62,7 @@ class BaseStatusChangeUseCaseTest(InMemoryDatabaseTestCase):
         input_dto = self.request_class(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.status, self.target_status)
+        assert result.status == self.target_status
 
     def test_execute_handles_timestamps_correctly(self):
         """Test execute handles actual_start/actual_end timestamps correctly."""
@@ -85,13 +76,13 @@ class BaseStatusChangeUseCaseTest(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         if self.sets_actual_start:
-            self.assertIsNotNone(result.actual_start)
+            assert result.actual_start is not None
         if self.sets_actual_end:
-            self.assertIsNotNone(result.actual_end)
+            assert result.actual_end is not None
         if self.clears_actual_start:
-            self.assertIsNone(result.actual_start)
+            assert result.actual_start is None
         if self.clears_actual_end:
-            self.assertIsNone(result.actual_end)
+            assert result.actual_end is None
 
     def test_execute_persists_changes(self):
         """Test execute saves changes to repository."""
@@ -105,39 +96,42 @@ class BaseStatusChangeUseCaseTest(InMemoryDatabaseTestCase):
         self.use_case.execute(input_dto)
 
         retrieved = self.repository.get_by_id(task.id)
-        self.assertEqual(retrieved.status, self.target_status)
+        assert retrieved.status == self.target_status
 
     def test_execute_with_invalid_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException."""
         input_dto = self.request_class(task_id=999)
 
-        with self.assertRaises(TaskNotFoundException) as context:
+        with pytest.raises(TaskNotFoundException) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertEqual(context.exception.task_id, 999)
+        assert exc_info.value.task_id == 999
 
-    def test_execute_raises_error_for_finished_tasks(self):
-        """Test execute raises TaskAlreadyFinishedError for finished tasks."""
-        test_cases = [
+    @pytest.mark.parametrize(
+        "finished_status,description",
+        [
             (TaskStatus.COMPLETED, "COMPLETED task"),
             (TaskStatus.CANCELED, "CANCELED task"),
-        ]
+        ],
+        ids=["completed_task", "canceled_task"],
+    )
+    def test_execute_raises_error_for_finished_tasks(
+        self, finished_status, description
+    ):
+        """Test execute raises TaskAlreadyFinishedError for finished tasks."""
+        task = Task(name="Test Task", priority=1, status=finished_status)
+        task.id = self.repository.generate_next_id()
+        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
+        task.actual_end = datetime(2024, 1, 1, 12, 0, 0)
+        self.repository.save(task)
 
-        for finished_status, description in test_cases:
-            with self.subTest(description=description):
-                task = Task(name="Test Task", priority=1, status=finished_status)
-                task.id = self.repository.generate_next_id()
-                task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
-                task.actual_end = datetime(2024, 1, 1, 12, 0, 0)
-                self.repository.save(task)
+        input_dto = self.request_class(task_id=task.id)
 
-                input_dto = self.request_class(task_id=task.id)
+        with pytest.raises(TaskAlreadyFinishedError) as exc_info:
+            self.use_case.execute(input_dto)
 
-                with self.assertRaises(TaskAlreadyFinishedError) as context:
-                    self.use_case.execute(input_dto)
-
-                self.assertEqual(context.exception.task_id, task.id)
-                self.assertEqual(context.exception.status, finished_status.value)
+        assert exc_info.value.task_id == task.id
+        assert exc_info.value.status == finished_status.value
 
     def test_execute_does_not_modify_finished_task_state(self):
         """Test execute does not modify state when attempted on finished task."""
@@ -154,6 +148,6 @@ class BaseStatusChangeUseCaseTest(InMemoryDatabaseTestCase):
 
         # Verify task state remains unchanged
         retrieved = self.repository.get_by_id(task.id)
-        self.assertEqual(retrieved.status, TaskStatus.COMPLETED)
-        self.assertEqual(retrieved.actual_start, datetime(2024, 1, 1, 10, 0, 0))
-        self.assertEqual(retrieved.actual_end, datetime(2024, 1, 1, 12, 0, 0))
+        assert retrieved.status == TaskStatus.COMPLETED
+        assert retrieved.actual_start == datetime(2024, 1, 1, 10, 0, 0)
+        assert retrieved.actual_end == datetime(2024, 1, 1, 12, 0, 0)

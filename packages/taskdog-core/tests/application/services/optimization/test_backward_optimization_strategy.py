@@ -1,6 +1,5 @@
 """Tests for BackwardOptimizationStrategy."""
 
-import unittest
 from datetime import date, datetime
 
 from tests.application.services.optimization.optimization_strategy_test_base import (
@@ -26,7 +25,7 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Verify
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Should be scheduled on Friday (closest to deadline)
         self.assert_task_scheduled(
@@ -39,7 +38,7 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
         # All 6h allocated on Friday
-        self.assertEqual(updated_task.daily_allocations[date(2025, 10, 24)], 6.0)
+        assert updated_task.daily_allocations[date(2025, 10, 24)] == 6.0
 
     def test_backward_spans_backward_from_deadline(self):
         """Test that backward strategy fills backwards when task doesn't fit in one day."""
@@ -54,7 +53,7 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Verify
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Should start on Thursday, end on Friday
         self.assert_task_scheduled(
@@ -66,8 +65,8 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         # 6h on Thursday, 6h on Friday
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
-        self.assertEqual(updated_task.daily_allocations[date(2025, 10, 23)], 6.0)
-        self.assertEqual(updated_task.daily_allocations[date(2025, 10, 24)], 6.0)
+        assert updated_task.daily_allocations[date(2025, 10, 23)] == 6.0
+        assert updated_task.daily_allocations[date(2025, 10, 24)] == 6.0
 
     def test_backward_without_deadline_schedules_near_future(self):
         """Test that tasks without deadline are scheduled in near future (1 week)."""
@@ -77,7 +76,7 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Verify
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
         task = result.successful_tasks[0]
 
         # Should be scheduled (using default 1-week period)
@@ -99,19 +98,19 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Verify
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Should respect max_hours_per_day
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
         for _date_str, hours in updated_task.daily_allocations.items():
-            self.assertLessEqual(hours, 6.0)
+            assert hours <= 6.0
 
         # Total should be 18h
         self.assert_total_allocated_hours(task, 18.0)
 
         # Should use Mon, Tue, Wed (backwards from Wed)
-        self.assertEqual(len(updated_task.daily_allocations), 3)
+        assert len(updated_task.daily_allocations) == 3
 
     def test_backward_handles_multiple_tasks(self):
         """Test backward strategy with multiple tasks (furthest deadline first)."""
@@ -126,17 +125,17 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Both tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # Task 1 (further deadline) is processed first, scheduled on Friday
         updated_task1 = self.repository.get_by_id(task1.id)
         assert updated_task1 is not None
-        self.assertEqual(updated_task1.planned_start, datetime(2025, 10, 24, 9, 0, 0))
+        assert updated_task1.planned_start == datetime(2025, 10, 24, 9, 0, 0)
 
         # Task 2 (closer deadline) is processed second, scheduled on Wednesday
         updated_task2 = self.repository.get_by_id(task2.id)
         assert updated_task2 is not None
-        self.assertEqual(updated_task2.planned_start, datetime(2025, 10, 22, 9, 0, 0))
+        assert updated_task2.planned_start == datetime(2025, 10, 22, 9, 0, 0)
 
     def test_backward_fails_when_deadline_before_start(self):
         """Test that backward strategy fails when deadline is before start date."""
@@ -150,7 +149,7 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Task should not be scheduled
-        self.assertEqual(len(result.successful_tasks), 0)
+        assert len(result.successful_tasks) == 0
 
     def test_backward_skips_weekends(self):
         """Test that backward strategy skips weekends when allocating."""
@@ -165,7 +164,7 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Verify
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Should be scheduled on Monday (deadline day)
         self.assert_task_scheduled(
@@ -177,9 +176,5 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         # Only Monday in allocations (no weekend days)
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
-        self.assertEqual(len(updated_task.daily_allocations), 1)
-        self.assertIn(date(2025, 10, 27), updated_task.daily_allocations)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(updated_task.daily_allocations) == 1
+        assert date(2025, 10, 27) in updated_task.daily_allocations

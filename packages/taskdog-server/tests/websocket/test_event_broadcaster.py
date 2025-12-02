@@ -1,7 +1,8 @@
 """Tests for WebSocketEventBroadcaster."""
 
-import unittest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.domain.entities.task import TaskStatus
@@ -9,10 +10,11 @@ from taskdog_server.websocket.broadcaster import WebSocketEventBroadcaster
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
 
-class TestWebSocketEventBroadcaster(unittest.TestCase):
+class TestWebSocketEventBroadcaster:
     """Test cases for WebSocketEventBroadcaster."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.mock_manager = MagicMock(spec=ConnectionManager)
         self.mock_manager.broadcast = AsyncMock()
@@ -60,18 +62,15 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][0], self.broadcaster._broadcast)
-        self.assertEqual(call_args[0][1], "task_created")
-        self.assertEqual(
-            call_args[0][2],
-            {
-                "task_id": 1,
-                "task_name": "Test Task",
-                "priority": 1,
-                "status": "PENDING",
-            },
-        )
-        self.assertEqual(call_args[0][3], "client-1")
+        assert call_args[0][0] == self.broadcaster._broadcast
+        assert call_args[0][1] == "task_created"
+        assert call_args[0][2] == {
+            "task_id": 1,
+            "task_name": "Test Task",
+            "priority": 1,
+            "status": "PENDING",
+        }
+        assert call_args[0][3] == "client-1"
 
     def test_task_created_without_exclude_client(self):
         """Test task_created with no exclude client."""
@@ -84,7 +83,7 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][3], None)
+        assert call_args[0][3] is None
 
     def test_task_updated_schedules_broadcast(self):
         """Test task_updated schedules background task."""
@@ -99,18 +98,15 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][0], self.broadcaster._broadcast)
-        self.assertEqual(call_args[0][1], "task_updated")
-        self.assertEqual(
-            call_args[0][2],
-            {
-                "task_id": 1,
-                "task_name": "Test Task",
-                "updated_fields": ["name", "priority"],
-                "status": "PENDING",
-            },
-        )
-        self.assertEqual(call_args[0][3], "client-2")
+        assert call_args[0][0] == self.broadcaster._broadcast
+        assert call_args[0][1] == "task_updated"
+        assert call_args[0][2] == {
+            "task_id": 1,
+            "task_name": "Test Task",
+            "updated_fields": ["name", "priority"],
+            "status": "PENDING",
+        }
+        assert call_args[0][3] == "client-2"
 
     def test_task_updated_with_single_field(self):
         """Test task_updated with a single field."""
@@ -124,7 +120,7 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][2]["updated_fields"], ["is_archived"])
+        assert call_args[0][2]["updated_fields"] == ["is_archived"]
 
     def test_task_deleted_schedules_broadcast(self):
         """Test task_deleted schedules background task."""
@@ -139,16 +135,13 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][0], self.broadcaster._broadcast)
-        self.assertEqual(call_args[0][1], "task_deleted")
-        self.assertEqual(
-            call_args[0][2],
-            {
-                "task_id": 123,
-                "task_name": "Deleted Task",
-            },
-        )
-        self.assertEqual(call_args[0][3], "client-3")
+        assert call_args[0][0] == self.broadcaster._broadcast
+        assert call_args[0][1] == "task_deleted"
+        assert call_args[0][2] == {
+            "task_id": 123,
+            "task_name": "Deleted Task",
+        }
+        assert call_args[0][3] == "client-3"
 
     def test_task_deleted_without_exclude_client(self):
         """Test task_deleted with no exclude client."""
@@ -162,7 +155,7 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][3], None)
+        assert call_args[0][3] is None
 
     def test_task_status_changed_schedules_broadcast(self):
         """Test task_status_changed schedules background task."""
@@ -177,18 +170,15 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][0], self.broadcaster._broadcast)
-        self.assertEqual(call_args[0][1], "task_status_changed")
-        self.assertEqual(
-            call_args[0][2],
-            {
-                "task_id": 1,
-                "task_name": "Test Task",
-                "old_status": "PENDING",
-                "new_status": "IN_PROGRESS",
-            },
-        )
-        self.assertEqual(call_args[0][3], "client-4")
+        assert call_args[0][0] == self.broadcaster._broadcast
+        assert call_args[0][1] == "task_status_changed"
+        assert call_args[0][2] == {
+            "task_id": 1,
+            "task_name": "Test Task",
+            "old_status": "PENDING",
+            "new_status": "IN_PROGRESS",
+        }
+        assert call_args[0][3] == "client-4"
 
     def test_task_status_changed_with_different_statuses(self):
         """Test task_status_changed with various status transitions."""
@@ -202,8 +192,8 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][2]["old_status"], "IN_PROGRESS")
-        self.assertEqual(call_args[0][2]["new_status"], "COMPLETED")
+        assert call_args[0][2]["old_status"] == "IN_PROGRESS"
+        assert call_args[0][2]["new_status"] == "COMPLETED"
 
     def test_task_notes_updated_schedules_broadcast(self):
         """Test task_notes_updated schedules background task."""
@@ -218,17 +208,14 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][0], self.broadcaster._broadcast)
-        self.assertEqual(call_args[0][1], "task_updated")
-        self.assertEqual(
-            call_args[0][2],
-            {
-                "task_id": 789,
-                "task_name": "Task with Notes",
-                "updated_fields": ["notes"],
-            },
-        )
-        self.assertEqual(call_args[0][3], "client-5")
+        assert call_args[0][0] == self.broadcaster._broadcast
+        assert call_args[0][1] == "task_updated"
+        assert call_args[0][2] == {
+            "task_id": 789,
+            "task_name": "Task with Notes",
+            "updated_fields": ["notes"],
+        }
+        assert call_args[0][3] == "client-5"
 
     def test_task_notes_updated_without_exclude_client(self):
         """Test task_notes_updated with no exclude client."""
@@ -242,7 +229,7 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][3], None)
+        assert call_args[0][3] is None
 
     def test_schedule_optimized_schedules_broadcast(self):
         """Test schedule_optimized schedules background task."""
@@ -260,17 +247,14 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
         call_args = self.mock_background_tasks.add_task.call_args
-        self.assertEqual(call_args[0][0], self.broadcaster._broadcast)
-        self.assertEqual(call_args[0][1], "schedule_optimized")
-        self.assertEqual(
-            call_args[0][2],
-            {
-                "scheduled_count": 5,
-                "failed_count": 2,
-                "algorithm": "greedy",
-            },
-        )
-        self.assertEqual(call_args[0][3], "client-6")
+        assert call_args[0][0] == self.broadcaster._broadcast
+        assert call_args[0][1] == "schedule_optimized"
+        assert call_args[0][2] == {
+            "scheduled_count": 5,
+            "failed_count": 2,
+            "algorithm": "greedy",
+        }
+        assert call_args[0][3] == "client-6"
 
     def test_schedule_optimized_with_different_algorithms(self):
         """Test schedule_optimized with various algorithms."""
@@ -286,7 +270,7 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
             # Assert
             self.mock_background_tasks.add_task.assert_called_once()
             call_args = self.mock_background_tasks.add_task.call_args
-            self.assertEqual(call_args[0][2]["algorithm"], algorithm)
+            assert call_args[0][2]["algorithm"] == algorithm
 
     def test_multiple_broadcasts_in_sequence(self):
         """Test multiple broadcast calls are scheduled correctly."""
@@ -300,13 +284,13 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         self.broadcaster.task_deleted(3, "Task 3", "client-3")
 
         # Assert
-        self.assertEqual(self.mock_background_tasks.add_task.call_count, 3)
+        assert self.mock_background_tasks.add_task.call_count == 3
 
     def test_broadcaster_stores_manager_and_background_tasks(self):
         """Test that broadcaster stores manager and background_tasks internally."""
         # Assert
-        self.assertEqual(self.broadcaster._manager, self.mock_manager)
-        self.assertEqual(self.broadcaster._background_tasks, self.mock_background_tasks)
+        assert self.broadcaster._manager == self.mock_manager
+        assert self.broadcaster._background_tasks == self.mock_background_tasks
 
     def test_add_background_task_schedules_task(self):
         """Test add_background_task schedules a generic background task."""
@@ -339,7 +323,7 @@ class TestWebSocketEventBroadcaster(unittest.TestCase):
         )
 
 
-class TestWebSocketEventBroadcasterBroadcast(unittest.IsolatedAsyncioTestCase):
+class TestWebSocketEventBroadcasterBroadcast:
     """Async test cases for WebSocketEventBroadcaster._broadcast method."""
 
     async def test_broadcast_adds_type_and_source_client_id(self):
@@ -360,10 +344,10 @@ class TestWebSocketEventBroadcasterBroadcast(unittest.IsolatedAsyncioTestCase):
         mock_manager.broadcast.assert_called_once()
         call_args = mock_manager.broadcast.call_args
         broadcast_payload = call_args[0][0]
-        self.assertEqual(broadcast_payload["type"], "task_created")
-        self.assertEqual(broadcast_payload["source_client_id"], "client-1")
-        self.assertEqual(broadcast_payload["task_id"], 1)
-        self.assertEqual(broadcast_payload["task_name"], "Test")
+        assert broadcast_payload["type"] == "task_created"
+        assert broadcast_payload["source_client_id"] == "client-1"
+        assert broadcast_payload["task_id"] == 1
+        assert broadcast_payload["task_name"] == "Test"
 
     async def test_broadcast_with_none_exclude_client_id(self):
         """Test _broadcast with None exclude_client_id."""
@@ -382,8 +366,8 @@ class TestWebSocketEventBroadcasterBroadcast(unittest.IsolatedAsyncioTestCase):
         mock_manager.broadcast.assert_called_once()
         call_args = mock_manager.broadcast.call_args
         broadcast_payload = call_args[0][0]
-        self.assertEqual(broadcast_payload["type"], "task_deleted")
-        self.assertEqual(broadcast_payload["source_client_id"], None)
+        assert broadcast_payload["type"] == "task_deleted"
+        assert broadcast_payload["source_client_id"] is None
 
     async def test_broadcast_does_not_modify_original_payload(self):
         """Test _broadcast does not modify the original payload dict."""
@@ -401,10 +385,6 @@ class TestWebSocketEventBroadcasterBroadcast(unittest.IsolatedAsyncioTestCase):
 
         # Assert
         # Original payload should not have type and source_client_id
-        self.assertEqual(set(payload.keys()), original_keys)
-        self.assertNotIn("type", payload)
-        self.assertNotIn("source_client_id", payload)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert set(payload.keys()) == original_keys
+        assert "type" not in payload
+        assert "source_client_id" not in payload

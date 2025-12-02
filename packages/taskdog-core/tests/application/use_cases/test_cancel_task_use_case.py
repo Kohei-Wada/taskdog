@@ -1,6 +1,5 @@
 """Tests for CancelTaskUseCase."""
 
-import unittest
 from datetime import datetime
 
 from taskdog_core.application.dto.single_task_inputs import CancelTaskInput
@@ -12,7 +11,7 @@ from tests.application.use_cases.status_change_test_base import (
 
 
 class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
-    """Test cases for CancelTaskUseCase"""
+    """Test cases for CancelTaskUseCase."""
 
     use_case_class = CancelTaskUseCase
     request_class = CancelTaskInput
@@ -31,9 +30,9 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = CancelTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.status, TaskStatus.CANCELED)
-        self.assertIsNotNone(result.actual_end)
-        self.assertIsNone(result.actual_start)
+        assert result.status == TaskStatus.CANCELED
+        assert result.actual_end is not None
+        assert result.actual_start is None
 
     def test_execute_can_cancel_in_progress_task(self):
         """Test execute can cancel IN_PROGRESS task."""
@@ -45,10 +44,6 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = CancelTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.status, TaskStatus.CANCELED)
-        self.assertIsNotNone(result.actual_start)
-        self.assertIsNotNone(result.actual_end)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.status == TaskStatus.CANCELED
+        assert result.actual_start is not None
+        assert result.actual_end is not None

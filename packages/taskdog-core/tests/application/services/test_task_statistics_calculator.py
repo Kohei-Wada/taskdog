@@ -1,7 +1,8 @@
 """Test cases for TaskStatisticsCalculator."""
 
-import unittest
 from datetime import datetime, timedelta
+
+import pytest
 
 from taskdog_core.application.services.task_statistics_calculator import (
     TaskStatisticsCalculator,
@@ -9,10 +10,11 @@ from taskdog_core.application.services.task_statistics_calculator import (
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class TestTaskStatisticsCalculator(unittest.TestCase):
+class TestTaskStatisticsCalculator:
     """Test cases for TaskStatisticsCalculator."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.calculator = TaskStatisticsCalculator()
 
@@ -20,10 +22,10 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
         """Test basic statistics with empty task list."""
         result = self.calculator.calculate_all([])
 
-        self.assertEqual(result.task_stats.total_tasks, 0)
-        self.assertEqual(result.task_stats.pending_count, 0)
-        self.assertEqual(result.task_stats.completed_count, 0)
-        self.assertEqual(result.task_stats.completion_rate, 0.0)
+        assert result.task_stats.total_tasks == 0
+        assert result.task_stats.pending_count == 0
+        assert result.task_stats.completed_count == 0
+        assert result.task_stats.completion_rate == 0.0
 
     def test_calculate_task_statistics_basic(self):
         """Test basic task statistics."""
@@ -37,13 +39,13 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
 
         result = self.calculator.calculate_all(tasks)
 
-        self.assertEqual(result.task_stats.total_tasks, 5)
-        self.assertEqual(result.task_stats.pending_count, 1)
-        self.assertEqual(result.task_stats.in_progress_count, 1)
-        self.assertEqual(result.task_stats.completed_count, 2)
-        self.assertEqual(result.task_stats.canceled_count, 1)
-        self.assertEqual(
-            result.task_stats.completion_rate, 2.0 / 3.0
+        assert result.task_stats.total_tasks == 5
+        assert result.task_stats.pending_count == 1
+        assert result.task_stats.in_progress_count == 1
+        assert result.task_stats.completed_count == 2
+        assert result.task_stats.canceled_count == 1
+        assert (
+            result.task_stats.completion_rate == 2.0 / 3.0
         )  # 2 completed / 3 finished
 
     def test_calculate_time_statistics(self):
@@ -68,13 +70,13 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
 
         result = self.calculator.calculate_all(tasks)
 
-        self.assertIsNotNone(result.time_stats)
-        self.assertEqual(result.time_stats.tasks_with_time_tracking, 2)
-        self.assertEqual(result.time_stats.total_work_hours, 6.0)  # 2h + 4h
-        self.assertEqual(result.time_stats.average_work_hours, 3.0)
-        self.assertEqual(result.time_stats.median_work_hours, 3.0)
-        self.assertIsNotNone(result.time_stats.longest_task)
-        self.assertEqual(result.time_stats.longest_task.name, "Task 2")
+        assert result.time_stats is not None
+        assert result.time_stats.tasks_with_time_tracking == 2
+        assert result.time_stats.total_work_hours == 6.0  # 2h + 4h
+        assert result.time_stats.average_work_hours == 3.0
+        assert result.time_stats.median_work_hours == 3.0
+        assert result.time_stats.longest_task is not None
+        assert result.time_stats.longest_task.name == "Task 2"
 
     def test_calculate_estimation_accuracy(self):
         """Test estimation accuracy statistics."""
@@ -102,10 +104,10 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
 
         result = self.calculator.calculate_all(tasks)
 
-        self.assertIsNotNone(result.estimation_stats)
-        self.assertEqual(result.estimation_stats.total_tasks_with_estimation, 2)
-        self.assertEqual(result.estimation_stats.over_estimated_count, 1)
-        self.assertEqual(result.estimation_stats.under_estimated_count, 1)
+        assert result.estimation_stats is not None
+        assert result.estimation_stats.total_tasks_with_estimation == 2
+        assert result.estimation_stats.over_estimated_count == 1
+        assert result.estimation_stats.under_estimated_count == 1
 
     def test_calculate_deadline_compliance(self):
         """Test deadline compliance statistics."""
@@ -133,11 +135,11 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
 
         result = self.calculator.calculate_all(tasks)
 
-        self.assertIsNotNone(result.deadline_stats)
-        self.assertEqual(result.deadline_stats.total_tasks_with_deadline, 2)
-        self.assertEqual(result.deadline_stats.met_deadline_count, 1)
-        self.assertEqual(result.deadline_stats.missed_deadline_count, 1)
-        self.assertEqual(result.deadline_stats.compliance_rate, 0.5)
+        assert result.deadline_stats is not None
+        assert result.deadline_stats.total_tasks_with_deadline == 2
+        assert result.deadline_stats.met_deadline_count == 1
+        assert result.deadline_stats.missed_deadline_count == 1
+        assert result.deadline_stats.compliance_rate == 0.5
 
     def test_calculate_priority_distribution(self):
         """Test priority distribution statistics."""
@@ -150,10 +152,10 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
 
         result = self.calculator.calculate_all(tasks)
 
-        self.assertEqual(result.priority_stats.high_priority_count, 2)
-        self.assertEqual(result.priority_stats.medium_priority_count, 1)
-        self.assertEqual(result.priority_stats.low_priority_count, 1)
-        self.assertEqual(result.priority_stats.high_priority_completion_rate, 0.5)
+        assert result.priority_stats.high_priority_count == 2
+        assert result.priority_stats.medium_priority_count == 1
+        assert result.priority_stats.low_priority_count == 1
+        assert result.priority_stats.high_priority_completion_rate == 0.5
 
     def test_calculate_trends(self):
         """Test trend statistics."""
@@ -179,9 +181,9 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
 
         result = self.calculator.calculate_all(tasks)
 
-        self.assertIsNotNone(result.trend_stats)
-        self.assertEqual(result.trend_stats.last_7_days_completed, 1)
-        self.assertEqual(result.trend_stats.last_30_days_completed, 2)
+        assert result.trend_stats is not None
+        assert result.trend_stats.last_7_days_completed == 1
+        assert result.trend_stats.last_30_days_completed == 2
 
     def test_filter_by_period_7d(self):
         """Test filtering tasks by 7-day period."""
@@ -207,9 +209,5 @@ class TestTaskStatisticsCalculator(unittest.TestCase):
 
         result = self.calculator.calculate_all(tasks, period="7d")
 
-        self.assertEqual(result.task_stats.total_tasks, 1)
-        self.assertEqual(result.task_stats.completed_count, 1)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.task_stats.total_tasks == 1
+        assert result.task_stats.completed_count == 1

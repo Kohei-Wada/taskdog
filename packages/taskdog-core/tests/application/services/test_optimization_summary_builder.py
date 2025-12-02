@@ -1,38 +1,23 @@
 """Tests for OptimizationSummaryBuilder."""
 
-import os
-import tempfile
-import unittest
 from datetime import date, datetime
+
+import pytest
 
 from taskdog_core.application.services.optimization_summary_builder import (
     OptimizationSummaryBuilder,
 )
 from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
 
 
-class TestOptimizationSummaryBuilder(unittest.TestCase):
+class TestOptimizationSummaryBuilder:
     """Test cases for OptimizationSummaryBuilder."""
 
-    def setUp(self):
-        """Create temporary file and initialize builder for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
+        """Set up test fixtures."""
+        self.repository = repository
         self.builder = OptimizationSummaryBuilder(self.repository)
-
-    def tearDown(self):
-        """Clean up temporary file after each test."""
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
 
     def test_build_with_new_tasks(self):
         """Test build calculates correct counts for newly scheduled tasks."""
@@ -67,11 +52,11 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             modified_tasks, task_states_before, daily_allocations, max_hours_per_day
         )
 
-        self.assertEqual(summary.new_count, 2)
-        self.assertEqual(summary.rescheduled_count, 0)
-        self.assertEqual(summary.total_hours, 16.0)
-        self.assertEqual(summary.days_span, 2)
-        self.assertEqual(len(summary.overloaded_days), 0)
+        assert summary.new_count == 2
+        assert summary.rescheduled_count == 0
+        assert summary.total_hours == 16.0
+        assert summary.days_span == 2
+        assert len(summary.overloaded_days) == 0
 
     def test_build_with_rescheduled_tasks(self):
         """Test build calculates correct counts for rescheduled tasks."""
@@ -95,8 +80,8 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             modified_tasks, task_states_before, daily_allocations, max_hours_per_day
         )
 
-        self.assertEqual(summary.new_count, 0)
-        self.assertEqual(summary.rescheduled_count, 1)
+        assert summary.new_count == 0
+        assert summary.rescheduled_count == 1
 
     def test_build_with_deadline_conflicts(self):
         """Test build detects deadline conflicts."""
@@ -121,7 +106,7 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             modified_tasks, task_states_before, daily_allocations, max_hours_per_day
         )
 
-        self.assertEqual(summary.deadline_conflicts, 1)
+        assert summary.deadline_conflicts == 1
 
     def test_build_with_overloaded_days(self):
         """Test build detects overloaded days."""
@@ -145,8 +130,8 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             modified_tasks, task_states_before, daily_allocations, max_hours_per_day
         )
 
-        self.assertEqual(len(summary.overloaded_days), 1)
-        self.assertEqual(summary.overloaded_days[0], ("2025-10-14", 10.0))
+        assert len(summary.overloaded_days) == 1
+        assert summary.overloaded_days[0] == ("2025-10-14", 10.0)
 
     def test_build_with_unscheduled_tasks(self):
         """Test build detects unscheduled tasks."""
@@ -181,8 +166,8 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             modified_tasks, task_states_before, daily_allocations, max_hours_per_day
         )
 
-        self.assertEqual(len(summary.unscheduled_tasks), 1)
-        self.assertEqual(summary.unscheduled_tasks[0].id, 2)
+        assert len(summary.unscheduled_tasks) == 1
+        assert summary.unscheduled_tasks[0].id == 2
 
     def test_build_ignores_completed_tasks(self):
         """Test build ignores completed tasks when checking unscheduled."""
@@ -206,8 +191,4 @@ class TestOptimizationSummaryBuilder(unittest.TestCase):
             modified_tasks, task_states_before, daily_allocations, max_hours_per_day
         )
 
-        self.assertEqual(len(summary.unscheduled_tasks), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(summary.unscheduled_tasks) == 0

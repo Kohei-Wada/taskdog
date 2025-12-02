@@ -1,20 +1,20 @@
 """Tests for ArchiveTaskUseCase."""
 
-import unittest
+import pytest
 
 from taskdog_core.application.dto.single_task_inputs import ArchiveTaskInput
 from taskdog_core.application.use_cases.archive_task import ArchiveTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class ArchiveTaskUseCaseTest(InMemoryDatabaseTestCase):
+class TestArchiveTaskUseCase:
     """Test cases for ArchiveTaskUseCase."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
         """Set up test fixtures."""
-        super().setUp()
+        self.repository = repository
         self.use_case = ArchiveTaskUseCase(self.repository)
 
     def test_archive_completed_task(self):
@@ -29,14 +29,14 @@ class ArchiveTaskUseCaseTest(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         # Verify task archived (is_archived=True, status preserved)
-        self.assertTrue(result.is_archived)
-        self.assertEqual(result.status, TaskStatus.COMPLETED)
+        assert result.is_archived is True
+        assert result.status == TaskStatus.COMPLETED
 
         # Verify persisted
         archived_task = self.repository.get_by_id(task.id)
-        self.assertIsNotNone(archived_task)
-        self.assertTrue(archived_task.is_archived)
-        self.assertEqual(archived_task.status, TaskStatus.COMPLETED)
+        assert archived_task is not None
+        assert archived_task.is_archived is True
+        assert archived_task.status == TaskStatus.COMPLETED
 
     def test_archive_canceled_task(self):
         """Test archiving a canceled task sets is_archived flag and preserves status."""
@@ -50,8 +50,8 @@ class ArchiveTaskUseCaseTest(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         # Verify task archived
-        self.assertTrue(result.is_archived)
-        self.assertEqual(result.status, TaskStatus.CANCELED)
+        assert result.is_archived is True
+        assert result.status == TaskStatus.CANCELED
 
     def test_archive_pending_task(self):
         """Test archiving a pending task is allowed and preserves status."""
@@ -65,8 +65,8 @@ class ArchiveTaskUseCaseTest(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         # Verify task archived
-        self.assertTrue(result.is_archived)
-        self.assertEqual(result.status, TaskStatus.PENDING)
+        assert result.is_archived is True
+        assert result.status == TaskStatus.PENDING
 
     def test_archive_in_progress_task(self):
         """Test archiving an in-progress task is allowed and preserves status."""
@@ -80,16 +80,12 @@ class ArchiveTaskUseCaseTest(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         # Verify task archived
-        self.assertTrue(result.is_archived)
-        self.assertEqual(result.status, TaskStatus.IN_PROGRESS)
+        assert result.is_archived is True
+        assert result.status == TaskStatus.IN_PROGRESS
 
     def test_archive_nonexistent_task(self):
         """Test archiving a task that doesn't exist."""
         input_dto = ArchiveTaskInput(task_id=999)
 
-        with self.assertRaises(TaskNotFoundException):
+        with pytest.raises(TaskNotFoundException):
             self.use_case.execute(input_dto)
-
-
-if __name__ == "__main__":
-    unittest.main()

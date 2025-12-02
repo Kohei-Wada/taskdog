@@ -1,7 +1,8 @@
 """Tests for ScheduleFitnessCalculator."""
 
-import unittest
 from datetime import date, datetime
+
+import pytest
 
 from taskdog_core.application.services.optimization.schedule_fitness_calculator import (
     DEADLINE_PENALTY_MULTIPLIER,
@@ -11,10 +12,11 @@ from taskdog_core.application.services.optimization.schedule_fitness_calculator 
 from taskdog_core.domain.entities.task import Task
 
 
-class TestScheduleFitnessCalculator(unittest.TestCase):
+class TestScheduleFitnessCalculator:
     """Test cases for ScheduleFitnessCalculator."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.calculator = ScheduleFitnessCalculator()
 
@@ -23,7 +25,7 @@ class TestScheduleFitnessCalculator(unittest.TestCase):
         fitness = self.calculator.calculate_fitness(
             [], {}, include_scheduling_bonus=False
         )
-        self.assertEqual(fitness, 0.0)
+        assert fitness == 0.0
 
     def test_calculate_fitness_with_scheduling_bonus(self):
         """Test that scheduling bonus is added when enabled."""
@@ -53,9 +55,7 @@ class TestScheduleFitnessCalculator(unittest.TestCase):
 
         # Should add 2 * 50 = 100 points for 2 tasks
         expected_bonus = 2 * SCHEDULED_TASK_BONUS
-        self.assertAlmostEqual(
-            fitness_with_bonus, fitness_without_bonus + expected_bonus, places=5
-        )
+        assert abs(fitness_with_bonus - (fitness_without_bonus + expected_bonus)) < 1e-5
 
     def test_priority_score_higher_for_earlier_high_priority_tasks(self):
         """Test that priority score rewards scheduling high-priority tasks earlier."""
@@ -84,13 +84,13 @@ class TestScheduleFitnessCalculator(unittest.TestCase):
         score_bad = self.calculator._calculate_priority_score(tasks_bad_order)
 
         # Good order should have higher score
-        self.assertGreater(score_good, score_bad)
+        assert score_good > score_bad
 
         # Verify calculation: priority * (total_tasks - position)
         # Good: 10 * (2 - 0) + 5 * (2 - 1) = 20 + 5 = 25
-        self.assertAlmostEqual(score_good, 25.0, places=5)
+        assert abs(score_good - 25.0) < 1e-5
         # Bad: 5 * (2 - 0) + 10 * (2 - 1) = 10 + 10 = 20
-        self.assertAlmostEqual(score_bad, 20.0, places=5)
+        assert abs(score_bad - 20.0) < 1e-5
 
     def test_priority_score_with_different_priorities(self):
         """Test priority score calculation with different priority values."""
@@ -115,7 +115,7 @@ class TestScheduleFitnessCalculator(unittest.TestCase):
         # First task: 10 * (2 - 0) = 20
         # Second task: 1 * (2 - 1) = 1
         # Total: 20 + 1 = 21
-        self.assertAlmostEqual(score, 21.0, places=5)
+        assert abs(score - 21.0) < 1e-5
 
     def test_deadline_penalty_for_late_tasks(self):
         """Test that tasks finishing after deadline incur penalties."""
@@ -132,7 +132,7 @@ class TestScheduleFitnessCalculator(unittest.TestCase):
         penalty = self.calculator._calculate_deadline_penalty([late_task])
         # 3 days * DEADLINE_PENALTY_MULTIPLIER
         expected_penalty = 3 * DEADLINE_PENALTY_MULTIPLIER
-        self.assertAlmostEqual(penalty, expected_penalty, places=5)
+        assert abs(penalty - expected_penalty) < 1e-5
 
     def test_deadline_penalty_zero_for_on_time_tasks(self):
         """Test that tasks finishing on or before deadline have no penalty."""
@@ -157,7 +157,7 @@ class TestScheduleFitnessCalculator(unittest.TestCase):
         penalty = self.calculator._calculate_deadline_penalty(
             [on_time_task, early_task]
         )
-        self.assertEqual(penalty, 0.0)
+        assert penalty == 0.0
 
     def test_deadline_penalty_ignores_tasks_without_deadline(self):
         """Test that tasks without deadline don't incur penalty."""
@@ -181,7 +181,7 @@ class TestScheduleFitnessCalculator(unittest.TestCase):
         ]
 
         penalty = self.calculator._calculate_deadline_penalty(tasks)
-        self.assertEqual(penalty, 0.0)
+        assert penalty == 0.0
 
     def test_workload_penalty_for_unbalanced_schedule(self):
         """Test that unbalanced workload distribution incurs penalty."""
@@ -205,21 +205,21 @@ class TestScheduleFitnessCalculator(unittest.TestCase):
         )
 
         # Unbalanced should have higher penalty
-        self.assertGreater(penalty_unbalanced, penalty_balanced)
+        assert penalty_unbalanced > penalty_balanced
 
         # Balanced should have zero penalty (zero variance)
-        self.assertEqual(penalty_balanced, 0.0)
+        assert penalty_balanced == 0.0
 
         # Verify unbalanced calculation:
         # avg = (8 + 2) / 2 = 5
         # variance = ((8-5)^2 + (2-5)^2) / 2 = (9 + 9) / 2 = 9
         # penalty = 9 * 10 = 90
-        self.assertAlmostEqual(penalty_unbalanced, 90.0, places=5)
+        assert abs(penalty_unbalanced - 90.0) < 1e-5
 
     def test_workload_penalty_zero_for_empty_allocations(self):
         """Test that empty allocations have zero penalty."""
         penalty = self.calculator._calculate_workload_penalty({})
-        self.assertEqual(penalty, 0.0)
+        assert penalty == 0.0
 
     def test_calculate_fitness_combines_all_components(self):
         """Test that fitness combines priority score, deadline penalty, and workload penalty."""
@@ -261,8 +261,4 @@ class TestScheduleFitnessCalculator(unittest.TestCase):
         # Deadline penalty: 2 days * 100 = 200
         # Workload penalty: 0 (balanced)
         # Fitness = 25 - 200 - 0 = -175
-        self.assertAlmostEqual(fitness, -175.0, places=5)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert abs(fitness - (-175.0)) < 1e-5

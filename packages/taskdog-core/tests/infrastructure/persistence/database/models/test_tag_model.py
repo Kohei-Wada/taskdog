@@ -8,11 +8,10 @@ The integration with TaskDbMapper and repository layer will be tested
 in Phase 2.
 """
 
-import tempfile
-import unittest
 from datetime import datetime
 from pathlib import Path
 
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -25,12 +24,13 @@ from taskdog_core.infrastructure.persistence.database.models import (
 )
 
 
-class TestTagModel(unittest.TestCase):
+class TestTagModel:
     """Test suite for TagModel and TaskTagModel."""
 
-    def setUp(self) -> None:
+    @pytest.fixture(autouse=True)
+    def setup(self, tmp_path):
         """Set up test fixtures with temporary database."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = tmp_path
         self.db_path = Path(self.temp_dir) / "test_tags.db"
         self.database_url = f"sqlite:///{self.db_path}"
 
@@ -38,18 +38,11 @@ class TestTagModel(unittest.TestCase):
         self.engine = create_engine(self.database_url)
         Base.metadata.create_all(self.engine)
         self.session = Session(self.engine)
-
-    def tearDown(self) -> None:
-        """Clean up database and close connections."""
+        yield
         self.session.close()
         self.engine.dispose()
 
-        import shutil
-
-        if Path(self.temp_dir).exists():
-            shutil.rmtree(self.temp_dir)
-
-    def test_tag_model_creation(self) -> None:
+    def test_tag_model_creation(self):
         """Test TagModel can be created and persisted."""
         tag = TagModel(name="urgent", created_at=datetime.now())
         self.session.add(tag)
@@ -59,11 +52,11 @@ class TestTagModel(unittest.TestCase):
         retrieved = self.session.scalar(
             select(TagModel).where(TagModel.name == "urgent")
         )
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved.name, "urgent")
-        self.assertEqual(retrieved.id, 1)
+        assert retrieved is not None
+        assert retrieved.name == "urgent"
+        assert retrieved.id == 1
 
-    def test_tag_model_unique_constraint(self) -> None:
+    def test_tag_model_unique_constraint(self):
         """Test TagModel enforces unique tag names."""
         tag1 = TagModel(name="backend", created_at=datetime.now())
         self.session.add(tag1)
@@ -73,13 +66,13 @@ class TestTagModel(unittest.TestCase):
         tag2 = TagModel(name="backend", created_at=datetime.now())
         self.session.add(tag2)
 
-        with self.assertRaises(IntegrityError):
+        with pytest.raises(IntegrityError):
             self.session.commit()
 
         # Rollback the failed transaction
         self.session.rollback()
 
-    def test_task_tag_model_creation(self) -> None:
+    def test_task_tag_model_creation(self):
         """Test TaskTagModel can create task-tag associations."""
         # Create a task
         task = TaskModel(
@@ -108,11 +101,11 @@ class TestTagModel(unittest.TestCase):
                 TaskTagModel.task_id == task.id, TaskTagModel.tag_id == tag.id
             )
         )
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved.task_id, task.id)
-        self.assertEqual(retrieved.tag_id, tag.id)
+        assert retrieved is not None
+        assert retrieved.task_id == task.id
+        assert retrieved.tag_id == tag.id
 
-    def test_task_tag_relationship(self) -> None:
+    def test_task_tag_relationship(self):
         """Test SQLAlchemy relationship between Task and Tag models."""
         # Create a task
         task = TaskModel(
@@ -136,13 +129,13 @@ class TestTagModel(unittest.TestCase):
 
         # Retrieve and verify
         retrieved_task = self.session.get(TaskModel, task.id)
-        self.assertIsNotNone(retrieved_task)
-        self.assertEqual(len(retrieved_task.tag_models), 2)
+        assert retrieved_task is not None
+        assert len(retrieved_task.tag_models) == 2
 
         tag_names = {tag.name for tag in retrieved_task.tag_models}
-        self.assertEqual(tag_names, {"urgent", "backend"})
+        assert tag_names == {"urgent", "backend"}
 
-    def test_cascade_delete_on_task_deletion(self) -> None:
+    def test_cascade_delete_on_task_deletion(self):
         """Test that task-tag associations are deleted when task is deleted."""
         # Create task and tag
         task = TaskModel(
@@ -171,13 +164,13 @@ class TestTagModel(unittest.TestCase):
                 TaskTagModel.task_id == task_id, TaskTagModel.tag_id == tag_id
             )
         )
-        self.assertIsNone(association)
+        assert association is None
 
         # Tag should still exist (orphaned)
         orphaned_tag = self.session.get(TagModel, tag_id)
-        self.assertIsNotNone(orphaned_tag)
+        assert orphaned_tag is not None
 
-    def test_multiple_tasks_can_share_tag(self) -> None:
+    def test_multiple_tasks_can_share_tag(self):
         """Test that multiple tasks can be associated with the same tag."""
         # Create one tag
         tag = TagModel(name="shared", created_at=datetime.now())
@@ -209,13 +202,13 @@ class TestTagModel(unittest.TestCase):
 
         # Verify both tasks are associated with the same tag
         retrieved_tag = self.session.get(TagModel, tag.id)
-        self.assertIsNotNone(retrieved_tag)
-        self.assertEqual(len(retrieved_tag.tasks), 2)
+        assert retrieved_tag is not None
+        assert len(retrieved_tag.tasks) == 2
 
         task_names = {task.name for task in retrieved_tag.tasks}
-        self.assertEqual(task_names, {"Task 1", "Task 2"})
+        assert task_names == {"Task 1", "Task 2"}
 
-    def test_cascade_delete_on_tag_deletion(self) -> None:
+    def test_cascade_delete_on_tag_deletion(self):
         """Test that task-tag associations are deleted when tag is deleted."""
         # Create task and tag
         task = TaskModel(
@@ -244,14 +237,14 @@ class TestTagModel(unittest.TestCase):
                 TaskTagModel.task_id == task_id, TaskTagModel.tag_id == tag_id
             )
         )
-        self.assertIsNone(association)
+        assert association is None
 
         # Task should still exist
         remaining_task = self.session.get(TaskModel, task_id)
-        self.assertIsNotNone(remaining_task)
-        self.assertEqual(len(remaining_task.tag_models), 0)
+        assert remaining_task is not None
+        assert len(remaining_task.tag_models) == 0
 
-    def test_duplicate_task_tag_association_prevented(self) -> None:
+    def test_duplicate_task_tag_association_prevented(self):
         """Test that duplicate task-tag associations are prevented by unique constraint."""
         # Create task and tag
         task = TaskModel(
@@ -278,13 +271,13 @@ class TestTagModel(unittest.TestCase):
         task_tag2 = TaskTagModel(task_id=task.id, tag_id=tag.id)
         self.session.add(task_tag2)
 
-        with self.assertRaises(IntegrityError):
+        with pytest.raises(IntegrityError):
             self.session.commit()
 
         # Rollback the failed transaction
         self.session.rollback()
 
-    def test_task_with_no_tags(self) -> None:
+    def test_task_with_no_tags(self):
         """Test that tasks can exist without any tags."""
         task = TaskModel(
             name="Untagged Task",
@@ -298,10 +291,10 @@ class TestTagModel(unittest.TestCase):
 
         # Retrieve and verify
         retrieved_task = self.session.get(TaskModel, task.id)
-        self.assertIsNotNone(retrieved_task)
-        self.assertEqual(len(retrieved_task.tag_models), 0)
+        assert retrieved_task is not None
+        assert len(retrieved_task.tag_models) == 0
 
-    def test_tag_with_no_tasks(self) -> None:
+    def test_tag_with_no_tasks(self):
         """Test that tags can exist without any associated tasks (orphaned tags)."""
         tag = TagModel(name="orphan", created_at=datetime.now())
         self.session.add(tag)
@@ -309,10 +302,10 @@ class TestTagModel(unittest.TestCase):
 
         # Retrieve and verify
         retrieved_tag = self.session.get(TagModel, tag.id)
-        self.assertIsNotNone(retrieved_tag)
-        self.assertEqual(len(retrieved_tag.tasks), 0)
+        assert retrieved_tag is not None
+        assert len(retrieved_tag.tasks) == 0
 
-    def test_remove_tag_from_task(self) -> None:
+    def test_remove_tag_from_task(self):
         """Test removing a specific tag from a task."""
         # Create task with two tags
         task = TaskModel(
@@ -337,11 +330,11 @@ class TestTagModel(unittest.TestCase):
 
         # Verify only one tag remains
         retrieved_task = self.session.get(TaskModel, task.id)
-        self.assertIsNotNone(retrieved_task)
-        self.assertEqual(len(retrieved_task.tag_models), 1)
-        self.assertEqual(retrieved_task.tag_models[0].name, "keep")
+        assert retrieved_task is not None
+        assert len(retrieved_task.tag_models) == 1
+        assert retrieved_task.tag_models[0].name == "keep"
 
-    def test_clear_all_tags_from_task(self) -> None:
+    def test_clear_all_tags_from_task(self):
         """Test clearing all tags from a task."""
         # Create task with multiple tags
         task = TaskModel(
@@ -365,10 +358,10 @@ class TestTagModel(unittest.TestCase):
 
         # Verify no tags remain
         retrieved_task = self.session.get(TaskModel, task.id)
-        self.assertIsNotNone(retrieved_task)
-        self.assertEqual(len(retrieved_task.tag_models), 0)
+        assert retrieved_task is not None
+        assert len(retrieved_task.tag_models) == 0
 
-    def test_query_tasks_by_tag(self) -> None:
+    def test_query_tasks_by_tag(self):
         """Test querying tasks by a specific tag."""
         # Create a tag
         tag = TagModel(name="query-test", created_at=datetime.now())
@@ -413,11 +406,11 @@ class TestTagModel(unittest.TestCase):
             .all()
         )
 
-        self.assertEqual(len(tagged_tasks), 2)
+        assert len(tagged_tasks) == 2
         task_names = {task.name for task in tagged_tasks}
-        self.assertEqual(task_names, {"Tagged Task 1", "Tagged Task 2"})
+        assert task_names == {"Tagged Task 1", "Tagged Task 2"}
 
-    def test_multiple_tasks_multiple_tags(self) -> None:
+    def test_multiple_tasks_multiple_tags(self):
         """Test complex many-to-many relationship with multiple tasks and tags."""
         # Create tags
         tag_urgent = TagModel(name="urgent", created_at=datetime.now())
@@ -459,24 +452,24 @@ class TestTagModel(unittest.TestCase):
         retrieved_urgent = (
             self.session.query(TagModel).filter(TagModel.name == "urgent").first()
         )
-        self.assertIsNotNone(retrieved_urgent)
-        self.assertEqual(len(retrieved_urgent.tasks), 2)
+        assert retrieved_urgent is not None
+        assert len(retrieved_urgent.tasks) == 2
 
         # Verify tag_backend has 2 tasks
         retrieved_backend = (
             self.session.query(TagModel).filter(TagModel.name == "backend").first()
         )
-        self.assertIsNotNone(retrieved_backend)
-        self.assertEqual(len(retrieved_backend.tasks), 2)
+        assert retrieved_backend is not None
+        assert len(retrieved_backend.tasks) == 2
 
         # Verify tag_frontend has 1 task
         retrieved_frontend = (
             self.session.query(TagModel).filter(TagModel.name == "frontend").first()
         )
-        self.assertIsNotNone(retrieved_frontend)
-        self.assertEqual(len(retrieved_frontend.tasks), 1)
+        assert retrieved_frontend is not None
+        assert len(retrieved_frontend.tasks) == 1
 
-    def test_tag_case_sensitivity(self) -> None:
+    def test_tag_case_sensitivity(self):
         """Test that tag names are case-sensitive."""
         tag_lower = TagModel(name="urgent", created_at=datetime.now())
         tag_upper = TagModel(name="URGENT", created_at=datetime.now())
@@ -491,9 +484,9 @@ class TestTagModel(unittest.TestCase):
             .filter(TagModel.name.in_(["urgent", "URGENT"]))
             .all()
         )
-        self.assertEqual(len(tags), 2)
+        assert len(tags) == 2
 
-    def test_tag_with_special_characters(self) -> None:
+    def test_tag_with_special_characters(self):
         """Test that tags can contain special characters."""
         special_tags = [
             "bug-fix",
@@ -511,12 +504,12 @@ class TestTagModel(unittest.TestCase):
 
         # Verify all tags were created
         tags = self.session.query(TagModel).all()
-        self.assertEqual(len(tags), len(special_tags))
+        assert len(tags) == len(special_tags)
 
         tag_names = {tag.name for tag in tags}
-        self.assertEqual(tag_names, set(special_tags))
+        assert tag_names == set(special_tags)
 
-    def test_update_task_tags_by_replacing_collection(self) -> None:
+    def test_update_task_tags_by_replacing_collection(self):
         """Test updating task tags by replacing the entire collection."""
         # Create task with initial tags
         task = TaskModel(
@@ -543,13 +536,13 @@ class TestTagModel(unittest.TestCase):
 
         # Verify new tags are associated
         retrieved_task = self.session.get(TaskModel, task.id)
-        self.assertIsNotNone(retrieved_task)
-        self.assertEqual(len(retrieved_task.tag_models), 2)
+        assert retrieved_task is not None
+        assert len(retrieved_task.tag_models) == 2
 
         tag_names = {tag.name for tag in retrieved_task.tag_models}
-        self.assertEqual(tag_names, {"new1", "new2"})
+        assert tag_names == {"new1", "new2"}
 
-    def test_query_count_tasks_per_tag(self) -> None:
+    def test_query_count_tasks_per_tag(self):
         """Test counting tasks per tag using SQL aggregation."""
         # Create tags
         tag1 = TagModel(name="tag1", created_at=datetime.now())
@@ -597,14 +590,14 @@ class TestTagModel(unittest.TestCase):
         )
 
         tag_count_dict = dict(tag_counts)
-        self.assertEqual(tag_count_dict["tag1"], 2)
-        self.assertEqual(tag_count_dict["tag2"], 2)
+        assert tag_count_dict["tag1"] == 2
+        assert tag_count_dict["tag2"] == 2
 
     # ====================================================================
     # Phase 4: Edge Case Tests
     # ====================================================================
 
-    def test_tag_name_exactly_100_characters(self) -> None:
+    def test_tag_name_exactly_100_characters(self):
         """Test tag name with exactly 100 characters (max length) (Phase 4)."""
         # TagModel defines String(100), so 100 chars should succeed
         tag_name = "a" * 100
@@ -614,11 +607,11 @@ class TestTagModel(unittest.TestCase):
 
         # Verify it was saved correctly
         retrieved = self.session.get(TagModel, tag.id)
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved.name, tag_name)
-        self.assertEqual(len(retrieved.name), 100)
+        assert retrieved is not None
+        assert retrieved.name == tag_name
+        assert len(retrieved.name) == 100
 
-    def test_tag_name_99_characters(self) -> None:
+    def test_tag_name_99_characters(self):
         """Test tag name with 99 characters (just under max) (Phase 4)."""
         tag_name = "b" * 99
         tag = TagModel(name=tag_name, created_at=datetime.now())
@@ -627,11 +620,11 @@ class TestTagModel(unittest.TestCase):
 
         # Verify it was saved correctly
         retrieved = self.session.get(TagModel, tag.id)
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved.name, tag_name)
-        self.assertEqual(len(retrieved.name), 99)
+        assert retrieved is not None
+        assert retrieved.name == tag_name
+        assert len(retrieved.name) == 99
 
-    def test_tag_name_exceeding_100_characters_fails(self) -> None:
+    def test_tag_name_exceeding_100_characters_fails(self):
         """Test tag name exceeding 100 characters is rejected (Phase 4)."""
         # 101 characters should fail
         tag_name = "c" * 101
@@ -645,13 +638,12 @@ class TestTagModel(unittest.TestCase):
             self.session.commit()
             # If commit succeeds, verify it was truncated to 100
             retrieved = self.session.get(TagModel, tag.id)
-            self.assertLessEqual(len(retrieved.name), 100)
+            assert len(retrieved.name) <= 100
         except Exception:
             # If it raises an error, that's also acceptable
             self.session.rollback()
-            pass
 
-    def test_tag_with_newline_character(self) -> None:
+    def test_tag_with_newline_character(self):
         """Test tag containing newline character (Phase 4)."""
         tag = TagModel(name="urgent\nbackend", created_at=datetime.now())
         self.session.add(tag)
@@ -659,10 +651,10 @@ class TestTagModel(unittest.TestCase):
 
         # Verify newline is preserved
         retrieved = self.session.get(TagModel, tag.id)
-        self.assertEqual(retrieved.name, "urgent\nbackend")
-        self.assertIn("\n", retrieved.name)
+        assert retrieved.name == "urgent\nbackend"
+        assert "\n" in retrieved.name
 
-    def test_tag_with_tab_character(self) -> None:
+    def test_tag_with_tab_character(self):
         """Test tag containing tab character (Phase 4)."""
         tag = TagModel(name="urgent\tbackend", created_at=datetime.now())
         self.session.add(tag)
@@ -670,10 +662,10 @@ class TestTagModel(unittest.TestCase):
 
         # Verify tab is preserved
         retrieved = self.session.get(TagModel, tag.id)
-        self.assertEqual(retrieved.name, "urgent\tbackend")
-        self.assertIn("\t", retrieved.name)
+        assert retrieved.name == "urgent\tbackend"
+        assert "\t" in retrieved.name
 
-    def test_tag_with_sql_injection_attempt(self) -> None:
+    def test_tag_with_sql_injection_attempt(self):
         """Test tag name with SQL injection attempt is safely stored (Phase 4)."""
         # This should be safely parameterized by SQLAlchemy
         dangerous_name = "'; DROP TABLE tags;--"
@@ -683,14 +675,14 @@ class TestTagModel(unittest.TestCase):
 
         # Verify it's stored as literal string, not executed as SQL
         retrieved = self.session.get(TagModel, tag.id)
-        self.assertEqual(retrieved.name, dangerous_name)
+        assert retrieved.name == dangerous_name
 
         # Verify tags table still exists by querying it
         stmt = select(TagModel).where(TagModel.name == dangerous_name)
         result = self.session.scalar(stmt)
-        self.assertIsNotNone(result)
+        assert result is not None
 
-    def test_tag_with_emoji(self) -> None:
+    def test_tag_with_emoji(self):
         """Test tag name containing emoji characters (Phase 4)."""
         tag_name = "🔥urgent🔥"
         tag = TagModel(name=tag_name, created_at=datetime.now())
@@ -699,10 +691,10 @@ class TestTagModel(unittest.TestCase):
 
         # Verify emoji is preserved
         retrieved = self.session.get(TagModel, tag.id)
-        self.assertEqual(retrieved.name, tag_name)
-        self.assertIn("🔥", retrieved.name)
+        assert retrieved.name == tag_name
+        assert "🔥" in retrieved.name
 
-    def test_tag_with_right_to_left_text(self) -> None:
+    def test_tag_with_right_to_left_text(self):
         """Test tag name with Arabic text (RTL) (Phase 4)."""
         # Arabic for "urgent"
         tag_name = "عاجل"
@@ -712,9 +704,9 @@ class TestTagModel(unittest.TestCase):
 
         # Verify RTL text is preserved
         retrieved = self.session.get(TagModel, tag.id)
-        self.assertEqual(retrieved.name, tag_name)
+        assert retrieved.name == tag_name
 
-    def test_tag_with_mixed_unicode(self) -> None:
+    def test_tag_with_mixed_unicode(self):
         """Test tag with mixed unicode (Latin, CJK, emoji) (Phase 4)."""
         tag_name = "urgent緊急🚨"
         tag = TagModel(name=tag_name, created_at=datetime.now())
@@ -723,9 +715,5 @@ class TestTagModel(unittest.TestCase):
 
         # Verify all characters are preserved
         retrieved = self.session.get(TagModel, tag.id)
-        self.assertEqual(retrieved.name, tag_name)
-        self.assertEqual(len(retrieved.name), 9)  # 6 latin + 2 CJK + 1 emoji
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert retrieved.name == tag_name
+        assert len(retrieved.name) == 9  # 6 latin + 2 CJK + 1 emoji

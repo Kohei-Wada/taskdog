@@ -1,7 +1,8 @@
 """Tests for OptimizationStrategy base class helper methods."""
 
-import unittest
 from datetime import date, datetime
+
+import pytest
 
 from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
@@ -9,14 +10,15 @@ from taskdog_core.application.services.optimization.greedy_optimization_strategy
 from taskdog_core.domain.entities.task import Task
 
 
-class TestOptimizationStrategyHelpers(unittest.TestCase):
+class TestOptimizationStrategyHelpers:
     """Test cases for OptimizationStrategy base class helper methods.
 
     These tests verify the protected helper methods that were extracted
     from individual strategy classes to eliminate code duplication.
     """
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         # Use GreedyOptimizationStrategy as a concrete implementation
         # to test the base class methods (default hours: 9-18)
@@ -35,7 +37,7 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
             daily_allocations, date_obj, max_hours_per_day, current_time
         )
 
-        self.assertEqual(available, 8.0)
+        assert available == 8.0
 
     def test_calculate_available_hours_with_partial_allocation(self):
         """Test available hours when some hours are already allocated."""
@@ -48,7 +50,7 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
             daily_allocations, date_obj, max_hours_per_day, current_time
         )
 
-        self.assertEqual(available, 5.0)  # 8.0 - 3.0
+        assert available == 5.0  # 8.0 - 3.0
 
     def test_calculate_available_hours_fully_allocated(self):
         """Test available hours when day is fully allocated."""
@@ -61,7 +63,7 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
             daily_allocations, date_obj, max_hours_per_day, current_time
         )
 
-        self.assertEqual(available, 0.0)
+        assert available == 0.0
 
     def test_calculate_available_hours_today_with_remaining_hours(self):
         """Test available hours for today with remaining work hours."""
@@ -77,7 +79,7 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
             daily_allocations, date_obj, max_hours_per_day, current_time
         )
 
-        self.assertEqual(available, 4.0)  # min(8.0, 4.0)
+        assert available == 4.0  # min(8.0, 4.0)
 
     def test_calculate_available_hours_today_with_allocation_and_time(self):
         """Test available hours for today considering both allocation and time."""
@@ -95,7 +97,7 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
             daily_allocations, date_obj, max_hours_per_day, current_time
         )
 
-        self.assertEqual(available, 4.0)
+        assert available == 4.0
 
     def test_calculate_available_hours_today_past_end_hour(self):
         """Test available hours for today when past end hour."""
@@ -109,7 +111,7 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
             daily_allocations, date_obj, max_hours_per_day, current_time
         )
 
-        self.assertEqual(available, 0.0)  # No time remaining today
+        assert available == 0.0  # No time remaining today
 
     def test_calculate_available_hours_with_minutes(self):
         """Test available hours calculation with fractional hours (minutes)."""
@@ -125,7 +127,7 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
             daily_allocations, date_obj, max_hours_per_day, current_time
         )
 
-        self.assertEqual(available, 3.5)
+        assert available == 3.5
 
     def test_set_planned_times(self):
         """Test setting planned start, end, and daily allocations on task."""
@@ -148,17 +150,17 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
         )
 
         # Verify planned_start is set to 9:00 AM
-        self.assertEqual(task.planned_start, datetime(2025, 10, 20, 9, 0, 0))
+        assert task.planned_start == datetime(2025, 10, 20, 9, 0, 0)
 
         # Verify planned_end is set to 6:00 PM
-        self.assertEqual(task.planned_end, datetime(2025, 10, 22, 18, 0, 0))
+        assert task.planned_end == datetime(2025, 10, 22, 18, 0, 0)
 
         # Verify daily allocations are set
-        self.assertEqual(task.daily_allocations, task_daily_allocations)
-        self.assertEqual(len(task.daily_allocations), 3)
-        self.assertEqual(task.daily_allocations[date(2025, 10, 20)], 5.0)
-        self.assertEqual(task.daily_allocations[date(2025, 10, 21)], 3.0)
-        self.assertEqual(task.daily_allocations[date(2025, 10, 22)], 2.0)
+        assert task.daily_allocations == task_daily_allocations
+        assert len(task.daily_allocations) == 3
+        assert task.daily_allocations[date(2025, 10, 20)] == 5.0
+        assert task.daily_allocations[date(2025, 10, 21)] == 3.0
+        assert task.daily_allocations[date(2025, 10, 22)] == 2.0
 
     def test_set_planned_times_preserves_date(self):
         """Test that _set_planned_times preserves the date but changes time."""
@@ -181,15 +183,15 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
         )
 
         # Date should be preserved, but time should be set to default hours
-        self.assertEqual(task.planned_start.date(), schedule_start.date())  # Same date
-        self.assertEqual(task.planned_start.hour, 9)  # Default start hour
-        self.assertEqual(task.planned_start.minute, 0)
-        self.assertEqual(task.planned_start.second, 0)
+        assert task.planned_start.date() == schedule_start.date()  # Same date
+        assert task.planned_start.hour == 9  # Default start hour
+        assert task.planned_start.minute == 0
+        assert task.planned_start.second == 0
 
-        self.assertEqual(task.planned_end.date(), schedule_end.date())  # Same date
-        self.assertEqual(task.planned_end.hour, 18)  # Default end hour
-        self.assertEqual(task.planned_end.minute, 0)
-        self.assertEqual(task.planned_end.second, 0)
+        assert task.planned_end.date() == schedule_end.date()  # Same date
+        assert task.planned_end.hour == 18  # Default end hour
+        assert task.planned_end.minute == 0
+        assert task.planned_end.second == 0
 
     def test_rollback_allocations(self):
         """Test rolling back allocations from daily_allocations."""
@@ -207,9 +209,9 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
         self.strategy._rollback_allocations(daily_allocations, task_allocations)
 
         # Verify allocations are rolled back
-        self.assertEqual(daily_allocations[date(2025, 10, 20)], 3.0)  # 5.0 - 2.0
-        self.assertEqual(daily_allocations[date(2025, 10, 21)], 5.0)  # 8.0 - 3.0
-        self.assertEqual(daily_allocations[date(2025, 10, 22)], 2.0)  # 3.0 - 1.0
+        assert daily_allocations[date(2025, 10, 20)] == 3.0  # 5.0 - 2.0
+        assert daily_allocations[date(2025, 10, 21)] == 5.0  # 8.0 - 3.0
+        assert daily_allocations[date(2025, 10, 22)] == 2.0  # 3.0 - 1.0
 
     def test_rollback_allocations_to_zero(self):
         """Test rolling back allocations that result in zero."""
@@ -225,8 +227,8 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
         self.strategy._rollback_allocations(daily_allocations, task_allocations)
 
         # Verify allocations are rolled back to zero
-        self.assertEqual(daily_allocations[date(2025, 10, 20)], 0.0)
-        self.assertEqual(daily_allocations[date(2025, 10, 21)], 0.0)
+        assert daily_allocations[date(2025, 10, 20)] == 0.0
+        assert daily_allocations[date(2025, 10, 21)] == 0.0
 
     def test_rollback_allocations_partial(self):
         """Test rolling back only some dates."""
@@ -244,9 +246,9 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
         self.strategy._rollback_allocations(daily_allocations, task_allocations)
 
         # Verify only specified dates are rolled back
-        self.assertEqual(daily_allocations[date(2025, 10, 20)], 3.0)  # 5.0 - 2.0
-        self.assertEqual(daily_allocations[date(2025, 10, 21)], 8.0)  # Unchanged
-        self.assertEqual(daily_allocations[date(2025, 10, 22)], 2.0)  # 3.0 - 1.0
+        assert daily_allocations[date(2025, 10, 20)] == 3.0  # 5.0 - 2.0
+        assert daily_allocations[date(2025, 10, 21)] == 8.0  # Unchanged
+        assert daily_allocations[date(2025, 10, 22)] == 2.0  # 3.0 - 1.0
 
     def test_rollback_allocations_empty(self):
         """Test rolling back with empty task allocations."""
@@ -260,8 +262,8 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
         self.strategy._rollback_allocations(daily_allocations, task_allocations)
 
         # Verify allocations are unchanged
-        self.assertEqual(daily_allocations[date(2025, 10, 20)], 5.0)
-        self.assertEqual(daily_allocations[date(2025, 10, 21)], 8.0)
+        assert daily_allocations[date(2025, 10, 20)] == 5.0
+        assert daily_allocations[date(2025, 10, 21)] == 8.0
 
     def test_prepare_task_for_allocation_valid_task(self):
         """Test _prepare_task_for_allocation with valid task."""
@@ -275,11 +277,11 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
         result = self.strategy._prepare_task_for_allocation(task)
 
         # Verify task copy is returned
-        self.assertIsNotNone(result)
-        self.assertIsNot(result, task)  # Should be a different object (deep copy)
-        self.assertEqual(result.id, task.id)
-        self.assertEqual(result.name, task.name)
-        self.assertEqual(result.estimated_duration, task.estimated_duration)
+        assert result is not None
+        assert result is not task  # Should be a different object (deep copy)
+        assert result.id == task.id
+        assert result.name == task.name
+        assert result.estimated_duration == task.estimated_duration
 
     def test_prepare_task_for_allocation_none_duration(self):
         """Test _prepare_task_for_allocation with None duration."""
@@ -293,7 +295,7 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
         result = self.strategy._prepare_task_for_allocation(task)
 
         # Should return None for None duration
-        self.assertIsNone(result)
+        assert result is None
 
     def test_prepare_task_for_allocation_is_deep_copy(self):
         """Test that _prepare_task_for_allocation returns deep copy."""
@@ -311,9 +313,5 @@ class TestOptimizationStrategyHelpers(unittest.TestCase):
         result.priority = 200
 
         # Original should be unchanged
-        self.assertEqual(task.name, "Original Task")
-        self.assertEqual(task.priority, 100)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert task.name == "Original Task"
+        assert task.priority == 100

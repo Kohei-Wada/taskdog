@@ -1,8 +1,8 @@
 """Unit tests for TaskTagRelationshipBuilder."""
 
-import unittest
 from datetime import datetime
 
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
@@ -18,18 +18,17 @@ from taskdog_core.infrastructure.persistence.database.mutation_builders import (
 from taskdog_core.infrastructure.persistence.mappers.tag_resolver import TagResolver
 
 
-class TestTaskTagRelationshipBuilder(unittest.TestCase):
+class TestTaskTagRelationshipBuilder:
     """Test cases for TaskTagRelationshipBuilder."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test database and builder."""
         # Create in-memory SQLite database
         self.engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
-
-    def tearDown(self):
-        """Clean up test database."""
+        yield
         Base.metadata.drop_all(self.engine)
         self.engine.dispose()
 
@@ -54,10 +53,10 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
             builder.sync_task_tags(task_model, ["urgent", "backend"])
 
             # Tags should be added
-            self.assertEqual(len(task_model.tag_models), 2)
+            assert len(task_model.tag_models) == 2
             tag_names = [tag.name for tag in task_model.tag_models]
-            self.assertIn("urgent", tag_names)
-            self.assertIn("backend", tag_names)
+            assert "urgent" in tag_names
+            assert "backend" in tag_names
 
     def test_sync_task_tags_clears_existing_tags(self):
         """Test that sync_task_tags clears existing tags before adding new ones."""
@@ -83,7 +82,7 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
             session.flush()
 
             # Verify initial tags
-            self.assertEqual(len(task_model.tag_models), 2)
+            assert len(task_model.tag_models) == 2
 
             # Sync with different tags
             tag_resolver = TagResolver(session)
@@ -91,8 +90,8 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
             builder.sync_task_tags(task_model, ["frontend"])
 
             # Old tags should be cleared, new tag added
-            self.assertEqual(len(task_model.tag_models), 1)
-            self.assertEqual(task_model.tag_models[0].name, "frontend")
+            assert len(task_model.tag_models) == 1
+            assert task_model.tag_models[0].name == "frontend"
 
     def test_sync_task_tags_with_empty_list_clears_all(self):
         """Test that sync_task_tags with empty list clears all tags."""
@@ -117,7 +116,7 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
             session.flush()
 
             # Verify initial tags
-            self.assertEqual(len(task_model.tag_models), 2)
+            assert len(task_model.tag_models) == 2
 
             # Sync with empty list
             tag_resolver = TagResolver(session)
@@ -125,7 +124,7 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
             builder.sync_task_tags(task_model, [])
 
             # All tags should be cleared
-            self.assertEqual(len(task_model.tag_models), 0)
+            assert len(task_model.tag_models) == 0
 
     def test_sync_task_tags_preserves_tag_order(self):
         """Test that sync_task_tags preserves the order of tags."""
@@ -147,7 +146,7 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
 
             # Tags should be in the order specified
             tag_names = [tag.name for tag in task_model.tag_models]
-            self.assertEqual(tag_names, ["zebra", "alpha", "beta", "gamma"])
+            assert tag_names == ["zebra", "alpha", "beta", "gamma"]
 
     def test_sync_task_tags_creates_new_tags(self):
         """Test that sync_task_tags creates new tags if they don't exist."""
@@ -166,7 +165,7 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
             # Verify no tags exist
             stmt = select(TagModel)
             existing_tags = session.scalars(stmt).all()
-            self.assertEqual(len(existing_tags), 0)
+            assert len(existing_tags) == 0
 
             # Sync with new tags
             tag_resolver = TagResolver(session)
@@ -177,7 +176,7 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
             # Tags should be created
             stmt = select(TagModel)
             created_tags = session.scalars(stmt).all()
-            self.assertEqual(len(created_tags), 2)
+            assert len(created_tags) == 2
 
     def test_sync_task_tags_reuses_existing_tags(self):
         """Test that sync_task_tags reuses existing tags instead of creating duplicates."""
@@ -209,7 +208,7 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
             # Should still only have 2 tags in database
             stmt = select(TagModel)
             all_tags = session.scalars(stmt).all()
-            self.assertEqual(len(all_tags), 2)
+            assert len(all_tags) == 2
 
     def test_sync_task_tags_handles_mixed_new_and_existing_tags(self):
         """Test that sync_task_tags handles mix of new and existing tags."""
@@ -238,12 +237,12 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
             session.commit()
 
             # Task should have 3 tags
-            self.assertEqual(len(task_model.tag_models), 3)
+            assert len(task_model.tag_models) == 3
 
             # Database should have 3 tags total
             stmt = select(TagModel)
             all_tags = session.scalars(stmt).all()
-            self.assertEqual(len(all_tags), 3)
+            assert len(all_tags) == 3
 
     def test_sync_task_tags_does_not_commit(self):
         """Test that sync_task_tags does not commit the transaction."""
@@ -269,7 +268,7 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
         # Tags should not be persisted without commit
         with self.Session() as session:
             task_model = session.get(TaskModel, 1)
-            self.assertEqual(len(task_model.tag_models), 0)
+            assert len(task_model.tag_models) == 0
 
     def test_sync_task_tags_persists_on_commit(self):
         """Test that sync_task_tags persists when session commits."""
@@ -293,10 +292,10 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
         # Tags should be persisted after commit
         with self.Session() as session:
             task_model = session.get(TaskModel, 1)
-            self.assertEqual(len(task_model.tag_models), 2)
+            assert len(task_model.tag_models) == 2
             tag_names = [tag.name for tag in task_model.tag_models]
-            self.assertIn("urgent", tag_names)
-            self.assertIn("backend", tag_names)
+            assert "urgent" in tag_names
+            assert "backend" in tag_names
 
     def test_sync_task_tags_creates_task_tag_relationships(self):
         """Test that sync_task_tags creates proper task_tags relationships."""
@@ -321,12 +320,8 @@ class TestTaskTagRelationshipBuilder(unittest.TestCase):
         with self.Session() as session:
             stmt = select(TaskTagModel)
             relationships = session.scalars(stmt).all()
-            self.assertEqual(len(relationships), 2)
+            assert len(relationships) == 2
 
             # All relationships should be for task_id=1
             for rel in relationships:
-                self.assertEqual(rel.task_id, 1)
-
-
-if __name__ == "__main__":
-    unittest.main()
+                assert rel.task_id == 1

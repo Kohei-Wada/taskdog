@@ -1,50 +1,46 @@
 """Tests for notes router (CRUD operations for markdown notes)."""
 
-import unittest
-
-from parameterized import parameterized
-
-from taskdog_core.domain.entities.task import Task
-from tests.test_base import BaseApiRouterTest
+import pytest
 
 
-class TestNotesRouter(BaseApiRouterTest):
+class TestNotesRouter:
     """Test cases for notes router endpoints."""
 
-    def test_get_notes_for_existing_task_with_no_notes(self):
+    def test_get_notes_for_existing_task_with_no_notes(self, client, task_factory):
         """Test getting notes for a task that has no notes."""
         # Arrange - create task without notes
-        task = Task(id=1, name="Test Task", priority=1)
-        self.repository.save(task)
+        task = task_factory.create(name="Test Task", priority=1)
 
         # Act
-        response = self.client.get("/api/v1/tasks/1/notes")
+        response = client.get(f"/api/v1/tasks/{task.id}/notes")
 
         # Assert
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         data = response.json()
-        self.assertEqual(data["task_id"], 1)
-        self.assertEqual(data["content"], "")
-        self.assertEqual(data["has_notes"], False)
+        assert data["task_id"] == task.id
+        assert data["content"] == ""
+        assert data["has_notes"] is False
 
-    def test_get_notes_for_existing_task_with_notes(self):
+    def test_get_notes_for_existing_task_with_notes(
+        self, client, task_factory, notes_repository
+    ):
         """Test getting notes for a task that has notes."""
         # Arrange - create task with notes
-        task = Task(id=1, name="Test Task", priority=1)
-        self.repository.save(task)
-        self.notes_repository.write_notes(1, "# Test Notes\n\nSome content here.")
+        task = task_factory.create(name="Test Task", priority=1)
+        notes_repository.write_notes(task.id, "# Test Notes\n\nSome content here.")
 
         # Act
-        response = self.client.get("/api/v1/tasks/1/notes")
+        response = client.get(f"/api/v1/tasks/{task.id}/notes")
 
         # Assert
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         data = response.json()
-        self.assertEqual(data["task_id"], 1)
-        self.assertEqual(data["content"], "# Test Notes\n\nSome content here.")
-        self.assertEqual(data["has_notes"], True)
+        assert data["task_id"] == task.id
+        assert data["content"] == "# Test Notes\n\nSome content here."
+        assert data["has_notes"] is True
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "operation,method,endpoint,payload",
         [
             ("get_notes", "GET", "/api/v1/tasks/999/notes", None),
             (
@@ -54,90 +50,90 @@ class TestNotesRouter(BaseApiRouterTest):
                 {"content": "Some notes"},
             ),
             ("delete_notes", "DELETE", "/api/v1/tasks/999/notes", None),
-        ]
+        ],
     )
     def test_notes_operation_not_found_returns_404(
-        self, operation, method, endpoint, payload
+        self, client, operation, method, endpoint, payload
     ):
         """Test notes operations on non-existent task return 404."""
         if method == "GET":
-            response = self.client.get(endpoint)
+            response = client.get(endpoint)
         elif method == "PUT":
-            response = self.client.put(endpoint, json=payload)
+            response = client.put(endpoint, json=payload)
         elif method == "DELETE":
-            response = self.client.delete(endpoint)
+            response = client.delete(endpoint)
 
-        self.assertEqual(response.status_code, 404)
+        assert response.status_code == 404
         if method != "DELETE":  # DELETE returns 204 with no content on success
-            self.assertIn("detail", response.json())
+            assert "detail" in response.json()
 
     # ===== PUT /{task_id}/notes Tests =====
 
-    def test_update_notes_for_existing_task(self):
+    def test_update_notes_for_existing_task(
+        self, client, task_factory, notes_repository
+    ):
         """Test updating notes for an existing task."""
         # Arrange - create task
-        task = Task(id=1, name="Test Task", priority=1)
-        self.repository.save(task)
+        task = task_factory.create(name="Test Task", priority=1)
 
         request_data = {"content": "# Updated Notes\n\nNew content."}
 
         # Act
-        response = self.client.put("/api/v1/tasks/1/notes", json=request_data)
+        response = client.put(f"/api/v1/tasks/{task.id}/notes", json=request_data)
 
         # Assert
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         data = response.json()
-        self.assertEqual(data["task_id"], 1)
-        self.assertEqual(data["content"], "# Updated Notes\n\nNew content.")
-        self.assertEqual(data["has_notes"], True)
+        assert data["task_id"] == task.id
+        assert data["content"] == "# Updated Notes\n\nNew content."
+        assert data["has_notes"] is True
 
         # Verify notes were actually saved
-        saved_notes = self.notes_repository.read_notes(1)
-        self.assertEqual(saved_notes, "# Updated Notes\n\nNew content.")
+        saved_notes = notes_repository.read_notes(task.id)
+        assert saved_notes == "# Updated Notes\n\nNew content."
 
-    def test_update_notes_with_empty_content(self):
+    def test_update_notes_with_empty_content(self, client, task_factory):
         """Test updating notes with empty content."""
         # Arrange - create task
-        task = Task(id=1, name="Test Task", priority=1)
-        self.repository.save(task)
+        task = task_factory.create(name="Test Task", priority=1)
 
         request_data = {"content": ""}
 
         # Act
-        response = self.client.put("/api/v1/tasks/1/notes", json=request_data)
+        response = client.put(f"/api/v1/tasks/{task.id}/notes", json=request_data)
 
         # Assert
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         data = response.json()
-        self.assertEqual(data["content"], "")
-        self.assertEqual(data["has_notes"], False)
+        assert data["content"] == ""
+        assert data["has_notes"] is False
 
-    def test_update_notes_replace_existing(self):
+    def test_update_notes_replace_existing(
+        self, client, task_factory, notes_repository
+    ):
         """Test updating notes replaces existing content."""
         # Arrange - create task with existing notes
-        task = Task(id=1, name="Test Task", priority=1)
-        self.repository.save(task)
-        self.notes_repository.write_notes(1, "Old content")
+        task = task_factory.create(name="Test Task", priority=1)
+        notes_repository.write_notes(task.id, "Old content")
 
         request_data = {"content": "New content"}
 
         # Act
-        response = self.client.put("/api/v1/tasks/1/notes", json=request_data)
+        response = client.put(f"/api/v1/tasks/{task.id}/notes", json=request_data)
 
         # Assert
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         data = response.json()
-        self.assertEqual(data["content"], "New content")
+        assert data["content"] == "New content"
 
         # Verify old content is replaced
-        saved_notes = self.notes_repository.read_notes(1)
-        self.assertEqual(saved_notes, "New content")
+        saved_notes = notes_repository.read_notes(task.id)
+        assert saved_notes == "New content"
 
-    def test_update_notes_with_markdown_formatting(self):
+    def test_update_notes_with_markdown_formatting(self, client, task_factory):
         """Test updating notes with markdown formatting."""
         # Arrange - create task
-        task = Task(id=1, name="Test Task", priority=1)
-        self.repository.save(task)
+        task = task_factory.create(name="Test Task", priority=1)
 
         markdown_content = """# Title
 
@@ -156,105 +152,101 @@ def hello():
         request_data = {"content": markdown_content}
 
         # Act
-        response = self.client.put("/api/v1/tasks/1/notes", json=request_data)
+        response = client.put(f"/api/v1/tasks/{task.id}/notes", json=request_data)
 
         # Assert
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         data = response.json()
-        self.assertEqual(data["content"], markdown_content)
+        assert data["content"] == markdown_content
 
     # ===== DELETE /{task_id}/notes Tests =====
 
-    def test_delete_notes_for_existing_task_with_notes(self):
+    def test_delete_notes_for_existing_task_with_notes(
+        self, client, task_factory, notes_repository
+    ):
         """Test deleting notes for a task that has notes."""
         # Arrange - create task with notes
-        task = Task(id=1, name="Test Task", priority=1)
-        self.repository.save(task)
-        self.notes_repository.write_notes(1, "Some notes to delete")
+        task = task_factory.create(name="Test Task", priority=1)
+        notes_repository.write_notes(task.id, "Some notes to delete")
 
         # Act
-        response = self.client.delete("/api/v1/tasks/1/notes")
+        response = client.delete(f"/api/v1/tasks/{task.id}/notes")
 
         # Assert
-        self.assertEqual(response.status_code, 204)
+        assert response.status_code == 204
 
         # Verify notes were deleted
-        saved_notes = self.notes_repository.read_notes(1)
-        self.assertEqual(saved_notes, "")
+        saved_notes = notes_repository.read_notes(task.id)
+        assert saved_notes == ""
 
-    def test_delete_notes_for_existing_task_without_notes(self):
+    def test_delete_notes_for_existing_task_without_notes(self, client, task_factory):
         """Test deleting notes for a task that has no notes."""
         # Arrange - create task without notes
-        task = Task(id=1, name="Test Task", priority=1)
-        self.repository.save(task)
+        task = task_factory.create(name="Test Task", priority=1)
 
         # Act
-        response = self.client.delete("/api/v1/tasks/1/notes")
+        response = client.delete(f"/api/v1/tasks/{task.id}/notes")
 
         # Assert
-        self.assertEqual(response.status_code, 204)
+        assert response.status_code == 204
 
-    def test_delete_notes_then_get_returns_empty(self):
+    def test_delete_notes_then_get_returns_empty(
+        self, client, task_factory, notes_repository
+    ):
         """Test that getting notes after deletion returns empty content."""
         # Arrange - create task with notes
-        task = Task(id=1, name="Test Task", priority=1)
-        self.repository.save(task)
-        self.notes_repository.write_notes(1, "Notes to be deleted")
+        task = task_factory.create(name="Test Task", priority=1)
+        notes_repository.write_notes(task.id, "Notes to be deleted")
 
         # Act - delete notes
-        delete_response = self.client.delete("/api/v1/tasks/1/notes")
-        self.assertEqual(delete_response.status_code, 204)
+        delete_response = client.delete(f"/api/v1/tasks/{task.id}/notes")
+        assert delete_response.status_code == 204
 
         # Act - get notes after deletion
-        get_response = self.client.get("/api/v1/tasks/1/notes")
+        get_response = client.get(f"/api/v1/tasks/{task.id}/notes")
 
         # Assert
-        self.assertEqual(get_response.status_code, 200)
+        assert get_response.status_code == 200
         data = get_response.json()
-        self.assertEqual(data["content"], "")
-        self.assertEqual(data["has_notes"], False)
+        assert data["content"] == ""
+        assert data["has_notes"] is False
 
     # ===== Integration Tests =====
 
-    def test_notes_crud_workflow(self):
+    def test_notes_crud_workflow(self, client, task_factory):
         """Test complete CRUD workflow for notes."""
         # Arrange - create task
-        task = Task(id=1, name="Test Task", priority=1)
-        self.repository.save(task)
+        task = task_factory.create(name="Test Task", priority=1)
 
         # 1. Create notes (PUT)
-        create_response = self.client.put(
-            "/api/v1/tasks/1/notes", json={"content": "Initial notes"}
+        create_response = client.put(
+            f"/api/v1/tasks/{task.id}/notes", json={"content": "Initial notes"}
         )
-        self.assertEqual(create_response.status_code, 200)
-        self.assertEqual(create_response.json()["content"], "Initial notes")
+        assert create_response.status_code == 200
+        assert create_response.json()["content"] == "Initial notes"
 
         # 2. Read notes (GET)
-        read_response = self.client.get("/api/v1/tasks/1/notes")
-        self.assertEqual(read_response.status_code, 200)
-        self.assertEqual(read_response.json()["content"], "Initial notes")
+        read_response = client.get(f"/api/v1/tasks/{task.id}/notes")
+        assert read_response.status_code == 200
+        assert read_response.json()["content"] == "Initial notes"
 
         # 3. Update notes (PUT)
-        update_response = self.client.put(
-            "/api/v1/tasks/1/notes", json={"content": "Updated notes"}
+        update_response = client.put(
+            f"/api/v1/tasks/{task.id}/notes", json={"content": "Updated notes"}
         )
-        self.assertEqual(update_response.status_code, 200)
-        self.assertEqual(update_response.json()["content"], "Updated notes")
+        assert update_response.status_code == 200
+        assert update_response.json()["content"] == "Updated notes"
 
         # 4. Verify update (GET)
-        verify_response = self.client.get("/api/v1/tasks/1/notes")
-        self.assertEqual(verify_response.status_code, 200)
-        self.assertEqual(verify_response.json()["content"], "Updated notes")
+        verify_response = client.get(f"/api/v1/tasks/{task.id}/notes")
+        assert verify_response.status_code == 200
+        assert verify_response.json()["content"] == "Updated notes"
 
         # 5. Delete notes (DELETE)
-        delete_response = self.client.delete("/api/v1/tasks/1/notes")
-        self.assertEqual(delete_response.status_code, 204)
+        delete_response = client.delete(f"/api/v1/tasks/{task.id}/notes")
+        assert delete_response.status_code == 204
 
         # 6. Verify deletion (GET)
-        final_response = self.client.get("/api/v1/tasks/1/notes")
-        self.assertEqual(final_response.status_code, 200)
-        self.assertEqual(final_response.json()["content"], "")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        final_response = client.get(f"/api/v1/tasks/{task.id}/notes")
+        assert final_response.status_code == 200
+        assert final_response.json()["content"] == ""

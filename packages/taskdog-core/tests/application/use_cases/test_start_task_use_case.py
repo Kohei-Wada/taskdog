@@ -1,7 +1,5 @@
 """Tests for StartTaskUseCase."""
 
-import unittest
-
 from taskdog_core.application.dto.single_task_inputs import StartTaskInput
 from taskdog_core.application.use_cases.start_task import StartTaskUseCase
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -11,7 +9,7 @@ from tests.application.use_cases.status_change_test_base import (
 
 
 class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
-    """Test cases for StartTaskUseCase"""
+    """Test cases for StartTaskUseCase."""
 
     use_case_class = StartTaskUseCase
     request_class = StartTaskInput
@@ -30,7 +28,7 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = StartTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertIsNone(result.actual_end)
+        assert result.actual_end is None
 
     def test_execute_without_parent_works_normally(self):
         """Test execute works normally for tasks without parent."""
@@ -41,9 +39,5 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = StartTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.status, TaskStatus.IN_PROGRESS)
-        self.assertIsNotNone(result.actual_start)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.status == TaskStatus.IN_PROGRESS
+        assert result.actual_start is not None

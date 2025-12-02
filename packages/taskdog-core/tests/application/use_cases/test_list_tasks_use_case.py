@@ -1,21 +1,22 @@
 """Tests for ListTasksUseCase."""
 
-import unittest
 from datetime import date, datetime, timedelta
+
+import pytest
 
 from taskdog_core.application.dto.query_inputs import ListTasksInput, TimeRange
 from taskdog_core.application.queries.task_query_service import TaskQueryService
 from taskdog_core.application.use_cases.list_tasks import ListTasksUseCase
 from taskdog_core.domain.entities.task import TaskStatus
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestListTasksUseCase(InMemoryDatabaseTestCase):
+class TestListTasksUseCase:
     """Test cases for ListTasksUseCase."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
         """Initialize use case for each test."""
-        super().setUp()
+        self.repository = repository
         self.query_service = TaskQueryService(self.repository)
         self.use_case = ListTasksUseCase(self.repository, self.query_service)
 
@@ -28,9 +29,9 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         input_dto = ListTasksInput(include_archived=True)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.total_count, 3)
-        self.assertEqual(result.filtered_count, 3)
-        self.assertEqual(len(result.tasks), 3)
+        assert result.total_count == 3
+        assert result.filtered_count == 3
+        assert len(result.tasks) == 3
 
     def test_execute_filters_archived_by_default(self):
         """Test execute excludes archived tasks by default."""
@@ -42,9 +43,9 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         input_dto = ListTasksInput(include_archived=False)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.total_count, 2)
-        self.assertEqual(result.filtered_count, 1)
-        self.assertEqual(result.tasks[0].name, "Active")
+        assert result.total_count == 2
+        assert result.filtered_count == 1
+        assert result.tasks[0].name == "Active"
 
     def test_execute_filters_by_status(self):
         """Test execute filters by status."""
@@ -59,8 +60,8 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         input_dto = ListTasksInput(include_archived=True, status="PENDING")
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.filtered_count, 1)
-        self.assertEqual(result.tasks[0].name, "Pending")
+        assert result.filtered_count == 1
+        assert result.tasks[0].name == "Pending"
 
     def test_execute_filters_by_tags(self):
         """Test execute filters by tags."""
@@ -86,10 +87,10 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         input_dto = ListTasksInput(include_archived=True, tags=["work"])
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.filtered_count, 2)
+        assert result.filtered_count == 2
         names = [t.name for t in result.tasks]
-        self.assertIn("Task with work tag", names)
-        self.assertIn("Task with both tags", names)
+        assert "Task with work tag" in names
+        assert "Task with both tags" in names
 
     def test_execute_filters_by_tags_match_all(self):
         """Test execute filters by tags with match_all=True."""
@@ -111,8 +112,8 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         )
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.filtered_count, 1)
-        self.assertEqual(result.tasks[0].name, "Task with both")
+        assert result.filtered_count == 1
+        assert result.tasks[0].name == "Task with both"
 
     def test_execute_sorts_by_priority(self):
         """Test execute sorts by priority."""
@@ -126,9 +127,9 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         # Default sort is descending for priority (highest first)
-        self.assertEqual(result.tasks[0].name, "High")
-        self.assertEqual(result.tasks[1].name, "Medium")
-        self.assertEqual(result.tasks[2].name, "Low")
+        assert result.tasks[0].name == "High"
+        assert result.tasks[1].name == "Medium"
+        assert result.tasks[2].name == "Low"
 
     def test_execute_sorts_by_deadline(self):
         """Test execute sorts by deadline."""
@@ -149,9 +150,9 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         # Closest deadline first
-        self.assertEqual(result.tasks[0].name, "Soonest")
-        self.assertEqual(result.tasks[1].name, "Sooner")
-        self.assertEqual(result.tasks[2].name, "Later")
+        assert result.tasks[0].name == "Soonest"
+        assert result.tasks[1].name == "Sooner"
+        assert result.tasks[2].name == "Later"
 
     def test_execute_with_today_time_range(self):
         """Test execute filters for today's tasks."""
@@ -193,11 +194,11 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         names = [t.name for t in result.tasks]
-        self.assertIn("Due today", names)
-        self.assertIn("Planned for today", names)
-        self.assertIn("In progress", names)
-        self.assertNotIn("Due tomorrow", names)
-        self.assertNotIn("Due yesterday", names)
+        assert "Due today" in names
+        assert "Planned for today" in names
+        assert "In progress" in names
+        assert "Due tomorrow" not in names
+        assert "Due yesterday" not in names
 
     def test_execute_with_this_week_time_range(self):
         """Test execute filters for this week's tasks."""
@@ -230,9 +231,9 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         names = [t.name for t in result.tasks]
-        self.assertIn("Due this week", names)
-        self.assertIn("In progress", names)
-        self.assertNotIn("Due next week", names)
+        assert "Due this week" in names
+        assert "In progress" in names
+        assert "Due next week" not in names
 
     def test_execute_with_date_range(self):
         """Test execute filters by date range."""
@@ -257,8 +258,8 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         names = [t.name for t in result.tasks]
-        self.assertIn("In range", names)
-        self.assertNotIn("Out of range", names)
+        assert "In range" in names
+        assert "Out of range" not in names
 
     def test_execute_combines_multiple_filters(self):
         """Test execute combines status and tag filters."""
@@ -286,8 +287,8 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         )
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.filtered_count, 1)
-        self.assertEqual(result.tasks[0].name, "Match both")
+        assert result.filtered_count == 1
+        assert result.tasks[0].name == "Match both"
 
     def test_execute_returns_empty_for_no_matches(self):
         """Test execute returns empty list when no tasks match."""
@@ -296,10 +297,6 @@ class TestListTasksUseCase(InMemoryDatabaseTestCase):
         input_dto = ListTasksInput(include_archived=True, status="CANCELED")
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.filtered_count, 0)
-        self.assertEqual(len(result.tasks), 0)
-        self.assertEqual(result.total_count, 1)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.filtered_count == 0
+        assert len(result.tasks) == 0
+        assert result.total_count == 1

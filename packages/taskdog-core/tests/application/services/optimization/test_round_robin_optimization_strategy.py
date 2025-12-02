@@ -1,6 +1,5 @@
 """Tests for RoundRobinOptimizationStrategy."""
 
-import unittest
 from datetime import date, datetime
 
 from tests.application.services.optimization.optimization_strategy_test_base import (
@@ -32,18 +31,18 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Both tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # Each task should get 3h per day (6h / 2 tasks)
         for task in [task1, task2]:
             updated_task = self.repository.get_by_id(task.id)
             assert updated_task is not None
-            self.assertIsNotNone(updated_task.daily_allocations)
+            assert updated_task.daily_allocations is not None
             # Check first day allocation
             first_day_allocation = updated_task.daily_allocations.get(
                 date(2025, 10, 20), 0.0
             )
-            self.assertAlmostEqual(first_day_allocation, 3.0, places=5)
+            assert abs(first_day_allocation - 3.0) < 1e-5
 
     def test_round_robin_makes_parallel_progress(self):
         """Test that round-robin makes progress on all tasks in parallel."""
@@ -77,15 +76,13 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # All tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 3)
+        assert len(result.successful_tasks) == 3
 
         # All tasks should start on the same day (parallel progress)
         for task in tasks:
             updated_task = self.repository.get_by_id(task.id)
             assert updated_task is not None
-            self.assertEqual(
-                updated_task.planned_start, datetime(2025, 10, 20, 9, 0, 0)
-            )
+            assert updated_task.planned_start == datetime(2025, 10, 20, 9, 0, 0)
 
     def test_round_robin_stops_allocating_after_task_completion(self):
         """Test that round-robin stops allocating to completed tasks."""
@@ -106,7 +103,7 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Both tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # Refetch tasks from repository to get updated state
         updated_short = self.repository.get_by_id(short_task.id)
@@ -114,7 +111,7 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
         assert updated_short is not None and updated_long is not None
 
         # Short task should complete earlier than long task
-        self.assertLess(updated_short.planned_end, updated_long.planned_end)
+        assert updated_short.planned_end < updated_long.planned_end
 
     def test_round_robin_respects_deadlines(self):
         """Test that round-robin respects task deadlines."""
@@ -129,8 +126,8 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Task should fail to schedule
-        self.assertEqual(len(result.successful_tasks), 0)
-        self.assertEqual(len(result.failed_tasks), 1)
+        assert len(result.successful_tasks) == 0
+        assert len(result.failed_tasks) == 1
 
     def test_round_robin_skips_weekends(self):
         """Test that round-robin skips weekends."""
@@ -150,12 +147,10 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
         assert updated_task is not None
 
         # Verify no weekend allocations
-        self.assertIsNone(
-            updated_task.daily_allocations.get(date(2025, 10, 25))
+        assert (
+            updated_task.daily_allocations.get(date(2025, 10, 25)) is None
         )  # Saturday
-        self.assertIsNone(
-            updated_task.daily_allocations.get(date(2025, 10, 26))
-        )  # Sunday
+        assert updated_task.daily_allocations.get(date(2025, 10, 26)) is None  # Sunday
 
     def test_round_robin_with_single_task(self):
         """Test that round-robin works correctly with a single task."""
@@ -174,11 +169,13 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
         assert updated_task is not None
 
         # Single task should get full 6h each day (not divided)
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 20), 0.0), 6.0, places=5
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 20), 0.0) - 6.0)
+            < 1e-5
         )
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 21), 0.0), 6.0, places=5
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 21), 0.0) - 6.0)
+            < 1e-5
         )
 
     def test_round_robin_adjusts_allocation_as_tasks_complete(self):
@@ -206,7 +203,7 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # All tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 3)
+        assert len(result.successful_tasks) == 3
 
         # Refetch tasks from repository to get updated state
         updated_quick = self.repository.get_by_id(quick_task.id)
@@ -223,9 +220,5 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
         medium_end = updated_medium.planned_end
         long_end = updated_long.planned_end
 
-        self.assertLess(quick_end, medium_end)
-        self.assertLess(medium_end, long_end)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert quick_end < medium_end
+        assert medium_end < long_end

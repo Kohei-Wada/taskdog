@@ -1,7 +1,8 @@
 """Tests for CompleteTaskUseCase."""
 
-import unittest
 from datetime import datetime
+
+import pytest
 
 from taskdog_core.application.dto.single_task_inputs import CompleteTaskInput
 from taskdog_core.application.use_cases.complete_task import CompleteTaskUseCase
@@ -13,7 +14,7 @@ from tests.application.use_cases.status_change_test_base import (
 
 
 class TestCompleteTaskUseCase(BaseStatusChangeUseCaseTest):
-    """Test cases for CompleteTaskUseCase"""
+    """Test cases for CompleteTaskUseCase."""
 
     use_case_class = CompleteTaskUseCase
     request_class = CompleteTaskInput
@@ -35,7 +36,7 @@ class TestCompleteTaskUseCase(BaseStatusChangeUseCaseTest):
         result = self.use_case.execute(input_dto)
 
         # actual_start should remain unchanged
-        self.assertEqual(result.actual_start, datetime(2025, 10, 12, 10, 0, 0))
+        assert result.actual_start == datetime(2025, 10, 12, 10, 0, 0)
 
     def test_execute_with_pending_task_raises_error(self):
         """Test execute with PENDING task raises TaskNotStartedError."""
@@ -46,11 +47,7 @@ class TestCompleteTaskUseCase(BaseStatusChangeUseCaseTest):
 
         input_dto = CompleteTaskInput(task_id=task.id)
 
-        with self.assertRaises(TaskNotStartedError) as context:
+        with pytest.raises(TaskNotStartedError) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertEqual(context.exception.task_id, task.id)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert exc_info.value.task_id == task.id

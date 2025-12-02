@@ -1,8 +1,9 @@
 """Tests for FastAPI application factory and configuration."""
 
-import unittest
 from unittest.mock import MagicMock, Mock
 
+import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from taskdog_core.controllers.query_controller import QueryController
@@ -17,53 +18,49 @@ from taskdog_server.api.context import ApiContext
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
 
-class TestApp(unittest.TestCase):
-    """Test cases for FastAPI application.
+class TestApp:
+    """Test cases for FastAPI application."""
 
-    Uses setUpClass instead of setUp to create app once for all tests,
-    improving performance by ~520ms (8x reduction in setup overhead).
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        """Set up shared test fixtures once for all tests."""
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up shared test fixtures."""
         # Mock repositories and config
-        cls.mock_repository = MagicMock()
-        cls.mock_notes_repository = MagicMock()
-        cls.mock_config = MagicMock()
-        cls.mock_config.task.default_priority = 3
-        cls.mock_config.scheduling.max_hours_per_day = 8.0
-        cls.mock_config.scheduling.default_algorithm = "greedy"
-        cls.mock_config.region.country = None
+        self.mock_repository = MagicMock()
+        self.mock_notes_repository = MagicMock()
+        self.mock_config = MagicMock()
+        self.mock_config.task.default_priority = 3
+        self.mock_config.scheduling.max_hours_per_day = 8.0
+        self.mock_config.scheduling.default_algorithm = "greedy"
+        self.mock_config.region.country = None
 
         # Create mock logger for controllers
-        cls.mock_logger = Mock(spec=Logger)
+        self.mock_logger = Mock(spec=Logger)
 
         # Create controllers with mocked dependencies
         query_controller = QueryController(
-            cls.mock_repository, cls.mock_notes_repository, cls.mock_logger
+            self.mock_repository, self.mock_notes_repository, self.mock_logger
         )
         lifecycle_controller = TaskLifecycleController(
-            cls.mock_repository, cls.mock_config, cls.mock_logger
+            self.mock_repository, self.mock_config, self.mock_logger
         )
         relationship_controller = TaskRelationshipController(
-            cls.mock_repository, cls.mock_config, cls.mock_logger
+            self.mock_repository, self.mock_config, self.mock_logger
         )
         analytics_controller = TaskAnalyticsController(
-            cls.mock_repository, cls.mock_config, None, cls.mock_logger
+            self.mock_repository, self.mock_config, None, self.mock_logger
         )
         crud_controller = TaskCrudController(
-            cls.mock_repository,
-            cls.mock_notes_repository,
-            cls.mock_config,
-            cls.mock_logger,
+            self.mock_repository,
+            self.mock_notes_repository,
+            self.mock_config,
+            self.mock_logger,
         )
 
         # Create API context
         api_context = ApiContext(
-            repository=cls.mock_repository,
-            config=cls.mock_config,
-            notes_repository=cls.mock_notes_repository,
+            repository=self.mock_repository,
+            config=self.mock_config,
+            notes_repository=self.mock_notes_repository,
             query_controller=query_controller,
             lifecycle_controller=lifecycle_controller,
             relationship_controller=relationship_controller,
@@ -75,20 +72,20 @@ class TestApp(unittest.TestCase):
         # Create app using create_app (lifespan will set its own context)
         from taskdog_server.api.app import create_app
 
-        cls.app = create_app()
+        self.app = create_app()
 
         # Override context on app.state for testing with our mock objects
-        cls.app.state.api_context = api_context
-        cls.app.state.connection_manager = ConnectionManager()
+        self.app.state.api_context = api_context
+        self.app.state.connection_manager = ConnectionManager()
 
-        cls.client = TestClient(cls.app)
+        self.client = TestClient(self.app)
 
     def test_app_creation(self):
         """Test that app is created successfully."""
         # Assert
-        self.assertIsNotNone(self.app)
-        self.assertEqual(self.app.title, "Taskdog API")
-        self.assertEqual(self.app.version, "1.0.0")
+        assert self.app is not None
+        assert self.app.title == "Taskdog API"
+        assert self.app.version == "1.0.0"
 
     def test_root_endpoint(self):
         """Test root endpoint returns correct message."""
@@ -96,10 +93,10 @@ class TestApp(unittest.TestCase):
         response = self.client.get("/")
 
         # Assert
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         data = response.json()
-        self.assertEqual(data["message"], "Taskdog API")
-        self.assertEqual(data["version"], "1.0.0")
+        assert data["message"] == "Taskdog API"
+        assert data["version"] == "1.0.0"
 
     def test_health_endpoint(self):
         """Test health check endpoint."""
@@ -107,9 +104,9 @@ class TestApp(unittest.TestCase):
         response = self.client.get("/health")
 
         # Assert
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         data = response.json()
-        self.assertEqual(data["status"], "ok")
+        assert data["status"] == "ok"
 
     def test_cors_middleware_configured(self):
         """Test that CORS middleware is configured."""
@@ -118,9 +115,7 @@ class TestApp(unittest.TestCase):
         response = self.client.options("/")
 
         # Assert - OPTIONS should be allowed
-        self.assertIn(
-            response.status_code, [200, 405]
-        )  # Either OK or Method Not Allowed
+        assert response.status_code in [200, 405]  # Either OK or Method Not Allowed
 
     def test_routers_registered(self):
         """Test that all routers are registered with correct prefixes."""
@@ -128,16 +123,13 @@ class TestApp(unittest.TestCase):
         routes = [route.path for route in self.app.routes]
 
         # Assert - Check for key endpoints from each router
-        self.assertTrue(
-            any("/api/v1/tasks" in route for route in routes), "Tasks router not found"
+        assert any("/api/v1/tasks" in route for route in routes), (
+            "Tasks router not found"
         )
-        self.assertTrue(
-            any(
-                "/api/v1/statistics" in route or "/api/v1/gantt" in route
-                for route in routes
-            ),
-            "Analytics router not found",
-        )
+        assert any(
+            "/api/v1/statistics" in route or "/api/v1/gantt" in route
+            for route in routes
+        ), "Analytics router not found"
 
     def test_openapi_docs_available(self):
         """Test that OpenAPI documentation is available."""
@@ -145,26 +137,24 @@ class TestApp(unittest.TestCase):
         response = self.client.get("/openapi.json")
 
         # Assert
-        self.assertEqual(response.status_code, 200)
+        assert response.status_code == 200
         data = response.json()
-        self.assertEqual(data["info"]["title"], "Taskdog API")
-        self.assertIn("paths", data)
+        assert data["info"]["title"] == "Taskdog API"
+        assert "paths" in data
 
     def test_app_has_correct_metadata(self):
         """Test that app has correct metadata."""
         # Assert
-        self.assertEqual(self.app.title, "Taskdog API")
-        self.assertIn("Task management API", self.app.description)
-        self.assertEqual(self.app.version, "1.0.0")
+        assert self.app.title == "Taskdog API"
+        assert "Task management API" in self.app.description
+        assert self.app.version == "1.0.0"
 
 
-class TestAppWithoutContext(unittest.TestCase):
+class TestAppWithoutContext:
     """Test cases for app behavior without initialized context."""
 
     def test_endpoints_fail_without_context(self):
         """Test that endpoints fail gracefully when context is not initialized."""
-        from fastapi import FastAPI
-
         from taskdog_server.api.routers import tasks_router
 
         # Create app WITHOUT setting app.state.api_context
@@ -177,8 +167,4 @@ class TestAppWithoutContext(unittest.TestCase):
         response = client.get("/api/v1/tasks")
 
         # Assert - should get 500 error due to uninitialized context
-        self.assertEqual(response.status_code, 500)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert response.status_code == 500

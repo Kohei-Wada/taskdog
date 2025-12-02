@@ -1,9 +1,8 @@
 """Tests for Pydantic request models."""
 
-import unittest
 from datetime import date, datetime
 
-from parameterized import parameterized
+import pytest
 from pydantic import ValidationError
 
 from taskdog_core.domain.entities.task import TaskStatus
@@ -20,7 +19,7 @@ from taskdog_server.api.models.requests import (
 )
 
 
-class TestCreateTaskRequest(unittest.TestCase):
+class TestCreateTaskRequest:
     """Test cases for CreateTaskRequest model."""
 
     def test_valid_minimal_request(self):
@@ -29,11 +28,11 @@ class TestCreateTaskRequest(unittest.TestCase):
         request = CreateTaskRequest(name="Test Task")
 
         # Assert
-        self.assertEqual(request.name, "Test Task")
-        self.assertIsNone(request.priority)
-        self.assertIsNone(request.planned_start)
-        self.assertIsNone(request.deadline)
-        self.assertEqual(request.is_fixed, False)
+        assert request.name == "Test Task"
+        assert request.priority is None
+        assert request.planned_start is None
+        assert request.deadline is None
+        assert request.is_fixed is False
 
     def test_valid_full_request(self):
         """Test creating request with all fields."""
@@ -53,14 +52,15 @@ class TestCreateTaskRequest(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(request.name, "Test Task")
-        self.assertEqual(request.priority, 1)
-        self.assertEqual(request.planned_start, now)
-        self.assertEqual(request.estimated_duration, 8.0)
-        self.assertEqual(request.is_fixed, True)
-        self.assertEqual(request.tags, ["backend", "api"])
+        assert request.name == "Test Task"
+        assert request.priority == 1
+        assert request.planned_start == now
+        assert request.estimated_duration == 8.0
+        assert request.is_fixed is True
+        assert request.tags == ["backend", "api"]
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "scenario,kwargs,expected_error",
         [
             ("empty_name", {"name": ""}, "name"),
             ("zero_priority", {"name": "Test", "priority": 0}, "priority"),
@@ -80,15 +80,15 @@ class TestCreateTaskRequest(unittest.TestCase):
                 {"name": "Test", "tags": ["tag1", "tag1"]},
                 "Tags must be unique",
             ),
-        ]
+        ],
     )
     def test_create_task_request_validation_errors(
-        self, _scenario, kwargs, expected_error
+        self, scenario, kwargs, expected_error
     ):
         """Test CreateTaskRequest validation errors."""
-        with self.assertRaises(ValidationError) as context:
+        with pytest.raises(ValidationError) as exc_info:
             CreateTaskRequest(**kwargs)
-        self.assertIn(expected_error, str(context.exception))
+        assert expected_error in str(exc_info.value)
 
     def test_valid_single_tag(self):
         """Test creating request with single tag."""
@@ -96,10 +96,10 @@ class TestCreateTaskRequest(unittest.TestCase):
         request = CreateTaskRequest(name="Test", tags=["backend"])
 
         # Assert
-        self.assertEqual(request.tags, ["backend"])
+        assert request.tags == ["backend"]
 
 
-class TestUpdateTaskRequest(unittest.TestCase):
+class TestUpdateTaskRequest:
     """Test cases for UpdateTaskRequest model."""
 
     def test_valid_empty_update(self):
@@ -108,9 +108,9 @@ class TestUpdateTaskRequest(unittest.TestCase):
         request = UpdateTaskRequest()
 
         # Assert
-        self.assertIsNone(request.name)
-        self.assertIsNone(request.priority)
-        self.assertIsNone(request.status)
+        assert request.name is None
+        assert request.priority is None
+        assert request.status is None
 
     def test_valid_partial_update(self):
         """Test updating only some fields."""
@@ -118,9 +118,9 @@ class TestUpdateTaskRequest(unittest.TestCase):
         request = UpdateTaskRequest(name="New Name", priority=2)
 
         # Assert
-        self.assertEqual(request.name, "New Name")
-        self.assertEqual(request.priority, 2)
-        self.assertIsNone(request.status)
+        assert request.name == "New Name"
+        assert request.priority == 2
+        assert request.status is None
 
     def test_valid_status_update(self):
         """Test updating task status."""
@@ -128,25 +128,26 @@ class TestUpdateTaskRequest(unittest.TestCase):
         request = UpdateTaskRequest(status=TaskStatus.IN_PROGRESS)
 
         # Assert
-        self.assertEqual(request.status, TaskStatus.IN_PROGRESS)
+        assert request.status == TaskStatus.IN_PROGRESS
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "scenario,kwargs,expected_error",
         [
             ("empty_name", {"name": ""}, "name"),
             ("zero_priority", {"priority": 0}, "priority"),
             ("empty_tag", {"tags": ["valid", ""]}, "Tags must be non-empty"),
-        ]
+        ],
     )
     def test_update_task_request_validation_errors(
-        self, _scenario, kwargs, expected_error
+        self, scenario, kwargs, expected_error
     ):
         """Test UpdateTaskRequest validation errors."""
-        with self.assertRaises(ValidationError) as context:
+        with pytest.raises(ValidationError) as exc_info:
             UpdateTaskRequest(**kwargs)
-        self.assertIn(expected_error, str(context.exception))
+        assert expected_error in str(exc_info.value)
 
 
-class TestAddDependencyRequest(unittest.TestCase):
+class TestAddDependencyRequest:
     """Test cases for AddDependencyRequest model."""
 
     def test_valid_request(self):
@@ -155,16 +156,16 @@ class TestAddDependencyRequest(unittest.TestCase):
         request = AddDependencyRequest(depends_on_id=123)
 
         # Assert
-        self.assertEqual(request.depends_on_id, 123)
+        assert request.depends_on_id == 123
 
     def test_missing_depends_on_id(self):
         """Test that depends_on_id is required."""
         # Act & Assert
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             AddDependencyRequest()
 
 
-class TestSetTaskTagsRequest(unittest.TestCase):
+class TestSetTaskTagsRequest:
     """Test cases for SetTaskTagsRequest model."""
 
     def test_valid_request(self):
@@ -173,21 +174,20 @@ class TestSetTaskTagsRequest(unittest.TestCase):
         request = SetTaskTagsRequest(tags=["backend", "api"])
 
         # Assert
-        self.assertEqual(request.tags, ["backend", "api"])
+        assert request.tags == ["backend", "api"]
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "scenario,kwargs,expected_error",
         [
             ("empty_tag", {"tags": ["valid", ""]}, "Tags must be non-empty"),
             ("duplicate_tags", {"tags": ["tag1", "tag1"]}, "Tags must be unique"),
-        ]
+        ],
     )
-    def test_set_tags_request_validation_errors(
-        self, _scenario, kwargs, expected_error
-    ):
+    def test_set_tags_request_validation_errors(self, scenario, kwargs, expected_error):
         """Test SetTaskTagsRequest validation errors."""
-        with self.assertRaises(ValidationError) as context:
+        with pytest.raises(ValidationError) as exc_info:
             SetTaskTagsRequest(**kwargs)
-        self.assertIn(expected_error, str(context.exception))
+        assert expected_error in str(exc_info.value)
 
     def test_valid_empty_list(self):
         """Test creating request with empty tag list."""
@@ -195,10 +195,10 @@ class TestSetTaskTagsRequest(unittest.TestCase):
         request = SetTaskTagsRequest(tags=[])
 
         # Assert
-        self.assertEqual(request.tags, [])
+        assert request.tags == []
 
 
-class TestLogHoursRequest(unittest.TestCase):
+class TestLogHoursRequest:
     """Test cases for LogHoursRequest model."""
 
     def test_valid_request_with_date(self):
@@ -210,8 +210,8 @@ class TestLogHoursRequest(unittest.TestCase):
         request = LogHoursRequest(hours=8.0, date=today)
 
         # Assert
-        self.assertEqual(request.hours, 8.0)
-        self.assertEqual(request.date, today)
+        assert request.hours == 8.0
+        assert request.date == today
 
     def test_valid_request_without_date(self):
         """Test creating valid log hours request without date."""
@@ -219,31 +219,32 @@ class TestLogHoursRequest(unittest.TestCase):
         request = LogHoursRequest(hours=4.5)
 
         # Assert
-        self.assertEqual(request.hours, 4.5)
-        self.assertIsNone(request.date)
+        assert request.hours == 4.5
+        assert request.date is None
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "scenario,kwargs,expected_error",
         [
             ("zero_hours", {"hours": 0.0}, "hours"),
             ("negative_hours", {"hours": -1.0}, "hours"),
-        ]
+        ],
     )
     def test_log_hours_request_validation_errors(
-        self, _scenario, kwargs, expected_error
+        self, scenario, kwargs, expected_error
     ):
         """Test LogHoursRequest validation errors."""
-        with self.assertRaises(ValidationError) as context:
+        with pytest.raises(ValidationError) as exc_info:
             LogHoursRequest(**kwargs)
-        self.assertIn(expected_error, str(context.exception).lower())
+        assert expected_error in str(exc_info.value).lower()
 
     def test_missing_hours(self):
         """Test that hours field is required."""
         # Act & Assert
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             LogHoursRequest()
 
 
-class TestOptimizeScheduleRequest(unittest.TestCase):
+class TestOptimizeScheduleRequest:
     """Test cases for OptimizeScheduleRequest model."""
 
     def test_valid_minimal_request(self):
@@ -252,10 +253,10 @@ class TestOptimizeScheduleRequest(unittest.TestCase):
         request = OptimizeScheduleRequest(algorithm="greedy")
 
         # Assert
-        self.assertEqual(request.algorithm, "greedy")
-        self.assertIsNone(request.start_date)
-        self.assertIsNone(request.max_hours_per_day)
-        self.assertEqual(request.force_override, True)
+        assert request.algorithm == "greedy"
+        assert request.start_date is None
+        assert request.max_hours_per_day is None
+        assert request.force_override is True
 
     def test_valid_full_request(self):
         """Test creating request with all fields."""
@@ -271,12 +272,13 @@ class TestOptimizeScheduleRequest(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(request.algorithm, "balanced")
-        self.assertEqual(request.start_date, now)
-        self.assertEqual(request.max_hours_per_day, 8.0)
-        self.assertEqual(request.force_override, False)
+        assert request.algorithm == "balanced"
+        assert request.start_date == now
+        assert request.max_hours_per_day == 8.0
+        assert request.force_override is False
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "scenario,kwargs,expected_error",
         [
             (
                 "zero_max_hours",
@@ -288,24 +290,24 @@ class TestOptimizeScheduleRequest(unittest.TestCase):
                 {"algorithm": "greedy", "max_hours_per_day": 25.0},
                 "max_hours_per_day",
             ),
-        ]
+        ],
     )
     def test_optimize_schedule_request_validation_errors(
-        self, _scenario, kwargs, expected_error
+        self, scenario, kwargs, expected_error
     ):
         """Test OptimizeScheduleRequest validation errors."""
-        with self.assertRaises(ValidationError) as context:
+        with pytest.raises(ValidationError) as exc_info:
             OptimizeScheduleRequest(**kwargs)
-        self.assertIn(expected_error, str(context.exception).lower())
+        assert expected_error in str(exc_info.value).lower()
 
     def test_missing_algorithm(self):
         """Test that algorithm field is required."""
         # Act & Assert
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             OptimizeScheduleRequest()
 
 
-class TestTaskFilterParams(unittest.TestCase):
+class TestTaskFilterParams:
     """Test cases for TaskFilterParams model."""
 
     def test_valid_default_params(self):
@@ -314,11 +316,11 @@ class TestTaskFilterParams(unittest.TestCase):
         params = TaskFilterParams()
 
         # Assert
-        self.assertEqual(params.all, False)
-        self.assertIsNone(params.status)
-        self.assertIsNone(params.tags)
-        self.assertIsNone(params.start_date)
-        self.assertIsNone(params.end_date)
+        assert params.all is False
+        assert params.status is None
+        assert params.tags is None
+        assert params.start_date is None
+        assert params.end_date is None
 
     def test_valid_full_params(self):
         """Test creating filter params with all fields."""
@@ -335,11 +337,11 @@ class TestTaskFilterParams(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(params.all, True)
-        self.assertEqual(params.status, TaskStatus.PENDING)
-        self.assertEqual(params.tags, ["backend", "api"])
-        self.assertEqual(params.start_date, today)
-        self.assertEqual(params.end_date, today)
+        assert params.all is True
+        assert params.status == TaskStatus.PENDING
+        assert params.tags == ["backend", "api"]
+        assert params.start_date == today
+        assert params.end_date == today
 
     def test_valid_status_filter(self):
         """Test filtering by status."""
@@ -347,10 +349,10 @@ class TestTaskFilterParams(unittest.TestCase):
         params = TaskFilterParams(status=TaskStatus.COMPLETED)
 
         # Assert
-        self.assertEqual(params.status, TaskStatus.COMPLETED)
+        assert params.status == TaskStatus.COMPLETED
 
 
-class TestTaskSortParams(unittest.TestCase):
+class TestTaskSortParams:
     """Test cases for TaskSortParams model."""
 
     def test_valid_default_params(self):
@@ -359,8 +361,8 @@ class TestTaskSortParams(unittest.TestCase):
         params = TaskSortParams()
 
         # Assert
-        self.assertEqual(params.sort, "id")
-        self.assertEqual(params.reverse, False)
+        assert params.sort == "id"
+        assert params.reverse is False
 
     def test_valid_custom_sort(self):
         """Test creating sort params with custom field."""
@@ -368,11 +370,11 @@ class TestTaskSortParams(unittest.TestCase):
         params = TaskSortParams(sort="deadline", reverse=True)
 
         # Assert
-        self.assertEqual(params.sort, "deadline")
-        self.assertEqual(params.reverse, True)
+        assert params.sort == "deadline"
+        assert params.reverse is True
 
 
-class TestUpdateNotesRequest(unittest.TestCase):
+class TestUpdateNotesRequest:
     """Test cases for UpdateNotesRequest model."""
 
     def test_valid_request_with_content(self):
@@ -381,7 +383,7 @@ class TestUpdateNotesRequest(unittest.TestCase):
         request = UpdateNotesRequest(content="# Test Notes\n\nSome content.")
 
         # Assert
-        self.assertEqual(request.content, "# Test Notes\n\nSome content.")
+        assert request.content == "# Test Notes\n\nSome content."
 
     def test_valid_request_with_empty_content(self):
         """Test creating valid notes request with empty content."""
@@ -389,12 +391,12 @@ class TestUpdateNotesRequest(unittest.TestCase):
         request = UpdateNotesRequest(content="")
 
         # Assert
-        self.assertEqual(request.content, "")
+        assert request.content == ""
 
     def test_missing_content(self):
         """Test that content field is required."""
         # Act & Assert
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             UpdateNotesRequest()
 
     def test_valid_markdown_content(self):
@@ -411,8 +413,4 @@ class TestUpdateNotesRequest(unittest.TestCase):
         request = UpdateNotesRequest(content=markdown)
 
         # Assert
-        self.assertEqual(request.content, markdown)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert request.content == markdown

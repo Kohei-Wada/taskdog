@@ -1,7 +1,8 @@
 """Base test class for optimization strategy tests."""
 
-import unittest
 from datetime import datetime
+
+import pytest
 
 from taskdog_core.application.dto.create_task_input import CreateTaskInput
 from taskdog_core.application.dto.optimize_schedule_input import OptimizeScheduleInput
@@ -9,10 +10,9 @@ from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
 from taskdog_core.application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from taskdog_core.domain.entities.task import Task
 from taskdog_core.shared.config_manager import ConfigManager
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class BaseOptimizationStrategyTest(InMemoryDatabaseTestCase):
+class BaseOptimizationStrategyTest:
     """Base test class for optimization strategy tests.
 
     Provides common fixtures and helper methods for testing different
@@ -25,19 +25,10 @@ class BaseOptimizationStrategyTest(InMemoryDatabaseTestCase):
     # Override in subclasses
     algorithm_name = None
 
-    @classmethod
-    def setUpClass(cls):
-        """Skip test execution for the base class itself and create in-memory DB."""
-        if cls is BaseOptimizationStrategyTest:
-            raise unittest.SkipTest("Skipping base test class")
-        # Call parent to create in-memory database
-        super().setUpClass()
-
-    def setUp(self):
-        """Clear database and initialize use cases for each test."""
-        # Call parent to clear database
-        super().setUp()
-        # Initialize use cases
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
+        """Set up test fixtures using repository from conftest."""
+        self.repository = repository
         self.create_use_case = CreateTaskUseCase(self.repository)
         config = ConfigManager.load()
         self.optimize_use_case = OptimizeScheduleUseCase(
@@ -119,23 +110,20 @@ class BaseOptimizationStrategyTest(InMemoryDatabaseTestCase):
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None, f"Task {task.id} not found in repository"
 
-        self.assertIsNotNone(
-            updated_task.planned_start,
-            f"Task {updated_task.name} should have planned_start",
+        assert updated_task.planned_start is not None, (
+            f"Task {updated_task.name} should have planned_start"
         )
-        self.assertIsNotNone(
-            updated_task.planned_end,
-            f"Task {updated_task.name} should have planned_end",
+        assert updated_task.planned_end is not None, (
+            f"Task {updated_task.name} should have planned_end"
         )
-        self.assertIsNotNone(
-            updated_task.daily_allocations,
-            f"Task {updated_task.name} should have daily_allocations",
+        assert updated_task.daily_allocations is not None, (
+            f"Task {updated_task.name} should have daily_allocations"
         )
 
         if expected_start:
-            self.assertEqual(updated_task.planned_start, expected_start)
+            assert updated_task.planned_start == expected_start
         if expected_end:
-            self.assertEqual(updated_task.planned_end, expected_end)
+            assert updated_task.planned_end == expected_end
 
     def assert_total_allocated_hours(
         self, task: Task, expected_hours: float, places: int = 5
@@ -152,11 +140,8 @@ class BaseOptimizationStrategyTest(InMemoryDatabaseTestCase):
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None, f"Task {task.id} not found in repository"
 
-        self.assertIsNotNone(updated_task.daily_allocations)
+        assert updated_task.daily_allocations is not None
         total = sum(updated_task.daily_allocations.values())
-        self.assertAlmostEqual(
-            total,
-            expected_hours,
-            places=places,
-            msg=f"Total allocated hours for {updated_task.name}",
+        assert abs(total - expected_hours) < 10 ** (-places), (
+            f"Total allocated hours for {updated_task.name}: {total} != {expected_hours}"
         )

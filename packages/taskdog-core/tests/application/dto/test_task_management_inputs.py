@@ -1,9 +1,8 @@
 """Tests for task management Input DTOs."""
 
-import unittest
 from datetime import datetime
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.dto.log_hours_input import LogHoursInput
 from taskdog_core.application.dto.manage_dependencies_input import (
@@ -17,34 +16,32 @@ from taskdog_core.application.dto.single_task_inputs import (
 )
 
 
-class TestSimpleTaskManagementInputs(unittest.TestCase):
+class TestSimpleTaskManagementInputs:
     """Test suite for simple task management DTOs (Archive, Restore)."""
 
-    @parameterized.expand(
-        [
-            ("archive", ArchiveTaskInput),
-            ("restore", RestoreTaskInput),
-        ]
+    @pytest.mark.parametrize(
+        "dto_class",
+        [ArchiveTaskInput, RestoreTaskInput],
+        ids=["archive", "restore"],
     )
-    def test_create_with_task_id(self, operation_name, dto_class):
+    def test_create_with_task_id(self, dto_class):
         """Test creating DTO with task_id."""
         dto = dto_class(task_id=1)
-        self.assertEqual(dto.task_id, 1)
+        assert dto.task_id == 1
 
-    @parameterized.expand(
-        [
-            ("archive", ArchiveTaskInput),
-            ("restore", RestoreTaskInput),
-        ]
+    @pytest.mark.parametrize(
+        "dto_class",
+        [ArchiveTaskInput, RestoreTaskInput],
+        ids=["archive", "restore"],
     )
-    def test_equality(self, operation_name, dto_class):
+    def test_equality(self, dto_class):
         """Test equality comparison."""
         dto1 = dto_class(task_id=1)
         dto2 = dto_class(task_id=1)
-        self.assertEqual(dto1, dto2)
+        assert dto1 == dto2
 
 
-class TestLogHoursInput(unittest.TestCase):
+class TestLogHoursInput:
     """Test suite for LogHoursInput DTO."""
 
     def test_create_with_date(self) -> None:
@@ -52,20 +49,19 @@ class TestLogHoursInput(unittest.TestCase):
         date = datetime(2025, 1, 1)
         dto = LogHoursInput(task_id=1, hours=5.5, date=date)
 
-        self.assertEqual(dto.task_id, 1)
-        self.assertEqual(dto.hours, 5.5)
-        self.assertEqual(dto.date, date)
+        assert dto.task_id == 1
+        assert dto.hours == 5.5
+        assert dto.date == date
 
-    @parameterized.expand(
-        [
-            ("whole_number", 8.0),
-            ("fractional", 3.5),
-        ]
+    @pytest.mark.parametrize(
+        "hours",
+        [8.0, 3.5],
+        ids=["whole_number", "fractional"],
     )
-    def test_create_with_hours(self, scenario, hours):
+    def test_create_with_hours(self, hours):
         """Test creating DTO with different hour values."""
         dto = LogHoursInput(task_id=1, hours=hours, date=datetime(2025, 1, 1))
-        self.assertEqual(dto.hours, hours)
+        assert dto.hours == hours
 
     def test_equality(self) -> None:
         """Test equality comparison."""
@@ -73,94 +69,90 @@ class TestLogHoursInput(unittest.TestCase):
         dto1 = LogHoursInput(task_id=1, hours=5.0, date=date)
         dto2 = LogHoursInput(task_id=1, hours=5.0, date=date)
 
-        self.assertEqual(dto1, dto2)
+        assert dto1 == dto2
 
 
-class TestDependencyInputs(unittest.TestCase):
+class TestDependencyInputs:
     """Test suite for dependency management DTOs."""
 
-    @parameterized.expand(
-        [
-            ("add_dependency", AddDependencyInput),
-            ("remove_dependency", RemoveDependencyInput),
-        ]
+    @pytest.mark.parametrize(
+        "dto_class",
+        [AddDependencyInput, RemoveDependencyInput],
+        ids=["add_dependency", "remove_dependency"],
     )
-    def test_create_with_dependency_id(self, operation_name, dto_class):
+    def test_create_with_dependency_id(self, dto_class):
         """Test creating DTO with task_id and depends_on_id."""
         dto = dto_class(task_id=1, depends_on_id=2)
 
-        self.assertEqual(dto.task_id, 1)
-        self.assertEqual(dto.depends_on_id, 2)
+        assert dto.task_id == 1
+        assert dto.depends_on_id == 2
 
-    @parameterized.expand(
-        [
-            ("add_dependency", AddDependencyInput),
-            ("remove_dependency", RemoveDependencyInput),
-        ]
+    @pytest.mark.parametrize(
+        "dto_class",
+        [AddDependencyInput, RemoveDependencyInput],
+        ids=["add_dependency", "remove_dependency"],
     )
-    def test_equality(self, operation_name, dto_class):
+    def test_equality(self, dto_class):
         """Test equality comparison."""
         dto1 = dto_class(task_id=1, depends_on_id=2)
         dto2 = dto_class(task_id=1, depends_on_id=2)
 
-        self.assertEqual(dto1, dto2)
+        assert dto1 == dto2
 
     def test_add_dependency_task_depends_on_itself_representation(self) -> None:
         """Test that same task_id and depends_on_id is allowed (validation elsewhere)."""
         dto = AddDependencyInput(task_id=1, depends_on_id=1)
-        self.assertEqual(dto.task_id, dto.depends_on_id)
+        assert dto.task_id == dto.depends_on_id
 
     def test_add_dependency_inequality_with_different_dependency(self) -> None:
         """Test inequality when depends_on_id differs."""
         dto1 = AddDependencyInput(task_id=1, depends_on_id=2)
         dto2 = AddDependencyInput(task_id=1, depends_on_id=3)
 
-        self.assertNotEqual(dto1, dto2)
+        assert dto1 != dto2
 
 
-class TestSetTaskTagsInput(unittest.TestCase):
+class TestSetTaskTagsInput:
     """Test suite for SetTaskTagsInput DTO."""
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "tags",
         [
-            ("empty_tags", []),
-            ("single_tag", ["urgent"]),
-            ("multiple_tags", ["urgent", "backend", "refactoring"]),
-        ]
+            [],
+            ["urgent"],
+            ["urgent", "backend", "refactoring"],
+        ],
+        ids=["empty_tags", "single_tag", "multiple_tags"],
     )
-    def test_create_with_tags(self, scenario, tags):
+    def test_create_with_tags(self, tags):
         """Test creating DTO with various tag configurations."""
         dto = SetTaskTagsInput(task_id=1, tags=tags)
-        self.assertEqual(dto.task_id, 1)
-        self.assertEqual(dto.tags, tags)
+        assert dto.task_id == 1
+        assert dto.tags == tags
 
     def test_tags_preserve_order(self) -> None:
         """Test that tags list preserves order."""
         tags = ["third", "first", "second"]
         dto = SetTaskTagsInput(task_id=1, tags=tags)
 
-        self.assertEqual(dto.tags, ["third", "first", "second"])
+        assert dto.tags == ["third", "first", "second"]
 
     def test_create_with_unicode_tags(self) -> None:
         """Test creating DTO with Unicode tags."""
         dto = SetTaskTagsInput(task_id=1, tags=["日本語", "絵文字🚀"])
 
-        self.assertEqual(dto.tags, ["日本語", "絵文字🚀"])
+        assert dto.tags == ["日本語", "絵文字🚀"]
 
     def test_equality(self) -> None:
         """Test equality comparison."""
         dto1 = SetTaskTagsInput(task_id=1, tags=["tag1", "tag2"])
         dto2 = SetTaskTagsInput(task_id=1, tags=["tag1", "tag2"])
 
-        self.assertEqual(dto1, dto2)
+        assert dto1 == dto2
 
     def test_inequality_with_different_tags_order(self) -> None:
         """Test inequality when tags order differs."""
         dto1 = SetTaskTagsInput(task_id=1, tags=["tag1", "tag2"])
         dto2 = SetTaskTagsInput(task_id=1, tags=["tag2", "tag1"])
 
-        self.assertNotEqual(dto1, dto2)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert dto1 != dto2
