@@ -1,10 +1,9 @@
 """Tests for DTO to Pydantic response model converters."""
 
-import unittest
 from datetime import date, datetime
 from unittest.mock import Mock
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.dto.gantt_output import (
     GanttDateRange,
@@ -27,7 +26,7 @@ from taskdog_server.api.converters import (
 )
 
 
-class TestConvertToTaskOperationResponse(unittest.TestCase):
+class TestConvertToTaskOperationResponse:
     """Test cases for convert_to_task_operation_response."""
 
     def test_convert_minimal_dto(self):
@@ -56,16 +55,16 @@ class TestConvertToTaskOperationResponse(unittest.TestCase):
         response = convert_to_task_operation_response(dto)
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(response.name, "Test Task")
-        self.assertEqual(response.status, TaskStatus.PENDING)
-        self.assertEqual(response.priority, 1)
-        self.assertIsNone(response.deadline)
-        self.assertIsNone(response.estimated_duration)
-        self.assertEqual(response.depends_on, [])
-        self.assertEqual(response.tags, [])
-        self.assertEqual(response.is_fixed, False)
-        self.assertEqual(response.is_archived, False)
+        assert response.id == 1
+        assert response.name == "Test Task"
+        assert response.status == TaskStatus.PENDING
+        assert response.priority == 1
+        assert response.deadline is None
+        assert response.estimated_duration is None
+        assert response.depends_on == []
+        assert response.tags == []
+        assert response.is_fixed is False
+        assert response.is_archived is False
 
     def test_convert_full_dto(self):
         """Test converting DTO with all fields populated."""
@@ -94,27 +93,25 @@ class TestConvertToTaskOperationResponse(unittest.TestCase):
         response = convert_to_task_operation_response(dto)
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(response.name, "Test Task")
-        self.assertEqual(response.status, TaskStatus.IN_PROGRESS)
-        self.assertEqual(response.priority, 2)
-        self.assertEqual(response.deadline, now)
-        self.assertEqual(response.estimated_duration, 8.0)
-        self.assertEqual(response.planned_start, now)
-        self.assertEqual(response.planned_end, now)
-        self.assertEqual(response.actual_start, now)
-        self.assertIsNone(response.actual_end)
-        self.assertEqual(response.depends_on, [2, 3])
-        self.assertEqual(response.tags, ["backend", "api"])
-        self.assertEqual(response.is_fixed, True)
-        self.assertEqual(response.is_archived, False)
-        self.assertEqual(response.actual_duration_hours, 4.5)
-        self.assertEqual(
-            response.actual_daily_hours, {"2025-01-01": 2.5, "2025-01-02": 2.0}
-        )
+        assert response.id == 1
+        assert response.name == "Test Task"
+        assert response.status == TaskStatus.IN_PROGRESS
+        assert response.priority == 2
+        assert response.deadline == now
+        assert response.estimated_duration == 8.0
+        assert response.planned_start == now
+        assert response.planned_end == now
+        assert response.actual_start == now
+        assert response.actual_end is None
+        assert response.depends_on == [2, 3]
+        assert response.tags == ["backend", "api"]
+        assert response.is_fixed is True
+        assert response.is_archived is False
+        assert response.actual_duration_hours == 4.5
+        assert response.actual_daily_hours == {"2025-01-01": 2.5, "2025-01-02": 2.0}
 
 
-class TestConvertToUpdateTaskResponse(unittest.TestCase):
+class TestConvertToUpdateTaskResponse:
     """Test cases for convert_to_update_task_response."""
 
     def test_convert_with_updated_fields(self):
@@ -145,11 +142,11 @@ class TestConvertToUpdateTaskResponse(unittest.TestCase):
         response = convert_to_update_task_response(dto)
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(response.name, "Updated Task")
-        self.assertEqual(response.status, TaskStatus.COMPLETED)
-        self.assertEqual(response.priority, 3)
-        self.assertEqual(response.updated_fields, ["name", "priority", "status"])
+        assert response.id == 1
+        assert response.name == "Updated Task"
+        assert response.status == TaskStatus.COMPLETED
+        assert response.priority == 3
+        assert response.updated_fields == ["name", "priority", "status"]
 
     def test_convert_with_empty_updated_fields(self):
         """Test converting TaskUpdateOutput with no updated fields."""
@@ -178,11 +175,11 @@ class TestConvertToUpdateTaskResponse(unittest.TestCase):
         response = convert_to_update_task_response(dto)
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(response.updated_fields, [])
+        assert response.id == 1
+        assert response.updated_fields == []
 
 
-class TestConvertToTaskListResponse(unittest.TestCase):
+class TestConvertToTaskListResponse:
     """Test cases for convert_to_task_list_response."""
 
     def test_convert_empty_list(self):
@@ -195,10 +192,10 @@ class TestConvertToTaskListResponse(unittest.TestCase):
         response = convert_to_task_list_response(dto, notes_repo)
 
         # Assert
-        self.assertEqual(response.tasks, [])
-        self.assertEqual(response.total_count, 0)
-        self.assertEqual(response.filtered_count, 0)
-        self.assertIsNone(response.gantt)
+        assert response.tasks == []
+        assert response.total_count == 0
+        assert response.filtered_count == 0
+        assert response.gantt is None
 
     def test_convert_task_list_without_gantt(self):
         """Test converting task list without gantt data."""
@@ -222,13 +219,13 @@ class TestConvertToTaskListResponse(unittest.TestCase):
         response = convert_to_task_list_response(dto, notes_repo)
 
         # Assert
-        self.assertEqual(len(response.tasks), 1)
-        self.assertEqual(response.tasks[0].id, 1)
-        self.assertEqual(response.tasks[0].name, "Test Task")
-        self.assertEqual(response.tasks[0].has_notes, False)
-        self.assertEqual(response.total_count, 10)
-        self.assertEqual(response.filtered_count, 1)
-        self.assertIsNone(response.gantt)
+        assert len(response.tasks) == 1
+        assert response.tasks[0].id == 1
+        assert response.tasks[0].name == "Test Task"
+        assert response.tasks[0].has_notes is False
+        assert response.total_count == 10
+        assert response.filtered_count == 1
+        assert response.gantt is None
         notes_repo.has_notes.assert_called_once_with(1)
 
     def test_convert_task_list_with_notes(self):
@@ -253,7 +250,7 @@ class TestConvertToTaskListResponse(unittest.TestCase):
         response = convert_to_task_list_response(dto, notes_repo)
 
         # Assert
-        self.assertEqual(response.tasks[0].has_notes, True)
+        assert response.tasks[0].has_notes is True
 
     def test_convert_task_list_with_gantt_data(self):
         """Test converting task list with gantt data."""
@@ -298,19 +295,19 @@ class TestConvertToTaskListResponse(unittest.TestCase):
         response = convert_to_task_list_response(dto, notes_repo)
 
         # Assert
-        self.assertIsNotNone(response.gantt)
-        self.assertEqual(response.gantt.date_range.start_date, start_date)
-        self.assertEqual(response.gantt.date_range.end_date, end_date)
-        self.assertEqual(len(response.gantt.tasks), 1)
-        self.assertEqual(response.gantt.tasks[0].id, 1)
-        self.assertEqual(response.gantt.tasks[0].name, "Test Task")
+        assert response.gantt is not None
+        assert response.gantt.date_range.start_date == start_date
+        assert response.gantt.date_range.end_date == end_date
+        assert len(response.gantt.tasks) == 1
+        assert response.gantt.tasks[0].id == 1
+        assert response.gantt.tasks[0].name == "Test Task"
         # Check date conversion to ISO strings
-        self.assertIn("2025-01-01", response.gantt.task_daily_hours[1])
-        self.assertIn("2025-01-02", response.gantt.task_daily_hours[1])
-        self.assertEqual(response.gantt.task_daily_hours[1]["2025-01-01"], 4.0)
-        self.assertIn("2025-01-01", response.gantt.daily_workload)
-        self.assertEqual(response.gantt.daily_workload["2025-01-01"], 8.0)
-        self.assertIn("2025-01-04", response.gantt.holidays)
+        assert "2025-01-01" in response.gantt.task_daily_hours[1]
+        assert "2025-01-02" in response.gantt.task_daily_hours[1]
+        assert response.gantt.task_daily_hours[1]["2025-01-01"] == 4.0
+        assert "2025-01-01" in response.gantt.daily_workload
+        assert response.gantt.daily_workload["2025-01-01"] == 8.0
+        assert "2025-01-04" in response.gantt.holidays
 
     def test_convert_multiple_tasks(self):
         """Test converting task list with multiple tasks."""
@@ -342,14 +339,14 @@ class TestConvertToTaskListResponse(unittest.TestCase):
         response = convert_to_task_list_response(dto, notes_repo)
 
         # Assert
-        self.assertEqual(len(response.tasks), 2)
-        self.assertEqual(response.tasks[0].id, 1)
-        self.assertEqual(response.tasks[0].has_notes, True)
-        self.assertEqual(response.tasks[1].id, 2)
-        self.assertEqual(response.tasks[1].has_notes, False)
+        assert len(response.tasks) == 2
+        assert response.tasks[0].id == 1
+        assert response.tasks[0].has_notes is True
+        assert response.tasks[1].id == 2
+        assert response.tasks[1].has_notes is False
 
 
-class TestConvertToTaskDetailResponse(unittest.TestCase):
+class TestConvertToTaskDetailResponse:
     """Test cases for convert_to_task_detail_response."""
 
     def test_convert_minimal_task_detail(self):
@@ -387,13 +384,13 @@ class TestConvertToTaskDetailResponse(unittest.TestCase):
         response = convert_to_task_detail_response(dto)
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(response.name, "Test Task")
-        self.assertEqual(response.priority, 1)
-        self.assertEqual(response.status, TaskStatus.PENDING)
-        self.assertIsNone(response.notes)
-        self.assertEqual(response.daily_allocations, {})
-        self.assertEqual(response.actual_daily_hours, {})
+        assert response.id == 1
+        assert response.name == "Test Task"
+        assert response.priority == 1
+        assert response.status == TaskStatus.PENDING
+        assert response.notes is None
+        assert response.daily_allocations == {}
+        assert response.actual_daily_hours == {}
 
     def test_convert_full_task_detail(self):
         """Test converting task detail with all fields."""
@@ -432,30 +429,31 @@ class TestConvertToTaskDetailResponse(unittest.TestCase):
         response = convert_to_task_detail_response(dto)
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(response.name, "Test Task")
-        self.assertEqual(response.status, TaskStatus.IN_PROGRESS)
-        self.assertEqual(response.estimated_duration, 8.0)
-        self.assertEqual(response.depends_on, [2, 3])
-        self.assertEqual(response.tags, ["backend", "api"])
-        self.assertEqual(response.is_fixed, True)
-        self.assertEqual(response.notes, "# Task Notes\n\nSome notes.")
+        assert response.id == 1
+        assert response.name == "Test Task"
+        assert response.status == TaskStatus.IN_PROGRESS
+        assert response.estimated_duration == 8.0
+        assert response.depends_on == [2, 3]
+        assert response.tags == ["backend", "api"]
+        assert response.is_fixed is True
+        assert response.notes == "# Task Notes\n\nSome notes."
         # Check date conversion to ISO strings
-        self.assertIn("2025-01-01", response.daily_allocations)
-        self.assertEqual(response.daily_allocations["2025-01-01"], 4.0)
-        self.assertIn("2025-01-01", response.actual_daily_hours)
-        self.assertEqual(response.actual_daily_hours["2025-01-01"], 3.5)
+        assert "2025-01-01" in response.daily_allocations
+        assert response.daily_allocations["2025-01-01"] == 4.0
+        assert "2025-01-01" in response.actual_daily_hours
+        assert response.actual_daily_hours["2025-01-01"] == 3.5
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "scenario,status,expected_active,expected_finished",
         [
             ("is_active", TaskStatus.IN_PROGRESS, True, False),
             ("not_active", TaskStatus.PENDING, False, False),
             ("is_finished", TaskStatus.COMPLETED, False, True),
             ("not_finished", TaskStatus.PENDING, False, False),
-        ]
+        ],
     )
     def test_convert_computed_properties(
-        self, _scenario, status, expected_active, expected_finished
+        self, scenario, status, expected_active, expected_finished
     ):
         """Test converting task detail with computed properties."""
         # Arrange
@@ -496,8 +494,8 @@ class TestConvertToTaskDetailResponse(unittest.TestCase):
         response = convert_to_task_detail_response(dto)
 
         # Assert
-        self.assertEqual(response.is_active, expected_active)
-        self.assertEqual(response.is_finished, expected_finished)
+        assert response.is_active == expected_active
+        assert response.is_finished == expected_finished
 
     def test_convert_with_empty_notes(self):
         """Test converting task detail with empty notes."""
@@ -534,8 +532,4 @@ class TestConvertToTaskDetailResponse(unittest.TestCase):
         response = convert_to_task_detail_response(dto)
 
         # Assert
-        self.assertEqual(response.notes, "")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert response.notes == ""

@@ -1,7 +1,9 @@
 """Tests for Pydantic response models."""
 
-import unittest
 from datetime import date, datetime
+
+import pytest
+from pydantic import ValidationError
 
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_server.api.models.responses import (
@@ -29,7 +31,7 @@ from taskdog_server.api.models.responses import (
 )
 
 
-class TestTaskOperationResponse(unittest.TestCase):
+class TestTaskOperationResponse:
     """Test cases for TaskOperationResponse model."""
 
     def test_create_response_with_minimal_data(self):
@@ -40,14 +42,14 @@ class TestTaskOperationResponse(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(response.name, "Test Task")
-        self.assertEqual(response.status, TaskStatus.PENDING)
-        self.assertEqual(response.priority, 3)
-        self.assertEqual(response.depends_on, [])
-        self.assertEqual(response.tags, [])
-        self.assertEqual(response.is_fixed, False)
-        self.assertEqual(response.is_archived, False)
+        assert response.id == 1
+        assert response.name == "Test Task"
+        assert response.status == TaskStatus.PENDING
+        assert response.priority == 3
+        assert response.depends_on == []
+        assert response.tags == []
+        assert response.is_fixed is False
+        assert response.is_archived is False
 
     def test_create_response_with_full_data(self):
         """Test creating response with all fields."""
@@ -75,15 +77,15 @@ class TestTaskOperationResponse(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(response.status, TaskStatus.COMPLETED)
-        self.assertEqual(response.depends_on, [2, 3])
-        self.assertEqual(response.tags, ["backend", "api"])
-        self.assertEqual(response.is_fixed, True)
-        self.assertEqual(response.actual_duration_hours, 8.5)
+        assert response.id == 1
+        assert response.status == TaskStatus.COMPLETED
+        assert response.depends_on == [2, 3]
+        assert response.tags == ["backend", "api"]
+        assert response.is_fixed is True
+        assert response.actual_duration_hours == 8.5
 
 
-class TestUpdateTaskResponse(unittest.TestCase):
+class TestUpdateTaskResponse:
     """Test cases for UpdateTaskResponse model."""
 
     def test_create_response_with_updated_fields(self):
@@ -98,11 +100,11 @@ class TestUpdateTaskResponse(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(response.updated_fields, ["name", "priority"])
+        assert response.id == 1
+        assert response.updated_fields == ["name", "priority"]
 
 
-class TestTaskResponse(unittest.TestCase):
+class TestTaskResponse:
     """Test cases for TaskResponse model."""
 
     def test_create_response_with_required_fields(self):
@@ -121,16 +123,14 @@ class TestTaskResponse(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(response.name, "Test Task")
-        self.assertEqual(response.is_finished, False)
-        self.assertEqual(response.has_notes, False)
+        assert response.id == 1
+        assert response.name == "Test Task"
+        assert response.is_finished is False
+        assert response.has_notes is False
 
     def test_response_is_frozen(self):
         """Test that response model is immutable."""
         # Arrange
-        from pydantic import ValidationError
-
         now = datetime.now()
         response = TaskResponse(
             id=1,
@@ -142,11 +142,11 @@ class TestTaskResponse(unittest.TestCase):
         )
 
         # Act & Assert
-        with self.assertRaises(ValidationError):
+        with pytest.raises(ValidationError):
             response.name = "Changed"
 
 
-class TestTaskDetailResponse(unittest.TestCase):
+class TestTaskDetailResponse:
     """Test cases for TaskDetailResponse model."""
 
     def test_create_detail_response(self):
@@ -172,15 +172,13 @@ class TestTaskDetailResponse(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(response.id, 1)
-        self.assertEqual(
-            response.daily_allocations, {"2024-01-15": 4.0, "2024-01-16": 4.0}
-        )
-        self.assertEqual(response.notes, "# Test Notes")
-        self.assertEqual(response.is_schedulable, True)
+        assert response.id == 1
+        assert response.daily_allocations == {"2024-01-15": 4.0, "2024-01-16": 4.0}
+        assert response.notes == "# Test Notes"
+        assert response.is_schedulable is True
 
 
-class TestTaskListResponse(unittest.TestCase):
+class TestTaskListResponse:
     """Test cases for TaskListResponse model."""
 
     def test_create_list_response(self):
@@ -200,13 +198,13 @@ class TestTaskListResponse(unittest.TestCase):
         response = TaskListResponse(tasks=[task], total_count=100, filtered_count=1)
 
         # Assert
-        self.assertEqual(len(response.tasks), 1)
-        self.assertEqual(response.total_count, 100)
-        self.assertEqual(response.filtered_count, 1)
-        self.assertIsNone(response.gantt)
+        assert len(response.tasks) == 1
+        assert response.total_count == 100
+        assert response.filtered_count == 1
+        assert response.gantt is None
 
 
-class TestGanttResponse(unittest.TestCase):
+class TestGanttResponse:
     """Test cases for Gantt chart response models."""
 
     def test_create_gantt_date_range(self):
@@ -219,8 +217,8 @@ class TestGanttResponse(unittest.TestCase):
         range_obj = GanttDateRange(start_date=start, end_date=end)
 
         # Assert
-        self.assertEqual(range_obj.start_date, start)
-        self.assertEqual(range_obj.end_date, end)
+        assert range_obj.start_date == start
+        assert range_obj.end_date == end
 
     def test_create_gantt_task_response(self):
         """Test creating Gantt task response."""
@@ -239,8 +237,8 @@ class TestGanttResponse(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(task.id, 1)
-        self.assertEqual(task.daily_allocations, {"2024-01-15": 4.0, "2024-01-16": 4.0})
+        assert task.id == 1
+        assert task.daily_allocations == {"2024-01-15": 4.0, "2024-01-16": 4.0}
 
     def test_create_gantt_response(self):
         """Test creating complete Gantt response."""
@@ -259,12 +257,12 @@ class TestGanttResponse(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(response.date_range.start_date, start)
-        self.assertEqual(response.daily_workload["2024-01-15"], 8.0)
-        self.assertEqual(response.holidays, ["2024-01-16"])
+        assert response.date_range.start_date == start
+        assert response.daily_workload["2024-01-15"] == 8.0
+        assert response.holidays == ["2024-01-16"]
 
 
-class TestStatisticsResponses(unittest.TestCase):
+class TestStatisticsResponses:
     """Test cases for statistics response models."""
 
     def test_completion_statistics(self):
@@ -280,9 +278,9 @@ class TestStatisticsResponses(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(stats.total, 100)
-        self.assertEqual(stats.completed, 60)
-        self.assertEqual(stats.completion_rate, 0.6)
+        assert stats.total == 100
+        assert stats.completed == 60
+        assert stats.completion_rate == 0.6
 
     def test_time_statistics(self):
         """Test time statistics model."""
@@ -294,8 +292,8 @@ class TestStatisticsResponses(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(stats.total_logged_hours, 160.0)
-        self.assertEqual(stats.average_task_duration, 8.0)
+        assert stats.total_logged_hours == 160.0
+        assert stats.average_task_duration == 8.0
 
     def test_estimation_statistics(self):
         """Test estimation statistics model."""
@@ -307,8 +305,8 @@ class TestStatisticsResponses(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(stats.average_deviation, 2.5)
-        self.assertEqual(stats.tasks_with_estimates, 50)
+        assert stats.average_deviation == 2.5
+        assert stats.tasks_with_estimates == 50
 
     def test_deadline_statistics(self):
         """Test deadline statistics model."""
@@ -316,9 +314,9 @@ class TestStatisticsResponses(unittest.TestCase):
         stats = DeadlineStatistics(met=45, missed=5, no_deadline=50, adherence_rate=0.9)
 
         # Assert
-        self.assertEqual(stats.met, 45)
-        self.assertEqual(stats.missed, 5)
-        self.assertEqual(stats.adherence_rate, 0.9)
+        assert stats.met == 45
+        assert stats.missed == 5
+        assert stats.adherence_rate == 0.9
 
     def test_priority_distribution(self):
         """Test priority distribution model."""
@@ -326,8 +324,8 @@ class TestStatisticsResponses(unittest.TestCase):
         dist = PriorityDistribution(distribution={1: 10, 2: 20, 3: 30})
 
         # Assert
-        self.assertEqual(dist.distribution[1], 10)
-        self.assertEqual(dist.distribution[3], 30)
+        assert dist.distribution[1] == 10
+        assert dist.distribution[3] == 30
 
     def test_trend_data(self):
         """Test trend data model."""
@@ -338,8 +336,8 @@ class TestStatisticsResponses(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(trends.completed_per_day["2024-01-15"], 5)
-        self.assertEqual(trends.hours_per_day["2024-01-16"], 6.5)
+        assert trends.completed_per_day["2024-01-15"] == 5
+        assert trends.hours_per_day["2024-01-16"] == 6.5
 
     def test_statistics_response(self):
         """Test complete statistics response."""
@@ -358,12 +356,12 @@ class TestStatisticsResponses(unittest.TestCase):
         response = StatisticsResponse(completion=completion, priority=priority)
 
         # Assert
-        self.assertEqual(response.completion.total, 100)
-        self.assertIsNone(response.time)
-        self.assertIsNone(response.estimation)
+        assert response.completion.total == 100
+        assert response.time is None
+        assert response.estimation is None
 
 
-class TestTagStatisticsResponses(unittest.TestCase):
+class TestTagStatisticsResponses:
     """Test cases for tag statistics response models."""
 
     def test_tag_statistics_item(self):
@@ -372,9 +370,9 @@ class TestTagStatisticsResponses(unittest.TestCase):
         item = TagStatisticsItem(tag="backend", count=25, completion_rate=0.8)
 
         # Assert
-        self.assertEqual(item.tag, "backend")
-        self.assertEqual(item.count, 25)
-        self.assertEqual(item.completion_rate, 0.8)
+        assert item.tag == "backend"
+        assert item.count == 25
+        assert item.completion_rate == 0.8
 
     def test_tag_statistics_response(self):
         """Test tag statistics response model."""
@@ -388,12 +386,12 @@ class TestTagStatisticsResponses(unittest.TestCase):
         response = TagStatisticsResponse(tags=items, total_tags=2)
 
         # Assert
-        self.assertEqual(len(response.tags), 2)
-        self.assertEqual(response.total_tags, 2)
-        self.assertEqual(response.tags[0].tag, "backend")
+        assert len(response.tags) == 2
+        assert response.total_tags == 2
+        assert response.tags[0].tag == "backend"
 
 
-class TestOptimizationResponses(unittest.TestCase):
+class TestOptimizationResponses:
     """Test cases for optimization response models."""
 
     def test_scheduling_failure(self):
@@ -404,9 +402,9 @@ class TestOptimizationResponses(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(failure.task_id, 1)
-        self.assertEqual(failure.task_name, "Failed Task")
-        self.assertEqual(failure.reason, "Insufficient time")
+        assert failure.task_id == 1
+        assert failure.task_name == "Failed Task"
+        assert failure.reason == "Insufficient time"
 
     def test_optimization_summary(self):
         """Test optimization summary model."""
@@ -426,9 +424,9 @@ class TestOptimizationResponses(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(summary.total_tasks, 10)
-        self.assertEqual(summary.scheduled_tasks, 8)
-        self.assertEqual(summary.algorithm, "greedy")
+        assert summary.total_tasks == 10
+        assert summary.scheduled_tasks == 8
+        assert summary.algorithm == "greedy"
 
     def test_optimization_response(self):
         """Test optimization response model."""
@@ -454,12 +452,12 @@ class TestOptimizationResponses(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(response.summary.total_tasks, 10)
-        self.assertEqual(len(response.failures), 1)
-        self.assertIn("Partially optimized", response.message)
+        assert response.summary.total_tasks == 10
+        assert len(response.failures) == 1
+        assert "Partially optimized" in response.message
 
 
-class TestNotesResponse(unittest.TestCase):
+class TestNotesResponse:
     """Test cases for notes response model."""
 
     def test_notes_response_with_content(self):
@@ -470,9 +468,9 @@ class TestNotesResponse(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(response.task_id, 1)
-        self.assertEqual(response.content, "# Test Notes\n\nSome content.")
-        self.assertEqual(response.has_notes, True)
+        assert response.task_id == 1
+        assert response.content == "# Test Notes\n\nSome content."
+        assert response.has_notes is True
 
     def test_notes_response_empty(self):
         """Test notes response with no content."""
@@ -480,10 +478,6 @@ class TestNotesResponse(unittest.TestCase):
         response = NotesResponse(task_id=1, content="", has_notes=False)
 
         # Assert
-        self.assertEqual(response.task_id, 1)
-        self.assertEqual(response.content, "")
-        self.assertEqual(response.has_notes, False)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert response.task_id == 1
+        assert response.content == ""
+        assert response.has_notes is False

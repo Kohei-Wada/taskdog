@@ -1,6 +1,5 @@
 """Tests for API context dataclass."""
 
-import unittest
 from unittest.mock import Mock
 
 from taskdog_core.controllers.query_controller import QueryController
@@ -17,10 +16,10 @@ from taskdog_core.shared.config_manager import Config
 from taskdog_server.api.context import ApiContext
 
 
-class TestApiContext(unittest.TestCase):
+class TestApiContext:
     """Test cases for ApiContext dataclass."""
 
-    def setUp(self):
+    def setup_method(self):
         """Set up mock dependencies for tests."""
         self.mock_repository = Mock(spec=TaskRepository)
         self.mock_config = Mock(spec=Config)
@@ -48,17 +47,15 @@ class TestApiContext(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(context.repository, self.mock_repository)
-        self.assertEqual(context.config, self.mock_config)
-        self.assertEqual(context.notes_repository, self.mock_notes_repository)
-        self.assertEqual(context.query_controller, self.mock_query_controller)
-        self.assertEqual(context.lifecycle_controller, self.mock_lifecycle_controller)
-        self.assertEqual(
-            context.relationship_controller, self.mock_relationship_controller
-        )
-        self.assertEqual(context.analytics_controller, self.mock_analytics_controller)
-        self.assertEqual(context.crud_controller, self.mock_crud_controller)
-        self.assertEqual(context.holiday_checker, self.mock_holiday_checker)
+        assert context.repository == self.mock_repository
+        assert context.config == self.mock_config
+        assert context.notes_repository == self.mock_notes_repository
+        assert context.query_controller == self.mock_query_controller
+        assert context.lifecycle_controller == self.mock_lifecycle_controller
+        assert context.relationship_controller == self.mock_relationship_controller
+        assert context.analytics_controller == self.mock_analytics_controller
+        assert context.crud_controller == self.mock_crud_controller
+        assert context.holiday_checker == self.mock_holiday_checker
 
     def test_create_context_without_holiday_checker(self):
         """Test creating ApiContext without holiday checker (None)."""
@@ -76,7 +73,7 @@ class TestApiContext(unittest.TestCase):
         )
 
         # Assert
-        self.assertIsNone(context.holiday_checker)
+        assert context.holiday_checker is None
 
     def test_context_is_immutable_dataclass(self):
         """Test that ApiContext attributes can be accessed and modified."""
@@ -94,15 +91,15 @@ class TestApiContext(unittest.TestCase):
         )
 
         # Assert - verify all attributes are accessible
-        self.assertIsNotNone(context.repository)
-        self.assertIsNotNone(context.config)
-        self.assertIsNotNone(context.notes_repository)
-        self.assertIsNotNone(context.query_controller)
-        self.assertIsNotNone(context.lifecycle_controller)
-        self.assertIsNotNone(context.relationship_controller)
-        self.assertIsNotNone(context.analytics_controller)
-        self.assertIsNotNone(context.crud_controller)
-        self.assertIsNotNone(context.holiday_checker)
+        assert context.repository is not None
+        assert context.config is not None
+        assert context.notes_repository is not None
+        assert context.query_controller is not None
+        assert context.lifecycle_controller is not None
+        assert context.relationship_controller is not None
+        assert context.analytics_controller is not None
+        assert context.crud_controller is not None
+        assert context.holiday_checker is not None
 
     def test_context_with_different_repository_instances(self):
         """Test creating contexts with different repository instances."""
@@ -135,7 +132,7 @@ class TestApiContext(unittest.TestCase):
         )
 
         # Assert
-        self.assertNotEqual(context1.repository, context2.repository)
+        assert context1.repository != context2.repository
 
     def test_context_with_different_controller_instances(self):
         """Test creating contexts with different controller instances."""
@@ -168,7 +165,7 @@ class TestApiContext(unittest.TestCase):
         )
 
         # Assert
-        self.assertNotEqual(context1.query_controller, context2.query_controller)
+        assert context1.query_controller != context2.query_controller
 
     def test_context_stores_all_five_controllers(self):
         """Test that context stores all five specialized controllers."""
@@ -196,11 +193,7 @@ class TestApiContext(unittest.TestCase):
 
         # All controllers should be non-None
         for controller in controllers:
-            self.assertIsNotNone(controller)
+            assert controller is not None
 
         # All controllers should be different instances
-        self.assertEqual(len(set(map(id, controllers))), 5)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(set(map(id, controllers))) == 5
