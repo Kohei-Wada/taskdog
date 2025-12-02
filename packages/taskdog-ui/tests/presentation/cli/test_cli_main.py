@@ -132,37 +132,23 @@ class TestCliGlobalOptions:
         assert result.exit_code == 1
         assert "192.168.1.100:3000" in result.output
 
-    @patch("taskdog.cli_main.load_cli_config")
-    def test_port_validation_too_low(self, mock_load_config):
+    def test_port_validation_too_low(self):
         """Test that port 0 is rejected."""
-        # Setup
-        mock_config = MagicMock()
-        mock_config.api.host = "127.0.0.1"
-        mock_config.api.port = 8000
-        mock_load_config.return_value = mock_config
-
         # Execute
         result = self.runner.invoke(cli, ["--port", "0", "table"])
 
-        # Verify
-        assert result.exit_code == 1
-        assert "Port must be between 1 and 65535" in result.output
+        # Verify - Click returns exit code 2 for usage errors
+        assert result.exit_code == 2
+        assert "is not in the range 1<=x<=65535" in result.output
 
-    @patch("taskdog.cli_main.load_cli_config")
-    def test_port_validation_too_high(self, mock_load_config):
+    def test_port_validation_too_high(self):
         """Test that port > 65535 is rejected."""
-        # Setup
-        mock_config = MagicMock()
-        mock_config.api.host = "127.0.0.1"
-        mock_config.api.port = 8000
-        mock_load_config.return_value = mock_config
-
         # Execute
         result = self.runner.invoke(cli, ["--port", "65536", "table"])
 
-        # Verify
-        assert result.exit_code == 1
-        assert "Port must be between 1 and 65535" in result.output
+        # Verify - Click returns exit code 2 for usage errors
+        assert result.exit_code == 2
+        assert "is not in the range 1<=x<=65535" in result.output
 
     @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
