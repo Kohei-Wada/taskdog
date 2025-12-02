@@ -63,8 +63,20 @@ class TaskdogGroup(click.Group):
     context_settings={"help_option_names": ["-h", "--help"]},
     invoke_without_command=True,
 )
+@click.option(
+    "--host",
+    type=str,
+    default=None,
+    help="API server host (overrides config/env)",
+)
+@click.option(
+    "--port",
+    type=click.IntRange(1, 65535),
+    default=None,
+    help="API server port (overrides config/env)",
+)
 @click.pass_context
-def cli(ctx: click.Context) -> None:
+def cli(ctx: click.Context, host: str | None, port: int | None) -> None:
     """Taskdog: Task management CLI tool with time tracking and optimization."""
     # Display help when no subcommand is provided
     if ctx.invoked_subcommand is None:
@@ -76,20 +88,22 @@ def cli(ctx: click.Context) -> None:
     console_writer = RichConsoleWriter(console)
     config = load_cli_config()
 
+    # CLI options override config/env settings
+    api_host = host if host is not None else config.api.host
+    api_port = port if port is not None else config.api.port
+
     # Initialize API client (required for all CLI commands)
     from taskdog.infrastructure.api_client import TaskdogApiClient
 
     try:
-        api_client = TaskdogApiClient(
-            base_url=f"http://{config.api.host}:{config.api.port}"
-        )
+        api_client = TaskdogApiClient(base_url=f"http://{api_host}:{api_port}")
         # Test connection
         api_client.client.get("/health")
     except Exception as e:
         console_writer.error(
             "connecting to API server",
             Exception(
-                f"Cannot connect to API server at {config.api.host}:{config.api.port}. "
+                f"Cannot connect to API server at {api_host}:{api_port}. "
                 f"Please start the server first with 'taskdog-server'. Error: {e}"
             ),
         )
