@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from taskdog_core.domain.constants import MIN_PRIORITY_EXCLUSIVE
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_ALGORITHM,
     DEFAULT_END_HOUR,
@@ -9,7 +10,6 @@ from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_PRIORITY,
     DEFAULT_START_HOUR,
     MAX_ESTIMATED_DURATION_HOURS,
-    MIN_PRIORITY_EXCLUSIVE,
 )
 from taskdog_core.shared.constants.file_management import (
     BACKUP_FILE_SUFFIX,

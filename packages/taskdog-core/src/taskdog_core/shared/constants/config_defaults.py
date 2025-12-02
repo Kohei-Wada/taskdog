@@ -8,7 +8,6 @@ DEFAULT_ALGORITHM = "greedy"
 DEFAULT_PRIORITY = 5
 
 # === Validation Limits ===
-MIN_PRIORITY_EXCLUSIVE = 0  # Priority must be > 0
 MAX_ESTIMATED_DURATION_HOURS = 999  # Maximum estimated duration in hours
 
 # === Time Defaults ===

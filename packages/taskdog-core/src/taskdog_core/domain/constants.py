@@ -18,3 +18,7 @@ SECONDS_PER_DAY = 86400
 # File size validation
 MIN_FILE_SIZE_FOR_CONTENT = 0
 """Minimum file size in bytes to consider a file as having content."""
+
+# Validation limits - Business rules
+MIN_PRIORITY_EXCLUSIVE = 0
+"""Minimum priority value (exclusive). Priority must be > 0."""
