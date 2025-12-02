@@ -1,8 +1,9 @@
 """Tests for TaskDataLoader."""
 
-import unittest
 from datetime import date
 from unittest.mock import Mock
+
+import pytest
 
 from taskdog.services.task_data_loader import TaskData, TaskDataLoader
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
@@ -12,10 +13,11 @@ from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class TestTaskDataLoader(unittest.TestCase):
+class TestTaskDataLoader:
     """Test cases for TaskDataLoader."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.api_client = Mock()
         self.table_presenter = Mock()
@@ -51,18 +53,18 @@ class TestTaskDataLoader(unittest.TestCase):
         )
 
         # Verify
-        self.assertIsInstance(result, TaskData)
-        self.assertEqual(len(result.all_tasks), 2)
-        self.assertEqual(len(result.filtered_tasks), 2)
-        self.assertEqual(len(result.table_view_models), 2)
-        self.assertIsNone(result.gantt_view_model)
-        self.assertIsNone(result.filtered_gantt_view_model)
+        assert isinstance(result, TaskData)
+        assert len(result.all_tasks) == 2
+        assert len(result.filtered_tasks) == 2
+        assert len(result.table_view_models) == 2
+        assert result.gantt_view_model is None
+        assert result.filtered_gantt_view_model is None
 
         # Verify API call
         self.api_client.list_tasks.assert_called_once()
         call_args = self.api_client.list_tasks.call_args
-        self.assertEqual(call_args.kwargs["sort_by"], "deadline")
-        self.assertEqual(call_args.kwargs["reverse"], False)
+        assert call_args.kwargs["sort_by"] == "deadline"
+        assert call_args.kwargs["reverse"] is False
 
     def test_load_tasks_with_hide_completed(self):
         """Test loading tasks with hide_completed filter."""
@@ -88,9 +90,9 @@ class TestTaskDataLoader(unittest.TestCase):
         )
 
         # Verify - only PENDING task should remain
-        self.assertEqual(len(result.all_tasks), 3)
-        self.assertEqual(len(result.filtered_tasks), 1)
-        self.assertEqual(result.filtered_tasks[0].id, 1)
+        assert len(result.all_tasks) == 3
+        assert len(result.filtered_tasks) == 1
+        assert result.filtered_tasks[0].id == 1
 
     def test_load_tasks_with_gantt(self):
         """Test loading tasks with gantt data."""
@@ -144,17 +146,17 @@ class TestTaskDataLoader(unittest.TestCase):
         )
 
         # Verify
-        self.assertIsNotNone(result.gantt_view_model)
-        self.assertIsNotNone(result.filtered_gantt_view_model)
-        self.assertEqual(len(result.gantt_view_model.tasks), 1)
+        assert result.gantt_view_model is not None
+        assert result.filtered_gantt_view_model is not None
+        assert len(result.gantt_view_model.tasks) == 1
 
         # Verify API call now uses include_gantt instead of get_gantt_data
         call_args = self.api_client.list_tasks.call_args
-        self.assertEqual(call_args.kwargs["sort_by"], "deadline")
-        self.assertEqual(call_args.kwargs["reverse"], False)
-        self.assertEqual(call_args.kwargs["include_gantt"], True)
-        self.assertEqual(call_args.kwargs["gantt_start_date"], date(2025, 1, 1))
-        self.assertEqual(call_args.kwargs["gantt_end_date"], date(2025, 1, 7))
+        assert call_args.kwargs["sort_by"] == "deadline"
+        assert call_args.kwargs["reverse"] is False
+        assert call_args.kwargs["include_gantt"] is True
+        assert call_args.kwargs["gantt_start_date"] == date(2025, 1, 1)
+        assert call_args.kwargs["gantt_end_date"] == date(2025, 1, 7)
 
     def test_apply_display_filter_show_all(self):
         """Test apply_display_filter with hide_completed=False."""
@@ -164,7 +166,7 @@ class TestTaskDataLoader(unittest.TestCase):
 
         result = self.loader.apply_display_filter(tasks, hide_completed=False)
 
-        self.assertEqual(len(result), 2)
+        assert len(result) == 2
 
     def test_apply_display_filter_hide_completed(self):
         """Test apply_display_filter with hide_completed=True."""
@@ -177,9 +179,9 @@ class TestTaskDataLoader(unittest.TestCase):
         result = self.loader.apply_display_filter(tasks, hide_completed=True)
 
         # Only PENDING and IN_PROGRESS should remain
-        self.assertEqual(len(result), 2)
+        assert len(result) == 2
         statuses = {t.status for t in result}
-        self.assertEqual(statuses, {TaskStatus.PENDING, TaskStatus.IN_PROGRESS})
+        assert statuses == {TaskStatus.PENDING, TaskStatus.IN_PROGRESS}
 
     def test_filter_gantt_by_tasks(self):
         """Test filtering gantt view model by tasks."""
@@ -241,13 +243,9 @@ class TestTaskDataLoader(unittest.TestCase):
         # Filter to only show task1 and task2
         result = self.loader.filter_gantt_by_tasks(gantt_view_model, [task1, task2])
 
-        self.assertEqual(len(result.tasks), 2)
+        assert len(result.tasks) == 2
         task_ids = {t.id for t in result.tasks}
-        self.assertEqual(task_ids, {1, 2})
+        assert task_ids == {1, 2}
         # Other properties should be preserved
-        self.assertEqual(result.start_date, gantt_view_model.start_date)
-        self.assertEqual(result.end_date, gantt_view_model.end_date)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.start_date == gantt_view_model.start_date
+        assert result.end_date == gantt_view_model.end_date

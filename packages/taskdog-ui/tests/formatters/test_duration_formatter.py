@@ -1,37 +1,40 @@
 """Tests for DurationFormatter."""
 
-import unittest
 from datetime import datetime
 from unittest.mock import patch
 
-from parameterized import parameterized
+import pytest
 
 from taskdog.formatters.duration_formatter import DurationFormatter
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-class TestDurationFormatter(unittest.TestCase):
+class TestDurationFormatter:
     """Test cases for DurationFormatter."""
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "hours,expected",
         [
-            ("with_value", 5.0, "5.0"),
-            ("with_none", None, "-"),
-        ]
+            (5.0, "5.0"),
+            (None, "-"),
+        ],
+        ids=["with_value", "with_none"],
     )
-    def test_format_hours(self, scenario, hours, expected):
+    def test_format_hours(self, hours, expected):
         """Test format_hours with various input values."""
         result = DurationFormatter.format_hours(hours)
-        self.assertEqual(result, expected)
+        assert result == expected
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "estimated_duration,expected",
         [
-            ("with_value", 10.0, "10.0"),
-            ("without_value", None, "-"),
-        ]
+            (10.0, "10.0"),
+            (None, "-"),
+        ],
+        ids=["with_value", "without_value"],
     )
-    def test_format_estimated_duration(self, scenario, estimated_duration, expected):
+    def test_format_estimated_duration(self, estimated_duration, expected):
         """Test format_estimated_duration with and without duration value."""
         now = datetime.now()
         task_vm = TaskRowViewModel(
@@ -55,16 +58,18 @@ class TestDurationFormatter(unittest.TestCase):
             updated_at=now,
         )
         result = DurationFormatter.format_estimated_duration(task_vm)
-        self.assertEqual(result, expected)
+        assert result == expected
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "status,actual_duration_hours,is_finished,expected",
         [
-            ("with_value", TaskStatus.COMPLETED, 8.5, True, "8.5"),
-            ("without_value", TaskStatus.PENDING, None, False, "-"),
-        ]
+            (TaskStatus.COMPLETED, 8.5, True, "8.5"),
+            (TaskStatus.PENDING, None, False, "-"),
+        ],
+        ids=["with_value", "without_value"],
     )
     def test_format_actual_duration(
-        self, scenario, status, actual_duration_hours, is_finished, expected
+        self, status, actual_duration_hours, is_finished, expected
     ):
         """Test format_actual_duration with and without duration value."""
         now = datetime.now()
@@ -89,15 +94,17 @@ class TestDurationFormatter(unittest.TestCase):
             updated_at=now,
         )
         result = DurationFormatter.format_actual_duration(task_vm)
-        self.assertEqual(result, expected)
+        assert result == expected
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "status,actual_start",
         [
-            ("not_in_progress", TaskStatus.PENDING, None),
-            ("in_progress_without_actual_start", TaskStatus.IN_PROGRESS, None),
-        ]
+            (TaskStatus.PENDING, None),
+            (TaskStatus.IN_PROGRESS, None),
+        ],
+        ids=["not_in_progress", "in_progress_without_actual_start"],
     )
-    def test_format_elapsed_time_returns_dash(self, scenario, status, actual_start):
+    def test_format_elapsed_time_returns_dash(self, status, actual_start):
         """Test format_elapsed_time returns dash for non-elapsed cases."""
         now = datetime.now()
         task_vm = TaskRowViewModel(
@@ -121,7 +128,7 @@ class TestDurationFormatter(unittest.TestCase):
             updated_at=now,
         )
         result = DurationFormatter.format_elapsed_time(task_vm)
-        self.assertEqual(result, "-")
+        assert result == "-"
 
     def test_format_elapsed_time_hours_only(self):
         """Test format_elapsed_time with elapsed time less than 1 day."""
@@ -153,7 +160,7 @@ class TestDurationFormatter(unittest.TestCase):
             mock_dt.now.return_value = now_time
             result = DurationFormatter.format_elapsed_time(task_vm)
             # 5 hours, 15 minutes, 38 seconds
-            self.assertEqual(result, "5:15:38")
+            assert result == "5:15:38"
 
     def test_format_elapsed_time_with_days(self):
         """Test format_elapsed_time with elapsed time more than 1 day."""
@@ -185,8 +192,4 @@ class TestDurationFormatter(unittest.TestCase):
             mock_dt.now.return_value = now_time
             result = DurationFormatter.format_elapsed_time(task_vm)
             # 3 days, 6 hours, 30 minutes, 45 seconds
-            self.assertEqual(result, "3d 6:30:45")
-
-
-if __name__ == "__main__":
-    unittest.main()
+            assert result == "3d 6:30:45"

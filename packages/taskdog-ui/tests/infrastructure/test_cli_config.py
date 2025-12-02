@@ -2,9 +2,10 @@
 
 import os
 import tempfile
-import unittest
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from taskdog.infrastructure.cli_config import (
     CliConfig,
@@ -13,13 +14,14 @@ from taskdog.infrastructure.cli_config import (
 )
 
 
-class TestCliConfig(unittest.TestCase):
+class TestCliConfig:
     """Test CLI configuration loading."""
 
-    def setUp(self):
-        """Set up test fixtures."""
+    @pytest.fixture(autouse=True)
+    def setup_and_teardown(self):
+        """Set up and clean up environment variables."""
         # Store original env vars
-        self.original_env = {
+        original_env = {
             "TASKDOG_API_HOST": os.environ.get("TASKDOG_API_HOST"),
             "TASKDOG_API_PORT": os.environ.get("TASKDOG_API_PORT"),
         }
@@ -27,10 +29,10 @@ class TestCliConfig(unittest.TestCase):
         for key in ["TASKDOG_API_HOST", "TASKDOG_API_PORT"]:
             os.environ.pop(key, None)
 
-    def tearDown(self):
-        """Clean up after tests."""
+        yield
+
         # Restore original env vars
-        for key, value in self.original_env.items():
+        for key, value in original_env.items():
             if value is not None:
                 os.environ[key] = value
             else:
@@ -39,20 +41,20 @@ class TestCliConfig(unittest.TestCase):
     def test_default_config(self):
         """Test default config values."""
         config = CliConfig()
-        self.assertEqual(config.api.host, "127.0.0.1")
-        self.assertEqual(config.api.port, 8000)
-        self.assertEqual(config.ui.theme, "textual-dark")
-        self.assertEqual(config.keybindings, {})
+        assert config.api.host == "127.0.0.1"
+        assert config.api.port == 8000
+        assert config.ui.theme == "textual-dark"
+        assert config.keybindings == {}
 
     def test_ui_config_defaults(self):
         """Test UI config default values."""
         ui_config = UiConfig()
-        self.assertEqual(ui_config.theme, "textual-dark")
+        assert ui_config.theme == "textual-dark"
 
     def test_ui_config_custom_theme(self):
         """Test UI config with custom theme."""
         ui_config = UiConfig(theme="nord")
-        self.assertEqual(ui_config.theme, "nord")
+        assert ui_config.theme == "nord"
 
     def test_load_config_with_ui_section(self):
         """Test loading config with [ui] section from TOML file."""
@@ -75,9 +77,9 @@ theme = "nord"
                 return_value=config_dir,
             ):
                 config = load_cli_config()
-                self.assertEqual(config.api.host, "192.168.1.100")
-                self.assertEqual(config.api.port, 3000)
-                self.assertEqual(config.ui.theme, "nord")
+                assert config.api.host == "192.168.1.100"
+                assert config.api.port == 3000
+                assert config.ui.theme == "nord"
 
     def test_load_config_with_missing_ui_section(self):
         """Test loading config without [ui] section uses defaults."""
@@ -97,10 +99,10 @@ port = 9000
                 return_value=config_dir,
             ):
                 config = load_cli_config()
-                self.assertEqual(config.api.host, "localhost")
-                self.assertEqual(config.api.port, 9000)
+                assert config.api.host == "localhost"
+                assert config.api.port == 9000
                 # UI should use defaults
-                self.assertEqual(config.ui.theme, "textual-dark")
+                assert config.ui.theme == "textual-dark"
 
     def test_load_config_partial_ui_section(self):
         """Test loading config with just theme specified."""
@@ -119,7 +121,7 @@ theme = "gruvbox"
                 return_value=config_dir,
             ):
                 config = load_cli_config()
-                self.assertEqual(config.ui.theme, "gruvbox")
+                assert config.ui.theme == "gruvbox"
 
     def test_load_config_no_file_uses_defaults(self):
         """Test loading config when file doesn't exist uses defaults."""
@@ -132,9 +134,9 @@ theme = "gruvbox"
                 return_value=config_dir,
             ):
                 config = load_cli_config()
-                self.assertEqual(config.api.host, "127.0.0.1")
-                self.assertEqual(config.api.port, 8000)
-                self.assertEqual(config.ui.theme, "textual-dark")
+                assert config.api.host == "127.0.0.1"
+                assert config.api.port == 8000
+                assert config.ui.theme == "textual-dark"
 
     def test_env_vars_override_api_only(self):
         """Test environment variables override API settings only."""
@@ -162,11 +164,7 @@ theme = "nord"
             ):
                 config = load_cli_config()
                 # API settings should be overridden by env vars
-                self.assertEqual(config.api.host, "192.168.1.200")
-                self.assertEqual(config.api.port, 4000)
+                assert config.api.host == "192.168.1.200"
+                assert config.api.port == 4000
                 # UI settings should come from file (no env var override)
-                self.assertEqual(config.ui.theme, "nord")
-
-
-if __name__ == "__main__":
-    unittest.main()
+                assert config.ui.theme == "nord"
