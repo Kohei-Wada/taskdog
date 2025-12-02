@@ -1,31 +1,25 @@
 """Tests for ConfigManager."""
 
+import logging
 import os
 import tempfile
-import unittest
 from dataclasses import FrozenInstanceError
 from pathlib import Path
 from unittest.mock import patch
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.shared.config_manager import ConfigManager
 
 
-class ConfigManagerTest(unittest.TestCase):
+class TestConfigManager:
     """Test cases for ConfigManager class."""
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "toml_content,expected_max_hours,expected_algorithm,expected_priority",
         [
+            (None, 6.0, "greedy", 5),
             (
-                "nonexistent_file",
-                None,  # No file content - triggers file not found
-                6.0,  # expected max_hours_per_day
-                "greedy",  # expected default_algorithm
-                5,  # expected default_priority
-            ),
-            (
-                "full_config",
                 """
 [optimization]
 max_hours_per_day = 8.0
@@ -39,38 +33,36 @@ default_priority = 3
                 3,
             ),
             (
-                "partial_config",
                 """
 [optimization]
 max_hours_per_day = 7.5
 """,
                 7.5,
-                "greedy",  # Falls back to default
-                5,  # Falls back to default
+                "greedy",
+                5,
             ),
             (
-                "empty_sections",
                 """
 [optimization]
 
 [task]
 """,
-                6.0,  # All defaults
+                6.0,
                 "greedy",
                 5,
             ),
-            (
-                "invalid_toml",
-                "this is not valid TOML {{{",
-                6.0,  # Falls back to defaults on parse error
-                "greedy",
-                5,
-            ),
-        ]
+            ("this is not valid TOML {{{", 6.0, "greedy", 5),
+        ],
+        ids=[
+            "nonexistent_file",
+            "full_config",
+            "partial_config",
+            "empty_sections",
+            "invalid_toml",
+        ],
     )
     def test_config_loading_scenarios(
         self,
-        scenario_name,
         toml_content,
         expected_max_hours,
         expected_algorithm,
@@ -96,23 +88,23 @@ max_hours_per_day = 7.5
                 config_path.unlink()
 
         # Verify all expected values
-        self.assertEqual(config.optimization.max_hours_per_day, expected_max_hours)
-        self.assertEqual(config.optimization.default_algorithm, expected_algorithm)
-        self.assertEqual(config.task.default_priority, expected_priority)
+        assert config.optimization.max_hours_per_day == expected_max_hours
+        assert config.optimization.default_algorithm == expected_algorithm
+        assert config.task.default_priority == expected_priority
 
     def test_config_dataclasses_are_frozen(self):
         """Test that config dataclasses are immutable."""
         config = ConfigManager.load()
 
         # All config objects should be frozen (immutable)
-        with self.assertRaises(FrozenInstanceError):
+        with pytest.raises(FrozenInstanceError):
             config.optimization.max_hours_per_day = 10.0
 
-        with self.assertRaises(FrozenInstanceError):
+        with pytest.raises(FrozenInstanceError):
             config.task.default_priority = 1
 
 
-class ConfigManagerEnvVarsTest(unittest.TestCase):
+class TestConfigManagerEnvVars:
     """Test cases for environment variable support in ConfigManager."""
 
     def test_env_vars_override_defaults(self):
@@ -125,8 +117,8 @@ class ConfigManagerEnvVarsTest(unittest.TestCase):
         with patch.dict(os.environ, env_vars, clear=False):
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
-        self.assertEqual(config.optimization.max_hours_per_day, 10.5)
-        self.assertEqual(config.task.default_priority, 1)
+        assert config.optimization.max_hours_per_day == 10.5
+        assert config.task.default_priority == 1
 
     def test_env_vars_override_toml(self):
         """Test that environment variables take precedence over TOML values."""
@@ -148,9 +140,9 @@ default_algorithm = "balanced"
                 config = ConfigManager.load(config_path)
 
             # Environment variables should override TOML
-            self.assertEqual(config.optimization.max_hours_per_day, 12.0)
+            assert config.optimization.max_hours_per_day == 12.0
             # TOML value should be used when no env var is set
-            self.assertEqual(config.optimization.default_algorithm, "balanced")
+            assert config.optimization.default_algorithm == "balanced"
         finally:
             config_path.unlink()
 
@@ -163,10 +155,11 @@ default_algorithm = "balanced"
         with patch.dict(os.environ, env_vars, clear=False):
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
-        self.assertEqual(
-            config.api.cors_origins,
-            ["http://localhost:3000", "http://example.com", "http://test.com"],
-        )
+        assert config.api.cors_origins == [
+            "http://localhost:3000",
+            "http://example.com",
+            "http://test.com",
+        ]
 
     def test_env_var_list_with_empty_items(self):
         """Test that empty items are filtered out from list parsing."""
@@ -177,12 +170,13 @@ default_algorithm = "balanced"
         with patch.dict(os.environ, env_vars, clear=False):
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
-        self.assertEqual(
-            config.api.cors_origins,
-            ["http://localhost:3000", "http://example.com"],
-        )
+        assert config.api.cors_origins == [
+            "http://localhost:3000",
+            "http://example.com",
+        ]
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "env_key,env_value,section,field,expected",
         [
             ("TASKDOG_TIME_DEFAULT_START_HOUR", "10", "time", "default_start_hour", 10),
             ("TASKDOG_TIME_DEFAULT_END_HOUR", "20", "time", "default_end_hour", 20),
@@ -202,7 +196,15 @@ default_algorithm = "balanced"
                 "default_algorithm",
                 "balanced",
             ),
-        ]
+        ],
+        ids=[
+            "start_hour",
+            "end_hour",
+            "country",
+            "backend",
+            "database_url",
+            "algorithm",
+        ],
     )
     def test_all_env_vars(self, env_key, env_value, section, field, expected):
         """Test all supported environment variables."""
@@ -211,7 +213,7 @@ default_algorithm = "balanced"
 
         section_obj = getattr(config, section)
         actual = getattr(section_obj, field)
-        self.assertEqual(actual, expected)
+        assert actual == expected
 
     def test_no_env_vars_uses_defaults(self):
         """Test that defaults are used when no environment variables are set."""
@@ -226,15 +228,15 @@ default_algorithm = "balanced"
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
         # Should use defaults
-        self.assertEqual(config.optimization.max_hours_per_day, 6.0)
-        self.assertEqual(config.optimization.default_algorithm, "greedy")
-        self.assertEqual(config.task.default_priority, 5)
-        self.assertEqual(config.time.default_start_hour, 9)
-        self.assertEqual(config.time.default_end_hour, 18)
+        assert config.optimization.max_hours_per_day == 6.0
+        assert config.optimization.default_algorithm == "greedy"
+        assert config.task.default_priority == 5
+        assert config.time.default_start_hour == 9
+        assert config.time.default_end_hour == 18
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "env_key,invalid_value,section,field,expected_default",
         [
-            # (env_key, invalid_value, section, field, expected_default)
             (
                 "TASKDOG_TASK_DEFAULT_PRIORITY",
                 "not_a_number",
@@ -251,7 +253,8 @@ default_algorithm = "balanced"
             ),
             ("TASKDOG_TIME_DEFAULT_START_HOUR", "abc", "time", "default_start_hour", 9),
             ("TASKDOG_TIME_DEFAULT_END_HOUR", "xyz", "time", "default_end_hour", 18),
-        ]
+        ],
+        ids=["priority", "max_hours", "start_hour", "end_hour"],
     )
     def test_invalid_env_var_falls_back_to_default(
         self, env_key, invalid_value, section, field, expected_default
@@ -262,16 +265,14 @@ default_algorithm = "balanced"
 
         section_obj = getattr(config, section)
         actual = getattr(section_obj, field)
-        self.assertEqual(actual, expected_default)
+        assert actual == expected_default
 
-    def test_invalid_env_var_logs_warning(self):
+    def test_invalid_env_var_logs_warning(self, caplog):
         """Test that invalid environment variable values log a warning."""
-        import logging
-
         with (
-            self.assertLogs(
-                "taskdog_core.shared.config_manager", level=logging.WARNING
-            ) as cm,
+            caplog.at_level(
+                logging.WARNING, logger="taskdog_core.shared.config_manager"
+            ),
             patch.dict(
                 os.environ,
                 {"TASKDOG_TASK_DEFAULT_PRIORITY": "not_a_number"},
@@ -281,11 +282,7 @@ default_algorithm = "balanced"
             ConfigManager.load(Path("/nonexistent/config.toml"))
 
         # Check that warning was logged
-        self.assertEqual(len(cm.output), 1)
-        self.assertIn("Invalid value for environment variable", cm.output[0])
-        self.assertIn("TASKDOG_TASK_DEFAULT_PRIORITY", cm.output[0])
-        self.assertIn("not_a_number", cm.output[0])
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(caplog.records) == 1
+        assert "Invalid value for environment variable" in caplog.records[0].message
+        assert "TASKDOG_TASK_DEFAULT_PRIORITY" in caplog.records[0].message
+        assert "not_a_number" in caplog.records[0].message

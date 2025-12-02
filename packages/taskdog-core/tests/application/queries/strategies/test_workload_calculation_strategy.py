@@ -1,7 +1,8 @@
 """Tests for workload calculation strategies."""
 
-import unittest
 from datetime import date, datetime
+
+import pytest
 
 from taskdog_core.application.queries.strategies.workload_calculation_strategy import (
     ActualScheduleStrategy,
@@ -22,10 +23,11 @@ class MockHolidayChecker:
         return check_date in self.holidays
 
 
-class TestWeekdayOnlyStrategy(unittest.TestCase):
+class TestWeekdayOnlyStrategy:
     """Test cases for WeekdayOnlyStrategy."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.strategy = WeekdayOnlyStrategy()
 
@@ -45,14 +47,14 @@ class TestWeekdayOnlyStrategy(unittest.TestCase):
 
         # Should have entries for Friday (10th), Monday (13th), Tuesday (14th)
         # 6 hours / 3 weekdays = 2 hours per day
-        self.assertEqual(len(result), 3)
-        self.assertAlmostEqual(result[task.planned_start.date()], 2.0)  # Friday
-        self.assertAlmostEqual(result[datetime(2025, 1, 13).date()], 2.0)  # Monday
-        self.assertAlmostEqual(result[task.planned_end.date()], 2.0)  # Tuesday
+        assert len(result) == 3
+        assert result[task.planned_start.date()] == pytest.approx(2.0)  # Friday
+        assert result[datetime(2025, 1, 13).date()] == pytest.approx(2.0)  # Monday
+        assert result[task.planned_end.date()] == pytest.approx(2.0)  # Tuesday
 
         # Weekend should NOT be in result
-        self.assertNotIn(datetime(2025, 1, 11).date(), result)  # Saturday
-        self.assertNotIn(datetime(2025, 1, 12).date(), result)  # Sunday
+        assert datetime(2025, 1, 11).date() not in result  # Saturday
+        assert datetime(2025, 1, 12).date() not in result  # Sunday
 
     def test_returns_empty_dict_for_weekend_only_task(self):
         """Test that weekend-only tasks return empty dict."""
@@ -69,7 +71,7 @@ class TestWeekdayOnlyStrategy(unittest.TestCase):
         result = self.strategy.compute_from_planned_period(task)
 
         # Should return empty dict (no weekdays in period)
-        self.assertEqual(result, {})
+        assert result == {}
 
     def test_returns_empty_dict_for_missing_fields(self):
         """Test that tasks with missing fields return empty dict."""
@@ -81,7 +83,7 @@ class TestWeekdayOnlyStrategy(unittest.TestCase):
             planned_end=datetime(2025, 1, 14, 18, 0, 0),
             estimated_duration=6.0,
         )
-        self.assertEqual(self.strategy.compute_from_planned_period(task1), {})
+        assert self.strategy.compute_from_planned_period(task1) == {}
 
         # No planned_end
         task2 = Task(
@@ -91,7 +93,7 @@ class TestWeekdayOnlyStrategy(unittest.TestCase):
             planned_start=datetime(2025, 1, 10, 9, 0, 0),
             estimated_duration=6.0,
         )
-        self.assertEqual(self.strategy.compute_from_planned_period(task2), {})
+        assert self.strategy.compute_from_planned_period(task2) == {}
 
         # No estimated_duration
         task3 = Task(
@@ -101,13 +103,14 @@ class TestWeekdayOnlyStrategy(unittest.TestCase):
             planned_start=datetime(2025, 1, 10, 9, 0, 0),
             planned_end=datetime(2025, 1, 14, 18, 0, 0),
         )
-        self.assertEqual(self.strategy.compute_from_planned_period(task3), {})
+        assert self.strategy.compute_from_planned_period(task3) == {}
 
 
-class TestActualScheduleStrategy(unittest.TestCase):
+class TestActualScheduleStrategy:
     """Test cases for ActualScheduleStrategy."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.strategy = ActualScheduleStrategy()
 
@@ -127,20 +130,20 @@ class TestActualScheduleStrategy(unittest.TestCase):
 
         # Should have entries for 3 weekdays only (Fri, Mon, Tue)
         # 10 hours / 3 weekdays = 3.33 hours per day
-        self.assertEqual(len(result), 3)
-        self.assertAlmostEqual(
-            result[datetime(2025, 1, 10).date()], 3.33, places=2
+        assert len(result) == 3
+        assert result[datetime(2025, 1, 10).date()] == pytest.approx(
+            3.33, abs=0.01
         )  # Friday
-        self.assertAlmostEqual(
-            result[datetime(2025, 1, 13).date()], 3.33, places=2
+        assert result[datetime(2025, 1, 13).date()] == pytest.approx(
+            3.33, abs=0.01
         )  # Monday
-        self.assertAlmostEqual(
-            result[datetime(2025, 1, 14).date()], 3.33, places=2
+        assert result[datetime(2025, 1, 14).date()] == pytest.approx(
+            3.33, abs=0.01
         )  # Tuesday
 
         # Weekend should NOT be in result
-        self.assertNotIn(datetime(2025, 1, 11).date(), result)  # Saturday
-        self.assertNotIn(datetime(2025, 1, 12).date(), result)  # Sunday
+        assert datetime(2025, 1, 11).date() not in result  # Saturday
+        assert datetime(2025, 1, 12).date() not in result  # Sunday
 
     def test_handles_weekend_only_task(self):
         """Test that weekend-only tasks are properly calculated."""
@@ -158,9 +161,9 @@ class TestActualScheduleStrategy(unittest.TestCase):
 
         # Should have entries for both weekend days
         # 10 hours / 2 days = 5 hours per day
-        self.assertEqual(len(result), 2)
-        self.assertAlmostEqual(result[datetime(2025, 1, 11).date()], 5.0)  # Saturday
-        self.assertAlmostEqual(result[datetime(2025, 1, 12).date()], 5.0)  # Sunday
+        assert len(result) == 2
+        assert result[datetime(2025, 1, 11).date()] == pytest.approx(5.0)  # Saturday
+        assert result[datetime(2025, 1, 12).date()] == pytest.approx(5.0)  # Sunday
 
     def test_single_day_task(self):
         """Test that single-day tasks work correctly."""
@@ -177,8 +180,8 @@ class TestActualScheduleStrategy(unittest.TestCase):
         result = self.strategy.compute_from_planned_period(task)
 
         # Should have entry for one day with all hours
-        self.assertEqual(len(result), 1)
-        self.assertAlmostEqual(result[datetime(2025, 1, 11).date()], 8.0)
+        assert len(result) == 1
+        assert result[datetime(2025, 1, 11).date()] == pytest.approx(8.0)
 
     def test_returns_empty_dict_for_missing_fields(self):
         """Test that tasks with missing fields return empty dict."""
@@ -190,7 +193,7 @@ class TestActualScheduleStrategy(unittest.TestCase):
             planned_end=datetime(2025, 1, 14, 18, 0, 0),
             estimated_duration=6.0,
         )
-        self.assertEqual(self.strategy.compute_from_planned_period(task1), {})
+        assert self.strategy.compute_from_planned_period(task1) == {}
 
         # No planned_end
         task2 = Task(
@@ -200,7 +203,7 @@ class TestActualScheduleStrategy(unittest.TestCase):
             planned_start=datetime(2025, 1, 10, 9, 0, 0),
             estimated_duration=6.0,
         )
-        self.assertEqual(self.strategy.compute_from_planned_period(task2), {})
+        assert self.strategy.compute_from_planned_period(task2) == {}
 
         # No estimated_duration
         task3 = Task(
@@ -210,7 +213,7 @@ class TestActualScheduleStrategy(unittest.TestCase):
             planned_start=datetime(2025, 1, 10, 9, 0, 0),
             planned_end=datetime(2025, 1, 14, 18, 0, 0),
         )
-        self.assertEqual(self.strategy.compute_from_planned_period(task3), {})
+        assert self.strategy.compute_from_planned_period(task3) == {}
 
     def test_excludes_holidays_when_holiday_checker_provided(self):
         """Test that holidays are excluded when holiday checker is provided."""
@@ -231,12 +234,12 @@ class TestActualScheduleStrategy(unittest.TestCase):
 
         # Should distribute across working days only (Mon, Wed)
         # 6h / 2 working days = 3h per day
-        self.assertEqual(len(result), 2)
-        self.assertAlmostEqual(result[date(2025, 1, 6)], 3.0)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 8)], 3.0)  # Wednesday
+        assert len(result) == 2
+        assert result[date(2025, 1, 6)] == pytest.approx(3.0)  # Monday
+        assert result[date(2025, 1, 8)] == pytest.approx(3.0)  # Wednesday
 
         # Tuesday (holiday) should NOT be in result
-        self.assertNotIn(date(2025, 1, 7), result)
+        assert date(2025, 1, 7) not in result
 
     def test_distributes_across_all_days_when_only_holidays_in_period(self):
         """Test that hours are distributed across all days if period is only holidays."""
@@ -261,11 +264,7 @@ class TestActualScheduleStrategy(unittest.TestCase):
 
         # No working days, so distribute across all days
         # 9h / 3 days = 3h per day
-        self.assertEqual(len(result), 3)
-        self.assertAlmostEqual(result[date(2025, 1, 6)], 3.0)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 7)], 3.0)  # Tuesday
-        self.assertAlmostEqual(result[date(2025, 1, 8)], 3.0)  # Wednesday
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(result) == 3
+        assert result[date(2025, 1, 6)] == pytest.approx(3.0)  # Monday
+        assert result[date(2025, 1, 7)] == pytest.approx(3.0)  # Tuesday
+        assert result[date(2025, 1, 8)] == pytest.approx(3.0)  # Wednesday
