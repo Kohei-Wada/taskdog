@@ -8,23 +8,27 @@ This controller handles all task lifecycle operations (status changes with time 
 - reopen_task: Reset finished task to PENDING, clear timestamps
 """
 
-from taskdog_core.application.dto.single_task_inputs import (
-    CancelTaskInput,
-    CompleteTaskInput,
-    PauseTaskInput,
-    ReopenTaskInput,
-    StartTaskInput,
-)
+from collections.abc import Callable
+
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.use_cases.cancel_task import CancelTaskUseCase
 from taskdog_core.application.use_cases.complete_task import CompleteTaskUseCase
 from taskdog_core.application.use_cases.pause_task import PauseTaskUseCase
 from taskdog_core.application.use_cases.reopen_task import ReopenTaskUseCase
 from taskdog_core.application.use_cases.start_task import StartTaskUseCase
+from taskdog_core.application.use_cases.status_change_use_case import (
+    StatusChangeUseCase,
+)
 from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.logger import Logger
 from taskdog_core.shared.config_manager import Config
+
+# Type alias for use case factory function
+StatusChangeUseCaseFactory = Callable[
+    [TaskRepository], StatusChangeUseCase[SingleTaskInput]
+]
 
 
 class TaskLifecycleController(BaseTaskController):
@@ -60,6 +64,23 @@ class TaskLifecycleController(BaseTaskController):
         """
         super().__init__(repository, config, logger)
 
+    def _execute_status_change(
+        self,
+        use_case_factory: StatusChangeUseCaseFactory,
+        task_id: int,
+    ) -> TaskOperationOutput:
+        """Execute a status change use case.
+
+        Args:
+            use_case_factory: Factory function (use case class) to instantiate
+            task_id: ID of the task to modify
+
+        Returns:
+            TaskOperationOutput containing the updated task information
+        """
+        use_case = use_case_factory(self.repository)
+        return use_case.execute(SingleTaskInput(task_id=task_id))
+
     def start_task(self, task_id: int) -> TaskOperationOutput:
         """Start a task.
 
@@ -75,9 +96,7 @@ class TaskLifecycleController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be started
         """
-        use_case = StartTaskUseCase(self.repository)
-        request = StartTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        return self._execute_status_change(StartTaskUseCase, task_id)
 
     def complete_task(self, task_id: int) -> TaskOperationOutput:
         """Complete a task.
@@ -94,9 +113,7 @@ class TaskLifecycleController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be completed
         """
-        use_case = CompleteTaskUseCase(self.repository)
-        request = CompleteTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        return self._execute_status_change(CompleteTaskUseCase, task_id)
 
     def pause_task(self, task_id: int) -> TaskOperationOutput:
         """Pause a task.
@@ -113,9 +130,7 @@ class TaskLifecycleController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be paused
         """
-        use_case = PauseTaskUseCase(self.repository)
-        request = PauseTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        return self._execute_status_change(PauseTaskUseCase, task_id)
 
     def cancel_task(self, task_id: int) -> TaskOperationOutput:
         """Cancel a task.
@@ -132,9 +147,7 @@ class TaskLifecycleController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be canceled
         """
-        use_case = CancelTaskUseCase(self.repository)
-        request = CancelTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        return self._execute_status_change(CancelTaskUseCase, task_id)
 
     def reopen_task(self, task_id: int) -> TaskOperationOutput:
         """Reopen a task.
@@ -151,6 +164,4 @@ class TaskLifecycleController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be reopened
         """
-        use_case = ReopenTaskUseCase(self.repository)
-        request = ReopenTaskInput(task_id=task_id)
-        return use_case.execute(request)
+        return self._execute_status_change(ReopenTaskUseCase, task_id)
