@@ -19,6 +19,7 @@ Projects included:
 Usage:
     python demo_data.py [--host HOST] [--port PORT] [--no-confirm] [--workers N]
     python demo_data.py [--api-url URL] [--no-confirm] [--workers N]
+    python demo_data.py [--api-key KEY] [--no-confirm] [--workers N]
 
 Requirements:
     - taskdog-server must be running (default: http://127.0.0.1:8000)
@@ -51,9 +52,12 @@ DATA_FILE = SCRIPT_DIR / "demo_data.json"
 class TaskdogAPIClient:
     """REST API client for Taskdog server using urllib."""
 
-    def __init__(self, base_url: str = "http://127.0.0.1:8000"):
+    def __init__(
+        self, base_url: str = "http://127.0.0.1:8000", api_key: str | None = None
+    ):
         self.base_url = base_url.rstrip("/")
         self.api_url = f"{self.base_url}/api/v1"
+        self.api_key = api_key
 
     def _request(
         self,
@@ -64,6 +68,8 @@ class TaskdogAPIClient:
         """Make HTTP request to API."""
         url = f"{self.api_url}{endpoint}"
         headers = {"Content-Type": "application/json"}
+        if self.api_key:
+            headers["X-Api-Key"] = self.api_key
 
         body = json.dumps(data).encode("utf-8") if data else None
         req = urllib.request.Request(url, data=body, headers=headers, method=method)
@@ -82,7 +88,12 @@ class TaskdogAPIClient:
     def health_check(self) -> bool:
         """Check if server is running."""
         try:
-            req = urllib.request.Request(f"{self.base_url}/health", method="GET")
+            headers = {}
+            if self.api_key:
+                headers["X-Api-Key"] = self.api_key
+            req = urllib.request.Request(
+                f"{self.base_url}/health", headers=headers, method="GET"
+            )
             with urllib.request.urlopen(req, timeout=5):
                 return True
         except (urllib.error.URLError, urllib.error.HTTPError):
@@ -500,6 +511,12 @@ def main() -> int:
         default=5,
         help="Number of parallel workers (default: 5)",
     )
+    parser.add_argument(
+        "--api-key",
+        "-k",
+        default=None,
+        help="API key for authentication (X-Api-Key header)",
+    )
     args = parser.parse_args()
 
     # Check data file exists
@@ -511,7 +528,7 @@ def main() -> int:
     api_url = args.api_url or f"http://{args.host}:{args.port}"
 
     # Initialize client
-    client = TaskdogAPIClient(api_url)
+    client = TaskdogAPIClient(api_url, api_key=args.api_key)
 
     # Check server health
     if not client.health_check():
