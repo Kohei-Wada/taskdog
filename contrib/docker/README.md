@@ -4,6 +4,25 @@ Run Taskdog Server in a Docker container.
 
 ## Quick Start
 
+### Using Pre-built Image (Recommended)
+
+```bash
+# Pull the latest image from GitHub Container Registry
+docker pull ghcr.io/kohei-wada/taskdog-server:main
+
+# Run with data persistence
+docker run -d \
+  --name taskdog-server \
+  -p 8000:8000 \
+  -v taskdog-data:/data \
+  ghcr.io/kohei-wada/taskdog-server:main
+
+# Verify it's running
+curl http://localhost:8000/health
+```
+
+### Building from Source
+
 ```bash
 # Build the image (from repository root)
 docker build -f contrib/docker/Dockerfile -t taskdog-server .
