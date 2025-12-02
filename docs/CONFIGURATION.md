@@ -17,6 +17,8 @@ Complete guide to configuring Taskdog.
 - [Data Storage](#data-storage)
 - [Environment Variables](#environment-variables)
 - [Examples](#examples)
+  - [Remote API Server](#remote-api-server)
+  - [Reverse Proxy Authentication](#reverse-proxy-authentication)
 
 ## Configuration File Location
 
@@ -248,12 +250,14 @@ These variables configure how CLI/TUI connect to the API server:
 |----------|------|---------|-------------|
 | `TASKDOG_API_HOST` | string | `"127.0.0.1"` | API server host |
 | `TASKDOG_API_PORT` | int | `8000` | API server port |
+| `TASKDOG_API_KEY` | string | `None` | API key for authentication |
 
 **Example:**
 
 ```bash
 export TASKDOG_API_HOST=192.168.1.100
 export TASKDOG_API_PORT=8000
+export TASKDOG_API_KEY=your-api-key
 ```
 
 ### XDG_CONFIG_HOME
@@ -353,6 +357,38 @@ Or use environment variables:
 export TASKDOG_API_HOST=192.168.1.100
 export TASKDOG_API_PORT=8000
 ```
+
+### Reverse Proxy Authentication
+
+When using a reverse proxy like Kong, Traefik, or Nginx for authentication, you can configure an API key that will be sent with every request as an `X-Api-Key` header.
+
+**Note:** This is for authenticating through external proxies. The taskdog-server itself does not validate API keys - it's designed to run locally or behind an authenticating proxy.
+
+Configure in `cli.toml`:
+
+```toml
+# ~/.config/taskdog/cli.toml
+[api]
+host = "api.example.com"
+port = 443
+api_key = "your-api-key-here"
+```
+
+Or use environment variables:
+
+```bash
+export TASKDOG_API_HOST=api.example.com
+export TASKDOG_API_PORT=443
+export TASKDOG_API_KEY=your-api-key-here
+```
+
+Or use CLI option (highest priority, useful for scripts):
+
+```bash
+taskdog --api-key "your-api-key" table
+```
+
+**Priority order:** CLI option > environment variable > config file > None
 
 ### Work Schedule Configuration
 
