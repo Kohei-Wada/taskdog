@@ -1,7 +1,5 @@
 """Tests for start command."""
 
-import unittest
-
 from taskdog.cli.commands.start import start_command
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from tests.presentation.cli.commands.batch_command_test_base import BaseBatchCommandTest
@@ -29,14 +27,10 @@ class TestStartCommand(BaseBatchCommandTest):
         result = self.runner.invoke(start_command, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         # Should still show success message
         self.console_writer.task_success.assert_called_once()
         # task_start_time should be called
         self.console_writer.task_start_time.assert_called_once()
         # Note: The command always passes was_already_in_progress=False as a keyword argument
         # The API client handles the actual status check
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -1,7 +1,5 @@
 """Tests for cancel command."""
 
-import unittest
-
 from taskdog.cli.commands.cancel import cancel_command
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from tests.presentation.cli.commands.batch_command_test_base import BaseBatchCommandTest
@@ -29,11 +27,7 @@ class TestCancelCommand(BaseBatchCommandTest):
         result = self.runner.invoke(cancel_command, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.task_success.assert_called_once_with(
             "Canceled", canceled_task
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

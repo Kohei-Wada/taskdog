@@ -1,7 +1,5 @@
 """Tests for done command."""
 
-import unittest
-
 from taskdog.cli.commands.done import done_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotStartedError
 from tests.presentation.cli.commands.batch_command_test_base import BaseBatchCommandTest
@@ -26,13 +24,9 @@ class TestDoneCommand(BaseBatchCommandTest):
         result = self.runner.invoke(done_command, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
         error_msg = self.console_writer.validation_error.call_args[0][0]
-        self.assertIn("task 1", error_msg)
-        self.assertIn("PENDING", error_msg)
-        self.assertIn("taskdog start 1", error_msg)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert "task 1" in error_msg
+        assert "PENDING" in error_msg
+        assert "taskdog start 1" in error_msg
