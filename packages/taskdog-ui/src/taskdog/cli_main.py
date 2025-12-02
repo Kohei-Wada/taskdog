@@ -75,8 +75,16 @@ class TaskdogGroup(click.Group):
     default=None,
     help="API server port (overrides config/env)",
 )
+@click.option(
+    "--api-key",
+    type=str,
+    default=None,
+    help="API key for authentication (overrides config/env)",
+)
 @click.pass_context
-def cli(ctx: click.Context, host: str | None, port: int | None) -> None:
+def cli(
+    ctx: click.Context, host: str | None, port: int | None, api_key: str | None
+) -> None:
     """Taskdog: Task management CLI tool with time tracking and optimization."""
     # Display help when no subcommand is provided
     if ctx.invoked_subcommand is None:
@@ -91,12 +99,16 @@ def cli(ctx: click.Context, host: str | None, port: int | None) -> None:
     # CLI options override config/env settings
     api_host = host if host is not None else config.api.host
     api_port = port if port is not None else config.api.port
+    effective_api_key = api_key if api_key is not None else config.api.api_key
 
     # Initialize API client (required for all CLI commands)
     from taskdog.infrastructure.api_client import TaskdogApiClient
 
     try:
-        api_client = TaskdogApiClient(base_url=f"http://{api_host}:{api_port}")
+        api_client = TaskdogApiClient(
+            base_url=f"http://{api_host}:{api_port}",
+            api_key=effective_api_key,
+        )
         # Test connection
         api_client.client.get("/health")
     except Exception as e:
