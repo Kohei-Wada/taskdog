@@ -18,18 +18,24 @@ class ConnectionManager:
     def __init__(self) -> None:
         """Initialize the connection manager."""
         self.active_connections: dict[str, WebSocket] = {}  # client_id -> WebSocket
+        self.client_user_names: dict[str, str] = {}  # client_id -> user_name
 
-    async def connect(self, client_id: str, websocket: WebSocket) -> None:
+    async def connect(
+        self, client_id: str, websocket: WebSocket, user_name: str | None = None
+    ) -> None:
         """Accept a new WebSocket connection.
 
         Args:
             client_id: Unique client identifier
             websocket: The WebSocket connection to accept
+            user_name: Optional user name from X-User-Name header
         """
         await websocket.accept()
         self.active_connections[client_id] = websocket
+        if user_name:
+            self.client_user_names[client_id] = user_name
         logger.info(
-            f"WebSocket client connected: {client_id} (total: {len(self.active_connections)})"
+            f"WebSocket client connected: {client_id} (user: {user_name or 'anonymous'}, total: {len(self.active_connections)})"
         )
 
     def disconnect(self, client_id: str) -> None:
@@ -40,11 +46,24 @@ class ConnectionManager:
         """
         if client_id in self.active_connections:
             del self.active_connections[client_id]
+            if client_id in self.client_user_names:
+                del self.client_user_names[client_id]
             logger.info(
                 f"WebSocket client disconnected: {client_id} (remaining: {
                     len(self.active_connections)
                 })"
             )
+
+    def get_user_name(self, client_id: str) -> str | None:
+        """Get the user name for a client.
+
+        Args:
+            client_id: Client identifier
+
+        Returns:
+            User name if set, None otherwise
+        """
+        return self.client_user_names.get(client_id)
 
     async def broadcast(
         self, message: dict[str, Any], exclude_client_id: str | None = None

@@ -37,14 +37,22 @@ async def websocket_endpoint(
     # Generate unique client ID for this connection
     client_id = str(uuid.uuid4())
 
-    await manager.connect(client_id, websocket)
+    # Get user name from X-User-Name header
+    # This should be set by reverse proxy (e.g., Kong's request-transformer plugin)
+    user_name = websocket.headers.get("x-user-name")
+    # Sanitize user name to prevent log injection attacks (CWE-117)
+    if user_name:
+        user_name = user_name.strip()[:100]  # Limit length and strip whitespace
+
+    await manager.connect(client_id, websocket, user_name)
     try:
-        # Send welcome message with client ID
+        # Send welcome message with client ID and user name
         await manager.send_personal_message(
             {
                 "type": "connected",
                 "message": "Connected to Taskdog real-time updates",
                 "client_id": client_id,
+                "user_name": user_name,
                 "connections": manager.get_connection_count(),
             },
             client_id,
