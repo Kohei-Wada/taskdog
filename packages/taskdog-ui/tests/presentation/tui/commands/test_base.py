@@ -1,7 +1,8 @@
 """Tests for TUICommandBase."""
 
-import unittest
 from unittest.mock import MagicMock
+
+import pytest
 
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
@@ -34,10 +35,11 @@ class ConcreteCommandWithImpl(TUICommandBase):
             raise ValueError("Test error from execute_impl")
 
 
-class TestTUICommandBase(unittest.TestCase):
+class TestTUICommandBase:
     """Test cases for TUICommandBase."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.app = MagicMock()
         self.app.main_screen = MagicMock()
@@ -46,8 +48,8 @@ class TestTUICommandBase(unittest.TestCase):
 
     def test_initialization(self):
         """Test command initialization."""
-        self.assertEqual(self.command.app, self.app)
-        self.assertEqual(self.command.context, self.context)
+        assert self.command.app == self.app
+        assert self.command.context == self.context
 
     def test_get_selected_task_success(self):
         """Test getting selected task successfully."""
@@ -87,7 +89,7 @@ class TestTUICommandBase(unittest.TestCase):
 
         result = self.command.get_selected_task()
 
-        self.assertEqual(result, task_dto)
+        assert result == task_dto
         self.context.api_client.get_task_by_id.assert_called_once_with(1)
 
     def test_get_selected_task_no_screen(self):
@@ -96,7 +98,7 @@ class TestTUICommandBase(unittest.TestCase):
 
         result = self.command.get_selected_task()
 
-        self.assertIsNone(result)
+        assert result is None
 
     def test_get_selected_task_no_table(self):
         """Test getting selected task when table is not available."""
@@ -104,7 +106,7 @@ class TestTUICommandBase(unittest.TestCase):
 
         result = self.command.get_selected_task()
 
-        self.assertIsNone(result)
+        assert result is None
 
     def test_reload_tasks(self):
         """Test reloading tasks posts TasksRefreshed event."""
@@ -113,7 +115,7 @@ class TestTUICommandBase(unittest.TestCase):
         # Verify that TasksRefreshed event was posted
         self.app.post_message.assert_called_once()
         posted_event = self.app.post_message.call_args[0][0]
-        self.assertEqual(type(posted_event).__name__, "TasksRefreshed")
+        assert type(posted_event).__name__ == "TasksRefreshed"
 
     def test_notify_success(self):
         """Test success notification."""
@@ -146,7 +148,7 @@ class TestTUICommandBase(unittest.TestCase):
         command.execute()
 
         # Verify execute_impl was called
-        self.assertTrue(command.executed)
+        assert command.executed is True
         # Verify no error notification
         self.app.notify.assert_not_called()
 
@@ -156,13 +158,13 @@ class TestTUICommandBase(unittest.TestCase):
         command.execute()
 
         # Verify execute_impl was called
-        self.assertTrue(command.executed)
+        assert command.executed is True
         # Verify error notification was shown
         self.app.notify.assert_called_once()
         call_args = self.app.notify.call_args
-        self.assertIn("Error", call_args[0][0])
-        self.assertIn("Test error from execute_impl", call_args[0][0])
-        self.assertEqual(call_args[1]["severity"], "error")
+        assert "Error" in call_args[0][0]
+        assert "Test error from execute_impl" in call_args[0][0]
+        assert call_args[1]["severity"] == "error"
 
     def test_get_action_name_default(self):
         """Test get_action_name() derives from class name."""
@@ -170,8 +172,8 @@ class TestTUICommandBase(unittest.TestCase):
         action_name = command.get_action_name()
 
         # "ConcreteCommandWithImpl" -> "concrete command with impl"
-        self.assertIn("concrete", action_name)
-        self.assertIn("command", action_name)
+        assert "concrete" in action_name
+        assert "command" in action_name
 
     def test_handle_error_wrapper_success(self):
         """Test handle_error() wrapper with successful callback."""
@@ -184,8 +186,8 @@ class TestTUICommandBase(unittest.TestCase):
         wrapped = self.command.handle_error(callback)
         result = wrapped(5)
 
-        self.assertEqual(result, 10)
-        self.assertEqual(called, [5])
+        assert result == 10
+        assert called == [5]
         # No error notification
         self.app.notify.assert_not_called()
 
@@ -199,13 +201,13 @@ class TestTUICommandBase(unittest.TestCase):
         result = wrapped(5)
 
         # Should return None on error
-        self.assertIsNone(result)
+        assert result is None
         # Should show error notification
         self.app.notify.assert_called_once()
         call_args = self.app.notify.call_args
-        self.assertIn("Error", call_args[0][0])
-        self.assertIn("Test error with 5", call_args[0][0])
-        self.assertEqual(call_args[1]["severity"], "error")
+        assert "Error" in call_args[0][0]
+        assert "Test error with 5" in call_args[0][0]
+        assert call_args[1]["severity"] == "error"
 
     def test_manage_dependencies_add_only(self):
         """Test manage_dependencies() with only adding dependencies."""
@@ -215,9 +217,9 @@ class TestTUICommandBase(unittest.TestCase):
         failures = self.command.manage_dependencies(task_id=1, add_deps=[2, 3, 4])
 
         # Verify no failures
-        self.assertEqual(failures, [])
+        assert failures == []
         # Verify add_dependency called for each dep
-        self.assertEqual(self.context.api_client.add_dependency.call_count, 3)
+        assert self.context.api_client.add_dependency.call_count == 3
         self.context.api_client.add_dependency.assert_any_call(1, 2)
         self.context.api_client.add_dependency.assert_any_call(1, 3)
         self.context.api_client.add_dependency.assert_any_call(1, 4)
@@ -230,9 +232,9 @@ class TestTUICommandBase(unittest.TestCase):
         failures = self.command.manage_dependencies(task_id=1, remove_deps=[2, 3])
 
         # Verify no failures
-        self.assertEqual(failures, [])
+        assert failures == []
         # Verify remove_dependency called for each dep
-        self.assertEqual(self.context.api_client.remove_dependency.call_count, 2)
+        assert self.context.api_client.remove_dependency.call_count == 2
         self.context.api_client.remove_dependency.assert_any_call(1, 2)
         self.context.api_client.remove_dependency.assert_any_call(1, 3)
 
@@ -247,13 +249,13 @@ class TestTUICommandBase(unittest.TestCase):
         )
 
         # Verify no failures
-        self.assertEqual(failures, [])
+        assert failures == []
         # Verify remove operations happen first
-        self.assertEqual(self.context.api_client.remove_dependency.call_count, 2)
+        assert self.context.api_client.remove_dependency.call_count == 2
         self.context.api_client.remove_dependency.assert_any_call(1, 2)
         self.context.api_client.remove_dependency.assert_any_call(1, 3)
         # Then add operations
-        self.assertEqual(self.context.api_client.add_dependency.call_count, 2)
+        assert self.context.api_client.add_dependency.call_count == 2
         self.context.api_client.add_dependency.assert_any_call(1, 4)
         self.context.api_client.add_dependency.assert_any_call(1, 5)
 
@@ -280,19 +282,15 @@ class TestTUICommandBase(unittest.TestCase):
         )
 
         # Verify we got 2 failure messages
-        self.assertEqual(len(failures), 2)
-        self.assertIn("Remove 2: Dependency not found", failures)
-        self.assertIn("Add 3: Circular dependency detected", failures)
+        assert len(failures) == 2
+        assert "Remove 2: Dependency not found" in failures
+        assert "Add 3: Circular dependency detected" in failures
 
     def test_manage_dependencies_no_operations(self):
         """Test manage_dependencies() with no operations."""
         failures = self.command.manage_dependencies(task_id=1)
 
         # Verify no failures and no API calls
-        self.assertEqual(failures, [])
+        assert failures == []
         self.context.api_client.add_dependency.assert_not_called()
         self.context.api_client.remove_dependency.assert_not_called()
-
-
-if __name__ == "__main__":
-    unittest.main()

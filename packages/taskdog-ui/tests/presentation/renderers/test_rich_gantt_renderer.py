@@ -1,18 +1,20 @@
 """Tests for RichGanttRenderer."""
 
-import unittest
 from datetime import date
 from unittest.mock import MagicMock
+
+import pytest
 
 from taskdog.renderers.rich_gantt_renderer import RichGanttRenderer
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-class TestRichGanttRendererBuildTable(unittest.TestCase):
+class TestRichGanttRendererBuildTable:
     """Test suite for RichGanttRenderer.build_table method."""
 
-    def setUp(self) -> None:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
         """Set up test fixtures."""
         self.console_writer = MagicMock()
         self.renderer = RichGanttRenderer(self.console_writer)
@@ -93,7 +95,7 @@ class TestRichGanttRendererBuildTable(unittest.TestCase):
 
         result = self.renderer.build_table(empty_model)
 
-        self.assertIsNone(result)
+        assert result is None
 
     def test_build_table_returns_table_with_correct_columns(self) -> None:
         """Table has 4 columns: ID, Task, Est.[h], Timeline."""
@@ -101,14 +103,14 @@ class TestRichGanttRendererBuildTable(unittest.TestCase):
 
         table = self.renderer.build_table(model)
 
-        self.assertIsNotNone(table)
-        self.assertEqual(len(table.columns), 4)
+        assert table is not None
+        assert len(table.columns) == 4
 
         column_headers = [col.header for col in table.columns]
-        self.assertEqual(str(column_headers[0]), "ID")
-        self.assertEqual(str(column_headers[1]), "Task")
-        self.assertEqual(str(column_headers[2]), "Est.\\[h]")
-        self.assertEqual(str(column_headers[3]), "Timeline")
+        assert str(column_headers[0]) == "ID"
+        assert str(column_headers[1]) == "Task"
+        assert str(column_headers[2]) == "Est.\\[h]"
+        assert str(column_headers[3]) == "Timeline"
 
     def test_build_table_includes_date_header_row(self) -> None:
         """Table includes date header row as first row."""
@@ -116,9 +118,9 @@ class TestRichGanttRendererBuildTable(unittest.TestCase):
 
         table = self.renderer.build_table(model)
 
-        self.assertIsNotNone(table)
+        assert table is not None
         # Should have at least one row (date header)
-        self.assertGreater(len(table.rows), 0)
+        assert len(table.rows) > 0
 
     def test_build_table_includes_task_rows(self) -> None:
         """Table includes rows for all tasks in order."""
@@ -126,10 +128,10 @@ class TestRichGanttRendererBuildTable(unittest.TestCase):
 
         table = self.renderer.build_table(model)
 
-        self.assertIsNotNone(table)
+        assert table is not None
         # 1 date header row + 2 task rows + workload summary row = 4 rows
         # Note: add_section() doesn't add a row, just a visual separator
-        self.assertEqual(len(table.rows), 4)
+        assert len(table.rows) == 4
 
     def test_build_table_includes_workload_summary(self) -> None:
         """Table includes workload summary row with total estimated hours."""
@@ -137,10 +139,10 @@ class TestRichGanttRendererBuildTable(unittest.TestCase):
 
         table = self.renderer.build_table(model)
 
-        self.assertIsNotNone(table)
+        assert table is not None
         # Table should have rows including workload summary
         # 1 date header + 2 tasks + 1 workload summary = 4 rows
-        self.assertEqual(len(table.rows), 4)
+        assert len(table.rows) == 4
 
     def test_build_table_includes_legend_caption(self) -> None:
         """Table caption contains legend."""
@@ -148,9 +150,9 @@ class TestRichGanttRendererBuildTable(unittest.TestCase):
 
         table = self.renderer.build_table(model)
 
-        self.assertIsNotNone(table)
-        self.assertIsNotNone(table.caption)
-        self.assertEqual(table.caption_justify, "center")
+        assert table is not None
+        assert table.caption is not None
+        assert table.caption_justify == "center"
 
     def test_build_table_with_zero_total_duration(self) -> None:
         """Table builds correctly when total_estimated_duration is 0."""
@@ -181,15 +183,16 @@ class TestRichGanttRendererBuildTable(unittest.TestCase):
 
         table = self.renderer.build_table(model)
 
-        self.assertIsNotNone(table)
+        assert table is not None
         # Should have 3 rows: date header + 1 task + workload summary
-        self.assertEqual(len(table.rows), 3)
+        assert len(table.rows) == 3
 
 
-class TestRichGanttRendererRender(unittest.TestCase):
+class TestRichGanttRendererRender:
     """Test suite for RichGanttRenderer.render method."""
 
-    def setUp(self) -> None:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
         """Set up test fixtures."""
         self.console_writer = MagicMock()
         self.renderer = RichGanttRenderer(self.console_writer)
@@ -242,7 +245,3 @@ class TestRichGanttRendererRender(unittest.TestCase):
 
         self.console_writer.print.assert_called_once()
         self.console_writer.warning.assert_not_called()
-
-
-if __name__ == "__main__":
-    unittest.main()

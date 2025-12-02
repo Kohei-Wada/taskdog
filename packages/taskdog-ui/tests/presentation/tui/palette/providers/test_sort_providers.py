@@ -1,17 +1,17 @@
 """Tests for sort command providers."""
 
-import unittest
 from unittest.mock import Mock
 
-from parameterized import parameterized
+import pytest
 
 from taskdog.tui.palette.providers.sort_providers import SortOptionsProvider
 
 
-class TestSortOptionsProvider(unittest.TestCase):
+class TestSortOptionsProvider:
     """Test cases for SortOptionsProvider."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.mock_app = Mock()
         self.mock_app.set_sort_order = Mock()
@@ -23,19 +23,20 @@ class TestSortOptionsProvider(unittest.TestCase):
         """Test that get_options returns all 7 sort options."""
         options = self.provider.get_options(self.mock_app)
 
-        self.assertEqual(len(options), 7)
+        assert len(options) == 7
 
         # Verify option names
         option_names = [opt[0] for opt in options]
-        self.assertIn("Deadline", option_names)
-        self.assertIn("Planned Start", option_names)
-        self.assertIn("Priority", option_names)
-        self.assertIn("Duration", option_names)
-        self.assertIn("ID", option_names)
-        self.assertIn("Name", option_names)
-        self.assertIn("Status", option_names)
+        assert "Deadline" in option_names
+        assert "Planned Start" in option_names
+        assert "Priority" in option_names
+        assert "Duration" in option_names
+        assert "ID" in option_names
+        assert "Name" in option_names
+        assert "Status" in option_names
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "sort_key,option_name",
         [
             ("deadline", "Deadline"),
             ("planned_start", "Planned Start"),
@@ -44,7 +45,16 @@ class TestSortOptionsProvider(unittest.TestCase):
             ("id", "ID"),
             ("name", "Name"),
             ("status", "Status"),
-        ]
+        ],
+        ids=[
+            "deadline",
+            "planned_start",
+            "priority",
+            "estimated_duration",
+            "id",
+            "name",
+            "status",
+        ],
     )
     def test_option_callback_calls_set_sort_order(self, sort_key, option_name):
         """Test that selecting an option calls set_sort_order with correct key."""
@@ -52,7 +62,7 @@ class TestSortOptionsProvider(unittest.TestCase):
 
         # Find the option by name
         option = next((opt for opt in options if opt[0] == option_name), None)
-        self.assertIsNotNone(option)
+        assert option is not None
 
         # Get callback and invoke it
         callback = option[1]
@@ -60,7 +70,3 @@ class TestSortOptionsProvider(unittest.TestCase):
 
         # Verify set_sort_order was called with correct sort_key
         self.mock_app.set_sort_order.assert_called_once_with(sort_key)
-
-
-if __name__ == "__main__":
-    unittest.main()

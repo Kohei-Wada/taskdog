@@ -1,17 +1,17 @@
 """Tests for export command providers."""
 
-import unittest
 from unittest.mock import Mock
 
-from parameterized import parameterized
+import pytest
 
 from taskdog.tui.palette.providers.export_providers import ExportFormatProvider
 
 
-class TestExportFormatProvider(unittest.TestCase):
+class TestExportFormatProvider:
     """Test cases for ExportFormatProvider."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.mock_app = Mock()
         self.mock_app.command_factory = Mock()
@@ -24,30 +24,32 @@ class TestExportFormatProvider(unittest.TestCase):
         """Test that get_options returns all 3 export formats."""
         options = self.provider.get_options(self.mock_app)
 
-        self.assertEqual(len(options), 3)
+        assert len(options) == 3
 
         # Verify option names
         option_names = [opt[0] for opt in options]
-        self.assertIn("JSON", option_names)
-        self.assertIn("CSV", option_names)
-        self.assertIn("Markdown", option_names)
+        assert "JSON" in option_names
+        assert "CSV" in option_names
+        assert "Markdown" in option_names
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "option_name,expected_format_key",
         [
-            ("json_format", "JSON", "json"),
-            ("csv_format", "CSV", "csv"),
-            ("markdown_format", "Markdown", "markdown"),
-        ]
+            ("JSON", "json"),
+            ("CSV", "csv"),
+            ("Markdown", "markdown"),
+        ],
+        ids=["json_format", "csv_format", "markdown_format"],
     )
     def test_option_callback_calls_export_command(
-        self, scenario, option_name, expected_format_key
+        self, option_name, expected_format_key
     ):
         """Test that selecting a format calls export command with correct format_key."""
         options = self.provider.get_options(self.mock_app)
 
         # Find the option by name
         option = next((opt for opt in options if opt[0] == option_name), None)
-        self.assertIsNotNone(option)
+        assert option is not None
 
         # Get callback and invoke it
         callback = option[1]
@@ -63,10 +65,6 @@ class TestExportFormatProvider(unittest.TestCase):
         options = self.provider.get_options(self.mock_app)
 
         for _option_name, _callback, description in options:
-            self.assertIsNotNone(description)
-            self.assertTrue(len(description) > 0)
-            self.assertIn("Export", description)
-
-
-if __name__ == "__main__":
-    unittest.main()
+            assert description is not None
+            assert len(description) > 0
+            assert "Export" in description

@@ -1,18 +1,18 @@
 """Tests for TaskSearchFilter."""
 
-import unittest
 from datetime import datetime, timedelta
 
-from parameterized import parameterized
+import pytest
 
 from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class TestTaskSearchFilter(unittest.TestCase):
+class TestTaskSearchFilter:
     """Test TaskSearchFilter search and filtering functionality."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.filter = TaskSearchFilter()
 
@@ -56,137 +56,139 @@ class TestTaskSearchFilter(unittest.TestCase):
         """Test filtering tasks by ID."""
         # Search by name to verify filtering works
         filtered = self.filter.filter(self.tasks, "Fix")
-        self.assertEqual(len(filtered), 2)  # Tasks 1 and 5 both have "Fix"
+        assert len(filtered) == 2  # Tasks 1 and 5 both have "Fix"
 
         # Search for task by ID 2
         filtered = self.filter.filter(self.tasks, "2")
         # Should match ID 2 and priority 2
-        self.assertGreaterEqual(len(filtered), 1)
+        assert len(filtered) >= 1
 
     def test_filter_by_name_case_insensitive(self):
         """Test case-insensitive filtering by name."""
         # Lowercase query should match "Fix authentication bug" (case-insensitive)
         filtered = self.filter.filter(self.tasks, "auth")
-        self.assertEqual(len(filtered), 1)
-        self.assertEqual(filtered[0].id, 1)
+        assert len(filtered) == 1
+        assert filtered[0].id == 1
 
         # Different case should still match when lowercase
         filtered = self.filter.filter(self.tasks, "registration")
-        self.assertEqual(len(filtered), 1)
-        self.assertEqual(filtered[0].id, 2)
+        assert len(filtered) == 1
+        assert filtered[0].id == 2
 
     def test_filter_by_name_case_sensitive(self):
         """Test case-sensitive filtering (smart case with uppercase in query)."""
         # Query with uppercase should be case-sensitive
         filtered = self.filter.filter(self.tasks, "URGENT")
-        self.assertEqual(len(filtered), 1)
-        self.assertEqual(filtered[0].id, 5)
+        assert len(filtered) == 1
+        assert filtered[0].id == 5
 
         # Different case should not match
         filtered = self.filter.filter(self.tasks, "urgent")
-        self.assertEqual(
-            len(filtered), 1
-        )  # Matches because lowercase is case-insensitive
+        assert len(filtered) == 1  # Matches because lowercase is case-insensitive
 
     def test_filter_by_status(self):
         """Test filtering by status."""
         # Search for PENDING status
         filtered = self.filter.filter(self.tasks, "PENDING")
-        self.assertEqual(len(filtered), 3)
+        assert len(filtered) == 3
         pending_ids = {task.id for task in filtered}
-        self.assertEqual(pending_ids, {1, 4, 5})
+        assert pending_ids == {1, 4, 5}
 
         # Search for IN_PROGRESS status
         filtered = self.filter.filter(self.tasks, "IN_PROGRESS")
-        self.assertEqual(len(filtered), 1)
-        self.assertEqual(filtered[0].id, 2)
+        assert len(filtered) == 1
+        assert filtered[0].id == 2
 
     def test_filter_by_priority(self):
         """Test filtering by priority."""
         # Search for priority 1
         filtered = self.filter.filter(self.tasks, "1")
         # Should match IDs 1, 3, 5 (priority 1) and also ID 2 ("Implement user registration" - no "1" in name)
-        self.assertGreaterEqual(len(filtered), 3)
+        assert len(filtered) >= 3
 
     def test_filter_by_fixed_status(self):
         """Test filtering by fixed status."""
         # Search for "fixed" keyword
         filtered = self.filter.filter(self.tasks, "fixed")
-        self.assertEqual(len(filtered), 1)
-        self.assertEqual(filtered[0].id, 5)
-        self.assertTrue(filtered[0].is_fixed)
+        assert len(filtered) == 1
+        assert filtered[0].id == 5
+        assert filtered[0].is_fixed is True
 
     def test_filter_partial_match(self):
         """Test partial string matching."""
         # Search for "bug" should match tasks with "bug" in name
         filtered = self.filter.filter(self.tasks, "bug")
-        self.assertEqual(len(filtered), 2)
+        assert len(filtered) == 2
         bug_ids = {task.id for task in filtered}
-        self.assertEqual(bug_ids, {1, 5})
+        assert bug_ids == {1, 5}
 
     def test_filter_no_matches(self):
         """Test filtering with no matches."""
         filtered = self.filter.filter(self.tasks, "nonexistent")
-        self.assertEqual(len(filtered), 0)
+        assert len(filtered) == 0
 
     def test_filter_empty_query(self):
         """Test filtering with empty query returns all tasks."""
         filtered = self.filter.filter(self.tasks, "")
-        self.assertEqual(len(filtered), 5)
-        self.assertEqual(filtered, self.tasks)
+        assert len(filtered) == 5
+        assert filtered == self.tasks
 
     def test_smart_case_lowercase_query(self):
         """Test smart case with lowercase query is case-insensitive."""
         # Lowercase "fix" should match both "Fix" and "fix"
         filtered = self.filter.filter(self.tasks, "fix")
-        self.assertEqual(len(filtered), 2)
+        assert len(filtered) == 2
         fix_ids = {task.id for task in filtered}
-        self.assertEqual(fix_ids, {1, 5})
+        assert fix_ids == {1, 5}
 
     def test_smart_case_mixed_case_query(self):
         """Test smart case with mixed case query is case-sensitive."""
         # Mixed case "Fix" should only match exact case
         filtered = self.filter.filter(self.tasks, "Fix")
-        self.assertEqual(len(filtered), 2)  # Both have "Fix"
+        assert len(filtered) == 2  # Both have "Fix"
 
     def test_matches_method(self):
         """Test the matches method directly."""
         task = self.tasks[0]  # "Fix authentication bug"
 
         # Should match
-        self.assertTrue(self.filter.matches(task, "auth"))
-        self.assertTrue(self.filter.matches(task, "Fix"))
-        self.assertTrue(self.filter.matches(task, "1"))  # Priority
+        assert self.filter.matches(task, "auth") is True
+        assert self.filter.matches(task, "Fix") is True
+        assert self.filter.matches(task, "1") is True  # Priority
 
         # Should not match
-        self.assertFalse(self.filter.matches(task, "urgent"))
-        self.assertFalse(self.filter.matches(task, "registration"))
+        assert self.filter.matches(task, "urgent") is False
+        assert self.filter.matches(task, "registration") is False
 
     def test_matches_with_explicit_case_sensitivity(self):
         """Test matches method with explicit case sensitivity parameter."""
         task = self.tasks[4]  # "URGENT: Fix production bug"
 
         # Case-insensitive
-        self.assertTrue(self.filter.matches(task, "urgent", case_sensitive=False))
-        self.assertTrue(self.filter.matches(task, "URGENT", case_sensitive=False))
+        assert self.filter.matches(task, "urgent", case_sensitive=False) is True
+        assert self.filter.matches(task, "URGENT", case_sensitive=False) is True
 
         # Case-sensitive
-        self.assertTrue(self.filter.matches(task, "URGENT", case_sensitive=True))
-        self.assertFalse(self.filter.matches(task, "urgent", case_sensitive=True))
+        assert self.filter.matches(task, "URGENT", case_sensitive=True) is True
+        assert self.filter.matches(task, "urgent", case_sensitive=True) is False
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "query,expected_case_sensitive",
         [
-            ("lowercase", "hello", False),
-            ("lowercase_with_numbers", "test123", False),
-            ("mixed_case", "Hello", True),
-            ("uppercase", "TEST", True),
-            ("mixed_with_numbers", "Test123", True),
-        ]
+            ("hello", False),
+            ("test123", False),
+            ("Hello", True),
+            ("TEST", True),
+            ("Test123", True),
+        ],
+        ids=[
+            "lowercase",
+            "lowercase_with_numbers",
+            "mixed_case",
+            "uppercase",
+            "mixed_with_numbers",
+        ],
     )
-    def test_is_case_sensitive(self, _scenario, query, expected_case_sensitive):
+    def test_is_case_sensitive(self, query, expected_case_sensitive):
         """Test smart case detection."""
-        self.assertEqual(self.filter._is_case_sensitive(query), expected_case_sensitive)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert self.filter._is_case_sensitive(query) == expected_case_sensitive
