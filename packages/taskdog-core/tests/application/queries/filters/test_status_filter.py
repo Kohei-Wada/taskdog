@@ -1,15 +1,16 @@
 """Tests for StatusFilter."""
 
-import unittest
+import pytest
 
 from taskdog_core.application.queries.filters.status_filter import StatusFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class TestStatusFilter(unittest.TestCase):
+class TestStatusFilter:
     """Test cases for StatusFilter."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Create sample tasks for testing."""
         self.task_pending = Task(
             id=1, name="Pending", status=TaskStatus.PENDING, priority=1
@@ -30,24 +31,24 @@ class TestStatusFilter(unittest.TestCase):
             self.task_canceled,
         ]
 
-    def test_filter_by_each_status(self):
+    @pytest.mark.parametrize(
+        "status,expected_id",
+        [
+            (TaskStatus.PENDING, 1),
+            (TaskStatus.IN_PROGRESS, 2),
+            (TaskStatus.COMPLETED, 3),
+            (TaskStatus.CANCELED, 4),
+        ],
+        ids=["pending", "in_progress", "completed", "canceled"],
+    )
+    def test_filter_by_each_status(self, status, expected_id):
         """Test filter returns only tasks matching each status."""
-        # Test data: (status, expected_id, expected_status)
-        test_cases = [
-            (TaskStatus.PENDING, 1, TaskStatus.PENDING),
-            (TaskStatus.IN_PROGRESS, 2, TaskStatus.IN_PROGRESS),
-            (TaskStatus.COMPLETED, 3, TaskStatus.COMPLETED),
-            (TaskStatus.CANCELED, 4, TaskStatus.CANCELED),
-        ]
+        status_filter = StatusFilter(status)
+        result = status_filter.filter(self.tasks)
 
-        for status, expected_id, expected_status in test_cases:
-            with self.subTest(status=status.name):
-                status_filter = StatusFilter(status)
-                result = status_filter.filter(self.tasks)
-
-                self.assertEqual(len(result), 1)
-                self.assertEqual(result[0].id, expected_id)
-                self.assertEqual(result[0].status, expected_status)
+        assert len(result) == 1
+        assert result[0].id == expected_id
+        assert result[0].status == status
 
     def test_filter_with_multiple_matching_tasks(self):
         """Test filter with multiple tasks of same status."""
@@ -59,33 +60,28 @@ class TestStatusFilter(unittest.TestCase):
         status_filter = StatusFilter(TaskStatus.PENDING)
         result = status_filter.filter(tasks)
 
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0].id, 1)
-        self.assertEqual(result[1].id, 5)
+        assert len(result) == 2
+        assert result[0].id == 1
+        assert result[1].id == 5
 
     def test_filter_with_no_matching_tasks(self):
         """Test filter with no tasks matching the status."""
-        # Only IN_PROGRESS tasks
         tasks = [self.task_in_progress]
 
         status_filter = StatusFilter(TaskStatus.PENDING)
         result = status_filter.filter(tasks)
 
-        self.assertEqual(len(result), 0)
+        assert len(result) == 0
 
     def test_filter_with_empty_list(self):
         """Test filter with empty task list."""
         status_filter = StatusFilter(TaskStatus.PENDING)
         result = status_filter.filter([])
 
-        self.assertEqual(len(result), 0)
+        assert len(result) == 0
 
     def test_filter_stores_status(self):
         """Test that filter stores the target status."""
         status_filter = StatusFilter(TaskStatus.COMPLETED)
 
-        self.assertEqual(status_filter.status, TaskStatus.COMPLETED)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert status_filter.status == TaskStatus.COMPLETED

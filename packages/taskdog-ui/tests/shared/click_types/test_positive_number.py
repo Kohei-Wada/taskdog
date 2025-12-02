@@ -1,93 +1,112 @@
 """Tests for PositiveFloat and PositiveInt Click types."""
 
-import unittest
 from unittest.mock import Mock
 
 import click
-from parameterized import parameterized
+import pytest
 
 from taskdog.shared.click_types.positive_number import PositiveFloat, PositiveInt
 
 
-class TestPositiveFloat(unittest.TestCase):
+class TestPositiveFloat:
     """Test cases for PositiveFloat Click type."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.param_type = PositiveFloat()
         self.param = Mock()
         self.ctx = Mock()
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "input_str,expected_value,expected_error",
         [
-            ("positive_float", "10.5", 10.5, None),
-            ("small_positive", "0.1", 0.1, None),
-            ("large_positive", "100.0", 100.0, None),
-            ("integer_string", "10", 10.0, None),
-            ("integer_one", "1", 1.0, None),
-            ("zero", "0", None, "not a valid positive number"),
-            ("zero_float", "0.0", None, "not a valid positive number"),
-            ("negative", "-5.5", None, "not a valid positive number"),
-            ("negative_int", "-1", None, "not a valid positive number"),
-            ("invalid_string", "abc", None, "not a valid number"),
-            ("malformed", "10.5.5", None, "not a valid number"),
-        ]
+            ("10.5", 10.5, None),
+            ("0.1", 0.1, None),
+            ("100.0", 100.0, None),
+            ("10", 10.0, None),
+            ("1", 1.0, None),
+            ("0", None, "not a valid positive number"),
+            ("0.0", None, "not a valid positive number"),
+            ("-5.5", None, "not a valid positive number"),
+            ("-1", None, "not a valid positive number"),
+            ("abc", None, "not a valid number"),
+            ("10.5.5", None, "not a valid number"),
+        ],
+        ids=[
+            "positive_float",
+            "small_positive",
+            "large_positive",
+            "integer_string",
+            "integer_one",
+            "zero",
+            "zero_float",
+            "negative",
+            "negative_int",
+            "invalid_string",
+            "malformed",
+        ],
     )
-    def test_positive_float_validation(
-        self, _scenario, input_str, expected_value, expected_error
-    ):
+    def test_positive_float_validation(self, input_str, expected_value, expected_error):
         """Test PositiveFloat validation with various inputs."""
         if expected_error is None:
             result = self.param_type.convert(input_str, self.param, self.ctx)
-            self.assertEqual(result, expected_value)
+            assert result == expected_value
         else:
-            with self.assertRaises(click.exceptions.BadParameter) as context:
+            with pytest.raises(click.exceptions.BadParameter) as exc_info:
                 self.param_type.convert(input_str, self.param, self.ctx)
-            self.assertIn(expected_error, str(context.exception))
+            assert expected_error in str(exc_info.value)
 
     def test_type_name(self):
         """Test that the type has correct name."""
-        self.assertEqual(self.param_type.name, "positive_float")
+        assert self.param_type.name == "positive_float"
 
 
-class TestPositiveInt(unittest.TestCase):
+class TestPositiveInt:
     """Test cases for PositiveInt Click type."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.param_type = PositiveInt()
         self.param = Mock()
         self.ctx = Mock()
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "input_str,expected_value,expected_error",
         [
-            ("positive_int", "10", 10, None),
-            ("small_positive", "1", 1, None),
-            ("large_positive", "100", 100, None),
-            ("zero", "0", None, "not a valid positive integer"),
-            ("negative", "-5", None, "not a valid positive integer"),
-            ("negative_one", "-1", None, "not a valid positive integer"),
-            ("float_string", "10.5", None, "not a valid integer"),
-            ("invalid_string", "abc", None, "not a valid integer"),
-            ("malformed", "10.5.5", None, "not a valid integer"),
-        ]
+            ("10", 10, None),
+            ("1", 1, None),
+            ("100", 100, None),
+            ("0", None, "not a valid positive integer"),
+            ("-5", None, "not a valid positive integer"),
+            ("-1", None, "not a valid positive integer"),
+            ("10.5", None, "not a valid integer"),
+            ("abc", None, "not a valid integer"),
+            ("10.5.5", None, "not a valid integer"),
+        ],
+        ids=[
+            "positive_int",
+            "small_positive",
+            "large_positive",
+            "zero",
+            "negative",
+            "negative_one",
+            "float_string",
+            "invalid_string",
+            "malformed",
+        ],
     )
-    def test_positive_int_validation(
-        self, _scenario, input_str, expected_value, expected_error
-    ):
+    def test_positive_int_validation(self, input_str, expected_value, expected_error):
         """Test PositiveInt validation with various inputs."""
         if expected_error is None:
             result = self.param_type.convert(input_str, self.param, self.ctx)
-            self.assertEqual(result, expected_value)
+            assert result == expected_value
         else:
-            with self.assertRaises(click.exceptions.BadParameter) as context:
+            with pytest.raises(click.exceptions.BadParameter) as exc_info:
                 self.param_type.convert(input_str, self.param, self.ctx)
-            self.assertIn(expected_error, str(context.exception))
+            assert expected_error in str(exc_info.value)
 
     def test_type_name(self):
         """Test that the type has correct name."""
-        self.assertEqual(self.param_type.name, "positive_int")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert self.param_type.name == "positive_int"

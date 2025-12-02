@@ -1,17 +1,19 @@
-import unittest
+"""Unit tests for TaskSorter service."""
+
 from datetime import datetime, timedelta
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.sorters.task_sorter import TaskSorter
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class TestTaskSorter(unittest.TestCase):
-    """Test cases for TaskSorter"""
+class TestTaskSorter:
+    """Test cases for TaskSorter."""
 
-    def setUp(self):
-        """Initialize sorter for each test"""
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Initialize sorter for each test."""
         self.sorter = TaskSorter()
 
         # Calculate datetimes for testing
@@ -27,9 +29,9 @@ class TestTaskSorter(unittest.TestCase):
             hour=18
         )
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "field,reverse,task_values,expected_order,attr_to_check",
         [
-            # (field, reverse, task_values, expected_order, attr_to_check)
             ("id", False, [3, 1, 2], [1, 2, 3], "id"),
             ("id", True, [3, 1, 2], [3, 2, 1], "id"),
             ("priority", False, [1, 5, 3], [5, 3, 1], "priority"),  # Default descending
@@ -40,7 +42,8 @@ class TestTaskSorter(unittest.TestCase):
                 [1, 3, 5],
                 "priority",
             ),  # Reverse to ascending
-        ]
+        ],
+        ids=["id_asc", "id_desc", "priority_desc", "priority_asc"],
     )
     def test_sort_by_id_and_priority(
         self, field, reverse, task_values, expected_order, attr_to_check
@@ -59,13 +62,15 @@ class TestTaskSorter(unittest.TestCase):
         sorted_tasks = self.sorter.sort(tasks, sort_by=field, reverse=reverse)
 
         for i, expected in enumerate(expected_order):
-            self.assertEqual(getattr(sorted_tasks[i], attr_to_check), expected)
+            assert getattr(sorted_tasks[i], attr_to_check) == expected
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "field,expected_names",
         [
             ("deadline", ["Yesterday", "Today", "Tomorrow"]),
             ("planned_start", ["Start Yesterday", "Start Today", "Start Tomorrow"]),
-        ]
+        ],
+        ids=["deadline", "planned_start"],
     )
     def test_sort_by_date_fields(self, field, expected_names):
         """Test sorting by date fields (deadline, planned_start)."""
@@ -80,13 +85,15 @@ class TestTaskSorter(unittest.TestCase):
         sorted_tasks = self.sorter.sort(tasks, sort_by=field)
 
         for i, expected_name in enumerate(expected_names):
-            self.assertEqual(sorted_tasks[i].name, expected_name)
+            assert sorted_tasks[i].name == expected_name
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "field,none_name,value_name",
         [
             ("deadline", "No Deadline", "With Deadline"),
             ("planned_start", "No Plan", "With Plan"),
-        ]
+        ],
+        ids=["deadline", "planned_start"],
     )
     def test_sort_with_none_values_last(self, field, none_name, value_name):
         """Test that tasks with None date values are sorted last."""
@@ -98,24 +105,18 @@ class TestTaskSorter(unittest.TestCase):
         tasks = [task1, task2]
         sorted_tasks = self.sorter.sort(tasks, sort_by=field)
 
-        self.assertEqual(sorted_tasks[0].name, value_name)
-        self.assertEqual(sorted_tasks[1].name, none_name)
+        assert sorted_tasks[0].name == value_name
+        assert sorted_tasks[1].name == none_name
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "input_names,expected_names",
         [
-            (
-                "alphabetical",
-                ["Zebra", "Apple", "Banana"],
-                ["Apple", "Banana", "Zebra"],
-            ),
-            (
-                "case_insensitive",
-                ["zebra", "Apple", "BANANA"],
-                ["Apple", "BANANA", "zebra"],
-            ),
-        ]
+            (["Zebra", "Apple", "Banana"], ["Apple", "Banana", "Zebra"]),
+            (["zebra", "Apple", "BANANA"], ["Apple", "BANANA", "zebra"]),
+        ],
+        ids=["alphabetical", "case_insensitive"],
     )
-    def test_sort_by_name(self, scenario, input_names, expected_names):
+    def test_sort_by_name(self, input_names, expected_names):
         """Test sorting by name (alphabetical and case-insensitive)."""
         tasks = []
         for i, name in enumerate(input_names, 1):
@@ -126,10 +127,10 @@ class TestTaskSorter(unittest.TestCase):
         sorted_tasks = self.sorter.sort(tasks, sort_by="name")
 
         for i, expected_name in enumerate(expected_names):
-            self.assertEqual(sorted_tasks[i].name, expected_name)
+            assert sorted_tasks[i].name == expected_name
 
     def test_sort_by_status(self):
-        """Test sorting by status"""
+        """Test sorting by status."""
         task1 = Task(name="Task 1", priority=1, status=TaskStatus.PENDING)
         task1.id = 1
         task2 = Task(name="Task 2", priority=1, status=TaskStatus.COMPLETED)
@@ -141,28 +142,24 @@ class TestTaskSorter(unittest.TestCase):
         sorted_tasks = self.sorter.sort(tasks, sort_by="status")
 
         # Alphabetical by status value: COMPLETED, IN_PROGRESS, PENDING
-        self.assertEqual(sorted_tasks[0].status, TaskStatus.COMPLETED)
-        self.assertEqual(sorted_tasks[1].status, TaskStatus.IN_PROGRESS)
-        self.assertEqual(sorted_tasks[2].status, TaskStatus.PENDING)
+        assert sorted_tasks[0].status == TaskStatus.COMPLETED
+        assert sorted_tasks[1].status == TaskStatus.IN_PROGRESS
+        assert sorted_tasks[2].status == TaskStatus.PENDING
 
     def test_sort_invalid_key_raises_error(self):
-        """Test that invalid sort key raises ValueError"""
+        """Test that invalid sort key raises ValueError."""
         task = Task(name="Task", priority=1)
         task.id = 1
         tasks = [task]
 
-        with self.assertRaises(ValueError) as context:
+        with pytest.raises(ValueError) as exc_info:
             self.sorter.sort(tasks, sort_by="invalid_key")
 
-        self.assertIn("Invalid sort_by", str(context.exception))
+        assert "Invalid sort_by" in str(exc_info.value)
 
     def test_sort_empty_list(self):
-        """Test sorting an empty list"""
-        tasks = []
+        """Test sorting an empty list."""
+        tasks: list[Task] = []
         sorted_tasks = self.sorter.sort(tasks, sort_by="id")
 
-        self.assertEqual(len(sorted_tasks), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(sorted_tasks) == 0

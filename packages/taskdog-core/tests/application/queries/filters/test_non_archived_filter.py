@@ -1,6 +1,6 @@
 """Tests for NonArchivedFilter."""
 
-import unittest
+import pytest
 
 from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
@@ -8,10 +8,11 @@ from taskdog_core.application.queries.filters.non_archived_filter import (
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class TestNonArchivedFilter(unittest.TestCase):
+class TestNonArchivedFilter:
     """Test cases for NonArchivedFilter."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Create sample tasks for testing."""
         self.task_pending = Task(
             id=1, name="Pending", status=TaskStatus.PENDING, priority=1
@@ -26,32 +27,19 @@ class TestNonArchivedFilter(unittest.TestCase):
             id=4, name="Canceled", status=TaskStatus.CANCELED, priority=1
         )
 
-    def test_filter_includes_each_non_archived_status(self):
+    @pytest.mark.parametrize(
+        "status_attr",
+        ["task_pending", "task_in_progress", "task_completed", "task_canceled"],
+        ids=["pending", "in_progress", "completed", "canceled"],
+    )
+    def test_filter_includes_each_non_archived_status(self, status_attr):
         """Test filter includes all non-archived statuses."""
         non_archived_filter = NonArchivedFilter()
+        task = getattr(self, status_attr)
+        result = non_archived_filter.filter([task])
 
-        # Test data: statuses that should be included
-        non_archived_statuses = [
-            TaskStatus.PENDING,
-            TaskStatus.IN_PROGRESS,
-            TaskStatus.COMPLETED,
-            TaskStatus.CANCELED,
-        ]
-
-        task_map = {
-            TaskStatus.PENDING: self.task_pending,
-            TaskStatus.IN_PROGRESS: self.task_in_progress,
-            TaskStatus.COMPLETED: self.task_completed,
-            TaskStatus.CANCELED: self.task_canceled,
-        }
-
-        for status in non_archived_statuses:
-            with self.subTest(status=status.name):
-                tasks = [task_map[status]]
-                result = non_archived_filter.filter(tasks)
-
-                self.assertEqual(len(result), 1)
-                self.assertEqual(result[0].status, status)
+        assert len(result) == 1
+        assert result[0] == task
 
     def test_filter_includes_all_non_archived_statuses(self):
         """Test filter includes all non-archived tasks."""
@@ -65,15 +53,11 @@ class TestNonArchivedFilter(unittest.TestCase):
 
         result = non_archived_filter.filter(tasks)
 
-        self.assertEqual(len(result), 4)
+        assert len(result) == 4
 
     def test_filter_with_empty_list(self):
         """Test filter with empty task list."""
         non_archived_filter = NonArchivedFilter()
         result = non_archived_filter.filter([])
 
-        self.assertEqual(len(result), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(result) == 0

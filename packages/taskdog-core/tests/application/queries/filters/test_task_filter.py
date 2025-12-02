@@ -1,8 +1,6 @@
 """Tests for TaskFilter base class."""
 
-import unittest
-
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.queries.filters.composite_filter import CompositeFilter
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
@@ -33,36 +31,36 @@ class HighPriorityFilter(TaskFilter):
         return [task for task in tasks if task.priority >= 5]
 
 
-class TestTaskFilter(unittest.TestCase):
+class TestTaskFilter:
     """Test cases for TaskFilter abstract base class."""
 
     def test_task_filter_is_abstract(self):
         """Test TaskFilter cannot be instantiated directly."""
-        with self.assertRaises(TypeError):
+        with pytest.raises(TypeError):
             TaskFilter()  # type: ignore[abstract]
 
     def test_concrete_filter_can_be_instantiated(self):
         """Test concrete implementation can be instantiated."""
         concrete_filter = ConcreteFilter()
 
-        self.assertIsInstance(concrete_filter, TaskFilter)
+        assert isinstance(concrete_filter, TaskFilter)
 
     def test_concrete_filter_has_filter_method(self):
         """Test concrete filter implements filter method."""
         concrete_filter = ConcreteFilter()
 
-        self.assertTrue(hasattr(concrete_filter, "filter"))
-        self.assertTrue(callable(concrete_filter.filter))
+        assert hasattr(concrete_filter, "filter")
+        assert callable(concrete_filter.filter)
 
     def test_filter_method_signature(self):
         """Test filter method has correct signature."""
         concrete_filter = ConcreteFilter()
-        tasks = []
+        tasks: list[Task] = []
 
         # Should not raise
         result = concrete_filter.filter(tasks)
 
-        self.assertIsInstance(result, list)
+        assert isinstance(result, list)
 
     def test_rshift_operator_composes_filters(self):
         """Test >> operator creates a composite filter."""
@@ -71,15 +69,15 @@ class TestTaskFilter(unittest.TestCase):
 
         composed = filter1 >> filter2
 
-        self.assertIsInstance(composed, CompositeFilter)
-        self.assertEqual(len(composed.filters), 2)
-        self.assertIs(composed.filters[0], filter1)
-        self.assertIs(composed.filters[1], filter2)
+        assert isinstance(composed, CompositeFilter)
+        assert len(composed.filters) == 2
+        assert composed.filters[0] is filter1
+        assert composed.filters[1] is filter2
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "composed_factory,tasks_factory,expected_count,expected_id",
         [
             (
-                "two_filters_sequence",
                 lambda: PendingOnlyFilter() >> HighPriorityFilter(),
                 lambda: [
                     Task(id=1, name="Task 1", status=TaskStatus.PENDING, priority=5),
@@ -91,7 +89,6 @@ class TestTaskFilter(unittest.TestCase):
                 1,
             ),
             (
-                "three_filters_chain",
                 lambda: ConcreteFilter() >> PendingOnlyFilter() >> HighPriorityFilter(),
                 lambda: [
                     Task(id=1, name="Task 1", status=TaskStatus.PENDING, priority=5),
@@ -100,18 +97,19 @@ class TestTaskFilter(unittest.TestCase):
                 1,
                 1,
             ),
-        ]
+        ],
+        ids=["two_filters_sequence", "three_filters_chain"],
     )
     def test_rshift_operator_filter_execution(
-        self, scenario, composed_factory, tasks_factory, expected_count, expected_id
+        self, composed_factory, tasks_factory, expected_count, expected_id
     ):
         """Test >> operator applies filters in sequence."""
         composed = composed_factory()
         tasks = tasks_factory()
         result = composed.filter(tasks)
 
-        self.assertEqual(len(result), expected_count)
-        self.assertEqual(result[0].id, expected_id)
+        assert len(result) == expected_count
+        assert result[0].id == expected_id
 
     def test_rshift_operator_with_none_returns_self(self):
         """Test >> operator with None returns self."""
@@ -119,33 +117,29 @@ class TestTaskFilter(unittest.TestCase):
 
         result = filter1 >> None
 
-        self.assertIs(result, filter1)
+        assert result is filter1
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "composed_factory,expected_filter_count",
         [
             (
-                "extend_composite",
                 lambda: (PendingOnlyFilter() >> HighPriorityFilter())
                 >> ConcreteFilter(),
                 3,
             ),
             (
-                "composite_on_right",
                 lambda: PendingOnlyFilter()
                 >> (HighPriorityFilter() >> ConcreteFilter()),
                 3,
             ),
-        ]
+        ],
+        ids=["extend_composite", "composite_on_right"],
     )
     def test_rshift_operator_composite_composition(
-        self, scenario, composed_factory, expected_filter_count
+        self, composed_factory, expected_filter_count
     ):
         """Test >> operator composition with CompositeFilters."""
         composed = composed_factory()
 
-        self.assertIsInstance(composed, CompositeFilter)
-        self.assertEqual(len(composed.filters), expected_filter_count)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert isinstance(composed, CompositeFilter)
+        assert len(composed.filters) == expected_filter_count
