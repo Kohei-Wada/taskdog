@@ -65,13 +65,11 @@ make install-core                # Install taskdog-core only
 make install-server              # Install taskdog-server (includes core)
 make install-ui                  # Install taskdog-ui (includes core)
 
-# Testing
-make test                        # Run all tests (core + server + ui)
-make test-core                   # Run taskdog-core tests only
-make test-server                 # Run taskdog-server tests only
-make test-ui                     # Run taskdog-ui tests only
-make coverage                    # Run all tests with coverage report (sorted by coverage: low → high)
-                                 # Used in CI - test failure will stop execution
+# Testing (all tests include coverage report)
+make test                        # Run all tests with coverage (core + server + ui)
+make test-core                   # Run taskdog-core tests with coverage
+make test-server                 # Run taskdog-server tests with coverage
+make test-ui                     # Run taskdog-ui tests with coverage
 
 # Single test file (run from package directory)
 cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/test_module.py -v
