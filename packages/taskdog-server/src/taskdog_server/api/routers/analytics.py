@@ -244,6 +244,7 @@ async def optimize_schedule(
     broadcaster: EventBroadcasterDep,
     run_async: bool = Query(False, description="Run optimization in background"),
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> OptimizationResponse:
     """Optimize task schedules using specified algorithm.
 
@@ -253,6 +254,7 @@ async def optimize_schedule(
         broadcaster: Event broadcaster dependency
         run_async: If True, run in background and return immediately
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Optimization results with summary and failures
@@ -304,6 +306,7 @@ async def optimize_schedule(
             len(result.failed_tasks),
             request.algorithm,
             x_client_id,
+            x_user_name,
         )
 
         # Convert DTO to response model

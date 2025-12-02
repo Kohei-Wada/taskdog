@@ -41,6 +41,7 @@ async def create_task(
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Create a new task.
 
@@ -49,6 +50,7 @@ async def create_task(
         controller: CRUD controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Created task data
@@ -68,7 +70,7 @@ async def create_task(
     )
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_created(result, x_client_id)
+    broadcaster.task_created(result, x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
 
@@ -259,6 +261,7 @@ async def update_task(
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> UpdateTaskResponse:
     """Update task fields.
 
@@ -268,6 +271,7 @@ async def update_task(
         controller: CRUD controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Updated task data
@@ -289,7 +293,9 @@ async def update_task(
     )
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result.task, result.updated_fields, x_client_id)
+    broadcaster.task_updated(
+        result.task, result.updated_fields, x_client_id, x_user_name
+    )
 
     return convert_to_update_task_response(result)
 
@@ -301,6 +307,7 @@ async def archive_task(
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Archive (soft delete) a task.
 
@@ -309,6 +316,7 @@ async def archive_task(
         controller: CRUD controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Archived task data
@@ -319,7 +327,7 @@ async def archive_task(
     result = controller.archive_task(task_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result, ["is_archived"], x_client_id)
+    broadcaster.task_updated(result, ["is_archived"], x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
 
@@ -331,6 +339,7 @@ async def restore_task(
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Restore an archived task.
 
@@ -339,6 +348,7 @@ async def restore_task(
         controller: CRUD controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Restored task data
@@ -349,7 +359,7 @@ async def restore_task(
     result = controller.restore_task(task_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result, ["is_archived"], x_client_id)
+    broadcaster.task_updated(result, ["is_archived"], x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
 
@@ -362,6 +372,7 @@ async def delete_task(
     query_controller: QueryControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> None:
     """Permanently delete a task.
 
@@ -371,6 +382,7 @@ async def delete_task(
         query_controller: Query controller dependency (for fetching task name before deletion)
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Raises:
         HTTPException: 404 if task not found
@@ -385,4 +397,4 @@ async def delete_task(
     controller.remove_task(task_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_deleted(task_id, task_name, x_client_id)
+    broadcaster.task_deleted(task_id, task_name, x_client_id, x_user_name)

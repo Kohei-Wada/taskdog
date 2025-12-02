@@ -29,6 +29,7 @@ async def add_dependency(
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Add a dependency to a task.
 
@@ -38,6 +39,7 @@ async def add_dependency(
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Updated task data with new dependency
@@ -48,7 +50,7 @@ async def add_dependency(
     result = controller.add_dependency(task_id, request.depends_on_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result, ["depends_on"], x_client_id)
+    broadcaster.task_updated(result, ["depends_on"], x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
 
@@ -63,6 +65,7 @@ async def remove_dependency(
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Remove a dependency from a task.
 
@@ -72,6 +75,7 @@ async def remove_dependency(
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Updated task data without the dependency
@@ -82,7 +86,7 @@ async def remove_dependency(
     result = controller.remove_dependency(task_id, depends_on_id)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result, ["depends_on"], x_client_id)
+    broadcaster.task_updated(result, ["depends_on"], x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
 
@@ -95,6 +99,7 @@ async def set_task_tags(
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Set task tags (replaces existing tags).
 
@@ -104,6 +109,7 @@ async def set_task_tags(
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Updated task data with new tags
@@ -114,7 +120,7 @@ async def set_task_tags(
     result = controller.set_task_tags(task_id, request.tags)
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result, ["tags"], x_client_id)
+    broadcaster.task_updated(result, ["tags"], x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
 
@@ -127,6 +133,7 @@ async def log_hours(
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
     x_client_id: Annotated[str | None, Header()] = None,
+    x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
     """Log actual hours worked on a task for a specific date.
 
@@ -136,6 +143,7 @@ async def log_hours(
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
         x_client_id: Optional client ID from WebSocket connection
+        x_user_name: Optional user name from API gateway
 
     Returns:
         Updated task data with logged hours
@@ -147,6 +155,6 @@ async def log_hours(
     result = controller.log_hours(task_id, request.hours, log_date.isoformat())
 
     # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result, ["actual_daily_hours"], x_client_id)
+    broadcaster.task_updated(result, ["actual_daily_hours"], x_client_id, x_user_name)
 
     return convert_to_task_operation_response(result)
