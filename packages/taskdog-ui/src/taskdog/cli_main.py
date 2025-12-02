@@ -90,6 +90,11 @@ def cli(ctx: click.Context, host: str | None, port: int | None) -> None:
 
     # CLI options override config/env settings
     api_host = host if host is not None else config.api.host
+    if port is not None and (port < 1 or port > 65535):
+        console_writer.validation_error(
+            f"Port must be between 1 and 65535, got: {port}"
+        )
+        ctx.exit(1)
     api_port = port if port is not None else config.api.port
 
     # Initialize API client (required for all CLI commands)

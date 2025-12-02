@@ -131,3 +131,59 @@ class TestCliGlobalOptions:
         # Verify - error message should show overridden values
         assert result.exit_code == 1
         assert "192.168.1.100:3000" in result.output
+
+    @patch("taskdog.cli_main.load_cli_config")
+    def test_port_validation_too_low(self, mock_load_config):
+        """Test that port 0 is rejected."""
+        # Setup
+        mock_config = MagicMock()
+        mock_config.api.host = "127.0.0.1"
+        mock_config.api.port = 8000
+        mock_load_config.return_value = mock_config
+
+        # Execute
+        result = self.runner.invoke(cli, ["--port", "0", "table"])
+
+        # Verify
+        assert result.exit_code == 1
+        assert "Port must be between 1 and 65535" in result.output
+
+    @patch("taskdog.cli_main.load_cli_config")
+    def test_port_validation_too_high(self, mock_load_config):
+        """Test that port > 65535 is rejected."""
+        # Setup
+        mock_config = MagicMock()
+        mock_config.api.host = "127.0.0.1"
+        mock_config.api.port = 8000
+        mock_load_config.return_value = mock_config
+
+        # Execute
+        result = self.runner.invoke(cli, ["--port", "65536", "table"])
+
+        # Verify
+        assert result.exit_code == 1
+        assert "Port must be between 1 and 65535" in result.output
+
+    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog.cli_main.load_cli_config")
+    def test_port_validation_valid_boundary(self, mock_load_config, mock_api_client):
+        """Test that valid boundary ports (1, 65535) are accepted."""
+        # Setup
+        mock_config = MagicMock()
+        mock_config.api.host = "127.0.0.1"
+        mock_config.api.port = 8000
+        mock_load_config.return_value = mock_config
+
+        mock_client_instance = MagicMock()
+        mock_api_client.return_value = mock_client_instance
+
+        # Execute - test port 1
+        self.runner.invoke(cli, ["--port", "1", "table", "--help"])
+        mock_api_client.assert_called_with(base_url="http://127.0.0.1:1")
+
+        # Reset mock
+        mock_api_client.reset_mock()
+
+        # Execute - test port 65535
+        self.runner.invoke(cli, ["--port", "65535", "table", "--help"])
+        mock_api_client.assert_called_with(base_url="http://127.0.0.1:65535")
