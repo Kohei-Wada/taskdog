@@ -1,8 +1,9 @@
 """Tests for WebSocketClient."""
 
 import asyncio
-import unittest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from taskdog.infrastructure.websocket.websocket_client import (
     ConnectionState,
@@ -10,48 +11,49 @@ from taskdog.infrastructure.websocket.websocket_client import (
 )
 
 
-class TestConnectionState(unittest.TestCase):
+class TestConnectionState:
     """Tests for ConnectionState enum."""
 
     def test_states_exist(self) -> None:
         """Test that all expected states exist."""
-        self.assertIsNotNone(ConnectionState.DISCONNECTED)
-        self.assertIsNotNone(ConnectionState.CONNECTING)
-        self.assertIsNotNone(ConnectionState.CONNECTED)
-        self.assertIsNotNone(ConnectionState.RECONNECTING)
+        assert ConnectionState.DISCONNECTED is not None
+        assert ConnectionState.CONNECTING is not None
+        assert ConnectionState.CONNECTED is not None
+        assert ConnectionState.RECONNECTING is not None
 
 
-class TestWebSocketClientInit(unittest.TestCase):
+class TestWebSocketClientInit:
     """Tests for WebSocketClient initialization."""
 
     def test_initial_state_is_disconnected(self) -> None:
         """Test that initial state is DISCONNECTED."""
         callback = MagicMock()
         client = WebSocketClient("ws://localhost:8000/ws", callback)
-        self.assertEqual(client._state, ConnectionState.DISCONNECTED)
+        assert client._state == ConnectionState.DISCONNECTED
 
     def test_initial_websocket_is_none(self) -> None:
         """Test that initial websocket is None."""
         callback = MagicMock()
         client = WebSocketClient("ws://localhost:8000/ws", callback)
-        self.assertIsNone(client._websocket)
+        assert client._websocket is None
 
     def test_initial_task_is_none(self) -> None:
         """Test that initial task is None."""
         callback = MagicMock()
         client = WebSocketClient("ws://localhost:8000/ws", callback)
-        self.assertIsNone(client._task)
+        assert client._task is None
 
     def test_lock_is_initialized(self) -> None:
         """Test that asyncio.Lock is initialized."""
         callback = MagicMock()
         client = WebSocketClient("ws://localhost:8000/ws", callback)
-        self.assertIsInstance(client._lock, asyncio.Lock)
+        assert isinstance(client._lock, asyncio.Lock)
 
 
-class TestWebSocketClientConnect(unittest.IsolatedAsyncioTestCase):
+class TestWebSocketClientConnect:
     """Tests for WebSocketClient.connect()."""
 
+    @pytest.mark.asyncio
     @patch(
         "taskdog.infrastructure.websocket.websocket_client.WEBSOCKETS_AVAILABLE", True
     )
@@ -67,13 +69,14 @@ class TestWebSocketClientConnect(unittest.IsolatedAsyncioTestCase):
         with patch.object(client, "_run", mock_run):
             await client.connect()
             # State should be CONNECTING (or CONNECTED if _run completes quickly)
-            self.assertIn(
-                client._state,
-                [ConnectionState.CONNECTING, ConnectionState.CONNECTED],
-            )
+            assert client._state in [
+                ConnectionState.CONNECTING,
+                ConnectionState.CONNECTED,
+            ]
             # Clean up
             await client.disconnect()
 
+    @pytest.mark.asyncio
     @patch(
         "taskdog.infrastructure.websocket.websocket_client.WEBSOCKETS_AVAILABLE", True
     )
@@ -97,9 +100,10 @@ class TestWebSocketClientConnect(unittest.IsolatedAsyncioTestCase):
             await client.connect()
             second_task = client._task
 
-            self.assertIs(first_task, second_task)
+            assert first_task is second_task
             await client.disconnect()
 
+    @pytest.mark.asyncio
     @patch(
         "taskdog.infrastructure.websocket.websocket_client.WEBSOCKETS_AVAILABLE", False
     )
@@ -109,13 +113,14 @@ class TestWebSocketClientConnect(unittest.IsolatedAsyncioTestCase):
         client = WebSocketClient("ws://localhost:8000/ws", callback)
 
         await client.connect()
-        self.assertEqual(client._state, ConnectionState.DISCONNECTED)
-        self.assertIsNone(client._task)
+        assert client._state == ConnectionState.DISCONNECTED
+        assert client._task is None
 
 
-class TestWebSocketClientDisconnect(unittest.IsolatedAsyncioTestCase):
+class TestWebSocketClientDisconnect:
     """Tests for WebSocketClient.disconnect()."""
 
+    @pytest.mark.asyncio
     @patch(
         "taskdog.infrastructure.websocket.websocket_client.WEBSOCKETS_AVAILABLE", True
     )
@@ -131,8 +136,9 @@ class TestWebSocketClientDisconnect(unittest.IsolatedAsyncioTestCase):
         with patch.object(client, "_run", mock_run):
             await client.connect()
             await client.disconnect()
-            self.assertEqual(client._state, ConnectionState.DISCONNECTED)
+            assert client._state == ConnectionState.DISCONNECTED
 
+    @pytest.mark.asyncio
     @patch(
         "taskdog.infrastructure.websocket.websocket_client.WEBSOCKETS_AVAILABLE", True
     )
@@ -143,8 +149,9 @@ class TestWebSocketClientDisconnect(unittest.IsolatedAsyncioTestCase):
 
         # Should not raise
         await client.disconnect()
-        self.assertEqual(client._state, ConnectionState.DISCONNECTED)
+        assert client._state == ConnectionState.DISCONNECTED
 
+    @pytest.mark.asyncio
     @patch(
         "taskdog.infrastructure.websocket.websocket_client.WEBSOCKETS_AVAILABLE", True
     )
@@ -159,46 +166,37 @@ class TestWebSocketClientDisconnect(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(client, "_run", mock_run):
             await client.connect()
-            self.assertIsNotNone(client._task)
+            assert client._task is not None
 
             await client.disconnect()
-            self.assertIsNone(client._task)
+            assert client._task is None
 
 
-class TestWebSocketClientIsConnected(unittest.TestCase):
+class TestWebSocketClientIsConnected:
     """Tests for WebSocketClient.is_connected()."""
 
-    def test_is_connected_when_disconnected(self) -> None:
-        """Test is_connected() returns False when disconnected."""
+    @pytest.mark.parametrize(
+        "state,expected",
+        [
+            (ConnectionState.DISCONNECTED, False),
+            (ConnectionState.CONNECTING, False),
+            (ConnectionState.CONNECTED, True),
+            (ConnectionState.RECONNECTING, False),
+        ],
+        ids=["disconnected", "connecting", "connected", "reconnecting"],
+    )
+    def test_is_connected(self, state, expected) -> None:
+        """Test is_connected() returns correct value for each state."""
         callback = MagicMock()
         client = WebSocketClient("ws://localhost:8000/ws", callback)
-        self.assertFalse(client.is_connected())
-
-    def test_is_connected_when_connecting(self) -> None:
-        """Test is_connected() returns False when connecting."""
-        callback = MagicMock()
-        client = WebSocketClient("ws://localhost:8000/ws", callback)
-        client._state = ConnectionState.CONNECTING
-        self.assertFalse(client.is_connected())
-
-    def test_is_connected_when_connected(self) -> None:
-        """Test is_connected() returns True when connected."""
-        callback = MagicMock()
-        client = WebSocketClient("ws://localhost:8000/ws", callback)
-        client._state = ConnectionState.CONNECTED
-        self.assertTrue(client.is_connected())
-
-    def test_is_connected_when_reconnecting(self) -> None:
-        """Test is_connected() returns False when reconnecting."""
-        callback = MagicMock()
-        client = WebSocketClient("ws://localhost:8000/ws", callback)
-        client._state = ConnectionState.RECONNECTING
-        self.assertFalse(client.is_connected())
+        client._state = state
+        assert client.is_connected() == expected
 
 
-class TestWebSocketClientConcurrency(unittest.IsolatedAsyncioTestCase):
+class TestWebSocketClientConcurrency:
     """Tests for WebSocketClient concurrent access."""
 
+    @pytest.mark.asyncio
     @patch(
         "taskdog.infrastructure.websocket.websocket_client.WEBSOCKETS_AVAILABLE", True
     )
@@ -227,8 +225,4 @@ class TestWebSocketClientConcurrency(unittest.IsolatedAsyncioTestCase):
             await asyncio.gather(connect_task, disconnect_task)
 
             # Should end up disconnected
-            self.assertEqual(client._state, ConnectionState.DISCONNECTED)
-
-
-if __name__ == "__main__":
-    unittest.main()
+            assert client._state == ConnectionState.DISCONNECTED

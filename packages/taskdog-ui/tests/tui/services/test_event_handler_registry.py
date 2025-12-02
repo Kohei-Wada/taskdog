@@ -1,13 +1,15 @@
 """Tests for EventHandlerRegistry."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 
-class TestEventHandlerRegistry(unittest.TestCase):
+
+class TestEventHandlerRegistry:
     """Test cases for EventHandlerRegistry."""
 
-    def setUp(self) -> None:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
         """Set up test fixtures."""
         self.mock_app = MagicMock()
         self.mock_app.api_client = MagicMock()
@@ -32,7 +34,7 @@ class TestEventHandlerRegistry(unittest.TestCase):
             "schedule_optimized",
         ]
         for event_type in expected_handlers:
-            self.assertIn(event_type, self.registry._handlers)
+            assert event_type in self.registry._handlers
 
     def test_dispatch_connected_sets_client_id(self) -> None:
         """Test that connected event sets client ID in API client."""
@@ -81,7 +83,7 @@ class TestEventHandlerRegistry(unittest.TestCase):
         self.mock_app.notify.assert_called_once()
         # Verify warning severity
         call_args = self.mock_app.notify.call_args
-        self.assertEqual(call_args.kwargs.get("severity"), "warning")
+        assert call_args.kwargs.get("severity") == "warning"
 
     def test_dispatch_task_status_changed_shows_transition(self) -> None:
         """Test that task_status_changed event shows status transition."""
@@ -133,7 +135,7 @@ class TestEventHandlerRegistry(unittest.TestCase):
         self.registry.dispatch(message)
         # The source should not be displayed in the notification
         result = self.registry._get_display_source(message)
-        self.assertIsNone(result)
+        assert result is None
 
     def test_source_client_id_shown_when_different(self) -> None:
         """Test that source client ID is shown when different from this client."""
@@ -144,7 +146,7 @@ class TestEventHandlerRegistry(unittest.TestCase):
             "source_client_id": "other-client-id",
         }
         result = self.registry._get_display_source(message)
-        self.assertEqual(result, "other-client-id")
+        assert result == "other-client-id"
 
     def test_no_task_ui_manager_does_not_fail(self) -> None:
         """Test that events don't fail when task_ui_manager is None."""
@@ -159,10 +161,11 @@ class TestEventHandlerRegistry(unittest.TestCase):
         self.mock_app.notify.assert_called_once()
 
 
-class TestWebSocketHandler(unittest.TestCase):
+class TestWebSocketHandler:
     """Test cases for WebSocketHandler delegation."""
 
-    def setUp(self) -> None:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
         """Set up test fixtures."""
         self.mock_app = MagicMock()
         self.mock_app.api_client = MagicMock()
@@ -181,7 +184,3 @@ class TestWebSocketHandler(unittest.TestCase):
         handler.handle_message(message)
 
         self.mock_app.api_client.set_client_id.assert_called_once_with("new-client")
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -1,13 +1,14 @@
 """Tests for ConnectionStatusManager."""
 
-import unittest
 from datetime import datetime
+
+import pytest
 
 from taskdog.tui.state.connection_status import ConnectionStatus
 from taskdog.tui.state.connection_status_manager import ConnectionStatusManager
 
 
-class TestConnectionStatus(unittest.TestCase):
+class TestConnectionStatus:
     """Test cases for ConnectionStatus dataclass."""
 
     def test_immutable(self):
@@ -17,50 +18,46 @@ class TestConnectionStatus(unittest.TestCase):
             is_websocket_connected=False,
             last_update=datetime.now(),
         )
-        with self.assertRaises(AttributeError):
+        with pytest.raises(AttributeError):
             status.is_api_connected = False  # type: ignore[misc]
 
 
-class TestConnectionStatusManager(unittest.TestCase):
+class TestConnectionStatusManager:
     """Test cases for ConnectionStatusManager class."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.manager = ConnectionStatusManager()
 
     def test_default_values(self):
         """Test default status values are correctly initialized."""
-        self.assertFalse(self.manager.is_api_connected)
-        self.assertFalse(self.manager.is_websocket_connected)
-        self.assertIsNotNone(self.manager.status.last_update)
+        assert self.manager.is_api_connected is False
+        assert self.manager.is_websocket_connected is False
+        assert self.manager.status.last_update is not None
 
     def test_status_property(self):
         """Test status property returns current ConnectionStatus."""
         status = self.manager.status
-        self.assertIsInstance(status, ConnectionStatus)
-        self.assertFalse(status.is_api_connected)
-        self.assertFalse(status.is_websocket_connected)
+        assert isinstance(status, ConnectionStatus)
+        assert status.is_api_connected is False
+        assert status.is_websocket_connected is False
 
-    def test_update_both_connected(self):
-        """Test update when both connections are established."""
-        self.manager.update(api_connected=True, ws_connected=True)
+    @pytest.mark.parametrize(
+        "api_connected,ws_connected",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+        ],
+        ids=["both_connected", "api_only", "websocket_only"],
+    )
+    def test_update(self, api_connected, ws_connected):
+        """Test update with different connection states."""
+        self.manager.update(api_connected=api_connected, ws_connected=ws_connected)
 
-        self.assertTrue(self.manager.is_api_connected)
-        self.assertTrue(self.manager.is_websocket_connected)
-
-    def test_update_api_only(self):
-        """Test update when only API is connected."""
-        self.manager.update(api_connected=True, ws_connected=False)
-
-        self.assertTrue(self.manager.is_api_connected)
-        self.assertFalse(self.manager.is_websocket_connected)
-
-    def test_update_websocket_only(self):
-        """Test update when only WebSocket is connected."""
-        self.manager.update(api_connected=False, ws_connected=True)
-
-        self.assertFalse(self.manager.is_api_connected)
-        self.assertTrue(self.manager.is_websocket_connected)
+        assert self.manager.is_api_connected == api_connected
+        assert self.manager.is_websocket_connected == ws_connected
 
     def test_update_updates_last_update(self):
         """Test update changes the last_update timestamp."""
@@ -70,7 +67,7 @@ class TestConnectionStatusManager(unittest.TestCase):
         self.manager.update(api_connected=True, ws_connected=True)
 
         # last_update should be >= initial_time
-        self.assertGreaterEqual(self.manager.status.last_update, initial_time)
+        assert self.manager.status.last_update >= initial_time
 
     def test_subscribe_receives_updates(self):
         """Test subscribers receive updates when status changes."""
@@ -82,9 +79,9 @@ class TestConnectionStatusManager(unittest.TestCase):
         self.manager.subscribe(callback)
         self.manager.update(api_connected=True, ws_connected=False)
 
-        self.assertEqual(len(received_statuses), 1)
-        self.assertTrue(received_statuses[0].is_api_connected)
-        self.assertFalse(received_statuses[0].is_websocket_connected)
+        assert len(received_statuses) == 1
+        assert received_statuses[0].is_api_connected is True
+        assert received_statuses[0].is_websocket_connected is False
 
     def test_multiple_subscribers(self):
         """Test multiple subscribers all receive updates."""
@@ -100,8 +97,8 @@ class TestConnectionStatusManager(unittest.TestCase):
         self.manager.subscribe(callback2)
         self.manager.update(api_connected=True, ws_connected=True)
 
-        self.assertEqual(call_counts["cb1"], 1)
-        self.assertEqual(call_counts["cb2"], 1)
+        assert call_counts["cb1"] == 1
+        assert call_counts["cb2"] == 1
 
     def test_unsubscribe_stops_updates(self):
         """Test unsubscribed callbacks no longer receive updates."""
@@ -112,13 +109,13 @@ class TestConnectionStatusManager(unittest.TestCase):
 
         self.manager.subscribe(callback)
         self.manager.update(api_connected=True, ws_connected=False)
-        self.assertEqual(len(received_statuses), 1)
+        assert len(received_statuses) == 1
 
         self.manager.unsubscribe(callback)
         self.manager.update(api_connected=False, ws_connected=False)
 
         # Should still be 1 (no new updates after unsubscribe)
-        self.assertEqual(len(received_statuses), 1)
+        assert len(received_statuses) == 1
 
     def test_unsubscribe_nonexistent_callback(self):
         """Test unsubscribe with non-existent callback does not raise."""
@@ -142,10 +139,10 @@ class TestConnectionStatusManager(unittest.TestCase):
         self.manager.update(api_connected=True, ws_connected=False)
         self.manager.update(api_connected=True, ws_connected=True)
 
-        self.assertEqual(len(received_statuses), 3)
-        self.assertFalse(received_statuses[0].is_api_connected)
-        self.assertTrue(received_statuses[1].is_api_connected)
-        self.assertTrue(received_statuses[2].is_websocket_connected)
+        assert len(received_statuses) == 3
+        assert received_statuses[0].is_api_connected is False
+        assert received_statuses[1].is_api_connected is True
+        assert received_statuses[2].is_websocket_connected is True
 
     def test_exception_in_callback_does_not_break_chain(self):
         """Test that exception in one callback doesn't prevent others from being called."""
@@ -168,10 +165,6 @@ class TestConnectionStatusManager(unittest.TestCase):
         # Should not raise, and all callbacks should be attempted
         self.manager.update(api_connected=True, ws_connected=True)
 
-        self.assertEqual(call_counts["cb1"], 1)
-        self.assertEqual(call_counts["cb2"], 1)  # Called but raised
-        self.assertEqual(call_counts["cb3"], 1)  # Still called despite cb2 exception
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert call_counts["cb1"] == 1
+        assert call_counts["cb2"] == 1  # Called but raised
+        assert call_counts["cb3"] == 1  # Still called despite cb2 exception
