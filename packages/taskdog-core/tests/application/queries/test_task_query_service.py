@@ -1,7 +1,10 @@
+"""Tests for TaskQueryService."""
+
 import os
 import tempfile
-import unittest
 from datetime import datetime, timedelta
+
+import pytest
 
 from taskdog_core.application.queries.filters.composite_filter import CompositeFilter
 from taskdog_core.application.queries.filters.incomplete_filter import IncompleteFilter
@@ -13,11 +16,12 @@ from taskdog_core.infrastructure.persistence.database.sqlite_task_repository imp
 )
 
 
-class TestTaskQueryService(unittest.TestCase):
-    """Test cases for TaskQueryService"""
+class TestTaskQueryService:
+    """Test cases for TaskQueryService."""
 
-    def setUp(self):
-        """Create temporary file and initialize service for each test"""
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Create temporary file and initialize service for each test."""
         self.test_file = tempfile.NamedTemporaryFile(
             mode="w", delete=False, suffix=".db"
         )
@@ -41,15 +45,16 @@ class TestTaskQueryService(unittest.TestCase):
             hour=18
         )
 
-    def tearDown(self):
-        """Clean up temporary file after each test"""
+        yield
+
+        # Cleanup
         if hasattr(self, "repository") and hasattr(self.repository, "close"):
             self.repository.close()
         if os.path.exists(self.test_filename):
             os.unlink(self.test_filename)
 
     def test_get_today_tasks_returns_matching_tasks(self):
-        """Test get_today_tasks returns tasks matching today's criteria"""
+        """Test get_today_tasks returns tasks matching today's criteria."""
         # Create tasks
         task1 = Task(name="Deadline Today", priority=1, deadline=self.today_dt)
         task1.id = self.repository.generate_next_id()
@@ -68,14 +73,14 @@ class TestTaskQueryService(unittest.TestCase):
         today_tasks = self.query_service.get_filtered_tasks(today_filter)
 
         # Verify
-        self.assertEqual(len(today_tasks), 2)
+        assert len(today_tasks) == 2
         task_names = {t.name for t in today_tasks}
-        self.assertIn("Deadline Today", task_names)
-        self.assertIn("In Progress", task_names)
-        self.assertNotIn("Not Today", task_names)
+        assert "Deadline Today" in task_names
+        assert "In Progress" in task_names
+        assert "Not Today" not in task_names
 
     def test_get_today_tasks_sorts_by_deadline(self):
-        """Test get_today_tasks sorts tasks by deadline"""
+        """Test get_today_tasks sorts tasks by deadline."""
         # Create tasks with different deadlines
         task1 = Task(name="Later", priority=1, id=1, deadline=self.tomorrow_dt)
         task1.id = self.repository.generate_next_id()
@@ -104,13 +109,13 @@ class TestTaskQueryService(unittest.TestCase):
         )
 
         # Verify sorted by deadline
-        self.assertEqual(len(today_tasks), 3)
-        self.assertEqual(today_tasks[0].name, "Earlier")
-        self.assertEqual(today_tasks[1].name, "Today")
-        self.assertEqual(today_tasks[2].name, "Later")
+        assert len(today_tasks) == 3
+        assert today_tasks[0].name == "Earlier"
+        assert today_tasks[1].name == "Today"
+        assert today_tasks[2].name == "Later"
 
     def test_get_today_tasks_sorts_by_priority_when_specified(self):
-        """Test get_today_tasks can sort by priority when specified"""
+        """Test get_today_tasks can sort by priority when specified."""
         # Create tasks with same deadline, different priorities
         task1 = Task(name="Low Priority", priority=1, id=1, deadline=self.today_dt)
         task1.id = self.repository.generate_next_id()
@@ -131,13 +136,13 @@ class TestTaskQueryService(unittest.TestCase):
         )
 
         # Verify sorted by priority (descending by default)
-        self.assertEqual(len(today_tasks), 3)
-        self.assertEqual(today_tasks[0].name, "High Priority")
-        self.assertEqual(today_tasks[1].name, "Mid Priority")
-        self.assertEqual(today_tasks[2].name, "Low Priority")
+        assert len(today_tasks) == 3
+        assert today_tasks[0].name == "High Priority"
+        assert today_tasks[1].name == "Mid Priority"
+        assert today_tasks[2].name == "Low Priority"
 
     def test_composite_filter_with_incomplete_excludes_completed(self):
-        """Test CompositeFilter with IncompleteFilter excludes completed tasks"""
+        """Test CompositeFilter with IncompleteFilter excludes completed tasks."""
         task = Task(
             name="Completed Today",
             priority=1,
@@ -151,10 +156,10 @@ class TestTaskQueryService(unittest.TestCase):
         composite_filter = CompositeFilter([IncompleteFilter(), TodayFilter()])
         today_tasks = self.query_service.get_filtered_tasks(composite_filter)
 
-        self.assertEqual(len(today_tasks), 0)
+        assert len(today_tasks) == 0
 
     def test_today_filter_alone_includes_completed(self):
-        """Test TodayFilter alone includes completed tasks (mimics 'taskdog today --all')"""
+        """Test TodayFilter alone includes completed tasks (mimics 'taskdog today --all')."""
         task = Task(
             name="Completed Today",
             priority=1,
@@ -168,8 +173,8 @@ class TestTaskQueryService(unittest.TestCase):
         today_filter = TodayFilter()
         today_tasks = self.query_service.get_filtered_tasks(today_filter)
 
-        self.assertEqual(len(today_tasks), 1)
-        self.assertEqual(today_tasks[0].name, "Completed Today")
+        assert len(today_tasks) == 1
+        assert today_tasks[0].name == "Completed Today"
 
     def test_filter_by_tags_with_or_logic(self):
         """Test filter_by_tags with OR logic returns tasks with any specified tag."""
@@ -196,12 +201,12 @@ class TestTaskQueryService(unittest.TestCase):
         )
 
         # Should return tasks 1, 2, and 3 (all have either "work" or "personal")
-        self.assertEqual(len(result), 3)
+        assert len(result) == 3
         task_names = {t.name for t in result}
-        self.assertIn("Work Task", task_names)
-        self.assertIn("Personal Task", task_names)
-        self.assertIn("Client Task", task_names)
-        self.assertNotIn("No Tags", task_names)
+        assert "Work Task" in task_names
+        assert "Personal Task" in task_names
+        assert "Client Task" in task_names
+        assert "No Tags" not in task_names
 
     def test_filter_by_tags_with_and_logic(self):
         """Test filter_by_tags with AND logic returns tasks with all specified tags."""
@@ -224,11 +229,11 @@ class TestTaskQueryService(unittest.TestCase):
         result = self.query_service.filter_by_tags(["work", "urgent"], match_all=True)
 
         # Should return only tasks 1 and 3 (both have "work" AND "urgent")
-        self.assertEqual(len(result), 2)
+        assert len(result) == 2
         task_names = {t.name for t in result}
-        self.assertIn("Work and Urgent", task_names)
-        self.assertIn("Work and Client", task_names)
-        self.assertNotIn("Only Work", task_names)
+        assert "Work and Urgent" in task_names
+        assert "Work and Client" in task_names
+        assert "Only Work" not in task_names
 
     def test_filter_by_tags_with_empty_list_returns_all(self):
         """Test filter_by_tags with empty tag list returns all tasks."""
@@ -242,7 +247,7 @@ class TestTaskQueryService(unittest.TestCase):
 
         result = self.query_service.filter_by_tags([], match_all=False)
 
-        self.assertEqual(len(result), 2)
+        assert len(result) == 2
 
     def test_filter_by_tags_with_nonexistent_tag(self):
         """Test filter_by_tags with nonexistent tag returns empty list."""
@@ -252,7 +257,7 @@ class TestTaskQueryService(unittest.TestCase):
 
         result = self.query_service.filter_by_tags(["nonexistent"], match_all=False)
 
-        self.assertEqual(len(result), 0)
+        assert len(result) == 0
 
     def test_get_all_tags_returns_tag_counts(self):
         """Test get_all_tags returns all unique tags with their counts."""
@@ -277,17 +282,17 @@ class TestTaskQueryService(unittest.TestCase):
         result = self.query_service.get_all_tags()
 
         # Verify counts
-        self.assertEqual(len(result), 4)
-        self.assertEqual(result["work"], 2)
-        self.assertEqual(result["urgent"], 1)
-        self.assertEqual(result["client-a"], 1)
-        self.assertEqual(result["personal"], 1)
+        assert len(result) == 4
+        assert result["work"] == 2
+        assert result["urgent"] == 1
+        assert result["client-a"] == 1
+        assert result["personal"] == 1
 
     def test_get_all_tags_with_no_tasks_returns_empty(self):
         """Test get_all_tags with no tasks returns empty dict."""
         result = self.query_service.get_all_tags()
 
-        self.assertEqual(result, {})
+        assert result == {}
 
     def test_get_all_tags_with_no_tags_returns_empty(self):
         """Test get_all_tags with tasks but no tags returns empty dict."""
@@ -297,7 +302,7 @@ class TestTaskQueryService(unittest.TestCase):
 
         result = self.query_service.get_all_tags()
 
-        self.assertEqual(result, {})
+        assert result == {}
 
     # ====================================================================
     # Phase 4: Edge Case Tests
@@ -320,18 +325,18 @@ class TestTaskQueryService(unittest.TestCase):
 
         # Filter by lowercase 'urgent' - should only match task1
         result = self.query_service.filter_by_tags(["urgent"], match_all=False)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].id, task1.id)
+        assert len(result) == 1
+        assert result[0].id == task1.id
 
         # Filter by uppercase 'URGENT' - should only match task2
         result = self.query_service.filter_by_tags(["URGENT"], match_all=False)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].id, task2.id)
+        assert len(result) == 1
+        assert result[0].id == task2.id
 
         # Filter by title case 'Urgent' - should only match task3
         result = self.query_service.filter_by_tags(["Urgent"], match_all=False)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].id, task3.id)
+        assert len(result) == 1
+        assert result[0].id == task3.id
 
     def test_filter_by_tags_case_sensitivity_and_logic(self):
         """Test case sensitivity with AND logic (Phase 4)."""
@@ -347,15 +352,15 @@ class TestTaskQueryService(unittest.TestCase):
         result = self.query_service.filter_by_tags(
             ["urgent", "backend"], match_all=True
         )
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].id, task1.id)
+        assert len(result) == 1
+        assert result[0].id == task1.id
 
         # Filter by ["URGENT", "backend"] - should only match task2
         result = self.query_service.filter_by_tags(
             ["URGENT", "backend"], match_all=True
         )
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].id, task2.id)
+        assert len(result) == 1
+        assert result[0].id == task2.id
 
     def test_get_all_tags_case_sensitivity(self):
         """Test that get_all_tags treats different cases as separate tags (Phase 4)."""
@@ -374,11 +379,7 @@ class TestTaskQueryService(unittest.TestCase):
         result = self.query_service.get_all_tags()
 
         # Should have 3 separate tags due to case differences
-        self.assertEqual(len(result), 3)
-        self.assertEqual(result["urgent"], 1)
-        self.assertEqual(result["URGENT"], 1)
-        self.assertEqual(result["Urgent"], 1)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(result) == 3
+        assert result["urgent"] == 1
+        assert result["URGENT"] == 1
+        assert result["Urgent"] == 1

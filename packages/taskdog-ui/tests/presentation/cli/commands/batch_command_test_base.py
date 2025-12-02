@@ -1,8 +1,8 @@
 """Base test class for CLI batch command tests."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -12,7 +12,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 )
 
 
-class BaseBatchCommandTest(unittest.TestCase):
+class BaseBatchCommandTest:
     """Base test class with common setup for batch CLI commands.
 
     Provides common fixtures and test methods for testing commands that process
@@ -38,14 +38,13 @@ class BaseBatchCommandTest(unittest.TestCase):
     controller_attr = "task_controller"  # Which controller to use: lifecycle_controller, crud_controller, etc.
     success_callback = None  # Optional: task_start_time, task_completion_details, etc.
 
-    @classmethod
-    def setUpClass(cls):
-        """Skip test execution for the base class itself."""
-        if cls is BaseBatchCommandTest:
-            raise unittest.SkipTest("Skipping base test class")
-
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up common test fixtures."""
+        # Skip if this is the base class itself
+        if self.__class__ is BaseBatchCommandTest:
+            pytest.skip("Skipping base test class")
+
         self.runner = CliRunner()
         self.repository = MagicMock()
         self.time_tracker = MagicMock()
@@ -100,7 +99,7 @@ class BaseBatchCommandTest(unittest.TestCase):
         result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         mock_method.assert_called_once()
         self.console_writer.task_success.assert_called_once_with(
             self.action_verb, result_task
@@ -121,11 +120,11 @@ class BaseBatchCommandTest(unittest.TestCase):
         result = self.runner.invoke(self.command_func, ["1", "2"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
-        self.assertEqual(mock_method.call_count, 2)
-        self.assertEqual(self.console_writer.task_success.call_count, 2)
+        assert result.exit_code == 0
+        assert mock_method.call_count == 2
+        assert self.console_writer.task_success.call_count == 2
         # Verify spacing added for multiple tasks
-        self.assertEqual(self.console_writer.empty_line.call_count, 2)
+        assert self.console_writer.empty_line.call_count == 2
 
     def test_nonexistent_task(self):
         """Test command with non-existent task."""
@@ -138,10 +137,10 @@ class BaseBatchCommandTest(unittest.TestCase):
         result = self.runner.invoke(self.command_func, ["999"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
         error_msg = self.console_writer.validation_error.call_args[0][0]
-        self.assertIn("999", error_msg)
+        assert "999" in error_msg
 
     def test_already_finished_task(self):
         """Test command with already finished task."""
@@ -154,11 +153,11 @@ class BaseBatchCommandTest(unittest.TestCase):
         result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
         error_msg = self.console_writer.validation_error.call_args[0][0]
-        self.assertIn("task 1", error_msg)
-        self.assertIn("COMPLETED", error_msg)
+        assert "task 1" in error_msg
+        assert "COMPLETED" in error_msg
 
     def test_general_exception(self):
         """Test handling of general exception during command execution."""
@@ -172,7 +171,7 @@ class BaseBatchCommandTest(unittest.TestCase):
         result = self.runner.invoke(self.command_func, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with(self.action_name, error)
 
     def test_no_task_id_provided(self):
@@ -181,4 +180,4 @@ class BaseBatchCommandTest(unittest.TestCase):
         result = self.runner.invoke(self.command_func, [], obj=self.cli_context)
 
         # Verify - Click handles missing required argument
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0

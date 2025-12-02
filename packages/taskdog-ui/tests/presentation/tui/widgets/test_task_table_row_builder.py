@@ -1,18 +1,19 @@
 """Tests for TaskTableRowBuilder."""
 
-import unittest
 from datetime import datetime, timedelta
 
+import pytest
 from rich.text import Text
 
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class TestTaskTableRowBuilder(unittest.TestCase):
+class TestTaskTableRowBuilder:
     """Test TaskTableRowBuilder row construction functionality."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.builder = TaskTableRowBuilder()
 
@@ -28,15 +29,15 @@ class TestTaskTableRowBuilder(unittest.TestCase):
         row = self.builder.build_row(task)
 
         # Should return tuple of 15 Text objects (15 columns)
-        self.assertEqual(len(row), 15)
-        self.assertIsInstance(row[0], Text)  # ID
-        self.assertIsInstance(row[1], Text)  # Name
-        self.assertIsInstance(row[3], Text)  # Priority
+        assert len(row) == 15
+        assert isinstance(row[0], Text)  # ID
+        assert isinstance(row[1], Text)  # Name
+        assert isinstance(row[3], Text)  # Priority
 
         # Check basic values
-        self.assertEqual(str(row[0]), "1")  # ID
-        self.assertEqual(str(row[1]), "Test task")  # Name
-        self.assertEqual(str(row[3]), "2")  # Priority
+        assert str(row[0]) == "1"  # ID
+        assert str(row[1]) == "Test task"  # Name
+        assert str(row[3]) == "2"  # Priority
 
     def test_build_row_completed_task_has_strikethrough(self):
         """Test that completed tasks have strikethrough style on name."""
@@ -51,7 +52,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         # Name column should have strikethrough style
         name_text = row[1]
-        self.assertEqual(name_text.style, "strike")
+        assert name_text.style == "strike"
 
     def test_build_row_pending_task_no_strikethrough(self):
         """Test that non-completed tasks don't have strikethrough."""
@@ -66,7 +67,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         # Name column should not have strikethrough
         name_text = row[1]
-        self.assertIsNone(name_text.style)
+        assert name_text.style is None
 
     def test_build_row_fixed_task_shows_flag(self):
         """Test that fixed tasks show the fixed indicator."""
@@ -82,7 +83,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         # Flags column should contain fixed indicator
         flags = str(row[4])
-        self.assertIn("📌", flags)
+        assert "📌" in flags
 
     def test_build_row_with_tags(self):
         """Test building a row with tags."""
@@ -98,7 +99,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         # Tags column should show comma-separated tags
         tags_text = str(row[14])
-        self.assertEqual(tags_text, "urgent, backend")
+        assert tags_text == "urgent, backend"
 
     def test_build_row_with_deadline(self):
         """Test building a row with deadline."""
@@ -115,7 +116,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         # Deadline column should be formatted (not "-")
         deadline_text = str(row[7])
-        self.assertNotEqual(deadline_text, "-")
+        assert deadline_text != "-"
 
     def test_build_row_with_dependencies(self):
         """Test building a row with dependencies."""
@@ -131,7 +132,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         # Dependencies column should show comma-separated IDs
         deps_text = str(row[13])
-        self.assertEqual(deps_text, "1,2")
+        assert deps_text == "1,2"
 
     def test_format_name_truncation(self):
         """Test name truncation for long task names."""
@@ -140,8 +141,8 @@ class TestTaskTableRowBuilder(unittest.TestCase):
         formatted = self.builder._format_name(long_name)
 
         # Should be truncated with "..."
-        self.assertTrue(formatted.endswith("..."))
-        self.assertLess(len(formatted), len(long_name))
+        assert formatted.endswith("...")
+        assert len(formatted) < len(long_name)
 
     def test_format_name_no_truncation(self):
         """Test that short names are not truncated."""
@@ -149,7 +150,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         formatted = self.builder._format_name(short_name)
 
-        self.assertEqual(formatted, short_name)
+        assert formatted == short_name
 
     def test_format_tags_truncation(self):
         """Test tags truncation for long tag lists."""
@@ -158,15 +159,15 @@ class TestTaskTableRowBuilder(unittest.TestCase):
         formatted = self.builder._format_tags(long_tags)
 
         # Should be truncated with "..."
-        self.assertTrue(formatted.endswith("..."))
+        assert formatted.endswith("...")
 
     def test_format_tags_empty(self):
         """Test formatting empty tags."""
         formatted = self.builder._format_tags(None)
-        self.assertEqual(formatted, "")
+        assert formatted == ""
 
         formatted = self.builder._format_tags([])
-        self.assertEqual(formatted, "")
+        assert formatted == ""
 
     def test_format_tags_no_truncation(self):
         """Test that short tag lists are not truncated."""
@@ -174,7 +175,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         formatted = self.builder._format_tags(short_tags)
 
-        self.assertEqual(formatted, "tag1, tag2")
+        assert formatted == "tag1, tag2"
 
     def test_build_row_in_progress_task_shows_elapsed_time(self):
         """Test that IN_PROGRESS tasks show elapsed time."""
@@ -190,7 +191,7 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         # Elapsed time column should show time (not "-")
         elapsed_text = str(row[12])
-        self.assertNotEqual(elapsed_text, "-")
+        assert elapsed_text != "-"
 
     def test_build_row_with_estimated_duration(self):
         """Test building a row with estimated duration."""
@@ -206,8 +207,4 @@ class TestTaskTableRowBuilder(unittest.TestCase):
 
         # Duration column should show estimate
         duration_text = str(row[5])
-        self.assertIn("E:8h", duration_text)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert "E:8h" in duration_text

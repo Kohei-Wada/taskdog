@@ -1,8 +1,9 @@
 """Tests for TaskUIManager service."""
 
-import unittest
 from datetime import date, datetime, timedelta
 from unittest.mock import MagicMock
+
+import pytest
 
 from taskdog.services.task_data_loader import TaskData, TaskDataLoader
 from taskdog.tui.services.task_ui_manager import TaskUIManager
@@ -100,10 +101,11 @@ def create_task_data(
     )
 
 
-class TestTaskUIManager(unittest.TestCase):
+class TestTaskUIManager:
     """Test cases for TaskUIManager class."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.state = TUIState()
         self.task_data_loader = MagicMock(spec=TaskDataLoader)
@@ -121,10 +123,10 @@ class TestTaskUIManager(unittest.TestCase):
 
     def test_init_with_dependencies(self):
         """Test TaskUIManager initializes with required dependencies."""
-        self.assertIs(self.manager.state, self.state)
-        self.assertIs(self.manager.task_data_loader, self.task_data_loader)
-        self.assertIsNotNone(self.manager._get_main_screen)
-        self.assertIs(self.manager._on_connection_error, self.on_connection_error)
+        assert self.manager.state is self.state
+        assert self.manager.task_data_loader is self.task_data_loader
+        assert self.manager._get_main_screen is not None
+        assert self.manager._on_connection_error is self.on_connection_error
 
     def test_load_tasks_updates_cache_and_ui(self):
         """Test load_tasks fetches data, updates cache, and refreshes UI."""
@@ -147,12 +149,12 @@ class TestTaskUIManager(unittest.TestCase):
         self.task_data_loader.load_tasks.assert_called_once()
 
         # Verify state cache was updated
-        self.assertEqual(len(self.state.tasks_cache), 1)
-        self.assertEqual(len(self.state.viewmodels_cache), 1)
+        assert len(self.state.tasks_cache) == 1
+        assert len(self.state.viewmodels_cache) == 1
 
         # Verify UI widgets were refreshed
         self.main_screen.gantt_widget.update_gantt.assert_called_once()
-        self.main_screen.task_table.refresh_tasks.assert_called_once()
+        self.main_screen.refresh_tasks.assert_called_once()
 
     def test_load_tasks_with_keep_scroll_position(self):
         """Test load_tasks passes keep_scroll_position to refresh_tasks."""
@@ -168,9 +170,9 @@ class TestTaskUIManager(unittest.TestCase):
         self.manager.load_tasks(keep_scroll_position=True)
 
         # Verify refresh_tasks was called with keep_scroll_position=True
-        self.main_screen.task_table.refresh_tasks.assert_called_once()
-        call_kwargs = self.main_screen.task_table.refresh_tasks.call_args[1]
-        self.assertTrue(call_kwargs.get("keep_scroll_position"))
+        self.main_screen.refresh_tasks.assert_called_once()
+        call_kwargs = self.main_screen.refresh_tasks.call_args[1]
+        assert call_kwargs.get("keep_scroll_position") is True
 
     def test_calculate_gantt_date_range_uses_widget(self):
         """Test _calculate_gantt_date_range delegates to gantt_widget."""
@@ -182,7 +184,7 @@ class TestTaskUIManager(unittest.TestCase):
         result = self.manager._calculate_gantt_date_range()
 
         # Verify
-        self.assertEqual(result, expected_range)
+        assert result == expected_range
         self.main_screen.gantt_widget.calculate_date_range.assert_called_once()
 
     def test_calculate_gantt_date_range_fallback(self):
@@ -200,15 +202,16 @@ class TestTaskUIManager(unittest.TestCase):
         # Verify fallback dates (this week's Monday to DEFAULT_GANTT_DISPLAY_DAYS later)
         today = date.today()
         expected_start = today - timedelta(days=today.weekday())
-        self.assertEqual(start_date, expected_start)
-        self.assertGreater(end_date, start_date)
+        assert start_date == expected_start
+        assert end_date > start_date
 
     def test_fetch_task_data_handles_connection_error(self):
         """Test _fetch_task_data calls error callback on ServerConnectionError."""
         # Setup
         original_error = ConnectionError("Connection refused")
         self.task_data_loader.load_tasks.side_effect = ServerConnectionError(
-            original_error=original_error
+            base_url="http://localhost:8000",
+            original_error=original_error,
         )
         self.main_screen.gantt_widget.calculate_date_range.return_value = (
             date.today(),
@@ -222,10 +225,10 @@ class TestTaskUIManager(unittest.TestCase):
         self.on_connection_error.assert_called_once()
 
         # Verify empty TaskData is returned
-        self.assertEqual(result.all_tasks, [])
-        self.assertEqual(result.filtered_tasks, [])
-        self.assertEqual(result.table_view_models, [])
-        self.assertIsNone(result.gantt_view_model)
+        assert result.all_tasks == []
+        assert result.filtered_tasks == []
+        assert result.table_view_models == []
+        assert result.gantt_view_model is None
 
     def test_fetch_task_data_uses_state_settings(self):
         """Test _fetch_task_data uses sort/filter settings from state."""
@@ -246,9 +249,9 @@ class TestTaskUIManager(unittest.TestCase):
 
         # Verify data loader was called with state settings
         call_kwargs = self.task_data_loader.load_tasks.call_args[1]
-        self.assertEqual(call_kwargs["sort_by"], "priority")
-        self.assertTrue(call_kwargs["reverse"])
-        self.assertTrue(call_kwargs["hide_completed"])
+        assert call_kwargs["sort_by"] == "priority"
+        assert call_kwargs["reverse"] is True
+        assert call_kwargs["hide_completed"] is True
 
     def test_update_cache_updates_state(self):
         """Test _update_cache updates TUIState correctly."""
@@ -262,11 +265,11 @@ class TestTaskUIManager(unittest.TestCase):
         self.manager._update_cache(task_data)
 
         # Verify state was updated
-        self.assertEqual(len(self.state.tasks_cache), 1)
-        self.assertEqual(self.state.tasks_cache[0].id, 1)
-        self.assertEqual(len(self.state.viewmodels_cache), 1)
-        self.assertEqual(self.state.viewmodels_cache[0].id, 1)
-        self.assertEqual(self.state.gantt_cache, gantt)
+        assert len(self.state.tasks_cache) == 1
+        assert self.state.tasks_cache[0].id == 1
+        assert len(self.state.viewmodels_cache) == 1
+        assert self.state.viewmodels_cache[0].id == 1
+        assert self.state.gantt_cache == gantt
 
     def test_refresh_ui_without_main_screen(self):
         """Test _refresh_ui does nothing when main_screen is None."""
@@ -295,8 +298,8 @@ class TestTaskUIManager(unittest.TestCase):
         # Verify gantt widget was updated
         self.main_screen.gantt_widget.update_gantt.assert_called_once()
         call_kwargs = self.main_screen.gantt_widget.update_gantt.call_args[1]
-        self.assertEqual(call_kwargs["task_ids"], [1])
-        self.assertEqual(call_kwargs["gantt_view_model"], gantt)
+        assert call_kwargs["task_ids"] == [1]
+        assert call_kwargs["gantt_view_model"] == gantt
 
     def test_refresh_ui_updates_task_table(self):
         """Test _refresh_ui updates task table with viewmodels."""
@@ -308,16 +311,17 @@ class TestTaskUIManager(unittest.TestCase):
         # Execute
         self.manager._refresh_ui(task_data, keep_scroll_position=True)
 
-        # Verify task table was updated
-        self.main_screen.task_table.refresh_tasks.assert_called_once_with(
+        # Verify task table was updated via main_screen
+        self.main_screen.refresh_tasks.assert_called_once_with(
             [vm], keep_scroll_position=True
         )
 
 
-class TestRecalculateGantt(unittest.TestCase):
+class TestRecalculateGantt:
     """Test cases for recalculate_gantt method."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.state = TUIState()
         self.task_data_loader = MagicMock(spec=TaskDataLoader)
@@ -397,9 +401,9 @@ class TestRecalculateGantt(unittest.TestCase):
 
         # Verify API was called with filter state from gantt_widget
         call_kwargs = self.task_data_loader.api_client.list_tasks.call_args[1]
-        self.assertTrue(call_kwargs["all"])  # Respects gantt_widget.get_filter_all()
-        self.assertEqual(
-            call_kwargs["sort_by"], "priority"
+        assert call_kwargs["all"] is True  # Respects gantt_widget.get_filter_all()
+        assert (
+            call_kwargs["sort_by"] == "priority"
         )  # Respects gantt_widget.get_sort_by()
 
     def test_recalculate_gantt_applies_hide_completed_filter(self):
@@ -441,7 +445,8 @@ class TestRecalculateGantt(unittest.TestCase):
         # Setup
         original_error = ConnectionError("Connection refused")
         self.task_data_loader.api_client.list_tasks.side_effect = ServerConnectionError(
-            original_error=original_error
+            base_url="http://localhost:8000",
+            original_error=original_error,
         )
 
         # Execute
@@ -500,7 +505,7 @@ class TestRecalculateGantt(unittest.TestCase):
         self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
 
 
-class TestTaskUIManagerWithoutErrorCallback(unittest.TestCase):
+class TestTaskUIManagerWithoutErrorCallback:
     """Test TaskUIManager behavior without error callback."""
 
     def test_connection_error_without_callback(self):
@@ -524,15 +529,12 @@ class TestTaskUIManagerWithoutErrorCallback(unittest.TestCase):
 
         original_error = ConnectionError("Connection refused")
         task_data_loader.load_tasks.side_effect = ServerConnectionError(
-            original_error=original_error
+            base_url="http://localhost:8000",
+            original_error=original_error,
         )
 
         # Execute - should not raise
         result = manager._fetch_task_data()
 
         # Verify empty TaskData is returned
-        self.assertEqual(result.all_tasks, [])
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.all_tasks == []

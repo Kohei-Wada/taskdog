@@ -1,7 +1,8 @@
 """Tests for rich statistics renderer."""
 
-import unittest
 from unittest.mock import MagicMock
+
+import pytest
 
 from taskdog.renderers.rich_statistics_renderer import RichStatisticsRenderer
 from taskdog.view_models.statistics_view_model import (
@@ -18,10 +19,11 @@ from taskdog_core.application.dto.statistics_output import (
 )
 
 
-class TestRichStatisticsRenderer(unittest.TestCase):
+class TestRichStatisticsRenderer:
     """Test cases for RichStatisticsRenderer."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.console_writer = MagicMock()
         self.renderer = RichStatisticsRenderer(self.console_writer)
@@ -59,8 +61,8 @@ class TestRichStatisticsRenderer(unittest.TestCase):
         self.renderer.render(view_model, focus="all")
 
         # Verify - should call print multiple times for title, tables, etc.
-        self.assertTrue(self.console_writer.print.called)
-        self.assertTrue(self.console_writer.empty_line.called)
+        assert self.console_writer.print.called
+        assert self.console_writer.empty_line.called
 
     def test_render_basic_focus(self):
         """Test rendering with focus='basic'."""
@@ -71,7 +73,7 @@ class TestRichStatisticsRenderer(unittest.TestCase):
         self.renderer.render(view_model, focus="basic")
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
+        assert self.console_writer.print.called
 
     def test_render_priority_focus(self):
         """Test rendering with focus='priority'."""
@@ -82,7 +84,7 @@ class TestRichStatisticsRenderer(unittest.TestCase):
         self.renderer.render(view_model, focus="priority")
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
+        assert self.console_writer.print.called
 
     def test_render_with_time_stats(self):
         """Test rendering with time statistics."""
@@ -130,7 +132,7 @@ class TestRichStatisticsRenderer(unittest.TestCase):
         self.renderer.render(view_model, focus="time")
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
+        assert self.console_writer.print.called
 
     def test_render_with_time_stats_no_tasks(self):
         """Test rendering with time stats but no longest/shortest tasks."""
@@ -168,7 +170,7 @@ class TestRichStatisticsRenderer(unittest.TestCase):
         self.renderer.render(view_model, focus="time")
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
+        assert self.console_writer.print.called
 
     def test_render_with_estimation_stats(self):
         """Test rendering with estimation statistics."""
@@ -221,7 +223,7 @@ class TestRichStatisticsRenderer(unittest.TestCase):
         self.renderer.render(view_model, focus="estimation")
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
+        assert self.console_writer.print.called
 
     def test_render_with_deadline_stats(self):
         """Test rendering with deadline statistics."""
@@ -258,7 +260,7 @@ class TestRichStatisticsRenderer(unittest.TestCase):
         self.renderer.render(view_model, focus="deadline")
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
+        assert self.console_writer.print.called
 
     def test_render_with_trend_stats(self):
         """Test rendering with trend statistics."""
@@ -294,48 +296,62 @@ class TestRichStatisticsRenderer(unittest.TestCase):
         self.renderer.render(view_model, focus="trends")
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
+        assert self.console_writer.print.called
 
 
-class TestRateColors(unittest.TestCase):
+class TestRateColors:
     """Test cases for rate color methods."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.console_writer = MagicMock()
         self.renderer = RichStatisticsRenderer(self.console_writer)
 
-    def test_get_rate_color_high(self):
-        """Test color for high rate (>=0.8)."""
-        self.assertEqual(self.renderer._get_rate_color(0.8), "green")
-        self.assertEqual(self.renderer._get_rate_color(1.0), "green")
+    @pytest.mark.parametrize(
+        "rate,expected_color",
+        [
+            (0.8, "green"),
+            (1.0, "green"),
+            (0.5, "yellow"),
+            (0.79, "yellow"),
+            (0.49, "red"),
+            (0.0, "red"),
+        ],
+        ids=[
+            "high_0.8",
+            "high_1.0",
+            "medium_0.5",
+            "medium_0.79",
+            "low_0.49",
+            "low_0.0",
+        ],
+    )
+    def test_get_rate_color(self, rate, expected_color):
+        """Test color for different rate values."""
+        assert self.renderer._get_rate_color(rate) == expected_color
 
-    def test_get_rate_color_medium(self):
-        """Test color for medium rate (0.5-0.79)."""
-        self.assertEqual(self.renderer._get_rate_color(0.5), "yellow")
-        self.assertEqual(self.renderer._get_rate_color(0.79), "yellow")
-
-    def test_get_rate_color_low(self):
-        """Test color for low rate (<0.5)."""
-        self.assertEqual(self.renderer._get_rate_color(0.49), "red")
-        self.assertEqual(self.renderer._get_rate_color(0.0), "red")
-
-    def test_get_estimation_accuracy_color_good(self):
-        """Test color for good estimation accuracy (0.9-1.1)."""
-        self.assertEqual(self.renderer._get_estimation_accuracy_color(0.9), "green")
-        self.assertEqual(self.renderer._get_estimation_accuracy_color(1.0), "green")
-        self.assertEqual(self.renderer._get_estimation_accuracy_color(1.1), "green")
-
-    def test_get_estimation_accuracy_color_moderate(self):
-        """Test color for moderate estimation accuracy (0.7-1.3)."""
-        self.assertEqual(self.renderer._get_estimation_accuracy_color(0.7), "yellow")
-        self.assertEqual(self.renderer._get_estimation_accuracy_color(1.3), "yellow")
-
-    def test_get_estimation_accuracy_color_poor(self):
-        """Test color for poor estimation accuracy."""
-        self.assertEqual(self.renderer._get_estimation_accuracy_color(0.5), "red")
-        self.assertEqual(self.renderer._get_estimation_accuracy_color(1.5), "red")
-
-
-if __name__ == "__main__":
-    unittest.main()
+    @pytest.mark.parametrize(
+        "accuracy,expected_color",
+        [
+            (0.9, "green"),
+            (1.0, "green"),
+            (1.1, "green"),
+            (0.7, "yellow"),
+            (1.3, "yellow"),
+            (0.5, "red"),
+            (1.5, "red"),
+        ],
+        ids=[
+            "good_0.9",
+            "good_1.0",
+            "good_1.1",
+            "moderate_0.7",
+            "moderate_1.3",
+            "poor_0.5",
+            "poor_1.5",
+        ],
+    )
+    def test_get_estimation_accuracy_color(self, accuracy, expected_color):
+        """Test color for different estimation accuracy values."""
+        assert self.renderer._get_estimation_accuracy_color(accuracy) == expected_color

@@ -1,18 +1,19 @@
 """Tests for update command."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.update import update_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-class TestUpdateCommand(unittest.TestCase):
+class TestUpdateCommand:
     """Test cases for update command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -36,9 +37,9 @@ class TestUpdateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertEqual(call_kwargs["priority"], 5)
+        assert call_kwargs["priority"] == 5
         self.console_writer.task_fields_updated.assert_called_once()
 
     def test_update_status(self):
@@ -56,9 +57,9 @@ class TestUpdateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertIsNotNone(call_kwargs["status"])
+        assert call_kwargs["status"] is not None
 
     def test_update_deadline(self):
         """Test updating task deadline."""
@@ -75,9 +76,9 @@ class TestUpdateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertIsNotNone(call_kwargs["deadline"])
+        assert call_kwargs["deadline"] is not None
 
     def test_update_multiple_fields(self):
         """Test updating multiple fields at once."""
@@ -96,10 +97,10 @@ class TestUpdateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertEqual(call_kwargs["priority"], 5)
-        self.assertIsNotNone(call_kwargs["deadline"])
+        assert call_kwargs["priority"] == 5
+        assert call_kwargs["deadline"] is not None
 
     def test_update_planned_schedule(self):
         """Test updating planned start and end."""
@@ -121,10 +122,10 @@ class TestUpdateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertIsNotNone(call_kwargs["planned_start"])
-        self.assertIsNotNone(call_kwargs["planned_end"])
+        assert call_kwargs["planned_start"] is not None
+        assert call_kwargs["planned_end"] is not None
 
     def test_update_estimated_duration(self):
         """Test updating estimated duration."""
@@ -141,9 +142,9 @@ class TestUpdateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertEqual(call_kwargs["estimated_duration"], 4.0)
+        assert call_kwargs["estimated_duration"] == 4.0
 
     def test_update_no_fields_warning(self):
         """Test warning when no fields are provided."""
@@ -158,7 +159,7 @@ class TestUpdateCommand(unittest.TestCase):
         result = self.runner.invoke(update_command, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.warning.assert_called_once()
 
     def test_task_not_found(self):
@@ -172,7 +173,7 @@ class TestUpdateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -187,14 +188,10 @@ class TestUpdateCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("updating task", error)
 
     def test_missing_task_id(self):
         """Test update without task_id argument."""
         result = self.runner.invoke(update_command, [], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code != 0

@@ -1,7 +1,8 @@
 """Tests for TUI state management."""
 
-import unittest
 from datetime import date, datetime
+
+import pytest
 
 from taskdog.tui.state.tui_state import TUIState
 from taskdog.view_models.gantt_view_model import GanttViewModel
@@ -60,21 +61,22 @@ def create_task_viewmodel(
     )
 
 
-class TestTUIState(unittest.TestCase):
+class TestTUIState:
     """Test cases for TUIState class."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.state = TUIState()
 
     def test_default_values(self):
         """Test default state values are correctly initialized."""
-        self.assertFalse(self.state.hide_completed)
-        self.assertEqual(self.state.sort_by, "deadline")
-        self.assertFalse(self.state.sort_reverse)
-        self.assertEqual(self.state.tasks_cache, [])
-        self.assertEqual(self.state.viewmodels_cache, [])
-        self.assertIsNone(self.state.gantt_cache)
+        assert self.state.hide_completed is False
+        assert self.state.sort_by == "deadline"
+        assert self.state.sort_reverse is False
+        assert self.state.tasks_cache == []
+        assert self.state.viewmodels_cache == []
+        assert self.state.gantt_cache is None
 
     def test_filtered_tasks_show_all(self):
         """Test filtered_tasks returns all tasks when hide_completed=False."""
@@ -89,7 +91,7 @@ class TestTUIState(unittest.TestCase):
 
         # Should return all tasks
         filtered = self.state.filtered_tasks
-        self.assertEqual(len(filtered), 3)
+        assert len(filtered) == 3
 
     def test_filtered_tasks_hide_completed(self):
         """Test filtered_tasks hides completed/canceled when hide_completed=True."""
@@ -105,9 +107,9 @@ class TestTUIState(unittest.TestCase):
 
         # Should return only non-finished tasks
         filtered = self.state.filtered_tasks
-        self.assertEqual(len(filtered), 2)
-        self.assertEqual(filtered[0].id, 2)
-        self.assertEqual(filtered[1].id, 4)
+        assert len(filtered) == 2
+        assert filtered[0].id == 2
+        assert filtered[1].id == 4
 
     def test_filtered_viewmodels_show_all(self):
         """Test filtered_viewmodels returns all when hide_completed=False."""
@@ -121,7 +123,7 @@ class TestTUIState(unittest.TestCase):
 
         # Should return all
         filtered = self.state.filtered_viewmodels
-        self.assertEqual(len(filtered), 2)
+        assert len(filtered) == 2
 
     def test_filtered_viewmodels_hide_completed(self):
         """Test filtered_viewmodels hides finished when hide_completed=True."""
@@ -136,9 +138,9 @@ class TestTUIState(unittest.TestCase):
 
         # Should return only non-finished
         filtered = self.state.filtered_viewmodels
-        self.assertEqual(len(filtered), 1)
-        self.assertEqual(filtered[0].id, 2)
-        self.assertFalse(filtered[0].is_finished)
+        assert len(filtered) == 1
+        assert filtered[0].id == 2
+        assert filtered[0].is_finished is False
 
     def test_update_caches_atomically(self):
         """Test update_caches updates all fields atomically."""
@@ -158,9 +160,9 @@ class TestTUIState(unittest.TestCase):
         self.state.update_caches(tasks, vms, gantt)
 
         # Verify all fields are updated
-        self.assertEqual(self.state.tasks_cache, tasks)
-        self.assertEqual(self.state.viewmodels_cache, vms)
-        self.assertEqual(self.state.gantt_cache, gantt)
+        assert self.state.tasks_cache == tasks
+        assert self.state.viewmodels_cache == vms
+        assert self.state.gantt_cache == gantt
 
     def test_update_caches_without_gantt(self):
         """Test update_caches can update without gantt (optional parameter)."""
@@ -182,7 +184,7 @@ class TestTUIState(unittest.TestCase):
         self.state.update_caches(tasks, vms)
 
         # Verify gantt cache is unchanged
-        self.assertEqual(self.state.gantt_cache, initial_gantt)
+        assert self.state.gantt_cache == initial_gantt
 
     def test_update_caches_validation_error(self):
         """Test update_caches raises error when lengths mismatch."""
@@ -193,11 +195,11 @@ class TestTUIState(unittest.TestCase):
         vms = [create_task_viewmodel(1, "Task 1", TaskStatus.PENDING, False)]
 
         # Should raise ValueError
-        with self.assertRaises(ValueError) as context:
+        with pytest.raises(ValueError) as exc_info:
             self.state.update_caches(tasks, vms)
 
-        self.assertIn("must have same length", str(context.exception))
-        self.assertIn("2 != 1", str(context.exception))
+        assert "must have same length" in str(exc_info.value)
+        assert "2 != 1" in str(exc_info.value)
 
     def test_clear_caches(self):
         """Test clear_caches removes all cached data."""
@@ -219,9 +221,9 @@ class TestTUIState(unittest.TestCase):
         self.state.clear_caches()
 
         # Verify all caches are cleared
-        self.assertEqual(self.state.tasks_cache, [])
-        self.assertEqual(self.state.viewmodels_cache, [])
-        self.assertIsNone(self.state.gantt_cache)
+        assert self.state.tasks_cache == []
+        assert self.state.viewmodels_cache == []
+        assert self.state.gantt_cache is None
 
     def test_invalidate_gantt_cache(self):
         """Test invalidate_gantt_cache only clears gantt cache."""
@@ -243,10 +245,6 @@ class TestTUIState(unittest.TestCase):
         self.state.invalidate_gantt_cache()
 
         # Verify only gantt cache is cleared
-        self.assertEqual(len(self.state.tasks_cache), 1)
-        self.assertEqual(len(self.state.viewmodels_cache), 1)
-        self.assertIsNone(self.state.gantt_cache)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(self.state.tasks_cache) == 1
+        assert len(self.state.viewmodels_cache) == 1
+        assert self.state.gantt_cache is None

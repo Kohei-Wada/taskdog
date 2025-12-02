@@ -1,35 +1,37 @@
 """Tests for LifecycleClient."""
 
-import unittest
 from unittest.mock import Mock, patch
 
-from parameterized import parameterized
+import pytest
 
 from taskdog.infrastructure.api.lifecycle_client import LifecycleClient
 
 
-class TestLifecycleClient(unittest.TestCase):
+class TestLifecycleClient:
     """Test cases for LifecycleClient."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.mock_base = Mock()
         self.client = LifecycleClient(self.mock_base)
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "method_name,expected_endpoint",
         [
-            ("start_task", "start_task", "/api/v1/tasks/1/start"),
-            ("complete_task", "complete_task", "/api/v1/tasks/1/complete"),
-            ("pause_task", "pause_task", "/api/v1/tasks/1/pause"),
-            ("cancel_task", "cancel_task", "/api/v1/tasks/1/cancel"),
-            ("reopen_task", "reopen_task", "/api/v1/tasks/1/reopen"),
-        ]
+            ("start_task", "/api/v1/tasks/1/start"),
+            ("complete_task", "/api/v1/tasks/1/complete"),
+            ("pause_task", "/api/v1/tasks/1/pause"),
+            ("cancel_task", "/api/v1/tasks/1/cancel"),
+            ("reopen_task", "/api/v1/tasks/1/reopen"),
+        ],
+        ids=["start_task", "complete_task", "pause_task", "cancel_task", "reopen_task"],
     )
     @patch(
         "taskdog.infrastructure.api.lifecycle_client.convert_to_task_operation_output"
     )
     def test_lifecycle_operation_makes_correct_api_call(
-        self, operation_name, method_name, expected_endpoint, mock_convert
+        self, mock_convert, method_name, expected_endpoint
     ):
         """Test lifecycle operations make correct API calls."""
         mock_response = Mock()
@@ -44,7 +46,7 @@ class TestLifecycleClient(unittest.TestCase):
         result = method(task_id=1)
 
         self.mock_base._safe_request.assert_called_once_with("post", expected_endpoint)
-        self.assertEqual(result, mock_output)
+        assert result == mock_output
 
     @patch(
         "taskdog.infrastructure.api.lifecycle_client.convert_to_task_operation_output"
@@ -58,7 +60,3 @@ class TestLifecycleClient(unittest.TestCase):
         self.client.start_task(task_id=999)
 
         self.mock_base._handle_error.assert_called_once_with(mock_response)
-
-
-if __name__ == "__main__":
-    unittest.main()

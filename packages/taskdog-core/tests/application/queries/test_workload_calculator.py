@@ -1,7 +1,8 @@
 """Tests for WorkloadCalculator query service."""
 
-import unittest
 from datetime import date, datetime, timedelta
+
+import pytest
 
 from taskdog_core.application.queries.strategies.workload_calculation_strategy import (
     ActualScheduleStrategy,
@@ -10,10 +11,11 @@ from taskdog_core.application.queries.workload_calculator import WorkloadCalcula
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class WorkloadCalculatorTest(unittest.TestCase):
+class TestWorkloadCalculator:
     """Test cases for WorkloadCalculator."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.calculator = WorkloadCalculator()
 
@@ -38,11 +40,11 @@ class WorkloadCalculatorTest(unittest.TestCase):
         result = self.calculator.calculate_daily_workload([task], start_date, end_date)
 
         # Equal distribution: 2h per day on all weekdays
-        self.assertAlmostEqual(result[date(2025, 1, 6)], 2.0, places=2)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 7)], 2.0, places=2)  # Tuesday
-        self.assertAlmostEqual(result[date(2025, 1, 8)], 2.0, places=2)  # Wednesday
-        self.assertAlmostEqual(result[date(2025, 1, 9)], 2.0, places=2)  # Thursday
-        self.assertAlmostEqual(result[date(2025, 1, 10)], 2.0, places=2)  # Friday
+        assert result[date(2025, 1, 6)] == pytest.approx(2.0, abs=0.01)  # Monday
+        assert result[date(2025, 1, 7)] == pytest.approx(2.0, abs=0.01)  # Tuesday
+        assert result[date(2025, 1, 8)] == pytest.approx(2.0, abs=0.01)  # Wednesday
+        assert result[date(2025, 1, 9)] == pytest.approx(2.0, abs=0.01)  # Thursday
+        assert result[date(2025, 1, 10)] == pytest.approx(2.0, abs=0.01)  # Friday
 
     def test_calculate_daily_workload_excludes_weekends(self):
         """Test that weekends are excluded from workload calculation."""
@@ -65,11 +67,11 @@ class WorkloadCalculatorTest(unittest.TestCase):
         result = self.calculator.calculate_daily_workload([task], start_date, end_date)
 
         # Equal distribution: 2h per weekday, weekends excluded
-        self.assertAlmostEqual(result[date(2025, 1, 10)], 2.0, places=2)  # Friday
-        self.assertAlmostEqual(result[date(2025, 1, 11)], 0.0, places=2)  # Saturday
-        self.assertAlmostEqual(result[date(2025, 1, 12)], 0.0, places=2)  # Sunday
-        self.assertAlmostEqual(result[date(2025, 1, 13)], 2.0, places=2)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 14)], 2.0, places=2)  # Tuesday
+        assert result[date(2025, 1, 10)] == pytest.approx(2.0, abs=0.01)  # Friday
+        assert result[date(2025, 1, 11)] == pytest.approx(0.0, abs=0.01)  # Saturday
+        assert result[date(2025, 1, 12)] == pytest.approx(0.0, abs=0.01)  # Sunday
+        assert result[date(2025, 1, 13)] == pytest.approx(2.0, abs=0.01)  # Monday
+        assert result[date(2025, 1, 14)] == pytest.approx(2.0, abs=0.01)  # Tuesday
 
     def test_calculate_daily_workload_multiple_tasks(self):
         """Test workload calculation with multiple overlapping tasks."""
@@ -109,20 +111,20 @@ class WorkloadCalculatorTest(unittest.TestCase):
         # Task 1: 2h on Mon, Tue, Wed
         # Task 2: 3h on Wed, Thu, Fri
         # Wednesday has both: 2h + 3h = 5h
-        self.assertAlmostEqual(
-            result[date(2025, 1, 6)], 2.0, places=2
+        assert result[date(2025, 1, 6)] == pytest.approx(
+            2.0, abs=0.01
         )  # Monday (task1)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 7)], 2.0, places=2
+        assert result[date(2025, 1, 7)] == pytest.approx(
+            2.0, abs=0.01
         )  # Tuesday (task1)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 8)], 5.0, places=2
+        assert result[date(2025, 1, 8)] == pytest.approx(
+            5.0, abs=0.01
         )  # Wednesday (task1 + task2)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 9)], 3.0, places=2
+        assert result[date(2025, 1, 9)] == pytest.approx(
+            3.0, abs=0.01
         )  # Thursday (task2)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 10)], 3.0, places=2
+        assert result[date(2025, 1, 10)] == pytest.approx(
+            3.0, abs=0.01
         )  # Friday (task2)
 
     def test_calculate_daily_workload_no_estimated_duration(self):
@@ -146,7 +148,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
         # All days should have 0 hours
         for day_offset in range(5):
             current_date = start_date + timedelta(days=day_offset)
-            self.assertEqual(result[current_date], 0.0)
+            assert result[current_date] == 0.0
 
     def test_calculate_daily_workload_no_planned_dates(self):
         """Test that tasks without planned dates are skipped."""
@@ -169,7 +171,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
         # All days should have 0 hours
         for day_offset in range(5):
             current_date = start_date + timedelta(days=day_offset)
-            self.assertEqual(result[current_date], 0.0)
+            assert result[current_date] == 0.0
 
     def test_calculate_daily_workload_task_outside_range(self):
         """Test that tasks outside the date range are handled correctly."""
@@ -193,7 +195,7 @@ class WorkloadCalculatorTest(unittest.TestCase):
         # All days should have 0 hours (task is outside range)
         for day_offset in range(5):
             current_date = start_date + timedelta(days=day_offset)
-            self.assertEqual(result[current_date], 0.0)
+            assert result[current_date] == 0.0
 
     def test_calculate_daily_workload_excludes_completed_tasks(self):
         """Test that completed tasks are excluded from workload calculation."""
@@ -231,20 +233,20 @@ class WorkloadCalculatorTest(unittest.TestCase):
 
         # Only task1 (PENDING) should be counted with equal distribution
         # Task2 (COMPLETED) is excluded entirely
-        self.assertAlmostEqual(
-            result[date(2025, 1, 6)], 2.0, places=2
+        assert result[date(2025, 1, 6)] == pytest.approx(
+            2.0, abs=0.01
         )  # Monday (task1)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 7)], 2.0, places=2
+        assert result[date(2025, 1, 7)] == pytest.approx(
+            2.0, abs=0.01
         )  # Tuesday (task1)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 8)], 2.0, places=2
+        assert result[date(2025, 1, 8)] == pytest.approx(
+            2.0, abs=0.01
         )  # Wednesday (task1)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 9)], 0.0, places=2
+        assert result[date(2025, 1, 9)] == pytest.approx(
+            0.0, abs=0.01
         )  # Thursday (task2 excluded)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 10)], 0.0, places=2
+        assert result[date(2025, 1, 10)] == pytest.approx(
+            0.0, abs=0.01
         )  # Friday (task2 excluded)
 
     def test_calculate_daily_workload_with_daily_allocations(self):
@@ -272,11 +274,11 @@ class WorkloadCalculatorTest(unittest.TestCase):
         result = self.calculator.calculate_daily_workload([task], start_date, end_date)
 
         # Should use daily_allocations instead of equal distribution
-        self.assertAlmostEqual(result[date(2025, 1, 6)], 5.0, places=2)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 7)], 1.0, places=2)  # Tuesday
-        self.assertAlmostEqual(result[date(2025, 1, 8)], 0.0, places=2)  # Wednesday
-        self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)  # Thursday
-        self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
+        assert result[date(2025, 1, 6)] == pytest.approx(5.0, abs=0.01)  # Monday
+        assert result[date(2025, 1, 7)] == pytest.approx(1.0, abs=0.01)  # Tuesday
+        assert result[date(2025, 1, 8)] == pytest.approx(0.0, abs=0.01)  # Wednesday
+        assert result[date(2025, 1, 9)] == pytest.approx(0.0, abs=0.01)  # Thursday
+        assert result[date(2025, 1, 10)] == pytest.approx(0.0, abs=0.01)  # Friday
 
     def test_calculate_daily_workload_fallback_to_equal_distribution(self):
         """Test that calculator falls back to equal distribution when daily_allocations is empty."""
@@ -299,11 +301,11 @@ class WorkloadCalculatorTest(unittest.TestCase):
         result = self.calculator.calculate_daily_workload([task], start_date, end_date)
 
         # Should fall back to equal distribution: 6h / 3 weekdays = 2h per day
-        self.assertAlmostEqual(result[date(2025, 1, 6)], 2.0, places=2)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 7)], 2.0, places=2)  # Tuesday
-        self.assertAlmostEqual(result[date(2025, 1, 8)], 2.0, places=2)  # Wednesday
-        self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)  # Thursday
-        self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
+        assert result[date(2025, 1, 6)] == pytest.approx(2.0, abs=0.01)  # Monday
+        assert result[date(2025, 1, 7)] == pytest.approx(2.0, abs=0.01)  # Tuesday
+        assert result[date(2025, 1, 8)] == pytest.approx(2.0, abs=0.01)  # Wednesday
+        assert result[date(2025, 1, 9)] == pytest.approx(0.0, abs=0.01)  # Thursday
+        assert result[date(2025, 1, 10)] == pytest.approx(0.0, abs=0.01)  # Friday
 
     def test_calculate_daily_workload_excludes_archived_tasks(self):
         """Test that archived tasks are excluded from workload calculation."""
@@ -342,31 +344,32 @@ class WorkloadCalculatorTest(unittest.TestCase):
 
         # Only task1 (active) should be counted with equal distribution
         # Task2 (archived) is excluded entirely
-        self.assertAlmostEqual(
-            result[date(2025, 1, 6)], 2.0, places=2
+        assert result[date(2025, 1, 6)] == pytest.approx(
+            2.0, abs=0.01
         )  # Monday (task1)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 7)], 2.0, places=2
+        assert result[date(2025, 1, 7)] == pytest.approx(
+            2.0, abs=0.01
         )  # Tuesday (task1)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 8)], 2.0, places=2
+        assert result[date(2025, 1, 8)] == pytest.approx(
+            2.0, abs=0.01
         )  # Wednesday (task1)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 9)], 0.0, places=2
+        assert result[date(2025, 1, 9)] == pytest.approx(
+            0.0, abs=0.01
         )  # Thursday (task2 excluded)
-        self.assertAlmostEqual(
-            result[date(2025, 1, 10)], 0.0, places=2
+        assert result[date(2025, 1, 10)] == pytest.approx(
+            0.0, abs=0.01
         )  # Friday (task2 excluded)
 
 
-class WorkloadCalculatorWithActualScheduleStrategyTest(unittest.TestCase):
+class TestWorkloadCalculatorWithActualScheduleStrategy:
     """Test cases for WorkloadCalculator with ActualScheduleStrategy.
 
     These tests verify that when using ActualScheduleStrategy, workload
     calculations include weekends and honor manually scheduled tasks.
     """
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures with ActualScheduleStrategy."""
         self.calculator = WorkloadCalculator(ActualScheduleStrategy())
 
@@ -391,11 +394,11 @@ class WorkloadCalculatorWithActualScheduleStrategyTest(unittest.TestCase):
         result = self.calculator.calculate_daily_workload([task], start_date, end_date)
 
         # Weekdays should have 3.33h, weekends should be 0
-        self.assertAlmostEqual(result[date(2025, 1, 10)], 3.33, places=2)  # Friday
-        self.assertAlmostEqual(result[date(2025, 1, 11)], 0.0, places=2)  # Saturday
-        self.assertAlmostEqual(result[date(2025, 1, 12)], 0.0, places=2)  # Sunday
-        self.assertAlmostEqual(result[date(2025, 1, 13)], 3.33, places=2)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 14)], 3.33, places=2)  # Tuesday
+        assert result[date(2025, 1, 10)] == pytest.approx(3.33, abs=0.01)  # Friday
+        assert result[date(2025, 1, 11)] == pytest.approx(0.0, abs=0.01)  # Saturday
+        assert result[date(2025, 1, 12)] == pytest.approx(0.0, abs=0.01)  # Sunday
+        assert result[date(2025, 1, 13)] == pytest.approx(3.33, abs=0.01)  # Monday
+        assert result[date(2025, 1, 14)] == pytest.approx(3.33, abs=0.01)  # Tuesday
 
     def test_calculate_daily_workload_weekend_only_task(self):
         """Test that weekend-only tasks are properly calculated."""
@@ -418,11 +421,11 @@ class WorkloadCalculatorWithActualScheduleStrategyTest(unittest.TestCase):
 
         # Weekend should have hours, weekdays should be 0
         # 10h / 2 days = 5h per day
-        self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
-        self.assertAlmostEqual(result[date(2025, 1, 11)], 5.0, places=2)  # Saturday
-        self.assertAlmostEqual(result[date(2025, 1, 12)], 5.0, places=2)  # Sunday
-        self.assertAlmostEqual(result[date(2025, 1, 13)], 0.0, places=2)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 14)], 0.0, places=2)  # Tuesday
+        assert result[date(2025, 1, 10)] == pytest.approx(0.0, abs=0.01)  # Friday
+        assert result[date(2025, 1, 11)] == pytest.approx(5.0, abs=0.01)  # Saturday
+        assert result[date(2025, 1, 12)] == pytest.approx(5.0, abs=0.01)  # Sunday
+        assert result[date(2025, 1, 13)] == pytest.approx(0.0, abs=0.01)  # Monday
+        assert result[date(2025, 1, 14)] == pytest.approx(0.0, abs=0.01)  # Tuesday
 
     def test_calculate_daily_workload_single_weekend_day(self):
         """Test that single weekend day tasks are properly calculated."""
@@ -444,11 +447,11 @@ class WorkloadCalculatorWithActualScheduleStrategyTest(unittest.TestCase):
         result = self.calculator.calculate_daily_workload([task], start_date, end_date)
 
         # Only Saturday should have hours
-        self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
-        self.assertAlmostEqual(result[date(2025, 1, 11)], 8.0, places=2)  # Saturday
-        self.assertAlmostEqual(result[date(2025, 1, 12)], 0.0, places=2)  # Sunday
-        self.assertAlmostEqual(result[date(2025, 1, 13)], 0.0, places=2)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 14)], 0.0, places=2)  # Tuesday
+        assert result[date(2025, 1, 10)] == pytest.approx(0.0, abs=0.01)  # Friday
+        assert result[date(2025, 1, 11)] == pytest.approx(8.0, abs=0.01)  # Saturday
+        assert result[date(2025, 1, 12)] == pytest.approx(0.0, abs=0.01)  # Sunday
+        assert result[date(2025, 1, 13)] == pytest.approx(0.0, abs=0.01)  # Monday
+        assert result[date(2025, 1, 14)] == pytest.approx(0.0, abs=0.01)  # Tuesday
 
     def test_calculate_daily_workload_mixed_weekday_weekend_tasks(self):
         """Test workload with both weekday and weekend tasks."""
@@ -485,14 +488,10 @@ class WorkloadCalculatorWithActualScheduleStrategyTest(unittest.TestCase):
 
         # Task 1: 6h / 3 days = 2h per day (Mon-Wed)
         # Task 2: 10h / 2 days = 5h per day (Sat-Sun)
-        self.assertAlmostEqual(result[date(2025, 1, 6)], 2.0, places=2)  # Monday
-        self.assertAlmostEqual(result[date(2025, 1, 7)], 2.0, places=2)  # Tuesday
-        self.assertAlmostEqual(result[date(2025, 1, 8)], 2.0, places=2)  # Wednesday
-        self.assertAlmostEqual(result[date(2025, 1, 9)], 0.0, places=2)  # Thursday
-        self.assertAlmostEqual(result[date(2025, 1, 10)], 0.0, places=2)  # Friday
-        self.assertAlmostEqual(result[date(2025, 1, 11)], 5.0, places=2)  # Saturday
-        self.assertAlmostEqual(result[date(2025, 1, 12)], 5.0, places=2)  # Sunday
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result[date(2025, 1, 6)] == pytest.approx(2.0, abs=0.01)  # Monday
+        assert result[date(2025, 1, 7)] == pytest.approx(2.0, abs=0.01)  # Tuesday
+        assert result[date(2025, 1, 8)] == pytest.approx(2.0, abs=0.01)  # Wednesday
+        assert result[date(2025, 1, 9)] == pytest.approx(0.0, abs=0.01)  # Thursday
+        assert result[date(2025, 1, 10)] == pytest.approx(0.0, abs=0.01)  # Friday
+        assert result[date(2025, 1, 11)] == pytest.approx(5.0, abs=0.01)  # Saturday
+        assert result[date(2025, 1, 12)] == pytest.approx(5.0, abs=0.01)  # Sunday

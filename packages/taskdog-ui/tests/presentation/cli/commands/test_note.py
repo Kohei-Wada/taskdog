@@ -1,20 +1,21 @@
 """Tests for note command."""
 
-import unittest
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.note import note_command
 from taskdog.cli.context import CliContext
 
 
-class TestNoteCommand(unittest.TestCase):
+class TestNoteCommand:
     """Test cases for note command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -49,7 +50,7 @@ class TestNoteCommand(unittest.TestCase):
             )
 
             # Verify
-            self.assertEqual(result.exit_code, 0)
+            assert result.exit_code == 0
             mock_read.assert_called_once_with(None, None, self.console_writer)
             self.api_client.update_task_notes.assert_called_once_with(1, content)
             self.console_writer.success.assert_called_once()
@@ -67,22 +68,8 @@ class TestNoteCommand(unittest.TestCase):
             obj=self.cli_context,
         )
 
-        # Debug: print output if test fails
-        if result.exit_code != 0:
-            print(f"Exit code: {result.exit_code}")
-            print(f"Output: {result.output}")
-            if result.exception:
-                print(f"Exception: {result.exception}")
-                import traceback
-
-                traceback.print_exception(
-                    type(result.exception),
-                    result.exception,
-                    result.exception.__traceback__,
-                )
-
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.update_task_notes.assert_called_once_with(1, content)
         self.console_writer.success.assert_called_once()
 
@@ -100,7 +87,7 @@ class TestNoteCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.update_task_notes.assert_called_once_with(1, content)
         self.console_writer.success.assert_called_once()
 
@@ -123,7 +110,7 @@ class TestNoteCommand(unittest.TestCase):
             )
 
             # Verify
-            self.assertEqual(result.exit_code, 0)
+            assert result.exit_code == 0
             self.api_client.update_task_notes.assert_called_once_with(1, content)
             self.console_writer.success.assert_called_once()
         finally:
@@ -148,7 +135,7 @@ class TestNoteCommand(unittest.TestCase):
             )
 
             # Verify
-            self.assertEqual(result.exit_code, 0)
+            assert result.exit_code == 0
             self.api_client.update_task_notes.assert_called_once_with(1, content)
             self.console_writer.success.assert_called_once()
         finally:
@@ -169,7 +156,7 @@ class TestNoteCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         expected_content = f"{existing_content}\n\n{new_content}"
         self.api_client.update_task_notes.assert_called_once_with(1, expected_content)
         self.console_writer.success.assert_called_once()
@@ -189,7 +176,7 @@ class TestNoteCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         expected_content = f"{existing_content}\n\n{new_content}"
         self.api_client.update_task_notes.assert_called_once_with(1, expected_content)
 
@@ -207,7 +194,7 @@ class TestNoteCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         # When no existing notes, should just save new content
         self.api_client.update_task_notes.assert_called_once_with(1, new_content)
         self.console_writer.success.assert_called_once()
@@ -227,7 +214,7 @@ class TestNoteCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         expected_content = "Existing note\n\nNew note"
         self.api_client.update_task_notes.assert_called_once_with(1, expected_content)
 
@@ -246,7 +233,7 @@ class TestNoteCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         # Should replace, not append
         self.api_client.update_task_notes.assert_called_once_with(1, new_content)
         self.console_writer.success.assert_called_once()
@@ -264,7 +251,7 @@ class TestNoteCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.warning.assert_called_once_with("Note content is empty")
         self.api_client.update_task_notes.assert_called_once()
 
@@ -286,10 +273,10 @@ class TestNoteCommand(unittest.TestCase):
             )
 
             # Verify
-            self.assertEqual(result.exit_code, 0)
+            assert result.exit_code == 0
             self.console_writer.validation_error.assert_called_once()
             error_msg = self.console_writer.validation_error.call_args[0][0]
-            self.assertIn("multiple input sources", error_msg)
+            assert "multiple input sources" in error_msg
             self.api_client.update_task_notes.assert_not_called()
         finally:
             tmp_path.unlink(missing_ok=True)
@@ -304,7 +291,7 @@ class TestNoteCommand(unittest.TestCase):
         )
 
         # Verify - Click should catch this before our code
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
         self.api_client.update_task_notes.assert_not_called()
 
     def test_editor_mode_when_no_input(self):
@@ -327,15 +314,15 @@ class TestNoteCommand(unittest.TestCase):
             )
 
             # Verify editor mode was called
-            self.assertEqual(result.exit_code, 0)
+            assert result.exit_code == 0
             mock_read.assert_called_once_with(None, None, self.console_writer)
             mock_edit.assert_called_once()
             # Verify it was called with correct arguments
             call_args = mock_edit.call_args[0]
-            self.assertEqual(call_args[0], 1)  # task_id
-            self.assertEqual(call_args[1], self.mock_task)  # task
-            self.assertEqual(call_args[2], self.api_client)  # api_client
-            self.assertEqual(call_args[3], self.console_writer)  # console_writer
+            assert call_args[0] == 1  # task_id
+            assert call_args[1] == self.mock_task  # task
+            assert call_args[2] == self.api_client  # api_client
+            assert call_args[3] == self.console_writer  # console_writer
 
     def test_api_error_handling(self):
         """Test error handling when API call fails."""
@@ -351,11 +338,7 @@ class TestNoteCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once()
         error_args = self.console_writer.error.call_args[0]
-        self.assertEqual(error_args[0], "saving notes")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert error_args[0] == "saving notes"

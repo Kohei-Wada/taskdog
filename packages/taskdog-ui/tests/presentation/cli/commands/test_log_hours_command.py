@@ -1,8 +1,8 @@
 """Tests for log-hours command."""
 
-import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.log_hours import log_hours_command
@@ -12,10 +12,11 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 )
 
 
-class TestLogHoursCommand(unittest.TestCase):
+class TestLogHoursCommand:
     """Test cases for log-hours command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -39,7 +40,7 @@ class TestLogHoursCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.log_hours.assert_called_once_with(5, 3.5, "2025-01-15")
         self.console_writer.success.assert_called_once()
         self.console_writer.info.assert_called_once()
@@ -59,7 +60,7 @@ class TestLogHoursCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.log_hours.assert_called_once_with(5, 4.0, "2025-01-10")
 
     def test_log_hours_with_short_date_option(self):
@@ -75,7 +76,7 @@ class TestLogHoursCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.log_hours.assert_called_once_with(5, 2.5, "2025-01-12")
 
     def test_log_hours_multiple_entries(self):
@@ -95,11 +96,11 @@ class TestLogHoursCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         # Check that info message includes total hours (4.0 + 3.0 + 2.5 = 9.5)
         self.console_writer.info.assert_called_once()
         call_args = self.console_writer.info.call_args[0][0]
-        self.assertIn("9.5", call_args)
+        assert "9.5" in call_args
 
     def test_task_not_found(self):
         """Test log-hours with non-existent task."""
@@ -112,7 +113,7 @@ class TestLogHoursCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     @patch("taskdog.cli.commands.log_hours.DateTimeFormatter")
@@ -128,7 +129,7 @@ class TestLogHoursCommand(unittest.TestCase):
         result = self.runner.invoke(log_hours_command, ["5", "0"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -143,19 +144,15 @@ class TestLogHoursCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("logging hours", error)
 
     def test_missing_task_id(self):
         """Test log-hours without task_id argument."""
         result = self.runner.invoke(log_hours_command, ["3.5"], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_missing_hours(self):
         """Test log-hours without hours argument."""
         result = self.runner.invoke(log_hours_command, ["5"], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code != 0

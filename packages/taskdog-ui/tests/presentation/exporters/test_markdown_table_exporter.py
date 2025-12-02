@@ -1,14 +1,15 @@
 """Tests for MarkdownTableExporter."""
 
-import unittest
 from datetime import date, datetime
+
+import pytest
 
 from taskdog.exporters.markdown_table_exporter import MarkdownTableExporter
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-class TestMarkdownTableExporter(unittest.TestCase):
+class TestMarkdownTableExporter:
     """Tests for MarkdownTableExporter class."""
 
     def _create_task_dto(
@@ -78,14 +79,14 @@ class TestMarkdownTableExporter(unittest.TestCase):
         result = exporter.export(tasks)
 
         # Check header row
-        self.assertIn("|Id|Name|Priority|Status|Deadline|", result)
+        assert "|Id|Name|Priority|Status|Deadline|" in result
 
         # Check separator row
-        self.assertIn("|--|--|--|--|--|", result)
+        assert "|--|--|--|--|--|" in result
 
         # Check data rows
-        self.assertIn("|1|Task 1|5|PENDING|2025-11-01", result)
-        self.assertIn("|2|Task 2|3|COMPLETED|2025-11-02", result)
+        assert "|1|Task 1|5|PENDING|2025-11-01" in result
+        assert "|2|Task 2|3|COMPLETED|2025-11-02" in result
 
     def test_export_with_specific_fields(self):
         """Test markdown export with specific fields."""
@@ -102,11 +103,11 @@ class TestMarkdownTableExporter(unittest.TestCase):
         result = exporter.export(tasks)
 
         # Check header contains only specified fields
-        self.assertIn("|Id|Name|Status|", result)
+        assert "|Id|Name|Status|" in result
 
         # Check that other fields are not present
-        self.assertNotIn("Priority", result)
-        self.assertNotIn("Deadline", result)
+        assert "Priority" not in result
+        assert "Deadline" not in result
 
     def test_export_handles_none_values(self):
         """Test that None values are displayed as '-'."""
@@ -127,7 +128,7 @@ class TestMarkdownTableExporter(unittest.TestCase):
         # Check that None values are displayed as '-'
         lines = result.split("\n")
         data_row = lines[2]  # First data row (after header and separator)
-        self.assertIn("|-|", data_row)  # Should contain '-' for None values
+        assert "|-|" in data_row  # Should contain '-' for None values
 
     def test_export_formats_datetime_correctly(self):
         """Test datetime formatting in export."""
@@ -146,8 +147,8 @@ class TestMarkdownTableExporter(unittest.TestCase):
         result = exporter.export(tasks)
 
         # Check datetime format
-        self.assertIn("2025-10-31 09:00:00", result)
-        self.assertIn("2025-11-01 18:00:00", result)
+        assert "2025-10-31 09:00:00" in result
+        assert "2025-11-01 18:00:00" in result
 
     def test_export_handles_empty_task_list(self):
         """Test exporting empty task list."""
@@ -158,53 +159,48 @@ class TestMarkdownTableExporter(unittest.TestCase):
 
         # Should still have header and separator
         lines = result.split("\n")
-        self.assertEqual(len(lines), 2)  # Only header and separator
-        self.assertIn("|Id|Name|Priority|", lines[0])
-        self.assertIn("|--|--|--|", lines[1])
+        assert len(lines) == 2  # Only header and separator
+        assert "|Id|Name|Priority|" in lines[0]
+        assert "|--|--|--|" in lines[1]
 
     def test_format_field_name_converts_snake_case(self):
         """Test field name formatting."""
         exporter = MarkdownTableExporter()
 
-        self.assertEqual(exporter._format_field_name("id"), "Id")
-        self.assertEqual(exporter._format_field_name("name"), "Name")
-        self.assertEqual(exporter._format_field_name("planned_start"), "Planned Start")
-        self.assertEqual(
-            exporter._format_field_name("estimated_duration"), "Estimated Duration"
-        )
+        assert exporter._format_field_name("id") == "Id"
+        assert exporter._format_field_name("name") == "Name"
+        assert exporter._format_field_name("planned_start") == "Planned Start"
+        assert exporter._format_field_name("estimated_duration") == "Estimated Duration"
 
-    def test_format_value_handles_different_types(self):
+    @pytest.mark.parametrize(
+        "value,expected",
+        [
+            (None, "-"),
+            (datetime(2025, 10, 31, 9, 0, 0), "2025-10-31 09:00:00"),
+            (date(2025, 10, 31), "2025-10-31"),
+            (True, "✓"),
+            (False, "✗"),
+            ("test", "test"),
+            (42, "42"),
+            (3.14, "3.14"),
+            ({}, "-"),
+            ([], "-"),
+        ],
+        ids=[
+            "none",
+            "datetime",
+            "date",
+            "true",
+            "false",
+            "string",
+            "int",
+            "float",
+            "empty_dict",
+            "empty_list",
+        ],
+    )
+    def test_format_value_handles_different_types(self, value, expected):
         """Test value formatting for different types."""
         exporter = MarkdownTableExporter()
 
-        # None
-        self.assertEqual(exporter._format_value(None), "-")
-
-        # Datetime
-        dt = datetime(2025, 10, 31, 9, 0, 0)
-        self.assertEqual(exporter._format_value(dt), "2025-10-31 09:00:00")
-
-        # Date
-        d = date(2025, 10, 31)
-        self.assertEqual(exporter._format_value(d), "2025-10-31")
-
-        # Boolean
-        self.assertEqual(exporter._format_value(True), "✓")
-        self.assertEqual(exporter._format_value(False), "✗")
-
-        # String
-        self.assertEqual(exporter._format_value("test"), "test")
-
-        # Number
-        self.assertEqual(exporter._format_value(42), "42")
-        self.assertEqual(exporter._format_value(3.14), "3.14")
-
-        # Empty dict
-        self.assertEqual(exporter._format_value({}), "-")
-
-        # Empty list
-        self.assertEqual(exporter._format_value([]), "-")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert exporter._format_value(value) == expected

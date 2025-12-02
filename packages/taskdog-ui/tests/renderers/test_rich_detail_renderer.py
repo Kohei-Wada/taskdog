@@ -1,8 +1,9 @@
 """Tests for rich detail renderer."""
 
-import unittest
 from datetime import date, datetime
 from unittest.mock import MagicMock
+
+import pytest
 
 from taskdog.renderers.rich_detail_renderer import RichDetailRenderer
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
@@ -10,10 +11,11 @@ from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-class TestRichDetailRenderer(unittest.TestCase):
+class TestRichDetailRenderer:
     """Test cases for RichDetailRenderer."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.console_writer = MagicMock()
         self.console_writer.get_width.return_value = 120
@@ -89,8 +91,8 @@ class TestRichDetailRenderer(unittest.TestCase):
         self.renderer.render(dto)
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
-        self.assertTrue(self.console_writer.empty_line.called)
+        assert self.console_writer.print.called
+        assert self.console_writer.empty_line.called
 
     def test_render_task_with_notes(self):
         """Test rendering a task with notes."""
@@ -106,7 +108,7 @@ class TestRichDetailRenderer(unittest.TestCase):
         self.renderer.render(dto)
 
         # Verify - should render notes as markdown
-        self.assertTrue(self.console_writer.print.called)
+        assert self.console_writer.print.called
 
     def test_render_task_with_raw_notes(self):
         """Test rendering a task with raw notes (no markdown rendering)."""
@@ -122,7 +124,7 @@ class TestRichDetailRenderer(unittest.TestCase):
         self.renderer.render(dto, raw=True)
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
+        assert self.console_writer.print.called
 
     def test_render_complete_task(self):
         """Test rendering a task with all fields populated."""
@@ -134,7 +136,7 @@ class TestRichDetailRenderer(unittest.TestCase):
         self.renderer.render(dto)
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
+        assert self.console_writer.print.called
 
     def test_format_task_info_basic(self):
         """Test format_task_info with basic task."""
@@ -145,7 +147,7 @@ class TestRichDetailRenderer(unittest.TestCase):
         table = self.renderer.format_task_info(task)
 
         # Verify - table should have rows
-        self.assertIsNotNone(table)
+        assert table is not None
 
     def test_format_task_info_with_dependencies(self):
         """Test format_task_info includes dependencies."""
@@ -181,7 +183,7 @@ class TestRichDetailRenderer(unittest.TestCase):
         table = self.renderer.format_task_info(task)
 
         # Verify
-        self.assertIsNotNone(table)
+        assert table is not None
 
     def test_format_task_info_fixed_task(self):
         """Test format_task_info with fixed task flag."""
@@ -217,57 +219,56 @@ class TestRichDetailRenderer(unittest.TestCase):
         table = self.renderer.format_task_info(task)
 
         # Verify
-        self.assertIsNotNone(table)
+        assert table is not None
 
-    def test_render_different_statuses(self):
+    @pytest.mark.parametrize(
+        "status,is_finished,is_active",
+        [
+            (TaskStatus.PENDING, False, False),
+            (TaskStatus.IN_PROGRESS, False, True),
+            (TaskStatus.COMPLETED, True, False),
+            (TaskStatus.CANCELED, True, False),
+        ],
+        ids=["pending", "in_progress", "completed", "canceled"],
+    )
+    def test_render_different_statuses(self, status, is_finished, is_active):
         """Test rendering tasks with different statuses."""
-        for status in [
-            TaskStatus.PENDING,
-            TaskStatus.IN_PROGRESS,
-            TaskStatus.COMPLETED,
-            TaskStatus.CANCELED,
-        ]:
-            with self.subTest(status=status):
-                # Reset mock
-                self.console_writer.reset_mock()
+        # Reset mock
+        self.console_writer.reset_mock()
 
-                # Determine is_finished based on status
-                is_finished = status in [TaskStatus.COMPLETED, TaskStatus.CANCELED]
-                is_active = status == TaskStatus.IN_PROGRESS
+        # Setup
+        task = TaskDetailDto(
+            id=1,
+            name=f"{status.value} Task",
+            priority=50,
+            status=status,
+            is_fixed=False,
+            depends_on=[],
+            tags=[],
+            is_archived=False,
+            created_at=datetime(2025, 1, 1, 10, 0, 0),
+            updated_at=datetime(2025, 1, 2, 12, 0, 0),
+            planned_start=None,
+            planned_end=None,
+            deadline=None,
+            actual_start=None,
+            actual_end=None,
+            estimated_duration=None,
+            actual_duration_hours=None,
+            actual_daily_hours={},
+            daily_allocations={},
+            is_active=is_active,
+            is_finished=is_finished,
+            can_be_modified=not is_finished,
+            is_schedulable=not is_finished and not is_active,
+        )
+        dto = TaskDetailOutput(task=task, has_notes=False, notes_content=None)
 
-                # Setup
-                task = TaskDetailDto(
-                    id=1,
-                    name=f"{status.value} Task",
-                    priority=50,
-                    status=status,
-                    is_fixed=False,
-                    depends_on=[],
-                    tags=[],
-                    is_archived=False,
-                    created_at=datetime(2025, 1, 1, 10, 0, 0),
-                    updated_at=datetime(2025, 1, 2, 12, 0, 0),
-                    planned_start=None,
-                    planned_end=None,
-                    deadline=None,
-                    actual_start=None,
-                    actual_end=None,
-                    estimated_duration=None,
-                    actual_duration_hours=None,
-                    actual_daily_hours={},
-                    daily_allocations={},
-                    is_active=is_active,
-                    is_finished=is_finished,
-                    can_be_modified=not is_finished,
-                    is_schedulable=not is_finished and not is_active,
-                )
-                dto = TaskDetailOutput(task=task, has_notes=False, notes_content=None)
+        # Execute
+        self.renderer.render(dto)
 
-                # Execute
-                self.renderer.render(dto)
-
-                # Verify
-                self.assertTrue(self.console_writer.print.called)
+        # Verify
+        assert self.console_writer.print.called
 
     def test_render_console_width_limit(self):
         """Test that renderer respects console width."""
@@ -280,8 +281,4 @@ class TestRichDetailRenderer(unittest.TestCase):
         self.renderer.render(dto)
 
         # Verify
-        self.assertTrue(self.console_writer.print.called)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert self.console_writer.print.called

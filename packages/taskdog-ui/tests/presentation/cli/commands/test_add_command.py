@@ -1,8 +1,8 @@
 """Tests for add command."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.add import add_command
@@ -12,10 +12,11 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 )
 
 
-class TestAddCommand(unittest.TestCase):
+class TestAddCommand:
     """Test cases for add command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -36,7 +37,7 @@ class TestAddCommand(unittest.TestCase):
         result = self.runner.invoke(add_command, ["Test Task"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.create_task.assert_called_once_with(
             name="Test Task",
             priority=None,
@@ -63,9 +64,9 @@ class TestAddCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.create_task.call_args[1]
-        self.assertEqual(call_kwargs["priority"], 5)
+        assert call_kwargs["priority"] == 5
 
     def test_add_with_fixed_flag(self):
         """Test task creation with fixed flag."""
@@ -81,9 +82,9 @@ class TestAddCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.create_task.call_args[1]
-        self.assertTrue(call_kwargs["is_fixed"])
+        assert call_kwargs["is_fixed"] is True
 
     def test_add_with_tags(self):
         """Test task creation with tags."""
@@ -101,9 +102,9 @@ class TestAddCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.create_task.call_args[1]
-        self.assertEqual(call_kwargs["tags"], ["work", "urgent"])
+        assert call_kwargs["tags"] == ["work", "urgent"]
         self.console_writer.info.assert_called()
 
     def test_add_with_deadline(self):
@@ -120,9 +121,9 @@ class TestAddCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.create_task.call_args[1]
-        self.assertIsNotNone(call_kwargs["deadline"])
+        assert call_kwargs["deadline"] is not None
 
     def test_add_with_estimate(self):
         """Test task creation with estimate."""
@@ -138,9 +139,9 @@ class TestAddCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.create_task.call_args[1]
-        self.assertEqual(call_kwargs["estimated_duration"], 2.5)
+        assert call_kwargs["estimated_duration"] == 2.5
 
     def test_add_with_schedule(self):
         """Test task creation with start and end times."""
@@ -158,10 +159,10 @@ class TestAddCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.create_task.call_args[1]
-        self.assertIsNotNone(call_kwargs["planned_start"])
-        self.assertIsNotNone(call_kwargs["planned_end"])
+        assert call_kwargs["planned_start"] is not None
+        assert call_kwargs["planned_end"] is not None
 
     def test_add_with_dependencies(self):
         """Test task creation with dependencies."""
@@ -179,8 +180,8 @@ class TestAddCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
-        self.assertEqual(self.api_client.add_dependency.call_count, 2)
+        assert result.exit_code == 0
+        assert self.api_client.add_dependency.call_count == 2
         self.console_writer.info.assert_called()
 
     def test_add_dependency_validation_error(self):
@@ -201,7 +202,7 @@ class TestAddCommand(unittest.TestCase):
         )
 
         # Verify - should continue even with dependency error
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
         self.console_writer.task_success.assert_called_once()
 
@@ -214,7 +215,7 @@ class TestAddCommand(unittest.TestCase):
         result = self.runner.invoke(add_command, ["Test Task"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -227,14 +228,10 @@ class TestAddCommand(unittest.TestCase):
         result = self.runner.invoke(add_command, ["Test Task"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("adding task", error)
 
     def test_missing_name(self):
         """Test add without name argument."""
         result = self.runner.invoke(add_command, [], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code != 0

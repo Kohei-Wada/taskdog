@@ -1,17 +1,18 @@
 """Tests for optimize command."""
 
-import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.optimize import optimize_command
 
 
-class TestOptimizeCommand(unittest.TestCase):
+class TestOptimizeCommand:
     """Test cases for optimize command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -35,7 +36,7 @@ class TestOptimizeCommand(unittest.TestCase):
         result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.optimize_schedule.assert_called_once()
         self.console_writer.success.assert_called_once()
 
@@ -56,9 +57,9 @@ class TestOptimizeCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.optimize_schedule.call_args[1]
-        self.assertEqual(call_kwargs["task_ids"], [1, 2, 3])
+        assert call_kwargs["task_ids"] == [1, 2, 3]
 
     @patch("taskdog.cli.commands.optimize.get_next_weekday")
     def test_optimize_with_algorithm(self, mock_get_next_weekday):
@@ -77,9 +78,9 @@ class TestOptimizeCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.optimize_schedule.call_args[1]
-        self.assertEqual(call_kwargs["algorithm"], "balanced")
+        assert call_kwargs["algorithm"] == "balanced"
 
     @patch("taskdog.cli.commands.optimize.get_next_weekday")
     def test_optimize_with_max_hours(self, mock_get_next_weekday):
@@ -98,9 +99,9 @@ class TestOptimizeCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.optimize_schedule.call_args[1]
-        self.assertEqual(call_kwargs["max_hours_per_day"], 8.0)
+        assert call_kwargs["max_hours_per_day"] == 8.0
 
     @patch("taskdog.cli.commands.optimize.get_next_weekday")
     def test_optimize_with_force(self, mock_get_next_weekday):
@@ -117,9 +118,9 @@ class TestOptimizeCommand(unittest.TestCase):
         result = self.runner.invoke(optimize_command, ["--force"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.optimize_schedule.call_args[1]
-        self.assertTrue(call_kwargs["force_override"])
+        assert call_kwargs["force_override"] is True
 
     @patch("taskdog.cli.commands.optimize.get_next_weekday")
     def test_optimize_with_start_date(self, mock_get_next_weekday):
@@ -137,9 +138,9 @@ class TestOptimizeCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.optimize_schedule.call_args[1]
-        self.assertIsNotNone(call_kwargs["start_date"])
+        assert call_kwargs["start_date"] is not None
 
     @patch("taskdog.cli.commands.optimize.get_next_weekday")
     def test_optimize_all_failed(self, mock_get_next_weekday):
@@ -155,7 +156,7 @@ class TestOptimizeCommand(unittest.TestCase):
         result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.warning.assert_called()
 
     @patch("taskdog.cli.commands.optimize.get_next_weekday")
@@ -172,7 +173,7 @@ class TestOptimizeCommand(unittest.TestCase):
         result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.warning.assert_called()
 
     @patch("taskdog.cli.commands.optimize.get_next_weekday")
@@ -191,7 +192,7 @@ class TestOptimizeCommand(unittest.TestCase):
         result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.warning.assert_called()
 
     def test_general_exception(self):
@@ -204,9 +205,5 @@ class TestOptimizeCommand(unittest.TestCase):
         result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("optimizing schedules", error)
-
-
-if __name__ == "__main__":
-    unittest.main()

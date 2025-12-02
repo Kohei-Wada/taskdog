@@ -1,17 +1,18 @@
 """Tests for today command."""
 
-import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.today import today_command
 
 
-class TestTodayCommand(unittest.TestCase):
+class TestTodayCommand:
     """Test cases for today command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -31,7 +32,7 @@ class TestTodayCommand(unittest.TestCase):
         result = self.runner.invoke(today_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.list_today_tasks.assert_called_once_with(
             all=False,
             status=None,
@@ -51,9 +52,9 @@ class TestTodayCommand(unittest.TestCase):
         result = self.runner.invoke(today_command, ["--all"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.list_today_tasks.call_args[1]
-        self.assertTrue(call_kwargs["all"])
+        assert call_kwargs["all"] is True
 
     @patch("taskdog.cli.commands.today.render_table")
     def test_with_status_filter(self, mock_render_table):
@@ -68,9 +69,9 @@ class TestTodayCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.list_today_tasks.call_args[1]
-        self.assertEqual(call_kwargs["status"], "pending")
+        assert call_kwargs["status"] == "pending"
 
     @patch("taskdog.cli.commands.today.render_table")
     def test_with_sort_option(self, mock_render_table):
@@ -85,10 +86,10 @@ class TestTodayCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.list_today_tasks.call_args[1]
-        self.assertEqual(call_kwargs["sort_by"], "priority")
-        self.assertTrue(call_kwargs["reverse"])
+        assert call_kwargs["sort_by"] == "priority"
+        assert call_kwargs["reverse"] is True
 
     def test_general_exception(self):
         """Test handling of general exception."""
@@ -100,9 +101,5 @@ class TestTodayCommand(unittest.TestCase):
         result = self.runner.invoke(today_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("displaying tasks", error)
-
-
-if __name__ == "__main__":
-    unittest.main()

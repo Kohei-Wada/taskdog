@@ -1,7 +1,5 @@
 """Tests for pause command."""
 
-import unittest
-
 from taskdog.cli.commands.pause import pause_command
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from tests.presentation.cli.commands.batch_command_test_base import BaseBatchCommandTest
@@ -34,14 +32,12 @@ class TestPauseCommand(BaseBatchCommandTest):
         result = self.runner.invoke(pause_command, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.pause_task.assert_called_once()
         self.console_writer.task_success.assert_called_once_with("Paused", paused_task)
         # Verify time tracking reset message
         info_calls = [call[0][0] for call in self.console_writer.info.call_args_list]
-        self.assertTrue(
-            any("Time tracking has been reset" in msg for msg in info_calls)
-        )
+        assert any("Time tracking has been reset" in msg for msg in info_calls)
 
     def test_pause_already_pending_task(self):
         """Test pausing a task that is already pending."""
@@ -55,13 +51,9 @@ class TestPauseCommand(BaseBatchCommandTest):
         result = self.runner.invoke(pause_command, ["1"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.pause_task.assert_called_once()
         # Should show info message about time tracking reset
         self.console_writer.info.assert_called_once()
         info_msg = self.console_writer.info.call_args[0][0]
-        self.assertIn("Time tracking has been reset", info_msg)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert "Time tracking has been reset" in info_msg

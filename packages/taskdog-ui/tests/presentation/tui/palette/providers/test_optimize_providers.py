@@ -1,15 +1,17 @@
 """Tests for optimize command providers."""
 
-import unittest
 from unittest.mock import Mock
+
+import pytest
 
 from taskdog.tui.palette.providers.optimize_providers import OptimizeCommandProvider
 
 
-class TestOptimizeCommandProvider(unittest.TestCase):
+class TestOptimizeCommandProvider:
     """Test cases for OptimizeCommandProvider."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.mock_app = Mock()
         self.mock_app.search_optimize = Mock()
@@ -23,11 +25,11 @@ class TestOptimizeCommandProvider(unittest.TestCase):
         """Test that get_options returns single optimize command."""
         options = self.provider.get_options(self.mock_app)
 
-        self.assertEqual(len(options), 1)
+        assert len(options) == 1
 
         # Verify option name
         option_names = [opt[0] for opt in options]
-        self.assertIn("Optimize", option_names)
+        assert "Optimize" in option_names
 
     def test_option_callback_calls_search_optimize(self):
         """Test that selecting the option calls search_optimize."""
@@ -35,7 +37,7 @@ class TestOptimizeCommandProvider(unittest.TestCase):
 
         # Find the Optimize option
         option = next((opt for opt in options if opt[0] == "Optimize"), None)
-        self.assertIsNotNone(option)
+        assert option is not None
 
         # Get callback and invoke it
         callback = option[1]
@@ -49,9 +51,5 @@ class TestOptimizeCommandProvider(unittest.TestCase):
         options = self.provider.get_options(self.mock_app)
 
         for _option_name, _callback, description in options:
-            self.assertIsNotNone(description)
-            self.assertTrue(len(description) > 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+            assert description is not None
+            assert len(description) > 0

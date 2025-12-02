@@ -1,7 +1,5 @@
 """Tests for optimization converter functions."""
 
-import unittest
-
 from taskdog.infrastructure.api.converters.optimization_converters import (
     _parse_optimization_summary,
     _parse_scheduling_failures,
@@ -9,7 +7,7 @@ from taskdog.infrastructure.api.converters.optimization_converters import (
 )
 
 
-class TestParseOptimizationSummary(unittest.TestCase):
+class TestParseOptimizationSummary:
     """Test cases for _parse_optimization_summary."""
 
     def test_basic_conversion(self):
@@ -27,13 +25,13 @@ class TestParseOptimizationSummary(unittest.TestCase):
 
         result = _parse_optimization_summary(summary, failures)
 
-        self.assertEqual(result.new_count, 8)
-        self.assertEqual(result.rescheduled_count, 0)
-        self.assertEqual(result.total_hours, 40.0)
-        self.assertEqual(result.days_span, 10)  # 10 days inclusive
-        self.assertEqual(len(result.unscheduled_tasks), 2)
-        self.assertEqual(result.unscheduled_tasks[0].id, 11)
-        self.assertEqual(result.unscheduled_tasks[1].id, 12)
+        assert result.new_count == 8
+        assert result.rescheduled_count == 0
+        assert result.total_hours == 40.0
+        assert result.days_span == 10  # 10 days inclusive
+        assert len(result.unscheduled_tasks) == 2
+        assert result.unscheduled_tasks[0].id == 11
+        assert result.unscheduled_tasks[1].id == 12
 
     def test_single_day_span(self):
         """Test calculation with single day."""
@@ -47,7 +45,7 @@ class TestParseOptimizationSummary(unittest.TestCase):
 
         result = _parse_optimization_summary(summary, failures)
 
-        self.assertEqual(result.days_span, 1)
+        assert result.days_span == 1
 
     def test_no_failures(self):
         """Test with no scheduling failures."""
@@ -61,8 +59,8 @@ class TestParseOptimizationSummary(unittest.TestCase):
 
         result = _parse_optimization_summary(summary, failures)
 
-        self.assertEqual(result.new_count, 10)
-        self.assertEqual(len(result.unscheduled_tasks), 0)
+        assert result.new_count == 10
+        assert len(result.unscheduled_tasks) == 0
 
     def test_all_failed(self):
         """Test when all tasks fail to schedule."""
@@ -80,11 +78,11 @@ class TestParseOptimizationSummary(unittest.TestCase):
 
         result = _parse_optimization_summary(summary, failures)
 
-        self.assertEqual(result.new_count, 0)
-        self.assertEqual(len(result.unscheduled_tasks), 3)
+        assert result.new_count == 0
+        assert len(result.unscheduled_tasks) == 3
 
 
-class TestParseSchedulingFailures(unittest.TestCase):
+class TestParseSchedulingFailures:
     """Test cases for _parse_scheduling_failures."""
 
     def test_multiple_failures(self):
@@ -97,12 +95,12 @@ class TestParseSchedulingFailures(unittest.TestCase):
 
         result = _parse_scheduling_failures(failures)
 
-        self.assertEqual(len(result), 3)
-        self.assertEqual(result[0].task.id, 1)
-        self.assertEqual(result[0].task.name, "Task 1")
-        self.assertEqual(result[0].reason, "No available time slot")
-        self.assertEqual(result[1].task.id, 2)
-        self.assertEqual(result[2].reason, "Deadline passed")
+        assert len(result) == 3
+        assert result[0].task.id == 1
+        assert result[0].task.name == "Task 1"
+        assert result[0].reason == "No available time slot"
+        assert result[1].task.id == 2
+        assert result[2].reason == "Deadline passed"
 
     def test_empty_failures(self):
         """Test parsing empty failures list."""
@@ -110,7 +108,7 @@ class TestParseSchedulingFailures(unittest.TestCase):
 
         result = _parse_scheduling_failures(failures)
 
-        self.assertEqual(result, [])
+        assert result == []
 
     def test_single_failure(self):
         """Test parsing single failure."""
@@ -120,13 +118,13 @@ class TestParseSchedulingFailures(unittest.TestCase):
 
         result = _parse_scheduling_failures(failures)
 
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].task.id, 42)
-        self.assertEqual(result[0].task.name, "Important Task")
-        self.assertEqual(result[0].reason, "Conflict")
+        assert len(result) == 1
+        assert result[0].task.id == 42
+        assert result[0].task.name == "Important Task"
+        assert result[0].reason == "Conflict"
 
 
-class TestConvertToOptimizationOutput(unittest.TestCase):
+class TestConvertToOptimizationOutput:
     """Test cases for convert_to_optimization_output."""
 
     def test_complete_data(self):
@@ -154,13 +152,13 @@ class TestConvertToOptimizationOutput(unittest.TestCase):
 
         result = convert_to_optimization_output(data)
 
-        self.assertEqual(result.summary.new_count, 8)
-        self.assertEqual(result.summary.total_hours, 40.0)
-        self.assertEqual(result.summary.days_span, 10)
-        self.assertEqual(len(result.failed_tasks), 2)
-        self.assertEqual(result.failed_tasks[0].task.id, 11)
-        self.assertEqual(result.failed_tasks[0].reason, "No available time")
-        self.assertEqual(len(result.successful_tasks), 8)
+        assert result.summary.new_count == 8
+        assert result.summary.total_hours == 40.0
+        assert result.summary.days_span == 10
+        assert len(result.failed_tasks) == 2
+        assert result.failed_tasks[0].task.id == 11
+        assert result.failed_tasks[0].reason == "No available time"
+        assert len(result.successful_tasks) == 8
 
     def test_all_successful(self):
         """Test when all tasks are scheduled successfully."""
@@ -180,10 +178,10 @@ class TestConvertToOptimizationOutput(unittest.TestCase):
 
         result = convert_to_optimization_output(data)
 
-        self.assertEqual(result.summary.new_count, 5)
-        self.assertEqual(len(result.failed_tasks), 0)
-        self.assertEqual(len(result.successful_tasks), 5)
-        self.assertEqual(len(result.summary.unscheduled_tasks), 0)
+        assert result.summary.new_count == 5
+        assert len(result.failed_tasks) == 0
+        assert len(result.successful_tasks) == 5
+        assert len(result.summary.unscheduled_tasks) == 0
 
     def test_all_failed(self):
         """Test when all tasks fail to schedule."""
@@ -207,10 +205,10 @@ class TestConvertToOptimizationOutput(unittest.TestCase):
 
         result = convert_to_optimization_output(data)
 
-        self.assertEqual(result.summary.new_count, 0)
-        self.assertEqual(len(result.failed_tasks), 3)
-        self.assertEqual(len(result.successful_tasks), 0)
-        self.assertEqual(len(result.summary.unscheduled_tasks), 3)
+        assert result.summary.new_count == 0
+        assert len(result.failed_tasks) == 3
+        assert len(result.successful_tasks) == 0
+        assert len(result.summary.unscheduled_tasks) == 3
 
     def test_daily_allocations_empty(self):
         """Test that daily_allocations is empty (not provided by API)."""
@@ -230,7 +228,7 @@ class TestConvertToOptimizationOutput(unittest.TestCase):
 
         result = convert_to_optimization_output(data)
 
-        self.assertEqual(result.daily_allocations, {})
+        assert result.daily_allocations == {}
 
     def test_task_states_before_empty(self):
         """Test that task_states_before is empty (not provided by API)."""
@@ -250,8 +248,4 @@ class TestConvertToOptimizationOutput(unittest.TestCase):
 
         result = convert_to_optimization_output(data)
 
-        self.assertEqual(result.task_states_before, {})
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.task_states_before == {}

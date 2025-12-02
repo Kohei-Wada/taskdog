@@ -1,19 +1,19 @@
 """Tests for TaskClient."""
 
-import unittest
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-from parameterized import parameterized
+import pytest
 
 from taskdog.infrastructure.api.task_client import TaskClient
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-class TestTaskClient(unittest.TestCase):
+class TestTaskClient:
     """Test cases for TaskClient."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.mock_base = Mock()
         self.client = TaskClient(self.mock_base)
@@ -41,18 +41,18 @@ class TestTaskClient(unittest.TestCase):
         # Verify API call
         self.mock_base._safe_request.assert_called_once()
         call_args = self.mock_base._safe_request.call_args
-        self.assertEqual(call_args[0][0], "post")
-        self.assertEqual(call_args[0][1], "/api/v1/tasks")
+        assert call_args[0][0] == "post"
+        assert call_args[0][1] == "/api/v1/tasks"
 
         payload = call_args[1]["json"]
-        self.assertEqual(payload["name"], "Test Task")
-        self.assertEqual(payload["priority"], 50)
-        self.assertEqual(payload["estimated_duration"], 5.0)
-        self.assertTrue(payload["is_fixed"])
-        self.assertEqual(payload["tags"], ["urgent"])
+        assert payload["name"] == "Test Task"
+        assert payload["priority"] == 50
+        assert payload["estimated_duration"] == 5.0
+        assert payload["is_fixed"] is True
+        assert payload["tags"] == ["urgent"]
 
         # Verify result
-        self.assertEqual(result, mock_output)
+        assert result == mock_output
         mock_convert.assert_called_once()
 
     @patch("taskdog.infrastructure.api.task_client.convert_to_task_operation_output")
@@ -81,12 +81,12 @@ class TestTaskClient(unittest.TestCase):
             tags=["updated"],
         )
 
-        self.assertEqual(payload["name"], "Updated")
-        self.assertEqual(payload["priority"], 75)
-        self.assertEqual(payload["status"], "IN_PROGRESS")
-        self.assertEqual(payload["estimated_duration"], 10.0)
-        self.assertTrue(payload["is_fixed"])
-        self.assertEqual(payload["tags"], ["updated"])
+        assert payload["name"] == "Updated"
+        assert payload["priority"] == 75
+        assert payload["status"] == "IN_PROGRESS"
+        assert payload["estimated_duration"] == 10.0
+        assert payload["is_fixed"] is True
+        assert payload["tags"] == ["updated"]
 
     def test_build_update_payload_partial_fields(self):
         """Test _build_update_payload with only some fields."""
@@ -102,9 +102,9 @@ class TestTaskClient(unittest.TestCase):
             tags=None,
         )
 
-        self.assertEqual(payload, {"name": "Updated"})
-        self.assertNotIn("priority", payload)
-        self.assertNotIn("status", payload)
+        assert payload == {"name": "Updated"}
+        assert "priority" not in payload
+        assert "status" not in payload
 
     @patch("taskdog.infrastructure.api.task_client.convert_to_update_task_output")
     def test_update_task(self, mock_convert):
@@ -124,26 +124,28 @@ class TestTaskClient(unittest.TestCase):
         # Verify API call
         self.mock_base._safe_request.assert_called_once()
         call_args = self.mock_base._safe_request.call_args
-        self.assertEqual(call_args[0][0], "patch")
-        self.assertEqual(call_args[0][1], "/api/v1/tasks/1")
+        assert call_args[0][0] == "patch"
+        assert call_args[0][1] == "/api/v1/tasks/1"
 
         payload = call_args[1]["json"]
-        self.assertEqual(payload["name"], "Updated")
-        self.assertEqual(payload["priority"], 75)
-        self.assertEqual(payload["tags"], ["new"])
+        assert payload["name"] == "Updated"
+        assert payload["priority"] == 75
+        assert payload["tags"] == ["new"]
 
         # Verify result
-        self.assertEqual(result, mock_output)
+        assert result == mock_output
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "method_name,expected_endpoint",
         [
-            ("archive_task", "archive_task", "/api/v1/tasks/1/archive"),
-            ("restore_task", "restore_task", "/api/v1/tasks/1/restore"),
-        ]
+            ("archive_task", "/api/v1/tasks/1/archive"),
+            ("restore_task", "/api/v1/tasks/1/restore"),
+        ],
+        ids=["archive_task", "restore_task"],
     )
     @patch("taskdog.infrastructure.api.task_client.convert_to_task_operation_output")
     def test_archive_restore_operations(
-        self, operation_name, method_name, expected_endpoint, mock_convert
+        self, mock_convert, method_name, expected_endpoint
     ):
         """Test archive/restore operations make correct API calls."""
         mock_response = Mock()
@@ -158,7 +160,7 @@ class TestTaskClient(unittest.TestCase):
         result = method(task_id=1)
 
         self.mock_base._safe_request.assert_called_once_with("post", expected_endpoint)
-        self.assertEqual(result, mock_output)
+        assert result == mock_output
 
     def test_remove_task(self):
         """Test remove_task makes correct API call."""
@@ -181,7 +183,3 @@ class TestTaskClient(unittest.TestCase):
         self.client.remove_task(task_id=999)
 
         self.mock_base._handle_error.assert_called_once_with(mock_response)
-
-
-if __name__ == "__main__":
-    unittest.main()

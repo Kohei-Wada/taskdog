@@ -1,18 +1,19 @@
 """Tests for schedule command."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.schedule import schedule_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-class TestScheduleCommand(unittest.TestCase):
+class TestScheduleCommand:
     """Test cases for schedule command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -37,10 +38,10 @@ class TestScheduleCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertIsNotNone(call_kwargs["planned_start"])
-        self.assertIsNone(call_kwargs["planned_end"])
+        assert call_kwargs["planned_start"] is not None
+        assert call_kwargs["planned_end"] is None
         self.console_writer.update_success.assert_called_once()
 
     def test_schedule_start_and_end(self):
@@ -59,10 +60,10 @@ class TestScheduleCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertIsNotNone(call_kwargs["planned_start"])
-        self.assertIsNotNone(call_kwargs["planned_end"])
+        assert call_kwargs["planned_start"] is not None
+        assert call_kwargs["planned_end"] is not None
 
     def test_schedule_with_time(self):
         """Test setting dates with specific times."""
@@ -82,10 +83,10 @@ class TestScheduleCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.update_task.call_args[1]
-        self.assertIsNotNone(call_kwargs["planned_start"])
-        self.assertIsNotNone(call_kwargs["planned_end"])
+        assert call_kwargs["planned_start"] is not None
+        assert call_kwargs["planned_end"] is not None
 
     def test_task_not_found(self):
         """Test schedule with non-existent task."""
@@ -98,7 +99,7 @@ class TestScheduleCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -113,7 +114,7 @@ class TestScheduleCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("setting schedule", error)
 
     def test_missing_task_id(self):
@@ -121,13 +122,9 @@ class TestScheduleCommand(unittest.TestCase):
         result = self.runner.invoke(
             schedule_command, ["2025-10-15"], obj=self.cli_context
         )
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_missing_start(self):
         """Test schedule without start argument."""
         result = self.runner.invoke(schedule_command, ["1"], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code != 0

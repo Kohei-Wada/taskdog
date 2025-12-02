@@ -1,18 +1,19 @@
 """Tests for priority command."""
 
-import unittest
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.priority import priority_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-class TestPriorityCommand(unittest.TestCase):
+class TestPriorityCommand:
     """Test cases for priority command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -33,7 +34,7 @@ class TestPriorityCommand(unittest.TestCase):
         result = self.runner.invoke(priority_command, ["1", "5"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.update_task.assert_called_once_with(task_id=1, priority=5)
         self.console_writer.update_success.assert_called_once()
 
@@ -48,7 +49,7 @@ class TestPriorityCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -61,37 +62,33 @@ class TestPriorityCommand(unittest.TestCase):
         result = self.runner.invoke(priority_command, ["1", "5"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("setting priority", error)
 
     def test_missing_task_id(self):
         """Test priority without task_id argument."""
         result = self.runner.invoke(priority_command, ["5"], obj=self.cli_context)
         # Click shows usage error for missing argument
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_missing_priority(self):
         """Test priority without priority argument."""
         result = self.runner.invoke(priority_command, ["1"], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_zero_priority_rejected(self):
         """Test that zero priority is rejected by PositiveInt."""
         result = self.runner.invoke(priority_command, ["1", "0"], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_negative_priority_rejected(self):
         """Test that negative priority is rejected by PositiveInt."""
         result = self.runner.invoke(priority_command, ["1", "-1"], obj=self.cli_context)
-        self.assertNotEqual(result.exit_code, 0)
+        assert result.exit_code != 0
 
     def test_non_integer_priority_rejected(self):
         """Test that non-integer priority is rejected."""
         result = self.runner.invoke(
             priority_command, ["1", "abc"], obj=self.cli_context
         )
-        self.assertNotEqual(result.exit_code, 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.exit_code != 0

@@ -1,18 +1,18 @@
 """Tests for DateRangeFilter."""
 
-import unittest
 from datetime import date, datetime
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.queries.filters.date_range_filter import DateRangeFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class TestDateRangeFilter(unittest.TestCase):
+class TestDateRangeFilter:
     """Test cases for DateRangeFilter."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Create sample tasks for testing."""
         # Task with planned dates in January 2025
         self.task_jan = Task(
@@ -48,27 +48,26 @@ class TestDateRangeFilter(unittest.TestCase):
             id=4, name="No Dates", status=TaskStatus.PENDING, priority=1
         )
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "start_date,end_date,expected_task_ids",
         [
-            # (scenario, start_date, end_date, expected_task_ids)
-            ("start_date_only", date(2025, 2, 1), None, [2, 3]),
-            ("end_date_only", None, date(2025, 2, 28), [1, 2]),
-            ("both_dates", date(2025, 2, 1), date(2025, 2, 28), [2]),
-        ]
+            (date(2025, 2, 1), None, [2, 3]),
+            (None, date(2025, 2, 28), [1, 2]),
+            (date(2025, 2, 1), date(2025, 2, 28), [2]),
+        ],
+        ids=["start_date_only", "end_date_only", "both_dates"],
     )
-    def test_filter_with_date_ranges(
-        self, scenario, start_date, end_date, expected_task_ids
-    ):
+    def test_filter_with_date_ranges(self, start_date, end_date, expected_task_ids):
         """Test filter with different date range configurations."""
         date_filter = DateRangeFilter(start_date=start_date, end_date=end_date)
         tasks = [self.task_jan, self.task_feb, self.task_mar]
 
         result = date_filter.filter(tasks)
 
-        self.assertEqual(len(result), len(expected_task_ids))
+        assert len(result) == len(expected_task_ids)
         result_ids = [task.id for task in result]
         for expected_id in expected_task_ids:
-            self.assertIn(expected_id, result_ids)
+            assert expected_id in result_ids
 
     def test_filter_includes_tasks_with_no_dates(self):
         """Test filter includes tasks with no date fields (unscheduled tasks)."""
@@ -77,8 +76,8 @@ class TestDateRangeFilter(unittest.TestCase):
 
         result = date_filter.filter(tasks)
 
-        self.assertEqual(len(result), 2)
-        self.assertIn(self.task_no_dates, result)
+        assert len(result) == 2
+        assert self.task_no_dates in result
 
     def test_filter_checks_all_date_fields(self):
         """Test filter checks planned_start, planned_end, actual_start, actual_end, deadline."""
@@ -101,7 +100,7 @@ class TestDateRangeFilter(unittest.TestCase):
 
         result = date_filter.filter([task_multi])
 
-        self.assertEqual(len(result), 1)
+        assert len(result) == 1
 
     def test_filter_with_boundary_dates(self):
         """Test filter includes tasks with dates on the boundaries."""
@@ -112,7 +111,7 @@ class TestDateRangeFilter(unittest.TestCase):
         result = date_filter.filter([self.task_jan])
 
         # task_jan has planned_start=2025-01-10, planned_end=2025-01-15
-        self.assertEqual(len(result), 1)
+        assert len(result) == 1
 
     def test_filter_with_no_matching_tasks(self):
         """Test filter returns empty list when no tasks match."""
@@ -123,23 +122,22 @@ class TestDateRangeFilter(unittest.TestCase):
 
         result = date_filter.filter(tasks)
 
-        self.assertEqual(len(result), 0)
+        assert len(result) == 0
 
     def test_filter_with_empty_task_list(self):
         """Test filter with empty task list."""
         date_filter = DateRangeFilter(start_date=date(2025, 1, 1))
         result = date_filter.filter([])
 
-        self.assertEqual(len(result), 0)
+        assert len(result) == 0
 
     def test_init_requires_at_least_one_date(self):
         """Test __init__ raises ValueError when both dates are None."""
-        with self.assertRaises(ValueError) as context:
+        with pytest.raises(ValueError) as exc_info:
             DateRangeFilter(start_date=None, end_date=None)
 
-        self.assertIn(
-            "At least one of start_date or end_date must be provided",
-            str(context.exception),
+        assert "At least one of start_date or end_date must be provided" in str(
+            exc_info.value
         )
 
     def test_filter_includes_task_if_any_date_in_range(self):
@@ -163,8 +161,4 @@ class TestDateRangeFilter(unittest.TestCase):
         result = date_filter.filter([task_mixed])
 
         # Should include because planned dates are in January
-        self.assertEqual(len(result), 1)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(result) == 1

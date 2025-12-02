@@ -1,7 +1,8 @@
 """Tests for API response converters."""
 
-import unittest
-from datetime import datetime
+from datetime import date, datetime
+
+import pytest
 
 from taskdog.infrastructure.api.converters import (
     ConversionError,
@@ -18,7 +19,7 @@ from taskdog.infrastructure.api.converters import (
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-class TestConverters(unittest.TestCase):
+class TestConverters:
     """Test cases for API response converters."""
 
     def test_convert_to_task_operation_output(self):
@@ -44,16 +45,16 @@ class TestConverters(unittest.TestCase):
 
         result = convert_to_task_operation_output(data)
 
-        self.assertEqual(result.id, 1)
-        self.assertEqual(result.name, "Test Task")
-        self.assertEqual(result.status, TaskStatus.PENDING)
-        self.assertEqual(result.priority, 50)
-        self.assertEqual(result.deadline, datetime(2025, 12, 31, 23, 59, 0))
-        self.assertEqual(result.estimated_duration, 5.0)
-        self.assertEqual(result.depends_on, [2, 3])
-        self.assertEqual(result.tags, ["urgent", "backend"])
-        self.assertFalse(result.is_fixed)
-        self.assertFalse(result.is_archived)
+        assert result.id == 1
+        assert result.name == "Test Task"
+        assert result.status == TaskStatus.PENDING
+        assert result.priority == 50
+        assert result.deadline == datetime(2025, 12, 31, 23, 59, 0)
+        assert result.estimated_duration == 5.0
+        assert result.depends_on == [2, 3]
+        assert result.tags == ["urgent", "backend"]
+        assert result.is_fixed is False
+        assert result.is_archived is False
 
     def test_convert_to_task_operation_output_with_nulls(self):
         """Test convert_to_task_operation_output with null fields."""
@@ -78,12 +79,12 @@ class TestConverters(unittest.TestCase):
 
         result = convert_to_task_operation_output(data)
 
-        self.assertEqual(result.id, 1)
-        self.assertIsNone(result.deadline)
-        self.assertIsNone(result.estimated_duration)
-        self.assertIsNone(result.planned_start)
-        self.assertEqual(result.depends_on, [])
-        self.assertEqual(result.tags, [])
+        assert result.id == 1
+        assert result.deadline is None
+        assert result.estimated_duration is None
+        assert result.planned_start is None
+        assert result.depends_on == []
+        assert result.tags == []
 
     def test_convert_to_update_task_output(self):
         """Test convert_to_update_task_output."""
@@ -109,10 +110,10 @@ class TestConverters(unittest.TestCase):
 
         result = convert_to_update_task_output(data)
 
-        self.assertEqual(result.task.id, 1)
-        self.assertEqual(result.task.name, "Updated Task")
-        self.assertEqual(result.task.status, TaskStatus.IN_PROGRESS)
-        self.assertEqual(result.updated_fields, ["name", "status", "tags"])
+        assert result.task.id == 1
+        assert result.task.name == "Updated Task"
+        assert result.task.status == TaskStatus.IN_PROGRESS
+        assert result.updated_fields == ["name", "status", "tags"]
 
     def test_convert_to_task_list_output(self):
         """Test convert_to_task_list_output."""
@@ -168,16 +169,16 @@ class TestConverters(unittest.TestCase):
         cache = {}
         result = convert_to_task_list_output(data, cache)
 
-        self.assertEqual(len(result.tasks), 2)
-        self.assertEqual(result.total_count, 10)
-        self.assertEqual(result.filtered_count, 2)
-        self.assertEqual(result.tasks[0].id, 1)
-        self.assertEqual(result.tasks[1].id, 2)
-        self.assertTrue(result.tasks[1].is_finished)
+        assert len(result.tasks) == 2
+        assert result.total_count == 10
+        assert result.filtered_count == 2
+        assert result.tasks[0].id == 1
+        assert result.tasks[1].id == 2
+        assert result.tasks[1].is_finished is True
 
         # Check cache was populated
-        self.assertFalse(cache[1])
-        self.assertTrue(cache[2])
+        assert cache[1] is False
+        assert cache[2] is True
 
     def test_convert_to_get_task_by_id_output(self):
         """Test convert_to_get_task_by_id_output."""
@@ -209,10 +210,10 @@ class TestConverters(unittest.TestCase):
 
         result = convert_to_get_task_by_id_output(data)
 
-        self.assertEqual(result.task.id, 1)
-        self.assertEqual(result.task.name, "Task Detail")
-        self.assertEqual(len(result.task.daily_allocations), 2)
-        self.assertTrue(result.task.can_be_modified)
+        assert result.task.id == 1
+        assert result.task.name == "Task Detail"
+        assert len(result.task.daily_allocations) == 2
+        assert result.task.can_be_modified is True
 
     def test_convert_to_get_task_detail_output(self):
         """Test convert_to_get_task_detail_output."""
@@ -245,11 +246,9 @@ class TestConverters(unittest.TestCase):
 
         result = convert_to_get_task_detail_output(data)
 
-        self.assertEqual(result.task.id, 1)
-        self.assertEqual(
-            result.notes_content, "# Important notes\n\nSome details here."
-        )
-        self.assertTrue(result.has_notes)
+        assert result.task.id == 1
+        assert result.notes_content == "# Important notes\n\nSome details here."
+        assert result.has_notes is True
 
     def test_convert_to_get_task_detail_output_no_notes(self):
         """Test convert_to_get_task_detail_output with no notes."""
@@ -282,8 +281,8 @@ class TestConverters(unittest.TestCase):
 
         result = convert_to_get_task_detail_output(data)
 
-        self.assertIsNone(result.notes_content)
-        self.assertFalse(result.has_notes)
+        assert result.notes_content is None
+        assert result.has_notes is False
 
     def test_convert_to_tag_statistics_output(self):
         """Test convert_to_tag_statistics_output."""
@@ -298,10 +297,10 @@ class TestConverters(unittest.TestCase):
 
         result = convert_to_tag_statistics_output(data)
 
-        self.assertEqual(result.total_tags, 3)
-        self.assertEqual(result.tag_counts["urgent"], 5)
-        self.assertEqual(result.tag_counts["backend"], 8)
-        self.assertEqual(result.tag_counts["frontend"], 3)
+        assert result.total_tags == 3
+        assert result.tag_counts["urgent"] == 5
+        assert result.tag_counts["backend"] == 8
+        assert result.tag_counts["frontend"] == 3
 
     def test_convert_to_gantt_output(self):
         """Test convert_to_gantt_output."""
@@ -338,13 +337,13 @@ class TestConverters(unittest.TestCase):
 
         result = convert_to_gantt_output(data)
 
-        self.assertEqual(result.date_range.start_date.isoformat(), "2025-01-01")
-        self.assertEqual(result.date_range.end_date.isoformat(), "2025-01-31")
-        self.assertEqual(len(result.tasks), 1)
-        self.assertEqual(result.tasks[0].id, 1)
-        self.assertEqual(result.tasks[0].name, "Task 1")
-        self.assertEqual(len(result.holidays), 2)
-        self.assertIn(datetime(2025, 1, 1).date(), result.holidays)
+        assert result.date_range.start_date.isoformat() == "2025-01-01"
+        assert result.date_range.end_date.isoformat() == "2025-01-31"
+        assert len(result.tasks) == 1
+        assert result.tasks[0].id == 1
+        assert result.tasks[0].name == "Task 1"
+        assert len(result.holidays) == 2
+        assert datetime(2025, 1, 1).date() in result.holidays
 
     def test_convert_to_statistics_output(self):
         """Test convert_to_statistics_output."""
@@ -364,11 +363,11 @@ class TestConverters(unittest.TestCase):
 
         result = convert_to_statistics_output(data)
 
-        self.assertEqual(result.task_stats.total_tasks, 100)
-        self.assertEqual(result.task_stats.pending_count, 20)
-        self.assertEqual(result.task_stats.completed_count, 60)
-        self.assertEqual(result.task_stats.completion_rate, 0.6)
-        self.assertIsNotNone(result.priority_stats)
+        assert result.task_stats.total_tasks == 100
+        assert result.task_stats.pending_count == 20
+        assert result.task_stats.completed_count == 60
+        assert result.task_stats.completion_rate == 0.6
+        assert result.priority_stats is not None
 
     def test_convert_to_optimization_output(self):
         """Test convert_to_optimization_output."""
@@ -395,14 +394,14 @@ class TestConverters(unittest.TestCase):
 
         result = convert_to_optimization_output(data)
 
-        self.assertEqual(result.summary.new_count, 8)
-        self.assertEqual(result.summary.total_hours, 40.0)
-        self.assertEqual(len(result.failed_tasks), 2)
-        self.assertEqual(result.failed_tasks[0].task.id, 11)
-        self.assertEqual(result.failed_tasks[0].reason, "No available time")
+        assert result.summary.new_count == 8
+        assert result.summary.total_hours == 40.0
+        assert len(result.failed_tasks) == 2
+        assert result.failed_tasks[0].task.id == 11
+        assert result.failed_tasks[0].reason == "No available time"
 
 
-class TestConverterErrorHandling(unittest.TestCase):
+class TestConverterErrorHandling:
     """Test cases for error handling in converters (Phase 3 refactoring)."""
 
     def test_invalid_datetime_format_raises_conversion_error(self):
@@ -419,13 +418,13 @@ class TestConverterErrorHandling(unittest.TestCase):
             "actual_end": None,
         }
 
-        with self.assertRaises(ConversionError) as context:
+        with pytest.raises(ConversionError) as exc_info:
             convert_to_task_operation_output(data)
 
         # Verify error contains field name and value
-        self.assertIn("deadline", str(context.exception))
-        self.assertEqual(context.exception.field, "deadline")
-        self.assertEqual(context.exception.value, "invalid-datetime-format")
+        assert "deadline" in str(exc_info.value)
+        assert exc_info.value.field == "deadline"
+        assert exc_info.value.value == "invalid-datetime-format"
 
     def test_invalid_date_type_raises_conversion_error(self):
         """Test that invalid date type (int instead of string) raises ConversionError."""
@@ -441,11 +440,11 @@ class TestConverterErrorHandling(unittest.TestCase):
             "actual_end": None,
         }
 
-        with self.assertRaises(ConversionError) as context:
+        with pytest.raises(ConversionError) as exc_info:
             convert_to_task_operation_output(data)
 
-        self.assertEqual(context.exception.field, "deadline")
-        self.assertEqual(context.exception.value, 12345)
+        assert exc_info.value.field == "deadline"
+        assert exc_info.value.value == 12345
 
     def test_invalid_date_dict_raises_conversion_error(self):
         """Test that invalid date dictionary keys raise ConversionError."""
@@ -477,11 +476,11 @@ class TestConverterErrorHandling(unittest.TestCase):
             "actual_daily_hours": {},
         }
 
-        with self.assertRaises(ConversionError) as context:
+        with pytest.raises(ConversionError) as exc_info:
             convert_to_get_task_by_id_output(data)
 
-        self.assertIn("daily_allocations", str(context.exception))
-        self.assertEqual(context.exception.field, "daily_allocations")
+        assert "daily_allocations" in str(exc_info.value)
+        assert exc_info.value.field == "daily_allocations"
 
     def test_missing_required_datetime_raises_conversion_error(self):
         """Test that missing required datetime field raises ConversionError."""
@@ -511,11 +510,11 @@ class TestConverterErrorHandling(unittest.TestCase):
             "updated_at": "2025-01-01T00:00:00",
         }
 
-        with self.assertRaises(ConversionError) as context:
+        with pytest.raises(ConversionError) as exc_info:
             convert_to_get_task_by_id_output(data)
 
-        self.assertIn("created_at", str(context.exception))
-        self.assertEqual(context.exception.field, "created_at")
+        assert "created_at" in str(exc_info.value)
+        assert exc_info.value.field == "created_at"
 
     def test_none_required_datetime_raises_conversion_error(self):
         """Test that None value for required datetime field raises ConversionError."""
@@ -545,12 +544,12 @@ class TestConverterErrorHandling(unittest.TestCase):
             "updated_at": "2025-01-01T00:00:00",
         }
 
-        with self.assertRaises(ConversionError) as context:
+        with pytest.raises(ConversionError) as exc_info:
             convert_to_get_task_by_id_output(data)
 
-        self.assertIn("created_at", str(context.exception))
-        self.assertEqual(context.exception.field, "created_at")
-        self.assertIsNone(context.exception.value)
+        assert "created_at" in str(exc_info.value)
+        assert exc_info.value.field == "created_at"
+        assert exc_info.value.value is None
 
     def test_empty_date_dict_returns_empty_dict(self):
         """Test that empty date dictionary is handled correctly."""
@@ -582,8 +581,8 @@ class TestConverterErrorHandling(unittest.TestCase):
 
         result = convert_to_get_task_by_id_output(data)
 
-        self.assertEqual(result.task.daily_allocations, {})
-        self.assertEqual(result.task.actual_daily_hours, {})
+        assert result.task.daily_allocations == {}
+        assert result.task.actual_daily_hours == {}
 
     def test_valid_date_dict_conversion(self):
         """Test that valid date dictionary is converted correctly."""
@@ -621,13 +620,7 @@ class TestConverterErrorHandling(unittest.TestCase):
         result = convert_to_get_task_by_id_output(data)
 
         # Verify date keys are converted to date objects
-        from datetime import date
-
-        self.assertEqual(len(result.task.daily_allocations), 2)
-        self.assertEqual(result.task.daily_allocations[date(2025, 1, 15)], 2.5)
-        self.assertEqual(result.task.daily_allocations[date(2025, 1, 16)], 3.0)
-        self.assertEqual(result.task.actual_daily_hours[date(2025, 1, 15)], 2.0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(result.task.daily_allocations) == 2
+        assert result.task.daily_allocations[date(2025, 1, 15)] == 2.5
+        assert result.task.daily_allocations[date(2025, 1, 16)] == 3.0
+        assert result.task.actual_daily_hours[date(2025, 1, 15)] == 2.0

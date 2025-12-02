@@ -1,13 +1,11 @@
 """Tests for tag converter functions."""
 
-import unittest
-
 from taskdog.infrastructure.api.converters.tag_converters import (
     convert_to_tag_statistics_output,
 )
 
 
-class TestConvertToTagStatisticsOutput(unittest.TestCase):
+class TestConvertToTagStatisticsOutput:
     """Test cases for convert_to_tag_statistics_output."""
 
     def test_basic_conversion(self):
@@ -23,12 +21,12 @@ class TestConvertToTagStatisticsOutput(unittest.TestCase):
 
         result = convert_to_tag_statistics_output(data)
 
-        self.assertEqual(result.total_tags, 3)
-        self.assertEqual(len(result.tag_counts), 3)
-        self.assertEqual(result.tag_counts["urgent"], 5)
-        self.assertEqual(result.tag_counts["backend"], 8)
-        self.assertEqual(result.tag_counts["frontend"], 3)
-        self.assertEqual(result.total_tagged_tasks, 0)  # Not available from API
+        assert result.total_tags == 3
+        assert len(result.tag_counts) == 3
+        assert result.tag_counts["urgent"] == 5
+        assert result.tag_counts["backend"] == 8
+        assert result.tag_counts["frontend"] == 3
+        assert result.total_tagged_tasks == 0  # Not available from API
 
     def test_single_tag(self):
         """Test with single tag."""
@@ -41,9 +39,9 @@ class TestConvertToTagStatisticsOutput(unittest.TestCase):
 
         result = convert_to_tag_statistics_output(data)
 
-        self.assertEqual(result.total_tags, 1)
-        self.assertEqual(len(result.tag_counts), 1)
-        self.assertEqual(result.tag_counts["important"], 10)
+        assert result.total_tags == 1
+        assert len(result.tag_counts) == 1
+        assert result.tag_counts["important"] == 10
 
     def test_empty_tags(self):
         """Test with no tags."""
@@ -54,8 +52,8 @@ class TestConvertToTagStatisticsOutput(unittest.TestCase):
 
         result = convert_to_tag_statistics_output(data)
 
-        self.assertEqual(result.total_tags, 0)
-        self.assertEqual(result.tag_counts, {})
+        assert result.total_tags == 0
+        assert result.tag_counts == {}
 
     def test_many_tags(self):
         """Test with many tags."""
@@ -70,10 +68,10 @@ class TestConvertToTagStatisticsOutput(unittest.TestCase):
 
         result = convert_to_tag_statistics_output(data)
 
-        self.assertEqual(result.total_tags, 10)
-        self.assertEqual(len(result.tag_counts), 10)
-        self.assertEqual(result.tag_counts["tag-0"], 1)
-        self.assertEqual(result.tag_counts["tag-9"], 10)
+        assert result.total_tags == 10
+        assert len(result.tag_counts) == 10
+        assert result.tag_counts["tag-0"] == 1
+        assert result.tag_counts["tag-9"] == 10
 
     def test_special_characters_in_tag(self):
         """Test tags with special characters."""
@@ -88,9 +86,9 @@ class TestConvertToTagStatisticsOutput(unittest.TestCase):
 
         result = convert_to_tag_statistics_output(data)
 
-        self.assertEqual(result.tag_counts["high-priority"], 5)
-        self.assertEqual(result.tag_counts["feature_request"], 3)
-        self.assertEqual(result.tag_counts["v1.0"], 2)
+        assert result.tag_counts["high-priority"] == 5
+        assert result.tag_counts["feature_request"] == 3
+        assert result.tag_counts["v1.0"] == 2
 
     def test_completion_rate_ignored(self):
         """Test that completion_rate is not included in output (not needed)."""
@@ -104,7 +102,7 @@ class TestConvertToTagStatisticsOutput(unittest.TestCase):
         result = convert_to_tag_statistics_output(data)
 
         # Result only has tag_counts, total_tags, total_tagged_tasks
-        self.assertEqual(result.tag_counts["test"], 5)
+        assert result.tag_counts["test"] == 5
         # completion_rate is not preserved in output
 
     def test_high_counts(self):
@@ -119,9 +117,5 @@ class TestConvertToTagStatisticsOutput(unittest.TestCase):
 
         result = convert_to_tag_statistics_output(data)
 
-        self.assertEqual(result.tag_counts["all-tasks"], 10000)
-        self.assertEqual(result.tag_counts["priority"], 5000)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.tag_counts["all-tasks"] == 10000
+        assert result.tag_counts["priority"] == 5000

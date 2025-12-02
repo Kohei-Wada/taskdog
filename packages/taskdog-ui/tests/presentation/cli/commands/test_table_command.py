@@ -1,17 +1,18 @@
 """Tests for table command."""
 
-import unittest
 from unittest.mock import MagicMock, patch
 
+import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.table import table_command
 
 
-class TestTableCommand(unittest.TestCase):
+class TestTableCommand:
     """Test cases for table command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
@@ -31,7 +32,7 @@ class TestTableCommand(unittest.TestCase):
         result = self.runner.invoke(table_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.api_client.list_tasks.assert_called_once_with(
             all=False,
             status=None,
@@ -54,9 +55,9 @@ class TestTableCommand(unittest.TestCase):
         result = self.runner.invoke(table_command, ["--all"], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.list_tasks.call_args[1]
-        self.assertTrue(call_kwargs["all"])
+        assert call_kwargs["all"] is True
 
     @patch("taskdog.cli.commands.table.render_table")
     def test_with_status_filter(self, mock_render_table):
@@ -71,9 +72,9 @@ class TestTableCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.list_tasks.call_args[1]
-        self.assertEqual(call_kwargs["status"], "completed")
+        assert call_kwargs["status"] == "completed"
 
     @patch("taskdog.cli.commands.table.render_table")
     def test_with_tags_filter(self, mock_render_table):
@@ -88,9 +89,9 @@ class TestTableCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.list_tasks.call_args[1]
-        self.assertEqual(call_kwargs["tags"], ["work", "urgent"])
+        assert call_kwargs["tags"] == ["work", "urgent"]
 
     @patch("taskdog.cli.commands.table.render_table")
     def test_with_sort_option(self, mock_render_table):
@@ -105,10 +106,10 @@ class TestTableCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.list_tasks.call_args[1]
-        self.assertEqual(call_kwargs["sort_by"], "priority")
-        self.assertTrue(call_kwargs["reverse"])
+        assert call_kwargs["sort_by"] == "priority"
+        assert call_kwargs["reverse"] is True
 
     @patch("taskdog.cli.commands.table.render_table")
     def test_with_fields_option(self, mock_render_table):
@@ -123,10 +124,10 @@ class TestTableCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         # Check that fields are passed to render_table
         call_args = mock_render_table.call_args
-        self.assertEqual(call_args[1]["fields"], ["id", "name", "status"])
+        assert call_args[1]["fields"] == ["id", "name", "status"]
 
     @patch("taskdog.cli.commands.table.render_table")
     def test_with_date_range(self, mock_render_table):
@@ -143,10 +144,10 @@ class TestTableCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         call_kwargs = self.api_client.list_tasks.call_args[1]
-        self.assertIsNotNone(call_kwargs["start_date"])
-        self.assertIsNotNone(call_kwargs["end_date"])
+        assert call_kwargs["start_date"] is not None
+        assert call_kwargs["end_date"] is not None
 
     def test_general_exception(self):
         """Test handling of general exception."""
@@ -158,9 +159,5 @@ class TestTableCommand(unittest.TestCase):
         result = self.runner.invoke(table_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("displaying tasks", error)
-
-
-if __name__ == "__main__":
-    unittest.main()

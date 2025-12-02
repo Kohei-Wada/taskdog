@@ -1,19 +1,19 @@
 """Tests for ThisWeekFilter."""
 
-import unittest
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.queries.filters.this_week_filter import ThisWeekFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class TestThisWeekFilter(unittest.TestCase):
+class TestThisWeekFilter:
     """Test cases for ThisWeekFilter."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test with fixed "today" for predictable testing."""
         # Fix "today" to Wednesday, January 15, 2025
         self.today = datetime(2025, 1, 15).date()
@@ -21,47 +21,32 @@ class TestThisWeekFilter(unittest.TestCase):
         self.week_start = datetime(2025, 1, 13).date()
         self.week_end = datetime(2025, 1, 19).date()
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "status,deadline,planned_start,planned_end,expected_count",
         [
-            # (scenario, status, deadline, planned_start, planned_end, expected_count)
-            (
-                "deadline_this_week",
-                TaskStatus.PENDING,
-                datetime(2025, 1, 16),
-                None,
-                None,
-                1,
-            ),
-            (
-                "deadline_next_week",
-                TaskStatus.PENDING,
-                datetime(2025, 1, 20),
-                None,
-                None,
-                0,
-            ),
-            (
-                "planned_period_this_week",
-                TaskStatus.PENDING,
-                None,
-                datetime(2025, 1, 13),
-                datetime(2025, 1, 17),
-                1,
-            ),
-            ("in_progress_no_dates", TaskStatus.IN_PROGRESS, None, None, None, 1),
-            ("pending_no_dates", TaskStatus.PENDING, None, None, None, 0),
-        ]
+            (TaskStatus.PENDING, datetime(2025, 1, 16), None, None, 1),
+            (TaskStatus.PENDING, datetime(2025, 1, 20), None, None, 0),
+            (TaskStatus.PENDING, None, datetime(2025, 1, 13), datetime(2025, 1, 17), 1),
+            (TaskStatus.IN_PROGRESS, None, None, None, 1),
+            (TaskStatus.PENDING, None, None, None, 0),
+        ],
+        ids=[
+            "deadline_this_week",
+            "deadline_next_week",
+            "planned_period_this_week",
+            "in_progress_no_dates",
+            "pending_no_dates",
+        ],
     )
     @patch("taskdog_core.application.queries.filters.this_week_filter.datetime")
     def test_filter_task_scenarios(
         self,
-        scenario,
+        mock_datetime,
         status,
         deadline,
         planned_start,
         planned_end,
         expected_count,
-        mock_datetime,
     ):
         """Test filter with various task scenarios."""
         mock_datetime.now.return_value = datetime.combine(
@@ -70,7 +55,7 @@ class TestThisWeekFilter(unittest.TestCase):
 
         task = Task(
             id=1,
-            name=scenario,
+            name="Test Task",
             status=status,
             priority=1,
             deadline=deadline,
@@ -81,17 +66,19 @@ class TestThisWeekFilter(unittest.TestCase):
         this_week_filter = ThisWeekFilter()
         result = this_week_filter.filter([task])
 
-        self.assertEqual(len(result), expected_count)
+        assert len(result) == expected_count
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "include_completed,expected_count",
         [
-            ("exclude_completed_by_default", False, 0),
-            ("include_completed_when_enabled", True, 1),
-        ]
+            (False, 0),
+            (True, 1),
+        ],
+        ids=["exclude_completed_by_default", "include_completed_when_enabled"],
     )
     @patch("taskdog_core.application.queries.filters.this_week_filter.datetime")
     def test_filter_completed_tasks(
-        self, scenario, include_completed, expected_count, mock_datetime
+        self, mock_datetime, include_completed, expected_count
     ):
         """Test filter behavior with COMPLETED tasks."""
         mock_datetime.now.return_value = datetime.combine(
@@ -109,7 +96,7 @@ class TestThisWeekFilter(unittest.TestCase):
         this_week_filter = ThisWeekFilter(include_completed=include_completed)
         result = this_week_filter.filter([task])
 
-        self.assertEqual(len(result), expected_count)
+        assert len(result) == expected_count
 
     @patch("taskdog_core.application.queries.filters.this_week_filter.datetime")
     def test_filter_with_empty_list(self, mock_datetime):
@@ -121,7 +108,7 @@ class TestThisWeekFilter(unittest.TestCase):
         this_week_filter = ThisWeekFilter()
         result = this_week_filter.filter([])
 
-        self.assertEqual(len(result), 0)
+        assert len(result) == 0
 
     @patch("taskdog_core.application.queries.filters.this_week_filter.datetime")
     def test_filter_calculates_week_correctly(self, mock_datetime):
@@ -145,8 +132,4 @@ class TestThisWeekFilter(unittest.TestCase):
             result = this_week_filter.filter([task])
 
             # Should match regardless of which day "today" is within the week
-            self.assertEqual(len(result), 1, f"Failed for {current_day.strftime('%A')}")
-
-
-if __name__ == "__main__":
-    unittest.main()
+            assert len(result) == 1, f"Failed for {current_day.strftime('%A')}"
