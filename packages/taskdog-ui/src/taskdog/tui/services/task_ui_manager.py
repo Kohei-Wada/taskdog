@@ -12,6 +12,7 @@ from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.exceptions.task_exceptions import (
     AuthenticationError,
     ServerConnectionError,
+    ServerError,
 )
 
 if TYPE_CHECKING:
@@ -36,6 +37,7 @@ class TaskUIManager:
         main_screen_provider: Callable[[], "MainScreen | None"],
         on_connection_error: Callable[[ServerConnectionError], None] | None = None,
         on_auth_error: Callable[[AuthenticationError], None] | None = None,
+        on_server_error: Callable[[ServerError], None] | None = None,
     ):
         """Initialize TaskUIManager.
 
@@ -45,12 +47,14 @@ class TaskUIManager:
             main_screen_provider: Callable that returns current MainScreen (lazy access)
             on_connection_error: Optional callback for connection errors
             on_auth_error: Optional callback for authentication errors
+            on_server_error: Optional callback for server errors (5xx)
         """
         self.state = state
         self.task_data_loader = task_data_loader
         self._get_main_screen = main_screen_provider
         self._on_connection_error = on_connection_error
         self._on_auth_error = on_auth_error
+        self._on_server_error = on_server_error
 
     def load_tasks(self, keep_scroll_position: bool = False) -> None:
         """Load tasks and update UI.
@@ -105,6 +109,11 @@ class TaskUIManager:
         except AuthenticationError as e:
             if self._on_auth_error:
                 self._on_auth_error(e)
+
+            return self._create_empty_task_data()
+        except ServerError as e:
+            if self._on_server_error:
+                self._on_server_error(e)
 
             return self._create_empty_task_data()
 
@@ -189,6 +198,9 @@ class TaskUIManager:
         except AuthenticationError as e:
             if self._on_auth_error:
                 self._on_auth_error(e)
+        except ServerError as e:
+            if self._on_server_error:
+                self._on_server_error(e)
 
     def _fetch_gantt_for_range(
         self, start_date: date, end_date: date

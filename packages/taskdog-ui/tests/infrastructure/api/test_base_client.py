@@ -7,7 +7,9 @@ import pytest
 
 from taskdog.infrastructure.api.base_client import BaseApiClient
 from taskdog_core.domain.exceptions.task_exceptions import (
+    AuthenticationError,
     ServerConnectionError,
+    ServerError,
     TaskNotFoundException,
     TaskValidationError,
 )
@@ -73,13 +75,50 @@ class TestBaseApiClient:
 
         assert detail_message in str(exc_info.value)
 
+    def test_handle_error_401_status(self):
+        """Test _handle_error raises AuthenticationError for 401."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = 401
+
+        with pytest.raises(AuthenticationError) as exc_info:
+            client._handle_error(response)
+
+        assert "Authentication failed" in str(exc_info.value)
+
+    def test_handle_error_5xx_status(self):
+        """Test _handle_error raises ServerError for 5xx errors."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = 500
+        response.json.return_value = {"detail": "Internal server error"}
+
+        with pytest.raises(ServerError) as exc_info:
+            client._handle_error(response)
+
+        assert "500" in str(exc_info.value)
+        assert "Internal server error" in str(exc_info.value)
+
+    def test_handle_error_5xx_status_no_json(self):
+        """Test _handle_error handles 5xx errors without JSON body."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = 502
+        response.json.side_effect = Exception("No JSON")
+
+        with pytest.raises(ServerError) as exc_info:
+            client._handle_error(response)
+
+        assert "502" in str(exc_info.value)
+        assert "Server error occurred" in str(exc_info.value)
+
     def test_handle_error_other_status(self):
         """Test _handle_error calls raise_for_status for other errors."""
         client = BaseApiClient(self.base_url, self.timeout)
         response = Mock()
-        response.status_code = 500
+        response.status_code = 403  # Use 403 Forbidden as "other" error
         response.raise_for_status.side_effect = httpx.HTTPStatusError(
-            "Server error", request=Mock(), response=response
+            "Forbidden", request=Mock(), response=response
         )
 
         with pytest.raises(httpx.HTTPStatusError):

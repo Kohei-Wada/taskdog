@@ -1,5 +1,6 @@
 """Base HTTP client infrastructure for Taskdog API."""
 
+import contextlib
 from collections.abc import Callable
 from typing import Any
 
@@ -8,6 +9,7 @@ import httpx  # type: ignore[import-not-found]
 from taskdog_core.domain.exceptions.task_exceptions import (
     AuthenticationError,
     ServerConnectionError,
+    ServerError,
     TaskNotFoundException,
     TaskValidationError,
 )
@@ -72,6 +74,11 @@ class BaseApiClient:
             raise TaskValidationError(detail)
         elif response.status_code == 401:
             raise AuthenticationError("Authentication failed. Check your API key.")
+        elif response.status_code >= 500:
+            detail = "Server error occurred"
+            with contextlib.suppress(Exception):
+                detail = response.json().get("detail", detail)
+            raise ServerError(response.status_code, detail)
         else:
             response.raise_for_status()
 
