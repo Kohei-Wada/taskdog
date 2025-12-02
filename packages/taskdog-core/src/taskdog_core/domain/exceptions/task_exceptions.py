@@ -135,6 +135,22 @@ class AuthenticationError(TaskError):
         super().__init__(message)
 
 
+class ServerError(TaskError):
+    """Raised when API server returns 5xx error."""
+
+    def __init__(
+        self, status_code: int, message: str = "Server error occurred."
+    ) -> None:
+        """Initialize with status code and error message.
+
+        Args:
+            status_code: HTTP status code (5xx)
+            message: Human-readable error message
+        """
+        self.status_code = status_code
+        super().__init__(f"Server error ({status_code}): {message}")
+
+
 class TaskNotSchedulableError(TaskValidationError):
     """Raised when a single task cannot be scheduled."""
 

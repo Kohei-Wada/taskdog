@@ -38,6 +38,7 @@ from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.domain.exceptions.task_exceptions import (
     AuthenticationError,
     ServerConnectionError,
+    ServerError,
 )
 
 # CliConfig is used only for theme setting, not passed to TUIContext
@@ -324,6 +325,7 @@ class TaskdogTUI(App):
             main_screen_provider=lambda: self.main_screen,
             on_connection_error=self._handle_connection_error,
             on_auth_error=self._handle_auth_error,
+            on_server_error=self._handle_server_error,
         )
 
         # Load tasks after screen is fully mounted
@@ -366,6 +368,18 @@ class TaskdogTUI(App):
         """
         self.notify(
             f"Authentication failed: {error}. Check your API key.",
+            severity="error",
+            timeout=10,
+        )
+
+    def _handle_server_error(self, error: ServerError) -> None:
+        """Handle server errors (5xx) from TaskUIManager.
+
+        Args:
+            error: ServerError from API call
+        """
+        self.notify(
+            f"Server error: {error}. Press 'r' to retry.",
             severity="error",
             timeout=10,
         )
