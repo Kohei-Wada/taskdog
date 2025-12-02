@@ -36,8 +36,7 @@ def configure_logging(
     # Configure format
     if format_str == "json":
         # JSON format for production (parseable by log aggregation tools)
-        # Python 3.12+ supports JSON serialization natively
-        log_format = '{"time":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","message":"%(message)s","context":%(context)s}'
+        log_format = '{"time":"%(asctime)s","level":"%(levelname)s","logger":"%(name)s","message":"%(message)s"}'
     else:
         # Text format for development (human-readable)
         log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
