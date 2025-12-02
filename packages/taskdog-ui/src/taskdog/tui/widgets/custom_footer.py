@@ -87,17 +87,32 @@ class CustomFooter(Static):
         """
         self._update_connection_status()
 
+    def _get_server_address(self) -> str:
+        """Extract host:port from API client base URL.
+
+        Returns:
+            Server address in host:port format
+        """
+        base_url = self.app.api_client.base_url
+        # Remove protocol (http:// or https://)
+        if "://" in base_url:
+            base_url = base_url.split("://", 1)[1]
+        # Remove trailing slash
+        return base_url.rstrip("/")
+
     def _update_connection_status(self) -> None:
         """Update the connection status display."""
+        server_addr = self._get_server_address()
+
         # Determine status text and CSS class
         if self.is_api_connected and self.is_websocket_connected:
-            status_text = "🟢 Online"
+            status_text = f"🟢 Online · {server_addr}"
             status_class = "status-online"
         elif self.is_api_connected or self.is_websocket_connected:
-            status_text = "🟡 Partial"
+            status_text = f"🟡 Partial · {server_addr}"
             status_class = "status-partial"
         else:
-            status_text = "🔴 Offline"
+            status_text = f"🔴 Offline · {server_addr}"
             status_class = "status-offline"
 
         # Update connection status widget
