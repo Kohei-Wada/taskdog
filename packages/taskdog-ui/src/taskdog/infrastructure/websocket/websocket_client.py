@@ -40,18 +40,25 @@ class WebSocketClient:
     the registered callback function.
     """
 
-    def __init__(self, ws_url: str, on_message: Callable[[dict[str, Any]], None]):
+    def __init__(
+        self,
+        ws_url: str,
+        on_message: Callable[[dict[str, Any]], None],
+        api_key: str | None = None,
+    ):
         """Initialize the WebSocket client.
 
         Args:
             ws_url: WebSocket URL (e.g., "ws://127.0.0.1:8000/ws")
             on_message: Callback function called when a message is received
+            api_key: Optional API key for authentication (sent as X-Api-Key header)
         """
         if not WEBSOCKETS_AVAILABLE:
             log.warning("websockets library not available, real-time sync disabled")
 
         self.ws_url = ws_url
         self.on_message = on_message
+        self.api_key = api_key
         self._websocket: Any = None
         self._state = ConnectionState.DISCONNECTED
         self._lock = asyncio.Lock()
@@ -146,7 +153,14 @@ class WebSocketClient:
 
         while self._state != ConnectionState.DISCONNECTED:
             try:
-                async with websockets.connect(self.ws_url) as websocket:  # type: ignore[attr-defined]
+                # Build additional headers for authentication
+                additional_headers = {}
+                if self.api_key:
+                    additional_headers["X-Api-Key"] = self.api_key
+
+                async with websockets.connect(
+                    self.ws_url, additional_headers=additional_headers or None
+                ) as websocket:  # type: ignore[attr-defined]
                     self._websocket = websocket
                     async with self._lock:
                         # State may have changed to DISCONNECTED during connection
