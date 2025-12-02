@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
+from urllib.parse import urlparse, urlunparse
 
 from textual.app import App
 from textual.binding import Binding
@@ -40,8 +41,6 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     ServerConnectionError,
     ServerError,
 )
-
-# CliConfig is used only for theme setting, not passed to TUIContext
 
 
 class TaskdogTUI(App):
@@ -201,15 +200,7 @@ class TaskdogTUI(App):
             cli_config: CLI configuration (optional, uses defaults if not provided)
         """
         super().__init__(*args, **kwargs)
-        from taskdog.infrastructure.api_client import TaskdogApiClient
         from taskdog.infrastructure.cli_config import CliConfig
-
-        if not isinstance(api_client, TaskdogApiClient):
-            from typing import TYPE_CHECKING
-
-            if TYPE_CHECKING:
-                # Type annotation for api_client parameter
-                pass
 
         self.api_client = api_client
         self._cli_config = cli_config or CliConfig()
@@ -256,9 +247,8 @@ class TaskdogTUI(App):
 
         # Initialize WebSocket client for real-time updates
         ws_url = self._get_websocket_url()
-        api_key = self.api_client._base.api_key
         self.websocket_client = WebSocketClient(
-            ws_url, self._handle_websocket_message, api_key
+            ws_url, self._handle_websocket_message, self.api_client.api_key
         )
 
     def _get_websocket_url(self) -> str:
@@ -267,10 +257,10 @@ class TaskdogTUI(App):
         Returns:
             WebSocket URL (e.g., "ws://127.0.0.1:8000/ws")
         """
-        # Convert HTTP URL to WebSocket URL
-        http_url = self.api_client.base_url
-        ws_url = http_url.replace("http://", "ws://").replace("https://", "wss://")
-        return f"{ws_url}/ws"
+        parsed = urlparse(self.api_client.base_url)
+        ws_scheme = "wss" if parsed.scheme == "https" else "ws"
+        ws_parsed = parsed._replace(scheme=ws_scheme)
+        return f"{urlunparse(ws_parsed)}/ws"
 
     def _handle_websocket_message(self, message: dict[str, Any]) -> None:
         """Handle incoming WebSocket messages.
