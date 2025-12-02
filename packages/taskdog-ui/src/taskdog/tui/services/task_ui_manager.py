@@ -9,7 +9,10 @@ from taskdog.tui.constants.ui_settings import DEFAULT_GANTT_DISPLAY_DAYS
 from taskdog.tui.state import TUIState
 from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog_core.application.dto.task_list_output import TaskListOutput
-from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
+from taskdog_core.domain.exceptions.task_exceptions import (
+    AuthenticationError,
+    ServerConnectionError,
+)
 
 if TYPE_CHECKING:
     from taskdog.tui.screens.main_screen import MainScreen
@@ -32,6 +35,7 @@ class TaskUIManager:
         task_data_loader: TaskDataLoader,
         main_screen_provider: Callable[[], "MainScreen | None"],
         on_connection_error: Callable[[ServerConnectionError], None] | None = None,
+        on_auth_error: Callable[[AuthenticationError], None] | None = None,
     ):
         """Initialize TaskUIManager.
 
@@ -40,11 +44,13 @@ class TaskUIManager:
             task_data_loader: Service for loading task data
             main_screen_provider: Callable that returns current MainScreen (lazy access)
             on_connection_error: Optional callback for connection errors
+            on_auth_error: Optional callback for authentication errors
         """
         self.state = state
         self.task_data_loader = task_data_loader
         self._get_main_screen = main_screen_provider
         self._on_connection_error = on_connection_error
+        self._on_auth_error = on_auth_error
 
     def load_tasks(self, keep_scroll_position: bool = False) -> None:
         """Load tasks and update UI.
@@ -95,22 +101,34 @@ class TaskUIManager:
             if self._on_connection_error:
                 self._on_connection_error(e)
 
-            # Return empty task data to avoid crash
-            empty_task_list_output = TaskListOutput(
-                tasks=[],
-                total_count=0,
-                filtered_count=0,
-                gantt_data=None,
-            )
+            return self._create_empty_task_data()
+        except AuthenticationError as e:
+            if self._on_auth_error:
+                self._on_auth_error(e)
 
-            return TaskData(
-                all_tasks=[],
-                filtered_tasks=[],
-                task_list_output=empty_task_list_output,
-                table_view_models=[],
-                gantt_view_model=None,
-                filtered_gantt_view_model=None,
-            )
+            return self._create_empty_task_data()
+
+    def _create_empty_task_data(self) -> TaskData:
+        """Create empty TaskData to avoid crash on errors.
+
+        Returns:
+            Empty TaskData object
+        """
+        empty_task_list_output = TaskListOutput(
+            tasks=[],
+            total_count=0,
+            filtered_count=0,
+            gantt_data=None,
+        )
+
+        return TaskData(
+            all_tasks=[],
+            filtered_tasks=[],
+            task_list_output=empty_task_list_output,
+            table_view_models=[],
+            gantt_view_model=None,
+            filtered_gantt_view_model=None,
+        )
 
     def _update_cache(self, task_data: TaskData) -> None:
         """Update internal cache with task data.
@@ -168,6 +186,9 @@ class TaskUIManager:
         except ServerConnectionError as e:
             if self._on_connection_error:
                 self._on_connection_error(e)
+        except AuthenticationError as e:
+            if self._on_auth_error:
+                self._on_auth_error(e)
 
     def _fetch_gantt_for_range(
         self, start_date: date, end_date: date

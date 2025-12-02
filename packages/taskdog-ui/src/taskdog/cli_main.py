@@ -109,8 +109,9 @@ def cli(
             base_url=f"http://{api_host}:{api_port}",
             api_key=effective_api_key,
         )
-        # Test connection
-        api_client.client.get("/health")
+        # Test connection (uses _safe_request which includes API key header)
+        if not api_client.check_health():
+            raise Exception("Health check failed")
     except Exception as e:
         console_writer.error(
             "connecting to API server",
