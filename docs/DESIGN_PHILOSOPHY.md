@@ -511,31 +511,43 @@ uv tool install taskdog-server
 pip install taskdog taskdog-server
 ```
 
-The repository provides:
+### What This Repository Includes
 
 - Python packages (taskdog-core, taskdog-server, taskdog-ui)
 - systemd/launchd service files for auto-start
+- **Basic Dockerfile** for containerized deployment (see `contrib/docker/`)
 - Configuration examples
 
 ### What This Repository Does NOT Include
 
-- Docker/container configurations
+- Docker Compose / orchestration configurations
 - Kubernetes manifests
 - Reverse proxy configurations
 - Authentication/authorization infrastructure
 - Backup automation
 
-### Why No Docker in This Repository?
+### Docker Philosophy
 
-1. **Simplicity**: Individual users don't need containerization for a personal tool
-2. **Separation of concerns**: Package distribution ≠ infrastructure management
-3. **Avoid over-engineering**: `taskdog-server` runs fine as a simple process
+This repository provides a **minimal Dockerfile** for users who prefer containerization, but keeps infrastructure concerns separate:
+
+**What we provide:**
+
+- Single `Dockerfile` for `taskdog-server`
+- Basic documentation for building and running
+
+**What we leave to users (or taskdog-stack):**
+
+- Docker Compose orchestration
+- Multi-service setups (webhooks, proxies, etc.)
+- Production deployment configurations
+
+This strikes a balance between accessibility and simplicity.
 
 ### For Users Who Need Infrastructure
 
-If you need Docker, authentication, reverse proxy, or backup automation, consider creating a separate **taskdog-stack** repository that:
+If you need Docker Compose, authentication, reverse proxy, or backup automation, consider creating a separate **taskdog-stack** repository that:
 
-- References taskdog as a dependency
+- Uses the Dockerfile from this repo as a base
 - Adds docker-compose.yml with your preferred setup
 - Includes authentication (Authelia, OAuth2 Proxy, etc.)
 - Configures reverse proxy (Traefik, Caddy, nginx)
@@ -543,7 +555,7 @@ If you need Docker, authentication, reverse proxy, or backup automation, conside
 
 This separation keeps:
 
-- **taskdog**: Simple, focused on the application
+- **taskdog**: Simple, focused on the application + basic container support
 - **taskdog-stack**: Infrastructure concerns, customizable per deployment
 
 **Example structure for taskdog-stack**:
