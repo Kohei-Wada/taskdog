@@ -2,9 +2,8 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
 
-from taskdog_core.domain.constants import SECONDS_PER_HOUR
+from taskdog_core.domain.constants import MIN_PRIORITY_EXCLUSIVE, SECONDS_PER_HOUR
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
-from taskdog_core.shared.constants import MIN_PRIORITY_EXCLUSIVE
 
 
 class TaskStatus(Enum):
