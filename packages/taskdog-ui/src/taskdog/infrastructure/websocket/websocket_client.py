@@ -43,14 +43,15 @@ class WebSocketClient:
     def __init__(
         self,
         ws_url: str,
-        on_message: Callable[[dict[str, Any]], None],
+        on_message: Callable[[dict[str, Any]], None] | None = None,
         api_key: str | None = None,
     ):
         """Initialize the WebSocket client.
 
         Args:
             ws_url: WebSocket URL (e.g., "ws://127.0.0.1:8000/ws")
-            on_message: Callback function called when a message is received
+            on_message: Callback function called when a message is received (optional,
+                can be set later via set_callback)
             api_key: Optional API key for authentication (sent as X-Api-Key header)
         """
         if not WEBSOCKETS_AVAILABLE:
@@ -64,6 +65,18 @@ class WebSocketClient:
         self._lock = asyncio.Lock()
         self._task: asyncio.Task[None] | None = None
         self.client_id: str | None = None  # Received from server on connection
+
+    def set_callback(self, on_message: Callable[[dict[str, Any]], None]) -> None:
+        """Set or update the message callback.
+
+        This allows setting the callback after initialization, which is useful
+        for dependency injection scenarios where the WebSocket client is created
+        before the callback handler is ready.
+
+        Args:
+            on_message: Callback function called when a message is received
+        """
+        self.on_message = on_message
 
     async def connect(self) -> None:
         """Connect to the WebSocket server and start listening.
@@ -120,7 +133,8 @@ class WebSocketClient:
                 self.client_id = message.get("client_id")
                 log.info(f"Received client ID: {self.client_id}")
 
-            self.on_message(message)
+            if self.on_message:
+                self.on_message(message)
         except json.JSONDecodeError:
             log.warning(f"Invalid JSON received: {message_str!r}")
         except Exception as e:
