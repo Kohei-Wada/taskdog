@@ -180,8 +180,7 @@ make test-core
 make test-server
 make test-ui
 
-# Run with coverage report (sorted by coverage: low → high)
-make coverage
+# All test commands include coverage (sorted by coverage: low → high)
 
 # Run single test file (from package directory)
 cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest tests/test_module.py
@@ -262,11 +261,8 @@ git checkout -b fix/bug-description
 # Run all quality checks
 make check
 
-# Run all tests
+# Run all tests with coverage
 make test
-
-# Run with coverage
-make coverage
 ```
 
 ### 5. Commit Your Changes
@@ -309,7 +305,7 @@ All pull requests automatically run:
 
 - Linting (`make lint`)
 - Type checking (`make typecheck`)
-- Tests with coverage (`make coverage`)
+- Tests with coverage (`make test`)
 
 All checks must pass before merging.
 

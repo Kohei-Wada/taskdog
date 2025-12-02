@@ -328,8 +328,7 @@ default_algorithm = "balanced"
 make install-dev                    # Install with dev dependencies
 
 # Testing
-make test                           # Run all tests
-make coverage                       # Test with coverage report
+make test                           # Run all tests with coverage
 
 # Code Quality
 make lint                           # Lint code
@@ -358,7 +357,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for det
 
 - Linting (`make lint`)
 - Type checking (`make typecheck`)
-- Tests with coverage (`make coverage`)
+- Tests with coverage (`make test`)
 
 Coverage reports are displayed in CI logs, sorted by coverage (low → high) to highlight areas needing improvement.
 

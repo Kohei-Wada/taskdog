@@ -85,7 +85,7 @@ jobs:
           uv pip install -e "packages/taskdog-ui[dev]"
 
       - name: Run tests with coverage
-        run: make coverage
+        run: make test
 
   security:
     name: Security Scan

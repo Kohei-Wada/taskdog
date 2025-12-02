@@ -1,4 +1,4 @@
-.PHONY: help test test-core test-server test-ui test-all coverage \
+.PHONY: help test test-core test-server test-ui test-all \
         install install-dev install-core install-server install-ui \
         install-ui-only install-server-only reinstall \
         tool-install-ui tool-install-server check-deps \
@@ -24,7 +24,7 @@ help: ## Show this help message
 	@grep -E '^(install|reinstall|tool-install).*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "🧪 Testing:"
-	@grep -E '^(test|coverage).*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^test.*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "✨ Code Quality:"
 	@grep -E '^(lint|format|typecheck|check).*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -159,39 +159,24 @@ endif
 # Testing Targets
 # ============================================================================
 
-test: test-core test-server test-ui ## Run all tests (core + server + ui)
+test: test-core test-server test-ui ## Run all tests with coverage (core + server + ui)
 	@echo ""
 	@echo "✓ All tests passed!"
 	@echo ""
 
 test-all: test ## Run all tests (alias for test)
 
-test-core: ## Run tests for taskdog-core only
+test-core: ## Run tests for taskdog-core with coverage
 	@echo "Running taskdog-core tests..."
-	cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/ -v
-
-test-server: ## Run tests for taskdog-server only
-	@echo "Running taskdog-server tests..."
-	cd packages/taskdog-server && PYTHONPATH=src uv run python -m pytest tests/ -v
-
-test-ui: ## Run tests for taskdog-ui only
-	@echo "Running taskdog-ui tests..."
-	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ -v
-
-coverage: ## Run tests with coverage and show report in terminal (sorted by coverage, low to high)
-	@echo "Running tests with coverage..."
-	@echo ""
-	@echo "📊 taskdog-core coverage (sorted: low → high):"
 	cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_core --cov-report=term-missing:skip-covered
-	@echo ""
-	@echo "📊 taskdog-server coverage (sorted: low → high):"
+
+test-server: ## Run tests for taskdog-server with coverage
+	@echo "Running taskdog-server tests..."
 	cd packages/taskdog-server && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_server --cov-report=term-missing:skip-covered
-	@echo ""
-	@echo "📊 taskdog-ui coverage (sorted: low → high):"
+
+test-ui: ## Run tests for taskdog-ui with coverage
+	@echo "Running taskdog-ui tests..."
 	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog --cov-report=term-missing:skip-covered
-	@echo ""
-	@echo "✓ Coverage report complete!"
-	@echo ""
 
 # ============================================================================
 # Code Quality Targets
