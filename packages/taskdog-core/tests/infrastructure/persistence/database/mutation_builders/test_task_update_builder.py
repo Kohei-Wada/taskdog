@@ -1,8 +1,8 @@
 """Unit tests for TaskUpdateBuilder."""
 
-import unittest
 from datetime import datetime
 
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -15,19 +15,18 @@ from taskdog_core.infrastructure.persistence.database.mutation_builders import (
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
 
-class TestTaskUpdateBuilder(unittest.TestCase):
+class TestTaskUpdateBuilder:
     """Test cases for TaskUpdateBuilder."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test database and builder."""
         # Create in-memory SQLite database
         self.engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.mapper = TaskDbMapper()
-
-    def tearDown(self):
-        """Clean up test database."""
+        yield
         Base.metadata.drop_all(self.engine)
         self.engine.dispose()
 
@@ -60,9 +59,9 @@ class TestTaskUpdateBuilder(unittest.TestCase):
             builder.update_task(initial_model, updated_task)
 
             # Verify changes applied
-            self.assertEqual(initial_model.name, "New Name")
-            self.assertEqual(initial_model.priority, 10)
-            self.assertEqual(initial_model.status, "IN_PROGRESS")
+            assert initial_model.name == "New Name"
+            assert initial_model.priority == 10
+            assert initial_model.status == "IN_PROGRESS"
 
     def test_update_task_updates_timestamp(self):
         """Test that update_task automatically sets updated_at timestamp."""
@@ -90,8 +89,8 @@ class TestTaskUpdateBuilder(unittest.TestCase):
             builder.update_task(initial_model, updated_task)
 
             # Timestamp should be updated
-            self.assertNotEqual(initial_model.updated_at, before_update)
-            self.assertGreater(initial_model.updated_at, before_update)
+            assert initial_model.updated_at != before_update
+            assert initial_model.updated_at > before_update
 
     def test_update_task_does_not_commit(self):
         """Test that update_task does not commit the transaction."""
@@ -121,7 +120,7 @@ class TestTaskUpdateBuilder(unittest.TestCase):
         # Changes should not be persisted without commit
         with self.Session() as session:
             model = session.get(TaskModel, 1)
-            self.assertEqual(model.name, "Old Name")  # Still old value
+            assert model.name == "Old Name"  # Still old value
 
     def test_update_tasks_bulk_updates_multiple_tasks(self):
         """Test that update_tasks_bulk updates multiple tasks."""
@@ -172,10 +171,10 @@ class TestTaskUpdateBuilder(unittest.TestCase):
             builder.update_tasks_bulk(models, updated_tasks)
 
             # Verify all updates applied
-            self.assertEqual(models[1].name, "Updated Task 1")
-            self.assertEqual(models[1].priority, 10)
-            self.assertEqual(models[2].name, "Updated Task 2")
-            self.assertEqual(models[2].priority, 8)
+            assert models[1].name == "Updated Task 1"
+            assert models[1].priority == 10
+            assert models[2].name == "Updated Task 2"
+            assert models[2].priority == 8
 
     def test_update_tasks_bulk_skips_nonexistent_tasks(self):
         """Test that update_tasks_bulk skips tasks not in models dict."""
@@ -218,7 +217,7 @@ class TestTaskUpdateBuilder(unittest.TestCase):
             builder.update_tasks_bulk(models, updated_tasks)
 
             # Only task 1 should be updated
-            self.assertEqual(models[1].name, "Updated Task 1")
+            assert models[1].name == "Updated Task 1"
 
     def test_update_task_preserves_all_fields(self):
         """Test that update_task correctly updates all task fields."""
@@ -254,11 +253,11 @@ class TestTaskUpdateBuilder(unittest.TestCase):
             builder.update_task(initial_model, updated_task)
 
             # Verify all fields updated
-            self.assertEqual(initial_model.name, "Complete Task")
-            self.assertEqual(initial_model.priority, 10)
-            self.assertEqual(initial_model.status, "IN_PROGRESS")
-            self.assertEqual(initial_model.estimated_duration, 15.0)
-            self.assertEqual(initial_model.is_fixed, True)
+            assert initial_model.name == "Complete Task"
+            assert initial_model.priority == 10
+            assert initial_model.status == "IN_PROGRESS"
+            assert initial_model.estimated_duration == 15.0
+            assert initial_model.is_fixed is True
 
     def test_update_tasks_bulk_with_empty_list(self):
         """Test that update_tasks_bulk handles empty task list."""
@@ -284,8 +283,4 @@ class TestTaskUpdateBuilder(unittest.TestCase):
             builder.update_tasks_bulk(models, updated_tasks)
 
             # Original values should remain
-            self.assertEqual(models[1].name, "Task 1")
-
-
-if __name__ == "__main__":
-    unittest.main()
+            assert models[1].name == "Task 1"

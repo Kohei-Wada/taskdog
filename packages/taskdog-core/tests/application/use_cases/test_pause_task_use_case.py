@@ -1,6 +1,5 @@
 """Tests for PauseTaskUseCase."""
 
-import unittest
 from datetime import datetime
 
 from taskdog_core.application.dto.single_task_inputs import PauseTaskInput
@@ -12,7 +11,7 @@ from tests.application.use_cases.status_change_test_base import (
 
 
 class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
-    """Test cases for PauseTaskUseCase"""
+    """Test cases for PauseTaskUseCase."""
 
     use_case_class = PauseTaskUseCase
     request_class = PauseTaskInput
@@ -33,7 +32,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = PauseTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertIsNone(result.actual_start)
+        assert result.actual_start is None
 
     def test_execute_clears_actual_end_time(self):
         """Test execute clears actual end timestamp if present."""
@@ -48,7 +47,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = PauseTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertIsNone(result.actual_end)
+        assert result.actual_end is None
 
     def test_execute_with_pending_task_is_idempotent(self):
         """Test execute works correctly when task is already PENDING."""
@@ -59,16 +58,12 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = PauseTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.status, TaskStatus.PENDING)
-        self.assertIsNone(result.actual_start)
-        self.assertIsNone(result.actual_end)
+        assert result.status == TaskStatus.PENDING
+        assert result.actual_start is None
+        assert result.actual_end is None
 
     def test_execute_does_not_modify_finished_task_state(self):
         """Override: PauseTask raises error for finished tasks, so this test is not applicable."""
         # PauseTask validates against finished tasks and raises error before any modifications
         # The base class test for this scenario is covered by test_execute_raises_error_for_finished_tasks
         pass
-
-
-if __name__ == "__main__":
-    unittest.main()

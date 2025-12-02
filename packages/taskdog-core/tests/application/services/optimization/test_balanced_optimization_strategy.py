@@ -1,6 +1,5 @@
 """Tests for BalancedOptimizationStrategy."""
 
-import unittest
 from datetime import datetime
 
 from tests.application.services.optimization.optimization_strategy_test_base import (
@@ -26,7 +25,7 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Verify balanced distribution
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Should start Monday, end Friday
         self.assert_task_scheduled(
@@ -38,9 +37,9 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         # Check daily allocations: 10h / 5 days = 2h/day
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
-        self.assertEqual(len(updated_task.daily_allocations), 5)  # Mon-Fri
+        assert len(updated_task.daily_allocations) == 5  # Mon-Fri
         for _date_str, hours in updated_task.daily_allocations.items():
-            self.assertAlmostEqual(hours, 2.0, places=5)
+            assert abs(hours - 2.0) < 1e-5
 
     def test_balanced_without_deadline_uses_default_period(self):
         """Test that tasks without deadline use a default period (2 weeks)."""
@@ -50,7 +49,7 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Verify task was scheduled
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
         task = result.successful_tasks[0]
 
         # Should be scheduled (using default 2-week period)
@@ -72,13 +71,13 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Verify
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Should respect max_hours_per_day
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
         for _date_str, hours in updated_task.daily_allocations.items():
-            self.assertLessEqual(hours, 6.0)
+            assert hours <= 6.0
 
         # Total should still be 12h
         self.assert_total_allocated_hours(task, 12.0)
@@ -107,7 +106,7 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Both tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # Each task should have daily allocations
         for task in tasks:
@@ -126,8 +125,4 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Task should not be scheduled
-        self.assertEqual(len(result.successful_tasks), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(result.successful_tasks) == 0

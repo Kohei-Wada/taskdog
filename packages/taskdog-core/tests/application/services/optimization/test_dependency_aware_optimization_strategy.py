@@ -1,6 +1,5 @@
 """Tests for DependencyAwareOptimizationStrategy."""
 
-import unittest
 from datetime import date, datetime
 
 from tests.application.services.optimization.optimization_strategy_test_base import (
@@ -32,19 +31,15 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Both tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # Early deadline task should be scheduled first
         updated_low_early = self.repository.get_by_id(low_early.id)
         updated_high_late = self.repository.get_by_id(high_late.id)
         assert updated_low_early is not None and updated_high_late is not None
 
-        self.assertEqual(
-            updated_low_early.planned_start, datetime(2025, 10, 20, 9, 0, 0)
-        )
-        self.assertEqual(
-            updated_high_late.planned_start, datetime(2025, 10, 21, 9, 0, 0)
-        )
+        assert updated_low_early.planned_start == datetime(2025, 10, 20, 9, 0, 0)
+        assert updated_high_late.planned_start == datetime(2025, 10, 21, 9, 0, 0)
 
     def test_dependency_aware_uses_priority_as_tiebreaker(self):
         """Test that priority is used when deadlines are equal."""
@@ -65,15 +60,15 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Both tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # High priority task should be scheduled first (same deadline)
         updated_high = self.repository.get_by_id(high_priority.id)
         updated_low = self.repository.get_by_id(low_priority.id)
         assert updated_high is not None and updated_low is not None
 
-        self.assertEqual(updated_high.planned_start, datetime(2025, 10, 20, 9, 0, 0))
-        self.assertEqual(updated_low.planned_start, datetime(2025, 10, 21, 9, 0, 0))
+        assert updated_high.planned_start == datetime(2025, 10, 20, 9, 0, 0)
+        assert updated_low.planned_start == datetime(2025, 10, 21, 9, 0, 0)
 
     def test_dependency_aware_schedules_no_deadline_tasks_last(self):
         """Test that tasks without deadlines are scheduled last."""
@@ -91,15 +86,15 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Both tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # Task with deadline should be scheduled first
         updated_with = self.repository.get_by_id(with_deadline.id)
         updated_no = self.repository.get_by_id(no_deadline.id)
         assert updated_with is not None and updated_no is not None
 
-        self.assertEqual(updated_with.planned_start, datetime(2025, 10, 20, 9, 0, 0))
-        self.assertEqual(updated_no.planned_start, datetime(2025, 10, 21, 9, 0, 0))
+        assert updated_with.planned_start == datetime(2025, 10, 20, 9, 0, 0)
+        assert updated_no.planned_start == datetime(2025, 10, 21, 9, 0, 0)
 
     def test_dependency_aware_uses_greedy_allocation(self):
         """Test that dependency-aware strategy uses greedy allocation."""
@@ -118,15 +113,18 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         assert updated_task is not None
 
         # Verify greedy allocation: fills each day to maximum
-        self.assertIsNotNone(updated_task.daily_allocations)
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 20), 0.0), 6.0, places=5
+        assert updated_task.daily_allocations is not None
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 20), 0.0) - 6.0)
+            < 1e-5
         )
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 21), 0.0), 6.0, places=5
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 21), 0.0) - 6.0)
+            < 1e-5
         )
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 22), 0.0), 3.0, places=5
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 22), 0.0) - 3.0)
+            < 1e-5
         )
 
     def test_dependency_aware_respects_deadlines(self):
@@ -142,8 +140,8 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Task should fail to schedule
-        self.assertEqual(len(result.successful_tasks), 0)
-        self.assertEqual(len(result.failed_tasks), 1)
+        assert len(result.successful_tasks) == 0
+        assert len(result.failed_tasks) == 1
 
     def test_dependency_aware_handles_multiple_tasks(self):
         """Test that dependency-aware strategy handles multiple tasks correctly."""
@@ -170,7 +168,7 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # All tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 3)
+        assert len(result.successful_tasks) == 3
 
         # Verify scheduling order (deadline first, then priority)
         updated_urgent = self.repository.get_by_id(urgent_low.id)
@@ -183,12 +181,8 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         )
 
         # Earliest deadline should be first
-        self.assertEqual(updated_urgent.planned_start, datetime(2025, 10, 20, 9, 0, 0))
+        assert updated_urgent.planned_start == datetime(2025, 10, 20, 9, 0, 0)
         # Middle deadline should be second
-        self.assertEqual(updated_medium.planned_start, datetime(2025, 10, 21, 9, 0, 0))
+        assert updated_medium.planned_start == datetime(2025, 10, 21, 9, 0, 0)
         # Latest deadline should be last
-        self.assertEqual(updated_high.planned_start, datetime(2025, 10, 22, 9, 0, 0))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert updated_high.planned_start == datetime(2025, 10, 22, 9, 0, 0)

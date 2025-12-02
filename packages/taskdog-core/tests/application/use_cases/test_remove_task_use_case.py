@@ -1,20 +1,21 @@
 """Tests for RemoveTaskUseCase."""
 
-import unittest
 from unittest.mock import MagicMock
+
+import pytest
 
 from taskdog_core.application.dto.single_task_inputs import RemoveTaskInput
 from taskdog_core.application.use_cases.remove_task import RemoveTaskUseCase
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class RemoveTaskUseCaseTest(InMemoryDatabaseTestCase):
+class TestRemoveTaskUseCase:
     """Test cases for RemoveTaskUseCase."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
         """Set up test fixtures."""
-        super().setUp()
+        self.repository = repository
         self.notes_repository = MagicMock()
         self.use_case = RemoveTaskUseCase(self.repository, self.notes_repository)
 
@@ -28,7 +29,7 @@ class RemoveTaskUseCaseTest(InMemoryDatabaseTestCase):
         self.use_case.execute(input_dto)
 
         # Verify task removed
-        self.assertIsNone(self.repository.get_by_id(task.id))
+        assert self.repository.get_by_id(task.id) is None
 
         # Verify notes deletion was called
         self.notes_repository.delete_notes.assert_called_once_with(task.id)
@@ -37,11 +38,7 @@ class RemoveTaskUseCaseTest(InMemoryDatabaseTestCase):
         """Test removing a task that doesn't exist."""
         input_dto = RemoveTaskInput(task_id=999)
 
-        with self.assertRaises(TaskNotFoundException) as context:
+        with pytest.raises(TaskNotFoundException) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertEqual(context.exception.task_id, 999)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert exc_info.value.task_id == 999

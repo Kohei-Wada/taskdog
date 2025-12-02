@@ -1,7 +1,8 @@
 """Tests for LogHoursUseCase."""
 
-import unittest
 from datetime import date
+
+import pytest
 
 from taskdog_core.application.dto.log_hours_input import LogHoursInput
 from taskdog_core.application.use_cases.log_hours import LogHoursUseCase
@@ -9,15 +10,15 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestLogHoursUseCase(InMemoryDatabaseTestCase):
+class TestLogHoursUseCase:
     """Test cases for LogHoursUseCase."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
         """Initialize use case for each test."""
-        super().setUp()
+        self.repository = repository
         self.use_case = LogHoursUseCase(self.repository)
 
     def test_execute_logs_hours(self):
@@ -27,8 +28,8 @@ class TestLogHoursUseCase(InMemoryDatabaseTestCase):
         input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=4.5)
         result = self.use_case.execute(input_dto)
 
-        self.assertIn("2025-01-15", result.actual_daily_hours)
-        self.assertEqual(result.actual_daily_hours["2025-01-15"], 4.5)
+        assert "2025-01-15" in result.actual_daily_hours
+        assert result.actual_daily_hours["2025-01-15"] == 4.5
 
     def test_execute_persists_changes(self):
         """Test execute saves hours to repository."""
@@ -39,32 +40,33 @@ class TestLogHoursUseCase(InMemoryDatabaseTestCase):
 
         # Verify persistence
         retrieved = self.repository.get_by_id(task.id)
-        self.assertIn(date(2025, 1, 15), retrieved.actual_daily_hours)
-        self.assertEqual(retrieved.actual_daily_hours[date(2025, 1, 15)], 3.0)
+        assert date(2025, 1, 15) in retrieved.actual_daily_hours
+        assert retrieved.actual_daily_hours[date(2025, 1, 15)] == 3.0
 
     def test_execute_with_nonexistent_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException."""
         input_dto = LogHoursInput(task_id=999, date="2025-01-15", hours=4.0)
 
-        with self.assertRaises(TaskNotFoundException) as context:
+        with pytest.raises(TaskNotFoundException) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertEqual(context.exception.task_id, 999)
+        assert exc_info.value.task_id == 999
 
-    def test_execute_with_invalid_date_format_raises_error(self):
+    @pytest.mark.parametrize(
+        "invalid_date",
+        ["2025/01/15", "15-01-2025", "invalid", "2025-13-01"],
+        ids=["slash_format", "reversed_format", "invalid_string", "invalid_month"],
+    )
+    def test_execute_with_invalid_date_format_raises_error(self, invalid_date):
         """Test execute with invalid date format raises TaskValidationError."""
         task = self.repository.create(name="Test Task", priority=1)
 
-        # Invalid date formats
-        invalid_dates = ["2025/01/15", "15-01-2025", "invalid", "2025-13-01"]
+        input_dto = LogHoursInput(task_id=task.id, date=invalid_date, hours=4.0)
 
-        for invalid_date in invalid_dates:
-            input_dto = LogHoursInput(task_id=task.id, date=invalid_date, hours=4.0)
+        with pytest.raises(TaskValidationError) as exc_info:
+            self.use_case.execute(input_dto)
 
-            with self.assertRaises(TaskValidationError) as context:
-                self.use_case.execute(input_dto)
-
-            self.assertIn("Invalid date format", str(context.exception))
+        assert "Invalid date format" in str(exc_info.value)
 
     def test_execute_with_zero_hours_raises_error(self):
         """Test execute with zero hours raises TaskValidationError."""
@@ -72,10 +74,10 @@ class TestLogHoursUseCase(InMemoryDatabaseTestCase):
 
         input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=0.0)
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertIn("must be greater than 0", str(context.exception))
+        assert "must be greater than 0" in str(exc_info.value)
 
     def test_execute_with_negative_hours_raises_error(self):
         """Test execute with negative hours raises TaskValidationError."""
@@ -83,10 +85,10 @@ class TestLogHoursUseCase(InMemoryDatabaseTestCase):
 
         input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=-2.5)
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertIn("must be greater than 0", str(context.exception))
+        assert "must be greater than 0" in str(exc_info.value)
 
     def test_execute_overwrites_existing_hours(self):
         """Test execute overwrites hours for same date."""
@@ -101,7 +103,7 @@ class TestLogHoursUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto2)
 
         # Should have new value, not sum
-        self.assertEqual(result.actual_daily_hours["2025-01-15"], 5.0)
+        assert result.actual_daily_hours["2025-01-15"] == 5.0
 
     def test_execute_allows_multiple_dates(self):
         """Test execute allows logging hours for multiple dates."""
@@ -120,11 +122,11 @@ class TestLogHoursUseCase(InMemoryDatabaseTestCase):
 
         # Verify all dates logged
         retrieved = self.repository.get_by_id(task.id)
-        self.assertEqual(len(retrieved.actual_daily_hours), 3)
+        assert len(retrieved.actual_daily_hours) == 3
         for date_str, hours in dates_hours:
             # Convert string to date object for lookup
             date_obj = date.fromisoformat(date_str)
-            self.assertEqual(retrieved.actual_daily_hours[date_obj], hours)
+            assert retrieved.actual_daily_hours[date_obj] == hours
 
     def test_execute_with_decimal_hours(self):
         """Test execute accepts decimal hours."""
@@ -133,8 +135,4 @@ class TestLogHoursUseCase(InMemoryDatabaseTestCase):
         input_dto = LogHoursInput(task_id=task.id, date="2025-01-15", hours=2.75)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.actual_daily_hours["2025-01-15"], 2.75)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.actual_daily_hours["2025-01-15"] == 2.75

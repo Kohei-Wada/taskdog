@@ -1,9 +1,9 @@
 """Tests for SqliteTaskRepository."""
 
-import tempfile
-import unittest
 from datetime import date, datetime
 from pathlib import Path
+
+import pytest
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
@@ -12,52 +12,47 @@ from taskdog_core.infrastructure.persistence.database.sqlite_task_repository imp
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
 
-class TestSqliteTaskRepository(unittest.TestCase):
+class TestSqliteTaskRepository:
     """Test suite for SqliteTaskRepository."""
 
-    def setUp(self) -> None:
+    @pytest.fixture(autouse=True)
+    def setup(self, tmp_path):
         """Set up test fixtures with temporary database."""
-        self.temp_dir = tempfile.mkdtemp()
+        self.temp_dir = tmp_path
         self.db_path = Path(self.temp_dir) / "test_tasks.db"
         self.database_url = f"sqlite:///{self.db_path}"
         self.mapper = TaskDbMapper()
         self.repository = SqliteTaskRepository(self.database_url, self.mapper)
-
-    def tearDown(self) -> None:
-        """Clean up database and close connections."""
+        yield
         self.repository.close()
-        import shutil
 
-        if Path(self.temp_dir).exists():
-            shutil.rmtree(self.temp_dir)
-
-    def test_create_task_generates_id_and_saves(self) -> None:
+    def test_create_task_generates_id_and_saves(self):
         """Test create() generates ID and saves task to database."""
         task = self.repository.create("Test Task", priority=1)
 
-        self.assertEqual(task.id, 1)
-        self.assertEqual(task.name, "Test Task")
-        self.assertEqual(task.priority, 1)
-        self.assertIsNotNone(task.created_at)
-        self.assertIsNotNone(task.updated_at)
+        assert task.id == 1
+        assert task.name == "Test Task"
+        assert task.priority == 1
+        assert task.created_at is not None
+        assert task.updated_at is not None
 
         # Verify persistence
         retrieved = self.repository.get_by_id(1)
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved.name, "Test Task")
+        assert retrieved is not None
+        assert retrieved.name == "Test Task"
 
-    def test_save_creates_new_task(self) -> None:
+    def test_save_creates_new_task(self):
         """Test save() creates a new task in database."""
         task = Task(id=1, name="New Task", priority=1)
 
         self.repository.save(task)
 
         retrieved = self.repository.get_by_id(1)
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved.name, "New Task")
-        self.assertEqual(retrieved.priority, 1)
+        assert retrieved is not None
+        assert retrieved.name == "New Task"
+        assert retrieved.priority == 1
 
-    def test_save_updates_existing_task(self) -> None:
+    def test_save_updates_existing_task(self):
         """Test save() updates an existing task."""
         task = Task(id=1, name="Original", priority=1)
         self.repository.save(task)
@@ -68,10 +63,10 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.repository.save(task)
 
         retrieved = self.repository.get_by_id(1)
-        self.assertEqual(retrieved.name, "Updated")
-        self.assertEqual(retrieved.priority, 5)
+        assert retrieved.name == "Updated"
+        assert retrieved.priority == 5
 
-    def test_get_all_returns_all_tasks(self) -> None:
+    def test_get_all_returns_all_tasks(self):
         """Test get_all() retrieves all tasks from database."""
         task1 = Task(id=1, name="Task 1", priority=1)
         task2 = Task(id=2, name="Task 2", priority=2)
@@ -81,27 +76,27 @@ class TestSqliteTaskRepository(unittest.TestCase):
 
         all_tasks = self.repository.get_all()
 
-        self.assertEqual(len(all_tasks), 2)
-        self.assertEqual(all_tasks[0].name, "Task 1")
-        self.assertEqual(all_tasks[1].name, "Task 2")
+        assert len(all_tasks) == 2
+        assert all_tasks[0].name == "Task 1"
+        assert all_tasks[1].name == "Task 2"
 
-    def test_get_by_id_returns_task(self) -> None:
+    def test_get_by_id_returns_task(self):
         """Test get_by_id() retrieves specific task."""
         task = Task(id=42, name="Specific Task", priority=1)
         self.repository.save(task)
 
         retrieved = self.repository.get_by_id(42)
 
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved.id, 42)
-        self.assertEqual(retrieved.name, "Specific Task")
+        assert retrieved is not None
+        assert retrieved.id == 42
+        assert retrieved.name == "Specific Task"
 
-    def test_get_by_id_returns_none_for_nonexistent(self) -> None:
+    def test_get_by_id_returns_none_for_nonexistent(self):
         """Test get_by_id() returns None for nonexistent task."""
         result = self.repository.get_by_id(999)
-        self.assertIsNone(result)
+        assert result is None
 
-    def test_get_by_ids_returns_multiple_tasks(self) -> None:
+    def test_get_by_ids_returns_multiple_tasks(self):
         """Test get_by_ids() retrieves multiple tasks in one query."""
         task1 = Task(id=1, name="Task 1", priority=1)
         task2 = Task(id=2, name="Task 2", priority=2)
@@ -113,29 +108,29 @@ class TestSqliteTaskRepository(unittest.TestCase):
 
         result = self.repository.get_by_ids([1, 3])
 
-        self.assertEqual(len(result), 2)
-        self.assertIn(1, result)
-        self.assertIn(3, result)
-        self.assertEqual(result[1].name, "Task 1")
-        self.assertEqual(result[3].name, "Task 3")
+        assert len(result) == 2
+        assert 1 in result
+        assert 3 in result
+        assert result[1].name == "Task 1"
+        assert result[3].name == "Task 3"
 
-    def test_get_by_ids_skips_nonexistent_ids(self) -> None:
+    def test_get_by_ids_skips_nonexistent_ids(self):
         """Test get_by_ids() omits nonexistent task IDs."""
         task1 = Task(id=1, name="Task 1", priority=1)
         self.repository.save(task1)
 
         result = self.repository.get_by_ids([1, 999])
 
-        self.assertEqual(len(result), 1)
-        self.assertIn(1, result)
-        self.assertNotIn(999, result)
+        assert len(result) == 1
+        assert 1 in result
+        assert 999 not in result
 
-    def test_get_by_ids_returns_empty_dict_for_empty_list(self) -> None:
+    def test_get_by_ids_returns_empty_dict_for_empty_list(self):
         """Test get_by_ids() returns empty dict for empty input."""
         result = self.repository.get_by_ids([])
-        self.assertEqual(result, {})
+        assert result == {}
 
-    def test_save_all_saves_multiple_tasks(self) -> None:
+    def test_save_all_saves_multiple_tasks(self):
         """Test save_all() saves multiple tasks in one transaction."""
         task1 = Task(id=1, name="Task 1", priority=1)
         task2 = Task(id=2, name="Task 2", priority=2)
@@ -144,15 +139,15 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.repository.save_all([task1, task2, task3])
 
         all_tasks = self.repository.get_all()
-        self.assertEqual(len(all_tasks), 3)
+        assert len(all_tasks) == 3
 
-    def test_save_all_with_empty_list(self) -> None:
+    def test_save_all_with_empty_list(self):
         """Test save_all() handles empty list gracefully."""
         self.repository.save_all([])
         all_tasks = self.repository.get_all()
-        self.assertEqual(len(all_tasks), 0)
+        assert len(all_tasks) == 0
 
-    def test_delete_removes_task(self) -> None:
+    def test_delete_removes_task(self):
         """Test delete() removes task from database."""
         task = Task(id=1, name="To Delete", priority=1)
         self.repository.save(task)
@@ -160,19 +155,19 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.repository.delete(1)
 
         retrieved = self.repository.get_by_id(1)
-        self.assertIsNone(retrieved)
+        assert retrieved is None
 
-    def test_delete_nonexistent_task_does_not_error(self) -> None:
+    def test_delete_nonexistent_task_does_not_error(self):
         """Test delete() handles nonexistent task gracefully."""
         # Should not raise error
         self.repository.delete(999)
 
-    def test_generate_next_id_starts_at_one(self) -> None:
+    def test_generate_next_id_starts_at_one(self):
         """Test generate_next_id() returns 1 for empty database."""
         next_id = self.repository.generate_next_id()
-        self.assertEqual(next_id, 1)
+        assert next_id == 1
 
-    def test_generate_next_id_increments(self) -> None:
+    def test_generate_next_id_increments(self):
         """Test generate_next_id() increments from max ID."""
         task1 = Task(id=1, name="Task 1", priority=1)
         task2 = Task(id=5, name="Task 5", priority=1)
@@ -181,9 +176,9 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.repository.save(task2)
 
         next_id = self.repository.generate_next_id()
-        self.assertEqual(next_id, 6)
+        assert next_id == 6
 
-    def test_complex_field_serialization(self) -> None:
+    def test_complex_field_serialization(self):
         """Test complex fields (daily_allocations, tags, etc.) are persisted correctly."""
         task = Task(
             id=1,
@@ -198,15 +193,15 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.repository.save(task)
         retrieved = self.repository.get_by_id(1)
 
-        self.assertEqual(
-            retrieved.daily_allocations,
-            {date(2025, 1, 15): 2.0, date(2025, 1, 16): 3.0},
-        )
-        self.assertEqual(retrieved.actual_daily_hours, {date(2025, 1, 15): 1.5})
-        self.assertEqual(retrieved.depends_on, [2, 3, 5])
-        self.assertEqual(retrieved.tags, ["urgent", "backend"])
+        assert retrieved.daily_allocations == {
+            date(2025, 1, 15): 2.0,
+            date(2025, 1, 16): 3.0,
+        }
+        assert retrieved.actual_daily_hours == {date(2025, 1, 15): 1.5}
+        assert retrieved.depends_on == [2, 3, 5]
+        assert retrieved.tags == ["urgent", "backend"]
 
-    def test_datetime_field_persistence(self) -> None:
+    def test_datetime_field_persistence(self):
         """Test datetime fields are persisted and retrieved correctly."""
         now = datetime(2025, 1, 15, 10, 30, 0)
         deadline = datetime(2025, 1, 20, 18, 0, 0)
@@ -227,20 +222,20 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.repository.save(task)
         retrieved = self.repository.get_by_id(1)
 
-        self.assertEqual(retrieved.created_at, now)
-        self.assertEqual(retrieved.deadline, deadline)
-        self.assertEqual(retrieved.planned_start, datetime(2025, 1, 16, 9, 0, 0))
+        assert retrieved.created_at == now
+        assert retrieved.deadline == deadline
+        assert retrieved.planned_start == datetime(2025, 1, 16, 9, 0, 0)
 
-    def test_status_enum_persistence(self) -> None:
+    def test_status_enum_persistence(self):
         """Test TaskStatus enum is persisted correctly."""
         task = Task(id=1, name="Status Test", priority=1, status=TaskStatus.IN_PROGRESS)
 
         self.repository.save(task)
         retrieved = self.repository.get_by_id(1)
 
-        self.assertEqual(retrieved.status, TaskStatus.IN_PROGRESS)
+        assert retrieved.status == TaskStatus.IN_PROGRESS
 
-    def test_boolean_field_persistence(self) -> None:
+    def test_boolean_field_persistence(self):
         """Test boolean fields are persisted correctly."""
         task = Task(
             id=1, name="Boolean Test", priority=1, is_fixed=True, is_archived=True
@@ -249,10 +244,10 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.repository.save(task)
         retrieved = self.repository.get_by_id(1)
 
-        self.assertTrue(retrieved.is_fixed)
-        self.assertTrue(retrieved.is_archived)
+        assert retrieved.is_fixed is True
+        assert retrieved.is_archived is True
 
-    def test_optional_fields_with_none(self) -> None:
+    def test_optional_fields_with_none(self):
         """Test optional fields can be None."""
         task = Task(
             id=1,
@@ -267,12 +262,12 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.repository.save(task)
         retrieved = self.repository.get_by_id(1)
 
-        self.assertIsNone(retrieved.planned_start)
-        self.assertIsNone(retrieved.planned_end)
-        self.assertIsNone(retrieved.deadline)
-        self.assertIsNone(retrieved.estimated_duration)
+        assert retrieved.planned_start is None
+        assert retrieved.planned_end is None
+        assert retrieved.deadline is None
+        assert retrieved.estimated_duration is None
 
-    def test_persistence_across_repository_instances(self) -> None:
+    def test_persistence_across_repository_instances(self):
         """Test data persists across different repository instances."""
         task = Task(id=1, name="Persistent Task", priority=1)
         self.repository.save(task)
@@ -284,12 +279,12 @@ class TestSqliteTaskRepository(unittest.TestCase):
         new_repository = SqliteTaskRepository(self.database_url, self.mapper)
 
         retrieved = new_repository.get_by_id(1)
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(retrieved.name, "Persistent Task")
+        assert retrieved is not None
+        assert retrieved.name == "Persistent Task"
 
         new_repository.close()
 
-    def test_empty_complex_fields_persistence(self) -> None:
+    def test_empty_complex_fields_persistence(self):
         """Test empty complex fields (empty dicts/lists) are persisted correctly."""
         task = Task(
             id=1,
@@ -304,12 +299,12 @@ class TestSqliteTaskRepository(unittest.TestCase):
         self.repository.save(task)
         retrieved = self.repository.get_by_id(1)
 
-        self.assertEqual(retrieved.daily_allocations, {})
-        self.assertEqual(retrieved.actual_daily_hours, {})
-        self.assertEqual(retrieved.depends_on, [])
-        self.assertEqual(retrieved.tags, [])
+        assert retrieved.daily_allocations == {}
+        assert retrieved.actual_daily_hours == {}
+        assert retrieved.depends_on == []
+        assert retrieved.tags == []
 
-    def test_get_tag_counts_returns_correct_counts(self) -> None:
+    def test_get_tag_counts_returns_correct_counts(self):
         """Test get_tag_counts returns accurate counts using SQL (Phase 3)."""
         # Create tasks with various tags
         _ = self.repository.create("Task 1", priority=1, tags=["urgent", "backend"])
@@ -321,17 +316,17 @@ class TestSqliteTaskRepository(unittest.TestCase):
         tag_counts = self.repository.get_tag_counts()
 
         # Verify counts
-        self.assertEqual(tag_counts.get("urgent"), 2)
-        self.assertEqual(tag_counts.get("backend"), 2)
-        self.assertEqual(tag_counts.get("frontend"), 1)
-        self.assertEqual(len(tag_counts), 3)  # Only 3 unique tags
+        assert tag_counts.get("urgent") == 2
+        assert tag_counts.get("backend") == 2
+        assert tag_counts.get("frontend") == 1
+        assert len(tag_counts) == 3  # Only 3 unique tags
 
-    def test_get_tag_counts_with_no_tasks(self) -> None:
+    def test_get_tag_counts_with_no_tasks(self):
         """Test get_tag_counts returns empty dict when no tasks exist (Phase 3)."""
         tag_counts = self.repository.get_tag_counts()
-        self.assertEqual(tag_counts, {})
+        assert tag_counts == {}
 
-    def test_get_task_ids_by_tags_or_logic(self) -> None:
+    def test_get_task_ids_by_tags_or_logic(self):
         """Test get_task_ids_by_tags with OR logic (Phase 3)."""
         # Create tasks with various tags
         task1 = self.repository.create("Task 1", priority=1, tags=["urgent", "backend"])
@@ -347,13 +342,13 @@ class TestSqliteTaskRepository(unittest.TestCase):
         )
 
         # Should return task1 (has both), task2 (has urgent), task3 (has backend)
-        self.assertEqual(len(task_ids), 3)
-        self.assertIn(task1.id, task_ids)
-        self.assertIn(task2.id, task_ids)
-        self.assertIn(task3.id, task_ids)
-        self.assertNotIn(task4.id, task_ids)
+        assert len(task_ids) == 3
+        assert task1.id in task_ids
+        assert task2.id in task_ids
+        assert task3.id in task_ids
+        assert task4.id not in task_ids
 
-    def test_get_task_ids_by_tags_and_logic(self) -> None:
+    def test_get_task_ids_by_tags_and_logic(self):
         """Test get_task_ids_by_tags with AND logic (Phase 3)."""
         # Create tasks with various tags
         task1 = self.repository.create("Task 1", priority=1, tags=["urgent", "backend"])
@@ -369,13 +364,13 @@ class TestSqliteTaskRepository(unittest.TestCase):
         )
 
         # Should return task1 and task2 (both have urgent AND backend)
-        self.assertEqual(len(task_ids), 2)
-        self.assertIn(task1.id, task_ids)
-        self.assertIn(task2.id, task_ids)
-        self.assertNotIn(task3.id, task_ids)
-        self.assertNotIn(task4.id, task_ids)
+        assert len(task_ids) == 2
+        assert task1.id in task_ids
+        assert task2.id in task_ids
+        assert task3.id not in task_ids
+        assert task4.id not in task_ids
 
-    def test_get_task_ids_by_tags_with_empty_list(self) -> None:
+    def test_get_task_ids_by_tags_with_empty_list(self):
         """Test get_task_ids_by_tags with empty tag list returns all tasks (Phase 3)."""
         task1 = self.repository.create("Task 1", priority=1, tags=["urgent"])
         task2 = self.repository.create("Task 2", priority=1, tags=["backend"])
@@ -384,12 +379,12 @@ class TestSqliteTaskRepository(unittest.TestCase):
         # Empty tag list should return all task IDs
         task_ids = self.repository.get_task_ids_by_tags([], match_all=False)
 
-        self.assertEqual(len(task_ids), 3)
-        self.assertIn(task1.id, task_ids)
-        self.assertIn(task2.id, task_ids)
-        self.assertIn(task3.id, task_ids)
+        assert len(task_ids) == 3
+        assert task1.id in task_ids
+        assert task2.id in task_ids
+        assert task3.id in task_ids
 
-    def test_get_task_ids_by_tags_with_nonexistent_tag(self) -> None:
+    def test_get_task_ids_by_tags_with_nonexistent_tag(self):
         """Test get_task_ids_by_tags with nonexistent tag returns empty (Phase 3)."""
         _ = self.repository.create("Task 1", priority=1, tags=["urgent"])
         _ = self.repository.create("Task 2", priority=1, tags=["backend"])
@@ -399,13 +394,13 @@ class TestSqliteTaskRepository(unittest.TestCase):
             ["nonexistent"], match_all=False
         )
 
-        self.assertEqual(task_ids, [])
+        assert task_ids == []
 
     # ====================================================================
     # Phase 4: Edge Case Tests
     # ====================================================================
 
-    def test_transaction_rollback_does_not_orphan_tags(self) -> None:
+    def test_transaction_rollback_does_not_orphan_tags(self):
         """Test that rolling back task creation doesn't leave orphaned tags (Phase 4)."""
         # Create a task with tags in a session
         with self.repository.Session() as session:
@@ -447,13 +442,13 @@ class TestSqliteTaskRepository(unittest.TestCase):
                 TagModel.name.in_(["rollback-test-1", "rollback-test-2"])
             )
             tags = session.scalars(stmt).all()
-            self.assertEqual(len(tags), 0)
+            assert len(tags) == 0
 
         # Verify task was not saved
         retrieved = self.repository.get_by_id(999)
-        self.assertIsNone(retrieved)
+        assert retrieved is None
 
-    def test_failed_tag_update_does_not_lose_existing_tags(self) -> None:
+    def test_failed_tag_update_does_not_lose_existing_tags(self):
         """Test that failed tag update preserves original tags (Phase 4)."""
         # Create task with tags
         task = self.repository.create(
@@ -482,10 +477,10 @@ class TestSqliteTaskRepository(unittest.TestCase):
 
         # Verify original tags are still there (get_by_id bypasses cache)
         retrieved = self.repository.get_by_id(task.id)
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(set(retrieved.tags), set(original_tags))
+        assert retrieved is not None
+        assert set(retrieved.tags) == set(original_tags)
 
-    def test_task_with_100_tags(self) -> None:
+    def test_task_with_100_tags(self):
         """Test task with 100 tags (large tag set) (Phase 4)."""
         # Create task with 100 unique tags
         tags = [f"tag-{i:03d}" for i in range(100)]
@@ -493,11 +488,11 @@ class TestSqliteTaskRepository(unittest.TestCase):
 
         # Verify all tags were saved
         retrieved = self.repository.get_by_id(task.id)
-        self.assertIsNotNone(retrieved)
-        self.assertEqual(len(retrieved.tags), 100)
-        self.assertEqual(set(retrieved.tags), set(tags))
+        assert retrieved is not None
+        assert len(retrieved.tags) == 100
+        assert set(retrieved.tags) == set(tags)
 
-    def test_repository_with_1000_unique_tags(self) -> None:
+    def test_repository_with_1000_unique_tags(self):
         """Test repository performance with 1000+ unique tags (Phase 4)."""
         # Create 100 tasks, each with 10 unique tags (1000 total unique tags)
         for i in range(100):
@@ -507,14 +502,14 @@ class TestSqliteTaskRepository(unittest.TestCase):
         # Test get_tag_counts performance
         tag_counts = self.repository.get_tag_counts()
         # Should have at least 10 categories + 100 tasks + 5 batches = ~115 unique tags
-        self.assertGreater(len(tag_counts), 100)
+        assert len(tag_counts) > 100
 
         # Test filter by tags performance
         task_ids = self.repository.get_task_ids_by_tags(["category-0"], match_all=False)
         # Should find 10 tasks in category-0 (tasks 0-9)
-        self.assertEqual(len(task_ids), 10)
+        assert len(task_ids) == 10
 
-    def test_concurrent_tag_creation_same_name(self) -> None:
+    def test_concurrent_tag_creation_same_name(self):
         """Test creating same tag from multiple tasks doesn't cause duplicates (Phase 4)."""
         # Create multiple tasks with the same tag
         # TagResolver should handle this via uniqueness constraint
@@ -525,13 +520,13 @@ class TestSqliteTaskRepository(unittest.TestCase):
         task3 = self.repository.create("Task 3", priority=1, tags=tags)
 
         # Verify all tasks have the tag
-        self.assertEqual(task1.tags, ["shared-tag"])
-        self.assertEqual(task2.tags, ["shared-tag"])
-        self.assertEqual(task3.tags, ["shared-tag"])
+        assert task1.tags == ["shared-tag"]
+        assert task2.tags == ["shared-tag"]
+        assert task3.tags == ["shared-tag"]
 
         # Verify tag count shows 3 tasks for this tag
         tag_counts = self.repository.get_tag_counts()
-        self.assertEqual(tag_counts.get("shared-tag"), 3)
+        assert tag_counts.get("shared-tag") == 3
 
         # Verify only one TagModel exists with this name
         with self.repository.Session() as session:
@@ -541,9 +536,9 @@ class TestSqliteTaskRepository(unittest.TestCase):
 
             stmt = select(TagModel).where(TagModel.name == "shared-tag")
             tag_models = session.scalars(stmt).all()
-            self.assertEqual(len(tag_models), 1)
+            assert len(tag_models) == 1
 
-    def test_count_tasks_returns_total_count(self) -> None:
+    def test_count_tasks_returns_total_count(self):
         """Test count_tasks() returns total task count without filters."""
         # Create test tasks
         task1 = Task(id=1, name="Task 1", priority=1)
@@ -554,13 +549,13 @@ class TestSqliteTaskRepository(unittest.TestCase):
 
         # Count all tasks (including archived)
         total_count = self.repository.count_tasks()
-        self.assertEqual(total_count, 3)
+        assert total_count == 3
 
         # Count non-archived tasks only
         non_archived_count = self.repository.count_tasks(include_archived=False)
-        self.assertEqual(non_archived_count, 2)
+        assert non_archived_count == 2
 
-    def test_count_tasks_with_status_filter(self) -> None:
+    def test_count_tasks_with_status_filter(self):
         """Test count_tasks() with status filter."""
         # Create tasks with different statuses
         task1 = Task(id=1, name="Pending", priority=1, status=TaskStatus.PENDING)
@@ -576,17 +571,17 @@ class TestSqliteTaskRepository(unittest.TestCase):
 
         # Count PENDING tasks
         pending_count = self.repository.count_tasks(status=TaskStatus.PENDING)
-        self.assertEqual(pending_count, 2)
+        assert pending_count == 2
 
         # Count COMPLETED tasks
         completed_count = self.repository.count_tasks(status=TaskStatus.COMPLETED)
-        self.assertEqual(completed_count, 1)
+        assert completed_count == 1
 
         # Count IN_PROGRESS tasks
         in_progress_count = self.repository.count_tasks(status=TaskStatus.IN_PROGRESS)
-        self.assertEqual(in_progress_count, 1)
+        assert in_progress_count == 1
 
-    def test_count_tasks_with_tag_filter(self) -> None:
+    def test_count_tasks_with_tag_filter(self):
         """Test count_tasks() with tag filter (OR and AND logic)."""
         # Create tasks with tags
         task1 = Task(id=1, name="Task 1", priority=1, tags=["urgent"])
@@ -600,19 +595,19 @@ class TestSqliteTaskRepository(unittest.TestCase):
         or_count = self.repository.count_tasks(
             tags=["urgent", "backend"], match_all_tags=False
         )
-        self.assertEqual(or_count, 3)  # task1, task2, task3
+        assert or_count == 3  # task1, task2, task3
 
         # AND logic: tasks with 'urgent' AND 'backend'
         and_count = self.repository.count_tasks(
             tags=["urgent", "backend"], match_all_tags=True
         )
-        self.assertEqual(and_count, 1)  # only task2
+        assert and_count == 1  # only task2
 
         # Single tag filter
         urgent_count = self.repository.count_tasks(tags=["urgent"])
-        self.assertEqual(urgent_count, 2)  # task1, task2
+        assert urgent_count == 2  # task1, task2
 
-    def test_count_tasks_with_date_filter(self) -> None:
+    def test_count_tasks_with_date_filter(self):
         """Test count_tasks() with date range filter."""
         # Create tasks with various dates
         task1 = Task(id=1, name="Task 1", priority=1, deadline=date(2025, 1, 15))
@@ -626,17 +621,17 @@ class TestSqliteTaskRepository(unittest.TestCase):
         feb_count = self.repository.count_tasks(
             start_date=date(2025, 2, 1), end_date=date(2025, 2, 28)
         )
-        self.assertEqual(feb_count, 2)  # task2, task4
+        assert feb_count == 2  # task2, task4
 
         # Count tasks after Feb 1
         after_feb_count = self.repository.count_tasks(start_date=date(2025, 2, 1))
-        self.assertEqual(after_feb_count, 3)  # task2, task3, task4
+        assert after_feb_count == 3  # task2, task3, task4
 
         # Count tasks before Feb 28
         before_feb_count = self.repository.count_tasks(end_date=date(2025, 2, 28))
-        self.assertEqual(before_feb_count, 3)  # task1, task2, task4
+        assert before_feb_count == 3  # task1, task2, task4
 
-    def test_count_tasks_with_combined_filters(self) -> None:
+    def test_count_tasks_with_combined_filters(self):
         """Test count_tasks() with multiple filters combined."""
         # Create diverse test data
         task1 = Task(
@@ -669,21 +664,21 @@ class TestSqliteTaskRepository(unittest.TestCase):
         pending_non_archived = self.repository.count_tasks(
             status=TaskStatus.PENDING, include_archived=False
         )
-        self.assertEqual(pending_non_archived, 2)  # task1, task4
+        assert pending_non_archived == 2  # task1, task4
 
         # Count non-archived tasks with 'urgent' tag
         urgent_non_archived = self.repository.count_tasks(
             tags=["urgent"], include_archived=False
         )
-        self.assertEqual(urgent_non_archived, 2)  # task1, task2
+        assert urgent_non_archived == 2  # task1, task2
 
         # Count non-archived PENDING tasks with 'urgent' tag
         complex_filter = self.repository.count_tasks(
             status=TaskStatus.PENDING, tags=["urgent"], include_archived=False
         )
-        self.assertEqual(complex_filter, 1)  # only task1
+        assert complex_filter == 1  # only task1
 
-    def test_count_tasks_with_tags_returns_tagged_count(self) -> None:
+    def test_count_tasks_with_tags_returns_tagged_count(self):
         """Test count_tasks_with_tags() returns count of tasks with at least one tag."""
         # Create tasks with and without tags
         task1 = Task(id=1, name="Tagged 1", priority=1, tags=["urgent"])
@@ -696,9 +691,9 @@ class TestSqliteTaskRepository(unittest.TestCase):
 
         # Count tasks with at least one tag
         tagged_count = self.repository.count_tasks_with_tags()
-        self.assertEqual(tagged_count, 3)  # task1, task2, task4
+        assert tagged_count == 3  # task1, task2, task4
 
-    def test_count_tasks_with_tags_returns_zero_when_no_tags(self) -> None:
+    def test_count_tasks_with_tags_returns_zero_when_no_tags(self):
         """Test count_tasks_with_tags() returns 0 when no tasks have tags."""
         # Create tasks without tags
         task1 = Task(id=1, name="No tags 1", priority=1)
@@ -708,9 +703,9 @@ class TestSqliteTaskRepository(unittest.TestCase):
 
         # Should return 0
         tagged_count = self.repository.count_tasks_with_tags()
-        self.assertEqual(tagged_count, 0)
+        assert tagged_count == 0
 
-    def test_count_tasks_consistency_with_get_filtered(self) -> None:
+    def test_count_tasks_consistency_with_get_filtered(self):
         """Test count_tasks() returns same count as len(get_filtered())."""
         # Create diverse test data
         task1 = Task(
@@ -741,12 +736,6 @@ class TestSqliteTaskRepository(unittest.TestCase):
         for filters in test_cases:
             count = self.repository.count_tasks(**filters)
             filtered_tasks = self.repository.get_filtered(**filters)
-            self.assertEqual(
-                count,
-                len(filtered_tasks),
-                f"count_tasks({filters}) != len(get_filtered({filters}))",
+            assert count == len(filtered_tasks), (
+                f"count_tasks({filters}) != len(get_filtered({filters}))"
             )
-
-
-if __name__ == "__main__":
-    unittest.main()

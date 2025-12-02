@@ -1,6 +1,5 @@
 """Tests for GreedyOptimizationStrategy."""
 
-import unittest
 from datetime import date, datetime
 
 from tests.application.services.optimization.optimization_strategy_test_base import (
@@ -26,7 +25,7 @@ class TestGreedyOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Verify greedy front-loading
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Should start on Monday, end on Tuesday (12h / 6h per day = 2 days)
         self.assert_task_scheduled(
@@ -38,12 +37,14 @@ class TestGreedyOptimizationStrategy(BaseOptimizationStrategyTest):
         # Check daily allocations: greedy fills each day to max
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
-        self.assertEqual(len(updated_task.daily_allocations), 2)  # Mon-Tue
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 20), 0.0), 6.0, places=5
+        assert len(updated_task.daily_allocations) == 2  # Mon-Tue
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 20), 0.0) - 6.0)
+            < 1e-5
         )
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 21), 0.0), 6.0, places=5
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 21), 0.0) - 6.0)
+            < 1e-5
         )
 
     def test_greedy_handles_partial_day(self):
@@ -60,11 +61,13 @@ class TestGreedyOptimizationStrategy(BaseOptimizationStrategyTest):
         # Check daily allocations
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 20), 0.0), 6.0, places=5
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 20), 0.0) - 6.0)
+            < 1e-5
         )
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 21), 0.0), 4.0, places=5
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 21), 0.0) - 4.0)
+            < 1e-5
         )
 
     def test_greedy_skips_weekends(self):
@@ -89,12 +92,10 @@ class TestGreedyOptimizationStrategy(BaseOptimizationStrategyTest):
         # Verify no weekend allocations
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
-        self.assertIsNone(
-            updated_task.daily_allocations.get(date(2025, 10, 25))
+        assert (
+            updated_task.daily_allocations.get(date(2025, 10, 25)) is None
         )  # Saturday
-        self.assertIsNone(
-            updated_task.daily_allocations.get(date(2025, 10, 26))
-        )  # Sunday
+        assert updated_task.daily_allocations.get(date(2025, 10, 26)) is None  # Sunday
 
     def test_greedy_respects_deadline(self):
         """Test that greedy strategy respects task deadlines."""
@@ -108,8 +109,8 @@ class TestGreedyOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should fail to schedule
-        self.assertEqual(len(result.successful_tasks), 0)
-        self.assertEqual(len(result.failed_tasks), 1)
+        assert len(result.successful_tasks) == 0
+        assert len(result.failed_tasks) == 1
 
     def test_greedy_respects_fixed_tasks_in_daily_limit(self):
         """Test that greedy strategy accounts for fixed tasks when calculating available hours."""
@@ -147,7 +148,7 @@ class TestGreedyOptimizationStrategy(BaseOptimizationStrategyTest):
         )
 
         # Verify regular task was scheduled
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Refetch regular task from repository to get updated state
         updated_regular = self.repository.get_by_id(regular_task.id)
@@ -155,30 +156,21 @@ class TestGreedyOptimizationStrategy(BaseOptimizationStrategyTest):
 
         # Verify daily allocations respect fixed task hours
         # Each day should have max 2h for regular task (6.0 - 4.0 fixed)
-        self.assertAlmostEqual(
-            updated_regular.daily_allocations.get(date(2025, 10, 20), 0.0),
-            2.0,
-            places=5,
+        assert (
+            abs(updated_regular.daily_allocations.get(date(2025, 10, 20), 0.0) - 2.0)
+            < 1e-5
         )
-        self.assertAlmostEqual(
-            updated_regular.daily_allocations.get(date(2025, 10, 21), 0.0),
-            2.0,
-            places=5,
+        assert (
+            abs(updated_regular.daily_allocations.get(date(2025, 10, 21), 0.0) - 2.0)
+            < 1e-5
         )
-        self.assertAlmostEqual(
-            updated_regular.daily_allocations.get(date(2025, 10, 22), 0.0),
-            2.0,
-            places=5,
+        assert (
+            abs(updated_regular.daily_allocations.get(date(2025, 10, 22), 0.0) - 2.0)
+            < 1e-5
         )
 
         # Verify total daily allocations don't exceed max_hours_per_day
         for date_str, hours in result.daily_allocations.items():
-            self.assertLessEqual(
-                hours,
-                6.0,
-                f"Total hours on {date_str} ({hours}h) exceeds max_hours_per_day (6.0h)",
+            assert hours <= 6.0, (
+                f"Total hours on {date_str} ({hours}h) exceeds max_hours_per_day (6.0h)"
             )
-
-
-if __name__ == "__main__":
-    unittest.main()

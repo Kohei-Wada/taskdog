@@ -1,6 +1,5 @@
 """Tests for PriorityFirstOptimizationStrategy."""
 
-import unittest
 from datetime import datetime
 
 from tests.application.services.optimization.optimization_strategy_test_base import (
@@ -38,7 +37,7 @@ class TestPriorityFirstOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # All should be scheduled
-        self.assertEqual(len(result.successful_tasks), 3)
+        assert len(result.successful_tasks) == 3
 
         # Verify scheduling order: high priority should start earliest
         # Refetch tasks from repository to get updated state
@@ -52,11 +51,11 @@ class TestPriorityFirstOptimizationStrategy(BaseOptimizationStrategyTest):
         )
 
         # High priority starts first (Monday)
-        self.assertEqual(updated_high.planned_start, datetime(2025, 10, 20, 9, 0, 0))
+        assert updated_high.planned_start == datetime(2025, 10, 20, 9, 0, 0)
         # Medium priority starts second (Tuesday)
-        self.assertEqual(updated_medium.planned_start, datetime(2025, 10, 21, 9, 0, 0))
+        assert updated_medium.planned_start == datetime(2025, 10, 21, 9, 0, 0)
         # Low priority starts last (Wednesday)
-        self.assertEqual(updated_low.planned_start, datetime(2025, 10, 22, 9, 0, 0))
+        assert updated_low.planned_start == datetime(2025, 10, 22, 9, 0, 0)
 
     def test_priority_first_ignores_deadlines(self):
         """Test that priority_first ignores deadlines and focuses only on priority."""
@@ -78,7 +77,7 @@ class TestPriorityFirstOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Both should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # Refetch tasks from repository to get updated state
         updated_high_far = self.repository.get_by_id(high_priority_far.id)
@@ -86,14 +85,6 @@ class TestPriorityFirstOptimizationStrategy(BaseOptimizationStrategyTest):
         assert updated_high_far is not None and updated_low_urgent is not None
 
         # High priority task scheduled first despite far deadline
-        self.assertEqual(
-            updated_high_far.planned_start, datetime(2025, 10, 20, 9, 0, 0)
-        )
+        assert updated_high_far.planned_start == datetime(2025, 10, 20, 9, 0, 0)
         # Urgent task scheduled second despite earlier deadline
-        self.assertEqual(
-            updated_low_urgent.planned_start, datetime(2025, 10, 21, 9, 0, 0)
-        )
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert updated_low_urgent.planned_start == datetime(2025, 10, 21, 9, 0, 0)

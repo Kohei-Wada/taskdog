@@ -1,6 +1,6 @@
 """Tests for AddDependencyUseCase."""
 
-import unittest
+import pytest
 
 from taskdog_core.application.dto.manage_dependencies_input import AddDependencyInput
 from taskdog_core.application.use_cases.add_dependency import AddDependencyUseCase
@@ -8,15 +8,15 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
+class TestAddDependencyUseCase:
     """Test cases for AddDependencyUseCase."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
         """Initialize use case for each test."""
-        super().setUp()
+        self.repository = repository
         self.use_case = AddDependencyUseCase(self.repository)
 
     def test_execute_adds_dependency(self):
@@ -28,8 +28,8 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
         input_dto = AddDependencyInput(task_id=task2.id, depends_on_id=task1.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertIn(task1.id, result.depends_on)
-        self.assertEqual(len(result.depends_on), 1)
+        assert task1.id in result.depends_on
+        assert len(result.depends_on) == 1
 
     def test_execute_persists_changes(self):
         """Test execute saves dependency to repository."""
@@ -41,7 +41,7 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
 
         # Verify persistence
         retrieved = self.repository.get_by_id(task2.id)
-        self.assertIn(task1.id, retrieved.depends_on)
+        assert task1.id in retrieved.depends_on
 
     def test_execute_with_nonexistent_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException."""
@@ -49,10 +49,10 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
 
         input_dto = AddDependencyInput(task_id=999, depends_on_id=task1.id)
 
-        with self.assertRaises(TaskNotFoundException) as context:
+        with pytest.raises(TaskNotFoundException) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertEqual(context.exception.task_id, 999)
+        assert exc_info.value.task_id == 999
 
     def test_execute_with_nonexistent_dependency_raises_error(self):
         """Test execute with non-existent dependency raises TaskNotFoundException."""
@@ -60,10 +60,10 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
 
         input_dto = AddDependencyInput(task_id=task1.id, depends_on_id=999)
 
-        with self.assertRaises(TaskNotFoundException) as context:
+        with pytest.raises(TaskNotFoundException) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertEqual(context.exception.task_id, 999)
+        assert exc_info.value.task_id == 999
 
     def test_execute_prevents_self_dependency(self):
         """Test execute prevents task from depending on itself."""
@@ -71,10 +71,10 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
 
         input_dto = AddDependencyInput(task_id=task1.id, depends_on_id=task1.id)
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertIn("cannot depend on itself", str(context.exception))
+        assert "cannot depend on itself" in str(exc_info.value)
 
     def test_execute_prevents_duplicate_dependency(self):
         """Test execute prevents adding same dependency twice."""
@@ -86,10 +86,10 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
         self.use_case.execute(input_dto)
 
         # Try to add again
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertIn("already depends on", str(context.exception))
+        assert "already depends on" in str(exc_info.value)
 
     def test_execute_detects_direct_circular_dependency(self):
         """Test execute detects direct circular dependency (A→B, B→A)."""
@@ -103,12 +103,12 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
         # Try to make task2 depend on task1 (would create 2→1→2)
         input_dto2 = AddDependencyInput(task_id=task2.id, depends_on_id=task1.id)
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto2)
 
-        error_msg = str(context.exception)
-        self.assertIn("Circular dependency", error_msg)
-        self.assertIn("2 → 1 → 2", error_msg)
+        error_msg = str(exc_info.value)
+        assert "Circular dependency" in error_msg
+        assert "2 → 1 → 2" in error_msg
 
     def test_execute_detects_indirect_circular_dependency(self):
         """Test execute detects indirect circular dependency (A→B→C, C→A)."""
@@ -126,12 +126,12 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
         # Try to make task3 depend on task1 (would create 3→1→2→3)
         input_dto3 = AddDependencyInput(task_id=task3.id, depends_on_id=task1.id)
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto3)
 
-        error_msg = str(context.exception)
-        self.assertIn("Circular dependency", error_msg)
-        self.assertIn("3 → 1 → 2 → 3", error_msg)
+        error_msg = str(exc_info.value)
+        assert "Circular dependency" in error_msg
+        assert "3 → 1 → 2 → 3" in error_msg
 
     def test_execute_detects_long_circular_dependency(self):
         """Test execute detects long circular dependency (A→B→C→D, D→A)."""
@@ -153,12 +153,12 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
         # Try to make task4 depend on task1 (would create 4→1→2→3→4)
         input_dto4 = AddDependencyInput(task_id=task4.id, depends_on_id=task1.id)
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto4)
 
-        error_msg = str(context.exception)
-        self.assertIn("Circular dependency", error_msg)
-        self.assertIn("4 → 1 → 2 → 3 → 4", error_msg)
+        error_msg = str(exc_info.value)
+        assert "Circular dependency" in error_msg
+        assert "4 → 1 → 2 → 3 → 4" in error_msg
 
     def test_execute_detects_cycle_at_any_point(self):
         """Test execute detects cycle even when connecting to middle of chain."""
@@ -176,12 +176,12 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
         # Try to make task3 depend on task2 (would create 3→2→3)
         input_dto3 = AddDependencyInput(task_id=task3.id, depends_on_id=task2.id)
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto3)
 
-        error_msg = str(context.exception)
-        self.assertIn("Circular dependency", error_msg)
-        self.assertIn("3 → 2 → 3", error_msg)
+        error_msg = str(exc_info.value)
+        assert "Circular dependency" in error_msg
+        assert "3 → 2 → 3" in error_msg
 
     def test_execute_allows_valid_long_chain(self):
         """Test execute allows valid long dependency chain without cycle."""
@@ -205,7 +205,7 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto4)
 
         # Should succeed
-        self.assertIn(task5.id, result.depends_on)
+        assert task5.id in result.depends_on
 
     def test_execute_allows_diamond_dependency_without_cycle(self):
         """Test execute allows diamond pattern (A→B,C; B,C→D) without cycle."""
@@ -228,7 +228,7 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto4)
 
         # Should succeed - this is valid (no cycle)
-        self.assertIn(task4.id, result.depends_on)
+        assert task4.id in result.depends_on
 
     def test_execute_allows_multiple_dependencies(self):
         """Test execute allows task to have multiple dependencies."""
@@ -243,10 +243,6 @@ class TestAddDependencyUseCase(InMemoryDatabaseTestCase):
         input_dto2 = AddDependencyInput(task_id=task3.id, depends_on_id=task2.id)
         result = self.use_case.execute(input_dto2)
 
-        self.assertIn(task1.id, result.depends_on)
-        self.assertIn(task2.id, result.depends_on)
-        self.assertEqual(len(result.depends_on), 2)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert task1.id in result.depends_on
+        assert task2.id in result.depends_on
+        assert len(result.depends_on) == 2

@@ -1,25 +1,25 @@
 """Tests for DependencyValidator."""
 
-import unittest
 from unittest.mock import Mock
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.validators.dependency_validator import DependencyValidator
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import DependencyNotMetError
 
 
-class TestDependencyValidator(unittest.TestCase):
+class TestDependencyValidator:
     """Test cases for DependencyValidator."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Initialize mock repository for each test."""
         self.mock_repository = Mock()
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "scenario_name,task_id,depends_on,dep_configs,should_pass,expected_unmet_deps",
         [
-            # (scenario_name, task_id, depends_on, dep_configs, should_pass, expected_unmet_deps)
             # dep_configs format: {dep_id: status} or "missing" for empty dict
             # Valid cases
             ("no_dependencies", 1, [], {}, True, None),
@@ -58,7 +58,18 @@ class TestDependencyValidator(unittest.TestCase):
                 False,
                 [1, 2, 3],
             ),
-        ]
+        ],
+        ids=[
+            "no_dependencies",
+            "all_completed_single",
+            "all_completed_multiple",
+            "pending_dependency",
+            "in_progress_dependency",
+            "canceled_dependency",
+            "missing_dependency",
+            "mixed_completed_and_pending",
+            "all_unmet_mixed_statuses",
+        ],
     )
     def test_dependency_validation_scenarios(
         self,
@@ -87,29 +98,27 @@ class TestDependencyValidator(unittest.TestCase):
                 for dep_id, status in dep_configs.items()
             }
             self.mock_repository.get_by_ids.return_value = deps_dict
-        else:
-            # No dependencies case - no need to mock
-            pass
+        # No dependencies case - no need to mock
 
         if should_pass:
             # Should not raise
             DependencyValidator.validate_dependencies_met(task, self.mock_repository)
         else:
             # Should raise DependencyNotMetError
-            with self.assertRaises(DependencyNotMetError) as context:
+            with pytest.raises(DependencyNotMetError) as exc_info:
                 DependencyValidator.validate_dependencies_met(
                     task, self.mock_repository
                 )
 
-            self.assertEqual(context.exception.task_id, task_id)
+            assert exc_info.value.task_id == task_id
             for unmet_dep_id in expected_unmet_deps:
-                self.assertIn(unmet_dep_id, context.exception.unmet_dependencies)
+                assert unmet_dep_id in exc_info.value.unmet_dependencies
 
             # For mixed cases, verify met dependencies are NOT in the list
             if "mixed" in scenario_name:
                 for dep_id, status in dep_configs.items():
                     if status == TaskStatus.COMPLETED:
-                        self.assertNotIn(dep_id, context.exception.unmet_dependencies)
+                        assert dep_id not in exc_info.value.unmet_dependencies
 
     def test_validate_dependencies_uses_get_by_ids(self):
         """Test that validator uses get_by_ids() for batch fetching."""
@@ -127,7 +136,3 @@ class TestDependencyValidator(unittest.TestCase):
 
         # Verify get_by_ids was called once with all dependency IDs
         self.mock_repository.get_by_ids.assert_called_once_with([1, 2])
-
-
-if __name__ == "__main__":
-    unittest.main()

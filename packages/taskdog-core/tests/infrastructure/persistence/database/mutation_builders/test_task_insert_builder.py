@@ -1,8 +1,8 @@
 """Unit tests for TaskInsertBuilder."""
 
-import unittest
 from datetime import datetime
 
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
@@ -15,19 +15,18 @@ from taskdog_core.infrastructure.persistence.database.mutation_builders import (
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
 
-class TestTaskInsertBuilder(unittest.TestCase):
+class TestTaskInsertBuilder:
     """Test cases for TaskInsertBuilder."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test database and builder."""
         # Create in-memory SQLite database
         self.engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
         self.mapper = TaskDbMapper()
-
-    def tearDown(self):
-        """Clean up test database."""
+        yield
         Base.metadata.drop_all(self.engine)
         self.engine.dispose()
 
@@ -46,13 +45,13 @@ class TestTaskInsertBuilder(unittest.TestCase):
             model = builder.insert_task(task)
 
             # Model should be created and flushed
-            self.assertIsInstance(model, TaskModel)
-            self.assertEqual(model.name, "Test Task")
-            self.assertEqual(model.priority, 5)
-            self.assertEqual(model.status, "PENDING")
+            assert isinstance(model, TaskModel)
+            assert model.name == "Test Task"
+            assert model.priority == 5
+            assert model.status == "PENDING"
 
             # Model should be in session
-            self.assertIn(model, session)
+            assert model in session
 
     def test_insert_task_flushes_for_id(self):
         """Test that insert_task flushes to get ID immediately."""
@@ -69,8 +68,8 @@ class TestTaskInsertBuilder(unittest.TestCase):
             model = builder.insert_task(task)
 
             # ID should be available immediately after flush
-            self.assertIsNotNone(model.id)
-            self.assertEqual(model.id, 1)
+            assert model.id is not None
+            assert model.id == 1
 
     def test_insert_task_does_not_commit(self):
         """Test that insert_task does not commit the transaction."""
@@ -91,7 +90,7 @@ class TestTaskInsertBuilder(unittest.TestCase):
         with self.Session() as session:
             stmt = select(TaskModel)
             models = session.scalars(stmt).all()
-            self.assertEqual(len(models), 0)
+            assert len(models) == 0
 
     def test_insert_task_commits_when_session_commits(self):
         """Test that insert_task persists when session commits."""
@@ -112,8 +111,8 @@ class TestTaskInsertBuilder(unittest.TestCase):
         with self.Session() as session:
             stmt = select(TaskModel)
             models = session.scalars(stmt).all()
-            self.assertEqual(len(models), 1)
-            self.assertEqual(models[0].name, "Test Task")
+            assert len(models) == 1
+            assert models[0].name == "Test Task"
 
     def test_insert_tasks_bulk_creates_multiple_models(self):
         """Test that insert_tasks_bulk creates multiple TaskModels."""
@@ -128,14 +127,14 @@ class TestTaskInsertBuilder(unittest.TestCase):
             models = builder.insert_tasks_bulk(tasks)
 
             # Should return 3 models
-            self.assertEqual(len(models), 3)
-            self.assertEqual(models[0].name, "Task 1")
-            self.assertEqual(models[1].name, "Task 2")
-            self.assertEqual(models[2].name, "Task 3")
+            assert len(models) == 3
+            assert models[0].name == "Task 1"
+            assert models[1].name == "Task 2"
+            assert models[2].name == "Task 3"
 
             # All models should be in session
             for model in models:
-                self.assertIn(model, session)
+                assert model in session
 
     def test_insert_tasks_bulk_flushes_for_ids(self):
         """Test that insert_tasks_bulk flushes to get IDs immediately."""
@@ -149,8 +148,8 @@ class TestTaskInsertBuilder(unittest.TestCase):
             models = builder.insert_tasks_bulk(tasks)
 
             # All IDs should be available immediately
-            self.assertEqual(models[0].id, 1)
-            self.assertEqual(models[1].id, 2)
+            assert models[0].id == 1
+            assert models[1].id == 2
 
     def test_insert_tasks_bulk_with_empty_list(self):
         """Test that insert_tasks_bulk handles empty list."""
@@ -161,7 +160,7 @@ class TestTaskInsertBuilder(unittest.TestCase):
             models = builder.insert_tasks_bulk(tasks)
 
             # Should return empty list
-            self.assertEqual(len(models), 0)
+            assert len(models) == 0
 
     def test_insert_task_preserves_all_fields(self):
         """Test that insert_task preserves all task fields."""
@@ -185,13 +184,9 @@ class TestTaskInsertBuilder(unittest.TestCase):
             model = builder.insert_task(task)
 
             # Verify all fields are preserved
-            self.assertEqual(model.name, "Complete Task")
-            self.assertEqual(model.priority, 5)
-            self.assertEqual(model.status, "IN_PROGRESS")
-            self.assertEqual(model.estimated_duration, 10.0)
-            self.assertEqual(model.is_fixed, True)
+            assert model.name == "Complete Task"
+            assert model.priority == 5
+            assert model.status == "IN_PROGRESS"
+            assert model.estimated_duration == 10.0
+            assert model.is_fixed is True
             # Note: tags and depends_on are handled separately
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -1,6 +1,5 @@
 """Tests for GeneticOptimizationStrategy."""
 
-import unittest
 from datetime import date, datetime
 
 from tests.application.services.optimization.optimization_strategy_test_base import (
@@ -31,7 +30,7 @@ class TestGeneticOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should successfully schedule
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
         task = result.successful_tasks[0]
 
         # Verify basic properties
@@ -54,7 +53,7 @@ class TestGeneticOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should successfully schedule all tasks
-        self.assertEqual(len(result.successful_tasks), 3)
+        assert len(result.successful_tasks) == 3
 
         # Verify all tasks have valid schedules
         for task in result.successful_tasks:
@@ -81,8 +80,8 @@ class TestGeneticOptimizationStrategy(BaseOptimizationStrategyTest):
 
         # Verify daily allocations don't exceed max
         for date_str, total_hours in result.daily_allocations.items():
-            self.assertLessEqual(
-                total_hours, 6.0, f"Day {date_str} exceeds max hours: {total_hours}"
+            assert total_hours <= 6.0, (
+                f"Day {date_str} exceeds max hours: {total_hours}"
             )
 
     def test_genetic_respects_deadlines(self):
@@ -98,14 +97,14 @@ class TestGeneticOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should successfully schedule
-        self.assertEqual(len(result.successful_tasks), 1)
+        assert len(result.successful_tasks) == 1
 
         # Refetch task from repository to get updated state
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
 
         # Verify end date is before or on deadline
-        self.assertLessEqual(updated_task.planned_end, updated_task.deadline)
+        assert updated_task.planned_end <= updated_task.deadline
 
     def test_genetic_fails_impossible_deadlines(self):
         """Test that genetic algorithm fails tasks with impossible deadlines."""
@@ -120,8 +119,8 @@ class TestGeneticOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should fail to schedule
-        self.assertEqual(len(result.successful_tasks), 0)
-        self.assertEqual(len(result.failed_tasks), 1)
+        assert len(result.successful_tasks) == 0
+        assert len(result.failed_tasks) == 1
 
     def test_genetic_skips_weekends(self):
         """Test that genetic algorithm skips weekends."""
@@ -141,12 +140,10 @@ class TestGeneticOptimizationStrategy(BaseOptimizationStrategyTest):
         assert updated_task is not None
 
         # Verify no weekend allocations
-        self.assertIsNone(
-            updated_task.daily_allocations.get(date(2025, 10, 25))
+        assert (
+            updated_task.daily_allocations.get(date(2025, 10, 25)) is None
         )  # Saturday
-        self.assertIsNone(
-            updated_task.daily_allocations.get(date(2025, 10, 26))
-        )  # Sunday
+        assert updated_task.daily_allocations.get(date(2025, 10, 26)) is None  # Sunday
 
     def test_genetic_produces_deterministic_results_with_seed(self):
         """Test that genetic algorithm produces valid results."""
@@ -164,25 +161,21 @@ class TestGeneticOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should successfully schedule all tasks
-        self.assertEqual(len(result.successful_tasks), 5)
+        assert len(result.successful_tasks) == 5
 
         # Verify no overlapping allocations
         for task in tasks:
             updated_task = self.repository.get_by_id(task.id)
             assert updated_task is not None
-            self.assertIsNotNone(updated_task.daily_allocations)
+            assert updated_task.daily_allocations is not None
             # All daily allocations should be positive
             for hours in updated_task.daily_allocations.values():
-                self.assertGreater(hours, 0)
+                assert hours > 0
 
     def test_genetic_handles_empty_task_list(self):
         """Test that genetic algorithm handles empty task list gracefully."""
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Should return empty results
-        self.assertEqual(len(result.successful_tasks), 0)
-        self.assertEqual(len(result.failed_tasks), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(result.successful_tasks) == 0
+        assert len(result.failed_tasks) == 0

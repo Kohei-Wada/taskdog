@@ -1,8 +1,9 @@
 """Tests for QueryController."""
 
-import unittest
 from datetime import date, datetime, timedelta
 from unittest.mock import Mock
+
+import pytest
 
 from taskdog_core.application.dto.query_inputs import (
     GetGanttDataInput,
@@ -11,15 +12,15 @@ from taskdog_core.application.dto.query_inputs import (
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.services.logger import Logger
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestQueryController(InMemoryDatabaseTestCase):
+class TestQueryController:
     """Test cases for QueryController."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
         """Initialize controller for each test."""
-        super().setUp()
+        self.repository = repository
         self.logger = Mock(spec=Logger)
         self.controller = QueryController(self.repository, None, self.logger)
 
@@ -34,9 +35,9 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.list_tasks(input_dto)
 
         # Verify result structure
-        self.assertEqual(len(result.tasks), 2)
-        self.assertEqual(result.total_count, 2)
-        self.assertEqual(result.filtered_count, 2)
+        assert len(result.tasks) == 2
+        assert result.total_count == 2
+        assert result.filtered_count == 2
 
     def test_list_tasks_with_filter(self):
         """Test list_tasks applies filter correctly."""
@@ -50,10 +51,10 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.list_tasks(input_dto)
 
         # Verify filtering
-        self.assertEqual(len(result.tasks), 1)
-        self.assertEqual(result.tasks[0].name, "Task 1")
-        self.assertEqual(result.total_count, 3)
-        self.assertEqual(result.filtered_count, 1)
+        assert len(result.tasks) == 1
+        assert result.tasks[0].name == "Task 1"
+        assert result.total_count == 3
+        assert result.filtered_count == 1
 
     def test_list_tasks_with_sorting(self):
         """Test list_tasks sorts correctly."""
@@ -69,9 +70,9 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.list_tasks(input_dto)
 
         # Verify sorting (High=10, Medium=5, Low=1)
-        self.assertEqual(result.tasks[0].name, "High")
-        self.assertEqual(result.tasks[1].name, "Medium")
-        self.assertEqual(result.tasks[2].name, "Low")
+        assert result.tasks[0].name == "High"
+        assert result.tasks[1].name == "Medium"
+        assert result.tasks[2].name == "Low"
 
     def test_list_tasks_with_composite_filter(self):
         """Test list_tasks with combined filters via Input DTO."""
@@ -88,8 +89,8 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.list_tasks(input_dto)
 
         # Verify filtering
-        self.assertEqual(len(result.tasks), 1)
-        self.assertEqual(result.tasks[0].name, "Active")
+        assert len(result.tasks) == 1
+        assert result.tasks[0].name == "Active"
 
     def test_get_gantt_data_returns_output_dto(self):
         """Test get_gantt_data returns GanttOutput."""
@@ -111,10 +112,10 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.get_gantt_data(input_dto)
 
         # Verify result structure
-        self.assertIsNotNone(result)
-        self.assertIsNotNone(result.date_range)
-        self.assertIsNotNone(result.tasks)
-        self.assertEqual(len(result.tasks), 1)
+        assert result is not None
+        assert result.date_range is not None
+        assert result.tasks is not None
+        assert len(result.tasks) == 1
 
     def test_get_gantt_data_with_date_range(self):
         """Test get_gantt_data with custom date range."""
@@ -141,8 +142,8 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.get_gantt_data(input_dto)
 
         # Verify date range
-        self.assertEqual(result.date_range.start_date, start_date)
-        self.assertEqual(result.date_range.end_date, end_date)
+        assert result.date_range.start_date == start_date
+        assert result.date_range.end_date == end_date
 
     def test_get_gantt_data_calculates_total_estimated_duration(self):
         """Test get_gantt_data calculates total_estimated_duration correctly."""
@@ -184,8 +185,8 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.get_gantt_data(input_dto)
 
         # Verify total_estimated_duration (8.0 + 16.5 = 24.5)
-        self.assertEqual(result.total_estimated_duration, 24.5)
-        self.assertEqual(len(result.tasks), 3)
+        assert result.total_estimated_duration == 24.5
+        assert len(result.tasks) == 3
 
     def test_get_gantt_data_total_estimated_duration_zero_when_no_estimates(self):
         """Test get_gantt_data returns zero total when no tasks have estimated durations."""
@@ -206,7 +207,7 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.get_gantt_data(input_dto)
 
         # Verify total_estimated_duration is 0.0
-        self.assertEqual(result.total_estimated_duration, 0.0)
+        assert result.total_estimated_duration == 0.0
 
     def test_get_tag_statistics_returns_output_dto(self):
         """Test get_tag_statistics returns TagStatisticsOutput."""
@@ -228,11 +229,11 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.get_tag_statistics()
 
         # Verify result structure
-        self.assertIsNotNone(result.tag_counts)
-        self.assertEqual(result.total_tags, 2)  # "work" and "urgent"
-        self.assertEqual(result.total_tagged_tasks, 2)  # task1 and task2
-        self.assertEqual(result.tag_counts["work"], 2)
-        self.assertEqual(result.tag_counts["urgent"], 1)
+        assert result.tag_counts is not None
+        assert result.total_tags == 2  # "work" and "urgent"
+        assert result.total_tagged_tasks == 2  # task1 and task2
+        assert result.tag_counts["work"] == 2
+        assert result.tag_counts["urgent"] == 1
 
     def test_get_tag_statistics_with_no_tags(self):
         """Test get_tag_statistics when no tasks have tags."""
@@ -245,9 +246,9 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.get_tag_statistics()
 
         # Verify empty statistics
-        self.assertEqual(len(result.tag_counts), 0)
-        self.assertEqual(result.total_tags, 0)
-        self.assertEqual(result.total_tagged_tasks, 0)
+        assert len(result.tag_counts) == 0
+        assert result.total_tags == 0
+        assert result.total_tagged_tasks == 0
 
     def test_get_task_by_id_returns_task(self):
         """Test get_task_by_id returns task DTO."""
@@ -260,9 +261,9 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.get_task_by_id(task.id)
 
         # Verify result
-        self.assertIsNotNone(result.task)
-        self.assertEqual(result.task.id, task.id)
-        self.assertEqual(result.task.name, "Test Task")
+        assert result.task is not None
+        assert result.task.id == task.id
+        assert result.task.name == "Test Task"
 
     def test_get_task_by_id_returns_none_when_not_found(self):
         """Test get_task_by_id returns None for missing task."""
@@ -270,8 +271,4 @@ class TestQueryController(InMemoryDatabaseTestCase):
         result = self.controller.get_task_by_id(999)
 
         # Verify task is None in output
-        self.assertIsNone(result.task)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.task is None

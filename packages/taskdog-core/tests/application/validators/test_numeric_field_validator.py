@@ -1,9 +1,8 @@
 """Tests for NumericFieldValidator."""
 
-import unittest
 from unittest.mock import Mock
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.validators.numeric_field_validator import (
     NumericFieldValidator,
@@ -12,15 +11,17 @@ from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
-class TestNumericFieldValidator(unittest.TestCase):
+class TestNumericFieldValidator:
     """Test cases for NumericFieldValidator."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Initialize mock repository and task for each test."""
         self.mock_repository = Mock()
         self.task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=5)
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "field_name,value,expected_error_fragment",
         [
             # Valid cases - (field_name, value, expected_error_fragment)
             ("estimated_duration", 10, None),
@@ -51,7 +52,34 @@ class TestNumericFieldValidator(unittest.TestCase):
             ("estimated_duration", [10], "Invalid type for estimated_duration"),
             ("priority", "high", "Invalid type for priority"),
             ("priority", {"value": 10}, "Invalid type for priority"),
-        ]
+        ],
+        ids=[
+            "valid_duration_10",
+            "valid_duration_100",
+            "valid_duration_10.5",
+            "valid_duration_0.5",
+            "valid_duration_0.1",
+            "valid_duration_none",
+            "valid_duration_true",
+            "valid_priority_100",
+            "valid_priority_5.5",
+            "valid_priority_1",
+            "valid_priority_none",
+            "valid_priority_true",
+            "invalid_duration_zero_int",
+            "invalid_duration_zero_float",
+            "invalid_priority_zero_int",
+            "invalid_priority_zero_float",
+            "invalid_duration_false",
+            "invalid_duration_negative_int",
+            "invalid_duration_negative_float",
+            "invalid_priority_negative_int",
+            "invalid_priority_negative_float",
+            "invalid_duration_string",
+            "invalid_duration_list",
+            "invalid_priority_string",
+            "invalid_priority_dict",
+        ],
     )
     def test_numeric_field_validation(self, field_name, value, expected_error_fragment):
         """Test validation of numeric fields with various inputs."""
@@ -62,26 +90,22 @@ class TestNumericFieldValidator(unittest.TestCase):
             validator.validate(value, self.task, self.mock_repository)
         else:
             # Should raise TaskValidationError with expected message
-            with self.assertRaises(TaskValidationError) as context:
+            with pytest.raises(TaskValidationError) as exc_info:
                 validator.validate(value, self.task, self.mock_repository)
-            self.assertIn(expected_error_fragment, str(context.exception))
+            assert expected_error_fragment in str(exc_info.value)
             # Also verify the value appears in error message for specific values
             if value not in (None, True, False) and not isinstance(
                 value, list | dict | str
             ):
-                self.assertIn(str(value), str(context.exception))
+                assert str(value) in str(exc_info.value)
 
     def test_field_name_formatting_in_error_message(self):
         """Test that field names are properly formatted in error messages."""
         validator = NumericFieldValidator("estimated_duration")
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             validator.validate(0, self.task, self.mock_repository)
 
-        error_message = str(context.exception)
+        error_message = str(exc_info.value)
         # Should contain user-friendly "Estimated duration" (not "estimated_duration")
-        self.assertIn("Estimated duration", error_message)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert "Estimated duration" in error_message

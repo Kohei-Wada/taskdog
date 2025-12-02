@@ -1,9 +1,8 @@
 """Tests for ReopenTaskUseCase."""
 
-import unittest
 from datetime import datetime
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.dto.single_task_inputs import ReopenTaskInput
 from taskdog_core.application.use_cases.reopen_task import ReopenTaskUseCase
@@ -12,25 +11,27 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestReopenTaskUseCase(InMemoryDatabaseTestCase):
+class TestReopenTaskUseCase:
     """Test cases for ReopenTaskUseCase."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
         """Initialize use case for each test."""
-        super().setUp()
+        self.repository = repository
         self.use_case = ReopenTaskUseCase(self.repository)
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "status,has_actual_start,has_actual_end",
         [
-            ("completed_task", TaskStatus.COMPLETED, True, True),
-            ("canceled_task", TaskStatus.CANCELED, False, True),
-        ]
+            (TaskStatus.COMPLETED, True, True),
+            (TaskStatus.CANCELED, False, True),
+        ],
+        ids=["completed_task", "canceled_task"],
     )
     def test_execute_reopens_finished_tasks(
-        self, scenario, status, has_actual_start, has_actual_end
+        self, status, has_actual_start, has_actual_end
     ):
         """Test execute reopens completed/canceled tasks."""
         create_kwargs = {
@@ -48,9 +49,9 @@ class TestReopenTaskUseCase(InMemoryDatabaseTestCase):
         input_dto = ReopenTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.status, TaskStatus.PENDING)
-        self.assertIsNone(result.actual_start)
-        self.assertIsNone(result.actual_end)
+        assert result.status == TaskStatus.PENDING
+        assert result.actual_start is None
+        assert result.actual_end is None
 
     def test_execute_persists_changes(self):
         """Test execute saves changes to repository."""
@@ -67,45 +68,37 @@ class TestReopenTaskUseCase(InMemoryDatabaseTestCase):
 
         # Verify persistence
         retrieved = self.repository.get_by_id(task.id)
-        self.assertEqual(retrieved.status, TaskStatus.PENDING)
-        self.assertIsNone(retrieved.actual_start)
-        self.assertIsNone(retrieved.actual_end)
+        assert retrieved.status == TaskStatus.PENDING
+        assert retrieved.actual_start is None
+        assert retrieved.actual_end is None
 
     def test_execute_with_nonexistent_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException."""
         input_dto = ReopenTaskInput(task_id=999)
 
-        with self.assertRaises(TaskNotFoundException) as context:
+        with pytest.raises(TaskNotFoundException) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertEqual(context.exception.task_id, 999)
+        assert exc_info.value.task_id == 999
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "status,expected_message",
         [
-            (
-                "pending_task",
-                TaskStatus.PENDING,
-                "Cannot reopen task with status PENDING",
-            ),
-            (
-                "in_progress_task",
-                TaskStatus.IN_PROGRESS,
-                "Cannot reopen task with status IN_PROGRESS",
-            ),
-        ]
+            (TaskStatus.PENDING, "Cannot reopen task with status PENDING"),
+            (TaskStatus.IN_PROGRESS, "Cannot reopen task with status IN_PROGRESS"),
+        ],
+        ids=["pending_task", "in_progress_task"],
     )
-    def test_execute_with_unfinished_task_raises_error(
-        self, scenario, status, expected_message
-    ):
+    def test_execute_with_unfinished_task_raises_error(self, status, expected_message):
         """Test execute with PENDING/IN_PROGRESS task raises TaskValidationError."""
         task = self.repository.create(name="Test Task", priority=1, status=status)
 
         input_dto = ReopenTaskInput(task_id=task.id)
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertIn(expected_message, str(context.exception))
+        assert expected_message in str(exc_info.value)
 
     def test_execute_with_dependencies_always_succeeds(self):
         """Test that reopen succeeds regardless of dependency states.
@@ -131,7 +124,7 @@ class TestReopenTaskUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         # Should succeed even though dependency is not completed
-        self.assertEqual(result.status, TaskStatus.PENDING)
+        assert result.status == TaskStatus.PENDING
 
     def test_execute_with_missing_dependency_succeeds(self):
         """Test that reopen succeeds even with missing dependencies."""
@@ -147,7 +140,7 @@ class TestReopenTaskUseCase(InMemoryDatabaseTestCase):
         result = self.use_case.execute(input_dto)
 
         # Should succeed even though dependency doesn't exist
-        self.assertEqual(result.status, TaskStatus.PENDING)
+        assert result.status == TaskStatus.PENDING
 
     def test_execute_with_no_dependencies_succeeds(self):
         """Test execute with no dependencies succeeds."""
@@ -158,8 +151,4 @@ class TestReopenTaskUseCase(InMemoryDatabaseTestCase):
         input_dto = ReopenTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertEqual(result.status, TaskStatus.PENDING)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result.status == TaskStatus.PENDING

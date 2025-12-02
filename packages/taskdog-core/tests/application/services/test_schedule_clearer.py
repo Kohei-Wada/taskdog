@@ -1,61 +1,48 @@
 """Tests for ScheduleClearer."""
 
-import os
-import tempfile
-import unittest
 from datetime import datetime
 
+import pytest
+
 from taskdog_core.application.services.schedule_clearer import ScheduleClearer
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
 
 
-class TestScheduleClearer(unittest.TestCase):
+class TestScheduleClearer:
     """Test cases for ScheduleClearer."""
 
-    def setUp(self):
-        """Create temporary file and initialize service for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
+        """Set up test fixtures."""
+        self.repository = repository
         self.clearer = ScheduleClearer(self.repository)
 
-    def tearDown(self):
-        """Clean up temporary file after each test."""
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
-
-    def test_clear_schedules_clears_all_schedule_fields(self):
-        """Test clear_schedules clears each schedule field."""
-        # Test data: (field_name, field_value, assertion_method)
-        test_cases = [
-            ("planned_start", datetime(2025, 1, 10, 9, 0), "assertIsNone"),
-            ("planned_end", datetime(2025, 1, 15, 18, 0), "assertIsNone"),
+    @pytest.mark.parametrize(
+        "field_name,field_value,expected_value",
+        [
+            ("planned_start", datetime(2025, 1, 10, 9, 0), None),
+            ("planned_end", datetime(2025, 1, 15, 18, 0), None),
             (
                 "daily_allocations",
                 {datetime(2025, 1, 10).date(): 4.0, datetime(2025, 1, 11).date(): 3.5},
-                "assertEqual",
+                {},
             ),
-        ]
+        ],
+        ids=["planned_start", "planned_end", "daily_allocations"],
+    )
+    def test_clear_schedules_clears_each_schedule_field(
+        self, field_name, field_value, expected_value
+    ):
+        """Test clear_schedules clears each schedule field."""
+        task = self.repository.create(name="Task 1", priority=1)
+        setattr(task, field_name, field_value)
+        self.repository.save(task)
 
-        for field_name, field_value, assertion_method in test_cases:
-            with self.subTest(field=field_name):
-                task = self.repository.create(name="Task 1", priority=1)
-                setattr(task, field_name, field_value)
-                self.repository.save(task)
+        result = self.clearer.clear_schedules([task])
 
-                result = self.clearer.clear_schedules([task])
-
-                if assertion_method == "assertIsNone":
-                    self.assertIsNone(getattr(result[0], field_name))
-                elif assertion_method == "assertEqual":
-                    self.assertEqual(getattr(result[0], field_name), {})
+        if expected_value is None:
+            assert getattr(result[0], field_name) is None
+        else:
+            assert getattr(result[0], field_name) == expected_value
 
     def test_clear_schedules_persists_changes(self):
         """Test clear_schedules saves changes to repository."""
@@ -70,9 +57,9 @@ class TestScheduleClearer(unittest.TestCase):
 
         # Retrieve from repository to verify persistence
         retrieved = self.repository.get_by_id(task.id)
-        self.assertIsNone(retrieved.planned_start)
-        self.assertIsNone(retrieved.planned_end)
-        self.assertEqual(retrieved.daily_allocations, {})
+        assert retrieved.planned_start is None
+        assert retrieved.planned_end is None
+        assert retrieved.daily_allocations == {}
 
     def test_clear_schedules_with_multiple_tasks(self):
         """Test clear_schedules handles multiple tasks."""
@@ -89,17 +76,17 @@ class TestScheduleClearer(unittest.TestCase):
         tasks = [task1, task2]
         result = self.clearer.clear_schedules(tasks)
 
-        self.assertEqual(len(result), 2)
-        self.assertIsNone(result[0].planned_start)
-        self.assertEqual(result[0].daily_allocations, {})
-        self.assertIsNone(result[1].planned_end)
-        self.assertEqual(result[1].daily_allocations, {})
+        assert len(result) == 2
+        assert result[0].planned_start is None
+        assert result[0].daily_allocations == {}
+        assert result[1].planned_end is None
+        assert result[1].daily_allocations == {}
 
     def test_clear_schedules_with_empty_list(self):
         """Test clear_schedules with empty task list."""
         result = self.clearer.clear_schedules([])
 
-        self.assertEqual(len(result), 0)
+        assert len(result) == 0
 
     def test_clear_schedules_does_not_affect_other_fields(self):
         """Test clear_schedules only clears schedule fields, not other fields."""
@@ -115,15 +102,15 @@ class TestScheduleClearer(unittest.TestCase):
         result = self.clearer.clear_schedules(tasks)
 
         # Schedule fields cleared
-        self.assertIsNone(result[0].planned_start)
-        self.assertIsNone(result[0].planned_end)
-        self.assertEqual(result[0].daily_allocations, {})
+        assert result[0].planned_start is None
+        assert result[0].planned_end is None
+        assert result[0].daily_allocations == {}
 
         # Other fields preserved
-        self.assertEqual(result[0].name, "Task 1")
-        self.assertEqual(result[0].priority, 1)
-        self.assertIsNotNone(result[0].deadline)
-        self.assertEqual(result[0].estimated_duration, 10.0)
+        assert result[0].name == "Task 1"
+        assert result[0].priority == 1
+        assert result[0].deadline is not None
+        assert result[0].estimated_duration == 10.0
 
     def test_clear_schedules_returns_tasks(self):
         """Test clear_schedules returns the tasks."""
@@ -133,9 +120,9 @@ class TestScheduleClearer(unittest.TestCase):
         tasks = [task1, task2]
         result = self.clearer.clear_schedules(tasks)
 
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0].id, task1.id)
-        self.assertEqual(result[1].id, task2.id)
+        assert len(result) == 2
+        assert result[0].id == task1.id
+        assert result[1].id == task2.id
 
     def test_clear_schedules_with_task_already_cleared(self):
         """Test clear_schedules with task that has no schedule fields."""
@@ -146,11 +133,7 @@ class TestScheduleClearer(unittest.TestCase):
         result = self.clearer.clear_schedules(tasks)
 
         # Should not raise, just return task as-is
-        self.assertEqual(len(result), 1)
-        self.assertIsNone(result[0].planned_start)
-        self.assertIsNone(result[0].planned_end)
-        self.assertEqual(result[0].daily_allocations, {})
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(result) == 1
+        assert result[0].planned_start is None
+        assert result[0].planned_end is None
+        assert result[0].daily_allocations == {}

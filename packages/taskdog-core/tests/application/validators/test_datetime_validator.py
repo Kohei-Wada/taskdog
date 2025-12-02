@@ -1,26 +1,26 @@
 """Tests for DateTimeValidator."""
 
-import unittest
 from datetime import datetime, timedelta
 from unittest.mock import Mock
 
-from parameterized import parameterized
+import pytest
 
 from taskdog_core.application.validators.datetime_validator import DateTimeValidator
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
-class TestDateTimeValidator(unittest.TestCase):
+class TestDateTimeValidator:
     """Test cases for DateTimeValidator."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Initialize mock repository for each test."""
         self.mock_repository = Mock()
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "field_name,task_status,actual_start_days_offset,value_days_offset,should_pass,error_fragment",
         [
-            # (field_name, task_status, actual_start_days_offset, value_days_offset, should_pass, error_fragment)
             # Valid cases - future dates for new tasks
             ("deadline", TaskStatus.PENDING, None, 7, True, None),
             ("planned_start", TaskStatus.PENDING, None, 7, True, None),
@@ -92,7 +92,30 @@ class TestDateTimeValidator(unittest.TestCase):
                 False,
                 "Invalid datetime type",
             ),
-        ]
+        ],
+        ids=[
+            "valid_future_deadline",
+            "valid_future_planned_start",
+            "valid_future_planned_end",
+            "valid_none_deadline",
+            "valid_none_planned_start",
+            "valid_none_planned_end",
+            "valid_past_deadline_in_progress",
+            "valid_past_planned_start_in_progress",
+            "valid_past_planned_end_in_progress",
+            "valid_past_deadline_completed",
+            "valid_past_planned_start_completed",
+            "valid_past_planned_end_completed",
+            "valid_today_deadline",
+            "valid_today_planned_start",
+            "valid_today_planned_end",
+            "invalid_past_deadline",
+            "invalid_past_planned_start",
+            "invalid_past_planned_end",
+            "invalid_string_deadline",
+            "invalid_string_planned_start",
+            "invalid_int_deadline",
+        ],
     )
     def test_datetime_validation_scenarios(
         self,
@@ -134,10 +157,6 @@ class TestDateTimeValidator(unittest.TestCase):
             validator.validate(value, task, self.mock_repository)
         else:
             # Should raise TaskValidationError with expected message
-            with self.assertRaises(TaskValidationError) as context:
+            with pytest.raises(TaskValidationError) as exc_info:
                 validator.validate(value, task, self.mock_repository)
-            self.assertIn(error_fragment, str(context.exception))
-
-
-if __name__ == "__main__":
-    unittest.main()
+            assert error_fragment in str(exc_info.value)

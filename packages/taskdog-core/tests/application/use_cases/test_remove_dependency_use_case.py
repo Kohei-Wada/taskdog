@@ -1,6 +1,6 @@
 """Tests for RemoveDependencyUseCase."""
 
-import unittest
+import pytest
 
 from taskdog_core.application.dto.manage_dependencies_input import RemoveDependencyInput
 from taskdog_core.application.use_cases.remove_dependency import RemoveDependencyUseCase
@@ -8,15 +8,15 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
-from tests.test_fixtures import InMemoryDatabaseTestCase
 
 
-class TestRemoveDependencyUseCase(InMemoryDatabaseTestCase):
+class TestRemoveDependencyUseCase:
     """Test cases for RemoveDependencyUseCase."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self, repository):
         """Initialize use case for each test."""
-        super().setUp()
+        self.repository = repository
         self.use_case = RemoveDependencyUseCase(self.repository)
 
     def test_execute_removes_dependency(self):
@@ -28,8 +28,8 @@ class TestRemoveDependencyUseCase(InMemoryDatabaseTestCase):
         input_dto = RemoveDependencyInput(task_id=task2.id, depends_on_id=task1.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertNotIn(task1.id, result.depends_on)
-        self.assertEqual(len(result.depends_on), 0)
+        assert task1.id not in result.depends_on
+        assert len(result.depends_on) == 0
 
     def test_execute_persists_changes(self):
         """Test execute saves changes to repository."""
@@ -41,17 +41,17 @@ class TestRemoveDependencyUseCase(InMemoryDatabaseTestCase):
 
         # Verify persistence
         retrieved = self.repository.get_by_id(task2.id)
-        self.assertNotIn(task1.id, retrieved.depends_on)
-        self.assertEqual(len(retrieved.depends_on), 0)
+        assert task1.id not in retrieved.depends_on
+        assert len(retrieved.depends_on) == 0
 
     def test_execute_with_nonexistent_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException."""
         input_dto = RemoveDependencyInput(task_id=999, depends_on_id=1)
 
-        with self.assertRaises(TaskNotFoundException) as context:
+        with pytest.raises(TaskNotFoundException) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertEqual(context.exception.task_id, 999)
+        assert exc_info.value.task_id == 999
 
     def test_execute_with_nonexistent_dependency_raises_error(self):
         """Test execute with non-existent dependency raises TaskValidationError."""
@@ -60,10 +60,10 @@ class TestRemoveDependencyUseCase(InMemoryDatabaseTestCase):
 
         input_dto = RemoveDependencyInput(task_id=task2.id, depends_on_id=task1.id)
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertIn("does not depend on", str(context.exception))
+        assert "does not depend on" in str(exc_info.value)
 
     def test_execute_preserves_other_dependencies(self):
         """Test execute only removes specified dependency."""
@@ -77,9 +77,9 @@ class TestRemoveDependencyUseCase(InMemoryDatabaseTestCase):
         input_dto = RemoveDependencyInput(task_id=task3.id, depends_on_id=task1.id)
         result = self.use_case.execute(input_dto)
 
-        self.assertNotIn(task1.id, result.depends_on)
-        self.assertIn(task2.id, result.depends_on)
-        self.assertEqual(len(result.depends_on), 1)
+        assert task1.id not in result.depends_on
+        assert task2.id in result.depends_on
+        assert len(result.depends_on) == 1
 
     def test_execute_with_empty_dependencies_raises_error(self):
         """Test execute with task that has no dependencies raises error."""
@@ -88,11 +88,7 @@ class TestRemoveDependencyUseCase(InMemoryDatabaseTestCase):
 
         input_dto = RemoveDependencyInput(task_id=task2.id, depends_on_id=task1.id)
 
-        with self.assertRaises(TaskValidationError) as context:
+        with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto)
 
-        self.assertIn("does not depend on", str(context.exception))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert "does not depend on" in str(exc_info.value)

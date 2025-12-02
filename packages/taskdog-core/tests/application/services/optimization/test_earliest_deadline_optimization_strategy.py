@@ -1,6 +1,5 @@
 """Tests for EarliestDeadlineOptimizationStrategy."""
 
-import unittest
 from datetime import date, datetime
 
 from tests.application.services.optimization.optimization_strategy_test_base import (
@@ -34,19 +33,15 @@ class TestEarliestDeadlineOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Both tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # Task 1 (early deadline) should start first
         updated_task1 = self.repository.get_by_id(task1.id)
         updated_task2 = self.repository.get_by_id(task2.id)
         assert updated_task1 is not None and updated_task2 is not None
 
-        self.assertEqual(
-            updated_task1.planned_start, datetime(2025, 10, 20, 9, 0, 0)
-        )  # Monday
-        self.assertEqual(
-            updated_task2.planned_start, datetime(2025, 10, 21, 9, 0, 0)
-        )  # Tuesday
+        assert updated_task1.planned_start == datetime(2025, 10, 20, 9, 0, 0)  # Monday
+        assert updated_task2.planned_start == datetime(2025, 10, 21, 9, 0, 0)  # Tuesday
 
     def test_earliest_deadline_handles_no_deadline(self):
         """Test that EDF schedules tasks without deadlines last."""
@@ -65,19 +60,15 @@ class TestEarliestDeadlineOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Both tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 2)
+        assert len(result.successful_tasks) == 2
 
         # Task with deadline should start first
         updated_task1 = self.repository.get_by_id(task1.id)
         updated_task2 = self.repository.get_by_id(task2.id)
         assert updated_task1 is not None and updated_task2 is not None
 
-        self.assertEqual(
-            updated_task1.planned_start, datetime(2025, 10, 20, 9, 0, 0)
-        )  # Monday
-        self.assertEqual(
-            updated_task2.planned_start, datetime(2025, 10, 21, 9, 0, 0)
-        )  # Tuesday
+        assert updated_task1.planned_start == datetime(2025, 10, 20, 9, 0, 0)  # Monday
+        assert updated_task2.planned_start == datetime(2025, 10, 21, 9, 0, 0)  # Tuesday
 
     def test_earliest_deadline_respects_deadline_constraints(self):
         """Test that EDF fails tasks that cannot meet their deadlines."""
@@ -92,8 +83,8 @@ class TestEarliestDeadlineOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # Task should fail to schedule
-        self.assertEqual(len(result.successful_tasks), 0)
-        self.assertEqual(len(result.failed_tasks), 1)
+        assert len(result.successful_tasks) == 0
+        assert len(result.failed_tasks) == 1
 
     def test_earliest_deadline_ignores_priority_completely(self):
         """Test that EDF ignores priority field when scheduling."""
@@ -121,7 +112,7 @@ class TestEarliestDeadlineOptimizationStrategy(BaseOptimizationStrategyTest):
         result = self.optimize_schedule(start_date=datetime(2025, 10, 20, 9, 0, 0))
 
         # All tasks should be scheduled
-        self.assertEqual(len(result.successful_tasks), 3)
+        assert len(result.successful_tasks) == 3
 
         # Verify scheduling order matches deadline order, not priority
         updated_low = self.repository.get_by_id(low_early.id)
@@ -134,11 +125,11 @@ class TestEarliestDeadlineOptimizationStrategy(BaseOptimizationStrategyTest):
         )
 
         # Earliest deadline should be scheduled first
-        self.assertEqual(updated_low.planned_start, datetime(2025, 10, 20, 9, 0, 0))
+        assert updated_low.planned_start == datetime(2025, 10, 20, 9, 0, 0)
         # Middle deadline should be scheduled second
-        self.assertEqual(updated_medium.planned_start, datetime(2025, 10, 21, 9, 0, 0))
+        assert updated_medium.planned_start == datetime(2025, 10, 21, 9, 0, 0)
         # Latest deadline should be scheduled last
-        self.assertEqual(updated_high.planned_start, datetime(2025, 10, 22, 9, 0, 0))
+        assert updated_high.planned_start == datetime(2025, 10, 22, 9, 0, 0)
 
     def test_earliest_deadline_uses_greedy_allocation(self):
         """Test that EDF uses greedy forward allocation strategy."""
@@ -157,17 +148,16 @@ class TestEarliestDeadlineOptimizationStrategy(BaseOptimizationStrategyTest):
         assert updated_task is not None
 
         # Verify greedy allocation: fills each day to maximum before moving to next
-        self.assertIsNotNone(updated_task.daily_allocations)
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 20), 0.0), 6.0, places=5
+        assert updated_task.daily_allocations is not None
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 20), 0.0) - 6.0)
+            < 1e-5
         )
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 21), 0.0), 6.0, places=5
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 21), 0.0) - 6.0)
+            < 1e-5
         )
-        self.assertAlmostEqual(
-            updated_task.daily_allocations.get(date(2025, 10, 22), 0.0), 3.0, places=5
+        assert (
+            abs(updated_task.daily_allocations.get(date(2025, 10, 22), 0.0) - 3.0)
+            < 1e-5
         )
-
-
-if __name__ == "__main__":
-    unittest.main()

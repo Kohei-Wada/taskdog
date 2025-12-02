@@ -1,8 +1,8 @@
 """Unit tests for TaskDeleteBuilder."""
 
-import unittest
 from datetime import datetime
 
+import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
@@ -13,18 +13,17 @@ from taskdog_core.infrastructure.persistence.database.mutation_builders import (
 )
 
 
-class TestTaskDeleteBuilder(unittest.TestCase):
+class TestTaskDeleteBuilder:
     """Test cases for TaskDeleteBuilder."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test database and builder."""
         # Create in-memory SQLite database
         self.engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
-
-    def tearDown(self):
-        """Clean up test database."""
+        yield
         Base.metadata.drop_all(self.engine)
         self.engine.dispose()
 
@@ -50,13 +49,13 @@ class TestTaskDeleteBuilder(unittest.TestCase):
             session.commit()
 
             # Should return True
-            self.assertTrue(result)
+            assert result is True
 
         # Task should be deleted
         with self.Session() as session:
             stmt = select(TaskModel)
             models = session.scalars(stmt).all()
-            self.assertEqual(len(models), 0)
+            assert len(models) == 0
 
     def test_delete_task_returns_true_when_found(self):
         """Test that delete_task returns True when task exists."""
@@ -77,7 +76,7 @@ class TestTaskDeleteBuilder(unittest.TestCase):
             builder = TaskDeleteBuilder(session)
             result = builder.delete_task(1)
 
-            self.assertTrue(result)
+            assert result is True
 
     def test_delete_task_returns_false_when_not_found(self):
         """Test that delete_task returns False when task doesn't exist."""
@@ -86,7 +85,7 @@ class TestTaskDeleteBuilder(unittest.TestCase):
             result = builder.delete_task(999)
 
             # Should return False for nonexistent task
-            self.assertFalse(result)
+            assert result is False
 
     def test_delete_task_does_not_commit(self):
         """Test that delete_task does not commit the transaction."""
@@ -112,7 +111,7 @@ class TestTaskDeleteBuilder(unittest.TestCase):
         with self.Session() as session:
             stmt = select(TaskModel)
             models = session.scalars(stmt).all()
-            self.assertEqual(len(models), 1)
+            assert len(models) == 1
 
     def test_delete_tasks_bulk_deletes_multiple_tasks(self):
         """Test that delete_tasks_bulk deletes multiple tasks."""
@@ -155,13 +154,13 @@ class TestTaskDeleteBuilder(unittest.TestCase):
             session.commit()
 
             # Should return count of deleted tasks
-            self.assertEqual(count, 3)
+            assert count == 3
 
         # All tasks should be deleted
         with self.Session() as session:
             stmt = select(TaskModel)
             models = session.scalars(stmt).all()
-            self.assertEqual(len(models), 0)
+            assert len(models) == 0
 
     def test_delete_tasks_bulk_returns_count_of_deleted(self):
         """Test that delete_tasks_bulk returns correct count."""
@@ -196,7 +195,7 @@ class TestTaskDeleteBuilder(unittest.TestCase):
             count = builder.delete_tasks_bulk([1, 2, 999])
 
             # Should only count the 2 that existed
-            self.assertEqual(count, 2)
+            assert count == 2
 
     def test_delete_tasks_bulk_with_empty_list(self):
         """Test that delete_tasks_bulk handles empty list."""
@@ -205,7 +204,7 @@ class TestTaskDeleteBuilder(unittest.TestCase):
             count = builder.delete_tasks_bulk([])
 
             # Should return 0
-            self.assertEqual(count, 0)
+            assert count == 0
 
     def test_delete_tasks_bulk_skips_nonexistent_ids(self):
         """Test that delete_tasks_bulk skips nonexistent IDs."""
@@ -230,13 +229,13 @@ class TestTaskDeleteBuilder(unittest.TestCase):
             session.commit()
 
             # Should only delete 1 task
-            self.assertEqual(count, 1)
+            assert count == 1
 
         # Only task 1 should be deleted, others never existed
         with self.Session() as session:
             stmt = select(TaskModel)
             models = session.scalars(stmt).all()
-            self.assertEqual(len(models), 0)
+            assert len(models) == 0
 
     def test_delete_tasks_bulk_does_not_commit(self):
         """Test that delete_tasks_bulk does not commit the transaction."""
@@ -273,8 +272,4 @@ class TestTaskDeleteBuilder(unittest.TestCase):
         with self.Session() as session:
             stmt = select(TaskModel)
             models = session.scalars(stmt).all()
-            self.assertEqual(len(models), 2)
-
-
-if __name__ == "__main__":
-    unittest.main()
+            assert len(models) == 2

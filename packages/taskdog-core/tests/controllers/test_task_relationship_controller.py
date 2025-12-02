@@ -1,7 +1,8 @@
 """Tests for TaskRelationshipController."""
 
-import unittest
 from unittest.mock import MagicMock, Mock
+
+import pytest
 
 from taskdog_core.controllers.task_relationship_controller import (
     TaskRelationshipController,
@@ -13,10 +14,11 @@ from taskdog_core.infrastructure.persistence.database.sqlite_task_repository imp
 )
 
 
-class TestTaskRelationshipController(unittest.TestCase):
+class TestTaskRelationshipController:
     """Test cases for TaskRelationshipController."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.repository = Mock(spec=SqliteTaskRepository)
         self.config = MagicMock()
@@ -61,8 +63,8 @@ class TestTaskRelationshipController(unittest.TestCase):
         result = self.controller.add_dependency(task_id, depends_on_id)
 
         # Assert
-        self.assertIsNotNone(result)
-        self.assertEqual(result.id, task_id)
+        assert result is not None
+        assert result.id == task_id
 
     def test_remove_dependency_returns_task_operation_output(self):
         """Test that remove_dependency returns TaskOperationOutput."""
@@ -83,8 +85,8 @@ class TestTaskRelationshipController(unittest.TestCase):
         result = self.controller.remove_dependency(task_id, depends_on_id)
 
         # Assert
-        self.assertIsNotNone(result)
-        self.assertEqual(result.id, task_id)
+        assert result is not None
+        assert result.id == task_id
 
     def test_set_task_tags_returns_task_operation_output(self):
         """Test that set_task_tags returns TaskOperationOutput."""
@@ -105,8 +107,8 @@ class TestTaskRelationshipController(unittest.TestCase):
         result = self.controller.set_task_tags(task_id, tags)
 
         # Assert
-        self.assertIsNotNone(result)
-        self.assertEqual(result.id, task_id)
+        assert result is not None
+        assert result.id == task_id
 
     def test_log_hours_returns_task_operation_output(self):
         """Test that log_hours returns TaskOperationOutput."""
@@ -127,16 +129,12 @@ class TestTaskRelationshipController(unittest.TestCase):
         result = self.controller.log_hours(task_id, hours, date)
 
         # Assert
-        self.assertIsNotNone(result)
-        self.assertEqual(result.id, task_id)
+        assert result is not None
+        assert result.id == task_id
 
     def test_controller_inherits_from_base_controller(self):
         """Test that controller has repository and config from base class."""
-        self.assertIsNotNone(self.controller.repository)
-        self.assertIsNotNone(self.controller.config)
-        self.assertEqual(self.controller.repository, self.repository)
-        self.assertEqual(self.controller.config, self.config)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert self.controller.repository is not None
+        assert self.controller.config is not None
+        assert self.controller.repository == self.repository
+        assert self.controller.config == self.config

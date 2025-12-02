@@ -1,8 +1,9 @@
 """Tests for TaskAnalyticsController."""
 
-import unittest
 from datetime import datetime
 from unittest.mock import MagicMock, Mock
+
+import pytest
 
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.domain.services.logger import Logger
@@ -11,10 +12,11 @@ from taskdog_core.infrastructure.persistence.database.sqlite_task_repository imp
 )
 
 
-class TestTaskAnalyticsController(unittest.TestCase):
+class TestTaskAnalyticsController:
     """Test cases for TaskAnalyticsController."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.repository = Mock(spec=SqliteTaskRepository)
         self.config = MagicMock()
@@ -35,7 +37,7 @@ class TestTaskAnalyticsController(unittest.TestCase):
         result = self.controller.calculate_statistics(period="all")
 
         # Assert
-        self.assertIsNotNone(result)
+        assert result is not None
         self.repository.get_all.assert_called_once()
 
     def test_calculate_statistics_with_valid_period_7d(self):
@@ -47,7 +49,7 @@ class TestTaskAnalyticsController(unittest.TestCase):
         result = self.controller.calculate_statistics(period="7d")
 
         # Assert
-        self.assertIsNotNone(result)
+        assert result is not None
         self.repository.get_all.assert_called_once()
 
     def test_calculate_statistics_with_valid_period_30d(self):
@@ -59,16 +61,16 @@ class TestTaskAnalyticsController(unittest.TestCase):
         result = self.controller.calculate_statistics(period="30d")
 
         # Assert
-        self.assertIsNotNone(result)
+        assert result is not None
         self.repository.get_all.assert_called_once()
 
     def test_calculate_statistics_raises_error_for_invalid_period(self):
         """Test that calculate_statistics raises ValueError for invalid period."""
         # Act & Assert
-        with self.assertRaises(ValueError) as context:
+        with pytest.raises(ValueError) as exc_info:
             self.controller.calculate_statistics(period="invalid")
 
-        self.assertIn("Invalid period", str(context.exception))
+        assert "Invalid period" in str(exc_info.value)
 
     def test_optimize_schedule_returns_optimization_output(self):
         """Test that optimize_schedule returns OptimizationOutput."""
@@ -89,15 +91,11 @@ class TestTaskAnalyticsController(unittest.TestCase):
         )
 
         # Assert
-        self.assertIsNotNone(result)
+        assert result is not None
 
     def test_controller_inherits_from_base_controller(self):
         """Test that controller has repository and config from base class."""
-        self.assertIsNotNone(self.controller.repository)
-        self.assertIsNotNone(self.controller.config)
-        self.assertEqual(self.controller.repository, self.repository)
-        self.assertEqual(self.controller.config, self.config)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert self.controller.repository is not None
+        assert self.controller.config is not None
+        assert self.controller.repository == self.repository
+        assert self.controller.config == self.config
