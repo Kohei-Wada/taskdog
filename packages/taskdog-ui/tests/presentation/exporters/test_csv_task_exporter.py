@@ -2,18 +2,20 @@
 
 import csv
 import io
-import unittest
 from datetime import datetime
+
+import pytest
 
 from taskdog.exporters.csv_task_exporter import CsvTaskExporter
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-class TestCsvTaskExporter(unittest.TestCase):
+class TestCsvTaskExporter:
     """Test suite for CsvTaskExporter."""
 
-    def setUp(self) -> None:
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
         """Set up test fixtures."""
         self.task1 = TaskRowDto(
             id=1,
@@ -63,10 +65,10 @@ class TestCsvTaskExporter(unittest.TestCase):
 
         result = exporter.export([self.task1])
 
-        self.assertIsInstance(result, str)
+        assert isinstance(result, str)
         # Should have header and at least one data row
         lines = result.strip().split("\n")
-        self.assertGreater(len(lines), 1)
+        assert len(lines) > 1
 
     def test_export_includes_header_row(self) -> None:
         """Test export includes CSV header row with field names."""
@@ -76,11 +78,11 @@ class TestCsvTaskExporter(unittest.TestCase):
 
         reader = csv.DictReader(io.StringIO(result))
         fieldnames = reader.fieldnames
-        self.assertIsNotNone(fieldnames)
+        assert fieldnames is not None
         # Should have at least basic fields
-        self.assertIn("id", fieldnames)
-        self.assertIn("name", fieldnames)
-        self.assertIn("status", fieldnames)
+        assert "id" in fieldnames
+        assert "name" in fieldnames
+        assert "status" in fieldnames
 
     def test_export_uses_default_fields_when_not_specified(self) -> None:
         """Test export uses DEFAULT_CSV_FIELDS when no fields specified."""
@@ -91,7 +93,7 @@ class TestCsvTaskExporter(unittest.TestCase):
         result = exporter.export([self.task1])
 
         reader = csv.DictReader(io.StringIO(result))
-        self.assertEqual(list(reader.fieldnames), list(DEFAULT_CSV_FIELDS))
+        assert list(reader.fieldnames) == list(DEFAULT_CSV_FIELDS)
 
     def test_export_uses_specified_fields(self) -> None:
         """Test export uses custom field list when provided."""
@@ -101,7 +103,7 @@ class TestCsvTaskExporter(unittest.TestCase):
         result = exporter.export([self.task1])
 
         reader = csv.DictReader(io.StringIO(result))
-        self.assertEqual(list(reader.fieldnames), custom_fields)
+        assert list(reader.fieldnames) == custom_fields
 
     def test_export_includes_all_tasks(self) -> None:
         """Test export includes all provided tasks."""
@@ -111,7 +113,7 @@ class TestCsvTaskExporter(unittest.TestCase):
 
         reader = csv.DictReader(io.StringIO(result))
         rows = list(reader)
-        self.assertEqual(len(rows), 2)
+        assert len(rows) == 2
 
     def test_export_preserves_task_data(self) -> None:
         """Test export preserves task data correctly."""
@@ -121,10 +123,10 @@ class TestCsvTaskExporter(unittest.TestCase):
 
         reader = csv.DictReader(io.StringIO(result))
         row = next(reader)
-        self.assertEqual(row["id"], "1")
-        self.assertEqual(row["name"], "Test Task 1")
-        self.assertEqual(row["priority"], "1")
-        self.assertEqual(row["status"], "PENDING")
+        assert row["id"] == "1"
+        assert row["name"] == "Test Task 1"
+        assert row["priority"] == "1"
+        assert row["status"] == "PENDING"
 
     def test_export_handles_datetime_fields(self) -> None:
         """Test export handles datetime fields correctly."""
@@ -137,9 +139,9 @@ class TestCsvTaskExporter(unittest.TestCase):
         reader = csv.DictReader(io.StringIO(result))
         row = next(reader)
         # Datetime should be serialized to ISO format
-        self.assertIn("2025-01-10", row["deadline"])
-        self.assertIn("2025-01-01", row["planned_start"])
-        self.assertIn("2025-01-05", row["actual_end"])
+        assert "2025-01-10" in row["deadline"]
+        assert "2025-01-01" in row["planned_start"]
+        assert "2025-01-05" in row["actual_end"]
 
     def test_export_handles_list_fields(self) -> None:
         """Test export handles list fields."""
@@ -150,8 +152,8 @@ class TestCsvTaskExporter(unittest.TestCase):
         reader = csv.DictReader(io.StringIO(result))
         row = next(reader)
         # Lists should be present in some string representation
-        self.assertIsInstance(row["tags"], str)
-        self.assertIsInstance(row["depends_on"], str)
+        assert isinstance(row["tags"], str)
+        assert isinstance(row["depends_on"], str)
 
     def test_export_handles_empty_task_list(self) -> None:
         """Test export handles empty task list gracefully."""
@@ -161,7 +163,7 @@ class TestCsvTaskExporter(unittest.TestCase):
 
         # Should have header but no data rows
         lines = result.strip().split("\n")
-        self.assertEqual(len(lines), 1)  # Only header
+        assert len(lines) == 1  # Only header
 
     def test_export_handles_none_values(self) -> None:
         """Test export handles None values correctly."""
@@ -171,8 +173,8 @@ class TestCsvTaskExporter(unittest.TestCase):
 
         reader = csv.DictReader(io.StringIO(result))
         row = next(reader)
-        self.assertEqual(row["deadline"], "")
-        self.assertEqual(row["estimated_duration"], "")
+        assert row["deadline"] == ""
+        assert row["estimated_duration"] == ""
 
     def test_export_escapes_special_characters_in_task_name(self) -> None:
         """Test export properly escapes special characters like commas."""
@@ -203,7 +205,7 @@ class TestCsvTaskExporter(unittest.TestCase):
         # CSV module should properly escape these
         reader = csv.DictReader(io.StringIO(result))
         row = next(reader)
-        self.assertEqual(row["name"], 'Task with comma, quote" and newline\n')
+        assert row["name"] == 'Task with comma, quote" and newline\n'
 
     def test_export_ignores_extra_fields_in_task_dict(self) -> None:
         """Test export ignores fields not in the specified field list."""
@@ -214,7 +216,7 @@ class TestCsvTaskExporter(unittest.TestCase):
         reader = csv.DictReader(io.StringIO(result))
         row = next(reader)
         # Should only have id and name
-        self.assertEqual(set(row.keys()), {"id", "name"})
+        assert set(row.keys()) == {"id", "name"}
 
     def test_export_handles_missing_fields_in_task_dict(self) -> None:
         """Test export fills missing fields with empty string."""
@@ -224,7 +226,7 @@ class TestCsvTaskExporter(unittest.TestCase):
 
         reader = csv.DictReader(io.StringIO(result))
         row = next(reader)
-        self.assertEqual(row["nonexistent_field"], "")
+        assert row["nonexistent_field"] == ""
 
     def test_export_with_all_fields(self) -> None:
         """Test export with all available fields."""
@@ -255,7 +257,7 @@ class TestCsvTaskExporter(unittest.TestCase):
         # Should not raise error and should have all fields
         reader = csv.DictReader(io.StringIO(result))
         row = next(reader)
-        self.assertEqual(len(row), len(all_fields))
+        assert len(row) == len(all_fields)
 
     def test_export_result_can_be_parsed_back(self) -> None:
         """Test exported CSV can be parsed back correctly."""
@@ -266,12 +268,8 @@ class TestCsvTaskExporter(unittest.TestCase):
         # Parse back
         reader = csv.DictReader(io.StringIO(result))
         rows = list(reader)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]["id"], "1")
-        self.assertEqual(rows[0]["name"], "Test Task 1")
-        self.assertEqual(rows[1]["id"], "2")
-        self.assertEqual(rows[1]["name"], "Complete Task")
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(rows) == 2
+        assert rows[0]["id"] == "1"
+        assert rows[0]["name"] == "Test Task 1"
+        assert rows[1]["id"] == "2"
+        assert rows[1]["name"] == "Complete Task"

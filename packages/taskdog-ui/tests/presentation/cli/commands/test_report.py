@@ -1,11 +1,10 @@
 """Tests for report command."""
 
-import unittest
 from datetime import date, datetime
 from unittest.mock import MagicMock
 
+import pytest
 from click.testing import CliRunner
-from parameterized import parameterized
 
 from taskdog.cli.commands.report import (
     _generate_markdown_report,
@@ -42,7 +41,7 @@ def _create_gantt_task(
     )
 
 
-class TestGroupTasksByDate(unittest.TestCase):
+class TestGroupTasksByDate:
     """Tests for _group_tasks_by_date function."""
 
     def test_groups_tasks_by_allocation_date(self):
@@ -57,16 +56,16 @@ class TestGroupTasksByDate(unittest.TestCase):
 
         result = _group_tasks_by_date([task1, task2], task_daily_hours, None, None)
 
-        self.assertEqual(len(result), 2)
-        self.assertEqual(len(result[date(2025, 10, 30)]), 2)  # task1 and task2
-        self.assertEqual(len(result[date(2025, 10, 31)]), 1)  # task1 only
-        self.assertEqual(result[date(2025, 10, 30)][0], (task1, 3.0))
-        self.assertEqual(result[date(2025, 10, 30)][1], (task2, 4.0))
+        assert len(result) == 2
+        assert len(result[date(2025, 10, 30)]) == 2  # task1 and task2
+        assert len(result[date(2025, 10, 31)]) == 1  # task1 only
+        assert result[date(2025, 10, 30)][0] == (task1, 3.0)
+        assert result[date(2025, 10, 30)][1] == (task2, 4.0)
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "start_date,end_date,daily_hours,expected_included,expected_excluded",
         [
-            (
-                "start_date_filter",
+            pytest.param(
                 date(2025, 10, 30),  # start_date
                 None,  # end_date
                 {
@@ -76,9 +75,9 @@ class TestGroupTasksByDate(unittest.TestCase):
                 },
                 [date(2025, 10, 30), date(2025, 10, 31)],  # expected included
                 [date(2025, 10, 28)],  # expected excluded
+                id="start_date_filter",
             ),
-            (
-                "end_date_filter",
+            pytest.param(
                 None,  # start_date
                 date(2025, 10, 31),  # end_date
                 {
@@ -88,9 +87,9 @@ class TestGroupTasksByDate(unittest.TestCase):
                 },
                 [date(2025, 10, 30), date(2025, 10, 31)],  # expected included
                 [date(2025, 11, 1)],  # expected excluded
+                id="end_date_filter",
             ),
-            (
-                "both_filters",
+            pytest.param(
                 date(2025, 10, 30),  # start_date
                 date(2025, 10, 31),  # end_date
                 {
@@ -101,12 +100,12 @@ class TestGroupTasksByDate(unittest.TestCase):
                 },
                 [date(2025, 10, 30), date(2025, 10, 31)],  # expected included
                 [date(2025, 10, 28), date(2025, 11, 1)],  # expected excluded
+                id="both_filters",
             ),
-        ]
+        ],
     )
     def test_filters_by_date_range(
         self,
-        name,
         start_date,
         end_date,
         daily_hours,
@@ -123,15 +122,11 @@ class TestGroupTasksByDate(unittest.TestCase):
 
         # Check expected dates are included
         for expected_date in expected_included:
-            self.assertIn(
-                expected_date, result, f"{name}: {expected_date} should be included"
-            )
+            assert expected_date in result, f"{expected_date} should be included"
 
         # Check excluded dates are not present
         for excluded_date in expected_excluded:
-            self.assertNotIn(
-                excluded_date, result, f"{name}: {excluded_date} should be excluded"
-            )
+            assert excluded_date not in result, f"{excluded_date} should be excluded"
 
     def test_sorts_by_date(self):
         """Test result is sorted by date."""
@@ -147,9 +142,7 @@ class TestGroupTasksByDate(unittest.TestCase):
         result = _group_tasks_by_date([task], task_daily_hours, None, None)
 
         dates = list(result.keys())
-        self.assertEqual(
-            dates, [date(2025, 10, 30), date(2025, 10, 31), date(2025, 11, 1)]
-        )
+        assert dates == [date(2025, 10, 30), date(2025, 10, 31), date(2025, 11, 1)]
 
     def test_ignores_tasks_without_schedule(self):
         """Test tasks without schedule (no task_daily_hours) are ignored."""
@@ -168,8 +161,8 @@ class TestGroupTasksByDate(unittest.TestCase):
             None,
         )
 
-        self.assertEqual(len(result), 1)
-        self.assertEqual(len(result[date(2025, 10, 30)]), 1)
+        assert len(result) == 1
+        assert len(result[date(2025, 10, 30)]) == 1
 
     def test_includes_fixed_tasks_without_daily_allocations(self):
         """Test fixed tasks are included when they have task_daily_hours."""
@@ -192,13 +185,13 @@ class TestGroupTasksByDate(unittest.TestCase):
         )
 
         # Both tasks should appear in the result
-        self.assertIn(date(2025, 10, 30), result)
+        assert date(2025, 10, 30) in result
 
         # Check that both tasks are present on 2025/10/30
         tasks_on_oct_30 = [task for task, _ in result[date(2025, 10, 30)]]
         task_names = [task.name for task in tasks_on_oct_30]
-        self.assertIn("Fixed Task", task_names)
-        self.assertIn("Optimized Task", task_names)
+        assert "Fixed Task" in task_names
+        assert "Optimized Task" in task_names
 
     def test_includes_manually_scheduled_tasks(self):
         """Test manually scheduled tasks are included when they have task_daily_hours."""
@@ -215,18 +208,18 @@ class TestGroupTasksByDate(unittest.TestCase):
         result = _group_tasks_by_date([manual_task], task_daily_hours, None, None)
 
         # Manual task should appear in the result
-        self.assertIn(date(2025, 10, 30), result)
-        self.assertEqual(len(result[date(2025, 10, 30)]), 1)
-        self.assertEqual(result[date(2025, 10, 30)][0][0].name, "Manual Task")
+        assert date(2025, 10, 30) in result
+        assert len(result[date(2025, 10, 30)]) == 1
+        assert result[date(2025, 10, 30)][0][0].name == "Manual Task"
 
 
-class TestGenerateMarkdownReport(unittest.TestCase):
+class TestGenerateMarkdownReport:
     """Tests for _generate_markdown_report function."""
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "grouped_tasks,expected_output",
         [
-            (
-                "multiple_tasks_multiple_dates",
+            pytest.param(
                 {
                     date(2025, 10, 30): [
                         (_create_gantt_task(1, "Task 1"), 3.0),
@@ -248,29 +241,31 @@ class TestGenerateMarkdownReport(unittest.TestCase):
                     "|Task 1|2|\n"
                     "|sum|2|\n"
                 ),
+                id="multiple_tasks_multiple_dates",
             ),
-            (
-                "zero_allocation",
+            pytest.param(
                 {date(2025, 10, 30): [(_create_gantt_task(1, "Task 1"), 0.0)]},
-                ("2025/10/30\n|タスク|想定工数[h]|\n|--|--|\n|Task 1|-|\n|sum|-|\n"),
+                "2025/10/30\n|タスク|想定工数[h]|\n|--|--|\n|Task 1|-|\n|sum|-|\n",
+                id="zero_allocation",
             ),
-            (
-                "float_to_int_conversion",
+            pytest.param(
                 {date(2025, 10, 30): [(_create_gantt_task(1, "Task 1"), 3.7)]},
-                ("2025/10/30\n|タスク|想定工数[h]|\n|--|--|\n|Task 1|3|\n|sum|3|\n"),
+                "2025/10/30\n|タスク|想定工数[h]|\n|--|--|\n|Task 1|3|\n|sum|3|\n",
+                id="float_to_int_conversion",
             ),
-        ]
+        ],
     )
-    def test_markdown_generation(self, name, grouped_tasks, expected_output):
+    def test_markdown_generation(self, grouped_tasks, expected_output):
         """Test markdown generation with various scenarios."""
         result = _generate_markdown_report(grouped_tasks)
-        self.assertEqual(result, expected_output)
+        assert result == expected_output
 
 
-class TestReportCommand(unittest.TestCase):
+class TestReportCommand:
     """Tests for report_command."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test dependencies."""
         self.runner = CliRunner()
         self.console_writer = MagicMock(spec=RichConsoleWriter)
@@ -293,11 +288,9 @@ class TestReportCommand(unittest.TestCase):
         result = self.runner.invoke(report_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.warning.assert_called_once()
-        self.assertIn(
-            "No scheduled tasks found", self.console_writer.warning.call_args[0][0]
-        )
+        assert "No scheduled tasks found" in self.console_writer.warning.call_args[0][0]
 
     def test_shows_warning_when_no_tasks_in_date_range(self):
         """Test warning is shown when no tasks match the date range."""
@@ -317,12 +310,9 @@ class TestReportCommand(unittest.TestCase):
         )
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.warning.assert_called_once()
-        self.assertIn(
-            "No scheduled tasks found",
-            self.console_writer.warning.call_args[0][0],
-        )
+        assert "No scheduled tasks found" in self.console_writer.warning.call_args[0][0]
 
     def test_generates_report_for_scheduled_tasks(self):
         """Test report is generated for tasks with task_daily_hours."""
@@ -341,17 +331,13 @@ class TestReportCommand(unittest.TestCase):
         result = self.runner.invoke(report_command, [], obj=self.cli_context)
 
         # Verify
-        self.assertEqual(result.exit_code, 0)
+        assert result.exit_code == 0
         self.console_writer.print.assert_called_once()
 
         # Check the markdown output
         output = self.console_writer.print.call_args[0][0]
-        self.assertIn("2025/10/30", output)
-        self.assertIn("|タスク|想定工数[h]|", output)
-        self.assertIn("|Task 1|3|", output)
-        self.assertIn("|Task 2|4|", output)
-        self.assertIn("|sum|7|", output)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert "2025/10/30" in output
+        assert "|タスク|想定工数[h]|" in output
+        assert "|Task 1|3|" in output
+        assert "|Task 2|4|" in output
+        assert "|sum|7|" in output
