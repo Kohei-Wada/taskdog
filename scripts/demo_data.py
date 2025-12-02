@@ -17,6 +17,7 @@ Projects included:
 - Learning & Skill Development (5 tasks)
 
 Usage:
+    python demo_data.py [--host HOST] [--port PORT] [--no-confirm] [--workers N]
     python demo_data.py [--api-url URL] [--no-confirm] [--workers N]
 
 Requirements:
@@ -471,8 +472,20 @@ def main() -> int:
     )
     parser.add_argument(
         "--api-url",
-        default="http://127.0.0.1:8000",
-        help="Taskdog API server URL (default: http://127.0.0.1:8000)",
+        default=None,
+        help="Taskdog API server URL (overrides --host and --port)",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="API server host (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        "-p",
+        type=int,
+        default=8000,
+        help="API server port (default: 8000)",
     )
     parser.add_argument(
         "--no-confirm",
@@ -494,12 +507,15 @@ def main() -> int:
         print(f"{RED}Error: Data file not found: {DATA_FILE}{NC}")
         return 1
 
+    # Determine API URL
+    api_url = args.api_url or f"http://{args.host}:{args.port}"
+
     # Initialize client
-    client = TaskdogAPIClient(args.api_url)
+    client = TaskdogAPIClient(api_url)
 
     # Check server health
     if not client.health_check():
-        print(f"{RED}Error: taskdog-server is not running at {args.api_url}{NC}")
+        print(f"{RED}Error: taskdog-server is not running at {api_url}{NC}")
         print("Please start the server with: taskdog-server")
         print("Or: systemctl --user start taskdog-server")
         return 1
