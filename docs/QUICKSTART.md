@@ -43,7 +43,20 @@ EOF
 
 ## Step 3: Start the Server (1 minute)
 
-### Option A: Manual Start (Quick Test)
+### Option A: Docker (Recommended for isolation)
+
+```bash
+# Build and run the container
+docker build -f contrib/docker/Dockerfile -t taskdog-server .
+docker run -d --name taskdog-server -p 8000:8000 -v taskdog-data:/data taskdog-server
+
+# Verify it's running
+curl http://localhost:8000/health
+```
+
+See [contrib/docker/README.md](../contrib/docker/README.md) for more details.
+
+### Option B: Manual Start (Quick Test)
 
 ```bash
 # Start the server in a terminal
@@ -52,7 +65,7 @@ taskdog-server
 # Keep this terminal running
 ```
 
-### Option B: Systemd Service (Recommended)
+### Option C: Systemd Service (Linux, Recommended for local)
 
 ```bash
 # Start the service

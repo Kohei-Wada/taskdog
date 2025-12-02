@@ -1,8 +1,60 @@
-# Systemd User Service Setup
+# Contrib - Deployment and Infrastructure
+
+This directory contains deployment configurations and infrastructure files for running Taskdog Server.
+
+## Contents
+
+| Directory | Description | Platform |
+|-----------|-------------|----------|
+| [docker/](docker/) | Docker container setup | Any (Docker) |
+| [systemd/](systemd/) | Systemd user service | Linux |
+| [launchd/](launchd/) | Launchd property list | macOS |
+
+## Quick Start
+
+Choose your preferred deployment method:
+
+### Docker (Recommended for isolation)
+
+```bash
+# Build and run
+docker build -f contrib/docker/Dockerfile -t taskdog-server .
+docker run -d -p 8000:8000 -v taskdog-data:/data taskdog-server
+```
+
+See [docker/README.md](docker/README.md) for details.
+
+### Systemd (Linux)
+
+```bash
+# Automatic setup via make install
+make install
+
+# Manual start
+systemctl --user start taskdog-server
+systemctl --user enable taskdog-server
+```
+
+See [Systemd Setup](#systemd-user-service-setup) below for details.
+
+### Launchd (macOS)
+
+```bash
+# Automatic setup via make install
+make install
+
+# Service starts automatically
+```
+
+See [launchd/taskdog-server.plist](launchd/taskdog-server.plist) for the property list.
+
+---
+
+## Systemd User Service Setup
 
 Taskdog Server can run as a systemd user service for automatic startup and management.
 
-## Installation
+### Installation
 
 The systemd service is automatically installed when you run:
 
@@ -17,7 +69,7 @@ This will:
 3. Enable the service for automatic startup
 4. Reload the systemd daemon
 
-## Important: CLI/TUI Requires Running Server
+### Important: CLI/TUI Requires Running Server
 
 **The `taskdog` CLI and TUI commands require the server to be running.** Without a running server, all CLI/TUI commands will fail with connection errors.
 
@@ -76,7 +128,7 @@ taskdog table
 - Set `enabled = true` in config file (see Method A above)
 - Or set TASKDOG_API_URL environment variable (see Method B above)
 
-## Starting the Service
+### Starting the Service
 
 After installation, start the service with:
 
@@ -90,9 +142,9 @@ Check the status:
 systemctl --user status taskdog-server
 ```
 
-## Service Management
+### Service Management
 
-### View Logs
+#### View Logs
 
 ```bash
 # Follow logs in real-time
@@ -105,31 +157,31 @@ journalctl --user -u taskdog-server -n 50
 journalctl --user -u taskdog-server -b
 ```
 
-### Stop the Service
+#### Stop the Service
 
 ```bash
 systemctl --user stop taskdog-server
 ```
 
-### Restart the Service
+#### Restart the Service
 
 ```bash
 systemctl --user restart taskdog-server
 ```
 
-### Disable Auto-Start
+#### Disable Auto-Start
 
 ```bash
 systemctl --user disable taskdog-server
 ```
 
-### Re-enable Auto-Start
+#### Re-enable Auto-Start
 
 ```bash
 systemctl --user enable taskdog-server
 ```
 
-## Configuration
+### Configuration
 
 The default service configuration:
 
@@ -141,7 +193,7 @@ The default service configuration:
 
 **Note**: WebSocket real-time synchronization requires `--workers 1`. Multiple workers are not supported yet due to lack of inter-process communication (would require Redis Pub/Sub or similar).
 
-### Customizing the Service
+#### Customizing the Service
 
 To customize the service (host, port, workers, etc.), edit the service file:
 
@@ -178,9 +230,9 @@ ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
 # Use --workers 1 for WebSocket support
 ```
 
-## Troubleshooting
+### Troubleshooting
 
-### Service Won't Start
+#### Service Won't Start
 
 1. Check logs:
 
@@ -200,7 +252,7 @@ ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
    ss -tlnp | grep 8000
    ```
 
-### Service Crashes on Startup
+#### Service Crashes on Startup
 
 - Check permissions on the data directory:
 
@@ -214,7 +266,7 @@ ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
   sqlite3 ~/.local/share/taskdog/tasks.db "PRAGMA integrity_check;"
   ```
 
-### Logs Not Appearing
+#### Logs Not Appearing
 
 - Ensure journald is running:
 
@@ -228,7 +280,7 @@ ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
   loginctl user-status
   ```
 
-### Service Not Auto-Starting on Boot
+#### Service Not Auto-Starting on Boot
 
 Enable lingering for your user (allows user services to run without login):
 
@@ -236,7 +288,7 @@ Enable lingering for your user (allows user services to run without login):
 loginctl enable-linger $USER
 ```
 
-## Uninstallation
+### Uninstallation
 
 To remove the systemd service:
 
@@ -252,7 +304,7 @@ This will:
 4. Reload the systemd daemon
 5. Uninstall the `taskdog-server` command
 
-## Manual Installation
+### Manual Installation
 
 If you prefer to manage the service manually without `make install`:
 
@@ -269,7 +321,7 @@ systemctl --user enable taskdog-server
 systemctl --user start taskdog-server
 ```
 
-## Security Considerations
+### Security Considerations
 
 The default service configuration includes security hardening:
 
