@@ -6,6 +6,7 @@ from typing import Any
 import httpx  # type: ignore[import-not-found]
 
 from taskdog_core.domain.exceptions.task_exceptions import (
+    AuthenticationError,
     ServerConnectionError,
     TaskNotFoundException,
     TaskValidationError,
@@ -69,6 +70,8 @@ class BaseApiClient:
         elif response.status_code == 400:
             detail = response.json().get("detail", "Validation error")
             raise TaskValidationError(detail)
+        elif response.status_code == 401:
+            raise AuthenticationError("Authentication failed. Check your API key.")
         else:
             response.raise_for_status()
 

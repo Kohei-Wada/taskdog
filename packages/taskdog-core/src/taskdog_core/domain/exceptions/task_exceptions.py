@@ -121,6 +121,20 @@ class ServerConnectionError(TaskError):
         )
 
 
+class AuthenticationError(TaskError):
+    """Raised when API authentication fails (401 Unauthorized)."""
+
+    def __init__(
+        self, message: str = "Authentication failed. Check your API key."
+    ) -> None:
+        """Initialize with error message.
+
+        Args:
+            message: Human-readable error message
+        """
+        super().__init__(message)
+
+
 class TaskNotSchedulableError(TaskValidationError):
     """Raised when a single task cannot be scheduled."""
 

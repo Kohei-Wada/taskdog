@@ -132,7 +132,8 @@ class TestCliGlobalOptions:
         mock_load_config.return_value = mock_config
 
         mock_client_instance = MagicMock()
-        mock_client_instance.client.get.side_effect = Exception("Connection refused")
+        # check_health() raises Exception on connection failure
+        mock_client_instance.check_health.side_effect = Exception("Connection refused")
         mock_api_client.return_value = mock_client_instance
 
         # Execute
