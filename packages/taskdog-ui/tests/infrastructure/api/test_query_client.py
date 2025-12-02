@@ -1,18 +1,18 @@
 """Tests for QueryClient."""
 
-import unittest
 from datetime import date
 from unittest.mock import Mock, patch
 
-from parameterized import parameterized
+import pytest
 
 from taskdog.infrastructure.api.query_client import QueryClient
 
 
-class TestQueryClient(unittest.TestCase):
+class TestQueryClient:
     """Test cases for QueryClient."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.mock_base = Mock()
         self.notes_cache = {}
@@ -45,40 +45,34 @@ class TestQueryClient(unittest.TestCase):
 
         self.mock_base._safe_request.assert_called_once()
         call_args = self.mock_base._safe_request.call_args
-        self.assertEqual(call_args[0][0], "get")
-        self.assertEqual(call_args[0][1], "/api/v1/tasks")
+        assert call_args[0][0] == "get"
+        assert call_args[0][1] == "/api/v1/tasks"
 
         params = call_args[1]["params"]
-        self.assertEqual(params["all"], "false")
-        self.assertEqual(params["status"], "pending")
-        self.assertEqual(params["tags"], ["urgent"])
-        self.assertEqual(params["start_date"], "2025-01-01")
-        self.assertEqual(params["end_date"], "2025-01-31")
-        self.assertEqual(params["sort"], "deadline")
-        self.assertEqual(params["reverse"], "true")
+        assert params["all"] == "false"
+        assert params["status"] == "pending"
+        assert params["tags"] == ["urgent"]
+        assert params["start_date"] == "2025-01-01"
+        assert params["end_date"] == "2025-01-31"
+        assert params["sort"] == "deadline"
+        assert params["reverse"] == "true"
 
-        self.assertEqual(result, mock_output)
+        assert result == mock_output
         mock_convert.assert_called_once_with(mock_response.json(), self.notes_cache)
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "method_name,converter_name,mock_json",
         [
+            ("get_task_by_id", "convert_to_get_task_by_id_output", {"id": 1}),
             (
-                "get_task_by_id",
-                "get_task_by_id",
-                "convert_to_get_task_by_id_output",
-                {"id": 1},
-            ),
-            (
-                "get_task_detail",
                 "get_task_detail",
                 "convert_to_get_task_detail_output",
                 {"id": 1, "notes": "Content"},
             ),
-        ]
+        ],
+        ids=["get_task_by_id", "get_task_detail"],
     )
-    def test_get_single_task_operations(
-        self, operation_name, method_name, converter_name, mock_json
-    ):
+    def test_get_single_task_operations(self, method_name, converter_name, mock_json):
         """Test single task GET operations make correct API calls."""
         with patch(
             f"taskdog.infrastructure.api.query_client.{converter_name}"
@@ -97,7 +91,7 @@ class TestQueryClient(unittest.TestCase):
             self.mock_base._safe_request.assert_called_once_with(
                 "get", "/api/v1/tasks/1"
             )
-            self.assertEqual(result, mock_output)
+            assert result == mock_output
 
     @patch("taskdog.infrastructure.api.query_client.convert_to_gantt_output")
     def test_get_gantt_data(self, mock_convert):
@@ -121,18 +115,18 @@ class TestQueryClient(unittest.TestCase):
 
         self.mock_base._safe_request.assert_called_once()
         call_args = self.mock_base._safe_request.call_args
-        self.assertEqual(call_args[0][0], "get")
-        self.assertEqual(call_args[0][1], "/api/v1/gantt")
+        assert call_args[0][0] == "get"
+        assert call_args[0][1] == "/api/v1/gantt"
 
         params = call_args[1]["params"]
-        self.assertEqual(params["all"], "false")
-        self.assertEqual(params["status"], "in_progress")
-        self.assertEqual(params["sort"], "deadline")
-        self.assertEqual(params["reverse"], "false")
-        self.assertEqual(params["start_date"], "2025-01-01")
-        self.assertEqual(params["end_date"], "2025-01-31")
+        assert params["all"] == "false"
+        assert params["status"] == "in_progress"
+        assert params["sort"] == "deadline"
+        assert params["reverse"] == "false"
+        assert params["start_date"] == "2025-01-01"
+        assert params["end_date"] == "2025-01-31"
 
-        self.assertEqual(result, mock_output)
+        assert result == mock_output
 
     @patch("taskdog.infrastructure.api.query_client.convert_to_tag_statistics_output")
     def test_get_tag_statistics(self, mock_convert):
@@ -150,8 +144,4 @@ class TestQueryClient(unittest.TestCase):
         self.mock_base._safe_request.assert_called_once_with(
             "get", "/api/v1/tags/statistics"
         )
-        self.assertEqual(result, mock_output)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result == mock_output

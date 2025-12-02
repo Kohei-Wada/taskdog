@@ -1,10 +1,9 @@
 """Tests for BaseApiClient."""
 
-import unittest
 from unittest.mock import Mock, patch
 
 import httpx
-from parameterized import parameterized
+import pytest
 
 from taskdog.infrastructure.api.base_client import BaseApiClient
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -14,10 +13,11 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 )
 
 
-class TestBaseApiClient(unittest.TestCase):
+class TestBaseApiClient:
     """Test cases for BaseApiClient."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.base_url = "http://test.example.com"
         self.timeout = 10.0
@@ -26,19 +26,19 @@ class TestBaseApiClient(unittest.TestCase):
         """Test client initialization."""
         client = BaseApiClient(self.base_url, self.timeout)
 
-        self.assertEqual(client.base_url, self.base_url)
-        self.assertIsInstance(client.client, httpx.Client)
+        assert client.base_url == self.base_url
+        assert isinstance(client.client, httpx.Client)
 
     def test_init_strips_trailing_slash(self):
         """Test base URL trailing slash is stripped."""
         client = BaseApiClient("http://test.example.com/", self.timeout)
 
-        self.assertEqual(client.base_url, "http://test.example.com")
+        assert client.base_url == "http://test.example.com"
 
     def test_context_manager(self):
         """Test context manager protocol."""
         with BaseApiClient(self.base_url, self.timeout) as client:
-            self.assertIsInstance(client, BaseApiClient)
+            assert isinstance(client, BaseApiClient)
 
     @patch("taskdog.infrastructure.api.base_client.httpx.Client")
     def test_close(self, mock_client_class):
@@ -51,14 +51,16 @@ class TestBaseApiClient(unittest.TestCase):
 
         mock_client_instance.close.assert_called_once()
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "status_code,expected_exception,detail_message",
         [
-            ("404_error", 404, TaskNotFoundException, "Task not found"),
-            ("400_error", 400, TaskValidationError, "Validation failed"),
-        ]
+            (404, TaskNotFoundException, "Task not found"),
+            (400, TaskValidationError, "Validation failed"),
+        ],
+        ids=["404_error", "400_error"],
     )
     def test_handle_error_status_codes(
-        self, scenario, status_code, expected_exception, detail_message
+        self, status_code, expected_exception, detail_message
     ):
         """Test _handle_error raises appropriate exceptions for error status codes."""
         client = BaseApiClient(self.base_url, self.timeout)
@@ -66,10 +68,10 @@ class TestBaseApiClient(unittest.TestCase):
         response.status_code = status_code
         response.json.return_value = {"detail": detail_message}
 
-        with self.assertRaises(expected_exception) as cm:
+        with pytest.raises(expected_exception) as exc_info:
             client._handle_error(response)
 
-        self.assertIn(detail_message, str(cm.exception))
+        assert detail_message in str(exc_info.value)
 
     def test_handle_error_other_status(self):
         """Test _handle_error calls raise_for_status for other errors."""
@@ -80,7 +82,7 @@ class TestBaseApiClient(unittest.TestCase):
             "Server error", request=Mock(), response=response
         )
 
-        with self.assertRaises(httpx.HTTPStatusError):
+        with pytest.raises(httpx.HTTPStatusError):
             client._handle_error(response)
 
         response.raise_for_status.assert_called_once()
@@ -95,28 +97,30 @@ class TestBaseApiClient(unittest.TestCase):
 
         response = client._safe_request("get", "/test")
 
-        self.assertEqual(response, mock_response)
+        assert response == mock_response
         mock_handle_error.assert_not_called()
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "exception_to_raise,should_check_base_url",
         [
-            ("connect_error", httpx.ConnectError("Connection failed"), True),
-            ("timeout_error", httpx.TimeoutException("Timeout"), False),
-            ("request_error", httpx.RequestError("Request failed"), False),
-        ]
+            (httpx.ConnectError("Connection failed"), True),
+            (httpx.TimeoutException("Timeout"), False),
+            (httpx.RequestError("Request failed"), False),
+        ],
+        ids=["connect_error", "timeout_error", "request_error"],
     )
     def test_safe_request_connection_errors(
-        self, scenario, exception_to_raise, should_check_base_url
+        self, exception_to_raise, should_check_base_url
     ):
         """Test _safe_request raises ServerConnectionError on connection failures."""
         client = BaseApiClient(self.base_url, self.timeout)
         client.client.get = Mock(side_effect=exception_to_raise)
 
-        with self.assertRaises(ServerConnectionError) as cm:
+        with pytest.raises(ServerConnectionError) as exc_info:
             client._safe_request("get", "/test")
 
         if should_check_base_url:
-            self.assertIn(self.base_url, str(cm.exception))
+            assert self.base_url in str(exc_info.value)
 
     def test_safe_request_calls_correct_method(self):
         """Test _safe_request calls the specified HTTP method."""
@@ -131,7 +135,3 @@ class TestBaseApiClient(unittest.TestCase):
             getattr(client.client, method).assert_called_once_with(
                 "/test", param="value"
             )
-
-
-if __name__ == "__main__":
-    unittest.main()

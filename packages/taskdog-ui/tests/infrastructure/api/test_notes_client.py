@@ -1,15 +1,18 @@
 """Tests for NotesClient."""
 
-import unittest
 from unittest.mock import Mock
 
+import pytest
+
 from taskdog.infrastructure.api.notes_client import NotesClient
+from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-class TestNotesClient(unittest.TestCase):
+class TestNotesClient:
     """Test cases for NotesClient."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.mock_base = Mock()
         self.client = NotesClient(self.mock_base)
@@ -29,20 +32,18 @@ class TestNotesClient(unittest.TestCase):
         self.mock_base._safe_request.assert_called_once_with(
             "get", "/api/v1/tasks/1/notes"
         )
-        self.assertEqual(content, "# Notes\n\nSome content")
-        self.assertTrue(has_notes)
+        assert content == "# Notes\n\nSome content"
+        assert has_notes is True
 
     def test_get_task_notes_error(self):
         """Test get_task_notes handles errors."""
-        from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
-
         mock_response = Mock()
         mock_response.status_code = 404
         mock_response.json.return_value = {"detail": "Not found"}
         self.mock_base._safe_request.return_value = mock_response
         self.mock_base._handle_error.side_effect = TaskNotFoundException("Not found")
 
-        with self.assertRaises(TaskNotFoundException):
+        with pytest.raises(TaskNotFoundException):
             self.client.get_task_notes(task_id=999)
 
         self.mock_base._handle_error.assert_called_once_with(mock_response)
@@ -57,9 +58,9 @@ class TestNotesClient(unittest.TestCase):
 
         self.mock_base._safe_request.assert_called_once()
         call_args = self.mock_base._safe_request.call_args
-        self.assertEqual(call_args[0][0], "put")
-        self.assertEqual(call_args[0][1], "/api/v1/tasks/1/notes")
-        self.assertEqual(call_args[1]["json"], {"content": "New notes"})
+        assert call_args[0][0] == "put"
+        assert call_args[0][1] == "/api/v1/tasks/1/notes"
+        assert call_args[1]["json"] == {"content": "New notes"}
 
     def test_delete_task_notes(self):
         """Test delete_task_notes makes correct API call."""
@@ -79,7 +80,7 @@ class TestNotesClient(unittest.TestCase):
 
         result = self.client.has_task_notes(task_id=1)
 
-        self.assertTrue(result)
+        assert result is True
         self.mock_base._safe_request.assert_not_called()
 
     def test_has_task_notes_from_api(self):
@@ -91,15 +92,15 @@ class TestNotesClient(unittest.TestCase):
 
         result = self.client.has_task_notes(task_id=1)
 
-        self.assertTrue(result)
+        assert result is True
         # Should be cached now
-        self.assertTrue(self.client._has_notes_cache[1])
+        assert self.client._has_notes_cache[1] is True
 
     def test_cache_notes_info(self):
         """Test cache_notes_info stores info."""
         self.client.cache_notes_info(task_id=1, has_notes=True)
 
-        self.assertTrue(self.client._has_notes_cache[1])
+        assert self.client._has_notes_cache[1] is True
 
     def test_clear_cache(self):
         """Test clear_cache empties cache."""
@@ -108,8 +109,4 @@ class TestNotesClient(unittest.TestCase):
 
         self.client.clear_cache()
 
-        self.assertEqual(len(self.client._has_notes_cache), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(self.client._has_notes_cache) == 0

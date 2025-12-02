@@ -1,25 +1,25 @@
 """Tests for RelationshipClient."""
 
-import unittest
 from unittest.mock import Mock, patch
 
-from parameterized import parameterized
+import pytest
 
 from taskdog.infrastructure.api.relationship_client import RelationshipClient
 
 
-class TestRelationshipClient(unittest.TestCase):
+class TestRelationshipClient:
     """Test cases for RelationshipClient."""
 
-    def setUp(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         """Set up test fixtures."""
         self.mock_base = Mock()
         self.client = RelationshipClient(self.mock_base)
 
-    @parameterized.expand(
+    @pytest.mark.parametrize(
+        "method_name,method_kwargs,expected_http_method,expected_endpoint,expected_json",
         [
             (
-                "add_dependency",
                 "add_dependency",
                 {"depends_on_id": 2},
                 "post",
@@ -28,7 +28,6 @@ class TestRelationshipClient(unittest.TestCase):
             ),
             (
                 "set_task_tags",
-                "set_task_tags",
                 {"tags": ["urgent", "backend"]},
                 "put",
                 "/api/v1/tasks/1/tags",
@@ -36,26 +35,25 @@ class TestRelationshipClient(unittest.TestCase):
             ),
             (
                 "log_hours",
-                "log_hours",
                 {"hours": 5.5, "date_str": "2025-01-15"},
                 "post",
                 "/api/v1/tasks/1/log-hours",
                 {"hours": 5.5, "date": "2025-01-15"},
             ),
-        ]
+        ],
+        ids=["add_dependency", "set_task_tags", "log_hours"],
     )
     @patch(
         "taskdog.infrastructure.api.relationship_client.convert_to_task_operation_output"
     )
     def test_relationship_operation_with_payload(
         self,
-        operation_name,
+        mock_convert,
         method_name,
         method_kwargs,
         expected_http_method,
         expected_endpoint,
         expected_json,
-        mock_convert,
     ):
         """Test relationship operations with JSON payload make correct API calls."""
         mock_response = Mock()
@@ -71,10 +69,10 @@ class TestRelationshipClient(unittest.TestCase):
 
         self.mock_base._safe_request.assert_called_once()
         call_args = self.mock_base._safe_request.call_args
-        self.assertEqual(call_args[0][0], expected_http_method)
-        self.assertEqual(call_args[0][1], expected_endpoint)
-        self.assertEqual(call_args[1]["json"], expected_json)
-        self.assertEqual(result, mock_output)
+        assert call_args[0][0] == expected_http_method
+        assert call_args[0][1] == expected_endpoint
+        assert call_args[1]["json"] == expected_json
+        assert result == mock_output
 
     @patch(
         "taskdog.infrastructure.api.relationship_client.convert_to_task_operation_output"
@@ -94,8 +92,4 @@ class TestRelationshipClient(unittest.TestCase):
         self.mock_base._safe_request.assert_called_once_with(
             "delete", "/api/v1/tasks/1/dependencies/2"
         )
-        self.assertEqual(result, mock_output)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert result == mock_output
