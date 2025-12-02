@@ -81,6 +81,15 @@ class TaskdogApiClient:
         """
         return self._base.client_id
 
+    @property
+    def api_key(self) -> str | None:
+        """Get the API key used for authentication.
+
+        Returns:
+            The API key string, or None if not set
+        """
+        return self._base.api_key
+
     def set_client_id(self, client_id: str) -> None:
         """Set the client ID for WebSocket message attribution.
 
