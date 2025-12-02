@@ -2,7 +2,6 @@
 
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
-from urllib.parse import urlparse, urlunparse
 
 from textual.app import App
 from textual.binding import Binding
@@ -186,6 +185,7 @@ class TaskdogTUI(App):
     def __init__(
         self,
         api_client: "TaskdogApiClient",
+        websocket_client: WebSocketClient,
         cli_config: "CliConfig | None" = None,
         *args,
         **kwargs,
@@ -197,6 +197,7 @@ class TaskdogTUI(App):
 
         Args:
             api_client: API client for server communication (required)
+            websocket_client: WebSocket client for real-time updates (required)
             cli_config: CLI configuration (optional, uses defaults if not provided)
         """
         super().__init__(*args, **kwargs)
@@ -246,21 +247,8 @@ class TaskdogTUI(App):
         self.task_ui_manager: TaskUIManager | None = None
 
         # Initialize WebSocket client for real-time updates
-        ws_url = self._get_websocket_url()
-        self.websocket_client = WebSocketClient(
-            ws_url, self._handle_websocket_message, self.api_client.api_key
-        )
-
-    def _get_websocket_url(self) -> str:
-        """Get WebSocket URL from API client configuration.
-
-        Returns:
-            WebSocket URL (e.g., "ws://127.0.0.1:8000/ws")
-        """
-        parsed = urlparse(self.api_client.base_url)
-        ws_scheme = "wss" if parsed.scheme == "https" else "ws"
-        ws_parsed = parsed._replace(scheme=ws_scheme)
-        return f"{urlunparse(ws_parsed)}/ws"
+        self.websocket_client = websocket_client
+        self.websocket_client.set_callback(self._handle_websocket_message)
 
     def _handle_websocket_message(self, message: dict[str, Any]) -> None:
         """Handle incoming WebSocket messages.
