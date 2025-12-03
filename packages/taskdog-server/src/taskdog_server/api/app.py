@@ -17,6 +17,7 @@ from taskdog_server.api.routers import (
     tasks_router,
     websocket_router,
 )
+from taskdog_server.config.server_config_manager import ServerConfigManager
 from taskdog_server.infrastructure.logging.config import configure_logging
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
@@ -29,6 +30,7 @@ def create_app() -> FastAPI:
     """
     # Load configuration once for the entire app
     config = ConfigManager.load()
+    server_config = ServerConfigManager.load()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -43,6 +45,9 @@ def create_app() -> FastAPI:
         # Initialize API context and store in app.state
         api_context = initialize_api_context(config)
         app.state.api_context = api_context
+
+        # Store server config in app.state (for authentication)
+        app.state.server_config = server_config
 
         # Initialize ConnectionManager in app.state (for WebSocket)
         app.state.connection_manager = ConnectionManager()

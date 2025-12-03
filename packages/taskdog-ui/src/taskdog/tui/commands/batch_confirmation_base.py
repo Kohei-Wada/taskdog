@@ -140,10 +140,8 @@ class BatchConfirmationCommandBase(TUICommandBase):
             self.clear_selection()
             self.reload_tasks()
 
-            # Show result summary
-            if failure_count == 0:
-                self.notify_success(self.get_success_message(success_count))
-            else:
+            # Show result summary (only for failures - success notifications via WebSocket)
+            if failure_count > 0:
                 total = success_count + failure_count
                 self.notify_warning(
                     f"Completed {total} tasks: {success_count} succeeded, {failure_count} failed"

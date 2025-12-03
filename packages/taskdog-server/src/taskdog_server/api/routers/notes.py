@@ -1,11 +1,10 @@
 """Task notes endpoints (CRUD operations for markdown notes)."""
 
-from typing import Annotated
-
-from fastapi import APIRouter, Header, status
+from fastapi import APIRouter, status
 
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import (
+    AuthenticatedClientDep,
     EventBroadcasterDep,
     NotesRepositoryDep,
     RepositoryDep,
@@ -20,7 +19,10 @@ router = APIRouter()
 @router.get("/{task_id}/notes", response_model=NotesResponse)
 @handle_task_errors
 async def get_task_notes(
-    task_id: int, repository: RepositoryDep, notes_repo: NotesRepositoryDep
+    task_id: int,
+    repository: RepositoryDep,
+    notes_repo: NotesRepositoryDep,
+    _client_name: AuthenticatedClientDep,
 ) -> NotesResponse:
     """Get task notes.
 
@@ -55,8 +57,7 @@ async def update_task_notes(
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
     broadcaster: EventBroadcasterDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
+    client_name: AuthenticatedClientDep,
 ) -> NotesResponse:
     """Update task notes.
 
@@ -66,8 +67,7 @@ async def update_task_notes(
         repository: Task repository dependency
         notes_repo: Notes repository dependency
         broadcaster: Event broadcaster dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
+        client_name: Authenticated client name (used for broadcast exclusion)
 
     Returns:
         Updated notes content and metadata
@@ -84,8 +84,8 @@ async def update_task_notes(
     notes_repo.write_notes(task_id, request.content)
     has_notes = notes_repo.has_notes(task_id)
 
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_notes_updated(task_id, task.name, x_client_id, x_user_name)
+    # Broadcast WebSocket event in background (exclude the requester by client name)
+    broadcaster.task_notes_updated(task_id, task.name, client_name)
 
     return NotesResponse(task_id=task_id, content=request.content, has_notes=has_notes)
 
@@ -97,8 +97,7 @@ async def delete_task_notes(
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
     broadcaster: EventBroadcasterDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
+    client_name: AuthenticatedClientDep,
 ) -> None:
     """Delete task notes.
 
@@ -107,8 +106,7 @@ async def delete_task_notes(
         repository: Task repository dependency
         notes_repo: Notes repository dependency
         broadcaster: Event broadcaster dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
+        client_name: Authenticated client name (used for broadcast exclusion)
 
     Raises:
         HTTPException: 404 if task not found
@@ -121,5 +119,5 @@ async def delete_task_notes(
     # Delete notes by writing empty content
     notes_repo.write_notes(task_id, "")
 
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_notes_updated(task_id, task.name, x_client_id, x_user_name)
+    # Broadcast WebSocket event in background (exclude the requester by client name)
+    broadcaster.task_notes_updated(task_id, task.name, client_name)

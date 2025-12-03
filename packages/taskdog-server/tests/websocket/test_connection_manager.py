@@ -96,27 +96,6 @@ class TestConnectionManager:
         mock_websocket2.send_json.assert_called_once_with(message)
         mock_websocket3.send_json.assert_called_once_with(message)
 
-    async def test_broadcast_with_excluded_client(self):
-        """Test broadcasting message excluding one client."""
-        # Arrange
-        mock_websocket1 = AsyncMock(spec=WebSocket)
-        mock_websocket2 = AsyncMock(spec=WebSocket)
-        mock_websocket3 = AsyncMock(spec=WebSocket)
-
-        await self.manager.connect("client-1", mock_websocket1)
-        await self.manager.connect("client-2", mock_websocket2)
-        await self.manager.connect("client-3", mock_websocket3)
-
-        message = {"type": "task_updated", "task_id": 123}
-
-        # Act
-        await self.manager.broadcast(message, exclude_client_id="client-2")
-
-        # Assert
-        mock_websocket1.send_json.assert_called_once_with(message)
-        mock_websocket2.send_json.assert_not_called()
-        mock_websocket3.send_json.assert_called_once_with(message)
-
     async def test_broadcast_removes_disconnected_clients(self):
         """Test that broadcast removes clients with broken connections."""
         # Arrange

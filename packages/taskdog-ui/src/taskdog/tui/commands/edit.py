@@ -5,7 +5,6 @@ from taskdog.tui.commands.decorators import require_selected_task
 from taskdog.tui.dialogs.task_form_dialog import TaskFormDialog
 from taskdog.tui.events import TaskUpdated
 from taskdog.tui.forms.task_form_fields import TaskFormData
-from taskdog.tui.messages import TUIMessageBuilder
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
@@ -147,12 +146,10 @@ class EditCommand(TUICommandBase):
             updated_fields.append("dependencies")
 
         # Post TaskUpdated event to trigger UI refresh
+        # (notification will be shown via WebSocket event)
         if updated_task.id is None:
             raise ValueError("Updated task must have an ID")
         self.app.post_message(TaskUpdated(updated_task.id))
-
-        msg = TUIMessageBuilder.task_updated(updated_task.id, updated_fields)
-        self.notify_success(msg)
 
     def _sync_dependencies(self, task: TaskDetailDto, form_data: TaskFormData) -> None:
         """Synchronize task dependencies.

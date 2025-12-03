@@ -99,15 +99,9 @@ class OptimizeCommand(TUICommandBase):
                 prefix = f"Partially optimized: {success_count} succeeded. "
                 message = self._format_failed_tasks_message(result, prefix)
                 self.notify_warning(message)
-            elif len(result.successful_tasks) > 0:
-                task_count = len(result.successful_tasks)
-                max_hours_text = f"{max_hours}h/day" if max_hours else "default"
-                self.notify_success(
-                    f"Optimized {task_count} task(s) using '{algorithm}' "
-                    f"(max {max_hours_text}). Check gantt chart."
-                )
-            else:
+            elif len(result.successful_tasks) == 0:
                 self.notify_warning("No tasks were optimized. Check task requirements.")
+            # Success case: notification will be shown via WebSocket event
 
         # Get algorithm metadata from API client
         algorithm_metadata = self.context.api_client.get_algorithm_metadata()

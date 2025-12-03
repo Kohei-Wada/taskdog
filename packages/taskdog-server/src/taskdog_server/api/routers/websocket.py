@@ -6,9 +6,13 @@ real-time notifications about task changes.
 
 import uuid
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
-from taskdog_server.api.dependencies import ConnectionManagerWsDep
+from taskdog_server.api.dependencies import (
+    ConnectionManagerWsDep,
+    ServerConfigWsDep,
+    validate_api_key_for_websocket,
+)
 
 router = APIRouter()
 
@@ -17,14 +21,22 @@ router = APIRouter()
 async def websocket_endpoint(
     websocket: WebSocket,
     manager: ConnectionManagerWsDep,
+    server_config: ServerConfigWsDep,
+    token: str | None = Query(None, description="API key for authentication"),
 ) -> None:
     """WebSocket endpoint for real-time task updates.
 
     Clients connect to this endpoint to receive real-time notifications
     when tasks are created, updated, or deleted.
 
+    Authentication:
+        Pass API key as query parameter: /ws?token=sk-xxx
+
     Args:
         websocket: The WebSocket connection
+        manager: Connection manager dependency
+        server_config: Server configuration dependency
+        token: API key for authentication (query parameter)
 
     Message Format:
         {
@@ -34,15 +46,19 @@ async def websocket_endpoint(
             "data": {...}  # Full task data or relevant fields
         }
     """
+    # Validate API key before accepting connection
+    try:
+        client_name = validate_api_key_for_websocket(token, server_config)
+    except ValueError as e:
+        # Use standard WebSocket close code 1008 (Policy Violation) for auth failures
+        await websocket.close(code=1008, reason=str(e))
+        return
+
     # Generate unique client ID for this connection
     client_id = str(uuid.uuid4())
 
-    # Get user name from X-User-Name header
-    # This should be set by reverse proxy (e.g., Kong's request-transformer plugin)
-    user_name = websocket.headers.get("x-user-name")
-    # Sanitize user name to prevent log injection attacks (CWE-117)
-    if user_name:
-        user_name = user_name.strip()[:100]  # Limit length and strip whitespace
+    # Use authenticated client name, or "anonymous" if auth is disabled
+    user_name = client_name if client_name else "anonymous"
 
     await manager.connect(client_id, websocket, user_name)
     try:

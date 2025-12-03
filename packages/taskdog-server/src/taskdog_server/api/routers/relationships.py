@@ -1,10 +1,9 @@
 """Task relationship endpoints (dependencies, tags, hours logging)."""
 
-from typing import Annotated
-
-from fastapi import APIRouter, Header
+from fastapi import APIRouter
 
 from taskdog_server.api.dependencies import (
+    AuthenticatedClientDep,
     EventBroadcasterDep,
     RelationshipControllerDep,
     TimeProviderDep,
@@ -27,8 +26,7 @@ async def add_dependency(
     request: AddDependencyRequest,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
+    client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
     """Add a dependency to a task.
 
@@ -37,8 +35,7 @@ async def add_dependency(
         request: Dependency data (ID of task to depend on)
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
+        client_name: Authenticated client name (for broadcast payload)
 
     Returns:
         Updated task data with new dependency
@@ -48,8 +45,8 @@ async def add_dependency(
     """
     result = controller.add_dependency(task_id, request.depends_on_id)
 
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result, ["depends_on"], x_client_id, x_user_name)
+    # Broadcast WebSocket event in background
+    broadcaster.task_updated(result, ["depends_on"], client_name)
 
     return TaskOperationResponse.from_dto(result)
 
@@ -63,8 +60,7 @@ async def remove_dependency(
     depends_on_id: int,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
+    client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
     """Remove a dependency from a task.
 
@@ -73,8 +69,7 @@ async def remove_dependency(
         depends_on_id: ID of dependency to remove
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
+        client_name: Authenticated client name (for broadcast payload)
 
     Returns:
         Updated task data without the dependency
@@ -84,8 +79,8 @@ async def remove_dependency(
     """
     result = controller.remove_dependency(task_id, depends_on_id)
 
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result, ["depends_on"], x_client_id, x_user_name)
+    # Broadcast WebSocket event in background
+    broadcaster.task_updated(result, ["depends_on"], client_name)
 
     return TaskOperationResponse.from_dto(result)
 
@@ -97,8 +92,7 @@ async def set_task_tags(
     request: SetTaskTagsRequest,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
+    client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
     """Set task tags (replaces existing tags).
 
@@ -107,8 +101,7 @@ async def set_task_tags(
         request: New tags list
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
+        client_name: Authenticated client name (for broadcast payload)
 
     Returns:
         Updated task data with new tags
@@ -118,8 +111,8 @@ async def set_task_tags(
     """
     result = controller.set_task_tags(task_id, request.tags)
 
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result, ["tags"], x_client_id, x_user_name)
+    # Broadcast WebSocket event in background
+    broadcaster.task_updated(result, ["tags"], client_name)
 
     return TaskOperationResponse.from_dto(result)
 
@@ -132,8 +125,7 @@ async def log_hours(
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
     time_provider: TimeProviderDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
+    client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
     """Log actual hours worked on a task for a specific date.
 
@@ -143,8 +135,7 @@ async def log_hours(
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
         time_provider: Time provider dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
+        client_name: Authenticated client name (for broadcast payload)
 
     Returns:
         Updated task data with logged hours
@@ -155,7 +146,7 @@ async def log_hours(
     log_date = request.date if request.date else time_provider.today()
     result = controller.log_hours(task_id, request.hours, log_date.isoformat())
 
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_updated(result, ["actual_daily_hours"], x_client_id, x_user_name)
+    # Broadcast WebSocket event in background
+    broadcaster.task_updated(result, ["actual_daily_hours"], client_name)
 
     return TaskOperationResponse.from_dto(result)

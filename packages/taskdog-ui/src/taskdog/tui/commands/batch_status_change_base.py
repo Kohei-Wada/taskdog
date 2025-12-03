@@ -65,17 +65,16 @@ class BatchStatusChangeCommandBase(TUICommandBase):
         self._show_summary(task_ids, success_count, failure_count)
 
     def _process_tasks(self, task_ids: list[int]) -> tuple[int, int]:
-        """Process tasks and return success/failure counts."""
+        """Process tasks and return success/failure counts.
+
+        Note: success notifications will be shown via WebSocket events.
+        """
         success_count = 0
         failure_count = 0
 
         for task_id in task_ids:
             try:
-                result = self.execute_single_task(task_id)
-                success_message = self.get_success_message(result.name, task_id)
-                if len(task_ids) == 1:
-                    # Single task: show detailed message
-                    self.notify_success(success_message)
+                self.execute_single_task(task_id)
                 success_count += 1
             except Exception as e:
                 # All exceptions handled uniformly
@@ -87,12 +86,13 @@ class BatchStatusChangeCommandBase(TUICommandBase):
     def _show_summary(
         self, task_ids: list[int], success_count: int, failure_count: int
     ) -> None:
-        """Show summary notification for batch operations."""
-        if len(task_ids) > 1:
+        """Show summary notification for batch operations.
+
+        Note: success notifications will be shown via WebSocket events.
+        Only shows warning for partial failures.
+        """
+        if len(task_ids) > 1 and failure_count > 0:
             total = success_count + failure_count
-            if failure_count == 0:
-                self.notify_success(f"Successfully processed {success_count} tasks")
-            else:
-                self.notify_warning(
-                    f"Completed {total} tasks: {success_count} succeeded, {failure_count} failed"
-                )
+            self.notify_warning(
+                f"Completed {total} tasks: {success_count} succeeded, {failure_count} failed"
+            )

@@ -65,22 +65,15 @@ class ConnectionManager:
         """
         return self.client_user_names.get(client_id)
 
-    async def broadcast(
-        self, message: dict[str, Any], exclude_client_id: str | None = None
-    ) -> None:
-        """Broadcast a message to all connected clients except excluded one.
+    async def broadcast(self, message: dict[str, Any]) -> None:
+        """Broadcast a message to all connected clients.
 
         Args:
             message: The message dictionary to broadcast
-            exclude_client_id: Optional client ID to exclude from broadcast
         """
         # Remove disconnected clients while broadcasting
         disconnected = []
         for client_id, connection in self.active_connections.items():
-            # Skip the excluded client (usually the one who triggered the change)
-            if client_id == exclude_client_id:
-                continue
-
             try:
                 await connection.send_json(message)
             except Exception as e:

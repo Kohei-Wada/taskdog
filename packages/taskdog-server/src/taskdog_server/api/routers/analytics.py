@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Header, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from taskdog_core.application.dto.query_inputs import GetGanttDataInput
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -14,6 +14,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 from taskdog_server.api.converters import convert_to_gantt_response
 from taskdog_server.api.dependencies import (
     AnalyticsControllerDep,
+    AuthenticatedClientDep,
     EventBroadcasterDep,
     HolidayCheckerDep,
     QueryControllerDep,
@@ -43,6 +44,7 @@ router = APIRouter()
 @router.get("/statistics", response_model=StatisticsResponse)
 async def get_statistics(
     controller: AnalyticsControllerDep,
+    _client_name: AuthenticatedClientDep,
     period: str = Query("all", description="Time period: all, 7d, or 30d"),
 ) -> StatisticsResponse:
     """Get task statistics for a time period.
@@ -125,7 +127,10 @@ async def get_statistics(
 
 
 @router.get("/tags/statistics", response_model=TagStatisticsResponse)
-async def get_tag_statistics(controller: QueryControllerDep) -> TagStatisticsResponse:
+async def get_tag_statistics(
+    controller: QueryControllerDep,
+    _client_name: AuthenticatedClientDep,
+) -> TagStatisticsResponse:
     """Get tag usage statistics.
 
     Args:
@@ -151,6 +156,7 @@ async def get_tag_statistics(controller: QueryControllerDep) -> TagStatisticsRes
 async def get_gantt_chart(
     controller: QueryControllerDep,
     holiday_checker: HolidayCheckerDep,
+    _client_name: AuthenticatedClientDep,
     all: Annotated[bool, Query(description="Include archived tasks")] = False,
     status_filter: Annotated[
         str | None, Query(alias="status", description="Filter by status")
@@ -244,9 +250,8 @@ async def optimize_schedule(
     controller: AnalyticsControllerDep,
     broadcaster: EventBroadcasterDep,
     time_provider: TimeProviderDep,
+    client_name: AuthenticatedClientDep,
     run_async: bool = Query(False, description="Run optimization in background"),
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
 ) -> OptimizationResponse:
     """Optimize task schedules using specified algorithm.
 
@@ -255,9 +260,8 @@ async def optimize_schedule(
         controller: Analytics controller dependency
         broadcaster: Event broadcaster dependency
         time_provider: Time provider dependency
+        client_name: Authenticated client name (used for broadcast exclusion)
         run_async: If True, run in background and return immediately
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
 
     Returns:
         Optimization results with summary and failures
@@ -303,13 +307,12 @@ async def optimize_schedule(
             task_ids=request.task_ids,
         )
 
-        # Broadcast WebSocket event in background (exclude the requester)
+        # Broadcast WebSocket event in background (exclude the requester by client name)
         broadcaster.schedule_optimized(
             len(result.successful_tasks),
             len(result.failed_tasks),
             request.algorithm,
-            x_client_id,
-            x_user_name,
+            client_name,
         )
 
         # Convert DTO to response model
@@ -363,7 +366,10 @@ async def optimize_schedule(
 
 
 @router.get("/algorithms", response_model=list[dict[str, str]])
-async def list_algorithms(controller: QueryControllerDep) -> list[dict[str, str]]:
+async def list_algorithms(
+    controller: QueryControllerDep,
+    _client_name: AuthenticatedClientDep,
+) -> list[dict[str, str]]:
     """List available optimization algorithms.
 
     Args:

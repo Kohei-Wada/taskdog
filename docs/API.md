@@ -41,7 +41,65 @@ Once the server is running, access interactive API documentation:
 
 ## Authentication
 
-Currently, Taskdog API does not require authentication. It's designed for local, single-user use.
+Taskdog API supports optional API key authentication. When enabled, all HTTP endpoints and WebSocket connections require authentication.
+
+### Configuration
+
+Authentication is configured in `server.toml`:
+
+```toml
+# ~/.config/taskdog/server.toml
+[auth]
+enabled = true  # Enable/disable authentication (default: true)
+
+[[auth.api_keys]]
+key = "your-secret-key"
+name = "my-tui"  # Friendly name (shown in WebSocket broadcasts)
+```
+
+See [examples/server.toml](../examples/server.toml) for a complete example.
+
+### HTTP Authentication
+
+Send API key via `X-Api-Key` header:
+
+```bash
+curl -H "X-Api-Key: your-secret-key" http://localhost:8000/api/v1/tasks/
+```
+
+### WebSocket Authentication
+
+Send API key via query parameter:
+
+```javascript
+const ws = new WebSocket('ws://localhost:8000/ws?token=your-secret-key');
+```
+
+### CLI/TUI Configuration
+
+Configure API key in `cli.toml` or environment variable:
+
+```toml
+# ~/.config/taskdog/cli.toml
+[api]
+api_key = "your-secret-key"
+```
+
+```bash
+export TASKDOG_API_KEY=your-secret-key
+```
+
+### Disabling Authentication
+
+For local development or trusted networks, you can disable authentication:
+
+```toml
+# ~/.config/taskdog/server.toml
+[auth]
+enabled = false
+```
+
+**Warning:** Only disable authentication in trusted environments.
 
 ## Base URL
 
@@ -505,12 +563,17 @@ Real-time task notifications
 Connect to WebSocket endpoint for real-time updates:
 
 ```javascript
+// With authentication
+const ws = new WebSocket('ws://localhost:8000/ws?token=your-api-key');
+
+// Without authentication (if auth.enabled = false)
 const ws = new WebSocket('ws://localhost:8000/ws');
 
 ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
-  console.log('Event:', data.event);  // task_created, task_updated, task_deleted, task_status_changed
-  console.log('Task:', data.task);
+  console.log('Event:', data.type);  // task_created, task_updated, task_deleted, task_status_changed
+  console.log('Task ID:', data.task_id);
+  console.log('Source User:', data.source_user_name);  // Who triggered the event
 };
 ```
 
@@ -520,17 +583,11 @@ ws.onmessage = (event) => {
 - `task_updated` - Task fields updated
 - `task_deleted` - Task deleted
 - `task_status_changed` - Task status changed
+- `schedule_optimized` - Schedule optimization completed
 
-**Client ID Header:**
-Send `X-Client-ID` header to prevent receiving your own events:
+**Event payload:**
 
-```javascript
-const ws = new WebSocket('ws://localhost:8000/ws', {
-  headers: {
-    'X-Client-ID': 'my-client-id'
-  }
-});
-```
+All events include `source_user_name` to identify who triggered the event (from API key name).
 
 ## Examples
 
