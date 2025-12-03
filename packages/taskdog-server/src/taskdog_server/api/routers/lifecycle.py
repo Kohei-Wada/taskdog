@@ -1,10 +1,10 @@
 """Task lifecycle endpoints (status changes with time tracking)."""
 
+from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import APIRouter, Header
 
-from taskdog_server.api.converters import convert_to_task_operation_response
 from taskdog_server.api.dependencies import EventBroadcasterDep, LifecycleControllerDep
 from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.responses import TaskOperationResponse
@@ -12,16 +12,52 @@ from taskdog_server.api.models.responses import TaskOperationResponse
 router = APIRouter()
 
 
-@router.post("/{task_id}/start", response_model=TaskOperationResponse)
-@handle_task_errors
-async def start_task(
-    task_id: int,
-    controller: LifecycleControllerDep,
-    broadcaster: EventBroadcasterDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
-) -> TaskOperationResponse:
-    """Start a task (change status to IN_PROGRESS and record start time).
+@dataclass(frozen=True)
+class LifecycleOperation:
+    """Configuration for a lifecycle endpoint."""
+
+    name: str
+    old_status: str
+    description: str
+    returns: str
+
+
+OPERATIONS = [
+    LifecycleOperation("start", "PENDING", "Start a task", "actual_start timestamp"),
+    LifecycleOperation(
+        "complete", "IN_PROGRESS", "Complete a task", "actual_end timestamp"
+    ),
+    LifecycleOperation("pause", "IN_PROGRESS", "Pause a task", "cleared timestamps"),
+    LifecycleOperation(
+        "cancel", "IN_PROGRESS", "Cancel a task", "actual_end timestamp"
+    ),
+    LifecycleOperation("reopen", "COMPLETED", "Reopen a task", "cleared timestamps"),
+]
+
+
+def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
+    """Create and register a lifecycle endpoint.
+
+    Args:
+        op: Operation configuration
+    """
+
+    @router.post(f"/{{task_id}}/{op.name}", response_model=TaskOperationResponse)
+    @handle_task_errors
+    async def endpoint(
+        task_id: int,
+        controller: LifecycleControllerDep,
+        broadcaster: EventBroadcasterDep,
+        x_client_id: Annotated[str | None, Header()] = None,
+        x_user_name: Annotated[str | None, Header()] = None,
+    ) -> TaskOperationResponse:
+        controller_method = getattr(controller, f"{op.name}_task")
+        result = controller_method(task_id)
+        broadcaster.task_status_changed(result, op.old_status, x_client_id, x_user_name)
+        return TaskOperationResponse.from_dto(result)
+
+    endpoint.__name__ = f"{op.name}_task"
+    endpoint.__doc__ = f"""{op.description} (change status and update timestamps).
 
     Args:
         task_id: Task ID
@@ -31,142 +67,13 @@ async def start_task(
         x_user_name: Optional user name from API gateway
 
     Returns:
-        Updated task data with actual_start timestamp
+        Updated task data with {op.returns}
 
     Raises:
         HTTPException: 404 if task not found, 400 if validation fails
     """
-    result = controller.start_task(task_id)
-
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_status_changed(result, "PENDING", x_client_id, x_user_name)
-
-    return convert_to_task_operation_response(result)
 
 
-@router.post("/{task_id}/complete", response_model=TaskOperationResponse)
-@handle_task_errors
-async def complete_task(
-    task_id: int,
-    controller: LifecycleControllerDep,
-    broadcaster: EventBroadcasterDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
-) -> TaskOperationResponse:
-    """Complete a task (change status to COMPLETED and record end time).
-
-    Args:
-        task_id: Task ID
-        controller: Lifecycle controller dependency
-        broadcaster: Event broadcaster dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
-
-    Returns:
-        Updated task data with actual_end timestamp
-
-    Raises:
-        HTTPException: 404 if task not found, 400 if validation fails
-    """
-    result = controller.complete_task(task_id)
-
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_status_changed(result, "IN_PROGRESS", x_client_id, x_user_name)
-
-    return convert_to_task_operation_response(result)
-
-
-@router.post("/{task_id}/pause", response_model=TaskOperationResponse)
-@handle_task_errors
-async def pause_task(
-    task_id: int,
-    controller: LifecycleControllerDep,
-    broadcaster: EventBroadcasterDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
-) -> TaskOperationResponse:
-    """Pause a task (change status to PENDING and clear timestamps).
-
-    Args:
-        task_id: Task ID
-        controller: Lifecycle controller dependency
-        broadcaster: Event broadcaster dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
-
-    Returns:
-        Updated task data with cleared timestamps
-
-    Raises:
-        HTTPException: 404 if task not found, 400 if validation fails
-    """
-    result = controller.pause_task(task_id)
-
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_status_changed(result, "IN_PROGRESS", x_client_id, x_user_name)
-
-    return convert_to_task_operation_response(result)
-
-
-@router.post("/{task_id}/cancel", response_model=TaskOperationResponse)
-@handle_task_errors
-async def cancel_task(
-    task_id: int,
-    controller: LifecycleControllerDep,
-    broadcaster: EventBroadcasterDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
-) -> TaskOperationResponse:
-    """Cancel a task (change status to CANCELED and record end time).
-
-    Args:
-        task_id: Task ID
-        controller: Lifecycle controller dependency
-        broadcaster: Event broadcaster dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
-
-    Returns:
-        Updated task data with actual_end timestamp
-
-    Raises:
-        HTTPException: 404 if task not found, 400 if validation fails
-    """
-    result = controller.cancel_task(task_id)
-
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_status_changed(result, "IN_PROGRESS", x_client_id, x_user_name)
-
-    return convert_to_task_operation_response(result)
-
-
-@router.post("/{task_id}/reopen", response_model=TaskOperationResponse)
-@handle_task_errors
-async def reopen_task(
-    task_id: int,
-    controller: LifecycleControllerDep,
-    broadcaster: EventBroadcasterDep,
-    x_client_id: Annotated[str | None, Header()] = None,
-    x_user_name: Annotated[str | None, Header()] = None,
-) -> TaskOperationResponse:
-    """Reopen a task (change status to PENDING and clear timestamps).
-
-    Args:
-        task_id: Task ID
-        controller: Lifecycle controller dependency
-        broadcaster: Event broadcaster dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
-
-    Returns:
-        Updated task data with cleared timestamps
-
-    Raises:
-        HTTPException: 404 if task not found, 400 if validation fails
-    """
-    result = controller.reopen_task(task_id)
-
-    # Broadcast WebSocket event in background (exclude the requester)
-    broadcaster.task_status_changed(result, "COMPLETED", x_client_id, x_user_name)
-
-    return convert_to_task_operation_response(result)
+# Generate all lifecycle endpoints
+for _op in OPERATIONS:
+    _create_lifecycle_endpoint(_op)
