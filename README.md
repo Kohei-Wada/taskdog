@@ -189,7 +189,7 @@ taskdog tui
 
 ## Themes
 
-Taskdog supports multiple beautiful themes out of the box. Configure your preferred theme in `~/.config/taskdog/config.toml`:
+Taskdog supports multiple beautiful themes out of the box. Configure your preferred theme in `~/.config/taskdog/cli.toml`:
 
 ```toml
 [ui]
@@ -282,7 +282,7 @@ taskdog optimize -a balanced             # Use balanced algorithm
 
 ## Configuration
 
-**Config file**: `~/.config/taskdog/config.toml`
+**Config file**: `~/.config/taskdog/cli.toml`
 
 **Minimal configuration** (only needed if using non-default host/port):
 

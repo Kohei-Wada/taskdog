@@ -26,8 +26,8 @@ Complete guide to configuring Taskdog.
 
 Taskdog looks for configuration in the following locations (in order):
 
-1. `$XDG_CONFIG_HOME/taskdog/config.toml`
-2. `~/.config/taskdog/config.toml` (fallback)
+1. `$XDG_CONFIG_HOME/taskdog/core.toml`
+2. `~/.config/taskdog/core.toml` (fallback)
 
 Create the directory if it doesn't exist:
 
@@ -41,7 +41,7 @@ Settings are resolved in the following order (highest to lowest priority):
 
 1. **Environment variables** (e.g., `TASKDOG_API_URL`)
 2. **CLI arguments** (e.g., `--max-hours-per-day`)
-3. **Configuration file** (`config.toml`)
+3. **Configuration file** (`core.toml`)
 4. **Default values** (hardcoded in application)
 
 ## Server Configuration
@@ -273,7 +273,7 @@ Environment variables take precedence over config file settings. This is useful 
 
 ### Server Configuration Variables
 
-These variables override server configuration (config.toml):
+These variables override core configuration (core.toml):
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -323,7 +323,7 @@ Override config file location:
 
 ```bash
 export XDG_CONFIG_HOME=/custom/path
-# Config file will be: /custom/path/taskdog/config.toml
+# Config file will be: /custom/path/taskdog/core.toml
 ```
 
 ### XDG_DATA_HOME
@@ -519,7 +519,7 @@ backend = "sqlite"
 
 **Solution:**
 
-1. Ensure `[ui]` section is present in `~/.config/taskdog/config.toml`
+1. Ensure `[ui]` section is present in `~/.config/taskdog/cli.toml`
 2. Restart TUI: `taskdog tui`
 3. Check theme name spelling (must match exactly)
 

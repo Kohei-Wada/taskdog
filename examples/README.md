@@ -6,13 +6,13 @@ This directory contains example configuration files for Taskdog.
 
 Taskdog uses **two separate configuration files** for clear separation of concerns:
 
-### 1. `config.toml` - Server Configuration
+### 1. `core.toml` - Core Configuration
 
-**Purpose**: Business logic and server settings
+**Purpose**: Business logic settings
 
 **Used by**: `taskdog-server` (API server)
 
-**Location**: `~/.config/taskdog/config.toml`
+**Location**: `~/.config/taskdog/core.toml`
 
 **Contains**:
 
@@ -21,9 +21,9 @@ Taskdog uses **two separate configuration files** for clear separation of concer
 - Time settings (default start/end hours)
 - Region settings (holiday calendar)
 - Storage settings (database location)
-- API server settings (host, port, CORS)
+- API settings (CORS)
 
-**When to use**: Configure business logic behavior and server infrastructure
+**When to use**: Configure business logic behavior
 
 ### 2. `cli.toml` - CLI Configuration
 
@@ -63,21 +63,21 @@ No configuration needed!
 
    ```bash
    mkdir -p ~/.config/taskdog
-   cp examples/config.toml ~/.config/taskdog/
+   cp examples/core.toml ~/.config/taskdog/
    cp examples/cli.toml ~/.config/taskdog/
    ```
 
 2. **Edit as needed**:
 
    ```bash
-   # Server config (business logic)
-   $EDITOR ~/.config/taskdog/config.toml
+   # Core config (business logic)
+   $EDITOR ~/.config/taskdog/core.toml
 
    # CLI config (API connection)
    $EDITOR ~/.config/taskdog/cli.toml
    ```
 
-3. **Restart server** (if config.toml changed):
+3. **Restart server** (if core.toml changed):
 
    ```bash
    systemctl --user restart taskdog-server
@@ -100,7 +100,7 @@ No configuration needed!
          │ Reads                             │ Reads
          ▼                                   ▼
 ┌─────────────────────┐           ┌─────────────────────┐
-│   cli.toml          │           │   config.toml       │
+│   cli.toml          │           │   core.toml         │
 │   (Infrastructure)  │           │   (Business Logic)  │
 └─────────────────────┘           └─────────────────────┘
 • API host/port                   • Task defaults
@@ -143,7 +143,7 @@ taskdog table   # Uses defaults
 
 ### Scenario 2: Custom Server Port
 
-**Server** (`~/.config/taskdog/config.toml`):
+**Core** (`~/.config/taskdog/core.toml`):
 
 ```toml
 [api]
@@ -179,7 +179,7 @@ port = 8000
 
 ### Scenario 4: Custom Business Logic
 
-**Only edit config.toml**:
+**Only edit core.toml**:
 
 ```toml
 [task]
@@ -207,7 +207,7 @@ export TASKDOG_API_PORT=3000
 taskdog table
 ```
 
-### Server (`config.toml`)
+### Core (`core.toml`)
 
 No environment variables currently supported. Use config file or command-line args:
 
@@ -219,7 +219,7 @@ taskdog-server --host 0.0.0.0 --port 3000
 
 If you're upgrading from an older version:
 
-1. **Keep your `config.toml`** - Server will continue using it
+1. **Keep your `core.toml`** - Server will continue using it
 2. **Optionally create `cli.toml`** - Only if you need non-default API settings
 3. **No data migration needed** - Database format unchanged
 
@@ -235,7 +235,7 @@ The old single-config approach still works for the server. CLI just gained its o
 
 1. Is server running? `systemctl --user status taskdog-server`
 2. Check CLI config: `cat ~/.config/taskdog/cli.toml`
-3. Check server config: `cat ~/.config/taskdog/config.toml`
+3. Check core config: `cat ~/.config/taskdog/core.toml`
 4. Test connection: `curl http://127.0.0.1:8000/health`
 
 **Common fixes**:
@@ -260,9 +260,9 @@ The old single-config approach still works for the server. CLI just gained its o
 
 **Check**:
 
-1. Are you editing the right file? Server uses `config.toml`, not `cli.toml`
+1. Are you editing the right file? Server uses `core.toml`, not `cli.toml`
 2. Did you restart server? `systemctl --user restart taskdog-server`
-3. Check file location: `~/.config/taskdog/config.toml`
+3. Check file location: `~/.config/taskdog/core.toml`
 
 ## See Also
 

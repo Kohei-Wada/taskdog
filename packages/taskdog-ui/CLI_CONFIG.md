@@ -4,10 +4,10 @@ This document describes the configuration system for Taskdog CLI/TUI.
 
 ## Overview
 
-Taskdog CLI/TUI uses a separate configuration file (`cli.toml`) from the server's `config.toml`. This separation clarifies that:
+Taskdog CLI/TUI uses a separate configuration file (`cli.toml`) from the core's `core.toml`. This separation clarifies that:
 
 - **CLI config** (`cli.toml`): Infrastructure settings for the UI layer (API connection, keybindings)
-- **Server config** (`config.toml`): Business logic settings (defaults, optimization, holidays)
+- **Core config** (`core.toml`): Business logic settings (defaults, optimization, holidays)
 
 The CLI/TUI is a thin client that delegates all business logic to the server. All task defaults (priority, max_hours_per_day, etc.) are handled by the server's controllers, not by the CLI.
 
@@ -150,7 +150,7 @@ port = 8000
 
 ## Business Logic Configuration
 
-Business logic settings (task defaults, optimization parameters, holidays) are configured in the **server's** `config.toml`, not in the CLI's `cli.toml`.
+Business logic settings (task defaults, optimization parameters, holidays) are configured in the **core's** `core.toml`, not in the CLI's `cli.toml`.
 
 Examples of server-side settings:
 
@@ -160,19 +160,19 @@ Examples of server-side settings:
 - Holiday calendar
 - Default work hours (9 AM - 6 PM)
 
-These are configured in `~/.config/taskdog/config.toml` and loaded by the server. See the main README or `packages/taskdog-server/README.md` for server configuration details.
+These are configured in `~/.config/taskdog/core.toml` and loaded by the server. See the main README or `packages/taskdog-server/README.md` for server configuration details.
 
 ## Migration from Old Config
 
 If you're upgrading from an older version that used a single `config.toml` file:
 
-1. **Keep your `config.toml`** - It's now only used by the server
+1. **Rename `config.toml` to `core.toml`** - It's now only used by the server
 2. **Optionally create `cli.toml`** - Only needed if you use non-default API settings
 3. **No migration needed** - CLI will use defaults (127.0.0.1:8000) if `cli.toml` doesn't exist
 
 The separation means:
 
-- `config.toml`: Server reads this (business logic settings)
+- `core.toml`: Server reads this (business logic settings)
 - `cli.toml`: CLI/TUI reads this (infrastructure settings)
 - No shared configuration file
 

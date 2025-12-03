@@ -66,7 +66,7 @@ systemctl --user enable taskdog-server
 
 ### 3. Configure API Connection
 
-Edit `~/.config/taskdog/config.toml`:
+Edit `~/.config/taskdog/cli.toml`:
 
 ```toml
 [api]
