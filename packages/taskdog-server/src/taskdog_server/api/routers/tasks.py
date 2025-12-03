@@ -9,7 +9,6 @@ from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.converters import (
     convert_to_task_detail_response,
     convert_to_task_list_response,
-    convert_to_task_operation_response,
     convert_to_update_task_response,
 )
 from taskdog_server.api.dependencies import (
@@ -72,7 +71,7 @@ async def create_task(
     # Broadcast WebSocket event in background (exclude the requester)
     broadcaster.task_created(result, x_client_id, x_user_name)
 
-    return convert_to_task_operation_response(result)
+    return TaskOperationResponse.from_dto(result)
 
 
 @router.get("", response_model=TaskListResponse)
@@ -329,7 +328,7 @@ async def archive_task(
     # Broadcast WebSocket event in background (exclude the requester)
     broadcaster.task_updated(result, ["is_archived"], x_client_id, x_user_name)
 
-    return convert_to_task_operation_response(result)
+    return TaskOperationResponse.from_dto(result)
 
 
 @router.post("/{task_id}/restore", response_model=TaskOperationResponse)
@@ -361,7 +360,7 @@ async def restore_task(
     # Broadcast WebSocket event in background (exclude the requester)
     broadcaster.task_updated(result, ["is_archived"], x_client_id, x_user_name)
 
-    return convert_to_task_operation_response(result)
+    return TaskOperationResponse.from_dto(result)
 
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)

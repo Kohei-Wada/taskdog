@@ -4,7 +4,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Header
 
-from taskdog_server.api.converters import convert_to_task_operation_response
 from taskdog_server.api.dependencies import (
     EventBroadcasterDep,
     RelationshipControllerDep,
@@ -52,7 +51,7 @@ async def add_dependency(
     # Broadcast WebSocket event in background (exclude the requester)
     broadcaster.task_updated(result, ["depends_on"], x_client_id, x_user_name)
 
-    return convert_to_task_operation_response(result)
+    return TaskOperationResponse.from_dto(result)
 
 
 @router.delete(
@@ -88,7 +87,7 @@ async def remove_dependency(
     # Broadcast WebSocket event in background (exclude the requester)
     broadcaster.task_updated(result, ["depends_on"], x_client_id, x_user_name)
 
-    return convert_to_task_operation_response(result)
+    return TaskOperationResponse.from_dto(result)
 
 
 @router.put("/{task_id}/tags", response_model=TaskOperationResponse)
@@ -122,7 +121,7 @@ async def set_task_tags(
     # Broadcast WebSocket event in background (exclude the requester)
     broadcaster.task_updated(result, ["tags"], x_client_id, x_user_name)
 
-    return convert_to_task_operation_response(result)
+    return TaskOperationResponse.from_dto(result)
 
 
 @router.post("/{task_id}/log-hours", response_model=TaskOperationResponse)
@@ -159,4 +158,4 @@ async def log_hours(
     # Broadcast WebSocket event in background (exclude the requester)
     broadcaster.task_updated(result, ["actual_daily_hours"], x_client_id, x_user_name)
 
-    return convert_to_task_operation_response(result)
+    return TaskOperationResponse.from_dto(result)
