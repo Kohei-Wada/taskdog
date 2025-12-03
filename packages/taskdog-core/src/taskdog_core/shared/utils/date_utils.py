@@ -20,21 +20,31 @@ from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 if TYPE_CHECKING:
     from taskdog_core.domain.services.time_provider import ITimeProvider
 
+# Module-level singleton for default time provider (lazy initialization)
+_default_time_provider: ITimeProvider | None = None
+
 
 def _get_time_provider(time_provider: ITimeProvider | None) -> ITimeProvider:
-    """Get time provider, defaulting to SystemTimeProvider if None.
+    """Get time provider, defaulting to a cached SystemTimeProvider singleton.
+
+    Uses a module-level singleton to avoid creating multiple instances
+    and ensure consistent behavior across calls.
 
     Args:
         time_provider: Optional time provider
 
     Returns:
-        The provided time_provider or a new SystemTimeProvider
+        The provided time_provider or the cached SystemTimeProvider singleton
     """
-    if time_provider is None:
+    if time_provider is not None:
+        return time_provider
+
+    global _default_time_provider
+    if _default_time_provider is None:
         from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 
-        return SystemTimeProvider()
-    return time_provider
+        _default_time_provider = SystemTimeProvider()
+    return _default_time_provider
 
 
 def parse_date(date_str: str | None) -> date | None:
