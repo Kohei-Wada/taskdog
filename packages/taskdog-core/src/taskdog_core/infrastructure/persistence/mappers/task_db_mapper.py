@@ -27,6 +27,47 @@ class TaskDbMapper(TaskMapperInterface):
     - Maintains data integrity during conversions
     """
 
+    # Fields that can be mapped directly without transformation
+    _DIRECT_FIELDS: tuple[str, ...] = (
+        "id",
+        "name",
+        "priority",
+        "created_at",
+        "updated_at",
+        "planned_start",
+        "planned_end",
+        "deadline",
+        "actual_start",
+        "actual_end",
+        "estimated_duration",
+        "is_fixed",
+        "is_archived",
+    )
+
+    def _get_serialized_fields(self, task: Task) -> dict[str, Any]:
+        """Extract and serialize all fields from a Task entity.
+
+        This method centralizes field extraction logic to avoid duplication
+        across to_dict, to_model, and update_model methods.
+
+        Args:
+            task: The Task entity to serialize
+
+        Returns:
+            Dictionary with all fields ready for persistence
+        """
+        result: dict[str, Any] = {
+            field: getattr(task, field) for field in self._DIRECT_FIELDS
+        }
+        # Fields requiring transformation
+        result["status"] = task.status.value
+        result["daily_allocations"] = self._serialize_date_dict(task.daily_allocations)
+        result["actual_daily_hours"] = self._serialize_date_dict(
+            task.actual_daily_hours
+        )
+        result["depends_on"] = json.dumps(task.depends_on)
+        return result
+
     def to_dict(self, task: Task) -> dict[str, Any]:
         """Convert a Task entity to a dictionary (for ORM compatibility).
 
@@ -39,25 +80,7 @@ class TaskDbMapper(TaskMapperInterface):
         Returns:
             Dictionary with all fields ready for TaskModel creation
         """
-        return {
-            "id": task.id,
-            "name": task.name,
-            "priority": task.priority,
-            "status": task.status.value,
-            "created_at": task.created_at,
-            "updated_at": task.updated_at,
-            "planned_start": task.planned_start,
-            "planned_end": task.planned_end,
-            "deadline": task.deadline,
-            "actual_start": task.actual_start,
-            "actual_end": task.actual_end,
-            "estimated_duration": task.estimated_duration,
-            "is_fixed": task.is_fixed,
-            "daily_allocations": self._serialize_date_dict(task.daily_allocations),
-            "actual_daily_hours": self._serialize_date_dict(task.actual_daily_hours),
-            "depends_on": json.dumps(task.depends_on),
-            "is_archived": task.is_archived,
-        }
+        return self._get_serialized_fields(task)
 
     def from_dict(self, data: dict[str, Any]) -> Task:
         """Convert a dictionary (from ORM) to a Task entity.
@@ -117,25 +140,7 @@ class TaskDbMapper(TaskMapperInterface):
         Returns:
             TaskModel instance ready for database persistence
         """
-        return TaskModel(
-            id=task.id,
-            name=task.name,
-            priority=task.priority,
-            status=task.status.value,
-            created_at=task.created_at,
-            updated_at=task.updated_at,
-            planned_start=task.planned_start,
-            planned_end=task.planned_end,
-            deadline=task.deadline,
-            actual_start=task.actual_start,
-            actual_end=task.actual_end,
-            estimated_duration=task.estimated_duration,
-            is_fixed=task.is_fixed,
-            daily_allocations=self._serialize_date_dict(task.daily_allocations),
-            actual_daily_hours=self._serialize_date_dict(task.actual_daily_hours),
-            depends_on=json.dumps(task.depends_on),
-            is_archived=task.is_archived,
-        )
+        return TaskModel(**self._get_serialized_fields(task))
 
     def from_model(self, model: TaskModel) -> Task:
         """Convert a TaskModel ORM instance to a Task entity.
@@ -206,22 +211,9 @@ class TaskDbMapper(TaskMapperInterface):
             model: The TaskModel instance to update
             task: The Task entity with new data
         """
-        model.name = task.name
-        model.priority = task.priority
-        model.status = task.status.value
-        model.created_at = task.created_at
-        model.updated_at = task.updated_at
-        model.planned_start = task.planned_start
-        model.planned_end = task.planned_end
-        model.deadline = task.deadline
-        model.actual_start = task.actual_start
-        model.actual_end = task.actual_end
-        model.estimated_duration = task.estimated_duration
-        model.is_fixed = task.is_fixed
-        model.daily_allocations = self._serialize_date_dict(task.daily_allocations)
-        model.actual_daily_hours = self._serialize_date_dict(task.actual_daily_hours)
-        model.depends_on = json.dumps(task.depends_on)
-        model.is_archived = task.is_archived
+        for field, value in self._get_serialized_fields(task).items():
+            if field != "id":  # id should not be updated
+                setattr(model, field, value)
 
     @staticmethod
     def _serialize_date_dict(date_dict: dict[date, float]) -> str:
