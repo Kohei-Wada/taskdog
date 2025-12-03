@@ -523,7 +523,6 @@ pip install taskdog taskdog-server
 - Docker Compose / orchestration configurations
 - Kubernetes manifests
 - Reverse proxy configurations
-- Authentication/authorization infrastructure
 - Backup automation
 
 ### Docker Philosophy

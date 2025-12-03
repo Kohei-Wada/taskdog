@@ -6,6 +6,8 @@ Complete guide to configuring Taskdog.
 
 - [Configuration File Location](#configuration-file-location)
 - [Configuration Priority](#configuration-priority)
+- [Server Configuration](#server-configuration)
+  - [Authentication](#authentication)
 - [Configuration Sections](#configuration-sections)
   - [API Settings](#api-settings-required)
   - [UI Settings](#ui-settings)
@@ -18,7 +20,7 @@ Complete guide to configuring Taskdog.
 - [Environment Variables](#environment-variables)
 - [Examples](#examples)
   - [Remote API Server](#remote-api-server)
-  - [Reverse Proxy Authentication](#reverse-proxy-authentication)
+  - [Server Authentication](#server-authentication)
 
 ## Configuration File Location
 
@@ -41,6 +43,61 @@ Settings are resolved in the following order (highest to lowest priority):
 2. **CLI arguments** (e.g., `--max-hours-per-day`)
 3. **Configuration file** (`config.toml`)
 4. **Default values** (hardcoded in application)
+
+## Server Configuration
+
+The API server has its own configuration file: `server.toml`
+
+**Location:** `$XDG_CONFIG_HOME/taskdog/server.toml` (fallback: `~/.config/taskdog/server.toml`)
+
+See [examples/server.toml](../examples/server.toml) for a complete example.
+
+### Authentication
+
+The `[auth]` section configures API key authentication for the server.
+
+```toml
+[auth]
+enabled = true  # Enable/disable authentication (default: true)
+
+# Define API keys (can have multiple)
+[[auth.api_keys]]
+key = "your-secret-api-key-1"
+name = "my-laptop"  # Friendly name (shown in WebSocket broadcasts)
+
+[[auth.api_keys]]
+key = "your-secret-api-key-2"
+name = "my-desktop"
+```
+
+**Fields:**
+
+- `enabled` (boolean) - Enable or disable authentication. Default: `true`
+- `api_keys` (array) - List of valid API keys
+  - `key` (string) - The secret API key value
+  - `name` (string) - Friendly name for identifying the client
+
+**Behavior:**
+
+- When `enabled = true`: All HTTP endpoints require `X-Api-Key` header, WebSocket requires `?token=` query parameter
+- When `enabled = false`: No authentication required (for local development)
+- The `name` field is used as `source_user_name` in WebSocket broadcast payloads
+
+**CLI/TUI configuration:**
+
+Configure the API key in `cli.toml`:
+
+```toml
+# ~/.config/taskdog/cli.toml
+[api]
+api_key = "your-secret-api-key-1"
+```
+
+Or via environment variable:
+
+```bash
+export TASKDOG_API_KEY=your-secret-api-key-1
+```
 
 ## Configuration Sections
 
@@ -358,37 +415,53 @@ export TASKDOG_API_HOST=192.168.1.100
 export TASKDOG_API_PORT=8000
 ```
 
-### Reverse Proxy Authentication
+### Server Authentication
 
-When using a reverse proxy like Kong, Traefik, or Nginx for authentication, you can configure an API key that will be sent with every request as an `X-Api-Key` header.
+Taskdog server supports API key authentication. Configure keys in `server.toml`:
 
-**Note:** This is for authenticating through external proxies. The taskdog-server itself does not validate API keys - it's designed to run locally or behind an authenticating proxy.
+```toml
+# ~/.config/taskdog/server.toml
+[auth]
+enabled = true
 
-Configure in `cli.toml`:
+[[auth.api_keys]]
+key = "your-secret-key"
+name = "my-tui"
+```
+
+Configure CLI/TUI to use the key in `cli.toml`:
 
 ```toml
 # ~/.config/taskdog/cli.toml
 [api]
-host = "api.example.com"
-port = 443
-api_key = "your-api-key-here"
+host = "127.0.0.1"
+port = 8000
+api_key = "your-secret-key"
 ```
 
 Or use environment variables:
 
 ```bash
-export TASKDOG_API_HOST=api.example.com
-export TASKDOG_API_PORT=443
-export TASKDOG_API_KEY=your-api-key-here
+export TASKDOG_API_HOST=127.0.0.1
+export TASKDOG_API_PORT=8000
+export TASKDOG_API_KEY=your-secret-key
 ```
 
 Or use CLI option (highest priority, useful for scripts):
 
 ```bash
-taskdog --api-key "your-api-key" table
+taskdog --api-key "your-secret-key" table
 ```
 
 **Priority order:** CLI option > environment variable > config file > None
+
+For local development, you can disable authentication:
+
+```toml
+# ~/.config/taskdog/server.toml
+[auth]
+enabled = false
+```
 
 ### Work Schedule Configuration
 
