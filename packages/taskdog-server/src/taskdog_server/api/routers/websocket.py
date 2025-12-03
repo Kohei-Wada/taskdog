@@ -50,7 +50,8 @@ async def websocket_endpoint(
     try:
         client_name = validate_api_key_for_websocket(token, server_config)
     except ValueError as e:
-        await websocket.close(code=4001, reason=str(e))
+        # Use standard WebSocket close code 1008 (Policy Violation) for auth failures
+        await websocket.close(code=1008, reason=str(e))
         return
 
     # Generate unique client ID for this connection

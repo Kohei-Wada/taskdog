@@ -1,5 +1,6 @@
 """FastAPI dependency injection functions."""
 
+import secrets
 from contextlib import suppress
 from typing import Annotated
 
@@ -372,9 +373,9 @@ def get_authenticated_client(
     if api_key is None:
         raise HTTPException(status_code=401, detail="API key required")
 
-    # Validate API key
+    # Validate API key using constant-time comparison to prevent timing attacks
     for entry in server_config.auth.api_keys:
-        if entry.key == api_key:
+        if secrets.compare_digest(entry.key, api_key):
             return entry.name
 
     raise HTTPException(status_code=401, detail="Invalid API key")
@@ -414,9 +415,9 @@ def validate_api_key_for_websocket(
     if api_key is None:
         raise ValueError("API key required")
 
-    # Validate API key
+    # Validate API key using constant-time comparison to prevent timing attacks
     for entry in server_config.auth.api_keys:
-        if entry.key == api_key:
+        if secrets.compare_digest(entry.key, api_key):
             return entry.name
 
     raise ValueError("Invalid API key")
