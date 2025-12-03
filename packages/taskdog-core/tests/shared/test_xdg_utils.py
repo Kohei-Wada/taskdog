@@ -74,7 +74,7 @@ class TestXDGDirectories:
         """Test get_config_file returns correct path."""
         with patch.dict(os.environ, {"XDG_CONFIG_HOME": "/tmp/test_config"}):
             config_file = XDGDirectories.get_config_file()
-            expected = Path("/tmp/test_config/taskdog/config.toml")
+            expected = Path("/tmp/test_config/taskdog/core.toml")
             assert config_file == expected
 
     def test_app_name_constant(self):

@@ -32,7 +32,7 @@ Create the configuration file:
 mkdir -p ~/.config/taskdog
 
 # Create config file
-cat > ~/.config/taskdog/config.toml << 'EOF'
+cat > ~/.config/taskdog/cli.toml << 'EOF'
 [api]
 host = "127.0.0.1"
 port = 8000
@@ -153,10 +153,10 @@ taskdog-server
 systemctl --user status taskdog-server  # Look for --port in the command
 
 # Make sure config matches
-cat ~/.config/taskdog/config.toml  # Check [api] port value
+cat ~/.config/taskdog/cli.toml  # Check [api] port value
 
 # Update config if needed
-nano ~/.config/taskdog/config.toml
+nano ~/.config/taskdog/cli.toml
 ```
 
 ### Server won't start
@@ -173,7 +173,7 @@ ss -tlnp | grep 8000
 taskdog-server --port 8001
 
 # Update config to match
-# Edit ~/.config/taskdog/config.toml: port = 8001
+# Edit ~/.config/taskdog/cli.toml: port = 8001
 ```
 
 ## Next Steps

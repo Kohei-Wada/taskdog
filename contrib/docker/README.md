@@ -153,7 +153,7 @@ export TASKDOG_API_URL=http://localhost:8000
 
 # Or create config file
 mkdir -p ~/.config/taskdog
-cat > ~/.config/taskdog/config.toml << 'EOF'
+cat > ~/.config/taskdog/cli.toml << 'EOF'
 [api]
 host = "127.0.0.1"
 port = 8000

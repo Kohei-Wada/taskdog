@@ -37,7 +37,7 @@ The repository uses UV workspace with three packages:
 
 **Tasks**: Stored in SQLite database `tasks.db` at `$XDG_DATA_HOME/taskdog/tasks.db` (fallback: `~/.local/share/taskdog/tasks.db`)
 
-**Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/config.toml` (fallback: `~/.config/taskdog/config.toml`)
+**Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/core.toml` (fallback: `~/.config/taskdog/core.toml`)
 
 - Sections: `[api]`, `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
 - Settings:

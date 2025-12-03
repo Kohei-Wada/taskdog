@@ -90,7 +90,7 @@ Choose one of these methods:
 
 **Method A: Config file** (Recommended)
 
-Edit `~/.config/taskdog/config.toml`:
+Edit `~/.config/taskdog/cli.toml`:
 
 ```toml
 [api]

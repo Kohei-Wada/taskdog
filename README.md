@@ -189,7 +189,7 @@ taskdog tui
 
 ## Themes
 
-Taskdog supports multiple beautiful themes out of the box. Configure your preferred theme in `~/.config/taskdog/config.toml`:
+Taskdog supports multiple beautiful themes out of the box. Configure your preferred theme in `~/.config/taskdog/cli.toml`:
 
 ```toml
 [ui]
@@ -282,17 +282,9 @@ taskdog optimize -a balanced             # Use balanced algorithm
 
 ## Configuration
 
-**Config file**: `~/.config/taskdog/config.toml`
+Taskdog uses separate config files for different purposes:
 
-**Minimal configuration** (only needed if using non-default host/port):
-
-```toml
-[api]
-host = "127.0.0.1"
-port = 8000
-```
-
-**With theme and optimization:**
+**CLI/TUI config**: `~/.config/taskdog/cli.toml`
 
 ```toml
 [api]
@@ -301,10 +293,17 @@ port = 8000
 
 [ui]
 theme = "tokyo-night"
+```
 
+**Core config**: `~/.config/taskdog/core.toml`
+
+```toml
 [optimization]
 max_hours_per_day = 8.0
 default_algorithm = "balanced"
+
+[region]
+country = "JP"
 ```
 
 **See [Configuration Guide](docs/CONFIGURATION.md) for all available options.**

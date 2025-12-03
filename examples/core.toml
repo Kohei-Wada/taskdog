@@ -1,10 +1,11 @@
-# Taskdog Server Configuration Example
+# Taskdog Core Configuration Example
 #
-# Copy this file to ~/.config/taskdog/config.toml (or $XDG_CONFIG_HOME/taskdog/config.toml)
-# to customize server behavior and business logic defaults.
+# Copy this file to ~/.config/taskdog/core.toml (or $XDG_CONFIG_HOME/taskdog/core.toml)
+# to customize business logic defaults.
 #
-# This config is for SERVER BUSINESS LOGIC only.
+# This config is for CORE BUSINESS LOGIC (task defaults, optimization, storage).
 # For CLI/TUI infrastructure settings (API connection), see cli.toml.
+# For server-specific settings (authentication), see server.toml.
 #
 # Note: Server host/port are configured via CLI arguments (taskdog-server --host --port),
 # not in this config file.
