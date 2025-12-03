@@ -25,7 +25,6 @@ from taskdog_core.application.use_cases.get_task_detail import (
     GetTaskDetailUseCase,
 )
 from taskdog_core.application.use_cases.list_tasks import ListTasksUseCase
-from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.logger import Logger
@@ -179,7 +178,7 @@ class QueryController:
             return TaskByIdOutput(task=None)
 
         # Convert Task to TaskDetailDto
-        task_dto = self._task_to_detail_dto(task)
+        task_dto = TaskDetailDto.from_entity(task)
         return TaskByIdOutput(task=task_dto)
 
     def get_task_detail(self, task_id: int) -> TaskDetailOutput:
@@ -220,42 +219,3 @@ class QueryController:
             ('greedy', 'Greedy', 'Front-loads tasks (default)')
         """
         return StrategyFactory.get_algorithm_metadata()
-
-    def _task_to_detail_dto(self, task: Task) -> TaskDetailDto:
-        """Convert Task entity to TaskDetailDto.
-
-        Args:
-            task: Task entity
-
-        Returns:
-            TaskDetailDto with all task data
-        """
-        # Tasks from repository must have an ID
-        if task.id is None:
-            raise ValueError("Task must have an ID")
-
-        return TaskDetailDto(
-            id=task.id,
-            name=task.name,
-            priority=task.priority,
-            status=task.status,
-            planned_start=task.planned_start,
-            planned_end=task.planned_end,
-            deadline=task.deadline,
-            actual_start=task.actual_start,
-            actual_end=task.actual_end,
-            estimated_duration=task.estimated_duration,
-            daily_allocations=task.daily_allocations,
-            is_fixed=task.is_fixed,
-            depends_on=task.depends_on,
-            actual_daily_hours=task.actual_daily_hours,
-            tags=task.tags,
-            is_archived=task.is_archived,
-            created_at=task.created_at,
-            updated_at=task.updated_at,
-            actual_duration_hours=task.actual_duration_hours,
-            is_active=task.is_active,
-            is_finished=task.is_finished,
-            can_be_modified=task.can_be_modified,
-            is_schedulable=task.is_schedulable(force_override=False),
-        )
