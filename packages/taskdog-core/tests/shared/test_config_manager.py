@@ -271,7 +271,7 @@ default_algorithm = "balanced"
         """Test that invalid environment variable values log a warning."""
         with (
             caplog.at_level(
-                logging.WARNING, logger="taskdog_core.shared.config_manager"
+                logging.WARNING, logger="taskdog_core.shared.config_loader"
             ),
             patch.dict(
                 os.environ,

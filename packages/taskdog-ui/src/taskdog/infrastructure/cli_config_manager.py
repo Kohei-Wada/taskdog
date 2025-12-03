@@ -5,11 +5,9 @@ Unlike the server's business logic configuration, this only contains
 infrastructure settings (API connection, future UI preferences).
 """
 
-import contextlib
-import os
-import tomllib
 from dataclasses import dataclass, field
 
+from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.xdg_utils import XDGDirectories
 
 CLI_CONFIG_FILENAME = "cli.toml"
@@ -90,63 +88,38 @@ def load_cli_config() -> CliConfig:
         Environment variables override file settings (API settings only).
         CLI/TUI always requires API server (no standalone mode).
     """
-    # Start with defaults
-    api_host = "127.0.0.1"
-    api_port = 8000
-    api_key: str | None = None
-    theme = "textual-dark"
-    notes_template: str | None = None
-    keybindings: dict[str, str] = {}
-
-    # Load from cli.toml if exists
+    # Load from cli.toml (returns empty dict if not exists or invalid)
     config_path = XDGDirectories.get_config_home() / CLI_CONFIG_FILENAME
-    if config_path.exists():
-        try:
-            with open(config_path, "rb") as f:
-                data = tomllib.load(f)
+    data = ConfigLoader.load_toml(config_path)
 
-            # Parse [api] section
-            if "api" in data:
-                api_section = data["api"]
-                api_host = api_section.get("host", api_host)
-                api_port = api_section.get("port", api_port)
-                api_key = api_section.get("api_key", api_key)
+    # Parse sections
+    api_data = data.get("api", {})
+    ui_data = data.get("ui", {})
+    notes_data = data.get("notes", {})
+    keybindings = data.get("keybindings", {})
 
-            # Parse [ui] section
-            if "ui" in data:
-                ui_section = data["ui"]
-                theme = ui_section.get("theme", theme)
-
-            # Parse [notes] section
-            if "notes" in data:
-                notes_section = data["notes"]
-                notes_template = notes_section.get("template", notes_template)
-
-            # Parse [keybindings] section (future feature)
-            if "keybindings" in data:
-                keybindings = data["keybindings"]
-
-        except Exception:
-            # If config file is invalid, fall back to defaults
-            # Don't raise - we want CLI to work even with broken config
-            pass
-
-    # Override with environment variables (highest priority, API settings only)
-    if "TASKDOG_API_HOST" in os.environ:
-        api_host = os.environ["TASKDOG_API_HOST"]
-
-    if "TASKDOG_API_PORT" in os.environ:
-        with contextlib.suppress(ValueError):
-            # Invalid port will be ignored, keep default
-            api_port = int(os.environ["TASKDOG_API_PORT"])
-
-    if "TASKDOG_API_KEY" in os.environ:
-        api_key = os.environ["TASKDOG_API_KEY"]
-
-    # Build config object
-    api_config = CliApiConfig(host=api_host, port=api_port, api_key=api_key)
-    ui_config = UiConfig(theme=theme)
-    notes_config = NotesConfig(template=notes_template)
+    # Build config with env var overrides (API settings only)
+    # log_errors=False to maintain current behavior (silently ignore invalid values)
     return CliConfig(
-        api=api_config, ui=ui_config, notes=notes_config, keybindings=keybindings
+        api=CliApiConfig(
+            host=ConfigLoader.get_env(
+                "API_HOST",
+                api_data.get("host", "127.0.0.1"),
+                str,
+            ),
+            port=ConfigLoader.get_env(
+                "API_PORT",
+                api_data.get("port", 8000),
+                int,
+                log_errors=False,
+            ),
+            api_key=ConfigLoader.get_env(
+                "API_KEY",
+                api_data.get("api_key"),
+                str,
+            ),
+        ),
+        ui=UiConfig(theme=ui_data.get("theme", "textual-dark")),
+        notes=NotesConfig(template=notes_data.get("template")),
+        keybindings=keybindings,
     )

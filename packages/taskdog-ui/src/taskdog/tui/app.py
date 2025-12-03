@@ -9,7 +9,7 @@ from textual.command import CommandPalette
 
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
-    from taskdog.infrastructure.cli_config import CliConfig
+    from taskdog.infrastructure.cli_config_manager import CliConfig
 
 from taskdog.infrastructure.websocket import WebSocketClient
 from taskdog.presenters.gantt_presenter import GanttPresenter
@@ -201,7 +201,7 @@ class TaskdogTUI(App):
             cli_config: CLI configuration (optional, uses defaults if not provided)
         """
         super().__init__(*args, **kwargs)
-        from taskdog.infrastructure.cli_config import CliConfig
+        from taskdog.infrastructure.cli_config_manager import CliConfig
 
         self.api_client = api_client
         self._cli_config = cli_config or CliConfig()
