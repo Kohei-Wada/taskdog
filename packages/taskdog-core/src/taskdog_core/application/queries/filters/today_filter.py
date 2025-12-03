@@ -1,9 +1,15 @@
 """Filter for today's tasks."""
 
-from datetime import date, datetime
+from __future__ import annotations
+
+from datetime import date
+from typing import TYPE_CHECKING
 
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
+
+if TYPE_CHECKING:
+    from taskdog_core.domain.services.time_provider import ITimeProvider
 
 
 class TodayFilter(TaskFilter):
@@ -18,6 +24,18 @@ class TodayFilter(TaskFilter):
     using CompositeFilter for proper filtering behavior.
     """
 
+    def __init__(self, time_provider: ITimeProvider | None = None):
+        """Initialize filter with optional time provider.
+
+        Args:
+            time_provider: Provider for current time. Defaults to SystemTimeProvider.
+        """
+        if time_provider is None:
+            from taskdog_core.infrastructure.time_provider import SystemTimeProvider
+
+            time_provider = SystemTimeProvider()
+        self._time_provider = time_provider
+
     def filter(self, tasks: list[Task]) -> list[Task]:
         """Filter tasks that are relevant for today.
 
@@ -27,7 +45,7 @@ class TodayFilter(TaskFilter):
         Returns:
             List of tasks matching today's criteria
         """
-        today = datetime.now().date()
+        today = self._time_provider.today()
 
         matching_tasks = []
 

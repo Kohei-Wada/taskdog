@@ -17,6 +17,7 @@ from taskdog_server.api.dependencies import (
     EventBroadcasterDep,
     HolidayCheckerDep,
     QueryControllerDep,
+    TimeProviderDep,
 )
 from taskdog_server.api.models.requests import OptimizeScheduleRequest
 from taskdog_server.api.models.responses import (
@@ -242,6 +243,7 @@ async def optimize_schedule(
     request: OptimizeScheduleRequest,
     controller: AnalyticsControllerDep,
     broadcaster: EventBroadcasterDep,
+    time_provider: TimeProviderDep,
     run_async: bool = Query(False, description="Run optimization in background"),
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
@@ -252,6 +254,7 @@ async def optimize_schedule(
         request: Optimization parameters
         controller: Analytics controller dependency
         broadcaster: Event broadcaster dependency
+        time_provider: Time provider dependency
         run_async: If True, run in background and return immediately
         x_client_id: Optional client ID from WebSocket connection
         x_user_name: Optional user name from API gateway
@@ -264,7 +267,7 @@ async def optimize_schedule(
     """
     try:
         # Use current date if not specified
-        start_date = request.start_date if request.start_date else datetime.now()
+        start_date = request.start_date if request.start_date else time_provider.now()
 
         if run_async:
             # Add optimization to background tasks

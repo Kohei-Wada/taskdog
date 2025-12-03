@@ -1,6 +1,5 @@
 """Task relationship endpoints (dependencies, tags, hours logging)."""
 
-from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Header
@@ -9,6 +8,7 @@ from taskdog_server.api.converters import convert_to_task_operation_response
 from taskdog_server.api.dependencies import (
     EventBroadcasterDep,
     RelationshipControllerDep,
+    TimeProviderDep,
 )
 from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import (
@@ -132,6 +132,7 @@ async def log_hours(
     request: LogHoursRequest,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
+    time_provider: TimeProviderDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
@@ -142,6 +143,7 @@ async def log_hours(
         request: Hours and date data
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
+        time_provider: Time provider dependency
         x_client_id: Optional client ID from WebSocket connection
         x_user_name: Optional user name from API gateway
 
@@ -151,7 +153,7 @@ async def log_hours(
     Raises:
         HTTPException: 404 if task not found, 400 if validation fails
     """
-    log_date = request.date if request.date else date.today()
+    log_date = request.date if request.date else time_provider.today()
     result = controller.log_hours(task_id, request.hours, log_date.isoformat())
 
     # Broadcast WebSocket event in background (exclude the requester)

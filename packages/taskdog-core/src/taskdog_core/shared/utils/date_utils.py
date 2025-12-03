@@ -9,10 +9,42 @@ This module provides utilities for:
 Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
 """
 
+from __future__ import annotations
+
 from datetime import date, datetime, timedelta
+from typing import TYPE_CHECKING
 
 from taskdog_core.shared.constants import WEEKDAY_THRESHOLD
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
+
+if TYPE_CHECKING:
+    from taskdog_core.domain.services.time_provider import ITimeProvider
+
+# Module-level singleton for default time provider (lazy initialization)
+_default_time_provider: ITimeProvider | None = None
+
+
+def _get_time_provider(time_provider: ITimeProvider | None) -> ITimeProvider:
+    """Get time provider, defaulting to a cached SystemTimeProvider singleton.
+
+    Uses a module-level singleton to avoid creating multiple instances
+    and ensure consistent behavior across calls.
+
+    Args:
+        time_provider: Optional time provider
+
+    Returns:
+        The provided time_provider or the cached SystemTimeProvider singleton
+    """
+    if time_provider is not None:
+        return time_provider
+
+    global _default_time_provider
+    if _default_time_provider is None:
+        from taskdog_core.infrastructure.time_provider import SystemTimeProvider
+
+        _default_time_provider = SystemTimeProvider()
+    return _default_time_provider
 
 
 def parse_date(date_str: str | None) -> date | None:
@@ -97,22 +129,31 @@ def count_weekdays(start: datetime | date, end: datetime | date) -> int:
     return weekday_count
 
 
-def get_previous_monday(from_date: date | None = None) -> date:
+def get_previous_monday(
+    from_date: date | None = None,
+    time_provider: ITimeProvider | None = None,
+) -> date:
     """Get the previous Monday (or today if today is Monday).
 
     Args:
         from_date: Optional date to calculate from (defaults to today)
+        time_provider: Provider for current time. Defaults to SystemTimeProvider.
 
     Returns:
         date object representing the previous Monday
     """
-    target_date = from_date or date.today()
+    if from_date is None:
+        provider = _get_time_provider(time_provider)
+        from_date = provider.today()
     # weekday(): Monday=0, Sunday=6
-    days_since_monday = target_date.weekday()
-    return target_date - timedelta(days=days_since_monday)
+    days_since_monday = from_date.weekday()
+    return from_date - timedelta(days=days_since_monday)
 
 
-def calculate_next_workday(start_date: datetime | None = None) -> datetime:
+def calculate_next_workday(
+    start_date: datetime | None = None,
+    time_provider: ITimeProvider | None = None,
+) -> datetime:
     """Calculate the next available workday.
 
     If the given date (or today if None) is a weekday, returns that date.
@@ -120,33 +161,41 @@ def calculate_next_workday(start_date: datetime | None = None) -> datetime:
 
     Args:
         start_date: Starting date (default: today)
+        time_provider: Provider for current time. Defaults to SystemTimeProvider.
 
     Returns:
         The next workday (Monday-Friday)
     """
-    today = start_date if start_date else datetime.now()
+    if start_date is None:
+        provider = _get_time_provider(time_provider)
+        start_date = provider.now()
 
     # If today is a weekday, use today
-    if is_weekday(today):
-        return today
+    if is_weekday(start_date):
+        return start_date
 
     # Otherwise, move to next Monday
-    days_until_monday = (7 - today.weekday()) % 7
+    days_until_monday = (7 - start_date.weekday()) % 7
     if days_until_monday == 0:  # If today is Sunday
         days_until_monday = 1
-    return today + timedelta(days=days_until_monday)
+    return start_date + timedelta(days=days_until_monday)
 
 
-def get_next_weekday(default_start_hour: int = 9) -> datetime:
+def get_next_weekday(
+    default_start_hour: int = 9,
+    time_provider: ITimeProvider | None = None,
+) -> datetime:
     """Get the next weekday (skip weekends).
 
     Args:
         default_start_hour: Hour to set for the returned datetime (default: 9)
+        time_provider: Provider for current time. Defaults to SystemTimeProvider.
 
     Returns:
         datetime object representing the next weekday at the specified hour
     """
-    today = datetime.now()
+    provider = _get_time_provider(time_provider)
+    today = provider.now()
     next_day = today + timedelta(days=1)
 
     # Skip weekends - move to next Monday if needed
@@ -157,25 +206,37 @@ def get_next_weekday(default_start_hour: int = 9) -> datetime:
     return next_day.replace(hour=default_start_hour, minute=0, second=0, microsecond=0)
 
 
-def get_today_range() -> tuple[date, date]:
+def get_today_range(
+    time_provider: ITimeProvider | None = None,
+) -> tuple[date, date]:
     """Get the date range for today (start and end are the same date).
 
     This is useful for filtering tasks that are relevant for today.
 
+    Args:
+        time_provider: Provider for current time. Defaults to SystemTimeProvider.
+
     Returns:
         Tuple of (start_date, end_date) where both are today's date
     """
-    today = date.today()
+    provider = _get_time_provider(time_provider)
+    today = provider.today()
     return today, today
 
 
-def get_this_week_range() -> tuple[date, date]:
+def get_this_week_range(
+    time_provider: ITimeProvider | None = None,
+) -> tuple[date, date]:
     """Get the date range for this week (Monday through Sunday).
+
+    Args:
+        time_provider: Provider for current time. Defaults to SystemTimeProvider.
 
     Returns:
         Tuple of (start_date, end_date) where start is Monday and end is Sunday
     """
-    today = date.today()
+    provider = _get_time_provider(time_provider)
+    today = provider.today()
     # Get the Monday of this week (weekday() returns 0 for Monday)
     week_start = today - timedelta(days=today.weekday())
     # Get the Sunday of this week

@@ -8,9 +8,11 @@ Phase 2 (Issue 228): Tags are now stored in normalized tables (tags/task_tags).
 The repository uses TagResolver to manage tag relationships when saving tasks.
 """
 
+from __future__ import annotations
+
 import warnings
-from datetime import date, datetime
-from typing import Any
+from datetime import date
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import create_engine, event, func, select
 from sqlalchemy.orm import sessionmaker
@@ -35,6 +37,9 @@ from taskdog_core.infrastructure.persistence.database.query_builders import (
 from taskdog_core.infrastructure.persistence.mappers.tag_resolver import TagResolver
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
+if TYPE_CHECKING:
+    from taskdog_core.domain.services.time_provider import ITimeProvider
+
 
 class SqliteTaskRepository(TaskRepository):
     """SQLite implementation of TaskRepository using SQLAlchemy ORM.
@@ -46,15 +51,26 @@ class SqliteTaskRepository(TaskRepository):
     - Uses TaskDbMapper for entity-model conversion
     """
 
-    def __init__(self, database_url: str, mapper: TaskDbMapper | None = None):
+    def __init__(
+        self,
+        database_url: str,
+        mapper: TaskDbMapper | None = None,
+        time_provider: ITimeProvider | None = None,
+    ):
         """Initialize the repository with a SQLite database.
 
         Args:
             database_url: SQLAlchemy database URL (e.g., "sqlite:///path/to/db.sqlite")
             mapper: TaskDbMapper instance. If None, creates a new instance.
+            time_provider: Provider for current time. Defaults to SystemTimeProvider.
         """
         self.database_url = database_url
         self.mapper = mapper or TaskDbMapper()
+        if time_provider is None:
+            from taskdog_core.infrastructure.time_provider import SystemTimeProvider
+
+            time_provider = SystemTimeProvider()
+        self._time_provider = time_provider
 
         # Create engine with SQLite-specific optimizations
         self.engine = create_engine(
@@ -362,7 +378,7 @@ class SqliteTaskRepository(TaskRepository):
         Returns:
             Created task with database-assigned ID
         """
-        now = datetime.now()
+        now = self._time_provider.now()
 
         # Create task without ID - database will assign via AUTOINCREMENT
         task = Task(
