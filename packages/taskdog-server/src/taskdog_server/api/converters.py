@@ -7,7 +7,6 @@ from taskdog-core into Pydantic response models for the API.
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
-from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_server.api.models.responses import (
@@ -16,17 +15,9 @@ from taskdog_server.api.models.responses import (
     GanttTaskResponse,
     TaskDetailResponse,
     TaskListResponse,
-    TaskOperationResponse,
     TaskResponse,
     UpdateTaskResponse,
 )
-
-
-def convert_to_task_operation_response(
-    dto: TaskOperationOutput,
-) -> TaskOperationResponse:
-    """Convert TaskOperationOutput DTO to Pydantic response model."""
-    return TaskOperationResponse.from_dto(dto)
 
 
 def convert_to_update_task_response(dto: TaskUpdateOutput) -> UpdateTaskResponse:
