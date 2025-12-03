@@ -205,12 +205,12 @@ class TaskDetailResponse(BaseModel):
             is_fixed=dto.task.is_fixed,
             is_archived=dto.task.is_archived,
             daily_allocations={
-                date.isoformat(): hours
-                for date, hours in dto.task.daily_allocations.items()
+                dt.isoformat(): hours
+                for dt, hours in dto.task.daily_allocations.items()
             },
             actual_daily_hours={
-                date.isoformat(): hours
-                for date, hours in dto.task.actual_daily_hours.items()
+                dt.isoformat(): hours
+                for dt, hours in dto.task.actual_daily_hours.items()
             },
             actual_duration_hours=dto.task.actual_duration_hours,
             is_active=dto.task.is_active,
