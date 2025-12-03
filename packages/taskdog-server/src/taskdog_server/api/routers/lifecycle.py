@@ -5,7 +5,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Header
 
-from taskdog_server.api.dependencies import EventBroadcasterDep, LifecycleControllerDep
+from taskdog_server.api.dependencies import (
+    AuthenticatedClientDep,
+    EventBroadcasterDep,
+    LifecycleControllerDep,
+)
 from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.responses import TaskOperationResponse
 
@@ -48,6 +52,7 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
         task_id: int,
         controller: LifecycleControllerDep,
         broadcaster: EventBroadcasterDep,
+        _client_name: AuthenticatedClientDep,
         x_client_id: Annotated[str | None, Header()] = None,
         x_user_name: Annotated[str | None, Header()] = None,
     ) -> TaskOperationResponse:

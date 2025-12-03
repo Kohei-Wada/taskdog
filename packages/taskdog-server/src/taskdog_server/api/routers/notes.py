@@ -6,6 +6,7 @@ from fastapi import APIRouter, Header, status
 
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import (
+    AuthenticatedClientDep,
     EventBroadcasterDep,
     NotesRepositoryDep,
     RepositoryDep,
@@ -20,7 +21,10 @@ router = APIRouter()
 @router.get("/{task_id}/notes", response_model=NotesResponse)
 @handle_task_errors
 async def get_task_notes(
-    task_id: int, repository: RepositoryDep, notes_repo: NotesRepositoryDep
+    task_id: int,
+    repository: RepositoryDep,
+    notes_repo: NotesRepositoryDep,
+    _client_name: AuthenticatedClientDep,
 ) -> NotesResponse:
     """Get task notes.
 
@@ -55,6 +59,7 @@ async def update_task_notes(
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
     broadcaster: EventBroadcasterDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> NotesResponse:
@@ -97,6 +102,7 @@ async def delete_task_notes(
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
     broadcaster: EventBroadcasterDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> None:

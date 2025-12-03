@@ -24,6 +24,11 @@ from taskdog_core.infrastructure.persistence.database.sqlite_task_repository imp
 )
 from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_server.api.context import ApiContext
+from taskdog_server.config.server_config_manager import (
+    ApiKeyEntry,
+    AuthConfig,
+    ServerConfig,
+)
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
 # =============================================================================
@@ -86,6 +91,28 @@ def mock_config():
     return config
 
 
+# Test API key for authentication
+TEST_API_KEY = "test-api-key-12345"
+TEST_CLIENT_NAME = "test-client"
+
+
+@pytest.fixture(scope="session")
+def server_config():
+    """Server configuration with test API key (session-scoped)."""
+    return ServerConfig(
+        auth=AuthConfig(
+            enabled=True,
+            api_keys=(ApiKeyEntry(name=TEST_CLIENT_NAME, key=TEST_API_KEY),),
+        )
+    )
+
+
+@pytest.fixture(scope="session")
+def auth_headers():
+    """HTTP headers with test API key."""
+    return {"X-Api-Key": TEST_API_KEY}
+
+
 @pytest.fixture(scope="session")
 def mock_logger():
     """Mock logger for controllers."""
@@ -135,7 +162,13 @@ def session_notes_repository():
 
 
 @pytest.fixture(scope="session")
-def app(session_repository, session_notes_repository, mock_config, mock_logger):
+def app(
+    session_repository,
+    session_notes_repository,
+    mock_config,
+    mock_logger,
+    server_config,
+):
     """FastAPI application with all routers (session-scoped)."""
     # Create controllers once (reused across all tests)
     query_controller = QueryController(
@@ -177,6 +210,7 @@ def app(session_repository, session_notes_repository, mock_config, mock_logger):
 
     # Set context on app.state BEFORE creating TestClient
     test_app.state.api_context = api_context
+    test_app.state.server_config = server_config
     test_app.state.connection_manager = ConnectionManager()
 
     # Import and register all routers
@@ -201,6 +235,50 @@ def app(session_repository, session_notes_repository, mock_config, mock_logger):
     return test_app
 
 
+class AuthenticatedTestClient:
+    """Wrapper around TestClient that automatically adds auth headers.
+
+    This allows existing tests to work without modification while ensuring
+    all requests include the required API key header.
+    """
+
+    def __init__(self, client: TestClient, auth_headers: dict[str, str]):
+        self._client = client
+        self._auth_headers = auth_headers
+
+    def _merge_headers(self, headers: dict[str, str] | None) -> dict[str, str]:
+        """Merge auth headers with provided headers."""
+        merged = dict(self._auth_headers)
+        if headers:
+            merged.update(headers)
+        return merged
+
+    def get(self, url: str, **kwargs):
+        """GET request with auth headers."""
+        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
+        return self._client.get(url, **kwargs)
+
+    def post(self, url: str, **kwargs):
+        """POST request with auth headers."""
+        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
+        return self._client.post(url, **kwargs)
+
+    def put(self, url: str, **kwargs):
+        """PUT request with auth headers."""
+        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
+        return self._client.put(url, **kwargs)
+
+    def patch(self, url: str, **kwargs):
+        """PATCH request with auth headers."""
+        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
+        return self._client.patch(url, **kwargs)
+
+    def delete(self, url: str, **kwargs):
+        """DELETE request with auth headers."""
+        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
+        return self._client.delete(url, **kwargs)
+
+
 @pytest.fixture(scope="session")
 def session_client(app):
     """TestClient (session-scoped for performance)."""
@@ -208,13 +286,15 @@ def session_client(app):
 
 
 @pytest.fixture
-def client(session_client, repository):
+def client(session_client, repository, auth_headers):
     """Function-scoped client that ensures repository is cleared.
 
     This fixture depends on 'repository' to ensure data is cleared
     before each test, while reusing the session-scoped TestClient.
+
+    Returns an AuthenticatedTestClient that automatically adds auth headers.
     """
-    return session_client
+    return AuthenticatedTestClient(session_client, auth_headers)
 
 
 # =============================================================================

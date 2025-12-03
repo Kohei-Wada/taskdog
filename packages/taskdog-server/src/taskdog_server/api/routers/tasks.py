@@ -12,6 +12,7 @@ from taskdog_server.api.converters import (
     convert_to_update_task_response,
 )
 from taskdog_server.api.dependencies import (
+    AuthenticatedClientDep,
     CrudControllerDep,
     EventBroadcasterDep,
     HolidayCheckerDep,
@@ -39,6 +40,7 @@ async def create_task(
     request: CreateTaskRequest,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
@@ -79,6 +81,7 @@ async def list_tasks(
     controller: QueryControllerDep,
     notes_repo: NotesRepositoryDep,
     holiday_checker: HolidayCheckerDep,
+    _client_name: AuthenticatedClientDep,
     all: Annotated[bool, Query(description="Include archived tasks")] = False,
     status_filter: Annotated[
         str | None, Query(alias="status", description="Filter by status")
@@ -151,6 +154,7 @@ async def list_tasks(
 async def list_today_tasks(
     controller: QueryControllerDep,
     notes_repo: NotesRepositoryDep,
+    _client_name: AuthenticatedClientDep,
     all: Annotated[bool, Query(description="Include archived tasks")] = False,
     status_filter: Annotated[
         str | None, Query(alias="status", description="Filter by status")
@@ -194,6 +198,7 @@ async def list_today_tasks(
 async def list_week_tasks(
     controller: QueryControllerDep,
     notes_repo: NotesRepositoryDep,
+    _client_name: AuthenticatedClientDep,
     all: Annotated[bool, Query(description="Include archived tasks")] = False,
     status_filter: Annotated[
         str | None, Query(alias="status", description="Filter by status")
@@ -235,7 +240,11 @@ async def list_week_tasks(
 
 @router.get("/{task_id}", response_model=TaskDetailResponse)
 @handle_task_errors
-async def get_task(task_id: int, controller: QueryControllerDep) -> TaskDetailResponse:
+async def get_task(
+    task_id: int,
+    controller: QueryControllerDep,
+    _client_name: AuthenticatedClientDep,
+) -> TaskDetailResponse:
     """Get task details by ID.
 
     Args:
@@ -259,6 +268,7 @@ async def update_task(
     request: UpdateTaskRequest,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> UpdateTaskResponse:
@@ -305,6 +315,7 @@ async def archive_task(
     task_id: int,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
@@ -337,6 +348,7 @@ async def restore_task(
     task_id: int,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
@@ -370,6 +382,7 @@ async def delete_task(
     controller: CrudControllerDep,
     query_controller: QueryControllerDep,
     broadcaster: EventBroadcasterDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> None:

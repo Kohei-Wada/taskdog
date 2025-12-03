@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Header
 
 from taskdog_server.api.dependencies import (
+    AuthenticatedClientDep,
     EventBroadcasterDep,
     RelationshipControllerDep,
     TimeProviderDep,
@@ -27,6 +28,7 @@ async def add_dependency(
     request: AddDependencyRequest,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
@@ -63,6 +65,7 @@ async def remove_dependency(
     depends_on_id: int,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
@@ -97,6 +100,7 @@ async def set_task_tags(
     request: SetTaskTagsRequest,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:
@@ -132,6 +136,7 @@ async def log_hours(
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
     time_provider: TimeProviderDep,
+    _client_name: AuthenticatedClientDep,
     x_client_id: Annotated[str | None, Header()] = None,
     x_user_name: Annotated[str | None, Header()] = None,
 ) -> TaskOperationResponse:

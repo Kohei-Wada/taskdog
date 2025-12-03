@@ -1,0 +1,58 @@
+# Taskdog Server Configuration
+# Copy this file to ~/.config/taskdog/server.toml and customize as needed.
+#
+# This file contains server-specific settings that are NOT shared with
+# CLI/TUI clients (which use cli.toml).
+
+# =============================================================================
+# Authentication Configuration
+# =============================================================================
+[auth]
+# Enable or disable API key authentication.
+# When enabled (default), all requests require a valid API key.
+# When disabled, all requests are allowed without authentication.
+#
+# Can be overridden with environment variable: TASKDOG_AUTH_ENABLED=false
+enabled = true
+
+# API Keys
+# Each API key has a name (for identification in logs/events) and a key value.
+# Generate secure keys using: python -c "import secrets; print(f'sk-{secrets.token_hex(24)}')"
+
+# Example: Claude Code / AI Agent
+[[auth.api_keys]]
+name = "claude-code"
+key = "sk-change-me-generate-a-secure-key"
+
+# Example: GitHub Webhook
+# [[auth.api_keys]]
+# name = "webhook-github"
+# key = "sk-another-secure-key-here"
+
+# Example: External service integration
+# [[auth.api_keys]]
+# name = "zapier"
+# key = "sk-yet-another-key"
+
+# =============================================================================
+# Usage Notes
+# =============================================================================
+#
+# HTTP Endpoints:
+#   Include the API key in the X-Api-Key header:
+#   curl -H "X-Api-Key: sk-your-key" http://localhost:8000/api/v1/tasks/
+#
+# WebSocket:
+#   Pass the API key as a query parameter:
+#   ws://localhost:8000/ws?token=sk-your-key
+#
+# CLI/TUI:
+#   Configure in ~/.config/taskdog/cli.toml:
+#   [api]
+#   api_key = "sk-your-key"
+#
+# Security Considerations:
+#   - Keep this file readable only by the user (chmod 600 server.toml)
+#   - Use unique keys for each client for better auditability
+#   - Rotate keys periodically
+#   - Never commit actual keys to version control

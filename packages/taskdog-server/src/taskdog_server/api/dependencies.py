@@ -3,7 +3,8 @@
 from contextlib import suppress
 from typing import Annotated
 
-from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, WebSocket
+from fastapi.security import APIKeyHeader
 
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
@@ -24,9 +25,13 @@ from taskdog_core.infrastructure.persistence.repository_factory import Repositor
 from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_core.shared.config_manager import Config, ConfigManager
 from taskdog_server.api.context import ApiContext
+from taskdog_server.config.server_config_manager import ServerConfig
 from taskdog_server.infrastructure.logging.standard_logger import StandardLogger
 from taskdog_server.websocket.broadcaster import WebSocketEventBroadcaster
 from taskdog_server.websocket.connection_manager import ConnectionManager
+
+# API Key header definition
+api_key_header = APIKeyHeader(name="X-Api-Key", auto_error=False)
 
 
 def initialize_api_context(
@@ -289,3 +294,129 @@ def get_event_broadcaster(
 EventBroadcasterDep = Annotated[
     WebSocketEventBroadcaster, Depends(get_event_broadcaster)
 ]
+
+
+# Server config dependency
+def get_server_config(request: Request) -> ServerConfig:
+    """Get the server config from app.state.
+
+    Args:
+        request: FastAPI request object (injected automatically)
+
+    Returns:
+        ServerConfig: The server config instance from app.state
+
+    Raises:
+        RuntimeError: If server config has not been initialized
+    """
+    config: ServerConfig | None = getattr(request.app.state, "server_config", None)
+    if config is None:
+        raise RuntimeError(
+            "Server config not initialized. Ensure lifespan sets app.state.server_config."
+        )
+    return config
+
+
+def get_server_config_ws(websocket: WebSocket) -> ServerConfig:
+    """Get the server config from app.state for WebSocket endpoints.
+
+    Args:
+        websocket: FastAPI WebSocket object (injected automatically)
+
+    Returns:
+        ServerConfig: The server config instance from app.state
+
+    Raises:
+        RuntimeError: If server config has not been initialized
+    """
+    config: ServerConfig | None = getattr(websocket.app.state, "server_config", None)
+    if config is None:
+        raise RuntimeError(
+            "Server config not initialized. Ensure lifespan sets app.state.server_config."
+        )
+    return config
+
+
+ServerConfigDep = Annotated[ServerConfig, Depends(get_server_config)]
+ServerConfigWsDep = Annotated[ServerConfig, Depends(get_server_config_ws)]
+
+
+def get_authenticated_client(
+    api_key: Annotated[str | None, Depends(api_key_header)],
+    server_config: ServerConfigDep,
+) -> str | None:
+    """Validate API key and return client name.
+
+    Args:
+        api_key: API key from X-Api-Key header
+        server_config: Server configuration with auth settings
+
+    Returns:
+        Client name if authenticated, None if auth is disabled
+
+    Raises:
+        HTTPException: 401 if authentication fails
+    """
+    # If auth is disabled, allow all requests
+    if not server_config.auth.enabled:
+        return None
+
+    # Auth is enabled but no API keys configured - reject all
+    if not server_config.auth.api_keys:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required but no API keys configured",
+        )
+
+    # API key required
+    if api_key is None:
+        raise HTTPException(status_code=401, detail="API key required")
+
+    # Validate API key
+    for entry in server_config.auth.api_keys:
+        if entry.key == api_key:
+            return entry.name
+
+    raise HTTPException(status_code=401, detail="Invalid API key")
+
+
+AuthenticatedClientDep = Annotated[str | None, Depends(get_authenticated_client)]
+
+
+def validate_api_key_for_websocket(
+    api_key: str | None,
+    server_config: ServerConfig,
+) -> str | None:
+    """Validate API key for WebSocket connections.
+
+    This is a helper function (not a FastAPI dependency) for WebSocket
+    authentication where we need to validate query parameters.
+
+    Args:
+        api_key: API key from query parameter
+        server_config: Server configuration with auth settings
+
+    Returns:
+        Client name if authenticated, None if auth is disabled
+
+    Raises:
+        ValueError: If authentication fails
+    """
+    # If auth is disabled, allow all requests
+    if not server_config.auth.enabled:
+        return None
+
+    # Auth is enabled but no API keys configured - reject all
+    if not server_config.auth.api_keys:
+        raise ValueError("Authentication required but no API keys configured")
+
+    # API key required
+    if api_key is None:
+        raise ValueError("API key required")
+
+    # Validate API key
+    for entry in server_config.auth.api_keys:
+        if entry.key == api_key:
+            return entry.name
+
+    raise ValueError("Invalid API key")
