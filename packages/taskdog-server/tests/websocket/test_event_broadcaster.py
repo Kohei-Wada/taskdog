@@ -54,10 +54,10 @@ class TestWebSocketEventBroadcaster:
         """Test task_created schedules background task."""
         # Arrange
         task = self._create_task_output()
-        exclude_client_id = "client-1"
+        source_user_name = "test-client"
 
         # Act
-        self.broadcaster.task_created(task, exclude_client_id)
+        self.broadcaster.task_created(task, source_user_name)
 
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
@@ -70,10 +70,10 @@ class TestWebSocketEventBroadcaster:
             "priority": 1,
             "status": "PENDING",
         }
-        assert call_args[0][3] == "client-1"
+        assert call_args[0][3] == "test-client"
 
-    def test_task_created_without_exclude_client(self):
-        """Test task_created with no exclude client."""
+    def test_task_created_without_source_user(self):
+        """Test task_created with no source user."""
         # Arrange
         task = self._create_task_output()
 
@@ -90,10 +90,10 @@ class TestWebSocketEventBroadcaster:
         # Arrange
         task = self._create_task_output()
         fields = ["name", "priority"]
-        exclude_client_id = "client-2"
+        source_user_name = "test-client-2"
 
         # Act
-        self.broadcaster.task_updated(task, fields, exclude_client_id)
+        self.broadcaster.task_updated(task, fields, source_user_name)
 
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
@@ -106,7 +106,7 @@ class TestWebSocketEventBroadcaster:
             "updated_fields": ["name", "priority"],
             "status": "PENDING",
         }
-        assert call_args[0][3] == "client-2"
+        assert call_args[0][3] == "test-client-2"
 
     def test_task_updated_with_single_field(self):
         """Test task_updated with a single field."""
@@ -127,10 +127,10 @@ class TestWebSocketEventBroadcaster:
         # Arrange
         task_id = 123
         task_name = "Deleted Task"
-        exclude_client_id = "client-3"
+        source_user_name = "test-client-3"
 
         # Act
-        self.broadcaster.task_deleted(task_id, task_name, exclude_client_id)
+        self.broadcaster.task_deleted(task_id, task_name, source_user_name)
 
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
@@ -141,10 +141,10 @@ class TestWebSocketEventBroadcaster:
             "task_id": 123,
             "task_name": "Deleted Task",
         }
-        assert call_args[0][3] == "client-3"
+        assert call_args[0][3] == "test-client-3"
 
-    def test_task_deleted_without_exclude_client(self):
-        """Test task_deleted with no exclude client."""
+    def test_task_deleted_without_source_user(self):
+        """Test task_deleted with no source user."""
         # Arrange
         task_id = 456
         task_name = "Another Task"
@@ -162,10 +162,10 @@ class TestWebSocketEventBroadcaster:
         # Arrange
         task = self._create_task_output(status=TaskStatus.IN_PROGRESS)
         old_status = "PENDING"
-        exclude_client_id = "client-4"
+        source_user_name = "test-client-4"
 
         # Act
-        self.broadcaster.task_status_changed(task, old_status, exclude_client_id)
+        self.broadcaster.task_status_changed(task, old_status, source_user_name)
 
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
@@ -178,7 +178,7 @@ class TestWebSocketEventBroadcaster:
             "old_status": "PENDING",
             "new_status": "IN_PROGRESS",
         }
-        assert call_args[0][3] == "client-4"
+        assert call_args[0][3] == "test-client-4"
 
     def test_task_status_changed_with_different_statuses(self):
         """Test task_status_changed with various status transitions."""
@@ -200,10 +200,10 @@ class TestWebSocketEventBroadcaster:
         # Arrange
         task_id = 789
         task_name = "Task with Notes"
-        exclude_client_id = "client-5"
+        source_user_name = "test-client-5"
 
         # Act
-        self.broadcaster.task_notes_updated(task_id, task_name, exclude_client_id)
+        self.broadcaster.task_notes_updated(task_id, task_name, source_user_name)
 
         # Assert
         self.mock_background_tasks.add_task.assert_called_once()
@@ -215,10 +215,10 @@ class TestWebSocketEventBroadcaster:
             "task_name": "Task with Notes",
             "updated_fields": ["notes"],
         }
-        assert call_args[0][3] == "client-5"
+        assert call_args[0][3] == "test-client-5"
 
-    def test_task_notes_updated_without_exclude_client(self):
-        """Test task_notes_updated with no exclude client."""
+    def test_task_notes_updated_without_source_user(self):
+        """Test task_notes_updated with no source user."""
         # Arrange
         task_id = 101
         task_name = "Notes Task"
@@ -237,11 +237,11 @@ class TestWebSocketEventBroadcaster:
         scheduled_count = 5
         failed_count = 2
         algorithm = "greedy"
-        exclude_client_id = "client-6"
+        source_user_name = "test-client-6"
 
         # Act
         self.broadcaster.schedule_optimized(
-            scheduled_count, failed_count, algorithm, exclude_client_id
+            scheduled_count, failed_count, algorithm, source_user_name
         )
 
         # Assert
@@ -254,7 +254,7 @@ class TestWebSocketEventBroadcaster:
             "failed_count": 2,
             "algorithm": "greedy",
         }
-        assert call_args[0][3] == "client-6"
+        assert call_args[0][3] == "test-client-6"
 
     def test_schedule_optimized_with_different_algorithms(self):
         """Test schedule_optimized with various algorithms."""
@@ -326,8 +326,8 @@ class TestWebSocketEventBroadcaster:
 class TestWebSocketEventBroadcasterBroadcast:
     """Async test cases for WebSocketEventBroadcaster._broadcast method."""
 
-    async def test_broadcast_adds_type_and_source_client_id(self):
-        """Test _broadcast adds type and source_client_id to payload."""
+    async def test_broadcast_adds_type_and_source_user_name(self):
+        """Test _broadcast adds type and source_user_name to payload."""
         # Arrange
         mock_manager = MagicMock(spec=ConnectionManager)
         mock_manager.broadcast = AsyncMock()
@@ -335,22 +335,22 @@ class TestWebSocketEventBroadcasterBroadcast:
         broadcaster = WebSocketEventBroadcaster(mock_manager, mock_background_tasks)
 
         payload = {"task_id": 1, "task_name": "Test"}
-        exclude_client_id = "client-1"
+        source_user_name = "test-client"
 
         # Act
-        await broadcaster._broadcast("task_created", payload, exclude_client_id)
+        await broadcaster._broadcast("task_created", payload, source_user_name)
 
         # Assert
         mock_manager.broadcast.assert_called_once()
         call_args = mock_manager.broadcast.call_args
         broadcast_payload = call_args[0][0]
         assert broadcast_payload["type"] == "task_created"
-        assert broadcast_payload["source_client_id"] == "client-1"
+        assert broadcast_payload["source_user_name"] == "test-client"
         assert broadcast_payload["task_id"] == 1
         assert broadcast_payload["task_name"] == "Test"
 
-    async def test_broadcast_with_none_exclude_client_id(self):
-        """Test _broadcast with None exclude_client_id."""
+    async def test_broadcast_with_none_source_user_name(self):
+        """Test _broadcast with None source_user_name."""
         # Arrange
         mock_manager = MagicMock(spec=ConnectionManager)
         mock_manager.broadcast = AsyncMock()
@@ -367,7 +367,7 @@ class TestWebSocketEventBroadcasterBroadcast:
         call_args = mock_manager.broadcast.call_args
         broadcast_payload = call_args[0][0]
         assert broadcast_payload["type"] == "task_deleted"
-        assert broadcast_payload["source_client_id"] is None
+        assert broadcast_payload["source_user_name"] is None
 
     async def test_broadcast_does_not_modify_original_payload(self):
         """Test _broadcast does not modify the original payload dict."""
@@ -381,10 +381,10 @@ class TestWebSocketEventBroadcasterBroadcast:
         original_keys = set(payload.keys())
 
         # Act
-        await broadcaster._broadcast("task_created", payload, "client-1")
+        await broadcaster._broadcast("task_created", payload, "test-client")
 
         # Assert
-        # Original payload should not have type and source_client_id
+        # Original payload should not have type and source_user_name
         assert set(payload.keys()) == original_keys
         assert "type" not in payload
-        assert "source_client_id" not in payload
+        assert "source_user_name" not in payload

@@ -50,15 +50,13 @@ class WebSocketEventBroadcaster:
     def task_created(
         self,
         task: TaskOperationOutput,
-        exclude_client_id: str | None = None,
-        user_name: str | None = None,
+        source_user_name: str | None = None,
     ) -> None:
         """Schedule a task creation broadcast.
 
         Args:
             task: The created task DTO
-            exclude_client_id: Optional client ID to exclude from broadcast
-            user_name: Optional user name who triggered the event
+            source_user_name: User name who triggered the event (for payload info)
         """
         payload = {
             "task_id": task.id,
@@ -66,22 +64,20 @@ class WebSocketEventBroadcaster:
             "priority": task.priority,
             "status": task.status.value,
         }
-        self._schedule_broadcast("task_created", payload, exclude_client_id, user_name)
+        self._schedule_broadcast("task_created", payload, source_user_name)
 
     def task_updated(
         self,
         task: TaskOperationOutput,
         fields: list[str],
-        exclude_client_id: str | None = None,
-        user_name: str | None = None,
+        source_user_name: str | None = None,
     ) -> None:
         """Schedule a task update broadcast.
 
         Args:
             task: The updated task DTO
             fields: List of updated field names
-            exclude_client_id: Optional client ID to exclude from broadcast
-            user_name: Optional user name who triggered the event
+            source_user_name: User name who triggered the event (for payload info)
         """
         payload = {
             "task_id": task.id,
@@ -89,43 +85,39 @@ class WebSocketEventBroadcaster:
             "updated_fields": fields,
             "status": task.status.value,
         }
-        self._schedule_broadcast("task_updated", payload, exclude_client_id, user_name)
+        self._schedule_broadcast("task_updated", payload, source_user_name)
 
     def task_deleted(
         self,
         task_id: int,
         task_name: str,
-        exclude_client_id: str | None = None,
-        user_name: str | None = None,
+        source_user_name: str | None = None,
     ) -> None:
         """Schedule a task deletion broadcast.
 
         Args:
             task_id: The deleted task ID
             task_name: The deleted task name
-            exclude_client_id: Optional client ID to exclude from broadcast
-            user_name: Optional user name who triggered the event
+            source_user_name: User name who triggered the event (for payload info)
         """
         payload = {
             "task_id": task_id,
             "task_name": task_name,
         }
-        self._schedule_broadcast("task_deleted", payload, exclude_client_id, user_name)
+        self._schedule_broadcast("task_deleted", payload, source_user_name)
 
     def task_status_changed(
         self,
         task: TaskOperationOutput,
         old_status: str,
-        exclude_client_id: str | None = None,
-        user_name: str | None = None,
+        source_user_name: str | None = None,
     ) -> None:
         """Schedule a task status change broadcast.
 
         Args:
             task: The task DTO with new status
             old_status: The previous status value
-            exclude_client_id: Optional client ID to exclude from broadcast
-            user_name: Optional user name who triggered the event
+            source_user_name: User name who triggered the event (for payload info)
         """
         payload = {
             "task_id": task.id,
@@ -133,39 +125,34 @@ class WebSocketEventBroadcaster:
             "old_status": old_status,
             "new_status": task.status.value,
         }
-        self._schedule_broadcast(
-            "task_status_changed", payload, exclude_client_id, user_name
-        )
+        self._schedule_broadcast("task_status_changed", payload, source_user_name)
 
     def task_notes_updated(
         self,
         task_id: int,
         task_name: str,
-        exclude_client_id: str | None = None,
-        user_name: str | None = None,
+        source_user_name: str | None = None,
     ) -> None:
         """Schedule a task notes update broadcast.
 
         Args:
             task_id: The task ID
             task_name: The task name
-            exclude_client_id: Optional client ID to exclude from broadcast
-            user_name: Optional user name who triggered the event
+            source_user_name: User name who triggered the event (for payload info)
         """
         payload = {
             "task_id": task_id,
             "task_name": task_name,
             "updated_fields": ["notes"],
         }
-        self._schedule_broadcast("task_updated", payload, exclude_client_id, user_name)
+        self._schedule_broadcast("task_updated", payload, source_user_name)
 
     def schedule_optimized(
         self,
         scheduled_count: int,
         failed_count: int,
         algorithm: str,
-        exclude_client_id: str | None = None,
-        user_name: str | None = None,
+        source_user_name: str | None = None,
     ) -> None:
         """Schedule a schedule optimization broadcast.
 
@@ -173,54 +160,46 @@ class WebSocketEventBroadcaster:
             scheduled_count: Number of successfully scheduled tasks
             failed_count: Number of failed tasks
             algorithm: Algorithm used for optimization
-            exclude_client_id: Optional client ID to exclude from broadcast
-            user_name: Optional user name who triggered the event
+            source_user_name: User name who triggered the event (for payload info)
         """
         payload = {
             "scheduled_count": scheduled_count,
             "failed_count": failed_count,
             "algorithm": algorithm,
         }
-        self._schedule_broadcast(
-            "schedule_optimized", payload, exclude_client_id, user_name
-        )
+        self._schedule_broadcast("schedule_optimized", payload, source_user_name)
 
     def _schedule_broadcast(
         self,
         event_type: str,
         payload: dict[str, Any],
-        exclude_client_id: str | None,
-        user_name: str | None = None,
+        source_user_name: str | None = None,
     ) -> None:
         """Schedule a broadcast as a background task.
 
         Args:
             event_type: The type of event (e.g., "task_created")
             payload: Event-specific data to broadcast
-            exclude_client_id: Optional client ID to exclude from broadcast
-            user_name: Optional user name who triggered the event
+            source_user_name: User name who triggered the event (for payload info)
         """
         self._background_tasks.add_task(
-            self._broadcast, event_type, payload, exclude_client_id, user_name
+            self._broadcast, event_type, payload, source_user_name
         )
 
     async def _broadcast(
         self,
         event_type: str,
         payload: dict[str, Any],
-        exclude_client_id: str | None,
-        user_name: str | None = None,
+        source_user_name: str | None = None,
     ) -> None:
         """Broadcast an event to all connected clients.
 
         Args:
             event_type: The type of event
             payload: Event-specific data
-            exclude_client_id: Optional client ID to exclude from broadcast
-            user_name: Optional user name who triggered the event
+            source_user_name: User name who triggered the event (for payload info)
         """
         broadcast_payload = payload.copy()
         broadcast_payload["type"] = event_type
-        broadcast_payload["source_client_id"] = exclude_client_id
-        broadcast_payload["source_user_name"] = user_name
-        await self._manager.broadcast(broadcast_payload, exclude_client_id)
+        broadcast_payload["source_user_name"] = source_user_name
+        await self._manager.broadcast(broadcast_payload)

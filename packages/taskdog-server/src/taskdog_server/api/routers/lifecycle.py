@@ -1,9 +1,8 @@
 """Task lifecycle endpoints (status changes with time tracking)."""
 
 from dataclasses import dataclass
-from typing import Annotated
 
-from fastapi import APIRouter, Header
+from fastapi import APIRouter
 
 from taskdog_server.api.dependencies import (
     AuthenticatedClientDep,
@@ -52,13 +51,11 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
         task_id: int,
         controller: LifecycleControllerDep,
         broadcaster: EventBroadcasterDep,
-        _client_name: AuthenticatedClientDep,
-        x_client_id: Annotated[str | None, Header()] = None,
-        x_user_name: Annotated[str | None, Header()] = None,
+        client_name: AuthenticatedClientDep,
     ) -> TaskOperationResponse:
         controller_method = getattr(controller, f"{op.name}_task")
         result = controller_method(task_id)
-        broadcaster.task_status_changed(result, op.old_status, x_client_id, x_user_name)
+        broadcaster.task_status_changed(result, op.old_status, client_name)
         return TaskOperationResponse.from_dto(result)
 
     endpoint.__name__ = f"{op.name}_task"
@@ -68,8 +65,7 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
         task_id: Task ID
         controller: Lifecycle controller dependency
         broadcaster: Event broadcaster dependency
-        x_client_id: Optional client ID from WebSocket connection
-        x_user_name: Optional user name from API gateway
+        client_name: Authenticated client name (for broadcast payload)
 
     Returns:
         Updated task data with {op.returns}
