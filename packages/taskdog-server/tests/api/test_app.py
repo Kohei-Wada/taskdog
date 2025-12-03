@@ -14,6 +14,7 @@ from taskdog_core.controllers.task_relationship_controller import (
     TaskRelationshipController,
 )
 from taskdog_core.domain.services.logger import Logger
+from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_server.api.context import ApiContext
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
@@ -67,6 +68,7 @@ class TestApp:
             analytics_controller=analytics_controller,
             crud_controller=crud_controller,
             holiday_checker=None,
+            time_provider=SystemTimeProvider(),
         )
 
         # Create app using create_app (lifespan will set its own context)

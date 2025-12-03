@@ -12,6 +12,8 @@ from taskdog_core.controllers.task_relationship_controller import (
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
+from taskdog_core.domain.services.time_provider import ITimeProvider
+from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_core.shared.config_manager import Config
 from taskdog_server.api.context import ApiContext
 
@@ -30,6 +32,7 @@ class TestApiContext:
         self.mock_analytics_controller = Mock(spec=TaskAnalyticsController)
         self.mock_crud_controller = Mock(spec=TaskCrudController)
         self.mock_holiday_checker = Mock(spec=IHolidayChecker)
+        self.mock_time_provider = Mock(spec=ITimeProvider)
 
     def test_create_context_with_all_dependencies(self):
         """Test creating ApiContext with all dependencies."""
@@ -44,6 +47,7 @@ class TestApiContext:
             analytics_controller=self.mock_analytics_controller,
             crud_controller=self.mock_crud_controller,
             holiday_checker=self.mock_holiday_checker,
+            time_provider=self.mock_time_provider,
         )
 
         # Assert
@@ -56,6 +60,7 @@ class TestApiContext:
         assert context.analytics_controller == self.mock_analytics_controller
         assert context.crud_controller == self.mock_crud_controller
         assert context.holiday_checker == self.mock_holiday_checker
+        assert context.time_provider == self.mock_time_provider
 
     def test_create_context_without_holiday_checker(self):
         """Test creating ApiContext without holiday checker (None)."""
@@ -70,6 +75,7 @@ class TestApiContext:
             analytics_controller=self.mock_analytics_controller,
             crud_controller=self.mock_crud_controller,
             holiday_checker=None,
+            time_provider=self.mock_time_provider,
         )
 
         # Assert
@@ -88,6 +94,7 @@ class TestApiContext:
             analytics_controller=self.mock_analytics_controller,
             crud_controller=self.mock_crud_controller,
             holiday_checker=self.mock_holiday_checker,
+            time_provider=self.mock_time_provider,
         )
 
         # Assert - verify all attributes are accessible
@@ -100,6 +107,7 @@ class TestApiContext:
         assert context.analytics_controller is not None
         assert context.crud_controller is not None
         assert context.holiday_checker is not None
+        assert context.time_provider is not None
 
     def test_context_with_different_repository_instances(self):
         """Test creating contexts with different repository instances."""
@@ -117,6 +125,7 @@ class TestApiContext:
             analytics_controller=self.mock_analytics_controller,
             crud_controller=self.mock_crud_controller,
             holiday_checker=None,
+            time_provider=self.mock_time_provider,
         )
 
         context2 = ApiContext(
@@ -129,6 +138,7 @@ class TestApiContext:
             analytics_controller=self.mock_analytics_controller,
             crud_controller=self.mock_crud_controller,
             holiday_checker=None,
+            time_provider=self.mock_time_provider,
         )
 
         # Assert
@@ -150,6 +160,7 @@ class TestApiContext:
             analytics_controller=self.mock_analytics_controller,
             crud_controller=self.mock_crud_controller,
             holiday_checker=None,
+            time_provider=self.mock_time_provider,
         )
 
         context2 = ApiContext(
@@ -162,6 +173,7 @@ class TestApiContext:
             analytics_controller=self.mock_analytics_controller,
             crud_controller=self.mock_crud_controller,
             holiday_checker=None,
+            time_provider=self.mock_time_provider,
         )
 
         # Assert
@@ -180,6 +192,7 @@ class TestApiContext:
             analytics_controller=self.mock_analytics_controller,
             crud_controller=self.mock_crud_controller,
             holiday_checker=None,
+            time_provider=self.mock_time_provider,
         )
 
         # Assert - verify all five controllers are present
@@ -197,3 +210,22 @@ class TestApiContext:
 
         # All controllers should be different instances
         assert len(set(map(id, controllers))) == 5
+
+    def test_context_with_system_time_provider(self):
+        """Test creating ApiContext with SystemTimeProvider."""
+        time_provider = SystemTimeProvider()
+
+        context = ApiContext(
+            repository=self.mock_repository,
+            config=self.mock_config,
+            notes_repository=self.mock_notes_repository,
+            query_controller=self.mock_query_controller,
+            lifecycle_controller=self.mock_lifecycle_controller,
+            relationship_controller=self.mock_relationship_controller,
+            analytics_controller=self.mock_analytics_controller,
+            crud_controller=self.mock_crud_controller,
+            holiday_checker=None,
+            time_provider=time_provider,
+        )
+
+        assert context.time_provider is time_provider

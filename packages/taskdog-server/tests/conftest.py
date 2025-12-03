@@ -22,6 +22,7 @@ from taskdog_core.domain.services.logger import Logger
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
+from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_server.api.context import ApiContext
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
@@ -164,6 +165,7 @@ def app(session_repository, session_notes_repository, mock_config, mock_logger):
         analytics_controller=analytics_controller,
         crud_controller=crud_controller,
         holiday_checker=None,
+        time_provider=SystemTimeProvider(),
     )
 
     # Create FastAPI app once with all routers

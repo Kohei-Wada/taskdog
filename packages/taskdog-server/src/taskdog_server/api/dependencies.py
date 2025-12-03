@@ -15,11 +15,13 @@ from taskdog_core.controllers.task_relationship_controller import (
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
+from taskdog_core.domain.services.time_provider import ITimeProvider
 from taskdog_core.infrastructure.holiday_checker import HolidayChecker
 from taskdog_core.infrastructure.persistence.file_notes_repository import (
     FileNotesRepository,
 )
 from taskdog_core.infrastructure.persistence.repository_factory import RepositoryFactory
+from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_core.shared.config_manager import Config, ConfigManager
 from taskdog_server.api.context import ApiContext
 from taskdog_server.infrastructure.logging.standard_logger import StandardLogger
@@ -27,13 +29,17 @@ from taskdog_server.websocket.broadcaster import WebSocketEventBroadcaster
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
 
-def initialize_api_context(config: Config | None = None) -> ApiContext:
+def initialize_api_context(
+    config: Config | None = None,
+    time_provider: ITimeProvider | None = None,
+) -> ApiContext:
     """Initialize API context with all dependencies.
 
     This should be called once during application startup.
 
     Args:
         config: Optional pre-loaded configuration. If None, loads from file.
+        time_provider: Optional time provider. If None, uses SystemTimeProvider.
 
     Returns:
         ApiContext: Initialized context with all controllers
@@ -42,6 +48,10 @@ def initialize_api_context(config: Config | None = None) -> ApiContext:
     if config is None:
         config = ConfigManager.load()
     notes_repository = FileNotesRepository()
+
+    # Initialize time provider if not provided
+    if time_provider is None:
+        time_provider = SystemTimeProvider()
 
     # Initialize HolidayChecker if country is configured
     holiday_checker = None
@@ -88,6 +98,7 @@ def initialize_api_context(config: Config | None = None) -> ApiContext:
         analytics_controller=analytics_controller,
         crud_controller=crud_controller,
         holiday_checker=holiday_checker,
+        time_provider=time_provider,
     )
 
 
@@ -187,6 +198,11 @@ def get_holiday_checker(context: ApiContextDep) -> IHolidayChecker | None:
     return context.holiday_checker
 
 
+def get_time_provider(context: ApiContextDep) -> ITimeProvider:
+    """Get time provider from context."""
+    return context.time_provider
+
+
 def get_connection_manager(request: Request) -> ConnectionManager:
     """Get the ConnectionManager instance from app.state for HTTP endpoints.
 
@@ -247,6 +263,7 @@ RepositoryDep = Annotated[TaskRepository, Depends(get_repository)]
 NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
 ConfigDep = Annotated[Config, Depends(get_config)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
+TimeProviderDep = Annotated[ITimeProvider, Depends(get_time_provider)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
 ConnectionManagerWsDep = Annotated[
     ConnectionManager, Depends(get_connection_manager_ws)

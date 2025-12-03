@@ -1,9 +1,15 @@
 """Filter for this week's tasks."""
 
-from datetime import date, datetime, timedelta
+from __future__ import annotations
+
+from datetime import date, timedelta
+from typing import TYPE_CHECKING
 
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
+
+if TYPE_CHECKING:
+    from taskdog_core.domain.services.time_provider import ITimeProvider
 
 
 class ThisWeekFilter(TaskFilter):
@@ -15,13 +21,23 @@ class ThisWeekFilter(TaskFilter):
     - Status is IN_PROGRESS
     """
 
-    def __init__(self, include_completed: bool = False):
+    def __init__(
+        self,
+        include_completed: bool = False,
+        time_provider: ITimeProvider | None = None,
+    ):
         """Initialize filter.
 
         Args:
             include_completed: Whether to include completed tasks
+            time_provider: Provider for current time. Defaults to SystemTimeProvider.
         """
         self.include_completed = include_completed
+        if time_provider is None:
+            from taskdog_core.infrastructure.time_provider import SystemTimeProvider
+
+            time_provider = SystemTimeProvider()
+        self._time_provider = time_provider
 
     def filter(self, tasks: list[Task]) -> list[Task]:
         """Filter tasks that are relevant for this week.
@@ -32,7 +48,7 @@ class ThisWeekFilter(TaskFilter):
         Returns:
             List of tasks matching this week's criteria
         """
-        today = datetime.now().date()
+        today = self._time_provider.today()
 
         # Calculate this week's range (Monday to Sunday)
         # weekday(): Monday=0, Sunday=6

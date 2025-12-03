@@ -1,12 +1,12 @@
 """Tests for ThisWeekFilter."""
 
 from datetime import datetime, timedelta
-from unittest.mock import patch
 
 import pytest
 
 from taskdog_core.application.queries.filters.this_week_filter import ThisWeekFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.testing.time_provider import FakeTimeProvider
 
 
 class TestThisWeekFilter:
@@ -20,6 +20,7 @@ class TestThisWeekFilter:
         # Week: Monday Jan 13 - Sunday Jan 19
         self.week_start = datetime(2025, 1, 13).date()
         self.week_end = datetime(2025, 1, 19).date()
+        self.time_provider = FakeTimeProvider(datetime(2025, 1, 15, 12, 0, 0))
 
     @pytest.mark.parametrize(
         "status,deadline,planned_start,planned_end,expected_count",
@@ -38,10 +39,8 @@ class TestThisWeekFilter:
             "pending_no_dates",
         ],
     )
-    @patch("taskdog_core.application.queries.filters.this_week_filter.datetime")
     def test_filter_task_scenarios(
         self,
-        mock_datetime,
         status,
         deadline,
         planned_start,
@@ -49,10 +48,6 @@ class TestThisWeekFilter:
         expected_count,
     ):
         """Test filter with various task scenarios."""
-        mock_datetime.now.return_value = datetime.combine(
-            self.today, datetime.min.time()
-        )
-
         task = Task(
             id=1,
             name="Test Task",
@@ -63,7 +58,7 @@ class TestThisWeekFilter:
             planned_end=planned_end,
         )
 
-        this_week_filter = ThisWeekFilter()
+        this_week_filter = ThisWeekFilter(time_provider=self.time_provider)
         result = this_week_filter.filter([task])
 
         assert len(result) == expected_count
@@ -76,15 +71,8 @@ class TestThisWeekFilter:
         ],
         ids=["exclude_completed_by_default", "include_completed_when_enabled"],
     )
-    @patch("taskdog_core.application.queries.filters.this_week_filter.datetime")
-    def test_filter_completed_tasks(
-        self, mock_datetime, include_completed, expected_count
-    ):
+    def test_filter_completed_tasks(self, include_completed, expected_count):
         """Test filter behavior with COMPLETED tasks."""
-        mock_datetime.now.return_value = datetime.combine(
-            self.today, datetime.min.time()
-        )
-
         task = Task(
             id=1,
             name="Completed",
@@ -93,32 +81,28 @@ class TestThisWeekFilter:
             deadline=datetime(2025, 1, 16),
         )
 
-        this_week_filter = ThisWeekFilter(include_completed=include_completed)
+        this_week_filter = ThisWeekFilter(
+            include_completed=include_completed, time_provider=self.time_provider
+        )
         result = this_week_filter.filter([task])
 
         assert len(result) == expected_count
 
-    @patch("taskdog_core.application.queries.filters.this_week_filter.datetime")
-    def test_filter_with_empty_list(self, mock_datetime):
+    def test_filter_with_empty_list(self):
         """Test filter with empty task list."""
-        mock_datetime.now.return_value = datetime.combine(
-            self.today, datetime.min.time()
-        )
-
-        this_week_filter = ThisWeekFilter()
+        this_week_filter = ThisWeekFilter(time_provider=self.time_provider)
         result = this_week_filter.filter([])
 
         assert len(result) == 0
 
-    @patch("taskdog_core.application.queries.filters.this_week_filter.datetime")
-    def test_filter_calculates_week_correctly(self, mock_datetime):
+    def test_filter_calculates_week_correctly(self):
         """Test filter calculates this week's Monday-Sunday range correctly."""
         # Test on different days of the week
         for day_offset in range(7):  # Monday=0 to Sunday=6
             current_day = datetime(2025, 1, 13) + timedelta(
                 days=day_offset
             )  # Week starting Jan 13
-            mock_datetime.now.return_value = current_day
+            time_provider = FakeTimeProvider(current_day)
 
             task = Task(
                 id=1,
@@ -128,7 +112,7 @@ class TestThisWeekFilter:
                 deadline=datetime(2025, 1, 16),  # Thursday
             )
 
-            this_week_filter = ThisWeekFilter()
+            this_week_filter = ThisWeekFilter(time_provider=time_provider)
             result = this_week_filter.filter([task])
 
             # Should match regardless of which day "today" is within the week

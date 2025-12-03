@@ -1,5 +1,7 @@
 """Task query service for read-optimized operations."""
 
+from __future__ import annotations
+
 from datetime import date, timedelta
 from typing import TYPE_CHECKING, Any
 
@@ -22,6 +24,7 @@ if TYPE_CHECKING:
     from taskdog_core.application.queries.filters.status_filter import StatusFilter
     from taskdog_core.application.queries.filters.tag_filter import TagFilter
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
+    from taskdog_core.domain.services.time_provider import ITimeProvider
 
 
 class TaskQueryService(QueryService):
@@ -31,14 +34,24 @@ class TaskQueryService(QueryService):
     query-specific logic. Optimized for data retrieval without state modification.
     """
 
-    def __init__(self, repository: TaskRepository) -> None:
+    def __init__(
+        self,
+        repository: TaskRepository,
+        time_provider: ITimeProvider | None = None,
+    ) -> None:
         """Initialize query service with repository.
 
         Args:
             repository: Task repository for data access
+            time_provider: Provider for current time. Defaults to SystemTimeProvider.
         """
         super().__init__(repository)
         self.sorter = TaskSorter()
+        if time_provider is None:
+            from taskdog_core.infrastructure.time_provider import SystemTimeProvider
+
+            time_provider = SystemTimeProvider()
+        self._time_provider = time_provider
 
     def get_filtered_tasks_as_dtos(
         self,
@@ -168,7 +181,7 @@ class TaskQueryService(QueryService):
         params["include_archived"] = False
 
     def _handle_status_filter(
-        self, params: dict[str, Any], filter_obj: "StatusFilter"
+        self, params: dict[str, Any], filter_obj: StatusFilter
     ) -> None:
         """Handle StatusFilter by extracting status value.
 
@@ -178,9 +191,7 @@ class TaskQueryService(QueryService):
         """
         params["status"] = filter_obj.status
 
-    def _handle_tag_filter(
-        self, params: dict[str, Any], filter_obj: "TagFilter"
-    ) -> None:
+    def _handle_tag_filter(self, params: dict[str, Any], filter_obj: TagFilter) -> None:
         """Handle TagFilter by extracting tags and match_all flag.
 
         Args:
@@ -191,7 +202,7 @@ class TaskQueryService(QueryService):
         params["match_all_tags"] = filter_obj.match_all
 
     def _handle_date_range_filter(
-        self, params: dict[str, Any], filter_obj: "DateRangeFilter"
+        self, params: dict[str, Any], filter_obj: DateRangeFilter
     ) -> None:
         """Handle DateRangeFilter by extracting start_date and end_date.
 
@@ -203,7 +214,7 @@ class TaskQueryService(QueryService):
         params["end_date"] = filter_obj.end_date
 
     def _handle_composite_filter(
-        self, params: dict[str, Any], filter_obj: "CompositeFilter"
+        self, params: dict[str, Any], filter_obj: CompositeFilter
     ) -> None:
         """Handle CompositeFilter by recursively processing sub-filters.
 
@@ -362,7 +373,7 @@ class TaskQueryService(QueryService):
         reverse: bool = False,
         start_date: date | None = None,
         end_date: date | None = None,
-        holiday_checker: "IHolidayChecker | None" = None,
+        holiday_checker: IHolidayChecker | None = None,
     ) -> GanttOutput:
         """Get Gantt chart data with business logic pre-computed.
 
@@ -392,7 +403,7 @@ class TaskQueryService(QueryService):
 
         if not tasks:
             # Return empty result with today's date range
-            today = date.today()
+            today = self._time_provider.today()
             return GanttOutput(
                 date_range=GanttDateRange(start_date=today, end_date=today),
                 tasks=[],
@@ -406,7 +417,7 @@ class TaskQueryService(QueryService):
 
         if date_range is None:
             # No dates available in tasks
-            today = date.today()
+            today = self._time_provider.today()
             task_dtos = [GanttTaskDto.from_entity(task) for task in tasks]
             return GanttOutput(
                 date_range=GanttDateRange(start_date=today, end_date=today),
