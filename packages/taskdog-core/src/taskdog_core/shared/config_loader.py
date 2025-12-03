@@ -89,7 +89,7 @@ class ConfigLoader:
         env_key = f"{prefix}{key}"
         value = os.environ.get(env_key)
 
-        if value is None:
+        if value is None or value.strip() == "":
             return default
 
         try:
@@ -132,7 +132,7 @@ class ConfigLoader:
         env_key = f"{prefix}{key}"
         value = os.environ.get(env_key)
 
-        if value is None:
+        if value is None or value.strip() == "":
             return default
 
         return [item.strip() for item in value.split(",") if item.strip()]

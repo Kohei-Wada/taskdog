@@ -149,6 +149,18 @@ class TestGetEnv:
 
         assert len(caplog.records) == 0
 
+    def test_empty_string_returns_default(self):
+        """Test that empty string env var returns default."""
+        with patch.dict(os.environ, {"TASKDOG_TEST_VAR": ""}, clear=False):
+            result = ConfigLoader.get_env("TEST_VAR", "default", str)
+        assert result == "default"
+
+    def test_whitespace_only_returns_default(self):
+        """Test that whitespace-only env var returns default."""
+        with patch.dict(os.environ, {"TASKDOG_TEST_VAR": "   "}, clear=False):
+            result = ConfigLoader.get_env("TEST_VAR", "default", str)
+        assert result == "default"
+
 
 class TestGetEnvList:
     """Test cases for ConfigLoader.get_env_list()."""
@@ -187,3 +199,15 @@ class TestGetEnvList:
         with patch.dict(os.environ, {"CUSTOM_MY_LIST": "a,b,c"}, clear=False):
             result = ConfigLoader.get_env_list("MY_LIST", [], prefix="CUSTOM_")
         assert result == ["a", "b", "c"]
+
+    def test_empty_string_returns_default(self):
+        """Test that empty string env var returns default."""
+        with patch.dict(os.environ, {"TASKDOG_TEST_LIST": ""}, clear=False):
+            result = ConfigLoader.get_env_list("TEST_LIST", ["default"])
+        assert result == ["default"]
+
+    def test_whitespace_only_returns_default(self):
+        """Test that whitespace-only env var returns default."""
+        with patch.dict(os.environ, {"TASKDOG_TEST_LIST": "   "}, clear=False):
+            result = ConfigLoader.get_env_list("TEST_LIST", ["default"])
+        assert result == ["default"]
