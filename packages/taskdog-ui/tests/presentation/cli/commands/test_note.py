@@ -342,3 +342,175 @@ class TestNoteCommand:
         self.console_writer.error.assert_called_once()
         error_args = self.console_writer.error.call_args[0]
         assert error_args[0] == "saving notes"
+
+    def test_task_not_found(self):
+        """Test error when task doesn't exist."""
+
+        # Setup - task not found
+        self.api_client.get_task_by_id.return_value = Mock(task=None)
+
+        # Execute
+        result = self.runner.invoke(
+            note_command,
+            ["999", "--content", "test"],
+            obj=self.cli_context,
+        )
+
+        # Verify - handle_task_errors catches TaskNotFoundException
+        assert result.exit_code == 0
+        self.console_writer.validation_error.assert_called_once()
+
+    def test_file_read_oserror(self):
+        """Test error handling when file read fails with OSError."""
+        from taskdog.cli.commands.note import _read_content_from_source
+
+        # Create a mock file path that will fail to read
+        with patch("taskdog.cli.commands.note.Path") as mock_path_cls:
+            mock_path = MagicMock()
+            mock_path.read_text.side_effect = OSError("Permission denied")
+            mock_path_cls.return_value = mock_path
+
+            # Execute
+            result = _read_content_from_source(None, "/fake/path", self.console_writer)
+
+            # Verify
+            assert result is None
+            self.console_writer.error.assert_called_once()
+
+    def test_file_read_unicode_error(self):
+        """Test error handling when file has encoding issues."""
+        from taskdog.cli.commands.note import _read_content_from_source
+
+        with patch("taskdog.cli.commands.note.Path") as mock_path_cls:
+            mock_path = MagicMock()
+            mock_path.read_text.side_effect = UnicodeDecodeError(
+                "utf-8", b"", 0, 1, "invalid"
+            )
+            mock_path_cls.return_value = mock_path
+
+            # Execute
+            result = _read_content_from_source(None, "/fake/path", self.console_writer)
+
+            # Verify
+            assert result is None
+            self.console_writer.error.assert_called_once()
+
+    def test_editor_not_found(self):
+        """Test error when $EDITOR is not found."""
+        from taskdog.cli.commands.note import _edit_with_editor
+
+        self.api_client.get_task_notes.return_value = ("", False)
+
+        with patch("taskdog.cli.commands.note.get_editor") as mock_get_editor:
+            mock_get_editor.side_effect = RuntimeError("No editor found")
+
+            # Execute
+            _edit_with_editor(
+                1, self.mock_task, self.api_client, self.console_writer, None
+            )
+
+            # Verify
+            self.console_writer.error.assert_called_once()
+            assert "finding editor" in self.console_writer.error.call_args[0][0]
+
+    def test_editor_execution_error(self):
+        """Test error when editor returns non-zero exit code."""
+        import subprocess
+
+        from taskdog.cli.commands.note import _edit_with_editor
+
+        self.api_client.get_task_notes.return_value = ("existing content", True)
+
+        with (
+            patch("taskdog.cli.commands.note.get_editor") as mock_get_editor,
+            patch("taskdog.cli.commands.note.subprocess.run") as mock_run,
+            patch("taskdog.cli.commands.note.tempfile.NamedTemporaryFile") as mock_tmp,
+            patch("taskdog.cli.commands.note.Path") as mock_path_cls,
+        ):
+            mock_get_editor.return_value = "vim"
+            mock_run.side_effect = subprocess.CalledProcessError(1, "vim")
+
+            # Setup temp file mock
+            mock_file = MagicMock()
+            mock_file.__enter__ = MagicMock(return_value=mock_file)
+            mock_file.__exit__ = MagicMock(return_value=False)
+            mock_file.name = "/tmp/test.md"
+            mock_tmp.return_value = mock_file
+
+            mock_path = MagicMock()
+            mock_path_cls.return_value = mock_path
+
+            # Execute
+            _edit_with_editor(
+                1, self.mock_task, self.api_client, self.console_writer, None
+            )
+
+            # Verify
+            self.console_writer.error.assert_called()
+
+    def test_editor_keyboard_interrupt(self):
+        """Test handling of keyboard interrupt during editing."""
+        from taskdog.cli.commands.note import _edit_with_editor
+
+        self.api_client.get_task_notes.return_value = ("existing content", True)
+
+        with (
+            patch("taskdog.cli.commands.note.get_editor") as mock_get_editor,
+            patch("taskdog.cli.commands.note.subprocess.run") as mock_run,
+            patch("taskdog.cli.commands.note.tempfile.NamedTemporaryFile") as mock_tmp,
+            patch("taskdog.cli.commands.note.Path") as mock_path_cls,
+        ):
+            mock_get_editor.return_value = "vim"
+            mock_run.side_effect = KeyboardInterrupt()
+
+            # Setup temp file mock
+            mock_file = MagicMock()
+            mock_file.__enter__ = MagicMock(return_value=mock_file)
+            mock_file.__exit__ = MagicMock(return_value=False)
+            mock_file.name = "/tmp/test.md"
+            mock_tmp.return_value = mock_file
+
+            mock_path = MagicMock()
+            mock_path_cls.return_value = mock_path
+
+            # Execute
+            _edit_with_editor(
+                1, self.mock_task, self.api_client, self.console_writer, None
+            )
+
+            # Verify
+            self.console_writer.warning.assert_called_once_with("Editor interrupted")
+
+    def test_editor_save_oserror(self):
+        """Test error handling when saving edited content fails."""
+        from taskdog.cli.commands.note import _edit_with_editor
+
+        self.api_client.get_task_notes.return_value = ("existing content", True)
+
+        with (
+            patch("taskdog.cli.commands.note.get_editor") as mock_get_editor,
+            patch("taskdog.cli.commands.note.subprocess.run") as mock_run,
+            patch("taskdog.cli.commands.note.tempfile.NamedTemporaryFile") as mock_tmp,
+            patch("taskdog.cli.commands.note.Path") as mock_path_cls,
+        ):
+            mock_get_editor.return_value = "vim"
+            mock_run.return_value = MagicMock(returncode=0)
+
+            # Setup temp file mock
+            mock_file = MagicMock()
+            mock_file.__enter__ = MagicMock(return_value=mock_file)
+            mock_file.__exit__ = MagicMock(return_value=False)
+            mock_file.name = "/tmp/test.md"
+            mock_tmp.return_value = mock_file
+
+            mock_path = MagicMock()
+            mock_path.read_text.side_effect = OSError("Cannot read file")
+            mock_path_cls.return_value = mock_path
+
+            # Execute
+            _edit_with_editor(
+                1, self.mock_task, self.api_client, self.console_writer, None
+            )
+
+            # Verify
+            self.console_writer.error.assert_called()

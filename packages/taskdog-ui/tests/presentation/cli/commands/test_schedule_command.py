@@ -128,3 +128,49 @@ class TestScheduleCommand:
         """Test schedule without start argument."""
         result = self.runner.invoke(schedule_command, ["1"], obj=self.cli_context)
         assert result.exit_code != 0
+
+    def test_schedule_format_with_null_start(self):
+        """Test schedule formatting when planned_start is None."""
+        # Setup - planned_start is None (should show "N/A")
+        mock_task = MagicMock()
+        mock_task.planned_start = None
+        mock_task.planned_end = "2025-10-17"
+        mock_result = MagicMock()
+        mock_result.task = mock_task
+        self.api_client.update_task.return_value = mock_result
+
+        # Execute
+        result = self.runner.invoke(
+            schedule_command, ["1", "2025-10-15"], obj=self.cli_context
+        )
+
+        # Verify
+        assert result.exit_code == 0
+        self.console_writer.update_success.assert_called_once()
+
+    def test_schedule_format_with_null_end(self):
+        """Test schedule formatting when planned_end is None."""
+        # Setup - planned_end is None (should show "N/A")
+        mock_task = MagicMock()
+        mock_task.planned_start = "2025-10-15"
+        mock_task.planned_end = None
+        mock_result = MagicMock()
+        mock_result.task = mock_task
+        self.api_client.update_task.return_value = mock_result
+
+        # Execute
+        result = self.runner.invoke(
+            schedule_command, ["1", "2025-10-15"], obj=self.cli_context
+        )
+
+        # Verify
+        assert result.exit_code == 0
+        self.console_writer.update_success.assert_called_once()
+        # Verify the format function was provided
+        call_args = self.console_writer.update_success.call_args
+        assert call_args is not None
+        # The fourth argument is the format function
+        format_func = call_args[0][3]
+        # Test the format function with None values
+        formatted = format_func(mock_task)
+        assert "N/A" in formatted
