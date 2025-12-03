@@ -5,6 +5,10 @@ from datetime import date, datetime
 import pytest
 from pydantic import ValidationError
 
+from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
+from taskdog_core.application.dto.task_dto import TaskDetailDto
+from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
+from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_server.api.models.responses import (
     CompletionStatistics,
@@ -84,6 +88,43 @@ class TestTaskOperationResponse:
         assert response.is_fixed is True
         assert response.actual_duration_hours == 8.5
 
+    def test_from_dto_converts_task_operation_output(self):
+        """Test from_dto creates response from TaskOperationOutput."""
+        # Arrange
+        now = datetime.now()
+        dto = TaskOperationOutput(
+            id=1,
+            name="Test Task",
+            status=TaskStatus.IN_PROGRESS,
+            priority=2,
+            deadline=now,
+            estimated_duration=4.0,
+            planned_start=now,
+            planned_end=now,
+            actual_start=now,
+            actual_end=None,
+            depends_on=[3],
+            tags=["urgent"],
+            is_fixed=False,
+            is_archived=False,
+            actual_duration_hours=2.5,
+            actual_daily_hours={"2024-01-15": 2.5},
+        )
+
+        # Act
+        response = TaskOperationResponse.from_dto(dto)
+
+        # Assert
+        assert response.id == dto.id
+        assert response.name == dto.name
+        assert response.status == dto.status
+        assert response.priority == dto.priority
+        assert response.deadline == dto.deadline
+        assert response.estimated_duration == dto.estimated_duration
+        assert response.depends_on == dto.depends_on
+        assert response.tags == dto.tags
+        assert response.actual_duration_hours == dto.actual_duration_hours
+
 
 class TestUpdateTaskResponse:
     """Test cases for UpdateTaskResponse model."""
@@ -102,6 +143,40 @@ class TestUpdateTaskResponse:
         # Assert
         assert response.id == 1
         assert response.updated_fields == ["name", "priority"]
+
+    def test_from_dto_converts_task_update_output(self):
+        """Test from_dto creates response from TaskUpdateOutput."""
+        # Arrange
+        now = datetime.now()
+        task = TaskOperationOutput(
+            id=1,
+            name="Updated Task",
+            status=TaskStatus.PENDING,
+            priority=5,
+            deadline=now,
+            estimated_duration=8.0,
+            planned_start=now,
+            planned_end=now,
+            actual_start=None,
+            actual_end=None,
+            depends_on=[],
+            tags=["refactored"],
+            is_fixed=False,
+            is_archived=False,
+            actual_duration_hours=None,
+            actual_daily_hours={},
+        )
+        dto = TaskUpdateOutput(task=task, updated_fields=["name", "priority", "tags"])
+
+        # Act
+        response = UpdateTaskResponse.from_dto(dto)
+
+        # Assert
+        assert response.id == task.id
+        assert response.name == task.name
+        assert response.priority == task.priority
+        assert response.tags == task.tags
+        assert response.updated_fields == ["name", "priority", "tags"]
 
 
 class TestTaskResponse:
@@ -176,6 +251,56 @@ class TestTaskDetailResponse:
         assert response.daily_allocations == {"2024-01-15": 4.0, "2024-01-16": 4.0}
         assert response.notes == "# Test Notes"
         assert response.is_schedulable is True
+
+    def test_from_dto_converts_task_detail_output(self):
+        """Test from_dto creates response from TaskDetailOutput."""
+        # Arrange
+        now = datetime.now()
+        task_dto = TaskDetailDto(
+            id=1,
+            name="Detailed Task",
+            priority=2,
+            status=TaskStatus.IN_PROGRESS,
+            planned_start=now,
+            planned_end=now,
+            deadline=now,
+            actual_start=now,
+            actual_end=None,
+            estimated_duration=8.0,
+            daily_allocations={date(2024, 1, 15): 4.0, date(2024, 1, 16): 4.0},
+            is_fixed=False,
+            depends_on=[2, 3],
+            actual_daily_hours={date(2024, 1, 15): 3.5},
+            tags=["backend"],
+            is_archived=False,
+            created_at=now,
+            updated_at=now,
+            actual_duration_hours=3.5,
+            is_active=True,
+            is_finished=False,
+            can_be_modified=True,
+            is_schedulable=False,
+        )
+        dto = TaskDetailOutput(
+            task=task_dto, notes_content="# Notes Content", has_notes=True
+        )
+
+        # Act
+        response = TaskDetailResponse.from_dto(dto)
+
+        # Assert
+        assert response.id == task_dto.id
+        assert response.name == task_dto.name
+        assert response.status == task_dto.status
+        assert response.priority == task_dto.priority
+        assert response.depends_on == task_dto.depends_on
+        assert response.tags == task_dto.tags
+        assert response.is_active == task_dto.is_active
+        assert response.is_schedulable == task_dto.is_schedulable
+        assert response.notes == "# Notes Content"
+        # Check date dict conversion (date -> ISO string)
+        assert response.daily_allocations == {"2024-01-15": 4.0, "2024-01-16": 4.0}
+        assert response.actual_daily_hours == {"2024-01-15": 3.5}
 
 
 class TestTaskListResponse:
