@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from taskdog.infrastructure.cli_config import (
+from taskdog.infrastructure.cli_config_manager import (
     CliConfig,
     UiConfig,
     load_cli_config,
@@ -73,7 +73,7 @@ theme = "nord"
             )
 
             with patch(
-                "taskdog.infrastructure.cli_config.XDGDirectories.get_config_home",
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
                 return_value=config_dir,
             ):
                 config = load_cli_config()
@@ -95,7 +95,7 @@ port = 9000
             )
 
             with patch(
-                "taskdog.infrastructure.cli_config.XDGDirectories.get_config_home",
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
                 return_value=config_dir,
             ):
                 config = load_cli_config()
@@ -117,7 +117,7 @@ theme = "gruvbox"
             )
 
             with patch(
-                "taskdog.infrastructure.cli_config.XDGDirectories.get_config_home",
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
                 return_value=config_dir,
             ):
                 config = load_cli_config()
@@ -130,7 +130,7 @@ theme = "gruvbox"
             config_dir = Path(tmpdir)
 
             with patch(
-                "taskdog.infrastructure.cli_config.XDGDirectories.get_config_home",
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
                 return_value=config_dir,
             ):
                 config = load_cli_config()
@@ -159,7 +159,7 @@ theme = "nord"
             os.environ["TASKDOG_API_PORT"] = "4000"
 
             with patch(
-                "taskdog.infrastructure.cli_config.XDGDirectories.get_config_home",
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
                 return_value=config_dir,
             ):
                 config = load_cli_config()

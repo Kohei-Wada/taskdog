@@ -7,7 +7,7 @@ from taskdog.tui.state import TUIState
 
 if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
-    from taskdog.infrastructure.cli_config import CliConfig
+    from taskdog.infrastructure.cli_config_manager import CliConfig
 
 
 @dataclass

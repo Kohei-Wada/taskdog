@@ -34,7 +34,7 @@ from taskdog.cli.commands.update import update_command
 from taskdog.cli.commands.week import week_command
 from taskdog.cli.context import CliContext
 from taskdog.console.rich_console_writer import RichConsoleWriter
-from taskdog.infrastructure.cli_config import load_cli_config
+from taskdog.infrastructure.cli_config_manager import load_cli_config
 
 
 class TaskdogGroup(click.Group):

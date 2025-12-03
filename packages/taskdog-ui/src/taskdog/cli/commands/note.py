@@ -12,7 +12,7 @@ from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
 from taskdog.console.console_writer import ConsoleWriter
 from taskdog.infrastructure.api_client import TaskdogApiClient
-from taskdog.infrastructure.cli_config import CliConfig
+from taskdog.infrastructure.cli_config_manager import CliConfig
 from taskdog.utils.editor import get_editor
 from taskdog.utils.notes_template import get_note_template
 from taskdog_core.application.dto.task_dto import TaskDetailDto

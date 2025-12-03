@@ -3,7 +3,7 @@
 import os
 from datetime import datetime
 
-from taskdog.infrastructure.cli_config import CliConfig
+from taskdog.infrastructure.cli_config_manager import CliConfig
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 

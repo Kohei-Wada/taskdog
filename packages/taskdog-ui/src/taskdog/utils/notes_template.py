@@ -1,7 +1,7 @@
 """Template generator for task notes markdown files."""
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
-from taskdog.infrastructure.cli_config import CliConfig
+from taskdog.infrastructure.cli_config_manager import CliConfig
 from taskdog.utils.template_loader import load_note_template
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 
