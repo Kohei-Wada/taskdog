@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from taskdog_core.domain.constants import MAX_TAGS_PER_TASK
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
@@ -480,16 +481,16 @@ class TestSqliteTaskRepository:
         assert retrieved is not None
         assert set(retrieved.tags) == set(original_tags)
 
-    def test_task_with_100_tags(self):
-        """Test task with 100 tags (large tag set) (Phase 4)."""
-        # Create task with 100 unique tags
-        tags = [f"tag-{i:03d}" for i in range(100)]
+    def test_task_with_max_tags(self):
+        """Test task with maximum allowed tags (Phase 4)."""
+        # Create task with maximum unique tags
+        tags = [f"tag-{i:03d}" for i in range(MAX_TAGS_PER_TASK)]
         task = self.repository.create("Task with many tags", priority=1, tags=tags)
 
         # Verify all tags were saved
         retrieved = self.repository.get_by_id(task.id)
         assert retrieved is not None
-        assert len(retrieved.tags) == 100
+        assert len(retrieved.tags) == MAX_TAGS_PER_TASK
         assert set(retrieved.tags) == set(tags)
 
     def test_repository_with_1000_unique_tags(self):
