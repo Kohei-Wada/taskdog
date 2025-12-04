@@ -1,5 +1,6 @@
 """Use case for updating a task."""
 
+from dataclasses import replace
 from datetime import datetime
 
 from taskdog_core.application.dto.update_task_input import UpdateTaskInput
@@ -122,8 +123,10 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
         self._update_status(task, input_dto, updated_fields)
         self._update_standard_fields(task, input_dto, updated_fields)
 
-        # Save changes
+        # Rebuild task to trigger __post_init__ validation (Always-Valid Entity)
+        # This ensures validation is consistent between create and update operations
         if updated_fields:
+            task = replace(task)
             self.repository.save(task)
 
         return TaskUpdateOutput.from_task_and_fields(task, updated_fields)

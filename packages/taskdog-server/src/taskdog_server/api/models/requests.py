@@ -6,13 +6,16 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.shared.constants import MAX_TASK_NAME_LENGTH
 from taskdog_server.api.validators import validate_tags as _validate_tags
 
 
 class CreateTaskRequest(BaseModel):
     """Request model for creating a task."""
 
-    name: str = Field(..., min_length=1, description="Task name")
+    name: str = Field(
+        ..., min_length=1, max_length=MAX_TASK_NAME_LENGTH, description="Task name"
+    )
     priority: int | None = Field(
         None, gt=0, description="Task priority (higher = more important)"
     )
@@ -40,7 +43,9 @@ class UpdateTaskRequest(BaseModel):
     All fields are optional. Only provided fields will be updated.
     """
 
-    name: str | None = Field(None, min_length=1, description="New task name")
+    name: str | None = Field(
+        None, min_length=1, max_length=MAX_TASK_NAME_LENGTH, description="New task name"
+    )
     priority: int | None = Field(None, gt=0, description="New priority")
     status: TaskStatus | None = Field(None, description="New status")
     planned_start: datetime | None = Field(None, description="New planned start")

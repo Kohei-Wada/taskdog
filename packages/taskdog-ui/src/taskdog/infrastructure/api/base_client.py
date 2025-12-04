@@ -55,6 +55,40 @@ class BaseApiClient:
         """Context manager exit."""
         self.close()
 
+    def _extract_validation_error_detail(self, response: httpx.Response) -> str:
+        """Extract validation error detail from response.
+
+        Handles both simple {"detail": "message"} and FastAPI's Pydantic format:
+        {"detail": [{"loc": [...], "msg": "...", "type": "..."}]}
+
+        Args:
+            response: HTTP response with validation error
+
+        Returns:
+            Human-readable error message
+        """
+        try:
+            data = response.json()
+            detail = data.get("detail", "Validation error")
+
+            # Handle FastAPI's Pydantic validation error format (list of errors)
+            if isinstance(detail, list) and len(detail) > 0:
+                messages = []
+                for error in detail:
+                    if isinstance(error, dict):
+                        msg = error.get("msg", "")
+                        loc = error.get("loc", [])
+                        # Format: "field: message"
+                        field = loc[-1] if loc else "field"
+                        messages.append(f"{field}: {msg}")
+                    else:
+                        messages.append(str(error))
+                return "; ".join(messages)
+
+            return str(detail)
+        except Exception:
+            return "Validation error"
+
     def _handle_error(self, response: httpx.Response) -> None:
         """Handle HTTP error responses.
 
@@ -63,14 +97,14 @@ class BaseApiClient:
 
         Raises:
             TaskNotFoundException: If status is 404
-            TaskValidationError: If status is 400
+            TaskValidationError: If status is 400 or 422
             Exception: For other errors
         """
         if response.status_code == 404:
             detail = response.json().get("detail", "Task not found")
             raise TaskNotFoundException(detail)
-        elif response.status_code == 400:
-            detail = response.json().get("detail", "Validation error")
+        elif response.status_code in (400, 422):
+            detail = self._extract_validation_error_detail(response)
             raise TaskValidationError(detail)
         elif response.status_code == 401:
             raise AuthenticationError("Authentication failed. Check your API key.")
