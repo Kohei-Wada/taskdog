@@ -2,7 +2,13 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
 
-from taskdog_core.domain.constants import MIN_PRIORITY_EXCLUSIVE, SECONDS_PER_HOUR
+from taskdog_core.domain.constants import (
+    MAX_TAG_LENGTH,
+    MAX_TAGS_PER_TASK,
+    MAX_TASK_NAME_LENGTH,
+    MIN_PRIORITY_EXCLUSIVE,
+    SECONDS_PER_HOUR,
+)
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
@@ -81,9 +87,13 @@ class Task:
         Raises:
             TaskValidationError: If any invariant is violated
         """
-        # Validate name (required and non-empty)
+        # Validate name (required, non-empty, and within length limit)
         if not self.name or not self.name.strip():
             raise TaskValidationError("Task name cannot be empty")
+        if len(self.name) > MAX_TASK_NAME_LENGTH:
+            raise TaskValidationError(
+                f"Task name cannot exceed {MAX_TASK_NAME_LENGTH} characters"
+            )
 
         # Validate priority (must be positive)
         if self.priority <= MIN_PRIORITY_EXCLUSIVE:
@@ -93,10 +103,18 @@ class Task:
         if self.estimated_duration is not None and self.estimated_duration <= 0:
             raise TaskValidationError("Estimated duration must be greater than 0")
 
-        # Validate tags (non-empty strings and unique)
+        # Validate tags (count limit, non-empty strings, length limit, unique)
+        if len(self.tags) > MAX_TAGS_PER_TASK:
+            raise TaskValidationError(
+                f"Cannot have more than {MAX_TAGS_PER_TASK} tags per task"
+            )
         for tag in self.tags:
             if not tag or not tag.strip():
                 raise TaskValidationError("Tag cannot be empty")
+            if len(tag) > MAX_TAG_LENGTH:
+                raise TaskValidationError(
+                    f"Tag cannot exceed {MAX_TAG_LENGTH} characters"
+                )
         if len(self.tags) != len(set(self.tags)):
             raise TaskValidationError("Tags must be unique")
 

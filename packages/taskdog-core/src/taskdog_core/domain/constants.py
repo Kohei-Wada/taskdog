@@ -22,3 +22,12 @@ MIN_FILE_SIZE_FOR_CONTENT = 0
 # Validation limits - Business rules
 MIN_PRIORITY_EXCLUSIVE = 0
 """Minimum priority value (exclusive). Priority must be > 0."""
+
+MAX_TASK_NAME_LENGTH = 255
+"""Maximum length of task name in characters."""
+
+MAX_TAG_LENGTH = 50
+"""Maximum length of a single tag in characters."""
+
+MAX_TAGS_PER_TASK = 20
+"""Maximum number of tags allowed per task."""

@@ -2,7 +2,12 @@
 
 from datetime import datetime
 
-from taskdog_core.domain.constants import MIN_PRIORITY_EXCLUSIVE
+from taskdog_core.domain.constants import (
+    MAX_TAG_LENGTH,
+    MAX_TAGS_PER_TASK,
+    MAX_TASK_NAME_LENGTH,
+    MIN_PRIORITY_EXCLUSIVE,
+)
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_ALGORITHM,
     DEFAULT_END_HOUR,
@@ -57,6 +62,9 @@ __all__ = [
     "ISO_8601_FORMAT",
     "MAX_ESTIMATED_DURATION_HOURS",
     "MAX_HOURS_PER_DAY_LIMIT",
+    "MAX_TAGS_PER_TASK",
+    "MAX_TAG_LENGTH",
+    "MAX_TASK_NAME_LENGTH",
     "MIN_HOURS_PER_DAY_EXCLUSIVE",
     "MIN_PRIORITY_EXCLUSIVE",
     "NOTES_DIR_NAME",
