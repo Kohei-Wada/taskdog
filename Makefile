@@ -168,15 +168,15 @@ test-all: test ## Run all tests (alias for test)
 
 test-core: ## Run tests for taskdog-core with coverage
 	@echo "Running taskdog-core tests..."
-	cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_core --cov-report=term-missing:skip-covered
+	cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_core --cov-report=term-missing:skip-covered --cov-fail-under=90
 
 test-server: ## Run tests for taskdog-server with coverage
 	@echo "Running taskdog-server tests..."
-	cd packages/taskdog-server && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_server --cov-report=term-missing:skip-covered
+	cd packages/taskdog-server && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_server --cov-report=term-missing:skip-covered --cov-fail-under=85
 
 test-ui: ## Run tests for taskdog-ui with coverage
 	@echo "Running taskdog-ui tests..."
-	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog --cov-report=term-missing:skip-covered
+	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog --cov-report=term-missing:skip-covered --cov-fail-under=65
 
 # ============================================================================
 # Code Quality Targets
