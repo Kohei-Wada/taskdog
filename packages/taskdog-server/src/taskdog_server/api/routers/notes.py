@@ -4,6 +4,7 @@ from fastapi import APIRouter, status
 
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import (
+    AuditLoggerDep,
     AuthenticatedClientDep,
     EventBroadcasterDep,
     NotesRepositoryDep,
@@ -57,6 +58,7 @@ async def update_task_notes(
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
     broadcaster: EventBroadcasterDep,
+    audit_logger: AuditLoggerDep,
     client_name: AuthenticatedClientDep,
 ) -> NotesResponse:
     """Update task notes.
@@ -87,6 +89,17 @@ async def update_task_notes(
     # Broadcast WebSocket event in background (exclude the requester by client name)
     broadcaster.task_notes_updated(task_id, task.name, client_name)
 
+    # Audit log
+    audit_logger.log_operation(
+        operation="update_notes",
+        resource_type="task",
+        resource_id=task_id,
+        resource_name=task.name,
+        client_name=client_name,
+        new_values={"has_notes": has_notes},
+        success=True,
+    )
+
     return NotesResponse(task_id=task_id, content=request.content, has_notes=has_notes)
 
 
@@ -97,6 +110,7 @@ async def delete_task_notes(
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
     broadcaster: EventBroadcasterDep,
+    audit_logger: AuditLoggerDep,
     client_name: AuthenticatedClientDep,
 ) -> None:
     """Delete task notes.
@@ -121,3 +135,13 @@ async def delete_task_notes(
 
     # Broadcast WebSocket event in background (exclude the requester by client name)
     broadcaster.task_notes_updated(task_id, task.name, client_name)
+
+    # Audit log
+    audit_logger.log_operation(
+        operation="delete_notes",
+        resource_type="task",
+        resource_id=task_id,
+        resource_name=task.name,
+        client_name=client_name,
+        success=True,
+    )

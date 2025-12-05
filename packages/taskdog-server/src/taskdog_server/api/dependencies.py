@@ -19,6 +19,9 @@ from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.domain.services.time_provider import ITimeProvider
 from taskdog_core.infrastructure.holiday_checker import HolidayChecker
+from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (
+    SqliteAuditLogRepository,
+)
 from taskdog_core.infrastructure.persistence.file_notes_repository import (
     FileNotesRepository,
 )
@@ -27,6 +30,7 @@ from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_core.shared.config_manager import Config, ConfigManager
 from taskdog_server.api.context import ApiContext
 from taskdog_server.config.server_config_manager import ServerConfig
+from taskdog_server.infrastructure.audit import BackgroundAuditLogger
 from taskdog_server.infrastructure.logging.standard_logger import StandardLogger
 from taskdog_server.websocket.broadcaster import WebSocketEventBroadcaster
 from taskdog_server.websocket.connection_manager import ConnectionManager
@@ -68,6 +72,18 @@ def initialize_api_context(
     # Initialize repository using factory based on storage config
     repository = RepositoryFactory.create(config.storage)
 
+    # Initialize audit log repository (shares the same database)
+    # Use the same URL resolution logic as RepositoryFactory
+    if config.storage.database_url:
+        audit_db_url = config.storage.database_url
+    else:
+        from taskdog_core.shared.xdg_utils import XDGDirectories
+
+        data_dir = XDGDirectories.get_data_home()
+        db_file = data_dir / "tasks.db"
+        audit_db_url = f"sqlite:///{db_file}"
+    audit_log_repository = SqliteAuditLogRepository(audit_db_url)
+
     # Initialize loggers for each controller
     query_logger = StandardLogger("taskdog_core.controllers.query_controller")
     lifecycle_logger = StandardLogger(
@@ -105,6 +121,7 @@ def initialize_api_context(
         crud_controller=crud_controller,
         holiday_checker=holiday_checker,
         time_provider=time_provider,
+        audit_log_repository=audit_log_repository,
     )
 
 
@@ -209,6 +226,27 @@ def get_time_provider(context: ApiContextDep) -> ITimeProvider:
     return context.time_provider
 
 
+def get_audit_log_repository(context: ApiContextDep) -> SqliteAuditLogRepository:
+    """Get audit log repository from context."""
+    return context.audit_log_repository
+
+
+def get_audit_logger(
+    context: ApiContextDep,
+    background_tasks: BackgroundTasks,
+) -> BackgroundAuditLogger:
+    """Get a BackgroundAuditLogger instance for non-blocking audit logging.
+
+    Args:
+        context: API context with audit log repository
+        background_tasks: FastAPI background tasks for async scheduling
+
+    Returns:
+        BackgroundAuditLogger: Logger for scheduling audit log writes
+    """
+    return BackgroundAuditLogger(context.audit_log_repository, background_tasks)
+
+
 def get_connection_manager(request: Request) -> ConnectionManager:
     """Get the ConnectionManager instance from app.state for HTTP endpoints.
 
@@ -270,6 +308,10 @@ NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
 ConfigDep = Annotated[Config, Depends(get_config)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
 TimeProviderDep = Annotated[ITimeProvider, Depends(get_time_provider)]
+AuditLogRepositoryDep = Annotated[
+    SqliteAuditLogRepository, Depends(get_audit_log_repository)
+]
+AuditLoggerDep = Annotated[BackgroundAuditLogger, Depends(get_audit_logger)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
 ConnectionManagerWsDep = Annotated[
     ConnectionManager, Depends(get_connection_manager_ws)

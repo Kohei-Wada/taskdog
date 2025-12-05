@@ -42,6 +42,7 @@ packages = [
     "taskdog_server.config",
     "taskdog_server.websocket",
     "taskdog_server.infrastructure",
+    "taskdog_server.infrastructure.audit",
     "taskdog_server.infrastructure.logging",
 ]
 package-dir = { "" = "src" }

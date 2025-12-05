@@ -10,12 +10,14 @@ from typing import Any
 import httpx  # type: ignore[import-not-found]
 
 from taskdog.infrastructure.api.analytics_client import AnalyticsClient
+from taskdog.infrastructure.api.audit_client import AuditClient
 from taskdog.infrastructure.api.base_client import BaseApiClient
 from taskdog.infrastructure.api.lifecycle_client import LifecycleClient
 from taskdog.infrastructure.api.notes_client import NotesClient
 from taskdog.infrastructure.api.query_client import QueryClient
 from taskdog.infrastructure.api.relationship_client import RelationshipClient
 from taskdog.infrastructure.api.task_client import TaskClient
+from taskdog_core.application.dto.audit_log_dto import AuditLogListOutput
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
@@ -59,6 +61,7 @@ class TaskdogApiClient:
         self._queries = QueryClient(self._base, self._has_notes_cache)
         self._analytics = AnalyticsClient(self._base)
         self._notes = NotesClient(self._base)
+        self._audit = AuditClient(self._base)
 
         # Share the notes cache with notes client
         self._notes._has_notes_cache = self._has_notes_cache
@@ -367,3 +370,30 @@ class TaskdogApiClient:
     def has_task_notes(self, task_id: int) -> bool:
         """Check if task has notes."""
         return self._notes.has_task_notes(task_id)
+
+    # Audit log methods - delegate to AuditClient
+
+    def list_audit_logs(
+        self,
+        client_filter: str | None = None,
+        operation: str | None = None,
+        resource_type: str | None = None,
+        resource_id: int | None = None,
+        success: bool | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> AuditLogListOutput:
+        """List audit logs with optional filtering."""
+        return self._audit.list_audit_logs(
+            client_filter=client_filter,
+            operation=operation,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            success=success,
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit,
+            offset=offset,
+        )

@@ -5,6 +5,7 @@ from rich.console import Console
 
 from taskdog.cli.commands.add import add_command
 from taskdog.cli.commands.add_dependency import add_dependency_command
+from taskdog.cli.commands.audit_logs import audit_logs_command
 from taskdog.cli.commands.cancel import cancel_command
 from taskdog.cli.commands.deadline import deadline_command
 from taskdog.cli.commands.done import done_command
@@ -133,6 +134,7 @@ def cli(
 
 cli.add_command(add_command)
 cli.add_command(add_dependency_command)
+cli.add_command(audit_logs_command)
 cli.add_command(table_command)
 cli.add_command(export_command)
 cli.add_command(rm_command)
