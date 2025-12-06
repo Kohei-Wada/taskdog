@@ -6,6 +6,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -14,9 +15,6 @@ from taskdog_core.controllers.task_relationship_controller import (
     TaskRelationshipController,
 )
 from taskdog_core.domain.services.logger import Logger
-from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (
-    SqliteAuditLogRepository,
-)
 from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_server.api.context import ApiContext
 from taskdog_server.websocket.connection_manager import ConnectionManager
@@ -31,7 +29,7 @@ class TestApp:
         # Mock repositories and config
         self.mock_repository = MagicMock()
         self.mock_notes_repository = MagicMock()
-        self.mock_audit_log_repository = Mock(spec=SqliteAuditLogRepository)
+        self.mock_audit_log_controller = Mock(spec=AuditLogController)
         self.mock_config = MagicMock()
         self.mock_config.task.default_priority = 3
         self.mock_config.scheduling.max_hours_per_day = 8.0
@@ -73,7 +71,7 @@ class TestApp:
             crud_controller=crud_controller,
             holiday_checker=None,
             time_provider=SystemTimeProvider(),
-            audit_log_repository=self.mock_audit_log_repository,
+            audit_log_controller=self.mock_audit_log_controller,
         )
 
         # Create app using create_app (lifespan will set its own context)

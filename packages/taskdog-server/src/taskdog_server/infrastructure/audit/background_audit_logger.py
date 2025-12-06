@@ -4,15 +4,16 @@ This module provides a non-blocking audit logger that schedules log writes
 as FastAPI background tasks, ensuring API responses are not delayed.
 """
 
+import logging
 from datetime import datetime
 from typing import Any
 
 from fastapi import BackgroundTasks
 
 from taskdog_core.application.dto.audit_log_dto import AuditEvent
-from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (
-    SqliteAuditLogRepository,
-)
+from taskdog_core.controllers.audit_log_controller import AuditLogController
+
+logger = logging.getLogger(__name__)
 
 
 class BackgroundAuditLogger:
@@ -25,17 +26,40 @@ class BackgroundAuditLogger:
 
     def __init__(
         self,
-        repository: SqliteAuditLogRepository,
+        controller: AuditLogController,
         background_tasks: BackgroundTasks,
     ) -> None:
         """Initialize the background audit logger.
 
         Args:
-            repository: The audit log repository for persistence
+            controller: The audit log controller for persistence
             background_tasks: FastAPI background tasks for async scheduling
         """
-        self._repository = repository
+        self._controller = controller
         self._background_tasks = background_tasks
+
+    def _save_with_error_handling(self, event: AuditEvent) -> None:
+        """Save an audit event with error handling.
+
+        This method wraps the controller log operation to catch and log
+        any errors that occur during persistence, preventing silent failures.
+
+        Args:
+            event: The audit event to save
+        """
+        try:
+            self._controller.log_operation(event)
+        except Exception as e:
+            # Log the failure but don't propagate - audit logging should not
+            # cause API failures
+            logger.error(
+                "Failed to save audit log: operation=%s, resource_type=%s, "
+                "resource_id=%s, error=%s",
+                event.operation,
+                event.resource_type,
+                event.resource_id,
+                str(e),
+            )
 
     def log(self, event: AuditEvent) -> None:
         """Schedule an audit event to be logged in the background.
@@ -43,7 +67,7 @@ class BackgroundAuditLogger:
         Args:
             event: The audit event to log
         """
-        self._background_tasks.add_task(self._repository.save, event)
+        self._background_tasks.add_task(self._save_with_error_handling, event)
 
     def log_operation(
         self,

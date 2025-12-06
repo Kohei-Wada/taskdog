@@ -100,9 +100,16 @@ class AuditClient:
 
     def _convert_to_output(self, data: dict[str, Any]) -> AuditLogOutput:
         """Convert API response to AuditLogOutput DTO."""
+        # Parse timestamp with error handling for malformed data
+        try:
+            timestamp = datetime.fromisoformat(data["timestamp"])
+        except (ValueError, KeyError):
+            # Fallback to current time if timestamp is invalid or missing
+            timestamp = datetime.now()
+
         return AuditLogOutput(
             id=data["id"],
-            timestamp=datetime.fromisoformat(data["timestamp"]),
+            timestamp=timestamp,
             client_name=data.get("client_name"),
             operation=data["operation"],
             resource_type=data["resource_type"],

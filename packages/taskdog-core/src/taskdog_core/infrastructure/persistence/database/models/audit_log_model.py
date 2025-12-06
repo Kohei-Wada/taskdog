@@ -66,12 +66,22 @@ class AuditLogModel(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Database indexes for common query patterns
+    # Single-column indexes for basic filtering
+    # Composite indexes for common combined query patterns
     __table_args__ = (
+        # Single-column indexes
         Index("idx_audit_timestamp", "timestamp"),
         Index("idx_audit_client_name", "client_name"),
         Index("idx_audit_operation", "operation"),
         Index("idx_audit_resource_id", "resource_id"),
         Index("idx_audit_success", "success"),
+        # Composite indexes for common query patterns
+        # Filter by client with time ordering (e.g., "show claude-code's recent actions")
+        Index("idx_audit_client_timestamp", "client_name", "timestamp"),
+        # Filter by operation with time ordering (e.g., "show recent completions")
+        Index("idx_audit_operation_timestamp", "operation", "timestamp"),
+        # Lookup all logs for a specific resource (e.g., "show history for task 123")
+        Index("idx_audit_resource", "resource_type", "resource_id"),
     )
 
     def __repr__(self) -> str:

@@ -2,11 +2,11 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query, status
 
 from taskdog_core.application.dto.audit_log_dto import AuditQuery
 from taskdog_server.api.dependencies import (
-    AuditLogRepositoryDep,
+    AuditLogControllerDep,
     AuthenticatedClientDep,
 )
 from taskdog_server.api.models.responses import AuditLogListResponse, AuditLogResponse
@@ -17,7 +17,7 @@ router = APIRouter()
 
 @router.get("", response_model=AuditLogListResponse)
 async def list_audit_logs(
-    repository: AuditLogRepositoryDep,
+    controller: AuditLogControllerDep,
     _client_name: AuthenticatedClientDep,
     client_filter: Annotated[
         str | None, Query(alias="client", description="Filter by client name")
@@ -48,7 +48,7 @@ async def list_audit_logs(
     """List audit logs with optional filtering.
 
     Args:
-        repository: Audit log repository dependency
+        controller: Audit log controller dependency
         client_filter: Filter by client name (e.g., "claude-code")
         operation: Filter by operation type (e.g., "create_task", "complete_task")
         resource_type: Filter by resource type (e.g., "task", "schedule")
@@ -80,7 +80,7 @@ async def list_audit_logs(
     )
 
     # Execute query
-    result = repository.get_logs(query)
+    result = controller.get_logs(query)
 
     # Convert to response models
     logs = [
@@ -108,24 +108,30 @@ async def list_audit_logs(
     )
 
 
-@router.get("/{log_id}", response_model=AuditLogResponse | None)
+@router.get("/{log_id}", response_model=AuditLogResponse)
 async def get_audit_log(
     log_id: int,
-    repository: AuditLogRepositoryDep,
+    controller: AuditLogControllerDep,
     _client_name: AuthenticatedClientDep,
-) -> AuditLogResponse | None:
+) -> AuditLogResponse:
     """Get a single audit log entry by ID.
 
     Args:
         log_id: Audit log ID
-        repository: Audit log repository dependency
+        controller: Audit log controller dependency
 
     Returns:
-        AuditLogResponse if found, None otherwise
+        AuditLogResponse if found
+
+    Raises:
+        HTTPException: 404 if audit log not found
     """
-    result = repository.get_by_id(log_id)
+    result = controller.get_by_id(log_id)
     if result is None:
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Audit log {log_id} not found",
+        )
 
     return AuditLogResponse(
         id=result.id,

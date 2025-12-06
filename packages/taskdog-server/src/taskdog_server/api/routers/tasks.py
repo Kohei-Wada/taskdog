@@ -305,8 +305,13 @@ async def update_task(
         HTTPException: 404 if task not found, 400 if validation fails
     """
     # Get old values before update for audit trail
-    old_task_output = query_controller.get_task_by_id(task_id)
-    old_task = old_task_output.task if old_task_output else None
+    # Handle potential errors gracefully - if we can't get old values,
+    # proceed with update but log without old values
+    try:
+        old_task_output = query_controller.get_task_by_id(task_id)
+        old_task = old_task_output.task if old_task_output else None
+    except Exception:
+        old_task = None
 
     result = controller.update_task(
         task_id=task_id,

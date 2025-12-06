@@ -7,6 +7,7 @@ from typing import Annotated
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, WebSocket
 from fastapi.security import APIKeyHeader
 
+from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -96,6 +97,7 @@ def initialize_api_context(
         "taskdog_core.controllers.task_analytics_controller"
     )
     crud_logger = StandardLogger("taskdog_core.controllers.task_crud_controller")
+    audit_log_logger = StandardLogger("taskdog_core.controllers.audit_log_controller")
 
     # Initialize controllers with loggers
     query_controller = QueryController(repository, notes_repository, query_logger)
@@ -109,6 +111,7 @@ def initialize_api_context(
     crud_controller = TaskCrudController(
         repository, notes_repository, config, crud_logger
     )
+    audit_log_controller = AuditLogController(audit_log_repository, audit_log_logger)
 
     return ApiContext(
         repository=repository,
@@ -121,7 +124,7 @@ def initialize_api_context(
         crud_controller=crud_controller,
         holiday_checker=holiday_checker,
         time_provider=time_provider,
-        audit_log_repository=audit_log_repository,
+        audit_log_controller=audit_log_controller,
     )
 
 
@@ -226,9 +229,9 @@ def get_time_provider(context: ApiContextDep) -> ITimeProvider:
     return context.time_provider
 
 
-def get_audit_log_repository(context: ApiContextDep) -> SqliteAuditLogRepository:
-    """Get audit log repository from context."""
-    return context.audit_log_repository
+def get_audit_log_controller(context: ApiContextDep) -> AuditLogController:
+    """Get audit log controller from context."""
+    return context.audit_log_controller
 
 
 def get_audit_logger(
@@ -238,13 +241,13 @@ def get_audit_logger(
     """Get a BackgroundAuditLogger instance for non-blocking audit logging.
 
     Args:
-        context: API context with audit log repository
+        context: API context with audit log controller
         background_tasks: FastAPI background tasks for async scheduling
 
     Returns:
         BackgroundAuditLogger: Logger for scheduling audit log writes
     """
-    return BackgroundAuditLogger(context.audit_log_repository, background_tasks)
+    return BackgroundAuditLogger(context.audit_log_controller, background_tasks)
 
 
 def get_connection_manager(request: Request) -> ConnectionManager:
@@ -308,9 +311,7 @@ NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
 ConfigDep = Annotated[Config, Depends(get_config)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
 TimeProviderDep = Annotated[ITimeProvider, Depends(get_time_provider)]
-AuditLogRepositoryDep = Annotated[
-    SqliteAuditLogRepository, Depends(get_audit_log_repository)
-]
+AuditLogControllerDep = Annotated[AuditLogController, Depends(get_audit_log_controller)]
 AuditLoggerDep = Annotated[BackgroundAuditLogger, Depends(get_audit_logger)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
 ConnectionManagerWsDep = Annotated[

@@ -254,10 +254,10 @@ class TestAuditLogsRouter:
         assert data["old_values"] == {"old": "value"}
         assert data["new_values"] == {"new": "value"}
 
-    def test_get_audit_log_nonexistent_returns_null(self, client):
-        """Test getting a non-existent audit log returns null."""
+    def test_get_audit_log_nonexistent_returns_404(self, client):
+        """Test getting a non-existent audit log returns 404."""
         response = client.get("/api/v1/audit-logs/999999")
 
-        # The endpoint returns None/null for non-existent logs
-        assert response.status_code == 200
-        assert response.json() is None
+        # The endpoint returns 404 Not Found for non-existent logs
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"].lower()

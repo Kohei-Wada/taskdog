@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -13,9 +14,6 @@ from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.domain.services.time_provider import ITimeProvider
-from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (
-    SqliteAuditLogRepository,
-)
 from taskdog_core.shared.config_manager import Config
 
 
@@ -34,7 +32,7 @@ class ApiContext:
         crud_controller: Controller for CRUD operations (create, update, archive, etc.)
         holiday_checker: Holiday checker for workday validation (optional)
         time_provider: Time provider for current time (optional, defaults to SystemTimeProvider)
-        audit_log_repository: Audit log repository for tracking API operations
+        audit_log_controller: Controller for audit log operations
     """
 
     repository: TaskRepository
@@ -47,4 +45,4 @@ class ApiContext:
     crud_controller: TaskCrudController
     holiday_checker: IHolidayChecker | None
     time_provider: ITimeProvider
-    audit_log_repository: SqliteAuditLogRepository
+    audit_log_controller: AuditLogController

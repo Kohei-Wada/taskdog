@@ -206,6 +206,17 @@ class SqliteAuditLogRepository:
         assert model.resource_type is not None
         assert model.success is not None
 
+        # Parse JSON values with error handling for malformed data
+        try:
+            old_values = json.loads(model.old_values) if model.old_values else None
+        except json.JSONDecodeError:
+            old_values = None
+
+        try:
+            new_values = json.loads(model.new_values) if model.new_values else None
+        except json.JSONDecodeError:
+            new_values = None
+
         return AuditLogOutput(
             id=model.id,
             timestamp=model.timestamp,
@@ -214,8 +225,8 @@ class SqliteAuditLogRepository:
             resource_type=model.resource_type,
             resource_id=model.resource_id,
             resource_name=model.resource_name,
-            old_values=json.loads(model.old_values) if model.old_values else None,
-            new_values=json.loads(model.new_values) if model.new_values else None,
+            old_values=old_values,
+            new_values=new_values,
             success=model.success,
             error_message=model.error_message,
         )
