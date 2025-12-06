@@ -6,7 +6,7 @@ import pytest
 
 from taskdog_core.application.dto.update_task_input import UpdateTaskInput
 from taskdog_core.application.use_cases.update_task import UpdateTaskUseCase
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
@@ -63,9 +63,7 @@ class TestUpdateTaskUseCase:
         description,
     ):
         """Test updating a single field."""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Test Task", priority=1)
 
         # Handle dynamic date values
         actual_kwargs = {}
@@ -88,9 +86,9 @@ class TestUpdateTaskUseCase:
 
     def test_execute_update_status(self):
         """Test updating task status with time tracking."""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Test Task", priority=1, status=TaskStatus.PENDING
+        )
 
         input_dto = UpdateTaskInput(task_id=task.id, status=TaskStatus.IN_PROGRESS)
         result = self.use_case.execute(input_dto)
@@ -102,9 +100,7 @@ class TestUpdateTaskUseCase:
 
     def test_execute_update_multiple_fields(self):
         """Test updating multiple fields at once."""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Test Task", priority=1)
 
         # Use future date
         future_date = datetime.now() + timedelta(days=7)
@@ -126,9 +122,7 @@ class TestUpdateTaskUseCase:
 
     def test_execute_no_updates(self):
         """Test when no fields are updated."""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Test Task", priority=1)
 
         input_dto = UpdateTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
@@ -157,9 +151,9 @@ class TestUpdateTaskUseCase:
             hour=18, minute=0, second=0, microsecond=0
         )
 
-        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Test Task", priority=1, status=TaskStatus.PENDING
+        )
 
         input_dto = UpdateTaskInput(
             task_id=task.id,
@@ -200,11 +194,13 @@ class TestUpdateTaskUseCase:
     )
     def test_execute_status_change_records_end_time(self, target_status, description):
         """Test that changing status to finished states records actual_end timestamp."""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        # Use a fixed past date for actual_start (already started tasks can have past dates)
-        task.actual_start = datetime.now() - timedelta(days=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.IN_PROGRESS,
+            # Use a fixed past date for actual_start (already started tasks can have past dates)
+            actual_start=datetime.now() - timedelta(days=1),
+        )
 
         input_dto = UpdateTaskInput(task_id=task.id, status=target_status)
         result = self.use_case.execute(input_dto)
@@ -220,9 +216,7 @@ class TestUpdateTaskUseCase:
             hour=18, minute=0, second=0, microsecond=0
         )
 
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Test Task", priority=1)
 
         input_dto = UpdateTaskInput(task_id=task.id, priority=5, deadline=deadline)
         self.use_case.execute(input_dto)
@@ -234,9 +228,7 @@ class TestUpdateTaskUseCase:
 
     def test_execute_update_estimated_duration_succeeds_for_leaf_task(self):
         """Test that estimated_duration can be set for leaf tasks (no children)."""
-        task = Task(name="Leaf Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Leaf Task", priority=1)
 
         input_dto = UpdateTaskInput(task_id=task.id, estimated_duration=3.5)
         result = self.use_case.execute(input_dto)
@@ -256,16 +248,17 @@ class TestUpdateTaskUseCase:
             hour=9, minute=0, second=0, microsecond=0
         )
 
-        task = Task(name="Task with allocations", priority=1)
-        task.id = self.repository.generate_next_id()
-        # Set daily_allocations as if optimized
-        task.daily_allocations = {
-            start_date.date(): 3.0,
-            (start_date + timedelta(days=1)).date(): 2.5,
-        }
-        task.planned_start = start_date
-        task.planned_end = end_date
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Task with allocations",
+            priority=1,
+            planned_start=start_date,
+            planned_end=end_date,
+            # Set daily_allocations as if optimized
+            daily_allocations={
+                start_date.date(): 3.0,
+                (start_date + timedelta(days=1)).date(): 2.5,
+            },
+        )
 
         # Update planned_start to a different date
         input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start)
@@ -290,16 +283,17 @@ class TestUpdateTaskUseCase:
             hour=18, minute=0, second=0, microsecond=0
         )
 
-        task = Task(name="Task with allocations", priority=1)
-        task.id = self.repository.generate_next_id()
-        # Set daily_allocations as if optimized
-        task.daily_allocations = {
-            start_date.date(): 3.0,
-            (start_date + timedelta(days=1)).date(): 2.5,
-        }
-        task.planned_start = start_date
-        task.planned_end = end_date
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Task with allocations",
+            priority=1,
+            planned_start=start_date,
+            planned_end=end_date,
+            # Set daily_allocations as if optimized
+            daily_allocations={
+                start_date.date(): 3.0,
+                (start_date + timedelta(days=1)).date(): 2.5,
+            },
+        )
 
         # Update planned_end to a different date
         input_dto = UpdateTaskInput(task_id=task.id, planned_end=new_end)
@@ -327,16 +321,17 @@ class TestUpdateTaskUseCase:
             hour=18, minute=0, second=0, microsecond=0
         )
 
-        task = Task(name="Task with allocations", priority=1)
-        task.id = self.repository.generate_next_id()
-        # Set daily_allocations as if optimized
-        task.daily_allocations = {
-            start_date.date(): 3.0,
-            (start_date + timedelta(days=1)).date(): 2.5,
-        }
-        task.planned_start = start_date
-        task.planned_end = end_date
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Task with allocations",
+            priority=1,
+            planned_start=start_date,
+            planned_end=end_date,
+            # Set daily_allocations as if optimized
+            daily_allocations={
+                start_date.date(): 3.0,
+                (start_date + timedelta(days=1)).date(): 2.5,
+            },
+        )
 
         # Update both planned_start and planned_end
         input_dto = UpdateTaskInput(
@@ -363,12 +358,13 @@ class TestUpdateTaskUseCase:
             hour=9, minute=0, second=0, microsecond=0
         )
 
-        task = Task(name="Task without allocations", priority=1)
-        task.id = self.repository.generate_next_id()
-        task.planned_start = start_date
-        task.planned_end = end_date
         # daily_allocations is already empty by default
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Task without allocations",
+            priority=1,
+            planned_start=start_date,
+            planned_end=end_date,
+        )
 
         # Update planned_start
         input_dto = UpdateTaskInput(task_id=task.id, planned_start=new_start)

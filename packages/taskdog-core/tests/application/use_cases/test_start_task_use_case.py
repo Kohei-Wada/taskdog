@@ -2,7 +2,7 @@
 
 from taskdog_core.application.dto.single_task_inputs import StartTaskInput
 from taskdog_core.application.use_cases.start_task import StartTaskUseCase
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
 from tests.application.use_cases.status_change_test_base import (
     BaseStatusChangeUseCaseTest,
 )
@@ -21,9 +21,7 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
 
     def test_execute_does_not_update_actual_end(self):
         """Test execute does not set actual_end when starting."""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Test Task", priority=1)
 
         input_dto = StartTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
@@ -32,9 +30,7 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
 
     def test_execute_without_parent_works_normally(self):
         """Test execute works normally for tasks without parent."""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Test Task", priority=1)
 
         input_dto = StartTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)

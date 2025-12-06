@@ -10,7 +10,7 @@ from taskdog_core.application.queries.filters.composite_filter import CompositeF
 from taskdog_core.application.queries.filters.incomplete_filter import IncompleteFilter
 from taskdog_core.application.queries.filters.today_filter import TodayFilter
 from taskdog_core.application.queries.task_query_service import TaskQueryService
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
@@ -56,17 +56,15 @@ class TestTaskQueryService:
     def test_get_today_tasks_returns_matching_tasks(self):
         """Test get_today_tasks returns tasks matching today's criteria."""
         # Create tasks
-        task1 = Task(name="Deadline Today", priority=1, deadline=self.today_dt)
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
+        self.repository.create(
+            name="Deadline Today", priority=1, deadline=self.today_dt
+        )
 
-        task2 = Task(name="In Progress", priority=1, status=TaskStatus.IN_PROGRESS)
-        task2.id = self.repository.generate_next_id()
-        self.repository.save(task2)
+        self.repository.create(
+            name="In Progress", priority=1, status=TaskStatus.IN_PROGRESS
+        )
 
-        task3 = Task(name="Not Today", priority=1, deadline=self.tomorrow_dt)
-        task3.id = self.repository.generate_next_id()
-        self.repository.save(task3)
+        self.repository.create(name="Not Today", priority=1, deadline=self.tomorrow_dt)
 
         # Query
         today_filter = TodayFilter()
@@ -81,26 +79,27 @@ class TestTaskQueryService:
 
     def test_get_today_tasks_sorts_by_deadline(self):
         """Test get_today_tasks sorts tasks by deadline."""
-        # Create tasks with different deadlines
-        task1 = Task(name="Later", priority=1, id=1, deadline=self.tomorrow_dt)
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
+        # Create tasks with different deadlines and IN_PROGRESS status
+        self.repository.create(
+            name="Later",
+            priority=1,
+            deadline=self.tomorrow_dt,
+            status=TaskStatus.IN_PROGRESS,
+        )
 
-        task2 = Task(name="Earlier", priority=1, id=2, deadline=self.yesterday_dt)
-        task2.id = self.repository.generate_next_id()
-        self.repository.save(task2)
+        self.repository.create(
+            name="Earlier",
+            priority=1,
+            deadline=self.yesterday_dt,
+            status=TaskStatus.IN_PROGRESS,
+        )
 
-        task3 = Task(name="Today", priority=1, id=3, deadline=self.today_dt)
-        task3.id = self.repository.generate_next_id()
-        self.repository.save(task3)
-
-        # Make all tasks "today tasks" by setting IN_PROGRESS
-        task1.status = TaskStatus.IN_PROGRESS
-        task2.status = TaskStatus.IN_PROGRESS
-        task3.status = TaskStatus.IN_PROGRESS
-        self.repository.save(task1)
-        self.repository.save(task2)
-        self.repository.save(task3)
+        self.repository.create(
+            name="Today",
+            priority=1,
+            deadline=self.today_dt,
+            status=TaskStatus.IN_PROGRESS,
+        )
 
         # Query
         today_filter = TodayFilter()
@@ -117,17 +116,11 @@ class TestTaskQueryService:
     def test_get_today_tasks_sorts_by_priority_when_specified(self):
         """Test get_today_tasks can sort by priority when specified."""
         # Create tasks with same deadline, different priorities
-        task1 = Task(name="Low Priority", priority=1, id=1, deadline=self.today_dt)
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
+        self.repository.create(name="Low Priority", priority=1, deadline=self.today_dt)
 
-        task2 = Task(name="High Priority", priority=5, id=2, deadline=self.today_dt)
-        task2.id = self.repository.generate_next_id()
-        self.repository.save(task2)
+        self.repository.create(name="High Priority", priority=5, deadline=self.today_dt)
 
-        task3 = Task(name="Mid Priority", priority=3, id=3, deadline=self.today_dt)
-        task3.id = self.repository.generate_next_id()
-        self.repository.save(task3)
+        self.repository.create(name="Mid Priority", priority=3, deadline=self.today_dt)
 
         # Query with priority sorting
         today_filter = TodayFilter()
@@ -143,14 +136,12 @@ class TestTaskQueryService:
 
     def test_composite_filter_with_incomplete_excludes_completed(self):
         """Test CompositeFilter with IncompleteFilter excludes completed tasks."""
-        task = Task(
+        self.repository.create(
             name="Completed Today",
             priority=1,
             deadline=self.today_dt,
             status=TaskStatus.COMPLETED,
         )
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
 
         # This mimics 'taskdog today' default behavior
         composite_filter = CompositeFilter([IncompleteFilter(), TodayFilter()])
@@ -160,14 +151,12 @@ class TestTaskQueryService:
 
     def test_today_filter_alone_includes_completed(self):
         """Test TodayFilter alone includes completed tasks (mimics 'taskdog today --all')."""
-        task = Task(
+        self.repository.create(
             name="Completed Today",
             priority=1,
             deadline=self.today_dt,
             status=TaskStatus.COMPLETED,
         )
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
 
         # This mimics 'taskdog today --all' behavior
         today_filter = TodayFilter()
@@ -179,21 +168,19 @@ class TestTaskQueryService:
     def test_filter_by_tags_with_or_logic(self):
         """Test filter_by_tags with OR logic returns tasks with any specified tag."""
         # Create tasks with different tags
-        task1 = Task(name="Work Task", priority=1, tags=["work", "urgent"])
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
+        self.repository.create(
+            name="Work Task", priority=1, tags=frozenset(["work", "urgent"])
+        )
 
-        task2 = Task(name="Personal Task", priority=1, tags=["personal"])
-        task2.id = self.repository.generate_next_id()
-        self.repository.save(task2)
+        self.repository.create(
+            name="Personal Task", priority=1, tags=frozenset(["personal"])
+        )
 
-        task3 = Task(name="Client Task", priority=1, tags=["work", "client-a"])
-        task3.id = self.repository.generate_next_id()
-        self.repository.save(task3)
+        self.repository.create(
+            name="Client Task", priority=1, tags=frozenset(["work", "client-a"])
+        )
 
-        task4 = Task(name="No Tags", priority=1, tags=[])
-        task4.id = self.repository.generate_next_id()
-        self.repository.save(task4)
+        self.repository.create(name="No Tags", priority=1)
 
         # Query with OR logic (default)
         result = self.query_service.filter_by_tags(
@@ -211,19 +198,17 @@ class TestTaskQueryService:
     def test_filter_by_tags_with_and_logic(self):
         """Test filter_by_tags with AND logic returns tasks with all specified tags."""
         # Create tasks with different tag combinations
-        task1 = Task(name="Work and Urgent", priority=1, tags=["work", "urgent"])
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
-
-        task2 = Task(name="Only Work", priority=1, tags=["work"])
-        task2.id = self.repository.generate_next_id()
-        self.repository.save(task2)
-
-        task3 = Task(
-            name="Work and Client", priority=1, tags=["work", "urgent", "client-a"]
+        self.repository.create(
+            name="Work and Urgent", priority=1, tags=frozenset(["work", "urgent"])
         )
-        task3.id = self.repository.generate_next_id()
-        self.repository.save(task3)
+
+        self.repository.create(name="Only Work", priority=1, tags=frozenset(["work"]))
+
+        self.repository.create(
+            name="Work and Client",
+            priority=1,
+            tags=frozenset(["work", "urgent", "client-a"]),
+        )
 
         # Query with AND logic
         result = self.query_service.filter_by_tags(["work", "urgent"], match_all=True)
@@ -237,13 +222,9 @@ class TestTaskQueryService:
 
     def test_filter_by_tags_with_empty_list_returns_all(self):
         """Test filter_by_tags with empty tag list returns all tasks."""
-        task1 = Task(name="Task 1", priority=1, tags=["work"])
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
+        self.repository.create(name="Task 1", priority=1, tags=frozenset(["work"]))
 
-        task2 = Task(name="Task 2", priority=1, tags=[])
-        task2.id = self.repository.generate_next_id()
-        self.repository.save(task2)
+        self.repository.create(name="Task 2", priority=1)
 
         result = self.query_service.filter_by_tags([], match_all=False)
 
@@ -251,9 +232,7 @@ class TestTaskQueryService:
 
     def test_filter_by_tags_with_nonexistent_tag(self):
         """Test filter_by_tags with nonexistent tag returns empty list."""
-        task1 = Task(name="Task 1", priority=1, tags=["work"])
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
+        self.repository.create(name="Task 1", priority=1, tags=frozenset(["work"]))
 
         result = self.query_service.filter_by_tags(["nonexistent"], match_all=False)
 
@@ -262,21 +241,17 @@ class TestTaskQueryService:
     def test_get_all_tags_returns_tag_counts(self):
         """Test get_all_tags returns all unique tags with their counts."""
         # Create tasks with various tags
-        task1 = Task(name="Task 1", priority=1, tags=["work", "urgent"])
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
+        self.repository.create(
+            name="Task 1", priority=1, tags=frozenset(["work", "urgent"])
+        )
 
-        task2 = Task(name="Task 2", priority=1, tags=["work", "client-a"])
-        task2.id = self.repository.generate_next_id()
-        self.repository.save(task2)
+        self.repository.create(
+            name="Task 2", priority=1, tags=frozenset(["work", "client-a"])
+        )
 
-        task3 = Task(name="Task 3", priority=1, tags=["personal"])
-        task3.id = self.repository.generate_next_id()
-        self.repository.save(task3)
+        self.repository.create(name="Task 3", priority=1, tags=frozenset(["personal"]))
 
-        task4 = Task(name="Task 4", priority=1, tags=[])
-        task4.id = self.repository.generate_next_id()
-        self.repository.save(task4)
+        self.repository.create(name="Task 4", priority=1)
 
         # Get all tags
         result = self.query_service.get_all_tags()
@@ -296,9 +271,7 @@ class TestTaskQueryService:
 
     def test_get_all_tags_with_no_tags_returns_empty(self):
         """Test get_all_tags with tasks but no tags returns empty dict."""
-        task = Task(name="Task", priority=1, tags=[])
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        self.repository.create(name="Task", priority=1)
 
         result = self.query_service.get_all_tags()
 
@@ -311,17 +284,17 @@ class TestTaskQueryService:
     def test_filter_by_tags_case_sensitivity_or_logic(self):
         """Test that filter_by_tags treats 'urgent' and 'URGENT' as different (Phase 4)."""
         # Create tasks with different case tags
-        task1 = Task(name="Task 1", priority=1, tags=["urgent"])
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
+        task1 = self.repository.create(
+            name="Task 1", priority=1, tags=frozenset(["urgent"])
+        )
 
-        task2 = Task(name="Task 2", priority=1, tags=["URGENT"])
-        task2.id = self.repository.generate_next_id()
-        self.repository.save(task2)
+        task2 = self.repository.create(
+            name="Task 2", priority=1, tags=frozenset(["URGENT"])
+        )
 
-        task3 = Task(name="Task 3", priority=1, tags=["Urgent"])
-        task3.id = self.repository.generate_next_id()
-        self.repository.save(task3)
+        task3 = self.repository.create(
+            name="Task 3", priority=1, tags=frozenset(["Urgent"])
+        )
 
         # Filter by lowercase 'urgent' - should only match task1
         result = self.query_service.filter_by_tags(["urgent"], match_all=False)
@@ -340,13 +313,13 @@ class TestTaskQueryService:
 
     def test_filter_by_tags_case_sensitivity_and_logic(self):
         """Test case sensitivity with AND logic (Phase 4)."""
-        task1 = Task(name="Task 1", priority=1, tags=["urgent", "backend"])
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
+        task1 = self.repository.create(
+            name="Task 1", priority=1, tags=frozenset(["urgent", "backend"])
+        )
 
-        task2 = Task(name="Task 2", priority=1, tags=["URGENT", "backend"])
-        task2.id = self.repository.generate_next_id()
-        self.repository.save(task2)
+        task2 = self.repository.create(
+            name="Task 2", priority=1, tags=frozenset(["URGENT", "backend"])
+        )
 
         # Filter by ["urgent", "backend"] - should only match task1
         result = self.query_service.filter_by_tags(
@@ -364,17 +337,11 @@ class TestTaskQueryService:
 
     def test_get_all_tags_case_sensitivity(self):
         """Test that get_all_tags treats different cases as separate tags (Phase 4)."""
-        task1 = Task(name="Task 1", priority=1, tags=["urgent"])
-        task1.id = self.repository.generate_next_id()
-        self.repository.save(task1)
+        self.repository.create(name="Task 1", priority=1, tags=frozenset(["urgent"]))
 
-        task2 = Task(name="Task 2", priority=1, tags=["URGENT"])
-        task2.id = self.repository.generate_next_id()
-        self.repository.save(task2)
+        self.repository.create(name="Task 2", priority=1, tags=frozenset(["URGENT"]))
 
-        task3 = Task(name="Task 3", priority=1, tags=["Urgent"])
-        task3.id = self.repository.generate_next_id()
-        self.repository.save(task3)
+        self.repository.create(name="Task 3", priority=1, tags=frozenset(["Urgent"]))
 
         result = self.query_service.get_all_tags()
 

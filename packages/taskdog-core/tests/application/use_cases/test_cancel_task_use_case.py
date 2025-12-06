@@ -4,7 +4,7 @@ from datetime import datetime
 
 from taskdog_core.application.dto.single_task_inputs import CancelTaskInput
 from taskdog_core.application.use_cases.cancel_task import CancelTaskUseCase
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
 from tests.application.use_cases.status_change_test_base import (
     BaseStatusChangeUseCaseTest,
 )
@@ -23,9 +23,9 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
 
     def test_execute_can_cancel_pending_task(self):
         """Test execute can cancel PENDING task."""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Test Task", priority=1, status=TaskStatus.PENDING
+        )
 
         input_dto = CancelTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
@@ -36,10 +36,12 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
 
     def test_execute_can_cancel_in_progress_task(self):
         """Test execute can cancel IN_PROGRESS task."""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        task.id = self.repository.generate_next_id()
-        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.IN_PROGRESS,
+            actual_start=datetime(2024, 1, 1, 10, 0, 0),
+        )
 
         input_dto = CancelTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
