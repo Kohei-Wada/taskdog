@@ -10,7 +10,6 @@ The repository uses TagResolver to manage tag relationships when saving tasks.
 
 from __future__ import annotations
 
-import warnings
 from datetime import date
 from typing import TYPE_CHECKING, Any
 
@@ -342,27 +341,6 @@ class SqliteTaskRepository(TaskRepository):
             delete_builder = TaskDeleteBuilder(session)
             delete_builder.delete_task(task_id)
             session.commit()
-
-    def generate_next_id(self) -> int:
-        """Generate the next available task ID.
-
-        .. deprecated::
-            This method has a race condition in concurrent scenarios.
-            Use create() which uses database AUTOINCREMENT instead.
-
-        Returns:
-            The next available ID (max_id + 1, or 1 if no tasks exist)
-        """
-        warnings.warn(
-            "generate_next_id() is deprecated due to race conditions. "
-            "Use create() method instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        with self.Session() as session:
-            stmt = select(TaskModel.id).order_by(TaskModel.id.desc()).limit(1)  # type: ignore[attr-defined]
-            result = session.scalar(stmt)
-            return (result + 1) if result is not None else 1
 
     def create(self, name: str, priority: int, **kwargs: Any) -> Task:
         """Create a new task with auto-generated ID and save it.
