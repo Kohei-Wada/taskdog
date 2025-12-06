@@ -57,7 +57,10 @@ def session_repository():
 @pytest.fixture(scope="session")
 def session_audit_log_repository():
     """Session-scoped in-memory audit log repository."""
-    return SqliteAuditLogRepository("sqlite:///file::memory:?cache=shared&uri=true")
+    repo = SqliteAuditLogRepository("sqlite:///file::memory:?cache=shared&uri=true")
+    yield repo
+    if hasattr(repo, "close"):
+        repo.close()
 
 
 @pytest.fixture
