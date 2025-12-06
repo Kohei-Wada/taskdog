@@ -1,5 +1,6 @@
 """CRUD endpoints for task management."""
 
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Query, status
@@ -342,6 +343,11 @@ async def update_task(
                     old_val = old_val.value
                 if hasattr(new_val, "value"):
                     new_val = new_val.value
+                # Handle datetime values (convert to ISO string for JSON)
+                if isinstance(old_val, datetime):
+                    old_val = old_val.isoformat()
+                if isinstance(new_val, datetime):
+                    new_val = new_val.isoformat()
                 old_values[field] = old_val
                 new_values[field] = new_val
 
