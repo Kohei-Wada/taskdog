@@ -1,5 +1,6 @@
 """Custom Click DateTime type that adds default time when only date is provided."""
 
+import re
 from datetime import datetime, time
 from typing import Any
 
@@ -34,7 +35,9 @@ class DateTimeWithDefault(click.DateTime):
                          - "start": uses business hour default (9 = 9 AM)
                          - int (0-23): uses specific hour
         """
-        super().__init__(formats=[DATETIME_FORMAT, "%Y-%m-%d", "%m-%d", "%m/%d"])
+        # Only use formats with year to avoid Python 3.13+ deprecation warning
+        # MM-DD and MM/DD patterns are handled in convert() before parsing
+        super().__init__(formats=[DATETIME_FORMAT, "%Y-%m-%d"])
 
         # Use UI default constants for date parsing convenience
         # These match the common business hour defaults for better UX
@@ -68,18 +71,22 @@ class DateTimeWithDefault(click.DateTime):
         if isinstance(value, str):
             value = value.strip()
 
-        # Check if input is in MM-DD or MM/DD format (no year provided)
-        if isinstance(value, str):
-            date_part = value.split()[0]  # Get date part (before any space/time)
-            # Check if it's 2-part date (MM-DD or MM/DD)
-            is_short_format = (
-                len(date_part.split("-")) == 2 or len(date_part.split("/")) == 2
-            )
-        else:
-            is_short_format = False
-
         # Check if input contains time component
         has_time = isinstance(value, str) and " " in value
+
+        # Pre-process MM-DD or MM/DD format by adding current year
+        # This avoids Python 3.13+ deprecation warning for year-less date parsing
+        if isinstance(value, str):
+            date_part = value.split()[0]  # Get date part (before any space/time)
+            # Match MM-DD or MM/DD pattern (1-2 digit month and day)
+            if re.match(r"^\d{1,2}[-/]\d{1,2}$", date_part):
+                current_year = datetime.now().year
+                # Normalize to hyphen separator
+                normalized = date_part.replace("/", "-")
+                time_part = value[len(date_part) :].strip()
+                value = f"{current_year}-{normalized}"
+                if time_part:
+                    value = f"{value} {time_part}"
 
         # Use parent class to parse datetime
         dt = super().convert(value, param, ctx)
@@ -90,11 +97,6 @@ class DateTimeWithDefault(click.DateTime):
         # Type narrowing for mypy
         if not isinstance(dt, datetime):
             raise TypeError(f"Expected datetime object, got {type(dt).__name__}")
-
-        # If MM-DD format was used, add current year
-        if is_short_format:
-            current_year = datetime.now().year
-            dt = dt.replace(year=current_year)
 
         # Only add default time if no time was provided in the input
         if not has_time and dt.time() == time(0, 0, 0):
