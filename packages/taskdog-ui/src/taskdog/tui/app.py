@@ -24,6 +24,7 @@ from taskdog.tui.constants.ui_settings import (
 from taskdog.tui.context import TUIContext
 from taskdog.tui.events import GanttResizeRequested, TasksRefreshed
 from taskdog.tui.palette.providers import (
+    AuditCommandProvider,
     ExportCommandProvider,
     ExportFormatProvider,
     HelpCommandProvider,
@@ -170,6 +171,7 @@ class TaskdogTUI(App):
 
     # Register custom command providers
     COMMANDS = App.COMMANDS | {
+        AuditCommandProvider,
         SortCommandProvider,
         OptimizeCommandProvider,
         ExportCommandProvider,
@@ -463,6 +465,14 @@ class TaskdogTUI(App):
     def action_command_palette(self) -> None:
         """Show the command palette."""
         self.push_screen(CommandPalette())
+
+    def toggle_audit_panel(self) -> None:
+        """Toggle the audit log side panel visibility.
+
+        Called from Command Palette via AuditCommandProvider.
+        """
+        if self.main_screen:
+            self.main_screen.toggle_audit_panel()
 
     def _refresh_elapsed_time(self) -> None:
         """Refresh the task table to update elapsed time for IN_PROGRESS tasks.

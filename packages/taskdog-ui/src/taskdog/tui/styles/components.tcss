@@ -143,3 +143,39 @@ Input {
     text-align: left;
     color: $accent;
 }
+
+/* Root container for full-width layout */
+#root-container {
+    width: 100%;
+    height: 100%;
+}
+
+/* Left content takes remaining space */
+#left-content {
+    width: 1fr;
+    height: 100%;
+}
+
+/* Audit Log Panel */
+#audit-panel {
+    width: 25%;
+    min-width: 40;
+    max-width: 80;
+    height: 100%;
+    padding: 1;
+    display: none;
+    border: double $primary;
+}
+
+#audit-panel.visible {
+    display: block;
+}
+
+#audit-panel:focus {
+    border: double $accent;
+}
+
+#audit-logs-content {
+    width: 100%;
+    height: auto;
+}

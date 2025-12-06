@@ -62,6 +62,7 @@ class EventHandlerRegistry:
     def _handle_task_created(self, message: dict[str, Any]) -> None:
         """Handle task created event."""
         self._reload_tasks()
+        self._refresh_audit_panel()
         task_name = message.get("task_name", "Unknown")
         task_id = message.get("task_id")
         display_source = self._get_display_source(message)
@@ -73,6 +74,7 @@ class EventHandlerRegistry:
     def _handle_task_updated(self, message: dict[str, Any]) -> None:
         """Handle task updated event."""
         self._reload_tasks()
+        self._refresh_audit_panel()
         task_name = message.get("task_name", "Unknown")
         task_id = message.get("task_id")
         display_source = self._get_display_source(message)
@@ -90,6 +92,7 @@ class EventHandlerRegistry:
     def _handle_task_deleted(self, message: dict[str, Any]) -> None:
         """Handle task deleted event."""
         self._reload_tasks()
+        self._refresh_audit_panel()
         task_name = message.get("task_name", "Unknown")
         task_id = message.get("task_id")
         display_source = self._get_display_source(message)
@@ -101,6 +104,7 @@ class EventHandlerRegistry:
     def _handle_task_status_changed(self, message: dict[str, Any]) -> None:
         """Handle task status changed event."""
         self._reload_tasks()
+        self._refresh_audit_panel()
         task_name = message.get("task_name", "Unknown")
         task_id = message.get("task_id")
         display_source = self._get_display_source(message)
@@ -127,6 +131,7 @@ class EventHandlerRegistry:
         from taskdog.tui.messages import TUIMessageBuilder
 
         self._reload_tasks()
+        self._refresh_audit_panel()
         scheduled_count = message.get("scheduled_count", 0)
         failed_count = message.get("failed_count", 0)
         algorithm = message.get("algorithm", "unknown")
@@ -141,6 +146,15 @@ class EventHandlerRegistry:
             self.app.call_later(
                 self.app.task_ui_manager.load_tasks, keep_scroll_position=True
             )
+
+    def _refresh_audit_panel(self) -> None:
+        """Refresh audit panel if visible.
+
+        Schedules the refresh to run after the current event is processed.
+        Only refreshes if the main screen exists and the audit panel is visible.
+        """
+        if hasattr(self.app, "main_screen") and self.app.main_screen:
+            self.app.call_later(self.app.main_screen.refresh_audit_panel)
 
     def _get_display_source(self, message: dict[str, Any]) -> str | None:
         """Get display source (user name or client ID) if different from this client.

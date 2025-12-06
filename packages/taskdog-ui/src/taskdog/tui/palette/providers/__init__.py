@@ -1,5 +1,6 @@
 """Command providers for Taskdog TUI Command Palette."""
 
+from taskdog.tui.palette.providers.audit_provider import AuditCommandProvider
 from taskdog.tui.palette.providers.base import BaseListProvider
 from taskdog.tui.palette.providers.export_providers import (
     EXPORT_FORMATS,
@@ -15,6 +16,7 @@ from taskdog.tui.palette.providers.sort_providers import (
 
 __all__ = [
     "EXPORT_FORMATS",
+    "AuditCommandProvider",
     "BaseListProvider",
     "ExportCommandProvider",
     "ExportFormatProvider",
