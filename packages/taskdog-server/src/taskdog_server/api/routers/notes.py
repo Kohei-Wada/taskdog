@@ -4,7 +4,7 @@ from fastapi import APIRouter, status
 
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import (
-    AuditLoggerDep,
+    AuditLogControllerDep,
     AuthenticatedClientDep,
     EventBroadcasterDep,
     NotesRepositoryDep,
@@ -58,7 +58,7 @@ async def update_task_notes(
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> NotesResponse:
     """Update task notes.
@@ -90,7 +90,7 @@ async def update_task_notes(
     broadcaster.task_notes_updated(task_id, task.name, client_name)
 
     # Audit log
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="update_notes",
         resource_type="task",
         resource_id=task_id,
@@ -110,7 +110,7 @@ async def delete_task_notes(
     repository: RepositoryDep,
     notes_repo: NotesRepositoryDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> None:
     """Delete task notes.
@@ -137,7 +137,7 @@ async def delete_task_notes(
     broadcaster.task_notes_updated(task_id, task.name, client_name)
 
     # Audit log
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="delete_notes",
         resource_type="task",
         resource_id=task_id,

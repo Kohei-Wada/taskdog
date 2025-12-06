@@ -14,7 +14,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 from taskdog_server.api.converters import convert_to_gantt_response
 from taskdog_server.api.dependencies import (
     AnalyticsControllerDep,
-    AuditLoggerDep,
+    AuditLogControllerDep,
     AuthenticatedClientDep,
     EventBroadcasterDep,
     HolidayCheckerDep,
@@ -250,7 +250,7 @@ async def optimize_schedule(
     request: OptimizeScheduleRequest,
     controller: AnalyticsControllerDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     time_provider: TimeProviderDep,
     client_name: AuthenticatedClientDep,
     run_async: bool = Query(False, description="Run optimization in background"),
@@ -318,7 +318,7 @@ async def optimize_schedule(
         )
 
         # Audit log
-        audit_logger.log_operation(
+        audit_controller.log_operation(
             operation="optimize_schedule",
             resource_type="schedule",
             resource_id=None,

@@ -12,7 +12,7 @@ from taskdog_server.api.converters import (
     convert_to_update_task_response,
 )
 from taskdog_server.api.dependencies import (
-    AuditLoggerDep,
+    AuditLogControllerDep,
     AuthenticatedClientDep,
     CrudControllerDep,
     EventBroadcasterDep,
@@ -41,7 +41,7 @@ async def create_task(
     request: CreateTaskRequest,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
     """Create a new task.
@@ -50,7 +50,7 @@ async def create_task(
         request: Task creation data
         controller: CRUD controller dependency
         broadcaster: Event broadcaster dependency
-        audit_logger: Audit logger dependency
+        audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
     Returns:
@@ -74,7 +74,7 @@ async def create_task(
     broadcaster.task_created(result, client_name)
 
     # Audit log
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="create_task",
         resource_type="task",
         resource_id=result.id,
@@ -284,7 +284,7 @@ async def update_task(
     controller: CrudControllerDep,
     query_controller: QueryControllerDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> UpdateTaskResponse:
     """Update task fields.
@@ -295,7 +295,7 @@ async def update_task(
         controller: CRUD controller dependency
         query_controller: Query controller dependency (for fetching old values)
         broadcaster: Event broadcaster dependency
-        audit_logger: Audit logger dependency
+        audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
     Returns:
@@ -345,7 +345,7 @@ async def update_task(
                 old_values[field] = old_val
                 new_values[field] = new_val
 
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="update_task",
         resource_type="task",
         resource_id=task_id,
@@ -365,7 +365,7 @@ async def archive_task(
     task_id: int,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
     """Archive (soft delete) a task.
@@ -374,7 +374,7 @@ async def archive_task(
         task_id: Task ID
         controller: CRUD controller dependency
         broadcaster: Event broadcaster dependency
-        audit_logger: Audit logger dependency
+        audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
     Returns:
@@ -389,7 +389,7 @@ async def archive_task(
     broadcaster.task_updated(result, ["is_archived"], client_name)
 
     # Audit log
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="archive_task",
         resource_type="task",
         resource_id=task_id,
@@ -409,7 +409,7 @@ async def restore_task(
     task_id: int,
     controller: CrudControllerDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
     """Restore an archived task.
@@ -418,7 +418,7 @@ async def restore_task(
         task_id: Task ID
         controller: CRUD controller dependency
         broadcaster: Event broadcaster dependency
-        audit_logger: Audit logger dependency
+        audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
     Returns:
@@ -433,7 +433,7 @@ async def restore_task(
     broadcaster.task_updated(result, ["is_archived"], client_name)
 
     # Audit log
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="restore_task",
         resource_type="task",
         resource_id=task_id,
@@ -454,7 +454,7 @@ async def delete_task(
     controller: CrudControllerDep,
     query_controller: QueryControllerDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> None:
     """Permanently delete a task.
@@ -464,7 +464,7 @@ async def delete_task(
         controller: CRUD controller dependency
         query_controller: Query controller dependency (for fetching task name before deletion)
         broadcaster: Event broadcaster dependency
-        audit_logger: Audit logger dependency
+        audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
     Raises:
@@ -483,7 +483,7 @@ async def delete_task(
     broadcaster.task_deleted(task_id, task_name, client_name)
 
     # Audit log
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="delete_task",
         resource_type="task",
         resource_id=task_id,

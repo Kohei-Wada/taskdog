@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 
 from taskdog_server.api.dependencies import (
-    AuditLoggerDep,
+    AuditLogControllerDep,
     AuthenticatedClientDep,
     EventBroadcasterDep,
     RelationshipControllerDep,
@@ -27,7 +27,7 @@ async def add_dependency(
     request: AddDependencyRequest,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
     """Add a dependency to a task.
@@ -37,7 +37,7 @@ async def add_dependency(
         request: Dependency data (ID of task to depend on)
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
-        audit_logger: Audit logger dependency
+        audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
     Returns:
@@ -52,7 +52,7 @@ async def add_dependency(
     broadcaster.task_updated(result, ["depends_on"], client_name)
 
     # Audit log
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="add_dependency",
         resource_type="task",
         resource_id=task_id,
@@ -74,7 +74,7 @@ async def remove_dependency(
     depends_on_id: int,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
     """Remove a dependency from a task.
@@ -84,7 +84,7 @@ async def remove_dependency(
         depends_on_id: ID of dependency to remove
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
-        audit_logger: Audit logger dependency
+        audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
     Returns:
@@ -99,7 +99,7 @@ async def remove_dependency(
     broadcaster.task_updated(result, ["depends_on"], client_name)
 
     # Audit log
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="remove_dependency",
         resource_type="task",
         resource_id=task_id,
@@ -119,7 +119,7 @@ async def set_task_tags(
     request: SetTaskTagsRequest,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
     """Set task tags (replaces existing tags).
@@ -129,7 +129,7 @@ async def set_task_tags(
         request: New tags list
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
-        audit_logger: Audit logger dependency
+        audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
     Returns:
@@ -144,7 +144,7 @@ async def set_task_tags(
     broadcaster.task_updated(result, ["tags"], client_name)
 
     # Audit log
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="set_tags",
         resource_type="task",
         resource_id=task_id,
@@ -164,7 +164,7 @@ async def log_hours(
     request: LogHoursRequest,
     controller: RelationshipControllerDep,
     broadcaster: EventBroadcasterDep,
-    audit_logger: AuditLoggerDep,
+    audit_controller: AuditLogControllerDep,
     time_provider: TimeProviderDep,
     client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
@@ -175,7 +175,7 @@ async def log_hours(
         request: Hours and date data
         controller: Relationship controller dependency
         broadcaster: Event broadcaster dependency
-        audit_logger: Audit logger dependency
+        audit_controller: Audit log controller dependency
         time_provider: Time provider dependency
         client_name: Authenticated client name (for broadcast payload)
 
@@ -192,7 +192,7 @@ async def log_hours(
     broadcaster.task_updated(result, ["actual_daily_hours"], client_name)
 
     # Audit log
-    audit_logger.log_operation(
+    audit_controller.log_operation(
         operation="log_hours",
         resource_type="task",
         resource_id=task_id,

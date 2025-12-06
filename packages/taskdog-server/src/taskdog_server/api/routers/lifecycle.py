@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from fastapi import APIRouter
 
 from taskdog_server.api.dependencies import (
-    AuditLoggerDep,
+    AuditLogControllerDep,
     AuthenticatedClientDep,
     EventBroadcasterDep,
     LifecycleControllerDep,
@@ -52,7 +52,7 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
         task_id: int,
         controller: LifecycleControllerDep,
         broadcaster: EventBroadcasterDep,
-        audit_logger: AuditLoggerDep,
+        audit_controller: AuditLogControllerDep,
         client_name: AuthenticatedClientDep,
     ) -> TaskOperationResponse:
         controller_method = getattr(controller, f"{op.name}_task")
@@ -60,7 +60,7 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
         broadcaster.task_status_changed(result, op.old_status, client_name)
 
         # Audit log
-        audit_logger.log_operation(
+        audit_controller.log_operation(
             operation=f"{op.name}_task",
             resource_type="task",
             resource_id=task_id,
@@ -80,7 +80,7 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
         task_id: Task ID
         controller: Lifecycle controller dependency
         broadcaster: Event broadcaster dependency
-        audit_logger: Audit logger dependency
+        audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
     Returns:

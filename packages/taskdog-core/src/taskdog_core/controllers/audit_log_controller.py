@@ -5,6 +5,9 @@ following Clean Architecture by ensuring all access to the audit log
 repository goes through the application layer.
 """
 
+from datetime import datetime
+from typing import Any
+
 from taskdog_core.application.dto.audit_log_dto import (
     AuditEvent,
     AuditLogListOutput,
@@ -44,7 +47,7 @@ class AuditLogController:
         self._repository = repository
         self._logger = logger
 
-    def log_operation(self, event: AuditEvent) -> None:
+    def save(self, event: AuditEvent) -> None:
         """Save an audit event to the database.
 
         Args:
@@ -56,6 +59,48 @@ class AuditLogController:
             f"resource_type={event.resource_type}, "
             f"resource_id={event.resource_id}"
         )
+
+    def log_operation(
+        self,
+        *,
+        operation: str,
+        resource_type: str,
+        success: bool,
+        client_name: str | None = None,
+        resource_id: int | None = None,
+        resource_name: str | None = None,
+        old_values: dict[str, Any] | None = None,
+        new_values: dict[str, Any] | None = None,
+        error_message: str | None = None,
+    ) -> None:
+        """Log an operation with a convenience method.
+
+        This is a shortcut for creating an AuditEvent and calling save().
+
+        Args:
+            operation: The operation type (e.g., 'create_task')
+            resource_type: The resource type (e.g., 'task')
+            success: Whether the operation succeeded
+            client_name: The authenticated client name
+            resource_id: The resource ID (task ID, etc.)
+            resource_name: The resource name (task name, etc.)
+            old_values: Values before the change
+            new_values: Values after the change
+            error_message: Error message if the operation failed
+        """
+        event = AuditEvent(
+            timestamp=datetime.now(),
+            operation=operation,
+            resource_type=resource_type,
+            success=success,
+            client_name=client_name,
+            resource_id=resource_id,
+            resource_name=resource_name,
+            old_values=old_values,
+            new_values=new_values,
+            error_message=error_message,
+        )
+        self.save(event)
 
     def get_logs(self, query: AuditQuery) -> AuditLogListOutput:
         """Query audit logs with filtering and pagination.

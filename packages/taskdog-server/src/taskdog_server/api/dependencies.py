@@ -31,7 +31,6 @@ from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_core.shared.config_manager import Config, ConfigManager
 from taskdog_server.api.context import ApiContext
 from taskdog_server.config.server_config_manager import ServerConfig
-from taskdog_server.infrastructure.audit import BackgroundAuditLogger
 from taskdog_server.infrastructure.logging.standard_logger import StandardLogger
 from taskdog_server.websocket.broadcaster import WebSocketEventBroadcaster
 from taskdog_server.websocket.connection_manager import ConnectionManager
@@ -234,22 +233,6 @@ def get_audit_log_controller(context: ApiContextDep) -> AuditLogController:
     return context.audit_log_controller
 
 
-def get_audit_logger(
-    context: ApiContextDep,
-    background_tasks: BackgroundTasks,
-) -> BackgroundAuditLogger:
-    """Get a BackgroundAuditLogger instance for non-blocking audit logging.
-
-    Args:
-        context: API context with audit log controller
-        background_tasks: FastAPI background tasks for async scheduling
-
-    Returns:
-        BackgroundAuditLogger: Logger for scheduling audit log writes
-    """
-    return BackgroundAuditLogger(context.audit_log_controller, background_tasks)
-
-
 def get_connection_manager(request: Request) -> ConnectionManager:
     """Get the ConnectionManager instance from app.state for HTTP endpoints.
 
@@ -312,7 +295,6 @@ ConfigDep = Annotated[Config, Depends(get_config)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
 TimeProviderDep = Annotated[ITimeProvider, Depends(get_time_provider)]
 AuditLogControllerDep = Annotated[AuditLogController, Depends(get_audit_log_controller)]
-AuditLoggerDep = Annotated[BackgroundAuditLogger, Depends(get_audit_logger)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
 ConnectionManagerWsDep = Annotated[
     ConnectionManager, Depends(get_connection_manager_ws)
