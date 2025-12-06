@@ -11,6 +11,7 @@ from taskdog_server.api.dependencies import initialize_api_context
 from taskdog_server.api.middleware import LoggingMiddleware
 from taskdog_server.api.routers import (
     analytics_router,
+    audit_router,
     lifecycle_router,
     notes_router,
     relationships_router,
@@ -86,6 +87,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(notes_router, prefix="/api/v1/tasks", tags=["notes"])
     app.include_router(analytics_router, prefix="/api/v1", tags=["analytics"])
+    app.include_router(audit_router, prefix="/api/v1/audit-logs", tags=["audit"])
     app.include_router(websocket_router, tags=["websocket"])
 
     @app.get("/")

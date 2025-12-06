@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -31,6 +32,7 @@ class ApiContext:
         crud_controller: Controller for CRUD operations (create, update, archive, etc.)
         holiday_checker: Holiday checker for workday validation (optional)
         time_provider: Time provider for current time (optional, defaults to SystemTimeProvider)
+        audit_log_controller: Controller for audit log operations
     """
 
     repository: TaskRepository
@@ -43,3 +45,4 @@ class ApiContext:
     crud_controller: TaskCrudController
     holiday_checker: IHolidayChecker | None
     time_provider: ITimeProvider
+    audit_log_controller: AuditLogController

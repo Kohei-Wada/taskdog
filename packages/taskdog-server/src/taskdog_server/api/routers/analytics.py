@@ -14,6 +14,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 from taskdog_server.api.converters import convert_to_gantt_response
 from taskdog_server.api.dependencies import (
     AnalyticsControllerDep,
+    AuditLogControllerDep,
     AuthenticatedClientDep,
     EventBroadcasterDep,
     HolidayCheckerDep,
@@ -249,6 +250,7 @@ async def optimize_schedule(
     request: OptimizeScheduleRequest,
     controller: AnalyticsControllerDep,
     broadcaster: EventBroadcasterDep,
+    audit_controller: AuditLogControllerDep,
     time_provider: TimeProviderDep,
     client_name: AuthenticatedClientDep,
     run_async: bool = Query(False, description="Run optimization in background"),
@@ -313,6 +315,23 @@ async def optimize_schedule(
             len(result.failed_tasks),
             request.algorithm,
             client_name,
+        )
+
+        # Audit log
+        audit_controller.log_operation(
+            operation="optimize_schedule",
+            resource_type="schedule",
+            resource_id=None,
+            resource_name=None,
+            client_name=client_name,
+            new_values={
+                "algorithm": request.algorithm,
+                "scheduled_tasks": len(result.successful_tasks),
+                "failed_tasks": len(result.failed_tasks),
+                "total_hours": result.summary.total_hours,
+                "task_ids": request.task_ids,
+            },
+            success=True,
         )
 
         # Convert DTO to response model

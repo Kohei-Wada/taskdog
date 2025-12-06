@@ -378,3 +378,28 @@ class NotesResponse(BaseModel):
     task_id: int
     content: str
     has_notes: bool
+
+
+class AuditLogResponse(BaseModel):
+    """Response model for a single audit log entry."""
+
+    id: int
+    timestamp: datetime
+    client_name: str | None = None
+    operation: str
+    resource_type: str
+    resource_id: int | None = None
+    resource_name: str | None = None
+    old_values: dict | None = None
+    new_values: dict | None = None
+    success: bool
+    error_message: str | None = None
+
+
+class AuditLogListResponse(BaseModel):
+    """Response model for audit log list queries."""
+
+    logs: list[AuditLogResponse]
+    total_count: int
+    limit: int
+    offset: int

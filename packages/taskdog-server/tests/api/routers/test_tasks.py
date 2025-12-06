@@ -1,9 +1,10 @@
 """Tests for tasks router (CRUD endpoints)."""
 
-from datetime import date
+from datetime import date, datetime, timedelta
 
 import pytest
 
+from taskdog_core.application.dto.audit_log_dto import AuditQuery
 from taskdog_core.domain.entities.task import TaskStatus
 
 
@@ -359,3 +360,54 @@ class TestTasksRouter:
         # Verify reverse order by checking priorities
         assert data["tasks"][0]["priority"] == 1
         assert data["tasks"][1]["priority"] == 2
+
+    def test_update_task_datetime_serialized_in_audit_log(
+        self, client, task_factory, audit_log_repository
+    ):
+        """Test that datetime values are properly serialized in audit logs.
+
+        Regression test for: Object of type datetime is not JSON serializable.
+        When updating tasks with datetime fields (planned_start, planned_end),
+        the audit log should receive ISO-formatted strings, not datetime objects.
+        """
+        # Arrange - create a task and start it (to allow past dates)
+        task = task_factory.create(
+            name="DateTime Test Task",
+            priority=1,
+            status=TaskStatus.IN_PROGRESS,
+            actual_start=datetime.now(),
+        )
+
+        # Use a future date to avoid validation errors
+        future_date = datetime.now() + timedelta(days=7)
+        planned_start = future_date.replace(hour=9, minute=0, second=0, microsecond=0)
+        planned_end = future_date.replace(hour=18, minute=0, second=0, microsecond=0)
+
+        # Act - update task with datetime fields
+        response = client.patch(
+            f"/api/v1/tasks/{task.id}",
+            json={
+                "planned_start": planned_start.isoformat(),
+                "planned_end": planned_end.isoformat(),
+            },
+        )
+
+        # Assert - request should succeed (no JSON serialization error)
+        assert response.status_code == 200
+
+        # Verify audit log contains properly serialized datetime values
+        query = AuditQuery(operation="update_task", limit=10, offset=0)
+        result = audit_log_repository.get_logs(query)
+        assert result.total_count >= 1
+
+        # Check that new_values contains ISO-formatted strings, not datetime objects
+        update_log = result.logs[0]
+        if update_log.new_values:
+            for key, value in update_log.new_values.items():
+                if "planned" in key:
+                    # Should be a string (ISO format), not a datetime object
+                    assert isinstance(value, str), (
+                        f"{key} should be serialized as string"
+                    )
+                    # Should be valid ISO format
+                    datetime.fromisoformat(value)

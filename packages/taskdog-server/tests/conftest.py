@@ -10,6 +10,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -19,6 +20,9 @@ from taskdog_core.controllers.task_relationship_controller import (
 )
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.services.logger import Logger
+from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (
+    SqliteAuditLogRepository,
+)
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
@@ -48,6 +52,23 @@ def session_repository():
     yield repo
     if hasattr(repo, "close"):
         repo.close()
+
+
+@pytest.fixture(scope="session")
+def session_audit_log_repository():
+    """Session-scoped in-memory audit log repository."""
+    return SqliteAuditLogRepository("sqlite:///file::memory:?cache=shared&uri=true")
+
+
+@pytest.fixture
+def audit_log_repository(session_audit_log_repository):
+    """Function-scoped fixture that clears audit logs before each test.
+
+    Inherits the session-scoped database but clears all audit logs
+    before each test to ensure test isolation.
+    """
+    session_audit_log_repository.clear()
+    yield session_audit_log_repository
 
 
 @pytest.fixture
@@ -165,6 +186,7 @@ def session_notes_repository():
 def app(
     session_repository,
     session_notes_repository,
+    session_audit_log_repository,
     mock_config,
     mock_logger,
     server_config,
@@ -186,6 +208,7 @@ def app(
     crud_controller = TaskCrudController(
         session_repository, session_notes_repository, mock_config, mock_logger
     )
+    audit_log_controller = AuditLogController(session_audit_log_repository, mock_logger)
 
     # Create API context once
     api_context = ApiContext(
@@ -199,6 +222,7 @@ def app(
         crud_controller=crud_controller,
         holiday_checker=None,
         time_provider=SystemTimeProvider(),
+        audit_log_controller=audit_log_controller,
     )
 
     # Create FastAPI app once with all routers
@@ -216,6 +240,7 @@ def app(
     # Import and register all routers
     from taskdog_server.api.routers import (
         analytics_router,
+        audit_router,
         lifecycle_router,
         notes_router,
         relationships_router,
@@ -231,6 +256,7 @@ def app(
     )
     test_app.include_router(notes_router, prefix="/api/v1/tasks", tags=["notes"])
     test_app.include_router(analytics_router, prefix="/api/v1", tags=["analytics"])
+    test_app.include_router(audit_router, prefix="/api/v1/audit-logs", tags=["audit"])
 
     return test_app
 
