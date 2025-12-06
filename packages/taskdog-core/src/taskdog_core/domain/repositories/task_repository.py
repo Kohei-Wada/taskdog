@@ -170,15 +170,6 @@ class TaskRepository(ABC):
         pass
 
     @abstractmethod
-    def generate_next_id(self) -> int:
-        """Generate the next available task ID.
-
-        Returns:
-            The next available ID
-        """
-        pass
-
-    @abstractmethod
     def create(self, name: str, priority: int, **kwargs: Any) -> Task:
         """Create a new task with auto-generated ID and save it.
 
