@@ -292,8 +292,15 @@ class TaskdogTUI(App):
 
     async def on_mount(self) -> None:
         """Called when app is mounted."""
-        # Apply theme from config
-        self.theme = self._theme
+        # Apply theme from config with fallback for invalid themes
+        try:
+            self.theme = self._theme
+        except Exception:
+            self.notify(
+                f"Invalid theme '{self._theme}'. Using default.",
+                severity="warning",
+            )
+            self.theme = "textual-dark"
 
         self.main_screen = MainScreen(state=self.state)
         self.push_screen(self.main_screen)
