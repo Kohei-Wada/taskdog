@@ -9,7 +9,7 @@ import pytest
 from taskdog_core.application.queries.filters.composite_filter import CompositeFilter
 from taskdog_core.application.queries.filters.incomplete_filter import IncompleteFilter
 from taskdog_core.application.queries.filters.today_filter import TodayFilter
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
@@ -55,9 +55,9 @@ class TestTodayFilter:
 
     def test_filter_includes_deadline_today(self):
         """Test filter includes task with deadline today."""
-        task = Task(name="Deadline Today", priority=1, deadline=self.today_dt)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        self.repository.create(
+            name="Deadline Today", priority=1, deadline=self.today_dt
+        )
 
         tasks = self.repository.get_all()
         filter_obj = TodayFilter()
@@ -68,9 +68,9 @@ class TestTodayFilter:
 
     def test_filter_excludes_deadline_tomorrow(self):
         """Test filter excludes task with deadline tomorrow."""
-        task = Task(name="Deadline Tomorrow", priority=1, deadline=self.tomorrow_dt)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        self.repository.create(
+            name="Deadline Tomorrow", priority=1, deadline=self.tomorrow_dt
+        )
 
         tasks = self.repository.get_all()
         filter_obj = TodayFilter()
@@ -80,9 +80,9 @@ class TestTodayFilter:
 
     def test_filter_includes_in_progress_task(self):
         """Test filter includes IN_PROGRESS task."""
-        task = Task(name="In Progress", priority=1, status=TaskStatus.IN_PROGRESS)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        self.repository.create(
+            name="In Progress", priority=1, status=TaskStatus.IN_PROGRESS
+        )
 
         tasks = self.repository.get_all()
         filter_obj = TodayFilter()
@@ -93,14 +93,12 @@ class TestTodayFilter:
 
     def test_filter_includes_planned_period_today(self):
         """Test filter includes task with planned period including today."""
-        task = Task(
+        self.repository.create(
             name="Planned Today",
             priority=1,
             planned_start=self.yesterday_dt,
             planned_end=self.tomorrow_dt,
         )
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
 
         tasks = self.repository.get_all()
         filter_obj = TodayFilter()
@@ -111,14 +109,12 @@ class TestTodayFilter:
 
     def test_filter_includes_completed_task_with_deadline_today(self):
         """Test TodayFilter itself includes completed tasks (filtering by date only)."""
-        task = Task(
+        self.repository.create(
             name="Completed Today",
             priority=1,
             deadline=self.today_dt,
             status=TaskStatus.COMPLETED,
         )
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
 
         tasks = self.repository.get_all()
         filter_obj = TodayFilter()
@@ -130,14 +126,12 @@ class TestTodayFilter:
 
     def test_composite_filter_excludes_completed_tasks(self):
         """Test CompositeFilter with IncompleteFilter excludes completed tasks."""
-        task = Task(
+        self.repository.create(
             name="Completed Today",
             priority=1,
             deadline=self.today_dt,
             status=TaskStatus.COMPLETED,
         )
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
 
         tasks = self.repository.get_all()
         # This mimics the default behavior of 'taskdog today' command
@@ -149,14 +143,12 @@ class TestTodayFilter:
 
     def test_composite_filter_includes_incomplete_task_with_deadline_today(self):
         """Test CompositeFilter with IncompleteFilter includes incomplete tasks."""
-        task = Task(
+        self.repository.create(
             name="Pending Today",
             priority=1,
             deadline=self.today_dt,
             status=TaskStatus.PENDING,
         )
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
 
         tasks = self.repository.get_all()
         filter_obj = CompositeFilter([IncompleteFilter(), TodayFilter()])

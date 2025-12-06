@@ -4,7 +4,7 @@ from datetime import datetime
 
 from taskdog_core.application.dto.single_task_inputs import PauseTaskInput
 from taskdog_core.application.use_cases.pause_task import PauseTaskUseCase
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
 from tests.application.use_cases.status_change_test_base import (
     BaseStatusChangeUseCaseTest,
 )
@@ -24,10 +24,12 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
 
     def test_execute_clears_actual_start_time(self):
         """Test execute clears actual start timestamp."""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        task.id = self.repository.generate_next_id()
-        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.IN_PROGRESS,
+            actual_start=datetime(2024, 1, 1, 10, 0, 0),
+        )
 
         input_dto = PauseTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
@@ -36,13 +38,14 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
 
     def test_execute_clears_actual_end_time(self):
         """Test execute clears actual end timestamp if present."""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.IN_PROGRESS)
-        task.id = self.repository.generate_next_id()
-        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
-        task.actual_end = datetime(
-            2024, 1, 1, 12, 0, 0
-        )  # Shouldn't normally exist for IN_PROGRESS
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.IN_PROGRESS,
+            actual_start=datetime(2024, 1, 1, 10, 0, 0),
+            # Shouldn't normally exist for IN_PROGRESS
+            actual_end=datetime(2024, 1, 1, 12, 0, 0),
+        )
 
         input_dto = PauseTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
@@ -51,9 +54,9 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
 
     def test_execute_with_pending_task_is_idempotent(self):
         """Test execute works correctly when task is already PENDING."""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.PENDING)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Test Task", priority=1, status=TaskStatus.PENDING
+        )
 
         input_dto = PauseTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)

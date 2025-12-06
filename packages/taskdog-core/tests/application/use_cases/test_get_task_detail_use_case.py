@@ -11,7 +11,6 @@ from taskdog_core.application.use_cases.get_task_detail import (
     GetTaskDetailInput,
     GetTaskDetailUseCase,
 )
-from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_core.infrastructure.persistence.file_notes_repository import (
     FileNotesRepository,
@@ -45,9 +44,7 @@ class TestGetTaskDetailUseCase:
 
     def test_execute_returns_task_detail_dto(self):
         """Test execute returns TaskDetailDTO with task data."""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Test Task", priority=1)
 
         input_dto = GetTaskDetailInput(task.id)
         result = self.use_case.execute(input_dto)
@@ -59,9 +56,7 @@ class TestGetTaskDetailUseCase:
 
     def test_execute_with_notes_file(self):
         """Test execute returns notes content when notes file exists."""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Test Task", priority=1)
 
         # Create notes file using NotesRepository
         notes_path = self.notes_repository.get_notes_path(task.id)
@@ -82,9 +77,7 @@ class TestGetTaskDetailUseCase:
 
     def test_execute_without_notes_file(self):
         """Test execute handles missing notes file gracefully."""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Test Task", priority=1)
 
         input_dto = GetTaskDetailInput(task.id)
         result = self.use_case.execute(input_dto)
@@ -103,7 +96,7 @@ class TestGetTaskDetailUseCase:
 
     def test_execute_preserves_task_properties(self):
         """Test execute preserves all task properties in DTO."""
-        task = Task(
+        task = self.repository.create(
             name="Complex Task",
             priority=2,
             planned_start=datetime(2024, 1, 1, 10, 0, 0),
@@ -111,8 +104,6 @@ class TestGetTaskDetailUseCase:
             deadline=datetime(2024, 1, 1, 18, 0, 0),
             estimated_duration=2.5,
         )
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
 
         input_dto = GetTaskDetailInput(task.id)
         result = self.use_case.execute(input_dto)
@@ -126,9 +117,7 @@ class TestGetTaskDetailUseCase:
 
     def test_execute_handles_corrupt_notes_file(self):
         """Test execute handles unreadable notes file gracefully."""
-        task = Task(name="Test Task", priority=1)
-        task.id = self.repository.generate_next_id()
-        self.repository.save(task)
+        task = self.repository.create(name="Test Task", priority=1)
 
         # Create notes file with restricted permissions using NotesRepository
         notes_path = self.notes_repository.get_notes_path(task.id)

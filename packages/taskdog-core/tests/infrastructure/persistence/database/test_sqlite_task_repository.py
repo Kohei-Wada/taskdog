@@ -163,22 +163,6 @@ class TestSqliteTaskRepository:
         # Should not raise error
         self.repository.delete(999)
 
-    def test_generate_next_id_starts_at_one(self):
-        """Test generate_next_id() returns 1 for empty database."""
-        next_id = self.repository.generate_next_id()
-        assert next_id == 1
-
-    def test_generate_next_id_increments(self):
-        """Test generate_next_id() increments from max ID."""
-        task1 = Task(id=1, name="Task 1", priority=1)
-        task2 = Task(id=5, name="Task 5", priority=1)
-
-        self.repository.save(task1)
-        self.repository.save(task2)
-
-        next_id = self.repository.generate_next_id()
-        assert next_id == 6
-
     def test_complex_field_serialization(self):
         """Test complex fields (daily_allocations, tags, etc.) are persisted correctly."""
         task = Task(

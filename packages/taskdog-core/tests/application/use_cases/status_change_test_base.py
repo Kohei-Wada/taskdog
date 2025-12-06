@@ -9,7 +9,7 @@ from datetime import datetime
 
 import pytest
 
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
@@ -53,11 +53,10 @@ class BaseStatusChangeUseCaseTest:
 
     def test_execute_sets_correct_status(self):
         """Test execute sets task status to the target status."""
-        task = Task(name="Test Task", priority=1, status=self.initial_status)
-        task.id = self.repository.generate_next_id()
+        kwargs = {"name": "Test Task", "priority": 1, "status": self.initial_status}
         if self.initial_status == TaskStatus.IN_PROGRESS:
-            task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
-        self.repository.save(task)
+            kwargs["actual_start"] = datetime(2024, 1, 1, 10, 0, 0)
+        task = self.repository.create(**kwargs)
 
         input_dto = self.request_class(task_id=task.id)
         result = self.use_case.execute(input_dto)
@@ -66,11 +65,10 @@ class BaseStatusChangeUseCaseTest:
 
     def test_execute_handles_timestamps_correctly(self):
         """Test execute handles actual_start/actual_end timestamps correctly."""
-        task = Task(name="Test Task", priority=1, status=self.initial_status)
-        task.id = self.repository.generate_next_id()
+        kwargs = {"name": "Test Task", "priority": 1, "status": self.initial_status}
         if self.initial_status == TaskStatus.IN_PROGRESS:
-            task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
-        self.repository.save(task)
+            kwargs["actual_start"] = datetime(2024, 1, 1, 10, 0, 0)
+        task = self.repository.create(**kwargs)
 
         input_dto = self.request_class(task_id=task.id)
         result = self.use_case.execute(input_dto)
@@ -86,11 +84,10 @@ class BaseStatusChangeUseCaseTest:
 
     def test_execute_persists_changes(self):
         """Test execute saves changes to repository."""
-        task = Task(name="Test Task", priority=1, status=self.initial_status)
-        task.id = self.repository.generate_next_id()
+        kwargs = {"name": "Test Task", "priority": 1, "status": self.initial_status}
         if self.initial_status == TaskStatus.IN_PROGRESS:
-            task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
-        self.repository.save(task)
+            kwargs["actual_start"] = datetime(2024, 1, 1, 10, 0, 0)
+        task = self.repository.create(**kwargs)
 
         input_dto = self.request_class(task_id=task.id)
         self.use_case.execute(input_dto)
@@ -119,11 +116,13 @@ class BaseStatusChangeUseCaseTest:
         self, finished_status, description
     ):
         """Test execute raises TaskAlreadyFinishedError for finished tasks."""
-        task = Task(name="Test Task", priority=1, status=finished_status)
-        task.id = self.repository.generate_next_id()
-        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
-        task.actual_end = datetime(2024, 1, 1, 12, 0, 0)
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Test Task",
+            priority=1,
+            status=finished_status,
+            actual_start=datetime(2024, 1, 1, 10, 0, 0),
+            actual_end=datetime(2024, 1, 1, 12, 0, 0),
+        )
 
         input_dto = self.request_class(task_id=task.id)
 
@@ -135,11 +134,13 @@ class BaseStatusChangeUseCaseTest:
 
     def test_execute_does_not_modify_finished_task_state(self):
         """Test execute does not modify state when attempted on finished task."""
-        task = Task(name="Test Task", priority=1, status=TaskStatus.COMPLETED)
-        task.id = self.repository.generate_next_id()
-        task.actual_start = datetime(2024, 1, 1, 10, 0, 0)
-        task.actual_end = datetime(2024, 1, 1, 12, 0, 0)
-        self.repository.save(task)
+        task = self.repository.create(
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.COMPLETED,
+            actual_start=datetime(2024, 1, 1, 10, 0, 0),
+            actual_end=datetime(2024, 1, 1, 12, 0, 0),
+        )
 
         input_dto = self.request_class(task_id=task.id)
 
