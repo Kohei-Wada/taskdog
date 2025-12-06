@@ -176,7 +176,7 @@ test-server: ## Run tests for taskdog-server with coverage
 
 test-ui: ## Run tests for taskdog-ui with coverage
 	@echo "Running taskdog-ui tests..."
-	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog --cov-report=term-missing:skip-covered --cov-fail-under=72
+	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog --cov-report=term-missing:skip-covered --cov-fail-under=75
 
 # ============================================================================
 # Code Quality Targets
