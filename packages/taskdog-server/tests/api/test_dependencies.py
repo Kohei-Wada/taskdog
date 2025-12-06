@@ -80,6 +80,7 @@ class TestDependencyInjection:
             f.write('[storage]\nbackend = "sqlite"\n')
             f.write('database_url = "sqlite:///:memory:"\n')
 
+        context = None
         try:
             # Mock XDG config path to use our temp file
             with patch(
@@ -103,6 +104,12 @@ class TestDependencyInjection:
             # Cleanup
             if os.path.exists(config_path):
                 os.unlink(config_path)
+            # Close database connections to prevent ResourceWarning
+            if context is not None:
+                if hasattr(context.repository, "close"):
+                    context.repository.close()
+                if hasattr(context.audit_log_controller._repository, "close"):
+                    context.audit_log_controller._repository.close()
 
     def test_get_query_controller(self):
         """Test getting query controller from context."""
@@ -312,6 +319,7 @@ class TestInitializeApiContext:
             f.write('[storage]\nbackend = "sqlite"\n')
             f.write('database_url = "sqlite:///:memory:"\n')
 
+        context = None
         try:
             with patch(
                 "taskdog_core.shared.xdg_utils.XDGDirectories.get_config_file",
@@ -329,6 +337,12 @@ class TestInitializeApiContext:
         finally:
             if os.path.exists(config_path):
                 os.unlink(config_path)
+            # Close database connections to prevent ResourceWarning
+            if context is not None:
+                if hasattr(context.repository, "close"):
+                    context.repository.close()
+                if hasattr(context.audit_log_controller._repository, "close"):
+                    context.audit_log_controller._repository.close()
 
     def test_initialize_creates_holiday_checker_when_country_configured(self):
         """Test that holiday checker is created when country is configured."""
@@ -342,6 +356,7 @@ class TestInitializeApiContext:
             f.write('database_url = "sqlite:///:memory:"\n')
             f.write('[region]\ncountry = "US"\n')
 
+        context = None
         try:
             with patch(
                 "taskdog_core.shared.xdg_utils.XDGDirectories.get_config_file",
@@ -355,6 +370,12 @@ class TestInitializeApiContext:
         finally:
             if os.path.exists(config_path):
                 os.unlink(config_path)
+            # Close database connections to prevent ResourceWarning
+            if context is not None:
+                if hasattr(context.repository, "close"):
+                    context.repository.close()
+                if hasattr(context.audit_log_controller._repository, "close"):
+                    context.audit_log_controller._repository.close()
 
     def test_initialize_handles_missing_holiday_library_gracefully(self):
         """Test that initialization continues even if holiday library is missing."""
@@ -368,6 +389,7 @@ class TestInitializeApiContext:
             f.write('database_url = "sqlite:///:memory:"\n')
             f.write('[region]\ncountry = "XX"\n')  # Invalid country code
 
+        context = None
         try:
             with patch(
                 "taskdog_core.shared.xdg_utils.XDGDirectories.get_config_file",
@@ -382,3 +404,9 @@ class TestInitializeApiContext:
         finally:
             if os.path.exists(config_path):
                 os.unlink(config_path)
+            # Close database connections to prevent ResourceWarning
+            if context is not None:
+                if hasattr(context.repository, "close"):
+                    context.repository.close()
+                if hasattr(context.audit_log_controller._repository, "close"):
+                    context.audit_log_controller._repository.close()
