@@ -240,7 +240,7 @@ def in_progress_task(repository, task_factory) -> Task:
     task = task_factory.create(name="In Progress Task")
     task.status = TaskStatus.IN_PROGRESS
     task.actual_start = datetime.now()
-    repository.update(task)
+    repository.save(task)
     return repository.get_by_id(task.id)
 
 
@@ -251,7 +251,7 @@ def completed_task(repository, task_factory) -> Task:
     task.status = TaskStatus.COMPLETED
     task.actual_start = datetime.now()
     task.actual_end = datetime.now()
-    repository.update(task)
+    repository.save(task)
     return repository.get_by_id(task.id)
 
 
@@ -262,7 +262,7 @@ def canceled_task(repository, task_factory) -> Task:
     task.status = TaskStatus.CANCELED
     task.actual_start = datetime.now()
     task.actual_end = datetime.now()
-    repository.update(task)
+    repository.save(task)
     return repository.get_by_id(task.id)
 
 
