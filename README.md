@@ -284,12 +284,24 @@ taskdog optimize -a balanced             # Use balanced algorithm
 
 Taskdog uses separate config files for different purposes:
 
+**Server config**: `~/.config/taskdog/server.toml`
+
+```toml
+[auth]
+enabled = true
+
+[[auth.api_keys]]
+name = "my-client"
+key = "your-secret-key"
+```
+
 **CLI/TUI config**: `~/.config/taskdog/cli.toml`
 
 ```toml
 [api]
 host = "127.0.0.1"
 port = 8000
+api_key = "your-secret-key"
 
 [ui]
 theme = "tokyo-night"
