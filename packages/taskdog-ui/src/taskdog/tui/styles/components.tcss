@@ -125,7 +125,7 @@ Input {
 }
 
 #search-input:focus {
-    border: round $accent;
+    border: double $accent;
 }
 
 .search-result {
