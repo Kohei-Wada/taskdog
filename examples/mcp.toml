@@ -23,7 +23,7 @@ port = 8000
 # Generate a key using: python -c "import secrets; print(f'sk-{secrets.token_hex(24)}')"
 # This key must match one configured in server.toml's [[auth.api_keys]] section.
 # Environment variable: TASKDOG_API_KEY
-api_key = "sk-change-me-to-match-server-toml"
+# api_key = ""  # Set via TASKDOG_API_KEY environment variable (recommended)
 
 # =============================================================================
 # MCP Server Settings

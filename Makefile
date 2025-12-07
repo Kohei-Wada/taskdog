@@ -200,7 +200,7 @@ test-ui: ## Run tests for taskdog-ui with coverage
 
 test-mcp: ## Run tests for taskdog-mcp with coverage
 	@echo "Running taskdog-mcp tests..."
-	cd packages/taskdog-mcp && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_mcp --cov-report=term-missing:skip-covered || true
+	cd packages/taskdog-mcp && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_mcp --cov-report=term-missing:skip-covered --cov-fail-under=50
 
 # ============================================================================
 # Code Quality Targets
