@@ -21,7 +21,7 @@ MainScreen {
     width: 100%;
     height: 3fr;
     background: transparent;
-    border: double $primary;
+    border: round $primary;
     margin-bottom: 1;
 }
 
@@ -35,7 +35,7 @@ MainScreen {
     max-width: 100%;
     height: auto;
     min-height: 30;
-    border: double $primary;
+    border: round $primary;
 }
 
 /* Task table - main content */
@@ -43,7 +43,7 @@ MainScreen {
     width: 100%;
     height: 2fr;
     background: transparent;
-    border: double $primary;
+    border: round $primary;
     overflow-y: auto;
 }
 

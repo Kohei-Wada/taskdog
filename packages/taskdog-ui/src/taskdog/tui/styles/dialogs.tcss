@@ -18,7 +18,7 @@ HelpDialog {
 .dialog-base {
     height: auto;
     background: $surface;
-    border: double $primary;
+    border: round $primary;
     padding: 1;
 }
 
@@ -61,7 +61,7 @@ HelpDialog {
     height: auto;
     max-height: 12;
     margin: 0 0 1 0;
-    border: double $primary;
+    border: round $primary;
 }
 
 /* Form container */
@@ -123,7 +123,7 @@ HelpDialog {
 
 /* Confirmation Dialog */
 #confirmation-dialog {
-    border: double $error;  /* Double border for extra emphasis on dangerous actions */
+    border: round $error;  /* Colored border for emphasis on dangerous actions */
 }
 
 /* Task Form Dialog (Add/Edit) */
