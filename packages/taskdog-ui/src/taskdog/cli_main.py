@@ -20,7 +20,6 @@ from taskdog.cli.commands.priority import priority_command
 from taskdog.cli.commands.remove_dependency import remove_dependency_command
 from taskdog.cli.commands.rename import rename_command
 from taskdog.cli.commands.reopen import reopen_command
-from taskdog.cli.commands.report import report_command
 from taskdog.cli.commands.restore import restore_command
 from taskdog.cli.commands.rm import rm_command
 from taskdog.cli.commands.schedule import schedule_command
@@ -154,7 +153,6 @@ cli.add_command(priority_command)
 cli.add_command(remove_dependency_command)
 cli.add_command(rename_command)
 cli.add_command(reopen_command)
-cli.add_command(report_command)
 cli.add_command(restore_command)
 cli.add_command(estimate_command)
 cli.add_command(schedule_command)

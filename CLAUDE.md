@@ -384,7 +384,6 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 - `today`: Today's tasks (deadline today, planned includes today, or IN_PROGRESS)
 - `week`: This week's tasks
 - `export [--format json|csv] [--output] [--fields] [--all] [--status] [--tag]`: Export tasks (exports non-archived tasks by default)
-- `report [--all] [--status] [--tag] [--start-date] [--end-date]`: Generate markdown workload report grouped by date (useful for Notion export)
 - `stats [--period all|7d|30d] [--focus all|basic|time|estimation|deadline|priority|trends]`: Analytics
 
 **Interactive**
