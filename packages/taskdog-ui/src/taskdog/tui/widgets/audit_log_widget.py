@@ -120,7 +120,7 @@ class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
         if len(entries) > self.MAX_LOGS:
             for entry in entries[self.MAX_LOGS :]:
                 entry.remove()
-            self._log_count = self.MAX_LOGS
+            self._log_count = len(self.query(".audit-log-entry"))
 
     @property
     def log_count(self) -> int:
