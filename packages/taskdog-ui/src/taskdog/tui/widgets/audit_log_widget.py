@@ -1,92 +1,38 @@
 """Audit log widget for displaying real-time audit logs in TUI.
 
-This widget displays audit log entries in a side panel as cards,
-showing operation details with timestamps, success status, and client info.
+This widget displays audit log entries in a side panel using Textual Static
+widgets styled with CSS, showing operation details with timestamps, success
+status, and client info.
 """
 
-from collections import deque
 from typing import Any, ClassVar
 
-from rich.console import Group
-from rich.panel import Panel
-from rich.text import Text
-from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import VerticalScroll
 from textual.widgets import Static
 
 from taskdog.tui.widgets.base_widget import TUIWidget
+from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
 
 
-class AuditLogWidget(VerticalScroll, TUIWidget):
+class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
     """A widget for displaying audit logs in a side panel.
 
     Features:
-    - Displays recent audit log entries
+    - Displays recent audit log entries as styled Static widgets
     - Auto-updates when new logs are received
     - Supports scrolling with Vi-style bindings
     - Limited buffer to prevent memory issues
     """
 
     MAX_LOGS: ClassVar[int] = 50
-
-    BINDINGS: ClassVar = [
-        Binding(
-            "j",
-            "scroll_down",
-            "Scroll Down",
-            show=False,
-            tooltip="Scroll down one line (Vi-style)",
-        ),
-        Binding(
-            "k",
-            "scroll_up",
-            "Scroll Up",
-            show=False,
-            tooltip="Scroll up one line (Vi-style)",
-        ),
-        Binding(
-            "g",
-            "scroll_home",
-            "Top",
-            show=False,
-            tooltip="Scroll to top (Vi-style)",
-        ),
-        Binding(
-            "G",
-            "scroll_end",
-            "Bottom",
-            show=False,
-            tooltip="Scroll to bottom (Vi-style)",
-        ),
-        Binding(
-            "ctrl+d",
-            "page_down",
-            "Page Down",
-            show=False,
-            tooltip="Scroll down half a page",
-        ),
-        Binding(
-            "ctrl+u",
-            "page_up",
-            "Page Up",
-            show=False,
-            tooltip="Scroll up half a page",
-        ),
-    ]
+    BINDINGS: ClassVar = ViNavigationMixin.VI_SCROLL_BINDINGS
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the audit log widget."""
         super().__init__(*args, **kwargs)
         self.can_focus = True
-        self._logs: deque[AuditLogOutput] = deque(maxlen=self.MAX_LOGS)
-        self._content_widget: Static | None = None
-
-    def compose(self) -> ComposeResult:
-        """Compose the widget layout."""
-        self._content_widget = Static("", id="audit-logs-content")
-        yield self._content_widget
+        self._log_count = 0
 
     def load_logs(self, logs: list[AuditLogOutput]) -> None:
         """Load logs from API response.
@@ -94,10 +40,9 @@ class AuditLogWidget(VerticalScroll, TUIWidget):
         Args:
             logs: List of audit log entries (newest first from API)
         """
-        self._logs.clear()
+        self.clear_logs()
         for log in logs:
-            self._logs.append(log)
-        self._render_logs()
+            self._mount_log_entry(log)
 
     def add_log(self, log: AuditLogOutput) -> None:
         """Add a new log entry at the beginning.
@@ -105,95 +50,79 @@ class AuditLogWidget(VerticalScroll, TUIWidget):
         Args:
             log: New audit log entry
         """
-        self._logs.appendleft(log)
-        self._render_logs()
+        self._mount_log_entry(log, prepend=True)
+        self._trim_old_logs()
 
     def clear_logs(self) -> None:
         """Clear all logs from the widget."""
-        self._logs.clear()
-        self._render_logs()
+        self.query(".audit-log-entry").remove()
+        self._log_count = 0
 
-    def _render_logs(self) -> None:
-        """Render all logs as cards."""
-        if not self._content_widget:
-            return
+    def _mount_log_entry(self, log: AuditLogOutput, prepend: bool = False) -> None:
+        """Mount a log entry as a Static widget.
 
-        if not self._logs:
-            self._content_widget.update("[dim]No audit logs available[/dim]")
-            return
+        Args:
+            log: Audit log entry to display
+            prepend: If True, insert at beginning; otherwise append
+        """
+        content = self._format_log_content(log)
+        status_class = "log-success" if log.success else "log-error"
+        widget = Static(content, classes=f"audit-log-entry {status_class}")
 
-        cards = [self._format_log_card(log) for log in self._logs]
-        self._content_widget.update(Group(*cards))
+        if prepend and self._log_count > 0:
+            self.mount(widget, before=0)
+        else:
+            self.mount(widget)
+        self._log_count += 1
 
-    def _format_log_card(self, log: AuditLogOutput) -> Panel:
-        """Format a single log entry as a card.
+    def _format_log_content(self, log: AuditLogOutput) -> str:
+        """Format log entry content as markup text.
 
         Args:
             log: Audit log entry to format
 
         Returns:
-            Rich Panel representing the log entry
+            Formatted markup string
         """
-        # Status and border color
-        if log.success:
-            status_icon = "[green]OK[/green]"
-            border_style = "green"
-        else:
-            status_icon = "[red]ER[/red]"
-            border_style = "red"
-
-        # Build card content
-        lines: list[Text] = []
+        lines: list[str] = []
 
         # Line 1: Timestamp and status
         ts = log.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        line1 = Text()
-        line1.append(ts, style="dim")
-        line1.append("  ")
-        line1.append_text(Text.from_markup(status_icon))
-        lines.append(line1)
+        status = "[green]OK[/]" if log.success else "[red]ER[/]"
+        lines.append(f"[dim]{ts}[/]  {status}")
 
         # Line 2: Operation
-        line2 = Text()
-        line2.append(log.operation, style="cyan bold")
-        lines.append(line2)
+        lines.append(f"[cyan bold]{log.operation}[/]")
 
         # Line 3: Resource info (if exists)
         if log.resource_id or log.resource_name:
-            line3 = Text()
+            parts: list[str] = []
             if log.resource_id:
-                line3.append(f"#{log.resource_id}", style="yellow")
+                parts.append(f"[yellow]#{log.resource_id}[/]")
             if log.resource_name:
-                if log.resource_id:
-                    line3.append(" ")
                 name = (
                     log.resource_name[:30] + "..."
                     if len(log.resource_name) > 30
                     else log.resource_name
                 )
-                line3.append(name)
-            lines.append(line3)
+                parts.append(name)
+            lines.append(" ".join(parts))
 
         # Line 4: Client (if exists)
         if log.client_name:
-            line4 = Text()
-            line4.append(f"@{log.client_name}", style="dim italic")
-            lines.append(line4)
+            lines.append(f"[dim italic]@{log.client_name}[/]")
 
-        # Combine lines
-        content = Text("\n").join(lines)
+        return "\n".join(lines)
 
-        return Panel(
-            content,
-            border_style=border_style,
-            padding=(0, 1),
-        )
+    def _trim_old_logs(self) -> None:
+        """Remove old logs exceeding MAX_LOGS."""
+        entries = list(self.query(".audit-log-entry"))
+        if len(entries) > self.MAX_LOGS:
+            for entry in entries[self.MAX_LOGS :]:
+                entry.remove()
+            self._log_count = self.MAX_LOGS
 
     @property
     def log_count(self) -> int:
-        """Get the current number of logs.
-
-        Returns:
-            Number of logs currently in the widget
-        """
-        return len(self._logs)
+        """Get the current number of logs."""
+        return self._log_count
