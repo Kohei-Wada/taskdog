@@ -100,5 +100,17 @@ class ViNavigationMixin:
         + VI_HORIZONTAL_JUMP_BINDINGS
     )
 
+    # Scroll-compatible bindings for VerticalScroll containers
+    # These map to built-in scroll_* actions instead of vi_* actions
+    VI_SCROLL_BINDINGS: ClassVar = [
+        Binding("j", "scroll_down", "Down", show=False),
+        Binding("k", "scroll_up", "Up", show=False),
+        Binding("g", "scroll_home", "Top", show=False),
+        Binding("G", "scroll_end", "Bottom", show=False),
+        Binding("ctrl+d", "page_down", "Page Down", show=False),
+        Binding("ctrl+u", "page_up", "Page Up", show=False),
+    ]
+
     # Note: Widgets must implement action_vi_* methods corresponding to the bindings
     # they use. Default implementations are not provided as behavior varies by widget type.
+    # For scroll containers, use VI_SCROLL_BINDINGS which map to built-in scroll actions.

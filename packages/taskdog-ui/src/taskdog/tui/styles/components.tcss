@@ -175,7 +175,19 @@ Input {
     border: double $accent;
 }
 
-#audit-logs-content {
+/* Audit Log Entry Cards */
+.audit-log-entry {
     width: 100%;
     height: auto;
+    padding: 0 1;
+    margin-bottom: 1;
+    border: solid $primary;
+}
+
+.audit-log-entry.log-success {
+    border: solid $success;
+}
+
+.audit-log-entry.log-error {
+    border: solid $error;
 }
