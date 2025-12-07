@@ -64,18 +64,21 @@ class TaskdogGroup(click.Group):
     invoke_without_command=True,
 )
 @click.option(
+    "-H",
     "--host",
     type=str,
     default=None,
     help="API server host (overrides config/env)",
 )
 @click.option(
+    "-p",
     "--port",
     type=click.IntRange(1, 65535),
     default=None,
     help="API server port (overrides config/env)",
 )
 @click.option(
+    "-k",
     "--api-key",
     type=str,
     default=None,
