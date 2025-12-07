@@ -13,7 +13,11 @@ from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
+from taskdog_core.domain.exceptions.task_exceptions import (
+    AuthenticationError,
+    ServerConnectionError,
+    ServerError,
+)
 
 
 def create_task_dto(task_id: int, name: str, status: TaskStatus) -> TaskRowDto:
@@ -503,6 +507,178 @@ class TestRecalculateGantt:
 
         # Verify widget was NOT updated
         self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
+
+
+class TestErrorHandling:
+    """Test cases for error handling in TaskUIManager."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures."""
+        self.state = TUIState()
+        self.task_data_loader = MagicMock(spec=TaskDataLoader)
+        self.main_screen = MagicMock()
+        self.main_screen.gantt_widget = MagicMock()
+        self.main_screen.gantt_widget.calculate_date_range.return_value = (
+            date.today(),
+            date.today() + timedelta(days=7),
+        )
+        self.main_screen.gantt_widget.get_filter_all.return_value = False
+        self.main_screen.gantt_widget.get_sort_by.return_value = "deadline"
+        self.on_connection_error = MagicMock()
+        self.on_auth_error = MagicMock()
+        self.on_server_error = MagicMock()
+
+        # Setup mock API client and presenter on task_data_loader
+        self.task_data_loader.api_client = MagicMock()
+        self.task_data_loader.gantt_presenter = MagicMock()
+
+        self.manager = TaskUIManager(
+            state=self.state,
+            task_data_loader=self.task_data_loader,
+            main_screen_provider=lambda: self.main_screen,
+            on_connection_error=self.on_connection_error,
+            on_auth_error=self.on_auth_error,
+            on_server_error=self.on_server_error,
+        )
+
+    def test_fetch_task_data_handles_authentication_error(self):
+        """Test _fetch_task_data calls auth error callback."""
+        self.task_data_loader.load_tasks.side_effect = AuthenticationError(
+            message="Unauthorized",
+        )
+
+        result = self.manager._fetch_task_data()
+
+        self.on_auth_error.assert_called_once()
+        assert result.all_tasks == []
+
+    def test_fetch_task_data_handles_server_error(self):
+        """Test _fetch_task_data calls server error callback."""
+        self.task_data_loader.load_tasks.side_effect = ServerError(
+            status_code=500,
+            message="Internal Server Error",
+        )
+
+        result = self.manager._fetch_task_data()
+
+        self.on_server_error.assert_called_once()
+        assert result.all_tasks == []
+
+    def test_recalculate_gantt_handles_authentication_error(self):
+        """Test recalculate_gantt calls auth error callback."""
+        self.task_data_loader.api_client.list_tasks.side_effect = AuthenticationError(
+            message="Unauthorized",
+        )
+
+        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
+
+        self.on_auth_error.assert_called_once()
+        self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
+
+    def test_recalculate_gantt_handles_server_error(self):
+        """Test recalculate_gantt calls server error callback."""
+        self.task_data_loader.api_client.list_tasks.side_effect = ServerError(
+            status_code=500,
+            message="Internal Server Error",
+        )
+
+        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
+
+        self.on_server_error.assert_called_once()
+        self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
+
+
+class TestCreateEmptyTaskData:
+    """Test cases for _create_empty_task_data method."""
+
+    def test_create_empty_task_data_returns_empty_data(self):
+        """Test _create_empty_task_data returns valid empty TaskData."""
+        state = TUIState()
+        task_data_loader = MagicMock(spec=TaskDataLoader)
+        manager = TaskUIManager(
+            state=state,
+            task_data_loader=task_data_loader,
+            main_screen_provider=lambda: None,
+        )
+
+        result = manager._create_empty_task_data()
+
+        assert result.all_tasks == []
+        assert result.filtered_tasks == []
+        assert result.table_view_models == []
+        assert result.gantt_view_model is None
+        assert result.filtered_gantt_view_model is None
+        assert result.task_list_output.total_count == 0
+        assert result.task_list_output.filtered_count == 0
+
+
+class TestRefreshUIEdgeCases:
+    """Test cases for _refresh_ui edge cases."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures."""
+        self.state = TUIState()
+        self.task_data_loader = MagicMock(spec=TaskDataLoader)
+        self.main_screen = MagicMock()
+
+    def test_refresh_ui_without_gantt_widget(self):
+        """Test _refresh_ui handles missing gantt_widget gracefully."""
+        self.main_screen.gantt_widget = None
+
+        manager = TaskUIManager(
+            state=self.state,
+            task_data_loader=self.task_data_loader,
+            main_screen_provider=lambda: self.main_screen,
+        )
+
+        task = create_task_dto(1, "Test Task", TaskStatus.PENDING)
+        vm = create_task_viewmodel(1, "Test Task", TaskStatus.PENDING)
+        gantt = create_gantt_viewmodel()
+        task_data = create_task_data([task], [vm], gantt)
+
+        # Execute - should not raise
+        manager._refresh_ui(task_data, keep_scroll_position=False)
+
+        # Verify task table was still updated
+        self.main_screen.refresh_tasks.assert_called_once()
+
+    def test_refresh_ui_without_filtered_gantt(self):
+        """Test _refresh_ui handles None filtered_gantt_view_model gracefully."""
+        self.main_screen.gantt_widget = MagicMock()
+
+        manager = TaskUIManager(
+            state=self.state,
+            task_data_loader=self.task_data_loader,
+            main_screen_provider=lambda: self.main_screen,
+        )
+
+        # Create task_data with None filtered_gantt_view_model
+        task = create_task_dto(1, "Test Task", TaskStatus.PENDING)
+        vm = create_task_viewmodel(1, "Test Task", TaskStatus.PENDING)
+        task_data = TaskData(
+            all_tasks=[task],
+            filtered_tasks=[task],
+            task_list_output=TaskListOutput(
+                tasks=[task],
+                total_count=1,
+                filtered_count=1,
+                gantt_data=None,
+            ),
+            table_view_models=[vm],
+            gantt_view_model=None,
+            filtered_gantt_view_model=None,  # None gantt
+        )
+
+        # Execute - should not raise
+        manager._refresh_ui(task_data, keep_scroll_position=False)
+
+        # Verify gantt_widget.update_gantt was NOT called (no gantt data)
+        self.main_screen.gantt_widget.update_gantt.assert_not_called()
+
+        # Verify task table was still updated
+        self.main_screen.refresh_tasks.assert_called_once()
 
 
 class TestTaskUIManagerWithoutErrorCallback:
