@@ -8,15 +8,17 @@ from datetime import date, datetime
 from typing import Any
 
 import httpx  # type: ignore[import-not-found]
+from taskdog_client import (  # type: ignore[import-not-found]
+    AnalyticsClient,
+    AuditClient,
+    BaseApiClient,
+    LifecycleClient,
+    NotesClient,
+    QueryClient,
+    RelationshipClient,
+    TaskClient,
+)
 
-from taskdog.infrastructure.api.analytics_client import AnalyticsClient
-from taskdog.infrastructure.api.audit_client import AuditClient
-from taskdog.infrastructure.api.base_client import BaseApiClient
-from taskdog.infrastructure.api.lifecycle_client import LifecycleClient
-from taskdog.infrastructure.api.notes_client import NotesClient
-from taskdog.infrastructure.api.query_client import QueryClient
-from taskdog.infrastructure.api.relationship_client import RelationshipClient
-from taskdog.infrastructure.api.task_client import TaskClient
 from taskdog_core.application.dto.audit_log_dto import AuditLogListOutput
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput

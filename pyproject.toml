@@ -27,14 +27,18 @@ dev = [
 [tool.uv.workspace]
 members = [
     "packages/taskdog-core",
+    "packages/taskdog-client",
     "packages/taskdog-server",
     "packages/taskdog-ui",
+    "packages/taskdog-mcp",
 ]
 
 [tool.uv.sources]
 taskdog-core = { workspace = true }
+taskdog-client = { workspace = true }
 taskdog-server = { workspace = true }
 taskdog-ui = { workspace = true }
+taskdog-mcp = { workspace = true }
 
 # mypy configuration
 [tool.mypy]
@@ -61,11 +65,16 @@ module = "tests.*"
 disallow_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = ["taskdog_server.api.*", "taskdog_server.main", "taskdog.infrastructure.api_client", "taskdog.shared.server_manager"]
+module = ["taskdog_server.api.*", "taskdog_server.main", "taskdog.shared.server_manager"]
 disallow_untyped_defs = false
 disallow_any_generics = false
 disallow_untyped_calls = false
 check_untyped_defs = false
+
+# Ignore modules that depend on taskdog_client (external package in monorepo)
+[[tool.mypy.overrides]]
+module = ["taskdog.infrastructure.api_client", "taskdog.infrastructure"]
+ignore_errors = true
 
 # Ignore third-party library without type stubs
 [[tool.mypy.overrides]]

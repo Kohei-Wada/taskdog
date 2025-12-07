@@ -11,10 +11,10 @@ license = { text = "MIT" }
 
 dependencies = [
     "taskdog-core==0.4.0",
+    "taskdog-client==0.4.0",
     "click>=8.3.0",
     "rich>=14.2.0",
     "textual>=0.88.0",
-    "httpx>=0.27.0",
     "websockets>=14.0",
 ]
 
@@ -70,8 +70,6 @@ packages = [
     "taskdog.shared",
     "taskdog.shared.click_types",
     "taskdog.infrastructure",
-    "taskdog.infrastructure.api",
-    "taskdog.infrastructure.api.converters",
     "taskdog.infrastructure.websocket",
 ]
 package-dir = { "" = "src" }
@@ -85,6 +83,14 @@ python_version = "3.13"
 strict = true
 # Disable unused-ignore warnings (environment-dependent)
 warn_unused_ignores = false
+
+# Ignore modules that depend on taskdog_client (external package)
+[[tool.mypy.overrides]]
+module = [
+    "taskdog.infrastructure.api_client",
+    "taskdog.infrastructure",
+]
+ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

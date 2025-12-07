@@ -1,0 +1,176 @@
+"""Tests for BaseApiClient."""
+
+from unittest.mock import Mock, patch
+
+import httpx
+import pytest
+from taskdog_client.base_client import BaseApiClient
+
+from taskdog_core.domain.exceptions.task_exceptions import (
+    AuthenticationError,
+    ServerConnectionError,
+    ServerError,
+    TaskNotFoundException,
+    TaskValidationError,
+)
+
+
+class TestBaseApiClient:
+    """Test cases for BaseApiClient."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures."""
+        self.base_url = "http://test.example.com"
+        self.timeout = 10.0
+
+    def test_init(self):
+        """Test client initialization."""
+        client = BaseApiClient(self.base_url, self.timeout)
+
+        assert client.base_url == self.base_url
+        assert isinstance(client.client, httpx.Client)
+
+    def test_init_strips_trailing_slash(self):
+        """Test base URL trailing slash is stripped."""
+        client = BaseApiClient("http://test.example.com/", self.timeout)
+
+        assert client.base_url == "http://test.example.com"
+
+    def test_context_manager(self):
+        """Test context manager protocol."""
+        with BaseApiClient(self.base_url, self.timeout) as client:
+            assert isinstance(client, BaseApiClient)
+
+    @patch("taskdog_client.base_client.httpx.Client")
+    def test_close(self, mock_client_class):
+        """Test close method closes underlying client."""
+        mock_client_instance = Mock()
+        mock_client_class.return_value = mock_client_instance
+
+        client = BaseApiClient(self.base_url, self.timeout)
+        client.close()
+
+        mock_client_instance.close.assert_called_once()
+
+    @pytest.mark.parametrize(
+        "status_code,expected_exception,detail_message",
+        [
+            (404, TaskNotFoundException, "Task not found"),
+            (400, TaskValidationError, "Validation failed"),
+        ],
+        ids=["404_error", "400_error"],
+    )
+    def test_handle_error_status_codes(
+        self, status_code, expected_exception, detail_message
+    ):
+        """Test _handle_error raises appropriate exceptions for error status codes."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = status_code
+        response.json.return_value = {"detail": detail_message}
+
+        with pytest.raises(expected_exception) as exc_info:
+            client._handle_error(response)
+
+        assert detail_message in str(exc_info.value)
+
+    def test_handle_error_401_status(self):
+        """Test _handle_error raises AuthenticationError for 401."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = 401
+
+        with pytest.raises(AuthenticationError) as exc_info:
+            client._handle_error(response)
+
+        assert "Authentication failed" in str(exc_info.value)
+
+    def test_handle_error_5xx_status(self):
+        """Test _handle_error raises ServerError for 5xx errors."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = 500
+        response.json.return_value = {"detail": "Internal server error"}
+
+        with pytest.raises(ServerError) as exc_info:
+            client._handle_error(response)
+
+        assert "500" in str(exc_info.value)
+        assert "Internal server error" in str(exc_info.value)
+
+    def test_handle_error_5xx_status_no_json(self):
+        """Test _handle_error handles 5xx errors without JSON body."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = 502
+        response.json.side_effect = Exception("No JSON")
+
+        with pytest.raises(ServerError) as exc_info:
+            client._handle_error(response)
+
+        assert "502" in str(exc_info.value)
+        assert "Server error occurred" in str(exc_info.value)
+
+    def test_handle_error_other_status(self):
+        """Test _handle_error calls raise_for_status for other errors."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        response = Mock()
+        response.status_code = 403  # Use 403 Forbidden as "other" error
+        response.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Forbidden", request=Mock(), response=response
+        )
+
+        with pytest.raises(httpx.HTTPStatusError):
+            client._handle_error(response)
+
+        response.raise_for_status.assert_called_once()
+
+    @patch.object(BaseApiClient, "_handle_error")
+    def test_safe_request_success(self, mock_handle_error):
+        """Test _safe_request executes successful request."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        mock_response = Mock()
+        mock_response.status_code = 200
+        client.client.get = Mock(return_value=mock_response)
+
+        response = client._safe_request("get", "/test")
+
+        assert response == mock_response
+        mock_handle_error.assert_not_called()
+
+    @pytest.mark.parametrize(
+        "exception_to_raise,should_check_base_url",
+        [
+            (httpx.ConnectError("Connection failed"), True),
+            (httpx.TimeoutException("Timeout"), False),
+            (httpx.RequestError("Request failed"), False),
+        ],
+        ids=["connect_error", "timeout_error", "request_error"],
+    )
+    def test_safe_request_connection_errors(
+        self, exception_to_raise, should_check_base_url
+    ):
+        """Test _safe_request raises ServerConnectionError on connection failures."""
+        client = BaseApiClient(self.base_url, self.timeout)
+        client.client.get = Mock(side_effect=exception_to_raise)
+
+        with pytest.raises(ServerConnectionError) as exc_info:
+            client._safe_request("get", "/test")
+
+        if should_check_base_url:
+            assert self.base_url in str(exc_info.value)
+
+    def test_safe_request_calls_correct_method(self):
+        """Test _safe_request calls the specified HTTP method."""
+        client = BaseApiClient(self.base_url, self.timeout)
+
+        for method in ["get", "post", "patch", "delete", "put"]:
+            mock_response = Mock()
+            setattr(client.client, method, Mock(return_value=mock_response))
+
+            client._safe_request(method, "/test", param="value")
+
+            getattr(client.client, method).assert_called_once_with(
+                "/test", param="value"
+            )

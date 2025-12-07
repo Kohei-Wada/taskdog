@@ -1,0 +1,222 @@
+"""Task CRUD MCP tools.
+
+Tools for creating, reading, updating, and deleting tasks.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
+
+from mcp.server.fastmcp import FastMCP
+
+if TYPE_CHECKING:
+    from taskdog_mcp.server import TaskdogMcpClients
+
+
+def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
+    """Register task CRUD tools with the MCP server.
+
+    Args:
+        mcp: FastMCP server instance
+        clients: API clients container
+    """
+
+    @mcp.tool()
+    def list_tasks(
+        include_archived: bool = False,
+        status: str | None = None,
+        tags: list[str] | None = None,
+        sort_by: str = "id",
+        reverse: bool = False,
+    ) -> dict[str, Any]:
+        """List all tasks with optional filtering.
+
+        Args:
+            include_archived: Include archived tasks (default: False)
+            status: Filter by status (PENDING, IN_PROGRESS, COMPLETED, CANCELED)
+            tags: Filter by tags (OR logic)
+            sort_by: Sort field (id, name, priority, deadline, status)
+            reverse: Reverse sort order
+
+        Returns:
+            Dictionary with tasks list and metadata
+        """
+        result = clients.queries.list_tasks(
+            all=include_archived,
+            status=status,
+            tags=tags,
+            sort_by=sort_by,
+            reverse=reverse,
+        )
+        return {
+            "tasks": [
+                {
+                    "id": t.id,
+                    "name": t.name,
+                    "status": t.status.value,
+                    "priority": t.priority,
+                    "deadline": t.deadline.isoformat() if t.deadline else None,
+                    "tags": list(t.tags) if t.tags else [],
+                    "estimated_duration": t.estimated_duration,
+                    "is_archived": t.is_archived,
+                }
+                for t in result.tasks
+            ],
+            "total": result.filtered_count,
+        }
+
+    @mcp.tool()
+    def get_task(task_id: int) -> dict[str, Any]:
+        """Get detailed information about a specific task.
+
+        Args:
+            task_id: The ID of the task to retrieve
+
+        Returns:
+            Task details including notes
+        """
+        result = clients.queries.get_task_detail(task_id)
+        task = result.task
+        return {
+            "id": task.id,
+            "name": task.name,
+            "status": task.status.value,
+            "priority": task.priority,
+            "deadline": task.deadline.isoformat() if task.deadline else None,
+            "planned_start": task.planned_start.isoformat()
+            if task.planned_start
+            else None,
+            "planned_end": task.planned_end.isoformat() if task.planned_end else None,
+            "estimated_duration": task.estimated_duration,
+            "actual_duration_hours": task.actual_duration_hours,
+            "tags": list(task.tags) if task.tags else [],
+            "depends_on": list(task.depends_on) if task.depends_on else [],
+            "is_fixed": task.is_fixed,
+            "is_archived": task.is_archived,
+            "notes": result.notes_content,
+        }
+
+    @mcp.tool()
+    def create_task(
+        name: str,
+        priority: int | None = None,
+        deadline: str | None = None,
+        estimated_duration: float | None = None,
+        tags: list[str] | None = None,
+        is_fixed: bool = False,
+    ) -> dict[str, Any]:
+        """Create a new task.
+
+        Args:
+            name: Task name (required)
+            priority: Task priority (higher = more important, default from config)
+            deadline: Deadline in ISO format (YYYY-MM-DDTHH:MM:SS)
+            estimated_duration: Estimated hours to complete
+            tags: List of tags for categorization
+            is_fixed: Whether schedule is fixed (won't be moved by optimizer)
+
+        Returns:
+            Created task data with ID
+        """
+        deadline_dt = datetime.fromisoformat(deadline) if deadline else None
+
+        result = clients.tasks.create_task(
+            name=name,
+            priority=priority,
+            deadline=deadline_dt,
+            estimated_duration=estimated_duration,
+            tags=tags,
+            is_fixed=is_fixed,
+        )
+        return {
+            "id": result.id,
+            "name": result.name,
+            "status": result.status.value,
+            "priority": result.priority,
+            "message": f"Task '{result.name}' created successfully",
+        }
+
+    @mcp.tool()
+    def update_task(
+        task_id: int,
+        name: str | None = None,
+        priority: int | None = None,
+        deadline: str | None = None,
+        estimated_duration: float | None = None,
+        tags: list[str] | None = None,
+        is_fixed: bool | None = None,
+    ) -> dict[str, Any]:
+        """Update an existing task.
+
+        Args:
+            task_id: ID of the task to update
+            name: New task name
+            priority: New priority
+            deadline: New deadline in ISO format
+            estimated_duration: New estimated duration in hours
+            tags: New tags list (replaces existing)
+            is_fixed: New fixed status
+
+        Returns:
+            Updated task data
+        """
+        deadline_dt = datetime.fromisoformat(deadline) if deadline else None
+
+        result = clients.tasks.update_task(
+            task_id=task_id,
+            name=name,
+            priority=priority,
+            deadline=deadline_dt,
+            estimated_duration=estimated_duration,
+            tags=tags,
+            is_fixed=is_fixed,
+        )
+        # TaskUpdateOutput has .task (TaskOperationOutput) and .updated_fields
+        task = result.task
+        return {
+            "id": task.id,
+            "name": task.name,
+            "status": task.status.value,
+            "priority": task.priority,
+            "message": f"Task '{task.name}' updated successfully",
+        }
+
+    @mcp.tool()
+    def delete_task(task_id: int, hard: bool = False) -> dict[str, Any]:
+        """Delete a task.
+
+        Args:
+            task_id: ID of the task to delete
+            hard: If True, permanently delete. If False, archive (soft delete).
+
+        Returns:
+            Confirmation message
+        """
+        if hard:
+            clients.tasks.remove_task(task_id)
+            return {"message": f"Task {task_id} permanently deleted"}
+        else:
+            result = clients.tasks.archive_task(task_id)
+            return {
+                "id": result.id,
+                "message": f"Task '{result.name}' archived",
+            }
+
+    @mcp.tool()
+    def restore_task(task_id: int) -> dict[str, Any]:
+        """Restore an archived task.
+
+        Args:
+            task_id: ID of the task to restore
+
+        Returns:
+            Restored task data
+        """
+        result = clients.tasks.restore_task(task_id)
+        return {
+            "id": result.id,
+            "name": result.name,
+            "status": result.status.value,
+            "message": f"Task '{result.name}' restored",
+        }

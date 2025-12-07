@@ -2,9 +2,9 @@
 
 This directory contains example configuration files for Taskdog.
 
-## Two Configuration Files
+## Configuration Files
 
-Taskdog uses **two separate configuration files** for clear separation of concerns:
+Taskdog uses **separate configuration files** for clear separation of concerns:
 
 ### 1. `core.toml` - Core Configuration
 
@@ -41,6 +41,23 @@ Taskdog uses **two separate configuration files** for clear separation of concer
 
 **When to use**: Configure how CLI/TUI connects to the server
 
+### 3. `mcp.toml` - MCP Server Configuration
+
+**Purpose**: MCP server settings for Claude Desktop integration
+
+**Used by**: `taskdog-mcp` (MCP server)
+
+**Location**: `~/.config/taskdog/mcp.toml`
+
+**Contains**:
+
+- API connection settings (host, port, api_key)
+- MCP server settings (name, log_level)
+
+**When to use**: Configure the MCP server for Claude Desktop
+
+**Important**: The `api_key` setting is required. It must match a key configured in `server.toml`.
+
 ## Quick Start
 
 ### Default Setup (Recommended)
@@ -65,6 +82,7 @@ No configuration needed!
    mkdir -p ~/.config/taskdog
    cp examples/core.toml ~/.config/taskdog/
    cp examples/cli.toml ~/.config/taskdog/
+   cp examples/mcp.toml ~/.config/taskdog/  # For MCP/Claude Desktop
    ```
 
 2. **Edit as needed**:
@@ -86,27 +104,27 @@ No configuration needed!
 ## Configuration File Relationship
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                         User                                │
-└────────┬───────────────────────────────────┬────────────────┘
-         │                                   │
-         │ Uses                              │ Uses
-         ▼                                   ▼
-┌─────────────────────┐           ┌─────────────────────┐
-│   taskdog (CLI)     │◄─────────►│  taskdog-server     │
-│   taskdog tui (TUI) │  HTTP     │  (API Server)       │
-└─────────────────────┘           └─────────────────────┘
-         │                                   │
-         │ Reads                             │ Reads
-         ▼                                   ▼
-┌─────────────────────┐           ┌─────────────────────┐
-│   cli.toml          │           │   core.toml         │
-│   (Infrastructure)  │           │   (Business Logic)  │
-└─────────────────────┘           └─────────────────────┘
-• API host/port                   • Task defaults
-• Future: keybindings             • Optimization settings
-                                  • Holiday calendar
-                                  • Database location
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                   User                                      │
+└────────┬────────────────────────────┬────────────────────────┬──────────────┘
+         │                            │                        │
+         │ Uses                       │ Uses                   │ Uses
+         ▼                            ▼                        ▼
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│   taskdog (CLI)     │    │  taskdog-server     │    │   taskdog-mcp       │
+│   taskdog tui (TUI) │───►│  (API Server)       │◄───│   (MCP Server)      │
+└─────────────────────┘HTTP└─────────────────────┘HTTP└─────────────────────┘
+         │                       │         │                   │
+         │ Reads                 │ Reads   │ Reads             │ Reads
+         ▼                       ▼         ▼                   ▼
+┌─────────────────┐    ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐
+│   cli.toml      │    │ core.toml   │ │ server.toml │ │   mcp.toml      │
+│ (CLI Settings)  │    │ (Business)  │ │ (Server)    │ │ (MCP Settings)  │
+└─────────────────┘    └─────────────┘ └─────────────┘ └─────────────────┘
+• API host/port         • Task defaults  • Auth/API keys  • API host/port
+• UI theme              • Optimization   • Audit logging  • Server name
+• Future: keybindings   • Holidays       • WebSocket      • Log level
+                        • Database
 ```
 
 ## Why Two Config Files?

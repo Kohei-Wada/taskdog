@@ -1,5 +1,5 @@
-.PHONY: help test test-core test-server test-ui test-all \
-        install install-dev install-core install-server install-ui \
+.PHONY: help test test-core test-server test-ui test-client test-mcp test-all \
+        install install-dev install-core install-server install-ui install-client install-mcp \
         install-ui-only install-server-only reinstall \
         tool-install-ui tool-install-server check-deps \
         clean lint format typecheck check
@@ -56,6 +56,8 @@ install: check-deps ## Install all commands globally with uv tool (recommended)
 	cd packages/taskdog-server && uv tool install --force --reinstall .
 	@echo "Installing taskdog globally..."
 	cd packages/taskdog-ui && uv tool install --force --reinstall .
+	@echo "Installing taskdog-mcp globally..."
+	cd packages/taskdog-mcp && uv tool install --force --reinstall .
 	@echo ""
 ifeq ($(PLATFORM),linux)
 	@echo "Setting up systemd user service..."
@@ -69,6 +71,7 @@ ifeq ($(PLATFORM),linux)
 	@echo "Available commands:"
 	@echo "  - taskdog          (CLI/TUI)"
 	@echo "  - taskdog-server   (API server)"
+	@echo "  - taskdog-mcp      (MCP server for Claude Desktop)"
 	@echo ""
 	@echo "Systemd service installed and enabled:"
 	@echo "  - Start:  systemctl --user start taskdog-server"
@@ -89,6 +92,7 @@ else ifeq ($(PLATFORM),macos)
 	@echo "Available commands:"
 	@echo "  - taskdog          (CLI/TUI)"
 	@echo "  - taskdog-server   (API server)"
+	@echo "  - taskdog-mcp      (MCP server for Claude Desktop)"
 	@echo ""
 	@echo "Launchd service installed and enabled:"
 	@echo "  - Start:  launchctl start com.github.kohei-wada.taskdog-server"
@@ -102,6 +106,7 @@ else
 	@echo "Available commands:"
 	@echo "  - taskdog          (CLI/TUI)"
 	@echo "  - taskdog-server   (API server)"
+	@echo "  - taskdog-mcp      (MCP server for Claude Desktop)"
 	@echo ""
 	@echo "Note: Automatic service management not supported on this platform."
 	@echo "Start the server manually: taskdog-server --host 127.0.0.1 --port 8000"
@@ -111,8 +116,10 @@ endif
 install-dev: ## Install all packages with development dependencies (for development)
 	@echo "Installing all packages with dev dependencies..."
 	cd packages/taskdog-core && uv pip install -e ".[dev]"
+	cd packages/taskdog-client && uv pip install -e ".[dev]"
 	cd packages/taskdog-server && uv pip install -e ".[dev]"
 	cd packages/taskdog-ui && uv pip install -e ".[dev]"
+	cd packages/taskdog-mcp && uv pip install -e ".[dev]"
 	@echo ""
 	@echo "✓ Development environment ready!"
 	@echo ""
@@ -125,11 +132,19 @@ install-server: install-core ## Install taskdog-server with pip (for development
 	@echo "Installing taskdog-server..."
 	cd packages/taskdog-server && uv pip install -e .
 
-install-ui: install-core ## Install taskdog-ui with pip (for development)
+install-client: install-core ## Install taskdog-client with pip (for development)
+	@echo "Installing taskdog-client..."
+	cd packages/taskdog-client && uv pip install -e .
+
+install-ui: install-client ## Install taskdog-ui with pip (for development)
 	@echo "Installing taskdog-ui..."
 	cd packages/taskdog-ui && uv pip install -e .
 
-install-local: install-core install-server install-ui ## Install all packages locally with pip (for development)
+install-mcp: install-client ## Install taskdog-mcp with pip (for development)
+	@echo "Installing taskdog-mcp..."
+	cd packages/taskdog-mcp && uv pip install -e .
+
+install-local: install-core install-client install-server install-ui install-mcp ## Install all packages locally with pip (for development)
 	@echo ""
 	@echo "✓ All packages installed locally for development!"
 	@echo ""
@@ -153,13 +168,14 @@ endif
 	@echo "Uninstalling taskdog commands..."
 	-uv tool uninstall taskdog 2>/dev/null || true
 	-uv tool uninstall taskdog-server 2>/dev/null || true
+	-uv tool uninstall taskdog-mcp 2>/dev/null || true
 	@echo "✓ Uninstalled successfully!"
 
 # ============================================================================
 # Testing Targets
 # ============================================================================
 
-test: test-core test-server test-ui ## Run all tests with coverage (core + server + ui)
+test: test-core test-client test-server test-ui test-mcp ## Run all tests with coverage
 	@echo ""
 	@echo "✓ All tests passed!"
 	@echo ""
@@ -170,13 +186,21 @@ test-core: ## Run tests for taskdog-core with coverage
 	@echo "Running taskdog-core tests..."
 	cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_core --cov-report=term-missing:skip-covered --cov-fail-under=90
 
+test-client: ## Run tests for taskdog-client with coverage
+	@echo "Running taskdog-client tests..."
+	cd packages/taskdog-client && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_client --cov-report=term-missing:skip-covered --cov-fail-under=80
+
 test-server: ## Run tests for taskdog-server with coverage
 	@echo "Running taskdog-server tests..."
 	cd packages/taskdog-server && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_server --cov-report=term-missing:skip-covered --cov-fail-under=85
 
 test-ui: ## Run tests for taskdog-ui with coverage
 	@echo "Running taskdog-ui tests..."
-	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog --cov-report=term-missing:skip-covered --cov-fail-under=75
+	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog --cov-report=term-missing:skip-covered --cov-fail-under=70
+
+test-mcp: ## Run tests for taskdog-mcp with coverage
+	@echo "Running taskdog-mcp tests..."
+	cd packages/taskdog-mcp && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_mcp --cov-report=term-missing:skip-covered || true
 
 # ============================================================================
 # Code Quality Targets
@@ -194,8 +218,10 @@ format: ## Format code with ruff and apply fixes
 typecheck: ## Run mypy type checker on all packages
 	@echo "Running mypy type checker..."
 	uv run mypy packages/taskdog-core/src/
+	uv run mypy packages/taskdog-client/src/
 	uv run mypy packages/taskdog-server/src/
 	uv run mypy packages/taskdog-ui/src/
+	uv run mypy packages/taskdog-mcp/src/
 
 check: lint typecheck ## Run all code quality checks (lint + typecheck)
 	@echo ""

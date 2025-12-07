@@ -1,0 +1,40 @@
+# MCP Server Configuration
+# Copy to: ~/.config/taskdog/mcp.toml
+#
+# This configures the taskdog MCP server for Claude Desktop integration.
+# All settings can also be overridden via environment variables.
+
+# =============================================================================
+# API Connection Settings
+# =============================================================================
+# Configure how the MCP server connects to the taskdog API server.
+
+[api]
+# API server hostname
+# Environment variable: TASKDOG_API_HOST
+host = "127.0.0.1"
+
+# API server port
+# Environment variable: TASKDOG_API_PORT
+port = 8000
+
+# API key for authentication (REQUIRED)
+# The taskdog-server requires API key authentication by default.
+# Generate a key using: python -c "import secrets; print(f'sk-{secrets.token_hex(24)}')"
+# This key must match one configured in server.toml's [[auth.api_keys]] section.
+# Environment variable: TASKDOG_API_KEY
+api_key = "sk-change-me-to-match-server-toml"
+
+# =============================================================================
+# MCP Server Settings
+# =============================================================================
+# Configure the MCP server behavior.
+
+[server]
+# Server name shown to MCP clients (Claude Desktop)
+# Environment variable: TASKDOG_MCP_NAME
+name = "taskdog"
+
+# Logging level (DEBUG, INFO, WARNING, ERROR)
+# Environment variable: TASKDOG_MCP_LOG_LEVEL
+log_level = "INFO"
