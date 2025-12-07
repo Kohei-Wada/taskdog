@@ -31,7 +31,7 @@ class MainScreen(Screen[None]):
             "Next widget",
             show=False,
             priority=True,
-            tooltip="Move focus to next widget (gantt/table)",
+            tooltip="Move focus to next focusable widget",
         ),
         Binding(
             "ctrl+k",
@@ -39,7 +39,7 @@ class MainScreen(Screen[None]):
             "Previous widget",
             show=False,
             priority=True,
-            tooltip="Move focus to previous widget (gantt/table)",
+            tooltip="Move focus to previous focusable widget",
         ),
     ]
 

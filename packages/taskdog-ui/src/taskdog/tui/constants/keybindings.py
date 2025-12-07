@@ -38,7 +38,7 @@ MAIN_FEATURES: str = """## Key Features
 
 - **Gantt Chart** - Visual timeline of your tasks
   - Shows task schedules and workload per day
-  - Use `Ctrl+J`/`Ctrl+K` to switch between table and gantt
+  - Use `Ctrl+J`/`Ctrl+K` to move focus between widgets
 
 - **Search** - Press `/` to filter tasks by name
   - Smart case: case-insensitive unless query contains uppercase
