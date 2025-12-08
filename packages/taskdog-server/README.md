@@ -12,6 +12,7 @@ This package provides a REST API for all Taskdog functionality including:
 - Time tracking and logging
 - Schedule optimization
 - Statistics and analytics
+- WebSocket real-time updates
 
 ## Installation
 
@@ -53,6 +54,81 @@ Once the server is running, visit:
 - Alternative docs: http://localhost:8000/redoc
 - Health check: http://localhost:8000/health
 
+For complete API reference, see [docs/API.md](../../docs/API.md).
+
+## Authentication
+
+Configure API key authentication in `~/.config/taskdog/server.toml`:
+
+```toml
+[auth]
+enabled = true
+
+[[auth.api_keys]]
+name = "my-client"
+key = "your-secret-key"
+```
+
+Clients authenticate via `X-Api-Key` header:
+
+```bash
+curl -H "X-Api-Key: your-secret-key" http://localhost:8000/api/v1/tasks/
+```
+
+See [Authentication Documentation](../../docs/API.md#authentication) for details.
+
+## WebSocket Real-time Updates
+
+Connect to `/ws` for real-time task notifications:
+
+```javascript
+const ws = new WebSocket('ws://localhost:8000/ws?token=your-api-key');
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Event:', data.type);  // task_created, task_updated, etc.
+};
+```
+
+**Event types:**
+
+- `task_created` - New task created
+- `task_updated` - Task fields updated
+- `task_deleted` - Task deleted
+- `task_status_changed` - Task status changed
+- `schedule_optimized` - Schedule optimization completed
+
+**Note:** WebSocket requires `--workers 1` (default). Multiple workers are not supported for WebSocket.
+
+## Configuration
+
+Server configuration: `~/.config/taskdog/server.toml`
+
+```toml
+[auth]
+enabled = true
+
+[[auth.api_keys]]
+name = "my-client"
+key = "your-secret-key"
+
+[audit]
+enabled = false
+```
+
+Core configuration: `~/.config/taskdog/core.toml`
+
+```toml
+[optimization]
+max_hours_per_day = 6.0
+default_algorithm = "greedy"
+
+[region]
+country = "JP"
+```
+
+See [Configuration Guide](../../docs/CONFIGURATION.md) for all options.
+
 ## Architecture
 
 The server uses:
@@ -62,18 +138,53 @@ The server uses:
 - **uvicorn**: ASGI server
 - **taskdog-core**: Core business logic and infrastructure
 
-## Dependencies
+### API Routers
 
-- `taskdog-core`: Core business logic
-- `fastapi`: Web framework
-- `uvicorn`: ASGI server
-- `pydantic`: Data validation
+- `tasks.py` - Task CRUD operations
+- `lifecycle.py` - Task status changes
+- `relationships.py` - Dependencies and tags
+- `analytics.py` - Statistics and reporting
+- `notes.py` - Markdown notes
+- `websocket.py` - Real-time updates
+
+### Dependency Injection
+
+Controllers are injected via FastAPI dependencies:
+
+```python
+CrudControllerDep = Annotated[TaskCrudController, Depends(get_crud_controller)]
+```
+
+## Related Packages
+
+- [taskdog-core](../taskdog-core/): Core business logic used by this package
+- [taskdog-ui](../taskdog-ui/): CLI and TUI interfaces connecting to this server
+- [taskdog-client](../taskdog-client/): HTTP client library for API access
+- [taskdog-mcp](../taskdog-mcp/): MCP server for Claude Desktop integration
 
 ## Testing
 
 ```bash
 pytest tests/
 ```
+
+## Deployment
+
+### Systemd (Linux)
+
+```bash
+systemctl --user start taskdog-server
+systemctl --user enable taskdog-server
+```
+
+### Docker
+
+```bash
+docker pull ghcr.io/kohei-wada/taskdog-server:main
+docker run -d -p 8000:8000 -v taskdog-data:/data ghcr.io/kohei-wada/taskdog-server:main
+```
+
+See [contrib/README.md](../../contrib/README.md) for deployment details.
 
 ## License
 

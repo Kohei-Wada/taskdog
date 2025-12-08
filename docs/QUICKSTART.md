@@ -186,17 +186,18 @@ taskdog-server --port 8001
 
 ## Environment Variable Alternative
 
-Instead of editing the config file, you can set an environment variable:
+Instead of editing the config file, you can set environment variables:
 
 ```bash
 # Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
-export TASKDOG_API_URL=http://127.0.0.1:8000
+export TASKDOG_API_HOST=127.0.0.1
+export TASKDOG_API_PORT=8000
 
-# Or set it temporarily
-TASKDOG_API_URL=http://127.0.0.1:8000 taskdog table
+# Or set them temporarily
+TASKDOG_API_HOST=127.0.0.1 TASKDOG_API_PORT=8000 taskdog table
 ```
 
-Note: Environment variable takes precedence over config file.
+Note: Environment variables take precedence over config file.
 
 ## Uninstall
 

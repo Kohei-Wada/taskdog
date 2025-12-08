@@ -136,6 +136,9 @@ theme = "textual-dark"        # TUI theme (default: "textual-dark")
   - `tokyo-night` - Tokyo Night color scheme
   - `dracula` - Dracula color scheme
   - `catppuccin-mocha` - Catppuccin Mocha color scheme
+  - `nord` - Nord color scheme
+  - `gruvbox` - Gruvbox color scheme
+  - `solarized-light` - Solarized Light color scheme
 
 ### Optimization Settings
 

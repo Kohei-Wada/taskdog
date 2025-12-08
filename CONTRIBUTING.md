@@ -103,15 +103,7 @@ CLI/TUI (taskdog-ui) → HTTP API → FastAPI (taskdog-server) → Controllers/R
 
 ### Architecture
 
-Taskdog follows **Clean Architecture** principles with clear separation of concerns:
-
-- **Domain Layer** (taskdog-core): Entities, domain services, exceptions
-- **Application Layer** (taskdog-core): Use cases, queries, DTOs, validators
-- **Infrastructure Layer** (taskdog-core): Repository, persistence, config
-- **Controllers Layer** (taskdog-core): CRUD, Lifecycle, Relationship, Analytics, Query controllers
-- **Presentation Layer** (taskdog-server + taskdog-ui): API routers, CLI commands, TUI
-
-For detailed architecture documentation, see [CLAUDE.md](CLAUDE.md).
+Taskdog follows **Clean Architecture** principles. For detailed architecture documentation, see [CLAUDE.md](CLAUDE.md).
 
 ## Coding Standards
 
@@ -346,22 +338,7 @@ PYTHONPATH=src uv run python -m taskdog_server.main --help
 
 ## Design Philosophy
 
-Before adding new features, please review [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md).
-
-Taskdog is designed for **individual task management**, following GTD principles:
-
-- **Individual over team**: No collaboration features, no cloud sync
-- **Transparent algorithms**: Choose from 9 scheduling strategies you can understand
-- **Privacy-first**: All data stored locally
-- **Simplicity**: Flat task structure with dependencies (no parent-child hierarchy)
-
-When proposing new features, ask:
-
-1. Does this benefit individual users? (Not teams)
-2. Does this maintain simplicity? (Every feature has a cost)
-3. Is this transparent? (No black boxes)
-4. Does this respect privacy? (No cloud requirements)
-5. Can this be achieved with existing features? (Tags, dependencies, notes)
+Before adding new features, please review [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md). This document explains why Taskdog focuses on individual task management with flat task structures, and includes guidelines for evaluating new feature proposals.
 
 ## Questions and Support
 

@@ -2,6 +2,8 @@
 
 This directory contains example configuration files for Taskdog.
 
+For comprehensive configuration documentation, see [docs/CONFIGURATION.md](../docs/CONFIGURATION.md).
+
 ## Configuration Files
 
 Taskdog uses **separate configuration files** for clear separation of concerns:

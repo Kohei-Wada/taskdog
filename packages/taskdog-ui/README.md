@@ -75,10 +75,11 @@ host = "127.0.0.1"
 port = 8000
 ```
 
-Or set environment variable:
+Or set environment variables:
 
 ```bash
-export TASKDOG_API_URL=http://127.0.0.1:8000
+export TASKDOG_API_HOST=127.0.0.1
+export TASKDOG_API_PORT=8000
 ```
 
 ### 4. Verify Connection

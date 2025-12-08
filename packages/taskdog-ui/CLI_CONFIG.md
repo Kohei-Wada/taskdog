@@ -54,9 +54,11 @@ theme = "textual-dark"  # TUI theme (default: "textual-dark")
 
 - `textual-dark` (default) - Textual's dark theme
 - `textual-light` - Textual's light theme
+- `tokyo-night` - Tokyo Night color scheme
+- `dracula` - Dracula color scheme
+- `catppuccin-mocha` - Catppuccin Mocha color scheme
 - `nord` - Nord color scheme
 - `gruvbox` - Gruvbox color scheme
-- `tokyo-night` - Tokyo Night color scheme
 - `solarized-light` - Solarized Light color scheme
 
 ### [keybindings] Section (Future Feature)
@@ -146,7 +148,7 @@ host = "192.168.1.100"
 port = 8000
 ```
 
-**Security Note**: The API server does not have authentication. Only use this for trusted networks or localhost.
+**Security Note**: For production use, configure API key authentication in `server.toml`. See [Authentication](../../docs/API.md#authentication) for details.
 
 ## Business Logic Configuration
 

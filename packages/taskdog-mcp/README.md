@@ -136,3 +136,53 @@ uv pip install -e .
 # Run tests
 PYTHONPATH=src uv run python -m pytest tests/ -v
 ```
+
+## Troubleshooting
+
+### "Cannot connect to API server"
+
+**Problem**: MCP server can't reach taskdog-server
+
+**Solutions**:
+
+1. Check if taskdog-server is running:
+
+   ```bash
+   curl http://127.0.0.1:8000/health
+   ```
+
+2. Verify `~/.config/taskdog/mcp.toml` has correct host/port
+3. Check if authentication is required:
+
+   ```bash
+   curl -H "X-Api-Key: your-key" http://127.0.0.1:8000/health
+   ```
+
+### "Authentication failed"
+
+**Problem**: API key is invalid or missing
+
+**Solutions**:
+
+1. Ensure `api_key` in `mcp.toml` matches a key in `server.toml`
+2. Check that auth is enabled on server (`[auth] enabled = true`)
+
+### Claude Desktop doesn't see taskdog tools
+
+**Problem**: MCP server not properly configured
+
+**Solutions**:
+
+1. Verify `claude_desktop_config.json` has correct path
+2. Restart Claude Desktop after config changes
+3. Check logs: `~/Library/Logs/Claude/mcp*.log` (macOS)
+
+## Related Packages
+
+- [taskdog-server](../taskdog-server/): Required API server
+- [taskdog-core](../taskdog-core/): Core business logic
+- [taskdog-client](../taskdog-client/): HTTP client used internally
+
+## License
+
+MIT
