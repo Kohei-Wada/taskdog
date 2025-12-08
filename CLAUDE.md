@@ -39,9 +39,10 @@ The repository uses UV workspace with three packages:
 
 **Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/core.toml` (fallback: `~/.config/taskdog/core.toml`)
 
-- Sections: `[api]`, `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
+- Sections: `[api]`, `[ui]`, `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
 - Settings:
   - API: cors_origins (for future Web UI)
+  - UI: theme (TUI theme)
   - Optimization: max_hours_per_day, default_algorithm
   - Task: default_priority
   - Time: default_start_hour, default_end_hour

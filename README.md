@@ -193,7 +193,7 @@ Taskdog supports multiple beautiful themes out of the box. Configure your prefer
 
 ```toml
 [ui]
-theme = "tokyo-night"  # Options: textual-dark, textual-light, tokyo-night, dracula, catppuccin-mocha
+theme = "tokyo-night"  # Options: textual-dark, textual-light, tokyo-night, dracula, catppuccin-mocha, nord, gruvbox, solarized-light
 ```
 
 <table>
