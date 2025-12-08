@@ -22,6 +22,12 @@ host = "127.0.0.1"
 # Must match the port used by taskdog-server
 port = 8000
 
+# API key for authentication (REQUIRED when auth is enabled on server)
+# This key must match one configured in server.toml's [[auth.api_keys]] section.
+# Generate a key with: python -c "import secrets; print(f'sk-{secrets.token_hex(24)}')"
+# Environment variable: TASKDOG_API_KEY
+api_key = "sk-your-api-key-here"
+
 # Examples:
 # - Default local server: host = "127.0.0.1", port = 8000
 # - Custom local port: host = "127.0.0.1", port = 3000
@@ -105,16 +111,18 @@ theme = "textual-dark"
 #
 # - TASKDOG_API_HOST: API server hostname
 # - TASKDOG_API_PORT: API server port
+# - TASKDOG_API_KEY: API key for authentication
 #
 # Examples:
 #
 #   export TASKDOG_API_HOST=192.168.1.100
 #   export TASKDOG_API_PORT=3000
+#   export TASKDOG_API_KEY=sk-your-api-key
 #   taskdog table
 #
 # Or inline:
 #
-#   TASKDOG_API_HOST=192.168.1.100 taskdog table
+#   TASKDOG_API_KEY=sk-your-key taskdog table
 
 # =============================================================================
 # Notes
