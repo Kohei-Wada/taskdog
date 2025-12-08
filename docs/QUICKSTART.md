@@ -23,23 +23,54 @@ This installs two commands:
 - `taskdog` - CLI and TUI interface
 - `taskdog-server` - API server (required for taskdog to work)
 
-## Step 2: Configure API Connection (1 minute)
+## Step 2: Configure Authentication (2 minutes)
 
-Create the configuration file:
+Taskdog uses API key authentication by default. You need to configure both server and client.
+
+### 2a. Generate API Key
+
+```bash
+# Generate a secure API key
+python -c "import secrets; print(f'sk-{secrets.token_hex(24)}')"
+# Example output: sk-a1b2c3d4e5f6...
+```
+
+### 2b. Configure Server
 
 ```bash
 # Create config directory
 mkdir -p ~/.config/taskdog
 
-# Create config file
+# Create server config with your API key
+cat > ~/.config/taskdog/server.toml << 'EOF'
+[auth]
+enabled = true
+
+[[auth.api_keys]]
+name = "my-client"
+key = "sk-YOUR-GENERATED-KEY-HERE"  # Replace with your key
+EOF
+
+# Secure the file (contains secrets)
+chmod 600 ~/.config/taskdog/server.toml
+```
+
+### 2c. Configure CLI/TUI
+
+```bash
+# Create CLI config with the same API key
 cat > ~/.config/taskdog/cli.toml << 'EOF'
 [api]
 host = "127.0.0.1"
 port = 8000
+api_key = "sk-YOUR-GENERATED-KEY-HERE"  # Same key as server.toml
+
+[ui]
+theme = "textual-dark"
 EOF
 ```
 
-**Note**: Default is `127.0.0.1:8000`. Only needed if using a different host/port.
+**Important**: The `api_key` in `cli.toml` must match one of the keys in `server.toml`.
 
 ## Step 3: Start the Server (1 minute)
 
@@ -176,6 +207,81 @@ taskdog-server --port 8001
 # Edit ~/.config/taskdog/cli.toml: port = 8001
 ```
 
+### Error: Authentication failed (401)
+
+**Problem**: API key mismatch or missing
+
+**Solution**:
+
+```bash
+# Check server config has the key
+grep -A2 "api_keys" ~/.config/taskdog/server.toml
+
+# Check CLI config has matching key
+grep "api_key" ~/.config/taskdog/cli.toml
+
+# Verify keys match (copy-paste to compare)
+```
+
+## MCP Server Setup (Optional)
+
+Use Claude Desktop or other MCP-compatible AI clients to manage tasks via natural language.
+
+### Install MCP Server
+
+```bash
+# From taskdog workspace root
+make install-mcp
+
+# Or install globally
+uv tool install taskdog-mcp
+```
+
+### Configure MCP
+
+```bash
+# Create MCP config
+cat > ~/.config/taskdog/mcp.toml << 'EOF'
+[api]
+host = "127.0.0.1"
+port = 8000
+api_key = "sk-YOUR-GENERATED-KEY-HERE"  # Same key as server.toml
+
+[server]
+name = "taskdog"
+log_level = "INFO"
+EOF
+```
+
+### Configure Claude Desktop
+
+Add to Claude Desktop config:
+
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Linux**: `~/.config/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "taskdog": {
+      "command": "taskdog-mcp"
+    }
+  }
+}
+```
+
+Restart Claude Desktop after configuration.
+
+### Test MCP
+
+Ask Claude Desktop:
+
+- "Show me today's tasks"
+- "Create a task to review the PR"
+- "Start task 42"
+
+See [taskdog-mcp README](../packages/taskdog-mcp/README.md) for more details.
+
 ## Next Steps
 
 - Read the [full README](../README.md) for all features
@@ -183,6 +289,7 @@ taskdog-server --port 8001
 - Explore optimization algorithms: `taskdog optimize --help`
 - Try the Gantt chart: `taskdog gantt`
 - Add dependencies: `taskdog add-dependency TASK_ID DEPENDS_ON_ID`
+- Set up MCP for AI-assisted task management
 
 ## Environment Variable Alternative
 
@@ -192,9 +299,10 @@ Instead of editing the config file, you can set environment variables:
 # Add to your shell profile (~/.bashrc, ~/.zshrc, etc.)
 export TASKDOG_API_HOST=127.0.0.1
 export TASKDOG_API_PORT=8000
+export TASKDOG_API_KEY=sk-your-api-key
 
 # Or set them temporarily
-TASKDOG_API_HOST=127.0.0.1 TASKDOG_API_PORT=8000 taskdog table
+TASKDOG_API_KEY=sk-your-key taskdog table
 ```
 
 Note: Environment variables take precedence over config file.
