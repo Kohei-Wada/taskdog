@@ -30,11 +30,11 @@ def _parse_date_filter(date_str: str, end_of_day: bool = False) -> datetime:
 def _format_resource(log: AuditLogOutput) -> str:
     """Format resource display for audit log entry."""
     if log.resource_id and log.resource_name:
-        return f"[cyan]#{log.resource_id}[/cyan] {log.resource_name[:18]}"
+        return f"[cyan]#{log.resource_id}[/cyan] {log.resource_name}"
     if log.resource_id:
         return f"[cyan]#{log.resource_id}[/cyan]"
     if log.resource_name:
-        return log.resource_name[:25]
+        return log.resource_name
     return "[dim]-[/dim]"
 
 
@@ -150,7 +150,7 @@ def audit_logs_command(
     table.add_column("Timestamp", width=19)
     table.add_column("Client", width=15)
     table.add_column("Operation", width=18)
-    table.add_column("Resource", width=25)
+    table.add_column("Resource")
     table.add_column("Status", width=8)
 
     for log in result.logs:
