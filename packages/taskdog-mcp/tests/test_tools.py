@@ -68,6 +68,7 @@ def create_mock_task_operation_output(
         is_archived=False,
         actual_duration_hours=None,
         actual_daily_hours={},
+        daily_allocations={},
     )
 
 

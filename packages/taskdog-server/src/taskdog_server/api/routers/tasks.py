@@ -335,7 +335,7 @@ async def update_task(
     new_values = {}
     if old_task:
         for field in result.updated_fields:
-            if hasattr(old_task, field):
+            if hasattr(old_task, field) and hasattr(result.task, field):
                 old_val = getattr(old_task, field)
                 new_val = getattr(result.task, field)
                 # Handle enum values
