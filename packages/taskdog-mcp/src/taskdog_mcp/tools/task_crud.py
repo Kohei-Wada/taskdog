@@ -105,21 +105,37 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         estimated_duration: float | None = None,
         tags: list[str] | None = None,
         is_fixed: bool = False,
+        planned_start: str | None = None,
+        planned_end: str | None = None,
     ) -> dict[str, Any]:
         """Create a new task.
 
         Args:
             name: Task name (required)
             priority: Task priority (higher = more important, default from config)
-            deadline: Deadline in ISO format (YYYY-MM-DDTHH:MM:SS)
-            estimated_duration: Estimated hours to complete
+            deadline: Deadline in ISO format with time (e.g., '2025-12-11T18:00:00')
+            estimated_duration: Estimated duration in hours (e.g., 0.5 = 30min, 1.5 = 1h30m)
             tags: List of tags for categorization
             is_fixed: Whether schedule is fixed (won't be moved by optimizer)
+            planned_start: Planned start datetime in ISO format (e.g., '2025-12-11T09:00:00')
+            planned_end: Planned end datetime in ISO format (e.g., '2025-12-11T17:00:00')
 
         Returns:
             Created task data with ID
         """
-        deadline_dt = datetime.fromisoformat(deadline) if deadline else None
+        try:
+            deadline_dt = datetime.fromisoformat(deadline) if deadline else None
+            planned_start_dt = (
+                datetime.fromisoformat(planned_start) if planned_start else None
+            )
+            planned_end_dt = (
+                datetime.fromisoformat(planned_end) if planned_end else None
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid datetime format. Use ISO format "
+                f"(e.g., '2025-12-11T09:00:00'): {e}"
+            ) from e
 
         result = clients.tasks.create_task(
             name=name,
@@ -128,6 +144,8 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
             estimated_duration=estimated_duration,
             tags=tags,
             is_fixed=is_fixed,
+            planned_start=planned_start_dt,
+            planned_end=planned_end_dt,
         )
         return {
             "id": result.id,
@@ -146,6 +164,8 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         estimated_duration: float | None = None,
         tags: list[str] | None = None,
         is_fixed: bool | None = None,
+        planned_start: str | None = None,
+        planned_end: str | None = None,
     ) -> dict[str, Any]:
         """Update an existing task.
 
@@ -153,15 +173,29 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
             task_id: ID of the task to update
             name: New task name
             priority: New priority
-            deadline: New deadline in ISO format
-            estimated_duration: New estimated duration in hours
+            deadline: New deadline in ISO format with time (e.g., '2025-12-11T18:00:00')
+            estimated_duration: New estimated duration in hours (e.g., 0.5 = 30min, 1.5 = 1h30m)
             tags: New tags list (replaces existing)
             is_fixed: New fixed status
+            planned_start: New planned start datetime in ISO format (e.g., '2025-12-11T09:00:00')
+            planned_end: New planned end datetime in ISO format (e.g., '2025-12-11T17:00:00')
 
         Returns:
             Updated task data
         """
-        deadline_dt = datetime.fromisoformat(deadline) if deadline else None
+        try:
+            deadline_dt = datetime.fromisoformat(deadline) if deadline else None
+            planned_start_dt = (
+                datetime.fromisoformat(planned_start) if planned_start else None
+            )
+            planned_end_dt = (
+                datetime.fromisoformat(planned_end) if planned_end else None
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid datetime format. Use ISO format "
+                f"(e.g., '2025-12-11T09:00:00'): {e}"
+            ) from e
 
         result = clients.tasks.update_task(
             task_id=task_id,
@@ -171,6 +205,8 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
             estimated_duration=estimated_duration,
             tags=tags,
             is_fixed=is_fixed,
+            planned_start=planned_start_dt,
+            planned_end=planned_end_dt,
         )
         # TaskUpdateOutput has .task (TaskOperationOutput) and .updated_fields
         task = result.task
