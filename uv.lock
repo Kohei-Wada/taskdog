@@ -1054,6 +1054,7 @@ source = { editable = "packages/taskdog-client" }
 dependencies = [
     { name = "httpx" },
     { name = "taskdog-core" },
+    { name = "websockets" },
 ]
 
 [package.optional-dependencies]
@@ -1074,6 +1075,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7.0" },
     { name = "taskdog-core", editable = "packages/taskdog-core" },
+    { name = "websockets", specifier = ">=14.0" },
 ]
 provides-extras = ["dev"]
 

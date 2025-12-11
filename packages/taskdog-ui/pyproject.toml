@@ -84,11 +84,17 @@ strict = true
 # Disable unused-ignore warnings (environment-dependent)
 warn_unused_ignores = false
 
+# Ignore missing imports for taskdog_client (installed separately)
+[[tool.mypy.overrides]]
+module = "taskdog_client"
+ignore_missing_imports = true
+
 # Ignore modules that depend on taskdog_client (external package)
 [[tool.mypy.overrides]]
 module = [
     "taskdog.infrastructure.api_client",
     "taskdog.infrastructure",
+    "taskdog.infrastructure.websocket",
 ]
 ignore_errors = true
 
