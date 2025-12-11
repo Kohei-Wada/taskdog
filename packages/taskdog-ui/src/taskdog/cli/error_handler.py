@@ -12,17 +12,16 @@ from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def handle_task_errors(action_name: str, is_parent: bool = False) -> Callable[[F], F]:
+def handle_task_errors(action_name: str) -> Callable[[F], F]:
     """Decorator for task-specific error handling in CLI commands.
 
     Use this for commands that operate on specific task IDs (add, update, remove).
 
     Args:
         action_name: Action description for error messages (e.g., "adding task", "starting task")
-        is_parent: Whether this is a parent task error (default: False)
 
     Usage:
-        @handle_task_errors("adding task", is_parent=True)
+        @handle_task_errors("adding task")
         def add_command(ctx, ...):
             # Command logic
 

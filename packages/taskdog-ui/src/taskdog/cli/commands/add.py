@@ -68,7 +68,7 @@ from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
     help="Planned end time (formats: YYYY-MM-DD, MM-DD, YYYY-MM-DD HH:MM:SS)",
 )
 @click.pass_context
-@handle_task_errors("adding task", is_parent=True)
+@handle_task_errors("adding task")
 def add_command(
     ctx: click.Context,
     name: str,
