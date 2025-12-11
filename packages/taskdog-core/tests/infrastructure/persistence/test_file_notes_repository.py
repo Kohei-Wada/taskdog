@@ -99,6 +99,19 @@ class TestFileNotesRepository:
     @patch(
         "taskdog_core.infrastructure.persistence.file_notes_repository.XDGDirectories"
     )
+    def test_has_notes_returns_false_on_os_error(self, mock_xdg: MagicMock):
+        """Test has_notes returns False when OSError occurs (e.g., permission denied)."""
+        mock_path = MagicMock(spec=Path)
+        mock_path.stat.side_effect = PermissionError("Permission denied")
+        mock_xdg.get_note_file.return_value = mock_path
+
+        result = self.repo.has_notes(self.task_id)
+
+        assert result is False
+
+    @patch(
+        "taskdog_core.infrastructure.persistence.file_notes_repository.XDGDirectories"
+    )
     def test_read_notes_returns_none_when_file_does_not_exist(
         self, mock_xdg: MagicMock
     ):
