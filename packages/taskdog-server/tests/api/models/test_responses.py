@@ -109,6 +109,7 @@ class TestTaskOperationResponse:
             is_archived=False,
             actual_duration_hours=2.5,
             actual_daily_hours={"2024-01-15": 2.5},
+            daily_allocations={},
         )
 
         # Act
@@ -165,6 +166,7 @@ class TestUpdateTaskResponse:
             is_archived=False,
             actual_duration_hours=None,
             actual_daily_hours={},
+            daily_allocations={},
         )
         dto = TaskUpdateOutput(task=task, updated_fields=["name", "priority", "tags"])
 

@@ -49,6 +49,7 @@ class TestConvertToUpdateTaskResponse:
             is_archived=False,
             actual_duration_hours=9.5,
             actual_daily_hours={},
+            daily_allocations={},
         )
         dto = TaskUpdateOutput(task=task, updated_fields=["name", "priority", "status"])
 
@@ -82,6 +83,7 @@ class TestConvertToUpdateTaskResponse:
             is_archived=False,
             actual_duration_hours=None,
             actual_daily_hours={},
+            daily_allocations={},
         )
         dto = TaskUpdateOutput(task=task, updated_fields=[])
 

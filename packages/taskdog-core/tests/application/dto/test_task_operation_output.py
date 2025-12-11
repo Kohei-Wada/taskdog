@@ -30,6 +30,7 @@ class TestTaskOperationOutput:
             is_archived=False,
             actual_duration_hours=5.5,
             actual_daily_hours={"2025-01-01": 5.5},
+            daily_allocations={"2025-01-01": 4.0},
         )
 
         assert dto.id == 1
@@ -62,6 +63,7 @@ class TestTaskOperationOutput:
             is_archived=False,
             actual_duration_hours=None,
             actual_daily_hours={},
+            daily_allocations={},
         )
 
         assert dto.id == 1
@@ -174,6 +176,7 @@ class TestTaskOperationOutput:
             is_archived=False,
             actual_duration_hours=None,
             actual_daily_hours={},
+            daily_allocations={},
         )
         dto2 = TaskOperationOutput(
             id=1,
@@ -192,6 +195,7 @@ class TestTaskOperationOutput:
             is_archived=False,
             actual_duration_hours=None,
             actual_daily_hours={},
+            daily_allocations={},
         )
 
         assert dto1 == dto2
@@ -215,6 +219,7 @@ class TestTaskOperationOutput:
             is_archived=False,
             actual_duration_hours=None,
             actual_daily_hours={},
+            daily_allocations={},
         )
         repr_str = repr(dto)
 

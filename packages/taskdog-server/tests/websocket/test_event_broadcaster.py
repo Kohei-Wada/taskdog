@@ -48,6 +48,7 @@ class TestWebSocketEventBroadcaster:
             is_archived=False,
             actual_duration_hours=None,
             actual_daily_hours={},
+            daily_allocations={},
         )
 
     def test_task_created_schedules_broadcast(self):

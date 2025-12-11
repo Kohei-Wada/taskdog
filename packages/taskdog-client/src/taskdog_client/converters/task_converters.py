@@ -94,6 +94,7 @@ def convert_to_task_operation_output(data: dict[str, Any]) -> TaskOperationOutpu
         is_archived=data.get("is_archived", False),
         actual_duration_hours=data.get("actual_duration_hours"),
         actual_daily_hours=data.get("actual_daily_hours", {}),
+        daily_allocations=data.get("daily_allocations", {}),
     )
 
 

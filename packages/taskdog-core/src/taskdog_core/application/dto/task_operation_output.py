@@ -31,6 +31,7 @@ class TaskOperationOutput:
         is_archived: Whether task is archived (soft deleted)
         actual_duration_hours: Computed actual duration (for completed tasks)
         actual_daily_hours: Dictionary mapping dates to logged hours
+        daily_allocations: Dictionary mapping dates to allocated hours (from optimization)
     """
 
     id: int
@@ -49,6 +50,7 @@ class TaskOperationOutput:
     is_archived: bool
     actual_duration_hours: float | None
     actual_daily_hours: dict[str, float]
+    daily_allocations: dict[str, float]
 
     @classmethod
     def from_task(cls, task: Task) -> "TaskOperationOutput":
@@ -86,5 +88,9 @@ class TaskOperationOutput:
             actual_daily_hours={
                 date.isoformat(): hours
                 for date, hours in task.actual_daily_hours.items()
+            },
+            daily_allocations={
+                date.isoformat(): hours
+                for date, hours in task.daily_allocations.items()
             },
         )
