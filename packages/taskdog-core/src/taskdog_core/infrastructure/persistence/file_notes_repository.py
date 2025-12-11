@@ -42,11 +42,12 @@ class FileNotesRepository(NotesRepository):
         Returns:
             True if notes file exists and has content
         """
-        notes_path = self.get_notes_path(task_id)
-        return (
-            notes_path.exists()
-            and notes_path.stat().st_size > MIN_FILE_SIZE_FOR_CONTENT
-        )
+        try:
+            return (
+                self.get_notes_path(task_id).stat().st_size > MIN_FILE_SIZE_FOR_CONTENT
+            )
+        except OSError:
+            return False
 
     def read_notes(self, task_id: int) -> str | None:
         """Read notes content for a task.
