@@ -1,7 +1,10 @@
 """Tests for MCP tools."""
 
 from datetime import datetime
+from typing import Any
 from unittest.mock import MagicMock
+
+import pytest
 
 from taskdog_core.application.dto.statistics_output import (
     PriorityDistributionStatistics,
@@ -118,6 +121,114 @@ class TestTaskCrudTools:
 
         # Verify registration didn't raise
         assert mcp is not None
+
+    @pytest.mark.parametrize(
+        ("input_kwargs", "expected_kwargs"),
+        [
+            pytest.param(
+                {
+                    "planned_start": "2025-12-11T09:00:00",
+                    "planned_end": "2025-12-11T17:00:00",
+                },
+                {
+                    "planned_start": datetime(2025, 12, 11, 9, 0, 0),
+                    "planned_end": datetime(2025, 12, 11, 17, 0, 0),
+                },
+                id="planned_times",
+            ),
+            pytest.param(
+                {
+                    "deadline": "2025-12-11T18:30:00",
+                    "estimated_duration": 0.5,
+                },
+                {
+                    "deadline": datetime(2025, 12, 11, 18, 30, 0),
+                    "estimated_duration": 0.5,
+                },
+                id="deadline_and_duration",
+            ),
+        ],
+    )
+    def test_create_task_datetime_conversion(
+        self,
+        input_kwargs: dict[str, Any],
+        expected_kwargs: dict[str, Any],
+    ) -> None:
+        """Test create_task tool converts datetime strings correctly."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_crud
+
+        clients = create_mock_clients()
+        clients.tasks.create_task.return_value = create_mock_task_operation_output()
+
+        mcp = FastMCP("test")
+        task_crud.register_tools(mcp, clients)
+
+        create_task_fn = mcp._tool_manager._tools["create_task"].fn
+        result = create_task_fn(name="Test Task", **input_kwargs)
+
+        clients.tasks.create_task.assert_called_once()
+        call_kwargs = clients.tasks.create_task.call_args.kwargs
+        for key, expected_value in expected_kwargs.items():
+            assert call_kwargs[key] == expected_value
+        assert result["id"] == 1
+
+    @pytest.mark.parametrize(
+        ("input_kwargs", "expected_kwargs"),
+        [
+            pytest.param(
+                {
+                    "planned_start": "2025-12-12T10:00:00",
+                    "planned_end": "2025-12-12T16:00:00",
+                },
+                {
+                    "planned_start": datetime(2025, 12, 12, 10, 0, 0),
+                    "planned_end": datetime(2025, 12, 12, 16, 0, 0),
+                },
+                id="planned_times",
+            ),
+            pytest.param(
+                {
+                    "deadline": "2025-12-15T14:00:00",
+                    "estimated_duration": 1.5,
+                },
+                {
+                    "deadline": datetime(2025, 12, 15, 14, 0, 0),
+                    "estimated_duration": 1.5,
+                },
+                id="deadline_and_duration",
+            ),
+        ],
+    )
+    def test_update_task_datetime_conversion(
+        self,
+        input_kwargs: dict[str, Any],
+        expected_kwargs: dict[str, Any],
+    ) -> None:
+        """Test update_task tool converts datetime strings correctly."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_crud
+
+        from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
+
+        clients = create_mock_clients()
+        clients.tasks.update_task.return_value = TaskUpdateOutput(
+            task=create_mock_task_operation_output(),
+            updated_fields=list(expected_kwargs.keys()),
+        )
+
+        mcp = FastMCP("test")
+        task_crud.register_tools(mcp, clients)
+
+        update_task_fn = mcp._tool_manager._tools["update_task"].fn
+        result = update_task_fn(task_id=1, **input_kwargs)
+
+        clients.tasks.update_task.assert_called_once()
+        call_kwargs = clients.tasks.update_task.call_args.kwargs
+        assert call_kwargs["task_id"] == 1
+        for key, expected_value in expected_kwargs.items():
+            assert call_kwargs[key] == expected_value
+        assert result["id"] == 1
 
 
 class TestTaskLifecycleTools:
