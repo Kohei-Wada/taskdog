@@ -1,6 +1,10 @@
-"""WebSocket client infrastructure."""
+"""WebSocket client infrastructure.
 
-from taskdog.infrastructure.websocket.websocket_client import (
+This module re-exports WebSocket classes from taskdog_client
+for backward compatibility.
+"""
+
+from taskdog_client import (  # type: ignore[import-not-found]
     ConnectionState,
     WebSocketClient,
 )

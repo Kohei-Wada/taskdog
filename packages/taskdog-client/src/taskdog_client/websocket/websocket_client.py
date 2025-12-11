@@ -7,11 +7,12 @@ and receives real-time notifications about task changes.
 import asyncio
 import contextlib
 import json
+import logging
 from collections.abc import Callable
 from enum import Enum, auto
 from typing import Any
 
-from textual import log
+logger = logging.getLogger(__name__)
 
 
 class ConnectionState(Enum):
@@ -55,7 +56,7 @@ class WebSocketClient:
             api_key: Optional API key for authentication (sent as query parameter)
         """
         if not WEBSOCKETS_AVAILABLE:
-            log.warning("websockets library not available, real-time sync disabled")
+            logger.warning("websockets library not available, real-time sync disabled")
 
         # Append API key as query parameter if provided
         if api_key:
@@ -90,7 +91,7 @@ class WebSocketClient:
         connection and processes incoming messages.
         """
         if not WEBSOCKETS_AVAILABLE:
-            log.warning("Cannot connect: websockets library not available")
+            logger.warning("Cannot connect: websockets library not available")
             return
 
         async with self._lock:
@@ -136,14 +137,14 @@ class WebSocketClient:
             # Store client ID from connection message
             if message.get("type") == "connected":
                 self.client_id = message.get("client_id")
-                log.info(f"Received client ID: {self.client_id}")
+                logger.info("Received client ID: %s", self.client_id)
 
             if self.on_message:
                 self.on_message(message)
         except json.JSONDecodeError:
-            log.warning(f"Invalid JSON received: {message_str!r}")
+            logger.warning("Invalid JSON received: %r", message_str)
         except Exception as e:
-            log.error(f"Error processing message: {e}")
+            logger.error("Error processing message: %s", e)
 
     async def _handle_connection_error(
         self, error: Exception, reconnect_delay: float, max_reconnect_delay: float
@@ -156,7 +157,7 @@ class WebSocketClient:
                 self._state = ConnectionState.RECONNECTING
                 should_reconnect = True
         if should_reconnect:
-            log.warning(f"WebSocket error: {error}, reconnecting...")
+            logger.warning("WebSocket error: %s, reconnecting...", error)
             await asyncio.sleep(reconnect_delay)
             return True, min(reconnect_delay * 2, max_reconnect_delay)
         return False, reconnect_delay
@@ -179,7 +180,7 @@ class WebSocketClient:
                         if self._state != ConnectionState.DISCONNECTED:  # type: ignore[comparison-overlap]
                             self._state = ConnectionState.CONNECTED
                     reconnect_delay = 1.0
-                    log.info("WebSocket connected")
+                    logger.info("WebSocket connected")
 
                     async for message_str in websocket:
                         if self._state == ConnectionState.DISCONNECTED:
