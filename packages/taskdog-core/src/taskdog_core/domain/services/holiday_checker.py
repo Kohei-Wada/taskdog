@@ -26,3 +26,16 @@ class IHolidayChecker(ABC):
             True if the date is a public holiday, False otherwise
         """
         ...
+
+    @abstractmethod
+    def get_holidays_in_range(self, start_date: date, end_date: date) -> set[date]:
+        """Get all holidays within a date range (inclusive).
+
+        Args:
+            start_date: Start date of the range
+            end_date: End date of the range
+
+        Returns:
+            Set of dates that are public holidays within the range
+        """
+        ...

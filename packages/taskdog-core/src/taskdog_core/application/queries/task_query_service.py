@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 from typing import TYPE_CHECKING, Any
 
 from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
@@ -454,14 +454,10 @@ class TaskQueryService(QueryService):
             tasks, range_start, range_end
         )
 
-        # Pre-compute holidays in the date range
+        # Pre-compute holidays in the date range (batch operation)
         holidays: set[date] = set()
         if holiday_checker:
-            current = range_start
-            while current <= range_end:
-                if holiday_checker.is_holiday(current):
-                    holidays.add(current)
-                current += timedelta(days=1)
+            holidays = holiday_checker.get_holidays_in_range(range_start, range_end)
 
         # Convert tasks to DTOs
         task_dtos = [GanttTaskDto.from_entity(task) for task in tasks]
