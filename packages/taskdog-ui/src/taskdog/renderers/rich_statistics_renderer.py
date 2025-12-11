@@ -352,6 +352,7 @@ class RichStatisticsRenderer:
         """
         table = Table(
             title=title,
+            title_style=color,
             show_header=True,
             header_style=TABLE_HEADER_STYLE,
             border_style=TABLE_BORDER_STYLE,
