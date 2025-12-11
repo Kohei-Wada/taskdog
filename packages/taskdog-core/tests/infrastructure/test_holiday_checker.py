@@ -52,6 +52,52 @@ class TestHolidayCheckerJapan:
         name = self.checker.get_holiday_name(date(2025, 1, 7))
         assert name is None
 
+    def test_get_holidays_in_range_single_month(self):
+        """Test get_holidays_in_range for a single month."""
+        # January 2025 in Japan has: Jan 1 (New Year), Jan 13 (Coming of Age Day)
+        holidays = self.checker.get_holidays_in_range(
+            date(2025, 1, 1), date(2025, 1, 31)
+        )
+
+        assert date(2025, 1, 1) in holidays  # New Year's Day
+        assert date(2025, 1, 13) in holidays  # Coming of Age Day
+        assert date(2025, 1, 7) not in holidays  # Regular day
+
+    def test_get_holidays_in_range_across_years(self):
+        """Test get_holidays_in_range spanning multiple years."""
+        holidays = self.checker.get_holidays_in_range(
+            date(2024, 2, 1), date(2025, 1, 31)
+        )
+
+        # Should include holidays from both years
+        assert date(2024, 2, 23) in holidays  # Emperor's Birthday (2024)
+        assert date(2025, 1, 1) in holidays  # New Year's Day (2025)
+
+    def test_get_holidays_in_range_no_holidays(self):
+        """Test get_holidays_in_range when no holidays in range."""
+        # June typically has no holidays in Japan
+        holidays = self.checker.get_holidays_in_range(
+            date(2025, 6, 2), date(2025, 6, 7)
+        )
+
+        assert len(holidays) == 0
+
+    def test_get_holidays_in_range_single_day(self):
+        """Test get_holidays_in_range with single day range."""
+        holidays = self.checker.get_holidays_in_range(
+            date(2025, 1, 1), date(2025, 1, 1)
+        )
+
+        assert holidays == {date(2025, 1, 1)}
+
+    def test_get_holidays_in_range_invalid_range(self):
+        """Test get_holidays_in_range returns empty set when start > end."""
+        holidays = self.checker.get_holidays_in_range(
+            date(2025, 12, 31), date(2025, 1, 1)
+        )
+
+        assert holidays == set()
+
 
 class TestHolidayCheckerNoCountry:
     """Test cases for HolidayChecker without country specification."""
@@ -72,6 +118,13 @@ class TestHolidayCheckerNoCountry:
         """Test that get_holiday_name returns None without country."""
         name = self.checker.get_holiday_name(date(2025, 1, 1))
         assert name is None
+
+    def test_get_holidays_in_range_no_country(self):
+        """Test that get_holidays_in_range returns empty set without country."""
+        holidays = self.checker.get_holidays_in_range(
+            date(2025, 1, 1), date(2025, 12, 31)
+        )
+        assert holidays == set()
 
 
 class TestHolidayCheckerInvalidCountry:

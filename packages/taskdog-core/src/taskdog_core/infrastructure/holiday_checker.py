@@ -78,6 +78,37 @@ class HolidayChecker(IHolidayChecker):
 
         return check_date in self._holidays
 
+    def get_holidays_in_range(self, start_date: date, end_date: date) -> set[date]:
+        """Get all holidays within a date range (inclusive).
+
+        Uses year-based batch querying for efficiency instead of checking
+        each date individually.
+
+        Args:
+            start_date: Start date of the range
+            end_date: End date of the range
+
+        Returns:
+            Set of dates that are public holidays within the range
+        """
+        if self._holidays is None:
+            return set()
+
+        if start_date > end_date:
+            return set()
+
+        # Trigger lazy generation for all years in range
+        for year in range(start_date.year, end_date.year + 1):
+            # Accessing a date triggers holiday generation for that year
+            _ = date(year, 1, 1) in self._holidays
+
+        # Now iterate over all generated holidays and filter by date range
+        return {
+            holiday_date
+            for holiday_date in self._holidays
+            if start_date <= holiday_date <= end_date
+        }
+
     def get_holiday_name(self, check_date: date) -> str | None:
         """Get the name of the holiday on a given date.
 
