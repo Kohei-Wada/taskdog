@@ -230,6 +230,54 @@ class TestTaskCrudTools:
             assert call_kwargs[key] == expected_value
         assert result["id"] == 1
 
+    @pytest.mark.parametrize(
+        "invalid_datetime",
+        [
+            pytest.param("invalid-date", id="invalid_format"),
+            pytest.param("2025-13-01T00:00:00", id="invalid_month"),
+            pytest.param("not-a-date", id="not_a_date"),
+        ],
+    )
+    def test_create_task_invalid_datetime_raises_error(
+        self, invalid_datetime: str
+    ) -> None:
+        """Test create_task raises ValueError for invalid datetime strings."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_crud
+
+        clients = create_mock_clients()
+        mcp = FastMCP("test")
+        task_crud.register_tools(mcp, clients)
+
+        create_task_fn = mcp._tool_manager._tools["create_task"].fn
+
+        with pytest.raises(ValueError, match="Invalid datetime format"):
+            create_task_fn(name="Test Task", deadline=invalid_datetime)
+
+    @pytest.mark.parametrize(
+        "invalid_datetime",
+        [
+            pytest.param("invalid-date", id="invalid_format"),
+            pytest.param("2025-13-01T00:00:00", id="invalid_month"),
+            pytest.param("not-a-date", id="not_a_date"),
+        ],
+    )
+    def test_update_task_invalid_datetime_raises_error(
+        self, invalid_datetime: str
+    ) -> None:
+        """Test update_task raises ValueError for invalid datetime strings."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_crud
+
+        clients = create_mock_clients()
+        mcp = FastMCP("test")
+        task_crud.register_tools(mcp, clients)
+
+        update_task_fn = mcp._tool_manager._tools["update_task"].fn
+
+        with pytest.raises(ValueError, match="Invalid datetime format"):
+            update_task_fn(task_id=1, planned_start=invalid_datetime)
+
 
 class TestTaskLifecycleTools:
     """Test task lifecycle MCP tools."""

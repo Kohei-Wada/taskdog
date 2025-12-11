@@ -123,11 +123,19 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Created task data with ID
         """
-        deadline_dt = datetime.fromisoformat(deadline) if deadline else None
-        planned_start_dt = (
-            datetime.fromisoformat(planned_start) if planned_start else None
-        )
-        planned_end_dt = datetime.fromisoformat(planned_end) if planned_end else None
+        try:
+            deadline_dt = datetime.fromisoformat(deadline) if deadline else None
+            planned_start_dt = (
+                datetime.fromisoformat(planned_start) if planned_start else None
+            )
+            planned_end_dt = (
+                datetime.fromisoformat(planned_end) if planned_end else None
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid datetime format. Use ISO format "
+                f"(e.g., '2025-12-11T09:00:00'): {e}"
+            ) from e
 
         result = clients.tasks.create_task(
             name=name,
@@ -175,11 +183,19 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Updated task data
         """
-        deadline_dt = datetime.fromisoformat(deadline) if deadline else None
-        planned_start_dt = (
-            datetime.fromisoformat(planned_start) if planned_start else None
-        )
-        planned_end_dt = datetime.fromisoformat(planned_end) if planned_end else None
+        try:
+            deadline_dt = datetime.fromisoformat(deadline) if deadline else None
+            planned_start_dt = (
+                datetime.fromisoformat(planned_start) if planned_start else None
+            )
+            planned_end_dt = (
+                datetime.fromisoformat(planned_end) if planned_end else None
+            )
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid datetime format. Use ISO format "
+                f"(e.g., '2025-12-11T09:00:00'): {e}"
+            ) from e
 
         result = clients.tasks.update_task(
             task_id=task_id,
