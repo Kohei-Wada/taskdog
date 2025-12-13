@@ -35,7 +35,6 @@ class TaskOperationResponse(BaseModel):
     is_fixed: bool = False
     is_archived: bool = False
     actual_duration_hours: float | None = None
-    actual_daily_hours: dict[str, float] = Field(default_factory=dict)
 
     @classmethod
     def from_dto(cls, dto: TaskOperationOutput) -> TaskOperationResponse:
@@ -63,7 +62,6 @@ class TaskOperationResponse(BaseModel):
             is_fixed=dto.is_fixed,
             is_archived=dto.is_archived,
             actual_duration_hours=dto.actual_duration_hours,
-            actual_daily_hours=dto.actual_daily_hours,
         )
 
 
@@ -87,7 +85,6 @@ class UpdateTaskResponse(BaseModel):
     is_fixed: bool = False
     is_archived: bool = False
     actual_duration_hours: float | None = None
-    actual_daily_hours: dict[str, float] = Field(default_factory=dict)
     updated_fields: list[str] = Field(default_factory=list)
 
     @classmethod
@@ -117,7 +114,6 @@ class UpdateTaskResponse(BaseModel):
             is_fixed=task.is_fixed,
             is_archived=task.is_archived,
             actual_duration_hours=task.actual_duration_hours,
-            actual_daily_hours=task.actual_daily_hours,
             updated_fields=dto.updated_fields,
         )
 
@@ -168,7 +164,6 @@ class TaskDetailResponse(BaseModel):
     is_fixed: bool = False
     is_archived: bool = False
     daily_allocations: dict[str, float] = Field(default_factory=dict)
-    actual_daily_hours: dict[str, float] = Field(default_factory=dict)
     # Computed properties
     actual_duration_hours: float | None = None
     is_active: bool = False
@@ -207,10 +202,6 @@ class TaskDetailResponse(BaseModel):
             daily_allocations={
                 dt.isoformat(): hours
                 for dt, hours in dto.task.daily_allocations.items()
-            },
-            actual_daily_hours={
-                dt.isoformat(): hours
-                for dt, hours in dto.task.actual_daily_hours.items()
             },
             actual_duration_hours=dto.task.actual_duration_hours,
             is_active=dto.task.is_active,

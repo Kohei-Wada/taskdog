@@ -62,9 +62,6 @@ class TaskDbMapper(TaskMapperInterface):
         # Fields requiring transformation
         result["status"] = task.status.value
         result["daily_allocations"] = self._serialize_date_dict(task.daily_allocations)
-        result["actual_daily_hours"] = self._serialize_date_dict(
-            task.actual_daily_hours
-        )
         result["depends_on"] = json.dumps(task.depends_on)
         return result
 
@@ -98,9 +95,6 @@ class TaskDbMapper(TaskMapperInterface):
         daily_allocations = self._deserialize_date_dict(
             data.get("daily_allocations", "{}")
         )
-        actual_daily_hours = self._deserialize_date_dict(
-            data.get("actual_daily_hours", "{}")
-        )
         depends_on = json.loads(data.get("depends_on", "[]"))
 
         # Convert status string to Enum
@@ -125,7 +119,6 @@ class TaskDbMapper(TaskMapperInterface):
             estimated_duration=data.get("estimated_duration"),
             is_fixed=data.get("is_fixed", False),
             daily_allocations=daily_allocations,
-            actual_daily_hours=actual_daily_hours,
             depends_on=depends_on,
             tags=[],  # Tags populated via tag_models relationship, not dict
             is_archived=data.get("is_archived", False),
@@ -165,14 +158,10 @@ class TaskDbMapper(TaskMapperInterface):
         assert model.daily_allocations is not None, (
             "TaskModel.daily_allocations must not be None"
         )
-        assert model.actual_daily_hours is not None, (
-            "TaskModel.actual_daily_hours must not be None"
-        )
         assert model.depends_on is not None, "TaskModel.depends_on must not be None"
 
         # Parse JSON fields
         daily_allocations = self._deserialize_date_dict(model.daily_allocations)
-        actual_daily_hours = self._deserialize_date_dict(model.actual_daily_hours)
         depends_on = json.loads(model.depends_on)
 
         # Phase 6: Get tags from normalized relationship only
@@ -195,7 +184,6 @@ class TaskDbMapper(TaskMapperInterface):
             estimated_duration=model.estimated_duration,
             is_fixed=model.is_fixed,
             daily_allocations=daily_allocations,
-            actual_daily_hours=actual_daily_hours,
             depends_on=depends_on,
             tags=tags,
             is_archived=model.is_archived,

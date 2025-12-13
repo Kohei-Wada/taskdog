@@ -1,6 +1,6 @@
 """Tests for rich detail renderer."""
 
-from datetime import date, datetime
+from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -41,7 +41,6 @@ class TestRichDetailRenderer:
             actual_end=None,
             estimated_duration=None,
             actual_duration_hours=None,
-            actual_daily_hours={},
             daily_allocations={},
             is_active=False,
             is_finished=False,
@@ -69,11 +68,6 @@ class TestRichDetailRenderer:
             actual_end=None,
             estimated_duration=40.0,
             actual_duration_hours=25.0,
-            actual_daily_hours={
-                date(2025, 1, 11): 8.0,
-                date(2025, 1, 12): 7.0,
-                date(2025, 1, 13): 10.0,
-            },
             daily_allocations={},
             is_active=True,
             is_finished=False,
@@ -171,7 +165,6 @@ class TestRichDetailRenderer:
             actual_end=base_task.actual_end,
             estimated_duration=base_task.estimated_duration,
             actual_duration_hours=base_task.actual_duration_hours,
-            actual_daily_hours=base_task.actual_daily_hours,
             daily_allocations=base_task.daily_allocations,
             is_active=base_task.is_active,
             is_finished=base_task.is_finished,
@@ -207,7 +200,6 @@ class TestRichDetailRenderer:
             actual_end=base_task.actual_end,
             estimated_duration=base_task.estimated_duration,
             actual_duration_hours=base_task.actual_duration_hours,
-            actual_daily_hours=base_task.actual_daily_hours,
             daily_allocations=base_task.daily_allocations,
             is_active=base_task.is_active,
             is_finished=base_task.is_finished,
@@ -255,7 +247,6 @@ class TestRichDetailRenderer:
             actual_end=None,
             estimated_duration=None,
             actual_duration_hours=None,
-            actual_daily_hours={},
             daily_allocations={},
             is_active=is_active,
             is_finished=is_finished,

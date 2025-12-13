@@ -84,13 +84,6 @@ class SetTaskTagsRequest(BaseModel):
         return _validate_tags(v)
 
 
-class LogHoursRequest(BaseModel):
-    """Request model for logging actual hours worked."""
-
-    hours: float = Field(..., gt=0, description="Hours worked")
-    date: date_type | None = Field(None, description="Date of work (defaults to today)")
-
-
 class FixActualTimesRequest(BaseModel):
     """Request model for fixing actual timestamps.
 

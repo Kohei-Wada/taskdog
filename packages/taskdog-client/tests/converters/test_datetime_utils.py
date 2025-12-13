@@ -242,9 +242,9 @@ class TestParseDateDict:
 
     def test_single_entry(self):
         """Test parsing dictionary with single entry."""
-        data = {"actual_daily_hours": {"2025-01-20": 4.0}}
+        data = {"daily_allocations": {"2025-01-20": 4.0}}
 
-        result = _parse_date_dict(data, "actual_daily_hours")
+        result = _parse_date_dict(data, "daily_allocations")
 
         assert len(result) == 1
         assert result[date(2025, 1, 20)] == 4.0

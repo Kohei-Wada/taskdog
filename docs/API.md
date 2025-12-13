@@ -303,24 +303,6 @@ Resets status to PENDING.
 
 **Response:** Updated task object
 
-#### POST /api/v1/tasks/{task_id}/log-hours
-
-Log actual hours worked
-
-**Request Body:**
-
-```json
-{
-  "hours": 8.0,
-  "date": "2025-10-22"
-}
-```
-
-**Required fields:** `hours`
-**Optional fields:** `date` (defaults to today)
-
-**Response:** Updated task object
-
 #### POST /api/v1/tasks/{task_id}/archive
 
 Archive a task (soft delete)
@@ -622,15 +604,7 @@ curl -X POST http://localhost:8000/api/v1/optimize \
 # 4. Start task
 curl -X POST http://localhost:8000/api/v1/tasks/1/start
 
-# 5. Log hours
-curl -X POST http://localhost:8000/api/v1/tasks/1/log-hours \
-  -H "Content-Type: application/json" \
-  -d '{
-    "hours": 8.0,
-    "date": "2025-10-22"
-  }'
-
-# 6. Complete task
+# 5. Complete task
 curl -X POST http://localhost:8000/api/v1/tasks/1/complete
 ```
 

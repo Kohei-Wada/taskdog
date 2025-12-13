@@ -30,7 +30,6 @@ class TaskOperationOutput:
         is_fixed: Whether task schedule is fixed
         is_archived: Whether task is archived (soft deleted)
         actual_duration_hours: Computed actual duration (for completed tasks)
-        actual_daily_hours: Dictionary mapping dates to logged hours
         daily_allocations: Dictionary mapping dates to allocated hours (from optimization)
     """
 
@@ -49,7 +48,6 @@ class TaskOperationOutput:
     is_fixed: bool
     is_archived: bool
     actual_duration_hours: float | None
-    actual_daily_hours: dict[str, float]
     daily_allocations: dict[str, float]
 
     @classmethod
@@ -85,10 +83,6 @@ class TaskOperationOutput:
             is_fixed=task.is_fixed,
             is_archived=task.is_archived,
             actual_duration_hours=task.actual_duration_hours,
-            actual_daily_hours={
-                date.isoformat(): hours
-                for date, hours in task.actual_daily_hours.items()
-            },
             daily_allocations={
                 date.isoformat(): hours
                 for date, hours in task.daily_allocations.items()

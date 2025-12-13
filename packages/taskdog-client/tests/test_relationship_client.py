@@ -32,15 +32,8 @@ class TestRelationshipClient:
                 "/api/v1/tasks/1/tags",
                 {"tags": ["urgent", "backend"]},
             ),
-            (
-                "log_hours",
-                {"hours": 5.5, "date_str": "2025-01-15"},
-                "post",
-                "/api/v1/tasks/1/log-hours",
-                {"hours": 5.5, "date": "2025-01-15"},
-            ),
         ],
-        ids=["add_dependency", "set_task_tags", "log_hours"],
+        ids=["add_dependency", "set_task_tags"],
     )
     @patch("taskdog_client.relationship_client.convert_to_task_operation_output")
     def test_relationship_operation_with_payload(

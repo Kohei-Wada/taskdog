@@ -6,12 +6,11 @@ from taskdog_core.application.dto.task_operation_output import TaskOperationOutp
 
 
 class RelationshipClient:
-    """Client for task relationships (dependencies, tags, hours).
+    """Client for task relationships (dependencies, tags).
 
     Operations:
     - Add/remove dependencies
     - Set tags
-    - Log work hours
     """
 
     def __init__(self, base_client: BaseApiClient):
@@ -88,34 +87,6 @@ class RelationshipClient:
         """
         response = self._base._safe_request(
             "put", f"/api/v1/tasks/{task_id}/tags", json={"tags": tags}
-        )
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
-        return convert_to_task_operation_output(data)
-
-    def log_hours(
-        self, task_id: int, hours: float, date_str: str
-    ) -> TaskOperationOutput:
-        """Log actual hours worked on a task.
-
-        Args:
-            task_id: Task ID
-            hours: Hours worked
-            date_str: Date in ISO format
-
-        Returns:
-            TaskOperationOutput with updated task data
-
-        Raises:
-            TaskNotFoundException: If task not found
-            TaskValidationError: If validation fails
-        """
-        response = self._base._safe_request(
-            "post",
-            f"/api/v1/tasks/{task_id}/log-hours",
-            json={"hours": hours, "date": date_str},
         )
         if not response.is_success:
             self._base._handle_error(response)

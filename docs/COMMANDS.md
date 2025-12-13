@@ -276,23 +276,6 @@ taskdog tags 1                  # Show task 1's tags
 taskdog tags 1 urgent backend   # Set tags for task 1
 ```
 
-## Time Tracking
-
-### log-hours - Log actual hours worked
-
-```bash
-taskdog log-hours ID HOURS [-d DATE]
-```
-
-Log actual hours worked on a task. Default date is today.
-
-**Examples:**
-
-```bash
-taskdog log-hours 1 8
-taskdog log-hours 2 4.5 -d 2025-10-20
-```
-
 ## Optimization
 
 ### optimize - Auto-schedule tasks

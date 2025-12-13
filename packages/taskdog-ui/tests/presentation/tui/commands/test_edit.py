@@ -38,7 +38,6 @@ def create_task_detail_dto(
         daily_allocations={},
         is_fixed=is_fixed,
         depends_on=depends_on or [],
-        actual_daily_hours={},
         tags=tags or [],
         is_archived=False,
         created_at=datetime.now(),
