@@ -3,10 +3,10 @@
 from datetime import datetime, timedelta
 
 import pytest
+from tests.helpers.time_provider import FakeTimeProvider
 
 from taskdog_core.application.queries.filters.this_week_filter import ThisWeekFilter
 from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_core.testing.time_provider import FakeTimeProvider
 
 
 class TestThisWeekFilter:
