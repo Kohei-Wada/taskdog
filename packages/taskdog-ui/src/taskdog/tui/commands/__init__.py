@@ -7,6 +7,7 @@ from taskdog.tui.commands.cancel import CancelCommand
 from taskdog.tui.commands.done import DoneCommand
 from taskdog.tui.commands.edit import EditCommand
 from taskdog.tui.commands.export_command import ExportCommand
+from taskdog.tui.commands.fix_actual import FixActualCommand
 from taskdog.tui.commands.hard_delete import HardDeleteCommand
 from taskdog.tui.commands.help_command import ShowHelpCommand
 from taskdog.tui.commands.note import NoteCommand
@@ -25,6 +26,7 @@ COMMANDS: dict[str, type[TUICommandBase]] = {
     "done": DoneCommand,
     "edit": EditCommand,
     "export": ExportCommand,
+    "fix_actual": FixActualCommand,
     "hard_delete": HardDeleteCommand,
     "show_help": ShowHelpCommand,
     "note": NoteCommand,
