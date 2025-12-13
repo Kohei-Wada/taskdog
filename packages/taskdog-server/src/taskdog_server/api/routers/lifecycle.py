@@ -109,21 +109,21 @@ async def fix_actual_times(
     audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
 ) -> TaskOperationResponse:
-    """Fix actual start/end timestamps for a task.
+    """Fix actual start/end timestamps and/or duration for a task.
 
     Used to correct timestamps after the fact, for historical accuracy.
     Past dates are allowed since these are historical records.
 
     Args:
         task_id: Task ID
-        request: Fix actual times request with optional start/end values
+        request: Fix actual times request with optional start/end/duration values
         controller: Lifecycle controller dependency
         broadcaster: Event broadcaster dependency
         audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
     Returns:
-        Updated task data with corrected timestamps
+        Updated task data with corrected timestamps/duration
 
     Raises:
         HTTPException: 404 if task not found, 400 if validation fails
@@ -150,20 +150,36 @@ async def fix_actual_times(
         if request.actual_end is not None
         else ...
     )
+    actual_duration = (
+        None
+        if request.clear_duration
+        else request.actual_duration
+        if request.actual_duration is not None
+        else ...
+    )
 
-    result = controller.fix_actual_times(task_id, actual_start, actual_end)
+    result = controller.fix_actual_times(
+        task_id, actual_start, actual_end, actual_duration
+    )
 
     # Broadcast event
-    broadcaster.task_updated(result, ["actual_start", "actual_end"], client_name)
+    broadcaster.task_updated(
+        result, ["actual_start", "actual_end", "actual_duration"], client_name
+    )
 
     # Audit log with old values
-    old_values = {}
+    old_values: dict[str, str | None] = {}
     if old_task:
         old_values["actual_start"] = (
             old_task.actual_start.isoformat() if old_task.actual_start else None
         )
         old_values["actual_end"] = (
             old_task.actual_end.isoformat() if old_task.actual_end else None
+        )
+        old_values["actual_duration"] = (
+            str(old_task.actual_duration)
+            if old_task.actual_duration is not None
+            else None
         )
 
     audit_controller.log_operation(
@@ -178,6 +194,9 @@ async def fix_actual_times(
             if result.actual_start
             else None,
             "actual_end": result.actual_end.isoformat() if result.actual_end else None,
+            "actual_duration": str(result.actual_duration)
+            if result.actual_duration is not None
+            else None,
         },
         success=True,
     )

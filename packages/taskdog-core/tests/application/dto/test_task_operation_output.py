@@ -24,6 +24,7 @@ class TestTaskOperationOutput:
             planned_end=datetime(2025, 1, 5, 18, 0),
             actual_start=datetime(2025, 1, 1, 9, 30),
             actual_end=None,
+            actual_duration=5.5,
             depends_on=[2, 3],
             tags=["urgent", "backend"],
             is_fixed=True,
@@ -38,6 +39,7 @@ class TestTaskOperationOutput:
         assert dto.priority == 2
         assert dto.deadline is not None
         assert dto.estimated_duration == 10.5
+        assert dto.actual_duration == 5.5
         assert dto.is_fixed is True
         assert dto.is_archived is False
         assert len(dto.depends_on) == 2
@@ -56,6 +58,7 @@ class TestTaskOperationOutput:
             planned_end=None,
             actual_start=None,
             actual_end=None,
+            actual_duration=None,
             depends_on=[],
             tags=[],
             is_fixed=False,
@@ -67,6 +70,7 @@ class TestTaskOperationOutput:
         assert dto.id == 1
         assert dto.name == "Minimal Task"
         assert dto.deadline is None
+        assert dto.actual_duration is None
         assert dto.depends_on == []
         assert dto.tags == []
 
@@ -148,6 +152,7 @@ class TestTaskOperationOutput:
             planned_end=None,
             actual_start=None,
             actual_end=None,
+            actual_duration=None,
             depends_on=[],
             tags=[],
             is_fixed=False,
@@ -166,6 +171,7 @@ class TestTaskOperationOutput:
             planned_end=None,
             actual_start=None,
             actual_end=None,
+            actual_duration=None,
             depends_on=[],
             tags=[],
             is_fixed=False,
@@ -189,6 +195,7 @@ class TestTaskOperationOutput:
             planned_end=None,
             actual_start=None,
             actual_end=None,
+            actual_duration=None,
             depends_on=[],
             tags=[],
             is_fixed=False,

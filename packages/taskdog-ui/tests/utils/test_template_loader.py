@@ -28,6 +28,7 @@ def create_mock_task(
         deadline=deadline,
         actual_start=None,
         actual_end=None,
+        actual_duration=None,
         estimated_duration=estimated_duration,
         daily_allocations={},
         is_fixed=False,

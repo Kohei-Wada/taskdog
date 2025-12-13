@@ -218,12 +218,20 @@ class TaskdogApiClient:
         task_id: int,
         actual_start: datetime | None = None,
         actual_end: datetime | None = None,
+        actual_duration: float | None = None,
         clear_start: bool = False,
         clear_end: bool = False,
+        clear_duration: bool = False,
     ) -> TaskOperationOutput:
-        """Fix actual start/end timestamps for a task."""
+        """Fix actual start/end timestamps and/or duration for a task."""
         return self._lifecycle.fix_actual_times(
-            task_id, actual_start, actual_end, clear_start, clear_end
+            task_id,
+            actual_start,
+            actual_end,
+            actual_duration,
+            clear_start,
+            clear_end,
+            clear_duration,
         )
 
     # Relationship Controller methods - delegate to RelationshipClient

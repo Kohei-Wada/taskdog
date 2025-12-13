@@ -116,6 +116,13 @@ class TaskdogTUI(App):
             tooltip="Edit the selected task's properties",
         ),
         Binding(
+            "f",
+            "fix_actual",
+            "Fix Time",
+            show=False,
+            tooltip="Fix actual start/end times or duration for the selected task",
+        ),
+        Binding(
             "v",
             "note",
             "Edit Note",

@@ -175,8 +175,9 @@ class TaskLifecycleController(BaseTaskController):
         task_id: int,
         actual_start: datetime | None | EllipsisType = ...,
         actual_end: datetime | None | EllipsisType = ...,
+        actual_duration: float | None | EllipsisType = ...,
     ) -> TaskOperationOutput:
-        """Fix actual start/end timestamps for a task.
+        """Fix actual start/end timestamps and/or duration for a task.
 
         Used to correct timestamps after the fact, for historical accuracy.
         Past dates are allowed since these are historical records.
@@ -185,6 +186,7 @@ class TaskLifecycleController(BaseTaskController):
             task_id: ID of the task to fix
             actual_start: New actual start (None to clear, ... to keep current)
             actual_end: New actual end (None to clear, ... to keep current)
+            actual_duration: Explicit duration in hours (None to clear, ... to keep current)
 
         Returns:
             TaskOperationOutput containing the updated task information
@@ -192,11 +194,13 @@ class TaskLifecycleController(BaseTaskController):
         Raises:
             TaskNotFoundException: If task not found
             TaskValidationError: If actual_end < actual_start when both are set
+            TaskValidationError: If actual_duration is set but <= 0
         """
         use_case = FixActualTimesUseCase(self.repository)
         request = FixActualTimesInput(
             task_id=task_id,
             actual_start=actual_start,
             actual_end=actual_end,
+            actual_duration=actual_duration,
         )
         return use_case.execute(request)

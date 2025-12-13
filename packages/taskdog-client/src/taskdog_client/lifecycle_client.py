@@ -129,10 +129,12 @@ class LifecycleClient:
         task_id: int,
         actual_start: datetime | None = None,
         actual_end: datetime | None = None,
+        actual_duration: float | None = None,
         clear_start: bool = False,
         clear_end: bool = False,
+        clear_duration: bool = False,
     ) -> TaskOperationOutput:
-        """Fix actual start/end timestamps for a task.
+        """Fix actual start/end timestamps and/or duration for a task.
 
         Used to correct timestamps after the fact, for historical accuracy.
         Past dates are allowed since these are historical records.
@@ -141,8 +143,10 @@ class LifecycleClient:
             task_id: Task ID
             actual_start: New actual start datetime
             actual_end: New actual end datetime
+            actual_duration: Explicit duration in hours (overrides calculated value)
             clear_start: Clear actual_start timestamp
             clear_end: Clear actual_end timestamp
+            clear_duration: Clear actual_duration (use calculated value)
 
         Returns:
             TaskOperationOutput with updated task data
@@ -154,11 +158,14 @@ class LifecycleClient:
         payload: dict[str, object] = {
             "clear_start": clear_start,
             "clear_end": clear_end,
+            "clear_duration": clear_duration,
         }
         if actual_start is not None:
             payload["actual_start"] = actual_start.isoformat()
         if actual_end is not None:
             payload["actual_end"] = actual_end.isoformat()
+        if actual_duration is not None:
+            payload["actual_duration"] = actual_duration
 
         response = self._base._safe_request(
             "post",

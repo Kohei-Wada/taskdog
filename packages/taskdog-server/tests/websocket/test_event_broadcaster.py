@@ -42,6 +42,7 @@ class TestWebSocketEventBroadcaster:
             planned_end=None,
             actual_start=None,
             actual_end=None,
+            actual_duration=None,
             depends_on=[],
             tags=[],
             is_fixed=False,

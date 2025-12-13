@@ -10,6 +10,7 @@ SortSelectionScreen,
 ConfirmationDialog,
 TaskFormDialog,
 TaskDetailDialog,
+FixActualDialog,
 HelpDialog {
     align: center middle;
 }
@@ -124,6 +125,12 @@ HelpDialog {
 /* Confirmation Dialog */
 #confirmation-dialog {
     border: round $error;  /* Colored border for emphasis on dangerous actions */
+}
+
+/* Fix Actual Dialog - special operation */
+#fix-actual-dialog {
+    border: round $error;  /* Colored border for emphasis on timestamp correction */
+    max-height: 30;  /* 3 fields */
 }
 
 /* Task Form Dialog (Add/Edit) */
