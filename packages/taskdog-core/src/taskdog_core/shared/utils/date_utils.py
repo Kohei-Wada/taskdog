@@ -3,7 +3,7 @@
 This module provides utilities for:
 - Parsing datetime strings (parse_date, parse_datetime)
 - Weekday/weekend detection (is_weekday, is_weekend)
-- Workday calculations (count_weekdays, get_previous_monday, calculate_next_workday, get_next_weekday)
+- Workday calculations (count_weekdays, calculate_next_workday, get_next_weekday)
 
 Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
 """
@@ -126,27 +126,6 @@ def count_weekdays(start: datetime | date, end: datetime | date) -> int:
             weekday_count += 1
         current_date += timedelta(days=1)
     return weekday_count
-
-
-def get_previous_monday(
-    from_date: date | None = None,
-    time_provider: ITimeProvider | None = None,
-) -> date:
-    """Get the previous Monday (or today if today is Monday).
-
-    Args:
-        from_date: Optional date to calculate from (defaults to today)
-        time_provider: Provider for current time. Defaults to SystemTimeProvider.
-
-    Returns:
-        date object representing the previous Monday
-    """
-    if from_date is None:
-        provider = _get_time_provider(time_provider)
-        from_date = provider.today()
-    # weekday(): Monday=0, Sunday=6
-    days_since_monday = from_date.weekday()
-    return from_date - timedelta(days=days_since_monday)
 
 
 def calculate_next_workday(
