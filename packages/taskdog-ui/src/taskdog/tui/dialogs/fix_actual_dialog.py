@@ -227,10 +227,16 @@ class FixActualDialog(BaseModalDialog[FixActualFormData | None]):
                 )
                 return
 
-        # Parse duration
+        # Parse duration (with safety check even though validator should catch invalid input)
         actual_duration: float | None = None
         if actual_duration_str:
-            actual_duration = float(actual_duration_str)
+            try:
+                actual_duration = float(actual_duration_str)
+            except ValueError:
+                self._show_validation_error(
+                    "Invalid duration format", actual_duration_input
+                )
+                return
 
         # All validations passed - create form data
         form_data = FixActualFormData(

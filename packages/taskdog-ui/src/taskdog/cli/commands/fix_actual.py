@@ -31,6 +31,8 @@ class ClearableDateTimeType(click.ParamType):
         self, value: Any, param: Any, ctx: click.Context | None
     ) -> datetime | str | None:
         """Convert value, treating empty string as clear sentinel."""
+        if value is None:
+            return None
         if value == "" or value == CLEAR_SENTINEL:
             return CLEAR_SENTINEL
         return self._inner.convert(value, param, ctx)
@@ -41,8 +43,12 @@ class ClearableFloatType(click.ParamType):
 
     name = "FLOAT"
 
-    def convert(self, value: Any, param: Any, ctx: click.Context | None) -> float | str:
+    def convert(
+        self, value: Any, param: Any, ctx: click.Context | None
+    ) -> float | str | None:
         """Convert value, treating empty string as clear sentinel."""
+        if value is None:
+            return None
         if value == "" or value == CLEAR_SENTINEL:
             return CLEAR_SENTINEL
         try:
