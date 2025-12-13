@@ -172,56 +172,54 @@ endif
 	@echo "✓ Uninstalled successfully!"
 
 # ============================================================================
-# Testing Targets
+# Testing Targets (recursive)
 # ============================================================================
 
-test: test-core test-client test-server test-ui test-mcp ## Run all tests with coverage
+PACKAGES := taskdog-core taskdog-client taskdog-server taskdog-ui taskdog-mcp
+ROOT_DIR := $(shell pwd)
+CONFIG := $(ROOT_DIR)/pyproject.toml
+
+test: $(addprefix test-,$(PACKAGES)) ## Run all tests with coverage
 	@echo ""
 	@echo "✓ All tests passed!"
 	@echo ""
 
 test-all: test ## Run all tests (alias for test)
 
-test-core: ## Run tests for taskdog-core with coverage
-	@echo "Running taskdog-core tests..."
-	cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_core --cov-report=term-missing:skip-covered --cov-fail-under=90
-
-test-client: ## Run tests for taskdog-client with coverage
-	@echo "Running taskdog-client tests..."
-	cd packages/taskdog-client && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_client --cov-report=term-missing:skip-covered --cov-fail-under=80
-
-test-server: ## Run tests for taskdog-server with coverage
-	@echo "Running taskdog-server tests..."
-	cd packages/taskdog-server && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_server --cov-report=term-missing:skip-covered --cov-fail-under=85
-
-test-ui: ## Run tests for taskdog-ui with coverage
-	@echo "Running taskdog-ui tests..."
-	cd packages/taskdog-ui && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog --cov-report=term-missing:skip-covered --cov-fail-under=70
-
-test-mcp: ## Run tests for taskdog-mcp with coverage
-	@echo "Running taskdog-mcp tests..."
-	cd packages/taskdog-mcp && PYTHONPATH=src uv run python -m pytest tests/ --cov=taskdog_mcp --cov-report=term-missing:skip-covered --cov-fail-under=50
+test-%: ## Run tests for a specific package (e.g., make test-taskdog-core)
+	@echo "Running $* tests..."
+	$(MAKE) -C packages/$* test
 
 # ============================================================================
-# Code Quality Targets
+# Code Quality Targets (recursive)
 # ============================================================================
 
-lint: ## Check code with ruff linter
-	@echo "Running ruff linter..."
-	uv run ruff check --config pyproject.toml packages/*/src/ packages/*/tests/
+lint: $(addprefix lint-,$(PACKAGES)) ## Check code with ruff linter
+	@echo ""
+	@echo "✓ Lint passed!"
+	@echo ""
 
-format: ## Format code with ruff and apply fixes
-	@echo "Formatting code with ruff..."
-	uv run ruff format --config pyproject.toml packages/*/src/ packages/*/tests/
-	uv run ruff check --fix --config pyproject.toml packages/*/src/ packages/*/tests/
+lint-%: ## Lint a specific package (e.g., make lint-taskdog-core)
+	@echo "Linting $*..."
+	$(MAKE) -C packages/$* lint CONFIG=$(CONFIG)
 
-typecheck: ## Run mypy type checker on all packages
-	@echo "Running mypy type checker..."
-	uv run mypy packages/taskdog-core/src/
-	uv run mypy packages/taskdog-client/src/
-	uv run mypy packages/taskdog-server/src/
-	uv run mypy packages/taskdog-ui/src/
-	uv run mypy packages/taskdog-mcp/src/
+format: $(addprefix format-,$(PACKAGES)) ## Format code with ruff and apply fixes
+	@echo ""
+	@echo "✓ Format complete!"
+	@echo ""
+
+format-%: ## Format a specific package (e.g., make format-taskdog-core)
+	@echo "Formatting $*..."
+	$(MAKE) -C packages/$* format CONFIG=$(CONFIG)
+
+typecheck: $(addprefix typecheck-,$(PACKAGES)) ## Run mypy type checker on all packages
+	@echo ""
+	@echo "✓ Type check passed!"
+	@echo ""
+
+typecheck-%: ## Type check a specific package (e.g., make typecheck-taskdog-core)
+	@echo "Type checking $*..."
+	$(MAKE) -C packages/$* typecheck CONFIG=$(CONFIG)
 
 check: lint typecheck ## Run all code quality checks (lint + typecheck)
 	@echo ""
