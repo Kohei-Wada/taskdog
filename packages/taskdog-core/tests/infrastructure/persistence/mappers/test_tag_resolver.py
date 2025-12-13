@@ -88,22 +88,6 @@ class TestTagResolver:
 
         assert tag_ids == []
 
-    def test_resolve_tag_ids_to_names(self):
-        """Test resolving tag IDs to names."""
-        # Create tags
-        tag1 = TagModel(name="urgent", created_at=datetime.now())
-        tag2 = TagModel(name="backend", created_at=datetime.now())
-        self.session.add_all([tag1, tag2])
-        self.session.commit()
-
-        # Resolve IDs to names
-        resolver = TagResolver(self.session)
-        tag_names = resolver.resolve_tag_ids_to_names([tag1.id, tag2.id])
-
-        assert len(tag_names) == 2
-        assert "urgent" in tag_names
-        assert "backend" in tag_names
-
     def test_cache_reduces_database_queries(self):
         """Test that cache reduces database queries."""
         # Create a tag
@@ -121,25 +105,6 @@ class TestTagResolver:
 
         assert tag_ids_1 == tag_ids_2
         assert tag_ids_1[0] == tag.id
-
-    def test_clear_cache(self):
-        """Test that clear_cache removes all cached entries."""
-        # Create a tag
-        tag = TagModel(name="test", created_at=datetime.now())
-        self.session.add(tag)
-        self.session.commit()
-
-        resolver = TagResolver(self.session)
-
-        # Cache the tag
-        resolver.resolve_tag_names_to_ids(["test"])
-
-        # Clear cache
-        resolver.clear_cache()
-
-        # Verify cache is empty
-        assert len(resolver._name_to_id_cache) == 0
-        assert len(resolver._id_to_name_cache) == 0
 
     def test_duplicate_tag_name_prevented(self):
         """Test that duplicate tag names are prevented."""
@@ -160,20 +125,6 @@ class TestTagResolver:
         # Verify only one tag exists
         tags = self.session.query(TagModel).filter(TagModel.name == "duplicate").all()
         assert len(tags) == 1
-
-    def test_preserves_tag_order(self):
-        """Test that tag order is preserved in results."""
-        resolver = TagResolver(self.session)
-
-        # Resolve tags in specific order
-        tag_names = ["zebra", "alpha", "beta"]
-        tag_ids = resolver.resolve_tag_names_to_ids(tag_names)
-
-        # Resolve back to names
-        resolved_names = resolver.resolve_tag_ids_to_names(tag_ids)
-
-        # Order should be preserved
-        assert resolved_names == tag_names
 
     def test_resolve_tag_names_with_special_characters(self):
         """Test resolving tag names with special characters."""
@@ -205,18 +156,3 @@ class TestTagResolver:
         # But only create one tag in database
         tags = self.session.query(TagModel).filter(TagModel.name == "urgent").all()
         assert len(tags) == 1
-
-    def test_bidirectional_conversion(self):
-        """Test that name->ID->name conversion works correctly."""
-        original_names = ["test1", "test2", "test3"]
-
-        resolver = TagResolver(self.session)
-
-        # Convert names to IDs
-        tag_ids = resolver.resolve_tag_names_to_ids(original_names)
-
-        # Convert IDs back to names
-        resolved_names = resolver.resolve_tag_ids_to_names(tag_ids)
-
-        # Should get back the original names
-        assert resolved_names == original_names

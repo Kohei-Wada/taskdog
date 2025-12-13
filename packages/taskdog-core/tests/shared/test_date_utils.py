@@ -5,30 +5,9 @@ from datetime import date, datetime
 import pytest
 
 from taskdog_core.shared.utils.date_utils import (
-    calculate_next_workday,
     is_weekday,
     is_weekend,
 )
-
-
-class TestDateUtils:
-    """Test cases for date utility functions."""
-
-    @pytest.mark.parametrize(
-        "input_date,expected_weekday,expected_date",
-        [
-            (datetime(2025, 1, 6), 0, datetime(2025, 1, 6)),
-            (datetime(2025, 1, 10), 4, datetime(2025, 1, 10)),
-            (datetime(2025, 1, 4), 0, datetime(2025, 1, 6)),
-            (datetime(2025, 1, 5), 0, datetime(2025, 1, 6)),
-        ],
-        ids=["monday", "friday", "saturday_to_monday", "sunday_to_monday"],
-    )
-    def test_calculate_next_workday(self, input_date, expected_weekday, expected_date):
-        """Test calculation for various days of the week."""
-        result = calculate_next_workday(input_date)
-        assert result.weekday() == expected_weekday
-        assert result.date() == expected_date.date()
 
 
 class TestWeekdayHelpers:

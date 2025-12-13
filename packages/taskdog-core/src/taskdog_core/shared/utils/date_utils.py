@@ -1,9 +1,9 @@
 """Date and time utility functions for task scheduling.
 
 This module provides utilities for:
-- Parsing datetime strings (parse_date, parse_datetime)
+- Parsing datetime strings (parse_datetime)
 - Weekday/weekend detection (is_weekday, is_weekend)
-- Workday calculations (count_weekdays, calculate_next_workday, get_next_weekday)
+- Workday calculations (count_weekdays, get_next_weekday)
 
 Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
 """
@@ -44,24 +44,6 @@ def _get_time_provider(time_provider: ITimeProvider | None) -> ITimeProvider:
 
         _default_time_provider = SystemTimeProvider()
     return _default_time_provider
-
-
-def parse_date(date_str: str | None) -> date | None:
-    """Parse date string to date object.
-
-    Args:
-        date_str: Date string in format YYYY-MM-DD HH:MM:SS
-
-    Returns:
-        date object or None if parsing fails or input is None
-    """
-    if not date_str:
-        return None
-    try:
-        dt = datetime.strptime(date_str, DATETIME_FORMAT)
-        return dt.date()
-    except ValueError:
-        return None
 
 
 def parse_datetime(date_str: str | None) -> datetime | None:
@@ -126,37 +108,6 @@ def count_weekdays(start: datetime | date, end: datetime | date) -> int:
             weekday_count += 1
         current_date += timedelta(days=1)
     return weekday_count
-
-
-def calculate_next_workday(
-    start_date: datetime | None = None,
-    time_provider: ITimeProvider | None = None,
-) -> datetime:
-    """Calculate the next available workday.
-
-    If the given date (or today if None) is a weekday, returns that date.
-    Otherwise, returns the next Monday.
-
-    Args:
-        start_date: Starting date (default: today)
-        time_provider: Provider for current time. Defaults to SystemTimeProvider.
-
-    Returns:
-        The next workday (Monday-Friday)
-    """
-    if start_date is None:
-        provider = _get_time_provider(time_provider)
-        start_date = provider.now()
-
-    # If today is a weekday, use today
-    if is_weekday(start_date):
-        return start_date
-
-    # Otherwise, move to next Monday
-    days_until_monday = (7 - start_date.weekday()) % 7
-    if days_until_monday == 0:  # If today is Sunday
-        days_until_monday = 1
-    return start_date + timedelta(days=days_until_monday)
 
 
 def get_next_weekday(
