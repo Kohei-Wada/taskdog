@@ -71,11 +71,7 @@ class AuditClient:
         if end_date is not None:
             params["end_date"] = end_date.isoformat()
 
-        response = self._base._safe_request("get", "/api/v1/audit-logs", params=params)
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("get", "/api/v1/audit-logs", params=params)
         return self._convert_to_list_output(data)
 
     def get_audit_log(self, log_id: int) -> AuditLogOutput | None:

@@ -116,6 +116,31 @@ class BaseApiClient:
         else:
             response.raise_for_status()
 
+    def _request_json(self, method: str, *args: Any, **kwargs: Any) -> Any:
+        """Execute HTTP request and return JSON response, handling errors.
+
+        Combines _safe_request + error check + JSON parsing into one call.
+
+        Args:
+            method: HTTP method name ('get', 'post', 'patch', 'delete', 'put')
+            *args: Positional arguments for the request
+            **kwargs: Keyword arguments for the request
+
+        Returns:
+            Parsed JSON response (dict, list, or primitive)
+
+        Raises:
+            ServerConnectionError: If connection to server fails
+            TaskNotFoundException: If status is 404
+            TaskValidationError: If status is 400 or 422
+            AuthenticationError: If status is 401
+            ServerError: If status >= 500
+        """
+        response = self._safe_request(method, *args, **kwargs)
+        if not response.is_success:
+            self._handle_error(response)
+        return response.json()
+
     def _safe_request(self, method: str, *args: Any, **kwargs: Any) -> httpx.Response:
         """Execute HTTP request with connection error handling.
 

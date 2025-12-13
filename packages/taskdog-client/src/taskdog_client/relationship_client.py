@@ -35,15 +35,11 @@ class RelationshipClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails (e.g., circular dependency)
         """
-        response = self._base._safe_request(
+        data = self._base._request_json(
             "post",
             f"/api/v1/tasks/{task_id}/dependencies",
             json={"depends_on_id": depends_on_id},
         )
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
         return convert_to_task_operation_output(data)
 
     def remove_dependency(
@@ -62,13 +58,9 @@ class RelationshipClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self._base._safe_request(
+        data = self._base._request_json(
             "delete", f"/api/v1/tasks/{task_id}/dependencies/{depends_on_id}"
         )
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
         return convert_to_task_operation_output(data)
 
     def set_task_tags(self, task_id: int, tags: list[str]) -> TaskOperationOutput:
@@ -85,11 +77,7 @@ class RelationshipClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self._base._safe_request(
+        data = self._base._request_json(
             "put", f"/api/v1/tasks/{task_id}/tags", json={"tags": tags}
         )
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
         return convert_to_task_operation_output(data)

@@ -91,11 +91,7 @@ class QueryClient:
             if gantt_end_date:
                 params["gantt_end_date"] = gantt_end_date.isoformat()
 
-        response = self._base._safe_request("get", "/api/v1/tasks", params=params)
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("get", "/api/v1/tasks", params=params)
         return convert_to_task_list_output(data, self._has_notes_cache)
 
     def list_today_tasks(
@@ -130,11 +126,7 @@ class QueryClient:
         if status:
             params["status"] = status.lower()
 
-        response = self._base._safe_request("get", "/api/v1/tasks/today", params=params)
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("get", "/api/v1/tasks/today", params=params)
         return convert_to_task_list_output(data, self._has_notes_cache)
 
     def list_week_tasks(
@@ -169,11 +161,7 @@ class QueryClient:
         if status:
             params["status"] = status.lower()
 
-        response = self._base._safe_request("get", "/api/v1/tasks/week", params=params)
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("get", "/api/v1/tasks/week", params=params)
         return convert_to_task_list_output(data, self._has_notes_cache)
 
     def get_task_by_id(self, task_id: int) -> TaskByIdOutput:
@@ -188,11 +176,7 @@ class QueryClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self._base._safe_request("get", f"/api/v1/tasks/{task_id}")
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("get", f"/api/v1/tasks/{task_id}")
         return convert_to_get_task_by_id_output(data)
 
     def get_task_detail(self, task_id: int) -> TaskDetailOutput:
@@ -207,11 +191,7 @@ class QueryClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self._base._safe_request("get", f"/api/v1/tasks/{task_id}")
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("get", f"/api/v1/tasks/{task_id}")
         return convert_to_get_task_detail_output(data)
 
     def get_gantt_data(
@@ -268,11 +248,7 @@ class QueryClient:
         if end_date:
             params["end_date"] = end_date.isoformat()
 
-        response = self._base._safe_request("get", "/api/v1/gantt", params=params)
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("get", "/api/v1/gantt", params=params)
         return convert_to_gantt_output(data)
 
     def get_tag_statistics(self) -> TagStatisticsOutput:
@@ -281,9 +257,5 @@ class QueryClient:
         Returns:
             TagStatisticsOutput with tag statistics
         """
-        response = self._base._safe_request("get", "/api/v1/tags/statistics")
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("get", "/api/v1/tags/statistics")
         return convert_to_tag_statistics_output(data)

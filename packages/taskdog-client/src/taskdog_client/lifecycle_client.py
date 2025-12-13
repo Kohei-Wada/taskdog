@@ -40,13 +40,7 @@ class LifecycleClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self._base._safe_request(
-            "post", f"/api/v1/tasks/{task_id}/{operation}"
-        )
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("post", f"/api/v1/tasks/{task_id}/{operation}")
         return convert_to_task_operation_output(data)
 
     def start_task(self, task_id: int) -> TaskOperationOutput:
@@ -167,12 +161,9 @@ class LifecycleClient:
         if actual_duration is not None:
             payload["actual_duration"] = actual_duration
 
-        response = self._base._safe_request(
+        data = self._base._request_json(
             "post",
             f"/api/v1/tasks/{task_id}/fix-actual",
             json=payload,
         )
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        return convert_to_task_operation_output(response.json())
+        return convert_to_task_operation_output(data)
