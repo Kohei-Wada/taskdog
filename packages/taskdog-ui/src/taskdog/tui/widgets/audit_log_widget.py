@@ -87,18 +87,19 @@ class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
         lines: list[str] = []
 
         # Line 1: Timestamp and status
+        # Success is expected, so keep it dim. Only highlight errors.
         ts = log.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        status = "[green]OK[/]" if log.success else "[red]ER[/]"
+        status = "[dim]OK[/]" if log.success else "[red]ER[/]"
         lines.append(f"[dim]{ts}[/]  {status}")
 
-        # Line 2: Operation
-        lines.append(f"[cyan bold]{log.operation}[/]")
+        # Line 2: Operation (no color - main content should be readable without distraction)
+        lines.append(log.operation)
 
         # Line 3: Resource info (if exists)
         if log.resource_id or log.resource_name:
             parts: list[str] = []
             if log.resource_id:
-                parts.append(f"[yellow]#{log.resource_id}[/]")
+                parts.append(f"[dim]#{log.resource_id}[/]")
             if log.resource_name:
                 name = (
                     log.resource_name[:30] + "..."

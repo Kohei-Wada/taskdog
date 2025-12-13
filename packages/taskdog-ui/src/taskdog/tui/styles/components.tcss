@@ -183,11 +183,3 @@ Input {
     margin-bottom: 1;
     border: round $primary;
 }
-
-.audit-log-entry.log-success {
-    border: round $success;
-}
-
-.audit-log-entry.log-error {
-    border: round $error;
-}
