@@ -184,10 +184,53 @@ Input {
     border: round $primary;
 }
 
-.audit-log-entry.log-success {
-    border: round $success;
+/* Audit Log Entry Components */
+.log-header {
+    width: 100%;
+    height: auto;
 }
 
-.audit-log-entry.log-error {
-    border: round $error;
+.log-timestamp {
+    color: $text-muted;
+    width: auto;
+    margin-right: 2;
+}
+
+.log-status-ok {
+    color: $success;
+    width: auto;
+}
+
+.log-status-error {
+    color: $error;
+    width: auto;
+}
+
+.log-operation {
+    width: 100%;
+    height: auto;
+}
+
+.log-resource {
+    width: 100%;
+    height: auto;
+    color: $text-muted;
+}
+
+.log-changes {
+    width: 100%;
+    height: auto;
+    color: $text-muted;
+}
+
+.log-error-message {
+    width: 100%;
+    height: auto;
+    color: $error;
+}
+
+.log-client {
+    width: 100%;
+    height: auto;
+    color: $secondary;
 }
