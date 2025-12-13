@@ -40,18 +40,6 @@ class TestHolidayCheckerJapan:
         """Test Japanese holiday detection."""
         assert self.checker.is_holiday(test_date) == expected_is_holiday
 
-    def test_get_holiday_name(self):
-        """Test that holiday names are retrieved correctly."""
-        name = self.checker.get_holiday_name(date(2025, 1, 1))
-        assert name is not None
-        # Holiday name should contain something (varies by language)
-        assert len(name) > 0
-
-    def test_get_holiday_name_non_holiday(self):
-        """Test that non-holidays return None for name."""
-        name = self.checker.get_holiday_name(date(2025, 1, 7))
-        assert name is None
-
     def test_get_holidays_in_range_single_month(self):
         """Test get_holidays_in_range for a single month."""
         # January 2025 in Japan has: Jan 1 (New Year), Jan 13 (Coming of Age Day)
@@ -113,11 +101,6 @@ class TestHolidayCheckerNoCountry:
         assert self.checker.is_holiday(date(2025, 1, 1)) is False
         # Regular day
         assert self.checker.is_holiday(date(2025, 6, 15)) is False
-
-    def test_get_holiday_name_no_country(self):
-        """Test that get_holiday_name returns None without country."""
-        name = self.checker.get_holiday_name(date(2025, 1, 1))
-        assert name is None
 
     def test_get_holidays_in_range_no_country(self):
         """Test that get_holidays_in_range returns empty set without country."""

@@ -1,6 +1,6 @@
 """Optimize command - Auto-generate optimal task schedules."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import click
 
@@ -10,7 +10,25 @@ from taskdog.console.console_writer import ConsoleWriter
 from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 from taskdog.tui.constants.ui_settings import DEFAULT_START_HOUR
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
-from taskdog_core.shared.utils.date_utils import get_next_weekday
+
+
+def _get_next_weekday_start() -> datetime:
+    """Get the next weekday (Mon-Fri) with default start hour.
+
+    Always returns at least tomorrow. If tomorrow is a weekend,
+    returns next Monday.
+
+    Returns:
+        datetime with the next weekday at DEFAULT_START_HOUR
+    """
+    today = datetime.now()
+    next_day = today + timedelta(days=1)
+
+    # Skip weekends - move to next Monday if needed
+    while next_day.weekday() >= 5:  # 5=Saturday, 6=Sunday
+        next_day += timedelta(days=1)
+
+    return next_day.replace(hour=DEFAULT_START_HOUR, minute=0, second=0, microsecond=0)
 
 
 def _show_failed_tasks(
@@ -104,7 +122,7 @@ def optimize_command(
     api_client = ctx_obj.api_client
 
     # Use start_date or get next weekday with default business start hour
-    start_date = start_date if start_date else get_next_weekday(DEFAULT_START_HOUR)
+    start_date = start_date if start_date else _get_next_weekday_start()
 
     # Convert task_ids tuple to list (or None if empty)
     task_ids_list = list(task_ids) if task_ids else None

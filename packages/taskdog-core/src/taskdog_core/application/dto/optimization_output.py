@@ -57,11 +57,3 @@ class OptimizationOutput:
             True if no tasks were successfully scheduled
         """
         return len(self.successful_tasks) == 0 and len(self.failed_tasks) > 0
-
-    def all_succeeded(self) -> bool:
-        """Check if all schedulable tasks succeeded.
-
-        Returns:
-            True if all tasks were successfully scheduled (no failures)
-        """
-        return len(self.failed_tasks) == 0 and len(self.successful_tasks) > 0

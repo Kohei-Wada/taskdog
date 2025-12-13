@@ -56,24 +56,6 @@ class XDGDirectories:
         return config_dir
 
     @classmethod
-    def get_cache_home(cls, create: bool = True) -> Path:
-        """Get XDG_CACHE_HOME directory for taskdog.
-
-        Returns:
-            Path to $XDG_CACHE_HOME/taskdog (default: ~/.cache/taskdog)
-
-        Args:
-            create: Create directory if it doesn't exist (default: True)
-        """
-        base_dir = os.getenv("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))
-        cache_dir = Path(base_dir) / cls.APP_NAME
-
-        if create:
-            cache_dir.mkdir(parents=True, exist_ok=True)
-
-        return cache_dir
-
-    @classmethod
     def get_notes_dir(cls) -> Path:
         """Get path to notes directory.
 

@@ -84,32 +84,6 @@ class TestStrategyFactory:
 
         assert isinstance(strategy, GreedyOptimizationStrategy)
 
-    def test_list_available_returns_all_algorithms(self):
-        """Test list_available returns all 9 algorithm names."""
-        algorithms = StrategyFactory.list_available()
-
-        expected_algorithms = [
-            "greedy",
-            "balanced",
-            "backward",
-            "priority_first",
-            "earliest_deadline",
-            "round_robin",
-            "dependency_aware",
-            "genetic",
-            "monte_carlo",
-        ]
-
-        assert len(algorithms) == 9
-        for algo in expected_algorithms:
-            assert algo in algorithms
-
-    def test_list_available_returns_list(self):
-        """Test list_available returns a list type."""
-        algorithms = StrategyFactory.list_available()
-
-        assert isinstance(algorithms, list)
-
     def test_get_algorithm_metadata_returns_metadata_for_all_algorithms(self):
         """Test get_algorithm_metadata returns metadata for all 9 algorithms."""
         metadata = StrategyFactory.get_algorithm_metadata()
@@ -140,21 +114,12 @@ class TestStrategyFactory:
 
         assert greedy_found, "Greedy algorithm not found in metadata"
 
-    def test_get_algorithm_metadata_all_ids_are_in_list_available(self):
-        """Test that all IDs in metadata match list_available."""
+    def test_create_all_algorithms_from_metadata(self):
+        """Test that all algorithms in metadata can be created successfully."""
         metadata = StrategyFactory.get_algorithm_metadata()
-        available = StrategyFactory.list_available()
 
-        metadata_ids = [algo_id for algo_id, _, _ in metadata]
-
-        assert set(metadata_ids) == set(available)
-
-    def test_create_all_algorithms_succeed(self):
-        """Test that all algorithms can be created successfully."""
-        algorithms = StrategyFactory.list_available()
-
-        for algo_name in algorithms:
-            strategy = StrategyFactory.create(algo_name, 9, 18)
+        for algo_id, _, _ in metadata:
+            strategy = StrategyFactory.create(algo_id, 9, 18)
             assert strategy is not None
 
     @pytest.mark.parametrize("case_variant", ["Greedy", "GREEDY"])

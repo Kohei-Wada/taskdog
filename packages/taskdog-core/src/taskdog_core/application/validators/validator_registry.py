@@ -53,14 +53,3 @@ class TaskFieldValidatorRegistry:
         """
         if field_name in self._validators:
             self._validators[field_name].validate(value, task, self.repository)
-
-    def has_validator(self, field_name: str) -> bool:
-        """Check if a validator exists for the given field.
-
-        Args:
-            field_name: Name of the field to check
-
-        Returns:
-            True if validator exists, False otherwise
-        """
-        return field_name in self._validators
