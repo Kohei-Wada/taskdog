@@ -27,7 +27,6 @@ def create_mock_task_dto(task_id: int = 1, name: str = "Test Task") -> TaskDetai
         daily_allocations={},
         is_fixed=False,
         depends_on=[],
-        actual_daily_hours={},
         tags=[],
         is_archived=False,
         created_at=datetime.now(),

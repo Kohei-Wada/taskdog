@@ -196,7 +196,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
   - Methods: start_task, complete_task, pause_task, cancel_task, reopen_task
   - Uses StatusChangeUseCase pattern for consistent state transitions
 - `TaskRelationshipController`: Orchestrates relationship operations
-  - Methods: add_dependency, remove_dependency, set_tags, log_hours
+  - Methods: add_dependency, remove_dependency, set_tags
   - Handles task dependencies and tag management
 - `TaskAnalyticsController`: Orchestrates analytics and optimization
   - Methods: calculate_statistics, optimize_schedule
@@ -303,7 +303,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 - `TaskCrudController`: Orchestrates CRUD operations (create, update, delete)
 - `TaskLifecycleController`: Orchestrates lifecycle operations (start, complete, pause, cancel, reopen)
-- `TaskRelationshipController`: Orchestrates relationship operations (dependencies, tags, log hours)
+- `TaskRelationshipController`: Orchestrates relationship operations (dependencies, tags)
 - `TaskAnalyticsController`: Orchestrates analytics and optimization (statistics, optimize)
 - `QueryController`: Orchestrates read operations (list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id)
   - Returns Output DTOs with metadata (TaskListOutput, GanttOutput, TagStatisticsOutput)
@@ -373,9 +373,8 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 - `remove-dependency TASK_ID DEPENDS_ON_ID`: Remove dependency
 - `tags [ID] [TAG...]`: List all tags, show task tags, or set task tags
 
-**Time & Optimization**
+**Optimization**
 
-- `log-hours ID HOURS [--date DATE]`: Log actual hours
 - `optimize [--start-date] [--max-hours-per-day] [--algorithm] [--force]`: Auto-schedule (9 strategies available)
 
 **Visualization**
@@ -462,7 +461,6 @@ The FastAPI server (`taskdog-server`) provides a REST API with automatic OpenAPI
 - `POST /api/v1/tasks/{task_id}/pause` - Pause task (reset to PENDING)
 - `POST /api/v1/tasks/{task_id}/cancel` - Cancel task
 - `POST /api/v1/tasks/{task_id}/reopen` - Reopen completed/canceled task
-- `POST /api/v1/tasks/{task_id}/log-hours` - Log actual hours worked
 - `POST /api/v1/tasks/{task_id}/archive` - Archive task (soft delete)
 - `POST /api/v1/tasks/{task_id}/restore` - Restore archived task
 

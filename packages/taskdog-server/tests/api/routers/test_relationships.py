@@ -1,7 +1,5 @@
 """Tests for relationships router (dependency and tag management)."""
 
-from datetime import date
-
 import pytest
 
 from taskdog_core.domain.entities.task import TaskStatus
@@ -45,7 +43,6 @@ class TestRelationshipsRouter:
             ),
             ("remove_dependency", "DELETE", "/api/v1/tasks/999/dependencies/1", None),
             ("set_tags", "PUT", "/api/v1/tasks/999/tags", {"tags": ["test"]}),
-            ("log_hours", "POST", "/api/v1/tasks/999/log-hours", {"hours": 2.0}),
         ],
     )
     def test_relationship_operation_not_found(
@@ -204,83 +201,3 @@ class TestRelationshipsRouter:
 
         # Assert
         assert response.status_code in [400, 422]
-
-    def test_log_hours_success(self, client, repository, task_factory):
-        """Test logging hours for a task."""
-        # Arrange
-        task = task_factory.create(
-            name="Test Task", priority=1, status=TaskStatus.PENDING
-        )
-
-        # Act
-        response = client.post(
-            f"/api/v1/tasks/{task.id}/log-hours",
-            json={"hours": 4.5, "date": "2025-01-15"},
-        )
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert "2025-01-15" in data["actual_daily_hours"]
-        assert data["actual_daily_hours"]["2025-01-15"] == 4.5
-
-        # Verify in database
-        updated_task = repository.get_by_id(task.id)
-        assert date(2025, 1, 15) in updated_task.actual_daily_hours
-        assert updated_task.actual_daily_hours[date(2025, 1, 15)] == 4.5
-
-    def test_log_hours_default_date_today(self, client, task_factory):
-        """Test logging hours without date uses today."""
-        # Arrange
-        task = task_factory.create(
-            name="Test Task", priority=1, status=TaskStatus.PENDING
-        )
-
-        today = date.today()
-
-        # Act
-        response = client.post(
-            f"/api/v1/tasks/{task.id}/log-hours", json={"hours": 3.0}
-        )
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert today.isoformat() in data["actual_daily_hours"]
-        assert data["actual_daily_hours"][today.isoformat()] == 3.0
-
-    def test_log_hours_validation_error_negative_hours(self, client, task_factory):
-        """Test logging negative hours returns 400 or 422."""
-        # Arrange
-        task = task_factory.create(
-            name="Test Task", priority=1, status=TaskStatus.PENDING
-        )
-
-        # Act
-        response = client.post(
-            f"/api/v1/tasks/{task.id}/log-hours", json={"hours": -1.0}
-        )
-
-        # Assert
-        assert response.status_code in [400, 422]
-
-    def test_log_hours_updates_existing_date(self, client, repository, task_factory):
-        """Test logging hours for existing date updates the value."""
-        # Arrange
-        task = task_factory.create(
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.PENDING,
-            actual_daily_hours={date(2025, 1, 15): 2.0},
-        )
-
-        # Act
-        response = client.post(
-            f"/api/v1/tasks/{task.id}/log-hours",
-            json={"hours": 5.0, "date": "2025-01-15"},
-        )
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert data["actual_daily_hours"]["2025-01-15"] == 5.0

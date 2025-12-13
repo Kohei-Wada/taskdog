@@ -2,7 +2,6 @@
 
 from taskdog_server.api.models.requests import (
     CreateTaskRequest,
-    LogHoursRequest,
     OptimizeScheduleRequest,
     UpdateTaskRequest,
 )
@@ -21,7 +20,6 @@ from taskdog_server.api.models.responses import (
 __all__ = [
     "CreateTaskRequest",
     "GanttResponse",
-    "LogHoursRequest",
     "OptimizationResponse",
     "OptimizeScheduleRequest",
     "StatisticsResponse",

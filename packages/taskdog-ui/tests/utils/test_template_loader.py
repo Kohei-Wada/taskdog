@@ -32,7 +32,6 @@ def create_mock_task(
         daily_allocations={},
         is_fixed=False,
         depends_on=[],
-        actual_daily_hours={},
         tags=tags or [],
         is_archived=False,
         created_at=datetime.now(),

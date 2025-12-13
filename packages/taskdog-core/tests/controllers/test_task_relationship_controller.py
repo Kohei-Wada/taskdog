@@ -110,28 +110,6 @@ class TestTaskRelationshipController:
         assert result is not None
         assert result.id == task_id
 
-    def test_log_hours_returns_task_operation_output(self):
-        """Test that log_hours returns TaskOperationOutput."""
-        # Arrange
-        task_id = 1
-        hours = 2.5
-        date = "2025-01-15"
-        task = Task(
-            id=task_id,
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.PENDING,
-        )
-        self.repository.get_by_id.return_value = task
-        self.repository.save.return_value = None
-
-        # Act
-        result = self.controller.log_hours(task_id, hours, date)
-
-        # Assert
-        assert result is not None
-        assert result.id == task_id
-
     def test_controller_inherits_from_base_controller(self):
         """Test that controller has repository and config from base class."""
         assert self.controller.repository is not None

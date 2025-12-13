@@ -9,7 +9,6 @@ from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_server.api.models.requests import (
     AddDependencyRequest,
     CreateTaskRequest,
-    LogHoursRequest,
     OptimizeScheduleRequest,
     SetTaskTagsRequest,
     TaskFilterParams,
@@ -196,52 +195,6 @@ class TestSetTaskTagsRequest:
 
         # Assert
         assert request.tags == []
-
-
-class TestLogHoursRequest:
-    """Test cases for LogHoursRequest model."""
-
-    def test_valid_request_with_date(self):
-        """Test creating valid log hours request with date."""
-        # Arrange
-        today = date.today()
-
-        # Act
-        request = LogHoursRequest(hours=8.0, date=today)
-
-        # Assert
-        assert request.hours == 8.0
-        assert request.date == today
-
-    def test_valid_request_without_date(self):
-        """Test creating valid log hours request without date."""
-        # Act
-        request = LogHoursRequest(hours=4.5)
-
-        # Assert
-        assert request.hours == 4.5
-        assert request.date is None
-
-    @pytest.mark.parametrize(
-        "scenario,kwargs,expected_error",
-        [
-            ("zero_hours", {"hours": 0.0}, "hours"),
-            ("negative_hours", {"hours": -1.0}, "hours"),
-        ],
-    )
-    def test_log_hours_request_validation_errors(
-        self, scenario, kwargs, expected_error
-    ):
-        """Test LogHoursRequest validation errors."""
-        with pytest.raises(ValidationError) as exc_info:
-            LogHoursRequest(**kwargs)
-        assert expected_error in str(exc_info.value).lower()
-
-    def test_missing_hours(self):
-        """Test that hours field is required."""
-        # Act & Assert
-        with pytest.raises(ValidationError):
-            LogHoursRequest()
 
 
 class TestOptimizeScheduleRequest:

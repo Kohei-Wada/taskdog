@@ -40,7 +40,6 @@ class Task:
         daily_allocations: Daily work hours allocation (date_str → hours)
         depends_on: List of task IDs that must be completed before this task can start
         is_fixed: Whether this task is fixed (cannot be moved by optimizer)
-        actual_daily_hours: Actual work hours per day (date_str → hours)
         tags: List of tags for categorization and filtering (non-empty, unique)
         is_archived: Whether this task is archived (soft deleted)
 
@@ -71,7 +70,6 @@ class Task:
     # New fields (Phase 1: Schema extension)
     depends_on: list[int] = field(default_factory=list)
     is_fixed: bool = False
-    actual_daily_hours: dict[date, float] = field(default_factory=dict)
     tags: list[str] = field(default_factory=list)
     # Archive flag: True = soft deleted, preserves original status
     is_archived: bool = False

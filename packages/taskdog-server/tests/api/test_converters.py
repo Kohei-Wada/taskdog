@@ -48,7 +48,6 @@ class TestConvertToUpdateTaskResponse:
             is_fixed=False,
             is_archived=False,
             actual_duration_hours=9.5,
-            actual_daily_hours={},
             daily_allocations={},
         )
         dto = TaskUpdateOutput(task=task, updated_fields=["name", "priority", "status"])
@@ -82,7 +81,6 @@ class TestConvertToUpdateTaskResponse:
             is_fixed=False,
             is_archived=False,
             actual_duration_hours=None,
-            actual_daily_hours={},
             daily_allocations={},
         )
         dto = TaskUpdateOutput(task=task, updated_fields=[])
@@ -283,7 +281,6 @@ class TestConvertToTaskDetailResponse:
             daily_allocations={},
             is_fixed=False,
             depends_on=[],
-            actual_daily_hours={},
             tags=[],
             is_archived=False,
             created_at=now,
@@ -306,7 +303,6 @@ class TestConvertToTaskDetailResponse:
         assert response.status == TaskStatus.PENDING
         assert response.notes is None
         assert response.daily_allocations == {}
-        assert response.actual_daily_hours == {}
 
     def test_convert_full_task_detail(self):
         """Test converting task detail with all fields."""
@@ -326,7 +322,6 @@ class TestConvertToTaskDetailResponse:
             daily_allocations={date(2025, 1, 1): 4.0, date(2025, 1, 2): 4.0},
             is_fixed=True,
             depends_on=[2, 3],
-            actual_daily_hours={date(2025, 1, 1): 3.5},
             tags=["backend", "api"],
             is_archived=False,
             created_at=now,
@@ -356,8 +351,6 @@ class TestConvertToTaskDetailResponse:
         # Check date conversion to ISO strings
         assert "2025-01-01" in response.daily_allocations
         assert response.daily_allocations["2025-01-01"] == 4.0
-        assert "2025-01-01" in response.actual_daily_hours
-        assert response.actual_daily_hours["2025-01-01"] == 3.5
 
     @pytest.mark.parametrize(
         "scenario,status,expected_active,expected_finished",
@@ -393,7 +386,6 @@ class TestConvertToTaskDetailResponse:
             daily_allocations={},
             is_fixed=False,
             depends_on=[],
-            actual_daily_hours={},
             tags=[],
             is_archived=False,
             created_at=now,
@@ -431,7 +423,6 @@ class TestConvertToTaskDetailResponse:
             daily_allocations={},
             is_fixed=False,
             depends_on=[],
-            actual_daily_hours={},
             tags=[],
             is_archived=False,
             created_at=now,

@@ -69,7 +69,6 @@ class TestTUICommandBase:
             daily_allocations={},
             is_fixed=False,
             depends_on=[],
-            actual_daily_hours={},
             tags=[],
             is_archived=False,
             created_at=task.created_at,

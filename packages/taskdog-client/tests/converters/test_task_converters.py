@@ -37,7 +37,6 @@ class TestConvertToTaskOperationOutput:
             "is_fixed": False,
             "is_archived": False,
             "actual_duration_hours": None,
-            "actual_daily_hours": {},
         }
 
         result = convert_to_task_operation_output(data)
@@ -73,7 +72,6 @@ class TestConvertToTaskOperationOutput:
             "is_fixed": False,
             "is_archived": False,
             "actual_duration_hours": None,
-            "actual_daily_hours": {},
         }
 
         result = convert_to_task_operation_output(data)
@@ -111,7 +109,6 @@ class TestConvertToTaskOperationOutput:
             "is_fixed": False,
             "is_archived": False,
             "actual_duration_hours": 8.0 if status_str == "COMPLETED" else None,
-            "actual_daily_hours": {},
         }
 
         result = convert_to_task_operation_output(data)
@@ -159,7 +156,6 @@ class TestConvertToUpdateTaskOutput:
             "is_fixed": False,
             "is_archived": False,
             "actual_duration_hours": None,
-            "actual_daily_hours": {},
             "updated_fields": ["name", "status", "tags"],
         }
 
@@ -188,7 +184,6 @@ class TestConvertToUpdateTaskOutput:
             "is_fixed": False,
             "is_archived": False,
             "actual_duration_hours": None,
-            "actual_daily_hours": {},
         }
 
         result = convert_to_update_task_output(data)
@@ -409,7 +404,6 @@ class TestBuildTaskDetailDto:
             "daily_allocations": {"2025-01-05": 2.5, "2025-01-06": 2.5},
             "is_fixed": False,
             "depends_on": [2, 3],
-            "actual_daily_hours": {},
             "tags": ["test"],
             "is_archived": False,
             "created_at": "2025-01-01T00:00:00",
@@ -447,7 +441,6 @@ class TestBuildTaskDetailDto:
             "daily_allocations": {},
             "is_fixed": False,
             "depends_on": [],
-            "actual_daily_hours": {},
             "tags": [],
             "is_archived": False,
             # Missing created_at
@@ -479,7 +472,6 @@ class TestConvertToGetTaskByIdOutput:
             "daily_allocations": {},
             "is_fixed": False,
             "depends_on": [],
-            "actual_daily_hours": {},
             "tags": [],
             "is_archived": False,
             "created_at": "2025-01-01T00:00:00",
@@ -525,7 +517,6 @@ class TestConvertToGetTaskDetailOutput:
             "daily_allocations": {},
             "is_fixed": False,
             "depends_on": [],
-            "actual_daily_hours": {},
             "tags": [],
             "is_archived": False,
             "created_at": "2025-01-01T00:00:00",

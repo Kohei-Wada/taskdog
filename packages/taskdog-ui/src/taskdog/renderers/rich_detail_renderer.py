@@ -83,18 +83,6 @@ class RichDetailRenderer:
         if task.actual_duration_hours:
             table.add_row("Actual Duration", f"{task.actual_duration_hours}h")
 
-    def _add_logged_hours(self, table: Table, task: TaskDetailDto) -> None:
-        """Add logged daily hours to table."""
-        if task.actual_daily_hours:
-            total_logged = sum(task.actual_daily_hours.values())
-            table.add_row("Total Logged Hours", f"[green]{total_logged}h[/green]")
-            # Show daily breakdown
-            daily_str = ", ".join(
-                f"{date_obj.isoformat()}: {hours}h"
-                for date_obj, hours in sorted(task.actual_daily_hours.items())
-            )
-            table.add_row("Daily Hours", f"[dim]{daily_str}[/dim]")
-
     def format_task_info(self, task: TaskDetailDto) -> Table:
         """Format task basic information as a Rich table.
 
@@ -110,7 +98,6 @@ class RichDetailRenderer:
 
         self._add_basic_info(table, task)
         self._add_time_fields(table, task)
-        self._add_logged_hours(table, task)
 
         return table
 

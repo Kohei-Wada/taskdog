@@ -77,7 +77,6 @@ class TestTaskOperationResponse:
             is_fixed=True,
             is_archived=False,
             actual_duration_hours=8.5,
-            actual_daily_hours={"2024-01-15": 8.5},
         )
 
         # Assert
@@ -108,7 +107,6 @@ class TestTaskOperationResponse:
             is_fixed=False,
             is_archived=False,
             actual_duration_hours=2.5,
-            actual_daily_hours={"2024-01-15": 2.5},
             daily_allocations={},
         )
 
@@ -165,7 +163,6 @@ class TestUpdateTaskResponse:
             is_fixed=False,
             is_archived=False,
             actual_duration_hours=None,
-            actual_daily_hours={},
             daily_allocations={},
         )
         dto = TaskUpdateOutput(task=task, updated_fields=["name", "priority", "tags"])
@@ -238,7 +235,6 @@ class TestTaskDetailResponse:
             priority=3,
             status=TaskStatus.PENDING,
             daily_allocations={"2024-01-15": 4.0, "2024-01-16": 4.0},
-            actual_daily_hours={"2024-01-15": 3.5},
             is_active=False,
             is_finished=False,
             can_be_modified=True,
@@ -272,7 +268,6 @@ class TestTaskDetailResponse:
             daily_allocations={date(2024, 1, 15): 4.0, date(2024, 1, 16): 4.0},
             is_fixed=False,
             depends_on=[2, 3],
-            actual_daily_hours={date(2024, 1, 15): 3.5},
             tags=["backend"],
             is_archived=False,
             created_at=now,
@@ -302,7 +297,6 @@ class TestTaskDetailResponse:
         assert response.notes == "# Notes Content"
         # Check date dict conversion (date -> ISO string)
         assert response.daily_allocations == {"2024-01-15": 4.0, "2024-01-16": 4.0}
-        assert response.actual_daily_hours == {"2024-01-15": 3.5}
 
 
 class TestTaskListResponse:

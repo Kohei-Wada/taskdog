@@ -208,7 +208,6 @@ class TaskDetailDto:
     daily_allocations: dict[date, float]
     is_fixed: bool
     depends_on: list[int]
-    actual_daily_hours: dict[date, float]
     tags: list[str]
     is_archived: bool
     created_at: datetime
@@ -252,7 +251,6 @@ class TaskDetailDto:
             daily_allocations=task.daily_allocations,
             is_fixed=task.is_fixed,
             depends_on=task.depends_on,
-            actual_daily_hours=task.actual_daily_hours,
             tags=task.tags,
             is_archived=task.is_archived,
             created_at=task.created_at,

@@ -40,7 +40,6 @@ class TestConverters:
             "is_fixed": False,
             "is_archived": False,
             "actual_duration_hours": None,
-            "actual_daily_hours": {},
         }
 
         result = convert_to_task_operation_output(data)
@@ -74,7 +73,6 @@ class TestConverters:
             "is_fixed": False,
             "is_archived": False,
             "actual_duration_hours": None,
-            "actual_daily_hours": {},
         }
 
         result = convert_to_task_operation_output(data)
@@ -104,7 +102,6 @@ class TestConverters:
             "is_fixed": False,
             "is_archived": False,
             "actual_duration_hours": None,
-            "actual_daily_hours": {},
             "updated_fields": ["name", "status", "tags"],
         }
 
@@ -196,7 +193,6 @@ class TestConverters:
             "daily_allocations": {"2025-01-15": 2.5, "2025-01-16": 2.5},
             "is_fixed": False,
             "depends_on": [2],
-            "actual_daily_hours": {},
             "tags": ["test"],
             "is_archived": False,
             "created_at": "2025-01-01T00:00:00",
@@ -231,7 +227,6 @@ class TestConverters:
             "daily_allocations": {},
             "is_fixed": False,
             "depends_on": [],
-            "actual_daily_hours": {},
             "tags": [],
             "is_archived": False,
             "created_at": "2025-01-01T00:00:00",
@@ -266,7 +261,6 @@ class TestConverters:
             "daily_allocations": {},
             "is_fixed": False,
             "depends_on": [],
-            "actual_daily_hours": {},
             "tags": [],
             "is_archived": False,
             "created_at": "2025-01-01T00:00:00",
@@ -473,7 +467,6 @@ class TestConverterErrorHandling:
             "daily_allocations": {
                 "invalid-date": 2.5,  # Invalid date format
             },
-            "actual_daily_hours": {},
         }
 
         with pytest.raises(ConversionError) as exc_info:
@@ -505,7 +498,6 @@ class TestConverterErrorHandling:
             "is_schedulable": True,
             "actual_duration_hours": None,
             "daily_allocations": {},
-            "actual_daily_hours": {},
             # Missing "created_at" (required field)
             "updated_at": "2025-01-01T00:00:00",
         }
@@ -539,7 +531,6 @@ class TestConverterErrorHandling:
             "is_schedulable": True,
             "actual_duration_hours": None,
             "daily_allocations": {},
-            "actual_daily_hours": {},
             "created_at": None,  # Required but None
             "updated_at": "2025-01-01T00:00:00",
         }
@@ -576,13 +567,11 @@ class TestConverterErrorHandling:
             "is_schedulable": True,
             "actual_duration_hours": None,
             "daily_allocations": {},  # Empty dict
-            "actual_daily_hours": {},  # Empty dict
         }
 
         result = convert_to_get_task_by_id_output(data)
 
         assert result.task.daily_allocations == {}
-        assert result.task.actual_daily_hours == {}
 
     def test_valid_date_dict_conversion(self):
         """Test that valid date dictionary is converted correctly."""
@@ -612,9 +601,6 @@ class TestConverterErrorHandling:
                 "2025-01-15": 2.5,
                 "2025-01-16": 3.0,
             },
-            "actual_daily_hours": {
-                "2025-01-15": 2.0,
-            },
         }
 
         result = convert_to_get_task_by_id_output(data)
@@ -623,4 +609,3 @@ class TestConverterErrorHandling:
         assert len(result.task.daily_allocations) == 2
         assert result.task.daily_allocations[date(2025, 1, 15)] == 2.5
         assert result.task.daily_allocations[date(2025, 1, 16)] == 3.0
-        assert result.task.actual_daily_hours[date(2025, 1, 15)] == 2.0

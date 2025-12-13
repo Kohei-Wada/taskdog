@@ -1,10 +1,7 @@
 """Tests for task management Input DTOs."""
 
-from datetime import datetime
-
 import pytest
 
-from taskdog_core.application.dto.log_hours_input import LogHoursInput
 from taskdog_core.application.dto.manage_dependencies_input import (
     AddDependencyInput,
     RemoveDependencyInput,
@@ -38,37 +35,6 @@ class TestSimpleTaskManagementInputs:
         """Test equality comparison."""
         dto1 = dto_class(task_id=1)
         dto2 = dto_class(task_id=1)
-        assert dto1 == dto2
-
-
-class TestLogHoursInput:
-    """Test suite for LogHoursInput DTO."""
-
-    def test_create_with_date(self) -> None:
-        """Test creating DTO with specific date."""
-        date = datetime(2025, 1, 1)
-        dto = LogHoursInput(task_id=1, hours=5.5, date=date)
-
-        assert dto.task_id == 1
-        assert dto.hours == 5.5
-        assert dto.date == date
-
-    @pytest.mark.parametrize(
-        "hours",
-        [8.0, 3.5],
-        ids=["whole_number", "fractional"],
-    )
-    def test_create_with_hours(self, hours):
-        """Test creating DTO with different hour values."""
-        dto = LogHoursInput(task_id=1, hours=hours, date=datetime(2025, 1, 1))
-        assert dto.hours == hours
-
-    def test_equality(self) -> None:
-        """Test equality comparison."""
-        date = datetime(2025, 1, 1)
-        dto1 = LogHoursInput(task_id=1, hours=5.0, date=date)
-        dto2 = LogHoursInput(task_id=1, hours=5.0, date=date)
-
         assert dto1 == dto2
 
 

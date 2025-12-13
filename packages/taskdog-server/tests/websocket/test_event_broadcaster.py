@@ -47,7 +47,6 @@ class TestWebSocketEventBroadcaster:
             is_fixed=False,
             is_archived=False,
             actual_duration_hours=None,
-            actual_daily_hours={},
             daily_allocations={},
         )
 

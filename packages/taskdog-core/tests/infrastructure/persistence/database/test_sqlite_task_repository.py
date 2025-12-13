@@ -170,7 +170,6 @@ class TestSqliteTaskRepository:
             name="Complex Task",
             priority=1,
             daily_allocations={date(2025, 1, 15): 2.0, date(2025, 1, 16): 3.0},
-            actual_daily_hours={date(2025, 1, 15): 1.5},
             depends_on=[2, 3, 5],
             tags=["urgent", "backend"],
         )
@@ -182,7 +181,6 @@ class TestSqliteTaskRepository:
             date(2025, 1, 15): 2.0,
             date(2025, 1, 16): 3.0,
         }
-        assert retrieved.actual_daily_hours == {date(2025, 1, 15): 1.5}
         assert retrieved.depends_on == [2, 3, 5]
         assert retrieved.tags == ["urgent", "backend"]
 
@@ -276,7 +274,6 @@ class TestSqliteTaskRepository:
             name="Empty Fields Task",
             priority=1,
             daily_allocations={},
-            actual_daily_hours={},
             depends_on=[],
             tags=[],
         )
@@ -285,7 +282,6 @@ class TestSqliteTaskRepository:
         retrieved = self.repository.get_by_id(1)
 
         assert retrieved.daily_allocations == {}
-        assert retrieved.actual_daily_hours == {}
         assert retrieved.depends_on == []
         assert retrieved.tags == []
 

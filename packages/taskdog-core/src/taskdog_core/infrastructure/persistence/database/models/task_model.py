@@ -1,7 +1,7 @@
 """SQLAlchemy ORM model for Task entity.
 
 This module defines the database schema for tasks using SQLAlchemy 2.0 ORM.
-Complex fields (daily_allocations, actual_daily_hours, tags, depends_on) are
+Complex fields (daily_allocations, tags, depends_on) are
 stored as JSON TEXT columns for Phase 2 implementation.
 """
 
@@ -63,7 +63,9 @@ class TaskModel(Base):
     # Format: {"2025-01-15": 2.0, "2025-01-16": 3.0}
     daily_allocations: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
 
-    # Format: {"2025-01-15": 1.5}
+    # DEPRECATED: Kept for database backwards compatibility only.
+    # This field is no longer used by the application but the column must exist
+    # in the database schema because it has NOT NULL constraint.
     actual_daily_hours: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
 
     # Format: [2, 3, 5]

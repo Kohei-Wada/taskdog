@@ -1,6 +1,6 @@
 """Tests for TaskOperationOutput DTO."""
 
-from datetime import date, datetime
+from datetime import datetime
 
 import pytest
 
@@ -29,7 +29,6 @@ class TestTaskOperationOutput:
             is_fixed=True,
             is_archived=False,
             actual_duration_hours=5.5,
-            actual_daily_hours={"2025-01-01": 5.5},
             daily_allocations={"2025-01-01": 4.0},
         )
 
@@ -62,7 +61,6 @@ class TestTaskOperationOutput:
             is_fixed=False,
             is_archived=False,
             actual_duration_hours=None,
-            actual_daily_hours={},
             daily_allocations={},
         )
 
@@ -101,25 +99,6 @@ class TestTaskOperationOutput:
 
         assert "Cannot convert task without ID" in str(exc_info.value)
 
-    def test_from_task_converts_actual_daily_hours_to_iso_format(self) -> None:
-        """Test from_task converts actual_daily_hours date keys to ISO format."""
-        task = Task(
-            id=1,
-            name="Test Task",
-            priority=1,
-            actual_daily_hours={
-                date(2025, 1, 1): 5.5,
-                date(2025, 1, 2): 7.0,
-            },
-        )
-
-        dto = TaskOperationOutput.from_task(task)
-
-        assert "2025-01-01" in dto.actual_daily_hours
-        assert "2025-01-02" in dto.actual_daily_hours
-        assert dto.actual_daily_hours["2025-01-01"] == 5.5
-        assert dto.actual_daily_hours["2025-01-02"] == 7.0
-
     def test_from_task_preserves_all_task_fields(self) -> None:
         """Test from_task preserves all Task entity fields."""
         task = Task(
@@ -137,7 +116,6 @@ class TestTaskOperationOutput:
             depends_on=[1, 2, 3],
             tags=["urgent", "backend", "refactoring"],
             is_archived=False,
-            actual_daily_hours={date(2025, 1, 1): 5.5},
         )
 
         dto = TaskOperationOutput.from_task(task)
@@ -175,7 +153,6 @@ class TestTaskOperationOutput:
             is_fixed=False,
             is_archived=False,
             actual_duration_hours=None,
-            actual_daily_hours={},
             daily_allocations={},
         )
         dto2 = TaskOperationOutput(
@@ -194,7 +171,6 @@ class TestTaskOperationOutput:
             is_fixed=False,
             is_archived=False,
             actual_duration_hours=None,
-            actual_daily_hours={},
             daily_allocations={},
         )
 
@@ -218,7 +194,6 @@ class TestTaskOperationOutput:
             is_fixed=False,
             is_archived=False,
             actual_duration_hours=None,
-            actual_daily_hours={},
             daily_allocations={},
         )
         repr_str = repr(dto)

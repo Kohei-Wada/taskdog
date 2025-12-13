@@ -242,12 +242,6 @@ class TaskdogApiClient:
         """Set task tags (replaces existing tags)."""
         return self._relationships.set_task_tags(task_id, tags)
 
-    def log_hours(
-        self, task_id: int, hours: float, date_str: str
-    ) -> TaskOperationOutput:
-        """Log actual hours worked on a task."""
-        return self._relationships.log_hours(task_id, hours, date_str)
-
     # Analytics Controller methods - delegate to AnalyticsClient
 
     def calculate_statistics(self, period: str = "all") -> StatisticsOutput:

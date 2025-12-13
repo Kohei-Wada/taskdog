@@ -1,4 +1,4 @@
-"""Task relationship endpoints (dependencies, tags, hours logging)."""
+"""Task relationship endpoints (dependencies, tags)."""
 
 from fastapi import APIRouter
 
@@ -7,12 +7,10 @@ from taskdog_server.api.dependencies import (
     AuthenticatedClientDep,
     EventBroadcasterDep,
     RelationshipControllerDep,
-    TimeProviderDep,
 )
 from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import (
     AddDependencyRequest,
-    LogHoursRequest,
     SetTaskTagsRequest,
 )
 from taskdog_server.api.models.responses import TaskOperationResponse
@@ -151,54 +149,6 @@ async def set_task_tags(
         resource_name=result.name,
         client_name=client_name,
         new_values={"tags": list(result.tags)},
-        success=True,
-    )
-
-    return TaskOperationResponse.from_dto(result)
-
-
-@router.post("/{task_id}/log-hours", response_model=TaskOperationResponse)
-@handle_task_errors
-async def log_hours(
-    task_id: int,
-    request: LogHoursRequest,
-    controller: RelationshipControllerDep,
-    broadcaster: EventBroadcasterDep,
-    audit_controller: AuditLogControllerDep,
-    time_provider: TimeProviderDep,
-    client_name: AuthenticatedClientDep,
-) -> TaskOperationResponse:
-    """Log actual hours worked on a task for a specific date.
-
-    Args:
-        task_id: Task ID
-        request: Hours and date data
-        controller: Relationship controller dependency
-        broadcaster: Event broadcaster dependency
-        audit_controller: Audit log controller dependency
-        time_provider: Time provider dependency
-        client_name: Authenticated client name (for broadcast payload)
-
-    Returns:
-        Updated task data with logged hours
-
-    Raises:
-        HTTPException: 404 if task not found, 400 if validation fails
-    """
-    log_date = request.date if request.date else time_provider.today()
-    result = controller.log_hours(task_id, request.hours, log_date.isoformat())
-
-    # Broadcast WebSocket event in background
-    broadcaster.task_updated(result, ["actual_daily_hours"], client_name)
-
-    # Audit log
-    audit_controller.log_operation(
-        operation="log_hours",
-        resource_type="task",
-        resource_id=task_id,
-        resource_name=result.name,
-        client_name=client_name,
-        new_values={"hours": request.hours, "date": log_date.isoformat()},
         success=True,
     )
 

@@ -4,10 +4,8 @@ This controller handles operations related to task relationships and metadata:
 - add_dependency: Add dependency relationship between tasks (with cycle detection)
 - remove_dependency: Remove dependency relationship
 - set_task_tags: Replace all tags for a task
-- log_hours: Log actual hours worked on a specific date
 """
 
-from taskdog_core.application.dto.log_hours_input import LogHoursInput
 from taskdog_core.application.dto.manage_dependencies_input import (
     AddDependencyInput,
     RemoveDependencyInput,
@@ -15,7 +13,6 @@ from taskdog_core.application.dto.manage_dependencies_input import (
 from taskdog_core.application.dto.set_task_tags_input import SetTaskTagsInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.use_cases.add_dependency import AddDependencyUseCase
-from taskdog_core.application.use_cases.log_hours import LogHoursUseCase
 from taskdog_core.application.use_cases.remove_dependency import RemoveDependencyUseCase
 from taskdog_core.application.use_cases.set_task_tags import SetTaskTagsUseCase
 from taskdog_core.controllers.base_controller import BaseTaskController
@@ -30,7 +27,6 @@ class TaskRelationshipController(BaseTaskController):
     Handles operations related to task relationships and metadata:
     - Managing task dependencies (add/remove with cycle detection)
     - Managing task tags (replace all tags)
-    - Logging actual hours worked
 
     All operations maintain data integrity and validate relationships.
 
@@ -104,23 +100,4 @@ class TaskRelationshipController(BaseTaskController):
         """
         use_case = SetTaskTagsUseCase(self.repository)
         request = SetTaskTagsInput(task_id=task_id, tags=tags)
-        return use_case.execute(request)
-
-    def log_hours(self, task_id: int, hours: float, date: str) -> TaskOperationOutput:
-        """Log actual hours worked on a task for a specific date.
-
-        Args:
-            task_id: ID of the task to log hours for
-            hours: Number of hours worked (must be > 0)
-            date: Date in YYYY-MM-DD format
-
-        Returns:
-            TaskOperationOutput containing the updated task information
-
-        Raises:
-            TaskNotFoundException: If task not found
-            TaskValidationError: If date format is invalid or hours <= 0
-        """
-        use_case = LogHoursUseCase(self.repository)
-        request = LogHoursInput(task_id=task_id, hours=hours, date=date)
         return use_case.execute(request)

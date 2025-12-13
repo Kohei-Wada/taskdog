@@ -50,7 +50,6 @@ def _build_task_detail_dto(data: dict[str, Any]) -> TaskDetailDto:
         daily_allocations=_parse_date_dict(data, "daily_allocations"),
         is_fixed=data.get("is_fixed", False),
         depends_on=data.get("depends_on", []),
-        actual_daily_hours=_parse_date_dict(data, "actual_daily_hours"),
         tags=data.get("tags", []),
         is_archived=data.get("is_archived", False),
         created_at=_parse_required_datetime(data, "created_at"),
@@ -93,7 +92,6 @@ def convert_to_task_operation_output(data: dict[str, Any]) -> TaskOperationOutpu
         is_fixed=data.get("is_fixed", False),
         is_archived=data.get("is_archived", False),
         actual_duration_hours=data.get("actual_duration_hours"),
-        actual_daily_hours=data.get("actual_daily_hours", {}),
         daily_allocations=data.get("daily_allocations", {}),
     )
 
