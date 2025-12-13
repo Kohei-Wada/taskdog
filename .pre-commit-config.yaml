@@ -50,6 +50,14 @@ repos:
       - id: check-merge-conflict
       - id: detect-private-key
 
+  # Conventional Commits linter
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert]
+
   # Local hooks
   - repo: local
     hooks:
