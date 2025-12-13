@@ -386,22 +386,6 @@ class TaskFactory:
             **create_kwargs,
         )
 
-    def create_batch(self, count: int, **kwargs) -> list[Task]:
-        """Create multiple tasks with shared properties.
-
-        Args:
-            count: Number of tasks to create
-            **kwargs: Shared task attributes
-
-        Returns:
-            List of created tasks
-        """
-        return [self.create(**kwargs) for _ in range(count)]
-
-    def reset_counter(self):
-        """Reset the task counter to 1."""
-        self._task_counter = 1
-
 
 @pytest.fixture
 def task_factory(repository) -> TaskFactory:
