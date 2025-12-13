@@ -9,6 +9,7 @@ from taskdog_server.api.dependencies import (
     AuthenticatedClientDep,
     EventBroadcasterDep,
     LifecycleControllerDep,
+    QueryControllerDep,
 )
 from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import FixActualTimesRequest
@@ -103,6 +104,7 @@ async def fix_actual_times(
     task_id: int,
     request: FixActualTimesRequest,
     controller: LifecycleControllerDep,
+    query_controller: QueryControllerDep,
     broadcaster: EventBroadcasterDep,
     audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
@@ -126,6 +128,13 @@ async def fix_actual_times(
     Raises:
         HTTPException: 404 if task not found, 400 if validation fails
     """
+    # Get old values before update for audit trail
+    try:
+        old_task_output = query_controller.get_task_by_id(task_id)
+        old_task = old_task_output.task if old_task_output else None
+    except Exception:
+        old_task = None
+
     # Determine values to pass (Ellipsis = keep current)
     actual_start = (
         None
@@ -147,13 +156,23 @@ async def fix_actual_times(
     # Broadcast event
     broadcaster.task_updated(result, ["actual_start", "actual_end"], client_name)
 
-    # Audit log
+    # Audit log with old values
+    old_values = {}
+    if old_task:
+        old_values["actual_start"] = (
+            old_task.actual_start.isoformat() if old_task.actual_start else None
+        )
+        old_values["actual_end"] = (
+            old_task.actual_end.isoformat() if old_task.actual_end else None
+        )
+
     audit_controller.log_operation(
         operation="fix_actual_times",
         resource_type="task",
         resource_id=task_id,
         resource_name=result.name,
         client_name=client_name,
+        old_values=old_values if old_values else None,
         new_values={
             "actual_start": result.actual_start.isoformat()
             if result.actual_start

@@ -149,8 +149,11 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Updated task data with new timestamps
         """
-        start_dt = datetime.fromisoformat(actual_start) if actual_start else None
-        end_dt = datetime.fromisoformat(actual_end) if actual_end else None
+        try:
+            start_dt = datetime.fromisoformat(actual_start) if actual_start else None
+            end_dt = datetime.fromisoformat(actual_end) if actual_end else None
+        except ValueError as e:
+            raise ValueError(f"Invalid datetime format: {e}") from e
 
         result = clients.lifecycle.fix_actual_times(
             task_id, start_dt, end_dt, clear_start, clear_end

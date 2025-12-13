@@ -113,11 +113,24 @@ class FixActualTimesRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_exclusive_options(self) -> "FixActualTimesRequest":
-        """Validate mutually exclusive options."""
+        """Validate mutually exclusive options and ensure at least one operation."""
         if self.actual_start is not None and self.clear_start:
             raise ValueError("Cannot set actual_start and clear_start simultaneously")
         if self.actual_end is not None and self.clear_end:
             raise ValueError("Cannot set actual_end and clear_end simultaneously")
+
+        # Ensure at least one operation is specified
+        if (
+            self.actual_start is None
+            and self.actual_end is None
+            and not self.clear_start
+            and not self.clear_end
+        ):
+            raise ValueError(
+                "At least one of actual_start, actual_end, clear_start, "
+                "or clear_end must be specified"
+            )
+
         return self
 
 

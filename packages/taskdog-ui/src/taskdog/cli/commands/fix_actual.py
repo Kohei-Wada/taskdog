@@ -77,6 +77,13 @@ def fix_actual_command(
         )
         ctx.exit(1)
 
+    # Validate that end is not before start when both are provided
+    if start is not None and end is not None and end < start:
+        console_writer.validation_error(
+            f"End time ({end}) cannot be before start time ({start})"
+        )
+        ctx.exit(1)
+
     # Call API
     ctx_obj.api_client.fix_actual_times(
         task_id=task_id,
