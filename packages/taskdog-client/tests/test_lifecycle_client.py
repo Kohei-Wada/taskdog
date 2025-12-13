@@ -31,10 +31,7 @@ class TestLifecycleClient:
         self, mock_convert, method_name, expected_endpoint
     ):
         """Test lifecycle operations make correct API calls."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"id": 1}
-        self.mock_base._safe_request.return_value = mock_response
+        self.mock_base._request_json.return_value = {"id": 1}
 
         mock_output = Mock()
         mock_convert.return_value = mock_output
@@ -42,16 +39,17 @@ class TestLifecycleClient:
         method = getattr(self.client, method_name)
         result = method(task_id=1)
 
-        self.mock_base._safe_request.assert_called_once_with("post", expected_endpoint)
+        self.mock_base._request_json.assert_called_once_with("post", expected_endpoint)
         assert result == mock_output
 
     @patch("taskdog_client.lifecycle_client.convert_to_task_operation_output")
     def test_lifecycle_operation_error_handling(self, mock_convert):
-        """Test lifecycle operations handle errors."""
-        mock_response = Mock()
-        mock_response.is_success = False
-        self.mock_base._safe_request.return_value = mock_response
+        """Test lifecycle operations propagate errors from _request_json."""
+        from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
-        self.client.start_task(task_id=999)
+        self.mock_base._request_json.side_effect = TaskNotFoundException(
+            "Task not found"
+        )
 
-        self.mock_base._handle_error.assert_called_once_with(mock_response)
+        with pytest.raises(TaskNotFoundException):
+            self.client.start_task(task_id=999)

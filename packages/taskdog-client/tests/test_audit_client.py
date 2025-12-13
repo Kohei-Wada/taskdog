@@ -18,20 +18,17 @@ class TestAuditClientListAuditLogs:
 
     def test_list_audit_logs_with_default_params(self) -> None:
         """Test list_audit_logs with only default parameters."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {
+        self.mock_base._request_json.return_value = {
             "logs": [],
             "total_count": 0,
             "limit": 100,
             "offset": 0,
         }
-        self.mock_base._safe_request.return_value = mock_response
 
         result = self.client.list_audit_logs()
 
-        self.mock_base._safe_request.assert_called_once()
-        call_args = self.mock_base._safe_request.call_args
+        self.mock_base._request_json.assert_called_once()
+        call_args = self.mock_base._request_json.call_args
         assert call_args[0][0] == "get"
         assert call_args[0][1] == "/api/v1/audit-logs"
         assert call_args[1]["params"]["limit"] == 100
@@ -40,15 +37,12 @@ class TestAuditClientListAuditLogs:
 
     def test_list_audit_logs_with_all_filters(self) -> None:
         """Test list_audit_logs with all filter parameters."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {
+        self.mock_base._request_json.return_value = {
             "logs": [],
             "total_count": 0,
             "limit": 50,
             "offset": 10,
         }
-        self.mock_base._safe_request.return_value = mock_response
 
         start_date = datetime(2025, 1, 1, 0, 0, 0)
         end_date = datetime(2025, 12, 31, 23, 59, 59)
@@ -65,7 +59,7 @@ class TestAuditClientListAuditLogs:
             offset=10,
         )
 
-        call_args = self.mock_base._safe_request.call_args
+        call_args = self.mock_base._request_json.call_args
         params = call_args[1]["params"]
 
         assert params["client"] == "test-client"
@@ -80,39 +74,29 @@ class TestAuditClientListAuditLogs:
 
     def test_list_audit_logs_success_false_converted_to_lowercase(self) -> None:
         """Test that success=False is converted to 'false' string."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {
+        self.mock_base._request_json.return_value = {
             "logs": [],
             "total_count": 0,
             "limit": 100,
             "offset": 0,
         }
-        self.mock_base._safe_request.return_value = mock_response
 
         self.client.list_audit_logs(success=False)
 
-        call_args = self.mock_base._safe_request.call_args
+        call_args = self.mock_base._request_json.call_args
         params = call_args[1]["params"]
         assert params["success"] == "false"
 
     def test_list_audit_logs_handles_error_response(self) -> None:
         """Test that error responses trigger error handler."""
-        mock_response = Mock()
-        mock_response.is_success = False
-        self.mock_base._safe_request.return_value = mock_response
-        self.mock_base._handle_error.side_effect = Exception("API Error")
+        self.mock_base._request_json.side_effect = Exception("API Error")
 
         with pytest.raises(Exception, match="API Error"):
             self.client.list_audit_logs()
 
-        self.mock_base._handle_error.assert_called_once_with(mock_response)
-
     def test_list_audit_logs_returns_logs(self) -> None:
         """Test that logs are correctly returned."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {
+        self.mock_base._request_json.return_value = {
             "logs": [
                 {
                     "id": 1,
@@ -145,7 +129,6 @@ class TestAuditClientListAuditLogs:
             "limit": 100,
             "offset": 0,
         }
-        self.mock_base._safe_request.return_value = mock_response
 
         result = self.client.list_audit_logs()
 

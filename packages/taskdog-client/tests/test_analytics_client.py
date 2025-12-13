@@ -19,17 +19,14 @@ class TestAnalyticsClient:
     @patch("taskdog_client.analytics_client.convert_to_statistics_output")
     def test_calculate_statistics(self, mock_convert):
         """Test calculate_statistics makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"completion": {}}
-        self.mock_base._safe_request.return_value = mock_response
+        self.mock_base._request_json.return_value = {"completion": {}}
 
         mock_output = Mock()
         mock_convert.return_value = mock_output
 
         result = self.client.calculate_statistics(period="7d")
 
-        self.mock_base._safe_request.assert_called_once_with(
+        self.mock_base._request_json.assert_called_once_with(
             "get", "/api/v1/statistics?period=7d"
         )
         assert result == mock_output
@@ -37,10 +34,7 @@ class TestAnalyticsClient:
     @patch("taskdog_client.analytics_client.convert_to_optimization_output")
     def test_optimize_schedule(self, mock_convert):
         """Test optimize_schedule makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"summary": {}}
-        self.mock_base._safe_request.return_value = mock_response
+        self.mock_base._request_json.return_value = {"summary": {}}
 
         mock_output = Mock()
         mock_convert.return_value = mock_output
@@ -53,8 +47,8 @@ class TestAnalyticsClient:
             force_override=True,
         )
 
-        self.mock_base._safe_request.assert_called_once()
-        call_args = self.mock_base._safe_request.call_args
+        self.mock_base._request_json.assert_called_once()
+        call_args = self.mock_base._request_json.call_args
         assert call_args[0][0] == "post"
         assert call_args[0][1] == "/api/v1/optimize"
 
@@ -66,9 +60,7 @@ class TestAnalyticsClient:
 
     def test_get_algorithm_metadata(self):
         """Test get_algorithm_metadata makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = [
+        self.mock_base._request_json.return_value = [
             {
                 "name": "greedy",
                 "display_name": "Greedy",
@@ -80,11 +72,10 @@ class TestAnalyticsClient:
                 "description": "Balanced approach",
             },
         ]
-        self.mock_base._safe_request.return_value = mock_response
 
         result = self.client.get_algorithm_metadata()
 
-        self.mock_base._safe_request.assert_called_once_with(
+        self.mock_base._request_json.assert_called_once_with(
             "get", "/api/v1/algorithms"
         )
         assert len(result) == 2

@@ -20,14 +20,12 @@ class TestQueryClient:
     @patch("taskdog_client.query_client.convert_to_task_list_output")
     def test_list_tasks(self, mock_convert):
         """Test list_tasks makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {
+        mock_json = {
             "tasks": [],
             "total_count": 0,
             "filtered_count": 0,
         }
-        self.mock_base._safe_request.return_value = mock_response
+        self.mock_base._request_json.return_value = mock_json
 
         mock_output = Mock()
         mock_convert.return_value = mock_output
@@ -42,8 +40,8 @@ class TestQueryClient:
             reverse=True,
         )
 
-        self.mock_base._safe_request.assert_called_once()
-        call_args = self.mock_base._safe_request.call_args
+        self.mock_base._request_json.assert_called_once()
+        call_args = self.mock_base._request_json.call_args
         assert call_args[0][0] == "get"
         assert call_args[0][1] == "/api/v1/tasks"
 
@@ -57,7 +55,7 @@ class TestQueryClient:
         assert params["reverse"] == "true"
 
         assert result == mock_output
-        mock_convert.assert_called_once_with(mock_response.json(), self.notes_cache)
+        mock_convert.assert_called_once_with(mock_json, self.notes_cache)
 
     @pytest.mark.parametrize(
         "method_name,converter_name,mock_json",
@@ -74,10 +72,7 @@ class TestQueryClient:
     def test_get_single_task_operations(self, method_name, converter_name, mock_json):
         """Test single task GET operations make correct API calls."""
         with patch(f"taskdog_client.query_client.{converter_name}") as mock_convert:
-            mock_response = Mock()
-            mock_response.is_success = True
-            mock_response.json.return_value = mock_json
-            self.mock_base._safe_request.return_value = mock_response
+            self.mock_base._request_json.return_value = mock_json
 
             mock_output = Mock()
             mock_convert.return_value = mock_output
@@ -85,7 +80,7 @@ class TestQueryClient:
             method = getattr(self.client, method_name)
             result = method(task_id=1)
 
-            self.mock_base._safe_request.assert_called_once_with(
+            self.mock_base._request_json.assert_called_once_with(
                 "get", "/api/v1/tasks/1"
             )
             assert result == mock_output
@@ -93,10 +88,7 @@ class TestQueryClient:
     @patch("taskdog_client.query_client.convert_to_gantt_output")
     def test_get_gantt_data(self, mock_convert):
         """Test get_gantt_data makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"date_range": {}, "tasks": []}
-        self.mock_base._safe_request.return_value = mock_response
+        self.mock_base._request_json.return_value = {"date_range": {}, "tasks": []}
 
         mock_output = Mock()
         mock_convert.return_value = mock_output
@@ -110,8 +102,8 @@ class TestQueryClient:
             end_date=date(2025, 1, 31),
         )
 
-        self.mock_base._safe_request.assert_called_once()
-        call_args = self.mock_base._safe_request.call_args
+        self.mock_base._request_json.assert_called_once()
+        call_args = self.mock_base._request_json.call_args
         assert call_args[0][0] == "get"
         assert call_args[0][1] == "/api/v1/gantt"
 
@@ -128,17 +120,14 @@ class TestQueryClient:
     @patch("taskdog_client.query_client.convert_to_tag_statistics_output")
     def test_get_tag_statistics(self, mock_convert):
         """Test get_tag_statistics makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"tags": [], "total_tags": 0}
-        self.mock_base._safe_request.return_value = mock_response
+        self.mock_base._request_json.return_value = {"tags": [], "total_tags": 0}
 
         mock_output = Mock()
         mock_convert.return_value = mock_output
 
         result = self.client.get_tag_statistics()
 
-        self.mock_base._safe_request.assert_called_once_with(
+        self.mock_base._request_json.assert_called_once_with(
             "get", "/api/v1/tags/statistics"
         )
         assert result == mock_output

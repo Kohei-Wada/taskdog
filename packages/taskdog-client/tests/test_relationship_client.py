@@ -46,10 +46,7 @@ class TestRelationshipClient:
         expected_json,
     ):
         """Test relationship operations with JSON payload make correct API calls."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"id": 1}
-        self.mock_base._safe_request.return_value = mock_response
+        self.mock_base._request_json.return_value = {"id": 1}
 
         mock_output = Mock()
         mock_convert.return_value = mock_output
@@ -57,8 +54,8 @@ class TestRelationshipClient:
         method = getattr(self.client, method_name)
         result = method(task_id=1, **method_kwargs)
 
-        self.mock_base._safe_request.assert_called_once()
-        call_args = self.mock_base._safe_request.call_args
+        self.mock_base._request_json.assert_called_once()
+        call_args = self.mock_base._request_json.call_args
         assert call_args[0][0] == expected_http_method
         assert call_args[0][1] == expected_endpoint
         assert call_args[1]["json"] == expected_json
@@ -67,17 +64,14 @@ class TestRelationshipClient:
     @patch("taskdog_client.relationship_client.convert_to_task_operation_output")
     def test_remove_dependency(self, mock_convert):
         """Test remove_dependency makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        mock_response.json.return_value = {"id": 1}
-        self.mock_base._safe_request.return_value = mock_response
+        self.mock_base._request_json.return_value = {"id": 1}
 
         mock_output = Mock()
         mock_convert.return_value = mock_output
 
         result = self.client.remove_dependency(task_id=1, depends_on_id=2)
 
-        self.mock_base._safe_request.assert_called_once_with(
+        self.mock_base._request_json.assert_called_once_with(
             "delete", "/api/v1/tasks/1/dependencies/2"
         )
         assert result == mock_output

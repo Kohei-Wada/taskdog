@@ -171,13 +171,9 @@ class TaskClient:
             tags,
         )
 
-        response = self._base._safe_request(
+        data = self._base._request_json(
             "patch", f"/api/v1/tasks/{task_id}", json=payload
         )
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
         return convert_to_update_task_output(data)
 
     def _lifecycle_operation(self, task_id: int, operation: str) -> TaskOperationOutput:
@@ -197,13 +193,7 @@ class TaskClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        response = self._base._safe_request(
-            "post", f"/api/v1/tasks/{task_id}/{operation}"
-        )
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("post", f"/api/v1/tasks/{task_id}/{operation}")
         return convert_to_task_operation_output(data)
 
     def archive_task(self, task_id: int) -> TaskOperationOutput:

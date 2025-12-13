@@ -40,13 +40,7 @@ class AnalyticsClient:
         Raises:
             TaskValidationError: If period is invalid
         """
-        response = self._base._safe_request(
-            "get", f"/api/v1/statistics?period={period}"
-        )
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("get", f"/api/v1/statistics?period={period}")
         return convert_to_statistics_output(data)
 
     def optimize_schedule(
@@ -85,11 +79,7 @@ class AnalyticsClient:
         if task_ids is not None:
             payload["task_ids"] = task_ids
 
-        response = self._base._safe_request("post", "/api/v1/optimize", json=payload)
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("post", "/api/v1/optimize", json=payload)
         return convert_to_optimization_output(data)
 
     def get_algorithm_metadata(self) -> list[tuple[str, str, str]]:
@@ -98,11 +88,7 @@ class AnalyticsClient:
         Returns:
             List of (name, display_name, description) tuples
         """
-        response = self._base._safe_request("get", "/api/v1/algorithms")
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("get", "/api/v1/algorithms")
         return [
             (algo["name"], algo["display_name"], algo["description"]) for algo in data
         ]
