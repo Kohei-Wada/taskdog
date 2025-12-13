@@ -6,7 +6,6 @@ import pytest
 
 from taskdog_core.shared.utils.date_utils import (
     calculate_next_workday,
-    get_previous_monday,
     is_weekday,
     is_weekend,
 )
@@ -30,42 +29,6 @@ class TestDateUtils:
         result = calculate_next_workday(input_date)
         assert result.weekday() == expected_weekday
         assert result.date() == expected_date.date()
-
-
-class TestGetPreviousMonday:
-    """Test cases for get_previous_monday function."""
-
-    @pytest.mark.parametrize(
-        "input_date,expected_monday",
-        [
-            (date(2025, 1, 6), date(2025, 1, 6)),
-            (date(2025, 1, 7), date(2025, 1, 6)),
-            (date(2025, 1, 8), date(2025, 1, 6)),
-            (date(2025, 1, 12), date(2025, 1, 6)),
-        ],
-        ids=["monday", "tuesday", "wednesday", "sunday"],
-    )
-    def test_get_previous_monday_for_weekday(self, input_date, expected_monday):
-        """Test that various days return the correct previous Monday."""
-        result = get_previous_monday(input_date)
-        assert result == expected_monday
-        assert result.weekday() == 0
-
-    def test_get_previous_monday_default_none(self):
-        """Test that None uses today's date."""
-        result = get_previous_monday(None)
-        # Should return a Monday
-        assert result.weekday() == 0
-        # Should be <= today
-        assert result <= date.today()
-
-    def test_get_previous_monday_no_argument(self):
-        """Test that no argument uses today's date."""
-        result = get_previous_monday()
-        # Should return a Monday
-        assert result.weekday() == 0
-        # Should be <= today
-        assert result <= date.today()
 
 
 class TestWeekdayHelpers:
