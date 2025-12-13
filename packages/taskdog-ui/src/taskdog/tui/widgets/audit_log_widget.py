@@ -109,11 +109,82 @@ class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
                 parts.append(name)
             lines.append(" ".join(parts))
 
-        # Line 4: Client (if exists)
+        # Line 4: Changes (if exists) - show what changed
+        changes = self._format_changes(log.old_values, log.new_values)
+        if changes:
+            lines.append(f"[dim]{changes}[/]")
+
+        # Line 5: Error message (if failed)
+        if not log.success and log.error_message:
+            error_msg = (
+                log.error_message[:40] + "..."
+                if len(log.error_message) > 40
+                else log.error_message
+            )
+            lines.append(f"[red]{error_msg}[/]")
+
+        # Line 6: Client (if exists)
         if log.client_name:
             lines.append(f"[dim italic]@{log.client_name}[/]")
 
         return "\n".join(lines)
+
+    def _format_changes(
+        self,
+        old_values: dict[str, Any] | None,
+        new_values: dict[str, Any] | None,
+    ) -> str:
+        """Format changes between old and new values.
+
+        Args:
+            old_values: Values before the change
+            new_values: Values after the change
+
+        Returns:
+            Formatted change string (e.g., "priority: 3 → 5")
+        """
+        if not old_values and not new_values:
+            return ""
+
+        changes: list[str] = []
+
+        # Get all keys that changed
+        all_keys: set[str] = set()
+        if old_values:
+            all_keys.update(old_values.keys())
+        if new_values:
+            all_keys.update(new_values.keys())
+
+        for key in sorted(all_keys):
+            old_val = old_values.get(key) if old_values else None
+            new_val = new_values.get(key) if new_values else None
+
+            if old_val != new_val:
+                old_str = self._format_value(old_val)
+                new_str = self._format_value(new_val)
+                changes.append(f"{key}: {old_str} → {new_str}")
+
+        # Limit to 2 changes to keep it compact
+        if len(changes) > 2:
+            return ", ".join(changes[:2]) + f" (+{len(changes) - 2})"
+        return ", ".join(changes)
+
+    def _format_value(self, value: Any) -> str:
+        """Format a single value for display.
+
+        Args:
+            value: Value to format
+
+        Returns:
+            Formatted string representation
+        """
+        if value is None:
+            return "∅"
+        if isinstance(value, bool):
+            return "✓" if value else "✗"
+        if isinstance(value, str) and len(value) > 15:
+            return value[:15] + "..."
+        return str(value)
 
     def _trim_old_logs(self) -> None:
         """Remove old logs exceeding MAX_LOGS."""
