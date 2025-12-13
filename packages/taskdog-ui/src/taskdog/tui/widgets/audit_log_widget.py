@@ -87,9 +87,8 @@ class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
         lines: list[str] = []
 
         # Line 1: Timestamp and status
-        # Success is expected, so keep it dim. Only highlight errors.
         ts = log.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        status = "[dim]OK[/]" if log.success else "[red]ER[/]"
+        status = "[green]OK[/]" if log.success else "[red]ER[/]"
         lines.append(f"[dim]{ts}[/]  {status}")
 
         # Line 2: Operation (no color - main content should be readable without distraction)
