@@ -436,28 +436,6 @@ class Task:
 
     # Schedule management methods
 
-    def set_schedule(
-        self,
-        start: datetime,
-        end: datetime,
-        allocations: dict[date, float] | None = None,
-    ) -> None:
-        """Set the task schedule.
-
-        Args:
-            start: Planned start datetime
-            end: Planned end datetime
-            allocations: Optional daily work hours allocation
-
-        Side effects:
-            - Sets planned_start and planned_end
-            - Sets daily_allocations if provided
-        """
-        self.planned_start = start
-        self.planned_end = end
-        if allocations is not None:
-            self.daily_allocations = allocations
-
     def clear_schedule(self) -> None:
         """Clear the task schedule.
 

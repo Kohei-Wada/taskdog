@@ -108,18 +108,3 @@ class HolidayChecker(IHolidayChecker):
             for holiday_date in self._holidays
             if start_date <= holiday_date <= end_date
         }
-
-    def get_holiday_name(self, check_date: date) -> str | None:
-        """Get the name of the holiday on a given date.
-
-        Args:
-            check_date: Date to check
-
-        Returns:
-            Name of the holiday if the date is a holiday, None otherwise
-        """
-        if self._holidays is None or check_date not in self._holidays:
-            return None
-
-        holiday_name = self._holidays.get(check_date)
-        return str(holiday_name) if holiday_name else None

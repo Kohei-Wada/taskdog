@@ -1,9 +1,8 @@
 """Date and time utility functions for task scheduling.
 
 This module provides utilities for:
-- Parsing datetime strings (parse_datetime)
 - Weekday/weekend detection (is_weekday, is_weekend)
-- Workday calculations (count_weekdays, get_next_weekday)
+- Workday calculations (count_weekdays)
 
 Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
 """
@@ -11,56 +10,8 @@ Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta
-from typing import TYPE_CHECKING
 
 from taskdog_core.shared.constants import WEEKDAY_THRESHOLD
-from taskdog_core.shared.constants.formats import DATETIME_FORMAT
-
-if TYPE_CHECKING:
-    from taskdog_core.domain.services.time_provider import ITimeProvider
-
-# Module-level singleton for default time provider (lazy initialization)
-_default_time_provider: ITimeProvider | None = None
-
-
-def _get_time_provider(time_provider: ITimeProvider | None) -> ITimeProvider:
-    """Get time provider, defaulting to a cached SystemTimeProvider singleton.
-
-    Uses a module-level singleton to avoid creating multiple instances
-    and ensure consistent behavior across calls.
-
-    Args:
-        time_provider: Optional time provider
-
-    Returns:
-        The provided time_provider or the cached SystemTimeProvider singleton
-    """
-    if time_provider is not None:
-        return time_provider
-
-    global _default_time_provider
-    if _default_time_provider is None:
-        from taskdog_core.infrastructure.time_provider import SystemTimeProvider
-
-        _default_time_provider = SystemTimeProvider()
-    return _default_time_provider
-
-
-def parse_datetime(date_str: str | None) -> datetime | None:
-    """Parse date string to datetime object.
-
-    Args:
-        date_str: Date string in format YYYY-MM-DD HH:MM:SS
-
-    Returns:
-        datetime object or None if parsing fails or input is None
-    """
-    if not date_str:
-        return None
-    try:
-        return datetime.strptime(date_str, DATETIME_FORMAT)
-    except ValueError:
-        return None
 
 
 def is_weekday(dt: datetime | date) -> bool:
@@ -108,28 +59,3 @@ def count_weekdays(start: datetime | date, end: datetime | date) -> int:
             weekday_count += 1
         current_date += timedelta(days=1)
     return weekday_count
-
-
-def get_next_weekday(
-    default_start_hour: int = 9,
-    time_provider: ITimeProvider | None = None,
-) -> datetime:
-    """Get the next weekday (skip weekends).
-
-    Args:
-        default_start_hour: Hour to set for the returned datetime (default: 9)
-        time_provider: Provider for current time. Defaults to SystemTimeProvider.
-
-    Returns:
-        datetime object representing the next weekday at the specified hour
-    """
-    provider = _get_time_provider(time_provider)
-    today = provider.now()
-    next_day = today + timedelta(days=1)
-
-    # Skip weekends - move to next Monday if needed
-    while is_weekend(next_day):
-        next_day += timedelta(days=1)
-
-    # Set time to specified hour for schedule start times
-    return next_day.replace(hour=default_start_hour, minute=0, second=0, microsecond=0)

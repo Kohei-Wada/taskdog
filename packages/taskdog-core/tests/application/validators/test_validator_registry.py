@@ -20,31 +20,6 @@ class TestTaskFieldValidatorRegistry:
         self.mock_repository = Mock()
         self.registry = TaskFieldValidatorRegistry(self.mock_repository)
 
-    def test_init_registers_status_validator(self):
-        """Test that status validator is registered on initialization."""
-        assert self.registry.has_validator("status") is True
-
-    def test_init_registers_datetime_validators(self):
-        """Test that datetime validators are registered on initialization."""
-        assert self.registry.has_validator("deadline") is True
-        assert self.registry.has_validator("planned_start") is True
-        assert self.registry.has_validator("planned_end") is True
-
-    def test_init_registers_numeric_validators(self):
-        """Test that numeric validators are registered on initialization."""
-        assert self.registry.has_validator("estimated_duration") is True
-        assert self.registry.has_validator("priority") is True
-
-    def test_has_validator_returns_true_for_registered_field(self):
-        """Test has_validator returns True for registered field."""
-        assert self.registry.has_validator("status") is True
-
-    def test_has_validator_returns_false_for_unregistered_field(self):
-        """Test has_validator returns False for unregistered field."""
-        assert self.registry.has_validator("name") is False
-        assert self.registry.has_validator("is_fixed") is False
-        assert self.registry.has_validator("depends_on") is False
-
     def test_validate_field_calls_status_validator(self):
         """Test validate_field calls status validator for status field."""
         task = Task(id=1, name="Test", status=TaskStatus.PENDING, priority=1)

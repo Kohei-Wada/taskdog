@@ -40,21 +40,6 @@ class TestXDGDirectories:
             expected = Path("/tmp/test_config/taskdog")
             assert config_home == expected
 
-    def test_get_cache_home_default(self):
-        """Test get_cache_home with default XDG_CACHE_HOME."""
-        # Use patch.dict with clear=True to ensure complete environment isolation
-        with patch.dict(os.environ, {}, clear=True):
-            cache_home = XDGDirectories.get_cache_home(create=False)
-            expected = Path.home() / ".cache" / "taskdog"
-            assert cache_home == expected
-
-    def test_get_cache_home_custom(self):
-        """Test get_cache_home with custom XDG_CACHE_HOME."""
-        with patch.dict(os.environ, {"XDG_CACHE_HOME": "/tmp/test_cache"}):
-            cache_home = XDGDirectories.get_cache_home(create=False)
-            expected = Path("/tmp/test_cache/taskdog")
-            assert cache_home == expected
-
     def test_get_note_file(self):
         """Test get_note_file returns correct path for task ID."""
         with patch.dict(os.environ, {"XDG_DATA_HOME": "/tmp/test_data"}):

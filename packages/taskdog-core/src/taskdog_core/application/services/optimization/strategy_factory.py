@@ -98,15 +98,6 @@ class StrategyFactory:
         return strategy_constructor(default_start_hour, default_end_hour)
 
     @classmethod
-    def list_available(cls) -> list[str]:
-        """Get list of available algorithm names.
-
-        Returns:
-            List of algorithm names that can be used with create()
-        """
-        return list(cls._strategies.keys())
-
-    @classmethod
     def get_algorithm_metadata(cls) -> list[tuple[str, str, str]]:
         """Get metadata for all available algorithms.
 
