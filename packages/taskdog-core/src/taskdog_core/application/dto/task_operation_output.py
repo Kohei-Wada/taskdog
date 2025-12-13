@@ -25,11 +25,12 @@ class TaskOperationOutput:
         planned_end: Planned end datetime
         actual_start: Actual start datetime (for started tasks)
         actual_end: Actual end datetime (for completed/canceled tasks)
+        actual_duration: Explicit actual duration in hours (overrides calculated)
         depends_on: List of dependency task IDs
         tags: List of tags
         is_fixed: Whether task schedule is fixed
         is_archived: Whether task is archived (soft deleted)
-        actual_duration_hours: Computed actual duration (for completed tasks)
+        actual_duration_hours: Effective actual duration (explicit or calculated)
         daily_allocations: Dictionary mapping dates to allocated hours (from optimization)
     """
 
@@ -43,6 +44,7 @@ class TaskOperationOutput:
     planned_end: datetime | None
     actual_start: datetime | None
     actual_end: datetime | None
+    actual_duration: float | None
     depends_on: list[int]
     tags: list[str]
     is_fixed: bool
@@ -78,6 +80,7 @@ class TaskOperationOutput:
             planned_end=task.planned_end,
             actual_start=task.actual_start,
             actual_end=task.actual_end,
+            actual_duration=task.actual_duration,
             depends_on=task.depends_on,
             tags=task.tags,
             is_fixed=task.is_fixed,

@@ -54,6 +54,8 @@ class TaskModel(Base):
     # Actual time tracking (nullable)
     actual_start: Mapped[datetime | None] = mapped_column(nullable=True)
     actual_end: Mapped[datetime | None] = mapped_column(nullable=True)
+    # Explicit actual duration in hours (takes priority over calculated value)
+    actual_duration: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     # Duration and scheduling
     estimated_duration: Mapped[float | None] = mapped_column(Float, nullable=True)

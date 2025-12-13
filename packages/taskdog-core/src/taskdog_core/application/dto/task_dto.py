@@ -204,6 +204,7 @@ class TaskDetailDto:
     deadline: datetime | None
     actual_start: datetime | None
     actual_end: datetime | None
+    actual_duration: float | None
     estimated_duration: float | None
     daily_allocations: dict[date, float]
     is_fixed: bool
@@ -247,6 +248,7 @@ class TaskDetailDto:
             deadline=task.deadline,
             actual_start=task.actual_start,
             actual_end=task.actual_end,
+            actual_duration=task.actual_duration,
             estimated_duration=task.estimated_duration,
             daily_allocations=task.daily_allocations,
             is_fixed=task.is_fixed,

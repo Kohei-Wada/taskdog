@@ -65,6 +65,7 @@ def create_mock_task_operation_output(
         planned_end=None,
         actual_start=None,
         actual_end=None,
+        actual_duration=None,
         depends_on=[],
         tags=["test"],
         is_fixed=False,

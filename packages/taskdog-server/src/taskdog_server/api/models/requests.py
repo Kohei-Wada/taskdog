@@ -85,10 +85,10 @@ class SetTaskTagsRequest(BaseModel):
 
 
 class FixActualTimesRequest(BaseModel):
-    """Request model for fixing actual timestamps.
+    """Request model for fixing actual timestamps and duration.
 
-    Used to correct actual_start and actual_end after the fact,
-    for historical accuracy. Past dates are allowed.
+    Used to correct actual_start, actual_end, and actual_duration
+    after the fact, for historical accuracy. Past dates are allowed.
     """
 
     actual_start: datetime | None = Field(
@@ -97,11 +97,18 @@ class FixActualTimesRequest(BaseModel):
     actual_end: datetime | None = Field(
         None, description="New actual end datetime (null to clear)"
     )
+    actual_duration: float | None = Field(
+        None, description="Explicit duration in hours (overrides calculated value)"
+    )
     clear_start: bool = Field(
         False, description="Clear actual_start (mutually exclusive with actual_start)"
     )
     clear_end: bool = Field(
         False, description="Clear actual_end (mutually exclusive with actual_end)"
+    )
+    clear_duration: bool = Field(
+        False,
+        description="Clear actual_duration (mutually exclusive with actual_duration)",
     )
 
     @model_validator(mode="after")
@@ -111,17 +118,27 @@ class FixActualTimesRequest(BaseModel):
             raise ValueError("Cannot set actual_start and clear_start simultaneously")
         if self.actual_end is not None and self.clear_end:
             raise ValueError("Cannot set actual_end and clear_end simultaneously")
+        if self.actual_duration is not None and self.clear_duration:
+            raise ValueError(
+                "Cannot set actual_duration and clear_duration simultaneously"
+            )
+
+        # Validate duration is positive
+        if self.actual_duration is not None and self.actual_duration <= 0:
+            raise ValueError("actual_duration must be greater than 0")
 
         # Ensure at least one operation is specified
         if (
             self.actual_start is None
             and self.actual_end is None
+            and self.actual_duration is None
             and not self.clear_start
             and not self.clear_end
+            and not self.clear_duration
         ):
             raise ValueError(
-                "At least one of actual_start, actual_end, clear_start, "
-                "or clear_end must be specified"
+                "At least one of actual_start, actual_end, actual_duration, "
+                "clear_start, clear_end, or clear_duration must be specified"
             )
 
         return self

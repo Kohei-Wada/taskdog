@@ -65,6 +65,8 @@ class Task:
     deadline: datetime | None = None
     actual_start: datetime | None = None
     actual_end: datetime | None = None
+    # Explicit actual duration (hours). Takes priority over calculated value.
+    actual_duration: float | None = None
     estimated_duration: float | None = None
     daily_allocations: dict[date, float] = field(default_factory=dict)
     # New fields (Phase 1: Schema extension)
@@ -81,12 +83,19 @@ class Task:
         - Task name is not empty or whitespace-only
         - Priority is a positive integer
         - Estimated duration (if provided) is a positive number
+        - Actual duration (if provided) is a positive number
         - Tags are non-empty strings and unique
 
         Raises:
             TaskValidationError: If any invariant is violated
         """
-        # Validate name (required, non-empty, and within length limit)
+        self._validate_name()
+        self._validate_priority()
+        self._validate_durations()
+        self._validate_tags()
+
+    def _validate_name(self) -> None:
+        """Validate task name is non-empty and within length limit."""
         if not self.name or not self.name.strip():
             raise TaskValidationError("Task name cannot be empty")
         if len(self.name) > MAX_TASK_NAME_LENGTH:
@@ -94,15 +103,20 @@ class Task:
                 f"Task name cannot exceed {MAX_TASK_NAME_LENGTH} characters"
             )
 
-        # Validate priority (must be positive)
+    def _validate_priority(self) -> None:
+        """Validate priority is a positive integer."""
         if self.priority <= MIN_PRIORITY_EXCLUSIVE:
             raise TaskValidationError("Priority must be greater than 0")
 
-        # Validate estimated_duration (if provided, must be positive)
+    def _validate_durations(self) -> None:
+        """Validate duration fields are positive when set."""
         if self.estimated_duration is not None and self.estimated_duration <= 0:
             raise TaskValidationError("Estimated duration must be greater than 0")
+        if self.actual_duration is not None and self.actual_duration <= 0:
+            raise TaskValidationError("Actual duration must be greater than 0")
 
-        # Validate tags (count limit, non-empty strings, length limit, unique)
+    def _validate_tags(self) -> None:
+        """Validate tags count, content, length, and uniqueness."""
         if len(self.tags) > MAX_TAGS_PER_TASK:
             raise TaskValidationError(
                 f"Cannot have more than {MAX_TAGS_PER_TASK} tags per task"
@@ -119,7 +133,18 @@ class Task:
 
     @property
     def actual_duration_hours(self) -> float | None:
-        """Calculate actual duration in hours from actual_start and actual_end"""
+        """Get actual duration in hours.
+
+        Priority:
+            1. Explicit actual_duration value (if set)
+            2. Calculated from actual_start and actual_end (if both set)
+            3. None (if neither available)
+        """
+        # Priority 1: Explicit value takes precedence
+        if self.actual_duration is not None:
+            return self.actual_duration
+
+        # Priority 2: Calculate from timestamps
         if not self.actual_start or not self.actual_end:
             return None
 
@@ -332,29 +357,32 @@ class Task:
 
         Side effects:
             - Changes status to PENDING
-            - Clears actual_start and actual_end
+            - Clears actual_start, actual_end, and actual_duration
         """
         self.status = TaskStatus.PENDING
         self.actual_start = None
         self.actual_end = None
+        self.actual_duration = None
 
     def reopen(self) -> None:
         """Reopen a finished task back to PENDING.
 
         Side effects:
             - Changes status to PENDING
-            - Clears actual_start and actual_end
+            - Clears actual_start, actual_end, and actual_duration
         """
         self.status = TaskStatus.PENDING
         self.actual_start = None
         self.actual_end = None
+        self.actual_duration = None
 
     def fix_actual_times(
         self,
         actual_start: datetime | None | EllipsisType = ...,
         actual_end: datetime | None | EllipsisType = ...,
+        actual_duration: float | None | EllipsisType = ...,
     ) -> None:
-        """Fix actual start and/or end timestamps.
+        """Fix actual start/end timestamps and/or duration.
 
         Used to correct timestamps after the fact, for historical accuracy.
         Past dates are allowed since these are historical records.
@@ -362,13 +390,16 @@ class Task:
         Args:
             actual_start: New actual start (None to clear, ... to keep current)
             actual_end: New actual end (None to clear, ... to keep current)
+            actual_duration: Explicit duration in hours (None to clear, ... to keep current)
 
         Raises:
             TaskValidationError: If actual_end < actual_start when both are set
+            TaskValidationError: If actual_duration is set but <= 0
 
         Side effects:
             - Updates actual_start if provided (not ...)
             - Updates actual_end if provided (not ...)
+            - Updates actual_duration if provided (not ...)
         """
         # Determine new values (sentinel ... means keep current)
         new_start: datetime | None = (
@@ -379,6 +410,11 @@ class Task:
         new_end: datetime | None = (
             self.actual_end if isinstance(actual_end, EllipsisType) else actual_end
         )
+        new_duration: float | None = (
+            self.actual_duration
+            if isinstance(actual_duration, EllipsisType)
+            else actual_duration
+        )
 
         # Validate: actual_end >= actual_start when both are set
         if new_start is not None and new_end is not None and new_end < new_start:
@@ -386,11 +422,17 @@ class Task:
                 f"actual_end ({new_end}) must be >= actual_start ({new_start})"
             )
 
+        # Validate: actual_duration > 0 when set
+        if new_duration is not None and new_duration <= 0:
+            raise TaskValidationError("Actual duration must be greater than 0")
+
         # Apply changes
         if not isinstance(actual_start, EllipsisType):
             self.actual_start = actual_start
         if not isinstance(actual_end, EllipsisType):
             self.actual_end = actual_end
+        if not isinstance(actual_duration, EllipsisType):
+            self.actual_duration = actual_duration
 
     # Schedule management methods
 

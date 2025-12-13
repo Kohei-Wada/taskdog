@@ -30,6 +30,7 @@ class TaskOperationResponse(BaseModel):
     planned_end: datetime | None = None
     actual_start: datetime | None = None
     actual_end: datetime | None = None
+    actual_duration: float | None = None
     depends_on: list[int] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     is_fixed: bool = False
@@ -57,6 +58,7 @@ class TaskOperationResponse(BaseModel):
             planned_end=dto.planned_end,
             actual_start=dto.actual_start,
             actual_end=dto.actual_end,
+            actual_duration=dto.actual_duration,
             depends_on=dto.depends_on,
             tags=dto.tags,
             is_fixed=dto.is_fixed,
