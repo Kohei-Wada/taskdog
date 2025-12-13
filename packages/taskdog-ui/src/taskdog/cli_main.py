@@ -11,6 +11,7 @@ from taskdog.cli.commands.deadline import deadline_command
 from taskdog.cli.commands.done import done_command
 from taskdog.cli.commands.estimate import estimate_command
 from taskdog.cli.commands.export import export_command
+from taskdog.cli.commands.fix_actual import fix_actual_command
 from taskdog.cli.commands.gantt import gantt_command
 from taskdog.cli.commands.log_hours import log_hours_command
 from taskdog.cli.commands.note import note_command
@@ -158,6 +159,7 @@ cli.add_command(rename_command)
 cli.add_command(reopen_command)
 cli.add_command(restore_command)
 cli.add_command(estimate_command)
+cli.add_command(fix_actual_command)
 cli.add_command(schedule_command)
 cli.add_command(optimize_command)
 cli.add_command(stats_command)

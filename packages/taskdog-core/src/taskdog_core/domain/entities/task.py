@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
+from types import EllipsisType
 
 from taskdog_core.domain.constants import (
     MAX_TAG_LENGTH,
@@ -349,6 +350,49 @@ class Task:
         self.status = TaskStatus.PENDING
         self.actual_start = None
         self.actual_end = None
+
+    def fix_actual_times(
+        self,
+        actual_start: datetime | None | EllipsisType = ...,
+        actual_end: datetime | None | EllipsisType = ...,
+    ) -> None:
+        """Fix actual start and/or end timestamps.
+
+        Used to correct timestamps after the fact, for historical accuracy.
+        Past dates are allowed since these are historical records.
+
+        Args:
+            actual_start: New actual start (None to clear, ... to keep current)
+            actual_end: New actual end (None to clear, ... to keep current)
+
+        Raises:
+            TaskValidationError: If actual_end < actual_start when both are set
+
+        Side effects:
+            - Updates actual_start if provided (not ...)
+            - Updates actual_end if provided (not ...)
+        """
+        # Determine new values (sentinel ... means keep current)
+        new_start: datetime | None = (
+            self.actual_start
+            if isinstance(actual_start, EllipsisType)
+            else actual_start
+        )
+        new_end: datetime | None = (
+            self.actual_end if isinstance(actual_end, EllipsisType) else actual_end
+        )
+
+        # Validate: actual_end >= actual_start when both are set
+        if new_start is not None and new_end is not None and new_end < new_start:
+            raise TaskValidationError(
+                f"actual_end ({new_end}) must be >= actual_start ({new_start})"
+            )
+
+        # Apply changes
+        if not isinstance(actual_start, EllipsisType):
+            self.actual_start = actual_start
+        if not isinstance(actual_end, EllipsisType):
+            self.actual_end = actual_end
 
     # Schedule management methods
 

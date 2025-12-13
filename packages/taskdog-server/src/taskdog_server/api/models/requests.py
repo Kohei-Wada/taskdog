@@ -3,7 +3,7 @@
 from datetime import date as date_type
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.shared.constants import MAX_TASK_NAME_LENGTH
@@ -89,6 +89,36 @@ class LogHoursRequest(BaseModel):
 
     hours: float = Field(..., gt=0, description="Hours worked")
     date: date_type | None = Field(None, description="Date of work (defaults to today)")
+
+
+class FixActualTimesRequest(BaseModel):
+    """Request model for fixing actual timestamps.
+
+    Used to correct actual_start and actual_end after the fact,
+    for historical accuracy. Past dates are allowed.
+    """
+
+    actual_start: datetime | None = Field(
+        None, description="New actual start datetime (null to clear)"
+    )
+    actual_end: datetime | None = Field(
+        None, description="New actual end datetime (null to clear)"
+    )
+    clear_start: bool = Field(
+        False, description="Clear actual_start (mutually exclusive with actual_start)"
+    )
+    clear_end: bool = Field(
+        False, description="Clear actual_end (mutually exclusive with actual_end)"
+    )
+
+    @model_validator(mode="after")
+    def validate_exclusive_options(self) -> "FixActualTimesRequest":
+        """Validate mutually exclusive options."""
+        if self.actual_start is not None and self.clear_start:
+            raise ValueError("Cannot set actual_start and clear_start simultaneously")
+        if self.actual_end is not None and self.clear_end:
+            raise ValueError("Cannot set actual_end and clear_end simultaneously")
+        return self
 
 
 class OptimizeScheduleRequest(BaseModel):
