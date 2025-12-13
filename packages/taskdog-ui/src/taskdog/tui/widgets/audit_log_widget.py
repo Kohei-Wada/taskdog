@@ -123,9 +123,9 @@ class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
             )
             lines.append(f"[red]{error_msg}[/]")
 
-        # Line 6: Client (if exists)
+        # Line 6: Client (if exists) - highlight to show who made the change
         if log.client_name:
-            lines.append(f"[dim italic]@{log.client_name}[/]")
+            lines.append(f"@{log.client_name}")
 
         return "\n".join(lines)
 
