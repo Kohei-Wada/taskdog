@@ -71,20 +71,12 @@ class CustomFooter(Static):
         self.is_api_connected = status.is_api_connected
         self.is_websocket_connected = status.is_websocket_connected
 
-    def watch_is_api_connected(self, new_value: bool) -> None:
-        """Watch for changes to API connection status.
-
-        Args:
-            new_value: New API connection status
-        """
+    def watch_is_api_connected(self, _new_value: bool) -> None:
+        """Watch for changes to API connection status."""
         self._update_connection_status()
 
-    def watch_is_websocket_connected(self, new_value: bool) -> None:
-        """Watch for changes to WebSocket connection status.
-
-        Args:
-            new_value: New WebSocket connection status
-        """
+    def watch_is_websocket_connected(self, _new_value: bool) -> None:
+        """Watch for changes to WebSocket connection status."""
         self._update_connection_status()
 
     def _get_server_address(self) -> str:

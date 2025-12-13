@@ -53,22 +53,3 @@ class TaskInsertBuilder:
         self._session.add(model)
         self._session.flush()  # Get ID immediately for downstream operations
         return model
-
-    def insert_tasks_bulk(self, tasks: list[Task]) -> list[TaskModel]:
-        """Bulk insert multiple tasks in a single operation.
-
-        Args:
-            tasks: List of Task entities to insert
-
-        Returns:
-            List of TaskModel ORM objects that were added to the session
-
-        Note:
-            - More efficient than calling insert_task() in a loop
-            - All tasks are added to the session but not committed
-            - Call session.commit() to persist all changes at once
-        """
-        models = [self._mapper.to_model(task) for task in tasks]
-        self._session.add_all(models)
-        self._session.flush()  # Get IDs for all tasks immediately
-        return models

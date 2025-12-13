@@ -5,7 +5,6 @@ including hard delete operations with automatic CASCADE deletion of
 related records.
 """
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from taskdog_core.infrastructure.persistence.database.models import TaskModel
@@ -54,29 +53,3 @@ class TaskDeleteBuilder:
             self._session.delete(model)
             return True
         return False
-
-    def delete_tasks_bulk(self, task_ids: list[int]) -> int:
-        """Bulk delete multiple tasks in a single operation.
-
-        Args:
-            task_ids: List of task IDs to delete
-
-        Returns:
-            Count of tasks that were actually deleted
-
-        Note:
-            - More efficient than calling delete_task() in a loop
-            - Only counts tasks that actually existed
-            - CASCADE rules apply to all deleted tasks
-            - Call session.commit() to persist all deletions at once
-        """
-        if not task_ids:
-            return 0
-
-        stmt = select(TaskModel).where(TaskModel.id.in_(task_ids))  # type: ignore[attr-defined]
-        models = self._session.scalars(stmt).all()
-
-        for model in models:
-            self._session.delete(model)
-
-        return len(models)

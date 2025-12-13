@@ -7,11 +7,10 @@ from rich.table import Table
 from rich.text import Text
 
 from taskdog.constants.colors import STATUS_COLORS_BOLD, STATUS_STYLES
-from taskdog.renderers.task_renderer import TaskRenderer
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-class RichRendererBase(TaskRenderer):
+class RichRendererBase:
     """Base class for renderers using Rich library.
 
     Provides common utility methods for Rich-based rendering,
