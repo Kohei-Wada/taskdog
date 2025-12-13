@@ -51,7 +51,7 @@ class SqliteAuditLogRepository:
 
         # Configure SQLite pragmas for concurrency
         @event.listens_for(self.engine, "connect")  # type: ignore[no-untyped-call]
-        def set_sqlite_pragma(dbapi_connection: Any, connection_record: Any) -> None:
+        def set_sqlite_pragma(dbapi_connection: Any, _: Any) -> None:
             cursor = dbapi_connection.cursor()
             try:
                 cursor.execute("PRAGMA journal_mode=WAL")
