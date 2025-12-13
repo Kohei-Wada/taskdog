@@ -52,22 +52,3 @@ class TaskUpdateBuilder:
         """
         self._mapper.update_model(model, task)
         model.updated_at = datetime.now()
-
-    def update_tasks_bulk(
-        self, models: dict[int, TaskModel], tasks: list[Task]
-    ) -> None:
-        """Bulk update multiple tasks in a single operation.
-
-        Args:
-            models: Dictionary mapping task IDs to TaskModel ORM objects
-            tasks: List of Task entities with updated data
-
-        Note:
-            - Only updates tasks that exist in the models dict
-            - Skips tasks whose IDs are not in models
-            - More efficient than calling update_task() individually
-            - Call session.commit() to persist all changes at once
-        """
-        for task in tasks:
-            if task.id in models:
-                self.update_task(models[task.id], task)

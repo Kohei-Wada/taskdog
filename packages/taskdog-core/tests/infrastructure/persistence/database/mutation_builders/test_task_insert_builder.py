@@ -114,54 +114,6 @@ class TestTaskInsertBuilder:
             assert len(models) == 1
             assert models[0].name == "Test Task"
 
-    def test_insert_tasks_bulk_creates_multiple_models(self):
-        """Test that insert_tasks_bulk creates multiple TaskModels."""
-        tasks = [
-            Task(id=1, name="Task 1", priority=5, status=TaskStatus.PENDING, tags=[]),
-            Task(id=2, name="Task 2", priority=3, status=TaskStatus.PENDING, tags=[]),
-            Task(id=3, name="Task 3", priority=1, status=TaskStatus.PENDING, tags=[]),
-        ]
-
-        with self.Session() as session:
-            builder = TaskInsertBuilder(session, self.mapper)
-            models = builder.insert_tasks_bulk(tasks)
-
-            # Should return 3 models
-            assert len(models) == 3
-            assert models[0].name == "Task 1"
-            assert models[1].name == "Task 2"
-            assert models[2].name == "Task 3"
-
-            # All models should be in session
-            for model in models:
-                assert model in session
-
-    def test_insert_tasks_bulk_flushes_for_ids(self):
-        """Test that insert_tasks_bulk flushes to get IDs immediately."""
-        tasks = [
-            Task(id=1, name="Task 1", priority=5, status=TaskStatus.PENDING, tags=[]),
-            Task(id=2, name="Task 2", priority=3, status=TaskStatus.PENDING, tags=[]),
-        ]
-
-        with self.Session() as session:
-            builder = TaskInsertBuilder(session, self.mapper)
-            models = builder.insert_tasks_bulk(tasks)
-
-            # All IDs should be available immediately
-            assert models[0].id == 1
-            assert models[1].id == 2
-
-    def test_insert_tasks_bulk_with_empty_list(self):
-        """Test that insert_tasks_bulk handles empty list."""
-        tasks = []
-
-        with self.Session() as session:
-            builder = TaskInsertBuilder(session, self.mapper)
-            models = builder.insert_tasks_bulk(tasks)
-
-            # Should return empty list
-            assert len(models) == 0
-
     def test_insert_task_preserves_all_fields(self):
         """Test that insert_task preserves all task fields."""
         now = datetime.now()
