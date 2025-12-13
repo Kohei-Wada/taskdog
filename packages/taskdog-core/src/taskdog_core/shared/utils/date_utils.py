@@ -4,7 +4,6 @@ This module provides utilities for:
 - Parsing datetime strings (parse_date, parse_datetime)
 - Weekday/weekend detection (is_weekday, is_weekend)
 - Workday calculations (count_weekdays, get_previous_monday, calculate_next_workday, get_next_weekday)
-- Date range calculations (get_today_range, get_this_week_range)
 
 Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
 """
@@ -204,41 +203,3 @@ def get_next_weekday(
 
     # Set time to specified hour for schedule start times
     return next_day.replace(hour=default_start_hour, minute=0, second=0, microsecond=0)
-
-
-def get_today_range(
-    time_provider: ITimeProvider | None = None,
-) -> tuple[date, date]:
-    """Get the date range for today (start and end are the same date).
-
-    This is useful for filtering tasks that are relevant for today.
-
-    Args:
-        time_provider: Provider for current time. Defaults to SystemTimeProvider.
-
-    Returns:
-        Tuple of (start_date, end_date) where both are today's date
-    """
-    provider = _get_time_provider(time_provider)
-    today = provider.today()
-    return today, today
-
-
-def get_this_week_range(
-    time_provider: ITimeProvider | None = None,
-) -> tuple[date, date]:
-    """Get the date range for this week (Monday through Sunday).
-
-    Args:
-        time_provider: Provider for current time. Defaults to SystemTimeProvider.
-
-    Returns:
-        Tuple of (start_date, end_date) where start is Monday and end is Sunday
-    """
-    provider = _get_time_provider(time_provider)
-    today = provider.today()
-    # Get the Monday of this week (weekday() returns 0 for Monday)
-    week_start = today - timedelta(days=today.weekday())
-    # Get the Sunday of this week
-    week_end = week_start + timedelta(days=6)
-    return week_start, week_end
