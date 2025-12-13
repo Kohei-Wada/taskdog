@@ -210,19 +210,3 @@ class ConfigManager:
                 ),
             ),
         )
-
-    @classmethod
-    def _default_config(cls) -> Config:
-        """Create default configuration.
-
-        Returns:
-            Config with all default values
-        """
-        return Config(
-            optimization=OptimizationConfig(),
-            task=TaskConfig(),
-            time=TimeConfig(),
-            region=RegionConfig(),
-            storage=StorageConfig(),
-            api=ApiConfig(),
-        )
