@@ -23,8 +23,6 @@ from taskdog_server.api.dependencies import (
     get_relationship_controller,
     get_repository,
     initialize_api_context,
-    reset_app_state,
-    set_api_context,
 )
 
 
@@ -37,26 +35,16 @@ class TestDependencyInjection:
 
     def teardown_method(self):
         """Clean up after tests."""
-        reset_app_state(self.app)
+        if hasattr(self.app.state, "api_context"):
+            delattr(self.app.state, "api_context")
+        if hasattr(self.app.state, "connection_manager"):
+            delattr(self.app.state, "connection_manager")
 
     def _create_mock_request(self) -> MagicMock:
         """Create a mock request with app reference."""
         mock_request = MagicMock()
         mock_request.app = self.app
         return mock_request
-
-    def test_set_and_get_api_context(self):
-        """Test setting and getting API context via app.state."""
-        # Arrange - create mock context
-        mock_context = MagicMock(spec=ApiContext)
-
-        # Act
-        set_api_context(self.app, mock_context)
-        mock_request = self._create_mock_request()
-        retrieved_context = get_api_context(mock_request)
-
-        # Assert
-        assert retrieved_context == mock_context
 
     def test_get_api_context_raises_when_not_initialized(self):
         """Test that get_api_context raises error when not initialized."""
@@ -249,8 +237,8 @@ class TestDependencyInjection:
         # Arrange
         mock_context = MagicMock(spec=ApiContext)
 
-        # Act
-        set_api_context(self.app, mock_context)
+        # Act - set context directly on app.state
+        self.app.state.api_context = mock_context
         mock_request = self._create_mock_request()
         context1 = get_api_context(mock_request)
         context2 = get_api_context(mock_request)
@@ -267,11 +255,11 @@ class TestDependencyInjection:
         mock_context2 = MagicMock(spec=ApiContext)
         mock_request = self._create_mock_request()
 
-        # Act
-        set_api_context(self.app, mock_context1)
+        # Act - set context directly on app.state
+        self.app.state.api_context = mock_context1
         context1 = get_api_context(mock_request)
 
-        set_api_context(self.app, mock_context2)
+        self.app.state.api_context = mock_context2
         context2 = get_api_context(mock_request)
 
         # Assert
@@ -292,21 +280,6 @@ class TestDependencyInjection:
         assert manager1 is not None
         assert manager1 is manager2
         assert self.app.state.connection_manager is manager1
-
-    def test_reset_app_state(self):
-        """Test that reset_app_state clears all state."""
-        # Arrange
-        mock_context = MagicMock(spec=ApiContext)
-        set_api_context(self.app, mock_context)
-        mock_request = self._create_mock_request()
-        get_connection_manager(mock_request)  # Initialize connection manager
-
-        # Act
-        reset_app_state(self.app)
-
-        # Assert
-        assert not hasattr(self.app.state, "api_context")
-        assert not hasattr(self.app.state, "connection_manager")
 
 
 class TestInitializeApiContext:

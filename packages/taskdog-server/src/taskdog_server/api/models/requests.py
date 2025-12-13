@@ -1,6 +1,5 @@
 """Pydantic request models for FastAPI endpoints."""
 
-from datetime import date as date_type
 from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -161,29 +160,6 @@ class OptimizeScheduleRequest(BaseModel):
         None,
         description="Specific task IDs to optimize (None means all schedulable tasks)",
     )
-
-
-class TaskFilterParams(BaseModel):
-    """Query parameters for filtering tasks."""
-
-    all: bool = Field(False, description="Include archived tasks")
-    status: TaskStatus | None = Field(None, description="Filter by status")
-    tags: list[str] | None = Field(None, description="Filter by tags (OR logic)")
-    start_date: date_type | None = Field(
-        None, description="Filter by start date (tasks on or after)"
-    )
-    end_date: date_type | None = Field(
-        None, description="Filter by end date (tasks on or before)"
-    )
-
-
-class TaskSortParams(BaseModel):
-    """Query parameters for sorting tasks."""
-
-    sort: str = Field(
-        "id", description="Sort field (id, name, priority, deadline, etc.)"
-    )
-    reverse: bool = Field(False, description="Reverse sort order")
 
 
 class UpdateNotesRequest(BaseModel):

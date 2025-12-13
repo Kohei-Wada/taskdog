@@ -4,7 +4,7 @@ import secrets
 from contextlib import suppress
 from typing import Annotated
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, WebSocket
+from fastapi import BackgroundTasks, Depends, HTTPException, Request, WebSocket
 from fastapi.security import APIKeyHeader
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
@@ -149,30 +149,6 @@ def get_api_context(request: Request) -> ApiContext:
     return context
 
 
-def set_api_context(app: FastAPI, context: ApiContext) -> None:
-    """Set the API context on app.state.
-
-    This is primarily used for testing to inject mock contexts.
-
-    Args:
-        app: FastAPI application instance
-        context: ApiContext instance to store in app.state
-    """
-    app.state.api_context = context
-
-
-def reset_app_state(app: FastAPI) -> None:
-    """Reset app.state for testing.
-
-    Args:
-        app: FastAPI application instance
-    """
-    if hasattr(app.state, "api_context"):
-        delattr(app.state, "api_context")
-    if hasattr(app.state, "connection_manager"):
-        delattr(app.state, "connection_manager")
-
-
 # Dependency type aliases for cleaner endpoint signatures
 ApiContextDep = Annotated[ApiContext, Depends(get_api_context)]
 
@@ -291,7 +267,6 @@ AnalyticsControllerDep = Annotated[
 CrudControllerDep = Annotated[TaskCrudController, Depends(get_crud_controller)]
 RepositoryDep = Annotated[TaskRepository, Depends(get_repository)]
 NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
-ConfigDep = Annotated[Config, Depends(get_config)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
 TimeProviderDep = Annotated[ITimeProvider, Depends(get_time_provider)]
 AuditLogControllerDep = Annotated[AuditLogController, Depends(get_audit_log_controller)]
