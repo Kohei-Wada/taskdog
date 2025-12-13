@@ -47,36 +47,6 @@ def _parse_optional_datetime(data: dict[str, Any], field: str) -> datetime | Non
         ) from e
 
 
-def _parse_optional_date(data: dict[str, Any], field: str) -> date_type | None:
-    """Parse ISO date from dict, returning None if field missing/None.
-
-    Args:
-        data: Dictionary containing date fields
-        field: Field name to extract
-
-    Returns:
-        Parsed date or None if field is missing/None
-
-    Raises:
-        ConversionError: If date value is present but malformed
-    """
-    value = data.get(field)
-    if value is None:
-        return None
-
-    try:
-        result = _core_parse_date(value)
-        if result is None and value:
-            raise ValueError(f"Failed to parse non-empty date value: {value}")
-        return result
-    except (ValueError, TypeError) as e:
-        raise ConversionError(
-            f"Failed to parse date field '{field}': {value}",
-            field=field,
-            value=value,
-        ) from e
-
-
 def _parse_datetime_fields(
     data: dict[str, Any], fields: list[str]
 ) -> dict[str, datetime | None]:

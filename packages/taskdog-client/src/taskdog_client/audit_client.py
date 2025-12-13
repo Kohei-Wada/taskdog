@@ -74,26 +74,6 @@ class AuditClient:
         data = self._base._request_json("get", "/api/v1/audit-logs", params=params)
         return self._convert_to_list_output(data)
 
-    def get_audit_log(self, log_id: int) -> AuditLogOutput | None:
-        """Get a single audit log by ID.
-
-        Args:
-            log_id: Audit log ID
-
-        Returns:
-            AuditLogOutput if found, None otherwise
-        """
-        response = self._base._safe_request("get", f"/api/v1/audit-logs/{log_id}")
-        if response.status_code == 404:
-            return None
-        if not response.is_success:
-            self._base._handle_error(response)
-
-        data = response.json()
-        if data is None:
-            return None
-        return self._convert_to_output(data)
-
     def _convert_to_output(self, data: dict[str, Any]) -> AuditLogOutput:
         """Convert API response to AuditLogOutput DTO."""
         # Parse timestamp with error handling for malformed data
