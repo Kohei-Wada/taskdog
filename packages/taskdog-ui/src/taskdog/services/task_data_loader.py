@@ -124,35 +124,6 @@ class TaskDataLoader:
             filtered_gantt_view_model=filtered_gantt_view_model,
         )
 
-    def load_gantt_data(
-        self,
-        all: bool = False,
-        sort_by: str = "deadline",
-        reverse: bool = False,
-        start_date: date | None = None,
-        end_date: date | None = None,
-    ) -> GanttViewModel:
-        """Load gantt data from API.
-
-        Args:
-            all: Include archived tasks (default: False)
-            sort_by: Sort field name
-            reverse: Sort direction (default: False for ascending)
-            start_date: Start date for gantt
-            end_date: End date for gantt
-
-        Returns:
-            GanttViewModel from presenter
-        """
-        gantt_output = self.api_client.get_gantt_data(
-            all=all,
-            sort_by=sort_by,
-            reverse=reverse,
-            start_date=start_date,
-            end_date=end_date,
-        )
-        return self.gantt_presenter.present(gantt_output)
-
     def apply_display_filter(
         self, tasks: list[TaskRowDto], hide_completed: bool
     ) -> list[TaskRowDto]:
