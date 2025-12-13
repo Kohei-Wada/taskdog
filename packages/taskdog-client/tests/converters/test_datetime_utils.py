@@ -6,7 +6,6 @@ import pytest
 from taskdog_client.converters.datetime_utils import (
     _parse_date_dict,
     _parse_datetime_fields,
-    _parse_optional_date,
     _parse_optional_datetime,
     _parse_required_datetime,
 )
@@ -63,41 +62,6 @@ class TestParseOptionalDatetime:
 
         assert exc_info.value.field == "deadline"
         assert exc_info.value.value == 12345
-
-
-class TestParseOptionalDate:
-    """Test cases for _parse_optional_date."""
-
-    def test_valid_date(self):
-        """Test parsing valid ISO date string."""
-        data = {"start_date": "2025-01-15"}
-        result = _parse_optional_date(data, "start_date")
-
-        assert result == date(2025, 1, 15)
-
-    def test_none_value(self):
-        """Test that None value returns None."""
-        data = {"start_date": None}
-        result = _parse_optional_date(data, "start_date")
-
-        assert result is None
-
-    def test_missing_field(self):
-        """Test that missing field returns None."""
-        data = {}
-        result = _parse_optional_date(data, "start_date")
-
-        assert result is None
-
-    def test_invalid_format_raises_error(self):
-        """Test that invalid format raises ConversionError."""
-        data = {"start_date": "not-a-date"}
-
-        with pytest.raises(ConversionError) as exc_info:
-            _parse_optional_date(data, "start_date")
-
-        assert exc_info.value.field == "start_date"
-        assert exc_info.value.value == "not-a-date"
 
 
 class TestParseDatetimeFields:

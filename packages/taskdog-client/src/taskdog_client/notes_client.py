@@ -90,16 +90,3 @@ class NotesClient:
         _, has_notes = self.get_task_notes(task_id)
         self._has_notes_cache[task_id] = has_notes
         return has_notes
-
-    def cache_notes_info(self, task_id: int, has_notes: bool) -> None:
-        """Cache has_notes information for a task.
-
-        Args:
-            task_id: Task ID
-            has_notes: Whether task has notes
-        """
-        self._has_notes_cache[task_id] = has_notes
-
-    def clear_cache(self) -> None:
-        """Clear the has_notes cache."""
-        self._has_notes_cache.clear()

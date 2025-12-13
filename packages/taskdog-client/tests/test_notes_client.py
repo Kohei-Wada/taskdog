@@ -95,18 +95,3 @@ class TestNotesClient:
         assert result is True
         # Should be cached now
         assert self.client._has_notes_cache[1] is True
-
-    def test_cache_notes_info(self):
-        """Test cache_notes_info stores info."""
-        self.client.cache_notes_info(task_id=1, has_notes=True)
-
-        assert self.client._has_notes_cache[1] is True
-
-    def test_clear_cache(self):
-        """Test clear_cache empties cache."""
-        self.client._has_notes_cache[1] = True
-        self.client._has_notes_cache[2] = False
-
-        self.client.clear_cache()
-
-        assert len(self.client._has_notes_cache) == 0

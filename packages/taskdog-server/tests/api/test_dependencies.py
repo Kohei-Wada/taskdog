@@ -13,7 +13,6 @@ from taskdog_server.api.context import ApiContext
 from taskdog_server.api.dependencies import (
     get_analytics_controller,
     get_api_context,
-    get_config,
     get_connection_manager,
     get_crud_controller,
     get_holiday_checker,
@@ -193,19 +192,6 @@ class TestDependencyInjection:
 
         # Assert
         assert notes_repo == mock_notes_repo
-
-    def test_get_config(self):
-        """Test getting config from context."""
-        # Arrange
-        mock_config = MagicMock()
-        mock_context = MagicMock(spec=ApiContext)
-        mock_context.config = mock_config
-
-        # Act
-        config = get_config(mock_context)
-
-        # Assert
-        assert config == mock_config
 
     def test_get_holiday_checker_returns_none_when_not_configured(self):
         """Test getting holiday checker when not configured."""

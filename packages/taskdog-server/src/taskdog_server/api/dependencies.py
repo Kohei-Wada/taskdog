@@ -189,11 +189,6 @@ def get_notes_repository(context: ApiContextDep) -> NotesRepository:
     return context.notes_repository
 
 
-def get_config(context: ApiContextDep) -> Config:
-    """Get configuration from context."""
-    return context.config
-
-
 def get_holiday_checker(context: ApiContextDep) -> IHolidayChecker | None:
     """Get holiday checker from context (may be None)."""
     return context.holiday_checker
