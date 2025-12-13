@@ -6,9 +6,11 @@ from typing import Any, ClassVar, TypeVar
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.screen import ModalScreen
-from textual.widgets import Static
+from textual.validation import Validator
+from textual.widgets import Input, Static
 
 T = TypeVar("T")
+V = TypeVar("V", bound=Validator)
 
 
 class BaseModalDialog(ModalScreen[T]):
@@ -67,6 +69,45 @@ class BaseModalDialog(ModalScreen[T]):
         except Exception:
             # If error-message widget doesn't exist, skip error clearing
             pass
+
+    def _get_validator(self, input_widget: Input, validator_type: type[V]) -> V:
+        """Get a validator of a specific type from an Input widget.
+
+        Args:
+            input_widget: Input widget to get validator from
+            validator_type: Type of validator to find
+
+        Returns:
+            The validator instance of the specified type
+
+        Raises:
+            ValueError: If no validator of the specified type is found
+        """
+        for validator in input_widget.validators:
+            if isinstance(validator, validator_type):
+                return validator
+        raise ValueError(f"Validator {validator_type.__name__} not found")
+
+    def _is_input_valid(self, input_widget: Input) -> bool:
+        """Check if an Input widget's value is valid.
+
+        This method properly handles the valid_empty attribute:
+        - If valid_empty=True and value is empty, returns True (bypasses validators)
+        - Otherwise, returns the result of input_widget.is_valid
+
+        Note: Textual validators may fail on empty strings even when valid_empty=True.
+        This method provides the expected behavior where empty values are considered
+        valid when the field is marked as optional (valid_empty=True).
+
+        Args:
+            input_widget: Input widget to validate
+
+        Returns:
+            True if the input is valid, False otherwise
+        """
+        if input_widget.valid_empty and not input_widget.value.strip():
+            return True  # Empty is valid when valid_empty=True
+        return bool(input_widget.is_valid)
 
     @abstractmethod
     def compose(self) -> ComposeResult:

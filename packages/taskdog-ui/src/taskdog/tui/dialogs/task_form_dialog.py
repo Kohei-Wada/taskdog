@@ -119,18 +119,14 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
             return
 
         # Parse priority (optional, defaults to config value)
-        from taskdog.tui.constants.ui_settings import (
-            DEFAULT_END_HOUR,
-            DEFAULT_START_HOUR,
-            DEFAULT_TASK_PRIORITY,
-        )
+        from taskdog.tui.constants.ui_settings import DEFAULT_TASK_PRIORITY
 
-        # Validate numeric fields before parsing (Textual shows validation error automatically)
-        if not priority_input.is_valid:
+        # Validate numeric fields before parsing
+        if not self._is_input_valid(priority_input):
             priority_input.focus()
             return
 
-        if not duration_input.is_valid:
+        if not self._is_input_valid(duration_input):
             duration_input.focus()
             return
 
@@ -141,34 +137,36 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         duration_str = duration_input.value.strip()
         duration = float(duration_str) if duration_str else None
 
-        # Validate datetime fields before parsing (Textual shows validation error automatically)
-        if not deadline_input.is_valid:
+        # Validate datetime fields before parsing
+        if not self._is_input_valid(deadline_input):
             deadline_input.focus()
             return
 
-        if not planned_start_input.is_valid:
+        if not self._is_input_valid(planned_start_input):
             planned_start_input.focus()
             return
 
-        if not planned_end_input.is_valid:
+        if not self._is_input_valid(planned_end_input):
             planned_end_input.focus()
             return
 
-        # Parse datetime fields using DateTimeValidator.parse()
-        deadline_validator = DateTimeValidator("deadline", DEFAULT_END_HOUR)
-        planned_start_validator = DateTimeValidator("planned start", DEFAULT_START_HOUR)
-        planned_end_validator = DateTimeValidator("planned end", DEFAULT_END_HOUR)
-
-        deadline = deadline_validator.parse(deadline_input.value)
-        planned_start = planned_start_validator.parse(planned_start_input.value)
-        planned_end = planned_end_validator.parse(planned_end_input.value)
+        # Parse datetime fields using validators registered on Input widgets
+        deadline = self._get_validator(deadline_input, DateTimeValidator).parse(
+            deadline_input.value
+        )
+        planned_start = self._get_validator(
+            planned_start_input, DateTimeValidator
+        ).parse(planned_start_input.value)
+        planned_end = self._get_validator(planned_end_input, DateTimeValidator).parse(
+            planned_end_input.value
+        )
 
         # Validate dependencies and tags before parsing
-        if not dependencies_input.is_valid:
+        if not self._is_input_valid(dependencies_input):
             dependencies_input.focus()
             return
 
-        if not tags_input.is_valid:
+        if not self._is_input_valid(tags_input):
             tags_input.focus()
             return
 

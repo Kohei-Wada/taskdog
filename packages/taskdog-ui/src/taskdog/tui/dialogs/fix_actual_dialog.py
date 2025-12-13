@@ -143,13 +143,17 @@ class FixActualDialog(BaseModalDialog[FixActualFormData | None]):
                 )
 
                 # Actual Duration field
+                # Show explicit duration if set, otherwise show computed duration
+                duration_value = ""
+                if self.task_dto.actual_duration is not None:
+                    duration_value = str(self.task_dto.actual_duration)
+                elif self.task_dto.actual_duration_hours is not None:
+                    duration_value = str(self.task_dto.actual_duration_hours)
                 yield Label("Actual Duration (hours):", classes="field-label")
                 yield Input(
                     placeholder="Empty to clear, e.g. 8, 2.5, 16 (overrides start/end)",
                     id="actual-duration-input",
-                    value=str(self.task_dto.actual_duration)
-                    if self.task_dto.actual_duration
-                    else "",
+                    value=duration_value,
                     valid_empty=True,
                     validators=[Number(minimum=0.01)],
                 )
@@ -190,7 +194,12 @@ class FixActualDialog(BaseModalDialog[FixActualFormData | None]):
         # Determine clear flags: clear if original had value but now empty
         clear_start = bool(self.task_dto.actual_start and not actual_start_str)
         clear_end = bool(self.task_dto.actual_end and not actual_end_str)
-        clear_duration = bool(self.task_dto.actual_duration and not actual_duration_str)
+        # For duration: check both explicit and computed values
+        had_duration = (
+            self.task_dto.actual_duration is not None
+            or self.task_dto.actual_duration_hours is not None
+        )
+        clear_duration = bool(had_duration and not actual_duration_str)
 
         # Check if any changes were made
         has_new_value = bool(actual_start_str or actual_end_str or actual_duration_str)
@@ -199,22 +208,23 @@ class FixActualDialog(BaseModalDialog[FixActualFormData | None]):
             self._show_validation_error("No changes made", actual_start_input)
             return
 
-        # Validate datetime/number fields (Textual validators)
+        # Validate datetime/number fields
         for input_widget in [
             actual_start_input,
             actual_end_input,
             actual_duration_input,
         ]:
-            if not input_widget.is_valid:
+            if not self._is_input_valid(input_widget):
                 input_widget.focus()
                 return
 
-        # Parse datetime fields
-        actual_start_validator = DateTimeValidator("actual start", DEFAULT_START_HOUR)
-        actual_end_validator = DateTimeValidator("actual end", DEFAULT_END_HOUR)
-
-        actual_start = actual_start_validator.parse(actual_start_str)
-        actual_end = actual_end_validator.parse(actual_end_str)
+        # Parse datetime fields using validators registered on Input widgets
+        actual_start = self._get_validator(actual_start_input, DateTimeValidator).parse(
+            actual_start_str
+        )
+        actual_end = self._get_validator(actual_end_input, DateTimeValidator).parse(
+            actual_end_str
+        )
 
         # Validate end is not before start (when both are provided)
         if actual_start and actual_end:
