@@ -54,17 +54,6 @@ class ConnectionManager:
                 })"
             )
 
-    def get_user_name(self, client_id: str) -> str | None:
-        """Get the user name for a client.
-
-        Args:
-            client_id: Client identifier
-
-        Returns:
-            User name if set, None otherwise
-        """
-        return self.client_user_names.get(client_id)
-
     async def broadcast(self, message: dict[str, Any]) -> None:
         """Broadcast a message to all connected clients.
 

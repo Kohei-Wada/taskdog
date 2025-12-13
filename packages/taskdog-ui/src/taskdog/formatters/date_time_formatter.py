@@ -97,18 +97,6 @@ class DateTimeFormatter:
         return DateTimeFormatter.format_datetime(actual_end)
 
     @staticmethod
-    def should_show_year(dt: datetime) -> bool:
-        """Check if year should be displayed for a given datetime.
-
-        Args:
-            dt: Datetime to check
-
-        Returns:
-            True if year should be shown, False otherwise
-        """
-        return dt.year != datetime.now().year
-
-    @staticmethod
     def format_created(created_at: datetime) -> str:
         """Format created timestamp (always shows full datetime).
 
@@ -163,18 +151,6 @@ class DateTimeFormatter:
             Current date formatted as YYYYMMDD
         """
         return datetime.now().strftime("%Y%m%d")
-
-    @staticmethod
-    def format_date_japanese(dt: datetime | date) -> str:
-        """Format date in Japanese style (YYYY/MM/DD).
-
-        Args:
-            dt: Datetime or date to format
-
-        Returns:
-            Formatted date string
-        """
-        return dt.strftime("%Y/%m/%d")
 
     @staticmethod
     def format_datetime_for_export(dt: datetime | None) -> str:

@@ -68,18 +68,3 @@ class TestDateTimeFormatter:
         """Test format_deadline with None returns dash."""
         result = DateTimeFormatter.format_deadline(None)
         assert result == "-"
-
-    @pytest.mark.parametrize(
-        "dt,expected",
-        [
-            (datetime(2025, 12, 31, 23, 59, 0), False),
-            (datetime(2024, 1, 1, 0, 0, 0), True),
-        ],
-        ids=["same_year", "different_year"],
-    )
-    def test_should_show_year(self, dt, expected):
-        """Test should_show_year returns correct result based on year."""
-        with patch("taskdog.formatters.date_time_formatter.datetime") as mock_dt:
-            mock_dt.now.return_value = datetime(2025, 6, 15, 12, 0, 0)
-            result = DateTimeFormatter.should_show_year(dt)
-            assert result == expected
