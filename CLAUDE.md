@@ -303,7 +303,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 - `TaskCrudController`: Orchestrates CRUD operations (create, update, delete)
 - `TaskLifecycleController`: Orchestrates lifecycle operations (start, complete, pause, cancel, reopen)
-- `TaskRelationshipController`: Orchestrates relationship operations (dependencies, tags, log hours)
+- `TaskRelationshipController`: Orchestrates relationship operations (dependencies, tags)
 - `TaskAnalyticsController`: Orchestrates analytics and optimization (statistics, optimize)
 - `QueryController`: Orchestrates read operations (list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id)
   - Returns Output DTOs with metadata (TaskListOutput, GanttOutput, TagStatisticsOutput)
