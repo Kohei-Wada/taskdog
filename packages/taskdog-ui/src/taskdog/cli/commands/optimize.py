@@ -15,24 +15,20 @@ from taskdog_core.application.dto.optimization_output import OptimizationOutput
 def _get_next_weekday_start() -> datetime:
     """Get the next weekday (Mon-Fri) with default start hour.
 
-    If today is a weekday, returns today. Otherwise returns next Monday.
+    Always returns at least tomorrow. If tomorrow is a weekend,
+    returns next Monday.
 
     Returns:
         datetime with the next weekday at DEFAULT_START_HOUR
     """
-    today = datetime.now().replace(
-        hour=DEFAULT_START_HOUR, minute=0, second=0, microsecond=0
-    )
-    weekday = today.weekday()
+    today = datetime.now()
+    next_day = today + timedelta(days=1)
 
-    # If today is a weekday (Mon=0 to Fri=4), use today
-    if weekday < 5:
-        return today
+    # Skip weekends - move to next Monday if needed
+    while next_day.weekday() >= 5:  # 5=Saturday, 6=Sunday
+        next_day += timedelta(days=1)
 
-    # If Saturday (5), skip to Monday (+2 days)
-    # If Sunday (6), skip to Monday (+1 day)
-    days_until_monday = 7 - weekday
-    return today + timedelta(days=days_until_monday)
+    return next_day.replace(hour=DEFAULT_START_HOUR, minute=0, second=0, microsecond=0)
 
 
 def _show_failed_tasks(
