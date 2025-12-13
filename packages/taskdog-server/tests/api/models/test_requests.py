@@ -1,6 +1,6 @@
 """Tests for Pydantic request models."""
 
-from datetime import date, datetime
+from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
@@ -11,8 +11,6 @@ from taskdog_server.api.models.requests import (
     CreateTaskRequest,
     OptimizeScheduleRequest,
     SetTaskTagsRequest,
-    TaskFilterParams,
-    TaskSortParams,
     UpdateNotesRequest,
     UpdateTaskRequest,
 )
@@ -258,73 +256,6 @@ class TestOptimizeScheduleRequest:
         # Act & Assert
         with pytest.raises(ValidationError):
             OptimizeScheduleRequest()
-
-
-class TestTaskFilterParams:
-    """Test cases for TaskFilterParams model."""
-
-    def test_valid_default_params(self):
-        """Test creating filter params with defaults."""
-        # Act
-        params = TaskFilterParams()
-
-        # Assert
-        assert params.all is False
-        assert params.status is None
-        assert params.tags is None
-        assert params.start_date is None
-        assert params.end_date is None
-
-    def test_valid_full_params(self):
-        """Test creating filter params with all fields."""
-        # Arrange
-        today = date.today()
-
-        # Act
-        params = TaskFilterParams(
-            all=True,
-            status=TaskStatus.PENDING,
-            tags=["backend", "api"],
-            start_date=today,
-            end_date=today,
-        )
-
-        # Assert
-        assert params.all is True
-        assert params.status == TaskStatus.PENDING
-        assert params.tags == ["backend", "api"]
-        assert params.start_date == today
-        assert params.end_date == today
-
-    def test_valid_status_filter(self):
-        """Test filtering by status."""
-        # Act
-        params = TaskFilterParams(status=TaskStatus.COMPLETED)
-
-        # Assert
-        assert params.status == TaskStatus.COMPLETED
-
-
-class TestTaskSortParams:
-    """Test cases for TaskSortParams model."""
-
-    def test_valid_default_params(self):
-        """Test creating sort params with defaults."""
-        # Act
-        params = TaskSortParams()
-
-        # Assert
-        assert params.sort == "id"
-        assert params.reverse is False
-
-    def test_valid_custom_sort(self):
-        """Test creating sort params with custom field."""
-        # Act
-        params = TaskSortParams(sort="deadline", reverse=True)
-
-        # Assert
-        assert params.sort == "deadline"
-        assert params.reverse is True
 
 
 class TestUpdateNotesRequest:
