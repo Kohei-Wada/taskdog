@@ -2,7 +2,7 @@
 
 from datetime import date, datetime, timedelta
 
-from taskdog_core.testing.time_provider import FakeTimeProvider
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestFakeTimeProvider:
