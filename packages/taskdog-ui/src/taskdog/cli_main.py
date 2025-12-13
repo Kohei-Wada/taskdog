@@ -3,6 +3,7 @@ from typing import Any
 import click
 from rich.console import Console
 
+from taskdog import __version__
 from taskdog.cli.commands.add import add_command
 from taskdog.cli.commands.add_dependency import add_dependency_command
 from taskdog.cli.commands.audit_logs import audit_logs_command
@@ -63,6 +64,7 @@ class TaskdogGroup(click.Group):
     context_settings={"help_option_names": ["-h", "--help"]},
     invoke_without_command=True,
 )
+@click.version_option(version=__version__, prog_name="taskdog")
 @click.option(
     "-H",
     "--host",

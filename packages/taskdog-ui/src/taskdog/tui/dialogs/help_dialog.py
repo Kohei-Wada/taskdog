@@ -7,6 +7,7 @@ from textual.binding import Binding
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Markdown, Static
 
+from taskdog import __version__
 from taskdog.tui.constants.keybindings import (
     BASIC_WORKFLOW,
     BUG_REPORT_INFO,
@@ -40,7 +41,7 @@ class HelpDialog(BaseModalDialog[None], ViNavigationMixin):
         with Container(
             id="help-screen", classes="dialog-base dialog-wide"
         ) as container:
-            container.border_title = "Taskdog TUI - Getting Started"
+            container.border_title = f"Taskdog TUI v{__version__} - Getting Started"
 
             with VerticalScroll(id="help-content"):
                 # Taskdog Overview

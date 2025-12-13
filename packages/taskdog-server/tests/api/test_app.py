@@ -16,6 +16,7 @@ from taskdog_core.controllers.task_relationship_controller import (
 )
 from taskdog_core.domain.services.logger import Logger
 from taskdog_core.infrastructure.time_provider import SystemTimeProvider
+from taskdog_server import __version__
 from taskdog_server.api.context import ApiContext
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
@@ -90,7 +91,7 @@ class TestApp:
         # Assert
         assert self.app is not None
         assert self.app.title == "Taskdog API"
-        assert self.app.version == "1.0.0"
+        assert self.app.version == __version__
 
     def test_root_endpoint(self):
         """Test root endpoint returns correct message."""
@@ -101,7 +102,7 @@ class TestApp:
         assert response.status_code == 200
         data = response.json()
         assert data["message"] == "Taskdog API"
-        assert data["version"] == "1.0.0"
+        assert data["version"] == __version__
 
     def test_health_endpoint(self):
         """Test health check endpoint."""
@@ -152,7 +153,7 @@ class TestApp:
         # Assert
         assert self.app.title == "Taskdog API"
         assert "Task management API" in self.app.description
-        assert self.app.version == "1.0.0"
+        assert self.app.version == __version__
 
 
 class TestAppWithoutContext:

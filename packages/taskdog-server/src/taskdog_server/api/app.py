@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from taskdog_core.shared.config_manager import ConfigManager
+from taskdog_server import __version__
 from taskdog_server.api.dependencies import initialize_api_context
 from taskdog_server.api.middleware import LoggingMiddleware
 from taskdog_server.api.routers import (
@@ -61,7 +62,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Taskdog API",
         description="Task management API with scheduling, dependencies, and analytics",
-        version="1.0.0",
+        version=__version__,
         lifespan=lifespan,
     )
 
@@ -93,7 +94,7 @@ def create_app() -> FastAPI:
     @app.get("/")
     async def root() -> dict[str, str]:
         """Root endpoint."""
-        return {"message": "Taskdog API", "version": "1.0.0"}
+        return {"message": "Taskdog API", "version": __version__}
 
     @app.get("/health")
     async def health() -> dict[str, str]:
