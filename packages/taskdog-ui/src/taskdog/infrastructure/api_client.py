@@ -213,6 +213,19 @@ class TaskdogApiClient:
         """Reopen a task."""
         return self._lifecycle.reopen_task(task_id)
 
+    def fix_actual_times(
+        self,
+        task_id: int,
+        actual_start: datetime | None = None,
+        actual_end: datetime | None = None,
+        clear_start: bool = False,
+        clear_end: bool = False,
+    ) -> TaskOperationOutput:
+        """Fix actual start/end timestamps for a task."""
+        return self._lifecycle.fix_actual_times(
+            task_id, actual_start, actual_end, clear_start, clear_end
+        )
+
     # Relationship Controller methods - delegate to RelationshipClient
 
     def add_dependency(self, task_id: int, depends_on_id: int) -> TaskOperationOutput:

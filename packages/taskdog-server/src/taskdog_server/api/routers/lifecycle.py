@@ -9,8 +9,10 @@ from taskdog_server.api.dependencies import (
     AuthenticatedClientDep,
     EventBroadcasterDep,
     LifecycleControllerDep,
+    QueryControllerDep,
 )
 from taskdog_server.api.error_handlers import handle_task_errors
+from taskdog_server.api.models.requests import FixActualTimesRequest
 from taskdog_server.api.models.responses import TaskOperationResponse
 
 router = APIRouter()
@@ -94,3 +96,90 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
 # Generate all lifecycle endpoints
 for _op in OPERATIONS:
     _create_lifecycle_endpoint(_op)
+
+
+@router.post("/{task_id}/fix-actual", response_model=TaskOperationResponse)
+@handle_task_errors
+async def fix_actual_times(
+    task_id: int,
+    request: FixActualTimesRequest,
+    controller: LifecycleControllerDep,
+    query_controller: QueryControllerDep,
+    broadcaster: EventBroadcasterDep,
+    audit_controller: AuditLogControllerDep,
+    client_name: AuthenticatedClientDep,
+) -> TaskOperationResponse:
+    """Fix actual start/end timestamps for a task.
+
+    Used to correct timestamps after the fact, for historical accuracy.
+    Past dates are allowed since these are historical records.
+
+    Args:
+        task_id: Task ID
+        request: Fix actual times request with optional start/end values
+        controller: Lifecycle controller dependency
+        broadcaster: Event broadcaster dependency
+        audit_controller: Audit log controller dependency
+        client_name: Authenticated client name (for broadcast payload)
+
+    Returns:
+        Updated task data with corrected timestamps
+
+    Raises:
+        HTTPException: 404 if task not found, 400 if validation fails
+    """
+    # Get old values before update for audit trail
+    try:
+        old_task_output = query_controller.get_task_by_id(task_id)
+        old_task = old_task_output.task if old_task_output else None
+    except Exception:
+        old_task = None
+
+    # Determine values to pass (Ellipsis = keep current)
+    actual_start = (
+        None
+        if request.clear_start
+        else request.actual_start
+        if request.actual_start is not None
+        else ...
+    )
+    actual_end = (
+        None
+        if request.clear_end
+        else request.actual_end
+        if request.actual_end is not None
+        else ...
+    )
+
+    result = controller.fix_actual_times(task_id, actual_start, actual_end)
+
+    # Broadcast event
+    broadcaster.task_updated(result, ["actual_start", "actual_end"], client_name)
+
+    # Audit log with old values
+    old_values = {}
+    if old_task:
+        old_values["actual_start"] = (
+            old_task.actual_start.isoformat() if old_task.actual_start else None
+        )
+        old_values["actual_end"] = (
+            old_task.actual_end.isoformat() if old_task.actual_end else None
+        )
+
+    audit_controller.log_operation(
+        operation="fix_actual_times",
+        resource_type="task",
+        resource_id=task_id,
+        resource_name=result.name,
+        client_name=client_name,
+        old_values=old_values if old_values else None,
+        new_values={
+            "actual_start": result.actual_start.isoformat()
+            if result.actual_start
+            else None,
+            "actual_end": result.actual_end.isoformat() if result.actual_end else None,
+        },
+        success=True,
+    )
+
+    return TaskOperationResponse.from_dto(result)

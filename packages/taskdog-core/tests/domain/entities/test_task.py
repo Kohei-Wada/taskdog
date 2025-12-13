@@ -1,5 +1,7 @@
 """Tests for Task entity business logic methods."""
 
+from datetime import datetime
+
 import pytest
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -298,3 +300,121 @@ class TestTaskShouldCountInWorkload:
             is_archived=True,
         )
         assert task.should_count_in_workload() is False
+
+
+class TestTaskFixActualTimes:
+    """Test cases for Task.fix_actual_times() method."""
+
+    def test_fix_actual_times_sets_start(self):
+        """Test setting actual_start only."""
+        task = Task(name="Test Task", priority=100)
+        start_time = datetime(2025, 12, 13, 9, 0, 0)
+
+        task.fix_actual_times(actual_start=start_time)
+
+        assert task.actual_start == start_time
+        assert task.actual_end is None
+
+    def test_fix_actual_times_sets_end(self):
+        """Test setting actual_end only."""
+        task = Task(name="Test Task", priority=100)
+        task.actual_start = datetime(2025, 12, 13, 9, 0, 0)
+        end_time = datetime(2025, 12, 13, 17, 0, 0)
+
+        task.fix_actual_times(actual_end=end_time)
+
+        assert task.actual_start == datetime(2025, 12, 13, 9, 0, 0)
+        assert task.actual_end == end_time
+
+    def test_fix_actual_times_sets_both(self):
+        """Test setting both actual_start and actual_end."""
+        task = Task(name="Test Task", priority=100)
+        start_time = datetime(2025, 12, 13, 9, 0, 0)
+        end_time = datetime(2025, 12, 13, 17, 0, 0)
+
+        task.fix_actual_times(actual_start=start_time, actual_end=end_time)
+
+        assert task.actual_start == start_time
+        assert task.actual_end == end_time
+
+    def test_fix_actual_times_clears_start(self):
+        """Test clearing actual_start by setting to None."""
+        task = Task(name="Test Task", priority=100)
+        task.actual_start = datetime(2025, 12, 13, 9, 0, 0)
+        task.actual_end = datetime(2025, 12, 13, 17, 0, 0)
+
+        task.fix_actual_times(actual_start=None)
+
+        assert task.actual_start is None
+        assert task.actual_end == datetime(2025, 12, 13, 17, 0, 0)
+
+    def test_fix_actual_times_clears_end(self):
+        """Test clearing actual_end by setting to None."""
+        task = Task(name="Test Task", priority=100)
+        task.actual_start = datetime(2025, 12, 13, 9, 0, 0)
+        task.actual_end = datetime(2025, 12, 13, 17, 0, 0)
+
+        task.fix_actual_times(actual_end=None)
+
+        assert task.actual_start == datetime(2025, 12, 13, 9, 0, 0)
+        assert task.actual_end is None
+
+    def test_fix_actual_times_keeps_current_with_ellipsis(self):
+        """Test that Ellipsis (default) keeps current values."""
+        task = Task(name="Test Task", priority=100)
+        original_start = datetime(2025, 12, 13, 9, 0, 0)
+        original_end = datetime(2025, 12, 13, 17, 0, 0)
+        task.actual_start = original_start
+        task.actual_end = original_end
+
+        # Call with no arguments (uses Ellipsis defaults)
+        task.fix_actual_times()
+
+        assert task.actual_start == original_start
+        assert task.actual_end == original_end
+
+    def test_fix_actual_times_validation_end_before_start_raises(self):
+        """Test that validation fails when actual_end < actual_start."""
+        task = Task(name="Test Task", priority=100)
+        start_time = datetime(2025, 12, 13, 17, 0, 0)  # Later time
+        end_time = datetime(2025, 12, 13, 9, 0, 0)  # Earlier time
+
+        with pytest.raises(TaskValidationError) as exc_info:
+            task.fix_actual_times(actual_start=start_time, actual_end=end_time)
+
+        assert "actual_end" in str(exc_info.value)
+        assert "actual_start" in str(exc_info.value)
+
+    def test_fix_actual_times_validation_with_existing_start(self):
+        """Test validation when setting only end with existing start."""
+        task = Task(name="Test Task", priority=100)
+        task.actual_start = datetime(2025, 12, 13, 17, 0, 0)  # Later time
+        end_time = datetime(2025, 12, 13, 9, 0, 0)  # Earlier time
+
+        with pytest.raises(TaskValidationError) as exc_info:
+            task.fix_actual_times(actual_end=end_time)
+
+        assert "actual_end" in str(exc_info.value)
+
+    def test_fix_actual_times_past_dates_allowed(self):
+        """Test that past dates are allowed (historical records)."""
+        task = Task(name="Test Task", priority=100)
+        past_start = datetime(2020, 1, 1, 9, 0, 0)
+        past_end = datetime(2020, 1, 1, 17, 0, 0)
+
+        # Should not raise
+        task.fix_actual_times(actual_start=past_start, actual_end=past_end)
+
+        assert task.actual_start == past_start
+        assert task.actual_end == past_end
+
+    def test_fix_actual_times_same_start_and_end_allowed(self):
+        """Test that same start and end times are allowed."""
+        task = Task(name="Test Task", priority=100)
+        same_time = datetime(2025, 12, 13, 12, 0, 0)
+
+        # Should not raise (edge case: zero duration)
+        task.fix_actual_times(actual_start=same_time, actual_end=same_time)
+
+        assert task.actual_start == same_time
+        assert task.actual_end == same_time

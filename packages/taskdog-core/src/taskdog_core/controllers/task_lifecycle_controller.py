@@ -9,11 +9,15 @@ This controller handles all task lifecycle operations (status changes with time 
 """
 
 from collections.abc import Callable
+from datetime import datetime
+from types import EllipsisType
 
 from taskdog_core.application.dto.base import SingleTaskInput
+from taskdog_core.application.dto.fix_actual_times_input import FixActualTimesInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.use_cases.cancel_task import CancelTaskUseCase
 from taskdog_core.application.use_cases.complete_task import CompleteTaskUseCase
+from taskdog_core.application.use_cases.fix_actual_times import FixActualTimesUseCase
 from taskdog_core.application.use_cases.pause_task import PauseTaskUseCase
 from taskdog_core.application.use_cases.reopen_task import ReopenTaskUseCase
 from taskdog_core.application.use_cases.start_task import StartTaskUseCase
@@ -165,3 +169,34 @@ class TaskLifecycleController(BaseTaskController):
             TaskValidationError: If task cannot be reopened
         """
         return self._execute_status_change(ReopenTaskUseCase, task_id)
+
+    def fix_actual_times(
+        self,
+        task_id: int,
+        actual_start: datetime | None | EllipsisType = ...,
+        actual_end: datetime | None | EllipsisType = ...,
+    ) -> TaskOperationOutput:
+        """Fix actual start/end timestamps for a task.
+
+        Used to correct timestamps after the fact, for historical accuracy.
+        Past dates are allowed since these are historical records.
+
+        Args:
+            task_id: ID of the task to fix
+            actual_start: New actual start (None to clear, ... to keep current)
+            actual_end: New actual end (None to clear, ... to keep current)
+
+        Returns:
+            TaskOperationOutput containing the updated task information
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If actual_end < actual_start when both are set
+        """
+        use_case = FixActualTimesUseCase(self.repository)
+        request = FixActualTimesInput(
+            task_id=task_id,
+            actual_start=actual_start,
+            actual_end=actual_end,
+        )
+        return use_case.execute(request)

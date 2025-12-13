@@ -5,6 +5,7 @@ Tools for changing task status (start, complete, pause, cancel, reopen).
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from mcp.server.fastmcp import FastMCP
@@ -124,4 +125,48 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
             "name": result.name,
             "status": result.status.value,
             "message": f"Task '{result.name}' reopened",
+        }
+
+    @mcp.tool()
+    def fix_actual_times(
+        task_id: int,
+        actual_start: str | None = None,
+        actual_end: str | None = None,
+        clear_start: bool = False,
+        clear_end: bool = False,
+    ) -> dict[str, Any]:
+        """Fix actual start/end timestamps for a task.
+
+        Used to correct timestamps for historical accuracy. Past dates allowed.
+
+        Args:
+            task_id: ID of the task to fix
+            actual_start: New actual start in ISO format (e.g., '2025-12-13T09:00:00')
+            actual_end: New actual end in ISO format (e.g., '2025-12-13T17:00:00')
+            clear_start: Clear actual_start timestamp
+            clear_end: Clear actual_end timestamp
+
+        Returns:
+            Updated task data with new timestamps
+        """
+        try:
+            start_dt = datetime.fromisoformat(actual_start) if actual_start else None
+            end_dt = datetime.fromisoformat(actual_end) if actual_end else None
+        except ValueError as e:
+            raise ValueError(f"Invalid datetime format: {e}") from e
+
+        result = clients.lifecycle.fix_actual_times(
+            task_id, start_dt, end_dt, clear_start, clear_end
+        )
+
+        return {
+            "id": result.id,
+            "name": result.name,
+            "status": result.status.value,
+            "actual_start": result.actual_start.isoformat()
+            if result.actual_start
+            else None,
+            "actual_end": result.actual_end.isoformat() if result.actual_end else None,
+            "actual_duration_hours": result.actual_duration_hours,
+            "message": f"Fixed actual times for task '{result.name}'",
         }

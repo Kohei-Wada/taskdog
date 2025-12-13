@@ -1,5 +1,7 @@
 """Task lifecycle operations client."""
 
+from datetime import datetime
+
 from taskdog_client.base_client import BaseApiClient
 from taskdog_client.converters import convert_to_task_operation_output
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
@@ -121,3 +123,49 @@ class LifecycleClient:
             TaskValidationError: If validation fails
         """
         return self._lifecycle_operation(task_id, "reopen")
+
+    def fix_actual_times(
+        self,
+        task_id: int,
+        actual_start: datetime | None = None,
+        actual_end: datetime | None = None,
+        clear_start: bool = False,
+        clear_end: bool = False,
+    ) -> TaskOperationOutput:
+        """Fix actual start/end timestamps for a task.
+
+        Used to correct timestamps after the fact, for historical accuracy.
+        Past dates are allowed since these are historical records.
+
+        Args:
+            task_id: Task ID
+            actual_start: New actual start datetime
+            actual_end: New actual end datetime
+            clear_start: Clear actual_start timestamp
+            clear_end: Clear actual_end timestamp
+
+        Returns:
+            TaskOperationOutput with updated task data
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If validation fails
+        """
+        payload: dict[str, object] = {
+            "clear_start": clear_start,
+            "clear_end": clear_end,
+        }
+        if actual_start is not None:
+            payload["actual_start"] = actual_start.isoformat()
+        if actual_end is not None:
+            payload["actual_end"] = actual_end.isoformat()
+
+        response = self._base._safe_request(
+            "post",
+            f"/api/v1/tasks/{task_id}/fix-actual",
+            json=payload,
+        )
+        if not response.is_success:
+            self._base._handle_error(response)
+
+        return convert_to_task_operation_output(response.json())
