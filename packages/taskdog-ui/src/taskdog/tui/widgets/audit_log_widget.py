@@ -1,13 +1,13 @@
 """Audit log widget for displaying real-time audit logs in TUI.
 
-This widget displays audit log entries in a side panel using Textual Static
+This widget displays audit log entries in a side panel using Textual
 widgets styled with CSS, showing operation details with timestamps, success
 status, and client info.
 """
 
 from typing import Any, ClassVar
 
-from textual.containers import VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Static
 
 from taskdog.tui.widgets.base_widget import TUIWidget
@@ -19,10 +19,11 @@ class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
     """A widget for displaying audit logs in a side panel.
 
     Features:
-    - Displays recent audit log entries as styled Static widgets
+    - Displays recent audit log entries as styled widgets
     - Auto-updates when new logs are received
     - Supports scrolling with Vi-style bindings
     - Limited buffer to prevent memory issues
+    - Theme-aware colors via CSS classes
     """
 
     MAX_LOGS: ClassVar[int] = 50
@@ -59,46 +60,50 @@ class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
         self._log_count = 0
 
     def _mount_log_entry(self, log: AuditLogOutput, prepend: bool = False) -> None:
-        """Mount a log entry as a Static widget.
+        """Mount a log entry as a container with styled widgets.
 
         Args:
             log: Audit log entry to display
             prepend: If True, insert at beginning; otherwise append
         """
-        content = self._format_log_content(log)
-        status_class = "log-success" if log.success else "log-error"
-        widget = Static(content, classes=f"audit-log-entry {status_class}")
+        entry = self._create_entry_widget(log)
 
         if prepend and self._log_count > 0:
-            self.mount(widget, before=0)
+            self.mount(entry, before=0)
         else:
-            self.mount(widget)
+            self.mount(entry)
         self._log_count += 1
 
-    def _format_log_content(self, log: AuditLogOutput) -> str:
-        """Format log entry content as markup text.
+    def _create_entry_widget(self, log: AuditLogOutput) -> Vertical:
+        """Create a container widget for a log entry.
 
         Args:
-            log: Audit log entry to format
+            log: Audit log entry to display
 
         Returns:
-            Formatted markup string
+            Vertical container with styled child widgets
         """
-        lines: list[str] = []
+        children: list[Static | Horizontal] = []
 
-        # Line 1: Timestamp and status
+        # Line 1: Timestamp and status (separate widgets for CSS styling)
         ts = log.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        status = "[green]OK[/]" if log.success else "[red]ER[/]"
-        lines.append(f"[dim]{ts}[/]  {status}")
+        status_text = "OK" if log.success else "ER"
+        status_class = "log-status-ok" if log.success else "log-status-error"
+        header = Horizontal(
+            Static(ts, classes="log-timestamp"),
+            Static(status_text, classes=status_class),
+            classes="log-header",
+        )
+        children.append(header)
 
-        # Line 2: Operation (no color - main content should be readable without distraction)
-        lines.append(log.operation)
+        # Line 2: Operation
+        children.append(Static(log.operation, classes="log-operation"))
 
         # Line 3: Resource info (if exists)
         if log.resource_id or log.resource_name:
             parts: list[str] = []
             if log.resource_id:
-                parts.append(f"[dim]#{log.resource_id}[/]")
+                parts.append(f"#{log.resource_id}")
             if log.resource_name:
                 name = (
                     log.resource_name[:30] + "..."
@@ -106,12 +111,12 @@ class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
                     else log.resource_name
                 )
                 parts.append(name)
-            lines.append(" ".join(parts))
+            children.append(Static(" ".join(parts), classes="log-resource"))
 
-        # Line 4: Changes (if exists) - show what changed
+        # Line 4: Changes (if exists)
         changes = self._format_changes(log.old_values, log.new_values)
         if changes:
-            lines.append(f"[dim]{changes}[/]")
+            children.append(Static(changes, classes="log-changes"))
 
         # Line 5: Error message (if failed)
         if not log.success and log.error_message:
@@ -120,13 +125,13 @@ class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
                 if len(log.error_message) > 40
                 else log.error_message
             )
-            lines.append(f"[red]{error_msg}[/]")
+            children.append(Static(error_msg, classes="log-error-message"))
 
-        # Line 6: Client (if exists) - highlight with cyan (secondary-like color)
+        # Line 6: Client (if exists)
         if log.client_name:
-            lines.append(f"[cyan]@{log.client_name}[/]")
+            children.append(Static(f"@{log.client_name}", classes="log-client"))
 
-        return "\n".join(lines)
+        return Vertical(*children, classes="audit-log-entry")
 
     def _format_changes(
         self,
