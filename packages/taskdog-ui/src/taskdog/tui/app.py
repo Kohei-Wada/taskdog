@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from taskdog.infrastructure.api_client import TaskdogApiClient
     from taskdog.infrastructure.cli_config_manager import CliConfig
 
+from taskdog import __version__
 from taskdog.infrastructure.websocket import WebSocketClient
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
@@ -45,6 +46,8 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 
 class TaskdogTUI(App):
     """Taskdog TUI application."""
+
+    TITLE = f"Taskdog v{__version__}"
 
     BINDINGS: ClassVar = [
         Binding(

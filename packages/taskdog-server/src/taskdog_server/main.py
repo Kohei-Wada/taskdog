@@ -3,6 +3,8 @@
 import argparse
 import sys
 
+from taskdog_server import __version__
+
 
 def main() -> None:
     """Start the Taskdog API server."""
@@ -22,6 +24,11 @@ The API will be available at:
   - Docs: http://{host}:{port}/docs
   - Health: http://{host}:{port}/health
         """,
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"taskdog-server {__version__}",
     )
     parser.add_argument(
         "--host",
