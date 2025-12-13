@@ -2,7 +2,9 @@
 
 PACKAGE_NAME := taskdog
 COV_THRESHOLD := 70
-CONFIG ?= ../../pyproject.toml
+ROOT_DIR ?= ../..
+CONFIG ?= $(ROOT_DIR)/pyproject.toml
+PKG_PATH := packages/taskdog-ui
 
 test:
 	PYTHONPATH=src uv run python -m pytest tests/ \
@@ -11,11 +13,11 @@ test:
 		--cov-fail-under=$(COV_THRESHOLD)
 
 lint:
-	uv run ruff check --config $(CONFIG) src/ tests/
+	cd $(ROOT_DIR) && uv run ruff check --config pyproject.toml $(PKG_PATH)/src/ $(PKG_PATH)/tests/
 
 format:
-	uv run ruff format --config $(CONFIG) src/ tests/
-	uv run ruff check --fix --config $(CONFIG) src/ tests/
+	cd $(ROOT_DIR) && uv run ruff format --config pyproject.toml $(PKG_PATH)/src/ $(PKG_PATH)/tests/
+	cd $(ROOT_DIR) && uv run ruff check --fix --config pyproject.toml $(PKG_PATH)/src/ $(PKG_PATH)/tests/
 
 typecheck:
-	uv run mypy --config-file $(CONFIG) src/
+	cd $(ROOT_DIR) && uv run mypy --config-file pyproject.toml $(PKG_PATH)/src/

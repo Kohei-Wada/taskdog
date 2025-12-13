@@ -201,7 +201,7 @@ lint: $(addprefix lint-,$(PACKAGES)) ## Check code with ruff linter
 
 lint-%: ## Lint a specific package (e.g., make lint-taskdog-core)
 	@echo "Linting $*..."
-	$(MAKE) -C packages/$* lint CONFIG=$(CONFIG)
+	$(MAKE) -C packages/$* lint ROOT_DIR=$(ROOT_DIR)
 
 format: $(addprefix format-,$(PACKAGES)) ## Format code with ruff and apply fixes
 	@echo ""
@@ -210,7 +210,7 @@ format: $(addprefix format-,$(PACKAGES)) ## Format code with ruff and apply fixe
 
 format-%: ## Format a specific package (e.g., make format-taskdog-core)
 	@echo "Formatting $*..."
-	$(MAKE) -C packages/$* format CONFIG=$(CONFIG)
+	$(MAKE) -C packages/$* format ROOT_DIR=$(ROOT_DIR)
 
 typecheck: $(addprefix typecheck-,$(PACKAGES)) ## Run mypy type checker on all packages
 	@echo ""
@@ -219,7 +219,7 @@ typecheck: $(addprefix typecheck-,$(PACKAGES)) ## Run mypy type checker on all p
 
 typecheck-%: ## Type check a specific package (e.g., make typecheck-taskdog-core)
 	@echo "Type checking $*..."
-	$(MAKE) -C packages/$* typecheck CONFIG=$(CONFIG)
+	$(MAKE) -C packages/$* typecheck ROOT_DIR=$(ROOT_DIR)
 
 check: lint typecheck ## Run all code quality checks (lint + typecheck)
 	@echo ""
