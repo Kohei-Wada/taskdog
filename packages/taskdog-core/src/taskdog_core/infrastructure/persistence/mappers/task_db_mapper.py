@@ -80,52 +80,6 @@ class TaskDbMapper(TaskMapperInterface):
         """
         return self._get_serialized_fields(task)
 
-    def from_dict(self, data: dict[str, Any]) -> Task:
-        """Convert a dictionary (from ORM) to a Task entity.
-
-        Args:
-            data: Dictionary containing task data from TaskModel
-
-        Returns:
-            Task entity reconstructed from the data
-
-        Raises:
-            TaskValidationError: If the data violates Task entity invariants
-        """
-        # Parse complex JSON fields
-        daily_allocations = self._deserialize_date_dict(
-            data.get("daily_allocations", "{}")
-        )
-        depends_on = json.loads(data.get("depends_on", "[]"))
-
-        # Convert status string to Enum
-        status = (
-            TaskStatus(data["status"])
-            if isinstance(data["status"], str)
-            else data["status"]
-        )
-
-        return Task(
-            id=data["id"],
-            name=data["name"],
-            priority=data["priority"],
-            status=status,
-            created_at=data["created_at"],
-            updated_at=data["updated_at"],
-            planned_start=data.get("planned_start"),
-            planned_end=data.get("planned_end"),
-            deadline=data.get("deadline"),
-            actual_start=data.get("actual_start"),
-            actual_end=data.get("actual_end"),
-            actual_duration=data.get("actual_duration"),
-            estimated_duration=data.get("estimated_duration"),
-            is_fixed=data.get("is_fixed", False),
-            daily_allocations=daily_allocations,
-            depends_on=depends_on,
-            tags=[],  # Tags populated via tag_models relationship, not dict
-            is_archived=data.get("is_archived", False),
-        )
-
     def to_model(self, task: Task) -> TaskModel:
         """Convert a Task entity to a TaskModel ORM instance.
 

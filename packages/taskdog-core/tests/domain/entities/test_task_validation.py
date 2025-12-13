@@ -7,7 +7,7 @@ from taskdog_core.domain.constants import (
     MAX_TAGS_PER_TASK,
     MAX_TASK_NAME_LENGTH,
 )
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
@@ -108,80 +108,6 @@ class TestTaskValidation:
         """Test that invalid estimated_duration values raise TaskValidationError."""
         with pytest.raises(TaskValidationError) as exc_info:
             Task(name="Test Task", priority=5, estimated_duration=duration)
-        assert expected_error in str(exc_info.value)
-
-    def test_from_dict_with_valid_data(self, mapper):
-        """Test that from_dict works with valid data."""
-        data = {
-            "id": 1,
-            "name": "Test Task",
-            "priority": 5,
-            "status": "PENDING",
-            "estimated_duration": 10.0,
-            "created_at": "2025-01-01T00:00:00",
-            "updated_at": "2025-01-01T00:00:00",
-        }
-        task = mapper.from_dict(data)
-        assert task.id == 1
-        assert task.name == "Test Task"
-        assert task.priority == 5
-        assert task.status == TaskStatus.PENDING
-        assert task.estimated_duration == 10.0
-
-    @pytest.mark.parametrize(
-        "task_dict,expected_error",
-        [
-            (
-                {"id": 1, "name": "", "priority": 5, "status": "PENDING"},
-                "Task name cannot be empty",
-            ),
-            (
-                {"id": 1, "name": "Test Task", "priority": 0, "status": "PENDING"},
-                "Priority must be greater than 0",
-            ),
-            (
-                {"id": 1, "name": "Test Task", "priority": -100, "status": "PENDING"},
-                "Priority must be greater than 0",
-            ),
-            (
-                {
-                    "id": 1,
-                    "name": "Test Task",
-                    "priority": 5,
-                    "status": "PENDING",
-                    "estimated_duration": 0.0,
-                },
-                "Estimated duration must be greater than 0",
-            ),
-            (
-                {
-                    "id": 1,
-                    "name": "Test Task",
-                    "priority": 5,
-                    "status": "PENDING",
-                    "estimated_duration": -5.0,
-                },
-                "Estimated duration must be greater than 0",
-            ),
-        ],
-        ids=[
-            "empty_name",
-            "zero_priority",
-            "negative_priority",
-            "zero_estimated_duration",
-            "negative_estimated_duration",
-        ],
-    )
-    def test_from_dict_validation_errors(self, mapper, task_dict, expected_error):
-        """Test that from_dict raises validation errors for invalid fields."""
-        # Add required timestamp fields
-        data = {
-            **task_dict,
-            "created_at": "2025-01-01T00:00:00",
-            "updated_at": "2025-01-01T00:00:00",
-        }
-        with pytest.raises(TaskValidationError) as exc_info:
-            mapper.from_dict(data)
         assert expected_error in str(exc_info.value)
 
     @pytest.mark.parametrize(

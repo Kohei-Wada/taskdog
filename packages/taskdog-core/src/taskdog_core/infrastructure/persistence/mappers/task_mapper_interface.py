@@ -29,18 +29,3 @@ class TaskMapperInterface(ABC):
             Dictionary representation suitable for the storage format
         """
         pass
-
-    @abstractmethod
-    def from_dict(self, data: dict[str, Any]) -> Task:
-        """Convert a dictionary representation to a Task entity.
-
-        Args:
-            data: Dictionary containing task data from storage
-
-        Returns:
-            Task entity reconstructed from the data
-
-        Raises:
-            TaskValidationError: If the data is invalid or incomplete
-        """
-        pass
