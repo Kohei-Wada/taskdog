@@ -38,15 +38,11 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
     # Reactive variable for selection count (Phase 3)
     selection_count = reactive(0)
 
-    def watch_selection_count(self, old: int, new: int) -> None:
+    def watch_selection_count(self, _old: int, _new: int) -> None:
         """Called automatically when selection_count changes.
 
         This reactive handler is currently a placeholder for future functionality
         such as updating a selection count display in the footer.
-
-        Args:
-            old: Previous selection count
-            new: New selection count
         """
         # Future: Update footer or status bar with selection count
         pass
@@ -354,14 +350,10 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         """
         return self._get_all_viewmodels_from_state()
 
-    def watch_cursor_row(self, old_row: int, new_row: int) -> None:
+    def watch_cursor_row(self, _old_row: int, _new_row: int) -> None:
         """Called when cursor row changes.
 
         Posts a TaskSelected event to notify other widgets of the selection change.
-
-        Args:
-            old_row: Previous cursor row index
-            new_row: New cursor row index
         """
         # Get the currently selected task ID
         selected_task_id = self.get_selected_task_id()
