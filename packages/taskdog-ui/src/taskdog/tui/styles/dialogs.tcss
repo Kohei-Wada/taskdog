@@ -206,3 +206,51 @@ StatsScreen {
     padding-top: 1;
     border-top: solid $primary;
 }
+
+/* Stats section title */
+.stats-section-title {
+    text-style: bold;
+    color: $primary;
+    padding: 0 0 1 0;
+}
+
+/* Stats label (left side) */
+.stats-label {
+    color: $text-muted;
+    width: 20;
+}
+
+/* Stats value variations */
+.stats-value {
+    width: 1fr;
+}
+
+.stats-value-success {
+    color: $success;
+}
+
+.stats-value-warning {
+    color: $warning;
+}
+
+.stats-value-error {
+    color: $error;
+}
+
+.stats-value-info {
+    color: $secondary;
+}
+
+.stats-value-muted {
+    color: $text-muted;
+}
+
+.stats-value-bold {
+    text-style: bold;
+}
+
+/* Stats row container */
+.stats-row {
+    height: auto;
+    padding: 0 2;
+}

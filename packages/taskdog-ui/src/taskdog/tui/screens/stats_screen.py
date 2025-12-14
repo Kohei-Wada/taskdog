@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Vertical, VerticalScroll
+from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.widgets import Label, Static
 
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
@@ -95,35 +95,37 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
 
             # Footer with key hints
             yield Static(
-                "[dim][1] All  [2] 7 Days  [3] 30 Days  [q/Esc] Close[/dim]",
+                "[1] All  [2] 7 Days  [3] 30 Days  [q/Esc] Close",
                 id="stats-footer",
+                classes="stats-value-muted",
             )
 
     def _compose_basic_stats(self) -> ComposeResult:
         """Compose basic task statistics section."""
         stats = self.view_model.task_stats
 
-        yield Label("[bold cyan]Basic Statistics[/bold cyan]")
+        yield Label("Basic Statistics", classes="stats-section-title")
 
         with Vertical(classes="stats-section"):
             yield self._create_stat_row("Total Tasks", str(stats.total_tasks))
             yield self._create_stat_row(
-                "Pending", f"[yellow]{stats.pending_count}[/yellow]"
+                "Pending", str(stats.pending_count), "stats-value-warning"
             )
             yield self._create_stat_row(
-                "In Progress", f"[blue]{stats.in_progress_count}[/blue]"
+                "In Progress", str(stats.in_progress_count), "stats-value-info"
             )
             yield self._create_stat_row(
-                "Completed", f"[green]{stats.completed_count}[/green]"
+                "Completed", str(stats.completed_count), "stats-value-success"
             )
             yield self._create_stat_row(
-                "Canceled", f"[red]{stats.canceled_count}[/red]"
+                "Canceled", str(stats.canceled_count), "stats-value-error"
             )
 
-            rate_color = self._get_rate_color(stats.completion_rate)
+            rate_class = self._get_rate_class(stats.completion_rate)
             yield self._create_stat_row(
                 "Completion Rate",
-                f"[{rate_color}]{stats.completion_rate:.1%}[/{rate_color}]",
+                f"{stats.completion_rate:.1%}",
+                rate_class,
             )
 
     def _compose_time_stats(self) -> ComposeResult:
@@ -133,15 +135,18 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
             return
 
         yield Static("", classes="section-spacer")
-        yield Label("[bold cyan]Time Tracking[/bold cyan]")
+        yield Label("Time Tracking", classes="stats-section-title")
 
         with Vertical(classes="stats-section"):
             yield self._create_stat_row(
                 "Tasks with Tracking",
-                f"[green]{stats.tasks_with_time_tracking}[/green]",
+                str(stats.tasks_with_time_tracking),
+                "stats-value-success",
             )
             yield self._create_stat_row(
-                "Total Work Hours", f"[bold]{stats.total_work_hours:.1f}h[/bold]"
+                "Total Work Hours",
+                f"{stats.total_work_hours:.1f}h",
+                "stats-value-bold",
             )
             yield self._create_stat_row(
                 "Average per Task", f"{stats.average_work_hours:.1f}h"
@@ -153,12 +158,12 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
             if stats.longest_task:
                 yield self._create_stat_row(
                     "Longest Task",
-                    f"{stats.longest_task.name[:25]}",
+                    stats.longest_task.name[:25],
                 )
             if stats.shortest_task:
                 yield self._create_stat_row(
                     "Shortest Task",
-                    f"{stats.shortest_task.name[:25]}",
+                    stats.shortest_task.name[:25],
                 )
 
     def _compose_estimation_stats(self) -> ComposeResult:
@@ -168,16 +173,17 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
             return
 
         yield Static("", classes="section-spacer")
-        yield Label("[bold cyan]Estimation Accuracy[/bold cyan]")
+        yield Label("Estimation Accuracy", classes="stats-section-title")
 
         with Vertical(classes="stats-section"):
             yield self._create_stat_row(
                 "Tasks with Estimation",
-                f"[green]{stats.total_tasks_with_estimation}[/green]",
+                str(stats.total_tasks_with_estimation),
+                "stats-value-success",
             )
 
             # Accuracy interpretation
-            accuracy_color = self._get_estimation_accuracy_color(stats.accuracy_rate)
+            accuracy_class = self._get_estimation_accuracy_class(stats.accuracy_rate)
             interpretation = ""
             if stats.accuracy_rate < 0.9:
                 interpretation = " (Overestimating)"
@@ -187,17 +193,20 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
                 interpretation = " (Accurate)"
             yield self._create_stat_row(
                 "Accuracy Rate",
-                f"[{accuracy_color}]{stats.accuracy_rate:.0%}{interpretation}[/{accuracy_color}]",
+                f"{stats.accuracy_rate:.0%}{interpretation}",
+                accuracy_class,
             )
 
             yield self._create_stat_row(
-                "Over-estimated", f"[blue]{stats.over_estimated_count}[/blue]"
+                "Over-estimated", str(stats.over_estimated_count), "stats-value-info"
             )
             yield self._create_stat_row(
-                "Under-estimated", f"[yellow]{stats.under_estimated_count}[/yellow]"
+                "Under-estimated",
+                str(stats.under_estimated_count),
+                "stats-value-warning",
             )
             yield self._create_stat_row(
-                "Accurate (±10%)", f"[green]{stats.exact_count}[/green]"
+                "Accurate (±10%)", str(stats.exact_count), "stats-value-success"
             )
 
     def _compose_deadline_stats(self) -> ComposeResult:
@@ -207,30 +216,33 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
             return
 
         yield Static("", classes="section-spacer")
-        yield Label("[bold cyan]Deadline Compliance[/bold cyan]")
+        yield Label("Deadline Compliance", classes="stats-section-title")
 
         with Vertical(classes="stats-section"):
             yield self._create_stat_row(
                 "Tasks with Deadline",
-                f"[green]{stats.total_tasks_with_deadline}[/green]",
+                str(stats.total_tasks_with_deadline),
+                "stats-value-success",
             )
             yield self._create_stat_row(
-                "Met Deadline", f"[green]{stats.met_deadline_count}[/green]"
+                "Met Deadline", str(stats.met_deadline_count), "stats-value-success"
             )
             yield self._create_stat_row(
-                "Missed Deadline", f"[red]{stats.missed_deadline_count}[/red]"
+                "Missed Deadline", str(stats.missed_deadline_count), "stats-value-error"
             )
 
-            rate_color = self._get_rate_color(stats.compliance_rate)
+            rate_class = self._get_rate_class(stats.compliance_rate)
             yield self._create_stat_row(
                 "Compliance Rate",
-                f"[{rate_color}]{stats.compliance_rate:.1%}[/{rate_color}]",
+                f"{stats.compliance_rate:.1%}",
+                rate_class,
             )
 
             if stats.average_delay_days > 0:
                 yield self._create_stat_row(
                     "Average Delay",
-                    f"[yellow]{stats.average_delay_days:.1f} days[/yellow]",
+                    f"{stats.average_delay_days:.1f} days",
+                    "stats-value-warning",
                 )
 
     def _compose_priority_stats(self) -> ComposeResult:
@@ -238,23 +250,26 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
         stats = self.view_model.priority_stats
 
         yield Static("", classes="section-spacer")
-        yield Label("[bold cyan]Priority Distribution[/bold cyan]")
+        yield Label("Priority Distribution", classes="stats-section-title")
 
         with Vertical(classes="stats-section"):
             yield self._create_stat_row(
-                "High (≥70)", f"[red]{stats.high_priority_count}[/red]"
+                "High (≥70)", str(stats.high_priority_count), "stats-value-error"
             )
             yield self._create_stat_row(
-                "Medium (30-69)", f"[yellow]{stats.medium_priority_count}[/yellow]"
+                "Medium (30-69)",
+                str(stats.medium_priority_count),
+                "stats-value-warning",
             )
             yield self._create_stat_row(
-                "Low (<30)", f"[green]{stats.low_priority_count}[/green]"
+                "Low (<30)", str(stats.low_priority_count), "stats-value-success"
             )
 
-            rate_color = self._get_rate_color(stats.high_priority_completion_rate)
+            rate_class = self._get_rate_class(stats.high_priority_completion_rate)
             yield self._create_stat_row(
                 "High Priority Done",
-                f"[{rate_color}]{stats.high_priority_completion_rate:.1%}[/{rate_color}]",
+                f"{stats.high_priority_completion_rate:.1%}",
+                rate_class,
             )
 
     def _compose_trend_stats(self) -> ComposeResult:
@@ -264,68 +279,76 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
             return
 
         yield Static("", classes="section-spacer")
-        yield Label("[bold cyan]Completion Trends[/bold cyan]")
+        yield Label("Completion Trends", classes="stats-section-title")
 
         with Vertical(classes="stats-section"):
             yield self._create_stat_row(
-                "Last 7 Days", f"[green]{stats.last_7_days_completed}[/green]"
+                "Last 7 Days", str(stats.last_7_days_completed), "stats-value-success"
             )
             yield self._create_stat_row(
-                "Last 30 Days", f"[green]{stats.last_30_days_completed}[/green]"
+                "Last 30 Days", str(stats.last_30_days_completed), "stats-value-success"
             )
 
             # Monthly trend (last 3 months)
             if stats.monthly_completion_trend:
                 sorted_months = sorted(stats.monthly_completion_trend.items())[-3:]
                 for month, count in sorted_months:
-                    yield self._create_stat_row(month, f"[dim]{count}[/dim]")
+                    yield self._create_stat_row(month, str(count), "stats-value-muted")
 
-    def _create_stat_row(self, label: str, value: str) -> Static:
+    def _create_stat_row(
+        self, label: str, value: str, value_class: str = ""
+    ) -> Horizontal:
         """Create a statistics row with label and value.
 
         Args:
             label: Field label
-            value: Field value (may include Rich markup)
+            value: Field value
+            value_class: CSS class for value styling
 
         Returns:
-            Static widget with formatted row
+            Horizontal container with label and value
         """
-        return Static(
-            f"  [dim]{label}:[/dim] {value}",
-            classes="stat-row",
+        value_classes = "stats-value"
+        if value_class:
+            value_classes = f"stats-value {value_class}"
+
+        return Horizontal(
+            Static(f"{label}:", classes="stats-label"),
+            Static(value, classes=value_classes),
+            classes="stats-row",
         )
 
-    def _get_rate_color(self, rate: float) -> str:
-        """Get color for a rate value.
+    def _get_rate_class(self, rate: float) -> str:
+        """Get CSS class for a rate value.
 
         Args:
             rate: Rate value (0.0 to 1.0)
 
         Returns:
-            Color name for Rich markup
+            CSS class name for value styling
         """
         if rate >= 0.8:
-            return "green"
+            return "stats-value-success"
         elif rate >= 0.5:
-            return "yellow"
+            return "stats-value-warning"
         else:
-            return "red"
+            return "stats-value-error"
 
-    def _get_estimation_accuracy_color(self, accuracy: float) -> str:
-        """Get color for estimation accuracy.
+    def _get_estimation_accuracy_class(self, accuracy: float) -> str:
+        """Get CSS class for estimation accuracy.
 
         Args:
             accuracy: Accuracy rate (actual/estimated)
 
         Returns:
-            Color name for Rich markup
+            CSS class name for value styling
         """
         if 0.9 <= accuracy <= 1.1:
-            return "green"
+            return "stats-value-success"
         elif 0.7 <= accuracy <= 1.3:
-            return "yellow"
+            return "stats-value-warning"
         else:
-            return "red"
+            return "stats-value-error"
 
     # Vi navigation actions
     def action_vi_down(self) -> None:
