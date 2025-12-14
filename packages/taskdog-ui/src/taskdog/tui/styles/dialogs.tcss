@@ -11,7 +11,8 @@ ConfirmationDialog,
 TaskFormDialog,
 TaskDetailDialog,
 FixActualDialog,
-HelpDialog {
+HelpDialog,
+StatsScreen {
     align: center middle;
 }
 
@@ -170,4 +171,38 @@ HelpDialog {
 .help-footer {
     text-align: center;
     padding-top: 1;
+}
+
+/* =============================================================================
+   Statistics Screen
+   ============================================================================= */
+
+/* Stats Screen Container */
+#stats-screen {
+    max-height: 50;
+}
+
+#stats-content {
+    padding: 1;
+    margin: 0;
+    overflow-y: auto;
+}
+
+.stats-section {
+    padding: 0 1;
+    margin-bottom: 1;
+}
+
+.stat-row {
+    padding: 0;
+}
+
+.section-spacer {
+    height: 1;
+}
+
+#stats-footer {
+    text-align: center;
+    padding-top: 1;
+    border-top: solid $primary;
 }

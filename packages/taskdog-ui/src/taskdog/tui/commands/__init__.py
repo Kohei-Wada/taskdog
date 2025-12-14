@@ -18,6 +18,7 @@ from taskdog.tui.commands.reopen import ReopenCommand
 from taskdog.tui.commands.rm import RmCommand
 from taskdog.tui.commands.show import ShowCommand
 from taskdog.tui.commands.start import StartCommand
+from taskdog.tui.commands.stats import StatsCommand
 
 COMMANDS: dict[str, type[TUICommandBase]] = {
     "add": AddCommand,
@@ -37,6 +38,7 @@ COMMANDS: dict[str, type[TUICommandBase]] = {
     "rm": RmCommand,
     "show": ShowCommand,
     "start": StartCommand,
+    "stats": StatsCommand,
 }
 
 __all__ = ["COMMANDS"]

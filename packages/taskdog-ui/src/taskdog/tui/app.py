@@ -171,6 +171,13 @@ class TaskdogTUI(App):
             tooltip="Show help screen with keybindings and usage instructions",
         ),
         Binding(
+            "S",
+            "stats",
+            "Stats",
+            show=True,
+            tooltip="Show task statistics dashboard",
+        ),
+        Binding(
             "z",
             "toggle_maximize",
             "Zoom",
