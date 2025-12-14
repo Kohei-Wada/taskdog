@@ -71,8 +71,8 @@ def _parse_time_statistics(time_data: dict[str, Any]) -> TimeStatistics:
         TimeStatistics object
     """
     return TimeStatistics(
-        total_work_hours=time_data["total_logged_hours"],
-        average_work_hours=time_data.get("average_task_duration") or 0.0,
+        total_work_hours=time_data["total_work_hours"],
+        average_work_hours=time_data.get("average_work_hours") or 0.0,
         median_work_hours=time_data.get("median_work_hours", 0.0),
         longest_task=_parse_task_summary(time_data.get("longest_task")),
         shortest_task=_parse_task_summary(time_data.get("shortest_task")),
@@ -92,7 +92,7 @@ def _parse_estimation_statistics(
         EstimationAccuracyStatistics object
     """
     return EstimationAccuracyStatistics(
-        total_tasks_with_estimation=estimation_data["tasks_with_estimates"],
+        total_tasks_with_estimation=estimation_data["total_tasks_with_estimation"],
         accuracy_rate=estimation_data.get("accuracy_rate", 0.0),
         over_estimated_count=estimation_data.get("over_estimated_count", 0),
         under_estimated_count=estimation_data.get("under_estimated_count", 0),
@@ -118,10 +118,10 @@ def _parse_deadline_statistics(
         DeadlineComplianceStatistics object
     """
     return DeadlineComplianceStatistics(
-        total_tasks_with_deadline=deadline_data["met"] + deadline_data["missed"],
-        met_deadline_count=deadline_data["met"],
-        missed_deadline_count=deadline_data["missed"],
-        compliance_rate=deadline_data["adherence_rate"],
+        total_tasks_with_deadline=deadline_data["total_tasks_with_deadline"],
+        met_deadline_count=deadline_data["met_deadline_count"],
+        missed_deadline_count=deadline_data["missed_deadline_count"],
+        compliance_rate=deadline_data["compliance_rate"],
         average_delay_days=deadline_data.get("average_delay_days", 0.0),
     )
 

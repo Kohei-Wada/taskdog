@@ -75,8 +75,8 @@ class TestParseTimeStatistics:
     def test_basic_conversion(self):
         """Test basic time statistics conversion."""
         data = {
-            "total_logged_hours": 100.5,
-            "average_task_duration": 5.0,
+            "total_work_hours": 100.5,
+            "average_work_hours": 5.0,
         }
 
         result = _parse_time_statistics(data)
@@ -86,10 +86,10 @@ class TestParseTimeStatistics:
         assert result.median_work_hours == 0.0  # Not available
 
     def test_missing_average(self):
-        """Test with missing average_task_duration."""
+        """Test with missing average_work_hours."""
         data = {
-            "total_logged_hours": 50.0,
-            "average_task_duration": None,
+            "total_work_hours": 50.0,
+            "average_work_hours": None,
         }
 
         result = _parse_time_statistics(data)
@@ -100,8 +100,8 @@ class TestParseTimeStatistics:
     def test_zero_hours(self):
         """Test with zero logged hours."""
         data = {
-            "total_logged_hours": 0.0,
-            "average_task_duration": 0.0,
+            "total_work_hours": 0.0,
+            "average_work_hours": 0.0,
         }
 
         result = _parse_time_statistics(data)
@@ -116,7 +116,7 @@ class TestParseEstimationStatistics:
     def test_basic_conversion(self):
         """Test basic estimation statistics conversion."""
         data = {
-            "tasks_with_estimates": 50,
+            "total_tasks_with_estimation": 50,
             "accuracy_rate": 0.95,
             "over_estimated_count": 10,
             "under_estimated_count": 5,
@@ -138,7 +138,7 @@ class TestParseEstimationStatistics:
     def test_high_deviation(self):
         """Test with high accuracy rate."""
         data = {
-            "tasks_with_estimates": 100,
+            "total_tasks_with_estimation": 100,
             "accuracy_rate": 1.5,  # 150% - over estimate
         }
 
@@ -151,22 +151,21 @@ class TestParseDeadlineStatistics:
     """Test cases for _parse_deadline_statistics."""
 
     @pytest.mark.parametrize(
-        "met,missed,adherence_rate,expected_total,expected_compliance",
+        "met,missed,compliance_rate,expected_total",
         [
-            (80, 20, 0.8, 100, 0.8),
-            (50, 0, 1.0, 50, 1.0),
-            (0, 30, 0.0, 30, 0.0),
+            (80, 20, 0.8, 100),
+            (50, 0, 1.0, 50),
+            (0, 30, 0.0, 30),
         ],
         ids=["basic", "all_met", "all_missed"],
     )
-    def test_deadline_statistics(
-        self, met, missed, adherence_rate, expected_total, expected_compliance
-    ):
+    def test_deadline_statistics(self, met, missed, compliance_rate, expected_total):
         """Test deadline statistics conversion."""
         data = {
-            "met": met,
-            "missed": missed,
-            "adherence_rate": adherence_rate,
+            "total_tasks_with_deadline": expected_total,
+            "met_deadline_count": met,
+            "missed_deadline_count": missed,
+            "compliance_rate": compliance_rate,
         }
 
         result = _parse_deadline_statistics(data)
@@ -174,7 +173,7 @@ class TestParseDeadlineStatistics:
         assert result.total_tasks_with_deadline == expected_total
         assert result.met_deadline_count == met
         assert result.missed_deadline_count == missed
-        assert result.compliance_rate == expected_compliance
+        assert result.compliance_rate == compliance_rate
         assert result.average_delay_days == 0.0  # Not available
 
 
@@ -316,17 +315,18 @@ class TestConvertToStatisticsOutput:
                 "completion_rate": 0.6,
             },
             "time": {
-                "total_logged_hours": 500.0,
-                "average_task_duration": 5.0,
+                "total_work_hours": 500.0,
+                "average_work_hours": 5.0,
             },
             "estimation": {
-                "tasks_with_estimates": 50,
+                "total_tasks_with_estimation": 50,
                 "accuracy_rate": 0.9,
             },
             "deadline": {
-                "met": 40,
-                "missed": 10,
-                "adherence_rate": 0.8,
+                "total_tasks_with_deadline": 50,
+                "met_deadline_count": 40,
+                "missed_deadline_count": 10,
+                "compliance_rate": 0.8,
             },
             "priority": {
                 "distribution": {"80": 30, "50": 50, "20": 20},
@@ -385,8 +385,8 @@ class TestConvertToStatisticsOutput:
                 "completion_rate": 0.4,
             },
             "time": {
-                "total_logged_hours": 200.0,
-                "average_task_duration": 4.0,
+                "total_work_hours": 200.0,
+                "average_work_hours": 4.0,
             },
             "priority": {
                 "distribution": {"50": 100},

@@ -410,15 +410,15 @@ class TestStatisticsResponses:
         """Test time statistics model."""
         # Act
         stats = TimeStatistics(
-            total_logged_hours=160.0,
-            average_task_duration=8.0,
+            total_work_hours=160.0,
+            average_work_hours=8.0,
             median_work_hours=7.5,
             tasks_with_time_tracking=20,
         )
 
         # Assert
-        assert stats.total_logged_hours == 160.0
-        assert stats.average_task_duration == 8.0
+        assert stats.total_work_hours == 160.0
+        assert stats.average_work_hours == 8.0
         assert stats.median_work_hours == 7.5
         assert stats.tasks_with_time_tracking == 20
 
@@ -426,7 +426,7 @@ class TestStatisticsResponses:
         """Test estimation statistics model."""
         # Act
         stats = EstimationStatistics(
-            tasks_with_estimates=50,
+            total_tasks_with_estimation=50,
             accuracy_rate=0.95,
             over_estimated_count=10,
             under_estimated_count=5,
@@ -434,7 +434,7 @@ class TestStatisticsResponses:
         )
 
         # Assert
-        assert stats.tasks_with_estimates == 50
+        assert stats.total_tasks_with_estimation == 50
         assert stats.accuracy_rate == 0.95
         assert stats.over_estimated_count == 10
         assert stats.under_estimated_count == 5
@@ -444,13 +444,18 @@ class TestStatisticsResponses:
         """Test deadline statistics model."""
         # Act
         stats = DeadlineStatistics(
-            met=45, missed=5, adherence_rate=0.9, average_delay_days=2.5
+            total_tasks_with_deadline=50,
+            met_deadline_count=45,
+            missed_deadline_count=5,
+            compliance_rate=0.9,
+            average_delay_days=2.5,
         )
 
         # Assert
-        assert stats.met == 45
-        assert stats.missed == 5
-        assert stats.adherence_rate == 0.9
+        assert stats.total_tasks_with_deadline == 50
+        assert stats.met_deadline_count == 45
+        assert stats.missed_deadline_count == 5
+        assert stats.compliance_rate == 0.9
         assert stats.average_delay_days == 2.5
 
     def test_priority_distribution(self):

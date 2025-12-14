@@ -101,8 +101,8 @@ async def get_statistics(
             ),
             time=(
                 TimeStatistics(
-                    total_logged_hours=result.time_stats.total_work_hours,
-                    average_task_duration=result.time_stats.average_work_hours,
+                    total_work_hours=result.time_stats.total_work_hours,
+                    average_work_hours=result.time_stats.average_work_hours,
                     median_work_hours=result.time_stats.median_work_hours,
                     longest_task=to_task_summary(result.time_stats.longest_task),
                     shortest_task=to_task_summary(result.time_stats.shortest_task),
@@ -113,7 +113,7 @@ async def get_statistics(
             ),
             estimation=(
                 EstimationStatistics(
-                    tasks_with_estimates=result.estimation_stats.total_tasks_with_estimation,
+                    total_tasks_with_estimation=result.estimation_stats.total_tasks_with_estimation,
                     accuracy_rate=result.estimation_stats.accuracy_rate,
                     over_estimated_count=result.estimation_stats.over_estimated_count,
                     under_estimated_count=result.estimation_stats.under_estimated_count,
@@ -130,9 +130,10 @@ async def get_statistics(
             ),
             deadline=(
                 DeadlineStatistics(
-                    met=result.deadline_stats.met_deadline_count,
-                    missed=result.deadline_stats.missed_deadline_count,
-                    adherence_rate=result.deadline_stats.compliance_rate,
+                    total_tasks_with_deadline=result.deadline_stats.total_tasks_with_deadline,
+                    met_deadline_count=result.deadline_stats.met_deadline_count,
+                    missed_deadline_count=result.deadline_stats.missed_deadline_count,
+                    compliance_rate=result.deadline_stats.compliance_rate,
                     average_delay_days=result.deadline_stats.average_delay_days,
                 )
                 if result.deadline_stats

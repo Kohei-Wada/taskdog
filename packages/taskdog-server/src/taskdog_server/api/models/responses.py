@@ -283,8 +283,8 @@ class TaskSummaryResponse(BaseModel):
 class TimeStatistics(BaseModel):
     """Time tracking statistics."""
 
-    total_logged_hours: float
-    average_task_duration: float | None = None
+    total_work_hours: float
+    average_work_hours: float | None = None
     median_work_hours: float = 0.0
     longest_task: TaskSummaryResponse | None = None
     shortest_task: TaskSummaryResponse | None = None
@@ -294,7 +294,7 @@ class TimeStatistics(BaseModel):
 class EstimationStatistics(BaseModel):
     """Estimation accuracy statistics."""
 
-    tasks_with_estimates: int
+    total_tasks_with_estimation: int
     accuracy_rate: float = 0.0
     over_estimated_count: int = 0
     under_estimated_count: int = 0
@@ -304,11 +304,12 @@ class EstimationStatistics(BaseModel):
 
 
 class DeadlineStatistics(BaseModel):
-    """Deadline adherence statistics."""
+    """Deadline compliance statistics."""
 
-    met: int
-    missed: int
-    adherence_rate: float
+    total_tasks_with_deadline: int
+    met_deadline_count: int
+    missed_deadline_count: int
+    compliance_rate: float
     average_delay_days: float = 0.0
 
 
