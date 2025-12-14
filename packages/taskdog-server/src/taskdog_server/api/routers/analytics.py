@@ -1,11 +1,15 @@
 """Analytics endpoints (statistics, optimization, gantt chart)."""
 
 from datetime import datetime
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
 
 from taskdog_core.application.dto.query_inputs import GetGanttDataInput
+
+if TYPE_CHECKING:
+    from taskdog_core.application.dto.task_dto import TaskSummaryDto
+
 from taskdog_core.domain.exceptions.task_exceptions import (
     NoSchedulableTasksError,
     TaskNotFoundException,
@@ -34,6 +38,7 @@ from taskdog_server.api.models.responses import (
     StatisticsResponse,
     TagStatisticsItem,
     TagStatisticsResponse,
+    TaskSummaryResponse,
     TimeStatistics,
     TrendData,
 )
@@ -69,6 +74,21 @@ async def get_statistics(
     try:
         result = controller.calculate_statistics(period=period)
 
+        # Helper to convert TaskSummaryDto to TaskSummaryResponse
+        def to_task_summary(
+            dto: "TaskSummaryDto | None",
+        ) -> TaskSummaryResponse | None:
+            if dto is None:
+                return None
+            return TaskSummaryResponse(id=dto.id, name=dto.name)
+
+        def to_task_summary_list(
+            dtos: "list[TaskSummaryDto]",
+        ) -> list[TaskSummaryResponse]:
+            if not dtos:
+                return []
+            return [TaskSummaryResponse(id=d.id, name=d.name) for d in dtos]
+
         # Convert DTO to response model
         response = StatisticsResponse(
             completion=CompletionStatistics(
@@ -83,17 +103,27 @@ async def get_statistics(
                 TimeStatistics(
                     total_logged_hours=result.time_stats.total_work_hours,
                     average_task_duration=result.time_stats.average_work_hours,
-                    total_estimated_hours=0.0,  # Not available in DTO
+                    median_work_hours=result.time_stats.median_work_hours,
+                    longest_task=to_task_summary(result.time_stats.longest_task),
+                    shortest_task=to_task_summary(result.time_stats.shortest_task),
+                    tasks_with_time_tracking=result.time_stats.tasks_with_time_tracking,
                 )
                 if result.time_stats
                 else None
             ),
             estimation=(
                 EstimationStatistics(
-                    average_deviation=0.0,  # Need to calculate from accuracy_rate
-                    average_deviation_percentage=result.estimation_stats.accuracy_rate
-                    * 100,
                     tasks_with_estimates=result.estimation_stats.total_tasks_with_estimation,
+                    accuracy_rate=result.estimation_stats.accuracy_rate,
+                    over_estimated_count=result.estimation_stats.over_estimated_count,
+                    under_estimated_count=result.estimation_stats.under_estimated_count,
+                    exact_count=result.estimation_stats.exact_count,
+                    best_estimated_tasks=to_task_summary_list(
+                        result.estimation_stats.best_estimated_tasks
+                    ),
+                    worst_estimated_tasks=to_task_summary_list(
+                        result.estimation_stats.worst_estimated_tasks
+                    ),
                 )
                 if result.estimation_stats
                 else None
@@ -102,19 +132,25 @@ async def get_statistics(
                 DeadlineStatistics(
                     met=result.deadline_stats.met_deadline_count,
                     missed=result.deadline_stats.missed_deadline_count,
-                    no_deadline=0,  # Not available in DTO
                     adherence_rate=result.deadline_stats.compliance_rate,
+                    average_delay_days=result.deadline_stats.average_delay_days,
                 )
                 if result.deadline_stats
                 else None
             ),
             priority=PriorityDistribution(
-                distribution=result.priority_stats.priority_completion_map
+                distribution=result.priority_stats.priority_completion_map,
+                high_priority_count=result.priority_stats.high_priority_count,
+                medium_priority_count=result.priority_stats.medium_priority_count,
+                low_priority_count=result.priority_stats.low_priority_count,
+                high_priority_completion_rate=result.priority_stats.high_priority_completion_rate,
             ),
             trends=(
                 TrendData(
-                    completed_per_day={},  # Need to map from weekly/monthly trends
-                    hours_per_day={},  # Not available in DTO
+                    last_7_days_completed=result.trend_stats.last_7_days_completed,
+                    last_30_days_completed=result.trend_stats.last_30_days_completed,
+                    weekly_completion_trend=result.trend_stats.weekly_completion_trend,
+                    monthly_completion_trend=result.trend_stats.monthly_completion_trend,
                 )
                 if result.trend_stats
                 else None

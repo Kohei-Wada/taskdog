@@ -273,20 +273,34 @@ class CompletionStatistics(BaseModel):
     completion_rate: float
 
 
+class TaskSummaryResponse(BaseModel):
+    """Minimal task information for references."""
+
+    id: int
+    name: str
+
+
 class TimeStatistics(BaseModel):
     """Time tracking statistics."""
 
     total_logged_hours: float
     average_task_duration: float | None = None
-    total_estimated_hours: float
+    median_work_hours: float = 0.0
+    longest_task: TaskSummaryResponse | None = None
+    shortest_task: TaskSummaryResponse | None = None
+    tasks_with_time_tracking: int = 0
 
 
 class EstimationStatistics(BaseModel):
     """Estimation accuracy statistics."""
 
-    average_deviation: float
-    average_deviation_percentage: float
     tasks_with_estimates: int
+    accuracy_rate: float = 0.0
+    over_estimated_count: int = 0
+    under_estimated_count: int = 0
+    exact_count: int = 0
+    best_estimated_tasks: list[TaskSummaryResponse] = Field(default_factory=list)
+    worst_estimated_tasks: list[TaskSummaryResponse] = Field(default_factory=list)
 
 
 class DeadlineStatistics(BaseModel):
@@ -294,21 +308,27 @@ class DeadlineStatistics(BaseModel):
 
     met: int
     missed: int
-    no_deadline: int
     adherence_rate: float
+    average_delay_days: float = 0.0
 
 
 class PriorityDistribution(BaseModel):
     """Task distribution by priority."""
 
     distribution: dict[int, int]
+    high_priority_count: int = 0
+    medium_priority_count: int = 0
+    low_priority_count: int = 0
+    high_priority_completion_rate: float = 0.0
 
 
 class TrendData(BaseModel):
     """Trend data over time."""
 
-    completed_per_day: dict[str, int]
-    hours_per_day: dict[str, float]
+    last_7_days_completed: int = 0
+    last_30_days_completed: int = 0
+    weekly_completion_trend: dict[str, int] = Field(default_factory=dict)
+    monthly_completion_trend: dict[str, int] = Field(default_factory=dict)
 
 
 class StatisticsResponse(BaseModel):
