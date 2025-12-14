@@ -2,7 +2,9 @@
         install install-dev install-core install-server install-ui install-client install-mcp \
         install-ui-only install-server-only reinstall \
         tool-install-ui tool-install-server check-deps \
-        clean lint format typecheck check
+        clean lint format typecheck check \
+        lint-core lint-client lint-server lint-ui lint-mcp \
+        typecheck-core typecheck-client typecheck-server typecheck-ui typecheck-mcp
 
 .DEFAULT_GOAL := help
 
@@ -190,6 +192,13 @@ test-%: ## Run tests for a specific package (e.g., make test-taskdog-core)
 	@echo "Running $* tests..."
 	$(MAKE) -C packages/$* test
 
+# Convenience aliases for testing
+test-core: test-taskdog-core ## Run taskdog-core tests
+test-client: test-taskdog-client ## Run taskdog-client tests
+test-server: test-taskdog-server ## Run taskdog-server tests
+test-ui: test-taskdog-ui ## Run taskdog-ui tests
+test-mcp: test-taskdog-mcp ## Run taskdog-mcp tests
+
 # ============================================================================
 # Code Quality Targets (recursive)
 # ============================================================================
@@ -202,6 +211,13 @@ lint: $(addprefix lint-,$(PACKAGES)) ## Check code with ruff linter
 lint-%: ## Lint a specific package (e.g., make lint-taskdog-core)
 	@echo "Linting $*..."
 	$(MAKE) -C packages/$* lint ROOT_DIR=$(ROOT_DIR)
+
+# Convenience aliases for linting
+lint-core: lint-taskdog-core ## Lint taskdog-core
+lint-client: lint-taskdog-client ## Lint taskdog-client
+lint-server: lint-taskdog-server ## Lint taskdog-server
+lint-ui: lint-taskdog-ui ## Lint taskdog-ui
+lint-mcp: lint-taskdog-mcp ## Lint taskdog-mcp
 
 format: $(addprefix format-,$(PACKAGES)) ## Format code with ruff and apply fixes
 	@echo ""
@@ -220,6 +236,13 @@ typecheck: $(addprefix typecheck-,$(PACKAGES)) ## Run mypy type checker on all p
 typecheck-%: ## Type check a specific package (e.g., make typecheck-taskdog-core)
 	@echo "Type checking $*..."
 	$(MAKE) -C packages/$* typecheck ROOT_DIR=$(ROOT_DIR)
+
+# Convenience aliases for type checking
+typecheck-core: typecheck-taskdog-core ## Type check taskdog-core
+typecheck-client: typecheck-taskdog-client ## Type check taskdog-client
+typecheck-server: typecheck-taskdog-server ## Type check taskdog-server
+typecheck-ui: typecheck-taskdog-ui ## Type check taskdog-ui
+typecheck-mcp: typecheck-taskdog-mcp ## Type check taskdog-mcp
 
 check: lint typecheck ## Run all code quality checks (lint + typecheck)
 	@echo ""
