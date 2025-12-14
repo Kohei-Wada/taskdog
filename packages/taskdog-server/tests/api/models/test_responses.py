@@ -410,58 +410,86 @@ class TestStatisticsResponses:
         """Test time statistics model."""
         # Act
         stats = TimeStatistics(
-            total_logged_hours=160.0,
-            average_task_duration=8.0,
-            total_estimated_hours=200.0,
+            total_work_hours=160.0,
+            average_work_hours=8.0,
+            median_work_hours=7.5,
+            tasks_with_time_tracking=20,
         )
 
         # Assert
-        assert stats.total_logged_hours == 160.0
-        assert stats.average_task_duration == 8.0
+        assert stats.total_work_hours == 160.0
+        assert stats.average_work_hours == 8.0
+        assert stats.median_work_hours == 7.5
+        assert stats.tasks_with_time_tracking == 20
 
     def test_estimation_statistics(self):
         """Test estimation statistics model."""
         # Act
         stats = EstimationStatistics(
-            average_deviation=2.5,
-            average_deviation_percentage=15.0,
-            tasks_with_estimates=50,
+            total_tasks_with_estimation=50,
+            accuracy_rate=0.95,
+            over_estimated_count=10,
+            under_estimated_count=5,
+            exact_count=35,
         )
 
         # Assert
-        assert stats.average_deviation == 2.5
-        assert stats.tasks_with_estimates == 50
+        assert stats.total_tasks_with_estimation == 50
+        assert stats.accuracy_rate == 0.95
+        assert stats.over_estimated_count == 10
+        assert stats.under_estimated_count == 5
+        assert stats.exact_count == 35
 
     def test_deadline_statistics(self):
         """Test deadline statistics model."""
         # Act
-        stats = DeadlineStatistics(met=45, missed=5, no_deadline=50, adherence_rate=0.9)
+        stats = DeadlineStatistics(
+            total_tasks_with_deadline=50,
+            met_deadline_count=45,
+            missed_deadline_count=5,
+            compliance_rate=0.9,
+            average_delay_days=2.5,
+        )
 
         # Assert
-        assert stats.met == 45
-        assert stats.missed == 5
-        assert stats.adherence_rate == 0.9
+        assert stats.total_tasks_with_deadline == 50
+        assert stats.met_deadline_count == 45
+        assert stats.missed_deadline_count == 5
+        assert stats.compliance_rate == 0.9
+        assert stats.average_delay_days == 2.5
 
     def test_priority_distribution(self):
         """Test priority distribution model."""
         # Act
-        dist = PriorityDistribution(distribution={1: 10, 2: 20, 3: 30})
+        dist = PriorityDistribution(
+            distribution={1: 10, 2: 20, 3: 30},
+            high_priority_count=10,
+            medium_priority_count=20,
+            low_priority_count=30,
+            high_priority_completion_rate=0.8,
+        )
 
         # Assert
         assert dist.distribution[1] == 10
         assert dist.distribution[3] == 30
+        assert dist.high_priority_count == 10
+        assert dist.high_priority_completion_rate == 0.8
 
     def test_trend_data(self):
         """Test trend data model."""
         # Act
         trends = TrendData(
-            completed_per_day={"2024-01-15": 5, "2024-01-16": 3},
-            hours_per_day={"2024-01-15": 8.0, "2024-01-16": 6.5},
+            last_7_days_completed=15,
+            last_30_days_completed=45,
+            weekly_completion_trend={"2024-W02": 5, "2024-W03": 10},
+            monthly_completion_trend={"2024-01": 45},
         )
 
         # Assert
-        assert trends.completed_per_day["2024-01-15"] == 5
-        assert trends.hours_per_day["2024-01-16"] == 6.5
+        assert trends.last_7_days_completed == 15
+        assert trends.last_30_days_completed == 45
+        assert trends.weekly_completion_trend["2024-W02"] == 5
+        assert trends.monthly_completion_trend["2024-01"] == 45
 
     def test_statistics_response(self):
         """Test complete statistics response."""

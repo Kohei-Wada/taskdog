@@ -11,6 +11,7 @@ from taskdog_core.application.dto.statistics_output import (
     TimeStatistics,
     TrendStatistics,
 )
+from taskdog_core.application.dto.task_dto import TaskSummaryDto
 
 
 def _parse_task_statistics(completion_data: dict[str, Any]) -> TaskStatistics:
@@ -32,6 +33,34 @@ def _parse_task_statistics(completion_data: dict[str, Any]) -> TaskStatistics:
     )
 
 
+def _parse_task_summary(data: dict[str, Any] | None) -> TaskSummaryDto | None:
+    """Parse task summary from API response.
+
+    Args:
+        data: Task summary data from API response
+
+    Returns:
+        TaskSummaryDto or None
+    """
+    if data is None:
+        return None
+    return TaskSummaryDto(id=data["id"], name=data["name"])
+
+
+def _parse_task_summary_list(data: list[dict[str, Any]] | None) -> list[TaskSummaryDto]:
+    """Parse list of task summaries from API response.
+
+    Args:
+        data: List of task summary data from API response
+
+    Returns:
+        List of TaskSummaryDto
+    """
+    if not data:
+        return []
+    return [TaskSummaryDto(id=d["id"], name=d["name"]) for d in data]
+
+
 def _parse_time_statistics(time_data: dict[str, Any]) -> TimeStatistics:
     """Parse time tracking statistics from API response.
 
@@ -42,12 +71,12 @@ def _parse_time_statistics(time_data: dict[str, Any]) -> TimeStatistics:
         TimeStatistics object
     """
     return TimeStatistics(
-        total_work_hours=time_data["total_logged_hours"],
-        average_work_hours=time_data.get("average_task_duration") or 0.0,
-        median_work_hours=0.0,  # Not available in API response
-        longest_task=None,  # Not available in API response
-        shortest_task=None,  # Not available in API response
-        tasks_with_time_tracking=0,  # Not available in API response
+        total_work_hours=time_data["total_work_hours"],
+        average_work_hours=time_data.get("average_work_hours") or 0.0,
+        median_work_hours=time_data.get("median_work_hours", 0.0),
+        longest_task=_parse_task_summary(time_data.get("longest_task")),
+        shortest_task=_parse_task_summary(time_data.get("shortest_task")),
+        tasks_with_time_tracking=time_data.get("tasks_with_time_tracking", 0),
     )
 
 
@@ -63,13 +92,17 @@ def _parse_estimation_statistics(
         EstimationAccuracyStatistics object
     """
     return EstimationAccuracyStatistics(
-        total_tasks_with_estimation=estimation_data["tasks_with_estimates"],
-        accuracy_rate=estimation_data["average_deviation_percentage"] / 100,
-        over_estimated_count=0,  # Not available in API response
-        under_estimated_count=0,  # Not available in API response
-        exact_count=0,  # Not available in API response
-        best_estimated_tasks=[],  # Not available in API response
-        worst_estimated_tasks=[],  # Not available in API response
+        total_tasks_with_estimation=estimation_data["total_tasks_with_estimation"],
+        accuracy_rate=estimation_data.get("accuracy_rate", 0.0),
+        over_estimated_count=estimation_data.get("over_estimated_count", 0),
+        under_estimated_count=estimation_data.get("under_estimated_count", 0),
+        exact_count=estimation_data.get("exact_count", 0),
+        best_estimated_tasks=_parse_task_summary_list(
+            estimation_data.get("best_estimated_tasks")
+        ),
+        worst_estimated_tasks=_parse_task_summary_list(
+            estimation_data.get("worst_estimated_tasks")
+        ),
     )
 
 
@@ -85,11 +118,11 @@ def _parse_deadline_statistics(
         DeadlineComplianceStatistics object
     """
     return DeadlineComplianceStatistics(
-        total_tasks_with_deadline=deadline_data["met"] + deadline_data["missed"],
-        met_deadline_count=deadline_data["met"],
-        missed_deadline_count=deadline_data["missed"],
-        compliance_rate=deadline_data["adherence_rate"],
-        average_delay_days=0.0,  # Not available in API response
+        total_tasks_with_deadline=deadline_data["total_tasks_with_deadline"],
+        met_deadline_count=deadline_data["met_deadline_count"],
+        missed_deadline_count=deadline_data["missed_deadline_count"],
+        compliance_rate=deadline_data["compliance_rate"],
+        average_delay_days=deadline_data.get("average_delay_days", 0.0),
     )
 
 
@@ -106,16 +139,12 @@ def _parse_priority_statistics(
     """
     distribution = priority_data["distribution"]
     return PriorityDistributionStatistics(
-        high_priority_count=sum(
-            count for prio, count in distribution.items() if int(prio) >= 70
+        high_priority_count=priority_data.get("high_priority_count", 0),
+        medium_priority_count=priority_data.get("medium_priority_count", 0),
+        low_priority_count=priority_data.get("low_priority_count", 0),
+        high_priority_completion_rate=priority_data.get(
+            "high_priority_completion_rate", 0.0
         ),
-        medium_priority_count=sum(
-            count for prio, count in distribution.items() if 30 <= int(prio) < 70
-        ),
-        low_priority_count=sum(
-            count for prio, count in distribution.items() if int(prio) < 30
-        ),
-        high_priority_completion_rate=0.0,  # Not available in API response
         priority_completion_map={int(k): v for k, v in distribution.items()},
     )
 
@@ -129,18 +158,11 @@ def _parse_trend_statistics(trends_data: dict[str, Any]) -> TrendStatistics:
     Returns:
         TrendStatistics object
     """
-    # Calculate last 7 and 30 days from completed_per_day
-    completed_per_day = trends_data.get("completed_per_day", {})
-    last_7_days = sum(list(completed_per_day.values())[-7:]) if completed_per_day else 0
-    last_30_days = (
-        sum(list(completed_per_day.values())[-30:]) if completed_per_day else 0
-    )
-
     return TrendStatistics(
-        last_7_days_completed=last_7_days,
-        last_30_days_completed=last_30_days,
-        weekly_completion_trend={},  # Would need grouping logic
-        monthly_completion_trend={},  # Would need grouping logic
+        last_7_days_completed=trends_data.get("last_7_days_completed", 0),
+        last_30_days_completed=trends_data.get("last_30_days_completed", 0),
+        weekly_completion_trend=trends_data.get("weekly_completion_trend", {}),
+        monthly_completion_trend=trends_data.get("monthly_completion_trend", {}),
     )
 
 

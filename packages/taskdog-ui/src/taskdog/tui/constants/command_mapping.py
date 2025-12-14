@@ -16,5 +16,6 @@ ACTION_TO_COMMAND_MAP: dict[str, str] = {
     "action_note": "note",
     "action_fix_actual": "fix_actual",
     "action_show_help": "show_help",
+    "action_stats": "stats",
 }
 """Mapping of Textual action names to command names for __getattr__ delegation."""

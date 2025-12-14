@@ -11,7 +11,8 @@ ConfirmationDialog,
 TaskFormDialog,
 TaskDetailDialog,
 FixActualDialog,
-HelpDialog {
+HelpDialog,
+StatsScreen {
     align: center middle;
 }
 
@@ -170,4 +171,86 @@ HelpDialog {
 .help-footer {
     text-align: center;
     padding-top: 1;
+}
+
+/* =============================================================================
+   Statistics Screen
+   ============================================================================= */
+
+/* Stats Screen Container */
+#stats-screen {
+    max-height: 50;
+}
+
+#stats-content {
+    padding: 1;
+    margin: 0;
+    overflow-y: auto;
+}
+
+.stats-section {
+    padding: 0 1;
+    margin-bottom: 1;
+}
+
+.stat-row {
+    padding: 0;
+}
+
+.section-spacer {
+    height: 1;
+}
+
+#stats-footer {
+    text-align: center;
+    padding-top: 1;
+    border-top: solid $primary;
+}
+
+/* Stats section title */
+.stats-section-title {
+    text-style: bold;
+    color: $primary;
+    padding: 0 0 1 0;
+}
+
+/* Stats label (left side) */
+.stats-label {
+    color: $text-muted;
+    width: 20;
+}
+
+/* Stats value variations */
+.stats-value {
+    width: 1fr;
+}
+
+.stats-value-success {
+    color: $success;
+}
+
+.stats-value-warning {
+    color: $warning;
+}
+
+.stats-value-error {
+    color: $error;
+}
+
+.stats-value-info {
+    color: $secondary;
+}
+
+.stats-value-muted {
+    color: $text-muted;
+}
+
+.stats-value-bold {
+    text-style: bold;
+}
+
+/* Stats row container */
+.stats-row {
+    height: auto;
+    padding: 0 2;
 }
