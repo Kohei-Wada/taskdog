@@ -15,99 +15,62 @@ from taskdog_client.converters.statistics_converters import (
 class TestParseTaskStatistics:
     """Test cases for _parse_task_statistics."""
 
-    def test_basic_conversion(self):
-        """Test basic task statistics conversion."""
+    @pytest.mark.parametrize(
+        "total,pending,in_progress,completed,canceled,rate",
+        [
+            (100, 20, 10, 60, 10, 0.6),
+            (50, 50, 0, 0, 0, 0.0),
+            (50, 0, 0, 50, 0, 1.0),
+        ],
+        ids=["basic", "all_pending", "all_completed"],
+    )
+    def test_parse_task_statistics(
+        self, total, pending, in_progress, completed, canceled, rate
+    ):
+        """Test task statistics conversion with various scenarios."""
         data = {
-            "total": 100,
-            "pending": 20,
-            "in_progress": 10,
-            "completed": 60,
-            "canceled": 10,
-            "completion_rate": 0.6,
+            "total": total,
+            "pending": pending,
+            "in_progress": in_progress,
+            "completed": completed,
+            "canceled": canceled,
+            "completion_rate": rate,
         }
 
         result = _parse_task_statistics(data)
 
-        assert result.total_tasks == 100
-        assert result.pending_count == 20
-        assert result.in_progress_count == 10
-        assert result.completed_count == 60
-        assert result.canceled_count == 10
-        assert result.completion_rate == 0.6
-
-    def test_all_pending(self):
-        """Test with all tasks pending."""
-        data = {
-            "total": 50,
-            "pending": 50,
-            "in_progress": 0,
-            "completed": 0,
-            "canceled": 0,
-            "completion_rate": 0.0,
-        }
-
-        result = _parse_task_statistics(data)
-
-        assert result.total_tasks == 50
-        assert result.pending_count == 50
-        assert result.completion_rate == 0.0
-
-    def test_all_completed(self):
-        """Test with all tasks completed."""
-        data = {
-            "total": 50,
-            "pending": 0,
-            "in_progress": 0,
-            "completed": 50,
-            "canceled": 0,
-            "completion_rate": 1.0,
-        }
-
-        result = _parse_task_statistics(data)
-
-        assert result.completed_count == 50
-        assert result.completion_rate == 1.0
+        assert result.total_tasks == total
+        assert result.pending_count == pending
+        assert result.in_progress_count == in_progress
+        assert result.completed_count == completed
+        assert result.canceled_count == canceled
+        assert result.completion_rate == rate
 
 
 class TestParseTimeStatistics:
     """Test cases for _parse_time_statistics."""
 
-    def test_basic_conversion(self):
-        """Test basic time statistics conversion."""
+    @pytest.mark.parametrize(
+        "total_hours,avg_hours,expected_avg",
+        [
+            (100.5, 5.0, 5.0),
+            (50.0, None, 0.0),
+            (0.0, 0.0, 0.0),
+        ],
+        ids=["basic", "missing_average", "zero_hours"],
+    )
+    def test_parse_time_statistics(self, total_hours, avg_hours, expected_avg):
+        """Test time statistics conversion with various scenarios."""
         data = {
-            "total_work_hours": 100.5,
-            "average_work_hours": 5.0,
+            "total_work_hours": total_hours,
+            "average_work_hours": avg_hours,
         }
 
         result = _parse_time_statistics(data)
 
-        assert result.total_work_hours == 100.5
-        assert result.average_work_hours == 5.0
-        assert result.median_work_hours == 0.0  # Not available
-
-    def test_missing_average(self):
-        """Test with missing average_work_hours."""
-        data = {
-            "total_work_hours": 50.0,
-            "average_work_hours": None,
-        }
-
-        result = _parse_time_statistics(data)
-
-        assert result.total_work_hours == 50.0
-        assert result.average_work_hours == 0.0
-
-    def test_zero_hours(self):
-        """Test with zero logged hours."""
-        data = {
-            "total_work_hours": 0.0,
-            "average_work_hours": 0.0,
-        }
-
-        result = _parse_time_statistics(data)
-
-        assert result.total_work_hours == 0.0
-        assert result.average_work_hours == 0.0
+        assert result.total_work_hours == total_hours
+        assert result.average_work_hours == expected_avg
+        assert result.median_work_hours == 0.0  # Not available from API
 
 
 class TestParseEstimationStatistics:
@@ -244,60 +207,59 @@ class TestParsePriorityStatistics:
 class TestParseTrendStatistics:
     """Test cases for _parse_trend_statistics."""
 
-    def test_basic_conversion(self):
-        """Test basic trend statistics conversion."""
-        data = {
-            "last_7_days_completed": 24,
-            "last_30_days_completed": 45,
-            "weekly_completion_trend": {"2025-W01": 24},
-            "monthly_completion_trend": {"2025-01": 45},
-        }
-
+    @pytest.mark.parametrize(
+        "data,expected_7d,expected_30d,expected_weekly,expected_monthly",
+        [
+            (
+                {
+                    "last_7_days_completed": 24,
+                    "last_30_days_completed": 45,
+                    "weekly_completion_trend": {"2025-W01": 24},
+                    "monthly_completion_trend": {"2025-01": 45},
+                },
+                24,
+                45,
+                {"2025-W01": 24},
+                {"2025-01": 45},
+            ),
+            (
+                {
+                    "last_7_days_completed": 7,
+                    "last_30_days_completed": 14,
+                    "weekly_completion_trend": {"2025-W01": 7, "2025-W02": 7},
+                    "monthly_completion_trend": {"2025-01": 14},
+                },
+                7,
+                14,
+                {"2025-W01": 7, "2025-W02": 7},
+                {"2025-01": 14},
+            ),
+            (
+                {
+                    "last_7_days_completed": 0,
+                    "last_30_days_completed": 0,
+                    "weekly_completion_trend": {},
+                    "monthly_completion_trend": {},
+                },
+                0,
+                0,
+                {},
+                {},
+            ),
+            ({}, 0, 0, {}, {}),
+        ],
+        ids=["basic", "multiple_weeks", "empty_data", "missing_fields"],
+    )
+    def test_parse_trend_statistics(
+        self, data, expected_7d, expected_30d, expected_weekly, expected_monthly
+    ):
+        """Test trend statistics conversion with various scenarios."""
         result = _parse_trend_statistics(data)
 
-        assert result.last_7_days_completed == 24
-        assert result.last_30_days_completed == 45
-        assert result.weekly_completion_trend == {"2025-W01": 24}
-        assert result.monthly_completion_trend == {"2025-01": 45}
-
-    def test_more_than_7_days(self):
-        """Test with larger data."""
-        data = {
-            "last_7_days_completed": 7,
-            "last_30_days_completed": 14,
-            "weekly_completion_trend": {"2025-W01": 7, "2025-W02": 7},
-            "monthly_completion_trend": {"2025-01": 14},
-        }
-
-        result = _parse_trend_statistics(data)
-
-        assert result.last_7_days_completed == 7
-        assert result.last_30_days_completed == 14
-
-    def test_empty_data(self):
-        """Test with empty trend data."""
-        data = {
-            "last_7_days_completed": 0,
-            "last_30_days_completed": 0,
-            "weekly_completion_trend": {},
-            "monthly_completion_trend": {},
-        }
-
-        result = _parse_trend_statistics(data)
-
-        assert result.last_7_days_completed == 0
-        assert result.last_30_days_completed == 0
-
-    def test_missing_fields(self):
-        """Test with missing fields (defaults to 0 / empty)."""
-        data = {}
-
-        result = _parse_trend_statistics(data)
-
-        assert result.last_7_days_completed == 0
-        assert result.last_30_days_completed == 0
-        assert result.weekly_completion_trend == {}
-        assert result.monthly_completion_trend == {}
+        assert result.last_7_days_completed == expected_7d
+        assert result.last_30_days_completed == expected_30d
+        assert result.weekly_completion_trend == expected_weekly
+        assert result.monthly_completion_trend == expected_monthly
 
 
 class TestConvertToStatisticsOutput:
