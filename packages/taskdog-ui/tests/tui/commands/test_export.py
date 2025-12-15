@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from taskdog.tui.commands.export_command import ExportCommand
+from taskdog.tui.commands.export import ExportCommand
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 
 
@@ -60,7 +60,7 @@ class TestExportCommandExecute:
         command.notify_warning.assert_called_once()
         assert "unknown" in command.notify_warning.call_args[0][0].lower()
 
-    @patch("taskdog.tui.commands.export_command.Path")
+    @patch("taskdog.tui.commands.export.Path")
     def test_exports_json_format(self, mock_path: MagicMock) -> None:
         """Test JSON format export."""
         mock_home = MagicMock()
@@ -81,7 +81,7 @@ class TestExportCommandExecute:
 
         command.notify_success.assert_called_once()
 
-    @patch("taskdog.tui.commands.export_command.Path")
+    @patch("taskdog.tui.commands.export.Path")
     def test_exports_csv_format(self, mock_path: MagicMock) -> None:
         """Test CSV format export."""
         mock_home = MagicMock()
@@ -102,7 +102,7 @@ class TestExportCommandExecute:
 
         command.notify_success.assert_called_once()
 
-    @patch("taskdog.tui.commands.export_command.Path")
+    @patch("taskdog.tui.commands.export.Path")
     def test_exports_markdown_format(self, mock_path: MagicMock) -> None:
         """Test Markdown format export."""
         mock_home = MagicMock()
@@ -152,7 +152,7 @@ class TestExportCommandExecute:
         command.notify_error.assert_called_once()
         assert "export failed" in command.notify_error.call_args[0][0].lower()
 
-    @patch("taskdog.tui.commands.export_command.Path")
+    @patch("taskdog.tui.commands.export.Path")
     def test_creates_downloads_directory(self, mock_path: MagicMock) -> None:
         """Test that Downloads directory is created if it doesn't exist."""
         mock_home = MagicMock()
@@ -173,8 +173,8 @@ class TestExportCommandExecute:
 
         mock_downloads.mkdir.assert_called_once_with(parents=True, exist_ok=True)
 
-    @patch("taskdog.tui.commands.export_command.JsonTaskExporter")
-    @patch("taskdog.tui.commands.export_command.Path")
+    @patch("taskdog.tui.commands.export.JsonTaskExporter")
+    @patch("taskdog.tui.commands.export.Path")
     def test_success_message_includes_task_count(
         self, mock_path: MagicMock, mock_exporter_class: MagicMock
     ) -> None:
