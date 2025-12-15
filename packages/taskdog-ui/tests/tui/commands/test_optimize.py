@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from taskdog.tui.commands.optimize_command import OptimizeCommand
+from taskdog.tui.commands.optimize import OptimizeCommand
 from taskdog_core.application.dto.optimization_output import (
     OptimizationOutput,
     SchedulingFailure,
