@@ -6,7 +6,6 @@ from typing import Literal
 
 from rich.text import Text
 
-from taskdog.builders.table_cell_builder import TableCellBuilder
 from taskdog.constants.colors import STATUS_STYLES
 from taskdog.constants.symbols import EMOJI_NOTE
 from taskdog.constants.table_dimensions import TASK_NAME_MAX_DISPLAY_LENGTH
@@ -34,15 +33,14 @@ class TaskTableRowBuilder:
     """Builds table row data from TaskRowViewModel.
 
     Responsible for converting TaskRowViewModel objects into Rich Text objects
-    suitable for display in the task table widget. Uses DateTimeFormatter,
-    DurationFormatter, and TableCellBuilder for formatting logic.
+    suitable for display in the task table widget. Uses DateTimeFormatter
+    and DurationFormatter for formatting logic.
     """
 
     def __init__(self):
         """Initialize the TaskTableRowBuilder with formatter dependencies."""
         self.date_formatter = DateTimeFormatter()
         self.duration_formatter = DurationFormatter()
-        self.cell_builder = TableCellBuilder()
         self._columns = self._initialize_column_config()
 
     def _initialize_column_config(self) -> list[ColumnConfig]:
@@ -140,13 +138,10 @@ class TaskTableRowBuilder:
         """
         value = col.formatter(task_vm)
         style = col.style_func(task_vm) if col.style_func else None
-
-        if col.justification == "left":
-            return self.cell_builder.build_left_aligned_cell(value, style=style)
-        else:
-            return self.cell_builder.build_styled_cell(
-                value, style=style, justify=col.justification
-            )
+        text = Text(value, justify=col.justification)
+        if style:
+            text.stylize(style)
+        return text
 
     @staticmethod
     def _format_flags(task_vm: TaskRowViewModel) -> str:
