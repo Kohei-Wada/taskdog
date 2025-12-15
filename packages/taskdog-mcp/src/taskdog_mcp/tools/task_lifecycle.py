@@ -11,15 +11,15 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import FastMCP
 
 if TYPE_CHECKING:
-    from taskdog_mcp.server import TaskdogMcpClients
+    from taskdog_client import TaskdogApiClient
 
 
-def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
+def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
     """Register task lifecycle tools with the MCP server.
 
     Args:
         mcp: FastMCP server instance
-        clients: API clients container
+        client: Taskdog API client
     """
 
     @mcp.tool()
@@ -34,7 +34,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Updated task data with status change confirmation
         """
-        result = clients.lifecycle.start_task(task_id)
+        result = client.start_task(task_id)
         return {
             "id": result.id,
             "name": result.name,
@@ -57,7 +57,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Updated task data with completion confirmation
         """
-        result = clients.lifecycle.complete_task(task_id)
+        result = client.complete_task(task_id)
         return {
             "id": result.id,
             "name": result.name,
@@ -79,7 +79,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Updated task data
         """
-        result = clients.lifecycle.pause_task(task_id)
+        result = client.pause_task(task_id)
         return {
             "id": result.id,
             "name": result.name,
@@ -99,7 +99,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Updated task data
         """
-        result = clients.lifecycle.cancel_task(task_id)
+        result = client.cancel_task(task_id)
         return {
             "id": result.id,
             "name": result.name,
@@ -119,7 +119,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Updated task data
         """
-        result = clients.lifecycle.reopen_task(task_id)
+        result = client.reopen_task(task_id)
         return {
             "id": result.id,
             "name": result.name,
@@ -155,7 +155,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         except ValueError as e:
             raise ValueError(f"Invalid datetime format: {e}") from e
 
-        result = clients.lifecycle.fix_actual_times(
+        result = client.fix_actual_times(
             task_id, start_dt, end_dt, clear_start, clear_end
         )
 

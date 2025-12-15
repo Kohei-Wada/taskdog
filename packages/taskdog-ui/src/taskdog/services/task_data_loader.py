@@ -3,7 +3,8 @@
 from dataclasses import dataclass
 from datetime import date
 
-from taskdog.infrastructure.api_client import TaskdogApiClient
+from taskdog_client import TaskdogApiClient
+
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
 from taskdog.view_models.gantt_view_model import GanttViewModel

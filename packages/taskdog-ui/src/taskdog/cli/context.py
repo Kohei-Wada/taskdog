@@ -7,7 +7,7 @@ from taskdog.console.console_writer import ConsoleWriter
 from taskdog.infrastructure.cli_config_manager import CliConfig
 
 if TYPE_CHECKING:
-    from taskdog.infrastructure.api_client import TaskdogApiClient
+    from taskdog_client import TaskdogApiClient
 
 
 @dataclass

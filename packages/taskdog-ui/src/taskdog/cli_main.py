@@ -107,7 +107,7 @@ def cli(
     effective_api_key = api_key if api_key is not None else config.api.api_key
 
     # Initialize API client (required for all CLI commands)
-    from taskdog.infrastructure.api_client import TaskdogApiClient
+    from taskdog_client import TaskdogApiClient
 
     try:
         api_client = TaskdogApiClient(

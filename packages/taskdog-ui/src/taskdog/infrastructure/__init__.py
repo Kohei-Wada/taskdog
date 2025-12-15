@@ -1,28 +1,12 @@
 """Infrastructure layer for taskdog-ui.
 
-This module provides the API client facade and specialized clients
-for communicating with the Taskdog server.
+This module provides CLI-specific infrastructure components.
+API client and WebSocket client are provided by the taskdog_client package.
 """
 
-from taskdog_client import (  # type: ignore[import-not-found]
-    AnalyticsClient,
-    BaseApiClient,
-    LifecycleClient,
-    NotesClient,
-    QueryClient,
-    RelationshipClient,
-    TaskClient,
-)
-
-from taskdog.infrastructure.api_client import TaskdogApiClient
+from taskdog.infrastructure.cli_config_manager import CliConfig, load_cli_config
 
 __all__ = [
-    "AnalyticsClient",
-    "BaseApiClient",
-    "LifecycleClient",
-    "NotesClient",
-    "QueryClient",
-    "RelationshipClient",
-    "TaskClient",
-    "TaskdogApiClient",
+    "CliConfig",
+    "load_cli_config",
 ]

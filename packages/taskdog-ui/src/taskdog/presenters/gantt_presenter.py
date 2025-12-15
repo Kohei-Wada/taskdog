@@ -12,7 +12,7 @@ from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.task_dto import GanttTaskDto
 
 if TYPE_CHECKING:
-    from taskdog.infrastructure.api_client import TaskdogApiClient
+    from taskdog_client import TaskdogApiClient
 
 
 class GanttPresenter:

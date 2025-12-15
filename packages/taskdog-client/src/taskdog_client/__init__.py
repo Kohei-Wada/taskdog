@@ -13,6 +13,7 @@ from taskdog_client.notes_client import NotesClient
 from taskdog_client.query_client import QueryClient
 from taskdog_client.relationship_client import RelationshipClient
 from taskdog_client.task_client import TaskClient
+from taskdog_client.taskdog_api_client import TaskdogApiClient
 from taskdog_client.websocket import ConnectionState, WebSocketClient
 
 __all__ = [
@@ -25,5 +26,6 @@ __all__ = [
     "QueryClient",
     "RelationshipClient",
     "TaskClient",
+    "TaskdogApiClient",
     "WebSocketClient",
 ]
