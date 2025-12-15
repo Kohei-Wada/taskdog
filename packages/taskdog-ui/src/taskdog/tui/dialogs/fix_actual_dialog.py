@@ -2,17 +2,16 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, ClassVar
+from typing import Any
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.validation import Number
 from textual.widgets import Input, Label, Static
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.constants.ui_settings import DEFAULT_END_HOUR, DEFAULT_START_HOUR
-from taskdog.tui.dialogs.base_dialog import BaseModalDialog
+from taskdog.tui.dialogs.form_dialog import FormDialogBase
 from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
@@ -51,38 +50,12 @@ class FixActualFormData:
         return datetime.strptime(self.actual_end, DATETIME_FORMAT)
 
 
-class FixActualDialog(BaseModalDialog[FixActualFormData | None]):
+class FixActualDialog(FormDialogBase[FixActualFormData | None]):
     """Modal dialog for fixing actual start/end times and duration.
 
     This dialog allows editing actual_start, actual_end, and actual_duration
     for a task. It also provides clear checkboxes to remove these values.
     """
-
-    BINDINGS: ClassVar = [
-        Binding(
-            "escape",
-            "cancel",
-            "Cancel",
-            tooltip="Cancel and close the form without saving",
-        ),
-        Binding(
-            "ctrl+s", "submit", "Submit", tooltip="Submit the form and save changes"
-        ),
-        Binding(
-            "ctrl+j",
-            "focus_next",
-            "Next field",
-            priority=True,
-            tooltip="Move to next form field",
-        ),
-        Binding(
-            "ctrl+k",
-            "focus_previous",
-            "Previous field",
-            priority=True,
-            tooltip="Move to previous form field",
-        ),
-    ]
 
     def __init__(
         self,
@@ -163,18 +136,6 @@ class FixActualDialog(BaseModalDialog[FixActualFormData | None]):
         # Focus on actual start input
         actual_start_input = self.query_one("#actual-start-input", Input)
         actual_start_input.focus()
-
-    def action_submit(self) -> None:
-        """Submit the form (Ctrl+S)."""
-        self._submit_form()
-
-    def action_focus_next(self) -> None:
-        """Move focus to the next field (Ctrl+J)."""
-        self.focus_next()
-
-    def action_focus_previous(self) -> None:
-        """Move focus to the previous field (Ctrl+K)."""
-        self.focus_previous()
 
     def _submit_form(self) -> None:
         """Validate and submit the form data."""

@@ -9,14 +9,13 @@ from textual.widgets import Label, Markdown, Static
 
 from taskdog.constants.colors import STATUS_COLORS_BOLD
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
-from taskdog.tui.dialogs.base_dialog import BaseModalDialog
-from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
+from taskdog.tui.dialogs.scrollable_dialog import ScrollableDialogBase
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 
 
-class TaskDetailDialog(BaseModalDialog[tuple[str, int] | None], ViNavigationMixin):
+class TaskDetailDialog(ScrollableDialogBase[tuple[str, int] | None]):
     """Modal screen for displaying task details.
 
     Shows comprehensive information about a task including:
@@ -27,11 +26,14 @@ class TaskDetailDialog(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
     """
 
     BINDINGS: ClassVar = [
-        *ViNavigationMixin.VI_VERTICAL_BINDINGS,
-        *ViNavigationMixin.VI_PAGE_BINDINGS,
+        *ScrollableDialogBase.BINDINGS,
         Binding("v", "note", "Edit Note", tooltip="Edit markdown notes for this task"),
-        Binding("q", "cancel", "Close", tooltip="Close the task detail screen"),
     ]
+
+    @property
+    def scroll_container_id(self) -> str:
+        """Return the ID of the scroll container."""
+        return "#detail-content"
 
     def __init__(self, detail: TaskDetailOutput, *args: Any, **kwargs: Any):
         """Initialize the detail screen.
@@ -193,38 +195,6 @@ class TaskDetailDialog(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
                 f"{hours:.{precision}f}h" if precision > 0 else f"{hours}h"
             )
             yield self._create_detail_row(label, formatted_hours)
-
-    def action_vi_down(self) -> None:
-        """Scroll down one line (j key)."""
-        scroll_widget = self.query_one("#detail-content", VerticalScroll)
-        scroll_widget.scroll_relative(y=1, animate=False)
-
-    def action_vi_up(self) -> None:
-        """Scroll up one line (k key)."""
-        scroll_widget = self.query_one("#detail-content", VerticalScroll)
-        scroll_widget.scroll_relative(y=-1, animate=False)
-
-    def action_vi_page_down(self) -> None:
-        """Scroll down half page (Ctrl+D)."""
-        scroll_widget = self.query_one("#detail-content", VerticalScroll)
-        scroll_widget.scroll_relative(y=scroll_widget.size.height // 2, animate=False)
-
-    def action_vi_page_up(self) -> None:
-        """Scroll up half page (Ctrl+U)."""
-        scroll_widget = self.query_one("#detail-content", VerticalScroll)
-        scroll_widget.scroll_relative(
-            y=-(scroll_widget.size.height // 2), animate=False
-        )
-
-    def action_vi_home(self) -> None:
-        """Scroll to top (g key)."""
-        scroll_widget = self.query_one("#detail-content", VerticalScroll)
-        scroll_widget.scroll_home(animate=False)
-
-    def action_vi_end(self) -> None:
-        """Scroll to bottom (G key)."""
-        scroll_widget = self.query_one("#detail-content", VerticalScroll)
-        scroll_widget.scroll_end(animate=False)
 
     def action_note(self) -> None:
         """Edit note (v key) - dismiss and return task ID to trigger note editing."""
