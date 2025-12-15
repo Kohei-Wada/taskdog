@@ -33,11 +33,15 @@ StatsScreen {
 }
 
 .dialog-standard {
-    width: 80;  /* For form-based dialogs and lists */
+    width: 70%;
+    min-width: 60;
+    max-width: 100;
 }
 
 .dialog-wide {
-    width: 100;  /* For detailed information display */
+    width: 80%;
+    min-width: 80;
+    max-width: 120;
 }
 
 /* =============================================================================
