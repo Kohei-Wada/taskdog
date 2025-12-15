@@ -40,8 +40,21 @@ class ScrollableDialogBase(BaseModalDialog[T], ViNavigationMixin):
         ...
 
     def _get_scroll_widget(self) -> VerticalScroll:
-        """Get the scroll widget for navigation."""
-        return self.query_one(self.scroll_container_id, VerticalScroll)
+        """Get the scroll widget for navigation.
+
+        Returns:
+            The VerticalScroll widget for this dialog.
+
+        Raises:
+            RuntimeError: If scroll container is not found or not a VerticalScroll.
+        """
+        try:
+            return self.query_one(self.scroll_container_id, VerticalScroll)
+        except Exception as e:
+            raise RuntimeError(
+                f"Scroll container '{self.scroll_container_id}' not found or "
+                f"not a VerticalScroll widget in {self.__class__.__name__}"
+            ) from e
 
     def action_vi_down(self) -> None:
         """Scroll down one line (j key)."""
