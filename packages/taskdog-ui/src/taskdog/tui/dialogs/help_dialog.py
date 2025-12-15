@@ -1,9 +1,6 @@
 """Help dialog displaying usage instructions and feature guide."""
 
-from typing import ClassVar
-
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Markdown, Static
 
@@ -16,11 +13,10 @@ from taskdog.tui.constants.keybindings import (
     QUICK_TIPS,
     TASKDOG_OVERVIEW,
 )
-from taskdog.tui.dialogs.base_dialog import BaseModalDialog
-from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
+from taskdog.tui.dialogs.scrollable_dialog import ScrollableDialogBase
 
 
-class HelpDialog(BaseModalDialog[None], ViNavigationMixin):
+class HelpDialog(ScrollableDialogBase[None]):
     """Modal screen displaying help information and usage guide.
 
     Shows:
@@ -30,11 +26,10 @@ class HelpDialog(BaseModalDialog[None], ViNavigationMixin):
     - Quick tips
     """
 
-    BINDINGS: ClassVar = [
-        *ViNavigationMixin.VI_VERTICAL_BINDINGS,
-        *ViNavigationMixin.VI_PAGE_BINDINGS,
-        Binding("q", "cancel", "Close", tooltip="Close the help screen"),
-    ]
+    @property
+    def scroll_container_id(self) -> str:
+        """Return the ID of the scroll container."""
+        return "#help-content"
 
     def compose(self) -> ComposeResult:
         """Compose the help screen layout."""
@@ -81,35 +76,3 @@ class HelpDialog(BaseModalDialog[None], ViNavigationMixin):
                     "[dim]Press 'q' or Escape to close • Press Ctrl+P → 'Keys' for all keybindings[/dim]",
                     classes="help-footer",
                 )
-
-    def action_vi_down(self) -> None:
-        """Scroll down one line (j key)."""
-        scroll_widget = self.query_one("#help-content", VerticalScroll)
-        scroll_widget.scroll_relative(y=1, animate=False)
-
-    def action_vi_up(self) -> None:
-        """Scroll up one line (k key)."""
-        scroll_widget = self.query_one("#help-content", VerticalScroll)
-        scroll_widget.scroll_relative(y=-1, animate=False)
-
-    def action_vi_page_down(self) -> None:
-        """Scroll down half page (Ctrl+D)."""
-        scroll_widget = self.query_one("#help-content", VerticalScroll)
-        scroll_widget.scroll_relative(y=scroll_widget.size.height // 2, animate=False)
-
-    def action_vi_page_up(self) -> None:
-        """Scroll up half page (Ctrl+U)."""
-        scroll_widget = self.query_one("#help-content", VerticalScroll)
-        scroll_widget.scroll_relative(
-            y=-(scroll_widget.size.height // 2), animate=False
-        )
-
-    def action_vi_home(self) -> None:
-        """Scroll to top (g key)."""
-        scroll_widget = self.query_one("#help-content", VerticalScroll)
-        scroll_widget.scroll_home(animate=False)
-
-    def action_vi_end(self) -> None:
-        """Scroll to bottom (G key)."""
-        scroll_widget = self.query_one("#help-content", VerticalScroll)
-        scroll_widget.scroll_end(animate=False)

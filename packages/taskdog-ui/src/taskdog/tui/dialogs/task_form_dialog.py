@@ -1,50 +1,23 @@
 """Unified task form dialog for adding and editing tasks."""
 
-from typing import Any, ClassVar
+from typing import Any
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Container
 from textual.widgets import Checkbox, Input, Label
 
-from taskdog.tui.dialogs.base_dialog import BaseModalDialog
+from taskdog.tui.dialogs.form_dialog import FormDialogBase
 from taskdog.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 
-class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
+class TaskFormDialog(FormDialogBase[TaskFormData | None]):
     """Unified modal dialog for adding or editing tasks.
 
     This dialog can be used for both creating new tasks and editing existing ones.
     Pass a TaskDetailDto instance to edit mode, or None for add mode.
     """
-
-    BINDINGS: ClassVar = [
-        Binding(
-            "escape",
-            "cancel",
-            "Cancel",
-            tooltip="Cancel and close the form without saving",
-        ),
-        Binding(
-            "ctrl+s", "submit", "Submit", tooltip="Submit the form and save changes"
-        ),
-        Binding(
-            "ctrl+j",
-            "focus_next",
-            "Next field",
-            priority=True,
-            tooltip="Move to next form field",
-        ),
-        Binding(
-            "ctrl+k",
-            "focus_previous",
-            "Previous field",
-            priority=True,
-            tooltip="Move to previous form field",
-        ),
-    ]
 
     def __init__(
         self,
@@ -83,18 +56,6 @@ class TaskFormDialog(BaseModalDialog[TaskFormData | None]):
         # Focus on task name input
         task_input = self.query_one("#task-name-input", Input)
         task_input.focus()
-
-    def action_submit(self) -> None:
-        """Submit the form (Ctrl+S)."""
-        self._submit_form()
-
-    def action_focus_next(self) -> None:
-        """Move focus to the next field (Ctrl+J)."""
-        self.focus_next()
-
-    def action_focus_previous(self) -> None:
-        """Move focus to the previous field (Ctrl+K)."""
-        self.focus_previous()
 
     def _submit_form(self) -> None:
         """Validate and submit the form data."""
