@@ -8,11 +8,13 @@ from textual.binding import Binding
 from textual.command import CommandPalette
 
 if TYPE_CHECKING:
-    from taskdog.infrastructure.api_client import TaskdogApiClient
+    from taskdog_client import TaskdogApiClient
+
     from taskdog.infrastructure.cli_config_manager import CliConfig
 
+from taskdog_client import WebSocketClient
+
 from taskdog import __version__
-from taskdog.infrastructure.websocket import WebSocketClient
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.presenters.table_presenter import TablePresenter
 from taskdog.services.task_data_loader import TaskDataLoader

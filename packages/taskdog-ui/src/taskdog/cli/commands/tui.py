@@ -3,9 +3,9 @@
 from urllib.parse import urlparse, urlunparse
 
 import click
+from taskdog_client import WebSocketClient
 
 from taskdog.cli.context import CliContext
-from taskdog.infrastructure.websocket import WebSocketClient
 from taskdog.tui.app import TaskdogTUI
 
 

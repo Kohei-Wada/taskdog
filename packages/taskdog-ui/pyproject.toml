@@ -69,7 +69,6 @@ packages = [
     "taskdog.shared",
     "taskdog.shared.click_types",
     "taskdog.infrastructure",
-    "taskdog.infrastructure.websocket",
 ]
 package-dir = { "" = "src" }
 
@@ -91,9 +90,7 @@ ignore_missing_imports = true
 # Ignore modules that depend on taskdog_client (external package)
 [[tool.mypy.overrides]]
 module = [
-    "taskdog.infrastructure.api_client",
     "taskdog.infrastructure",
-    "taskdog.infrastructure.websocket",
 ]
 ignore_errors = true
 

@@ -12,7 +12,7 @@ from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import TaskStatus
 
 if TYPE_CHECKING:
-    from taskdog.infrastructure.api_client import TaskdogApiClient
+    from taskdog_client import TaskdogApiClient
 
 
 class NotesChecker(Protocol):

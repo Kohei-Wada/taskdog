@@ -16,7 +16,7 @@ class TestCliGlobalOptions:
         """Set up test fixtures."""
         self.runner = CliRunner()
 
-    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
     def test_default_connection(self, mock_load_config, mock_api_client):
         """Test default connection uses config values."""
@@ -39,7 +39,7 @@ class TestCliGlobalOptions:
             base_url="http://127.0.0.1:8000", api_key=None
         )
 
-    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
     def test_host_option_override(self, mock_load_config, mock_api_client):
         """Test --host option overrides config."""
@@ -61,7 +61,7 @@ class TestCliGlobalOptions:
             base_url="http://192.168.1.100:8000", api_key=None
         )
 
-    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
     def test_port_option_override(self, mock_load_config, mock_api_client):
         """Test --port option overrides config."""
@@ -83,7 +83,7 @@ class TestCliGlobalOptions:
             base_url="http://127.0.0.1:3000", api_key=None
         )
 
-    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
     def test_both_options_override(self, mock_load_config, mock_api_client):
         """Test --host and --port options both override config."""
@@ -119,7 +119,7 @@ class TestCliGlobalOptions:
         assert "API server host" in result.output
         assert "API server port" in result.output
 
-    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
     def test_connection_error_shows_overridden_host_port(
         self, mock_load_config, mock_api_client
@@ -163,7 +163,7 @@ class TestCliGlobalOptions:
         assert result.exit_code == 2
         assert "is not in the range 1<=x<=65535" in result.output
 
-    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
     def test_port_validation_valid_boundary(self, mock_load_config, mock_api_client):
         """Test that valid boundary ports (1, 65535) are accepted."""
@@ -190,7 +190,7 @@ class TestCliGlobalOptions:
             base_url="http://127.0.0.1:65535", api_key=None
         )
 
-    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
     def test_api_key_option_override(self, mock_load_config, mock_api_client):
         """Test --api-key option overrides config."""
@@ -212,7 +212,7 @@ class TestCliGlobalOptions:
             base_url="http://127.0.0.1:8000", api_key="cli-key"
         )
 
-    @patch("taskdog.infrastructure.api_client.TaskdogApiClient")
+    @patch("taskdog_client.TaskdogApiClient")
     @patch("taskdog.cli_main.load_cli_config")
     def test_api_key_from_config(self, mock_load_config, mock_api_client):
         """Test api_key from config is used when --api-key not provided."""

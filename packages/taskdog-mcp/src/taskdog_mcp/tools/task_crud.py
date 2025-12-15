@@ -11,15 +11,15 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import FastMCP
 
 if TYPE_CHECKING:
-    from taskdog_mcp.server import TaskdogMcpClients
+    from taskdog_client import TaskdogApiClient
 
 
-def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
+def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
     """Register task CRUD tools with the MCP server.
 
     Args:
         mcp: FastMCP server instance
-        clients: API clients container
+        client: Taskdog API client
     """
 
     @mcp.tool()
@@ -42,7 +42,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Dictionary with tasks list and metadata
         """
-        result = clients.queries.list_tasks(
+        result = client.list_tasks(
             all=include_archived,
             status=status,
             tags=tags,
@@ -76,7 +76,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Task details including notes
         """
-        result = clients.queries.get_task_detail(task_id)
+        result = client.get_task_detail(task_id)
         task = result.task
         return {
             "id": task.id,
@@ -137,7 +137,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
                 f"(e.g., '2025-12-11T09:00:00'): {e}"
             ) from e
 
-        result = clients.tasks.create_task(
+        result = client.create_task(
             name=name,
             priority=priority,
             deadline=deadline_dt,
@@ -197,7 +197,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
                 f"(e.g., '2025-12-11T09:00:00'): {e}"
             ) from e
 
-        result = clients.tasks.update_task(
+        result = client.update_task(
             task_id=task_id,
             name=name,
             priority=priority,
@@ -230,10 +230,10 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
             Confirmation message
         """
         if hard:
-            clients.tasks.remove_task(task_id)
+            client.remove_task(task_id)
             return {"message": f"Task {task_id} permanently deleted"}
         else:
-            result = clients.tasks.archive_task(task_id)
+            result = client.archive_task(task_id)
             return {
                 "id": result.id,
                 "message": f"Task '{result.name}' archived",
@@ -249,7 +249,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Restored task data
         """
-        result = clients.tasks.restore_task(task_id)
+        result = client.restore_task(task_id)
         return {
             "id": result.id,
             "name": result.name,

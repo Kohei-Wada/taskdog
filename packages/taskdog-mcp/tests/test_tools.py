@@ -75,16 +75,38 @@ def create_mock_task_operation_output(
     )
 
 
-def create_mock_clients() -> MagicMock:
-    """Create a mock TaskdogMcpClients with all required attributes."""
-    clients = MagicMock()
-    clients.tasks = MagicMock()
-    clients.lifecycle = MagicMock()
-    clients.queries = MagicMock()
-    clients.analytics = MagicMock()
-    clients.relationships = MagicMock()
-    clients.notes = MagicMock()
-    return clients
+def create_mock_client() -> MagicMock:
+    """Create a mock TaskdogApiClient with all required methods."""
+    client = MagicMock()
+    # TaskdogApiClient has flat methods (no nested clients)
+    # CRUD methods
+    client.list_tasks = MagicMock()
+    client.get_task_detail = MagicMock()
+    client.create_task = MagicMock()
+    client.update_task = MagicMock()
+    client.archive_task = MagicMock()
+    client.restore_task = MagicMock()
+    client.remove_task = MagicMock()
+    # Lifecycle methods
+    client.start_task = MagicMock()
+    client.complete_task = MagicMock()
+    client.pause_task = MagicMock()
+    client.cancel_task = MagicMock()
+    client.reopen_task = MagicMock()
+    client.fix_actual_times = MagicMock()
+    # Query methods
+    client.list_today_tasks = MagicMock()
+    client.list_week_tasks = MagicMock()
+    client.get_tag_statistics = MagicMock()
+    client.calculate_statistics = MagicMock()
+    # Relationship methods
+    client.add_dependency = MagicMock()
+    client.remove_dependency = MagicMock()
+    client.set_task_tags = MagicMock()
+    # Notes methods
+    client.get_task_notes = MagicMock()
+    client.update_task_notes = MagicMock()
+    return client
 
 
 class TestTaskCrudTools:
@@ -95,29 +117,29 @@ class TestTaskCrudTools:
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_crud
 
-        clients = create_mock_clients()
-        clients.queries.list_tasks.return_value = TaskListOutput(
+        client = create_mock_client()
+        client.list_tasks.return_value = TaskListOutput(
             tasks=[create_mock_task_row()],
             total_count=1,
             filtered_count=1,
         )
 
         mcp = FastMCP("test")
-        task_crud.register_tools(mcp, clients)
+        task_crud.register_tools(mcp, client)
 
         # Call the tool directly through the registered function
-        clients.queries.list_tasks.assert_not_called()  # Not called yet
+        client.list_tasks.assert_not_called()  # Not called yet
 
     def test_create_task_formats_response(self) -> None:
         """Test create_task tool formats response correctly."""
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_crud
 
-        clients = create_mock_clients()
-        clients.tasks.create_task.return_value = create_mock_task_operation_output()
+        client = create_mock_client()
+        client.create_task.return_value = create_mock_task_operation_output()
 
         mcp = FastMCP("test")
-        task_crud.register_tools(mcp, clients)
+        task_crud.register_tools(mcp, client)
 
         # Verify registration didn't raise
         assert mcp is not None
@@ -158,17 +180,17 @@ class TestTaskCrudTools:
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_crud
 
-        clients = create_mock_clients()
-        clients.tasks.create_task.return_value = create_mock_task_operation_output()
+        client = create_mock_client()
+        client.create_task.return_value = create_mock_task_operation_output()
 
         mcp = FastMCP("test")
-        task_crud.register_tools(mcp, clients)
+        task_crud.register_tools(mcp, client)
 
         create_task_fn = mcp._tool_manager._tools["create_task"].fn
         result = create_task_fn(name="Test Task", **input_kwargs)
 
-        clients.tasks.create_task.assert_called_once()
-        call_kwargs = clients.tasks.create_task.call_args.kwargs
+        client.create_task.assert_called_once()
+        call_kwargs = client.create_task.call_args.kwargs
         for key, expected_value in expected_kwargs.items():
             assert call_kwargs[key] == expected_value
         assert result["id"] == 1
@@ -211,20 +233,20 @@ class TestTaskCrudTools:
 
         from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 
-        clients = create_mock_clients()
-        clients.tasks.update_task.return_value = TaskUpdateOutput(
+        client = create_mock_client()
+        client.update_task.return_value = TaskUpdateOutput(
             task=create_mock_task_operation_output(),
             updated_fields=list(expected_kwargs.keys()),
         )
 
         mcp = FastMCP("test")
-        task_crud.register_tools(mcp, clients)
+        task_crud.register_tools(mcp, client)
 
         update_task_fn = mcp._tool_manager._tools["update_task"].fn
         result = update_task_fn(task_id=1, **input_kwargs)
 
-        clients.tasks.update_task.assert_called_once()
-        call_kwargs = clients.tasks.update_task.call_args.kwargs
+        client.update_task.assert_called_once()
+        call_kwargs = client.update_task.call_args.kwargs
         assert call_kwargs["task_id"] == 1
         for key, expected_value in expected_kwargs.items():
             assert call_kwargs[key] == expected_value
@@ -245,9 +267,9 @@ class TestTaskCrudTools:
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_crud
 
-        clients = create_mock_clients()
+        client = create_mock_client()
         mcp = FastMCP("test")
-        task_crud.register_tools(mcp, clients)
+        task_crud.register_tools(mcp, client)
 
         create_task_fn = mcp._tool_manager._tools["create_task"].fn
 
@@ -269,9 +291,9 @@ class TestTaskCrudTools:
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_crud
 
-        clients = create_mock_clients()
+        client = create_mock_client()
         mcp = FastMCP("test")
-        task_crud.register_tools(mcp, clients)
+        task_crud.register_tools(mcp, client)
 
         update_task_fn = mcp._tool_manager._tools["update_task"].fn
 
@@ -287,13 +309,13 @@ class TestTaskLifecycleTools:
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_lifecycle
 
-        clients = create_mock_clients()
+        client = create_mock_client()
         started_task = create_mock_task_operation_output(status=TaskStatus.IN_PROGRESS)
         started_task.actual_start = datetime.now()
-        clients.lifecycle.start_task.return_value = started_task
+        client.start_task.return_value = started_task
 
         mcp = FastMCP("test")
-        task_lifecycle.register_tools(mcp, clients)
+        task_lifecycle.register_tools(mcp, client)
 
         assert mcp is not None
 
@@ -306,8 +328,8 @@ class TestTaskQueryTools:
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_query
 
-        clients = create_mock_clients()
-        clients.analytics.calculate_statistics.return_value = StatisticsOutput(
+        client = create_mock_client()
+        client.calculate_statistics.return_value = StatisticsOutput(
             task_stats=TaskStatistics(
                 total_tasks=10,
                 pending_count=5,
@@ -337,7 +359,7 @@ class TestTaskQueryTools:
         )
 
         mcp = FastMCP("test")
-        task_query.register_tools(mcp, clients)
+        task_query.register_tools(mcp, client)
 
         assert mcp is not None
 
@@ -346,15 +368,15 @@ class TestTaskQueryTools:
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_query
 
-        clients = create_mock_clients()
-        clients.queries.get_tag_statistics.return_value = TagStatisticsOutput(
+        client = create_mock_client()
+        client.get_tag_statistics.return_value = TagStatisticsOutput(
             tag_counts={"work": 5, "personal": 3},
             total_tags=2,
             total_tagged_tasks=8,
         )
 
         mcp = FastMCP("test")
-        task_query.register_tools(mcp, clients)
+        task_query.register_tools(mcp, client)
 
         assert mcp is not None
 
@@ -367,10 +389,10 @@ class TestTaskDecompositionTools:
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_decomposition
 
-        clients = create_mock_clients()
+        client = create_mock_client()
 
         mcp = FastMCP("test")
-        task_decomposition.register_tools(mcp, clients)
+        task_decomposition.register_tools(mcp, client)
 
         assert mcp is not None
 

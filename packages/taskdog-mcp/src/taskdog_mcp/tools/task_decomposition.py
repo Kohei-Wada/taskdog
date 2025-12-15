@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import FastMCP
 
 if TYPE_CHECKING:
-    from taskdog_mcp.server import TaskdogMcpClients
+    from taskdog_client import TaskdogApiClient
 
 
 def _build_subtask_tags(
@@ -29,13 +29,13 @@ def _build_subtask_tags(
 
 
 def _create_single_subtask(
-    clients: TaskdogMcpClients,
+    client: TaskdogApiClient,
     subtask_data: dict[str, Any],
     subtask_tags: list[str],
     subtask_priority: int,
 ) -> dict[str, Any]:
     """Create a single subtask and return its info."""
-    result = clients.tasks.create_task(
+    result = client.create_task(
         name=subtask_data["name"],
         estimated_duration=subtask_data["estimated_duration"],
         priority=subtask_priority,
@@ -52,13 +52,13 @@ def _create_single_subtask(
 
 
 def _update_decomposition_notes(
-    clients: TaskdogMcpClients,
+    client: TaskdogApiClient,
     task_id: int,
     created_subtasks: list[dict[str, Any]],
 ) -> None:
     """Update original task notes with decomposition info."""
     try:
-        existing_notes, _ = clients.notes.get_task_notes(task_id)
+        existing_notes, _ = client.get_task_notes(task_id)
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
         note_addition = f"\n\n## Decomposition ({timestamp})\n"
         note_addition += f"Decomposed into {len(created_subtasks)} subtasks:\n"
@@ -68,12 +68,12 @@ def _update_decomposition_notes(
             )
 
         new_notes = (existing_notes or "") + note_addition
-        clients.notes.update_task_notes(task_id, new_notes)
+        client.update_task_notes(task_id, new_notes)
     except Exception:
         pass  # Notes update is optional
 
 
-def register_decomposition_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
+def register_decomposition_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
     """Register decompose_task tool with the MCP server."""
 
     @mcp.tool()
@@ -106,7 +106,7 @@ def register_decomposition_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> No
         Returns:
             Decomposition result with created subtask IDs
         """
-        original = clients.queries.get_task_detail(task_id)
+        original = client.get_task_detail(task_id)
         # TaskDetailOutput has .task (TaskDetailDto)
         original_task = original.task
         original_tags = list(original_task.tags) if original_task.tags else []
@@ -125,15 +125,13 @@ def register_decomposition_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> No
                 )
 
                 subtask_info = _create_single_subtask(
-                    clients, subtask_data, subtask_tags, subtask_priority
+                    client, subtask_data, subtask_tags, subtask_priority
                 )
                 created_subtasks.append(subtask_info)
 
                 if create_dependencies and previous_task_id is not None:
                     try:
-                        clients.relationships.add_dependency(
-                            subtask_info["id"], previous_task_id
-                        )
+                        client.add_dependency(subtask_info["id"], previous_task_id)
                     except Exception as dep_error:
                         errors.append(
                             {
@@ -155,11 +153,11 @@ def register_decomposition_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> No
                 )
 
         if created_subtasks:
-            _update_decomposition_notes(clients, task_id, created_subtasks)
+            _update_decomposition_notes(client, task_id, created_subtasks)
 
         if archive_original and created_subtasks:
             try:
-                clients.tasks.archive_task(task_id)
+                client.archive_task(task_id)
             except Exception as archive_error:
                 errors.append(
                     {
@@ -184,7 +182,7 @@ def register_decomposition_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> No
         }
 
 
-def register_relationship_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
+def register_relationship_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
     """Register relationship management tools with the MCP server."""
 
     @mcp.tool()
@@ -200,7 +198,7 @@ def register_relationship_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> Non
         Returns:
             Confirmation with updated task info
         """
-        result = clients.relationships.add_dependency(task_id, depends_on_id)
+        result = client.add_dependency(task_id, depends_on_id)
         # TaskOperationOutput is flat
         return {
             "id": result.id,
@@ -220,7 +218,7 @@ def register_relationship_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> Non
         Returns:
             Confirmation with updated task info
         """
-        result = clients.relationships.remove_dependency(task_id, depends_on_id)
+        result = client.remove_dependency(task_id, depends_on_id)
         return {
             "id": result.id,
             "name": result.name,
@@ -239,7 +237,7 @@ def register_relationship_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> Non
         Returns:
             Updated task info with new tags
         """
-        result = clients.relationships.set_task_tags(task_id, tags)
+        result = client.set_task_tags(task_id, tags)
         return {
             "id": result.id,
             "name": result.name,
@@ -248,7 +246,7 @@ def register_relationship_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> Non
         }
 
 
-def register_notes_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
+def register_notes_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
     """Register notes management tools with the MCP server."""
 
     @mcp.tool()
@@ -262,7 +260,7 @@ def register_notes_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Confirmation message
         """
-        clients.notes.update_task_notes(task_id, content)
+        client.update_task_notes(task_id, content)
         return {
             "id": task_id,
             "message": f"Notes updated for task {task_id}",
@@ -278,7 +276,7 @@ def register_notes_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Task notes content
         """
-        content, has_notes = clients.notes.get_task_notes(task_id)
+        content, has_notes = client.get_task_notes(task_id)
         return {
             "id": task_id,
             "has_notes": has_notes,
@@ -286,13 +284,13 @@ def register_notes_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         }
 
 
-def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
+def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
     """Register all task decomposition and relationship tools.
 
     Args:
         mcp: FastMCP server instance
-        clients: API clients container
+        client: Taskdog API client
     """
-    register_decomposition_tools(mcp, clients)
-    register_relationship_tools(mcp, clients)
-    register_notes_tools(mcp, clients)
+    register_decomposition_tools(mcp, client)
+    register_relationship_tools(mcp, client)
+    register_notes_tools(mcp, client)

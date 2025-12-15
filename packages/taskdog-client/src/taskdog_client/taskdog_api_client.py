@@ -1,24 +1,22 @@
 """Unified API client facade for Taskdog server communication.
 
-This module provides backward compatibility by delegating to specialized
-clients while maintaining the same public API.
+This module provides a unified interface by delegating to specialized
+clients while maintaining a simple public API.
 """
 
 from datetime import date, datetime
 from typing import Any
 
 import httpx  # type: ignore[import-not-found]
-from taskdog_client import (  # type: ignore[import-not-found]
-    AnalyticsClient,
-    AuditClient,
-    BaseApiClient,
-    LifecycleClient,
-    NotesClient,
-    QueryClient,
-    RelationshipClient,
-    TaskClient,
-)
 
+from taskdog_client.analytics_client import AnalyticsClient
+from taskdog_client.audit_client import AuditClient
+from taskdog_client.base_client import BaseApiClient
+from taskdog_client.lifecycle_client import LifecycleClient
+from taskdog_client.notes_client import NotesClient
+from taskdog_client.query_client import QueryClient
+from taskdog_client.relationship_client import RelationshipClient
+from taskdog_client.task_client import TaskClient
 from taskdog_core.application.dto.audit_log_dto import AuditLogListOutput
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput

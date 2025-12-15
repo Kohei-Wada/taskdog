@@ -10,15 +10,15 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import FastMCP
 
 if TYPE_CHECKING:
-    from taskdog_mcp.server import TaskdogMcpClients
+    from taskdog_client import TaskdogApiClient
 
 
-def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
+def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
     """Register task query tools with the MCP server.
 
     Args:
         mcp: FastMCP server instance
-        clients: API clients container
+        client: Taskdog API client
     """
 
     @mcp.tool()
@@ -31,7 +31,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Statistics including counts by status, completion rates, etc.
         """
-        result = clients.analytics.calculate_statistics(period)
+        result = client.calculate_statistics(period)
         # StatisticsOutput has .task_stats, .time_stats, etc.
         task_stats = result.task_stats
         time_stats = result.time_stats
@@ -68,7 +68,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Today's tasks list
         """
-        result = clients.queries.list_today_tasks(
+        result = client.list_today_tasks(
             status=status,
             sort_by=sort_by,
         )
@@ -107,7 +107,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             This week's tasks list
         """
-        result = clients.queries.list_week_tasks(
+        result = client.list_week_tasks(
             status=status,
             sort_by=sort_by,
         )
@@ -134,7 +134,7 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
         Returns:
             Tag statistics including task counts per tag
         """
-        result = clients.queries.get_tag_statistics()
+        result = client.get_tag_statistics()
         # TagStatisticsOutput has .tag_counts (dict), .total_tags (int)
         return {
             "tags": [
@@ -161,14 +161,14 @@ def register_tools(mcp: FastMCP, clients: TaskdogMcpClients) -> None:
             List of executable tasks with details
         """
         # Get pending and in-progress tasks
-        pending = clients.queries.list_tasks(
+        pending = client.list_tasks(
             status="pending",
             tags=tags,
             sort_by="priority",
             reverse=True,  # Higher priority first
         )
 
-        in_progress = clients.queries.list_tasks(
+        in_progress = client.list_tasks(
             status="in_progress",
             tags=tags,
             sort_by="priority",
