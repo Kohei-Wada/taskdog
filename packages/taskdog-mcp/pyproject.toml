@@ -10,8 +10,8 @@ authors = [
 license = { text = "MIT" }
 
 dependencies = [
-    "taskdog-client==0.5.0",
-    "taskdog-core==0.5.0",
+    "taskdog-client==0.6.0",
+    "taskdog-core==0.6.0",
     "mcp>=1.2.0",
 ]
 
