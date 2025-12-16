@@ -247,9 +247,9 @@ class TaskdogTUI(App):
             config=self._cli_config,
         )
 
-        # Initialize presenters for view models (will be updated to not use notes_repository)
+        # Initialize presenters for view models
         self.table_presenter = TablePresenter(api_client)
-        self.gantt_presenter = GanttPresenter(api_client)
+        self.gantt_presenter = GanttPresenter()
 
         # Initialize TaskDataLoader for data fetching
         self.task_data_loader = TaskDataLoader(
