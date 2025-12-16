@@ -98,9 +98,11 @@ class AlgorithmSelectionDialog(
                     validators=[StartDateTextualValidator()],
                 )
 
-                yield Label("Force:", classes="field-label")
+                yield Label(
+                    "Override existing schedules (reschedule already scheduled tasks):",
+                    classes="field-label",
+                )
                 yield Checkbox(
-                    "Override existing schedules (reschedule already scheduled tasks)",
                     id="force-checkbox",
                 )
 
