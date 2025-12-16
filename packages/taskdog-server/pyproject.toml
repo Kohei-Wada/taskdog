@@ -1,6 +1,6 @@
 [project]
 name = "taskdog-server"
-version = "0.5.0"
+version = "0.6.0"
 description = "FastAPI server for Taskdog task management system"
 readme = "README.md"
 requires-python = ">=3.13"
