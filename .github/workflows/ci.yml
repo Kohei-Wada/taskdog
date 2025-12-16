@@ -61,8 +61,12 @@ jobs:
         run: make typecheck
 
   test:
-    name: Test
+    name: Test (${{ matrix.package }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [taskdog-core, taskdog-client, taskdog-server, taskdog-ui, taskdog-mcp]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -81,11 +85,13 @@ jobs:
         run: |
           uv sync --all-extras --dev
           uv pip install -e "packages/taskdog-core[dev]"
+          uv pip install -e "packages/taskdog-client[dev]"
           uv pip install -e "packages/taskdog-server[dev]"
           uv pip install -e "packages/taskdog-ui[dev]"
+          uv pip install -e "packages/taskdog-mcp[dev]"
 
-      - name: Run tests with coverage
-        run: make test
+      - name: Run tests
+        run: make test-${{ matrix.package }} >/dev/null 2>&1
 
   security:
     name: Security Scan
