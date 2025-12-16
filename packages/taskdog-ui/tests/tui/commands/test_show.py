@@ -179,21 +179,19 @@ class TestShowCommandOnEditSuccess:
         self.mock_context = MagicMock()
         self.command = ShowCommand(self.mock_app, self.mock_context)
 
-    def test_shows_success_notification(self) -> None:
-        """Test that success notification is shown."""
+    def test_does_not_show_explicit_notification(self) -> None:
+        """Test that no explicit notification is shown (handled via WebSocket)."""
         self.command.notify_success = MagicMock()
         self.command.execute = MagicMock()
 
         self.command._on_edit_success("Test Task", 42)
 
-        self.command.notify_success.assert_called_once()
-        msg = self.command.notify_success.call_args[0][0]
-        assert "Test Task" in msg
-        assert "42" in msg
+        # Notification is handled via WebSocket (task_updated event),
+        # not via explicit notify_success call
+        self.command.notify_success.assert_not_called()
 
     def test_re_displays_detail_screen(self) -> None:
         """Test that execute is called to re-display screen."""
-        self.command.notify_success = MagicMock()
         self.command.execute = MagicMock()
 
         self.command._on_edit_success("Task", 1)

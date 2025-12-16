@@ -67,6 +67,6 @@ class ShowCommand(TUICommandBase):
             task_name: Name of the task
             task_id: ID of the task
         """
-        self.notify_success(f"Note saved for task: {task_name} (ID: {task_id})")
+        # Notification is sent via WebSocket (task_updated event with "notes" field)
         # Re-display detail screen with updated notes
         self.execute()
