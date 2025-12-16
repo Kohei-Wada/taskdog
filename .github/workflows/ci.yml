@@ -66,7 +66,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [taskdog-core, taskdog-client, taskdog-server, taskdog-ui, taskdog-mcp]
+        include:
+          - package: taskdog-core
+            deps: ""
+          - package: taskdog-client
+            deps: "uv pip install -e packages/taskdog-core[dev]"
+          - package: taskdog-server
+            deps: "uv pip install -e packages/taskdog-core[dev]"
+          - package: taskdog-ui
+            deps: "uv pip install -e packages/taskdog-core[dev] && uv pip install -e packages/taskdog-client[dev]"
+          - package: taskdog-mcp
+            deps: "uv pip install -e packages/taskdog-core[dev] && uv pip install -e packages/taskdog-client[dev]"
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -84,14 +94,11 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --all-extras --dev
-          uv pip install -e "packages/taskdog-core[dev]"
-          uv pip install -e "packages/taskdog-client[dev]"
-          uv pip install -e "packages/taskdog-server[dev]"
-          uv pip install -e "packages/taskdog-ui[dev]"
-          uv pip install -e "packages/taskdog-mcp[dev]"
+          ${{ matrix.deps }}
+          uv pip install -e "packages/${{ matrix.package }}[dev]"
 
       - name: Run tests
-        run: make test-${{ matrix.package }} >/dev/null 2>&1
+        run: make test-${{ matrix.package }}
 
   security:
     name: Security Scan
