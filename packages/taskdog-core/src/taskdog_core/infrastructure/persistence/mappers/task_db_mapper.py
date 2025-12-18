@@ -119,10 +119,9 @@ class TaskDbMapper(TaskMapperInterface):
         assert model.depends_on is not None, "TaskModel.depends_on must not be None"
 
         # Parse JSON fields
-        raw_allocations = (
+        daily_allocations = parse_date_dict(
             json.loads(model.daily_allocations) if model.daily_allocations else {}
         )
-        daily_allocations = parse_date_dict(raw_allocations)
         depends_on = json.loads(model.depends_on)
 
         # Phase 6: Get tags from normalized relationship only
