@@ -8,11 +8,11 @@ The mapper reads/writes tags via the TaskModel.tag_models relationship.
 """
 
 import json
-from datetime import date
 from typing import Any
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.infrastructure.persistence.database.models.task_model import TaskModel
+from taskdog_core.shared.utils.datetime_parser import format_date_dict, parse_date_dict
 
 from .task_mapper_interface import TaskMapperInterface
 
@@ -62,7 +62,9 @@ class TaskDbMapper(TaskMapperInterface):
         }
         # Fields requiring transformation
         result["status"] = task.status.value
-        result["daily_allocations"] = self._serialize_date_dict(task.daily_allocations)
+        result["daily_allocations"] = json.dumps(
+            format_date_dict(task.daily_allocations)
+        )
         result["depends_on"] = json.dumps(task.depends_on)
         return result
 
@@ -117,7 +119,9 @@ class TaskDbMapper(TaskMapperInterface):
         assert model.depends_on is not None, "TaskModel.depends_on must not be None"
 
         # Parse JSON fields
-        daily_allocations = self._deserialize_date_dict(model.daily_allocations)
+        daily_allocations = parse_date_dict(
+            json.loads(model.daily_allocations) if model.daily_allocations else {}
+        )
         depends_on = json.loads(model.depends_on)
 
         # Phase 6: Get tags from normalized relationship only
@@ -159,45 +163,3 @@ class TaskDbMapper(TaskMapperInterface):
         for field, value in self._get_serialized_fields(task).items():
             if field != "id":  # id should not be updated
                 setattr(model, field, value)
-
-    @staticmethod
-    def _serialize_date_dict(date_dict: dict[date, float]) -> str:
-        """Serialize date dictionary to JSON string.
-
-        Args:
-            date_dict: Dictionary with date keys and float values
-
-        Returns:
-            JSON string representation
-        """
-        if not date_dict:
-            return "{}"
-        # Convert date keys to ISO format strings
-        str_dict = {k.isoformat(): v for k, v in date_dict.items()}
-        return json.dumps(str_dict)
-
-    @staticmethod
-    def _deserialize_date_dict(json_str: str) -> dict[date, float]:
-        """Deserialize JSON string to date dictionary.
-
-        Args:
-            json_str: JSON string with date keys
-
-        Returns:
-            Dictionary with date object keys and float values
-        """
-        if not json_str or json_str == "{}":
-            return {}
-
-        str_dict = json.loads(json_str)
-        result: dict[date, float] = {}
-
-        for date_str, value in str_dict.items():
-            try:
-                date_obj = date.fromisoformat(date_str)
-                result[date_obj] = value
-            except (ValueError, AttributeError):
-                # Skip invalid dates
-                continue
-
-        return result

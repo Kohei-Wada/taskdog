@@ -9,6 +9,7 @@ from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
+from taskdog_core.shared.utils.datetime_parser import format_date_dict
 from taskdog_server.api.models.responses import (
     GanttDateRange,
     GanttResponse,
@@ -48,29 +49,21 @@ def convert_to_gantt_response(gantt_output: GanttOutput) -> GanttResponse:
             deadline=task.deadline,
             is_fixed=False,  # Not available in GanttTaskDto
             is_archived=False,  # Not available in GanttTaskDto
-            daily_allocations={
-                date_obj.isoformat(): hours
-                for date_obj, hours in gantt_output.task_daily_hours.get(
-                    task.id, {}
-                ).items()
-            },
+            daily_allocations=format_date_dict(
+                gantt_output.task_daily_hours.get(task.id, {})
+            ),
         )
         for task in gantt_output.tasks
     ]
 
     # Convert task_daily_hours (nested dict with date keys)
     task_daily_hours = {
-        task_id: {
-            date_obj.isoformat(): hours for date_obj, hours in daily_hours.items()
-        }
+        task_id: format_date_dict(daily_hours)
         for task_id, daily_hours in gantt_output.task_daily_hours.items()
     }
 
     # Convert daily_workload
-    daily_workload = {
-        date_obj.isoformat(): hours
-        for date_obj, hours in gantt_output.daily_workload.items()
-    }
+    daily_workload = format_date_dict(gantt_output.daily_workload)
 
     # Convert holidays (set of dates to list of ISO strings)
     holidays = [holiday.isoformat() for holiday in gantt_output.holidays]

@@ -5,8 +5,10 @@ from datetime import date, datetime
 import pytest
 
 from taskdog_core.shared.utils.datetime_parser import (
+    format_date_dict,
     format_iso_date,
     format_iso_datetime,
+    parse_date_dict,
     parse_iso_date,
     parse_iso_datetime,
 )
@@ -121,3 +123,64 @@ class TestFormatIsoDate:
     def test_none_returns_none(self):
         """None input should return None."""
         assert format_iso_date(None) is None
+
+
+class TestParseDateDict:
+    """Test cases for parse_date_dict."""
+
+    def test_empty_dict_returns_empty(self):
+        """Empty dict should return empty dict."""
+        assert parse_date_dict({}) == {}
+
+    def test_parse_dict_with_values(self):
+        """Dict with ISO date keys should parse correctly."""
+        input_dict = {
+            "2025-01-15": 2.5,
+            "2025-01-16": 3.0,
+        }
+        expected = {
+            date(2025, 1, 15): 2.5,
+            date(2025, 1, 16): 3.0,
+        }
+        assert parse_date_dict(input_dict) == expected
+
+    def test_parse_dict_with_datetime_keys(self):
+        """Dict with datetime string keys should parse to date keys."""
+        input_dict = {"2025-01-15T10:30:00": 1.5}
+        expected = {date(2025, 1, 15): 1.5}
+        assert parse_date_dict(input_dict) == expected
+
+    def test_invalid_key_raises_valueerror(self):
+        """Invalid date key should raise ValueError."""
+        with pytest.raises(ValueError):
+            parse_date_dict({"invalid-date": 1.0})
+
+
+class TestFormatDateDict:
+    """Test cases for format_date_dict."""
+
+    def test_empty_dict_returns_empty(self):
+        """Empty dict should return empty dict."""
+        assert format_date_dict({}) == {}
+
+    def test_format_dict_with_values(self):
+        """Dict with date keys should format to ISO string keys."""
+        input_dict = {
+            date(2025, 1, 15): 2.5,
+            date(2025, 1, 16): 3.0,
+        }
+        expected = {
+            "2025-01-15": 2.5,
+            "2025-01-16": 3.0,
+        }
+        assert format_date_dict(input_dict) == expected
+
+    def test_roundtrip_conversion(self):
+        """parse_date_dict and format_date_dict should be inverse operations."""
+        original = {
+            date(2025, 1, 15): 2.5,
+            date(2025, 1, 16): 3.0,
+        }
+        formatted = format_date_dict(original)
+        parsed = parse_date_dict(formatted)
+        assert parsed == original
