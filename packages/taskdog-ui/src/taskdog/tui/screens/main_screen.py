@@ -168,6 +168,9 @@ class MainScreen(Screen[None]):
             self.task_table.clear_filter()  # type: ignore[no-untyped-call]
             self.task_table.focus()
 
+        # Update search result count after clearing filter
+        self._update_search_result()
+
     def _update_search_result(self) -> None:
         """Update the search result count display."""
         if self.custom_footer and self.task_table:
