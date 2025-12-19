@@ -74,7 +74,8 @@ class CustomFooter(Container):
         with Horizontal(id="footer-search-container"):
             yield Static("", id="footer-filter-chain")
             search_input = Input(
-                placeholder="Press '/' to search tasks", id=SEARCH_INPUT_ID
+                placeholder="Press '/' to search, Ctrl-R to refine",
+                id=SEARCH_INPUT_ID,
             )
             search_input.can_focus = True
             yield search_input
