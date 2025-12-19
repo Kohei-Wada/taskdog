@@ -13,7 +13,6 @@ from taskdog.tui.state import TUIState
 from taskdog.tui.widgets.audit_log_widget import AuditLogWidget
 from taskdog.tui.widgets.custom_footer import CustomFooter
 from taskdog.tui.widgets.gantt_widget import GanttWidget
-from taskdog.tui.widgets.search_input import SearchInput
 from taskdog.tui.widgets.task_table import TaskTable
 from taskdog.view_models.task_view_model import TaskRowViewModel
 
@@ -53,7 +52,6 @@ class MainScreen(Screen[None]):
         self.state = state
         self.task_table: TaskTable | None = None
         self.gantt_widget: GanttWidget | None = None
-        self.search_input: SearchInput | None = None
         self.custom_footer: CustomFooter | None = None
         self.audit_widget: AuditLogWidget | None = None
         self._audit_panel_visible: bool = False
@@ -64,34 +62,29 @@ class MainScreen(Screen[None]):
         Returns:
             Iterable of widgets to display
         """
+        # Header at the top
+        yield Header(show_clock=True, id="main-header")
+
         with Horizontal(id="root-container"):
-            # Left side: Header, main content, footer
+            # Left side: main content
             with Vertical(id="left-content"):
-                # Header (simplified, no connection status)
-                yield Header(show_clock=True, id="main-header")
+                # Gantt chart section (main display)
+                self.gantt_widget = GanttWidget(id="gantt-widget")
+                self.gantt_widget.border_title = "Gantt Chart"
+                yield self.gantt_widget
 
-                with Vertical(id="main-content"):
-                    # Gantt chart section (main display)
-                    self.gantt_widget = GanttWidget(id="gantt-widget")
-                    self.gantt_widget.border_title = "Gantt Chart"
-                    yield self.gantt_widget
-
-                    # Task table (main content)
-                    self.task_table = TaskTable(id="task-table")  # type: ignore[no-untyped-call]
-                    self.task_table.border_title = "Tasks"
-                    yield self.task_table
-
-                    # Search input at the bottom (Vim-style)
-                    self.search_input = SearchInput(id="main-search-input")
-                    yield self.search_input
-
-                # Custom footer with keybindings and connection status
-                self.custom_footer = CustomFooter(id="custom-footer")
-                yield self.custom_footer
+                # Task table (main content)
+                self.task_table = TaskTable(id="task-table")  # type: ignore[no-untyped-call]
+                self.task_table.border_title = "Tasks"
+                yield self.task_table
 
             # Right side: Audit log panel (full height, hidden by default)
             self.audit_widget = AuditLogWidget(id="audit-panel")
             yield self.audit_widget
+
+        # Custom footer at screen level (full width)
+        self.custom_footer = CustomFooter(id="custom-footer")
+        yield self.custom_footer
 
     def on_mount(self) -> None:
         """Called when screen is mounted."""
@@ -115,30 +108,30 @@ class MainScreen(Screen[None]):
             self.task_table.filter_tasks(event.query)
             self._update_search_result()
 
-    def on_search_input_submitted(self, event: SearchInput.Submitted) -> None:
+    def on_custom_footer_submitted(self, event: CustomFooter.Submitted) -> None:
         """Handle Enter key press in search input.
 
         Args:
-            event: SearchInput submitted event
+            event: CustomFooter submitted event
         """
         # Move focus back to the task table
         if self.task_table:
             self.task_table.focus()
 
-    def on_search_input_refine_filter(self, event: SearchInput.RefineFilter) -> None:
+    def on_custom_footer_refine_filter(self, event: CustomFooter.RefineFilter) -> None:
         """Handle Ctrl+R key press in search input to refine filter.
 
         Args:
-            event: SearchInput RefineFilter event
+            event: CustomFooter RefineFilter event
         """
         self._refine_filter()
 
     def _refine_filter(self) -> None:
         """Add current search query to filter chain for progressive filtering."""
-        if not self.search_input or not self.task_table:
+        if not self.custom_footer or not self.task_table:
             return
 
-        current_query = self.search_input.value
+        current_query = self.custom_footer.value
         if not current_query:
             return
 
@@ -146,11 +139,11 @@ class MainScreen(Screen[None]):
         self.task_table.add_filter_to_chain(current_query)
 
         # Clear search input for new query
-        self.search_input.clear_input_only()
+        self.custom_footer.clear_input_only()
 
         # Update filter chain display
         filter_chain = self.task_table.filter_chain
-        self.search_input.update_filter_chain(filter_chain)
+        self.custom_footer.update_filter_chain(filter_chain)
 
         # Reapply filters to show refined results
         self.task_table.filter_tasks("")
@@ -160,13 +153,13 @@ class MainScreen(Screen[None]):
 
     def show_search(self) -> None:
         """Focus the search input."""
-        if self.search_input:
-            self.search_input.focus_input()
+        if self.custom_footer:
+            self.custom_footer.focus_input()
 
     def hide_search(self) -> None:
         """Clear the search filter and return focus to table."""
-        if self.search_input:
-            self.search_input.clear()
+        if self.custom_footer:
+            self.custom_footer.clear()
 
         if self.task_table:
             self.task_table.clear_filter()  # type: ignore[no-untyped-call]
@@ -174,10 +167,10 @@ class MainScreen(Screen[None]):
 
     def _update_search_result(self) -> None:
         """Update the search result count display."""
-        if self.search_input and self.task_table:
+        if self.custom_footer and self.task_table:
             matched = self.task_table.match_count
             total = self.task_table.total_count
-            self.search_input.update_result(matched, total)
+            self.custom_footer.update_result(matched, total)
 
     # Delegate methods to task_table for compatibility
 

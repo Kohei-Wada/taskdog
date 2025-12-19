@@ -36,15 +36,19 @@
     color: $error;
 }
 
-/* Custom Footer */
+/* Custom Footer (2-row layout: status bar + search bar) */
 #custom-footer {
     width: 100%;
     height: auto;
     dock: bottom;
     background: $surface;
+    margin: 0;
+    padding: 0;
+    layout: vertical;
 }
 
-#footer-container {
+/* Row 1: Status bar */
+#footer-status-row {
     width: 100%;
     height: auto;
     padding: 0 1;
@@ -63,6 +67,42 @@
     content-align: right middle;
     padding: 0 2;
     text-style: bold;
+}
+
+/* Row 2: Search bar container (full width) */
+#footer-search-container {
+    width: 100%;
+    height: 3;
+    border: round $primary;
+    margin: 0;
+    padding: 0;
+}
+
+#footer-filter-chain {
+    width: auto;
+    height: auto;
+    padding: 0 1;
+    content-align: left middle;
+    color: $accent;
+}
+
+#footer-search-container:focus-within {
+    border: double $accent;
+}
+
+#footer-search-input {
+    width: 1fr;
+    height: auto;
+    border: none;
+    padding: 0;
+}
+
+#footer-search-result {
+    width: auto;
+    height: auto;
+    padding: 0 1;
+    content-align: right middle;
+    color: $text-muted;
 }
 
 /* Dialog Components */
@@ -95,52 +135,12 @@ Input {
     border: double $accent;
 }
 
-/* Search Components */
-.search-container {
-    height: auto;
-    width: 100%;
-    padding: 0 2;
-    background: transparent;
-    margin-top: 1;
-    margin-bottom: 0;
-}
-
-/* Main search input at the bottom (Vim-style) */
-#main-search-input {
-    width: 100%;
-    height: auto;
-    padding: 0;
-    margin: 0;
-    background: transparent;
-}
-
-#search-input-container {
-    width: 100%;
-    height: 3;
-}
-
-#search-input {
-    width: 1fr;
-    height: 3;
-}
-
-#search-input:focus {
-    border: double $accent;
-}
-
+/* Search Components (legacy - kept for reference) */
 .search-result {
-    width: 100%;
-    height: auto;
-    padding: 0 0 0 2;
-    text-align: left;
     color: $text-muted;
 }
 
 .filter-chain {
-    width: 100%;
-    height: auto;
-    padding: 0 0 0 2;
-    text-align: left;
     color: $accent;
 }
 
