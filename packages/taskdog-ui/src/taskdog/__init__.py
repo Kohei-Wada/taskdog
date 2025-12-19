@@ -2,4 +2,7 @@
 
 from importlib.metadata import version
 
-__version__ = version("taskdog-ui")
+try:
+    __version__ = version("taskdog-ui")
+except Exception:
+    __version__ = "unknown"
