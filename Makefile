@@ -4,7 +4,8 @@
         tool-install-ui tool-install-server check-deps \
         clean lint format typecheck check \
         lint-core lint-client lint-server lint-ui lint-mcp \
-        typecheck-core typecheck-client typecheck-server typecheck-ui typecheck-mcp
+        typecheck-core typecheck-client typecheck-server typecheck-ui typecheck-mcp \
+        bump-version show-version
 
 .DEFAULT_GOAL := help
 
@@ -33,6 +34,9 @@ help: ## Show this help message
 	@echo ""
 	@echo "🧹 Cleanup:"
 	@grep -E '^clean.*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@echo ""
+	@echo "🏷️  Version:"
+	@grep -E '^(bump-version|show-version).*:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 
 # ============================================================================
@@ -267,3 +271,16 @@ else ifeq ($(PLATFORM),macos)
 	-launchctl stop com.github.kohei-wada.taskdog-server 2>/dev/null || true
 endif
 	@echo "✓ Clean complete!"
+
+# ============================================================================
+# Version Management Targets
+# ============================================================================
+
+bump-version: ## Bump version (e.g., make bump-version VERSION=0.8.0)
+ifndef VERSION
+	$(error VERSION is required. Usage: make bump-version VERSION=0.8.0)
+endif
+	python scripts/bump_version.py $(VERSION)
+
+show-version: ## Show current version
+	@python scripts/bump_version.py --current

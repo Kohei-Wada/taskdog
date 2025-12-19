@@ -3,4 +3,9 @@
 FastAPI-based REST API server for task management.
 """
 
-__version__ = "0.7.0"
+from importlib.metadata import version
+
+try:
+    __version__ = version("taskdog-server")
+except Exception:
+    __version__ = "unknown"
