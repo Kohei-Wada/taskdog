@@ -10,7 +10,7 @@ MainScreen {
     text-align: center;
 }
 
-#gantt-title, #table-title {
+#table-title {
     padding: 1 0;
     text-align: left;
     background: transparent;
@@ -29,12 +29,29 @@ MainScreen {
     border: double $accent;
 }
 
-/* Gantt data table - inside gantt widget */
+/* Gantt title - fixed at top */
+#gantt-title {
+    width: 100%;
+    height: auto;
+    text-align: center;
+    padding: 0 0 1 0;
+    dock: top;
+}
+
+/* Gantt legend - fixed at bottom */
+#gantt-legend {
+    width: 100%;
+    height: auto;
+    text-align: center;
+    padding: 1 0 0 0;
+    dock: bottom;
+}
+
+/* Gantt data table - takes remaining space, scrollable */
 #gantt-table {
     width: 100%;
     max-width: 100%;
-    height: auto;
-    min-height: 30;
+    height: 1fr;
     border: round $primary;
 }
 

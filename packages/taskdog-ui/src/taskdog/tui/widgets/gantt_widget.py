@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import VerticalScroll
+from textual.containers import Vertical
 from textual.events import Resize
 from textual.widgets import Static
 
@@ -29,17 +29,22 @@ from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog_core.shared.constants.time import DAYS_PER_WEEK
 
 
-class GanttWidget(VerticalScroll, TUIWidget):
+class GanttWidget(Vertical, TUIWidget):
     """A widget for displaying gantt chart using GanttDataTable.
 
     This widget manages the GanttDataTable and handles date range calculations
     based on available screen width.
+
+    Layout:
+    - Title (fixed at top, dock: top)
+    - GanttDataTable (scrollable, height: 1fr)
+    - Legend (fixed at bottom, dock: bottom)
     """
 
     # Allow maximize for this widget (same as TaskTable)
     allow_maximize = True
 
-    # Add Vi-style bindings for scrolling
+    # Add Vi-style bindings for scrolling (delegated to internal scroll container)
     BINDINGS: ClassVar = [
         Binding(
             "j",
@@ -113,21 +118,58 @@ class GanttWidget(VerticalScroll, TUIWidget):
         Returns:
             Iterable of widgets to display
         """
-        # Title above the table
-        self._title_widget = Static("")
-        self._title_widget.styles.text_align = "center"
-        self._title_widget.styles.margin = (0, 0, 1, 0)  # Bottom margin
+        # Title at top (fixed - not scrollable)
+        self._title_widget = Static("", id="gantt-title")
         yield self._title_widget
 
-        # Create GanttDataTable
+        # GanttDataTable (scrollable via DataTable's built-in scroll)
         self._gantt_table = GanttDataTable(id="gantt-table")
         yield self._gantt_table
 
-        # Legend below the table
-        self._legend_widget = Static("")
-        self._legend_widget.styles.text_align = "center"
-        self._legend_widget.styles.margin = (1, 0, 0, 0)  # Top margin
+        # Legend at bottom (fixed - not scrollable)
+        self._legend_widget = Static("", id="gantt-legend")
         yield self._legend_widget
+
+    # Vi-style scroll actions - delegate to gantt table
+    def action_scroll_down(self) -> None:
+        """Scroll down one line."""
+        if self._gantt_table:
+            self._gantt_table.scroll_down()
+
+    def action_scroll_up(self) -> None:
+        """Scroll up one line."""
+        if self._gantt_table:
+            self._gantt_table.scroll_up()
+
+    def action_scroll_home(self) -> None:
+        """Scroll to top."""
+        if self._gantt_table:
+            self._gantt_table.scroll_home()
+
+    def action_scroll_end(self) -> None:
+        """Scroll to bottom."""
+        if self._gantt_table:
+            self._gantt_table.scroll_end()
+
+    def action_page_down(self) -> None:
+        """Scroll down half a page."""
+        if self._gantt_table:
+            self._gantt_table.scroll_page_down()
+
+    def action_page_up(self) -> None:
+        """Scroll up half a page."""
+        if self._gantt_table:
+            self._gantt_table.scroll_page_up()
+
+    def action_scroll_left(self) -> None:
+        """Scroll left."""
+        if self._gantt_table:
+            self._gantt_table.scroll_left()
+
+    def action_scroll_right(self) -> None:
+        """Scroll right."""
+        if self._gantt_table:
+            self._gantt_table.scroll_right()
 
     def update_gantt(
         self,
