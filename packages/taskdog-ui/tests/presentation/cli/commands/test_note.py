@@ -395,6 +395,24 @@ class TestNoteCommand:
             assert result is None
             self.console_writer.error.assert_called_once()
 
+    def test_empty_stdin_falls_back_to_editor(self):
+        """Test that empty stdin returns None (falls back to editor mode)."""
+        from taskdog.cli.commands.note import _read_content_from_source
+
+        with (
+            patch("taskdog.cli.commands.note.sys.stdin") as mock_stdin,
+            patch("taskdog.cli.commands.note.select.select") as mock_select,
+        ):
+            mock_stdin.isatty.return_value = False
+            mock_select.return_value = ([mock_stdin], [], [])
+            mock_stdin.read.return_value = ""  # Empty stdin
+
+            # Execute
+            result = _read_content_from_source(None, None, self.console_writer)
+
+            # Verify: should return None to fall back to editor mode
+            assert result is None
+
     def test_editor_not_found(self):
         """Test error when $EDITOR is not found."""
         from taskdog.cli.commands.note import _edit_with_editor
@@ -514,3 +532,77 @@ class TestNoteCommand:
 
             # Verify
             self.console_writer.error.assert_called()
+
+    def test_editor_no_changes_skips_save(self):
+        """Test that no API call is made when content is unchanged."""
+        from taskdog.cli.commands.note import _edit_with_editor
+
+        original_content = "existing content"
+        self.api_client.get_task_notes.return_value = (original_content, True)
+
+        with (
+            patch("taskdog.cli.commands.note.get_editor") as mock_get_editor,
+            patch("taskdog.cli.commands.note.subprocess.run") as mock_run,
+            patch("taskdog.cli.commands.note.tempfile.NamedTemporaryFile") as mock_tmp,
+            patch("taskdog.cli.commands.note.Path") as mock_path_cls,
+        ):
+            mock_get_editor.return_value = "vim"
+            mock_run.return_value = MagicMock(returncode=0)
+
+            # Setup temp file mock
+            mock_file = MagicMock()
+            mock_file.__enter__ = MagicMock(return_value=mock_file)
+            mock_file.__exit__ = MagicMock(return_value=False)
+            mock_file.name = "/tmp/test.md"
+            mock_tmp.return_value = mock_file
+
+            mock_path = MagicMock()
+            # Return the same content (no changes)
+            mock_path.read_text.return_value = original_content
+            mock_path_cls.return_value = mock_path
+
+            # Execute
+            _edit_with_editor(
+                1, self.mock_task, self.api_client, self.console_writer, None
+            )
+
+            # Verify: API should NOT be called
+            self.api_client.update_task_notes.assert_not_called()
+            self.console_writer.info.assert_called_with("No changes to save")
+
+    def test_editor_trailing_newline_added_by_vim_skips_save(self):
+        """Test that editor adding trailing newline doesn't trigger save."""
+        from taskdog.cli.commands.note import _edit_with_editor
+
+        original_content = "existing content"  # No trailing newline
+        self.api_client.get_task_notes.return_value = (original_content, True)
+
+        with (
+            patch("taskdog.cli.commands.note.get_editor") as mock_get_editor,
+            patch("taskdog.cli.commands.note.subprocess.run") as mock_run,
+            patch("taskdog.cli.commands.note.tempfile.NamedTemporaryFile") as mock_tmp,
+            patch("taskdog.cli.commands.note.Path") as mock_path_cls,
+        ):
+            mock_get_editor.return_value = "vim"
+            mock_run.return_value = MagicMock(returncode=0)
+
+            # Setup temp file mock
+            mock_file = MagicMock()
+            mock_file.__enter__ = MagicMock(return_value=mock_file)
+            mock_file.__exit__ = MagicMock(return_value=False)
+            mock_file.name = "/tmp/test.md"
+            mock_tmp.return_value = mock_file
+
+            mock_path = MagicMock()
+            # Return content with trailing newline (vim adds this)
+            mock_path.read_text.return_value = original_content + "\n"
+            mock_path_cls.return_value = mock_path
+
+            # Execute
+            _edit_with_editor(
+                1, self.mock_task, self.api_client, self.console_writer, None
+            )
+
+            # Verify: API should NOT be called (trailing newline is normalized)
+            self.api_client.update_task_notes.assert_not_called()
+            self.console_writer.info.assert_called_with("No changes to save")
