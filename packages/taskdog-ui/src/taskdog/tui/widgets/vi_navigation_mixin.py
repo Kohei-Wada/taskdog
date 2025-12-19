@@ -84,7 +84,7 @@ class ViNavigationMixin:
             tooltip="Jump to leftmost position (Vi-style)",
         ),
         Binding(
-            "dollar_sign",
+            "$",
             "vi_end_horizontal",
             "Scroll to Rightmost",
             show=False,
@@ -109,6 +109,24 @@ class ViNavigationMixin:
         Binding("G", "scroll_end", "Bottom", show=False),
         Binding("ctrl+d", "page_down", "Page Down", show=False),
         Binding("ctrl+u", "page_up", "Page Up", show=False),
+    ]
+
+    # Complete scroll bindings including horizontal scroll and jump
+    # For widgets that need full Vi-style navigation with scroll_* actions
+    VI_SCROLL_ALL_BINDINGS: ClassVar = [
+        # Vertical navigation
+        Binding("j", "scroll_down", "Down", show=False),
+        Binding("k", "scroll_up", "Up", show=False),
+        Binding("g", "scroll_home", "Top", show=False),
+        Binding("G", "scroll_end", "Bottom", show=False),
+        Binding("ctrl+d", "page_down", "Page Down", show=False),
+        Binding("ctrl+u", "page_up", "Page Up", show=False),
+        # Horizontal navigation
+        Binding("h", "scroll_left", "Left", show=False),
+        Binding("l", "scroll_right", "Right", show=False),
+        # Horizontal jump (0 = line start, $ = line end)
+        Binding("0", "scroll_home_horizontal", "Line Start", show=False),
+        Binding("$", "scroll_end_horizontal", "Line End", show=False),
     ]
 
     # Note: Widgets must implement action_vi_* methods corresponding to the bindings
