@@ -126,9 +126,8 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
     def action_scroll_end_horizontal(self) -> None:
         """Scroll to rightmost position ($ key)."""
         if self._gantt_table:
-            self._gantt_table.scroll_to(
-                self._gantt_table.max_scroll_x, None, animate=False
-            )
+            max_x = getattr(self._gantt_table, "max_scroll_x", 0)
+            self._gantt_table.scroll_to(max_x, None, animate=False)
 
     def update_gantt(
         self,
