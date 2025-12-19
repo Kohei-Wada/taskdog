@@ -23,6 +23,9 @@ if TYPE_CHECKING:
 class MainScreen(Screen[None]):
     """Main screen showing gantt chart and task list."""
 
+    # Keep footer visible when a widget is maximized
+    ALLOW_IN_MAXIMIZED_VIEW: ClassVar[str] = "#custom-footer"
+
     BINDINGS: ClassVar = [
         Binding(
             "ctrl+j",
