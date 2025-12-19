@@ -44,7 +44,11 @@ def _read_content_from_source(
 
     # Check stdin only if no explicit options provided
     if not sys.stdin.isatty() and select.select([sys.stdin], [], [], 0)[0]:
-        return sys.stdin.read()
+        stdin_content = sys.stdin.read()
+        # Only use stdin content if it's non-empty
+        # Empty stdin (e.g., from /dev/null) should fall back to editor mode
+        if stdin_content:
+            return stdin_content
 
     return None
 
@@ -122,6 +126,11 @@ def _edit_with_editor(
         try:
             subprocess.run([editor, str(temp_path)], check=True)
             edited_content = temp_path.read_text(encoding="utf-8")
+            # Normalize trailing whitespace for comparison
+            # (editors like vim may add trailing newline)
+            if edited_content.rstrip() == editor_content.rstrip():
+                console_writer.info("No changes to save")
+                return
             api_client.update_task_notes(task_id, edited_content)
             console_writer.success(f"Notes saved for task #{task_id}")
         except subprocess.CalledProcessError as e:

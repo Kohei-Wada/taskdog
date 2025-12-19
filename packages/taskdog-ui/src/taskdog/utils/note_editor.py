@@ -70,7 +70,7 @@ def _edit_and_save_notes(
     task: TaskDetailDto,
     notes_provider: NotesProvider,
     app: App[Any],
-) -> None:
+) -> bool:
     """Open editor and save edited content.
 
     Args:
@@ -78,6 +78,9 @@ def _edit_and_save_notes(
         task: Task DTO being edited
         notes_provider: Notes provider for saving
         app: Textual app instance (for suspend)
+
+    Returns:
+        True if notes were changed and saved, False if no changes
 
     Raises:
         RuntimeError: If editor is not found
@@ -91,6 +94,9 @@ def _edit_and_save_notes(
     # Get editor
     editor = get_editor()
 
+    # Read original content before editing
+    original_content = temp_path.read_text(encoding="utf-8")
+
     # Open editor
     with app.suspend():
         subprocess.run([editor, str(temp_path)], check=True)
@@ -98,8 +104,14 @@ def _edit_and_save_notes(
     # Read edited content
     edited_content = temp_path.read_text(encoding="utf-8")
 
+    # Check if content changed (normalize trailing whitespace for comparison,
+    # as editors like vim may add trailing newline)
+    if edited_content.rstrip() == original_content.rstrip():
+        return False
+
     # Save via NotesProvider interface
     notes_provider.update_task_notes(task.id, edited_content)
+    return True
 
 
 def _prepare_temp_file(
@@ -142,12 +154,12 @@ def _execute_edit(
         task: Task DTO being edited
         notes_provider: Notes provider
         app: Textual app instance
-        on_success: Success callback
+        on_success: Success callback (called only if notes were changed)
         on_error: Error callback
     """
     try:
-        _edit_and_save_notes(temp_path, task, notes_provider, app)
-        if on_success:
+        changed = _edit_and_save_notes(temp_path, task, notes_provider, app)
+        if changed and on_success:
             on_success(task.name, task.id)
     except RuntimeError as e:
         if on_error:
