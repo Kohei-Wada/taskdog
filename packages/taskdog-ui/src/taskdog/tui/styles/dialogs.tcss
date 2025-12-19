@@ -114,17 +114,9 @@ StatsScreen {
     max-height: 28;
 }
 
-#algorithm-list {
-    /* Uses .dialog-list styles */
-}
-
 /* Sort Selection Dialog */
 #sort-dialog {
     max-height: 25;  /* Smaller than algorithm dialog (no input fields) */
-}
-
-#sort-list {
-    /* Uses .dialog-list styles */
 }
 
 /* Confirmation Dialog */

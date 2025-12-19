@@ -1,20 +1,5 @@
 /* Shared Component Styles */
 
-/* Header Container */
-#header-container {
-    width: 100%;
-    height: auto;
-    dock: top;
-}
-
-#main-header {
-    width: 1fr;
-}
-
-#connection-status {
-    width: auto;
-}
-
 /* Connection Status Indicator */
 .connection-status {
     width: auto;
@@ -134,15 +119,6 @@ Input {
 
 #filterable-task-table:focus-within {
     border: double $accent;
-}
-
-/* Search Components (legacy - kept for reference) */
-.search-result {
-    color: $text-muted;
-}
-
-.filter-chain {
-    color: $accent;
 }
 
 /* Root container for full-width layout */
