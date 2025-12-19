@@ -1,3 +1,5 @@
 """taskdog - CLI task management tool"""
 
-__version__ = "0.7.0"
+from importlib.metadata import version
+
+__version__ = version("taskdog-ui")
