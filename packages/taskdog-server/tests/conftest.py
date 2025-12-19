@@ -1,39 +1,69 @@
 """Pytest fixtures for taskdog-server tests.
 
 This module provides shared fixtures for all tests in taskdog-server.
-Fixtures replace the unittest-style BaseApiRouterTest base class.
+Task fixtures are imported from taskdog-core's shared fixtures module.
 """
 
-from unittest.mock import MagicMock, Mock
+import sys
+from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from taskdog_core.controllers.audit_log_controller import AuditLogController
-from taskdog_core.controllers.query_controller import QueryController
-from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
-from taskdog_core.controllers.task_crud_controller import TaskCrudController
-from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleController
-from taskdog_core.controllers.task_relationship_controller import (
+# Add taskdog-core tests to path for shared fixtures
+_core_tests_path = Path(__file__).parent.parent.parent / "taskdog-core" / "tests"
+if str(_core_tests_path) not in sys.path:
+    sys.path.insert(0, str(_core_tests_path))
+
+# Import shared test utilities from core's fixtures module
+from fixtures import InMemoryNotesRepository  # noqa: E402
+from fixtures.pytest_fixtures import (  # noqa: E402, F401
+    archived_task,
+    canceled_task,
+    completed_task,
+    create_mock_config,
+    in_progress_task,
+    pending_task,
+    sample_task,
+    task_factory,
+)
+
+# Import from taskdog-core
+from taskdog_core.controllers.audit_log_controller import (  # noqa: E402
+    AuditLogController,
+)
+from taskdog_core.controllers.query_controller import QueryController  # noqa: E402
+from taskdog_core.controllers.task_analytics_controller import (  # noqa: E402
+    TaskAnalyticsController,
+)
+from taskdog_core.controllers.task_crud_controller import (  # noqa: E402
+    TaskCrudController,
+)
+from taskdog_core.controllers.task_lifecycle_controller import (  # noqa: E402
+    TaskLifecycleController,
+)
+from taskdog_core.controllers.task_relationship_controller import (  # noqa: E402
     TaskRelationshipController,
 )
-from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_core.domain.services.logger import Logger
-from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (
+from taskdog_core.domain.services.logger import Logger  # noqa: E402
+from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (  # noqa: E402
     SqliteAuditLogRepository,
 )
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
+from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (  # noqa: E402
     SqliteTaskRepository,
 )
-from taskdog_core.infrastructure.time_provider import SystemTimeProvider
-from taskdog_server.api.context import ApiContext
-from taskdog_server.config.server_config_manager import (
+from taskdog_core.infrastructure.time_provider import SystemTimeProvider  # noqa: E402
+
+# Import server-specific modules
+from taskdog_server.api.context import ApiContext  # noqa: E402
+from taskdog_server.config.server_config_manager import (  # noqa: E402
     ApiKeyEntry,
     AuthConfig,
     ServerConfig,
 )
-from taskdog_server.websocket.connection_manager import ConnectionManager
+from taskdog_server.websocket.connection_manager import ConnectionManager  # noqa: E402
 
 # =============================================================================
 # Repository Fixtures
@@ -42,10 +72,8 @@ from taskdog_server.websocket.connection_manager import ConnectionManager
 
 @pytest.fixture(scope="session")
 def session_repository():
-    """Session-scoped in-memory repository shared across all tests.
+    """Session-scoped in-memory repository with shared cache.
 
-    Using a single database connection for the entire test session
-    provides ~50-60% speedup compared to creating new databases.
     The "file::memory:?cache=shared" syntax ensures all connections see the same data.
     """
     repo = SqliteTaskRepository("sqlite:///file::memory:?cache=shared&uri=true")
@@ -65,34 +93,28 @@ def session_audit_log_repository():
 
 @pytest.fixture
 def audit_log_repository(session_audit_log_repository):
-    """Function-scoped fixture that clears audit logs before each test.
-
-    Inherits the session-scoped database but clears all audit logs
-    before each test to ensure test isolation.
-    """
+    """Function-scoped fixture that clears audit logs before each test."""
     session_audit_log_repository.clear()
     yield session_audit_log_repository
 
 
 @pytest.fixture
 def repository(session_repository):
-    """Function-scoped fixture that clears data before each test.
-
-    Inherits the session-scoped database but clears all tasks
-    before each test to ensure test isolation.
-    """
+    """Function-scoped fixture that clears data before each test."""
     for task in session_repository.get_all():
         session_repository.delete(task.id)
     yield session_repository
 
 
+@pytest.fixture(scope="session")
+def session_notes_repository():
+    """Session-scoped in-memory notes repository."""
+    return InMemoryNotesRepository()
+
+
 @pytest.fixture
 def notes_repository(session_notes_repository):
-    """Function-scoped fixture that clears notes before each test.
-
-    Inherits the session-scoped InMemoryNotesRepository but clears all notes
-    before each test to ensure test isolation.
-    """
+    """Function-scoped fixture that clears notes before each test."""
     session_notes_repository.clear()
     yield session_notes_repository
 
@@ -101,23 +123,14 @@ def notes_repository(session_notes_repository):
 # Config Fixtures
 # =============================================================================
 
+TEST_API_KEY = "test-api-key-12345"
+TEST_CLIENT_NAME = "test-client"
+
 
 @pytest.fixture(scope="session")
 def mock_config():
     """Mock configuration with sensible defaults (session-scoped)."""
-    config = MagicMock()
-    config.task.default_priority = 3
-    config.optimization.max_hours_per_day = 8.0
-    config.optimization.default_algorithm = "greedy"
-    config.region.country = None
-    config.time.default_start_hour = 9
-    config.time.default_end_hour = 18
-    return config
-
-
-# Test API key for authentication
-TEST_API_KEY = "test-api-key-12345"
-TEST_CLIENT_NAME = "test-client"
+    return create_mock_config()
 
 
 @pytest.fixture(scope="session")
@@ -148,41 +161,44 @@ def mock_logger():
 # =============================================================================
 
 
-class InMemoryNotesRepository:
-    """In-memory notes repository for testing.
+class AuthenticatedTestClient:
+    """Wrapper around TestClient that automatically adds auth headers."""
 
-    Provides a simple dict-based storage for notes that can be cleared between tests.
-    """
+    def __init__(self, client: TestClient, auth_headers: dict[str, str]):
+        self._client = client
+        self._auth_headers = auth_headers
 
-    def __init__(self):
-        self._notes: dict[int, str] = {}
+    def _merge_headers(self, headers: dict[str, str] | None) -> dict[str, str]:
+        """Merge auth headers with provided headers."""
+        merged = dict(self._auth_headers)
+        if headers:
+            merged.update(headers)
+        return merged
 
-    def has_notes(self, task_id: int) -> bool:
-        """Check if task has notes."""
-        return task_id in self._notes and len(self._notes[task_id]) > 0
+    def get(self, url: str, **kwargs):
+        """GET request with auth headers."""
+        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
+        return self._client.get(url, **kwargs)
 
-    def read_notes(self, task_id: int) -> str | None:
-        """Read notes for task."""
-        return self._notes.get(task_id)
+    def post(self, url: str, **kwargs):
+        """POST request with auth headers."""
+        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
+        return self._client.post(url, **kwargs)
 
-    def write_notes(self, task_id: int, content: str) -> None:
-        """Write notes for task."""
-        self._notes[task_id] = content
+    def put(self, url: str, **kwargs):
+        """PUT request with auth headers."""
+        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
+        return self._client.put(url, **kwargs)
 
-    def delete_notes(self, task_id: int) -> None:
-        """Delete notes for task."""
-        if task_id in self._notes:
-            del self._notes[task_id]
+    def patch(self, url: str, **kwargs):
+        """PATCH request with auth headers."""
+        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
+        return self._client.patch(url, **kwargs)
 
-    def clear(self) -> None:
-        """Clear all notes."""
-        self._notes.clear()
-
-
-@pytest.fixture(scope="session")
-def session_notes_repository():
-    """Session-scoped in-memory notes repository."""
-    return InMemoryNotesRepository()
+    def delete(self, url: str, **kwargs):
+        """DELETE request with auth headers."""
+        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
+        return self._client.delete(url, **kwargs)
 
 
 @pytest.fixture(scope="session")
@@ -264,50 +280,6 @@ def app(
     return test_app
 
 
-class AuthenticatedTestClient:
-    """Wrapper around TestClient that automatically adds auth headers.
-
-    This allows existing tests to work without modification while ensuring
-    all requests include the required API key header.
-    """
-
-    def __init__(self, client: TestClient, auth_headers: dict[str, str]):
-        self._client = client
-        self._auth_headers = auth_headers
-
-    def _merge_headers(self, headers: dict[str, str] | None) -> dict[str, str]:
-        """Merge auth headers with provided headers."""
-        merged = dict(self._auth_headers)
-        if headers:
-            merged.update(headers)
-        return merged
-
-    def get(self, url: str, **kwargs):
-        """GET request with auth headers."""
-        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
-        return self._client.get(url, **kwargs)
-
-    def post(self, url: str, **kwargs):
-        """POST request with auth headers."""
-        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
-        return self._client.post(url, **kwargs)
-
-    def put(self, url: str, **kwargs):
-        """PUT request with auth headers."""
-        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
-        return self._client.put(url, **kwargs)
-
-    def patch(self, url: str, **kwargs):
-        """PATCH request with auth headers."""
-        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
-        return self._client.patch(url, **kwargs)
-
-    def delete(self, url: str, **kwargs):
-        """DELETE request with auth headers."""
-        kwargs["headers"] = self._merge_headers(kwargs.get("headers"))
-        return self._client.delete(url, **kwargs)
-
-
 @pytest.fixture(scope="session")
 def session_client(app):
     """TestClient (session-scoped for performance)."""
@@ -324,118 +296,3 @@ def client(session_client, repository, auth_headers):
     Returns an AuthenticatedTestClient that automatically adds auth headers.
     """
     return AuthenticatedTestClient(session_client, auth_headers)
-
-
-# =============================================================================
-# Task Factory
-# =============================================================================
-
-
-class TaskFactory:
-    """Factory for creating test tasks with sensible defaults.
-
-    Simplifies test data creation and reduces boilerplate code.
-
-    Usage:
-        def test_something(task_factory):
-            task = task_factory.create(name="My Task", estimated_duration=8.0)
-            tasks = task_factory.create_batch(5, priority=1)
-    """
-
-    def __init__(self, repository: SqliteTaskRepository):
-        """Initialize factory with repository.
-
-        Args:
-            repository: Task repository to use for saving tasks
-        """
-        self.repository = repository
-        self._task_counter = 1
-
-    def create(
-        self,
-        name: str | None = None,
-        priority: int = 100,
-        status: TaskStatus = TaskStatus.PENDING,
-        **kwargs,
-    ) -> Task:
-        """Create and save a task with auto-generated name if not provided.
-
-        Uses repository.create() with database AUTOINCREMENT for ID assignment.
-
-        Args:
-            name: Task name (auto-generated if None)
-            priority: Task priority (default: 100)
-            status: Task status (default: PENDING)
-            **kwargs: Additional task attributes
-
-        Returns:
-            Created and saved task
-        """
-        if name is None:
-            name = f"Test Task {self._task_counter}"
-            self._task_counter += 1
-
-        create_kwargs = {
-            **kwargs,
-            "status": status,
-        }
-
-        return self.repository.create(
-            name=name,
-            priority=priority,
-            **create_kwargs,
-        )
-
-
-@pytest.fixture
-def task_factory(repository) -> TaskFactory:
-    """Task factory for creating test tasks."""
-    return TaskFactory(repository)
-
-
-# =============================================================================
-# Sample Task Fixtures
-# =============================================================================
-
-
-@pytest.fixture
-def sample_task(task_factory) -> Task:
-    """Basic sample task."""
-    return task_factory.create(name="Sample Task", priority=50)
-
-
-@pytest.fixture
-def pending_task(task_factory) -> Task:
-    """Task in PENDING status."""
-    return task_factory.create(name="Pending Task")
-
-
-@pytest.fixture
-def in_progress_task(repository, task_factory) -> Task:
-    """Task in IN_PROGRESS status with actual_start set."""
-    from datetime import datetime
-
-    task = task_factory.create(name="In Progress Task")
-    task.status = TaskStatus.IN_PROGRESS
-    task.actual_start = datetime.now()
-    repository.save(task)
-    return repository.get_by_id(task.id)
-
-
-@pytest.fixture
-def completed_task(repository, task_factory) -> Task:
-    """Task in COMPLETED status with actual_start and actual_end set."""
-    from datetime import datetime
-
-    task = task_factory.create(name="Completed Task")
-    task.status = TaskStatus.COMPLETED
-    task.actual_start = datetime.now()
-    task.actual_end = datetime.now()
-    repository.save(task)
-    return repository.get_by_id(task.id)
-
-
-@pytest.fixture
-def archived_task(task_factory) -> Task:
-    """Archived task."""
-    return task_factory.create(name="Archived Task", is_archived=True)
