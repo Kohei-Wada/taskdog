@@ -1,25 +1,51 @@
-"""Custom footer widget with keybindings and connection status."""
+"""Custom footer widget with keybindings, connection status, and search input."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
+from textual import events
 from textual.app import ComposeResult
-from textual.containers import Horizontal
+from textual.binding import Binding
+from textual.containers import Container, Horizontal
+from textual.message import Message
 from textual.reactive import reactive
-from textual.widgets import Static
+from textual.widgets import Input, Static
+
+from taskdog.tui.events import SearchQueryChanged
 
 if TYPE_CHECKING:
     from taskdog.tui.state import ConnectionStatus
 
+# Constants
+SEARCH_INPUT_ID = "footer-search-input"
 
-class CustomFooter(Static):
-    """Custom footer displaying essential keybindings and connection status.
 
-    Layout:
-    - Left side: Essential keybindings (q: Quit, a: Add, r: Refresh, Ctrl+P: Palette)
-    - Right side: Connection status indicator (🟢 Online / 🟡 Partial / 🔴 Offline)
+class CustomFooter(Container):
+    """Custom footer with status bar and search input (Vim-style).
+
+    Layout (2 rows):
+    - Row 1 (Status bar): Keybindings (left) + Connection status (right)
+    - Row 2 (Search bar): Filter chain + Search input + Result count
 
     Subscribes to ConnectionStatusManager for automatic updates via observer pattern.
     """
+
+    class Submitted(Message):
+        """Message sent when Enter is pressed in the search input."""
+
+    class RefineFilter(Message):
+        """Message sent when Ctrl+R is pressed to refine the filter."""
+
+        bubble = True  # Enable message bubbling to parent widgets
+
+    BINDINGS: ClassVar = [
+        Binding(
+            "ctrl+r",
+            "refine_filter",
+            "Refine Filter",
+            show=False,
+            tooltip="Refine the search filter",
+        ),
+    ]
 
     # Reactive properties that trigger update when changed
     is_api_connected: reactive[bool] = reactive(False)
@@ -36,15 +62,23 @@ class CustomFooter(Static):
         Returns:
             Iterable of widgets to display
         """
-        with Horizontal(id="footer-container"):
-            # Left side: Keybindings
+        # Row 1: Status bar (keybindings + connection status)
+        with Horizontal(id="footer-status-row"):
             yield Static(
                 " [bold]q[/] Quit  [bold]a[/] Add  [bold]r[/] Refresh  [bold]S[/] Stats  [bold]?[/] Help  [bold]Ctrl+P[/] Palette",
                 id="footer-keybindings",
             )
-
-            # Right side: Connection status
             yield Static("🔴 Offline", id="footer-connection-status")
+
+        # Row 2: Search bar (container with filter chain, input, and result count)
+        with Horizontal(id="footer-search-container"):
+            yield Static("", id="footer-filter-chain")
+            search_input = Input(
+                placeholder="Press '/' to search tasks", id=SEARCH_INPUT_ID
+            )
+            search_input.can_focus = True
+            yield search_input
+            yield Static("", id="footer-search-result")
 
     def on_mount(self) -> None:
         """Called when widget is mounted to the DOM."""
@@ -114,3 +148,98 @@ class CustomFooter(Static):
         # Remove all status classes and add the current one
         status_widget.remove_class("status-online", "status-partial", "status-offline")
         status_widget.add_class(status_class)
+
+    # Search input methods
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        """Handle search input value changes.
+
+        Args:
+            event: Input changed event
+        """
+        # Only handle events from our search input
+        if event.input.id == SEARCH_INPUT_ID:
+            # Post SearchQueryChanged event for other widgets to react
+            self.post_message(SearchQueryChanged(event.value))
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle Enter key press in the search input.
+
+        Args:
+            event: Input submitted event
+        """
+        # Only handle events from our search input
+        if event.input.id == SEARCH_INPUT_ID:
+            # Post a message to the parent screen
+            self.post_message(self.Submitted())
+
+    def on_key(self, event: events.Key) -> None:
+        """Handle key events.
+
+        Args:
+            event: Key event
+        """
+        if event.key == "ctrl+r":
+            event.prevent_default()
+            event.stop()
+            self.action_refine_filter()
+
+    def action_refine_filter(self) -> None:
+        """Handle Ctrl+R key press to refine the filter.
+
+        Posts a RefineFilter message to parent widget for handling.
+        """
+        self.post_message(self.RefineFilter())
+
+    def clear(self) -> None:
+        """Clear the search input and filter chain display."""
+        search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
+        search_input.value = ""
+        self.update_result(0, 0)
+        self.update_filter_chain([])
+
+    def clear_input_only(self) -> None:
+        """Clear only the search input, preserving filter chain display."""
+        search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
+        search_input.value = ""
+
+    @property
+    def value(self) -> str:
+        """Get the current search query."""
+        search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
+        return search_input.value
+
+    def focus_input(self) -> None:
+        """Focus the search input field."""
+        search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
+        search_input.focus()
+
+    def update_result(self, matched: int, total: int) -> None:
+        """Update the search result count display.
+
+        Args:
+            matched: Number of matched tasks
+            total: Total number of tasks
+        """
+        result_label = self.query_one("#footer-search-result", Static)
+        if total == 0:
+            # No tasks at all
+            result_label.update("")
+        else:
+            # Always show match count for consistency
+            result_label.update(f"({matched}/{total})")
+
+    def update_filter_chain(self, filter_chain: list[str]) -> None:
+        """Update the filter chain display.
+
+        Args:
+            filter_chain: List of filter queries applied in order
+        """
+        filter_chain_label = self.query_one("#footer-filter-chain", Static)
+        if not filter_chain:
+            # No filter chain
+            filter_chain_label.update("")
+        else:
+            # Display filter chain: filter1 > filter2 > ...
+            chain_display = " > ".join(f'"{f}"' for f in filter_chain)
+            filter_chain_label.update(f"Filters: {chain_display} > ")
