@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 # Add tests directory to path for fixtures module
-_tests_path = Path(__file__).parent
+_tests_path = Path(__file__).parent.resolve()
 if str(_tests_path) not in sys.path:
     sys.path.insert(0, str(_tests_path))
 

@@ -13,7 +13,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 # Add taskdog-core tests to path for shared fixtures
-_core_tests_path = Path(__file__).parent.parent.parent / "taskdog-core" / "tests"
+_core_tests_path = (
+    Path(__file__).parent.parent.parent / "taskdog-core" / "tests"
+).resolve()
 if str(_core_tests_path) not in sys.path:
     sys.path.insert(0, str(_core_tests_path))
 
