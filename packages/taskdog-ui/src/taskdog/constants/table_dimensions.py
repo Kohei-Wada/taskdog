@@ -2,7 +2,6 @@
 
 # Task Table Display Limits
 TASK_NAME_MAX_DISPLAY_LENGTH = 28
-DEADLINE_DISPLAY_LENGTH = 16
 PAGE_SCROLL_SIZE = 10
 
 # Gantt Chart Column Widths (CLI)
@@ -11,7 +10,6 @@ GANTT_TABLE_TASK_MIN_WIDTH = 20
 GANTT_TABLE_EST_HOURS_WIDTH = 7
 
 # Gantt Chart Timeline Dimensions
-GANTT_TABLE_FIXED_WIDTH = 47  # Combined width of ID, Task, and Est Hours columns
 MIN_TIMELINE_WIDTH = 30
 CHARS_PER_DAY = 3
 
@@ -19,7 +17,3 @@ CHARS_PER_DAY = 3
 DEFAULT_GANTT_WIDGET_WIDTH = 120
 MIN_CONSOLE_WIDTH = 80
 BORDER_WIDTH = 2
-DISPLAY_HALF_WIDTH_DIVISOR = 2  # For centering calculations
-
-# Detail Panel Dimensions
-MAX_DETAIL_PANEL_WIDTH = 100
