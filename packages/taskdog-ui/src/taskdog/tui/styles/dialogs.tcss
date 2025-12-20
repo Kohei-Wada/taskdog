@@ -57,6 +57,7 @@ StatsScreen {
 
 /* Message text in confirmation dialogs */
 #dialog-message {
+    width: 100%;
     text-align: center;
     padding: 1 2;
     margin: 1 0;
@@ -128,6 +129,14 @@ StatsScreen {
 #fix-actual-dialog {
     border: round $error;  /* Colored border for emphasis on timestamp correction */
     max-height: 30;  /* 3 fields */
+}
+
+/* Warning message in fix actual dialog */
+#fix-actual-warning {
+    width: 100%;
+    text-align: center;
+    padding: 0 2;
+    margin-bottom: 1;
 }
 
 /* Task Form Dialog (Add/Edit) */
