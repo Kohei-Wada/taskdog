@@ -82,6 +82,10 @@ class FixActualDialog(FormDialogBase[FixActualFormData | None]):
                 "Tab/Ctrl-j: next | Shift+Tab/Ctrl-k: previous[/dim]",
                 id="dialog-hint",
             )
+            yield Label(
+                "⚠ You are responsible for ensuring data consistency.",
+                id="fix-actual-warning",
+            )
 
             # Error message area
             yield Static("", id="error-message")
