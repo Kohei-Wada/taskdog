@@ -131,10 +131,13 @@ class GanttDataTable(DataTable):
         )
 
         # Restore scroll position to prevent stuttering
+        # Apply bounds check to handle cases where table dimensions changed
         if saved_scroll_y is not None:
-            self.scroll_y = saved_scroll_y
+            max_scroll_y = max(0, self.virtual_size.height - self.size.height)
+            self.scroll_y = min(saved_scroll_y, max_scroll_y)
         if saved_scroll_x is not None:
-            self.scroll_x = saved_scroll_x
+            max_scroll_x = max(0, self.virtual_size.width - self.size.width)
+            self.scroll_x = min(saved_scroll_x, max_scroll_x)
 
     def _add_date_header_rows(
         self, start_date: date, end_date: date, holidays: set[date]
