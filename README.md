@@ -9,7 +9,7 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 
 **Note**: Designed for individual use. Stores tasks locally in SQLite database.
 
-![TUI Screenshot](docs/images/theme-textual-dark.svg)
+https://github.com/user-attachments/assets/d4b4b127-c8d9-4ea2-8702-6a776b717455
 
 **Architecture**: UV workspace monorepo with three packages:
 
@@ -24,7 +24,6 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Interactive TUI](#interactive-tui)
-- [Themes](#themes)
 - [API Server](#api-server)
 - [Commands](#commands)
 - [Configuration](#configuration)
@@ -186,40 +185,6 @@ Launch the TUI with:
 ```bash
 taskdog tui
 ```
-
-## Themes
-
-Taskdog supports multiple beautiful themes out of the box. Configure your preferred theme in `~/.config/taskdog/cli.toml`:
-
-```toml
-[ui]
-theme = "tokyo-night"  # Options: textual-dark, textual-light, tokyo-night, dracula, catppuccin-mocha, nord, gruvbox, solarized-light
-```
-
-<table>
-  <tr>
-    <td align="center">
-      <b>Tokyo Night</b><br/>
-      <img src="docs/images/theme-tokyo-night.svg" width="400" alt="Tokyo Night theme"/>
-    </td>
-    <td align="center">
-      <b>Dracula</b><br/>
-      <img src="docs/images/theme-dracula.svg" width="400" alt="Dracula theme"/>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <b>Catppuccin Mocha</b><br/>
-      <img src="docs/images/theme-catppuccin-mocha.svg" width="400" alt="Catppuccin Mocha theme"/>
-    </td>
-    <td align="center">
-      <b>Textual Light</b><br/>
-      <img src="docs/images/theme-textual-light.svg" width="400" alt="Textual Light theme"/>
-    </td>
-  </tr>
-</table>
-
-**Default theme**: `textual-dark` (shown at the top of this README)
 
 ## API Server
 
