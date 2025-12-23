@@ -55,6 +55,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         # NOTE: _gantt_view_model removed - now accessed via self.app.state.gantt_cache (Step 4)
         # NOTE: _sort_by and _reverse removed - now accessed via self.app.state (Step 2)
         self._filter_all: bool = False  # Include archived tasks flag for recalculation
+        self._keep_scroll_position: bool = False  # Preserve scroll position on refresh
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
         self._legend_widget: Static | None = None
@@ -136,6 +137,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         sort_by: str = "deadline",
         reverse: bool = False,
         all: bool = False,
+        keep_scroll_position: bool = False,
     ):
         """Update the gantt chart with new gantt data.
 
@@ -145,6 +147,8 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
             sort_by: Sort order for tasks (kept for compatibility, value comes from app.state)
             reverse: Sort direction (kept for compatibility, value comes from app.state)
             all: Include archived tasks (default: False)
+            keep_scroll_position: Whether to preserve scroll position during refresh.
+                                 Set to True for periodic updates to avoid scroll stuttering.
         """
         self._task_ids = task_ids
         # Store gantt view model in app state (Step 4)
@@ -152,6 +156,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         # NOTE: sort_by and reverse parameters kept for API compatibility,
         # but actual values are read from self.tui_state
         self._filter_all = all
+        self._keep_scroll_position = keep_scroll_position
         self._render_gantt()
 
     def _get_gantt_from_state(self) -> GanttViewModel | None:
@@ -212,7 +217,9 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         try:
             gantt_view_model = self._get_gantt_from_state()
             if gantt_view_model:
-                self._gantt_table.load_gantt(gantt_view_model)
+                self._gantt_table.load_gantt(
+                    gantt_view_model, keep_scroll_position=self._keep_scroll_position
+                )
                 self._update_title()
                 self._update_legend()
         except Exception as e:
@@ -360,7 +367,9 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         # Access sort state from tui_state (single source of truth)
         return self.tui_state.sort_by
 
-    def update_view_model_and_render(self, gantt_view_model) -> None:
+    def update_view_model_and_render(
+        self, gantt_view_model, keep_scroll_position: bool = False
+    ) -> None:
         """Update gantt view model and trigger re-render.
 
         This method updates the internal view model and schedules a re-render
@@ -368,9 +377,12 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
 
         Args:
             gantt_view_model: New GanttViewModel to display
+            keep_scroll_position: Whether to preserve scroll position during refresh.
+                                 Set to True for periodic updates to avoid scroll stuttering.
         """
         # Store in app state (Step 4)
         self.tui_state.gantt_cache = gantt_view_model
+        self._keep_scroll_position = keep_scroll_position
         self.call_after_refresh(self._render_gantt)
 
     def calculate_display_days(self, widget_width: int | None = None) -> int:

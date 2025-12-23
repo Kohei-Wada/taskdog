@@ -77,12 +77,20 @@ class GanttDataTable(DataTable):
         # Single Timeline column with centered header
         self.add_column(Text("Timeline", justify="center"))
 
-    def load_gantt(self, gantt_view_model: GanttViewModel):
+    def load_gantt(
+        self, gantt_view_model: GanttViewModel, keep_scroll_position: bool = False
+    ):
         """Load Gantt data into the table.
 
         Args:
             gantt_view_model: Presentation-ready Gantt data
+            keep_scroll_position: Whether to preserve scroll position during refresh.
+                                 Set to True for periodic updates to avoid scroll stuttering.
         """
+        # Save scroll position before refresh (both vertical and horizontal)
+        saved_scroll_y = self.scroll_y if keep_scroll_position else None
+        saved_scroll_x = self.scroll_x if keep_scroll_position else None
+
         # NOTE: No longer storing view model locally - just use parameter (Step 4)
         self._task_map.clear()
 
@@ -121,6 +129,12 @@ class GanttDataTable(DataTable):
             gantt_view_model.end_date,
             gantt_view_model.total_estimated_duration,
         )
+
+        # Restore scroll position to prevent stuttering
+        if saved_scroll_y is not None:
+            self.scroll_y = saved_scroll_y
+        if saved_scroll_x is not None:
+            self.scroll_x = saved_scroll_x
 
     def _add_date_header_rows(
         self, start_date: date, end_date: date, holidays: set[date]
