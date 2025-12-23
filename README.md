@@ -9,7 +9,7 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 
 **Note**: Designed for individual use. Stores tasks locally in SQLite database.
 
-<video src="https://github.com/user-attachments/assets/d4b4b127-c8d9-4ea2-8702-6a776b717455" controls autoplay loop muted></video>
+https://github.com/user-attachments/assets/d4b4b127-c8d9-4ea2-8702-6a776b717455
 
 **Architecture**: UV workspace monorepo with three packages:
 
