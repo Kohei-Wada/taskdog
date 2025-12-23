@@ -171,6 +171,7 @@ class TaskUIManager:
                 sort_by=self.state.sort_by,
                 reverse=self.state.sort_reverse,
                 all=False,  # Non-archived by default
+                keep_scroll_position=keep_scroll_position,
             )
 
         # Update Table widget (via main_screen to update search result count)
