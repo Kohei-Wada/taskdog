@@ -26,7 +26,7 @@ MainScreen {
 }
 
 #gantt-widget:focus {
-    border: double $accent;
+    border: round $accent;
 }
 
 /* Gantt title - fixed at top */
@@ -65,5 +65,5 @@ MainScreen {
 }
 
 #task-table:focus {
-    border: double $accent;
+    border: round $accent;
 }

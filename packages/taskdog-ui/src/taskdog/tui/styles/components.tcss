@@ -73,7 +73,7 @@
 }
 
 #footer-search-container:focus-within {
-    border: double $accent;
+    border: round $accent;
 }
 
 #footer-search-input {
@@ -118,7 +118,7 @@ Input {
 }
 
 #filterable-task-table:focus-within {
-    border: double $accent;
+    border: round $accent;
 }
 
 /* Root container for full-width layout */
@@ -149,7 +149,7 @@ Input {
 }
 
 #audit-panel:focus {
-    border: double $accent;
+    border: round $accent;
 }
 
 /* Audit Log Entry Cards */
