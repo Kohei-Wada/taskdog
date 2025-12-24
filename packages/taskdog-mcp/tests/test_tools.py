@@ -547,71 +547,46 @@ class TestTaskLifecycleTools:
         assert result["actual_duration_hours"] == 8.0
         assert "completed" in result["message"]
 
-    def test_pause_task_returns_pending(self) -> None:
-        """Test pause_task returns status as PENDING."""
+    @pytest.mark.parametrize(
+        ("tool_name", "client_method", "expected_status", "message_keyword"),
+        [
+            pytest.param("pause_task", "pause_task", "PENDING", "paused", id="pause"),
+            pytest.param(
+                "cancel_task", "cancel_task", "CANCELED", "canceled", id="cancel"
+            ),
+            pytest.param(
+                "reopen_task", "reopen_task", "PENDING", "reopened", id="reopen"
+            ),
+        ],
+    )
+    def test_lifecycle_status_change_tools(
+        self,
+        tool_name: str,
+        client_method: str,
+        expected_status: str,
+        message_keyword: str,
+    ) -> None:
+        """Test lifecycle tools that change task status."""
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_lifecycle
 
         client = create_mock_client()
-        paused_task = create_mock_task_operation_output(
-            task_id=1, name="Paused Task", status=TaskStatus.PENDING
+        status_enum = TaskStatus(expected_status)
+        task = create_mock_task_operation_output(
+            task_id=1, name="Test Task", status=status_enum
         )
-        client.pause_task.return_value = paused_task
+        getattr(client, client_method).return_value = task
 
         mcp = FastMCP("test")
         task_lifecycle.register_tools(mcp, client)
 
-        pause_task_fn = mcp._tool_manager._tools["pause_task"].fn
-        result = pause_task_fn(task_id=1)
+        tool_fn = mcp._tool_manager._tools[tool_name].fn
+        result = tool_fn(task_id=1)
 
-        client.pause_task.assert_called_once_with(1)
+        getattr(client, client_method).assert_called_once_with(1)
         assert result["id"] == 1
-        assert result["status"] == "PENDING"
-        assert "paused" in result["message"]
-
-    def test_cancel_task_returns_canceled(self) -> None:
-        """Test cancel_task returns status as CANCELED."""
-        from mcp.server.fastmcp import FastMCP
-        from taskdog_mcp.tools import task_lifecycle
-
-        client = create_mock_client()
-        canceled_task = create_mock_task_operation_output(
-            task_id=1, name="Canceled Task", status=TaskStatus.CANCELED
-        )
-        client.cancel_task.return_value = canceled_task
-
-        mcp = FastMCP("test")
-        task_lifecycle.register_tools(mcp, client)
-
-        cancel_task_fn = mcp._tool_manager._tools["cancel_task"].fn
-        result = cancel_task_fn(task_id=1)
-
-        client.cancel_task.assert_called_once_with(1)
-        assert result["id"] == 1
-        assert result["status"] == "CANCELED"
-        assert "canceled" in result["message"]
-
-    def test_reopen_task_returns_pending(self) -> None:
-        """Test reopen_task returns status as PENDING."""
-        from mcp.server.fastmcp import FastMCP
-        from taskdog_mcp.tools import task_lifecycle
-
-        client = create_mock_client()
-        reopened_task = create_mock_task_operation_output(
-            task_id=1, name="Reopened Task", status=TaskStatus.PENDING
-        )
-        client.reopen_task.return_value = reopened_task
-
-        mcp = FastMCP("test")
-        task_lifecycle.register_tools(mcp, client)
-
-        reopen_task_fn = mcp._tool_manager._tools["reopen_task"].fn
-        result = reopen_task_fn(task_id=1)
-
-        client.reopen_task.assert_called_once_with(1)
-        assert result["id"] == 1
-        assert result["status"] == "PENDING"
-        assert "reopened" in result["message"]
+        assert result["status"] == expected_status
+        assert message_keyword in result["message"]
 
     def test_fix_actual_times_valid_datetime(self) -> None:
         """Test fix_actual_times with valid ISO format datetimes."""
@@ -824,15 +799,32 @@ class TestTaskQueryTools:
 
         assert result["average_completion_time_hours"] is None
 
-    def test_get_today_tasks(self) -> None:
-        """Test get_today_tasks returns today's tasks."""
+    @pytest.mark.parametrize(
+        ("tool_name", "client_method", "status", "sort_by"),
+        [
+            pytest.param(
+                "get_today_tasks", "list_today_tasks", "PENDING", "priority", id="today"
+            ),
+            pytest.param(
+                "get_week_tasks",
+                "list_week_tasks",
+                "IN_PROGRESS",
+                "deadline",
+                id="week",
+            ),
+        ],
+    )
+    def test_time_period_task_queries(
+        self, tool_name: str, client_method: str, status: str, sort_by: str
+    ) -> None:
+        """Test today/week task query tools."""
         from mcp.server.fastmcp import FastMCP
         from taskdog_mcp.tools import task_query
 
         client = create_mock_client()
-        task1 = create_mock_task_row(task_id=1, name="Today Task 1")
-        task2 = create_mock_task_row(task_id=2, name="Today Task 2")
-        client.list_today_tasks.return_value = TaskListOutput(
+        task1 = create_mock_task_row(task_id=1, name="Task 1")
+        task2 = create_mock_task_row(task_id=2, name="Task 2")
+        getattr(client, client_method).return_value = TaskListOutput(
             tasks=[task1, task2],
             total_count=2,
             filtered_count=2,
@@ -841,41 +833,15 @@ class TestTaskQueryTools:
         mcp = FastMCP("test")
         task_query.register_tools(mcp, client)
 
-        get_today_fn = mcp._tool_manager._tools["get_today_tasks"].fn
-        result = get_today_fn(status="PENDING", sort_by="priority")
+        tool_fn = mcp._tool_manager._tools[tool_name].fn
+        result = tool_fn(status=status, sort_by=sort_by)
 
-        client.list_today_tasks.assert_called_once_with(
-            status="PENDING", sort_by="priority"
+        getattr(client, client_method).assert_called_once_with(
+            status=status, sort_by=sort_by
         )
         assert len(result["tasks"]) == 2
         assert result["total"] == 2
         assert result["tasks"][0]["id"] == 1
-        assert result["tasks"][0]["name"] == "Today Task 1"
-
-    def test_get_week_tasks(self) -> None:
-        """Test get_week_tasks returns this week's tasks."""
-        from mcp.server.fastmcp import FastMCP
-        from taskdog_mcp.tools import task_query
-
-        client = create_mock_client()
-        task1 = create_mock_task_row(task_id=1, name="Week Task 1")
-        client.list_week_tasks.return_value = TaskListOutput(
-            tasks=[task1],
-            total_count=1,
-            filtered_count=1,
-        )
-
-        mcp = FastMCP("test")
-        task_query.register_tools(mcp, client)
-
-        get_week_fn = mcp._tool_manager._tools["get_week_tasks"].fn
-        result = get_week_fn(status="IN_PROGRESS", sort_by="deadline")
-
-        client.list_week_tasks.assert_called_once_with(
-            status="IN_PROGRESS", sort_by="deadline"
-        )
-        assert len(result["tasks"]) == 1
-        assert result["total"] == 1
 
     def test_get_tag_statistics_returns_formatted_data(self) -> None:
         """Test get_tag_statistics returns properly formatted tag stats."""
