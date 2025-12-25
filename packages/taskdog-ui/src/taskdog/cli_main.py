@@ -20,7 +20,6 @@ from taskdog.cli.commands.rename import rename_command
 from taskdog.cli.commands.reopen import reopen_command
 from taskdog.cli.commands.restore import restore_command
 from taskdog.cli.commands.rm import rm_command
-from taskdog.cli.commands.schedule import schedule_command
 from taskdog.cli.commands.show import show_command
 from taskdog.cli.commands.start import start_command
 from taskdog.cli.commands.stats import stats_command
@@ -154,7 +153,6 @@ cli.add_command(rename_command)
 cli.add_command(reopen_command)
 cli.add_command(restore_command)
 cli.add_command(fix_actual_command)
-cli.add_command(schedule_command)
 cli.add_command(optimize_command)
 cli.add_command(stats_command)
 cli.add_command(tags_command)

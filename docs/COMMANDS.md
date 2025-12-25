@@ -34,21 +34,6 @@ taskdog add "Implementation" -p 100 -d 1 -t backend -t api
 taskdog add "Team meeting" --fixed  # Won't be rescheduled
 ```
 
-### schedule - Set planned schedule
-
-```bash
-taskdog schedule ID START [END]
-```
-
-Set planned start and optional end time. If end time is omitted, uses estimated_duration.
-
-**Examples:**
-
-```bash
-taskdog schedule 1 "2025-10-22 09:00"
-taskdog schedule 2 "2025-10-22 10:00" "2025-10-22 11:00"
-```
-
 ### rename - Rename task
 
 ```bash
