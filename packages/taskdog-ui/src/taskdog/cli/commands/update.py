@@ -10,6 +10,15 @@ from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 from taskdog_core.domain.entities.task import TaskStatus
 
 
+def _validate_name(
+    ctx: click.Context, param: click.Parameter, value: str | None
+) -> str | None:
+    """Validate that name is not empty or whitespace-only."""
+    if value is not None and not value.strip():
+        raise click.BadParameter("cannot be empty or whitespace-only")
+    return value
+
+
 @click.command(
     name="update",
     help="Update multiple task properties at once.",
@@ -19,6 +28,7 @@ from taskdog_core.domain.entities.task import TaskStatus
     "--name",
     type=str,
     default=None,
+    callback=_validate_name,
     help="New task name",
 )
 @click.option(

@@ -42,6 +42,26 @@ class TestUpdateCommand:
         assert call_kwargs["name"] == "New name"
         self.console_writer.task_fields_updated.assert_called_once()
 
+    def test_update_name_empty_error(self):
+        """Test error when name is empty."""
+        result = self.runner.invoke(
+            update_command, ["1", "--name", ""], obj=self.cli_context
+        )
+
+        assert result.exit_code != 0
+        assert "cannot be empty or whitespace-only" in result.output
+        self.api_client.update_task.assert_not_called()
+
+    def test_update_name_whitespace_only_error(self):
+        """Test error when name is whitespace-only."""
+        result = self.runner.invoke(
+            update_command, ["1", "--name", "   "], obj=self.cli_context
+        )
+
+        assert result.exit_code != 0
+        assert "cannot be empty or whitespace-only" in result.output
+        self.api_client.update_task.assert_not_called()
+
     def test_update_priority(self):
         """Test updating task priority."""
         # Setup
