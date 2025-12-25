@@ -34,21 +34,6 @@ taskdog add "Implementation" -p 100 -d 1 -t backend -t api
 taskdog add "Team meeting" --fixed  # Won't be rescheduled
 ```
 
-### deadline - Set task deadline
-
-```bash
-taskdog deadline ID DATE
-```
-
-Set or update task deadline. Supports `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS` format.
-
-**Examples:**
-
-```bash
-taskdog deadline 1 2025-10-20
-taskdog deadline 2 "2025-10-22 18:00:00"
-```
-
 ### priority - Set task priority
 
 ```bash

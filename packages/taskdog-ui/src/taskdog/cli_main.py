@@ -8,7 +8,6 @@ from taskdog.cli.commands.add import add_command
 from taskdog.cli.commands.add_dependency import add_dependency_command
 from taskdog.cli.commands.audit_logs import audit_logs_command
 from taskdog.cli.commands.cancel import cancel_command
-from taskdog.cli.commands.deadline import deadline_command
 from taskdog.cli.commands.done import done_command
 from taskdog.cli.commands.estimate import estimate_command
 from taskdog.cli.commands.export import export_command
@@ -152,7 +151,6 @@ cli.add_command(today_command)
 cli.add_command(week_command)
 cli.add_command(note_command)
 cli.add_command(show_command)
-cli.add_command(deadline_command)
 cli.add_command(priority_command)
 cli.add_command(remove_dependency_command)
 cli.add_command(rename_command)
