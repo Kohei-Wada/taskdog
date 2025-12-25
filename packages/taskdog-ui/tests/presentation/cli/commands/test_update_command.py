@@ -22,6 +22,26 @@ class TestUpdateCommand:
         self.cli_context.console_writer = self.console_writer
         self.cli_context.api_client = self.api_client
 
+    def test_update_name(self):
+        """Test updating task name."""
+        # Setup
+        mock_task = MagicMock()
+        mock_result = MagicMock()
+        mock_result.task = mock_task
+        mock_result.updated_fields = {"name": "New name"}
+        self.api_client.update_task.return_value = mock_result
+
+        # Execute
+        result = self.runner.invoke(
+            update_command, ["1", "--name", "New name"], obj=self.cli_context
+        )
+
+        # Verify
+        assert result.exit_code == 0
+        call_kwargs = self.api_client.update_task.call_args[1]
+        assert call_kwargs["name"] == "New name"
+        self.console_writer.task_fields_updated.assert_called_once()
+
     def test_update_priority(self):
         """Test updating task priority."""
         # Setup

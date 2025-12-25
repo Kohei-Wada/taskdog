@@ -51,7 +51,7 @@ taskdog rename 1 "New task name"
 ### update - Multi-field update
 
 ```bash
-taskdog update ID [--name] [--priority] [--status] [--planned-start] [--planned-end] [--deadline] [--estimated-duration]
+taskdog update ID [--name NAME] [--priority N] [--status STATUS] [--planned-start DATE] [--planned-end DATE] [--deadline DATE] [--estimated-duration HOURS]
 ```
 
 Update multiple task fields at once.
@@ -60,6 +60,7 @@ Update multiple task fields at once.
 
 ```bash
 taskdog update 1 --priority 200 --deadline 2025-10-25
+taskdog update 2 --name "New task name"
 ```
 
 ## Task Management
