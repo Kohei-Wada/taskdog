@@ -10,11 +10,27 @@ from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 from taskdog_core.domain.entities.task import TaskStatus
 
 
+def _validate_name(
+    ctx: click.Context, param: click.Parameter, value: str | None
+) -> str | None:
+    """Validate that name is not empty or whitespace-only."""
+    if value is not None and not value.strip():
+        raise click.BadParameter("cannot be empty or whitespace-only")
+    return value
+
+
 @click.command(
     name="update",
-    help="Update multiple task properties at once. For single-field updates, prefer specialized commands (deadline, priority, rename, estimate, schedule).",
+    help="Update multiple task properties at once.",
 )
 @click.argument("task_id", type=int)
+@click.option(
+    "--name",
+    type=str,
+    default=None,
+    callback=_validate_name,
+    help="New task name",
+)
 @click.option(
     "--priority",
     type=int,
@@ -56,6 +72,7 @@ from taskdog_core.domain.entities.task import TaskStatus
 def update_command(
     ctx: click.Context,
     task_id: int,
+    name: str | None,
     priority: int | None,
     status: str | None,
     planned_start: datetime | None,
@@ -72,17 +89,11 @@ def update_command(
         # Update multiple fields at once
         taskdog update 5 --priority 3 --deadline 2025-10-15
 
-        # Update status and record time
-        taskdog update 10 --status IN_PROGRESS
+        # Rename a task
+        taskdog update 10 --name "New task name"
 
         # Update deadline and estimated duration
         taskdog update 7 --deadline 2025-10-20 --estimated-duration 4.0
-
-    For single-field updates, prefer specialized commands:
-        taskdog deadline <ID> <DATE>
-        taskdog priority <ID> <PRIORITY>
-        taskdog estimate <ID> <HOURS>
-        taskdog schedule <ID> <START> [END]
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
@@ -93,6 +104,7 @@ def update_command(
     # Update task via API client
     result = ctx_obj.api_client.update_task(
         task_id=task_id,
+        name=name,
         priority=priority,
         status=status_enum,
         planned_start=planned_start,
@@ -103,7 +115,7 @@ def update_command(
 
     if not result.updated_fields:
         console_writer.warning(
-            "No fields to update. Use --priority, --status, --planned-start, --planned-end, --deadline, or --estimated-duration"
+            "No fields to update. Use --name, --priority, --status, --planned-start, --planned-end, --deadline, or --estimated-duration"
         )
         return
 

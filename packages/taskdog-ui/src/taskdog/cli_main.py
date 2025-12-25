@@ -8,22 +8,17 @@ from taskdog.cli.commands.add import add_command
 from taskdog.cli.commands.add_dependency import add_dependency_command
 from taskdog.cli.commands.audit_logs import audit_logs_command
 from taskdog.cli.commands.cancel import cancel_command
-from taskdog.cli.commands.deadline import deadline_command
 from taskdog.cli.commands.done import done_command
-from taskdog.cli.commands.estimate import estimate_command
 from taskdog.cli.commands.export import export_command
 from taskdog.cli.commands.fix_actual import fix_actual_command
 from taskdog.cli.commands.gantt import gantt_command
 from taskdog.cli.commands.note import note_command
 from taskdog.cli.commands.optimize import optimize_command
 from taskdog.cli.commands.pause import pause_command
-from taskdog.cli.commands.priority import priority_command
 from taskdog.cli.commands.remove_dependency import remove_dependency_command
-from taskdog.cli.commands.rename import rename_command
 from taskdog.cli.commands.reopen import reopen_command
 from taskdog.cli.commands.restore import restore_command
 from taskdog.cli.commands.rm import rm_command
-from taskdog.cli.commands.schedule import schedule_command
 from taskdog.cli.commands.show import show_command
 from taskdog.cli.commands.start import start_command
 from taskdog.cli.commands.stats import stats_command
@@ -152,15 +147,10 @@ cli.add_command(today_command)
 cli.add_command(week_command)
 cli.add_command(note_command)
 cli.add_command(show_command)
-cli.add_command(deadline_command)
-cli.add_command(priority_command)
 cli.add_command(remove_dependency_command)
-cli.add_command(rename_command)
 cli.add_command(reopen_command)
 cli.add_command(restore_command)
-cli.add_command(estimate_command)
 cli.add_command(fix_actual_command)
-cli.add_command(schedule_command)
 cli.add_command(optimize_command)
 cli.add_command(stats_command)
 cli.add_command(tags_command)

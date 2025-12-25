@@ -34,83 +34,10 @@ taskdog add "Implementation" -p 100 -d 1 -t backend -t api
 taskdog add "Team meeting" --fixed  # Won't be rescheduled
 ```
 
-### deadline - Set task deadline
-
-```bash
-taskdog deadline ID DATE
-```
-
-Set or update task deadline. Supports `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS` format.
-
-**Examples:**
-
-```bash
-taskdog deadline 1 2025-10-20
-taskdog deadline 2 "2025-10-22 18:00:00"
-```
-
-### priority - Set task priority
-
-```bash
-taskdog priority ID N
-```
-
-Set task priority (higher = more important). Default is 5.
-
-**Examples:**
-
-```bash
-taskdog priority 1 150
-```
-
-### est - Set estimated duration
-
-```bash
-taskdog est ID HOURS
-```
-
-Set estimated duration in hours for the task.
-
-**Examples:**
-
-```bash
-taskdog est 1 16
-taskdog est 2 8.5
-```
-
-### schedule - Set planned schedule
-
-```bash
-taskdog schedule ID START [END]
-```
-
-Set planned start and optional end time. If end time is omitted, uses estimated_duration.
-
-**Examples:**
-
-```bash
-taskdog schedule 1 "2025-10-22 09:00"
-taskdog schedule 2 "2025-10-22 10:00" "2025-10-22 11:00"
-```
-
-### rename - Rename task
-
-```bash
-taskdog rename ID NAME
-```
-
-Change the task name.
-
-**Examples:**
-
-```bash
-taskdog rename 1 "New task name"
-```
-
 ### update - Multi-field update
 
 ```bash
-taskdog update ID [--name] [--priority] [--status] [--planned-start] [--planned-end] [--deadline] [--estimated-duration]
+taskdog update ID [--name NAME] [--priority N] [--status STATUS] [--planned-start DATE] [--planned-end DATE] [--deadline DATE] [--estimated-duration HOURS]
 ```
 
 Update multiple task fields at once.
@@ -119,6 +46,7 @@ Update multiple task fields at once.
 
 ```bash
 taskdog update 1 --priority 200 --deadline 2025-10-25
+taskdog update 2 --name "New task name"
 ```
 
 ## Task Management
