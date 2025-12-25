@@ -15,7 +15,6 @@ from taskdog.cli.commands.gantt import gantt_command
 from taskdog.cli.commands.note import note_command
 from taskdog.cli.commands.optimize import optimize_command
 from taskdog.cli.commands.pause import pause_command
-from taskdog.cli.commands.priority import priority_command
 from taskdog.cli.commands.remove_dependency import remove_dependency_command
 from taskdog.cli.commands.rename import rename_command
 from taskdog.cli.commands.reopen import reopen_command
@@ -150,7 +149,6 @@ cli.add_command(today_command)
 cli.add_command(week_command)
 cli.add_command(note_command)
 cli.add_command(show_command)
-cli.add_command(priority_command)
 cli.add_command(remove_dependency_command)
 cli.add_command(rename_command)
 cli.add_command(reopen_command)

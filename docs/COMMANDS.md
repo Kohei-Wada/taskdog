@@ -34,20 +34,6 @@ taskdog add "Implementation" -p 100 -d 1 -t backend -t api
 taskdog add "Team meeting" --fixed  # Won't be rescheduled
 ```
 
-### priority - Set task priority
-
-```bash
-taskdog priority ID N
-```
-
-Set task priority (higher = more important). Default is 5.
-
-**Examples:**
-
-```bash
-taskdog priority 1 150
-```
-
 ### schedule - Set planned schedule
 
 ```bash
