@@ -16,7 +16,6 @@ from taskdog.cli.commands.note import note_command
 from taskdog.cli.commands.optimize import optimize_command
 from taskdog.cli.commands.pause import pause_command
 from taskdog.cli.commands.remove_dependency import remove_dependency_command
-from taskdog.cli.commands.rename import rename_command
 from taskdog.cli.commands.reopen import reopen_command
 from taskdog.cli.commands.restore import restore_command
 from taskdog.cli.commands.rm import rm_command
@@ -149,7 +148,6 @@ cli.add_command(week_command)
 cli.add_command(note_command)
 cli.add_command(show_command)
 cli.add_command(remove_dependency_command)
-cli.add_command(rename_command)
 cli.add_command(reopen_command)
 cli.add_command(restore_command)
 cli.add_command(fix_actual_command)

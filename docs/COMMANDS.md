@@ -34,20 +34,6 @@ taskdog add "Implementation" -p 100 -d 1 -t backend -t api
 taskdog add "Team meeting" --fixed  # Won't be rescheduled
 ```
 
-### rename - Rename task
-
-```bash
-taskdog rename ID NAME
-```
-
-Change the task name.
-
-**Examples:**
-
-```bash
-taskdog rename 1 "New task name"
-```
-
 ### update - Multi-field update
 
 ```bash
