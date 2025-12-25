@@ -9,7 +9,6 @@ from taskdog.cli.commands.add_dependency import add_dependency_command
 from taskdog.cli.commands.audit_logs import audit_logs_command
 from taskdog.cli.commands.cancel import cancel_command
 from taskdog.cli.commands.done import done_command
-from taskdog.cli.commands.estimate import estimate_command
 from taskdog.cli.commands.export import export_command
 from taskdog.cli.commands.fix_actual import fix_actual_command
 from taskdog.cli.commands.gantt import gantt_command
@@ -156,7 +155,6 @@ cli.add_command(remove_dependency_command)
 cli.add_command(rename_command)
 cli.add_command(reopen_command)
 cli.add_command(restore_command)
-cli.add_command(estimate_command)
 cli.add_command(fix_actual_command)
 cli.add_command(schedule_command)
 cli.add_command(optimize_command)

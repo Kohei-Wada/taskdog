@@ -48,21 +48,6 @@ Set task priority (higher = more important). Default is 5.
 taskdog priority 1 150
 ```
 
-### est - Set estimated duration
-
-```bash
-taskdog est ID HOURS
-```
-
-Set estimated duration in hours for the task.
-
-**Examples:**
-
-```bash
-taskdog est 1 16
-taskdog est 2 8.5
-```
-
 ### schedule - Set planned schedule
 
 ```bash
