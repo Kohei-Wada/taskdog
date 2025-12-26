@@ -130,4 +130,7 @@ def get_current_revision(engine: Engine) -> str | None:
     with engine.connect() as conn:
         result = conn.execute(text("SELECT version_num FROM alembic_version"))
         row = result.fetchone()
-        return row[0] if row else None
+        if row is None:
+            return None
+        version: str = row[0]
+        return version
