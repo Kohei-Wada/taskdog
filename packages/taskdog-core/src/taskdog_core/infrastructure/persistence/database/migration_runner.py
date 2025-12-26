@@ -132,5 +132,4 @@ def get_current_revision(engine: Engine) -> str | None:
         row = result.fetchone()
         if row is None:
             return None
-        version: str = row[0]
-        return version
+        return str(row[0])
