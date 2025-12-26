@@ -18,10 +18,12 @@ from taskdog_core.application.dto.audit_log_dto import (
     AuditLogOutput,
     AuditQuery,
 )
+from taskdog_core.infrastructure.persistence.database.migration_runner import (
+    run_migrations,
+)
 from taskdog_core.infrastructure.persistence.database.models.audit_log_model import (
     AuditLogModel,
 )
-from taskdog_core.infrastructure.persistence.database.models.task_model import Base
 
 
 class SqliteAuditLogRepository:
@@ -63,8 +65,8 @@ class SqliteAuditLogRepository:
         # Create sessionmaker for managing database sessions
         self.Session = sessionmaker(bind=self.engine)
 
-        # Create tables if they don't exist
-        Base.metadata.create_all(self.engine)
+        # Run database migrations
+        run_migrations(self.engine)
 
     def save(self, event: AuditEvent) -> None:
         """Persist an audit event to the database.

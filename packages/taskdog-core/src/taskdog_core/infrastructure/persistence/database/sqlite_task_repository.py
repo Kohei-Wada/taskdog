@@ -18,12 +18,14 @@ from sqlalchemy.orm import sessionmaker
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+from taskdog_core.infrastructure.persistence.database.migration_runner import (
+    run_migrations,
+)
 from taskdog_core.infrastructure.persistence.database.models import (
     TagModel,
     TaskModel,
     TaskTagModel,
 )
-from taskdog_core.infrastructure.persistence.database.models.task_model import Base
 from taskdog_core.infrastructure.persistence.database.mutation_builders import (
     TaskDeleteBuilder,
     TaskInsertBuilder,
@@ -96,8 +98,8 @@ class SqliteTaskRepository(TaskRepository):
         # Create sessionmaker for managing database sessions
         self.Session = sessionmaker(bind=self.engine)
 
-        # Create tables if they don't exist
-        Base.metadata.create_all(self.engine)
+        # Run database migrations
+        run_migrations(self.engine)
 
     def get_all(self) -> list[Task]:
         """Retrieve all tasks from database.
