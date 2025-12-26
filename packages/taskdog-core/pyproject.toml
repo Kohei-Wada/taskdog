@@ -10,6 +10,7 @@ authors = [
 license = { text = "MIT" }
 
 dependencies = [
+    "alembic>=1.13.0",
     "holidays>=0.60.0",
     "python-dateutil>=2.8.0",
     "sqlalchemy>=2.0.0",
@@ -58,17 +59,24 @@ packages = [
     "taskdog_core.shared",
     "taskdog_core.shared.constants",
     "taskdog_core.shared.utils",
+    "taskdog_core.infrastructure.persistence.database.migrations",
+    "taskdog_core.infrastructure.persistence.database.migrations.versions",
 ]
 package-dir = { "" = "src" }
 
 [tool.setuptools.package-data]
 taskdog_core = ["py.typed"]
+"taskdog_core.infrastructure.persistence.database.migrations" = ["*.mako"]
 
 [tool.mypy]
 python_version = "3.13"
 strict = true
 # Disable unused-ignore warnings (SQLAlchemy attr-defined errors are environment-dependent)
 warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = "alembic.*"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
