@@ -1,6 +1,7 @@
 """Tests for database migration runner."""
 
-import pytest
+from pathlib import Path
+
 from sqlalchemy import create_engine, inspect, text
 
 from taskdog_core.infrastructure.persistence.database.migration_runner import (
@@ -54,13 +55,13 @@ class TestRunMigrations:
         assert "alembic_version" in inspector.get_table_names()
 
     def test_stamps_existing_database_without_alembic_version(
-        self, tmp_path: pytest.TempPathFactory
+        self, tmp_path: Path
     ) -> None:
         """Test migrations on existing database without alembic_version.
 
         Simulates bringing a pre-migration database under version control.
         """
-        db_path = tmp_path / "test.db"  # type: ignore[operator]
+        db_path = tmp_path / "test.db"
         database_url = f"sqlite:///{db_path}"
 
         # Create existing schema using create_all (simulating pre-migration DB)

@@ -37,6 +37,9 @@ def run_migrations_offline() -> None:
     script output.
     """
     url = config.get_main_option("sqlalchemy.url")
+    if url is None:
+        raise ValueError("sqlalchemy.url must be configured for offline migrations")
+
     context.configure(
         url=url,
         target_metadata=target_metadata,

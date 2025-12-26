@@ -82,7 +82,6 @@ def run_migrations(engine: Engine) -> None:
     inspector = inspect(engine)
     existing_tables = inspector.get_table_names()
     has_alembic_version = "alembic_version" in existing_tables
-    has_existing_data = "tasks" in existing_tables
 
     # If already at head revision, skip migration
     if has_alembic_version:
@@ -98,6 +97,7 @@ def run_migrations(engine: Engine) -> None:
         inspector = inspect(engine)
         existing_tables = inspector.get_table_names()
         has_alembic_version = "alembic_version" in existing_tables
+        has_existing_data = "tasks" in existing_tables
 
         if has_alembic_version:
             current = get_current_revision(engine)
