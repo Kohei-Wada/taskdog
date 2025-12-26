@@ -12,7 +12,8 @@ create separate databases.
 from typing import Any
 
 from alembic import context
-from sqlalchemy import Engine, engine_from_config, pool
+from sqlalchemy import engine_from_config, pool
+from sqlalchemy.engine import Engine
 
 from taskdog_core.infrastructure.persistence.database.models.task_model import Base
 

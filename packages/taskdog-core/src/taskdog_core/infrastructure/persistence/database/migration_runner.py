@@ -13,7 +13,8 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config as AlembicConfig
 from alembic.script import ScriptDirectory
-from sqlalchemy import Engine, inspect, text
+from sqlalchemy import inspect, text
+from sqlalchemy.engine import Engine
 
 # Lock for thread-safe migration execution
 _migration_lock = threading.Lock()
