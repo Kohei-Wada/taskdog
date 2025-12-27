@@ -71,11 +71,6 @@ disallow_any_generics = false
 disallow_untyped_calls = false
 check_untyped_defs = false
 
-# Ignore modules that depend on taskdog_client (external package in monorepo)
-[[tool.mypy.overrides]]
-module = ["taskdog.infrastructure.api_client", "taskdog.infrastructure"]
-ignore_errors = true
-
 # Ignore third-party library without type stubs
 [[tool.mypy.overrides]]
 module = "textual.*"
@@ -108,10 +103,8 @@ module = [
   "taskdog.renderers.rich_renderer_base",
   "taskdog.renderers.rich_table_renderer",
   "taskdog.renderers.rich_gantt_renderer",
-  # "taskdog.cli.commands.*",  # Temporarily enabled for Tier 4 work
   "taskdog.tui.app",
   "taskdog.tui.widgets.*",
-  "taskdog.tui.screens.algorithm_selection_screen",
 ]
 ignore_errors = true
 

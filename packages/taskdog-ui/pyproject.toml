@@ -87,13 +87,6 @@ warn_unused_ignores = false
 module = "taskdog_client"
 ignore_missing_imports = true
 
-# Ignore modules that depend on taskdog_client (external package)
-[[tool.mypy.overrides]]
-module = [
-    "taskdog.infrastructure",
-]
-ignore_errors = true
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
