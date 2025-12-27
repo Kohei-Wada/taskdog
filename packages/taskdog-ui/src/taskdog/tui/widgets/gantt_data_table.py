@@ -29,7 +29,8 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
     """
 
     # No bindings - read-only display
-    BINDINGS: ClassVar[list[Binding]] = []
+    # Note: Base DataTable uses list[Binding | tuple] but list is invariant
+    BINDINGS: ClassVar[list[Binding]] = []  # type: ignore[assignment]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the Gantt data table."""
