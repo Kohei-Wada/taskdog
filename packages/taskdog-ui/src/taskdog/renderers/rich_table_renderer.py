@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from datetime import datetime
-from typing import ClassVar, Literal
+from typing import ClassVar, Literal, cast
 
 from rich.table import Table
 
@@ -212,8 +212,11 @@ class RichTableRenderer(RichRendererBase):
             field_config = self.FIELD_DEFINITIONS[field_name]
             header = str(field_config["header"])
             justify_val = field_config.get("justify")
+            valid_justify = {"default", "left", "center", "right", "full"}
             justify: JustifyMethod = (
-                str(justify_val) if justify_val else "left"  # type: ignore[assignment]
+                cast(JustifyMethod, justify_val)
+                if isinstance(justify_val, str) and justify_val in valid_justify
+                else "left"
             )
             style_val = field_config.get("style")
             style = str(style_val) if style_val else None
