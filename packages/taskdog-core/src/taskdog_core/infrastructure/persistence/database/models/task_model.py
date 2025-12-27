@@ -65,11 +65,6 @@ class TaskModel(Base):
     # Format: {"2025-01-15": 2.0, "2025-01-16": 3.0}
     daily_allocations: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
 
-    # DEPRECATED: Kept for database backwards compatibility only.
-    # This field is no longer used by the application but the column must exist
-    # in the database schema because it has NOT NULL constraint.
-    actual_daily_hours: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
-
     # Format: [2, 3, 5]
     depends_on: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
 

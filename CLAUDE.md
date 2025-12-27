@@ -270,7 +270,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 **Task Entity** (`packages/taskdog-core/src/taskdog_core/domain/entities/task.py`)
 
-- Fields: id, name, priority, status, planned_start/end, deadline, actual_start/end, estimated_duration, daily_allocations, is_fixed, depends_on, actual_daily_hours, tags, is_archived
+- Fields: id, name, priority, status, planned_start/end, deadline, actual_start/end, estimated_duration, daily_allocations, is_fixed, depends_on, tags, is_archived
 - Statuses: PENDING, IN_PROGRESS, COMPLETED, CANCELED
 - Always-Valid Entity: validates invariants in `__post_init__` (name non-empty, priority > 0, estimated_duration > 0 if set, tags non-empty and unique)
 - Properties: actual_duration_hours, is_active, is_finished, can_be_modified, is_schedulable
