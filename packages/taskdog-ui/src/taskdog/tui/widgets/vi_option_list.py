@@ -1,6 +1,5 @@
 """ViOptionList widget with Vi-style key bindings."""
 
-from collections.abc import Sequence
 from typing import ClassVar
 
 from textual.binding import Binding
@@ -24,7 +23,7 @@ class ViOptionList(OptionList, ViNavigationMixin):
     """
 
     # Use Vi vertical navigation bindings from mixin
-    BINDINGS: ClassVar[Sequence[Binding | tuple[str, str] | tuple[str, str, str]]] = (
+    BINDINGS: ClassVar[list[Binding | tuple[str, str] | tuple[str, str, str]]] = list(
         ViNavigationMixin.VI_VERTICAL_BINDINGS
     )
 
