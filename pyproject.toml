@@ -100,8 +100,6 @@ ignore_missing_imports = true
 # These require Click decorator type annotations and Rich library compatibility fixes
 [[tool.mypy.overrides]]
 module = [
-  "taskdog.renderers.rich_table_renderer",
-  "taskdog.renderers.rich_gantt_renderer",
   "taskdog.tui.app",
   "taskdog.tui.widgets.*",
 ]

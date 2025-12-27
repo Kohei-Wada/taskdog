@@ -1,4 +1,6 @@
-from typing import ClassVar
+from collections.abc import Callable
+from datetime import datetime
+from typing import ClassVar, Literal
 
 from rich.table import Table
 
@@ -26,6 +28,9 @@ from taskdog_core.domain.constants import (
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
 )
+
+# Type alias for Rich table justify method
+JustifyMethod = Literal["default", "left", "center", "right", "full"]
 
 
 class RichTableRenderer(RichRendererBase):
@@ -205,12 +210,15 @@ class RichTableRenderer(RichRendererBase):
         # Add columns dynamically based on selected fields
         for field_name in fields:
             field_config = self.FIELD_DEFINITIONS[field_name]
-            table.add_column(
-                field_config["header"],
-                justify=field_config.get("justify"),
-                style=field_config.get("style"),
-                no_wrap=field_config.get("no_wrap", False),
+            header = str(field_config["header"])
+            justify_val = field_config.get("justify")
+            justify: JustifyMethod = (
+                str(justify_val) if justify_val else "left"  # type: ignore[assignment]
             )
+            style_val = field_config.get("style")
+            style = str(style_val) if style_val else None
+            no_wrap = bool(field_config.get("no_wrap", False))
+            table.add_column(header, justify=justify, style=style, no_wrap=no_wrap)
 
         # Add rows
         for task in tasks:
@@ -233,7 +241,7 @@ class RichTableRenderer(RichRendererBase):
             Formatted string value for display
         """
         # Field value extractors mapping
-        field_extractors = {
+        field_extractors: dict[str, Callable[[TaskRowViewModel], str]] = {
             "id": lambda t: str(t.id),
             "name": lambda t: f"[strike]{t.name}[/strike]" if t.is_finished else t.name,
             "note": lambda t: "📝" if t.has_notes else "",
@@ -283,7 +291,7 @@ class RichTableRenderer(RichRendererBase):
         status_style = self._get_status_style(task.status)
         return f"[{status_style}]{task.status.value}[/{status_style}]"
 
-    def _format_datetime(self, dt) -> str:
+    def _format_datetime(self, dt: datetime | None) -> str:
         """Format datetime for display.
 
         Args:
@@ -294,12 +302,7 @@ class RichTableRenderer(RichRendererBase):
         """
         if not dt:
             return "-"
-        from datetime import datetime
-
-        if isinstance(dt, datetime):
-            # Show only date and time (YYYY-MM-DD HH:MM)
-            return DateTimeFormatter.format_datetime_compact(dt)
-        return str(dt)
+        return DateTimeFormatter.format_datetime_compact(dt)
 
     def _format_dependencies(self, task: TaskRowViewModel) -> str:
         """Format task dependencies for display.
