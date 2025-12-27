@@ -96,13 +96,6 @@ ignore_missing_imports = true
 module = "alembic.*"
 ignore_missing_imports = true
 
-# Temporarily ignore UI modules with missing type annotations (Tier 4)
-# These require Click decorator type annotations and Rich library compatibility fixes
-[[tool.mypy.overrides]]
-module = [
-  "taskdog.tui.widgets.task_table",
-]
-ignore_errors = true
 
 # Ruff configuration
 [tool.ruff]

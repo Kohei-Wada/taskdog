@@ -7,10 +7,11 @@ This module provides a data table widget for displaying tasks with:
 - Automatic formatting for all task fields
 """
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from rich.text import Text
 from textual.binding import Binding
+from textual.coordinate import Coordinate
 from textual.reactive import reactive
 from textual.widgets import DataTable
 
@@ -26,7 +27,7 @@ from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog.view_models.task_view_model import TaskRowViewModel
 
 
-class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
+class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-arg]
     """A data table widget for displaying tasks with Vi-style keyboard navigation.
 
     This widget acts as a coordinator that delegates responsibilities to:
@@ -93,7 +94,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         ),
     ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the task table."""
         super().__init__(*args, **kwargs)
         self.cursor_type = "row"
@@ -112,7 +113,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         self._search_filter = TaskSearchFilter()
         self._row_builder = TaskTableRowBuilder()
 
-    def setup_columns(self):
+    def setup_columns(self) -> None:
         """Set up table columns."""
         self.add_column(Text("", justify="center"))
         self.add_column(Text("ID", justify="center"))
@@ -131,7 +132,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         self.add_column(Text("Dependencies", justify="center"))
         self.add_column(Text("Tags", justify="center"))
 
-    def load_tasks(self, view_models: list[TaskRowViewModel]):
+    def load_tasks(self, view_models: list[TaskRowViewModel]) -> None:
         """Load task ViewModels into the table.
 
         Args:
@@ -142,7 +143,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         self._filter_chain = []
         self._render_tasks(self._get_all_viewmodels_from_state())
 
-    def _render_tasks(self, view_models: list[TaskRowViewModel]):
+    def _render_tasks(self, view_models: list[TaskRowViewModel]) -> None:
         """Render task ViewModels to the table using Textual's recommended pattern.
 
         Instead of clearing and rebuilding the entire table, this method:
@@ -168,9 +169,9 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
 
             if idx < current_row_count:
                 # Update existing row using update_cell_at() - preserves cursor/hover state
-                self.update_cell_at((idx, 0), checkbox)  # Checkbox column
+                self.update_cell_at(Coordinate(idx, 0), checkbox)  # Checkbox column
                 for col_idx, value in enumerate(row_data, start=1):
-                    self.update_cell_at((idx, col_idx), value)
+                    self.update_cell_at(Coordinate(idx, col_idx), value)
             else:
                 # Add new row
                 self.add_row(checkbox, *row_data)
@@ -186,7 +187,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
                 del self._viewmodel_map[row_idx_to_remove]
             # Get the last row key from coordinates and remove it
             # coordinate_to_cell_key returns (row_key, column_key)
-            row_key, _ = self.coordinate_to_cell_key((row_idx_to_remove, 0))
+            row_key, _ = self.coordinate_to_cell_key(Coordinate(row_idx_to_remove, 0))
             self.remove_row(row_key)
 
     def _build_checkbox(self, task_id: int) -> Text:
@@ -231,7 +232,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
 
     def refresh_tasks(
         self, view_models: list[TaskRowViewModel], keep_scroll_position: bool = False
-    ):
+    ) -> None:
         """Refresh the table with updated ViewModels while maintaining cursor position.
 
         Args:
@@ -241,8 +242,13 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         """
         current_row = self.cursor_row
         # Save scroll position before refresh (both vertical and horizontal)
-        saved_scroll_y = self.scroll_y if keep_scroll_position else None
-        saved_scroll_x = self.scroll_x if keep_scroll_position else None
+        # Note: scroll_y/scroll_x types from DataTable base class (type: ignore needed)
+        saved_scroll_y: float | None = (
+            self.scroll_y if keep_scroll_position else None  # type: ignore[has-type]
+        )
+        saved_scroll_x: float | None = (
+            self.scroll_x if keep_scroll_position else None  # type: ignore[has-type]
+        )
 
         # NOTE: view_models parameter ignored - data is read from app.state (Step 5)
         all_viewmodels = self._get_all_viewmodels_from_state()
@@ -269,7 +275,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
             if saved_scroll_x is not None:
                 self.scroll_x = saved_scroll_x
 
-    def filter_tasks(self, query: str):
+    def filter_tasks(self, query: str) -> None:
         """Filter task ViewModels based on search query with smart case matching.
 
         Applies filter chain first, then applies current query to the result.
@@ -291,7 +297,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
 
         self._render_tasks(filtered_vms)
 
-    def clear_filter(self):
+    def clear_filter(self) -> None:
         """Clear the current filter and filter chain, then show all ViewModels."""
         self._current_query = ""
         self._filter_chain = []
@@ -463,7 +469,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):
         checkbox = self._build_checkbox(task_vm.id)
 
         # Update the checkbox cell
-        self.update_cell_at((self.cursor_row, 0), checkbox)
+        self.update_cell_at(Coordinate(self.cursor_row, 0), checkbox)
 
     def get_selected_task_ids(self) -> list[int]:
         """Get all selected task IDs for batch operations.
