@@ -234,7 +234,7 @@ class RichGanttRenderer(RichRendererBase):
         start_date: date,
         end_date: date,
         holidays: set[date],
-    ):
+    ) -> None:
         """Add a task to Gantt chart table.
 
         Args:

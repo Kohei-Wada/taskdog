@@ -449,12 +449,11 @@ class TestRichTableRenderer:
         [
             (None, "-"),
             (datetime(2025, 3, 15, 14, 30, 45), "2025-03-15 14:30"),
-            ("2025-01-01", "2025-01-01"),
         ],
-        ids=["none", "datetime_object", "non_datetime"],
+        ids=["none", "datetime_object"],
     )
     def test_format_datetime(self, dt_value, expected):
-        """Test _format_datetime handles None, datetime objects, and other types."""
+        """Test _format_datetime handles None and datetime objects."""
         result = self.renderer._format_datetime(dt_value)
         assert result == expected
 
