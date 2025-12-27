@@ -74,7 +74,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         yield self._title_widget
 
         # GanttDataTable (scrollable via DataTable's built-in scroll)
-        self._gantt_table = GanttDataTable(id="gantt-table")
+        self._gantt_table = GanttDataTable(id="gantt-table")  # type: ignore[no-untyped-call]
         yield self._gantt_table
 
         # Legend at bottom (fixed - not scrollable)
@@ -141,7 +141,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         reverse: bool = False,
         all: bool = False,
         keep_scroll_position: bool = False,
-    ):
+    ) -> None:
         """Update the gantt chart with new gantt data.
 
         Args:
@@ -219,7 +219,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         """Load and display gantt data from the pre-computed gantt ViewModel."""
         try:
             gantt_view_model = self._get_gantt_from_state()
-            if gantt_view_model:
+            if gantt_view_model and self._gantt_table:
                 self._gantt_table.load_gantt(
                     gantt_view_model, keep_scroll_position=self._keep_scroll_position
                 )
@@ -250,7 +250,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
 
     def _update_legend(self) -> None:
         """Update legend with gantt chart symbols."""
-        if not self._legend_widget:
+        if not self._legend_widget or not self._gantt_table:
             return
 
         legend_text = self._gantt_table.get_legend_text()
@@ -371,7 +371,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         return self.tui_state.sort_by
 
     def update_view_model_and_render(
-        self, gantt_view_model, keep_scroll_position: bool = False
+        self, gantt_view_model: GanttViewModel, keep_scroll_position: bool = False
     ) -> None:
         """Update gantt view model and trigger re-render.
 
