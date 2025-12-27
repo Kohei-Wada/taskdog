@@ -1,6 +1,5 @@
 """ViSelect widget with Vi-style key bindings."""
 
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual.binding import Binding
@@ -23,7 +22,7 @@ class ViSelectOverlay(SelectOverlay, ViNavigationMixin):
     - G: Jump to bottom
     """
 
-    BINDINGS: ClassVar[Sequence[Binding | tuple[str, str] | tuple[str, str, str]]] = [
+    BINDINGS: ClassVar[list[Binding | tuple[str, str] | tuple[str, str, str]]] = [
         *SelectOverlay.BINDINGS,
         *ViNavigationMixin.VI_VERTICAL_BINDINGS,
     ]

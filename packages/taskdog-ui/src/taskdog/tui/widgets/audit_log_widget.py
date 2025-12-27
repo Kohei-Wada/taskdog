@@ -7,6 +7,7 @@ status, and client info.
 
 from typing import Any, ClassVar
 
+from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.widgets import Static
 
@@ -27,7 +28,9 @@ class AuditLogWidget(VerticalScroll, ViNavigationMixin, TUIWidget):
     """
 
     MAX_LOGS: ClassVar[int] = 50
-    BINDINGS: ClassVar = ViNavigationMixin.VI_SCROLL_BINDINGS
+    BINDINGS: ClassVar[list[Binding | tuple[str, str] | tuple[str, str, str]]] = list(
+        ViNavigationMixin.VI_SCROLL_BINDINGS
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the audit log widget."""

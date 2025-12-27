@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     pass
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Vertical
 from textual.events import Resize
 from textual.widgets import Static
@@ -45,7 +46,9 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
     allow_maximize = True
 
     # Vi-style bindings for scrolling (delegated to gantt table)
-    BINDINGS: ClassVar = ViNavigationMixin.VI_SCROLL_ALL_BINDINGS
+    BINDINGS: ClassVar[list[Binding | tuple[str, str] | tuple[str, str, str]]] = list(
+        ViNavigationMixin.VI_SCROLL_ALL_BINDINGS
+    )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the gantt widget."""
