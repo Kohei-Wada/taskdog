@@ -6,9 +6,10 @@ like task selection, date range adjustment, and filtering.
 """
 
 from datetime import date, timedelta
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from rich.text import Text
+from textual.binding import Binding
 from textual.widgets import DataTable
 
 from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
@@ -18,7 +19,7 @@ from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowVie
 GANTT_HEADER_ROW_COUNT = 3  # Number of header rows (Month, Week, Date)
 
 
-class GanttDataTable(DataTable):
+class GanttDataTable(DataTable):  # type: ignore[type-arg]
     """A Textual DataTable widget for displaying Gantt charts.
 
     This widget provides a read-only Gantt chart display with:
@@ -28,9 +29,10 @@ class GanttDataTable(DataTable):
     """
 
     # No bindings - read-only display
-    BINDINGS: ClassVar = []
+    # Note: Base DataTable uses list[Binding | tuple] but list is invariant
+    BINDINGS: ClassVar[list[Binding]] = []  # type: ignore[assignment]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the Gantt data table."""
         super().__init__(*args, **kwargs)
         self.cursor_type = "none"
@@ -51,7 +53,7 @@ class GanttDataTable(DataTable):
         self,
         start_date: date,
         end_date: date,
-    ):
+    ) -> None:
         """Set up table columns including Timeline column.
 
         Args:
@@ -79,7 +81,7 @@ class GanttDataTable(DataTable):
 
     def load_gantt(
         self, gantt_view_model: GanttViewModel, keep_scroll_position: bool = False
-    ):
+    ) -> None:
         """Load Gantt data into the table.
 
         Args:
@@ -88,8 +90,13 @@ class GanttDataTable(DataTable):
                                  Set to True for periodic updates to avoid scroll stuttering.
         """
         # Save scroll position before refresh (both vertical and horizontal)
-        saved_scroll_y = self.scroll_y if keep_scroll_position else None
-        saved_scroll_x = self.scroll_x if keep_scroll_position else None
+        # Note: scroll_y/scroll_x types from DataTable base class (type: ignore needed)
+        saved_scroll_y: float | None = (
+            self.scroll_y if keep_scroll_position else None  # type: ignore[has-type]
+        )
+        saved_scroll_x: float | None = (
+            self.scroll_x if keep_scroll_position else None  # type: ignore[has-type]
+        )
 
         # NOTE: No longer storing view model locally - just use parameter (Step 4)
         self._task_map.clear()
@@ -141,7 +148,7 @@ class GanttDataTable(DataTable):
 
     def _add_date_header_rows(
         self, start_date: date, end_date: date, holidays: set[date]
-    ):
+    ) -> None:
         """Add date header rows (Month, Today marker, Day) as separate rows.
 
         Args:
@@ -181,7 +188,7 @@ class GanttDataTable(DataTable):
         start_date: date,
         end_date: date,
         holidays: set[date],
-    ):
+    ) -> None:
         """Add a task row to the Gantt table.
 
         Args:
@@ -276,7 +283,7 @@ class GanttDataTable(DataTable):
         start_date: date,
         end_date: date,
         total_estimated_duration: float = 0.0,
-    ):
+    ) -> None:
         """Add workload summary row.
 
         Args:
