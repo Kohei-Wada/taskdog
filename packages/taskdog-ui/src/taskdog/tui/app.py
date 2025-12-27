@@ -46,7 +46,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 )
 
 
-class TaskdogTUI(App):
+class TaskdogTUI(App):  # type: ignore[type-arg]
     """Taskdog TUI application."""
 
     TITLE = f"Taskdog v{__version__}"
@@ -198,7 +198,9 @@ class TaskdogTUI(App):
     }
 
     # Load CSS from external files
-    CSS_PATH: ClassVar[list[str | Path]] = get_css_paths()
+    # Note: get_css_paths() returns list[str | Path], but App expects list[str | PurePath]
+    # Path is a subclass of PurePath, but list is invariant so we need type: ignore
+    CSS_PATH: ClassVar[list[str | Path]] = get_css_paths()  # type: ignore[assignment]
 
     # Enable mouse support
     ENABLE_MOUSE: ClassVar[bool] = True
@@ -208,9 +210,9 @@ class TaskdogTUI(App):
         api_client: "TaskdogApiClient",
         websocket_client: WebSocketClient,
         cli_config: "CliConfig | None" = None,
-        *args,
-        **kwargs,
-    ):
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         """Initialize the TUI application.
 
         TUI operates through the API client for all task operations.
@@ -281,7 +283,7 @@ class TaskdogTUI(App):
         """
         self.websocket_handler.handle_message(message)
 
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Any:
         """Dynamically handle action_* methods by delegating to command_factory.
 
         This eliminates the need for 12 nearly-identical action methods.
@@ -335,9 +337,11 @@ class TaskdogTUI(App):
         )
 
         # Load tasks after screen is fully mounted
-        self.call_after_refresh(
-            lambda: self.task_ui_manager and self.task_ui_manager.load_tasks()
-        )
+        def _load_tasks_if_ready() -> None:
+            if self.task_ui_manager:
+                self.task_ui_manager.load_tasks()
+
+        self.call_after_refresh(_load_tasks_if_ready)
         # Start auto-refresh timer for elapsed time updates
         self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
         # Start connection monitoring timer (check every 3 seconds)
@@ -518,7 +522,7 @@ class TaskdogTUI(App):
                 )
 
     # Event handlers for task operations
-    def _handle_task_change_event(self, event) -> None:
+    def _handle_task_change_event(self, event: Any) -> None:
         """Handle any task change event by reloading tasks.
 
         This generic handler is used for all task modification events
