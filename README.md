@@ -11,11 +11,13 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 
 https://github.com/user-attachments/assets/47022478-078d-4ad9-ba7d-d1cd4016e105
 
-**Architecture**: UV workspace monorepo with three packages:
+**Architecture**: UV workspace monorepo with five packages:
 
 - **taskdog-core**: Core business logic and SQLite persistence
+- **taskdog-client**: HTTP API client library
 - **taskdog-server**: FastAPI REST API server
 - **taskdog-ui**: CLI and TUI interfaces
+- **taskdog-mcp**: MCP server for Claude Desktop integration
 
 ## Table of Contents
 
@@ -55,6 +57,8 @@ https://github.com/user-attachments/assets/47022478-078d-4ad9-ba7d-d1cd4016e105
 - **Batch Operations**: Start/complete/pause/cancel multiple tasks at once
 - **Soft Delete**: Restore removed tasks
 - **SQLite Storage**: Transactional persistence with ACID guarantees
+- **Audit Logging**: Track all task operations with client identification
+- **MCP Integration**: Native Claude Desktop support via Model Context Protocol
 
 ## Design Philosophy
 
@@ -96,6 +100,7 @@ make install-local
 
 - `taskdog` - CLI and TUI interface
 - `taskdog-server` - FastAPI REST API server
+- `taskdog-mcp` - MCP server for Claude Desktop integration
 - **Linux**: systemd user service for automatic startup
 - **macOS**: launchd service for automatic startup
 
@@ -241,6 +246,9 @@ taskdog tui                              # Interactive TUI
 # Optimization
 taskdog optimize                         # Auto-schedule tasks
 taskdog optimize -a balanced             # Use balanced algorithm
+
+# Auditing
+taskdog audit-logs                       # View operation history
 ```
 
 **See [CLI Commands Reference](docs/COMMANDS.md) for complete command documentation.**
@@ -285,6 +293,25 @@ country = "JP"
 
 **See [Configuration Guide](docs/CONFIGURATION.md) for all available options.**
 
+### MCP Integration (Claude Desktop)
+
+Taskdog includes an MCP server for Claude Desktop integration. See **[taskdog-mcp README](packages/taskdog-mcp/README.md)** for setup and available tools.
+
+Quick setup:
+
+1. Ensure `taskdog-server` is running
+2. Add to Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "taskdog": {
+      "command": "taskdog-mcp"
+    }
+  }
+}
+```
+
 ## Workflow
 
 1. **Create tasks** with priorities and estimates
@@ -315,8 +342,10 @@ make check                          # Lint + typecheck
 **Architecture**: UV workspace monorepo with Clean Architecture principles.
 
 - **taskdog-core**: Domain, Application, Infrastructure layers
+- **taskdog-client**: HTTP API client library
 - **taskdog-server**: FastAPI REST API (Presentation layer)
 - **taskdog-ui**: CLI/TUI interfaces (Presentation layer)
+- **taskdog-mcp**: MCP server for AI integration (Presentation layer)
 
 **See [CLAUDE.md](CLAUDE.md) for detailed development guide and architecture documentation.**
 
