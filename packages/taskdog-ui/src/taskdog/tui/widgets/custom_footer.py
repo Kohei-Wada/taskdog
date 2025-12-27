@@ -1,6 +1,6 @@
 """Custom footer widget with keybindings, connection status, and search input."""
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual import events
 from textual.app import ComposeResult
@@ -51,7 +51,7 @@ class CustomFooter(Container):
     is_api_connected: reactive[bool] = reactive(False)
     is_websocket_connected: reactive[bool] = reactive(False)
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the custom footer."""
         super().__init__(*args, **kwargs)
         self.add_class("custom-footer")
@@ -84,10 +84,12 @@ class CustomFooter(Container):
     def on_mount(self) -> None:
         """Called when widget is mounted to the DOM."""
         # Subscribe to connection status changes via observer pattern
-        self.app.connection_manager.subscribe(self._on_connection_status_changed)
+        self.app.connection_manager.subscribe(  # type: ignore[attr-defined]
+            self._on_connection_status_changed
+        )
 
         # Initialize from current status
-        status = self.app.connection_manager.status
+        status = self.app.connection_manager.status  # type: ignore[attr-defined]
         self.is_api_connected = status.is_api_connected
         self.is_websocket_connected = status.is_websocket_connected
         self._update_connection_status()
@@ -95,7 +97,9 @@ class CustomFooter(Container):
     def on_unmount(self) -> None:
         """Called when widget is unmounted from the DOM."""
         # Unsubscribe to prevent memory leaks
-        self.app.connection_manager.unsubscribe(self._on_connection_status_changed)
+        self.app.connection_manager.unsubscribe(  # type: ignore[attr-defined]
+            self._on_connection_status_changed
+        )
 
     def _on_connection_status_changed(self, status: "ConnectionStatus") -> None:
         """Handle connection status change from ConnectionStatusManager.
@@ -120,7 +124,7 @@ class CustomFooter(Container):
         Returns:
             Server address in host:port format
         """
-        base_url = self.app.api_client.base_url
+        base_url: str = self.app.api_client.base_url  # type: ignore[attr-defined]
         # Remove protocol (http:// or https://)
         if "://" in base_url:
             base_url = base_url.split("://", 1)[1]
@@ -208,7 +212,8 @@ class CustomFooter(Container):
     def value(self) -> str:
         """Get the current search query."""
         search_input = self.query_one(f"#{SEARCH_INPUT_ID}", Input)
-        return search_input.value
+        result: str = search_input.value
+        return result
 
     def focus_input(self) -> None:
         """Focus the search input field."""
