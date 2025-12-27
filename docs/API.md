@@ -198,7 +198,6 @@ List tasks with filtering
     "is_fixed": false,
     "depends_on": [],
     "daily_allocations": {},
-    "actual_daily_hours": {},
     "tags": ["backend", "api"],
     "is_archived": false
   }
