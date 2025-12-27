@@ -21,10 +21,13 @@ class TaskSummaryDto:
     """Minimal task information for lists and references.
 
     Used when only basic task identification is needed.
+    Includes optional duration fields for statistics display.
     """
 
     id: int
     name: str
+    estimated_duration: float | None = None
+    actual_duration_hours: float | None = None
 
     @classmethod
     def from_entity(cls, task: Task) -> TaskSummaryDto:
@@ -34,14 +37,19 @@ class TaskSummaryDto:
             task: Task entity to convert
 
         Returns:
-            TaskSummaryDto with id and name
+            TaskSummaryDto with id, name, and duration fields
 
         Raises:
             ValueError: If task.id is None
         """
         if task.id is None:
             raise ValueError("Task must have an ID")
-        return cls(id=task.id, name=task.name)
+        return cls(
+            id=task.id,
+            name=task.name,
+            estimated_duration=task.estimated_duration,
+            actual_duration_hours=task.actual_duration_hours,
+        )
 
 
 @dataclass(frozen=True)

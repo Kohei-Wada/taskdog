@@ -274,10 +274,15 @@ class CompletionStatistics(BaseModel):
 
 
 class TaskSummaryResponse(BaseModel):
-    """Minimal task information for references."""
+    """Minimal task information for references.
+
+    Includes optional duration fields for statistics display.
+    """
 
     id: int
     name: str
+    estimated_duration: float | None = None
+    actual_duration_hours: float | None = None
 
 
 class TimeStatistics(BaseModel):

@@ -135,10 +135,9 @@ class StatisticsMapper:
         Returns:
             TaskSummaryViewModel with basic task information
         """
-        # TaskSummaryDto only has id and name, so we set optional fields to None
         return TaskSummaryViewModel(
             id=task.id,
             name=task.name,
-            estimated_duration=None,
-            actual_duration_hours=None,
+            estimated_duration=task.estimated_duration,
+            actual_duration_hours=task.actual_duration_hours,
         )
