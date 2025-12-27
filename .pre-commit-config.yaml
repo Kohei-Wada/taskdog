@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [click>=8.3.0, rich>=14.2.0, fastapi>=0.115.0, pydantic>=2.10.0, httpx>=0.27.0, "uvicorn[standard]>=0.32.0"]
-        args: [--config-file=pyproject.toml, packages/taskdog-core/src/, packages/taskdog-client/src/, packages/taskdog-server/src/, packages/taskdog-ui/src/]
+        args: [--config-file=pyproject.toml, packages/taskdog-core/src/, packages/taskdog-client/src/, packages/taskdog-server/src/, packages/taskdog-ui/src/, packages/taskdog-mcp/src/]
         pass_filenames: false
 
   # Markdown linter
