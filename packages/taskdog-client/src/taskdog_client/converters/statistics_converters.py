@@ -44,7 +44,12 @@ def _parse_task_summary(data: dict[str, Any] | None) -> TaskSummaryDto | None:
     """
     if data is None:
         return None
-    return TaskSummaryDto(id=data["id"], name=data["name"])
+    return TaskSummaryDto(
+        id=data["id"],
+        name=data["name"],
+        estimated_duration=data.get("estimated_duration"),
+        actual_duration_hours=data.get("actual_duration_hours"),
+    )
 
 
 def _parse_task_summary_list(data: list[dict[str, Any]] | None) -> list[TaskSummaryDto]:
@@ -58,7 +63,15 @@ def _parse_task_summary_list(data: list[dict[str, Any]] | None) -> list[TaskSumm
     """
     if not data:
         return []
-    return [TaskSummaryDto(id=d["id"], name=d["name"]) for d in data]
+    return [
+        TaskSummaryDto(
+            id=d["id"],
+            name=d["name"],
+            estimated_duration=d.get("estimated_duration"),
+            actual_duration_hours=d.get("actual_duration_hours"),
+        )
+        for d in data
+    ]
 
 
 def _parse_time_statistics(time_data: dict[str, Any]) -> TimeStatistics:

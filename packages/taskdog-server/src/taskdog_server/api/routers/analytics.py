@@ -80,14 +80,27 @@ async def get_statistics(
         ) -> TaskSummaryResponse | None:
             if dto is None:
                 return None
-            return TaskSummaryResponse(id=dto.id, name=dto.name)
+            return TaskSummaryResponse(
+                id=dto.id,
+                name=dto.name,
+                estimated_duration=dto.estimated_duration,
+                actual_duration_hours=dto.actual_duration_hours,
+            )
 
         def to_task_summary_list(
             dtos: "list[TaskSummaryDto]",
         ) -> list[TaskSummaryResponse]:
             if not dtos:
                 return []
-            return [TaskSummaryResponse(id=d.id, name=d.name) for d in dtos]
+            return [
+                TaskSummaryResponse(
+                    id=d.id,
+                    name=d.name,
+                    estimated_duration=d.estimated_duration,
+                    actual_duration_hours=d.actual_duration_hours,
+                )
+                for d in dtos
+            ]
 
         # Convert DTO to response model
         response = StatisticsResponse(
