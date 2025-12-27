@@ -101,7 +101,11 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = [
   "taskdog.tui.app",
-  "taskdog.tui.widgets.*",
+  "taskdog.tui.widgets.connection_status",
+  "taskdog.tui.widgets.custom_footer",
+  "taskdog.tui.widgets.gantt_data_table",
+  "taskdog.tui.widgets.gantt_widget",
+  "taskdog.tui.widgets.task_table",
 ]
 ignore_errors = true
 

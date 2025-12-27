@@ -37,7 +37,7 @@ class TaskTableRowBuilder:
     and DurationFormatter for formatting logic.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the TaskTableRowBuilder with formatter dependencies."""
         self.date_formatter = DateTimeFormatter()
         self.duration_formatter = DurationFormatter()
