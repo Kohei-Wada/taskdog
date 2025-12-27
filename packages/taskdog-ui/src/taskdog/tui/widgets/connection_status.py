@@ -1,6 +1,6 @@
 """Connection status indicator widget for TUI header."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from textual.reactive import reactive
 from textual.widgets import Static
@@ -24,7 +24,7 @@ class ConnectionStatusWidget(Static):
     is_api_connected: reactive[bool] = reactive(False)
     is_websocket_connected: reactive[bool] = reactive(False)
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the connection status widget."""
         super().__init__(*args, **kwargs)
         self.add_class("connection-status")
@@ -32,10 +32,12 @@ class ConnectionStatusWidget(Static):
     def on_mount(self) -> None:
         """Called when widget is mounted to the DOM."""
         # Subscribe to connection status changes via observer pattern
-        self.app.connection_manager.subscribe(self._on_connection_status_changed)
+        self.app.connection_manager.subscribe(  # type: ignore[attr-defined]
+            self._on_connection_status_changed
+        )
 
         # Initialize from current status
-        status = self.app.connection_manager.status
+        status = self.app.connection_manager.status  # type: ignore[attr-defined]
         self.is_api_connected = status.is_api_connected
         self.is_websocket_connected = status.is_websocket_connected
         self._update_display()
@@ -43,7 +45,9 @@ class ConnectionStatusWidget(Static):
     def on_unmount(self) -> None:
         """Called when widget is unmounted from the DOM."""
         # Unsubscribe to prevent memory leaks
-        self.app.connection_manager.unsubscribe(self._on_connection_status_changed)
+        self.app.connection_manager.unsubscribe(  # type: ignore[attr-defined]
+            self._on_connection_status_changed
+        )
 
     def _on_connection_status_changed(self, status: "ConnectionStatusData") -> None:
         """Handle connection status change from ConnectionStatusManager.
