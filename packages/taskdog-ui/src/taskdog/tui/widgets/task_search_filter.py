@@ -18,7 +18,7 @@ class TaskSearchFilter:
     Formatters are cached at instance level to avoid repeated instantiation.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with cached formatters for efficient reuse."""
         self._duration_formatter = DurationFormatter()
         self._date_formatter = DateTimeFormatter()
