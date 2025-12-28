@@ -10,12 +10,25 @@
 .DEFAULT_GOAL := help
 
 # Platform detection
-UNAME_S := $(shell uname -s)
+UNAME_S := $(shell uname -s 2>/dev/null || echo Windows)
 ifeq ($(UNAME_S),Linux)
     PLATFORM := linux
 endif
 ifeq ($(UNAME_S),Darwin)
     PLATFORM := macos
+endif
+# Windows detection (Git Bash, MSYS2, Cygwin)
+ifneq (,$(findstring MINGW,$(UNAME_S)))
+    PLATFORM := windows
+endif
+ifneq (,$(findstring MSYS,$(UNAME_S)))
+    PLATFORM := windows
+endif
+ifneq (,$(findstring CYGWIN,$(UNAME_S)))
+    PLATFORM := windows
+endif
+ifeq ($(UNAME_S),Windows)
+    PLATFORM := windows
 endif
 
 help: ## Show this help message
@@ -53,6 +66,8 @@ ifeq ($(PLATFORM),linux)
 else ifeq ($(PLATFORM),macos)
 	@command -v launchctl >/dev/null 2>&1 || { echo "❌ Error: launchctl is not installed"; exit 1; }
 	@echo "✓ launchctl is installed"
+else ifeq ($(PLATFORM),windows)
+	@echo "✓ Windows detected (Task Scheduler available)"
 endif
 	@echo "✓ All dependencies are installed"
 	@echo ""
@@ -105,6 +120,22 @@ else ifeq ($(PLATFORM),macos)
 	@echo "  - Stop:   launchctl stop com.github.kohei-wada.taskdog-server"
 	@echo "  - Status: launchctl list | grep taskdog-server"
 	@echo "  - Logs:   tail -f ~/Library/Logs/taskdog-server.log"
+	@echo ""
+else ifeq ($(PLATFORM),windows)
+	@echo "✓ All commands installed successfully!"
+	@echo ""
+	@echo "Available commands:"
+	@echo "  - taskdog          (CLI/TUI)"
+	@echo "  - taskdog-server   (API server)"
+	@echo "  - taskdog-mcp      (MCP server for Claude Desktop)"
+	@echo ""
+	@echo "Windows Task Scheduler setup:"
+	@echo "  Run: contrib/windows/install-service.ps1"
+	@echo ""
+	@echo "Or start manually:"
+	@echo "  taskdog-server --host 127.0.0.1 --port 8000"
+	@echo ""
+	@echo "See contrib/windows/README.md for more details."
 	@echo ""
 else
 	@echo "✓ All commands installed successfully!"

@@ -10,6 +10,16 @@ from pathlib import Path
 
 import pytest
 
+# =============================================================================
+# Platform-specific test markers
+# =============================================================================
+
+# Marker for tests that only work on Unix-like systems (Linux, macOS)
+unix_only = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Test uses Unix-specific features (file permissions, etc.)",
+)
+
 # Add tests directory to path for fixtures module
 _tests_path = Path(__file__).parent.resolve()
 if str(_tests_path) not in sys.path:

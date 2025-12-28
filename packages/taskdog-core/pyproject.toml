@@ -12,6 +12,7 @@ license = { text = "MIT" }
 dependencies = [
     "alembic>=1.13.0",
     "holidays>=0.60.0",
+    "platformdirs>=4.0.0",
     "python-dateutil>=2.8.0",
     "sqlalchemy>=2.0.0",
 ]

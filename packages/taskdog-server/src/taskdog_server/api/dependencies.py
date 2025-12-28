@@ -81,7 +81,8 @@ def initialize_api_context(
 
         data_dir = XDGDirectories.get_data_home()
         db_file = data_dir / "tasks.db"
-        audit_db_url = f"sqlite:///{db_file}"
+        # Use as_posix() to ensure forward slashes in SQLite URL on Windows
+        audit_db_url = f"sqlite:///{db_file.as_posix()}"
     audit_log_repository = SqliteAuditLogRepository(audit_db_url)
 
     # Initialize loggers for each controller

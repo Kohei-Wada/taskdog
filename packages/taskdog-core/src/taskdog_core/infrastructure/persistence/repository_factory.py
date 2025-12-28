@@ -62,7 +62,8 @@ class RepositoryFactory:
             # Default: sqlite:///<XDG_DATA_HOME>/taskdog/tasks.db
             data_dir = XDGDirectories.get_data_home()
             db_file = data_dir / "tasks.db"
-            database_url = f"sqlite:///{db_file}"
+            # Use as_posix() to ensure forward slashes in SQLite URL on Windows
+            database_url = f"sqlite:///{db_file.as_posix()}"
 
         mapper = TaskDbMapper()
         return SqliteTaskRepository(database_url, mapper)

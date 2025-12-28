@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from conftest import unix_only
 
 from taskdog_core.domain.constants import MIN_FILE_SIZE_FOR_CONTENT
 from taskdog_core.infrastructure.persistence.file_notes_repository import (
@@ -153,11 +154,15 @@ class TestFileNotesRepository:
 
         assert result == expected_content
 
+    @unix_only
     @patch(
         "taskdog_core.infrastructure.persistence.file_notes_repository.XDGDirectories"
     )
     def test_read_notes_returns_none_on_permission_error(self, mock_xdg: MagicMock):
-        """Test read_notes returns None when permission denied."""
+        """Test read_notes returns None when permission denied.
+
+        Note: Skipped on Windows because chmod() works differently on NTFS.
+        """
         notes_path = Path(self.temp_dir) / "notes" / "123.md"
         notes_path.parent.mkdir(parents=True, exist_ok=True)
         notes_path.write_text("test content", encoding="utf-8")

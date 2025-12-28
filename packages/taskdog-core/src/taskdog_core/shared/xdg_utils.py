@@ -2,9 +2,14 @@
 
 Implements the XDG Base Directory Specification:
 https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+
+On Windows, uses platformdirs for cross-platform compatibility:
+- Data: %LOCALAPPDATA%/taskdog
+- Config: %LOCALAPPDATA%/taskdog
 """
 
 import os
+import sys
 from pathlib import Path
 
 from taskdog_core.shared.constants.file_management import (
@@ -13,24 +18,42 @@ from taskdog_core.shared.constants.file_management import (
     NOTES_DIR_NAME,
 )
 
+# Import platformdirs for Windows support
+if sys.platform == "win32":
+    import platformdirs
+
 
 class XDGDirectories:
-    """XDG Base Directory helper for taskdog."""
+    """XDG Base Directory helper for taskdog.
+
+    On Linux/macOS: Uses XDG Base Directory Specification.
+    On Windows: Uses platformdirs for standard Windows paths.
+    """
 
     APP_NAME = "taskdog"
 
     @classmethod
     def get_data_home(cls, create: bool = True) -> Path:
-        """Get XDG_DATA_HOME directory for taskdog.
+        """Get data directory for taskdog.
 
         Returns:
-            Path to $XDG_DATA_HOME/taskdog (default: ~/.local/share/taskdog)
+            Linux/macOS: $XDG_DATA_HOME/taskdog (default: ~/.local/share/taskdog)
+            Windows: %LOCALAPPDATA%/taskdog
 
         Args:
             create: Create directory if it doesn't exist (default: True)
         """
-        base_dir = os.getenv("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-        data_dir = Path(base_dir) / cls.APP_NAME
+        # XDG environment variable takes precedence on all platforms
+        xdg_data = os.getenv("XDG_DATA_HOME")
+        if xdg_data:
+            data_dir = Path(xdg_data) / cls.APP_NAME
+        elif sys.platform == "win32":
+            # Windows: use platformdirs for %LOCALAPPDATA%
+            data_dir = Path(platformdirs.user_data_dir(cls.APP_NAME, roaming=False))
+        else:
+            # Linux/macOS: use XDG default
+            base_dir = os.path.expanduser("~/.local/share")
+            data_dir = Path(base_dir) / cls.APP_NAME
 
         if create:
             data_dir.mkdir(parents=True, exist_ok=True)
@@ -39,16 +62,26 @@ class XDGDirectories:
 
     @classmethod
     def get_config_home(cls, create: bool = True) -> Path:
-        """Get XDG_CONFIG_HOME directory for taskdog.
+        """Get config directory for taskdog.
 
         Returns:
-            Path to $XDG_CONFIG_HOME/taskdog (default: ~/.config/taskdog)
+            Linux/macOS: $XDG_CONFIG_HOME/taskdog (default: ~/.config/taskdog)
+            Windows: %LOCALAPPDATA%/taskdog
 
         Args:
             create: Create directory if it doesn't exist (default: True)
         """
-        base_dir = os.getenv("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-        config_dir = Path(base_dir) / cls.APP_NAME
+        # XDG environment variable takes precedence on all platforms
+        xdg_config = os.getenv("XDG_CONFIG_HOME")
+        if xdg_config:
+            config_dir = Path(xdg_config) / cls.APP_NAME
+        elif sys.platform == "win32":
+            # Windows: use platformdirs for %LOCALAPPDATA%
+            config_dir = Path(platformdirs.user_config_dir(cls.APP_NAME, roaming=False))
+        else:
+            # Linux/macOS: use XDG default
+            base_dir = os.path.expanduser("~/.config")
+            config_dir = Path(base_dir) / cls.APP_NAME
 
         if create:
             config_dir.mkdir(parents=True, exist_ok=True)
