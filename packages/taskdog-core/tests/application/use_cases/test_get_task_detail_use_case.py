@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from conftest import unix_only
 
 from taskdog_core.application.use_cases.get_task_detail import (
     GetTaskDetailInput,
@@ -115,6 +116,7 @@ class TestGetTaskDetailUseCase:
         assert result.task.deadline == datetime(2024, 1, 1, 18, 0, 0)
         assert result.task.estimated_duration == 2.5
 
+    @unix_only
     def test_execute_handles_corrupt_notes_file(self):
         """Test execute handles unreadable notes file gracefully."""
         task = self.repository.create(name="Test Task", priority=1)
