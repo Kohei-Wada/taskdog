@@ -23,7 +23,6 @@ https://github.com/user-attachments/assets/47022478-078d-4ad9-ba7d-d1cd4016e105
 
 - [Features](#features)
 - [Design Philosophy](#design-philosophy)
-- [Installation](#installation)
 - [Quick Start](#quick-start)
 - [Interactive TUI](#interactive-tui)
 - [API Server](#api-server)
@@ -75,82 +74,27 @@ Individual users don't need complex hierarchies. Dependencies + tags cover 99% o
 
 For detailed design rationale, see [DESIGN_PHILOSOPHY.md](docs/DESIGN_PHILOSOPHY.md).
 
-## Installation
+## Quick Start
 
-**Requirements**: Python 3.11+ (3.13+ for individual packages), [uv](https://github.com/astral-sh/uv)
+**Requirements**: Python 3.11+, [uv](https://github.com/astral-sh/uv)
 
 **Supported Platforms**: Linux, macOS (Windows support coming soon)
 
 ```bash
-# Clone the repository
 git clone https://github.com/Kohei-Wada/taskdog.git
 cd taskdog
-
-# Install globally (recommended - installs taskdog and taskdog-server commands)
 make install
-
-# OR: Install with development dependencies (for contributing)
-make install-dev
-
-# OR: Install locally for development (editable mode)
-make install-local
 ```
 
-**What gets installed:**
+For complete setup including API key configuration and server startup, see **[Quick Start Guide](docs/QUICKSTART.md)**.
 
-- `taskdog` - CLI and TUI interface
-- `taskdog-server` - FastAPI REST API server
-- `taskdog-mcp` - MCP server for Claude Desktop integration
-- **Linux**: systemd user service for automatic startup
-- **macOS**: launchd service for automatic startup
-
-**Platform-Specific Service Management:**
-
-**Linux (systemd):**
+### After Setup
 
 ```bash
-systemctl --user start taskdog-server    # Start server
-systemctl --user status taskdog-server   # Check status
-systemctl --user stop taskdog-server     # Stop server
-journalctl --user -u taskdog-server -f   # View logs
-```
-
-**macOS (launchd):**
-
-```bash
-launchctl start com.github.kohei-wada.taskdog-server   # Start server
-launchctl stop com.github.kohei-wada.taskdog-server    # Stop server
-launchctl list | grep taskdog-server                   # Check status
-tail -f ~/Library/Logs/taskdog-server.log              # View logs
-```
-
-**Common Make targets:**
-
-```bash
-make install          # Install as global commands via uv tool
-make check-deps       # Check if required tools are installed
-make install-dev      # Install all packages with dev dependencies
-make install-local    # Install locally for development (per-package)
-make reinstall        # Clean and reinstall
-make uninstall        # Remove global installations
-```
-
-## Quick Start
-
-```bash
-# Install
-make install
-
-# Start server (required)
-taskdog-server
-
-# Try it
 taskdog add "My first task" --priority 10
 taskdog table
 taskdog tui
 ```
-
-For detailed setup and troubleshooting, see **[Quick Start Guide](docs/QUICKSTART.md)**.
 
 ## Interactive TUI
 
