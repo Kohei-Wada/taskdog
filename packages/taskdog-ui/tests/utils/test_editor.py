@@ -97,16 +97,21 @@ class TestGetEditor:
             assert "$EDITOR" in str(exc_info.value)
 
     @patch("shutil.which")
-    def test_windows_fallback_to_notepad(self, mock_which) -> None:
-        """Test that Windows falls back to notepad when no editor found."""
+    def test_windows_raises_runtime_error_when_no_editor_found(
+        self, mock_which
+    ) -> None:
+        """Test that RuntimeError is raised when no editor is found on Windows."""
         mock_which.return_value = None
 
         with (
             patch("os.getenv", return_value=None),
             patch("taskdog.utils.editor.sys.platform", "win32"),
         ):
-            result = get_editor()
-            assert result == "notepad"
+            with pytest.raises(RuntimeError) as exc_info:
+                get_editor()
+
+            assert "No editor found" in str(exc_info.value)
+            assert "$EDITOR" in str(exc_info.value)
 
     @patch("shutil.which")
     def test_windows_uses_code_first(self, mock_which) -> None:

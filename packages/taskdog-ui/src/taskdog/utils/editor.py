@@ -33,11 +33,9 @@ def get_editor() -> str:
         if shutil.which(fallback):
             return fallback
 
-    # Final fallback for Windows - notepad is always available
+    # No editor found
     if sys.platform == "win32":
-        return "notepad"
-
-    # No editor found on Unix
+        raise RuntimeError("No editor found. Please set $EDITOR environment variable.")
     raise RuntimeError(
         "No editor found. Please set $EDITOR environment variable or install vim, nano, or vi."
     )

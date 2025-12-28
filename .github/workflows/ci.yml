@@ -67,39 +67,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        package: [taskdog-core, taskdog-client, taskdog-server, taskdog-ui, taskdog-mcp]
         include:
-          # Ubuntu packages
-          - os: ubuntu-latest
-            package: taskdog-core
-            deps: ""
-          - os: ubuntu-latest
-            package: taskdog-client
-            deps: "uv pip install -e packages/taskdog-core[dev]"
-          - os: ubuntu-latest
-            package: taskdog-server
-            deps: "uv pip install -e packages/taskdog-core[dev]"
-          - os: ubuntu-latest
-            package: taskdog-ui
-            deps: "uv pip install -e packages/taskdog-core[dev] && uv pip install -e packages/taskdog-client[dev]"
-          - os: ubuntu-latest
-            package: taskdog-mcp
-            deps: "uv pip install -e packages/taskdog-core[dev] && uv pip install -e packages/taskdog-client[dev]"
-          # Windows packages
-          - os: windows-latest
-            package: taskdog-core
-            deps: ""
-          - os: windows-latest
-            package: taskdog-client
-            deps: "uv pip install -e packages/taskdog-core[dev]"
-          - os: windows-latest
-            package: taskdog-server
-            deps: "uv pip install -e packages/taskdog-core[dev]"
-          - os: windows-latest
-            package: taskdog-ui
-            deps: "uv pip install -e packages/taskdog-core[dev]; uv pip install -e packages/taskdog-client[dev]"
-          - os: windows-latest
-            package: taskdog-mcp
-            deps: "uv pip install -e packages/taskdog-core[dev]; uv pip install -e packages/taskdog-client[dev]"
+          # Dependencies for packages that need other packages
+          - package: taskdog-client
+            deps: taskdog-core
+          - package: taskdog-server
+            deps: taskdog-core
+          - package: taskdog-ui
+            deps: taskdog-core taskdog-client
+          - package: taskdog-mcp
+            deps: taskdog-core taskdog-client
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -114,32 +92,20 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Install dependencies (Unix)
-        if: runner.os != 'Windows'
+      - name: Install dependencies
+        shell: bash
         run: |
           uv sync --all-extras --dev
-          ${{ matrix.deps }}
+          for dep in ${{ matrix.deps }}; do
+            uv pip install -e "packages/${dep}[dev]"
+          done
           uv pip install -e "packages/${{ matrix.package }}[dev]"
 
-      - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          uv sync --all-extras --dev
-          ${{ matrix.deps }}
-          uv pip install -e "packages/${{ matrix.package }}[dev]"
-
-      - name: Run tests (Unix)
-        if: runner.os != 'Windows'
-        run: make test-${{ matrix.package }}
-
-      - name: Run tests (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
+      - name: Run tests
+        shell: bash
         run: |
           cd packages/${{ matrix.package }}
-          $env:PYTHONPATH = "src"
-          uv run python -m pytest tests/ -v --tb=short
+          PYTHONPATH=src uv run python -m pytest tests/ -v --tb=short
 
   security:
     name: Security Scan

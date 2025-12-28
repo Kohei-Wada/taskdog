@@ -8,7 +8,10 @@
 # - taskdog-server must be installed (uv tool install taskdog-server)
 
 param(
+    [ValidatePattern('^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^localhost$|^0\.0\.0\.0$')]
     [string]$Host = "127.0.0.1",
+
+    [ValidateRange(1, 65535)]
     [int]$Port = 8000
 )
 

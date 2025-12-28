@@ -8,9 +8,13 @@ On Windows, uses platformdirs for cross-platform compatibility:
 - Config: %LOCALAPPDATA%/taskdog
 """
 
+from __future__ import annotations
+
+import contextlib
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from taskdog_core.shared.constants.file_management import (
     CONFIG_FILE_NAME,
@@ -18,9 +22,10 @@ from taskdog_core.shared.constants.file_management import (
     NOTES_DIR_NAME,
 )
 
-# Import platformdirs for Windows support
-if sys.platform == "win32":
-    import platformdirs
+# Import platformdirs for Windows support with proper error handling
+_platformdirs: Any = None
+with contextlib.suppress(ImportError):
+    import platformdirs as _platformdirs  # type: ignore[import-not-found, no-redef]
 
 
 class XDGDirectories:
@@ -49,7 +54,12 @@ class XDGDirectories:
             data_dir = Path(xdg_data) / cls.APP_NAME
         elif sys.platform == "win32":
             # Windows: use platformdirs for %LOCALAPPDATA%
-            data_dir = Path(platformdirs.user_data_dir(cls.APP_NAME, roaming=False))
+            if _platformdirs is None:
+                raise ImportError(
+                    "platformdirs is required for Windows support. "
+                    "Install with: pip install platformdirs>=4.0.0"
+                )
+            data_dir = Path(_platformdirs.user_data_dir(cls.APP_NAME, roaming=False))
         else:
             # Linux/macOS: use XDG default
             base_dir = os.path.expanduser("~/.local/share")
@@ -77,7 +87,14 @@ class XDGDirectories:
             config_dir = Path(xdg_config) / cls.APP_NAME
         elif sys.platform == "win32":
             # Windows: use platformdirs for %LOCALAPPDATA%
-            config_dir = Path(platformdirs.user_config_dir(cls.APP_NAME, roaming=False))
+            if _platformdirs is None:
+                raise ImportError(
+                    "platformdirs is required for Windows support. "
+                    "Install with: pip install platformdirs>=4.0.0"
+                )
+            config_dir = Path(
+                _platformdirs.user_config_dir(cls.APP_NAME, roaming=False)
+            )
         else:
             # Linux/macOS: use XDG default
             base_dir = os.path.expanduser("~/.config")
