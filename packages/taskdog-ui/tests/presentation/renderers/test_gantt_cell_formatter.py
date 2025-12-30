@@ -311,3 +311,78 @@ class TestGanttCellFormatter:
     def test_get_status_color(self, status, expected_color):
         """Test getting status color."""
         assert GanttCellFormatter.get_status_color(status) == expected_color
+
+    def test_format_timeline_cell_allocated_hours_outside_planned_period(self):
+        """Test that cells with allocated hours outside planned period get correct background color.
+
+        This test verifies the fix for the bug where cells with hours > 0
+        but outside the planned period (is_planned == False) had no background color.
+        """
+        parsed_dates = {
+            "planned_start": date(2025, 10, 1),
+            "planned_end": date(2025, 10, 3),  # Planned period ends on 10/3
+            "actual_start": None,
+            "actual_end": None,
+            "deadline": None,
+        }
+
+        # Test a cell OUTSIDE the planned period but WITH allocated hours
+        display, style = GanttCellFormatter.format_timeline_cell(
+            current_date=date(2025, 10, 5),  # Outside planned period (10/1-10/3)
+            hours=4.0,  # Has allocated hours
+            parsed_dates=parsed_dates,
+            status=TaskStatus.PENDING,
+            holidays=set(),
+        )
+
+        # Should show hours display
+        assert display == " 4 "
+        # Should have "Allocated hours" background color (not dim)
+        assert "on rgb" in style
+        assert "dim" not in style
+
+    def test_format_timeline_cell_no_hours_outside_planned_period(self):
+        """Test that cells without hours outside planned period are dim."""
+        parsed_dates = {
+            "planned_start": date(2025, 10, 1),
+            "planned_end": date(2025, 10, 3),
+            "actual_start": None,
+            "actual_end": None,
+            "deadline": None,
+        }
+
+        # Test a cell OUTSIDE the planned period and WITHOUT allocated hours
+        display, style = GanttCellFormatter.format_timeline_cell(
+            current_date=date(2025, 10, 5),  # Outside planned period
+            hours=0.0,  # No allocated hours
+            parsed_dates=parsed_dates,
+            status=TaskStatus.PENDING,
+            holidays=set(),
+        )
+
+        # Should show empty symbol and be dim
+        assert display == SYMBOL_EMPTY
+        assert style == "dim"
+
+    def test_format_timeline_cell_planned_period_without_hours(self):
+        """Test that cells in planned period without hours get light background."""
+        parsed_dates = {
+            "planned_start": date(2025, 10, 1),
+            "planned_end": date(2025, 10, 5),
+            "actual_start": None,
+            "actual_end": None,
+            "deadline": None,
+        }
+
+        # Test a cell INSIDE the planned period but WITHOUT allocated hours
+        display, style = GanttCellFormatter.format_timeline_cell(
+            current_date=date(2025, 10, 3),  # Inside planned period
+            hours=0.0,  # No allocated hours
+            parsed_dates=parsed_dates,
+            status=TaskStatus.PENDING,
+            holidays=set(),
+        )
+
+        # Should show empty symbol but with planned period background
+        assert display == SYMBOL_EMPTY
+        assert "on rgb" in style  # Has light background color

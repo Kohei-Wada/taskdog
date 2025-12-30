@@ -1,7 +1,15 @@
 """Tests for BalancedOptimizationStrategy."""
 
-from datetime import datetime
+from datetime import date, datetime
 
+from taskdog_core.application.services.optimization.allocation_context import (
+    AllocationContext,
+)
+from taskdog_core.application.services.optimization.balanced_optimization_strategy import (
+    BalancedOptimizationStrategy,
+)
+from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from tests.application.services.optimization.optimization_strategy_test_base import (
     BaseOptimizationStrategyTest,
 )
@@ -126,3 +134,98 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
 
         # Task should not be scheduled
         assert len(result.successful_tasks) == 0
+
+
+class TestBalancedOptimizationStrategyWithHolidays:
+    """Test cases for BalancedOptimizationStrategy with holiday handling."""
+
+    def test_planned_end_matches_daily_allocations_with_holidays(self):
+        """Test that planned_end matches the last date in daily_allocations when holidays are involved.
+
+        This test verifies the fix for the bug where multi-pass allocation
+        with holidays caused planned_end to not match daily_allocations.
+        """
+
+        # Mock holiday checker that marks 2026-01-01 as holiday
+        class MockHolidayChecker(IHolidayChecker):
+            def is_holiday(self, d: date) -> bool:
+                return d == date(2026, 1, 1)
+
+            def get_holidays_in_range(self, start: date, end: date) -> set[date]:
+                if date(2026, 1, 1) >= start and date(2026, 1, 1) <= end:
+                    return {date(2026, 1, 1)}
+                return set()
+
+        holiday_checker = MockHolidayChecker()
+
+        # Task with 8 hours, deadline on 1/3 (only 12/31 and 1/2 available due to holiday)
+        task = Task(
+            id=1,
+            name="Test Task",
+            priority=5,
+            status=TaskStatus.PENDING,
+            estimated_duration=8.0,
+            deadline=datetime(2026, 1, 3, 18, 0, 0),
+        )
+
+        # Context with max 6 hours per day (forces multi-pass allocation)
+        context = AllocationContext(
+            start_date=datetime(2025, 12, 31, 9, 0, 0),
+            max_hours_per_day=6.0,
+            daily_allocations={},
+            holiday_checker=holiday_checker,
+            current_time=None,
+        )
+
+        strategy = BalancedOptimizationStrategy(
+            default_start_hour=9, default_end_hour=18
+        )
+        result = strategy._allocate_task(task, context, holiday_checker=holiday_checker)
+
+        assert result is not None
+        assert result.daily_allocations is not None
+        assert result.planned_end is not None
+
+        # The key assertion: planned_end should match the last date in daily_allocations
+        last_allocation_date = max(result.daily_allocations.keys())
+        planned_end_date = result.planned_end.date()
+        assert last_allocation_date == planned_end_date, (
+            f"planned_end ({planned_end_date}) should match "
+            f"last allocation date ({last_allocation_date})"
+        )
+
+        # Verify holiday is skipped (no allocation on 2026-01-01)
+        assert date(2026, 1, 1) not in result.daily_allocations
+
+    def test_planned_end_correct_without_holidays(self):
+        """Test that planned_end is correct even without holidays."""
+        task = Task(
+            id=1,
+            name="Test Task",
+            priority=5,
+            status=TaskStatus.PENDING,
+            estimated_duration=10.0,
+            deadline=datetime(2026, 1, 10, 18, 0, 0),
+        )
+
+        context = AllocationContext(
+            start_date=datetime(2025, 12, 31, 9, 0, 0),
+            max_hours_per_day=6.0,
+            daily_allocations={},
+            holiday_checker=None,
+            current_time=None,
+        )
+
+        strategy = BalancedOptimizationStrategy(
+            default_start_hour=9, default_end_hour=18
+        )
+        result = strategy._allocate_task(task, context, holiday_checker=None)
+
+        assert result is not None
+        assert result.daily_allocations is not None
+        assert result.planned_end is not None
+
+        # planned_end should match the last date in daily_allocations
+        last_allocation_date = max(result.daily_allocations.keys())
+        planned_end_date = result.planned_end.date()
+        assert last_allocation_date == planned_end_date
