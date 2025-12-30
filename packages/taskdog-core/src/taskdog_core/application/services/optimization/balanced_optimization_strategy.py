@@ -124,11 +124,18 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
             )
             return None
 
-        if state.schedule_start and state.schedule_end:
+        if state.schedule_start and state.task_daily_allocations:
+            # Calculate actual schedule_end from daily_allocations
+            # This is necessary because multi-pass allocation may not update
+            # schedule_end correctly when holidays are involved
+            actual_schedule_end = datetime.combine(
+                max(state.task_daily_allocations.keys()),
+                state.schedule_start.time(),
+            )
             set_planned_times(
                 task_copy,
                 state.schedule_start,
-                state.schedule_end,
+                actual_schedule_end,
                 state.task_daily_allocations,
                 self.default_start_hour,
                 self.default_end_hour,
