@@ -347,10 +347,8 @@ class GanttCellFormatter:
 
         Priority (highest to lowest):
         1. Deadline: Orange
-        2. Planned period (for non-finished tasks):
-           - Weekend/holiday: Weekend/holiday colors
-           - Allocated hours on weekday: Darker weekday color
-           - No allocation on weekday: Light gray
+        2. Allocated hours (for non-finished tasks): Darker color
+        3. Planned period without allocation: Light gray
 
         Args:
             current_date: Date of the cell
@@ -366,21 +364,31 @@ class GanttCellFormatter:
         if is_deadline:
             return BACKGROUND_COLOR_DEADLINE
 
-        if is_planned and status not in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
-            weekday = current_date.weekday()
-            is_weekend_or_holiday = current_date in holidays or weekday in (
-                SATURDAY,
-                SUNDAY,
-            )
+        # Finished tasks: no background color
+        if status in [TaskStatus.COMPLETED, TaskStatus.CANCELED]:
+            return None
 
+        weekday = current_date.weekday()
+        is_weekend_or_holiday = current_date in holidays or weekday in (
+            SATURDAY,
+            SUNDAY,
+        )
+
+        # Allocated hours: show darker color (takes priority over planned period)
+        if hours > 0:
             if is_weekend_or_holiday:
                 return GanttCellFormatter._get_weekend_holiday_background_color(
                     current_date, holidays
                 )
-            elif hours > 0:
-                return BACKGROUND_COLOR
-            else:
-                return BACKGROUND_COLOR_PLANNED_LIGHT
+            return BACKGROUND_COLOR
+
+        # Planned period without allocation: show light color
+        if is_planned:
+            if is_weekend_or_holiday:
+                return GanttCellFormatter._get_weekend_holiday_background_color(
+                    current_date, holidays
+                )
+            return BACKGROUND_COLOR_PLANNED_LIGHT
 
         return None
 
