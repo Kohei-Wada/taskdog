@@ -13,7 +13,7 @@ The repository uses UV workspace with three packages:
 **taskdog-core** (`packages/taskdog-core/`): Core business logic and infrastructure
 
 - Domain entities, use cases, repositories, validators
-- SQLite persistence layer with transactional writes
+- SQLite + SQLAlchemy ORM with Alembic migrations
 - Schedule optimization algorithms (9 strategies)
 - No UI dependencies - pure business logic
 
@@ -181,7 +181,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 **Infrastructure** (`packages/taskdog-core/src/taskdog_core/infrastructure/`): External concerns
 
-- `persistence/database/`: SqliteTaskRepository (transactional writes, indexed queries, efficient lookups)
+- `persistence/database/`: SqliteTaskRepository (SQLAlchemy ORM, sessionmaker for transactions, indexed queries)
 - `persistence/file/`: FileNotesRepository (markdown note storage)
 - `persistence/mappers/`: TaskDbMapper for entity-to-database mapping
 - `config/`: ConfigManager (loads TOML config with fallback to defaults)
@@ -278,9 +278,9 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 **Repository** (`packages/taskdog-core/src/taskdog_core/infrastructure/persistence/database/sqlite_task_repository.py`)
 
-- `SqliteTaskRepository`: Transactional writes with automatic rollback on errors
+- `SqliteTaskRepository`: SQLAlchemy ORM with sessionmaker for transactional writes
+- Automatic rollback on errors via SQLAlchemy session management
 - Indexed queries for efficient lookups and filtering
-- Connection pooling and proper resource management
 - Used by API server only (CLI/TUI access via HTTP API, not directly)
 
 **TimeTracker** (`packages/taskdog-core/src/taskdog_core/domain/services/time_tracker.py`):
@@ -437,7 +437,7 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 9. **Always-Valid Entity**: Task validates invariants in `__post_init__` (DDD best practice)
 10. **Context-based DI**: CliContext/TUIContext/ApiContext dataclasses for dependency injection
 11. **ConsoleWriter Abstraction**: All CLI output through unified interface (RichConsoleWriter)
-12. **Transactional Operations**: SqliteTaskRepository uses database transactions for atomic writes with automatic rollback
+12. **Transactional Operations**: SqliteTaskRepository uses SQLAlchemy sessions for atomic writes with automatic rollback
 13. **Config Priority**: CLI args > TOML config > defaults (uses Python 3.11+ tomllib)
 14. **Fixed Tasks**: is_fixed=True prevents rescheduling; hours counted in optimizer's max_hours_per_day calculation
 15. **Visual Styling**: Use task.is_finished property (not direct status checks) for strikethrough; archived tasks display without strikethrough
