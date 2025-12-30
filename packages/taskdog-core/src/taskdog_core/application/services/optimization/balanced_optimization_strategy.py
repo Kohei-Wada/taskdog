@@ -1,8 +1,10 @@
 """Balanced optimization strategy implementation."""
 
-from datetime import date, timedelta
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING
 
+from taskdog_core.application.constants.optimization import SCHEDULING_EPSILON
 from taskdog_core.application.dto.optimization_output import SchedulingFailure
 from taskdog_core.application.services.optimization.allocation_context import (
     AllocationContext,
@@ -30,6 +32,16 @@ if TYPE_CHECKING:
     )
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
+
+
+@dataclass
+class _AllocationState:
+    """Internal state for balanced allocation."""
+
+    remaining_hours: float
+    schedule_start: datetime | None
+    schedule_end: datetime | None
+    task_daily_allocations: dict[date, float]
 
 
 class BalancedOptimizationStrategy(OptimizationStrategy):
@@ -74,7 +86,7 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         context: AllocationContext,
         holiday_checker: "IHolidayChecker | None" = None,
     ) -> Task | None:
-        """Allocate task using balanced distribution."""
+        """Allocate task using balanced distribution with multi-pass approach."""
         task_copy = prepare_task_for_allocation(task)
         if task_copy is None:
             return None
@@ -91,55 +103,100 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
             return None
 
         target_hours_per_day = task_copy.estimated_duration / available_weekdays
+        state = _AllocationState(
+            remaining_hours=task_copy.estimated_duration,
+            schedule_start=None,
+            schedule_end=None,
+            task_daily_allocations={},
+        )
 
-        current_date = context.start_date
-        remaining_hours = task_copy.estimated_duration
-        schedule_start = None
-        schedule_end = None
-        task_daily_allocations: dict[date, float] = {}
-
-        while remaining_hours > 0 and current_date <= end_date:
-            if not is_workday(current_date, holiday_checker):
-                current_date += timedelta(days=1)
-                continue
-
-            date_obj = current_date.date()
-            desired_allocation = min(target_hours_per_day, remaining_hours)
-
-            available_hours = calculate_available_hours(
-                context.daily_allocations,
-                date_obj,
-                context.max_hours_per_day,
-                context.current_time,
-                self.default_end_hour,
+        # Multi-pass allocation until all hours allocated or no capacity
+        while state.remaining_hours > SCHEDULING_EPSILON:
+            made_progress = self._allocate_single_pass(
+                state, context, end_date, target_hours_per_day, holiday_checker
             )
+            if not made_progress:
+                break
 
-            if available_hours > 0:
-                if schedule_start is None:
-                    schedule_start = current_date
-
-                allocated = min(desired_allocation, available_hours)
-                current_allocation = context.daily_allocations.get(date_obj, 0.0)
-                context.daily_allocations[date_obj] = current_allocation + allocated
-                task_daily_allocations[date_obj] = allocated
-                remaining_hours -= allocated
-                schedule_end = current_date
-
-            current_date += timedelta(days=1)
-
-        if remaining_hours > 0:
-            rollback_allocations(context.daily_allocations, task_daily_allocations)
+        if state.remaining_hours > SCHEDULING_EPSILON:
+            rollback_allocations(
+                context.daily_allocations, state.task_daily_allocations
+            )
             return None
 
-        if schedule_start and schedule_end:
+        if state.schedule_start and state.schedule_end:
             set_planned_times(
                 task_copy,
-                schedule_start,
-                schedule_end,
-                task_daily_allocations,
+                state.schedule_start,
+                state.schedule_end,
+                state.task_daily_allocations,
                 self.default_start_hour,
                 self.default_end_hour,
             )
             return task_copy
 
         return None
+
+    def _allocate_single_pass(
+        self,
+        state: _AllocationState,
+        context: AllocationContext,
+        end_date: datetime,
+        target_hours_per_day: float,
+        holiday_checker: "IHolidayChecker | None",
+    ) -> bool:
+        """Execute single allocation pass across all days. Returns True if progress."""
+        made_progress = False
+        current_date = context.start_date
+
+        while current_date <= end_date:
+            if not is_workday(current_date, holiday_checker):
+                current_date += timedelta(days=1)
+                continue
+
+            allocated = self._try_allocate_day(
+                state, context, current_date, target_hours_per_day
+            )
+            if allocated:
+                made_progress = True
+                if state.remaining_hours <= SCHEDULING_EPSILON:
+                    break
+
+            current_date += timedelta(days=1)
+
+        return made_progress
+
+    def _try_allocate_day(
+        self,
+        state: _AllocationState,
+        context: AllocationContext,
+        current_date: datetime,
+        target_hours_per_day: float,
+    ) -> bool:
+        """Try to allocate hours for a single day. Returns True if allocated."""
+        date_obj = current_date.date()
+        desired_allocation = min(target_hours_per_day, state.remaining_hours)
+
+        available_hours = calculate_available_hours(
+            context.daily_allocations,
+            date_obj,
+            context.max_hours_per_day,
+            context.current_time,
+            self.default_end_hour,
+        )
+
+        if available_hours <= SCHEDULING_EPSILON:
+            return False
+
+        if state.schedule_start is None:
+            state.schedule_start = current_date
+
+        allocated = min(desired_allocation, available_hours)
+        current_allocation = context.daily_allocations.get(date_obj, 0.0)
+        context.daily_allocations[date_obj] = current_allocation + allocated
+        state.task_daily_allocations[date_obj] = (
+            state.task_daily_allocations.get(date_obj, 0.0) + allocated
+        )
+        state.remaining_hours -= allocated
+        state.schedule_end = current_date
+        return True
