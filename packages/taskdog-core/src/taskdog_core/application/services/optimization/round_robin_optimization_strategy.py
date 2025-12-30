@@ -129,6 +129,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             input_dto.max_hours_per_day,
             task_effective_deadlines,
             holiday_checker,
+            existing_allocations=context.daily_allocations,
         )
 
         # Identify tasks that couldn't be fully scheduled
@@ -178,6 +179,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         max_hours_per_day: float,
         task_effective_deadlines: dict[int, datetime | None],
         holiday_checker: "IHolidayChecker | None" = None,
+        existing_allocations: dict[date, float] | None = None,
     ) -> None:
         """Allocate time in round-robin fashion across tasks.
 
@@ -189,11 +191,15 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             task_end_dates: Dict to store task end dates
             start_date: Starting date for allocation
             max_hours_per_day: Maximum hours per day
+            task_effective_deadlines: Effective deadlines for each task
+            holiday_checker: Optional holiday checker
+            existing_allocations: Existing allocations from Fixed/IN_PROGRESS tasks
         """
         current_date = start_date
         max_iterations = (
             ROUND_ROBIN_MAX_ITERATIONS  # Safety limit to prevent infinite loops
         )
+        existing = existing_allocations or {}
 
         iteration = 0
         while any(hours > SCHEDULING_EPSILON for hours in task_remaining.values()):
@@ -208,35 +214,45 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
             date_obj = current_date.date()
 
-            # Get active tasks (with remaining hours)
+            # Calculate available hours (respect existing allocations)
+            existing_hours = existing.get(date_obj, 0.0)
+            available_hours = max(0.0, max_hours_per_day - existing_hours)
+
+            if available_hours <= SCHEDULING_EPSILON:
+                current_date += timedelta(days=1)
+                continue
+
+            # Get active tasks (with remaining hours and not past deadline)
             active_tasks = [
                 tid
                 for tid, remaining in task_remaining.items()
                 if remaining > SCHEDULING_EPSILON
+                and not self._is_past_deadline(
+                    current_date, task_effective_deadlines.get(tid)
+                )
             ]
 
             if not active_tasks:
+                # Check if any tasks still have remaining hours (past deadline)
+                if any(h > SCHEDULING_EPSILON for h in task_remaining.values()):
+                    current_date += timedelta(days=1)
+                    continue
                 break
 
             # Distribute available hours equally among active tasks
-            hours_per_task = max_hours_per_day / len(active_tasks)
+            hours_per_task = available_hours / len(active_tasks)
 
             daily_total = 0.0
             for task_id in active_tasks:
-                # Check effective deadline constraint
-                effective_deadline = task_effective_deadlines.get(task_id)
-                if effective_deadline:
-                    deadline_dt = effective_deadline
-                    if current_date > deadline_dt:
-                        # Skip this task - deadline exceeded
-                        continue
-
                 # Allocate up to hours_per_task, but not more than remaining
                 allocated = min(hours_per_task, task_remaining[task_id])
                 task_remaining[task_id] -= allocated
 
-                # Record allocation
-                task_daily_allocations[task_id][date_obj] = allocated
+                # Record allocation (accumulate if already allocated today)
+                current_task_daily = task_daily_allocations[task_id].get(date_obj, 0.0)
+                task_daily_allocations[task_id][date_obj] = (
+                    current_task_daily + allocated
+                )
                 daily_total += allocated
 
                 # Track start and end dates
@@ -248,6 +264,14 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
             # Move to next day
             current_date += timedelta(days=1)
+
+    def _is_past_deadline(
+        self, current_date: datetime, deadline: datetime | None
+    ) -> bool:
+        """Check if current date is past the deadline."""
+        if deadline is None:
+            return False
+        return current_date > deadline
 
     def _build_updated_tasks(
         self,
