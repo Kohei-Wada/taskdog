@@ -138,11 +138,8 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         modified_tasks, daily_allocations, failed_tasks = strategy.optimize_tasks(
             schedulable_tasks=schedulable_tasks,
             all_tasks_for_context=workload_tasks,
-            start_date=input_dto.start_date,
-            max_hours_per_day=input_dto.max_hours_per_day,
-            force_override=input_dto.force_override,
+            input_dto=input_dto,
             holiday_checker=self.holiday_checker,
-            current_time=input_dto.current_time,
             workload_calculator=workload_calculator,
         )
 

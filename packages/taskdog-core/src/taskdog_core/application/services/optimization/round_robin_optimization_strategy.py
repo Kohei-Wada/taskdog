@@ -19,6 +19,9 @@ from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
+    from taskdog_core.application.dto.optimize_schedule_input import (
+        OptimizeScheduleInput,
+    )
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -51,11 +54,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         self,
         schedulable_tasks: list[Task],
         all_tasks_for_context: list[Task],
-        start_date: datetime,
-        max_hours_per_day: float,
-        force_override: bool,
+        input_dto: "OptimizeScheduleInput",
         holiday_checker: "IHolidayChecker | None" = None,
-        current_time: datetime | None = None,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
         """Optimize task schedules using round-robin algorithm.
@@ -63,11 +63,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         Args:
             schedulable_tasks: List of tasks to schedule (already filtered by is_schedulable())
             all_tasks_for_context: All tasks in the system (for calculating existing allocations)
-            start_date: Starting date for schedule optimization
-            max_hours_per_day: Maximum work hours per day
-            force_override: Whether to override existing schedules
+            input_dto: Optimization parameters (start_date, max_hours_per_day, etc.)
             holiday_checker: Optional HolidayChecker for holiday detection
-            current_time: Current time for calculating remaining hours on today
             workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
@@ -80,10 +77,10 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         # NOTE: all_tasks_for_context should already be filtered by UseCase
         context = AllocationContext.create(
             tasks=all_tasks_for_context,
-            start_date=start_date,
-            max_hours_per_day=max_hours_per_day,
+            start_date=input_dto.start_date,
+            max_hours_per_day=input_dto.max_hours_per_day,
             holiday_checker=holiday_checker,
-            current_time=current_time,
+            current_time=input_dto.current_time,
             workload_calculator=workload_calculator,
         )
 
@@ -128,8 +125,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             daily_allocations,
             task_start_dates,
             task_end_dates,
-            start_date,
-            max_hours_per_day,
+            input_dto.start_date,
+            input_dto.max_hours_per_day,
             task_effective_deadlines,
             holiday_checker,
         )
@@ -298,17 +295,3 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 updated_tasks.append(task)
 
         return updated_tasks
-
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime
-    ) -> list[Task]:
-        """Not used by round-robin strategy (overrides optimize_tasks)."""
-        raise NotImplementedError(
-            "RoundRobinOptimizationStrategy overrides optimize_tasks directly"
-        )
-
-    def _allocate_task(self, task: Task, context: AllocationContext) -> Task | None:
-        """Not used by round-robin strategy (overrides optimize_tasks)."""
-        raise NotImplementedError(
-            "RoundRobinOptimizationStrategy overrides optimize_tasks directly"
-        )

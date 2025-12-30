@@ -1,6 +1,6 @@
 """Factory for creating optimization strategy instances."""
 
-from typing import ClassVar, Protocol
+from typing import ClassVar
 
 from taskdog_core.application.services.optimization.backward_optimization_strategy import (
     BackwardOptimizationStrategy,
@@ -34,19 +34,6 @@ from taskdog_core.application.services.optimization.round_robin_optimization_str
 )
 
 
-class OptimizationStrategyConstructor(Protocol):
-    """Protocol for optimization strategy constructors.
-
-    Defines the signature for creating optimization strategy instances.
-    All optimization strategies must accept default_start_hour and default_end_hour
-    in their constructors.
-    """
-
-    def __call__(
-        self, default_start_hour: int, default_end_hour: int
-    ) -> OptimizationStrategy: ...
-
-
 class StrategyFactory:
     """Factory for creating optimization strategy instances.
 
@@ -55,7 +42,7 @@ class StrategyFactory:
     """
 
     # Registry of available strategies
-    _strategies: ClassVar[dict[str, OptimizationStrategyConstructor]] = {
+    _strategies: ClassVar[dict[str, type[OptimizationStrategy]]] = {
         "greedy": GreedyOptimizationStrategy,
         "balanced": BalancedOptimizationStrategy,
         "backward": BackwardOptimizationStrategy,
@@ -95,7 +82,8 @@ class StrategyFactory:
             )
 
         strategy_constructor = cls._strategies[algorithm_name]
-        return strategy_constructor(default_start_hour, default_end_hour)
+        # All concrete subclasses have __init__(default_start_hour, default_end_hour)
+        return strategy_constructor(default_start_hour, default_end_hour)  # type: ignore[call-arg]
 
     @classmethod
     def get_algorithm_metadata(cls) -> list[tuple[str, str, str]]:
