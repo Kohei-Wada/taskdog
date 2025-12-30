@@ -21,6 +21,9 @@ from taskdog_core.application.services.optimization.schedule_fitness_calculator 
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
+    from taskdog_core.application.dto.optimize_schedule_input import (
+        OptimizeScheduleInput,
+    )
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -63,11 +66,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self,
         schedulable_tasks: list[Task],
         all_tasks_for_context: list[Task],
-        start_date: datetime,
-        max_hours_per_day: float,
-        force_override: bool,
+        input_dto: "OptimizeScheduleInput",
         holiday_checker: "IHolidayChecker | None" = None,
-        current_time: datetime | None = None,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
         """Optimize task schedules using Monte Carlo simulation.
@@ -75,11 +75,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         Args:
             schedulable_tasks: List of tasks to schedule (already filtered by is_schedulable())
             all_tasks_for_context: All tasks in the system (for calculating existing allocations)
-            start_date: Starting date for schedule optimization
-            max_hours_per_day: Maximum work hours per day
-            force_override: Whether to override existing schedules
+            input_dto: Optimization parameters (start_date, max_hours_per_day, etc.)
             holiday_checker: Optional HolidayChecker for holiday detection
-            current_time: Current time for calculating remaining hours on today
             workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
@@ -99,10 +96,10 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         # NOTE: all_tasks_for_context should already be filtered by UseCase
         context = AllocationContext.create(
             tasks=all_tasks_for_context,
-            start_date=start_date,
-            max_hours_per_day=max_hours_per_day,
+            start_date=input_dto.start_date,
+            max_hours_per_day=input_dto.max_hours_per_day,
             holiday_checker=holiday_checker,
-            current_time=current_time,
+            current_time=input_dto.current_time,
             workload_calculator=workload_calculator,
         )
 
@@ -119,9 +116,9 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         best_order = self._monte_carlo_simulation(
             schedulable_tasks,
             all_tasks_for_context,
-            start_date,
-            max_hours_per_day,
-            force_override,
+            input_dto.start_date,
+            input_dto.max_hours_per_day,
+            input_dto.force_override,
             greedy_strategy,
             workload_calculator,
         )
@@ -296,17 +293,3 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         )
 
         return score
-
-    def _sort_schedulable_tasks(
-        self, tasks: list[Task], start_date: datetime
-    ) -> list[Task]:
-        """Not used by Monte Carlo strategy (overrides optimize_tasks)."""
-        raise NotImplementedError(
-            "MonteCarloOptimizationStrategy overrides optimize_tasks directly"
-        )
-
-    def _allocate_task(self, task: Task, context: AllocationContext) -> Task | None:
-        """Not used by Monte Carlo strategy (overrides optimize_tasks)."""
-        raise NotImplementedError(
-            "MonteCarloOptimizationStrategy overrides optimize_tasks directly"
-        )

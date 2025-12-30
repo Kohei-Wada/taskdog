@@ -1,40 +1,44 @@
-"""Tests for OptimizationStrategy base class helper methods."""
+"""Tests for allocation helper functions."""
 
 from datetime import date, datetime
 
 import pytest
 
-from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
-    GreedyOptimizationStrategy,
+from taskdog_core.application.services.optimization.allocation_helpers import (
+    calculate_available_hours,
+    prepare_task_for_allocation,
+    rollback_allocations,
+    set_planned_times,
 )
 from taskdog_core.domain.entities.task import Task
 
 
 class TestOptimizationStrategyHelpers:
-    """Test cases for OptimizationStrategy base class helper methods.
+    """Test cases for allocation helper functions.
 
-    These tests verify the protected helper methods that were extracted
+    These tests verify the helper functions that were extracted
     from individual strategy classes to eliminate code duplication.
     """
 
     @pytest.fixture(autouse=True)
     def setup(self):
         """Set up test fixtures."""
-        # Use GreedyOptimizationStrategy as a concrete implementation
-        # to test the base class methods (default hours: 9-18)
-        self.strategy = GreedyOptimizationStrategy(
-            default_start_hour=9, default_end_hour=18
-        )
+        self.default_start_hour = 9
+        self.default_end_hour = 18
 
     def test_calculate_available_hours_with_no_allocation(self):
         """Test available hours calculation when no hours are allocated."""
-        daily_allocations = {}
+        daily_allocations: dict[date, float] = {}
         date_obj = date(2025, 10, 20)
         max_hours_per_day = 8.0
         current_time = None
 
-        available = self.strategy._calculate_available_hours(
-            daily_allocations, date_obj, max_hours_per_day, current_time
+        available = calculate_available_hours(
+            daily_allocations,
+            date_obj,
+            max_hours_per_day,
+            current_time,
+            self.default_end_hour,
         )
 
         assert available == 8.0
@@ -46,8 +50,12 @@ class TestOptimizationStrategyHelpers:
         max_hours_per_day = 8.0
         current_time = None
 
-        available = self.strategy._calculate_available_hours(
-            daily_allocations, date_obj, max_hours_per_day, current_time
+        available = calculate_available_hours(
+            daily_allocations,
+            date_obj,
+            max_hours_per_day,
+            current_time,
+            self.default_end_hour,
         )
 
         assert available == 5.0  # 8.0 - 3.0
@@ -59,15 +67,19 @@ class TestOptimizationStrategyHelpers:
         max_hours_per_day = 8.0
         current_time = None
 
-        available = self.strategy._calculate_available_hours(
-            daily_allocations, date_obj, max_hours_per_day, current_time
+        available = calculate_available_hours(
+            daily_allocations,
+            date_obj,
+            max_hours_per_day,
+            current_time,
+            self.default_end_hour,
         )
 
         assert available == 0.0
 
     def test_calculate_available_hours_today_with_remaining_hours(self):
         """Test available hours for today with remaining work hours."""
-        daily_allocations = {}
+        daily_allocations: dict[date, float] = {}
         date_obj = date(2025, 10, 20)
         max_hours_per_day = 8.0
         # Current time: 2025-10-20 14:00 (2:00 PM)
@@ -75,8 +87,12 @@ class TestOptimizationStrategyHelpers:
         # Remaining: 4.0 hours
         current_time = datetime(2025, 10, 20, 14, 0, 0)
 
-        available = self.strategy._calculate_available_hours(
-            daily_allocations, date_obj, max_hours_per_day, current_time
+        available = calculate_available_hours(
+            daily_allocations,
+            date_obj,
+            max_hours_per_day,
+            current_time,
+            self.default_end_hour,
         )
 
         assert available == 4.0  # min(8.0, 4.0)
@@ -93,29 +109,37 @@ class TestOptimizationStrategyHelpers:
         # Result: min(6.0, 4.0) = 4.0
         current_time = datetime(2025, 10, 20, 14, 0, 0)
 
-        available = self.strategy._calculate_available_hours(
-            daily_allocations, date_obj, max_hours_per_day, current_time
+        available = calculate_available_hours(
+            daily_allocations,
+            date_obj,
+            max_hours_per_day,
+            current_time,
+            self.default_end_hour,
         )
 
         assert available == 4.0
 
     def test_calculate_available_hours_today_past_end_hour(self):
         """Test available hours for today when past end hour."""
-        daily_allocations = {}
+        daily_allocations: dict[date, float] = {}
         date_obj = date(2025, 10, 20)
         max_hours_per_day = 8.0
         # Current time: 2025-10-20 19:00 (7:00 PM) - past end hour (18:00)
         current_time = datetime(2025, 10, 20, 19, 0, 0)
 
-        available = self.strategy._calculate_available_hours(
-            daily_allocations, date_obj, max_hours_per_day, current_time
+        available = calculate_available_hours(
+            daily_allocations,
+            date_obj,
+            max_hours_per_day,
+            current_time,
+            self.default_end_hour,
         )
 
         assert available == 0.0  # No time remaining today
 
     def test_calculate_available_hours_with_minutes(self):
         """Test available hours calculation with fractional hours (minutes)."""
-        daily_allocations = {}
+        daily_allocations: dict[date, float] = {}
         date_obj = date(2025, 10, 20)
         max_hours_per_day = 8.0
         # Current time: 2025-10-20 14:30 (2:30 PM)
@@ -123,8 +147,12 @@ class TestOptimizationStrategyHelpers:
         # Remaining: 3.5 hours
         current_time = datetime(2025, 10, 20, 14, 30, 0)
 
-        available = self.strategy._calculate_available_hours(
-            daily_allocations, date_obj, max_hours_per_day, current_time
+        available = calculate_available_hours(
+            daily_allocations,
+            date_obj,
+            max_hours_per_day,
+            current_time,
+            self.default_end_hour,
         )
 
         assert available == 3.5
@@ -145,8 +173,13 @@ class TestOptimizationStrategyHelpers:
             date(2025, 10, 22): 2.0,
         }
 
-        self.strategy._set_planned_times(
-            task, schedule_start, schedule_end, task_daily_allocations
+        set_planned_times(
+            task,
+            schedule_start,
+            schedule_end,
+            task_daily_allocations,
+            self.default_start_hour,
+            self.default_end_hour,
         )
 
         # Verify planned_start is set to 9:00 AM
@@ -163,7 +196,7 @@ class TestOptimizationStrategyHelpers:
         assert task.daily_allocations[date(2025, 10, 22)] == 2.0
 
     def test_set_planned_times_preserves_date(self):
-        """Test that _set_planned_times preserves the date but changes time."""
+        """Test that set_planned_times preserves the date but changes time."""
         task = Task(
             id=1,
             name="Test Task",
@@ -178,16 +211,23 @@ class TestOptimizationStrategyHelpers:
             date(2025, 10, 16): 2.0,
         }
 
-        self.strategy._set_planned_times(
-            task, schedule_start, schedule_end, task_daily_allocations
+        set_planned_times(
+            task,
+            schedule_start,
+            schedule_end,
+            task_daily_allocations,
+            self.default_start_hour,
+            self.default_end_hour,
         )
 
         # Date should be preserved, but time should be set to default hours
+        assert task.planned_start is not None
         assert task.planned_start.date() == schedule_start.date()  # Same date
         assert task.planned_start.hour == 9  # Default start hour
         assert task.planned_start.minute == 0
         assert task.planned_start.second == 0
 
+        assert task.planned_end is not None
         assert task.planned_end.date() == schedule_end.date()  # Same date
         assert task.planned_end.hour == 18  # Default end hour
         assert task.planned_end.minute == 0
@@ -206,7 +246,7 @@ class TestOptimizationStrategyHelpers:
             date(2025, 10, 22): 1.0,
         }
 
-        self.strategy._rollback_allocations(daily_allocations, task_allocations)
+        rollback_allocations(daily_allocations, task_allocations)
 
         # Verify allocations are rolled back
         assert daily_allocations[date(2025, 10, 20)] == 3.0  # 5.0 - 2.0
@@ -224,7 +264,7 @@ class TestOptimizationStrategyHelpers:
             date(2025, 10, 21): 3.0,  # Complete rollback
         }
 
-        self.strategy._rollback_allocations(daily_allocations, task_allocations)
+        rollback_allocations(daily_allocations, task_allocations)
 
         # Verify allocations are rolled back to zero
         assert daily_allocations[date(2025, 10, 20)] == 0.0
@@ -243,7 +283,7 @@ class TestOptimizationStrategyHelpers:
             date(2025, 10, 22): 1.0,
         }
 
-        self.strategy._rollback_allocations(daily_allocations, task_allocations)
+        rollback_allocations(daily_allocations, task_allocations)
 
         # Verify only specified dates are rolled back
         assert daily_allocations[date(2025, 10, 20)] == 3.0  # 5.0 - 2.0
@@ -256,17 +296,17 @@ class TestOptimizationStrategyHelpers:
             date(2025, 10, 20): 5.0,
             date(2025, 10, 21): 8.0,
         }
-        task_allocations = {}  # Empty - nothing to rollback
+        task_allocations: dict[date, float] = {}  # Empty - nothing to rollback
 
         # Should not raise any errors
-        self.strategy._rollback_allocations(daily_allocations, task_allocations)
+        rollback_allocations(daily_allocations, task_allocations)
 
         # Verify allocations are unchanged
         assert daily_allocations[date(2025, 10, 20)] == 5.0
         assert daily_allocations[date(2025, 10, 21)] == 8.0
 
     def test_prepare_task_for_allocation_valid_task(self):
-        """Test _prepare_task_for_allocation with valid task."""
+        """Test prepare_task_for_allocation with valid task."""
         task = Task(
             id=1,
             name="Test Task",
@@ -274,7 +314,7 @@ class TestOptimizationStrategyHelpers:
             estimated_duration=10.0,
         )
 
-        result = self.strategy._prepare_task_for_allocation(task)
+        result = prepare_task_for_allocation(task)
 
         # Verify task copy is returned
         assert result is not None
@@ -284,7 +324,7 @@ class TestOptimizationStrategyHelpers:
         assert result.estimated_duration == task.estimated_duration
 
     def test_prepare_task_for_allocation_none_duration(self):
-        """Test _prepare_task_for_allocation with None duration."""
+        """Test prepare_task_for_allocation with None duration."""
         task = Task(
             id=1,
             name="Test Task",
@@ -292,13 +332,13 @@ class TestOptimizationStrategyHelpers:
             estimated_duration=None,
         )
 
-        result = self.strategy._prepare_task_for_allocation(task)
+        result = prepare_task_for_allocation(task)
 
         # Should return None for None duration
         assert result is None
 
     def test_prepare_task_for_allocation_is_deep_copy(self):
-        """Test that _prepare_task_for_allocation returns deep copy."""
+        """Test that prepare_task_for_allocation returns deep copy."""
         task = Task(
             id=1,
             name="Original Task",
@@ -306,8 +346,9 @@ class TestOptimizationStrategyHelpers:
             estimated_duration=10.0,
         )
 
-        result = self.strategy._prepare_task_for_allocation(task)
+        result = prepare_task_for_allocation(task)
 
+        assert result is not None
         # Modify the copy
         result.name = "Modified Task"
         result.priority = 200
