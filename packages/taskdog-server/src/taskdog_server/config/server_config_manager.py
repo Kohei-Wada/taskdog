@@ -11,6 +11,24 @@ from taskdog_core.shared.xdg_utils import XDGDirectories
 
 SERVER_CONFIG_FILENAME = "server.toml"
 
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+]
+
+
+@dataclass(frozen=True)
+class CorsConfig:
+    """CORS (Cross-Origin Resource Sharing) configuration.
+
+    Attributes:
+        origins: List of allowed CORS origins for API requests (for future Web UI)
+    """
+
+    origins: tuple[str, ...] = tuple(DEFAULT_CORS_ORIGINS)
+
 
 @dataclass(frozen=True)
 class ApiKeyEntry:
@@ -46,9 +64,11 @@ class ServerConfig:
 
     Attributes:
         auth: Authentication configuration
+        cors: CORS configuration
     """
 
     auth: AuthConfig = field(default_factory=AuthConfig)
+    cors: CorsConfig = field(default_factory=CorsConfig)
 
 
 class ServerConfigManager:
@@ -106,4 +126,15 @@ class ServerConfigManager:
             if isinstance(entry, dict) and "name" in entry and "key" in entry
         )
 
-        return ServerConfig(auth=AuthConfig(enabled=enabled, api_keys=api_keys))
+        # Parse CORS configuration
+        cors_data = data.get("cors", {})
+        cors_origins_from_file = cors_data.get("origins", DEFAULT_CORS_ORIGINS)
+        cors_origins = ConfigLoader.get_env_list(
+            "CORS_ORIGINS",
+            cors_origins_from_file,
+        )
+
+        return ServerConfig(
+            auth=AuthConfig(enabled=enabled, api_keys=api_keys),
+            cors=CorsConfig(origins=tuple(cors_origins)),
+        )

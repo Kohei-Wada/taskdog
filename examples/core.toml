@@ -5,27 +5,10 @@
 #
 # This config is for CORE BUSINESS LOGIC (task defaults, optimization, storage).
 # For CLI/TUI infrastructure settings (API connection), see cli.toml.
-# For server-specific settings (authentication), see server.toml.
+# For server-specific settings (authentication, CORS), see server.toml.
 #
 # Note: Server host/port are configured via CLI arguments (taskdog-server --host --port),
 # not in this config file.
-
-# =============================================================================
-# API Server Settings
-# =============================================================================
-#
-# Settings that affect API server behavior (not connection settings).
-
-[api]
-# CORS (Cross-Origin Resource Sharing) allowed origins
-# Used when accessing API from web browsers (for future Web UI)
-# Default: localhost:3000, localhost:8000, 127.0.0.1:3000, 127.0.0.1:8000
-cors_origins = [
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:8000",
-]
 
 # =============================================================================
 # Task Defaults

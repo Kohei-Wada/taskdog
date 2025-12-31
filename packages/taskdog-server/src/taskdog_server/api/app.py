@@ -71,10 +71,10 @@ def create_app() -> FastAPI:
 
     # Configure CORS with settings from config file or defaults
     # Default origins: localhost:3000, localhost:8000, 127.0.0.1:3000, 127.0.0.1:8000
-    # Can be overridden in core.toml under [api] section with cors_origins = [...]
+    # Can be overridden in server.toml under [cors] section with origins = [...]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=config.api.cors_origins,
+        allow_origins=list(server_config.cors.origins),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
