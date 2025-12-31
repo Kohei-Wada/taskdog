@@ -37,17 +37,17 @@ The repository uses UV workspace with three packages:
 
 **Tasks**: Stored in SQLite database `tasks.db` at `$XDG_DATA_HOME/taskdog/tasks.db` (fallback: `~/.local/share/taskdog/tasks.db`)
 
-**Config**: Optional TOML at `$XDG_CONFIG_HOME/taskdog/core.toml` (fallback: `~/.config/taskdog/core.toml`)
+**Config**: Optional TOML files at `$XDG_CONFIG_HOME/taskdog/` (fallback: `~/.config/taskdog/`)
 
-- Sections: `[api]`, `[ui]`, `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
-- Settings:
-  - API: cors_origins (for future Web UI)
-  - UI: theme (TUI theme)
-  - Optimization: max_hours_per_day, default_algorithm
-  - Task: default_priority
-  - Time: default_start_hour, default_end_hour
-  - Region: country (ISO 3166-1 alpha-2: "JP", "US", "GB", "DE", etc.)
-  - Storage: database_url, backend
+- **core.toml** (business logic):
+  - Sections: `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
+  - Settings: max_hours_per_day, default_algorithm, default_priority, default_start_hour, default_end_hour, country, database_url, backend
+- **server.toml** (server-specific):
+  - Sections: `[auth]`, `[cors]`
+  - Settings: enabled, api_keys, origins (CORS for future Web UI)
+- **cli.toml** (CLI/TUI infrastructure):
+  - Sections: `[api]`, `[ui]`, `[notes]`, `[keybindings]`
+  - Settings: host, port, api_key, theme
 - Priority: Environment vars > CLI args > Config file > Defaults
 - Server host/port: CLI arguments (`taskdog-server --host --port`)
 - CLI/TUI connection: `cli.toml` or `TASKDOG_API_HOST`/`TASKDOG_API_PORT` env vars

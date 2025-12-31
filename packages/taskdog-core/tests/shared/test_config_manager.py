@@ -146,35 +146,6 @@ default_algorithm = "balanced"
         finally:
             config_path.unlink()
 
-    def test_env_var_list_parsing(self):
-        """Test comma-separated list parsing for environment variables."""
-        env_vars = {
-            "TASKDOG_API_CORS_ORIGINS": "http://localhost:3000, http://example.com, http://test.com",
-        }
-
-        with patch.dict(os.environ, env_vars, clear=False):
-            config = ConfigManager.load(Path("/nonexistent/config.toml"))
-
-        assert config.api.cors_origins == [
-            "http://localhost:3000",
-            "http://example.com",
-            "http://test.com",
-        ]
-
-    def test_env_var_list_with_empty_items(self):
-        """Test that empty items are filtered out from list parsing."""
-        env_vars = {
-            "TASKDOG_API_CORS_ORIGINS": "http://localhost:3000, , http://example.com, ",
-        }
-
-        with patch.dict(os.environ, env_vars, clear=False):
-            config = ConfigManager.load(Path("/nonexistent/config.toml"))
-
-        assert config.api.cors_origins == [
-            "http://localhost:3000",
-            "http://example.com",
-        ]
-
     @pytest.mark.parametrize(
         "env_key,env_value,section,field,expected",
         [

@@ -10,7 +10,6 @@ from pathlib import Path
 from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_ALGORITHM,
-    DEFAULT_CORS_ORIGINS,
     DEFAULT_END_HOUR,
     DEFAULT_MAX_HOURS_PER_DAY,
     DEFAULT_PRIORITY,
@@ -83,20 +82,6 @@ class StorageConfig:
 
 
 @dataclass(frozen=True)
-class ApiConfig:
-    """API server configuration.
-
-    Note: host and port are configured via CLI arguments, not here.
-    This config only contains settings that affect server behavior.
-
-    Attributes:
-        cors_origins: List of allowed CORS origins for API requests (for future Web UI)
-    """
-
-    cors_origins: list[str] = field(default_factory=lambda: DEFAULT_CORS_ORIGINS.copy())
-
-
-@dataclass(frozen=True)
 class Config:
     """Taskdog configuration.
 
@@ -106,7 +91,6 @@ class Config:
         time: Time-related settings
         region: Region-related settings (holidays, etc.)
         storage: Storage backend settings
-        api: API server settings
     """
 
     optimization: OptimizationConfig
@@ -114,7 +98,6 @@ class Config:
     time: TimeConfig
     region: RegionConfig = field(default_factory=RegionConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
-    api: ApiConfig = field(default_factory=ApiConfig)
 
 
 class ConfigManager:
@@ -148,7 +131,6 @@ class ConfigManager:
         time_data = toml_data.get("time", {})
         region_data = toml_data.get("region", {})
         storage_data = toml_data.get("storage", {})
-        api_data = toml_data.get("api", {})
 
         return Config(
             optimization=OptimizationConfig(
@@ -201,12 +183,6 @@ class ConfigManager:
                     "STORAGE_DATABASE_URL",
                     storage_data.get("database_url"),
                     str,
-                ),
-            ),
-            api=ApiConfig(
-                cors_origins=ConfigLoader.get_env_list(
-                    "API_CORS_ORIGINS",
-                    api_data.get("cors_origins", DEFAULT_CORS_ORIGINS),
                 ),
             ),
         )
