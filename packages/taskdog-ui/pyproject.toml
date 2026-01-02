@@ -1,6 +1,6 @@
 [project]
 name = "taskdog-ui"
-version = "0.8.0"
+version = "0.9.0"
 description = "CLI and TUI for Taskdog task management system"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -10,8 +10,8 @@ authors = [
 license = { text = "MIT" }
 
 dependencies = [
-    "taskdog-core==0.8.0",
-    "taskdog-client==0.8.0",
+    "taskdog-core==0.9.0",
+    "taskdog-client==0.9.0",
     "click>=8.3.0",
     "rich>=14.2.0",
     "textual>=0.88.0",
@@ -27,7 +27,7 @@ dev = [
     "ruff>=0.7.0",
 ]
 server = [
-    "taskdog-server==0.8.0",
+    "taskdog-server==0.9.0",
 ]
 
 [project.scripts]
