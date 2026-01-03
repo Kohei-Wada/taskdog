@@ -1,6 +1,6 @@
 """Tests for optimize command."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from click.testing import CliRunner
@@ -21,11 +21,9 @@ class TestOptimizeCommand:
         self.cli_context.console_writer = self.console_writer
         self.cli_context.api_client = self.api_client
 
-    @patch("taskdog.cli.commands.optimize._get_next_weekday_start")
-    def test_basic_optimize(self, mock_get_next_weekday_start):
+    def test_basic_optimize(self):
         """Test basic optimization."""
         # Setup
-        mock_get_next_weekday_start.return_value = MagicMock()
         mock_result = MagicMock()
         mock_result.all_failed.return_value = False
         mock_result.successful_tasks = [MagicMock()]
@@ -40,11 +38,9 @@ class TestOptimizeCommand:
         self.api_client.optimize_schedule.assert_called_once()
         self.console_writer.success.assert_called_once()
 
-    @patch("taskdog.cli.commands.optimize._get_next_weekday_start")
-    def test_optimize_specific_tasks(self, mock_get_next_weekday_start):
+    def test_optimize_specific_tasks(self):
         """Test optimization with specific task IDs."""
         # Setup
-        mock_get_next_weekday_start.return_value = MagicMock()
         mock_result = MagicMock()
         mock_result.all_failed.return_value = False
         mock_result.successful_tasks = [MagicMock(), MagicMock()]
@@ -61,11 +57,9 @@ class TestOptimizeCommand:
         call_kwargs = self.api_client.optimize_schedule.call_args[1]
         assert call_kwargs["task_ids"] == [1, 2, 3]
 
-    @patch("taskdog.cli.commands.optimize._get_next_weekday_start")
-    def test_optimize_with_algorithm(self, mock_get_next_weekday_start):
+    def test_optimize_with_algorithm(self):
         """Test optimization with specific algorithm."""
         # Setup
-        mock_get_next_weekday_start.return_value = MagicMock()
         mock_result = MagicMock()
         mock_result.all_failed.return_value = False
         mock_result.successful_tasks = [MagicMock()]
@@ -82,11 +76,9 @@ class TestOptimizeCommand:
         call_kwargs = self.api_client.optimize_schedule.call_args[1]
         assert call_kwargs["algorithm"] == "balanced"
 
-    @patch("taskdog.cli.commands.optimize._get_next_weekday_start")
-    def test_optimize_with_max_hours(self, mock_get_next_weekday_start):
+    def test_optimize_with_max_hours(self):
         """Test optimization with max hours per day."""
         # Setup
-        mock_get_next_weekday_start.return_value = MagicMock()
         mock_result = MagicMock()
         mock_result.all_failed.return_value = False
         mock_result.successful_tasks = [MagicMock()]
@@ -103,11 +95,9 @@ class TestOptimizeCommand:
         call_kwargs = self.api_client.optimize_schedule.call_args[1]
         assert call_kwargs["max_hours_per_day"] == 8.0
 
-    @patch("taskdog.cli.commands.optimize._get_next_weekday_start")
-    def test_optimize_with_force(self, mock_get_next_weekday_start):
+    def test_optimize_with_force(self):
         """Test optimization with force flag."""
         # Setup
-        mock_get_next_weekday_start.return_value = MagicMock()
         mock_result = MagicMock()
         mock_result.all_failed.return_value = False
         mock_result.successful_tasks = [MagicMock()]
@@ -122,8 +112,7 @@ class TestOptimizeCommand:
         call_kwargs = self.api_client.optimize_schedule.call_args[1]
         assert call_kwargs["force_override"] is True
 
-    @patch("taskdog.cli.commands.optimize._get_next_weekday_start")
-    def test_optimize_with_start_date(self, mock_get_next_weekday_start):
+    def test_optimize_with_start_date(self):
         """Test optimization with specific start date."""
         # Setup
         mock_result = MagicMock()
@@ -142,11 +131,26 @@ class TestOptimizeCommand:
         call_kwargs = self.api_client.optimize_schedule.call_args[1]
         assert call_kwargs["start_date"] is not None
 
-    @patch("taskdog.cli.commands.optimize._get_next_weekday_start")
-    def test_optimize_all_failed(self, mock_get_next_weekday_start):
+    def test_optimize_without_start_date(self):
+        """Test optimization without start date passes None to API."""
+        # Setup
+        mock_result = MagicMock()
+        mock_result.all_failed.return_value = False
+        mock_result.successful_tasks = [MagicMock()]
+        mock_result.has_failures.return_value = False
+        self.api_client.optimize_schedule.return_value = mock_result
+
+        # Execute
+        result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
+
+        # Verify
+        assert result.exit_code == 0
+        call_kwargs = self.api_client.optimize_schedule.call_args[1]
+        assert call_kwargs["start_date"] is None
+
+    def test_optimize_all_failed(self):
         """Test optimization when all tasks fail."""
         # Setup
-        mock_get_next_weekday_start.return_value = MagicMock()
         mock_result = MagicMock()
         mock_result.all_failed.return_value = True
         mock_result.failed_tasks = [MagicMock()]
@@ -159,11 +163,9 @@ class TestOptimizeCommand:
         assert result.exit_code == 0
         self.console_writer.warning.assert_called()
 
-    @patch("taskdog.cli.commands.optimize._get_next_weekday_start")
-    def test_optimize_no_tasks(self, mock_get_next_weekday_start):
+    def test_optimize_no_tasks(self):
         """Test optimization when no tasks to optimize."""
         # Setup
-        mock_get_next_weekday_start.return_value = MagicMock()
         mock_result = MagicMock()
         mock_result.all_failed.return_value = False
         mock_result.successful_tasks = []
@@ -176,11 +178,9 @@ class TestOptimizeCommand:
         assert result.exit_code == 0
         self.console_writer.warning.assert_called()
 
-    @patch("taskdog.cli.commands.optimize._get_next_weekday_start")
-    def test_optimize_partial_success(self, mock_get_next_weekday_start):
+    def test_optimize_partial_success(self):
         """Test optimization with partial success."""
         # Setup
-        mock_get_next_weekday_start.return_value = MagicMock()
         mock_result = MagicMock()
         mock_result.all_failed.return_value = False
         mock_result.successful_tasks = [MagicMock()]
