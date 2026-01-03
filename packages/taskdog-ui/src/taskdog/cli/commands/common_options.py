@@ -6,8 +6,6 @@ from typing import Any
 
 import click
 
-from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
-
 
 def filter_options() -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Add common filter options (--all, --status) to a command.
@@ -97,15 +95,15 @@ def date_range_options() -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         @click.option(
             "--end-date",
             "-e",
-            type=DateTimeWithDefault(),
-            help="End date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
+            type=click.DateTime(),
+            help="End date for filtering (YYYY-MM-DD). "
             "Shows tasks with any date field <= end date.",
         )
         @click.option(
             "--start-date",
             "-s",
-            type=DateTimeWithDefault(),
-            help="Start date for filtering (YYYY-MM-DD, MM-DD, or MM/DD). "
+            type=click.DateTime(),
+            help="Start date for filtering (YYYY-MM-DD). "
             "Shows tasks with any date field >= start date.",
         )
         @wraps(f)
