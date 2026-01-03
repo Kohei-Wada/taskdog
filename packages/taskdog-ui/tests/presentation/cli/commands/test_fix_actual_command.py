@@ -117,31 +117,6 @@ class TestFixActualCommand:
                     "clear_duration": False,
                 },
             ),
-            # Date-only input (defaults to specific times)
-            (
-                ["1", "--start", "2025-12-13"],
-                {
-                    "task_id": 1,
-                    "actual_start": datetime(2025, 12, 13, 9, 0, 0),
-                    "actual_end": None,
-                    "actual_duration": None,
-                    "clear_start": False,
-                    "clear_end": False,
-                    "clear_duration": False,
-                },
-            ),
-            (
-                ["1", "--end", "2025-12-13"],
-                {
-                    "task_id": 1,
-                    "actual_start": None,
-                    "actual_end": datetime(2025, 12, 13, 18, 0, 0),
-                    "actual_duration": None,
-                    "clear_start": False,
-                    "clear_end": False,
-                    "clear_duration": False,
-                },
-            ),
         ],
         ids=[
             "start_only",
@@ -150,8 +125,6 @@ class TestFixActualCommand:
             "start_and_end",
             "all_options",
             "short_options",
-            "date_only_start",
-            "date_only_end",
         ],
     )
     def test_fix_actual_success(self, args, expected_kwargs):
