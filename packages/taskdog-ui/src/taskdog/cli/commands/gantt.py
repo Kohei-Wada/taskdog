@@ -9,7 +9,6 @@ from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.renderers.rich_gantt_renderer import RichGanttRenderer
-from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 
 
 @click.command(
@@ -48,7 +47,7 @@ EXAMPLE:
   taskdog gantt -a                              # Show all tasks (including archived)
   taskdog gantt --status completed              # Show only completed tasks
   taskdog gantt -t work -t urgent               # Tasks with tag "work" OR "urgent"
-  taskdog gantt --start-date 2025-10-01 --end-date 2025-10-31
+  taskdog gantt --start-date 2025-10-01 --end-date 2025-10-31  # October tasks
 """,
 )
 @click.option(
@@ -61,14 +60,14 @@ EXAMPLE:
 @click.option(
     "--start-date",
     "-s",
-    type=DateTimeWithDefault(),
-    help="Start date for the chart (YYYY-MM-DD, MM-DD, or MM/DD). Defaults to previous Monday.",
+    type=click.DateTime(),
+    help="Start date for the chart (YYYY-MM-DD). Defaults to previous Monday.",
 )
 @click.option(
     "--end-date",
     "-e",
-    type=DateTimeWithDefault(),
-    help="End date for the chart (YYYY-MM-DD, MM-DD, or MM/DD). Defaults to last task date.",
+    type=click.DateTime(),
+    help="End date for the chart (YYYY-MM-DD). Defaults to last task date.",
 )
 @sort_options(default_sort="deadline")
 @filter_options()
