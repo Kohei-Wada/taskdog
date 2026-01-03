@@ -1,31 +1,28 @@
 """Fix-actual command - Correct actual start/end timestamps and duration."""
 
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 import click
 
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
-from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 
 # Sentinel value for "clear" - distinct from None (not provided)
 CLEAR_SENTINEL = "CLEAR"
 
 
 class ClearableDateTimeType(click.ParamType):
-    """DateTime type that treats empty string as 'clear' command."""
+    """DateTime type that treats empty string as 'clear' command.
+
+    Requires full datetime input (YYYY-MM-DD HH:MM:SS) for accurate timestamps.
+    """
 
     name = "DATETIME"
 
-    def __init__(self, default_hour: int | str | None = None) -> None:
-        """Initialize with wrapped DateTimeWithDefault.
-
-        Args:
-            default_hour: Hour to use when only date provided.
-                         None = end hour (18:00), "start" = start hour (9:00)
-        """
-        self._inner = DateTimeWithDefault(default_hour)
+    def __init__(self) -> None:
+        """Initialize with click.DateTime for parsing."""
+        self._inner = click.DateTime()
 
     def convert(
         self, value: Any, param: Any, ctx: click.Context | None
@@ -35,7 +32,7 @@ class ClearableDateTimeType(click.ParamType):
             return None
         if value == "" or value == CLEAR_SENTINEL:
             return CLEAR_SENTINEL
-        return self._inner.convert(value, param, ctx)
+        return cast(datetime, self._inner.convert(value, param, ctx))
 
 
 class ClearableFloatType(click.ParamType):
@@ -65,7 +62,7 @@ class ClearableFloatType(click.ParamType):
 @click.option(
     "--start",
     "-s",
-    type=ClearableDateTimeType("start"),
+    type=ClearableDateTimeType(),
     default=None,
     help='Actual start datetime (empty string "" to clear)',
 )
@@ -101,10 +98,10 @@ def fix_actual_command(
     Use empty string "" to clear a value.
 
     Examples:
-        taskdog fix-actual 5 --start "2025-12-13T09:00:00"
-        taskdog fix-actual 5 --start "2025-12-13T09:00:00" --end "2025-12-13T17:00:00"
+        taskdog fix-actual 5 --start "2025-12-13 09:00:00"
+        taskdog fix-actual 5 --start "2025-12-13 09:00:00" --end "2025-12-13 17:00:00"
         taskdog fix-actual 5 --duration 8
-        taskdog fix-actual 5 --start "2025-12-01" --end "2025-12-03" --duration 16
+        taskdog fix-actual 5 --start "2025-12-01 09:00:00" --end "2025-12-03 18:00:00" --duration 16
         taskdog fix-actual 5 --start ""      # Clear actual_start
         taskdog fix-actual 5 --duration ""   # Clear actual_duration
     """
