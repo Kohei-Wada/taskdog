@@ -98,7 +98,7 @@ def gantt_command(
     # Prepare filter parameters (tags use OR logic by default)
     tags = list(tag) if tag else None
 
-    # Convert datetime to date objects if provided (DateTimeWithDefault returns datetime)
+    # Convert datetime to date objects if provided
     # Default to previous Monday if start_date not provided
     if start_date:
         start_date_obj = start_date.date()

@@ -46,7 +46,7 @@ class AnalyticsClient:
     def optimize_schedule(
         self,
         algorithm: str | None,
-        start_date: datetime,
+        start_date: datetime | None,
         max_hours_per_day: float | None,
         force_override: bool = True,
         task_ids: list[int] | None = None,
@@ -55,7 +55,7 @@ class AnalyticsClient:
 
         Args:
             algorithm: Algorithm name (None = server default)
-            start_date: Optimization start date
+            start_date: Optimization start date (None = server current time)
             max_hours_per_day: Maximum hours per day (None = server default)
             force_override: Force override existing schedules
             task_ids: Specific task IDs to optimize (None means all schedulable tasks)
@@ -70,7 +70,7 @@ class AnalyticsClient:
         """
         payload: dict[str, str | float | bool | list[int] | None] = {
             "algorithm": algorithm,
-            "start_date": start_date.isoformat(),
+            "start_date": start_date.isoformat() if start_date else None,
             "max_hours_per_day": max_hours_per_day,
             "force_override": force_override,
         }

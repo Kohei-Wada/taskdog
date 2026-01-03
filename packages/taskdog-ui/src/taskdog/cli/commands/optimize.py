@@ -1,34 +1,13 @@
 """Optimize command - Auto-generate optimal task schedules."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import click
 
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
 from taskdog.console.console_writer import ConsoleWriter
-from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
-from taskdog.tui.constants.ui_settings import DEFAULT_START_HOUR
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
-
-
-def _get_next_weekday_start() -> datetime:
-    """Get the next weekday (Mon-Fri) with default start hour.
-
-    Always returns at least tomorrow. If tomorrow is a weekend,
-    returns next Monday.
-
-    Returns:
-        datetime with the next weekday at DEFAULT_START_HOUR
-    """
-    today = datetime.now()
-    next_day = today + timedelta(days=1)
-
-    # Skip weekends - move to next Monday if needed
-    while next_day.weekday() >= 5:  # 5=Saturday, 6=Sunday
-        next_day += timedelta(days=1)
-
-    return next_day.replace(hour=DEFAULT_START_HOUR, minute=0, second=0, microsecond=0)
 
 
 def _show_failed_tasks(
@@ -77,8 +56,8 @@ Examples:
 @click.argument("task_ids", nargs=-1, type=int, required=False)
 @click.option(
     "--start-date",
-    type=DateTimeWithDefault("start"),
-    help="Start date for scheduling (default: next weekday at 09:00)",
+    type=click.DateTime(),
+    help="Start date for scheduling (YYYY-MM-DD, default: server current time)",
 )
 @click.option(
     "--max-hours-per-day",
@@ -120,9 +99,6 @@ def optimize_command(
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
     api_client = ctx_obj.api_client
-
-    # Use start_date or get next weekday with default business start hour
-    start_date = start_date if start_date else _get_next_weekday_start()
 
     # Convert task_ids tuple to list (or None if empty)
     task_ids_list = list(task_ids) if task_ids else None
