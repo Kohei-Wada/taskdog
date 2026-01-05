@@ -48,13 +48,13 @@ class AuthConfig:
     """Authentication configuration.
 
     Attributes:
-        enabled: Whether authentication is enabled. Default is True.
+        enabled: Whether authentication is enabled. Default is False.
                  When disabled, all requests are allowed without API key.
         api_keys: Tuple of API key entries. When enabled=True and empty,
                   all requests are rejected.
     """
 
-    enabled: bool = True
+    enabled: bool = False
     api_keys: tuple[ApiKeyEntry, ...] = ()
 
 
@@ -80,7 +80,7 @@ class ServerConfigManager:
 
     Example server.toml:
         [auth]
-        enabled = true  # optional, default true
+        enabled = true  # optional, default false
 
         [[auth.api_keys]]
         name = "claude-code"
@@ -111,7 +111,7 @@ class ServerConfigManager:
         auth_data = data.get("auth", {})
 
         # Parse enabled flag with environment variable override
-        enabled_from_file = auth_data.get("enabled", True)
+        enabled_from_file = auth_data.get("enabled", False)
         enabled = ConfigLoader.get_env(
             "AUTH_ENABLED",
             enabled_from_file,
