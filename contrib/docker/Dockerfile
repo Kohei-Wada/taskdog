@@ -15,9 +15,14 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY packages/ ./packages/
 
-# Install taskdog-server and taskdog-ui packages (includes taskdog-core as dependency)
-# --no-editable ensures package data (tcss styles) are properly installed
-RUN uv sync --locked --no-dev --no-editable --package taskdog-server --package taskdog-ui
+# Build wheels and install with pip for proper package data
+RUN uv build --package taskdog-core --wheel --out-dir /tmp/wheels \
+    && uv build --package taskdog-client --wheel --out-dir /tmp/wheels \
+    && uv build --package taskdog-server --wheel --out-dir /tmp/wheels \
+    && uv build --package taskdog-ui --wheel --out-dir /tmp/wheels \
+    && uv venv /app/.venv \
+    && uv pip install --python /app/.venv/bin/python /tmp/wheels/*.whl \
+    && rm -rf /tmp/wheels
 
 # Create non-root user and data directory
 RUN useradd -m -u 1000 taskdog \
@@ -44,4 +49,4 @@ ENV TASKDOG_STORAGE_DATABASE_URL=sqlite:////data/tasks.db
 
 # Start taskdog-server
 # Note: --workers 1 is required for WebSocket real-time sync
-ENTRYPOINT ["uv", "run", "taskdog-server", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+ENTRYPOINT ["taskdog-server", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
