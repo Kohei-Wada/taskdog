@@ -36,6 +36,8 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
 # Environment variables
+# Add venv to PATH so taskdog CLI is directly accessible
+ENV PATH="/app/.venv/bin:$PATH"
 # SQLAlchemy requires sqlite:/// prefix for database URL
 ENV TASKDOG_STORAGE_DATABASE_URL=sqlite:////data/tasks.db
 

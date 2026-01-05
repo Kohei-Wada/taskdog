@@ -198,13 +198,13 @@ The container includes the CLI, so you can try taskdog without installing anythi
 
 ```bash
 # List tasks
-docker exec -it taskdog-server uv run taskdog table
+docker exec -it taskdog-server taskdog table
 
 # Add a task
-docker exec -it taskdog-server uv run taskdog add "Test task"
+docker exec -it taskdog-server taskdog add "Test task"
 
 # View Gantt chart
-docker exec -it taskdog-server uv run taskdog gantt
+docker exec -it taskdog-server taskdog gantt
 ```
 
 **Note:** TUI mode requires a proper terminal and is better used on the host machine.
