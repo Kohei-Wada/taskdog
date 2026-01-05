@@ -16,7 +16,8 @@ COPY pyproject.toml uv.lock ./
 COPY packages/ ./packages/
 
 # Install taskdog-server and taskdog-ui packages (includes taskdog-core as dependency)
-RUN uv sync --locked --no-dev --package taskdog-server --package taskdog-ui
+# --no-editable ensures package data (tcss styles) are properly installed
+RUN uv sync --locked --no-dev --no-editable --package taskdog-server --package taskdog-ui
 
 # Create non-root user and data directory
 RUN useradd -m -u 1000 taskdog \
