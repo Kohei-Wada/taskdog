@@ -21,7 +21,7 @@ class TestServerConfigManager:
         """When config file doesn't exist, return default config."""
         config = ServerConfigManager.load(tmp_path / "nonexistent.toml")
 
-        assert config.auth.enabled is True
+        assert config.auth.enabled is False
         assert config.auth.api_keys == ()
         assert config.cors.origins == tuple(DEFAULT_CORS_ORIGINS)
 
@@ -32,7 +32,7 @@ class TestServerConfigManager:
 
         config = ServerConfigManager.load(config_path)
 
-        assert config.auth.enabled is True
+        assert config.auth.enabled is False
         assert config.auth.api_keys == ()
         assert config.cors.origins == tuple(DEFAULT_CORS_ORIGINS)
 
@@ -176,7 +176,7 @@ class TestAuthConfig:
         """AuthConfig has sensible defaults."""
         config = AuthConfig()
 
-        assert config.enabled is True
+        assert config.enabled is False
         assert config.api_keys == ()
 
     def test_frozen_dataclass(self) -> None:
@@ -194,7 +194,7 @@ class TestServerConfig:
         """ServerConfig has default AuthConfig and CorsConfig."""
         config = ServerConfig()
 
-        assert config.auth.enabled is True
+        assert config.auth.enabled is False
         assert config.auth.api_keys == ()
         assert config.cors.origins == tuple(DEFAULT_CORS_ORIGINS)
 
