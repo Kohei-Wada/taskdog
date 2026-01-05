@@ -15,8 +15,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY packages/ ./packages/
 
-# Install taskdog-server package (includes taskdog-core as dependency)
-RUN uv sync --locked --no-dev --package taskdog-server
+# Install taskdog-server and taskdog-ui packages (includes taskdog-core as dependency)
+RUN uv sync --locked --no-dev --package taskdog-server --package taskdog-ui
 
 # Create non-root user and data directory
 RUN useradd -m -u 1000 taskdog \

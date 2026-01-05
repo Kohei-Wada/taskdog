@@ -192,10 +192,27 @@ docker logs taskdog-server
 docker logs -f taskdog-server
 ```
 
+## Using CLI in Container
+
+The container includes the CLI, so you can try taskdog without installing anything on your host:
+
+```bash
+# List tasks
+docker exec -it taskdog-server uv run taskdog table
+
+# Add a task
+docker exec -it taskdog-server uv run taskdog add "Test task"
+
+# View Gantt chart
+docker exec -it taskdog-server uv run taskdog gantt
+```
+
+**Note:** TUI mode requires a proper terminal and is better used on the host machine.
+
 ## Limitations
 
 - **WebSocket:** The container runs with `--workers 1` (required for WebSocket real-time sync)
-- **CLI/TUI:** Must be installed on host, not containerized (interactive terminal required)
+- **TUI:** Best used on host machine (interactive terminal required)
 
 ## Advanced: taskdog-stack
 
