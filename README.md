@@ -229,7 +229,6 @@ theme = "tokyo-night"
 ```toml
 [optimization]
 max_hours_per_day = 8.0
-default_algorithm = "balanced"
 
 [region]
 country = "JP"

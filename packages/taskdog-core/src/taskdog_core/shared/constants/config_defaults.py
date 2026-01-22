@@ -2,7 +2,6 @@
 
 # === Optimization Defaults ===
 DEFAULT_MAX_HOURS_PER_DAY = 6.0
-DEFAULT_ALGORITHM = "greedy"
 
 # === Task Defaults ===
 DEFAULT_PRIORITY = 5

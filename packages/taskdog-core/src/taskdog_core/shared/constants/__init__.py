@@ -9,7 +9,6 @@ from taskdog_core.domain.constants import (
     MIN_PRIORITY_EXCLUSIVE,
 )
 from taskdog_core.shared.constants.config_defaults import (
-    DEFAULT_ALGORITHM,
     DEFAULT_END_HOUR,
     DEFAULT_MAX_HOURS_PER_DAY,
     DEFAULT_PRIORITY,
@@ -53,7 +52,6 @@ __all__ = [
     "CONFIG_FILE_NAME",
     "DATETIME_FORMAT",
     "DAYS_PER_WEEK",
-    "DEFAULT_ALGORITHM",
     "DEFAULT_END_HOUR",
     "DEFAULT_MAX_HOURS_PER_DAY",
     "DEFAULT_PRIORITY",

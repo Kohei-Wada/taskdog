@@ -34,7 +34,6 @@ class TestApp:
         self.mock_config = MagicMock()
         self.mock_config.task.default_priority = 3
         self.mock_config.scheduling.max_hours_per_day = 8.0
-        self.mock_config.scheduling.default_algorithm = "greedy"
         self.mock_config.region.country = None
 
         # Create mock logger for controllers
