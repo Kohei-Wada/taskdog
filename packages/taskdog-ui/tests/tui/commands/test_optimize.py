@@ -202,7 +202,7 @@ class TestOptimizeCommandExecute:
         self.command.execute()
 
         callback = self.mock_app.push_screen.call_args[0][1]
-        callback(("greedy", None, datetime.now(), False))
+        callback(("greedy", 6.0, datetime.now(), False))
 
         self.command.reload_tasks.assert_called_once()
 
@@ -256,7 +256,7 @@ class TestOptimizeCommandExecute:
         self.command.execute()
 
         callback = self.mock_app.push_screen.call_args[0][1]
-        callback(("greedy", None, datetime.now(), False))
+        callback(("greedy", 6.0, datetime.now(), False))
 
         self.command.notify_warning.assert_called_once()
         message = self.command.notify_warning.call_args[0][0]
@@ -277,19 +277,3 @@ class TestOptimizeCommandExecute:
         callback(("greedy", 8.0, datetime.now(), False))
 
         self.command.notify_warning.assert_not_called()
-
-    def test_passes_none_max_hours_to_api(self) -> None:
-        """Test that None max_hours is passed correctly to API."""
-        self.mock_context.api_client.get_algorithm_metadata.return_value = []
-        result = create_mock_optimization_output(successful_count=1)
-        self.mock_context.api_client.optimize_schedule.return_value = result
-        self.command.reload_tasks = MagicMock()
-
-        self.command.execute()
-
-        callback = self.mock_app.push_screen.call_args[0][1]
-        start_date = datetime(2025, 1, 6)
-        callback(("greedy", None, start_date, False))  # max_hours is None
-
-        call_kwargs = self.mock_context.api_client.optimize_schedule.call_args
-        assert call_kwargs[1]["max_hours_per_day"] is None

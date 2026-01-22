@@ -201,12 +201,12 @@ class TestOptimizeScheduleRequest:
     def test_valid_minimal_request(self):
         """Test creating request with minimal required fields."""
         # Act
-        request = OptimizeScheduleRequest(algorithm="greedy")
+        request = OptimizeScheduleRequest(algorithm="greedy", max_hours_per_day=6.0)
 
         # Assert
         assert request.algorithm == "greedy"
         assert request.start_date is None
-        assert request.max_hours_per_day is None
+        assert request.max_hours_per_day == 6.0
         assert request.force_override is True
 
     def test_valid_full_request(self):

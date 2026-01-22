@@ -62,14 +62,13 @@ class OptimizeCommand(TUICommandBase):
         """Execute the optimize command."""
 
         def handle_optimization_settings(
-            settings: tuple[str, float | None, datetime, bool] | None,
+            settings: tuple[str, float, datetime, bool] | None,
         ) -> None:
             """Handle the optimization settings from the dialog.
 
             Args:
                 settings: Tuple of (algorithm_name, max_hours_per_day, start_date, force_override),
                          or None if cancelled.
-                         max_hours_per_day can be None (server will apply config default)
             """
             if settings is None:
                 return  # User cancelled
@@ -77,7 +76,6 @@ class OptimizeCommand(TUICommandBase):
             algorithm, max_hours, start_date, force_override = settings
 
             # Use API client to optimize schedules
-            # max_hours can be None - server will apply config default
             result = self.context.api_client.optimize_schedule(
                 algorithm=algorithm,
                 start_date=start_date,

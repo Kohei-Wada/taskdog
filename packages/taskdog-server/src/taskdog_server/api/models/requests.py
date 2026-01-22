@@ -150,8 +150,8 @@ class OptimizeScheduleRequest(BaseModel):
         ..., description="Algorithm name (e.g., 'greedy', 'balanced')"
     )
     start_date: datetime | None = Field(None, description="Optimization start date")
-    max_hours_per_day: float | None = Field(
-        None, gt=0, le=24, description="Maximum hours per day"
+    max_hours_per_day: float = Field(
+        ..., gt=0, le=24, description="Maximum hours per day (required)"
     )
     force_override: bool = Field(
         True, description="Whether to override existing schedules for non-fixed tasks"

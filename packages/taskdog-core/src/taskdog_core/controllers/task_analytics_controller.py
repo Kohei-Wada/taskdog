@@ -81,7 +81,7 @@ class TaskAnalyticsController(BaseTaskController):
         self,
         algorithm: str,
         start_date: datetime,
-        max_hours_per_day: float | None = None,
+        max_hours_per_day: float,
         force_override: bool = True,
         task_ids: list[int] | None = None,
     ) -> OptimizationOutput:
@@ -90,7 +90,7 @@ class TaskAnalyticsController(BaseTaskController):
         Args:
             algorithm: Optimization algorithm name
             start_date: Start date for optimization
-            max_hours_per_day: Maximum hours per day (default: from config)
+            max_hours_per_day: Maximum hours per day (required)
             force_override: Force override existing schedules (default: True)
             task_ids: Specific task IDs to optimize (None means all schedulable tasks)
 
@@ -102,16 +102,9 @@ class TaskAnalyticsController(BaseTaskController):
             TaskNotFoundException: If any specified task_id does not exist
             NoSchedulableTasksError: If no tasks can be scheduled
         """
-        # Apply config default if not specified
-        hours_per_day = (
-            max_hours_per_day
-            if max_hours_per_day is not None
-            else self.config.optimization.max_hours_per_day
-        )
-
         optimize_input = OptimizeScheduleInput(
             start_date=start_date,
-            max_hours_per_day=hours_per_day,
+            max_hours_per_day=max_hours_per_day,
             force_override=force_override,
             algorithm_name=algorithm,
             current_time=datetime.now(),

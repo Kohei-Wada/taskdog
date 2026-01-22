@@ -1,8 +1,5 @@
 """Default configuration values for taskdog."""
 
-# === Optimization Defaults ===
-DEFAULT_MAX_HOURS_PER_DAY = 6.0
-
 # === Task Defaults ===
 DEFAULT_PRIORITY = 5
 
