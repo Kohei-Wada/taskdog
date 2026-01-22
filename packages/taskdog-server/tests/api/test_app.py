@@ -114,15 +114,6 @@ class TestApp:
         data = response.json()
         assert data["status"] == "ok"
 
-    def test_cors_middleware_configured(self):
-        """Test that CORS middleware is configured."""
-        # The app should have CORS middleware
-        # We can verify by checking if OPTIONS requests are handled
-        response = self.client.options("/")
-
-        # Assert - OPTIONS should be allowed
-        assert response.status_code in [200, 405]  # Either OK or Method Not Allowed
-
     def test_routers_registered(self):
         """Test that all routers are registered with correct prefixes."""
         # Check that routes exist for each router

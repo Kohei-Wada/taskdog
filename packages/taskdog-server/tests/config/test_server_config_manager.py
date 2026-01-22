@@ -5,10 +5,8 @@ from pathlib import Path
 import pytest
 
 from taskdog_server.config.server_config_manager import (
-    DEFAULT_CORS_ORIGINS,
     ApiKeyEntry,
     AuthConfig,
-    CorsConfig,
     ServerConfig,
     ServerConfigManager,
 )
@@ -23,7 +21,6 @@ class TestServerConfigManager:
 
         assert config.auth.enabled is False
         assert config.auth.api_keys == ()
-        assert config.cors.origins == tuple(DEFAULT_CORS_ORIGINS)
 
     def test_load_empty_file_returns_defaults(self, tmp_path: Path) -> None:
         """When config file is empty, return default config."""
@@ -34,7 +31,6 @@ class TestServerConfigManager:
 
         assert config.auth.enabled is False
         assert config.auth.api_keys == ()
-        assert config.cors.origins == tuple(DEFAULT_CORS_ORIGINS)
 
     def test_load_with_single_api_key(self, tmp_path: Path) -> None:
         """Load config with a single API key."""
@@ -191,12 +187,11 @@ class TestServerConfig:
     """Tests for ServerConfig dataclass."""
 
     def test_default_values(self) -> None:
-        """ServerConfig has default AuthConfig and CorsConfig."""
+        """ServerConfig has default AuthConfig."""
         config = ServerConfig()
 
         assert config.auth.enabled is False
         assert config.auth.api_keys == ()
-        assert config.cors.origins == tuple(DEFAULT_CORS_ORIGINS)
 
     def test_frozen_dataclass(self) -> None:
         """ServerConfig is immutable."""
@@ -204,67 +199,3 @@ class TestServerConfig:
 
         with pytest.raises(AttributeError):
             config.auth = AuthConfig(enabled=False)  # type: ignore[misc]
-
-
-class TestCorsConfig:
-    """Tests for CorsConfig dataclass."""
-
-    def test_default_values(self) -> None:
-        """CorsConfig has sensible defaults."""
-        config = CorsConfig()
-
-        assert config.origins == tuple(DEFAULT_CORS_ORIGINS)
-
-    def test_frozen_dataclass(self) -> None:
-        """CorsConfig is immutable."""
-        config = CorsConfig()
-
-        with pytest.raises(AttributeError):
-            config.origins = ("http://example.com",)  # type: ignore[misc]
-
-
-class TestCorsConfiguration:
-    """Tests for CORS configuration loading."""
-
-    def test_load_custom_cors_origins(self, tmp_path: Path) -> None:
-        """Load config with custom CORS origins."""
-        config_path = tmp_path / "server.toml"
-        config_path.write_text("""
-[cors]
-origins = ["http://example.com", "https://app.example.com"]
-""")
-
-        config = ServerConfigManager.load(config_path)
-
-        assert config.cors.origins == ("http://example.com", "https://app.example.com")
-
-    def test_environment_variable_override_cors(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """TASKDOG_CORS_ORIGINS env var overrides config file."""
-        config_path = tmp_path / "server.toml"
-        config_path.write_text("""
-[cors]
-origins = ["http://from-file.com"]
-""")
-
-        # Override with environment variable (comma-separated)
-        monkeypatch.setenv(
-            "TASKDOG_CORS_ORIGINS", "http://from-env.com,https://another.com"
-        )
-
-        config = ServerConfigManager.load(config_path)
-
-        assert config.cors.origins == ("http://from-env.com", "https://another.com")
-
-    def test_cors_empty_origins_list(self, tmp_path: Path) -> None:
-        """Empty CORS origins list is preserved."""
-        config_path = tmp_path / "server.toml"
-        config_path.write_text("""
-[cors]
-origins = []
-""")
-
-        config = ServerConfigManager.load(config_path)
-
-        assert config.cors.origins == ()

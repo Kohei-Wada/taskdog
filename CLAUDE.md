@@ -43,8 +43,8 @@ The repository uses UV workspace with three packages:
   - Sections: `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
   - Settings: max_hours_per_day, default_algorithm, default_priority, default_start_hour, default_end_hour, country, database_url, backend
 - **server.toml** (server-specific):
-  - Sections: `[auth]`, `[cors]`
-  - Settings: enabled, api_keys, origins (CORS for future Web UI)
+  - Sections: `[auth]`
+  - Settings: enabled, api_keys
 - **cli.toml** (CLI/TUI infrastructure):
   - Sections: `[api]`, `[ui]`, `[notes]`, `[keybindings]`
   - Settings: host, port, api_key, theme
@@ -214,7 +214,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 **API** (`packages/taskdog-server/src/taskdog_server/api/`):
 
-- `app.py`: FastAPI application setup with CORS, exception handlers
+- `app.py`: FastAPI application setup with exception handlers
 - `routers/`: API route handlers
   - `tasks.py`: Task CRUD operations
   - `lifecycle.py`: Task status changes (start, complete, pause, cancel, reopen)

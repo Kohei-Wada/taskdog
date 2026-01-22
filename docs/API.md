@@ -681,7 +681,3 @@ done
 ## Rate Limiting
 
 Currently, Taskdog API does not implement rate limiting as it's designed for local use. For production deployments, consider adding rate limiting middleware.
-
-## CORS
-
-CORS is enabled by default for all origins in development. For production, configure appropriate CORS origins in the server startup.

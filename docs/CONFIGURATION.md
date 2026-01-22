@@ -270,7 +270,6 @@ These variables override core configuration (core.toml):
 | `TASKDOG_REGION_COUNTRY` | string | `None` | ISO 3166-1 alpha-2 country code |
 | `TASKDOG_STORAGE_BACKEND` | string | `"sqlite"` | Storage backend type |
 | `TASKDOG_STORAGE_DATABASE_URL` | string | XDG path | Database file location |
-| `TASKDOG_CORS_ORIGINS` | string | localhost | Comma-separated CORS origins (server.toml) |
 
 **Example:**
 
@@ -279,7 +278,6 @@ These variables override core configuration (core.toml):
 export TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY=8.0
 export TASKDOG_TASK_DEFAULT_PRIORITY=3
 export TASKDOG_REGION_COUNTRY=US
-export TASKDOG_CORS_ORIGINS="http://localhost:3000,http://app.example.com"
 ```
 
 **Note:** Invalid values are logged as warnings and fall back to defaults.

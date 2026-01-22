@@ -35,22 +35,6 @@ key = "sk-change-me-generate-a-secure-key"
 # key = "sk-yet-another-key"
 
 # =============================================================================
-# CORS Configuration
-# =============================================================================
-[cors]
-# CORS (Cross-Origin Resource Sharing) allowed origins
-# Used when accessing API from web browsers (for future Web UI)
-# Default: localhost:3000, localhost:8000, 127.0.0.1:3000, 127.0.0.1:8000
-#
-# Can be overridden with environment variable: TASKDOG_CORS_ORIGINS=http://example.com,http://app.example.com
-origins = [
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:8000",
-]
-
-# =============================================================================
 # Usage Notes
 # =============================================================================
 #
