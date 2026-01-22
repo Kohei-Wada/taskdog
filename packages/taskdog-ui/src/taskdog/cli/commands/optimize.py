@@ -70,9 +70,9 @@ Examples:
     "--algorithm",
     "-a",
     type=str,
-    default=None,
+    default="greedy",
     help=(
-        "Optimization algorithm (default: from config or greedy): "
+        "Optimization algorithm: "
         "greedy (front-load), "
         "balanced (even distribution), "
         "backward (JIT from deadline), "
@@ -104,9 +104,8 @@ def optimize_command(
     task_ids_list = list(task_ids) if task_ids else None
 
     # Execute optimization via API
-    # Server will apply config defaults for None values
     result = api_client.optimize_schedule(
-        algorithm=algorithm,  # None if not provided, server applies default
+        algorithm=algorithm,
         start_date=start_date,
         max_hours_per_day=max_hours_per_day,  # None if not provided, server applies default
         force_override=force,

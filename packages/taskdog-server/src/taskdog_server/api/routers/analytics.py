@@ -269,7 +269,7 @@ async def get_gantt_chart(
 
 def run_optimization(
     controller: AnalyticsControllerDep,
-    algorithm: str | None,
+    algorithm: str,
     start_date: datetime,
     max_hours_per_day: float | None,
     force_override: bool,
@@ -279,7 +279,7 @@ def run_optimization(
 
     Args:
         controller: Analytics controller
-        algorithm: Algorithm name (None = controller applies default)
+        algorithm: Algorithm name (required, provided by UI)
         start_date: Optimization start date
         max_hours_per_day: Maximum hours per day (None = controller applies default)
         force_override: Force override existing schedules
@@ -287,7 +287,7 @@ def run_optimization(
     """
     # This runs in the background
     controller.optimize_schedule(
-        algorithm=algorithm or "greedy",  # Provide default if None
+        algorithm=algorithm,
         start_date=start_date,
         max_hours_per_day=max_hours_per_day,
         force_override=force_override,
