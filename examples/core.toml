@@ -5,7 +5,7 @@
 #
 # This config is for CORE BUSINESS LOGIC (task defaults, optimization, storage).
 # For CLI/TUI infrastructure settings (API connection), see cli.toml.
-# For server-specific settings (authentication, CORS), see server.toml.
+# For server-specific settings (authentication), see server.toml.
 #
 # Note: Server host/port are configured via CLI arguments (taskdog-server --host --port),
 # not in this config file.

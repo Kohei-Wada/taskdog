@@ -23,7 +23,6 @@ Taskdog uses **separate configuration files** for clear separation of concerns:
 - Time settings (default start/end hours)
 - Region settings (holiday calendar)
 - Storage settings (database location)
-- API settings (CORS)
 
 **When to use**: Configure business logic behavior
 
