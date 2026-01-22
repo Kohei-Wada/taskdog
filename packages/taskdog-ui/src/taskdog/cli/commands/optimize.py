@@ -63,8 +63,8 @@ Examples:
     "--max-hours-per-day",
     "-m",
     type=click.FloatRange(min=0, min_open=True, max=24.0),
-    default=None,
-    help="Max work hours per day (default: from config or 6.0)",
+    required=True,
+    help="Max work hours per day (required, e.g., 6.0 or 8.0)",
 )
 @click.option(
     "--algorithm",
@@ -91,8 +91,8 @@ def optimize_command(
     ctx: click.Context,
     task_ids: tuple[int, ...],
     start_date: datetime | None,
-    max_hours_per_day: float | None,
-    algorithm: str | None,
+    max_hours_per_day: float,
+    algorithm: str,
     force: bool,
 ) -> None:
     """Auto-generate optimal schedules for tasks."""
@@ -107,7 +107,7 @@ def optimize_command(
     result = api_client.optimize_schedule(
         algorithm=algorithm,
         start_date=start_date,
-        max_hours_per_day=max_hours_per_day,  # None if not provided, server applies default
+        max_hours_per_day=max_hours_per_day,
         force_override=force,
         task_ids=task_ids_list,
     )

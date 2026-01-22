@@ -63,7 +63,6 @@ class TestDependencyInjection:
             config_path = f.name
             # Write minimal config
             f.write("[task]\ndefault_priority = 3\n")
-            f.write("[optimization]\nmax_hours_per_day = 8.0\n")
             f.write('[storage]\nbackend = "sqlite"\n')
             f.write('database_url = "sqlite:///:memory:"\n')
 
@@ -276,7 +275,6 @@ class TestInitializeApiContext:
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".toml") as f:
             config_path = f.name
             f.write("[task]\ndefault_priority = 3\n")
-            f.write("[optimization]\nmax_hours_per_day = 8.0\n")
             f.write('[storage]\nbackend = "sqlite"\n')
             f.write('database_url = "sqlite:///:memory:"\n')
 
@@ -314,7 +312,6 @@ class TestInitializeApiContext:
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".toml") as f:
             config_path = f.name
             f.write("[task]\ndefault_priority = 3\n")
-            f.write("[optimization]\nmax_hours_per_day = 8.0\n")
             f.write('[storage]\nbackend = "sqlite"\n')
             f.write('database_url = "sqlite:///:memory:"\n')
             f.write('[region]\ncountry = "US"\n')
@@ -349,7 +346,6 @@ class TestInitializeApiContext:
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".toml") as f:
             config_path = f.name
             f.write("[task]\ndefault_priority = 3\n")
-            f.write("[optimization]\nmax_hours_per_day = 8.0\n")
             f.write('[storage]\nbackend = "sqlite"\n')
             f.write('database_url = "sqlite:///:memory:"\n')
             f.write('[region]\ncountry = "XX"\n')  # Invalid country code

@@ -16,43 +16,27 @@ class TestConfigManager:
     """Test cases for ConfigManager class."""
 
     @pytest.mark.parametrize(
-        "toml_content,expected_max_hours,expected_priority",
+        "toml_content,expected_priority",
         [
-            (None, 6.0, 5),
+            (None, 5),
             (
                 """
-[optimization]
-max_hours_per_day = 8.0
-
 [task]
 default_priority = 3
 """,
-                8.0,
                 3,
             ),
             (
                 """
-[optimization]
-max_hours_per_day = 7.5
-""",
-                7.5,
-                5,
-            ),
-            (
-                """
-[optimization]
-
 [task]
 """,
-                6.0,
                 5,
             ),
-            ("this is not valid TOML {{{", 6.0, 5),
+            ("this is not valid TOML {{{", 5),
         ],
         ids=[
             "nonexistent_file",
             "full_config",
-            "partial_config",
             "empty_sections",
             "invalid_toml",
         ],
@@ -60,7 +44,6 @@ max_hours_per_day = 7.5
     def test_config_loading_scenarios(
         self,
         toml_content,
-        expected_max_hours,
         expected_priority,
     ):
         """Test various config loading scenarios with different TOML content."""
@@ -83,7 +66,6 @@ max_hours_per_day = 7.5
                 config_path.unlink()
 
         # Verify all expected values
-        assert config.optimization.max_hours_per_day == expected_max_hours
         assert config.task.default_priority == expected_priority
 
     def test_config_dataclasses_are_frozen(self):
@@ -91,9 +73,6 @@ max_hours_per_day = 7.5
         config = ConfigManager.load()
 
         # All config objects should be frozen (immutable)
-        with pytest.raises(FrozenInstanceError):
-            config.optimization.max_hours_per_day = 10.0
-
         with pytest.raises(FrozenInstanceError):
             config.task.default_priority = 1
 
@@ -104,27 +83,25 @@ class TestConfigManagerEnvVars:
     def test_env_vars_override_defaults(self):
         """Test that environment variables override default values."""
         env_vars = {
-            "TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY": "10.5",
             "TASKDOG_TASK_DEFAULT_PRIORITY": "1",
         }
 
         with patch.dict(os.environ, env_vars, clear=False):
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
-        assert config.optimization.max_hours_per_day == 10.5
         assert config.task.default_priority == 1
 
     def test_env_vars_override_toml(self):
         """Test that environment variables take precedence over TOML values."""
         toml_content = """
-[optimization]
-max_hours_per_day = 6.0
-
 [task]
 default_priority = 3
+
+[time]
+default_start_hour = 10
 """
         env_vars = {
-            "TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY": "12.0",
+            "TASKDOG_TASK_DEFAULT_PRIORITY": "7",
         }
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
@@ -136,9 +113,9 @@ default_priority = 3
                 config = ConfigManager.load(config_path)
 
             # Environment variables should override TOML
-            assert config.optimization.max_hours_per_day == 12.0
+            assert config.task.default_priority == 7
             # TOML value should be used when no env var is set
-            assert config.task.default_priority == 3
+            assert config.time.default_start_hour == 10
         finally:
             config_path.unlink()
 
@@ -187,7 +164,6 @@ default_priority = 3
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
         # Should use defaults
-        assert config.optimization.max_hours_per_day == 6.0
         assert config.task.default_priority == 5
         assert config.time.default_start_hour == 9
         assert config.time.default_end_hour == 18
@@ -202,17 +178,10 @@ default_priority = 3
                 "default_priority",
                 5,
             ),
-            (
-                "TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY",
-                "invalid",
-                "optimization",
-                "max_hours_per_day",
-                6.0,
-            ),
             ("TASKDOG_TIME_DEFAULT_START_HOUR", "abc", "time", "default_start_hour", 9),
             ("TASKDOG_TIME_DEFAULT_END_HOUR", "xyz", "time", "default_end_hour", 18),
         ],
-        ids=["priority", "max_hours", "start_hour", "end_hour"],
+        ids=["priority", "start_hour", "end_hour"],
     )
     def test_invalid_env_var_falls_back_to_default(
         self, env_key, invalid_value, section, field, expected_default

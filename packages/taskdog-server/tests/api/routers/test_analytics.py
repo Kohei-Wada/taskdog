@@ -303,8 +303,8 @@ class TestAnalyticsRouter:
         data = response.json()
         assert "background" in data["message"].lower()
 
-    def test_optimize_schedule_with_defaults(self, client, task_factory):
-        """Test schedule optimization with default parameters."""
+    def test_optimize_schedule_with_required_fields(self, client, task_factory):
+        """Test schedule optimization with required parameters."""
         # Arrange - create task
         task_factory.create(
             name="Task",
@@ -313,7 +313,7 @@ class TestAnalyticsRouter:
             status=TaskStatus.PENDING,
         )
 
-        request_data = {"algorithm": "greedy"}
+        request_data = {"algorithm": "greedy", "max_hours_per_day": 6.0}
 
         # Act
         response = client.post("/api/v1/optimize", json=request_data)

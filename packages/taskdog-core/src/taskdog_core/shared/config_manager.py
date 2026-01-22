@@ -10,22 +10,10 @@ from pathlib import Path
 from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_END_HOUR,
-    DEFAULT_MAX_HOURS_PER_DAY,
     DEFAULT_PRIORITY,
     DEFAULT_START_HOUR,
 )
 from taskdog_core.shared.xdg_utils import XDGDirectories
-
-
-@dataclass(frozen=True)
-class OptimizationConfig:
-    """Optimization-related configuration.
-
-    Attributes:
-        max_hours_per_day: Maximum work hours per day for schedule optimization
-    """
-
-    max_hours_per_day: float = DEFAULT_MAX_HOURS_PER_DAY
 
 
 @dataclass(frozen=True)
@@ -83,14 +71,12 @@ class Config:
     """Taskdog configuration.
 
     Attributes:
-        optimization: Optimization-related settings
         task: Task-related settings
         time: Time-related settings
         region: Region-related settings (holidays, etc.)
         storage: Storage backend settings
     """
 
-    optimization: OptimizationConfig
     task: TaskConfig
     time: TimeConfig
     region: RegionConfig = field(default_factory=RegionConfig)
@@ -123,22 +109,12 @@ class ConfigManager:
         toml_data = ConfigLoader.load_toml(config_path)
 
         # Parse sections with fallback to defaults, then apply env overrides
-        optimization_data = toml_data.get("optimization", {})
         task_data = toml_data.get("task", {})
         time_data = toml_data.get("time", {})
         region_data = toml_data.get("region", {})
         storage_data = toml_data.get("storage", {})
 
         return Config(
-            optimization=OptimizationConfig(
-                max_hours_per_day=ConfigLoader.get_env(
-                    "OPTIMIZATION_MAX_HOURS_PER_DAY",
-                    optimization_data.get(
-                        "max_hours_per_day", DEFAULT_MAX_HOURS_PER_DAY
-                    ),
-                    float,
-                ),
-            ),
             task=TaskConfig(
                 default_priority=ConfigLoader.get_env(
                     "TASK_DEFAULT_PRIORITY",

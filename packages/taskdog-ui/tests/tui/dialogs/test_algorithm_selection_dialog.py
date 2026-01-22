@@ -181,6 +181,42 @@ class TestAlgorithmSelectionDialogSubmit:
         assert "algorithm" in dialog._show_validation_error.call_args[0][0].lower()
         dialog.dismiss.assert_not_called()
 
+    def test_submit_shows_error_when_max_hours_empty(self) -> None:
+        """Test that error is shown when max hours is empty."""
+        metadata = create_algorithm_metadata()
+        dialog = AlgorithmSelectionDialog(metadata)
+        dialog._clear_validation_error = MagicMock()
+        dialog._show_validation_error = MagicMock()
+
+        mock_select = MagicMock()
+        mock_select.value = "greedy"
+        mock_max_hours = MagicMock()
+        mock_max_hours.value = ""  # Empty
+        mock_max_hours.is_valid = True
+        mock_start_date = MagicMock()
+        mock_start_date.value = "2025-01-06"
+        mock_checkbox = MagicMock()
+
+        def mock_query_one(selector: str, widget_type: type) -> MagicMock:
+            if "algorithm" in selector:
+                return mock_select
+            elif "max-hours" in selector:
+                return mock_max_hours
+            elif "start-date" in selector:
+                return mock_start_date
+            elif "force" in selector:
+                return mock_checkbox
+            return MagicMock()
+
+        dialog.query_one = mock_query_one
+        dialog.dismiss = MagicMock()
+
+        dialog.action_submit()
+
+        dialog._show_validation_error.assert_called_once()
+        assert "max hours" in dialog._show_validation_error.call_args[0][0].lower()
+        dialog.dismiss.assert_not_called()
+
     def test_submit_shows_error_when_start_date_empty(self) -> None:
         """Test that error is shown when start date is empty."""
         metadata = create_algorithm_metadata()
@@ -191,7 +227,7 @@ class TestAlgorithmSelectionDialogSubmit:
         mock_select = MagicMock()
         mock_select.value = "greedy"
         mock_max_hours = MagicMock()
-        mock_max_hours.value = ""
+        mock_max_hours.value = "6.0"  # Valid max hours
         mock_max_hours.is_valid = True
         mock_start_date = MagicMock()
         mock_start_date.value = "   "  # Empty after strip
@@ -327,40 +363,3 @@ class TestAlgorithmSelectionDialogSubmit:
         assert result[1] == 6.5  # max_hours
         assert isinstance(result[2], datetime)  # start_date
         assert result[3] is True  # force_override
-
-    def test_submit_with_empty_max_hours_passes_none(self) -> None:
-        """Test that empty max hours results in None."""
-        metadata = create_algorithm_metadata()
-        dialog = AlgorithmSelectionDialog(metadata)
-        dialog._clear_validation_error = MagicMock()
-
-        mock_select = MagicMock()
-        mock_select.value = "greedy"
-        mock_max_hours = MagicMock()
-        mock_max_hours.value = ""  # Empty
-        mock_max_hours.is_valid = True
-        mock_start_date = MagicMock()
-        mock_start_date.value = "tomorrow"
-        mock_start_date.is_valid = True
-        mock_checkbox = MagicMock()
-        mock_checkbox.value = False
-
-        def mock_query_one(selector: str, widget_type: type) -> MagicMock:
-            if "algorithm" in selector:
-                return mock_select
-            elif "max-hours" in selector:
-                return mock_max_hours
-            elif "start-date" in selector:
-                return mock_start_date
-            elif "force" in selector:
-                return mock_checkbox
-            return MagicMock()
-
-        dialog.query_one = mock_query_one
-        dialog.dismiss = MagicMock()
-
-        dialog.action_submit()
-
-        dialog.dismiss.assert_called_once()
-        result = dialog.dismiss.call_args[0][0]
-        assert result[1] is None  # max_hours should be None

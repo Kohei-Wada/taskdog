@@ -271,7 +271,7 @@ def run_optimization(
     controller: AnalyticsControllerDep,
     algorithm: str,
     start_date: datetime,
-    max_hours_per_day: float | None,
+    max_hours_per_day: float,
     force_override: bool,
     task_ids: list[int] | None = None,
 ) -> None:
@@ -279,9 +279,9 @@ def run_optimization(
 
     Args:
         controller: Analytics controller
-        algorithm: Algorithm name (required, provided by UI)
+        algorithm: Algorithm name (required)
         start_date: Optimization start date
-        max_hours_per_day: Maximum hours per day (None = controller applies default)
+        max_hours_per_day: Maximum hours per day (required)
         force_override: Force override existing schedules
         task_ids: Specific task IDs to optimize
     """

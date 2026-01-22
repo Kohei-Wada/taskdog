@@ -32,7 +32,7 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["-a", "greedy"], obj=self.cli_context
+            optimize_command, ["-a", "greedy", "-m", "6.0"], obj=self.cli_context
         )
 
         # Verify
@@ -51,7 +51,9 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["-a", "greedy", "1", "2", "3"], obj=self.cli_context
+            optimize_command,
+            ["-a", "greedy", "-m", "6.0", "1", "2", "3"],
+            obj=self.cli_context,
         )
 
         # Verify
@@ -70,7 +72,9 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["--algorithm", "balanced"], obj=self.cli_context
+            optimize_command,
+            ["--algorithm", "balanced", "-m", "6.0"],
+            obj=self.cli_context,
         )
 
         # Verify
@@ -110,7 +114,9 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["-a", "greedy", "--force"], obj=self.cli_context
+            optimize_command,
+            ["-a", "greedy", "-m", "6.0", "--force"],
+            obj=self.cli_context,
         )
 
         # Verify
@@ -130,7 +136,7 @@ class TestOptimizeCommand:
         # Execute
         result = self.runner.invoke(
             optimize_command,
-            ["-a", "greedy", "--start-date", "2025-10-15"],
+            ["-a", "greedy", "-m", "6.0", "--start-date", "2025-10-15"],
             obj=self.cli_context,
         )
 
@@ -150,7 +156,7 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["-a", "greedy"], obj=self.cli_context
+            optimize_command, ["-a", "greedy", "-m", "6.0"], obj=self.cli_context
         )
 
         # Verify
@@ -168,7 +174,7 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["-a", "greedy"], obj=self.cli_context
+            optimize_command, ["-a", "greedy", "-m", "6.0"], obj=self.cli_context
         )
 
         # Verify
@@ -185,7 +191,7 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["-a", "greedy"], obj=self.cli_context
+            optimize_command, ["-a", "greedy", "-m", "6.0"], obj=self.cli_context
         )
 
         # Verify
@@ -204,7 +210,7 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["-a", "greedy"], obj=self.cli_context
+            optimize_command, ["-a", "greedy", "-m", "6.0"], obj=self.cli_context
         )
 
         # Verify
@@ -219,7 +225,7 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["-a", "greedy"], obj=self.cli_context
+            optimize_command, ["-a", "greedy", "-m", "6.0"], obj=self.cli_context
         )
 
         # Verify
@@ -228,8 +234,21 @@ class TestOptimizeCommand:
 
     def test_missing_algorithm_fails(self):
         """Test that missing algorithm option causes error."""
-        # Execute without -a option
-        result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
+        # Execute without -a option (but with -m)
+        result = self.runner.invoke(
+            optimize_command, ["-m", "6.0"], obj=self.cli_context
+        )
+
+        # Verify - should fail with missing required option
+        assert result.exit_code != 0
+        assert "Missing option" in result.output or "required" in result.output.lower()
+
+    def test_missing_max_hours_fails(self):
+        """Test that missing --max-hours-per-day option causes error."""
+        # Execute without -m option (but with -a)
+        result = self.runner.invoke(
+            optimize_command, ["-a", "greedy"], obj=self.cli_context
+        )
 
         # Verify - should fail with missing required option
         assert result.exit_code != 0

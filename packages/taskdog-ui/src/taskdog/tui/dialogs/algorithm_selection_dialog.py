@@ -16,7 +16,7 @@ from taskdog.tui.widgets.vi_select import ViSelect
 
 
 class AlgorithmSelectionDialog(
-    BaseModalDialog[tuple[str, float | None, datetime, bool] | None]
+    BaseModalDialog[tuple[str, float, datetime, bool] | None]
 ):
     """Modal screen for selecting optimization algorithm, max hours, and start date."""
 
@@ -79,12 +79,16 @@ class AlgorithmSelectionDialog(
                 ]
                 yield ViSelect(options, id="algorithm-select", allow_blank=False)
 
-                yield Label("Max Hours per Day:", classes="field-label")
+                yield Label(
+                    "Max Hours per Day [red]*[/red]:",
+                    classes="field-label",
+                    markup=True,
+                )
                 yield Input(
-                    placeholder="Enter max hours per day (typically 6-8)",
+                    placeholder="Enter max hours per day (required, e.g., 6 or 8)",
                     id="max-hours-input",
                     value="",
-                    valid_empty=True,
+                    valid_empty=False,
                     validators=[Number(minimum=0.1, maximum=24)],
                 )
 
@@ -153,6 +157,14 @@ class AlgorithmSelectionDialog(
             return
         selected_algo = str(algorithm_select.value)
 
+        # Validate max hours (required)
+        max_hours_str = max_hours_input.value.strip()
+        if not max_hours_str:
+            self._show_validation_error(
+                "Max hours per day is required", max_hours_input
+            )
+            return
+
         # Validate start date (required)
         start_date_str = start_date_input.value.strip()
         if not start_date_str:
@@ -169,8 +181,7 @@ class AlgorithmSelectionDialog(
             return
 
         # Parse values
-        max_hours_str = max_hours_input.value.strip()
-        max_hours = float(max_hours_str) if max_hours_str else None
+        max_hours = float(max_hours_str)
 
         start_date_validator = StartDateTextualValidator()
         start_date = start_date_validator.parse(start_date_str)
