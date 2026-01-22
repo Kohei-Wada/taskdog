@@ -33,7 +33,7 @@ class TestApp:
         self.mock_audit_log_controller = Mock(spec=AuditLogController)
         self.mock_config = MagicMock()
         self.mock_config.task.default_priority = 3
-        self.mock_config.scheduling.max_hours_per_day = 8.0
+        self.mock_config.optimization.max_hours_per_day = 8.0
         self.mock_config.region.country = None
 
         # Create mock logger for controllers
