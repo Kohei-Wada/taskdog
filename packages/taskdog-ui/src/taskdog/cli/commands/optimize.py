@@ -70,9 +70,9 @@ Examples:
     "--algorithm",
     "-a",
     type=str,
-    default="greedy",
+    required=True,
     help=(
-        "Optimization algorithm: "
+        "Optimization algorithm (required): "
         "greedy (front-load), "
         "balanced (even distribution), "
         "backward (JIT from deadline), "

@@ -31,7 +31,9 @@ class TestOptimizeCommand:
         self.api_client.optimize_schedule.return_value = mock_result
 
         # Execute
-        result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
+        result = self.runner.invoke(
+            optimize_command, ["-a", "greedy"], obj=self.cli_context
+        )
 
         # Verify
         assert result.exit_code == 0
@@ -49,7 +51,7 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["1", "2", "3"], obj=self.cli_context
+            optimize_command, ["-a", "greedy", "1", "2", "3"], obj=self.cli_context
         )
 
         # Verify
@@ -87,7 +89,9 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["--max-hours-per-day", "8"], obj=self.cli_context
+            optimize_command,
+            ["-a", "greedy", "--max-hours-per-day", "8"],
+            obj=self.cli_context,
         )
 
         # Verify
@@ -105,7 +109,9 @@ class TestOptimizeCommand:
         self.api_client.optimize_schedule.return_value = mock_result
 
         # Execute
-        result = self.runner.invoke(optimize_command, ["--force"], obj=self.cli_context)
+        result = self.runner.invoke(
+            optimize_command, ["-a", "greedy", "--force"], obj=self.cli_context
+        )
 
         # Verify
         assert result.exit_code == 0
@@ -123,7 +129,9 @@ class TestOptimizeCommand:
 
         # Execute
         result = self.runner.invoke(
-            optimize_command, ["--start-date", "2025-10-15"], obj=self.cli_context
+            optimize_command,
+            ["-a", "greedy", "--start-date", "2025-10-15"],
+            obj=self.cli_context,
         )
 
         # Verify
@@ -141,7 +149,9 @@ class TestOptimizeCommand:
         self.api_client.optimize_schedule.return_value = mock_result
 
         # Execute
-        result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
+        result = self.runner.invoke(
+            optimize_command, ["-a", "greedy"], obj=self.cli_context
+        )
 
         # Verify
         assert result.exit_code == 0
@@ -157,7 +167,9 @@ class TestOptimizeCommand:
         self.api_client.optimize_schedule.return_value = mock_result
 
         # Execute
-        result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
+        result = self.runner.invoke(
+            optimize_command, ["-a", "greedy"], obj=self.cli_context
+        )
 
         # Verify
         assert result.exit_code == 0
@@ -172,7 +184,9 @@ class TestOptimizeCommand:
         self.api_client.optimize_schedule.return_value = mock_result
 
         # Execute
-        result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
+        result = self.runner.invoke(
+            optimize_command, ["-a", "greedy"], obj=self.cli_context
+        )
 
         # Verify
         assert result.exit_code == 0
@@ -189,7 +203,9 @@ class TestOptimizeCommand:
         self.api_client.optimize_schedule.return_value = mock_result
 
         # Execute
-        result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
+        result = self.runner.invoke(
+            optimize_command, ["-a", "greedy"], obj=self.cli_context
+        )
 
         # Verify
         assert result.exit_code == 0
@@ -202,8 +218,19 @@ class TestOptimizeCommand:
         self.api_client.optimize_schedule.side_effect = error
 
         # Execute
-        result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
+        result = self.runner.invoke(
+            optimize_command, ["-a", "greedy"], obj=self.cli_context
+        )
 
         # Verify
         assert result.exit_code == 0
         self.console_writer.error.assert_called_once_with("optimizing schedules", error)
+
+    def test_missing_algorithm_fails(self):
+        """Test that missing algorithm option causes error."""
+        # Execute without -a option
+        result = self.runner.invoke(optimize_command, [], obj=self.cli_context)
+
+        # Verify - should fail with missing required option
+        assert result.exit_code != 0
+        assert "Missing option" in result.output or "required" in result.output.lower()
