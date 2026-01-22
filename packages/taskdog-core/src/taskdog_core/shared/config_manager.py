@@ -9,7 +9,6 @@ from pathlib import Path
 
 from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.constants.config_defaults import (
-    DEFAULT_ALGORITHM,
     DEFAULT_END_HOUR,
     DEFAULT_MAX_HOURS_PER_DAY,
     DEFAULT_PRIORITY,
@@ -24,11 +23,9 @@ class OptimizationConfig:
 
     Attributes:
         max_hours_per_day: Maximum work hours per day for schedule optimization
-        default_algorithm: Default optimization algorithm to use
     """
 
     max_hours_per_day: float = DEFAULT_MAX_HOURS_PER_DAY
-    default_algorithm: str = DEFAULT_ALGORITHM
 
 
 @dataclass(frozen=True)
@@ -140,11 +137,6 @@ class ConfigManager:
                         "max_hours_per_day", DEFAULT_MAX_HOURS_PER_DAY
                     ),
                     float,
-                ),
-                default_algorithm=ConfigLoader.get_env(
-                    "OPTIMIZATION_DEFAULT_ALGORITHM",
-                    optimization_data.get("default_algorithm", DEFAULT_ALGORITHM),
-                    str,
                 ),
             ),
             task=TaskConfig(

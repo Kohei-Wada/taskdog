@@ -129,27 +129,30 @@ The `[optimization]` section configures schedule optimization behavior.
 ```toml
 [optimization]
 max_hours_per_day = 6.0        # Default work hours per day (default: 6.0)
-default_algorithm = "greedy"   # Default scheduling algorithm (default: "greedy")
 ```
 
 **Fields:**
 
 - `max_hours_per_day` (float) - Maximum hours to schedule per day. Used by optimizer to distribute workload.
-- `default_algorithm` (string) - Default optimization algorithm. Available options:
-  - `greedy` - Schedule highest priority tasks first
-  - `balanced` - Distribute workload evenly across days
-  - `backward` - Schedule from deadline backwards
-  - `priority_first` - Strict priority ordering
-  - `earliest_deadline` - Schedule tasks with earliest deadlines first
-  - `round_robin` - Rotate through tasks to minimize context switching
-  - `dependency_aware` - Prioritize tasks that unblock others
-  - `genetic` - Use genetic algorithm for optimization
-  - `monte_carlo` - Use Monte Carlo simulation
+
+**Algorithm Selection:**
+
+The optimization algorithm is specified via CLI `--algorithm` flag (default: "greedy"). Available options:
+
+- `greedy` - Schedule highest priority tasks first
+- `balanced` - Distribute workload evenly across days
+- `backward` - Schedule from deadline backwards
+- `priority_first` - Strict priority ordering
+- `earliest_deadline` - Schedule tasks with earliest deadlines first
+- `round_robin` - Rotate through tasks to minimize context switching
+- `dependency_aware` - Prioritize tasks that unblock others
+- `genetic` - Use genetic algorithm for optimization
+- `monte_carlo` - Use Monte Carlo simulation
 
 **CLI Override:**
 
 ```bash
-taskdog optimize --max-hours-per-day 8 -a balanced
+taskdog optimize --max-hours-per-day 8 --algorithm balanced
 ```
 
 ### Task Settings
@@ -355,7 +358,6 @@ theme = "tokyo-night"
 # Optimization Settings
 [optimization]
 max_hours_per_day = 8.0
-default_algorithm = "balanced"
 
 # Task Settings
 [task]
@@ -449,7 +451,6 @@ Configure for 8-hour work days with strict 9-18 schedule:
 ```toml
 [optimization]
 max_hours_per_day = 8.0
-default_algorithm = "balanced"
 
 [time]
 default_start_hour = 9
@@ -458,6 +459,8 @@ default_end_hour = 18
 [region]
 country = "US"  # Avoid US holidays
 ```
+
+Use `--algorithm balanced` when running the optimize command to distribute workload evenly.
 
 ### Custom Theme
 

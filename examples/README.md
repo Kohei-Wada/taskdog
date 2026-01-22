@@ -206,13 +206,12 @@ default_priority = 7  # Higher default priority
 
 [optimization]
 max_hours_per_day = 8.0  # Longer work days
-default_algorithm = "balanced"
 
 [region]
 country = "US"  # Use US holidays
 ```
 
-CLI needs no changes - it automatically uses server's settings.
+CLI needs no changes - it automatically uses server's settings. Use `--algorithm balanced` when running the optimize command if needed.
 
 ## Environment Variables
 

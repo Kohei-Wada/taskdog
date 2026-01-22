@@ -16,20 +16,18 @@ class TestConfigManager:
     """Test cases for ConfigManager class."""
 
     @pytest.mark.parametrize(
-        "toml_content,expected_max_hours,expected_algorithm,expected_priority",
+        "toml_content,expected_max_hours,expected_priority",
         [
-            (None, 6.0, "greedy", 5),
+            (None, 6.0, 5),
             (
                 """
 [optimization]
 max_hours_per_day = 8.0
-default_algorithm = "balanced"
 
 [task]
 default_priority = 3
 """,
                 8.0,
-                "balanced",
                 3,
             ),
             (
@@ -38,7 +36,6 @@ default_priority = 3
 max_hours_per_day = 7.5
 """,
                 7.5,
-                "greedy",
                 5,
             ),
             (
@@ -48,10 +45,9 @@ max_hours_per_day = 7.5
 [task]
 """,
                 6.0,
-                "greedy",
                 5,
             ),
-            ("this is not valid TOML {{{", 6.0, "greedy", 5),
+            ("this is not valid TOML {{{", 6.0, 5),
         ],
         ids=[
             "nonexistent_file",
@@ -65,7 +61,6 @@ max_hours_per_day = 7.5
         self,
         toml_content,
         expected_max_hours,
-        expected_algorithm,
         expected_priority,
     ):
         """Test various config loading scenarios with different TOML content."""
@@ -89,7 +84,6 @@ max_hours_per_day = 7.5
 
         # Verify all expected values
         assert config.optimization.max_hours_per_day == expected_max_hours
-        assert config.optimization.default_algorithm == expected_algorithm
         assert config.task.default_priority == expected_priority
 
     def test_config_dataclasses_are_frozen(self):
@@ -125,7 +119,9 @@ class TestConfigManagerEnvVars:
         toml_content = """
 [optimization]
 max_hours_per_day = 6.0
-default_algorithm = "balanced"
+
+[task]
+default_priority = 3
 """
         env_vars = {
             "TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY": "12.0",
@@ -142,7 +138,7 @@ default_algorithm = "balanced"
             # Environment variables should override TOML
             assert config.optimization.max_hours_per_day == 12.0
             # TOML value should be used when no env var is set
-            assert config.optimization.default_algorithm == "balanced"
+            assert config.task.default_priority == 3
         finally:
             config_path.unlink()
 
@@ -160,13 +156,6 @@ default_algorithm = "balanced"
                 "database_url",
                 "sqlite:///test.db",
             ),
-            (
-                "TASKDOG_OPTIMIZATION_DEFAULT_ALGORITHM",
-                "balanced",
-                "optimization",
-                "default_algorithm",
-                "balanced",
-            ),
         ],
         ids=[
             "start_hour",
@@ -174,7 +163,6 @@ default_algorithm = "balanced"
             "country",
             "backend",
             "database_url",
-            "algorithm",
         ],
     )
     def test_all_env_vars(self, env_key, env_value, section, field, expected):
@@ -200,7 +188,6 @@ default_algorithm = "balanced"
 
         # Should use defaults
         assert config.optimization.max_hours_per_day == 6.0
-        assert config.optimization.default_algorithm == "greedy"
         assert config.task.default_priority == 5
         assert config.time.default_start_hour == 9
         assert config.time.default_end_hour == 18

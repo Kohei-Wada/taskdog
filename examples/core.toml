@@ -47,18 +47,9 @@ default_end_hour = 18
 # Used when auto-scheduling tasks to distribute workload
 max_hours_per_day = 6.0
 
-# Default optimization algorithm (default: "greedy")
-# Available algorithms:
-# - greedy: Fast, prioritizes high-priority tasks first
-# - balanced: Distributes workload evenly across days
-# - backward: Schedules from deadlines backward
-# - priority_first: Strictly priority-ordered scheduling
-# - earliest_deadline: Schedules tasks with nearest deadlines first
-# - round_robin: Alternates between tasks to balance progress
-# - dependency_aware: Respects task dependencies during scheduling
-# - genetic: Uses genetic algorithm for global optimization
-# - monte_carlo: Uses Monte Carlo simulation for probabilistic scheduling
-default_algorithm = "greedy"
+# Algorithm is specified via CLI --algorithm flag (default: "greedy")
+# Available algorithms: greedy, balanced, backward, priority_first,
+# earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo
 
 # =============================================================================
 # Region Settings
