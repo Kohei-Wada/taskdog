@@ -50,34 +50,6 @@ def parse_iso_datetime(datetime_str: str | None) -> datetime | None:
     return datetime.fromisoformat(datetime_str)
 
 
-def format_iso_datetime(dt: datetime | None) -> str | None:
-    """Format datetime object to ISO 8601 string.
-
-    Args:
-        dt: Datetime object or None
-
-    Returns:
-        ISO format string, or None if input is None
-    """
-    if dt is None:
-        return None
-    return dt.isoformat()
-
-
-def format_iso_date(d: date | None) -> str | None:
-    """Format date object to ISO 8601 string.
-
-    Args:
-        d: Date object or None
-
-    Returns:
-        ISO format string (YYYY-MM-DD), or None if input is None
-    """
-    if d is None:
-        return None
-    return d.isoformat()
-
-
 def parse_date_set(date_strings: Iterable[str]) -> set[date]:
     """Parse iterable of ISO date strings to set of date objects.
 

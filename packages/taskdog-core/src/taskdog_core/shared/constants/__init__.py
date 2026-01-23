@@ -15,13 +15,11 @@ from taskdog_core.shared.constants.config_defaults import (
     MAX_ESTIMATED_DURATION_HOURS,
 )
 from taskdog_core.shared.constants.file_management import (
-    BACKUP_FILE_SUFFIX,
     CONFIG_FILE_NAME,
     NOTE_FILE_EXTENSION,
     NOTES_DIR_NAME,
-    TASKS_FILE_NAME,
 )
-from taskdog_core.shared.constants.formats import DATETIME_FORMAT, ISO_8601_FORMAT
+from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 from taskdog_core.shared.constants.status_verbs import StatusVerbs
 from taskdog_core.shared.constants.time import (
     DAYS_PER_WEEK,
@@ -47,7 +45,6 @@ WORKLOAD_COMFORTABLE_HOURS = 6.0  # Green zone: comfortable daily load
 WORKLOAD_MODERATE_HOURS = 8.0  # Yellow zone: moderate daily load
 
 __all__ = [
-    "BACKUP_FILE_SUFFIX",
     "CONFIG_FILE_NAME",
     "DATETIME_FORMAT",
     "DAYS_PER_WEEK",
@@ -55,7 +52,6 @@ __all__ = [
     "DEFAULT_PRIORITY",
     "DEFAULT_SCHEDULE_DAYS",
     "DEFAULT_START_HOUR",
-    "ISO_8601_FORMAT",
     "MAX_ESTIMATED_DURATION_HOURS",
     "MAX_HOURS_PER_DAY_LIMIT",
     "MAX_TAGS_PER_TASK",
@@ -69,7 +65,6 @@ __all__ = [
     "SORT_SENTINEL_FUTURE",
     "SORT_SENTINEL_PAST",
     "SUNDAY",
-    "TASKS_FILE_NAME",
     "WEEKDAY_THRESHOLD",
     "WORKLOAD_COMFORTABLE_HOURS",
     "WORKLOAD_MODERATE_HOURS",

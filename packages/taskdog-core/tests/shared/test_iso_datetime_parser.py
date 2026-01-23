@@ -6,8 +6,6 @@ import pytest
 
 from taskdog_core.shared.utils.datetime_parser import (
     format_date_dict,
-    format_iso_date,
-    format_iso_datetime,
     parse_date_dict,
     parse_iso_date,
     parse_iso_datetime,
@@ -89,40 +87,6 @@ class TestParseIsoDatetime:
         """Invalid format should raise ValueError."""
         with pytest.raises(ValueError):
             parse_iso_datetime(invalid_input)
-
-
-class TestFormatIsoDatetime:
-    """Test cases for format_iso_datetime."""
-
-    def test_format_datetime(self):
-        """Datetime should format to ISO string."""
-        dt = datetime(2025, 1, 15, 10, 30, 0)
-        result = format_iso_datetime(dt)
-        assert result == "2025-01-15T10:30:00"
-
-    def test_format_datetime_with_micros(self):
-        """Datetime with microseconds should include them."""
-        dt = datetime(2025, 1, 15, 10, 30, 0, 123456)
-        result = format_iso_datetime(dt)
-        assert result == "2025-01-15T10:30:00.123456"
-
-    def test_none_returns_none(self):
-        """None input should return None."""
-        assert format_iso_datetime(None) is None
-
-
-class TestFormatIsoDate:
-    """Test cases for format_iso_date."""
-
-    def test_format_date(self):
-        """Date should format to ISO string."""
-        d = date(2025, 1, 15)
-        result = format_iso_date(d)
-        assert result == "2025-01-15"
-
-    def test_none_returns_none(self):
-        """None input should return None."""
-        assert format_iso_date(None) is None
 
 
 class TestParseDateDict:
