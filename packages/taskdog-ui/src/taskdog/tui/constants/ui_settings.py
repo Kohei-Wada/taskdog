@@ -4,6 +4,27 @@ This module centralizes all UI-related constants to improve maintainability
 and avoid magic numbers scattered throughout the codebase.
 """
 
+# Re-export config defaults from core for backward compatibility
+from taskdog_core.shared.constants.config_defaults import (
+    DEFAULT_END_HOUR,
+    DEFAULT_START_HOUR,
+)
+from taskdog_core.shared.constants.config_defaults import (
+    DEFAULT_PRIORITY as DEFAULT_TASK_PRIORITY,
+)
+
+__all__ = [
+    "AUTO_REFRESH_INTERVAL_SECONDS",
+    "DEFAULT_END_HOUR",
+    "DEFAULT_GANTT_DISPLAY_DAYS",
+    "DEFAULT_START_HOUR",
+    "DEFAULT_TASK_PRIORITY",
+    "MAX_HOURS_PER_DAY",
+    "OPTIMIZATION_FAILURE_DETAIL_THRESHOLD",
+    "SORT_KEY_LABELS",
+    "TAGS_MAX_DISPLAY_LENGTH",
+]
+
 # Auto-refresh settings
 AUTO_REFRESH_INTERVAL_SECONDS = 1.0
 """Interval in seconds for auto-refreshing elapsed time display."""
@@ -35,13 +56,3 @@ SORT_KEY_LABELS: dict[str, str] = {
     "status": "Status",
 }
 """Mapping of sort keys to display labels for UI."""
-
-# Task form default values
-DEFAULT_TASK_PRIORITY = 5
-"""Default priority for new tasks in the form dialog."""
-
-DEFAULT_START_HOUR = 9
-"""Default business day start hour (9 AM) for task scheduling."""
-
-DEFAULT_END_HOUR = 18
-"""Default business day end hour (6 PM) for task scheduling."""
