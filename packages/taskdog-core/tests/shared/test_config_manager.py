@@ -18,7 +18,7 @@ class TestConfigManager:
     @pytest.mark.parametrize(
         "toml_content,expected_start_time",
         [
-            (None, time(9, 0)),
+            (None, time(9, 30)),
             (
                 """
 [time]
@@ -30,9 +30,9 @@ default_start_time = "10:00"
                 """
 [time]
 """,
-                time(9, 0),
+                time(9, 30),
             ),
-            ("this is not valid TOML {{{", time(9, 0)),
+            ("this is not valid TOML {{{", time(9, 30)),
         ],
         ids=[
             "nonexistent_file",
@@ -344,8 +344,8 @@ default_end_time = "17:00"
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
         # Should use defaults
-        assert config.time.default_start_time == time(9, 0)
-        assert config.time.default_end_time == time(18, 0)
+        assert config.time.default_start_time == time(9, 30)
+        assert config.time.default_end_time == time(18, 30)
 
     @pytest.mark.parametrize(
         "env_key,invalid_value,section,field,expected_default",
@@ -355,14 +355,14 @@ default_end_time = "17:00"
                 "abc:def",
                 "time",
                 "default_start_time",
-                time(9, 0),
+                time(9, 30),
             ),
             (
                 "TASKDOG_TIME_DEFAULT_END_TIME",
                 "xyz",
                 "time",
                 "default_end_time",
-                time(18, 0),
+                time(18, 30),
             ),
         ],
         ids=["start_time", "end_time"],

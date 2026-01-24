@@ -10,7 +10,7 @@ from textual.validation import Number
 from textual.widgets import Input, Label, Static
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
-from taskdog.tui.constants.ui_settings import DEFAULT_END_HOUR, DEFAULT_START_HOUR
+from taskdog.tui.constants.ui_settings import DEFAULT_END_TIME, DEFAULT_START_TIME
 from taskdog.tui.dialogs.form_dialog import FormDialogBase
 from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog_core.application.dto.task_dto import TaskDetailDto
@@ -102,7 +102,7 @@ class FixActualDialog(FormDialogBase[FixActualFormData | None]):
                     if self.task_dto.actual_start
                     else "",
                     valid_empty=True,
-                    validators=[DateTimeValidator("actual start", DEFAULT_START_HOUR)],
+                    validators=[DateTimeValidator("actual start", DEFAULT_START_TIME)],
                 )
 
                 # Actual End field
@@ -116,7 +116,7 @@ class FixActualDialog(FormDialogBase[FixActualFormData | None]):
                     if self.task_dto.actual_end
                     else "",
                     valid_empty=True,
-                    validators=[DateTimeValidator("actual end", DEFAULT_END_HOUR)],
+                    validators=[DateTimeValidator("actual end", DEFAULT_END_TIME)],
                 )
 
                 # Actual Duration field
