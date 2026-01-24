@@ -15,12 +15,3 @@ DEFAULT_PLANNED_END_TIME = time(18, 30)  # Default time for planned_end input
 # Defines the available working hours per day for schedule optimization
 WORK_HOURS_START = time(9, 30)  # Work day start time
 WORK_HOURS_END = time(18, 30)  # Work day end time
-
-# === Backward Compatibility Aliases (deprecated) ===
-# These aliases are deprecated and will be removed in a future version.
-DEFAULT_START_TIME = (
-    DEFAULT_PLANNED_START_TIME  # Deprecated: use DEFAULT_PLANNED_START_TIME
-)
-DEFAULT_END_TIME = DEFAULT_PLANNED_END_TIME  # Deprecated: use DEFAULT_PLANNED_END_TIME
-DEFAULT_START_HOUR = DEFAULT_PLANNED_START_TIME.hour  # Deprecated
-DEFAULT_END_HOUR = DEFAULT_PLANNED_END_TIME.hour  # Deprecated
