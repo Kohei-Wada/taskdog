@@ -77,8 +77,12 @@ class TaskSorter:
             return lambda task: task.id
 
         elif sort_by == "priority":
-            # Tasks with None priority are sorted last (use 0 as fallback)
-            return lambda task: task.priority if task.priority is not None else 0
+            # Tasks with None priority are sorted last using tuple key
+            # (0, priority) for tasks with priority, (1, 0) for tasks without
+            # This ensures None-priority tasks always sort after prioritized tasks
+            return (
+                lambda task: (0, task.priority) if task.priority is not None else (1, 0)
+            )
 
         elif sort_by == "deadline":
             return lambda task: self._parse_date_for_sort(task.deadline)
