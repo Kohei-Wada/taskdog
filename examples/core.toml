@@ -26,21 +26,6 @@ default_start_hour = 9
 default_end_hour = 18
 
 # =============================================================================
-# Schedule Optimization Settings
-# =============================================================================
-#
-# Settings for the schedule optimizer.
-
-[optimization]
-# Maximum work hours per day for optimization (default: 6.0)
-# Used when auto-scheduling tasks to distribute workload
-max_hours_per_day = 6.0
-
-# Algorithm is specified via CLI --algorithm flag (default: "greedy")
-# Available algorithms: greedy, balanced, backward, priority_first,
-# earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo
-
-# =============================================================================
 # Region Settings
 # =============================================================================
 #

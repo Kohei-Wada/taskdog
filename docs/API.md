@@ -484,12 +484,12 @@ Run schedule optimization
 }
 ```
 
-**All fields optional:**
+**Fields:**
 
-- `start_date` - Optimization start date (default: today)
-- `max_hours_per_day` - Daily hour limit (default: from config or 6.0)
-- `algorithm` - Algorithm to use (default: greedy)
-- `force` - Force re-optimization even if tasks already scheduled
+- `algorithm` - Algorithm to use (required)
+- `max_hours_per_day` - Daily hour limit (required)
+- `start_date` - Optimization start date (optional, default: today)
+- `force` - Force re-optimization even if tasks already scheduled (optional, default: true)
 
 **Available algorithms:**
 
