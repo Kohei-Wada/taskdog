@@ -3,8 +3,8 @@
 # Copy this file to ~/.config/taskdog/cli.toml (or $XDG_CONFIG_HOME/taskdog/cli.toml)
 # to customize CLI/TUI settings.
 #
-# This config is for UI infrastructure only (API connection, keybindings).
-# Business logic settings (task defaults, optimization) are in the server's config.toml.
+# This config is for UI infrastructure only (API connection, appearance, input defaults).
+# Business logic settings (work hours, optimization) are in core.toml.
 
 # =============================================================================
 # API Connection Settings
@@ -56,6 +56,32 @@ theme = "textual-dark"
 # - Gruvbox: theme = "gruvbox"
 
 # =============================================================================
+# UI Input Completion Defaults
+# =============================================================================
+#
+# Default times used when users enter date-only input in the TUI.
+# For example, entering "2025-12-31" gets converted to "2025-12-31 18:30:00".
+#
+# Note: These are separate from work hours (in core.toml) which are used for
+# schedule optimization. These settings only affect UI input convenience.
+
+[input_defaults]
+# Default time for deadline input (default: "18:30")
+# Format: "HH:MM" (24-hour format)
+# Example: "2025-12-31" -> "2025-12-31 18:30:00"
+deadline_time = "18:30"
+
+# Default time for planned_start input (default: "09:30")
+# Format: "HH:MM" (24-hour format)
+# Example: "2025-11-01" -> "2025-11-01 09:30:00"
+planned_start_time = "09:30"
+
+# Default time for planned_end input (default: "18:30")
+# Format: "HH:MM" (24-hour format)
+# Example: "2025-11-15" -> "2025-11-15 18:30:00"
+planned_end_time = "18:30"
+
+# =============================================================================
 # Notes Settings
 # =============================================================================
 #
@@ -80,44 +106,27 @@ theme = "textual-dark"
 # template = "~/.config/taskdog/note_template.md"
 
 # =============================================================================
-# Keybindings (Future Feature)
-# =============================================================================
-#
-# Custom keybindings for TUI. Not yet implemented.
-
-# [keybindings]
-# quit = "q"
-# add = "a"
-# start = "s"
-# pause = "P"
-# done = "d"
-# cancel = "c"
-# reopen = "R"
-# archive = "x"
-# delete = "X"
-# detail = "i"
-# edit = "e"
-# note = "v"
-# refresh = "r"
-# toggle_visibility = "t"
-# search = "/"
-# optimize = "o"
-
-# =============================================================================
 # Environment Variables
 # =============================================================================
 #
 # Environment variables override settings in this file:
 #
+# API Connection:
 # - TASKDOG_API_HOST: API server hostname
 # - TASKDOG_API_PORT: API server port
 # - TASKDOG_API_KEY: API key for authentication
+#
+# Input Defaults:
+# - TASKDOG_INPUT_DEADLINE_TIME: Default time for deadline input
+# - TASKDOG_INPUT_PLANNED_START_TIME: Default time for planned_start input
+# - TASKDOG_INPUT_PLANNED_END_TIME: Default time for planned_end input
 #
 # Examples:
 #
 #   export TASKDOG_API_HOST=192.168.1.100
 #   export TASKDOG_API_PORT=3000
 #   export TASKDOG_API_KEY=sk-your-api-key
+#   export TASKDOG_INPUT_DEADLINE_TIME=17:00
 #   taskdog table
 #
 # Or inline:
