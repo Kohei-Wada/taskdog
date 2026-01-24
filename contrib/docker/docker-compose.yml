@@ -8,13 +8,37 @@ services:
     volumes:
       - taskdog-data:/data
     environment:
+      # ============================================
+      # Core Settings (taskdog-core)
+      # ============================================
       # Database (default: /data/tasks.db in container)
       - TASKDOG_STORAGE_DATABASE_URL=sqlite:////data/tasks.db
+      - TASKDOG_STORAGE_BACKEND=${TASKDOG_STORAGE_BACKEND:-sqlite}
+
       # Business hours (HH:MM format)
       - TASKDOG_TIME_DEFAULT_START_TIME=${TASKDOG_TIME_DEFAULT_START_TIME:-09:00}
       - TASKDOG_TIME_DEFAULT_END_TIME=${TASKDOG_TIME_DEFAULT_END_TIME:-18:00}
+
       # Region for holiday detection (ISO 3166-1 alpha-2, e.g., JP, US)
       - TASKDOG_REGION_COUNTRY=${TASKDOG_REGION_COUNTRY:-}
+
+      # ============================================
+      # Server Settings (taskdog-server)
+      # ============================================
+      # Authentication (set API key to enable)
+      - TASKDOG_AUTH_ENABLED=${TASKDOG_AUTH_ENABLED:-false}
+      - TASKDOG_AUTH_API_KEY=${TASKDOG_AUTH_API_KEY:-}
+
+      # ============================================
+      # CLI/TUI Settings (for docker exec usage)
+      # ============================================
+      # API connection (CLI inside container connects to localhost)
+      - TASKDOG_API_HOST=127.0.0.1
+      - TASKDOG_API_PORT=8000
+      - TASKDOG_API_KEY=${TASKDOG_AUTH_API_KEY:-}
+
+      # UI theme (textual-dark, tokyo-night, dracula, etc.)
+      - TASKDOG_UI_THEME=${TASKDOG_UI_THEME:-textual-dark}
     restart: unless-stopped
 
 volumes:
