@@ -117,7 +117,9 @@ class TestAddCommand:
 
         # Execute
         result = self.runner.invoke(
-            add_command, ["Test Task", "--deadline", "2025-12-31"], obj=self.cli_context
+            add_command,
+            ["Test Task", "--deadline", "2025-12-31 18:00:00"],
+            obj=self.cli_context,
         )
 
         # Verify
@@ -154,7 +156,13 @@ class TestAddCommand:
         # Execute
         result = self.runner.invoke(
             add_command,
-            ["Test Task", "--start", "2025-10-15", "--end", "2025-10-17"],
+            [
+                "Test Task",
+                "--start",
+                "2025-10-15 09:00:00",
+                "--end",
+                "2025-10-17 18:00:00",
+            ],
             obj=self.cli_context,
         )
 

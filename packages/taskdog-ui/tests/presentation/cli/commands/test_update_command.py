@@ -107,12 +107,14 @@ class TestUpdateCommand:
         mock_task = MagicMock()
         mock_result = MagicMock()
         mock_result.task = mock_task
-        mock_result.updated_fields = {"deadline": "2025-12-31"}
+        mock_result.updated_fields = {"deadline": "2025-12-31 18:00:00"}
         self.api_client.update_task.return_value = mock_result
 
         # Execute
         result = self.runner.invoke(
-            update_command, ["1", "--deadline", "2025-12-31"], obj=self.cli_context
+            update_command,
+            ["1", "--deadline", "2025-12-31 18:00:00"],
+            obj=self.cli_context,
         )
 
         # Verify
@@ -126,13 +128,13 @@ class TestUpdateCommand:
         mock_task = MagicMock()
         mock_result = MagicMock()
         mock_result.task = mock_task
-        mock_result.updated_fields = {"priority": 5, "deadline": "2025-12-31"}
+        mock_result.updated_fields = {"priority": 5, "deadline": "2025-12-31 18:00:00"}
         self.api_client.update_task.return_value = mock_result
 
         # Execute
         result = self.runner.invoke(
             update_command,
-            ["1", "--priority", "5", "--deadline", "2025-12-31"],
+            ["1", "--priority", "5", "--deadline", "2025-12-31 18:00:00"],
             obj=self.cli_context,
         )
 
@@ -149,15 +151,21 @@ class TestUpdateCommand:
         mock_result = MagicMock()
         mock_result.task = mock_task
         mock_result.updated_fields = {
-            "planned_start": "2025-10-15",
-            "planned_end": "2025-10-17",
+            "planned_start": "2025-10-15 09:00:00",
+            "planned_end": "2025-10-17 18:00:00",
         }
         self.api_client.update_task.return_value = mock_result
 
         # Execute
         result = self.runner.invoke(
             update_command,
-            ["1", "--planned-start", "2025-10-15", "--planned-end", "2025-10-17"],
+            [
+                "1",
+                "--planned-start",
+                "2025-10-15 09:00:00",
+                "--planned-end",
+                "2025-10-17 18:00:00",
+            ],
             obj=self.cli_context,
         )
 
