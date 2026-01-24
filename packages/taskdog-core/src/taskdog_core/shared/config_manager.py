@@ -12,6 +12,7 @@ from typing import Any
 from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_DEADLINE_TIME,
+    DEFAULT_PLANNED_END_TIME,
     DEFAULT_PLANNED_START_TIME,
     WORK_HOURS_END,
     WORK_HOURS_START,
@@ -97,14 +98,16 @@ class TimeConfig:
     """Time-related configuration.
 
     Attributes:
-        default_start_time: Default time for task start times (UI input completion)
-        default_end_time: Default time for task end times and deadlines (UI input completion)
+        default_deadline_time: Default time for deadline input (UI completion)
+        default_planned_start_time: Default time for planned_start input (UI completion)
+        default_planned_end_time: Default time for planned_end input (UI completion)
         work_hours_start: Work day start time (for schedule optimization)
         work_hours_end: Work day end time (for schedule optimization)
     """
 
-    default_start_time: time = DEFAULT_PLANNED_START_TIME
-    default_end_time: time = DEFAULT_DEADLINE_TIME
+    default_deadline_time: time = DEFAULT_DEADLINE_TIME
+    default_planned_start_time: time = DEFAULT_PLANNED_START_TIME
+    default_planned_end_time: time = DEFAULT_PLANNED_END_TIME
     work_hours_start: time = WORK_HOURS_START
     work_hours_end: time = WORK_HOURS_END
 
@@ -181,18 +184,41 @@ class ConfigManager:
         storage_data = toml_data.get("storage", {})
 
         # Parse time values with backward compatibility
-        # Priority: env var > TOML > default
+        # Priority: env var > TOML (new key) > TOML (old key) > default
         # Supports: int (9), str ("09:30"), str ("9")
-        start_time_raw: Any = ConfigLoader.get_env(
-            "TIME_DEFAULT_START_TIME",
-            time_data.get("default_start_time", time_data.get("default_start_hour")),
+
+        # UI completion defaults
+        # Fallback: default_deadline_time -> default_end_time (old)
+        deadline_time_raw: Any = ConfigLoader.get_env(
+            "TIME_DEFAULT_DEADLINE_TIME",
+            time_data.get(
+                "default_deadline_time",
+                time_data.get("default_end_time", time_data.get("default_end_hour")),
+            ),
             str,
         )
-        end_time_raw: Any = ConfigLoader.get_env(
-            "TIME_DEFAULT_END_TIME",
-            time_data.get("default_end_time", time_data.get("default_end_hour")),
+        # Fallback: default_planned_start_time -> default_start_time (old)
+        planned_start_time_raw: Any = ConfigLoader.get_env(
+            "TIME_DEFAULT_PLANNED_START_TIME",
+            time_data.get(
+                "default_planned_start_time",
+                time_data.get(
+                    "default_start_time", time_data.get("default_start_hour")
+                ),
+            ),
             str,
         )
+        # Fallback: default_planned_end_time -> default_end_time (old)
+        planned_end_time_raw: Any = ConfigLoader.get_env(
+            "TIME_DEFAULT_PLANNED_END_TIME",
+            time_data.get(
+                "default_planned_end_time",
+                time_data.get("default_end_time", time_data.get("default_end_hour")),
+            ),
+            str,
+        )
+
+        # Work hours for optimization
         work_hours_start_raw: Any = ConfigLoader.get_env(
             "TIME_WORK_HOURS_START",
             time_data.get("work_hours_start"),
@@ -206,10 +232,15 @@ class ConfigManager:
 
         return Config(
             time=TimeConfig(
-                default_start_time=parse_time_value(
-                    start_time_raw, DEFAULT_PLANNED_START_TIME
+                default_deadline_time=parse_time_value(
+                    deadline_time_raw, DEFAULT_DEADLINE_TIME
                 ),
-                default_end_time=parse_time_value(end_time_raw, DEFAULT_DEADLINE_TIME),
+                default_planned_start_time=parse_time_value(
+                    planned_start_time_raw, DEFAULT_PLANNED_START_TIME
+                ),
+                default_planned_end_time=parse_time_value(
+                    planned_end_time_raw, DEFAULT_PLANNED_END_TIME
+                ),
                 work_hours_start=parse_time_value(
                     work_hours_start_raw, WORK_HOURS_START
                 ),
