@@ -1,6 +1,6 @@
 """Tests for allocation helper functions."""
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 import pytest
 
@@ -23,8 +23,8 @@ class TestOptimizationStrategyHelpers:
     @pytest.fixture(autouse=True)
     def setup(self):
         """Set up test fixtures."""
-        self.default_start_hour = 9
-        self.default_end_hour = 18
+        self.default_start_time = time(9, 0)
+        self.default_end_time = time(18, 0)
 
     def test_calculate_available_hours_with_no_allocation(self):
         """Test available hours calculation when no hours are allocated."""
@@ -38,7 +38,7 @@ class TestOptimizationStrategyHelpers:
             date_obj,
             max_hours_per_day,
             current_time,
-            self.default_end_hour,
+            self.default_end_time,
         )
 
         assert available == 8.0
@@ -55,7 +55,7 @@ class TestOptimizationStrategyHelpers:
             date_obj,
             max_hours_per_day,
             current_time,
-            self.default_end_hour,
+            self.default_end_time,
         )
 
         assert available == 5.0  # 8.0 - 3.0
@@ -72,7 +72,7 @@ class TestOptimizationStrategyHelpers:
             date_obj,
             max_hours_per_day,
             current_time,
-            self.default_end_hour,
+            self.default_end_time,
         )
 
         assert available == 0.0
@@ -92,7 +92,7 @@ class TestOptimizationStrategyHelpers:
             date_obj,
             max_hours_per_day,
             current_time,
-            self.default_end_hour,
+            self.default_end_time,
         )
 
         assert available == 4.0  # min(8.0, 4.0)
@@ -114,7 +114,7 @@ class TestOptimizationStrategyHelpers:
             date_obj,
             max_hours_per_day,
             current_time,
-            self.default_end_hour,
+            self.default_end_time,
         )
 
         assert available == 4.0
@@ -132,7 +132,7 @@ class TestOptimizationStrategyHelpers:
             date_obj,
             max_hours_per_day,
             current_time,
-            self.default_end_hour,
+            self.default_end_time,
         )
 
         assert available == 0.0  # No time remaining today
@@ -152,7 +152,7 @@ class TestOptimizationStrategyHelpers:
             date_obj,
             max_hours_per_day,
             current_time,
-            self.default_end_hour,
+            self.default_end_time,
         )
 
         assert available == 3.5
@@ -178,8 +178,8 @@ class TestOptimizationStrategyHelpers:
             schedule_start,
             schedule_end,
             task_daily_allocations,
-            self.default_start_hour,
-            self.default_end_hour,
+            self.default_start_time,
+            self.default_end_time,
         )
 
         # Verify planned_start is set to 9:00 AM
@@ -216,8 +216,8 @@ class TestOptimizationStrategyHelpers:
             schedule_start,
             schedule_end,
             task_daily_allocations,
-            self.default_start_hour,
-            self.default_end_hour,
+            self.default_start_time,
+            self.default_end_time,
         )
 
         # Date should be preserved, but time should be set to default hours

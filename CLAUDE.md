@@ -41,7 +41,7 @@ The repository uses UV workspace with three packages:
 
 - **core.toml** (business logic):
   - Sections: `[time]`, `[region]`, `[storage]`
-  - Settings: default_start_hour, default_end_hour, country, database_url, backend
+  - Settings: default_start_time, default_end_time, country, database_url, backend
 - **server.toml** (server-specific):
   - Sections: `[auth]`
   - Settings: enabled, api_keys

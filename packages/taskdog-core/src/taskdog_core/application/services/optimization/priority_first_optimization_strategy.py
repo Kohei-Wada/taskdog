@@ -1,6 +1,6 @@
 """Priority-first optimization strategy implementation."""
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import TYPE_CHECKING
 
 from taskdog_core.application.dto.optimization_output import SchedulingFailure
@@ -35,10 +35,10 @@ class PriorityFirstOptimizationStrategy(OptimizationStrategy):
     DISPLAY_NAME = "Priority First"
     DESCRIPTION = "Priority-based scheduling"
 
-    def __init__(self, default_start_hour: int, default_end_hour: int):
-        self.default_start_hour = default_start_hour
-        self.default_end_hour = default_end_hour
-        self._greedy = GreedyOptimizationStrategy(default_start_hour, default_end_hour)
+    def __init__(self, default_start_time: time, default_end_time: time):
+        self.default_start_time = default_start_time
+        self.default_end_time = default_end_time
+        self._greedy = GreedyOptimizationStrategy(default_start_time, default_end_time)
 
     def optimize_tasks(
         self,

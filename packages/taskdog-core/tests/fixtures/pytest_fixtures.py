@@ -16,7 +16,7 @@ Usage in conftest.py:
     )
 """
 
-from datetime import datetime
+from datetime import datetime, time
 from unittest.mock import MagicMock
 
 import pytest
@@ -28,8 +28,8 @@ from .factories import TaskFactory
 
 def create_mock_config(
     max_hours_per_day: float = 8.0,
-    default_start_hour: int = 9,
-    default_end_hour: int = 18,
+    default_start_time: time = time(9, 0),
+    default_end_time: time = time(18, 0),
     country: str | None = None,
 ) -> MagicMock:
     """Create a mock configuration with customizable defaults.
@@ -38,8 +38,11 @@ def create_mock_config(
     """
     config = MagicMock()
     config.optimization.max_hours_per_day = max_hours_per_day
-    config.time.default_start_hour = default_start_hour
-    config.time.default_end_hour = default_end_hour
+    config.time.default_start_time = default_start_time
+    config.time.default_end_time = default_end_time
+    # Backward compatibility properties
+    config.time.default_start_hour = default_start_time.hour
+    config.time.default_end_hour = default_end_time.hour
     config.region.country = country
     return config
 

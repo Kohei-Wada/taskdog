@@ -1,6 +1,6 @@
 """Base test class for optimization strategy tests."""
 
-from datetime import datetime
+from datetime import datetime, time
 
 import pytest
 
@@ -9,7 +9,6 @@ from taskdog_core.application.dto.optimize_schedule_input import OptimizeSchedul
 from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
 from taskdog_core.application.use_cases.optimize_schedule import OptimizeScheduleUseCase
 from taskdog_core.domain.entities.task import Task
-from taskdog_core.shared.config_manager import ConfigManager
 
 
 class BaseOptimizationStrategyTest:
@@ -30,11 +29,12 @@ class BaseOptimizationStrategyTest:
         """Set up test fixtures using repository from conftest."""
         self.repository = repository
         self.create_use_case = CreateTaskUseCase(self.repository)
-        config = ConfigManager.load()
+        # Use default time values directly instead of loading config
+        # to avoid tests depending on user's local config
         self.optimize_use_case = OptimizeScheduleUseCase(
             self.repository,
-            config.time.default_start_hour,
-            config.time.default_end_hour,
+            time(9, 0),  # default start time
+            time(18, 0),  # default end time
         )
 
     def create_task(

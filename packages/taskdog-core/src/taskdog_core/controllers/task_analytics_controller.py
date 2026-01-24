@@ -113,8 +113,8 @@ class TaskAnalyticsController(BaseTaskController):
 
         use_case = OptimizeScheduleUseCase(
             self.repository,
-            self.config.time.default_start_hour,
-            self.config.time.default_end_hour,
+            self.config.time.default_start_time,
+            self.config.time.default_end_time,
             self.holiday_checker,
         )
         return use_case.execute(optimize_input)

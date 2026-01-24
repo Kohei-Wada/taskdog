@@ -1,5 +1,6 @@
 """Factory for creating optimization strategy instances."""
 
+from datetime import time
 from typing import ClassVar
 
 from taskdog_core.application.services.optimization.backward_optimization_strategy import (
@@ -32,6 +33,10 @@ from taskdog_core.application.services.optimization.priority_first_optimization_
 from taskdog_core.application.services.optimization.round_robin_optimization_strategy import (
     RoundRobinOptimizationStrategy,
 )
+from taskdog_core.shared.constants.config_defaults import (
+    DEFAULT_END_TIME,
+    DEFAULT_START_TIME,
+)
 
 
 class StrategyFactory:
@@ -58,15 +63,15 @@ class StrategyFactory:
     def create(
         cls,
         algorithm_name: str = "greedy",
-        default_start_hour: int = 9,
-        default_end_hour: int = 18,
+        default_start_time: time = DEFAULT_START_TIME,
+        default_end_time: time = DEFAULT_END_TIME,
     ) -> OptimizationStrategy:
         """Create an optimization strategy instance.
 
         Args:
             algorithm_name: Name of the algorithm to use (default: "greedy")
-            default_start_hour: Default start hour for tasks (e.g., 9)
-            default_end_hour: Default end hour for tasks (e.g., 18)
+            default_start_time: Default start time for tasks (e.g., time(9, 0))
+            default_end_time: Default end time for tasks (e.g., time(18, 0))
 
         Returns:
             Instance of the requested optimization strategy
@@ -82,8 +87,8 @@ class StrategyFactory:
             )
 
         strategy_constructor = cls._strategies[algorithm_name]
-        # All concrete subclasses have __init__(default_start_hour, default_end_hour)
-        return strategy_constructor(default_start_hour, default_end_hour)  # type: ignore[call-arg]
+        # All concrete subclasses have __init__(default_start_time, default_end_time)
+        return strategy_constructor(default_start_time, default_end_time)  # type: ignore[call-arg]
 
     @classmethod
     def get_algorithm_metadata(cls) -> list[tuple[str, str, str]]:

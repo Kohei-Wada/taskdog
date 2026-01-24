@@ -1,7 +1,7 @@
 """Round-robin optimization strategy implementation."""
 
 import copy
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING
 
 from taskdog_core.application.constants.optimization import (
@@ -40,15 +40,15 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
     DISPLAY_NAME = "Round Robin"
     DESCRIPTION = "Parallel progress on tasks"
 
-    def __init__(self, default_start_hour: int, default_end_hour: int):
+    def __init__(self, default_start_time: time, default_end_time: time):
         """Initialize strategy with configuration.
 
         Args:
-            default_start_hour: Default start hour for tasks (e.g., 9)
-            default_end_hour: Default end hour for tasks (e.g., 18)
+            default_start_time: Default start time for tasks (e.g., time(9, 0))
+            default_end_time: Default end time for tasks (e.g., time(18, 0))
         """
-        self.default_start_hour = default_start_hour
-        self.default_end_hour = default_end_hour
+        self.default_start_time = default_start_time
+        self.default_end_time = default_end_time
 
     def optimize_tasks(
         self,
@@ -303,13 +303,17 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 start_dt = task_start_dates[task_id]
                 end_dt = task_end_dates[task_id]
 
-                # Set start time to default_start_hour (default: 9:00)
+                # Set start time to default_start_time (default: 9:00)
                 start_with_time = start_dt.replace(
-                    hour=self.default_start_hour, minute=0, second=0
+                    hour=self.default_start_time.hour,
+                    minute=self.default_start_time.minute,
+                    second=0,
                 )
-                # Set end time to default_end_hour (default: 18:00)
+                # Set end time to default_end_time (default: 18:00)
                 end_with_time = end_dt.replace(
-                    hour=self.default_end_hour, minute=0, second=0
+                    hour=self.default_end_time.hour,
+                    minute=self.default_end_time.minute,
+                    second=0,
                 )
 
                 task.planned_start = start_with_time

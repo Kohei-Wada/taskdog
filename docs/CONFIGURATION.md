@@ -126,16 +126,18 @@ The `[time]` section configures business hours.
 
 ```toml
 [time]
-default_start_hour = 9         # Business day start hour (default: 9)
-default_end_hour = 18          # Business day end hour (default: 18)
+default_start_time = "09:00"   # Business day start time (default: "09:00")
+default_end_time = "18:00"     # Business day end time (default: "18:00")
 ```
 
 **Fields:**
 
-- `default_start_hour` (integer) - Business day start hour (0-23). Used when scheduling tasks without specific times.
-- `default_end_hour` (integer) - Business day end hour (0-23). Used for workload calculations.
+- `default_start_time` (string) - Business day start time in "HH:MM" format. Used when scheduling tasks without specific times.
+- `default_end_time` (string) - Business day end time in "HH:MM" format. Used for workload calculations.
 
-**Example:** With `default_start_hour = 9`, scheduling a task for "2025-10-22" will use "2025-10-22 09:00:00".
+**Backward Compatibility:** Integer values (e.g., `default_start_hour = 9`) are still supported but deprecated. The new string format supports minute-level precision (e.g., "09:30").
+
+**Example:** With `default_start_time = "09:30"`, scheduling a task for "2025-10-22" will use "2025-10-22 09:30:00".
 
 ### Region Settings
 
@@ -211,8 +213,8 @@ These variables override core configuration (core.toml):
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `TASKDOG_TIME_DEFAULT_START_HOUR` | int | `9` | Business day start hour |
-| `TASKDOG_TIME_DEFAULT_END_HOUR` | int | `18` | Business day end hour |
+| `TASKDOG_TIME_DEFAULT_START_TIME` | string | `"09:00"` | Business day start time (HH:MM format) |
+| `TASKDOG_TIME_DEFAULT_END_TIME` | string | `"18:00"` | Business day end time (HH:MM format) |
 | `TASKDOG_REGION_COUNTRY` | string | `None` | ISO 3166-1 alpha-2 country code |
 | `TASKDOG_STORAGE_BACKEND` | string | `"sqlite"` | Storage backend type |
 | `TASKDOG_STORAGE_DATABASE_URL` | string | XDG path | Database file location |
@@ -298,8 +300,8 @@ theme = "tokyo-night"
 
 # Time Settings
 [time]
-default_start_hour = 9
-default_end_hour = 18
+default_start_time = "09:00"
+default_end_time = "18:00"
 
 # Region Settings
 [region]
@@ -383,8 +385,8 @@ Configure for strict 9-18 schedule with US holidays:
 
 ```toml
 [time]
-default_start_hour = 9
-default_end_hour = 18
+default_start_time = "09:00"
+default_end_time = "18:00"
 
 [region]
 country = "US"  # Avoid US holidays
