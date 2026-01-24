@@ -34,8 +34,8 @@ from taskdog_core.application.services.optimization.round_robin_optimization_str
     RoundRobinOptimizationStrategy,
 )
 from taskdog_core.shared.constants.config_defaults import (
-    DEFAULT_END_TIME,
-    DEFAULT_START_TIME,
+    WORK_HOURS_END,
+    WORK_HOURS_START,
 )
 
 
@@ -63,8 +63,8 @@ class StrategyFactory:
     def create(
         cls,
         algorithm_name: str = "greedy",
-        default_start_time: time = DEFAULT_START_TIME,
-        default_end_time: time = DEFAULT_END_TIME,
+        default_start_time: time = WORK_HOURS_START,
+        default_end_time: time = WORK_HOURS_END,
     ) -> OptimizationStrategy:
         """Create an optimization strategy instance.
 

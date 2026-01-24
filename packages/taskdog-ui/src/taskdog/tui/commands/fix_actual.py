@@ -46,5 +46,8 @@ class FixActualCommand(TUICommandBase):
             self.app.post_message(TaskUpdated(task.id))
 
         # Show fix actual dialog
-        dialog = FixActualDialog(task=task)
+        input_defaults = (
+            self.context.config.input_defaults if self.context.config else None
+        )
+        dialog = FixActualDialog(task=task, input_defaults=input_defaults)
         self.app.push_screen(dialog, self.handle_error(handle_form_data))

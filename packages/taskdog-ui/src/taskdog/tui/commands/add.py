@@ -52,5 +52,8 @@ class AddCommand(TUICommandBase):
 
         # Show task form dialog in add mode (no task parameter)
         # Wrap callback with error handling from base class
-        dialog = TaskFormDialog()
+        input_defaults = (
+            self.context.config.input_defaults if self.context.config else None
+        )
+        dialog = TaskFormDialog(input_defaults=input_defaults)
         self.app.push_screen(dialog, self.handle_error(handle_task_data))

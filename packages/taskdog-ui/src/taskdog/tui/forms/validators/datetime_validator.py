@@ -1,5 +1,7 @@
 """Validator for date/time fields."""
 
+from datetime import time
+
 from dateutil import parser as dateutil_parser
 from dateutil.parser import ParserError
 from textual.validation import ValidationResult, Validator
@@ -10,16 +12,16 @@ from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 class DateTimeValidator(Validator):
     """Textual-compatible validator for date/time fields with fuzzy parsing."""
 
-    def __init__(self, field_name: str, default_hour: int) -> None:
+    def __init__(self, field_name: str, default_time: time) -> None:
         """Initialize the validator.
 
         Args:
             field_name: Name of the field for error messages
-            default_hour: Default hour to use when only date is provided
+            default_time: Default time to use when only date is provided
         """
         super().__init__()
         self.field_name = field_name
-        self.default_hour = default_hour
+        self.default_time = default_time
 
     def validate(self, value: str) -> ValidationResult:
         """Validate a date/time string.
@@ -43,10 +45,12 @@ class DateTimeValidator(Validator):
         try:
             parsed_date = dateutil_parser.parse(datetime_str, fuzzy=True)
 
-            # If no time was provided and parsed time is midnight, apply default hour
+            # If no time was provided and parsed time is midnight, apply default time
             if not has_time and parsed_date.hour == 0 and parsed_date.minute == 0:
                 parsed_date = parsed_date.replace(
-                    hour=self.default_hour, minute=0, second=0
+                    hour=self.default_time.hour,
+                    minute=self.default_time.minute,
+                    second=self.default_time.second,
                 )
 
             # Validate successful - the actual parsing for form submission
@@ -75,7 +79,9 @@ class DateTimeValidator(Validator):
 
         if not has_time and parsed_date.hour == 0 and parsed_date.minute == 0:
             parsed_date = parsed_date.replace(
-                hour=self.default_hour, minute=0, second=0
+                hour=self.default_time.hour,
+                minute=self.default_time.minute,
+                second=self.default_time.second,
             )
 
         return str(parsed_date.strftime(DATETIME_FORMAT))

@@ -1,6 +1,6 @@
 """Unified task form dialog for adding and editing tasks."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from textual.app import ComposeResult
 from textual.containers import Container
@@ -10,6 +10,9 @@ from taskdog.tui.dialogs.form_dialog import FormDialogBase
 from taskdog.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog_core.application.dto.task_dto import TaskDetailDto
+
+if TYPE_CHECKING:
+    from taskdog.infrastructure.cli_config_manager import InputDefaultsConfig
 
 
 class TaskFormDialog(FormDialogBase[TaskFormData | None]):
@@ -22,6 +25,7 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
     def __init__(
         self,
         task: TaskDetailDto | None = None,
+        input_defaults: "InputDefaultsConfig | None" = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -29,10 +33,12 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
 
         Args:
             task: Existing task DTO for editing, or None for adding new task
+            input_defaults: UI input completion defaults (uses hardcoded defaults if None)
         """
         super().__init__(*args, **kwargs)
         self.task_to_edit = task
         self.is_edit_mode = task is not None
+        self._input_defaults = input_defaults
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""
@@ -49,7 +55,9 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
             )
 
             # Compose form fields using the common helper
-            yield from TaskFormFields.compose_form_fields(self.task_to_edit)
+            yield from TaskFormFields.compose_form_fields(
+                self.task_to_edit, self._input_defaults
+            )
 
     def on_mount(self) -> None:
         """Called when dialog is mounted."""

@@ -5,11 +5,13 @@ from datetime import time
 # === Validation Limits ===
 MAX_ESTIMATED_DURATION_HOURS = 999  # Maximum estimated duration in hours
 
-# === Time Defaults ===
-DEFAULT_START_TIME = time(9, 0)  # Business day start time (default: 09:00)
-DEFAULT_END_TIME = time(18, 0)  # Business day end time (default: 18:00)
+# === UI Input Completion Defaults ===
+# Used when user enters date-only input (e.g., "2025-01-24" -> "2025-01-24 18:30:00")
+DEFAULT_DEADLINE_TIME = time(18, 30)  # Default time for deadline input
+DEFAULT_PLANNED_START_TIME = time(9, 30)  # Default time for planned_start input
+DEFAULT_PLANNED_END_TIME = time(18, 30)  # Default time for planned_end input
 
-# === Backward Compatibility Aliases (deprecated) ===
-# These integer aliases are deprecated. Use DEFAULT_START_TIME/DEFAULT_END_TIME instead.
-DEFAULT_START_HOUR = DEFAULT_START_TIME.hour  # Deprecated: use DEFAULT_START_TIME
-DEFAULT_END_HOUR = DEFAULT_END_TIME.hour  # Deprecated: use DEFAULT_END_TIME
+# === Work Hours (for optimization) ===
+# Defines the available working hours per day for schedule optimization
+WORK_HOURS_START = time(9, 30)  # Work day start time
+WORK_HOURS_END = time(18, 30)  # Work day end time

@@ -3,33 +3,37 @@
 # Copy this file to ~/.config/taskdog/core.toml (or $XDG_CONFIG_HOME/taskdog/core.toml)
 # to customize business logic defaults.
 #
-# This config is for CORE BUSINESS LOGIC (task defaults, optimization, storage).
-# For CLI/TUI infrastructure settings (API connection), see cli.toml.
+# This config is for CORE BUSINESS LOGIC (work hours, optimization, storage).
+# For CLI/TUI infrastructure settings (API connection, input defaults), see cli.toml.
 # For server-specific settings (authentication), see server.toml.
 #
 # Note: Server host/port are configured via CLI arguments (taskdog-server --host --port),
 # not in this config file.
 
 # =============================================================================
-# Time Settings
+# Time Settings (Work Hours for Optimization)
 # =============================================================================
 #
-# Default work hours used by the server.
+# Work hours used by the schedule optimization algorithm.
+# These define the daily working time window for task scheduling.
 
 [time]
-# Default start time for business day (default: "09:00")
+# Work day start time (default: "09:30")
 # Format: "HH:MM" (24-hour format)
-# Used when parsing dates without time (e.g., "2025-12-31" → "2025-12-31 09:00:00")
-default_start_time = "09:00"
+# Used by optimizer to determine when tasks can be scheduled
+work_hours_start = "09:30"
 
-# Default end time for business day (default: "18:00")
+# Work day end time (default: "18:30")
 # Format: "HH:MM" (24-hour format)
-# Used for deadlines without time (e.g., "2025-12-31" → "2025-12-31 18:00:00")
-default_end_time = "18:00"
+# Used by optimizer to determine when tasks should end
+work_hours_end = "18:30"
 
-# Minute-level precision examples:
-# default_start_time = "09:30"  # Start at 9:30 AM
-# default_end_time = "17:30"    # End at 5:30 PM
+# Examples:
+# work_hours_start = "08:00"  # Start at 8:00 AM
+# work_hours_end = "17:00"    # End at 5:00 PM
+#
+# Note: UI input completion defaults (deadline_time, planned_start_time, etc.)
+# are configured separately in cli.toml [input_defaults] section.
 
 # =============================================================================
 # Region Settings
@@ -67,12 +71,24 @@ backend = "sqlite"
 # database_url = "/path/to/custom/tasks.db"
 
 # =============================================================================
+# Environment Variables
+# =============================================================================
+#
+# Environment variables override settings in this file:
+#
+# - TASKDOG_TIME_WORK_HOURS_START: Work day start time
+# - TASKDOG_TIME_WORK_HOURS_END: Work day end time
+# - TASKDOG_REGION_COUNTRY: Country code for holidays
+# - TASKDOG_STORAGE_BACKEND: Storage backend type
+# - TASKDOG_STORAGE_DATABASE_URL: Database file path
+
+# =============================================================================
 # Notes
 # =============================================================================
 #
 # 1. If this file doesn't exist, defaults are used
 # 2. Only the server reads this config (CLI/TUI read cli.toml)
-# 3. Environment variables can override some settings (check server docs)
+# 3. Environment variables can override settings
 # 4. Changes require server restart: systemctl --user restart taskdog-server
 # 5. Optimization algorithms can be listed with: taskdog optimize --help
 #
