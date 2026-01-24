@@ -11,8 +11,10 @@ from typing import Any
 
 from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.constants.config_defaults import (
-    DEFAULT_END_TIME,
-    DEFAULT_START_TIME,
+    DEFAULT_DEADLINE_TIME,
+    DEFAULT_PLANNED_START_TIME,
+    WORK_HOURS_END,
+    WORK_HOURS_START,
 )
 from taskdog_core.shared.xdg_utils import XDGDirectories
 
@@ -95,12 +97,16 @@ class TimeConfig:
     """Time-related configuration.
 
     Attributes:
-        default_start_time: Default time for task start times (business day start)
-        default_end_time: Default time for task end times and deadlines (business day end)
+        default_start_time: Default time for task start times (UI input completion)
+        default_end_time: Default time for task end times and deadlines (UI input completion)
+        work_hours_start: Work day start time (for schedule optimization)
+        work_hours_end: Work day end time (for schedule optimization)
     """
 
-    default_start_time: time = DEFAULT_START_TIME
-    default_end_time: time = DEFAULT_END_TIME
+    default_start_time: time = DEFAULT_PLANNED_START_TIME
+    default_end_time: time = DEFAULT_DEADLINE_TIME
+    work_hours_start: time = WORK_HOURS_START
+    work_hours_end: time = WORK_HOURS_END
 
 
 @dataclass(frozen=True)
@@ -187,11 +193,27 @@ class ConfigManager:
             time_data.get("default_end_time", time_data.get("default_end_hour")),
             str,
         )
+        work_hours_start_raw: Any = ConfigLoader.get_env(
+            "TIME_WORK_HOURS_START",
+            time_data.get("work_hours_start"),
+            str,
+        )
+        work_hours_end_raw: Any = ConfigLoader.get_env(
+            "TIME_WORK_HOURS_END",
+            time_data.get("work_hours_end"),
+            str,
+        )
 
         return Config(
             time=TimeConfig(
-                default_start_time=parse_time_value(start_time_raw, DEFAULT_START_TIME),
-                default_end_time=parse_time_value(end_time_raw, DEFAULT_END_TIME),
+                default_start_time=parse_time_value(
+                    start_time_raw, DEFAULT_PLANNED_START_TIME
+                ),
+                default_end_time=parse_time_value(end_time_raw, DEFAULT_DEADLINE_TIME),
+                work_hours_start=parse_time_value(
+                    work_hours_start_raw, WORK_HOURS_START
+                ),
+                work_hours_end=parse_time_value(work_hours_end_raw, WORK_HOURS_END),
             ),
             region=RegionConfig(
                 country=ConfigLoader.get_env(

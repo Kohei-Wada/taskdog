@@ -10,8 +10,9 @@ from textual.widgets import Checkbox, Input, Label, Static
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.constants.ui_settings import (
-    DEFAULT_END_TIME,
-    DEFAULT_START_TIME,
+    DEFAULT_DEADLINE_TIME,
+    DEFAULT_PLANNED_END_TIME,
+    DEFAULT_PLANNED_START_TIME,
 )
 from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog_core.application.dto.task_dto import TaskDetailDto
@@ -122,7 +123,7 @@ class TaskFormFields:
                 if task and task.deadline
                 else "",
                 valid_empty=True,
-                validators=[DateTimeValidator("deadline", DEFAULT_END_TIME)],
+                validators=[DateTimeValidator("deadline", DEFAULT_DEADLINE_TIME)],
             )
 
             # Planned Start field
@@ -134,7 +135,9 @@ class TaskFormFields:
                 if task and task.planned_start
                 else "",
                 valid_empty=True,
-                validators=[DateTimeValidator("planned start", DEFAULT_START_TIME)],
+                validators=[
+                    DateTimeValidator("planned start", DEFAULT_PLANNED_START_TIME)
+                ],
             )
 
             # Planned End field
@@ -146,7 +149,7 @@ class TaskFormFields:
                 if task and task.planned_end
                 else "",
                 valid_empty=True,
-                validators=[DateTimeValidator("planned end", DEFAULT_END_TIME)],
+                validators=[DateTimeValidator("planned end", DEFAULT_PLANNED_END_TIME)],
             )
 
             # Priority field

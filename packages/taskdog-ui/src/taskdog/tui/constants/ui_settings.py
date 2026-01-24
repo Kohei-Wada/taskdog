@@ -4,17 +4,19 @@ This module centralizes all UI-related constants to improve maintainability
 and avoid magic numbers scattered throughout the codebase.
 """
 
-# Re-export config defaults from core
+# Re-export UI input completion defaults from core
 from taskdog_core.shared.constants.config_defaults import (
-    DEFAULT_END_TIME,
-    DEFAULT_START_TIME,
+    DEFAULT_DEADLINE_TIME,
+    DEFAULT_PLANNED_END_TIME,
+    DEFAULT_PLANNED_START_TIME,
 )
 
 __all__ = [
     "AUTO_REFRESH_INTERVAL_SECONDS",
-    "DEFAULT_END_TIME",
+    "DEFAULT_DEADLINE_TIME",
     "DEFAULT_GANTT_DISPLAY_DAYS",
-    "DEFAULT_START_TIME",
+    "DEFAULT_PLANNED_END_TIME",
+    "DEFAULT_PLANNED_START_TIME",
     "MAX_HOURS_PER_DAY",
     "OPTIMIZATION_FAILURE_DETAIL_THRESHOLD",
     "SORT_KEY_LABELS",
