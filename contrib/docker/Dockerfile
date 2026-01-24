@@ -17,13 +17,14 @@ COPY packages/ ./packages/
 
 # Build wheels for all packages and install into virtual environment
 # Using wheels instead of uv sync to include taskdog-ui in the image
-RUN uv build --package taskdog-core --wheel --out-dir /tmp/wheels \
-    && uv build --package taskdog-client --wheel --out-dir /tmp/wheels \
-    && uv build --package taskdog-server --wheel --out-dir /tmp/wheels \
-    && uv build --package taskdog-ui --wheel --out-dir /tmp/wheels \
-    && uv venv /app/.venv \
-    && uv pip install --python /app/.venv/bin/python /tmp/wheels/*.whl \
-    && rm -rf /tmp/wheels
+RUN set -e && \
+    uv build --package taskdog-core --wheel --out-dir /tmp/wheels && \
+    uv build --package taskdog-client --wheel --out-dir /tmp/wheels && \
+    uv build --package taskdog-server --wheel --out-dir /tmp/wheels && \
+    uv build --package taskdog-ui --wheel --out-dir /tmp/wheels && \
+    uv venv /app/.venv && \
+    uv pip install --python /app/.venv/bin/python /tmp/wheels/*.whl && \
+    rm -rf /tmp/wheels
 
 # Add virtual environment to PATH
 ENV PATH="/app/.venv/bin:$PATH"
@@ -54,4 +55,4 @@ ENV COLORTERM=truecolor
 
 # Start taskdog-server
 # Note: --workers 1 is required for WebSocket real-time sync
-ENTRYPOINT ["taskdog-server", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+ENTRYPOINT ["/app/.venv/bin/taskdog-server", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
