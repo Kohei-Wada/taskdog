@@ -520,58 +520,9 @@ pip install taskdog taskdog-server
 
 ### What This Repository Does NOT Include
 
-- Docker Compose / orchestration configurations
 - Kubernetes manifests
 - Reverse proxy configurations
 - Backup automation
-
-### Docker Philosophy
-
-This repository provides a **minimal Dockerfile** for users who prefer containerization, but keeps infrastructure concerns separate:
-
-**What we provide:**
-
-- Single `Dockerfile` for `taskdog-server`
-- Basic documentation for building and running
-
-**What we leave to users (or taskdog-stack):**
-
-- Docker Compose orchestration
-- Multi-service setups (webhooks, proxies, etc.)
-- Production deployment configurations
-
-This strikes a balance between accessibility and simplicity.
-
-### For Users Who Need Infrastructure
-
-If you need Docker Compose, authentication, reverse proxy, or backup automation, consider creating a separate **taskdog-stack** repository that:
-
-- Uses the Dockerfile from this repo as a base
-- Adds docker-compose.yml with your preferred setup
-- Includes authentication (Authelia, OAuth2 Proxy, etc.)
-- Configures reverse proxy (Traefik, Caddy, nginx)
-- Sets up backup automation (restic, borg, etc.)
-
-This separation keeps:
-
-- **taskdog**: Simple, focused on the application + basic container support
-- **taskdog-stack**: Infrastructure concerns, customizable per deployment
-
-**Example structure for taskdog-stack**:
-
-```text
-taskdog-stack/
-├── docker-compose.yml
-├── .env.example
-├── traefik/
-│   └── config.yml
-├── authelia/
-│   └── configuration.yml
-└── backup/
-    └── restic.sh
-```
-
-This approach follows the Unix philosophy: do one thing well.
 
 ## Contributing Within the Philosophy
 

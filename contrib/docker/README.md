@@ -38,6 +38,19 @@ docker run -d \
 curl http://localhost:8000/health
 ```
 
+### Using Docker Compose
+
+```bash
+cd contrib/docker
+docker compose up -d
+
+# Verify it's running
+curl http://localhost:8000/health
+
+# Stop
+docker compose down
+```
+
 ## Usage
 
 ### Build
@@ -216,13 +229,3 @@ docker logs -f taskdog-server
 
 - **WebSocket:** The container runs with `--workers 1` (required for WebSocket real-time sync)
 - **TUI:** The TUI requires a proper terminal and is better used on the host machine (CLI works in container via `docker exec`)
-
-## Advanced: taskdog-stack
-
-For more advanced setups including:
-
-- Docker Compose orchestration
-- Webhook integration (n8n, etc.)
-- External service connections
-
-See [taskdog-stack](https://github.com/Kohei-Wada/taskdog-stack) (coming soon).
