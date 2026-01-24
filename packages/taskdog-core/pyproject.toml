@@ -1,6 +1,6 @@
 [project]
 name = "taskdog-core"
-version = "0.9.0"
+version = "0.10.0"
 description = "Core business logic and infrastructure for Taskdog"
 readme = "README.md"
 requires-python = ">=3.13"
