@@ -23,7 +23,7 @@ class TaskRowViewModel(BaseViewModel):
         id: Task ID
         name: Task name
         status: Task status
-        priority: Task priority
+        priority: Task priority (None if not set)
         is_fixed: Whether task schedule is fixed
         estimated_duration: Estimated duration in hours (None if not set)
         actual_duration_hours: Actual duration in hours (None if not set)
@@ -43,7 +43,7 @@ class TaskRowViewModel(BaseViewModel):
     id: int
     name: str
     status: TaskStatus
-    priority: int
+    priority: int | None
     is_fixed: bool
     estimated_duration: float | None
     actual_duration_hours: float | None

@@ -170,12 +170,12 @@ class TaskRepository(ABC):
         pass
 
     @abstractmethod
-    def create(self, name: str, priority: int, **kwargs: Any) -> Task:
+    def create(self, name: str, priority: int | None = None, **kwargs: Any) -> Task:
         """Create a new task with auto-generated ID and save it.
 
         Args:
             name: Task name
-            priority: Task priority
+            priority: Task priority (optional, can be None)
             **kwargs: Additional task fields
 
         Returns:

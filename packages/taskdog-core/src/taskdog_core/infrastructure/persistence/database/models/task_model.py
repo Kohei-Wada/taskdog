@@ -39,7 +39,7 @@ class TaskModel(Base):
 
     # Core task fields
     name: Mapped[str] = mapped_column(String(500), nullable=False)
-    priority: Mapped[int] = mapped_column(Integer, nullable=False)
+    priority: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False)
 
     # Timestamps

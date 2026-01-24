@@ -37,7 +37,7 @@ class TaskOperationOutput:
     id: int
     name: str
     status: TaskStatus
-    priority: int
+    priority: int | None
     deadline: datetime | None
     estimated_duration: float | None
     planned_start: datetime | None

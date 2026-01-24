@@ -9,16 +9,12 @@ from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_END_HOUR,
     DEFAULT_START_HOUR,
 )
-from taskdog_core.shared.constants.config_defaults import (
-    DEFAULT_PRIORITY as DEFAULT_TASK_PRIORITY,
-)
 
 __all__ = [
     "AUTO_REFRESH_INTERVAL_SECONDS",
     "DEFAULT_END_HOUR",
     "DEFAULT_GANTT_DISPLAY_DAYS",
     "DEFAULT_START_HOUR",
-    "DEFAULT_TASK_PRIORITY",
     "MAX_HOURS_PER_DAY",
     "OPTIMIZATION_FAILURE_DETAIL_THRESHOLD",
     "SORT_KEY_LABELS",

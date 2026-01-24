@@ -107,7 +107,7 @@ class TaskDbMapper(TaskMapperInterface):
         """
         # Validate required fields (database enforces NOT NULL constraints)
         assert model.name is not None, "TaskModel.name must not be None"
-        assert model.priority is not None, "TaskModel.priority must not be None"
+        # Note: priority can be None (nullable column)
         assert model.status is not None, "TaskModel.status must not be None"
         assert model.created_at is not None, "TaskModel.created_at must not be None"
         assert model.updated_at is not None, "TaskModel.updated_at must not be None"

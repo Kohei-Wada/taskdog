@@ -344,7 +344,7 @@ class SqliteTaskRepository(TaskRepository):
             delete_builder.delete_task(task_id)
             session.commit()
 
-    def create(self, name: str, priority: int, **kwargs: Any) -> Task:
+    def create(self, name: str, priority: int | None = None, **kwargs: Any) -> Task:
         """Create a new task with auto-generated ID and save it.
 
         Uses SQLite AUTOINCREMENT to assign IDs atomically, avoiding race
@@ -352,7 +352,7 @@ class SqliteTaskRepository(TaskRepository):
 
         Args:
             name: Task name
-            priority: Task priority
+            priority: Task priority (optional, can be None)
             **kwargs: Additional task fields
 
         Returns:

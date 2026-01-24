@@ -10,7 +10,7 @@ class CreateTaskInput:
 
     Attributes:
         name: Task name
-        priority: Task priority (higher value = higher priority)
+        priority: Task priority (higher value = higher priority), or None if not set
         planned_start: Planned start datetime (optional)
         planned_end: Planned end datetime (optional)
         deadline: Deadline datetime (optional)
@@ -20,7 +20,7 @@ class CreateTaskInput:
     """
 
     name: str
-    priority: int
+    priority: int | None = None
     planned_start: datetime | None = None
     planned_end: datetime | None = None
     deadline: datetime | None = None

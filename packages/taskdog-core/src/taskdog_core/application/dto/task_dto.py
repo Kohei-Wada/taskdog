@@ -109,7 +109,7 @@ class TaskRowDto:
 
     id: int
     name: str
-    priority: int
+    priority: int | None
     status: TaskStatus
     planned_start: datetime | None
     planned_end: datetime | None
@@ -205,7 +205,7 @@ class TaskDetailDto:
 
     id: int
     name: str
-    priority: int
+    priority: int | None
     status: TaskStatus
     planned_start: datetime | None
     planned_end: datetime | None

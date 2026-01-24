@@ -40,8 +40,8 @@ The repository uses UV workspace with three packages:
 **Config**: Optional TOML files at `$XDG_CONFIG_HOME/taskdog/` (fallback: `~/.config/taskdog/`)
 
 - **core.toml** (business logic):
-  - Sections: `[optimization]`, `[task]`, `[time]`, `[region]`, `[storage]`
-  - Settings: max_hours_per_day, default_priority, default_start_hour, default_end_hour, country, database_url, backend
+  - Sections: `[optimization]`, `[time]`, `[region]`, `[storage]`
+  - Settings: max_hours_per_day, default_start_hour, default_end_hour, country, database_url, backend
 - **server.toml** (server-specific):
   - Sections: `[auth]`
   - Settings: enabled, api_keys

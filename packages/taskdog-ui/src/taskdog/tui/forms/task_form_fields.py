@@ -12,7 +12,6 @@ from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.constants.ui_settings import (
     DEFAULT_END_HOUR,
     DEFAULT_START_HOUR,
-    DEFAULT_TASK_PRIORITY,
 )
 from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog_core.application.dto.task_dto import TaskDetailDto
@@ -25,7 +24,7 @@ class TaskFormData:
 
     Attributes:
         name: Task name
-        priority: Task priority (1-10)
+        priority: Task priority (higher = more important), or None if not set
         deadline: Optional deadline in format YYYY-MM-DD HH:MM:SS
         estimated_duration: Optional estimated duration in hours
         planned_start: Optional planned start date in format YYYY-MM-DD HH:MM:SS
@@ -36,7 +35,7 @@ class TaskFormData:
     """
 
     name: str
-    priority: int
+    priority: int | None = None
     deadline: str | None = None
     estimated_duration: float | None = None
     planned_start: str | None = None
@@ -91,10 +90,6 @@ class TaskFormFields:
         """
         # Error message area (hidden by default)
         yield Static("", id="error-message")
-
-        # Use UI default constant for placeholder text
-        # Server will apply actual config default when creating tasks
-        default_priority = DEFAULT_TASK_PRIORITY
 
         with Vertical(id="form-container"):
             # Task name field (required)
@@ -157,11 +152,9 @@ class TaskFormFields:
             # Priority field
             yield Label("Priority:", classes="field-label")
             yield Input(
-                placeholder=f"Enter priority (default: {
-                    default_priority
-                }, higher = more important)",
+                placeholder="Optional: 1, 5, 10 (higher = more important)",
                 id="priority-input",
-                value=str(task.priority) if task else "",
+                value=str(task.priority) if task and task.priority is not None else "",
                 valid_empty=True,
                 validators=[Number(minimum=1)],
             )

@@ -27,7 +27,6 @@ from .factories import TaskFactory
 
 
 def create_mock_config(
-    default_priority: int = 3,
     max_hours_per_day: float = 8.0,
     default_start_hour: int = 9,
     default_end_hour: int = 18,
@@ -38,7 +37,6 @@ def create_mock_config(
     This is a helper function rather than a fixture to allow customization.
     """
     config = MagicMock()
-    config.task.default_priority = default_priority
     config.optimization.max_hours_per_day = max_hours_per_day
     config.time.default_start_hour = default_start_hour
     config.time.default_end_hour = default_end_hour

@@ -10,21 +10,9 @@ from pathlib import Path
 from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_END_HOUR,
-    DEFAULT_PRIORITY,
     DEFAULT_START_HOUR,
 )
 from taskdog_core.shared.xdg_utils import XDGDirectories
-
-
-@dataclass(frozen=True)
-class TaskConfig:
-    """Task-related configuration.
-
-    Attributes:
-        default_priority: Default priority for new tasks
-    """
-
-    default_priority: int = DEFAULT_PRIORITY
 
 
 @dataclass(frozen=True)
@@ -71,13 +59,11 @@ class Config:
     """Taskdog configuration.
 
     Attributes:
-        task: Task-related settings
         time: Time-related settings
         region: Region-related settings (holidays, etc.)
         storage: Storage backend settings
     """
 
-    task: TaskConfig
     time: TimeConfig
     region: RegionConfig = field(default_factory=RegionConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
@@ -109,19 +95,11 @@ class ConfigManager:
         toml_data = ConfigLoader.load_toml(config_path)
 
         # Parse sections with fallback to defaults, then apply env overrides
-        task_data = toml_data.get("task", {})
         time_data = toml_data.get("time", {})
         region_data = toml_data.get("region", {})
         storage_data = toml_data.get("storage", {})
 
         return Config(
-            task=TaskConfig(
-                default_priority=ConfigLoader.get_env(
-                    "TASK_DEFAULT_PRIORITY",
-                    task_data.get("default_priority", DEFAULT_PRIORITY),
-                    int,
-                ),
-            ),
             time=TimeConfig(
                 default_start_hour=ConfigLoader.get_env(
                     "TIME_DEFAULT_START_HOUR",

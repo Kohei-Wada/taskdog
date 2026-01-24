@@ -23,7 +23,7 @@ class TaskOperationResponse(BaseModel):
     id: int
     name: str
     status: TaskStatus
-    priority: int
+    priority: int | None = None
     deadline: datetime | None = None
     estimated_duration: float | None = None
     planned_start: datetime | None = None
@@ -75,7 +75,7 @@ class UpdateTaskResponse(BaseModel):
     id: int
     name: str
     status: TaskStatus
-    priority: int
+    priority: int | None = None
     deadline: datetime | None = None
     estimated_duration: float | None = None
     planned_start: datetime | None = None
@@ -127,7 +127,7 @@ class TaskResponse(BaseModel):
 
     id: int
     name: str
-    priority: int
+    priority: int | None = None
     status: TaskStatus
     planned_start: datetime | None = None
     planned_end: datetime | None = None
@@ -153,7 +153,7 @@ class TaskDetailResponse(BaseModel):
 
     id: int
     name: str
-    priority: int
+    priority: int | None = None
     status: TaskStatus
     planned_start: datetime | None = None
     planned_end: datetime | None = None
