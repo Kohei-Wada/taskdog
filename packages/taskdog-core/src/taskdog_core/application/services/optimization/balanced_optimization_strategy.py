@@ -1,7 +1,7 @@
 """Balanced optimization strategy implementation."""
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING
 
 from taskdog_core.application.constants.optimization import SCHEDULING_EPSILON
@@ -56,9 +56,9 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
     DISPLAY_NAME = "Balanced"
     DESCRIPTION = "Even workload distribution"
 
-    def __init__(self, default_start_hour: int, default_end_hour: int):
-        self.default_start_hour = default_start_hour
-        self.default_end_hour = default_end_hour
+    def __init__(self, default_start_time: time, default_end_time: time):
+        self.default_start_time = default_start_time
+        self.default_end_time = default_end_time
 
     def optimize_tasks(
         self,
@@ -137,8 +137,8 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
                 state.schedule_start,
                 actual_schedule_end,
                 state.task_daily_allocations,
-                self.default_start_hour,
-                self.default_end_hour,
+                self.default_start_time,
+                self.default_end_time,
             )
             return task_copy
 
@@ -189,7 +189,7 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
             date_obj,
             context.max_hours_per_day,
             context.current_time,
-            self.default_end_hour,
+            self.default_end_time,
         )
 
         if available_hours <= SCHEDULING_EPSILON:

@@ -1,7 +1,7 @@
 """Monte Carlo optimization strategy implementation."""
 
 import random
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import TYPE_CHECKING
 
 from taskdog_core.application.constants.optimization import MONTE_CARLO_NUM_SIMULATIONS
@@ -47,15 +47,15 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
     NUM_SIMULATIONS = MONTE_CARLO_NUM_SIMULATIONS
 
-    def __init__(self, default_start_hour: int, default_end_hour: int):
+    def __init__(self, default_start_time: time, default_end_time: time):
         """Initialize strategy with configuration.
 
         Args:
-            default_start_hour: Default start hour for tasks (e.g., 9)
-            default_end_hour: Default end hour for tasks (e.g., 18)
+            default_start_time: Default start time for tasks (e.g., time(9, 0))
+            default_end_time: Default end time for tasks (e.g., time(18, 0))
         """
-        self.default_start_hour = default_start_hour
-        self.default_end_hour = default_end_hour
+        self.default_start_time = default_start_time
+        self.default_end_time = default_end_time
         self.fitness_calculator = ScheduleFitnessCalculator()
         self._evaluation_cache: dict[
             tuple[int | None, ...], float
@@ -105,8 +105,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         # Create greedy strategy instance for allocation
         greedy_strategy = GreedyOptimizationStrategy(
-            self.default_start_hour,
-            self.default_end_hour,
+            self.default_start_time,
+            self.default_end_time,
         )
 
         # Clear evaluation cache for new optimization run

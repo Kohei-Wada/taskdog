@@ -7,14 +7,18 @@ and avoid magic numbers scattered throughout the codebase.
 # Re-export config defaults from core for backward compatibility
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_END_HOUR,
+    DEFAULT_END_TIME,
     DEFAULT_START_HOUR,
+    DEFAULT_START_TIME,
 )
 
 __all__ = [
     "AUTO_REFRESH_INTERVAL_SECONDS",
     "DEFAULT_END_HOUR",
+    "DEFAULT_END_TIME",
     "DEFAULT_GANTT_DISPLAY_DAYS",
     "DEFAULT_START_HOUR",
+    "DEFAULT_START_TIME",
     "MAX_HOURS_PER_DAY",
     "OPTIMIZATION_FAILURE_DETAIL_THRESHOLD",
     "SORT_KEY_LABELS",

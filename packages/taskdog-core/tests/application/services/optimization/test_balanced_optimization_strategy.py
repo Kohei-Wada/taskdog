@@ -1,6 +1,6 @@
 """Tests for BalancedOptimizationStrategy."""
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from taskdog_core.application.services.optimization.allocation_context import (
     AllocationContext,
@@ -178,7 +178,7 @@ class TestBalancedOptimizationStrategyWithHolidays:
         )
 
         strategy = BalancedOptimizationStrategy(
-            default_start_hour=9, default_end_hour=18
+            default_start_time=time(9, 0), default_end_time=time(18, 0)
         )
         result = strategy._allocate_task(task, context, holiday_checker=holiday_checker)
 
@@ -217,7 +217,7 @@ class TestBalancedOptimizationStrategyWithHolidays:
         )
 
         strategy = BalancedOptimizationStrategy(
-            default_start_hour=9, default_end_hour=18
+            default_start_time=time(9, 0), default_end_time=time(18, 0)
         )
         result = strategy._allocate_task(task, context, holiday_checker=None)
 

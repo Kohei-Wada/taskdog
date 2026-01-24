@@ -5,14 +5,89 @@ Priority: Environment variables > TOML file > Default values
 """
 
 from dataclasses import dataclass, field
+from datetime import time
 from pathlib import Path
+from typing import Any
 
 from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.constants.config_defaults import (
-    DEFAULT_END_HOUR,
-    DEFAULT_START_HOUR,
+    DEFAULT_END_TIME,
+    DEFAULT_START_TIME,
 )
 from taskdog_core.shared.xdg_utils import XDGDirectories
+
+
+def _is_valid_hour(hour: int) -> bool:
+    """Check if hour is in valid range (0-23)."""
+    return 0 <= hour <= 23
+
+
+def _is_valid_minute(minute: int) -> bool:
+    """Check if minute is in valid range (0-59)."""
+    return 0 <= minute <= 59
+
+
+def parse_time_value(value: int | str | None, default: time) -> time:
+    """Parse time value with backward compatibility.
+
+    Accepts:
+    - int: 9 -> time(9, 0)
+    - str: "09:30" -> time(9, 30)
+    - str: "9" -> time(9, 0)
+    - None: returns default
+
+    Invalid values (out of range hours/minutes) return the default.
+
+    Args:
+        value: Time value in various formats
+        default: Default time to use if value is None or invalid
+
+    Returns:
+        Parsed time object
+
+    Examples:
+        >>> parse_time_value(9, time(9, 0))
+        datetime.time(9, 0)
+        >>> parse_time_value("09:30", time(9, 0))
+        datetime.time(9, 30)
+        >>> parse_time_value("9", time(9, 0))
+        datetime.time(9, 0)
+        >>> parse_time_value(25, time(9, 0))  # Invalid hour
+        datetime.time(9, 0)
+    """
+    if value is None:
+        return default
+
+    if isinstance(value, int):
+        # Backward compatibility: integer hours (e.g., 9 -> 09:00)
+        if not _is_valid_hour(value):
+            return default
+        return time(value, 0)
+
+    if isinstance(value, str):
+        value = value.strip()
+        if ":" in value:
+            # Format: "HH:MM" or "H:MM"
+            parts = value.split(":")
+            try:
+                hour = int(parts[0])
+                minute = int(parts[1]) if len(parts) > 1 else 0
+                if not _is_valid_hour(hour) or not _is_valid_minute(minute):
+                    return default
+                return time(hour, minute)
+            except (ValueError, IndexError):
+                return default
+        else:
+            # Single integer as string (e.g., "9")
+            try:
+                hour = int(value)
+                if not _is_valid_hour(hour):
+                    return default
+                return time(hour, 0)
+            except ValueError:
+                return default
+
+    return default
 
 
 @dataclass(frozen=True)
@@ -20,12 +95,23 @@ class TimeConfig:
     """Time-related configuration.
 
     Attributes:
-        default_start_hour: Default hour for task start times (business day start)
-        default_end_hour: Default hour for task end times and deadlines (business day end)
+        default_start_time: Default time for task start times (business day start)
+        default_end_time: Default time for task end times and deadlines (business day end)
     """
 
-    default_start_hour: int = DEFAULT_START_HOUR
-    default_end_hour: int = DEFAULT_END_HOUR
+    default_start_time: time = DEFAULT_START_TIME
+    default_end_time: time = DEFAULT_END_TIME
+
+    # Backward compatibility properties (deprecated)
+    @property
+    def default_start_hour(self) -> int:
+        """Deprecated: Use default_start_time instead."""
+        return self.default_start_time.hour
+
+    @property
+    def default_end_hour(self) -> int:
+        """Deprecated: Use default_end_time instead."""
+        return self.default_end_time.hour
 
 
 @dataclass(frozen=True)
@@ -99,18 +185,24 @@ class ConfigManager:
         region_data = toml_data.get("region", {})
         storage_data = toml_data.get("storage", {})
 
+        # Parse time values with backward compatibility
+        # Priority: env var > TOML > default
+        # Supports: int (9), str ("09:30"), str ("9")
+        start_time_raw: Any = ConfigLoader.get_env(
+            "TIME_DEFAULT_START_TIME",
+            time_data.get("default_start_time", time_data.get("default_start_hour")),
+            str,
+        )
+        end_time_raw: Any = ConfigLoader.get_env(
+            "TIME_DEFAULT_END_TIME",
+            time_data.get("default_end_time", time_data.get("default_end_hour")),
+            str,
+        )
+
         return Config(
             time=TimeConfig(
-                default_start_hour=ConfigLoader.get_env(
-                    "TIME_DEFAULT_START_HOUR",
-                    time_data.get("default_start_hour", DEFAULT_START_HOUR),
-                    int,
-                ),
-                default_end_hour=ConfigLoader.get_env(
-                    "TIME_DEFAULT_END_HOUR",
-                    time_data.get("default_end_hour", DEFAULT_END_HOUR),
-                    int,
-                ),
+                default_start_time=parse_time_value(start_time_raw, DEFAULT_START_TIME),
+                default_end_time=parse_time_value(end_time_raw, DEFAULT_END_TIME),
             ),
             region=RegionConfig(
                 country=ConfigLoader.get_env(

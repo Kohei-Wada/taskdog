@@ -17,13 +17,19 @@
 # Default work hours used by the server.
 
 [time]
-# Default start hour for business day (default: 9)
+# Default start time for business day (default: "09:00")
+# Format: "HH:MM" (24-hour format)
 # Used when parsing dates without time (e.g., "2025-12-31" → "2025-12-31 09:00:00")
-default_start_hour = 9
+default_start_time = "09:00"
 
-# Default end hour for business day (default: 18)
+# Default end time for business day (default: "18:00")
+# Format: "HH:MM" (24-hour format)
 # Used for deadlines without time (e.g., "2025-12-31" → "2025-12-31 18:00:00")
-default_end_hour = 18
+default_end_time = "18:00"
+
+# Minute-level precision examples:
+# default_start_time = "09:30"  # Start at 9:30 AM
+# default_end_time = "17:30"    # End at 5:30 PM
 
 # =============================================================================
 # Region Settings

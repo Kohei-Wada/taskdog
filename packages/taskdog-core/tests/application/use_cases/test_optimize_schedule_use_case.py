@@ -1,6 +1,6 @@
 """Tests for OptimizeScheduleUseCase."""
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 import pytest
 
@@ -15,7 +15,6 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     NoSchedulableTasksError,
     TaskNotFoundException,
 )
-from taskdog_core.shared.config_manager import ConfigManager
 
 
 class TestOptimizeScheduleUseCase:
@@ -26,11 +25,12 @@ class TestOptimizeScheduleUseCase:
         """Initialize use cases for each test."""
         self.repository = repository
         self.create_use_case = CreateTaskUseCase(self.repository)
-        config = ConfigManager.load()
+        # Use default time values directly instead of loading config
+        # to avoid tests depending on user's local config
         self.optimize_use_case = OptimizeScheduleUseCase(
             self.repository,
-            config.time.default_start_hour,
-            config.time.default_end_hour,
+            time(9, 0),  # default start time
+            time(18, 0),  # default end time
         )
 
     def test_optimize_single_task(self):
