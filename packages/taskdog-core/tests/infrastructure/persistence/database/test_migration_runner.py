@@ -84,7 +84,7 @@ class TestRunMigrations:
             # Should now have alembic_version stamped
             inspector = inspect(engine)
             assert "alembic_version" in inspector.get_table_names()
-            assert get_current_revision(engine) == "002_remove_actual_daily_hours"
+            assert get_current_revision(engine) == "003_make_priority_nullable"
         finally:
             engine.dispose()
 
@@ -98,7 +98,7 @@ class TestRunMigrations:
             run_migrations(engine)
 
             # Should still work and have correct revision
-            assert get_current_revision(engine) == "002_remove_actual_daily_hours"
+            assert get_current_revision(engine) == "003_make_priority_nullable"
         finally:
             engine.dispose()
 
@@ -226,7 +226,7 @@ class TestGetCurrentRevision:
         try:
             run_migrations(engine)
 
-            assert get_current_revision(engine) == "002_remove_actual_daily_hours"
+            assert get_current_revision(engine) == "003_make_priority_nullable"
         finally:
             engine.dispose()
 

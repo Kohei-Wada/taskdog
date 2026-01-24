@@ -32,7 +32,6 @@ class TestApp:
         self.mock_notes_repository = MagicMock()
         self.mock_audit_log_controller = Mock(spec=AuditLogController)
         self.mock_config = MagicMock()
-        self.mock_config.task.default_priority = 3
         self.mock_config.region.country = None
 
         # Create mock logger for controllers

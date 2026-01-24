@@ -155,25 +155,6 @@ The optimization algorithm is specified via CLI `--algorithm` flag (default: "gr
 taskdog optimize --max-hours-per-day 8 --algorithm balanced
 ```
 
-### Task Settings
-
-The `[task]` section configures default task properties.
-
-```toml
-[task]
-default_priority = 5           # Default task priority (default: 5)
-```
-
-**Fields:**
-
-- `default_priority` (integer) - Default priority for new tasks. Higher values = higher priority.
-
-**CLI Override:**
-
-```bash
-taskdog add "Task name" -p 150
-```
-
 ### Time Settings
 
 The `[time]` section configures business hours.
@@ -267,7 +248,6 @@ These variables override core configuration (core.toml):
 |----------|------|---------|-------------|
 | `TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY` | float | `6.0` | Maximum work hours per day |
 | `TASKDOG_OPTIMIZATION_DEFAULT_ALGORITHM` | string | `"greedy"` | Default scheduling algorithm |
-| `TASKDOG_TASK_DEFAULT_PRIORITY` | int | `5` | Default priority for new tasks |
 | `TASKDOG_TIME_DEFAULT_START_HOUR` | int | `9` | Business day start hour |
 | `TASKDOG_TIME_DEFAULT_END_HOUR` | int | `18` | Business day end hour |
 | `TASKDOG_REGION_COUNTRY` | string | `None` | ISO 3166-1 alpha-2 country code |
@@ -279,7 +259,6 @@ These variables override core configuration (core.toml):
 ```bash
 # Production settings
 export TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY=8.0
-export TASKDOG_TASK_DEFAULT_PRIORITY=3
 export TASKDOG_REGION_COUNTRY=US
 ```
 
@@ -358,10 +337,6 @@ theme = "tokyo-night"
 # Optimization Settings
 [optimization]
 max_hours_per_day = 8.0
-
-# Task Settings
-[task]
-default_priority = 10
 
 # Time Settings
 [time]

@@ -83,7 +83,7 @@ class TaskCrudController(BaseTaskController):
 
         Args:
             name: Task name
-            priority: Task priority (default: from config)
+            priority: Task priority (optional, can be None)
             deadline: Task deadline (optional)
             estimated_duration: Estimated duration in hours (optional)
             planned_start: Planned start datetime (optional)
@@ -102,7 +102,7 @@ class TaskCrudController(BaseTaskController):
         use_case = CreateTaskUseCase(self.repository)
         request = CreateTaskInput(
             name=name,
-            priority=priority or self.config.task.default_priority,
+            priority=priority,
             deadline=deadline,
             estimated_duration=estimated_duration,
             planned_start=planned_start,

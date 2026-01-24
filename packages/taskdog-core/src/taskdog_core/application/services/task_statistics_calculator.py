@@ -340,6 +340,10 @@ class TaskStatisticsCalculator:
         priority_map: dict[int, int] = defaultdict(int)
 
         for task in tasks:
+            # Skip tasks without priority for distribution calculation
+            if task.priority is None:
+                continue
+
             # Classify by priority level
             if task.priority >= self.HIGH_PRIORITY_THRESHOLD:
                 high_count += 1

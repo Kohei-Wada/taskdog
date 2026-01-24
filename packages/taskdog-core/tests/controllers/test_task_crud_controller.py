@@ -18,7 +18,6 @@ class TestTaskCrudController:
         self.repository = repository
         self.notes_repository = MagicMock()
         self.config = MagicMock()
-        self.config.task.default_priority = 3
         self.logger = Mock(spec=Logger)
         self.controller = TaskCrudController(
             repository=self.repository,
@@ -42,13 +41,13 @@ class TestTaskCrudController:
         assert persisted_task is not None
         assert persisted_task.name == "Test Task"
 
-    def test_create_task_uses_config_default_priority(self):
-        """Test that create_task uses config default priority when not specified."""
+    def test_create_task_without_priority_sets_none(self):
+        """Test that create_task leaves priority as None when not specified."""
         # Act
         result = self.controller.create_task(name="Test Task")
 
         # Assert
-        assert result.priority == 3  # From config
+        assert result.priority is None  # No default priority
 
     def test_update_task_returns_update_task_output(self):
         """Test that update_task returns TaskUpdateOutput."""

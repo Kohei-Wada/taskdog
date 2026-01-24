@@ -79,9 +79,7 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
             self._show_validation_error("Task name is required", task_name_input)
             return
 
-        # Parse priority (optional, defaults to config value)
-        from taskdog.tui.constants.ui_settings import DEFAULT_TASK_PRIORITY
-
+        # Parse priority (optional, can be None)
         # Validate numeric fields before parsing
         if not self._is_input_valid(priority_input):
             priority_input.focus()
@@ -92,7 +90,7 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
             return
 
         priority_str = priority_input.value.strip()
-        priority = int(priority_str) if priority_str else DEFAULT_TASK_PRIORITY
+        priority = int(priority_str) if priority_str else None
 
         # Parse duration (optional)
         duration_str = duration_input.value.strip()

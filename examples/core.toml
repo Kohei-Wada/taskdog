@@ -11,17 +11,6 @@
 # not in this config file.
 
 # =============================================================================
-# Task Defaults
-# =============================================================================
-#
-# Default values applied when creating new tasks.
-
-[task]
-# Default priority for new tasks (default: 5)
-# Range: 1-10 (higher = more important)
-default_priority = 5
-
-# =============================================================================
 # Time Settings
 # =============================================================================
 #

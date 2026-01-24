@@ -44,7 +44,7 @@ class TestTasksRouter:
         assert response.status_code == 201
         data = response.json()
         assert data["name"] == "Minimal Task"
-        assert data["priority"] == 3  # Default from config
+        assert data["priority"] is None  # No default priority
 
     def test_create_task_validation_error_empty_name(self, client):
         """Test creating task with empty name returns 400 or 422."""

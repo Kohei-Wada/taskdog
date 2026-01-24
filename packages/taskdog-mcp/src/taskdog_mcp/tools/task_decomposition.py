@@ -32,7 +32,7 @@ def _create_single_subtask(
     client: TaskdogApiClient,
     subtask_data: dict[str, Any],
     subtask_tags: list[str],
-    subtask_priority: int,
+    subtask_priority: int | None,
 ) -> dict[str, Any]:
     """Create a single subtask and return its info."""
     result = client.create_task(
