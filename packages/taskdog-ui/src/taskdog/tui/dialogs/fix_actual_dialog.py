@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from textual.app import ComposeResult
 from textual.containers import Container, Vertical
@@ -10,14 +10,17 @@ from textual.validation import Number
 from textual.widgets import Input, Label, Static
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
-from taskdog.tui.constants.ui_settings import (
-    DEFAULT_PLANNED_END_TIME,
-    DEFAULT_PLANNED_START_TIME,
-)
 from taskdog.tui.dialogs.form_dialog import FormDialogBase
 from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog_core.application.dto.task_dto import TaskDetailDto
+from taskdog_core.shared.constants.config_defaults import (
+    DEFAULT_PLANNED_END_TIME,
+    DEFAULT_PLANNED_START_TIME,
+)
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
+
+if TYPE_CHECKING:
+    from taskdog.infrastructure.cli_config_manager import InputDefaultsConfig
 
 
 @dataclass
@@ -63,6 +66,7 @@ class FixActualDialog(FormDialogBase[FixActualFormData | None]):
     def __init__(
         self,
         task: TaskDetailDto,
+        input_defaults: "InputDefaultsConfig | None" = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -70,12 +74,26 @@ class FixActualDialog(FormDialogBase[FixActualFormData | None]):
 
         Args:
             task: Task DTO to edit actual times for
+            input_defaults: UI input completion defaults (uses hardcoded defaults if None)
         """
         super().__init__(*args, **kwargs)
         self.task_dto = task
+        self._input_defaults = input_defaults
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""
+        # Use config values or fall back to hardcoded defaults
+        planned_start_time = (
+            self._input_defaults.planned_start_time
+            if self._input_defaults
+            else DEFAULT_PLANNED_START_TIME
+        )
+        planned_end_time = (
+            self._input_defaults.planned_end_time
+            if self._input_defaults
+            else DEFAULT_PLANNED_END_TIME
+        )
+
         with Container(
             id="fix-actual-dialog", classes="dialog-base dialog-standard"
         ) as container:
@@ -105,9 +123,7 @@ class FixActualDialog(FormDialogBase[FixActualFormData | None]):
                     if self.task_dto.actual_start
                     else "",
                     valid_empty=True,
-                    validators=[
-                        DateTimeValidator("actual start", DEFAULT_PLANNED_START_TIME)
-                    ],
+                    validators=[DateTimeValidator("actual start", planned_start_time)],
                 )
 
                 # Actual End field
@@ -121,9 +137,7 @@ class FixActualDialog(FormDialogBase[FixActualFormData | None]):
                     if self.task_dto.actual_end
                     else "",
                     valid_empty=True,
-                    validators=[
-                        DateTimeValidator("actual end", DEFAULT_PLANNED_END_TIME)
-                    ],
+                    validators=[DateTimeValidator("actual end", planned_end_time)],
                 )
 
                 # Actual Duration field

@@ -16,21 +16,13 @@ class TestConfigManager:
     """Test cases for ConfigManager class."""
 
     @pytest.mark.parametrize(
-        "toml_content,expected_planned_start_time",
+        "toml_content,expected_work_hours_start",
         [
             (None, time(9, 30)),
             (
                 """
 [time]
-default_planned_start_time = "10:00"
-""",
-                time(10, 0),
-            ),
-            # Backward compatibility: old key name
-            (
-                """
-[time]
-default_start_time = "10:00"
+work_hours_start = "10:00"
 """,
                 time(10, 0),
             ),
@@ -44,8 +36,7 @@ default_start_time = "10:00"
         ],
         ids=[
             "nonexistent_file",
-            "new_key",
-            "old_key_backward_compat",
+            "with_work_hours",
             "empty_sections",
             "invalid_toml",
         ],
@@ -53,7 +44,7 @@ default_start_time = "10:00"
     def test_config_loading_scenarios(
         self,
         toml_content,
-        expected_planned_start_time,
+        expected_work_hours_start,
     ):
         """Test various config loading scenarios with different TOML content."""
         if toml_content is None:
@@ -75,7 +66,7 @@ default_start_time = "10:00"
                 config_path.unlink()
 
         # Verify expected values
-        assert config.time.default_planned_start_time == expected_planned_start_time
+        assert config.time.work_hours_start == expected_work_hours_start
 
     def test_config_dataclasses_are_frozen(self):
         """Test that config dataclasses are immutable."""
@@ -83,7 +74,7 @@ default_start_time = "10:00"
 
         # All config objects should be frozen (immutable)
         with pytest.raises((FrozenInstanceError, AttributeError)):
-            config.time.default_planned_start_time = time(10, 0)
+            config.time.work_hours_start = time(10, 0)
 
 
 class TestParseTimeValue:
@@ -197,41 +188,16 @@ class TestParseTimeValue:
         assert result == default
 
 
-class TestConfigManagerTimeFormat:
-    """Test cases for time format support in ConfigManager."""
+class TestWorkHoursConfig:
+    """Test cases for work hours configuration."""
 
-    @pytest.mark.parametrize(
-        "toml_content,expected_hour,expected_minute",
-        [
-            (
-                """
+    def test_work_hours_from_toml(self):
+        """Test loading work hours from TOML."""
+        toml_content = """
 [time]
-default_planned_start_time = "09:30"
-""",
-                9,
-                30,
-            ),
-            (
-                """
-[time]
-default_planned_start_time = "10:45"
-""",
-                10,
-                45,
-            ),
-            (
-                """
-[time]
-default_planned_start_time = "11:00"
-""",
-                11,
-                0,
-            ),
-        ],
-        ids=["new_format", "new_format_other", "full_hour"],
-    )
-    def test_time_config_loading(self, toml_content, expected_hour, expected_minute):
-        """Test loading time config in new format."""
+work_hours_start = "08:00"
+work_hours_end = "17:00"
+"""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
             f.write(toml_content)
             config_path = Path(f.name)
@@ -241,44 +207,38 @@ default_planned_start_time = "11:00"
         finally:
             config_path.unlink()
 
-        assert config.time.default_planned_start_time.hour == expected_hour
-        assert config.time.default_planned_start_time.minute == expected_minute
+        assert config.time.work_hours_start == time(8, 0)
+        assert config.time.work_hours_end == time(17, 0)
 
-    def test_env_var_time_format(self):
-        """Test environment variable with time format."""
+    def test_work_hours_defaults(self):
+        """Test that work hours use defaults when not specified."""
+        config = ConfigManager.load(Path("/nonexistent/config.toml"))
+
+        assert config.time.work_hours_start == time(9, 30)
+        assert config.time.work_hours_end == time(18, 30)
+
+    def test_work_hours_env_var_override(self):
+        """Test that environment variables override work hours."""
         env_vars = {
-            "TASKDOG_TIME_DEFAULT_PLANNED_START_TIME": "10:30",
+            "TASKDOG_TIME_WORK_HOURS_START": "08:00",
+            "TASKDOG_TIME_WORK_HOURS_END": "17:00",
         }
 
         with patch.dict(os.environ, env_vars, clear=False):
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
-        assert config.time.default_planned_start_time == time(10, 30)
+        assert config.time.work_hours_start == time(8, 0)
+        assert config.time.work_hours_end == time(17, 0)
 
-
-class TestConfigManagerEnvVars:
-    """Test cases for environment variable support in ConfigManager."""
-
-    def test_env_vars_override_defaults(self):
-        """Test that environment variables override default values."""
-        env_vars = {
-            "TASKDOG_TIME_DEFAULT_PLANNED_START_TIME": "10:00",
-        }
-
-        with patch.dict(os.environ, env_vars, clear=False):
-            config = ConfigManager.load(Path("/nonexistent/config.toml"))
-
-        assert config.time.default_planned_start_time == time(10, 0)
-
-    def test_env_vars_override_toml(self):
-        """Test that environment variables take precedence over TOML values."""
+    def test_work_hours_env_var_override_toml(self):
+        """Test that env vars take precedence over TOML for work hours."""
         toml_content = """
 [time]
-default_planned_start_time = "10:00"
-default_deadline_time = "17:00"
+work_hours_start = "10:00"
+work_hours_end = "19:00"
 """
         env_vars = {
-            "TASKDOG_TIME_DEFAULT_PLANNED_START_TIME": "08:30",
+            "TASKDOG_TIME_WORK_HOURS_START": "08:00",
         }
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
@@ -289,30 +249,20 @@ default_deadline_time = "17:00"
             with patch.dict(os.environ, env_vars, clear=False):
                 config = ConfigManager.load(config_path)
 
-            # Environment variables should override TOML
-            assert config.time.default_planned_start_time == time(8, 30)
+            # Environment variable should override TOML
+            assert config.time.work_hours_start == time(8, 0)
             # TOML value should be used when no env var is set
-            assert config.time.default_deadline_time == time(17, 0)
+            assert config.time.work_hours_end == time(19, 0)
         finally:
             config_path.unlink()
+
+
+class TestConfigManagerEnvVars:
+    """Test cases for environment variable support in ConfigManager."""
 
     @pytest.mark.parametrize(
         "env_key,env_value,section,field,expected",
         [
-            (
-                "TASKDOG_TIME_DEFAULT_PLANNED_START_TIME",
-                "10:00",
-                "time",
-                "default_planned_start_time",
-                time(10, 0),
-            ),
-            (
-                "TASKDOG_TIME_DEFAULT_DEADLINE_TIME",
-                "20:00",
-                "time",
-                "default_deadline_time",
-                time(20, 0),
-            ),
             (
                 "TASKDOG_TIME_WORK_HOURS_START",
                 "08:00",
@@ -338,8 +288,6 @@ default_deadline_time = "17:00"
             ),
         ],
         ids=[
-            "planned_start_time",
-            "deadline_time",
             "work_hours_start",
             "work_hours_end",
             "country",
@@ -369,8 +317,6 @@ default_deadline_time = "17:00"
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
         # Should use defaults
-        assert config.time.default_planned_start_time == time(9, 30)
-        assert config.time.default_deadline_time == time(18, 30)
         assert config.time.work_hours_start == time(9, 30)
         assert config.time.work_hours_end == time(18, 30)
 
@@ -378,21 +324,21 @@ default_deadline_time = "17:00"
         "env_key,invalid_value,section,field,expected_default",
         [
             (
-                "TASKDOG_TIME_DEFAULT_PLANNED_START_TIME",
+                "TASKDOG_TIME_WORK_HOURS_START",
                 "abc:def",
                 "time",
-                "default_planned_start_time",
+                "work_hours_start",
                 time(9, 30),
             ),
             (
-                "TASKDOG_TIME_DEFAULT_DEADLINE_TIME",
+                "TASKDOG_TIME_WORK_HOURS_END",
                 "xyz",
                 "time",
-                "default_deadline_time",
+                "work_hours_end",
                 time(18, 30),
             ),
         ],
-        ids=["planned_start_time", "deadline_time"],
+        ids=["work_hours_start", "work_hours_end"],
     )
     def test_invalid_env_var_falls_back_to_default(
         self, env_key, invalid_value, section, field, expected_default
@@ -404,33 +350,3 @@ default_deadline_time = "17:00"
         section_obj = getattr(config, section)
         actual = getattr(section_obj, field)
         assert actual == expected_default
-
-
-class TestWorkHoursConfig:
-    """Test cases for work hours configuration."""
-
-    def test_work_hours_from_toml(self):
-        """Test loading work hours from TOML."""
-        toml_content = """
-[time]
-work_hours_start = "08:00"
-work_hours_end = "17:00"
-"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
-            f.write(toml_content)
-            config_path = Path(f.name)
-
-        try:
-            config = ConfigManager.load(config_path)
-        finally:
-            config_path.unlink()
-
-        assert config.time.work_hours_start == time(8, 0)
-        assert config.time.work_hours_end == time(17, 0)
-
-    def test_work_hours_defaults(self):
-        """Test that work hours use defaults when not specified."""
-        config = ConfigManager.load(Path("/nonexistent/config.toml"))
-
-        assert config.time.work_hours_start == time(9, 30)
-        assert config.time.work_hours_end == time(18, 30)

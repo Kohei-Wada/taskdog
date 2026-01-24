@@ -39,7 +39,10 @@ class EditCommand(TUICommandBase):
 
         # Show task form dialog in edit mode
         # Wrap callback with error handling from base class
-        dialog = TaskFormDialog(task=original_task)
+        input_defaults = (
+            self.context.config.input_defaults if self.context.config else None
+        )
+        dialog = TaskFormDialog(task=original_task, input_defaults=input_defaults)
         self.app.push_screen(dialog, self.handle_error(handle_task_data))
 
     def _detect_changes(
