@@ -23,6 +23,8 @@ class OptimizationStrategy(ABC):
     - Implement optimize_tasks() method
 
     Example:
+        from datetime import time
+
         class MyStrategy(OptimizationStrategy):
             DISPLAY_NAME = "My Algorithm"
             DESCRIPTION = "Does something cool"
