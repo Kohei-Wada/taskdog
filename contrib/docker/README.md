@@ -139,9 +139,29 @@ docker run --rm -v taskdog-data:/data -v $(pwd):/backup alpine \
   sh -c "cd /data && tar xzf /backup/taskdog-backup.tar.gz"
 ```
 
-## Connecting CLI/TUI
+## Using CLI in Container
 
-The CLI and TUI are installed on your host machine and connect to the containerized server:
+The container includes the CLI, so you can try taskdog without installing anything on your host:
+
+```bash
+# View tasks
+docker exec -it taskdog-server taskdog table
+
+# Add a task
+docker exec -it taskdog-server taskdog add "Test task"
+
+# View Gantt chart
+docker exec -it taskdog-server taskdog gantt
+
+# Get help
+docker exec -it taskdog-server taskdog --help
+```
+
+**Note:** TUI mode requires a proper terminal and is better used on the host machine.
+
+## Connecting CLI/TUI from Host
+
+For a better experience, install the CLI/TUI on your host machine and connect to the containerized server:
 
 ```bash
 # Install CLI/TUI on host (not in container)
@@ -195,7 +215,7 @@ docker logs -f taskdog-server
 ## Limitations
 
 - **WebSocket:** The container runs with `--workers 1` (required for WebSocket real-time sync)
-- **CLI/TUI:** Must be installed on host, not containerized (interactive terminal required)
+- **TUI:** The TUI requires a proper terminal and is better used on the host machine (CLI works in container via `docker exec`)
 
 ## Advanced: taskdog-stack
 
