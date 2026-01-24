@@ -119,9 +119,6 @@ enabled = false
 Core configuration: `~/.config/taskdog/core.toml`
 
 ```toml
-[optimization]
-max_hours_per_day = 6.0
-
 [region]
 country = "JP"
 ```

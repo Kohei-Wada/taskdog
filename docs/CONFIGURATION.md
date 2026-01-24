@@ -11,8 +11,6 @@ Complete guide to configuring Taskdog.
 - [Configuration Sections](#configuration-sections)
   - [API Settings](#api-settings-required)
   - [UI Settings](#ui-settings)
-  - [Optimization Settings](#optimization-settings)
-  - [Task Settings](#task-settings)
   - [Time Settings](#time-settings)
   - [Region Settings](#region-settings)
   - [Storage Settings](#storage-settings)
@@ -122,39 +120,6 @@ theme = "textual-dark"        # TUI theme (default: "textual-dark")
   - `gruvbox` - Gruvbox color scheme
   - `solarized-light` - Solarized Light color scheme
 
-### Optimization Settings
-
-The `[optimization]` section configures schedule optimization behavior.
-
-```toml
-[optimization]
-max_hours_per_day = 6.0        # Default work hours per day (default: 6.0)
-```
-
-**Fields:**
-
-- `max_hours_per_day` (float) - Maximum hours to schedule per day. Used by optimizer to distribute workload.
-
-**Algorithm Selection:**
-
-The optimization algorithm is specified via CLI `--algorithm` flag (default: "greedy"). Available options:
-
-- `greedy` - Schedule highest priority tasks first
-- `balanced` - Distribute workload evenly across days
-- `backward` - Schedule from deadline backwards
-- `priority_first` - Strict priority ordering
-- `earliest_deadline` - Schedule tasks with earliest deadlines first
-- `round_robin` - Rotate through tasks to minimize context switching
-- `dependency_aware` - Prioritize tasks that unblock others
-- `genetic` - Use genetic algorithm for optimization
-- `monte_carlo` - Use Monte Carlo simulation
-
-**CLI Override:**
-
-```bash
-taskdog optimize --max-hours-per-day 8 --algorithm balanced
-```
-
 ### Time Settings
 
 The `[time]` section configures business hours.
@@ -246,8 +211,6 @@ These variables override core configuration (core.toml):
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY` | float | `6.0` | Maximum work hours per day |
-| `TASKDOG_OPTIMIZATION_DEFAULT_ALGORITHM` | string | `"greedy"` | Default scheduling algorithm |
 | `TASKDOG_TIME_DEFAULT_START_HOUR` | int | `9` | Business day start hour |
 | `TASKDOG_TIME_DEFAULT_END_HOUR` | int | `18` | Business day end hour |
 | `TASKDOG_REGION_COUNTRY` | string | `None` | ISO 3166-1 alpha-2 country code |
@@ -258,7 +221,6 @@ These variables override core configuration (core.toml):
 
 ```bash
 # Production settings
-export TASKDOG_OPTIMIZATION_MAX_HOURS_PER_DAY=8.0
 export TASKDOG_REGION_COUNTRY=US
 ```
 
@@ -333,10 +295,6 @@ Complete configuration with all options:
 # UI Settings
 [ui]
 theme = "tokyo-night"
-
-# Optimization Settings
-[optimization]
-max_hours_per_day = 8.0
 
 # Time Settings
 [time]
@@ -421,12 +379,9 @@ enabled = false
 
 ### Work Schedule Configuration
 
-Configure for 8-hour work days with strict 9-18 schedule:
+Configure for strict 9-18 schedule with US holidays:
 
 ```toml
-[optimization]
-max_hours_per_day = 8.0
-
 [time]
 default_start_hour = 9
 default_end_hour = 18
@@ -435,7 +390,11 @@ default_end_hour = 18
 country = "US"  # Avoid US holidays
 ```
 
-Use `--algorithm balanced` when running the optimize command to distribute workload evenly.
+Use `--max-hours-per-day` and `--algorithm` options when running the optimize command:
+
+```bash
+taskdog optimize --max-hours-per-day 8 --algorithm balanced
+```
 
 ### Custom Theme
 

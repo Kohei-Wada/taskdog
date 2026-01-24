@@ -227,9 +227,6 @@ theme = "tokyo-night"
 **Core config**: `~/.config/taskdog/core.toml`
 
 ```toml
-[optimization]
-max_hours_per_day = 8.0
-
 [region]
 country = "JP"
 ```
