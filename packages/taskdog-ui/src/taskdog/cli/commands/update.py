@@ -6,7 +6,6 @@ import click
 
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
-from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 from taskdog_core.domain.entities.task import TaskStatus
 
 
@@ -45,21 +44,21 @@ def _validate_name(
 )
 @click.option(
     "--planned-start",
-    type=DateTimeWithDefault("start"),
+    type=click.DateTime(formats=["%Y-%m-%d %H:%M:%S"]),
     default=None,
-    help="Planned start (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 09:00:00)",
+    help="Planned start (format: YYYY-MM-DD HH:MM:SS)",
 )
 @click.option(
     "--planned-end",
-    type=DateTimeWithDefault(),
+    type=click.DateTime(formats=["%Y-%m-%d %H:%M:%S"]),
     default=None,
-    help="Planned end (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 18:00:00)",
+    help="Planned end (format: YYYY-MM-DD HH:MM:SS)",
 )
 @click.option(
     "--deadline",
-    type=DateTimeWithDefault(),
+    type=click.DateTime(formats=["%Y-%m-%d %H:%M:%S"]),
     default=None,
-    help="Deadline (YYYY-MM-DD, MM-DD, or MM/DD; defaults to 18:00:00)",
+    help="Deadline (format: YYYY-MM-DD HH:MM:SS)",
 )
 @click.option(
     "--estimated-duration",

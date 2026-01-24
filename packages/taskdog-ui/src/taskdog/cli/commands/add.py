@@ -6,7 +6,6 @@ import click
 
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
-from taskdog.shared.click_types.datetime_with_default import DateTimeWithDefault
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
@@ -42,9 +41,9 @@ from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 @click.option(
     "--deadline",
     "-D",
-    type=DateTimeWithDefault(),
+    type=click.DateTime(formats=["%Y-%m-%d %H:%M:%S"]),
     default=None,
-    help="Task deadline (formats: YYYY-MM-DD, MM-DD, YYYY-MM-DD HH:MM:SS)",
+    help="Task deadline (format: YYYY-MM-DD HH:MM:SS)",
 )
 @click.option(
     "--estimate",
@@ -56,16 +55,16 @@ from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 @click.option(
     "--start",
     "-s",
-    type=DateTimeWithDefault(default_hour="start"),
+    type=click.DateTime(formats=["%Y-%m-%d %H:%M:%S"]),
     default=None,
-    help="Planned start time (formats: YYYY-MM-DD, MM-DD, YYYY-MM-DD HH:MM:SS)",
+    help="Planned start time (format: YYYY-MM-DD HH:MM:SS)",
 )
 @click.option(
     "--end",
     "-E",
-    type=DateTimeWithDefault(),
+    type=click.DateTime(formats=["%Y-%m-%d %H:%M:%S"]),
     default=None,
-    help="Planned end time (formats: YYYY-MM-DD, MM-DD, YYYY-MM-DD HH:MM:SS)",
+    help="Planned end time (format: YYYY-MM-DD HH:MM:SS)",
 )
 @click.pass_context
 @handle_task_errors("adding task")
