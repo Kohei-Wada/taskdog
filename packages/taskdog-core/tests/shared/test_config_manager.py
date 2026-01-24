@@ -16,23 +16,23 @@ class TestConfigManager:
     """Test cases for ConfigManager class."""
 
     @pytest.mark.parametrize(
-        "toml_content,expected_start_hour",
+        "toml_content,expected_start_time",
         [
-            (None, 9),
+            (None, time(9, 0)),
             (
                 """
 [time]
-default_start_hour = 10
+default_start_time = "10:00"
 """,
-                10,
+                time(10, 0),
             ),
             (
                 """
 [time]
 """,
-                9,
+                time(9, 0),
             ),
-            ("this is not valid TOML {{{", 9),
+            ("this is not valid TOML {{{", time(9, 0)),
         ],
         ids=[
             "nonexistent_file",
@@ -44,7 +44,7 @@ default_start_hour = 10
     def test_config_loading_scenarios(
         self,
         toml_content,
-        expected_start_hour,
+        expected_start_time,
     ):
         """Test various config loading scenarios with different TOML content."""
         if toml_content is None:
@@ -66,7 +66,7 @@ default_start_hour = 10
                 config_path.unlink()
 
         # Verify expected values
-        assert config.time.default_start_hour == expected_start_hour
+        assert config.time.default_start_time == expected_start_time
 
     def test_config_dataclasses_are_frozen(self):
         """Test that config dataclasses are immutable."""
@@ -213,13 +213,13 @@ default_start_time = "10:45"
             (
                 """
 [time]
-default_start_hour = 11
+default_start_time = "11:00"
 """,
                 11,
                 0,
             ),
         ],
-        ids=["new_format", "new_format_other", "backward_compat"],
+        ids=["new_format", "new_format_other", "full_hour"],
     )
     def test_time_config_loading(self, toml_content, expected_hour, expected_minute):
         """Test loading time config in new format."""
@@ -245,31 +245,6 @@ default_start_hour = 11
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
         assert config.time.default_start_time == time(10, 30)
-        # Backward compatibility property should return hour only
-        assert config.time.default_start_hour == 10
-
-    def test_backward_compatibility_properties(self):
-        """Test that backward compatibility properties work."""
-        toml_content = """
-[time]
-default_start_time = "09:30"
-default_end_time = "18:45"
-"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
-            f.write(toml_content)
-            config_path = Path(f.name)
-
-        try:
-            config = ConfigManager.load(config_path)
-        finally:
-            config_path.unlink()
-
-        # New time properties
-        assert config.time.default_start_time == time(9, 30)
-        assert config.time.default_end_time == time(18, 45)
-        # Backward compatibility properties (hour only)
-        assert config.time.default_start_hour == 9
-        assert config.time.default_end_hour == 18
 
 
 class TestConfigManagerEnvVars:
@@ -284,7 +259,6 @@ class TestConfigManagerEnvVars:
         with patch.dict(os.environ, env_vars, clear=False):
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
-        assert config.time.default_start_hour == 10
         assert config.time.default_start_time == time(10, 0)
 
     def test_env_vars_override_toml(self):
@@ -308,10 +282,8 @@ default_end_time = "17:00"
 
             # Environment variables should override TOML
             assert config.time.default_start_time == time(8, 30)
-            assert config.time.default_start_hour == 8
             # TOML value should be used when no env var is set
             assert config.time.default_end_time == time(17, 0)
-            assert config.time.default_end_hour == 17
         finally:
             config_path.unlink()
 
@@ -322,10 +294,16 @@ default_end_time = "17:00"
                 "TASKDOG_TIME_DEFAULT_START_TIME",
                 "10:00",
                 "time",
-                "default_start_hour",
-                10,
+                "default_start_time",
+                time(10, 0),
             ),
-            ("TASKDOG_TIME_DEFAULT_END_TIME", "20:00", "time", "default_end_hour", 20),
+            (
+                "TASKDOG_TIME_DEFAULT_END_TIME",
+                "20:00",
+                "time",
+                "default_end_time",
+                time(20, 0),
+            ),
             ("TASKDOG_REGION_COUNTRY", "US", "region", "country", "US"),
             ("TASKDOG_STORAGE_BACKEND", "postgres", "storage", "backend", "postgres"),
             (
@@ -366,8 +344,6 @@ default_end_time = "17:00"
             config = ConfigManager.load(Path("/nonexistent/config.toml"))
 
         # Should use defaults
-        assert config.time.default_start_hour == 9
-        assert config.time.default_end_hour == 18
         assert config.time.default_start_time == time(9, 0)
         assert config.time.default_end_time == time(18, 0)
 
@@ -378,10 +354,16 @@ default_end_time = "17:00"
                 "TASKDOG_TIME_DEFAULT_START_TIME",
                 "abc:def",
                 "time",
-                "default_start_hour",
-                9,
+                "default_start_time",
+                time(9, 0),
             ),
-            ("TASKDOG_TIME_DEFAULT_END_TIME", "xyz", "time", "default_end_hour", 18),
+            (
+                "TASKDOG_TIME_DEFAULT_END_TIME",
+                "xyz",
+                "time",
+                "default_end_time",
+                time(18, 0),
+            ),
         ],
         ids=["start_time", "end_time"],
     )

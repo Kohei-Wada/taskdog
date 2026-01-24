@@ -40,9 +40,6 @@ def create_mock_config(
     config.optimization.max_hours_per_day = max_hours_per_day
     config.time.default_start_time = default_start_time
     config.time.default_end_time = default_end_time
-    # Backward compatibility properties
-    config.time.default_start_hour = default_start_time.hour
-    config.time.default_end_hour = default_end_time.hour
     config.region.country = country
     return config
 

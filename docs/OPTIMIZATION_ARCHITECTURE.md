@@ -79,7 +79,7 @@ MonteCarloOptimizationStrategy   # Random sampling
 Strategies can be selected at runtime via `StrategyFactory`:
 
 ```python
-strategy = StrategyFactory.create("greedy", default_start_hour=9, default_end_hour=18)
+strategy = StrategyFactory.create("greedy", default_start_time=time(9, 0), default_end_time=time(18, 0))
 ```
 
 ### Context Object Pattern
@@ -181,8 +181,8 @@ Creates strategy instances by name:
 ```python
 strategy = StrategyFactory.create(
     algorithm_name="greedy",
-    default_start_hour=9,
-    default_end_hour=18,
+    default_start_time=time(9, 0),
+    default_end_time=time(18, 0),
 )
 ```
 
@@ -525,14 +525,14 @@ def _set_planned_times(
     schedule_end: datetime,
     task_daily_allocations: dict[date, float],
 ) -> None:
-    # Set start time to default_start_hour (e.g., 9:00 AM)
+    # Set start time to default_start_time (e.g., 9:00 AM)
     task.planned_start = schedule_start.replace(
-        hour=self.default_start_hour, minute=0, second=0
+        hour=self.default_start_time.hour, minute=self.default_start_time.minute, second=0
     )
 
-    # Set end time to default_end_hour (e.g., 6:00 PM)
+    # Set end time to default_end_time (e.g., 6:00 PM)
     task.planned_end = schedule_end.replace(
-        hour=self.default_end_hour, minute=0, second=0
+        hour=self.default_end_time.hour, minute=self.default_end_time.minute, second=0
     )
 
     # Set daily allocations

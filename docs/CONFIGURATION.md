@@ -135,8 +135,6 @@ default_end_time = "18:00"     # Business day end time (default: "18:00")
 - `default_start_time` (string) - Business day start time in "HH:MM" format. Used when scheduling tasks without specific times.
 - `default_end_time` (string) - Business day end time in "HH:MM" format. Used for workload calculations.
 
-**Backward Compatibility:** Integer values (e.g., `default_start_hour = 9`) are still supported but deprecated. The new string format supports minute-level precision (e.g., "09:30").
-
 **Example:** With `default_start_time = "09:30"`, scheduling a task for "2025-10-22" will use "2025-10-22 09:30:00".
 
 ### Region Settings
@@ -471,7 +469,7 @@ backend = "sqlite"
 4. **Start with defaults** - Only configure what you need to change
 5. **Document custom settings** - Add comments explaining why you changed defaults
 6. **Test configuration changes** - Run `taskdog table` after config changes to verify
-7. **Use consistent time settings** - Match `default_start_hour` with your actual work schedule
+7. **Use consistent time settings** - Match `default_start_time` with your actual work schedule
 8. **Set region for accurate holidays** - Helps optimizer avoid scheduling on holidays
 
 ## See Also
