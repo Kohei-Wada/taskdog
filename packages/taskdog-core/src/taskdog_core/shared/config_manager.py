@@ -102,17 +102,6 @@ class TimeConfig:
     default_start_time: time = DEFAULT_START_TIME
     default_end_time: time = DEFAULT_END_TIME
 
-    # Backward compatibility properties (deprecated)
-    @property
-    def default_start_hour(self) -> int:
-        """Deprecated: Use default_start_time instead."""
-        return self.default_start_time.hour
-
-    @property
-    def default_end_hour(self) -> int:
-        """Deprecated: Use default_end_time instead."""
-        return self.default_end_time.hour
-
 
 @dataclass(frozen=True)
 class RegionConfig:
