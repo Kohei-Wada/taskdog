@@ -17,6 +17,16 @@ from taskdog_core.shared.constants.config_defaults import (
 from taskdog_core.shared.xdg_utils import XDGDirectories
 
 
+def _is_valid_hour(hour: int) -> bool:
+    """Check if hour is in valid range (0-23)."""
+    return 0 <= hour <= 23
+
+
+def _is_valid_minute(minute: int) -> bool:
+    """Check if minute is in valid range (0-59)."""
+    return 0 <= minute <= 59
+
+
 def parse_time_value(value: int | str | None, default: time) -> time:
     """Parse time value with backward compatibility.
 
@@ -25,6 +35,8 @@ def parse_time_value(value: int | str | None, default: time) -> time:
     - str: "09:30" -> time(9, 30)
     - str: "9" -> time(9, 0)
     - None: returns default
+
+    Invalid values (out of range hours/minutes) return the default.
 
     Args:
         value: Time value in various formats
@@ -40,12 +52,16 @@ def parse_time_value(value: int | str | None, default: time) -> time:
         datetime.time(9, 30)
         >>> parse_time_value("9", time(9, 0))
         datetime.time(9, 0)
+        >>> parse_time_value(25, time(9, 0))  # Invalid hour
+        datetime.time(9, 0)
     """
     if value is None:
         return default
 
     if isinstance(value, int):
         # Backward compatibility: integer hours (e.g., 9 -> 09:00)
+        if not _is_valid_hour(value):
+            return default
         return time(value, 0)
 
     if isinstance(value, str):
@@ -56,13 +72,18 @@ def parse_time_value(value: int | str | None, default: time) -> time:
             try:
                 hour = int(parts[0])
                 minute = int(parts[1]) if len(parts) > 1 else 0
+                if not _is_valid_hour(hour) or not _is_valid_minute(minute):
+                    return default
                 return time(hour, minute)
             except (ValueError, IndexError):
                 return default
         else:
             # Single integer as string (e.g., "9")
             try:
-                return time(int(value), 0)
+                hour = int(value)
+                if not _is_valid_hour(hour):
+                    return default
+                return time(hour, 0)
             except ValueError:
                 return default
 

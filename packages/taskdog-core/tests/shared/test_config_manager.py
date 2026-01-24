@@ -142,6 +142,51 @@ class TestParseTimeValue:
         result = parse_time_value(value, default)
         assert result == default
 
+    @pytest.mark.parametrize(
+        "value",
+        [
+            24,  # hour out of range (max is 23)
+            25,
+            -1,  # negative hour
+            100,
+        ],
+        ids=["int_24", "int_25", "int_negative", "int_100"],
+    )
+    def test_parse_invalid_integer_hour_returns_default(self, value):
+        """Test that invalid integer hour values return the default."""
+        default = time(9, 0)
+        result = parse_time_value(value, default)
+        assert result == default
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "24:00",  # hour out of range
+            "25:30",
+            "-1:00",  # negative hour
+            "10:60",  # minute out of range (max is 59)
+            "10:99",
+            "10:-1",  # negative minute
+            "24",  # string integer out of range
+            "100",
+        ],
+        ids=[
+            "str_hour_24",
+            "str_hour_25",
+            "str_negative_hour",
+            "str_minute_60",
+            "str_minute_99",
+            "str_negative_minute",
+            "str_int_24",
+            "str_int_100",
+        ],
+    )
+    def test_parse_invalid_string_hour_minute_returns_default(self, value):
+        """Test that invalid string hour/minute values return the default."""
+        default = time(9, 0)
+        result = parse_time_value(value, default)
+        assert result == default
+
 
 class TestConfigManagerTimeFormat:
     """Test cases for new time format support in ConfigManager."""
