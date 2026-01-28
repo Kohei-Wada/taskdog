@@ -124,7 +124,7 @@ class TestRichTableRenderer:
         assert result == expected
 
     @pytest.mark.parametrize(
-        "is_finished,expected_text,has_strikethrough",
+        "is_finished,expected_text,has_strikethrough_dim",
         [
             (False, "Test Task 1", False),
             (True, "Completed Task", True),
@@ -132,17 +132,17 @@ class TestRichTableRenderer:
         ids=["unfinished_task", "finished_task"],
     )
     def test_get_field_value_name_field(
-        self, is_finished, expected_text, has_strikethrough
+        self, is_finished, expected_text, has_strikethrough_dim
     ):
-        """Test _get_field_value returns name with optional strikethrough for finished tasks."""
+        """Test _get_field_value returns name with optional strikethrough+dim for finished tasks."""
         task = self.task2 if is_finished else self.task1
         result = self.renderer._get_field_value(task, "name")
 
-        if has_strikethrough:
-            assert result == f"[strike]{expected_text}[/strike]"
+        if has_strikethrough_dim:
+            assert result == f"[strike dim]{expected_text}[/strike dim]"
         else:
             assert result == expected_text
-            assert "[strike]" not in result
+            assert "[strike dim]" not in result
 
     @pytest.mark.parametrize(
         "has_notes,expected",

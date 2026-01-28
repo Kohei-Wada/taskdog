@@ -246,7 +246,9 @@ class RichTableRenderer(RichRendererBase):
         # Field value extractors mapping
         field_extractors: dict[str, Callable[[TaskRowViewModel], str]] = {
             "id": lambda t: str(t.id),
-            "name": lambda t: f"[strike]{t.name}[/strike]" if t.is_finished else t.name,
+            "name": lambda t: f"[strike dim]{t.name}[/strike dim]"
+            if t.is_finished
+            else t.name,
             "note": lambda t: "📝" if t.has_notes else "",
             "priority": lambda t: str(t.priority),
             "status": lambda t: self._format_status(t),

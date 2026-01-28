@@ -52,11 +52,11 @@ class TaskTableRowBuilder:
         return [
             # ID column
             ColumnConfig(formatter=lambda vm: str(vm.id)),
-            # Name column (left-aligned, strikethrough for finished)
+            # Name column (left-aligned, strikethrough + dim for finished)
             ColumnConfig(
                 formatter=lambda vm: self._format_name(vm.name),
                 justification="left",
-                style_func=lambda vm: "strike" if vm.is_finished else None,
+                style_func=lambda vm: "strike dim" if vm.is_finished else None,
             ),
             # Status column (color-coded)
             ColumnConfig(
