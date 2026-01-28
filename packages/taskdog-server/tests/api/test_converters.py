@@ -103,6 +103,7 @@ class TestConvertToTaskListResponse:
         # Arrange
         dto = TaskListOutput(tasks=[], total_count=0, filtered_count=0, gantt_data=None)
         notes_repo = Mock()
+        notes_repo.get_task_ids_with_notes = Mock(return_value=set())
 
         # Act
         response = convert_to_task_list_response(dto, notes_repo)
@@ -129,7 +130,7 @@ class TestConvertToTaskListResponse:
             tasks=[task], total_count=10, filtered_count=1, gantt_data=None
         )
         notes_repo = Mock()
-        notes_repo.has_notes = Mock(return_value=False)
+        notes_repo.get_task_ids_with_notes = Mock(return_value=set())
 
         # Act
         response = convert_to_task_list_response(dto, notes_repo)
@@ -142,7 +143,7 @@ class TestConvertToTaskListResponse:
         assert response.total_count == 10
         assert response.filtered_count == 1
         assert response.gantt is None
-        notes_repo.has_notes.assert_called_once_with(1)
+        notes_repo.get_task_ids_with_notes.assert_called_once_with([1])
 
     def test_convert_task_list_with_notes(self):
         """Test converting task list with notes."""
@@ -160,7 +161,7 @@ class TestConvertToTaskListResponse:
             tasks=[task], total_count=1, filtered_count=1, gantt_data=None
         )
         notes_repo = Mock()
-        notes_repo.has_notes = Mock(return_value=True)
+        notes_repo.get_task_ids_with_notes = Mock(return_value={1})
 
         # Act
         response = convert_to_task_list_response(dto, notes_repo)
@@ -205,7 +206,7 @@ class TestConvertToTaskListResponse:
             tasks=[task], total_count=1, filtered_count=1, gantt_data=gantt_output
         )
         notes_repo = Mock()
-        notes_repo.has_notes = Mock(return_value=False)
+        notes_repo.get_task_ids_with_notes = Mock(return_value=set())
 
         # Act
         response = convert_to_task_list_response(dto, notes_repo)
@@ -249,7 +250,8 @@ class TestConvertToTaskListResponse:
             tasks=[task1, task2], total_count=2, filtered_count=2, gantt_data=None
         )
         notes_repo = Mock()
-        notes_repo.has_notes = Mock(side_effect=[True, False])
+        # Task 1 has notes, task 2 does not
+        notes_repo.get_task_ids_with_notes = Mock(return_value={1})
 
         # Act
         response = convert_to_task_list_response(dto, notes_repo)

@@ -23,8 +23,8 @@ from taskdog_core.infrastructure.holiday_checker import HolidayChecker
 from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (
     SqliteAuditLogRepository,
 )
-from taskdog_core.infrastructure.persistence.file_notes_repository import (
-    FileNotesRepository,
+from taskdog_core.infrastructure.persistence.database.sqlite_notes_repository import (
+    SqliteNotesRepository,
 )
 from taskdog_core.infrastructure.persistence.repository_factory import RepositoryFactory
 from taskdog_core.infrastructure.time_provider import SystemTimeProvider
@@ -54,14 +54,40 @@ def initialize_api_context(
     Returns:
         ApiContext: Initialized context with all controllers
     """
+    import logging
+
+    from taskdog_core.shared.xdg_utils import XDGDirectories
+
+    logger = logging.getLogger("taskdog_server.api.dependencies")
+
     # Load configuration if not provided
     if config is None:
         config = ConfigManager.load()
-    notes_repository = FileNotesRepository()
 
     # Initialize time provider if not provided
     if time_provider is None:
         time_provider = SystemTimeProvider()
+
+    # Resolve database URL
+    if config.storage.database_url:
+        db_url = config.storage.database_url
+    else:
+        data_dir = XDGDirectories.get_data_home()
+        db_file = data_dir / "tasks.db"
+        db_url = f"sqlite:///{db_file}"
+
+    # Initialize notes repository with database backend
+    notes_repository = SqliteNotesRepository(db_url, time_provider)
+
+    # Auto-migrate notes from filesystem to database (idempotent)
+    notes_dir = XDGDirectories.get_data_home(create=False) / "notes"
+    if notes_dir.exists():
+        result = notes_repository.migrate_from_files(notes_dir)
+        if result.migrated > 0:
+            logger.info(f"Migrated {result.migrated} notes from files to database")
+        if result.errors > 0:
+            for msg in result.error_messages:
+                logger.warning(f"Note migration error: {msg}")
 
     # Initialize HolidayChecker if country is configured
     holiday_checker = None
@@ -73,16 +99,7 @@ def initialize_api_context(
     repository = RepositoryFactory.create(config.storage)
 
     # Initialize audit log repository (shares the same database)
-    # Use the same URL resolution logic as RepositoryFactory
-    if config.storage.database_url:
-        audit_db_url = config.storage.database_url
-    else:
-        from taskdog_core.shared.xdg_utils import XDGDirectories
-
-        data_dir = XDGDirectories.get_data_home()
-        db_file = data_dir / "tasks.db"
-        audit_db_url = f"sqlite:///{db_file}"
-    audit_log_repository = SqliteAuditLogRepository(audit_db_url)
+    audit_log_repository = SqliteAuditLogRepository(db_url)
 
     # Initialize loggers for each controller
     query_logger = StandardLogger("taskdog_core.controllers.query_controller")

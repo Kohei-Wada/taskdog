@@ -43,6 +43,7 @@ class TestRunMigrations:
             assert "tags" in tables
             assert "task_tags" in tables
             assert "audit_logs" in tables
+            assert "notes" in tables
             assert "alembic_version" in tables
         finally:
             engine.dispose()
@@ -84,7 +85,7 @@ class TestRunMigrations:
             # Should now have alembic_version stamped
             inspector = inspect(engine)
             assert "alembic_version" in inspector.get_table_names()
-            assert get_current_revision(engine) == "003_make_priority_nullable"
+            assert get_current_revision(engine) == "004_add_notes_table"
         finally:
             engine.dispose()
 
@@ -98,7 +99,7 @@ class TestRunMigrations:
             run_migrations(engine)
 
             # Should still work and have correct revision
-            assert get_current_revision(engine) == "003_make_priority_nullable"
+            assert get_current_revision(engine) == "004_add_notes_table"
         finally:
             engine.dispose()
 
@@ -208,6 +209,38 @@ class TestRunMigrations:
         finally:
             engine.dispose()
 
+    def test_creates_notes_table_with_correct_schema(self) -> None:
+        """Test that notes table has the correct columns."""
+        engine = create_engine("sqlite:///:memory:")
+        try:
+            run_migrations(engine)
+
+            inspector = inspect(engine)
+            columns = {col["name"] for col in inspector.get_columns("notes")}
+
+            expected_columns = {"task_id", "content", "created_at", "updated_at"}
+            assert columns == expected_columns
+        finally:
+            engine.dispose()
+
+    def test_notes_table_has_primary_key(self) -> None:
+        """Test that notes table primary key is properly set.
+
+        Note: SQLite automatically creates an index for primary keys,
+        so we don't create an explicit index.
+        """
+        engine = create_engine("sqlite:///:memory:")
+        try:
+            run_migrations(engine)
+
+            inspector = inspect(engine)
+            pk = inspector.get_pk_constraint("notes")
+
+            # Verify primary key is on task_id
+            assert pk["constrained_columns"] == ["task_id"]
+        finally:
+            engine.dispose()
+
 
 class TestGetCurrentRevision:
     """Tests for get_current_revision function."""
@@ -226,7 +259,7 @@ class TestGetCurrentRevision:
         try:
             run_migrations(engine)
 
-            assert get_current_revision(engine) == "003_make_priority_nullable"
+            assert get_current_revision(engine) == "004_add_notes_table"
         finally:
             engine.dispose()
 

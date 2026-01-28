@@ -30,6 +30,8 @@ def create_mock_config(
     max_hours_per_day: float = 8.0,
     default_start_time: time = time(9, 0),
     default_end_time: time = time(18, 0),
+    work_hours_start: time = time(9, 0),
+    work_hours_end: time = time(18, 0),
     country: str | None = None,
 ) -> MagicMock:
     """Create a mock configuration with customizable defaults.
@@ -40,6 +42,8 @@ def create_mock_config(
     config.optimization.max_hours_per_day = max_hours_per_day
     config.time.default_start_time = default_start_time
     config.time.default_end_time = default_end_time
+    config.time.work_hours_start = work_hours_start
+    config.time.work_hours_end = work_hours_end
     config.region.country = country
     return config
 
