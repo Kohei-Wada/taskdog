@@ -7,7 +7,7 @@ task list request.
 
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, Index, Integer, Text
+from sqlalchemy import ForeignKey, Integer, Text
 from sqlalchemy.orm import (  # type: ignore[attr-defined]
     Mapped,
     mapped_column,
@@ -43,13 +43,10 @@ class NoteModel(Base):
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     updated_at: Mapped[datetime] = mapped_column(nullable=False)
 
-    # Index on task_id for efficient lookups
-    # (Primary key automatically creates an index, but being explicit)
-    __table_args__ = (Index("idx_notes_task_id", "task_id"),)
+    # Note: Primary key automatically creates an index, no additional index needed
 
     def __repr__(self) -> str:
         """String representation for debugging."""
-        content_preview = (
-            self.content[:50] + "..." if len(self.content) > 50 else self.content
-        )
+        content = self.content or ""
+        content_preview = content[:50] + "..." if len(content) > 50 else content
         return f"<NoteModel(task_id={self.task_id}, content='{content_preview}')>"

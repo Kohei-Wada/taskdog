@@ -52,9 +52,7 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
     )
-
-    # Create index on task_id for efficient lookups
-    op.create_index("idx_notes_task_id", "notes", ["task_id"])
+    # Note: Primary key automatically creates an index, no additional index needed
 
 
 def downgrade() -> None:
@@ -64,5 +62,4 @@ def downgrade() -> None:
     Make sure to export notes to files before downgrading if you want to
     preserve them.
     """
-    op.drop_index("idx_notes_task_id", table_name="notes")
     op.drop_table("notes")

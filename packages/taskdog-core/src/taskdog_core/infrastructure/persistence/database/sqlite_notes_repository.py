@@ -172,7 +172,7 @@ class SqliteNotesRepository(NotesRepository):
 
         with self.Session() as session:
             result = session.execute(
-                select(NoteModel.task_id).where(NoteModel.task_id.in_(task_ids))
+                select(NoteModel.task_id).where(NoteModel.task_id.in_(task_ids))  # type: ignore[attr-defined]
             ).scalars()
             return set(result)
 
@@ -197,17 +197,26 @@ class SqliteNotesRepository(NotesRepository):
         if not notes_dir.exists():
             return MigrationResult(migrated, skipped, errors, error_messages)
 
+        # First pass: collect all valid task IDs and their files
+        file_task_mapping: dict[int, Path] = {}
         for note_file in notes_dir.glob("*.md"):
             try:
-                # Parse task ID from filename (e.g., "123.md" -> 123)
                 task_id = int(note_file.stem)
+                file_task_mapping[task_id] = note_file
             except ValueError:
                 errors += 1
                 error_messages.append(f"Invalid filename: {note_file.name}")
-                continue
 
+        if not file_task_mapping:
+            return MigrationResult(migrated, skipped, errors, error_messages)
+
+        # Batch check for existing notes to avoid N+1 queries
+        existing_task_ids = self.get_task_ids_with_notes(list(file_task_mapping.keys()))
+
+        # Second pass: migrate notes that don't exist in database
+        for task_id, note_file in file_task_mapping.items():
             # Check if note already exists in database
-            if self.has_notes(task_id):
+            if task_id in existing_task_ids:
                 skipped += 1
                 continue
 

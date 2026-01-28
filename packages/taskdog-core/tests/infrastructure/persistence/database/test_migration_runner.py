@@ -223,17 +223,21 @@ class TestRunMigrations:
         finally:
             engine.dispose()
 
-    def test_creates_notes_table_indexes(self) -> None:
-        """Test that notes table has the correct indexes."""
+    def test_notes_table_has_primary_key(self) -> None:
+        """Test that notes table primary key is properly set.
+
+        Note: SQLite automatically creates an index for primary keys,
+        so we don't create an explicit index.
+        """
         engine = create_engine("sqlite:///:memory:")
         try:
             run_migrations(engine)
 
             inspector = inspect(engine)
-            indexes = {idx["name"] for idx in inspector.get_indexes("notes")}
+            pk = inspector.get_pk_constraint("notes")
 
-            expected_indexes = {"idx_notes_task_id"}
-            assert expected_indexes.issubset(indexes)
+            # Verify primary key is on task_id
+            assert pk["constrained_columns"] == ["task_id"]
         finally:
             engine.dispose()
 
