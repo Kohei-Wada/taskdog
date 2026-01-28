@@ -5,12 +5,47 @@ Task fixtures are imported from taskdog-core's shared fixtures module.
 """
 
 import sys
+import warnings
 from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
+
+
+def pytest_configure(config):
+    """Configure pytest to ignore ResourceWarning for unclosed databases.
+
+    Session-scoped fixtures keep DB connections open until test session ends.
+    This causes ResourceWarning during pytest's garbage collection phase.
+    """
+    warnings.filterwarnings(
+        "ignore",
+        message="unclosed database",
+        category=ResourceWarning,
+    )
+
+
+# Global references to session-scoped repositories for cleanup
+_session_repos: list = []
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Clean up session-scoped repositories before pytest's GC phase.
+
+    This ensures database connections are closed before pytest runs
+    garbage collection in its unraisableexception plugin.
+    """
+    import gc
+
+    for repo in _session_repos:
+        if hasattr(repo, "close"):
+            repo.close()
+    _session_repos.clear()
+    gc.collect()
+
+
+from fastapi import FastAPI  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 # Add taskdog-core tests to path for shared fixtures
 _core_tests_path = (
@@ -73,24 +108,32 @@ from taskdog_server.websocket.connection_manager import ConnectionManager  # noq
 
 
 @pytest.fixture(scope="session")
-def session_repository():
+def session_repository(request):
     """Session-scoped in-memory repository with shared cache.
 
     The "file::memory:?cache=shared" syntax ensures all connections see the same data.
     """
     repo = SqliteTaskRepository("sqlite:///file::memory:?cache=shared&uri=true")
-    yield repo
-    if hasattr(repo, "close"):
+    _session_repos.append(repo)
+
+    def cleanup():
         repo.close()
+
+    request.addfinalizer(cleanup)
+    return repo
 
 
 @pytest.fixture(scope="session")
-def session_audit_log_repository():
+def session_audit_log_repository(request):
     """Session-scoped in-memory audit log repository."""
     repo = SqliteAuditLogRepository("sqlite:///file::memory:?cache=shared&uri=true")
-    yield repo
-    if hasattr(repo, "close"):
+    _session_repos.append(repo)
+
+    def cleanup():
         repo.close()
+
+    request.addfinalizer(cleanup)
+    return repo
 
 
 @pytest.fixture

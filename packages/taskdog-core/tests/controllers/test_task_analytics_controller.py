@@ -78,7 +78,8 @@ class TestTaskAnalyticsController:
         algorithm = "greedy"
         start_date = datetime(2025, 1, 1)
         max_hours_per_day = 8.0
-        self.repository.get_all.return_value = []
+        self.repository.get_filtered.return_value = []
+        self.repository.get_all.return_value = []  # For OptimizationSummaryBuilder
         self.config.region.country = "JP"  # Set country for holiday checker
 
         # Act

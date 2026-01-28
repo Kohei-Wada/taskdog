@@ -63,4 +63,6 @@ python_functions = ["test_*"]
 asyncio_mode = "auto"
 filterwarnings = [
     "ignore::ResourceWarning:holidays.*",
+    # Session-scoped fixtures keep DB connections open until test session ends
+    "ignore:unclosed database:ResourceWarning",
 ]

@@ -71,8 +71,9 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             NoSchedulableTasksError: If no tasks can be scheduled
             Exception: If optimization fails
         """
-        # Get all tasks and backup their states before optimization
-        all_tasks = self.repository.get_all()
+        # Get non-archived tasks and backup their states before optimization
+        # (exclude archived at DB level for performance)
+        all_tasks = self.repository.get_filtered(include_archived=False)
         task_states_before: dict[int, datetime | None] = {
             t.id: t.planned_start for t in all_tasks if t.id is not None
         }

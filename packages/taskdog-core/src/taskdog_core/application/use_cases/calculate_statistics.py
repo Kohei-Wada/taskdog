@@ -38,7 +38,7 @@ class CalculateStatisticsUseCase(UseCase[CalculateStatisticsInput, StatisticsOut
         Returns:
             StatisticsOutput containing all calculated statistics
         """
-        # Get all tasks from repository
+        # Get all tasks from repository (including archived for complete statistics)
         tasks = self.repository.get_all()
 
         # Calculate statistics using the calculator service
