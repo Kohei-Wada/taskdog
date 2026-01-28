@@ -93,6 +93,10 @@ def convert_to_task_list_response(
     Returns:
         TaskListResponse with has_notes field populated
     """
+    # Batch query for note existence - single query instead of N queries
+    task_ids = [task.id for task in dto.tasks]
+    task_ids_with_notes = notes_repo.get_task_ids_with_notes(task_ids)
+
     tasks = [
         TaskResponse(
             id=task.id,
@@ -111,7 +115,7 @@ def convert_to_task_list_response(
             is_fixed=task.is_fixed,
             is_archived=task.is_archived,
             is_finished=task.is_finished,
-            has_notes=notes_repo.has_notes(task.id),
+            has_notes=task.id in task_ids_with_notes,
             created_at=task.created_at,
             updated_at=task.updated_at,
         )

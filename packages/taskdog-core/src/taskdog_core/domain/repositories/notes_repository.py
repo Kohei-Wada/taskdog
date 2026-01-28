@@ -71,3 +71,18 @@ class NotesRepository(ABC):
             Should not raise error if notes don't exist (idempotent operation)
         """
         pass
+
+    @abstractmethod
+    def get_task_ids_with_notes(self, task_ids: list[int]) -> set[int]:
+        """Get task IDs that have notes from a list of task IDs.
+
+        This is a batch operation to efficiently check note existence for
+        multiple tasks at once, avoiding N individual has_notes() calls.
+
+        Args:
+            task_ids: List of task IDs to check
+
+        Returns:
+            Set of task IDs that have notes
+        """
+        pass

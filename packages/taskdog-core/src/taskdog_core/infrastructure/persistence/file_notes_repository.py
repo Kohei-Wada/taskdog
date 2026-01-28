@@ -101,3 +101,18 @@ class FileNotesRepository(NotesRepository):
         """
         notes_path = self.get_notes_path(task_id)
         notes_path.unlink(missing_ok=True)
+
+    def get_task_ids_with_notes(self, task_ids: list[int]) -> set[int]:
+        """Get task IDs that have notes from a list of task IDs.
+
+        This is a batch operation that checks note existence for multiple tasks.
+        For file-based storage, this still requires N stat() calls but allows
+        for consistent interface with database-based storage.
+
+        Args:
+            task_ids: List of task IDs to check
+
+        Returns:
+            Set of task IDs that have notes
+        """
+        return {task_id for task_id in task_ids if self.has_notes(task_id)}

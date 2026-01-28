@@ -43,6 +43,7 @@ class TestRunMigrations:
             assert "tags" in tables
             assert "task_tags" in tables
             assert "audit_logs" in tables
+            assert "notes" in tables
             assert "alembic_version" in tables
         finally:
             engine.dispose()
@@ -84,7 +85,7 @@ class TestRunMigrations:
             # Should now have alembic_version stamped
             inspector = inspect(engine)
             assert "alembic_version" in inspector.get_table_names()
-            assert get_current_revision(engine) == "003_make_priority_nullable"
+            assert get_current_revision(engine) == "004_add_notes_table"
         finally:
             engine.dispose()
 
@@ -98,7 +99,7 @@ class TestRunMigrations:
             run_migrations(engine)
 
             # Should still work and have correct revision
-            assert get_current_revision(engine) == "003_make_priority_nullable"
+            assert get_current_revision(engine) == "004_add_notes_table"
         finally:
             engine.dispose()
 
@@ -208,6 +209,34 @@ class TestRunMigrations:
         finally:
             engine.dispose()
 
+    def test_creates_notes_table_with_correct_schema(self) -> None:
+        """Test that notes table has the correct columns."""
+        engine = create_engine("sqlite:///:memory:")
+        try:
+            run_migrations(engine)
+
+            inspector = inspect(engine)
+            columns = {col["name"] for col in inspector.get_columns("notes")}
+
+            expected_columns = {"task_id", "content", "created_at", "updated_at"}
+            assert columns == expected_columns
+        finally:
+            engine.dispose()
+
+    def test_creates_notes_table_indexes(self) -> None:
+        """Test that notes table has the correct indexes."""
+        engine = create_engine("sqlite:///:memory:")
+        try:
+            run_migrations(engine)
+
+            inspector = inspect(engine)
+            indexes = {idx["name"] for idx in inspector.get_indexes("notes")}
+
+            expected_indexes = {"idx_notes_task_id"}
+            assert expected_indexes.issubset(indexes)
+        finally:
+            engine.dispose()
+
 
 class TestGetCurrentRevision:
     """Tests for get_current_revision function."""
@@ -226,7 +255,7 @@ class TestGetCurrentRevision:
         try:
             run_migrations(engine)
 
-            assert get_current_revision(engine) == "003_make_priority_nullable"
+            assert get_current_revision(engine) == "004_add_notes_table"
         finally:
             engine.dispose()
 
