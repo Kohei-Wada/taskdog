@@ -39,8 +39,8 @@ class TestTaskTableRowBuilder:
         assert str(row[1]) == "Test task"  # Name
         assert str(row[3]) == "2"  # Priority
 
-    def test_build_row_completed_task_has_strikethrough(self):
-        """Test that completed tasks have strikethrough style on name."""
+    def test_build_row_completed_task_has_strikethrough_and_dim(self):
+        """Test that completed tasks have strikethrough and dim style on name."""
         task = Task(
             id=1,
             name="Completed task",
@@ -50,9 +50,9 @@ class TestTaskTableRowBuilder:
 
         row = self.builder.build_row(task)
 
-        # Name column should have strikethrough style
+        # Name column should have strikethrough + dim style
         name_text = row[1]
-        assert name_text.style == "strike"
+        assert name_text.style == "strike dim"
 
     def test_build_row_pending_task_no_strikethrough(self):
         """Test that non-completed tasks don't have strikethrough."""

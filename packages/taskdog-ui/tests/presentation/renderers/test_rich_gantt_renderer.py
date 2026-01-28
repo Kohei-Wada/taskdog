@@ -38,7 +38,7 @@ class TestRichGanttRendererBuildTable:
         self.task2 = TaskGanttRowViewModel(
             id=2,
             name="Task 2",
-            formatted_name="[strike]Task 2[/strike]",
+            formatted_name="[strike dim]Task 2[/strike dim]",
             estimated_duration=4.0,
             formatted_estimated_duration="4.0",
             status=TaskStatus.COMPLETED,

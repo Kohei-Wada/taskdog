@@ -56,10 +56,10 @@ class GanttPresenter:
         Returns:
             TaskGanttRowViewModel with presentation-ready data
         """
-        # Apply strikethrough for finished tasks
+        # Apply strikethrough + dim for finished tasks
         formatted_name = task.name
         if task.is_finished:
-            formatted_name = f"[strike]{task.name}[/strike]"
+            formatted_name = f"[strike dim]{task.name}[/strike dim]"
 
         # Format estimated duration
         formatted_estimated_duration = self._format_estimated_duration(
