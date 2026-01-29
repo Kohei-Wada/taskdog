@@ -2,7 +2,7 @@
 
 import pytest
 
-from taskdog_core.application.dto.single_task_inputs import ArchiveTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.archive_task import ArchiveTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
@@ -25,7 +25,7 @@ class TestArchiveTaskUseCase:
         )
 
         # Archive task
-        input_dto = ArchiveTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify task archived (is_archived=True, status preserved)
@@ -46,7 +46,7 @@ class TestArchiveTaskUseCase:
         )
 
         # Archive task
-        input_dto = ArchiveTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify task archived
@@ -61,7 +61,7 @@ class TestArchiveTaskUseCase:
         )
 
         # Archive task
-        input_dto = ArchiveTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify task archived
@@ -76,7 +76,7 @@ class TestArchiveTaskUseCase:
         )
 
         # Archive task
-        input_dto = ArchiveTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Verify task archived
@@ -85,7 +85,7 @@ class TestArchiveTaskUseCase:
 
     def test_archive_nonexistent_task(self):
         """Test archiving a task that doesn't exist."""
-        input_dto = ArchiveTaskInput(task_id=999)
+        input_dto = SingleTaskInput(task_id=999)
 
         with pytest.raises(TaskNotFoundException):
             self.use_case.execute(input_dto)

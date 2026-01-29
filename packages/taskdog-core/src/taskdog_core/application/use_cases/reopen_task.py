@@ -1,6 +1,6 @@
 """Use case for reopening a completed or canceled task."""
 
-from taskdog_core.application.dto.single_task_inputs import ReopenTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.status_change_use_case import (
     StatusChangeUseCase,
 )
@@ -8,7 +8,7 @@ from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
-class ReopenTaskUseCase(StatusChangeUseCase[ReopenTaskInput]):
+class ReopenTaskUseCase(StatusChangeUseCase[SingleTaskInput]):
     """Use case for reopening a completed or canceled task.
 
     Reopening transitions a task from COMPLETED or CANCELED back to PENDING.

@@ -10,12 +10,8 @@ This controller handles standard CRUD operations:
 
 from datetime import datetime
 
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.create_task_input import CreateTaskInput
-from taskdog_core.application.dto.single_task_inputs import (
-    ArchiveTaskInput,
-    RemoveTaskInput,
-    RestoreTaskInput,
-)
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_input import UpdateTaskInput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
@@ -195,7 +191,7 @@ class TaskCrudController(BaseTaskController):
         self.logger.info(f"Archiving task: task_id={task_id}", task_id=task_id)
 
         use_case = ArchiveTaskUseCase(self.repository)
-        request = ArchiveTaskInput(task_id=task_id)
+        request = SingleTaskInput(task_id=task_id)
         result = use_case.execute(request)
 
         self.logger.info(
@@ -222,7 +218,7 @@ class TaskCrudController(BaseTaskController):
         self.logger.info(f"Restoring task: task_id={task_id}", task_id=task_id)
 
         use_case = RestoreTaskUseCase(self.repository)
-        request = RestoreTaskInput(task_id=task_id)
+        request = SingleTaskInput(task_id=task_id)
         result = use_case.execute(request)
 
         self.logger.info(
@@ -247,7 +243,7 @@ class TaskCrudController(BaseTaskController):
         )
 
         use_case = RemoveTaskUseCase(self.repository, self.notes_repository)
-        request = RemoveTaskInput(task_id=task_id)
+        request = SingleTaskInput(task_id=task_id)
         use_case.execute(request)
 
         self.logger.info(

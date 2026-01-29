@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from taskdog_core.application.dto.single_task_inputs import PauseTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.pause_task import PauseTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
 from tests.application.use_cases.status_change_test_base import (
@@ -14,7 +14,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
     """Test cases for PauseTaskUseCase."""
 
     use_case_class = PauseTaskUseCase
-    request_class = PauseTaskInput
+    request_class = SingleTaskInput
     target_status = TaskStatus.PENDING
     initial_status = TaskStatus.IN_PROGRESS
 
@@ -31,7 +31,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
             actual_start=datetime(2024, 1, 1, 10, 0, 0),
         )
 
-        input_dto = PauseTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.actual_start is None
@@ -47,7 +47,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
             actual_end=datetime(2024, 1, 1, 12, 0, 0),
         )
 
-        input_dto = PauseTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.actual_end is None
@@ -58,7 +58,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
             name="Test Task", priority=1, status=TaskStatus.PENDING
         )
 
-        input_dto = PauseTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.status == TaskStatus.PENDING

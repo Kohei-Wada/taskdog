@@ -1,13 +1,13 @@
 """Use case for restoring an archived task."""
 
-from taskdog_core.application.dto.single_task_inputs import RestoreTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 
-class RestoreTaskUseCase(UseCase[RestoreTaskInput, TaskOperationOutput]):
+class RestoreTaskUseCase(UseCase[SingleTaskInput, TaskOperationOutput]):
     """Use case for restoring archived tasks.
 
     Restores an archived task back to its original status.
@@ -28,7 +28,7 @@ class RestoreTaskUseCase(UseCase[RestoreTaskInput, TaskOperationOutput]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: RestoreTaskInput) -> TaskOperationOutput:
+    def execute(self, input_dto: SingleTaskInput) -> TaskOperationOutput:
         """Restore an archived task.
 
         Args:
