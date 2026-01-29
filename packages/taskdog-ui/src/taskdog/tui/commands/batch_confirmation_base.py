@@ -137,7 +137,7 @@ class BatchConfirmationCommandBase(TUICommandBase):
                     failure_count += 1
 
             # Clear selection and reload tasks
-            self.clear_selection()
+            self.clear_task_selection()
             self.reload_tasks()
 
             # Show result summary (only for failures - success notifications via WebSocket)

@@ -46,6 +46,7 @@ class AlgorithmSelectionDialog(
     def __init__(
         self,
         algorithm_metadata: list[tuple[str, str, str]],
+        selected_task_count: int = 0,
         *args: Any,
         **kwargs: Any,
     ):
@@ -53,16 +54,23 @@ class AlgorithmSelectionDialog(
 
         Args:
             algorithm_metadata: List of (algorithm_id, display_name, description) tuples
+            selected_task_count: Number of selected tasks (0 means optimize all tasks)
         """
         super().__init__(*args, **kwargs)
         self.algorithms = algorithm_metadata
+        self.selected_task_count = selected_task_count
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout."""
         with Container(
             id="algorithm-dialog", classes="dialog-base dialog-standard"
         ) as container:
-            container.border_title = "Optimize Schedule Settings"
+            if self.selected_task_count > 0:
+                container.border_title = (
+                    f"Optimize {self.selected_task_count} Selected Task(s)"
+                )
+            else:
+                container.border_title = "Optimize All Tasks"
             yield Label(
                 "[dim]Ctrl+S: submit | Esc: cancel | Tab/Ctrl-j: next | Shift+Tab/Ctrl-k: previous[/dim]",
                 id="dialog-hint",
