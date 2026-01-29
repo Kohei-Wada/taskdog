@@ -11,8 +11,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy import Engine, delete, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import delete, select
+from sqlalchemy.engine import Engine
 
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.services.time_provider import ITimeProvider
@@ -69,7 +69,7 @@ class SqliteNotesRepository(NotesRepository):
         )
 
         # Create sessionmaker for managing database sessions
-        self.Session: sessionmaker[Session] = create_session_factory(self.engine)
+        self.Session = create_session_factory(self.engine)
 
     def has_notes(self, task_id: int) -> bool:
         """Check if task has associated notes.

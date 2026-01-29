@@ -13,8 +13,8 @@ from __future__ import annotations
 from datetime import date
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Engine, func, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import func, select
+from sqlalchemy.engine import Engine
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
@@ -84,7 +84,7 @@ class SqliteTaskRepository(TaskRepository):
         )
 
         # Create sessionmaker for managing database sessions
-        self.Session: sessionmaker[Session] = create_session_factory(self.engine)
+        self.Session = create_session_factory(self.engine)
 
     def get_all(self) -> list[Task]:
         """Retrieve all tasks from database.

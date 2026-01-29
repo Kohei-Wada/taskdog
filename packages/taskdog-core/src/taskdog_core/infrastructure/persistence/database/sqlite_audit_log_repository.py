@@ -9,8 +9,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from sqlalchemy import Engine, delete, func, select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import delete, func, select
+from sqlalchemy.engine import Engine
 
 from taskdog_core.application.dto.audit_log_dto import (
     AuditEvent,
@@ -54,7 +54,7 @@ class SqliteAuditLogRepository:
         )
 
         # Create sessionmaker for managing database sessions
-        self.Session: sessionmaker[Session] = create_session_factory(self.engine)
+        self.Session = create_session_factory(self.engine)
 
     def save(self, event: AuditEvent) -> None:
         """Persist an audit event to the database.

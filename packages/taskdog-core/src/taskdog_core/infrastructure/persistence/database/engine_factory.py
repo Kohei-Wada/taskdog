@@ -5,10 +5,14 @@ SQLite-specific optimizations. All repositories should use this factory
 to share the same engine instance, avoiding redundant connection pools.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Engine, create_engine, event
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import create_engine, event
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import sessionmaker
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 from taskdog_core.infrastructure.persistence.database.migration_runner import (
     run_migrations,
@@ -46,13 +50,16 @@ def create_sqlite_engine(database_url: str, run_migration: bool = True) -> Engin
         finally:
             cursor.close()
 
-    if run_migration:
+    # Track migration status on engine to avoid running multiple times
+    # when the same engine is reused or passed around
+    if run_migration and not getattr(engine, "_migrations_completed", False):
         run_migrations(engine)
+        engine._migrations_completed = True  # type: ignore[attr-defined]
 
     return engine
 
 
-def create_session_factory(engine: Engine) -> sessionmaker[Session]:
+def create_session_factory(engine: Engine) -> "sessionmaker[Session]":
     """Create a sessionmaker bound to the given engine.
 
     Args:
@@ -61,4 +68,4 @@ def create_session_factory(engine: Engine) -> sessionmaker[Session]:
     Returns:
         Configured sessionmaker for creating database sessions
     """
-    return sessionmaker(bind=engine)
+    return sessionmaker(bind=engine)  # type: ignore[return-value]
