@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from taskdog_core.application.dto.status_change_input import StatusChangeInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.services.task_status_service import TaskStatusService
 from taskdog_core.application.use_cases.base import UseCase
@@ -13,7 +13,7 @@ from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 
-class StatusChangeUseCase[TInput: StatusChangeInput](
+class StatusChangeUseCase[TInput: SingleTaskInput](
     UseCase[TInput, TaskOperationOutput], ABC
 ):
     """Base use case for status change operations.
