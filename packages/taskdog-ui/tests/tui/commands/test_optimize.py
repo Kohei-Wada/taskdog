@@ -142,6 +142,8 @@ class TestOptimizeCommandExecute:
         self.mock_app = MagicMock()
         self.mock_context = MagicMock()
         self.command = OptimizeCommand(self.mock_app, self.mock_context)
+        # Default: no selected tasks
+        self.command.get_explicitly_selected_task_ids = MagicMock(return_value=[])
 
     def test_pushes_algorithm_selection_dialog(self) -> None:
         """Test that execute pushes the algorithm selection dialog."""
@@ -173,7 +175,7 @@ class TestOptimizeCommandExecute:
         self.mock_context.api_client.optimize_schedule.assert_not_called()
 
     def test_calls_optimize_schedule_with_settings(self) -> None:
-        """Test that optimize_schedule is called with correct settings."""
+        """Test that optimize_schedule is called with correct settings (no selected tasks)."""
         self.mock_context.api_client.get_algorithm_metadata.return_value = []
         result = create_mock_optimization_output(successful_count=3)
         self.mock_context.api_client.optimize_schedule.return_value = result
@@ -190,6 +192,7 @@ class TestOptimizeCommandExecute:
             start_date=start_date,
             max_hours_per_day=6.0,
             force_override=True,
+            task_ids=None,
         )
 
     def test_reloads_tasks_after_optimization(self) -> None:
@@ -277,3 +280,61 @@ class TestOptimizeCommandExecute:
         callback(("greedy", 8.0, datetime.now(), False))
 
         self.command.notify_warning.assert_not_called()
+
+    def test_calls_optimize_schedule_with_selected_task_ids(self) -> None:
+        """Test that optimize_schedule is called with selected task IDs."""
+        self.mock_context.api_client.get_algorithm_metadata.return_value = []
+        result = create_mock_optimization_output(successful_count=2)
+        self.mock_context.api_client.optimize_schedule.return_value = result
+        self.command.reload_tasks = MagicMock()
+        # Set selected task IDs
+        self.command.get_explicitly_selected_task_ids = MagicMock(
+            return_value=[1, 2, 5]
+        )
+
+        self.command.execute()
+
+        callback = self.mock_app.push_screen.call_args[0][1]
+        start_date = datetime(2025, 1, 6)
+        callback(("greedy", 8.0, start_date, False))
+
+        self.mock_context.api_client.optimize_schedule.assert_called_once_with(
+            algorithm="greedy",
+            start_date=start_date,
+            max_hours_per_day=8.0,
+            force_override=False,
+            task_ids=[1, 2, 5],
+        )
+
+    def test_dialog_shows_selected_task_count(self) -> None:
+        """Test that dialog is created with selected task count."""
+        self.mock_context.api_client.get_algorithm_metadata.return_value = [
+            ("greedy", "Greedy", "Simple greedy algorithm")
+        ]
+        self.command.get_explicitly_selected_task_ids = MagicMock(
+            return_value=[1, 2, 3]
+        )
+
+        self.command.execute()
+
+        call_args = self.mock_app.push_screen.call_args
+        dialog = call_args[0][0]
+        from taskdog.tui.dialogs.algorithm_selection_dialog import (
+            AlgorithmSelectionDialog,
+        )
+
+        assert isinstance(dialog, AlgorithmSelectionDialog)
+        assert dialog.selected_task_count == 3
+
+    def test_dialog_shows_zero_count_when_no_selection(self) -> None:
+        """Test that dialog shows zero count when no tasks are selected."""
+        self.mock_context.api_client.get_algorithm_metadata.return_value = [
+            ("greedy", "Greedy", "Simple greedy algorithm")
+        ]
+        # No tasks selected (default in setup)
+
+        self.command.execute()
+
+        call_args = self.mock_app.push_screen.call_args
+        dialog = call_args[0][0]
+        assert dialog.selected_task_count == 0

@@ -145,7 +145,7 @@ class TestBatchConfirmationCommandConfirmationHandler:
         """Test that action is executed when confirmed."""
         self.command.get_selected_task_ids = MagicMock(return_value=[42])
         self.command.execute_confirmed_action = MagicMock()
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
@@ -160,7 +160,7 @@ class TestBatchConfirmationCommandConfirmationHandler:
         """Test that action is executed for all tasks."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1, 2, 3])
         self.command.execute_confirmed_action = MagicMock()
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
@@ -177,7 +177,7 @@ class TestBatchConfirmationCommandConfirmationHandler:
         """Test that selection is cleared after execution."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1])
         self.command.execute_confirmed_action = MagicMock()
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
@@ -185,7 +185,7 @@ class TestBatchConfirmationCommandConfirmationHandler:
         callback_wrapper = self.mock_app.push_screen.call_args[0][1]
         callback_wrapper(True)
 
-        self.command.clear_selection.assert_called_once()
+        self.command.clear_task_selection.assert_called_once()
         self.command.reload_tasks.assert_called_once()
 
     def test_handles_task_not_found_error(self) -> None:
@@ -195,7 +195,7 @@ class TestBatchConfirmationCommandConfirmationHandler:
             side_effect=TaskNotFoundException(999)
         )
         self.command.notify_error = MagicMock()
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
@@ -212,7 +212,7 @@ class TestBatchConfirmationCommandConfirmationHandler:
             side_effect=TaskValidationError("Invalid operation")
         )
         self.command.notify_error = MagicMock()
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
@@ -229,7 +229,7 @@ class TestBatchConfirmationCommandConfirmationHandler:
             side_effect=Exception("Generic error")
         )
         self.command.notify_error = MagicMock()
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
@@ -247,7 +247,7 @@ class TestBatchConfirmationCommandConfirmationHandler:
         )
         self.command.notify_error = MagicMock()
         self.command.notify_warning = MagicMock()
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
@@ -265,7 +265,7 @@ class TestBatchConfirmationCommandConfirmationHandler:
         self.command.get_selected_task_ids = MagicMock(return_value=[1, 2])
         self.command.execute_confirmed_action = MagicMock()
         self.command.notify_warning = MagicMock()
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()

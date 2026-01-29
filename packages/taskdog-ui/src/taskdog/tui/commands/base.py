@@ -177,7 +177,22 @@ class TUICommandBase(ABC):  # noqa: B024
             return []
         return self.app.main_screen.task_table.get_selected_task_ids()
 
-    def clear_selection(self) -> None:
+    def get_explicitly_selected_task_ids(self) -> list[int]:
+        """Get only explicitly selected task IDs (no cursor fallback).
+
+        Unlike get_selected_task_ids(), this method does NOT fall back to
+        the cursor position when no tasks are explicitly selected.
+        Use this when you need to distinguish between "no selection" and
+        "single task selected".
+
+        Returns:
+            List of explicitly selected task IDs, or empty list if none selected
+        """
+        if not self.app.main_screen or not self.app.main_screen.task_table:
+            return []
+        return self.app.main_screen.task_table.get_explicitly_selected_task_ids()
+
+    def clear_task_selection(self) -> None:
         """Clear all task selections in the table.
 
         Called after batch operations complete to reset selection state.

@@ -60,6 +60,10 @@ class OptimizeCommand(TUICommandBase):
 
     def execute(self) -> None:
         """Execute the optimize command."""
+        # Get explicitly selected task IDs (empty list means optimize all)
+        # Use get_explicitly_selected_task_ids() to avoid cursor fallback
+        selected_ids = self.get_explicitly_selected_task_ids()
+        task_ids = selected_ids if selected_ids else None
 
         def handle_optimization_settings(
             settings: tuple[str, float, datetime, bool] | None,
@@ -81,6 +85,7 @@ class OptimizeCommand(TUICommandBase):
                 start_date=start_date,
                 max_hours_per_day=max_hours,
                 force_override=force_override,
+                task_ids=task_ids,
             )
 
             # Reload tasks to show updated schedules
@@ -104,9 +109,11 @@ class OptimizeCommand(TUICommandBase):
         # Get algorithm metadata from API client
         algorithm_metadata = self.context.api_client.get_algorithm_metadata()
 
-        # Show optimization settings screen
+        # Show optimization settings screen with selected task count
         # Wrap callback with error handling from base class
         self.app.push_screen(
-            AlgorithmSelectionDialog(algorithm_metadata),
+            AlgorithmSelectionDialog(
+                algorithm_metadata, selected_task_count=len(selected_ids)
+            ),
             self.handle_error(handle_optimization_settings),
         )

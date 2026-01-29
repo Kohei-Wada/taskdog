@@ -59,13 +59,13 @@ class TestBatchStatusChangeCommandBase:
         self.command.execute_single_task = MagicMock(
             return_value=create_mock_output(task_id=42, name="Task 42")
         )
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
 
         self.command.execute_single_task.assert_called_once_with(42)
-        self.command.clear_selection.assert_called_once()
+        self.command.clear_task_selection.assert_called_once()
         self.command.reload_tasks.assert_called_once()
 
     def test_execute_processes_multiple_tasks(self) -> None:
@@ -78,7 +78,7 @@ class TestBatchStatusChangeCommandBase:
                 create_mock_output(task_id=3, name="Task 3"),
             ]
         )
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
@@ -92,14 +92,14 @@ class TestBatchStatusChangeCommandBase:
             side_effect=Exception("Task failed")
         )
         self.command.notify_error = MagicMock()
-        self.command.clear_selection = MagicMock()
+        self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
 
         self.command.notify_error.assert_called_once()
         # Should still clear selection and reload
-        self.command.clear_selection.assert_called_once()
+        self.command.clear_task_selection.assert_called_once()
         self.command.reload_tasks.assert_called_once()
 
 

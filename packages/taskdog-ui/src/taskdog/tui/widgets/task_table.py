@@ -45,7 +45,6 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         This reactive handler is currently a placeholder for future functionality
         such as updating a selection count display in the footer.
         """
-        # Future: Update footer or status bar with selection count
         pass
 
     # Add Vi-style bindings in addition to DataTable's default bindings
@@ -486,6 +485,19 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         # Fall back to single selection (cursor position)
         task_id = self.get_selected_task_id()
         return [task_id] if task_id else []
+
+    def get_explicitly_selected_task_ids(self) -> list[int]:
+        """Get only explicitly selected task IDs (no cursor fallback).
+
+        Unlike get_selected_task_ids(), this method does NOT fall back to
+        the cursor position when no tasks are explicitly selected.
+        Use this when you need to distinguish between "no selection" and
+        "single task selected".
+
+        Returns:
+            List of explicitly selected task IDs, or empty list if none selected
+        """
+        return sorted(self._selected_task_ids) if self._selected_task_ids else []
 
     def clear_selection(self) -> None:
         """Clear all selections (called after batch operations)."""

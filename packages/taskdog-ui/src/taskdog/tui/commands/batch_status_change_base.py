@@ -58,7 +58,7 @@ class BatchStatusChangeCommandBase(TUICommandBase):
         success_count, failure_count = self._process_tasks(task_ids)
 
         # Clear selection and reload tasks
-        self.clear_selection()
+        self.clear_task_selection()
         self.reload_tasks()
 
         # Show batch summary for multiple tasks

@@ -32,6 +32,20 @@ class TestAlgorithmSelectionDialogInit:
 
         assert dialog.algorithms == []
 
+    def test_stores_selected_task_count(self) -> None:
+        """Test that selected_task_count is stored correctly."""
+        metadata = create_algorithm_metadata()
+        dialog = AlgorithmSelectionDialog(metadata, selected_task_count=5)
+
+        assert dialog.selected_task_count == 5
+
+    def test_default_selected_task_count_is_zero(self) -> None:
+        """Test that default selected_task_count is zero."""
+        metadata = create_algorithm_metadata()
+        dialog = AlgorithmSelectionDialog(metadata)
+
+        assert dialog.selected_task_count == 0
+
 
 class TestAlgorithmSelectionDialogGetDefaultStartDate:
     """Test cases for _get_default_start_date method."""

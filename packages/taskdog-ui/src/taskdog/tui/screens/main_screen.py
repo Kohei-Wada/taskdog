@@ -214,7 +214,13 @@ class MainScreen(Screen[None]):
             return self.task_table.get_selected_task_ids()
         return []
 
-    def clear_selection(self) -> None:
+    def get_explicitly_selected_task_ids(self) -> list[int]:
+        """Get only explicitly selected task IDs (no cursor fallback)."""
+        if self.task_table:
+            return self.task_table.get_explicitly_selected_task_ids()
+        return []
+
+    def clear_task_selection(self) -> None:
         """Clear all task selections."""
         if self.task_table:
             self.task_table.clear_selection()
