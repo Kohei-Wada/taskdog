@@ -38,6 +38,44 @@ class QueryClient:
         self._base = base_client
         self._has_notes_cache = has_notes_cache
 
+    def _build_list_params(
+        self,
+        all: bool,
+        sort_by: str,
+        reverse: bool,
+        status: str | None = None,
+        tags: list[str] | None = None,
+        **extra_params: Any,
+    ) -> dict[str, Any]:
+        """Build common parameters for list operations.
+
+        Args:
+            all: Include archived tasks
+            sort_by: Sort field
+            reverse: Reverse sort order
+            status: Filter by status
+            tags: Filter by tags
+            **extra_params: Additional parameters to include
+
+        Returns:
+            Dictionary of query parameters
+        """
+        params: dict[str, Any] = {
+            "all": str(all).lower(),
+            "sort": sort_by,
+            "reverse": str(reverse).lower(),
+        }
+
+        if status:
+            params["status"] = status.lower()
+        if tags:
+            params["tags"] = tags
+
+        # Add any extra parameters
+        params.update(extra_params)
+
+        return params
+
     def list_tasks(
         self,
         all: bool = False,
@@ -68,29 +106,19 @@ class QueryClient:
         Returns:
             TaskListOutput with task list and metadata, optionally including Gantt data
         """
-        params: dict[str, Any] = {
-            "all": str(all).lower(),
-            "sort": sort_by,
-            "reverse": str(reverse).lower(),
-            "include_gantt": str(include_gantt).lower(),
-        }
-
-        # Add filter parameters if provided
-        if status:
-            params["status"] = status.lower()
-        if tags:
-            params["tags"] = tags
+        # Build extra params for date filters and gantt options
+        extra: dict[str, Any] = {"include_gantt": str(include_gantt).lower()}
         if start_date:
-            params["start_date"] = start_date.isoformat()
+            extra["start_date"] = start_date.isoformat()
         if end_date:
-            params["end_date"] = end_date.isoformat()
-
+            extra["end_date"] = end_date.isoformat()
         if include_gantt:
             if gantt_start_date:
-                params["gantt_start_date"] = gantt_start_date.isoformat()
+                extra["gantt_start_date"] = gantt_start_date.isoformat()
             if gantt_end_date:
-                params["gantt_end_date"] = gantt_end_date.isoformat()
+                extra["gantt_end_date"] = gantt_end_date.isoformat()
 
+        params = self._build_list_params(all, sort_by, reverse, status, tags, **extra)
         data = self._base._request_json("get", "/api/v1/tasks", params=params)
         return convert_to_task_list_output(data, self._has_notes_cache)
 
@@ -117,15 +145,7 @@ class QueryClient:
         Returns:
             TaskListOutput with today's tasks
         """
-        params: dict[str, Any] = {
-            "all": str(all).lower(),
-            "sort": sort_by,
-            "reverse": str(reverse).lower(),
-        }
-
-        if status:
-            params["status"] = status.lower()
-
+        params = self._build_list_params(all, sort_by, reverse, status)
         data = self._base._request_json("get", "/api/v1/tasks/today", params=params)
         return convert_to_task_list_output(data, self._has_notes_cache)
 
@@ -152,15 +172,7 @@ class QueryClient:
         Returns:
             TaskListOutput with this week's tasks
         """
-        params: dict[str, Any] = {
-            "all": str(all).lower(),
-            "sort": sort_by,
-            "reverse": str(reverse).lower(),
-        }
-
-        if status:
-            params["status"] = status.lower()
-
+        params = self._build_list_params(all, sort_by, reverse, status)
         data = self._base._request_json("get", "/api/v1/tasks/week", params=params)
         return convert_to_task_list_output(data, self._has_notes_cache)
 
@@ -226,28 +238,18 @@ class QueryClient:
             filter_start_date/filter_end_date are for filtering tasks.
             start_date/end_date are for the chart display range.
         """
-        params: dict[str, Any] = {
-            "all": str(all).lower(),
-            "sort": sort_by,
-            "reverse": str(reverse).lower(),
-        }
-
-        # Add filter parameters if provided
-        if status:
-            params["status"] = status.lower()
-        if tags:
-            params["tags"] = tags
+        # Build extra params for date filters and chart range
+        extra: dict[str, Any] = {}
         if filter_start_date:
-            params["filter_start_date"] = filter_start_date.isoformat()
+            extra["filter_start_date"] = filter_start_date.isoformat()
         if filter_end_date:
-            params["filter_end_date"] = filter_end_date.isoformat()
-
-        # Add chart display range if provided
+            extra["filter_end_date"] = filter_end_date.isoformat()
         if start_date:
-            params["start_date"] = start_date.isoformat()
+            extra["start_date"] = start_date.isoformat()
         if end_date:
-            params["end_date"] = end_date.isoformat()
+            extra["end_date"] = end_date.isoformat()
 
+        params = self._build_list_params(all, sort_by, reverse, status, tags, **extra)
         data = self._base._request_json("get", "/api/v1/gantt", params=params)
         return convert_to_gantt_output(data)
 
