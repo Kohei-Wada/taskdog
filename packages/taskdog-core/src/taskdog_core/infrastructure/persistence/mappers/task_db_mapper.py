@@ -14,10 +14,8 @@ from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.infrastructure.persistence.database.models.task_model import TaskModel
 from taskdog_core.shared.utils.datetime_parser import format_date_dict, parse_date_dict
 
-from .task_mapper_interface import TaskMapperInterface
 
-
-class TaskDbMapper(TaskMapperInterface):
+class TaskDbMapper:
     """Mapper for converting Task entities to/from SQLAlchemy TaskModel.
 
     This mapper:

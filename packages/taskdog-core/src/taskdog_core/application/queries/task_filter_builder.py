@@ -7,8 +7,6 @@ previously duplicated across API routes.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from taskdog_core.application.dto.query_inputs import ListTasksInput, TimeRange
 from taskdog_core.application.queries.filters.date_range_filter import DateRangeFilter
 from taskdog_core.application.queries.filters.non_archived_filter import (
@@ -20,9 +18,6 @@ from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.application.queries.filters.this_week_filter import ThisWeekFilter
 from taskdog_core.application.queries.filters.today_filter import TodayFilter
 from taskdog_core.domain.entities.task import TaskStatus
-
-if TYPE_CHECKING:
-    pass
 
 
 class TaskFilterBuilder:
