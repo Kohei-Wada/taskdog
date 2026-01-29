@@ -8,7 +8,7 @@ Taskdog is a task management system built with Python. It provides a CLI/TUI int
 
 ### Monorepo Structure
 
-The repository uses UV workspace with three packages:
+The repository uses UV workspace with five packages:
 
 **taskdog-core** (`packages/taskdog-core/`): Core business logic and infrastructure
 
@@ -21,17 +21,28 @@ The repository uses UV workspace with three packages:
 
 - Depends on: taskdog-core
 - FastAPI application with automatic OpenAPI docs
-- API routers: tasks, lifecycle, relationships, analytics
+- API routers: tasks, lifecycle, relationships, analytics, audit
 - Pydantic models for request/response validation
 - Health check and comprehensive error handling
 
-**taskdog-ui** (`packages/taskdog-ui/`): CLI and TUI interfaces
+**taskdog-client** (`packages/taskdog-client/`): HTTP client for server communication
 
 - Depends on: taskdog-core
+- TaskdogClient class for API communication
+- Used by CLI/TUI to communicate with the server
+
+**taskdog-ui** (`packages/taskdog-ui/`): CLI and TUI interfaces
+
+- Depends on: taskdog-core, taskdog-client
 - Click-based CLI commands with Rich output
 - Textual-based full-screen TUI
-- API client for server communication (required - CLI/TUI do not work without API server)
 - Renderers for tables, Gantt charts, and markdown notes
+
+**taskdog-mcp** (`packages/taskdog-mcp/`): MCP server for Claude Desktop integration
+
+- Depends on: taskdog-client
+- Model Context Protocol server implementation
+- Enables Claude Desktop to manage tasks via natural language
 
 ### Data Storage & Configuration
 
@@ -48,6 +59,9 @@ The repository uses UV workspace with three packages:
 - **cli.toml** (CLI/TUI infrastructure):
   - Sections: `[api]`, `[ui]`, `[notes]`, `[keybindings]`
   - Settings: host, port, api_key, theme
+- **mcp.toml** (MCP server settings):
+  - Sections: `[api]`
+  - Settings: host, port, api_key
 - Priority: Environment vars > CLI args > Config file > Defaults
 - Server host/port: CLI arguments (`taskdog-server --host --port`)
 - CLI/TUI connection: `cli.toml` or `TASKDOG_API_HOST`/`TASKDOG_API_PORT` env vars
@@ -153,7 +167,7 @@ journalctl --user -u taskdog-server -f   # View logs in real-time
 
 ## Architecture
 
-Clean Architecture with 5 layers across three packages: **Domain** ← **Application** → **Infrastructure** / **Presentation** / **Shared**
+Clean Architecture with 5 layers across five packages: **Domain** ← **Application** → **Infrastructure** / **Presentation** / **Shared**
 
 ### Package Structure
 
@@ -161,9 +175,10 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 **Domain** (`packages/taskdog-core/src/taskdog_core/domain/`): Core business logic, no external dependencies
 
-- `entities/`: Task, TaskStatus
+- `entities/`: Task, TaskStatus, AuditLog
 - `services/`: TimeTracker (records timestamps)
 - `exceptions/`: TaskNotFoundException, TaskValidationError, TaskAlreadyFinishedError, TaskNotStartedError
+- `constants.py`: Domain constants (DEFAULT_PRIORITY, etc.)
 
 **Application** (`packages/taskdog-core/src/taskdog_core/application/`): Business logic orchestration
 
@@ -204,6 +219,9 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 - `QueryController`: Orchestrates read operations (queries)
   - Methods: list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id
   - Returns Output DTOs with metadata (TaskListOutput, GanttOutput, TagStatisticsOutput)
+- `AuditLogController`: Orchestrates audit log operations
+  - Methods: save, log_operation, get_logs, get_by_id, count_logs
+  - Records all task operations for audit trail
 - All controllers used by: API server directly; CLI/TUI via HTTP API
 
 **Shared** (`packages/taskdog-core/src/taskdog_core/shared/`): Cross-cutting utilities
@@ -220,6 +238,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
   - `lifecycle.py`: Task status changes (start, complete, pause, cancel, reopen)
   - `relationships.py`: Dependencies and tags
   - `analytics.py`: Statistics and reporting
+  - `audit.py`: Audit log retrieval
 - `models/`: Pydantic request/response models
 - `dependencies.py`: FastAPI dependency injection (repository, controllers)
 - `context.py`: ApiContext (similar to CliContext for DI)
@@ -230,7 +249,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 - `cli_main.py`: Click application entry point
 - `commands/`: Click command implementations (add, start, done, table, gantt, etc.)
-- `context.py`: CliContext (DI container for console_writer, api_client, config, holiday_checker)
+- `context.py`: CliContext (DI container for console_writer, api_client, config)
 - Error handlers: `@handle_task_errors`, `@handle_command_errors` decorators
 
 **Console** (`packages/taskdog-ui/src/taskdog/console/`):
@@ -251,9 +270,15 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 - `services/task_service.py`: Facade wrapping TaskController + QueryController for TUI
 - `styles/`: TCSS stylesheets (included via package_data)
 
-**Infrastructure** (`packages/taskdog-ui/src/taskdog/infrastructure/`):
+**Additional UI Directories** (`packages/taskdog-ui/src/taskdog/`):
 
-- `api_client.py`: HTTP client for communicating with taskdog-server (optional remote mode)
+- `view_models/`: View model classes for UI data representation
+- `mappers/`: Data mappers between API responses and view models
+- `services/`: UI service layer abstractions
+- `utils/`: UI utility functions
+- `exporters/`: Export functionality (JSON, CSV)
+- `presenters/`: Presentation logic for formatted output
+- `formatters/`: Output formatting utilities
 
 **Shared** (`packages/taskdog-ui/src/taskdog/shared/`):
 
@@ -261,8 +286,8 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 ### Dependency Injection
 
-**CLI** (`taskdog-ui`): `CliContext` dataclass (console_writer, api_client, config, holiday_checker) passed via `ctx.obj`
-**TUI** (`taskdog-ui`): `TUIContext` dataclass (api_client, config, holiday_checker) + CommandFactory for command instantiation
+**CLI** (`taskdog-ui`): `CliContext` dataclass (console_writer, api_client, config) passed via `ctx.obj`
+**TUI** (`taskdog-ui`): `TUIContext` dataclass (api_client, state, config) + CommandFactory for command instantiation (state: TUIState for UI state management)
 **API** (`taskdog-server`): `ApiContext` dataclass + FastAPI dependency injection via `dependencies.py`
 **Communication**: CLI/TUI access all data via HTTP API client; only server directly uses repositories and controllers
 
@@ -307,6 +332,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 - `TaskAnalyticsController`: Orchestrates analytics and optimization (statistics, optimize)
 - `QueryController`: Orchestrates read operations (list_tasks, get_gantt_data, get_tag_statistics, get_task_by_id)
   - Returns Output DTOs with metadata (TaskListOutput, GanttOutput, TagStatisticsOutput)
+- `AuditLogController`: Orchestrates audit log operations (save, log_operation, get_logs, get_by_id, count_logs)
 - All controllers instantiate use cases, construct Request DTOs, handle config defaults
 - Used by: API server directly; CLI/TUI via HTTP API client
 
@@ -320,7 +346,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 **API Patterns** (`packages/taskdog-server/src/taskdog_server/api/`)
 
-- FastAPI routers: tasks, lifecycle, relationships, analytics, notes, websocket
+- FastAPI routers: tasks, lifecycle, relationships, analytics, notes, audit, websocket
 - Pydantic models for automatic request/response validation
 - Dependency injection via `dependencies.py`:
   - `CrudControllerDep` - TaskCrudController for CRUD operations
@@ -328,6 +354,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
   - `RelationshipControllerDep` - TaskRelationshipController for dependencies/tags
   - `AnalyticsControllerDep` - TaskAnalyticsController for statistics
   - `QueryControllerDep` - QueryController for read operations
+  - `AuditLogControllerDep` - AuditLogController for audit logs
   - `NotesRepositoryDep` - NotesRepository for note persistence
   - `ConnectionManagerDep` - WebSocket connection manager
 - Automatic OpenAPI documentation at `/docs`
@@ -342,7 +369,7 @@ Clean Architecture with 5 layers across three packages: **Domain** ← **Applica
 
 ### CLI Commands
 
-Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
+Commands in `packages/taskdog-ui/src/taskdog/cli/commands/`, registered in `cli_main.py`:
 
 **Creation & Viewing**
 
@@ -360,10 +387,10 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 - `cancel ID...`: Mark as CANCELED
 - `reopen ID...`: Reset to PENDING (no dependency validation)
 
-**Updates** (single-field commands use `update_helpers.py`)
+**Updates**
 
-- `deadline ID DATE`, `priority ID N`, `rename ID NAME`, `estimate ID HOURS`, `schedule ID START [END]`
-- `update ID [--priority] [--status] [...]`: Multi-field update
+- `update ID [--name] [--priority] [--deadline] [--estimate] [--planned-start] [--planned-end] [--fixed/--no-fixed]`: Update task fields
+- `fix-actual ID [--start DATETIME] [--end DATETIME] [--duration HOURS] [--clear-start] [--clear-end]`: Fix actual timestamps
 
 **Management**
 
@@ -385,6 +412,10 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 - `week`: This week's tasks
 - `export [--format json|csv] [--output] [--fields] [--all] [--status] [--tag]`: Export tasks (exports non-archived tasks by default)
 - `stats [--period all|7d|30d] [--focus all|basic|time|estimation|deadline|priority|trends]`: Analytics
+
+**Audit**
+
+- `audit-logs [--limit N] [--task-id ID] [--operation OP]`: View audit logs
 
 **Interactive**
 
@@ -418,13 +449,15 @@ Commands in `src/presentation/cli/commands/`, registered in `cli.py`:
 
 **Implementation Principles**:
 
-1. **Monorepo with UV Workspace**: Three packages with clear separation of concerns
+1. **Monorepo with UV Workspace**: Five packages with clear separation of concerns
    - `taskdog-core`: Pure business logic (no UI/API dependencies)
    - `taskdog-server`: FastAPI REST API (depends on core)
-   - `taskdog-ui`: CLI/TUI interfaces (depends on core)
+   - `taskdog-client`: HTTP client library (depends on core)
+   - `taskdog-ui`: CLI/TUI interfaces (depends on core, client)
+   - `taskdog-mcp`: MCP server for Claude Desktop (depends on client)
 2. **Clean Architecture**: Strict layer dependencies (Presentation → Application → Domain ← Infrastructure)
-3. **Specialized Controllers**: Five specialized controllers in core package (SRP - Single Responsibility Principle)
-   - `TaskCrudController`, `TaskLifecycleController`, `TaskRelationshipController`, `TaskAnalyticsController`, `QueryController`
+3. **Specialized Controllers**: Six specialized controllers in core package (SRP - Single Responsibility Principle)
+   - `TaskCrudController`, `TaskLifecycleController`, `TaskRelationshipController`, `TaskAnalyticsController`, `QueryController`, `AuditLogController`
    - Used by all presentation layers (CLI, TUI, API) via HTTP API
 4. **Use Case Pattern**: Each business operation = separate use case class with `execute(input_dto)`
 5. **CQRS Pattern**: Commands (writes) via specialized controllers + Use Cases; Queries (reads) via QueryController + TaskQueryService
@@ -463,6 +496,7 @@ The FastAPI server (`taskdog-server`) provides a REST API with automatic OpenAPI
 - `POST /api/v1/tasks/{task_id}/reopen` - Reopen completed/canceled task
 - `POST /api/v1/tasks/{task_id}/archive` - Archive task (soft delete)
 - `POST /api/v1/tasks/{task_id}/restore` - Restore archived task
+- `PATCH /api/v1/tasks/{task_id}/fix-actual` - Fix actual timestamps (actual_start, actual_end, actual_duration)
 
 **Relationships** (`/api/v1/tasks/{task_id}/`)
 
@@ -486,6 +520,10 @@ The FastAPI server (`taskdog-server`) provides a REST API with automatic OpenAPI
 
 - `POST /api/v1/optimize` - Run schedule optimization with algorithm selection
 - `GET /api/v1/algorithms` - List available optimization algorithms
+
+**Audit** (`/api/v1/`)
+
+- `GET /api/v1/audit-logs` - List audit logs with filtering (task_id, operation, limit)
 
 **Real-time Updates**:
 
