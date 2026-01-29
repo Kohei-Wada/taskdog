@@ -407,6 +407,7 @@ Commands in `packages/taskdog-ui/src/taskdog/cli/commands/`, registered in `cli_
 **Visualization**
 
 - `gantt [--sort] [--reverse] [--all] [--status] [--tag] [--start-date] [--end-date]`: Gantt chart with workload summary (default sort: deadline, shows non-archived tasks by default)
+- `timeline [--date YYYY-MM-DD]`: Daily timeline showing actual work times (horizontal axis is hours, vertical is tasks)
 - `table [--sort] [--reverse] [--all] [--fields] [--status] [--tag] [--start-date] [--end-date]`: Task table with filtering (shows non-archived tasks by default)
 - `today`: Today's tasks (deadline today, planned includes today, or IN_PROGRESS)
 - `week`: This week's tasks
