@@ -1,3 +1,4 @@
+import importlib
 from typing import Any
 
 import click
@@ -25,16 +26,55 @@ from taskdog.cli.commands.stats import stats_command
 from taskdog.cli.commands.table import table_command
 from taskdog.cli.commands.tags import tags_command
 from taskdog.cli.commands.today import today_command
-from taskdog.cli.commands.tui import tui_command
 from taskdog.cli.commands.update import update_command
 from taskdog.cli.commands.week import week_command
 from taskdog.cli.context import CliContext
 from taskdog.console.rich_console_writer import RichConsoleWriter
 from taskdog.infrastructure.cli_config_manager import load_cli_config
 
+# Lazy-loaded subcommands for performance optimization
+# These commands have heavy dependencies (e.g., Textual) that slow down CLI startup
+LAZY_SUBCOMMANDS: dict[str, str] = {
+    "tui": "taskdog.cli.commands.tui.tui_command",
+}
+
 
 class TaskdogGroup(click.Group):
-    """Custom Click Group that displays ASCII art before help."""
+    """Custom Click Group with lazy loading and ASCII art help display.
+
+    Implements Click's LazyGroup pattern to defer loading of heavy subcommands
+    (like TUI with Textual) until they are actually invoked.
+    See: https://click.palletsprojects.com/en/stable/complex/
+    """
+
+    def __init__(
+        self,
+        *args: Any,
+        lazy_subcommands: dict[str, str] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.lazy_subcommands = lazy_subcommands or {}
+
+    def list_commands(self, ctx: click.Context) -> list[str]:
+        """List all commands including lazy-loaded ones."""
+        base = super().list_commands(ctx)
+        lazy = sorted(self.lazy_subcommands.keys())
+        return base + lazy
+
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
+        """Get a command, loading lazily if necessary."""
+        if cmd_name in self.lazy_subcommands:
+            return self._lazy_load(cmd_name)
+        return super().get_command(ctx, cmd_name)
+
+    def _lazy_load(self, cmd_name: str) -> click.Command:
+        """Lazily load a command from its import path."""
+        import_path = self.lazy_subcommands[cmd_name]
+        modname, attr = import_path.rsplit(".", 1)
+        mod = importlib.import_module(modname)
+        cmd: click.Command = getattr(mod, attr)
+        return cmd
 
     def format_help(self, ctx: click.Context, formatter: Any) -> None:
         """Override format_help to add ASCII art before help text."""
@@ -56,6 +96,7 @@ class TaskdogGroup(click.Group):
 
 @click.group(
     cls=TaskdogGroup,
+    lazy_subcommands=LAZY_SUBCOMMANDS,
     context_settings={"help_option_names": ["-h", "--help"]},
     invoke_without_command=True,
 )
@@ -142,7 +183,7 @@ cli.add_command(fix_actual_command)
 cli.add_command(optimize_command)
 cli.add_command(stats_command)
 cli.add_command(tags_command)
-cli.add_command(tui_command)
+# Note: tui_command is lazy-loaded via LAZY_SUBCOMMANDS for performance
 
 if __name__ == "__main__":
     cli()
