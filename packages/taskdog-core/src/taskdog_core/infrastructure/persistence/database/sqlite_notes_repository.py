@@ -10,15 +10,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
-from sqlalchemy import create_engine, delete, event, select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Engine, delete, select
+from sqlalchemy.orm import Session, sessionmaker
 
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.services.time_provider import ITimeProvider
-from taskdog_core.infrastructure.persistence.database.migration_runner import (
-    run_migrations,
+from taskdog_core.infrastructure.persistence.database.engine_factory import (
+    create_session_factory,
+    create_sqlite_engine,
 )
 from taskdog_core.infrastructure.persistence.database.models.note_model import (
     NoteModel,
@@ -45,39 +45,31 @@ class SqliteNotesRepository(NotesRepository):
     - Eliminates filesystem stat() calls for note existence checks
     """
 
-    def __init__(self, database_url: str, time_provider: ITimeProvider):
+    def __init__(
+        self,
+        database_url: str,
+        time_provider: ITimeProvider,
+        engine: Engine | None = None,
+    ):
         """Initialize the repository with a SQLite database.
 
         Args:
             database_url: SQLAlchemy database URL (e.g., "sqlite:///path/to/db.sqlite")
             time_provider: Time provider for timestamps
+            engine: SQLAlchemy Engine instance. If None, creates a new engine.
+                   Pass a shared engine to avoid redundant connection pools.
         """
         self.database_url = database_url
         self.time_provider = time_provider
 
-        # Create engine with SQLite-specific optimizations
-        self.engine = create_engine(
-            database_url,
-            echo=False,
-            connect_args={"check_same_thread": False},
+        # Use provided engine or create a new one
+        self._owns_engine = engine is None
+        self.engine = (
+            engine if engine is not None else create_sqlite_engine(database_url)
         )
 
-        # Configure SQLite pragmas for concurrency
-        @event.listens_for(self.engine, "connect")  # type: ignore[no-untyped-call]
-        def set_sqlite_pragma(dbapi_connection: Any, _: Any) -> None:
-            cursor = dbapi_connection.cursor()
-            try:
-                cursor.execute("PRAGMA journal_mode=WAL")
-                cursor.execute("PRAGMA busy_timeout=30000")
-                cursor.execute("PRAGMA synchronous=NORMAL")
-            finally:
-                cursor.close()
-
         # Create sessionmaker for managing database sessions
-        self.Session = sessionmaker(bind=self.engine)
-
-        # Run database migrations
-        run_migrations(self.engine)
+        self.Session: sessionmaker[Session] = create_session_factory(self.engine)
 
     def has_notes(self, task_id: int) -> bool:
         """Check if task has associated notes.
@@ -266,5 +258,9 @@ class SqliteNotesRepository(NotesRepository):
             session.commit()
 
     def close(self) -> None:
-        """Close database connections and clean up resources."""
-        self.engine.dispose()
+        """Close database connections and clean up resources.
+
+        Only disposes the engine if this repository created it.
+        """
+        if self._owns_engine:
+            self.engine.dispose()

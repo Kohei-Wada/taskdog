@@ -13,13 +13,14 @@ from __future__ import annotations
 from datetime import date
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import create_engine, event, func, select
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Engine, func, select
+from sqlalchemy.orm import Session, sessionmaker
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
-from taskdog_core.infrastructure.persistence.database.migration_runner import (
-    run_migrations,
+from taskdog_core.infrastructure.persistence.database.engine_factory import (
+    create_session_factory,
+    create_sqlite_engine,
 )
 from taskdog_core.infrastructure.persistence.database.models import (
     TagModel,
@@ -57,6 +58,7 @@ class SqliteTaskRepository(TaskRepository):
         database_url: str,
         mapper: TaskDbMapper | None = None,
         time_provider: ITimeProvider | None = None,
+        engine: Engine | None = None,
     ):
         """Initialize the repository with a SQLite database.
 
@@ -64,6 +66,8 @@ class SqliteTaskRepository(TaskRepository):
             database_url: SQLAlchemy database URL (e.g., "sqlite:///path/to/db.sqlite")
             mapper: TaskDbMapper instance. If None, creates a new instance.
             time_provider: Provider for current time. Defaults to SystemTimeProvider.
+            engine: SQLAlchemy Engine instance. If None, creates a new engine.
+                   Pass a shared engine to avoid redundant connection pools.
         """
         self.database_url = database_url
         self.mapper = mapper or TaskDbMapper()
@@ -73,33 +77,14 @@ class SqliteTaskRepository(TaskRepository):
             time_provider = SystemTimeProvider()
         self._time_provider = time_provider
 
-        # Create engine with SQLite-specific optimizations
-        self.engine = create_engine(
-            database_url,
-            echo=False,  # Set to True for SQL query debugging
-            # SQLite-specific settings
-            connect_args={"check_same_thread": False},  # Allow multi-threading
+        # Use provided engine or create a new one
+        self._owns_engine = engine is None
+        self.engine = (
+            engine if engine is not None else create_sqlite_engine(database_url)
         )
 
-        # Configure SQLite pragmas for concurrency (Issue #226)
-        @event.listens_for(self.engine, "connect")  # type: ignore[no-untyped-call]
-        def set_sqlite_pragma(dbapi_connection: Any, _: Any) -> None:
-            cursor = dbapi_connection.cursor()
-            try:
-                # WAL mode enables concurrent readers during writes
-                cursor.execute("PRAGMA journal_mode=WAL")
-                # 30 second timeout for lock acquisition
-                cursor.execute("PRAGMA busy_timeout=30000")
-                # Good balance between safety and performance with WAL
-                cursor.execute("PRAGMA synchronous=NORMAL")
-            finally:
-                cursor.close()
-
         # Create sessionmaker for managing database sessions
-        self.Session = sessionmaker(bind=self.engine)
-
-        # Run database migrations
-        run_migrations(self.engine)
+        self.Session: sessionmaker[Session] = create_session_factory(self.engine)
 
     def get_all(self) -> list[Task]:
         """Retrieve all tasks from database.
@@ -487,5 +472,7 @@ class SqliteTaskRepository(TaskRepository):
         """Close database connections and clean up resources.
 
         Should be called when the repository is no longer needed.
+        Only disposes the engine if this repository created it.
         """
-        self.engine.dispose()
+        if self._owns_engine:
+            self.engine.dispose()
