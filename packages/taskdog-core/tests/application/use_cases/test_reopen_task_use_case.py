@@ -4,7 +4,7 @@ from datetime import datetime
 
 import pytest
 
-from taskdog_core.application.dto.single_task_inputs import ReopenTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.reopen_task import ReopenTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -46,7 +46,7 @@ class TestReopenTaskUseCase:
 
         task = self.repository.create(**create_kwargs)
 
-        input_dto = ReopenTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.status == TaskStatus.PENDING
@@ -63,7 +63,7 @@ class TestReopenTaskUseCase:
             actual_end=datetime(2025, 1, 1, 12, 0, 0),
         )
 
-        input_dto = ReopenTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         self.use_case.execute(input_dto)
 
         # Verify persistence
@@ -74,7 +74,7 @@ class TestReopenTaskUseCase:
 
     def test_execute_with_nonexistent_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException."""
-        input_dto = ReopenTaskInput(task_id=999)
+        input_dto = SingleTaskInput(task_id=999)
 
         with pytest.raises(TaskNotFoundException) as exc_info:
             self.use_case.execute(input_dto)
@@ -93,7 +93,7 @@ class TestReopenTaskUseCase:
         """Test execute with PENDING/IN_PROGRESS task raises TaskValidationError."""
         task = self.repository.create(name="Test Task", priority=1, status=status)
 
-        input_dto = ReopenTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
 
         with pytest.raises(TaskValidationError) as exc_info:
             self.use_case.execute(input_dto)
@@ -120,7 +120,7 @@ class TestReopenTaskUseCase:
             depends_on=[dep.id],
         )
 
-        input_dto = ReopenTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Should succeed even though dependency is not completed
@@ -136,7 +136,7 @@ class TestReopenTaskUseCase:
             depends_on=[999],  # Non-existent task
         )
 
-        input_dto = ReopenTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         # Should succeed even though dependency doesn't exist
@@ -148,7 +148,7 @@ class TestReopenTaskUseCase:
             name="Test Task", priority=1, status=TaskStatus.COMPLETED
         )
 
-        input_dto = ReopenTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.status == TaskStatus.PENDING

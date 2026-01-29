@@ -1,12 +1,12 @@
 """Use case for removing a task."""
 
-from taskdog_core.application.dto.single_task_inputs import RemoveTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 
-class RemoveTaskUseCase(UseCase[RemoveTaskInput, None]):
+class RemoveTaskUseCase(UseCase[SingleTaskInput, None]):
     """Use case for removing tasks."""
 
     def __init__(self, repository: TaskRepository, notes_repository: NotesRepository):
@@ -19,7 +19,7 @@ class RemoveTaskUseCase(UseCase[RemoveTaskInput, None]):
         self.repository = repository
         self.notes_repository = notes_repository
 
-    def execute(self, input_dto: RemoveTaskInput) -> None:
+    def execute(self, input_dto: SingleTaskInput) -> None:
         """Execute task removal.
 
         Deletes both the task and its associated notes file (if any).

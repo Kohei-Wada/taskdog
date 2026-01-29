@@ -2,39 +2,26 @@
 
 import pytest
 
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.manage_dependencies_input import (
     AddDependencyInput,
     RemoveDependencyInput,
 )
 from taskdog_core.application.dto.set_task_tags_input import SetTaskTagsInput
-from taskdog_core.application.dto.single_task_inputs import (
-    ArchiveTaskInput,
-    RestoreTaskInput,
-)
 
 
 class TestSimpleTaskManagementInputs:
-    """Test suite for simple task management DTOs (Archive, Restore)."""
+    """Test suite for simple task management DTOs (using SingleTaskInput)."""
 
-    @pytest.mark.parametrize(
-        "dto_class",
-        [ArchiveTaskInput, RestoreTaskInput],
-        ids=["archive", "restore"],
-    )
-    def test_create_with_task_id(self, dto_class):
-        """Test creating DTO with task_id."""
-        dto = dto_class(task_id=1)
+    def test_create_with_task_id(self):
+        """Test creating SingleTaskInput with task_id."""
+        dto = SingleTaskInput(task_id=1)
         assert dto.task_id == 1
 
-    @pytest.mark.parametrize(
-        "dto_class",
-        [ArchiveTaskInput, RestoreTaskInput],
-        ids=["archive", "restore"],
-    )
-    def test_equality(self, dto_class):
+    def test_equality(self):
         """Test equality comparison."""
-        dto1 = dto_class(task_id=1)
-        dto2 = dto_class(task_id=1)
+        dto1 = SingleTaskInput(task_id=1)
+        dto2 = SingleTaskInput(task_id=1)
         assert dto1 == dto2
 
 

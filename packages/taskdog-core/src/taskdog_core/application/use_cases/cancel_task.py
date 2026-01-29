@@ -1,13 +1,13 @@
 """Use case for canceling a task."""
 
-from taskdog_core.application.dto.single_task_inputs import CancelTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.status_change_use_case import (
     StatusChangeUseCase,
 )
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-class CancelTaskUseCase(StatusChangeUseCase[CancelTaskInput]):
+class CancelTaskUseCase(StatusChangeUseCase[SingleTaskInput]):
     """Use case for canceling a task.
 
     Sets task status to CANCELED and records actual end time.

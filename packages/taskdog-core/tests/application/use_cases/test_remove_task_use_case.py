@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from taskdog_core.application.dto.single_task_inputs import RemoveTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.remove_task import RemoveTaskUseCase
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
@@ -25,7 +25,7 @@ class TestRemoveTaskUseCase:
         task = self.repository.create(name="Test Task", priority=1)
 
         # Remove task
-        input_dto = RemoveTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         self.use_case.execute(input_dto)
 
         # Verify task removed
@@ -36,7 +36,7 @@ class TestRemoveTaskUseCase:
 
     def test_remove_nonexistent_task(self):
         """Test removing a task that doesn't exist."""
-        input_dto = RemoveTaskInput(task_id=999)
+        input_dto = SingleTaskInput(task_id=999)
 
         with pytest.raises(TaskNotFoundException) as exc_info:
             self.use_case.execute(input_dto)

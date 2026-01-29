@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from taskdog_core.application.dto.single_task_inputs import CancelTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.cancel_task import CancelTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
 from tests.application.use_cases.status_change_test_base import (
@@ -14,7 +14,7 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
     """Test cases for CancelTaskUseCase."""
 
     use_case_class = CancelTaskUseCase
-    request_class = CancelTaskInput
+    request_class = SingleTaskInput
     target_status = TaskStatus.CANCELED
     initial_status = TaskStatus.PENDING
 
@@ -27,7 +27,7 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
             name="Test Task", priority=1, status=TaskStatus.PENDING
         )
 
-        input_dto = CancelTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.status == TaskStatus.CANCELED
@@ -43,7 +43,7 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
             actual_start=datetime(2024, 1, 1, 10, 0, 0),
         )
 
-        input_dto = CancelTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.status == TaskStatus.CANCELED

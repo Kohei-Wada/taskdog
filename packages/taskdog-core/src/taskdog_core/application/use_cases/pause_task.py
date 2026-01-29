@@ -1,13 +1,13 @@
 """Use case for pausing a task."""
 
-from taskdog_core.application.dto.single_task_inputs import PauseTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.status_change_use_case import (
     StatusChangeUseCase,
 )
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-class PauseTaskUseCase(StatusChangeUseCase[PauseTaskInput]):
+class PauseTaskUseCase(StatusChangeUseCase[SingleTaskInput]):
     """Use case for pausing a task.
 
     Sets task status to PENDING and clears actual start/end timestamps.

@@ -1,12 +1,12 @@
 """Use case for archiving a task."""
 
-from taskdog_core.application.dto.single_task_inputs import ArchiveTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 
-class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, TaskOperationOutput]):
+class ArchiveTaskUseCase(UseCase[SingleTaskInput, TaskOperationOutput]):
     """Use case for archiving tasks.
 
     Archives a task for data retention while removing it from active views.
@@ -27,7 +27,7 @@ class ArchiveTaskUseCase(UseCase[ArchiveTaskInput, TaskOperationOutput]):
         """
         self.repository = repository
 
-    def execute(self, input_dto: ArchiveTaskInput) -> TaskOperationOutput:
+    def execute(self, input_dto: SingleTaskInput) -> TaskOperationOutput:
         """Archive a task.
 
         Args:

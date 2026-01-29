@@ -1,6 +1,6 @@
 """Tests for StartTaskUseCase."""
 
-from taskdog_core.application.dto.single_task_inputs import StartTaskInput
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.start_task import StartTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
 from tests.application.use_cases.status_change_test_base import (
@@ -12,7 +12,7 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
     """Test cases for StartTaskUseCase."""
 
     use_case_class = StartTaskUseCase
-    request_class = StartTaskInput
+    request_class = SingleTaskInput
     target_status = TaskStatus.IN_PROGRESS
     initial_status = TaskStatus.PENDING
 
@@ -23,7 +23,7 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
         """Test execute does not set actual_end when starting."""
         task = self.repository.create(name="Test Task", priority=1)
 
-        input_dto = StartTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.actual_end is None
@@ -32,7 +32,7 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
         """Test execute works normally for tasks without parent."""
         task = self.repository.create(name="Test Task", priority=1)
 
-        input_dto = StartTaskInput(task_id=task.id)
+        input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.status == TaskStatus.IN_PROGRESS
