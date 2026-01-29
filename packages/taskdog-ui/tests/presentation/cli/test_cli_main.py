@@ -119,32 +119,6 @@ class TestCliGlobalOptions:
         assert "API server host" in result.output
         assert "API server port" in result.output
 
-    @patch("taskdog_client.TaskdogApiClient")
-    @patch("taskdog.cli_main.load_cli_config")
-    def test_connection_error_shows_overridden_host_port(
-        self, mock_load_config, mock_api_client
-    ):
-        """Test connection error message uses overridden host/port."""
-        # Setup
-        mock_config = MagicMock()
-        mock_config.api.host = "127.0.0.1"
-        mock_config.api.port = 8000
-        mock_load_config.return_value = mock_config
-
-        mock_client_instance = MagicMock()
-        # check_health() raises Exception on connection failure
-        mock_client_instance.check_health.side_effect = Exception("Connection refused")
-        mock_api_client.return_value = mock_client_instance
-
-        # Execute
-        result = self.runner.invoke(
-            cli, ["--host", "192.168.1.100", "--port", "3000", "table"]
-        )
-
-        # Verify - error message should show overridden values
-        assert result.exit_code == 1
-        assert "192.168.1.100:3000" in result.output
-
     def test_port_validation_too_low(self):
         """Test that port 0 is rejected."""
         # Execute

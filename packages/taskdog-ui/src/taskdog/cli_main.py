@@ -102,25 +102,13 @@ def cli(
     effective_api_key = api_key if api_key is not None else config.api.api_key
 
     # Initialize API client (required for all CLI commands)
+    # Health check is deferred to actual API calls for better performance
     from taskdog_client import TaskdogApiClient
 
-    try:
-        api_client = TaskdogApiClient(
-            base_url=f"http://{api_host}:{api_port}",
-            api_key=effective_api_key,
-        )
-        # Test connection (uses _safe_request which includes API key header)
-        if not api_client.check_health():
-            raise Exception("Health check failed")
-    except Exception as e:
-        console_writer.error(
-            "connecting to API server",
-            Exception(
-                f"Cannot connect to API server at {api_host}:{api_port}. "
-                f"Please start the server first with 'taskdog-server'. Error: {e}"
-            ),
-        )
-        ctx.exit(1)
+    api_client = TaskdogApiClient(
+        base_url=f"http://{api_host}:{api_port}",
+        api_key=effective_api_key,
+    )
 
     # Store in CliContext for type-safe access
     ctx.ensure_object(dict)
