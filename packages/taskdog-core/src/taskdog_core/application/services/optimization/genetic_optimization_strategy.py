@@ -308,8 +308,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             Tuple of (fitness_score, daily_allocations, scheduled_tasks)
         """
         # Simulate scheduling with this order
-        # Initialize daily allocations for simulation
-        daily_allocations = _initialize_allocations(task_order, workload_calculator)
+        # Start with empty allocations for fair comparison across orderings
+        daily_allocations: dict[date, float] = {}
         scheduled_tasks = []
 
         for task in task_order:
