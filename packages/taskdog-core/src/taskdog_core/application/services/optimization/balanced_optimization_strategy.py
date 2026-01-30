@@ -10,14 +10,16 @@ from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.allocation_helpers import (
     calculate_available_hours,
     prepare_task_for_allocation,
-    rollback_allocations,
     set_planned_times,
+)
+from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
+    initialize_allocations,
 )
 from taskdog_core.application.services.optimization.optimization_strategy import (
     OptimizationStrategy,
 )
-from taskdog_core.application.services.optimization.sequential_allocation import (
-    allocate_tasks_sequentially,
+from taskdog_core.application.sorters.optimization_task_sorter import (
+    OptimizationTaskSorter,
 )
 from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
@@ -62,15 +64,24 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using balanced distribution."""
-        return allocate_tasks_sequentially(
-            tasks=tasks,
-            context_tasks=context_tasks,
-            params=params,
-            allocate_single_task=lambda task, daily_alloc, p: self._allocate_task(
-                task, daily_alloc, p
-            ),
-            workload_calculator=workload_calculator,
-        )
+        daily_allocations = initialize_allocations(context_tasks, workload_calculator)
+        result = OptimizeResult(daily_allocations=daily_allocations)
+
+        sorted_tasks = self._sort_tasks(tasks, params.start_date)
+
+        for task in sorted_tasks:
+            updated_task = self._allocate_task(task, daily_allocations, params)
+            if updated_task:
+                result.tasks.append(updated_task)
+            else:
+                result.record_allocation_failure(task)
+
+        return result
+
+    def _sort_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
+        """Sort tasks by priority (default sorting)."""
+        sorter = OptimizationTaskSorter(start_date)
+        return sorter.sort_by_priority(tasks)
 
     def _allocate_task(
         self,
@@ -111,7 +122,8 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
                 break
 
         if state.remaining_hours > SCHEDULING_EPSILON:
-            rollback_allocations(daily_allocations, state.task_daily_allocations)
+            for date_obj, hours in state.task_daily_allocations.items():
+                daily_allocations[date_obj] -= hours
             return None
 
         if state.schedule_start and state.task_daily_allocations:

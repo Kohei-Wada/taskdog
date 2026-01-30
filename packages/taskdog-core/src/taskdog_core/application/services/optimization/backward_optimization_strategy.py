@@ -10,11 +10,11 @@ from taskdog_core.application.services.optimization.allocation_helpers import (
     prepare_task_for_allocation,
     set_planned_times,
 )
+from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
+    initialize_allocations,
+)
 from taskdog_core.application.services.optimization.optimization_strategy import (
     OptimizationStrategy,
-)
-from taskdog_core.application.services.optimization.sequential_allocation import (
-    allocate_tasks_sequentially,
 )
 from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
@@ -47,16 +47,19 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using backward allocation."""
-        return allocate_tasks_sequentially(
-            tasks=tasks,
-            context_tasks=context_tasks,
-            params=params,
-            allocate_single_task=lambda task, daily_alloc, p: self._allocate_task(
-                task, daily_alloc, p
-            ),
-            sort_tasks=self._sort_tasks,
-            workload_calculator=workload_calculator,
-        )
+        daily_allocations = initialize_allocations(context_tasks, workload_calculator)
+        result = OptimizeResult(daily_allocations=daily_allocations)
+
+        sorted_tasks = self._sort_tasks(tasks, params.start_date)
+
+        for task in sorted_tasks:
+            updated_task = self._allocate_task(task, daily_allocations, params)
+            if updated_task:
+                result.tasks.append(updated_task)
+            else:
+                result.record_allocation_failure(task)
+
+        return result
 
     def _sort_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks by deadline (furthest first)."""

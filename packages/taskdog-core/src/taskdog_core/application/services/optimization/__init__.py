@@ -1,5 +1,9 @@
 """Optimization strategies package."""
 
+from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
+    GreedyBasedOptimizationStrategy,
+    initialize_allocations,
+)
 from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
 )
@@ -11,7 +15,9 @@ from taskdog_core.application.services.optimization.strategy_factory import (
 )
 
 __all__ = [
+    "GreedyBasedOptimizationStrategy",
     "GreedyOptimizationStrategy",
     "OptimizationStrategy",
     "StrategyFactory",
+    "initialize_allocations",
 ]

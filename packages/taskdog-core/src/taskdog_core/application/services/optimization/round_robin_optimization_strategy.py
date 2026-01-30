@@ -10,11 +10,11 @@ from taskdog_core.application.constants.optimization import (
 )
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
+from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
+    initialize_allocations,
+)
 from taskdog_core.application.services.optimization.optimization_strategy import (
     OptimizationStrategy,
-)
-from taskdog_core.application.services.optimization.sequential_allocation import (
-    _initialize_allocations,
 )
 from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
@@ -67,7 +67,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             OptimizeResult containing modified tasks, daily allocations, and failures
         """
         # Initialize daily allocations from context tasks
-        existing_allocations = _initialize_allocations(
+        existing_allocations = initialize_allocations(
             context_tasks, workload_calculator
         )
         result = OptimizeResult()

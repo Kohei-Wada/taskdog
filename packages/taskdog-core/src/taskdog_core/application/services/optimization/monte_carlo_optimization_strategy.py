@@ -7,6 +7,9 @@ from typing import TYPE_CHECKING
 from taskdog_core.application.constants.optimization import MONTE_CARLO_NUM_SIMULATIONS
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
+from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
+    initialize_allocations,
+)
 from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
 )
@@ -15,9 +18,6 @@ from taskdog_core.application.services.optimization.optimization_strategy import
 )
 from taskdog_core.application.services.optimization.schedule_fitness_calculator import (
     ScheduleFitnessCalculator,
-)
-from taskdog_core.application.services.optimization.sequential_allocation import (
-    _initialize_allocations,
 )
 from taskdog_core.domain.entities.task import Task
 
@@ -84,9 +84,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self._params = params
 
         # Initialize daily allocations from context tasks
-        initial_allocations = _initialize_allocations(
-            context_tasks, workload_calculator
-        )
+        initial_allocations = initialize_allocations(context_tasks, workload_calculator)
         result = OptimizeResult(daily_allocations=dict(initial_allocations))
 
         # Create greedy strategy instance for allocation
@@ -237,7 +235,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         """
         # Simulate scheduling with this order
         # Initialize daily allocations for simulation
-        daily_allocations = _initialize_allocations(context_tasks, workload_calculator)
+        daily_allocations = initialize_allocations(context_tasks, workload_calculator)
         scheduled_tasks = []
 
         for task in task_order:

@@ -7,7 +7,6 @@ import pytest
 from taskdog_core.application.services.optimization.allocation_helpers import (
     calculate_available_hours,
     prepare_task_for_allocation,
-    rollback_allocations,
     set_planned_times,
 )
 from taskdog_core.domain.entities.task import Task
@@ -232,78 +231,6 @@ class TestOptimizationStrategyHelpers:
         assert task.planned_end.hour == 18  # Default end hour
         assert task.planned_end.minute == 0
         assert task.planned_end.second == 0
-
-    def test_rollback_allocations(self):
-        """Test rolling back allocations from daily_allocations."""
-        daily_allocations = {
-            date(2025, 10, 20): 5.0,
-            date(2025, 10, 21): 8.0,
-            date(2025, 10, 22): 3.0,
-        }
-        task_allocations = {
-            date(2025, 10, 20): 2.0,
-            date(2025, 10, 21): 3.0,
-            date(2025, 10, 22): 1.0,
-        }
-
-        rollback_allocations(daily_allocations, task_allocations)
-
-        # Verify allocations are rolled back
-        assert daily_allocations[date(2025, 10, 20)] == 3.0  # 5.0 - 2.0
-        assert daily_allocations[date(2025, 10, 21)] == 5.0  # 8.0 - 3.0
-        assert daily_allocations[date(2025, 10, 22)] == 2.0  # 3.0 - 1.0
-
-    def test_rollback_allocations_to_zero(self):
-        """Test rolling back allocations that result in zero."""
-        daily_allocations = {
-            date(2025, 10, 20): 5.0,
-            date(2025, 10, 21): 3.0,
-        }
-        task_allocations = {
-            date(2025, 10, 20): 5.0,  # Complete rollback
-            date(2025, 10, 21): 3.0,  # Complete rollback
-        }
-
-        rollback_allocations(daily_allocations, task_allocations)
-
-        # Verify allocations are rolled back to zero
-        assert daily_allocations[date(2025, 10, 20)] == 0.0
-        assert daily_allocations[date(2025, 10, 21)] == 0.0
-
-    def test_rollback_allocations_partial(self):
-        """Test rolling back only some dates."""
-        daily_allocations = {
-            date(2025, 10, 20): 5.0,
-            date(2025, 10, 21): 8.0,
-            date(2025, 10, 22): 3.0,
-        }
-        task_allocations = {
-            date(2025, 10, 20): 2.0,
-            # No rollback for 2025-10-21
-            date(2025, 10, 22): 1.0,
-        }
-
-        rollback_allocations(daily_allocations, task_allocations)
-
-        # Verify only specified dates are rolled back
-        assert daily_allocations[date(2025, 10, 20)] == 3.0  # 5.0 - 2.0
-        assert daily_allocations[date(2025, 10, 21)] == 8.0  # Unchanged
-        assert daily_allocations[date(2025, 10, 22)] == 2.0  # 3.0 - 1.0
-
-    def test_rollback_allocations_empty(self):
-        """Test rolling back with empty task allocations."""
-        daily_allocations = {
-            date(2025, 10, 20): 5.0,
-            date(2025, 10, 21): 8.0,
-        }
-        task_allocations: dict[date, float] = {}  # Empty - nothing to rollback
-
-        # Should not raise any errors
-        rollback_allocations(daily_allocations, task_allocations)
-
-        # Verify allocations are unchanged
-        assert daily_allocations[date(2025, 10, 20)] == 5.0
-        assert daily_allocations[date(2025, 10, 21)] == 8.0
 
     def test_prepare_task_for_allocation_valid_task(self):
         """Test prepare_task_for_allocation with valid task."""
