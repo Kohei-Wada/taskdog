@@ -4,20 +4,30 @@ from datetime import date, datetime, timedelta
 
 import pytest
 
-from taskdog_core.application.queries.strategies.workload_calculation_strategy import (
-    ActualScheduleStrategy,
+from taskdog_core.application.queries.workload import (
+    BaseWorkloadCalculator,
+    DisplayWorkloadCalculator,
+    OptimizationWorkloadCalculator,
 )
-from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-class TestWorkloadCalculator:
-    """Test cases for WorkloadCalculator."""
+class TestOptimizationWorkloadCalculator:
+    """Test cases for OptimizationWorkloadCalculator (weekdays only)."""
 
     @pytest.fixture(autouse=True)
     def setup(self):
         """Set up test fixtures."""
-        self.calculator = WorkloadCalculator()
+        self.calculator = OptimizationWorkloadCalculator()
+
+
+class TestBaseWorkloadCalculator:
+    """Test cases for BaseWorkloadCalculator (default: weekdays only)."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures."""
+        self.calculator = BaseWorkloadCalculator()
 
     def test_calculate_daily_workload_single_task(self):
         """Test workload calculation with a single task."""
@@ -361,17 +371,17 @@ class TestWorkloadCalculator:
         )  # Friday (task2 excluded)
 
 
-class TestWorkloadCalculatorWithActualScheduleStrategy:
-    """Test cases for WorkloadCalculator with ActualScheduleStrategy.
+class TestDisplayWorkloadCalculator:
+    """Test cases for DisplayWorkloadCalculator.
 
-    These tests verify that when using ActualScheduleStrategy, workload
-    calculations include weekends and honor manually scheduled tasks.
+    These tests verify that DisplayWorkloadCalculator (using ActualScheduleStrategy)
+    honors manually scheduled tasks while prioritizing weekdays.
     """
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        """Set up test fixtures with ActualScheduleStrategy."""
-        self.calculator = WorkloadCalculator(ActualScheduleStrategy())
+        """Set up test fixtures with DisplayWorkloadCalculator."""
+        self.calculator = DisplayWorkloadCalculator()
 
     def test_calculate_daily_workload_prioritizes_weekdays_in_period(self):
         """Test that ActualScheduleStrategy prioritizes weekdays within the period."""

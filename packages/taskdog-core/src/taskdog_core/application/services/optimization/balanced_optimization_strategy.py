@@ -27,7 +27,7 @@ from taskdog_core.shared.constants import DEFAULT_SCHEDULE_DAYS
 from taskdog_core.shared.utils.date_utils import count_weekdays
 
 if TYPE_CHECKING:
-    from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
+    from taskdog_core.application.queries.workload import BaseWorkloadCalculator
 
 
 @dataclass
@@ -61,7 +61,7 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         context_tasks: list[Task],
         params: OptimizeParams,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using balanced distribution."""
         daily_allocations = initialize_allocations(context_tasks, workload_calculator)

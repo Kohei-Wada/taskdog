@@ -9,7 +9,7 @@ from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutpu
 from taskdog_core.application.dto.task_dto import GanttTaskDto, TaskRowDto
 from taskdog_core.application.queries.base import QueryService
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
-from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
+from taskdog_core.application.queries.workload import DisplayWorkloadCalculator
 from taskdog_core.application.sorters.task_sorter import TaskSorter
 from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.task_repository import TaskRepository
@@ -391,16 +391,8 @@ class TaskQueryService(QueryService):
         range_start, range_end = date_range
 
         # Create workload calculator with holiday checker for this request
-        # Use factory to get appropriate strategy for display context
-        # ActualScheduleStrategy honors manually scheduled tasks while excluding weekends and holidays
-        from taskdog_core.application.services.workload_calculation_strategy_factory import (
-            WorkloadCalculationStrategyFactory,
-        )
-
-        workload_strategy = WorkloadCalculationStrategyFactory.create_for_display(
-            holiday_checker
-        )
-        workload_calculator = WorkloadCalculator(workload_strategy)
+        # DisplayWorkloadCalculator honors manually scheduled tasks while excluding weekends and holidays
+        workload_calculator = DisplayWorkloadCalculator(holiday_checker)
 
         # Calculate daily hours per task
         task_daily_hours: dict[int, dict[date, float]] = {}

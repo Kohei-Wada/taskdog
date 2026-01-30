@@ -20,7 +20,7 @@ from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
-    from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
+    from taskdog_core.application.queries.workload import BaseWorkloadCalculator
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
@@ -53,7 +53,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         context_tasks: list[Task],
         params: OptimizeParams,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using round-robin algorithm.
 
@@ -61,7 +61,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             tasks: List of tasks to schedule (already filtered by is_schedulable())
             context_tasks: All tasks in the system (for calculating existing allocations)
             params: Optimization parameters (start_date, max_hours_per_day, etc.)
-            workload_calculator: Optional pre-configured calculator for workload calculation
+            workload_calculator: Optional pre-configured workload calculator
 
         Returns:
             OptimizeResult containing modified tasks, daily allocations, and failures

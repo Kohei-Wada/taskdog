@@ -1,65 +1,72 @@
-"""Tests for WorkloadCalculationStrategyFactory."""
+"""Tests for workload calculator classes (replaces factory tests).
+
+The WorkloadCalculationStrategyFactory has been replaced by specialized
+calculator classes:
+- OptimizationWorkloadCalculator: For optimization (uses WeekdayOnlyStrategy)
+- DisplayWorkloadCalculator: For display (uses ActualScheduleStrategy)
+"""
 
 from unittest.mock import Mock
 
-from taskdog_core.application.queries.strategies.workload_calculation_strategy import (
+from taskdog_core.application.queries.workload import (
+    DisplayWorkloadCalculator,
+    OptimizationWorkloadCalculator,
+)
+from taskdog_core.application.queries.workload._strategies import (
     ActualScheduleStrategy,
     WeekdayOnlyStrategy,
 )
-from taskdog_core.application.services.workload_calculation_strategy_factory import (
-    WorkloadCalculationStrategyFactory,
-)
 
 
-class TestWorkloadCalculationStrategyFactory:
-    """Test cases for WorkloadCalculationStrategyFactory."""
+class TestOptimizationWorkloadCalculator:
+    """Test cases for OptimizationWorkloadCalculator."""
 
-    def test_create_for_optimization_returns_weekday_only_strategy(self):
-        """Test that optimization factory returns WeekdayOnlyStrategy."""
-        strategy = WorkloadCalculationStrategyFactory.create_for_optimization()
+    def test_uses_weekday_only_strategy(self):
+        """Test that optimization calculator uses WeekdayOnlyStrategy."""
+        calculator = OptimizationWorkloadCalculator()
 
         # Verify strategy type
-        assert isinstance(strategy, WeekdayOnlyStrategy)
+        assert isinstance(calculator.strategy, WeekdayOnlyStrategy)
 
-    def test_create_for_optimization_with_holiday_checker(self):
-        """Test that optimization factory accepts holiday checker."""
+    def test_with_holiday_checker(self):
+        """Test that optimization calculator accepts holiday checker."""
         mock_checker = Mock()
-        strategy = WorkloadCalculationStrategyFactory.create_for_optimization(
-            holiday_checker=mock_checker
-        )
+        calculator = OptimizationWorkloadCalculator(holiday_checker=mock_checker)
 
         # Verify holiday checker is passed to strategy
-        assert strategy.holiday_checker == mock_checker
+        assert calculator.strategy.holiday_checker == mock_checker
 
-    def test_create_for_optimization_without_holiday_checker(self):
-        """Test that optimization factory works without holiday checker."""
-        strategy = WorkloadCalculationStrategyFactory.create_for_optimization()
+    def test_without_holiday_checker(self):
+        """Test that optimization calculator works without holiday checker."""
+        calculator = OptimizationWorkloadCalculator()
 
-        # Verify no crash and strategy created
-        assert strategy is not None
-        assert strategy.holiday_checker is None
+        # Verify no crash and calculator created
+        assert calculator is not None
+        assert calculator.strategy.holiday_checker is None
 
-    def test_create_for_display_returns_actual_schedule_strategy(self):
-        """Test that display factory returns ActualScheduleStrategy."""
-        strategy = WorkloadCalculationStrategyFactory.create_for_display()
+
+class TestDisplayWorkloadCalculator:
+    """Test cases for DisplayWorkloadCalculator."""
+
+    def test_uses_actual_schedule_strategy(self):
+        """Test that display calculator uses ActualScheduleStrategy."""
+        calculator = DisplayWorkloadCalculator()
 
         # Verify strategy type
-        assert isinstance(strategy, ActualScheduleStrategy)
+        assert isinstance(calculator.strategy, ActualScheduleStrategy)
 
-    def test_create_for_display_with_holiday_checker(self):
-        """Test that display factory accepts holiday checker."""
+    def test_with_holiday_checker(self):
+        """Test that display calculator accepts holiday checker."""
         mock_checker = Mock()
-        strategy = WorkloadCalculationStrategyFactory.create_for_display(
-            holiday_checker=mock_checker
-        )
+        calculator = DisplayWorkloadCalculator(holiday_checker=mock_checker)
 
         # Verify holiday checker is passed to strategy
-        assert strategy.holiday_checker == mock_checker
+        assert calculator.strategy.holiday_checker == mock_checker
 
-    def test_create_for_display_without_holiday_checker(self):
-        """Test that display factory works without holiday checker."""
-        strategy = WorkloadCalculationStrategyFactory.create_for_display()
+    def test_without_holiday_checker(self):
+        """Test that display calculator works without holiday checker."""
+        calculator = DisplayWorkloadCalculator()
 
-        # Verify no crash and strategy created
-        assert strategy is not None
-        assert strategy.holiday_checker is None
+        # Verify no crash and calculator created
+        assert calculator is not None
+        assert calculator.strategy.holiday_checker is None
