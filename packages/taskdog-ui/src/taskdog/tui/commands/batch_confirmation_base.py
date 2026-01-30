@@ -89,18 +89,6 @@ class BatchConfirmationCommandBase(TUICommandBase):
         """
         pass
 
-    @abstractmethod
-    def get_success_message(self, task_count: int) -> str:
-        """Return success message after batch operation.
-
-        Args:
-            task_count: Number of tasks successfully processed
-
-        Returns:
-            Success message text
-        """
-        pass
-
     def execute(self) -> None:
         """Execute batch operation with confirmation.
 

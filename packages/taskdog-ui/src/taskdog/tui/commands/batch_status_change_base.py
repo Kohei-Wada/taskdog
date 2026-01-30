@@ -29,19 +29,6 @@ class BatchStatusChangeCommandBase(TUICommandBase):
         """
         pass
 
-    @abstractmethod
-    def get_success_message(self, task_name: str, task_id: int) -> str:
-        """Generate success message for a task.
-
-        Args:
-            task_name: Name of the task
-            task_id: ID of the task
-
-        Returns:
-            Success message string
-        """
-        pass
-
     def execute(self) -> None:
         """Execute status change on all selected tasks.
 

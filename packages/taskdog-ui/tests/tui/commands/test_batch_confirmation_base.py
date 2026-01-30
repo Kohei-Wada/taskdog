@@ -30,10 +30,6 @@ class ConcreteBatchConfirmCommand(BatchConfirmationCommandBase):
         """Execute the action."""
         pass  # Will be mocked
 
-    def get_success_message(self, task_count: int) -> str:
-        """Return success message."""
-        return f"Processed {task_count} tasks"
-
 
 class TestBatchConfirmationCommandBase:
     """Test cases for BatchConfirmationCommandBase."""
