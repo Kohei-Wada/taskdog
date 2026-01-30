@@ -116,6 +116,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             task_effective_deadlines,
             params.holiday_checker,
             existing_allocations=existing_allocations,
+            include_all_days=params.include_all_days,
         )
 
         # Identify tasks that couldn't be fully scheduled
@@ -163,6 +164,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         task_effective_deadlines: dict[int, datetime | None],
         holiday_checker: "IHolidayChecker | None" = None,
         existing_allocations: dict[date, float] | None = None,
+        include_all_days: bool = False,
     ) -> None:
         """Allocate time in round-robin fashion across tasks.
 
@@ -177,6 +179,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             task_effective_deadlines: Effective deadlines for each task
             holiday_checker: Optional holiday checker
             existing_allocations: Existing allocations from Fixed/IN_PROGRESS tasks
+            include_all_days: If True, schedule tasks on weekends and holidays too
         """
         current_date = start_date
         max_iterations = (
@@ -190,8 +193,8 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             if iteration > max_iterations:
                 break
 
-            # Skip weekends and holidays
-            if not is_workday(current_date, holiday_checker):
+            # Skip weekends and holidays (unless include_all_days is True)
+            if not include_all_days and not is_workday(current_date, holiday_checker):
                 current_date += timedelta(days=1)
                 continue
 

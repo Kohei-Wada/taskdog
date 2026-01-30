@@ -117,9 +117,11 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         )
 
         # Create WorkloadCalculator for optimization context
-        # OptimizationWorkloadCalculator uses WeekdayOnlyStrategy
+        # OptimizationWorkloadCalculator uses WeekdayOnlyStrategy by default,
+        # or AllDaysStrategy if include_all_days=True
         workload_calculator = OptimizationWorkloadCalculator(
-            holiday_checker=self.holiday_checker
+            holiday_checker=self.holiday_checker,
+            include_all_days=input_dto.include_all_days,
         )
 
         # Get optimization strategy
@@ -133,6 +135,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             max_hours_per_day=input_dto.max_hours_per_day,
             holiday_checker=self.holiday_checker,
             current_time=input_dto.current_time,
+            include_all_days=input_dto.include_all_days,
         )
 
         # Run optimization with injected workload calculator

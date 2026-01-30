@@ -185,7 +185,8 @@ class TestOptimizeCommandExecute:
 
         callback = self.mock_app.push_screen.call_args[0][1]
         start_date = datetime(2025, 1, 6)
-        callback(("balanced", 6.0, start_date, True))
+        # Tuple: (algorithm, max_hours, start_date, force_override, include_all_days)
+        callback(("balanced", 6.0, start_date, True, False))
 
         self.mock_context.api_client.optimize_schedule.assert_called_once_with(
             algorithm="balanced",
@@ -193,6 +194,7 @@ class TestOptimizeCommandExecute:
             max_hours_per_day=6.0,
             force_override=True,
             task_ids=None,
+            include_all_days=False,
         )
 
     def test_reloads_tasks_after_optimization(self) -> None:
@@ -205,7 +207,8 @@ class TestOptimizeCommandExecute:
         self.command.execute()
 
         callback = self.mock_app.push_screen.call_args[0][1]
-        callback(("greedy", 6.0, datetime.now(), False))
+        # Tuple: (algorithm, max_hours, start_date, force_override, include_all_days)
+        callback(("greedy", 6.0, datetime.now(), False, False))
 
         self.command.reload_tasks.assert_called_once()
 
@@ -221,7 +224,8 @@ class TestOptimizeCommandExecute:
         self.command.execute()
 
         callback = self.mock_app.push_screen.call_args[0][1]
-        callback(("greedy", 8.0, datetime.now(), False))
+        # Tuple: (algorithm, max_hours, start_date, force_override, include_all_days)
+        callback(("greedy", 8.0, datetime.now(), False, False))
 
         self.command.notify_warning.assert_called_once()
         message = self.command.notify_warning.call_args[0][0]
@@ -241,7 +245,8 @@ class TestOptimizeCommandExecute:
         self.command.execute()
 
         callback = self.mock_app.push_screen.call_args[0][1]
-        callback(("balanced", 8.0, datetime.now(), True))
+        # Tuple: (algorithm, max_hours, start_date, force_override, include_all_days)
+        callback(("balanced", 8.0, datetime.now(), True, False))
 
         self.command.notify_warning.assert_called_once()
         message = self.command.notify_warning.call_args[0][0]
@@ -259,7 +264,8 @@ class TestOptimizeCommandExecute:
         self.command.execute()
 
         callback = self.mock_app.push_screen.call_args[0][1]
-        callback(("greedy", 6.0, datetime.now(), False))
+        # Tuple: (algorithm, max_hours, start_date, force_override, include_all_days)
+        callback(("greedy", 6.0, datetime.now(), False, False))
 
         self.command.notify_warning.assert_called_once()
         message = self.command.notify_warning.call_args[0][0]
@@ -277,7 +283,8 @@ class TestOptimizeCommandExecute:
         self.command.execute()
 
         callback = self.mock_app.push_screen.call_args[0][1]
-        callback(("greedy", 8.0, datetime.now(), False))
+        # Tuple: (algorithm, max_hours, start_date, force_override, include_all_days)
+        callback(("greedy", 8.0, datetime.now(), False, False))
 
         self.command.notify_warning.assert_not_called()
 
@@ -296,7 +303,8 @@ class TestOptimizeCommandExecute:
 
         callback = self.mock_app.push_screen.call_args[0][1]
         start_date = datetime(2025, 1, 6)
-        callback(("greedy", 8.0, start_date, False))
+        # Tuple: (algorithm, max_hours, start_date, force_override, include_all_days)
+        callback(("greedy", 8.0, start_date, False, True))
 
         self.mock_context.api_client.optimize_schedule.assert_called_once_with(
             algorithm="greedy",
@@ -304,6 +312,7 @@ class TestOptimizeCommandExecute:
             max_hours_per_day=8.0,
             force_override=False,
             task_ids=[1, 2, 5],
+            include_all_days=True,
         )
 
     def test_dialog_shows_selected_task_count(self) -> None:

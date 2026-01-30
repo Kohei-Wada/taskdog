@@ -160,6 +160,10 @@ class OptimizeScheduleRequest(BaseModel):
         None,
         description="Specific task IDs to optimize (None means all schedulable tasks)",
     )
+    include_all_days: bool = Field(
+        False,
+        description="If True, schedule tasks on weekends and holidays too (default: False)",
+    )
 
 
 class UpdateNotesRequest(BaseModel):

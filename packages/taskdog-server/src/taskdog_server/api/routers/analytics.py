@@ -274,6 +274,7 @@ def run_optimization(
     max_hours_per_day: float,
     force_override: bool,
     task_ids: list[int] | None = None,
+    include_all_days: bool = False,
 ) -> None:
     """Background task to run schedule optimization.
 
@@ -284,6 +285,7 @@ def run_optimization(
         max_hours_per_day: Maximum hours per day (required)
         force_override: Force override existing schedules
         task_ids: Specific task IDs to optimize
+        include_all_days: If True, schedule tasks on weekends and holidays too
     """
     # This runs in the background
     controller.optimize_schedule(
@@ -292,6 +294,7 @@ def run_optimization(
         max_hours_per_day=max_hours_per_day,
         force_override=force_override,
         task_ids=task_ids,
+        include_all_days=include_all_days,
     )
 
 
@@ -335,6 +338,7 @@ async def optimize_schedule(
                 request.max_hours_per_day,
                 request.force_override,
                 request.task_ids,
+                request.include_all_days,
             )
             return OptimizationResponse(
                 summary=OptimizationSummary(
@@ -357,6 +361,7 @@ async def optimize_schedule(
             max_hours_per_day=request.max_hours_per_day,
             force_override=request.force_override,
             task_ids=request.task_ids,
+            include_all_days=request.include_all_days,
         )
 
         # Broadcast WebSocket event in background (exclude the requester by client name)

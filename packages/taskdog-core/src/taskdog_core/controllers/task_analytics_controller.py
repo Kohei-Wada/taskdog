@@ -84,6 +84,7 @@ class TaskAnalyticsController(BaseTaskController):
         max_hours_per_day: float,
         force_override: bool = True,
         task_ids: list[int] | None = None,
+        include_all_days: bool = False,
     ) -> OptimizationOutput:
         """Optimize task schedules.
 
@@ -93,6 +94,7 @@ class TaskAnalyticsController(BaseTaskController):
             max_hours_per_day: Maximum hours per day (required)
             force_override: Force override existing schedules (default: True)
             task_ids: Specific task IDs to optimize (None means all schedulable tasks)
+            include_all_days: If True, schedule tasks on weekends and holidays too (default: False)
 
         Returns:
             OptimizationOutput containing successful/failed tasks and summary
@@ -109,6 +111,7 @@ class TaskAnalyticsController(BaseTaskController):
             algorithm_name=algorithm,
             current_time=datetime.now(),
             task_ids=task_ids,
+            include_all_days=include_all_days,
         )
 
         use_case = OptimizeScheduleUseCase(

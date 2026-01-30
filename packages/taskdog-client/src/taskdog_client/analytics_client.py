@@ -50,6 +50,7 @@ class AnalyticsClient:
         max_hours_per_day: float,
         force_override: bool = True,
         task_ids: list[int] | None = None,
+        include_all_days: bool = False,
     ) -> OptimizationOutput:
         """Optimize task schedules.
 
@@ -59,6 +60,7 @@ class AnalyticsClient:
             max_hours_per_day: Maximum hours per day (required)
             force_override: Force override existing schedules
             task_ids: Specific task IDs to optimize (None means all schedulable tasks)
+            include_all_days: If True, schedule tasks on weekends and holidays too (default: False)
 
         Returns:
             OptimizationOutput with optimization results
@@ -73,6 +75,7 @@ class AnalyticsClient:
             "start_date": start_date.isoformat() if start_date else None,
             "max_hours_per_day": max_hours_per_day,
             "force_override": force_override,
+            "include_all_days": include_all_days,
         }
 
         # Only include task_ids if it's not None

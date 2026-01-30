@@ -15,6 +15,7 @@ class OptimizeScheduleInput:
         algorithm_name: Name of optimization algorithm to use
         current_time: Current time for calculating remaining hours on the start date (defaults to None)
         task_ids: Specific task IDs to optimize (None means all schedulable tasks)
+        include_all_days: If True, schedule tasks on weekends and holidays too (default: False)
     """
 
     start_date: datetime
@@ -23,3 +24,4 @@ class OptimizeScheduleInput:
     algorithm_name: str
     current_time: datetime | None = None
     task_ids: list[int] | None = None
+    include_all_days: bool = False
