@@ -110,10 +110,11 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
 
         # Filter tasks for workload calculation (UseCase responsibility)
         # - Exclude finished tasks (completed/archived)
+        # - If task_ids specified: include all OTHER scheduled tasks (not being rescheduled)
         # - If force_override=True: only include Fixed and IN_PROGRESS tasks
         # - If force_override=False: include all active scheduled tasks
         workload_tasks = self._filter_workload_tasks(
-            all_tasks, input_dto.force_override
+            all_tasks, input_dto.force_override, input_dto.task_ids
         )
 
         # Create WorkloadCalculator for optimization context
@@ -192,39 +193,60 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         )
 
     def _filter_workload_tasks(
-        self, all_tasks: list[Task], force_override: bool
+        self,
+        all_tasks: list[Task],
+        force_override: bool,
+        task_ids: list[int] | None = None,
     ) -> list[Task]:
         """Filter tasks that should be included in workload calculation.
 
         Business Rules:
         - Exclude finished tasks (completed/archived) - they don't contribute to future workload
-        - If force_override=True:
-          - Include Fixed tasks (immovable time constraints)
-          - Include IN_PROGRESS tasks (already started, should not be rescheduled)
-          - Exclude PENDING non-fixed tasks (will be rescheduled)
-        - If force_override=False:
-          - Include all active tasks with schedules
+        - If task_ids specified (partial reschedule):
+          - Include all OTHER scheduled tasks (not in task_ids) as constraints
+          - This ensures selected tasks are scheduled around existing schedules
+        - If task_ids not specified (full optimization):
+          - If force_override=True:
+            - Include Fixed tasks (immovable time constraints)
+            - Include IN_PROGRESS tasks (already started, should not be rescheduled)
+            - Exclude PENDING non-fixed tasks (will be rescheduled)
+          - If force_override=False:
+            - Include all active tasks with schedules
 
         Args:
             all_tasks: All tasks in the system
             force_override: Whether existing schedules will be overridden
+            task_ids: Specific task IDs being rescheduled (None means all tasks)
 
         Returns:
             List of tasks to include in workload calculation
         """
+        # Convert task_ids to a set for O(1) lookup
+        target_ids = set(task_ids) if task_ids else set()
+
         filtered = []
         for task in all_tasks:
             # Skip finished tasks (completed/archived) - they don't contribute to future workload
             if not task.should_count_in_workload():
                 continue
 
-            # If force_override=True, only include Fixed and IN_PROGRESS tasks
-            # (PENDING non-fixed tasks will be rescheduled, so exclude them from workload)
-            if force_override:
-                if task.is_fixed or task.status == TaskStatus.IN_PROGRESS:
+            # If specific task_ids are being rescheduled, include all OTHER scheduled tasks
+            # as constraints (regardless of force_override)
+            if task_ids:
+                # Skip tasks that are being rescheduled
+                if task.id in target_ids:
+                    continue
+                # Include all other tasks that have schedules
+                if task.planned_start:
                     filtered.append(task)
             else:
-                # If force_override=False, include all active tasks
-                filtered.append(task)
+                # Full optimization: use force_override logic
+                if force_override:
+                    # Only include Fixed and IN_PROGRESS tasks
+                    if task.is_fixed or task.status == TaskStatus.IN_PROGRESS:
+                        filtered.append(task)
+                else:
+                    # Include all active tasks
+                    filtered.append(task)
 
         return filtered
