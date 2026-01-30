@@ -261,6 +261,7 @@ class TaskdogApiClient:
         max_hours_per_day: float,
         force_override: bool = True,
         task_ids: list[int] | None = None,
+        include_all_days: bool = False,
     ) -> OptimizationOutput:
         """Optimize task schedules.
 
@@ -270,12 +271,18 @@ class TaskdogApiClient:
             max_hours_per_day: Max hours per day (required)
             force_override: Force override existing schedules
             task_ids: Specific task IDs to optimize
+            include_all_days: If True, schedule tasks on weekends and holidays too (default: False)
 
         Returns:
             OptimizationOutput with results
         """
         return self._analytics.optimize_schedule(
-            algorithm, start_date, max_hours_per_day, force_override, task_ids
+            algorithm,
+            start_date,
+            max_hours_per_day,
+            force_override,
+            task_ids,
+            include_all_days,
         )
 
     def get_algorithm_metadata(self) -> list[tuple[str, str, str]]:

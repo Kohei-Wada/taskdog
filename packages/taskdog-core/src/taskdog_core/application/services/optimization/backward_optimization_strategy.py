@@ -96,7 +96,9 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         temp_allocations: list[tuple[date, float, datetime]] = []
 
         while remaining_hours > 0:
-            if not is_workday(current_date, params.holiday_checker):
+            if not params.include_all_days and not is_workday(
+                current_date, params.holiday_checker
+            ):
                 current_date -= timedelta(days=1)
                 continue
 

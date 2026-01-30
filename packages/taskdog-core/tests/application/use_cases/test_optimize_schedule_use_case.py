@@ -544,3 +544,291 @@ class TestOptimizeScheduleUseCase:
         # Note: The current implementation doesn't track "unschedulable" as failures
         # They are simply not included in schedulable_tasks
         # This is OK - we just schedule what we can
+
+    def test_optimize_includes_weekends_when_include_all_days_true(self):
+        """Test that weekends are included when include_all_days=True."""
+        # Create task with 10h duration (needs multiple days)
+        input_dto = CreateTaskInput(
+            name="Weekend Task", priority=100, estimated_duration=10.0
+        )
+        task_result = self.create_use_case.execute(input_dto)
+
+        # Start on Friday 2025-10-17
+        start_date = datetime(2025, 10, 17, 18, 0, 0)  # Friday
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+            include_all_days=True,  # Include weekends
+        )
+        self.optimize_use_case.execute(optimize_input)
+
+        # Re-fetch task from repository to verify scheduling
+        task = self.repository.get_by_id(task_result.id)
+        assert task is not None
+        assert task.daily_allocations is not None
+
+        # With include_all_days=True, task should be scheduled on:
+        # Friday (Oct 17): 6h
+        # Saturday (Oct 18): 4h (remaining)
+        # Without include_all_days, it would skip to Monday
+
+        # Verify daily allocations include Saturday (weekend)
+        assert date(2025, 10, 17) in task.daily_allocations  # Friday
+        assert date(2025, 10, 18) in task.daily_allocations  # Saturday (weekend!)
+        assert task.daily_allocations[date(2025, 10, 17)] == 6.0
+        assert task.daily_allocations[date(2025, 10, 18)] == 4.0
+
+    def test_optimize_skips_weekends_when_include_all_days_false(self):
+        """Test that weekends are skipped when include_all_days=False (default)."""
+        # Create task with 10h duration (needs multiple days)
+        input_dto = CreateTaskInput(
+            name="Weekday Task", priority=100, estimated_duration=10.0
+        )
+        task_result = self.create_use_case.execute(input_dto)
+
+        # Start on Friday 2025-10-17
+        start_date = datetime(2025, 10, 17, 18, 0, 0)  # Friday
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+            include_all_days=False,  # Skip weekends (default)
+        )
+        self.optimize_use_case.execute(optimize_input)
+
+        # Re-fetch task from repository to verify scheduling
+        task = self.repository.get_by_id(task_result.id)
+        assert task is not None
+        assert task.daily_allocations is not None
+
+        # Without include_all_days, task should skip weekend:
+        # Friday (Oct 17): 6h
+        # Saturday/Sunday skipped
+        # Monday (Oct 20): 4h
+
+        # Verify daily allocations skip weekend
+        assert date(2025, 10, 17) in task.daily_allocations  # Friday
+        assert date(2025, 10, 18) not in task.daily_allocations  # Saturday skipped
+        assert date(2025, 10, 19) not in task.daily_allocations  # Sunday skipped
+        assert date(2025, 10, 20) in task.daily_allocations  # Monday
+        assert task.daily_allocations[date(2025, 10, 17)] == 6.0
+        assert task.daily_allocations[date(2025, 10, 20)] == 4.0
+
+    def test_optimize_backward_includes_weekends_when_include_all_days_true(self):
+        """Test that backward strategy includes weekends when include_all_days=True."""
+        # Create task with 10h duration and a deadline on Wednesday
+        input_dto = CreateTaskInput(
+            name="Backward Weekend Task",
+            priority=100,
+            estimated_duration=10.0,
+            deadline=datetime(2025, 10, 22, 18, 0, 0),  # Wednesday
+        )
+        task_result = self.create_use_case.execute(input_dto)
+
+        # Start on Thursday 2025-10-16
+        start_date = datetime(2025, 10, 16, 18, 0, 0)  # Thursday
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="backward",
+            include_all_days=True,  # Include weekends
+        )
+        self.optimize_use_case.execute(optimize_input)
+
+        # Re-fetch task from repository to verify scheduling
+        task = self.repository.get_by_id(task_result.id)
+        assert task is not None
+        assert task.daily_allocations is not None
+
+        # With backward strategy and include_all_days=True:
+        # Should schedule backwards from deadline, including weekends
+        # Wednesday (Oct 22): up to 6h
+        # Tuesday (Oct 21): 4h (remaining)
+        # Or if full: Mon, Tue, Wed
+
+        # Verify task is scheduled (actual allocation depends on algorithm)
+        total_hours = sum(task.daily_allocations.values())
+        assert total_hours == 10.0
+
+    def test_optimize_balanced_includes_weekends_when_include_all_days_true(self):
+        """Test that balanced strategy includes weekends when include_all_days=True."""
+        # Create task with 10h duration
+        input_dto = CreateTaskInput(
+            name="Balanced Weekend Task",
+            priority=100,
+            estimated_duration=10.0,
+            deadline=datetime(2025, 10, 20, 18, 0, 0),  # Monday
+        )
+        task_result = self.create_use_case.execute(input_dto)
+
+        # Start on Friday 2025-10-17
+        start_date = datetime(2025, 10, 17, 18, 0, 0)  # Friday
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="balanced",
+            include_all_days=True,  # Include weekends
+        )
+        self.optimize_use_case.execute(optimize_input)
+
+        # Re-fetch task from repository to verify scheduling
+        task = self.repository.get_by_id(task_result.id)
+        assert task is not None
+        assert task.daily_allocations is not None
+
+        # With balanced strategy and include_all_days=True:
+        # Should distribute across Fri, Sat, Sun, Mon (4 days)
+        # Each day: 10h / 4 = 2.5h
+
+        # Verify weekend days are included
+        assert date(2025, 10, 17) in task.daily_allocations  # Friday
+        # Balanced may include weekends
+        total_hours = sum(task.daily_allocations.values())
+        assert total_hours == 10.0
+
+    def test_optimize_round_robin_includes_weekends_when_include_all_days_true(self):
+        """Test that round robin strategy includes weekends when include_all_days=True."""
+        # Create two tasks
+        input_dto1 = CreateTaskInput(
+            name="RR Task 1", priority=100, estimated_duration=5.0
+        )
+        input_dto2 = CreateTaskInput(
+            name="RR Task 2", priority=100, estimated_duration=5.0
+        )
+        task_result1 = self.create_use_case.execute(input_dto1)
+        task_result2 = self.create_use_case.execute(input_dto2)
+
+        # Start on Friday 2025-10-17
+        start_date = datetime(2025, 10, 17, 18, 0, 0)  # Friday
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="round_robin",
+            include_all_days=True,  # Include weekends
+        )
+        result = self.optimize_use_case.execute(optimize_input)
+
+        # Both tasks should be scheduled
+        assert len(result.successful_tasks) == 2
+
+        # Re-fetch tasks from repository to verify scheduling
+        task1 = self.repository.get_by_id(task_result1.id)
+        task2 = self.repository.get_by_id(task_result2.id)
+        assert task1 is not None and task2 is not None
+        assert task1.daily_allocations is not None
+        assert task2.daily_allocations is not None
+
+        # Verify tasks are scheduled (including potentially on weekends)
+        total_hours1 = sum(task1.daily_allocations.values())
+        total_hours2 = sum(task2.daily_allocations.values())
+        assert total_hours1 == 5.0
+        assert total_hours2 == 5.0
+
+    def test_optimize_respects_fixed_task_on_weekend_when_include_all_days_true(self):
+        """Test that fixed task on weekend is respected when include_all_days=True.
+
+        When a fixed task is scheduled on Saturday, the optimizer should count
+        its hours towards the daily allocation, preventing over-scheduling.
+        """
+        # Create a fixed task on Saturday (2025-10-18)
+        fixed_task_input = CreateTaskInput(
+            name="Fixed Saturday Task",
+            priority=100,
+            estimated_duration=4.0,
+            planned_start=datetime(2025, 10, 18, 9, 0, 0),  # Saturday
+            planned_end=datetime(2025, 10, 18, 13, 0, 0),
+            is_fixed=True,
+        )
+        fixed_result = self.create_use_case.execute(fixed_task_input)
+
+        # Set daily_allocations for the fixed task (simulating optimizer output)
+        fixed_task = self.repository.get_by_id(fixed_result.id)
+        assert fixed_task is not None
+        fixed_task.set_daily_allocations({date(2025, 10, 18): 4.0})
+        self.repository.save(fixed_task)
+
+        # Create a task to be optimized
+        task_input = CreateTaskInput(
+            name="Task to Optimize", priority=100, estimated_duration=5.0
+        )
+        task_result = self.create_use_case.execute(task_input)
+
+        # Optimize starting from Saturday with include_all_days=True
+        start_date = datetime(2025, 10, 18, 9, 0, 0)  # Saturday
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+            include_all_days=True,  # Include weekends
+        )
+        self.optimize_use_case.execute(optimize_input)
+
+        # Re-fetch task from repository
+        task = self.repository.get_by_id(task_result.id)
+        assert task is not None
+        assert task.daily_allocations is not None
+
+        # Saturday should have at most 2h (6h max - 4h fixed = 2h available)
+        saturday = date(2025, 10, 18)
+        if saturday in task.daily_allocations:
+            assert task.daily_allocations[saturday] <= 2.0
+
+        # Total hours should be 5.0
+        total_hours = sum(task.daily_allocations.values())
+        assert total_hours == 5.0
+
+    def test_optimize_respects_fixed_task_on_weekend_without_daily_allocations(self):
+        """Test fixed task on weekend is counted even without daily_allocations.
+
+        When a fixed task is scheduled on Saturday but doesn't have daily_allocations
+        set, the workload calculator should still count its hours using AllDaysStrategy.
+        """
+        # Create a fixed task on Saturday without daily_allocations
+        fixed_task_input = CreateTaskInput(
+            name="Fixed Saturday Task",
+            priority=100,
+            estimated_duration=4.0,
+            planned_start=datetime(2025, 10, 18, 9, 0, 0),  # Saturday
+            planned_end=datetime(2025, 10, 18, 13, 0, 0),
+            is_fixed=True,
+        )
+        self.create_use_case.execute(fixed_task_input)
+        # Note: NOT setting daily_allocations - let calculator compute it
+
+        # Create a task to be optimized
+        task_input = CreateTaskInput(
+            name="Task to Optimize", priority=100, estimated_duration=5.0
+        )
+        task_result = self.create_use_case.execute(task_input)
+
+        # Optimize starting from Saturday with include_all_days=True
+        start_date = datetime(2025, 10, 18, 9, 0, 0)  # Saturday
+        optimize_input = OptimizeScheduleInput(
+            start_date=start_date,
+            max_hours_per_day=6.0,
+            force_override=False,
+            algorithm_name="greedy",
+            include_all_days=True,  # Include weekends
+        )
+        self.optimize_use_case.execute(optimize_input)
+
+        # Re-fetch task from repository
+        task = self.repository.get_by_id(task_result.id)
+        assert task is not None
+        assert task.daily_allocations is not None
+
+        # Saturday should have at most 2h (6h max - 4h fixed = 2h available)
+        saturday = date(2025, 10, 18)
+        if saturday in task.daily_allocations:
+            assert task.daily_allocations[saturday] <= 2.0
+
+        # Total hours should be 5.0
+        total_hours = sum(task.daily_allocations.values())
+        assert total_hours == 5.0

@@ -134,7 +134,9 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
         task_daily_allocations: dict[date, float] = {}
 
         while remaining_hours > 0:
-            if not is_workday(current_date, params.holiday_checker):
+            if not params.include_all_days and not is_workday(
+                current_date, params.holiday_checker
+            ):
                 current_date += timedelta(days=1)
                 continue
 

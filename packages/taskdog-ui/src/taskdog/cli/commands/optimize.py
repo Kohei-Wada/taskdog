@@ -44,13 +44,15 @@ def _show_no_tasks_message(console_writer: ConsoleWriter) -> None:
     name="optimize",
     help="""Auto-generate optimal schedules for tasks based on priority, deadlines, and workload.
 
-Schedules tasks with estimated_duration across weekdays, respecting max hours/day.
+By default, schedules tasks with estimated_duration across weekdays only.
+Use --include-all-days to schedule on weekends and holidays too.
 Use --force to override existing schedules.
 
 Examples:
-  taskdog optimize                    # Optimize all schedulable tasks
-  taskdog optimize 1 2 3              # Optimize only tasks 1, 2, and 3
-  taskdog optimize 5 --force          # Force optimize task 5
+  taskdog optimize                          # Optimize all schedulable tasks (weekdays only)
+  taskdog optimize 1 2 3                    # Optimize only tasks 1, 2, and 3
+  taskdog optimize 5 --force                # Force optimize task 5
+  taskdog optimize --include-all-days       # Include weekends and holidays
 """,
 )
 @click.argument("task_ids", nargs=-1, type=int, required=False)
@@ -85,6 +87,11 @@ Examples:
     ),
 )
 @click.option("--force", "-f", is_flag=True, help="Override existing schedules")
+@click.option(
+    "--include-all-days",
+    is_flag=True,
+    help="Schedule tasks on weekends and holidays too (default: weekdays only)",
+)
 @click.pass_context
 @handle_command_errors("optimizing schedules")
 def optimize_command(
@@ -94,6 +101,7 @@ def optimize_command(
     max_hours_per_day: float,
     algorithm: str,
     force: bool,
+    include_all_days: bool,
 ) -> None:
     """Auto-generate optimal schedules for tasks."""
     ctx_obj: CliContext = ctx.obj
@@ -110,6 +118,7 @@ def optimize_command(
         max_hours_per_day=max_hours_per_day,
         force_override=force,
         task_ids=task_ids_list,
+        include_all_days=include_all_days,
     )
 
     # Handle empty result (no tasks to optimize)

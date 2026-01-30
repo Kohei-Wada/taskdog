@@ -21,9 +21,11 @@ class OptimizeParams:
         max_hours_per_day: Maximum work hours per day
         holiday_checker: Optional holiday checker for workday validation
         current_time: Optional current time for remaining hours calculation on start date
+        include_all_days: If True, schedule tasks on weekends and holidays too (default: False)
     """
 
     start_date: datetime
     max_hours_per_day: float
     holiday_checker: "IHolidayChecker | None" = None
     current_time: datetime | None = None
+    include_all_days: bool = False

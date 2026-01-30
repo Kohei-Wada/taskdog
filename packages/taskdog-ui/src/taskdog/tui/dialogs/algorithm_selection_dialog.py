@@ -16,7 +16,7 @@ from taskdog.tui.widgets.vi_select import ViSelect
 
 
 class AlgorithmSelectionDialog(
-    BaseModalDialog[tuple[str, float, datetime, bool] | None]
+    BaseModalDialog[tuple[str, float, datetime, bool, bool] | None]
 ):
     """Modal screen for selecting optimization algorithm, max hours, and start date."""
 
@@ -118,6 +118,14 @@ class AlgorithmSelectionDialog(
                     id="force-checkbox",
                 )
 
+                yield Label(
+                    "Include weekends and holidays:",
+                    classes="field-label",
+                )
+                yield Checkbox(
+                    id="include-all-days-checkbox",
+                )
+
     def on_mount(self) -> None:
         """Called when screen is mounted."""
         # Focus the algorithm select (first option is auto-selected with allow_blank=False)
@@ -155,6 +163,9 @@ class AlgorithmSelectionDialog(
         max_hours_input = self.query_one("#max-hours-input", Input)
         start_date_input = self.query_one("#start-date-input", Input)
         force_checkbox = self.query_one("#force-checkbox", Checkbox)
+        include_all_days_checkbox = self.query_one(
+            "#include-all-days-checkbox", Checkbox
+        )
 
         # Clear previous error
         self._clear_validation_error()
@@ -197,5 +208,10 @@ class AlgorithmSelectionDialog(
         # Get force override value
         force_override = force_checkbox.value
 
-        # Submit algorithm, max_hours (can be None), start_date, and force_override
-        self.dismiss((selected_algo, max_hours, start_date, force_override))
+        # Get include_all_days value
+        include_all_days = include_all_days_checkbox.value
+
+        # Submit algorithm, max_hours, start_date, force_override, and include_all_days
+        self.dismiss(
+            (selected_algo, max_hours, start_date, force_override, include_all_days)
+        )

@@ -411,3 +411,63 @@ class TestAnalyticsRouter:
         data = response.json()
         algorithm_names = [algo["name"] for algo in data]
         assert "greedy" in algorithm_names
+
+    def test_optimize_schedule_with_include_all_days(self, client, task_factory):
+        """Test schedule optimization with include_all_days flag."""
+        # Arrange - create task to optimize
+        task_factory.create(
+            name="Weekend Task",
+            priority=1,
+            estimated_duration=10.0,
+            status=TaskStatus.PENDING,
+        )
+
+        # Friday as start date
+        start_date = datetime(2025, 10, 17, 9, 0, 0)  # Friday
+
+        request_data = {
+            "algorithm": "greedy",
+            "start_date": start_date.isoformat(),
+            "max_hours_per_day": 6.0,
+            "force_override": False,
+            "include_all_days": True,  # Include weekends
+        }
+
+        # Act
+        response = client.post("/api/v1/optimize", json=request_data)
+
+        # Assert
+        assert response.status_code == 200
+        data = response.json()
+        assert "summary" in data
+        assert data["summary"]["scheduled_tasks"] == 1
+
+    def test_optimize_schedule_without_include_all_days(self, client, task_factory):
+        """Test schedule optimization without include_all_days flag (default)."""
+        # Arrange - create task to optimize
+        task_factory.create(
+            name="Weekday Task",
+            priority=1,
+            estimated_duration=10.0,
+            status=TaskStatus.PENDING,
+        )
+
+        # Friday as start date
+        start_date = datetime(2025, 10, 17, 9, 0, 0)  # Friday
+
+        request_data = {
+            "algorithm": "greedy",
+            "start_date": start_date.isoformat(),
+            "max_hours_per_day": 6.0,
+            "force_override": False,
+            "include_all_days": False,  # Skip weekends (default)
+        }
+
+        # Act
+        response = client.post("/api/v1/optimize", json=request_data)
+
+        # Assert
+        assert response.status_code == 200
+        data = response.json()
+        assert "summary" in data
+        assert data["summary"]["scheduled_tasks"] == 1

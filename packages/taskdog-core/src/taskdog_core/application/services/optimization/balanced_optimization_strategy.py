@@ -159,7 +159,9 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         current_date = params.start_date
 
         while current_date <= end_date:
-            if not is_workday(current_date, params.holiday_checker):
+            if not params.include_all_days and not is_workday(
+                current_date, params.holiday_checker
+            ):
                 current_date += timedelta(days=1)
                 continue
 

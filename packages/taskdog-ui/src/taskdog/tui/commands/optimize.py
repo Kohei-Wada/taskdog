@@ -66,18 +66,20 @@ class OptimizeCommand(TUICommandBase):
         task_ids = selected_ids if selected_ids else None
 
         def handle_optimization_settings(
-            settings: tuple[str, float, datetime, bool] | None,
+            settings: tuple[str, float, datetime, bool, bool] | None,
         ) -> None:
             """Handle the optimization settings from the dialog.
 
             Args:
-                settings: Tuple of (algorithm_name, max_hours_per_day, start_date, force_override),
-                         or None if cancelled.
+                settings: Tuple of (algorithm_name, max_hours_per_day, start_date,
+                         force_override, include_all_days), or None if cancelled.
             """
             if settings is None:
                 return  # User cancelled
 
-            algorithm, max_hours, start_date, force_override = settings
+            algorithm, max_hours, start_date, force_override, include_all_days = (
+                settings
+            )
 
             # Use API client to optimize schedules
             result = self.context.api_client.optimize_schedule(
@@ -86,6 +88,7 @@ class OptimizeCommand(TUICommandBase):
                 max_hours_per_day=max_hours,
                 force_override=force_override,
                 task_ids=task_ids,
+                include_all_days=include_all_days,
             )
 
             # Reload tasks to show updated schedules
