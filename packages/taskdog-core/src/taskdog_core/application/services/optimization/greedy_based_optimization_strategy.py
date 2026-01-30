@@ -45,6 +45,7 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
             default_start_time: Default start time for tasks (e.g., time(9, 0))
             default_end_time: Default end time for tasks (e.g., time(18, 0))
         """
+        super().__init__()
         self.default_start_time = default_start_time
         self.default_end_time = default_end_time
 
