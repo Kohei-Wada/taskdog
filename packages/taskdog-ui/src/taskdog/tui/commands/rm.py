@@ -1,7 +1,6 @@
 """Delete task command for TUI."""
 
 from taskdog.tui.commands.batch_confirmation_base import BatchConfirmationCommandBase
-from taskdog.tui.messages import TUIMessageBuilder
 
 
 class RmCommand(BatchConfirmationCommandBase):
@@ -30,7 +29,3 @@ class RmCommand(BatchConfirmationCommandBase):
     def execute_confirmed_action(self, task_id: int) -> None:
         """Archive the task (soft delete)."""
         self.context.api_client.archive_task(task_id)
-
-    def get_success_message(self, task_count: int) -> str:
-        """Return the success message."""
-        return TUIMessageBuilder.batch_success("Archived", task_count)

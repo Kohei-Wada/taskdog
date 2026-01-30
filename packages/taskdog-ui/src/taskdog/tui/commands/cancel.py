@@ -1,7 +1,6 @@
 """Cancel task command for TUI."""
 
 from taskdog.tui.commands.batch_confirmation_base import BatchConfirmationCommandBase
-from taskdog.tui.messages import TUIMessageBuilder
 
 
 class CancelCommand(BatchConfirmationCommandBase):
@@ -22,7 +21,3 @@ class CancelCommand(BatchConfirmationCommandBase):
     def execute_confirmed_action(self, task_id: int) -> None:
         """Cancel the task via API client."""
         self.context.api_client.cancel_task(task_id)
-
-    def get_success_message(self, task_count: int) -> str:
-        """Return the success message."""
-        return TUIMessageBuilder.batch_success("Canceled", task_count)

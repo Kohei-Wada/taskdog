@@ -26,10 +26,6 @@ class ConcreteBatchCommand(BatchStatusChangeCommandBase):
         mock.name = f"Task {task_id}"
         return mock
 
-    def get_success_message(self, task_name: str, task_id: int) -> str:
-        """Get success message."""
-        return f"Completed: {task_name} (ID: {task_id})"
-
 
 class TestBatchStatusChangeCommandBase:
     """Test cases for BatchStatusChangeCommandBase."""
