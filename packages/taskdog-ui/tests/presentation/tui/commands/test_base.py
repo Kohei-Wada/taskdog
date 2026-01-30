@@ -5,9 +5,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
-from taskdog_core.application.dto.task_dto import TaskDetailDto
-from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
 
 
@@ -50,63 +47,6 @@ class TestTUICommandBase:
         """Test command initialization."""
         assert self.command.app == self.app
         assert self.command.context == self.context
-
-    def test_get_selected_task_success(self):
-        """Test getting selected task successfully."""
-        task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.PENDING)
-        # Create TaskDetailDto from task
-        task_dto = TaskDetailDto(
-            id=task.id,
-            name=task.name,
-            priority=task.priority,
-            status=task.status,
-            planned_start=None,
-            planned_end=None,
-            deadline=None,
-            actual_start=None,
-            actual_end=None,
-            actual_duration=None,
-            estimated_duration=None,
-            daily_allocations={},
-            is_fixed=False,
-            depends_on=[],
-            tags=[],
-            is_archived=False,
-            created_at=task.created_at,
-            updated_at=task.updated_at,
-            actual_duration_hours=None,
-            is_active=False,
-            is_finished=False,
-            can_be_modified=True,
-            is_schedulable=False,
-        )
-        # Mock get_selected_task_id to return the task ID
-        self.app.main_screen.task_table.get_selected_task_id.return_value = 1
-        # Mock API client to return the TaskByIdOutput
-        self.context.api_client.get_task_by_id.return_value = TaskByIdOutput(
-            task=task_dto
-        )
-
-        result = self.command.get_selected_task()
-
-        assert result == task_dto
-        self.context.api_client.get_task_by_id.assert_called_once_with(1)
-
-    def test_get_selected_task_no_screen(self):
-        """Test getting selected task when screen is not available."""
-        self.app.main_screen = None
-
-        result = self.command.get_selected_task()
-
-        assert result is None
-
-    def test_get_selected_task_no_table(self):
-        """Test getting selected task when table is not available."""
-        self.app.main_screen.task_table = None
-
-        result = self.command.get_selected_task()
-
-        assert result is None
 
     def test_reload_tasks(self):
         """Test reloading tasks posts TasksRefreshed event."""
