@@ -6,7 +6,7 @@ from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_schedule_input import OptimizeScheduleInput
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
-from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
+from taskdog_core.application.queries.workload import OptimizationWorkloadCalculator
 from taskdog_core.application.services.optimization.strategy_factory import (
     StrategyFactory,
 )
@@ -14,9 +14,6 @@ from taskdog_core.application.services.optimization_summary_builder import (
     OptimizationSummaryBuilder,
 )
 from taskdog_core.application.services.schedule_clearer import ScheduleClearer
-from taskdog_core.application.services.workload_calculation_strategy_factory import (
-    WorkloadCalculationStrategyFactory,
-)
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -120,13 +117,10 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         )
 
         # Create WorkloadCalculator for optimization context
-        # Factory selects appropriate strategy (WeekdayOnlyStrategy for optimization)
-        # UseCase constructs the calculator with the strategy
-        workload_strategy = WorkloadCalculationStrategyFactory.create_for_optimization(
-            holiday_checker=self.holiday_checker,
-            include_weekends=False,  # Future: from config
+        # OptimizationWorkloadCalculator uses WeekdayOnlyStrategy
+        workload_calculator = OptimizationWorkloadCalculator(
+            holiday_checker=self.holiday_checker
         )
-        workload_calculator = WorkloadCalculator(workload_strategy)
 
         # Get optimization strategy
         strategy = StrategyFactory.create(

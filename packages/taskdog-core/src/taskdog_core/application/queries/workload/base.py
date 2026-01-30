@@ -1,19 +1,24 @@
-"""Domain service for calculating workload from tasks."""
+"""Base workload calculator for calculating daily workload from tasks."""
 
 from datetime import date, timedelta
 
-from taskdog_core.application.queries.strategies.workload_calculation_strategy import (
+from taskdog_core.application.queries.workload._strategies import (
     WeekdayOnlyStrategy,
     WorkloadCalculationStrategy,
 )
 from taskdog_core.domain.entities.task import Task
 
 
-class WorkloadCalculator:
-    """Calculates daily workload from tasks with estimated duration.
+class BaseWorkloadCalculator:
+    """Base class for calculating daily workload from tasks with estimated duration.
 
     Uses a WorkloadCalculationStrategy to determine how to distribute hours
     when daily_allocations is not explicitly set.
+
+    This is the base class that provides core workload calculation logic.
+    For typical use cases, prefer using the specialized calculators:
+    - OptimizationWorkloadCalculator: For schedule optimization
+    - DisplayWorkloadCalculator: For Gantt charts and reports
     """
 
     def __init__(self, strategy: WorkloadCalculationStrategy | None = None):

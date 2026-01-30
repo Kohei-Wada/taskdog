@@ -30,7 +30,7 @@ from taskdog_core.application.services.optimization.schedule_fitness_calculator 
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
-    from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
+    from taskdog_core.application.queries.workload import BaseWorkloadCalculator
 
 
 class GeneticOptimizationStrategy(OptimizationStrategy):
@@ -81,7 +81,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         context_tasks: list[Task],
         params: OptimizeParams,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using genetic algorithm.
 
@@ -157,7 +157,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> list[Task]:
         """Run genetic algorithm to find optimal task ordering.
 
@@ -252,7 +252,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         task_order: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> tuple[float, dict[date, float], list[Task]]:
         """Evaluate fitness with caching to avoid redundant calculations.
 
@@ -290,7 +290,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         task_order: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> tuple[float, dict[date, float], list[Task]]:
         """Evaluate fitness of a task ordering.
 

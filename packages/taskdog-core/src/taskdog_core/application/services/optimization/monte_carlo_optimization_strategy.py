@@ -22,7 +22,7 @@ from taskdog_core.application.services.optimization.schedule_fitness_calculator 
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
-    from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
+    from taskdog_core.application.queries.workload import BaseWorkloadCalculator
 
 
 class MonteCarloOptimizationStrategy(OptimizationStrategy):
@@ -64,7 +64,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         context_tasks: list[Task],
         params: OptimizeParams,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using Monte Carlo simulation.
 
@@ -124,7 +124,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         context_tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> list[Task]:
         """Run Monte Carlo simulation to find optimal task ordering.
 
@@ -176,7 +176,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         context_tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> float:
         """Evaluate ordering with caching to avoid redundant calculations.
 
@@ -217,7 +217,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         context_tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> float:
         """Evaluate a task ordering by simulating scheduling.
 

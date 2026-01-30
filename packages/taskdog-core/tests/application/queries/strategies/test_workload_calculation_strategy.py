@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 import pytest
 
-from taskdog_core.application.queries.strategies.workload_calculation_strategy import (
+from taskdog_core.application.queries.workload._strategies import (
     ActualScheduleStrategy,
     WeekdayOnlyStrategy,
 )

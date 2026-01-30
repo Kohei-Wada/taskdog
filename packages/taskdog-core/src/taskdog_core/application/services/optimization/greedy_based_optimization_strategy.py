@@ -20,7 +20,7 @@ from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
-    from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
+    from taskdog_core.application.queries.workload import BaseWorkloadCalculator
 
 
 class GreedyBasedOptimizationStrategy(OptimizationStrategy):
@@ -54,7 +54,7 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         context_tasks: list[Task],
         params: OptimizeParams,
-        workload_calculator: "WorkloadCalculator | None" = None,
+        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using greedy forward allocation.
 
@@ -184,7 +184,7 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
 
 def initialize_allocations(
     tasks: list[Task],
-    workload_calculator: "WorkloadCalculator | None" = None,
+    workload_calculator: "BaseWorkloadCalculator | None" = None,
 ) -> dict[date, float]:
     """Initialize daily allocations from existing scheduled tasks.
 
@@ -193,14 +193,14 @@ def initialize_allocations(
 
     Args:
         tasks: Tasks to include in workload calculation (already filtered by caller)
-        workload_calculator: Optional WorkloadCalculator for calculating task daily hours
+        workload_calculator: Optional workload calculator for calculating task daily hours
 
     Returns:
         Dictionary mapping dates to allocated hours
     """
-    from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
+    from taskdog_core.application.queries.workload import OptimizationWorkloadCalculator
 
-    calculator = workload_calculator or WorkloadCalculator()
+    calculator = workload_calculator or OptimizationWorkloadCalculator()
     daily_allocations: dict[date, float] = {}
 
     for task in tasks:
