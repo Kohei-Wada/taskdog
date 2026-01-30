@@ -91,18 +91,3 @@ def set_planned_times(
     task.planned_end = end_date_with_time
 
     task.set_daily_allocations(task_daily_allocations)
-
-
-def rollback_allocations(
-    daily_allocations: dict[date, float], task_allocations: dict[date, float]
-) -> None:
-    """Rollback allocations from daily_allocations.
-
-    Used when a task allocation fails and needs to be undone.
-
-    Args:
-        daily_allocations: Global daily allocations (modified in place)
-        task_allocations: Task's allocations to roll back
-    """
-    for date_obj, hours in task_allocations.items():
-        daily_allocations[date_obj] -= hours
