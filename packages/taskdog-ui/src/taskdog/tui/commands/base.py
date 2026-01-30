@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from taskdog.tui.context import TUIContext
 from taskdog.tui.events import TasksRefreshed
-from taskdog.view_models.task_view_model import TaskRowViewModel
-from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.domain.exceptions.task_exceptions import (
     ServerConnectionError,
     TaskValidationError,
@@ -131,19 +129,6 @@ class TUICommandBase(ABC):  # noqa: B024
 
         return words
 
-    def get_selected_task(self) -> TaskDetailDto | None:
-        """Get the currently selected task from the table.
-
-        Returns:
-            The selected task DTO, or None if no task is selected or table not available
-        """
-        task_id = self.get_selected_task_id()
-        if task_id is None:
-            return None
-        # Use API client and extract task from output
-        output = self.context.api_client.get_task_by_id(task_id)
-        return output.task
-
     def get_selected_task_id(self) -> int | None:
         """Get the ID of the currently selected task.
 
@@ -153,16 +138,6 @@ class TUICommandBase(ABC):  # noqa: B024
         if not self.app.main_screen or not self.app.main_screen.task_table:
             return None
         return self.app.main_screen.task_table.get_selected_task_id()
-
-    def get_selected_task_vm(self) -> TaskRowViewModel | None:
-        """Get the currently selected task as a ViewModel.
-
-        Returns:
-            The selected TaskRowViewModel, or None if no task is selected
-        """
-        if not self.app.main_screen or not self.app.main_screen.task_table:
-            return None
-        return self.app.main_screen.task_table.get_selected_task_vm()
 
     def get_selected_task_ids(self) -> list[int]:
         """Get all selected task IDs for batch operations.
