@@ -1,18 +1,14 @@
 """Abstract base class for optimization strategies."""
 
 from abc import ABC, abstractmethod
-from datetime import date
 from typing import TYPE_CHECKING, ClassVar
 
-from taskdog_core.application.dto.optimization_output import SchedulingFailure
+from taskdog_core.application.dto.optimize_params import OptimizeParams
+from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
-    from taskdog_core.application.dto.optimize_schedule_input import (
-        OptimizeScheduleInput,
-    )
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-    from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 class OptimizationStrategy(ABC):
@@ -33,7 +29,7 @@ class OptimizationStrategy(ABC):
                 self.default_start_time = default_start_time
                 self.default_end_time = default_end_time
 
-            def optimize_tasks(self, ...) -> tuple[...]:
+            def optimize_tasks(self, tasks, context_tasks, params) -> OptimizeResult:
                 # Custom implementation
     """
 
@@ -50,25 +46,20 @@ class OptimizationStrategy(ABC):
     @abstractmethod
     def optimize_tasks(
         self,
-        schedulable_tasks: list[Task],
-        all_tasks_for_context: list[Task],
-        input_dto: "OptimizeScheduleInput",
-        holiday_checker: "IHolidayChecker | None" = None,
+        tasks: list[Task],
+        context_tasks: list[Task],
+        params: OptimizeParams,
         workload_calculator: "WorkloadCalculator | None" = None,
-    ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
+    ) -> OptimizeResult:
         """Optimize task schedules.
 
         Args:
-            schedulable_tasks: List of tasks to schedule (already filtered by is_schedulable())
-            all_tasks_for_context: All tasks in the system (for calculating existing allocations)
-            input_dto: Optimization parameters (start_date, max_hours_per_day, etc.)
-            holiday_checker: Optional HolidayChecker for holiday detection
+            tasks: List of tasks to schedule (already filtered by is_schedulable())
+            context_tasks: All tasks for calculating existing allocations (already filtered)
+            params: Optimization parameters (start_date, max_hours_per_day, etc.)
             workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
-            Tuple of (modified_tasks, daily_allocations, failed_tasks)
-            - modified_tasks: List of tasks with updated schedules
-            - daily_allocations: Dict mapping date objects to allocated hours
-            - failed_tasks: List of tasks that could not be scheduled with reasons
+            OptimizeResult containing modified tasks, daily allocations, and failures
         """
         pass

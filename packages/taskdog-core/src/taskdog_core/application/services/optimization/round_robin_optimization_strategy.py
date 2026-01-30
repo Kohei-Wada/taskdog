@@ -8,20 +8,18 @@ from taskdog_core.application.constants.optimization import (
     ROUND_ROBIN_MAX_ITERATIONS,
     SCHEDULING_EPSILON,
 )
-from taskdog_core.application.dto.optimization_output import SchedulingFailure
-from taskdog_core.application.services.optimization.allocation_context import (
-    AllocationContext,
-)
+from taskdog_core.application.dto.optimize_params import OptimizeParams
+from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.optimization_strategy import (
     OptimizationStrategy,
+)
+from taskdog_core.application.services.optimization.sequential_allocation import (
+    _initialize_allocations,
 )
 from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
-    from taskdog_core.application.dto.optimize_schedule_input import (
-        OptimizeScheduleInput,
-    )
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -52,45 +50,33 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
     def optimize_tasks(
         self,
-        schedulable_tasks: list[Task],
-        all_tasks_for_context: list[Task],
-        input_dto: "OptimizeScheduleInput",
-        holiday_checker: "IHolidayChecker | None" = None,
+        tasks: list[Task],
+        context_tasks: list[Task],
+        params: OptimizeParams,
         workload_calculator: "WorkloadCalculator | None" = None,
-    ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
+    ) -> OptimizeResult:
         """Optimize task schedules using round-robin algorithm.
 
         Args:
-            schedulable_tasks: List of tasks to schedule (already filtered by is_schedulable())
-            all_tasks_for_context: All tasks in the system (for calculating existing allocations)
-            input_dto: Optimization parameters (start_date, max_hours_per_day, etc.)
-            holiday_checker: Optional HolidayChecker for holiday detection
+            tasks: List of tasks to schedule (already filtered by is_schedulable())
+            context_tasks: All tasks in the system (for calculating existing allocations)
+            params: Optimization parameters (start_date, max_hours_per_day, etc.)
             workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
-            Tuple of (modified_tasks, daily_allocations, failed_tasks)
-            - modified_tasks: List of tasks with updated schedules
-            - daily_allocations: Dict mapping date objects to allocated hours
-            - failed_tasks: List of tasks that could not be scheduled (empty for round-robin)
+            OptimizeResult containing modified tasks, daily allocations, and failures
         """
-        # Create allocation context
-        # NOTE: all_tasks_for_context should already be filtered by UseCase
-        context = AllocationContext.create(
-            tasks=all_tasks_for_context,
-            start_date=input_dto.start_date,
-            max_hours_per_day=input_dto.max_hours_per_day,
-            holiday_checker=holiday_checker,
-            current_time=input_dto.current_time,
-            workload_calculator=workload_calculator,
+        # Initialize daily allocations from context tasks
+        existing_allocations = _initialize_allocations(
+            context_tasks, workload_calculator
         )
+        result = OptimizeResult()
 
-        # No filtering needed - schedulable_tasks is already filtered by UseCase
-
-        if not schedulable_tasks:
-            return [], {}, []
+        if not tasks:
+            return result
 
         # Filter out tasks without ID (should not happen, but for type safety)
-        schedulable_tasks = [t for t in schedulable_tasks if t.id is not None]
+        schedulable_tasks = [t for t in tasks if t.id is not None]
 
         # Calculate effective deadlines for all tasks
         task_effective_deadlines: dict[int, datetime | None] = {
@@ -125,11 +111,11 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
             daily_allocations,
             task_start_dates,
             task_end_dates,
-            input_dto.start_date,
-            input_dto.max_hours_per_day,
+            params.start_date,
+            params.max_hours_per_day,
             task_effective_deadlines,
-            holiday_checker,
-            existing_allocations=context.daily_allocations,
+            params.holiday_checker,
+            existing_allocations=existing_allocations,
         )
 
         # Identify tasks that couldn't be fully scheduled
@@ -140,13 +126,13 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
 
                 if task_id in task_start_dates:
                     # Partially scheduled but ran out of time
-                    context.record_failure(
+                    result.record_failure(
                         task,
                         f"Could not complete scheduling before deadline ({remaining_hours:.1f}h remaining)",
                     )
                 else:
                     # Never scheduled at all
-                    context.record_failure(
+                    result.record_failure(
                         task, "Deadline too close or no time available"
                     )
             else:
@@ -154,19 +140,16 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                 fully_scheduled_task_ids.add(task_id)
 
         # Build updated tasks with schedules (only fully scheduled tasks)
-        updated_tasks = self._build_updated_tasks(
+        result.tasks = self._build_updated_tasks(
             task_map,
             task_start_dates,
             task_end_dates,
             task_daily_allocations,
             fully_scheduled_task_ids,
         )
+        result.daily_allocations = daily_allocations
 
-        # Update parent task periods based on children
-        # Schedule propagation removed (no parent-child hierarchy)
-
-        # Return modified tasks, daily allocations, and failed tasks
-        return updated_tasks, daily_allocations, context.failed_tasks
+        return result
 
     def _allocate_round_robin(
         self,

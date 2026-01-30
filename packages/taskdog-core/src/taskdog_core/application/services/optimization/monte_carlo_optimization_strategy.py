@@ -1,14 +1,12 @@
 """Monte Carlo optimization strategy implementation."""
 
 import random
-from datetime import date, datetime, time
+from datetime import time
 from typing import TYPE_CHECKING
 
 from taskdog_core.application.constants.optimization import MONTE_CARLO_NUM_SIMULATIONS
-from taskdog_core.application.dto.optimization_output import SchedulingFailure
-from taskdog_core.application.services.optimization.allocation_context import (
-    AllocationContext,
-)
+from taskdog_core.application.dto.optimize_params import OptimizeParams
+from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
 )
@@ -18,14 +16,13 @@ from taskdog_core.application.services.optimization.optimization_strategy import
 from taskdog_core.application.services.optimization.schedule_fitness_calculator import (
     ScheduleFitnessCalculator,
 )
+from taskdog_core.application.services.optimization.sequential_allocation import (
+    _initialize_allocations,
+)
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
-    from taskdog_core.application.dto.optimize_schedule_input import (
-        OptimizeScheduleInput,
-    )
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-    from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 class MonteCarloOptimizationStrategy(OptimizationStrategy):
@@ -60,48 +57,37 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self._evaluation_cache: dict[
             tuple[int | None, ...], float
         ] = {}  # Cache for evaluation results
-        self.holiday_checker: IHolidayChecker | None = None
+        self._params: OptimizeParams | None = None
 
     def optimize_tasks(
         self,
-        schedulable_tasks: list[Task],
-        all_tasks_for_context: list[Task],
-        input_dto: "OptimizeScheduleInput",
-        holiday_checker: "IHolidayChecker | None" = None,
+        tasks: list[Task],
+        context_tasks: list[Task],
+        params: OptimizeParams,
         workload_calculator: "WorkloadCalculator | None" = None,
-    ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
+    ) -> OptimizeResult:
         """Optimize task schedules using Monte Carlo simulation.
 
         Args:
-            schedulable_tasks: List of tasks to schedule (already filtered by is_schedulable())
-            all_tasks_for_context: All tasks in the system (for calculating existing allocations)
-            input_dto: Optimization parameters (start_date, max_hours_per_day, etc.)
-            holiday_checker: Optional HolidayChecker for holiday detection
+            tasks: List of tasks to schedule (already filtered by is_schedulable())
+            context_tasks: All tasks in the system (for calculating existing allocations)
+            params: Optimization parameters (start_date, max_hours_per_day, etc.)
             workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
-            Tuple of (modified_tasks, daily_allocations, failed_tasks)
-            - modified_tasks: List of tasks with updated schedules
-            - daily_allocations: Dict mapping date strings to allocated hours
-            - failed_tasks: List of tasks that could not be scheduled with reasons
+            OptimizeResult containing modified tasks, daily allocations, and failures
         """
-        # No filtering needed - schedulable_tasks is already filtered by UseCase
-        if not schedulable_tasks:
-            return [], {}, []
+        if not tasks:
+            return OptimizeResult()
 
-        # Store holiday_checker for use in evaluation
-        self.holiday_checker = holiday_checker
+        # Store params for use in evaluation
+        self._params = params
 
-        # Create allocation context
-        # NOTE: all_tasks_for_context should already be filtered by UseCase
-        context = AllocationContext.create(
-            tasks=all_tasks_for_context,
-            start_date=input_dto.start_date,
-            max_hours_per_day=input_dto.max_hours_per_day,
-            holiday_checker=holiday_checker,
-            current_time=input_dto.current_time,
-            workload_calculator=workload_calculator,
+        # Initialize daily allocations from context tasks
+        initial_allocations = _initialize_allocations(
+            context_tasks, workload_calculator
         )
+        result = OptimizeResult(daily_allocations=dict(initial_allocations))
 
         # Create greedy strategy instance for allocation
         greedy_strategy = GreedyOptimizationStrategy(
@@ -114,35 +100,31 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         # Run Monte Carlo simulation
         best_order = self._monte_carlo_simulation(
-            schedulable_tasks,
-            all_tasks_for_context,
-            input_dto.start_date,
-            input_dto.max_hours_per_day,
-            input_dto.force_override,
+            tasks,
+            context_tasks,
+            params,
             greedy_strategy,
             workload_calculator,
         )
 
         # Schedule tasks according to best order using greedy allocation
-        updated_tasks = []
         for task in best_order:
-            updated_task = greedy_strategy._allocate_task(task, context)
+            updated_task = greedy_strategy._allocate_task(
+                task, result.daily_allocations, params
+            )
             if updated_task:
-                updated_tasks.append(updated_task)
+                result.tasks.append(updated_task)
             else:
                 # Record allocation failure
-                context.record_allocation_failure(task)
+                result.record_allocation_failure(task)
 
-        # Return modified tasks, daily allocations, and failed tasks
-        return updated_tasks, context.daily_allocations, context.failed_tasks
+        return result
 
     def _monte_carlo_simulation(
         self,
         schedulable_tasks: list[Task],
-        all_tasks: list[Task],
-        start_date: datetime,
-        max_hours_per_day: float,
-        force_override: bool,
+        context_tasks: list[Task],
+        params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> list[Task]:
@@ -150,10 +132,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         Args:
             schedulable_tasks: List of tasks to schedule
-            all_tasks: All tasks (for initializing allocations)
-            start_date: Starting date for scheduling
-            max_hours_per_day: Maximum work hours per day
-            force_override: Whether to override existing schedules
+            context_tasks: All tasks (for initializing allocations)
+            params: Optimization parameters
             greedy_strategy: Greedy strategy instance
             workload_calculator: Optional pre-configured calculator for workload calculation
 
@@ -179,10 +159,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             # Evaluate this ordering (with caching)
             score = self._evaluate_ordering_cached(
                 random_order,
-                all_tasks,
-                start_date,
-                max_hours_per_day,
-                force_override,
+                context_tasks,
+                params,
                 greedy_strategy,
                 workload_calculator,
             )
@@ -197,10 +175,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
     def _evaluate_ordering_cached(
         self,
         task_order: list[Task],
-        all_tasks: list[Task],
-        start_date: datetime,
-        max_hours_per_day: float,
-        force_override: bool,
+        context_tasks: list[Task],
+        params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> float:
@@ -208,10 +184,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         Args:
             task_order: Ordering of tasks to evaluate
-            all_tasks: All tasks (for initializing allocations)
-            start_date: Starting date for scheduling
-            max_hours_per_day: Maximum work hours per day
-            force_override: Whether to override existing schedules
+            context_tasks: All tasks (for initializing allocations)
+            params: Optimization parameters
             greedy_strategy: Greedy strategy instance
             workload_calculator: Optional pre-configured calculator for workload calculation
 
@@ -228,10 +202,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         # Calculate score
         score = self._evaluate_ordering(
             task_order,
-            all_tasks,
-            start_date,
-            max_hours_per_day,
-            force_override,
+            context_tasks,
+            params,
             greedy_strategy,
             workload_calculator,
         )
@@ -244,10 +216,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
     def _evaluate_ordering(
         self,
         task_order: list[Task],
-        all_tasks: list[Task],
-        start_date: datetime,
-        max_hours_per_day: float,
-        force_override: bool,
+        context_tasks: list[Task],
+        params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> float:
@@ -257,10 +227,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         Args:
             task_order: Ordering of tasks to evaluate
-            all_tasks: All tasks (for initializing allocations)
-            start_date: Starting date for scheduling
-            max_hours_per_day: Maximum work hours per day
-            force_override: Whether to override existing schedules
+            context_tasks: All tasks (for initializing allocations)
+            params: Optimization parameters
             greedy_strategy: Greedy strategy instance
             workload_calculator: Optional pre-configured calculator for workload calculation
 
@@ -268,27 +236,21 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             Score (higher is better)
         """
         # Simulate scheduling with this order
-        # Create a temporary context for simulation
-        # NOTE: all_tasks should already be filtered by caller
-        temp_context = AllocationContext.create(
-            tasks=all_tasks,
-            start_date=start_date,
-            max_hours_per_day=max_hours_per_day,
-            holiday_checker=self.holiday_checker,
-            current_time=None,
-            workload_calculator=workload_calculator,
-        )
+        # Initialize daily allocations for simulation
+        daily_allocations = _initialize_allocations(context_tasks, workload_calculator)
         scheduled_tasks = []
 
         for task in task_order:
-            updated_task = greedy_strategy._allocate_task(task, temp_context)
+            updated_task = greedy_strategy._allocate_task(
+                task, daily_allocations, params
+            )
             if updated_task:
                 scheduled_tasks.append(updated_task)
 
         # Calculate score using the calculator (with scheduling bonus)
         score = self.fitness_calculator.calculate_fitness(
             scheduled_tasks,
-            temp_context.daily_allocations,
+            daily_allocations,
             include_scheduling_bonus=True,
         )
 

@@ -3,10 +3,8 @@
 from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING
 
-from taskdog_core.application.dto.optimization_output import SchedulingFailure
-from taskdog_core.application.services.optimization.allocation_context import (
-    AllocationContext,
-)
+from taskdog_core.application.dto.optimize_params import OptimizeParams
+from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.allocation_helpers import (
     calculate_available_hours,
     prepare_task_for_allocation,
@@ -22,11 +20,7 @@ from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
-    from taskdog_core.application.dto.optimize_schedule_input import (
-        OptimizeScheduleInput,
-    )
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-    from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 class BackwardOptimizationStrategy(OptimizationStrategy):
@@ -47,22 +41,20 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
 
     def optimize_tasks(
         self,
-        schedulable_tasks: list[Task],
-        all_tasks_for_context: list[Task],
-        input_dto: "OptimizeScheduleInput",
-        holiday_checker: "IHolidayChecker | None" = None,
+        tasks: list[Task],
+        context_tasks: list[Task],
+        params: OptimizeParams,
         workload_calculator: "WorkloadCalculator | None" = None,
-    ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
+    ) -> OptimizeResult:
         """Optimize task schedules using backward allocation."""
         return allocate_tasks_sequentially(
-            schedulable_tasks=schedulable_tasks,
-            all_tasks_for_context=all_tasks_for_context,
-            input_dto=input_dto,
-            allocate_single_task=lambda task, ctx: self._allocate_task(
-                task, ctx, holiday_checker
+            tasks=tasks,
+            context_tasks=context_tasks,
+            params=params,
+            allocate_single_task=lambda task, daily_alloc, p: self._allocate_task(
+                task, daily_alloc, p
             ),
             sort_tasks=self._sort_tasks,
-            holiday_checker=holiday_checker,
             workload_calculator=workload_calculator,
         )
 
@@ -81,8 +73,8 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
     def _allocate_task(
         self,
         task: Task,
-        context: AllocationContext,
-        holiday_checker: "IHolidayChecker | None" = None,
+        daily_allocations: dict[date, float],
+        params: OptimizeParams,
     ) -> Task | None:
         """Allocate task using backward allocation from deadline."""
         task_copy = prepare_task_for_allocation(task)
@@ -92,7 +84,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         effective_deadline = task_copy.deadline
         assert task_copy.estimated_duration is not None
 
-        target_end = effective_deadline or context.start_date + timedelta(days=7)
+        target_end = effective_deadline or params.start_date + timedelta(days=7)
 
         current_date = target_end
         remaining_hours = task_copy.estimated_duration
@@ -101,19 +93,19 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         temp_allocations: list[tuple[date, float, datetime]] = []
 
         while remaining_hours > 0:
-            if not is_workday(current_date, holiday_checker):
+            if not is_workday(current_date, params.holiday_checker):
                 current_date -= timedelta(days=1)
                 continue
 
-            if current_date < context.start_date:
+            if current_date < params.start_date:
                 return None
 
             date_obj = current_date.date()
             available_hours = calculate_available_hours(
-                context.daily_allocations,
+                daily_allocations,
                 date_obj,
-                context.max_hours_per_day,
-                context.current_time,
+                params.max_hours_per_day,
+                params.current_time,
                 self.default_end_time,
             )
 
@@ -126,8 +118,8 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
 
         task_daily_allocations: dict[date, float] = {}
         for date_obj, hours, datetime_obj in reversed(temp_allocations):
-            current_allocation = context.daily_allocations.get(date_obj, 0.0)
-            context.daily_allocations[date_obj] = current_allocation + hours
+            current_allocation = daily_allocations.get(date_obj, 0.0)
+            daily_allocations[date_obj] = current_allocation + hours
             task_daily_allocations[date_obj] = hours
 
             if schedule_start is None:

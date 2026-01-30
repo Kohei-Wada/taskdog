@@ -5,10 +5,8 @@ from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING
 
 from taskdog_core.application.constants.optimization import SCHEDULING_EPSILON
-from taskdog_core.application.dto.optimization_output import SchedulingFailure
-from taskdog_core.application.services.optimization.allocation_context import (
-    AllocationContext,
-)
+from taskdog_core.application.dto.optimize_params import OptimizeParams
+from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.allocation_helpers import (
     calculate_available_hours,
     prepare_task_for_allocation,
@@ -27,11 +25,7 @@ from taskdog_core.shared.constants import DEFAULT_SCHEDULE_DAYS
 from taskdog_core.shared.utils.date_utils import count_weekdays
 
 if TYPE_CHECKING:
-    from taskdog_core.application.dto.optimize_schedule_input import (
-        OptimizeScheduleInput,
-    )
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-    from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 @dataclass
@@ -62,29 +56,27 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
 
     def optimize_tasks(
         self,
-        schedulable_tasks: list[Task],
-        all_tasks_for_context: list[Task],
-        input_dto: "OptimizeScheduleInput",
-        holiday_checker: "IHolidayChecker | None" = None,
+        tasks: list[Task],
+        context_tasks: list[Task],
+        params: OptimizeParams,
         workload_calculator: "WorkloadCalculator | None" = None,
-    ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
+    ) -> OptimizeResult:
         """Optimize task schedules using balanced distribution."""
         return allocate_tasks_sequentially(
-            schedulable_tasks=schedulable_tasks,
-            all_tasks_for_context=all_tasks_for_context,
-            input_dto=input_dto,
-            allocate_single_task=lambda task, ctx: self._allocate_task(
-                task, ctx, holiday_checker
+            tasks=tasks,
+            context_tasks=context_tasks,
+            params=params,
+            allocate_single_task=lambda task, daily_alloc, p: self._allocate_task(
+                task, daily_alloc, p
             ),
-            holiday_checker=holiday_checker,
             workload_calculator=workload_calculator,
         )
 
     def _allocate_task(
         self,
         task: Task,
-        context: AllocationContext,
-        holiday_checker: "IHolidayChecker | None" = None,
+        daily_allocations: dict[date, float],
+        params: OptimizeParams,
     ) -> Task | None:
         """Allocate task using balanced distribution with multi-pass approach."""
         task_copy = prepare_task_for_allocation(task)
@@ -94,11 +86,11 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         effective_deadline = task_copy.deadline
         assert task_copy.estimated_duration is not None
 
-        end_date = effective_deadline or context.start_date + timedelta(
+        end_date = effective_deadline or params.start_date + timedelta(
             days=DEFAULT_SCHEDULE_DAYS
         )
 
-        available_weekdays = count_weekdays(context.start_date, end_date)
+        available_weekdays = count_weekdays(params.start_date, end_date)
         if available_weekdays == 0:
             return None
 
@@ -113,15 +105,13 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         # Multi-pass allocation until all hours allocated or no capacity
         while state.remaining_hours > SCHEDULING_EPSILON:
             made_progress = self._allocate_single_pass(
-                state, context, end_date, target_hours_per_day, holiday_checker
+                state, daily_allocations, params, end_date, target_hours_per_day
             )
             if not made_progress:
                 break
 
         if state.remaining_hours > SCHEDULING_EPSILON:
-            rollback_allocations(
-                context.daily_allocations, state.task_daily_allocations
-            )
+            rollback_allocations(daily_allocations, state.task_daily_allocations)
             return None
 
         if state.schedule_start and state.task_daily_allocations:
@@ -147,22 +137,22 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
     def _allocate_single_pass(
         self,
         state: _AllocationState,
-        context: AllocationContext,
+        daily_allocations: dict[date, float],
+        params: OptimizeParams,
         end_date: datetime,
         target_hours_per_day: float,
-        holiday_checker: "IHolidayChecker | None",
     ) -> bool:
         """Execute single allocation pass across all days. Returns True if progress."""
         made_progress = False
-        current_date = context.start_date
+        current_date = params.start_date
 
         while current_date <= end_date:
-            if not is_workday(current_date, holiday_checker):
+            if not is_workday(current_date, params.holiday_checker):
                 current_date += timedelta(days=1)
                 continue
 
             allocated = self._try_allocate_day(
-                state, context, current_date, target_hours_per_day
+                state, daily_allocations, params, current_date, target_hours_per_day
             )
             if allocated:
                 made_progress = True
@@ -176,7 +166,8 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
     def _try_allocate_day(
         self,
         state: _AllocationState,
-        context: AllocationContext,
+        daily_allocations: dict[date, float],
+        params: OptimizeParams,
         current_date: datetime,
         target_hours_per_day: float,
     ) -> bool:
@@ -185,10 +176,10 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
         desired_allocation = min(target_hours_per_day, state.remaining_hours)
 
         available_hours = calculate_available_hours(
-            context.daily_allocations,
+            daily_allocations,
             date_obj,
-            context.max_hours_per_day,
-            context.current_time,
+            params.max_hours_per_day,
+            params.current_time,
             self.default_end_time,
         )
 
@@ -199,8 +190,8 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
             state.schedule_start = current_date
 
         allocated = min(desired_allocation, available_hours)
-        current_allocation = context.daily_allocations.get(date_obj, 0.0)
-        context.daily_allocations[date_obj] = current_allocation + allocated
+        current_allocation = daily_allocations.get(date_obj, 0.0)
+        daily_allocations[date_obj] = current_allocation + allocated
         state.task_daily_allocations[date_obj] = (
             state.task_daily_allocations.get(date_obj, 0.0) + allocated
         )
