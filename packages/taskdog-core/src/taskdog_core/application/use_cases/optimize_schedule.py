@@ -3,6 +3,7 @@
 from datetime import datetime, time
 
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
+from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_schedule_input import OptimizeScheduleInput
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
 from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
@@ -132,25 +133,32 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             input_dto.algorithm_name, self.default_start_time, self.default_end_time
         )
 
+        # Create OptimizeParams from input_dto
+        params = OptimizeParams(
+            start_date=input_dto.start_date,
+            max_hours_per_day=input_dto.max_hours_per_day,
+            holiday_checker=self.holiday_checker,
+            current_time=input_dto.current_time,
+        )
+
         # Run optimization with injected workload calculator
         # Strategy responsibility: how to optimize
         # Pass filtered workload_tasks instead of all_tasks
-        modified_tasks, daily_allocations, failed_tasks = strategy.optimize_tasks(
-            schedulable_tasks=schedulable_tasks,
-            all_tasks_for_context=workload_tasks,
-            input_dto=input_dto,
-            holiday_checker=self.holiday_checker,
+        result = strategy.optimize_tasks(
+            tasks=schedulable_tasks,
+            context_tasks=workload_tasks,
+            params=params,
             workload_calculator=workload_calculator,
         )
 
         # Save successfully scheduled tasks (batch operation for performance)
-        self.repository.save_all(modified_tasks)
+        self.repository.save_all(result.tasks)
 
         # Clear schedules for tasks that couldn't be scheduled
         # (when force_override is True, schedulable tasks that failed to schedule
         # should have their old schedules cleared to avoid phantom allocations)
         if input_dto.force_override:
-            scheduled_task_ids = {t.id for t in modified_tasks}
+            scheduled_task_ids = {t.id for t in result.tasks}
 
             # Find tasks that were schedulable but failed to schedule
             # Use already-filtered schedulable_tasks instead of re-filtering
@@ -166,24 +174,22 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
 
         # Build optimization summary
         summary = self.summary_builder.build(
-            modified_tasks,
+            result.tasks,
             task_states_before,
-            daily_allocations,
+            result.daily_allocations,
             input_dto.max_hours_per_day,
         )
 
         # Convert Tasks to DTOs
         successful_tasks_dto = [
-            TaskSummaryDto.from_entity(task) for task in modified_tasks
+            TaskSummaryDto.from_entity(task) for task in result.tasks
         ]
-        # failed_tasks is already list[SchedulingFailure] with TaskSummaryDto from strategy
-        failed_tasks_dto = failed_tasks
 
         # Create and return result
         return OptimizationOutput(
             successful_tasks=successful_tasks_dto,
-            failed_tasks=failed_tasks_dto,
-            daily_allocations=daily_allocations,
+            failed_tasks=result.failures,
+            daily_allocations=result.daily_allocations,
             summary=summary,
             task_states_before=task_states_before,
         )

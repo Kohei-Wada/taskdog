@@ -1,9 +1,10 @@
 """Priority-first optimization strategy implementation."""
 
-from datetime import date, datetime, time
+from datetime import datetime, time
 from typing import TYPE_CHECKING
 
-from taskdog_core.application.dto.optimization_output import SchedulingFailure
+from taskdog_core.application.dto.optimize_params import OptimizeParams
+from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
 )
@@ -16,11 +17,7 @@ from taskdog_core.application.services.optimization.sequential_allocation import
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
-    from taskdog_core.application.dto.optimize_schedule_input import (
-        OptimizeScheduleInput,
-    )
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-    from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 class PriorityFirstOptimizationStrategy(OptimizationStrategy):
@@ -42,22 +39,20 @@ class PriorityFirstOptimizationStrategy(OptimizationStrategy):
 
     def optimize_tasks(
         self,
-        schedulable_tasks: list[Task],
-        all_tasks_for_context: list[Task],
-        input_dto: "OptimizeScheduleInput",
-        holiday_checker: "IHolidayChecker | None" = None,
+        tasks: list[Task],
+        context_tasks: list[Task],
+        params: OptimizeParams,
         workload_calculator: "WorkloadCalculator | None" = None,
-    ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
+    ) -> OptimizeResult:
         """Optimize task schedules using priority-first ordering."""
         return allocate_tasks_sequentially(
-            schedulable_tasks=schedulable_tasks,
-            all_tasks_for_context=all_tasks_for_context,
-            input_dto=input_dto,
-            allocate_single_task=lambda task, ctx: self._greedy._allocate_task(
-                task, ctx, holiday_checker
-            ),
+            tasks=tasks,
+            context_tasks=context_tasks,
+            params=params,
+            allocate_single_task=lambda task,
+            daily_alloc,
+            p: self._greedy._allocate_task(task, daily_alloc, p),
             sort_tasks=self._sort_tasks,
-            holiday_checker=holiday_checker,
             workload_calculator=workload_calculator,
         )
 

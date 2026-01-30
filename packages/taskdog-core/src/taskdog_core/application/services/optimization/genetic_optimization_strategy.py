@@ -2,7 +2,7 @@
 
 import copy
 import random
-from datetime import date, datetime, time
+from datetime import date, time
 from typing import TYPE_CHECKING
 
 from taskdog_core.application.constants.optimization import (
@@ -13,10 +13,8 @@ from taskdog_core.application.constants.optimization import (
     GENETIC_POPULATION_SIZE,
     GENETIC_TOURNAMENT_SIZE,
 )
-from taskdog_core.application.dto.optimization_output import SchedulingFailure
-from taskdog_core.application.services.optimization.allocation_context import (
-    AllocationContext,
-)
+from taskdog_core.application.dto.optimize_params import OptimizeParams
+from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
 )
@@ -26,14 +24,13 @@ from taskdog_core.application.services.optimization.optimization_strategy import
 from taskdog_core.application.services.optimization.schedule_fitness_calculator import (
     ScheduleFitnessCalculator,
 )
+from taskdog_core.application.services.optimization.sequential_allocation import (
+    _initialize_allocations,
+)
 from taskdog_core.domain.entities.task import Task
 
 if TYPE_CHECKING:
-    from taskdog_core.application.dto.optimize_schedule_input import (
-        OptimizeScheduleInput,
-    )
     from taskdog_core.application.queries.workload_calculator import WorkloadCalculator
-    from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 class GeneticOptimizationStrategy(OptimizationStrategy):
@@ -77,48 +74,37 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         self._fitness_cache: dict[
             tuple[int | None, ...], tuple[float, dict[date, float], list[Task]]
         ] = {}
-        self.holiday_checker: IHolidayChecker | None = None
+        self._params: OptimizeParams | None = None
 
     def optimize_tasks(
         self,
-        schedulable_tasks: list[Task],
-        all_tasks_for_context: list[Task],
-        input_dto: "OptimizeScheduleInput",
-        holiday_checker: "IHolidayChecker | None" = None,
+        tasks: list[Task],
+        context_tasks: list[Task],
+        params: OptimizeParams,
         workload_calculator: "WorkloadCalculator | None" = None,
-    ) -> tuple[list[Task], dict[date, float], list[SchedulingFailure]]:
+    ) -> OptimizeResult:
         """Optimize task schedules using genetic algorithm.
 
         Args:
-            schedulable_tasks: List of tasks to schedule (already filtered by is_schedulable())
-            all_tasks_for_context: All tasks in the system (for calculating existing allocations)
-            input_dto: Optimization parameters (start_date, max_hours_per_day, etc.)
-            holiday_checker: Optional HolidayChecker for holiday detection
+            tasks: List of tasks to schedule (already filtered by is_schedulable())
+            context_tasks: All tasks in the system (for calculating existing allocations)
+            params: Optimization parameters (start_date, max_hours_per_day, etc.)
             workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
-            Tuple of (modified_tasks, daily_allocations, failed_tasks)
-            - modified_tasks: List of tasks with updated schedules
-            - daily_allocations: Dict mapping date strings to allocated hours
-            - failed_tasks: List of tasks that could not be scheduled with reasons
+            OptimizeResult containing modified tasks, daily allocations, and failures
         """
-        # No filtering needed - schedulable_tasks is already filtered by UseCase
-        if not schedulable_tasks:
-            return [], {}, []
+        if not tasks:
+            return OptimizeResult()
 
-        # Store holiday_checker for use in evaluation
-        self.holiday_checker = holiday_checker
+        # Store params for use in evaluation
+        self._params = params
 
-        # Create allocation context
-        # NOTE: all_tasks_for_context should already be filtered by UseCase
-        context = AllocationContext.create(
-            tasks=all_tasks_for_context,
-            start_date=input_dto.start_date,
-            max_hours_per_day=input_dto.max_hours_per_day,
-            holiday_checker=holiday_checker,
-            current_time=input_dto.current_time,
-            workload_calculator=workload_calculator,
+        # Initialize daily allocations from context tasks
+        initial_allocations = _initialize_allocations(
+            context_tasks, workload_calculator
         )
+        result = OptimizeResult(daily_allocations=dict(initial_allocations))
 
         # Create greedy strategy instance for allocation
         greedy_strategy = GreedyOptimizationStrategy(
@@ -131,9 +117,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         # Run genetic algorithm to find best task order
         best_order = self._genetic_algorithm(
-            schedulable_tasks,
-            input_dto.start_date,
-            input_dto.max_hours_per_day,
+            tasks,
+            params,
             greedy_strategy,
             workload_calculator,
         )
@@ -145,35 +130,34 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             _fitness, cached_daily_allocations, cached_scheduled_tasks = (
                 self._fitness_cache[cache_key]
             )
-            # Update context.daily_allocations with cached results
-            context.daily_allocations.update(cached_daily_allocations)
-            updated_tasks = cached_scheduled_tasks
+            # Update result.daily_allocations with cached results
+            result.daily_allocations.update(cached_daily_allocations)
+            result.tasks = cached_scheduled_tasks
 
             # Record failed tasks (tasks that were not successfully scheduled)
             scheduled_task_ids = {task.id for task in cached_scheduled_tasks}
             for task in best_order:
                 if task.id not in scheduled_task_ids:
                     # Task was not successfully scheduled - record failure
-                    context.record_allocation_failure(task)
+                    result.record_allocation_failure(task)
         else:
             # Fallback: allocate tasks if cache miss (shouldn't happen normally)
-            updated_tasks = []
             for task in best_order:
-                updated_task = greedy_strategy._allocate_task(task, context)
+                updated_task = greedy_strategy._allocate_task(
+                    task, result.daily_allocations, params
+                )
                 if updated_task:
-                    updated_tasks.append(updated_task)
+                    result.tasks.append(updated_task)
                 else:
                     # Record allocation failure
-                    context.record_allocation_failure(task)
+                    result.record_allocation_failure(task)
 
-        # Return modified tasks, daily allocations, and failed tasks
-        return updated_tasks, context.daily_allocations, context.failed_tasks
+        return result
 
     def _genetic_algorithm(
         self,
         tasks: list[Task],
-        start_date: datetime,
-        max_hours_per_day: float,
+        params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> list[Task]:
@@ -181,8 +165,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         Args:
             tasks: List of tasks to schedule
-            start_date: Starting date for scheduling
-            max_hours_per_day: Maximum work hours per day
+            params: Optimization parameters
             greedy_strategy: Greedy strategy instance
             workload_calculator: Optional pre-configured calculator for workload calculation
 
@@ -204,8 +187,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             fitness_scores = [
                 self._evaluate_fitness_cached(
                     individual,
-                    start_date,
-                    max_hours_per_day,
+                    params,
                     greedy_strategy,
                     workload_calculator,
                 )[0]  # Extract fitness score only
@@ -257,8 +239,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         final_results = [
             self._evaluate_fitness_cached(
                 individual,
-                start_date,
-                max_hours_per_day,
+                params,
                 greedy_strategy,
                 workload_calculator,
             )
@@ -271,8 +252,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     def _evaluate_fitness_cached(
         self,
         task_order: list[Task],
-        start_date: datetime,
-        max_hours_per_day: float,
+        params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> tuple[float, dict[date, float], list[Task]]:
@@ -280,8 +260,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         Args:
             task_order: Ordering of tasks to evaluate
-            start_date: Starting date for scheduling
-            max_hours_per_day: Maximum work hours per day
+            params: Optimization parameters
             greedy_strategy: Greedy strategy instance
             workload_calculator: Optional pre-configured calculator for workload calculation
 
@@ -298,8 +277,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         # Calculate fitness and allocation results
         fitness, daily_allocations, scheduled_tasks = self._evaluate_fitness(
             task_order,
-            start_date,
-            max_hours_per_day,
+            params,
             greedy_strategy,
             workload_calculator,
         )
@@ -312,8 +290,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     def _evaluate_fitness(
         self,
         task_order: list[Task],
-        start_date: datetime,
-        max_hours_per_day: float,
+        params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
         workload_calculator: "WorkloadCalculator | None" = None,
     ) -> tuple[float, dict[date, float], list[Task]]:
@@ -323,8 +300,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         Args:
             task_order: Ordering of tasks to evaluate
-            start_date: Starting date for scheduling
-            max_hours_per_day: Maximum work hours per day
+            params: Optimization parameters
             greedy_strategy: Greedy strategy instance
             workload_calculator: Optional pre-configured calculator for workload calculation
 
@@ -332,31 +308,25 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             Tuple of (fitness_score, daily_allocations, scheduled_tasks)
         """
         # Simulate scheduling with this order
-        # Create a temporary context for simulation
-        # NOTE: task_order is already the filtered schedulable tasks
-        temp_context = AllocationContext.create(
-            tasks=task_order,
-            start_date=start_date,
-            max_hours_per_day=max_hours_per_day,
-            holiday_checker=self.holiday_checker,
-            current_time=None,
-            workload_calculator=workload_calculator,
-        )
+        # Start with empty allocations for fair comparison across orderings
+        daily_allocations: dict[date, float] = {}
         scheduled_tasks = []
 
         for task in task_order:
-            updated_task = greedy_strategy._allocate_task(task, temp_context)
+            updated_task = greedy_strategy._allocate_task(
+                task, daily_allocations, params
+            )
             if updated_task:
                 scheduled_tasks.append(updated_task)
 
         # Calculate fitness using the calculator
         fitness = self.fitness_calculator.calculate_fitness(
             scheduled_tasks,
-            temp_context.daily_allocations,
+            daily_allocations,
             include_scheduling_bonus=False,
         )
 
-        return fitness, temp_context.daily_allocations, scheduled_tasks
+        return fitness, daily_allocations, scheduled_tasks
 
     def _select_parents(
         self, population: list[list[Task]], fitness_scores: list[float]

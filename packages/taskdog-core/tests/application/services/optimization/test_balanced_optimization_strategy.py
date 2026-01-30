@@ -2,9 +2,7 @@
 
 from datetime import date, datetime, time
 
-from taskdog_core.application.services.optimization.allocation_context import (
-    AllocationContext,
-)
+from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.services.optimization.balanced_optimization_strategy import (
     BalancedOptimizationStrategy,
 )
@@ -168,19 +166,19 @@ class TestBalancedOptimizationStrategyWithHolidays:
             deadline=datetime(2026, 1, 3, 18, 0, 0),
         )
 
-        # Context with max 6 hours per day (forces multi-pass allocation)
-        context = AllocationContext(
+        # Create params with max 6 hours per day (forces multi-pass allocation)
+        params = OptimizeParams(
             start_date=datetime(2025, 12, 31, 9, 0, 0),
             max_hours_per_day=6.0,
-            daily_allocations={},
             holiday_checker=holiday_checker,
             current_time=None,
         )
+        daily_allocations: dict[date, float] = {}
 
         strategy = BalancedOptimizationStrategy(
             default_start_time=time(9, 0), default_end_time=time(18, 0)
         )
-        result = strategy._allocate_task(task, context, holiday_checker=holiday_checker)
+        result = strategy._allocate_task(task, daily_allocations, params)
 
         assert result is not None
         assert result.daily_allocations is not None
@@ -208,18 +206,18 @@ class TestBalancedOptimizationStrategyWithHolidays:
             deadline=datetime(2026, 1, 10, 18, 0, 0),
         )
 
-        context = AllocationContext(
+        params = OptimizeParams(
             start_date=datetime(2025, 12, 31, 9, 0, 0),
             max_hours_per_day=6.0,
-            daily_allocations={},
             holiday_checker=None,
             current_time=None,
         )
+        daily_allocations: dict[date, float] = {}
 
         strategy = BalancedOptimizationStrategy(
             default_start_time=time(9, 0), default_end_time=time(18, 0)
         )
-        result = strategy._allocate_task(task, context, holiday_checker=None)
+        result = strategy._allocate_task(task, daily_allocations, params)
 
         assert result is not None
         assert result.daily_allocations is not None
