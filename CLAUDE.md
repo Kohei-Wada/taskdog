@@ -196,8 +196,7 @@ Clean Architecture with 5 layers across five packages: **Domain** ← **Applicat
 
 **Infrastructure** (`packages/taskdog-core/src/taskdog_core/infrastructure/`): External concerns
 
-- `persistence/database/`: SqliteTaskRepository (SQLAlchemy ORM, sessionmaker for transactions, indexed queries)
-- `persistence/file/`: FileNotesRepository (markdown note storage)
+- `persistence/database/`: SqliteTaskRepository, SqliteNotesRepository (SQLAlchemy ORM, sessionmaker for transactions, indexed queries)
 - `persistence/mappers/`: TaskDbMapper for entity-to-database mapping
 - `config/`: ConfigManager (loads TOML config with fallback to defaults)
 

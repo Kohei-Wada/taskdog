@@ -56,7 +56,7 @@ Controllers (orchestration layer)
 **Infrastructure Layer** (`taskdog_core/infrastructure/`):
 
 - `SqliteTaskRepository` - SQLite persistence with transactional writes
-- `FileNotesRepository` - Markdown notes storage
+- `SqliteNotesRepository` - Database-based notes storage
 - `ConfigManager` - TOML configuration loading
 
 **Controllers** (`taskdog_core/controllers/`):

@@ -31,9 +31,6 @@ from fixtures.pytest_fixtures import (  # noqa: E402, F401
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (  # noqa: E402
     SqliteTaskRepository,
 )
-from taskdog_core.infrastructure.persistence.file_notes_repository import (  # noqa: E402
-    FileNotesRepository,
-)
 
 # =============================================================================
 # Repository Fixtures
@@ -63,9 +60,3 @@ def repository(session_repository):
     for task in session_repository.get_all():
         session_repository.delete(task.id)
     yield session_repository
-
-
-@pytest.fixture
-def notes_repository(tmp_path):
-    """Notes repository using temporary directory."""
-    return FileNotesRepository(base_path=str(tmp_path))
