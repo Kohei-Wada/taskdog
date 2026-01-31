@@ -12,14 +12,12 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from rich.text import Text
 from textual.binding import Binding
 from textual.coordinate import Coordinate
-from textual.reactive import reactive
 from textual.widgets import DataTable
 
 if TYPE_CHECKING:
     pass
 
 from taskdog.constants.table_dimensions import PAGE_SCROLL_SIZE
-from taskdog.tui.events import TaskSelected
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
@@ -35,17 +33,6 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
     - TaskTableRowBuilder: Builds table row data from TaskRowViewModel
     - ViNavigationMixin: Provides Vi-style keybindings
     """
-
-    # Reactive variable for selection count (Phase 3)
-    selection_count = reactive(0)
-
-    def watch_selection_count(self, _old: int, _new: int) -> None:
-        """Called automatically when selection_count changes.
-
-        This reactive handler is currently a placeholder for future functionality
-        such as updating a selection count display in the footer.
-        """
-        pass
 
     # Add Vi-style bindings in addition to DataTable's default bindings
     BINDINGS: ClassVar = [
@@ -355,16 +342,6 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         """
         return self._get_all_viewmodels_from_state()
 
-    def watch_cursor_row(self, _old_row: int, _new_row: int) -> None:
-        """Called when cursor row changes.
-
-        Posts a TaskSelected event to notify other widgets of the selection change.
-        """
-        # Get the currently selected task ID
-        selected_task_id = self.get_selected_task_id()
-        # Post TaskSelected event for other widgets to react
-        self.post_message(TaskSelected(selected_task_id))
-
     def _safe_move_cursor(self, row: int) -> None:
         """Safely move cursor to specified row if table has rows.
 
@@ -428,9 +405,6 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         else:
             self._selected_task_ids.add(task_id)
 
-        # Update reactive variable (automatically triggers watch_selection_count)
-        self.selection_count = len(self._selected_task_ids)
-
         # Refresh only the current row to update checkbox
         self._refresh_current_row()
 
@@ -439,16 +413,12 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         # Select all tasks in current view (respecting filter)
         for task_vm in self._viewmodel_map.values():
             self._selected_task_ids.add(task_vm.id)
-        # Update reactive variable
-        self.selection_count = len(self._selected_task_ids)
         # Refresh table to show checkboxes
         self._render_tasks(list(self._viewmodel_map.values()))
 
     def action_clear_selection(self) -> None:
         """Clear all selections (Ctrl+N)."""
         self._selected_task_ids.clear()
-        # Update reactive variable
-        self.selection_count = 0
         # Refresh table to hide checkboxes
         all_viewmodels = self._get_all_viewmodels_from_state()
         if self._current_query:
@@ -502,5 +472,3 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
     def clear_selection(self) -> None:
         """Clear all selections (called after batch operations)."""
         self._selected_task_ids.clear()
-        # Update reactive variable
-        self.selection_count = 0

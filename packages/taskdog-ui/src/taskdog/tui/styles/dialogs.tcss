@@ -63,14 +63,6 @@ StatsScreen {
     margin: 1 0;
 }
 
-/* List containers within dialogs */
-.dialog-list {
-    height: auto;
-    max-height: 12;
-    margin: 0 0 1 0;
-    border: round $primary;
-}
-
 /* Form container */
 #form-container {
     padding: 0;
@@ -91,14 +83,6 @@ StatsScreen {
 
 .detail-row {
     padding: 0;
-}
-
-.detail-label {
-    color: $text-muted;
-}
-
-.detail-value {
-    color: $text;
 }
 
 .notes-content {
@@ -196,10 +180,6 @@ StatsScreen {
 .stats-section {
     padding: 0 1;
     margin-bottom: 1;
-}
-
-.stat-row {
-    padding: 0;
 }
 
 .section-spacer {

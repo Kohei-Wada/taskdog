@@ -6,16 +6,6 @@ from datetime import datetime
 from taskdog_core.domain.entities.task import TaskStatus
 
 
-# Sentinel value to distinguish "not provided" from "explicitly set to None"
-class _Unset:
-    """Sentinel class to represent an unset field."""
-
-    pass
-
-
-UNSET = _Unset()
-
-
 @dataclass
 class UpdateTaskInput:
     """Request data for updating a task.

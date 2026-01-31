@@ -74,26 +74,6 @@ class TaskCreated(Message):
 # UI interaction events (posted by widgets)
 
 
-class TaskSelected(Message):
-    """Event sent when a task is selected in the task table.
-
-    This allows other widgets (e.g., detail panel, gantt chart) to
-    react to task selection changes without direct coupling.
-
-    Attributes:
-        task_id: The selected task ID, or None if no task is selected
-    """
-
-    def __init__(self, task_id: int | None):
-        """Initialize the event.
-
-        Args:
-            task_id: The selected task ID, or None if selection is cleared
-        """
-        super().__init__()
-        self.task_id = task_id
-
-
 class SearchQueryChanged(Message):
     """Event sent when the search query changes.
 
