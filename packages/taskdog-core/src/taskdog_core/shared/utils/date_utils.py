@@ -1,7 +1,7 @@
 """Date and time utility functions for task scheduling.
 
 This module provides utilities for:
-- Weekday/weekend detection (is_weekday, is_weekend)
+- Weekday detection (is_weekday)
 - Workday calculations (count_weekdays)
 
 Note: Monday=0, Tuesday=1, ..., Friday=4, Saturday=5, Sunday=6
@@ -24,18 +24,6 @@ def is_weekday(dt: datetime | date) -> bool:
         True if Monday-Friday, False if Saturday-Sunday
     """
     return dt.weekday() < WEEKDAY_THRESHOLD
-
-
-def is_weekend(dt: datetime | date) -> bool:
-    """Check if a date is a weekend (Saturday-Sunday).
-
-    Args:
-        dt: Date or datetime to check
-
-    Returns:
-        True if Saturday-Sunday, False if Monday-Friday
-    """
-    return dt.weekday() >= WEEKDAY_THRESHOLD
 
 
 def count_weekdays(start: datetime | date, end: datetime | date) -> int:
