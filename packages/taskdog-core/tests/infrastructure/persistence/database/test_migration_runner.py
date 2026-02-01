@@ -86,7 +86,7 @@ class TestRunMigrations:
             # Should now have alembic_version stamped
             inspector = inspect(engine)
             assert "alembic_version" in inspector.get_table_names()
-            assert get_current_revision(engine) == "005_add_daily_allocations_table"
+            assert get_current_revision(engine) == "006_remove_daily_allocations_json"
         finally:
             engine.dispose()
 
@@ -100,7 +100,7 @@ class TestRunMigrations:
             run_migrations(engine)
 
             # Should still work and have correct revision
-            assert get_current_revision(engine) == "005_add_daily_allocations_table"
+            assert get_current_revision(engine) == "006_remove_daily_allocations_json"
         finally:
             engine.dispose()
 
@@ -128,7 +128,6 @@ class TestRunMigrations:
                 "actual_duration",
                 "estimated_duration",
                 "is_fixed",
-                "daily_allocations",
                 "depends_on",
                 "is_archived",
             }
@@ -295,7 +294,7 @@ class TestGetCurrentRevision:
         try:
             run_migrations(engine)
 
-            assert get_current_revision(engine) == "005_add_daily_allocations_table"
+            assert get_current_revision(engine) == "006_remove_daily_allocations_json"
         finally:
             engine.dispose()
 

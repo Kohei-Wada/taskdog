@@ -12,7 +12,7 @@ tuple is stored as a separate row, enabling:
 from datetime import date, datetime
 
 from sqlalchemy import Date, Float, ForeignKey, Index, Integer, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .task_model import Base
 
@@ -49,6 +49,12 @@ class DailyAllocationModel(Base):
 
     # Timestamp
     created_at: Mapped[datetime] = mapped_column(nullable=False)
+
+    # Relationship to task (many-to-one)
+    task: Mapped["TaskModel"] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "TaskModel",
+        back_populates="allocation_models",
+    )
 
     # Database constraints and indexes
     __table_args__ = (
