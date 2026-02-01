@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from taskdog_core.application.dto.create_task_input import CreateTaskInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
-from taskdog_core.application.queries.workload import DisplayWorkloadCalculator
+from taskdog_core.application.queries.workload._strategies import ActualScheduleStrategy
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
@@ -29,9 +29,7 @@ class CreateTaskUseCase(UseCase[CreateTaskInput, TaskOperationOutput]):
                            from daily allocation calculations
         """
         self.repository = repository
-        self._workload_calculator = DisplayWorkloadCalculator(
-            holiday_checker=holiday_checker
-        )
+        self._strategy = ActualScheduleStrategy(holiday_checker=holiday_checker)
 
     def execute(self, input_dto: CreateTaskInput) -> TaskOperationOutput:
         """Execute task creation.
@@ -102,4 +100,4 @@ class CreateTaskUseCase(UseCase[CreateTaskInput, TaskOperationOutput]):
             daily_allocations={},
         )
 
-        return self._workload_calculator.get_task_daily_hours(temp_task)  # type: ignore[arg-type]
+        return self._strategy.compute_from_planned_period(temp_task)  # type: ignore[arg-type]

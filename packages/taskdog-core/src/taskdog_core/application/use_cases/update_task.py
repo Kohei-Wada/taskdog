@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from taskdog_core.application.dto.update_task_input import UpdateTaskInput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
-from taskdog_core.application.queries.workload import DisplayWorkloadCalculator
+from taskdog_core.application.queries.workload._strategies import ActualScheduleStrategy
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.application.validators.validator_registry import (
     TaskFieldValidatorRegistry,
@@ -39,9 +39,7 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
         """
         self.repository = repository
         self.validator_registry = TaskFieldValidatorRegistry(repository)
-        self._workload_calculator = DisplayWorkloadCalculator(
-            holiday_checker=holiday_checker
-        )
+        self._strategy = ActualScheduleStrategy(holiday_checker=holiday_checker)
 
     def _update_status(
         self,
@@ -131,11 +129,8 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
         )
 
         if task.planned_start and task.planned_end and task.estimated_duration:
-            # Clear existing allocations first so calculator will compute fresh values
-            # (get_task_daily_hours returns existing allocations if present)
-            task.set_daily_allocations({})
             # Recalculate allocations based on new schedule
-            new_allocations = self._workload_calculator.get_task_daily_hours(task)
+            new_allocations = self._strategy.compute_from_planned_period(task)
             task.set_daily_allocations(new_allocations)
         else:
             # Clear allocations if any required field is missing

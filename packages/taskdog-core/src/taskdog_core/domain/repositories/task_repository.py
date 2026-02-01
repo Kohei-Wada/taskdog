@@ -210,3 +210,32 @@ class TaskRepository(ABC):
         # Default implementation: fallback to empty dict (no optimization)
         # Subclasses should override this method to use SQL aggregation
         return {}
+
+    def get_daily_allocations_for_tasks(
+        self,
+        task_ids: list[int],
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> dict[int, dict[date, float]]:
+        """Get daily allocations for multiple tasks in a single query.
+
+        This method uses SQL to fetch daily allocations for multiple tasks
+        efficiently, avoiding N+1 query problems.
+
+        Args:
+            task_ids: List of task IDs to fetch allocations for
+            start_date: Optional start date filter (inclusive)
+            end_date: Optional end date filter (inclusive)
+
+        Returns:
+            Dictionary mapping task_id to {date: hours} allocations
+
+        Notes:
+            - Default implementation returns empty dict (no optimization)
+            - Repositories should override this for SQL-level fetching
+            - More efficient than loading full Task entities when only
+              allocations are needed
+        """
+        # Default implementation: fallback to empty dict (no optimization)
+        # Subclasses should override this method to use SQL fetching
+        return {}

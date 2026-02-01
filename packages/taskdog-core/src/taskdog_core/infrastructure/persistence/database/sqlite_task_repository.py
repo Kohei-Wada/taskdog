@@ -542,6 +542,64 @@ class SqliteTaskRepository(TaskRepository):
             # Convert to dictionary
             return {row[0]: float(row[1]) for row in results}
 
+    def get_daily_allocations_for_tasks(
+        self,
+        task_ids: list[int],
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> dict[int, dict[date, float]]:
+        """Get daily allocations for multiple tasks in a single query.
+
+        Uses SQL to fetch daily allocations for multiple tasks efficiently,
+        avoiding N+1 query problems when displaying Gantt charts.
+
+        Args:
+            task_ids: List of task IDs to fetch allocations for
+            start_date: Optional start date filter (inclusive)
+            end_date: Optional end date filter (inclusive)
+
+        Returns:
+            Dictionary mapping task_id to {date: hours} allocations
+
+        Example:
+            >>> repo.get_daily_allocations_for_tasks([1, 2, 3])
+            {
+                1: {date(2025, 1, 20): 2.0, date(2025, 1, 21): 2.0},
+                2: {date(2025, 1, 20): 4.0},
+            }
+        """
+        if not task_ids:
+            return {}
+
+        with self.Session() as session:
+            # Build query: SELECT task_id, date, hours FROM daily_allocations
+            #              WHERE task_id IN (...)
+            stmt = select(
+                DailyAllocationModel.task_id,
+                DailyAllocationModel.date,
+                DailyAllocationModel.hours,
+            ).where(
+                DailyAllocationModel.task_id.in_(task_ids)  # type: ignore[attr-defined]
+            )
+
+            # Add date range filters if specified
+            if start_date is not None:
+                stmt = stmt.where(DailyAllocationModel.date >= start_date)
+            if end_date is not None:
+                stmt = stmt.where(DailyAllocationModel.date <= end_date)
+
+            # Execute query
+            results = session.execute(stmt).all()
+
+            # Build result dictionary
+            allocations: dict[int, dict[date, float]] = {}
+            for task_id, alloc_date, hours in results:
+                if task_id not in allocations:
+                    allocations[task_id] = {}
+                allocations[task_id][alloc_date] = float(hours)
+
+            return allocations
+
     def close(self) -> None:
         """Close database connections and clean up resources.
 
