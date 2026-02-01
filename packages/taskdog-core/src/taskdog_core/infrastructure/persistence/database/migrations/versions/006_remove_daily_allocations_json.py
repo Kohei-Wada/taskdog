@@ -17,7 +17,9 @@ Prerequisites:
 - Dual-write should have been active, ensuring all data is in the normalized table
 """
 
+import json
 from collections.abc import Sequence
+from datetime import datetime
 
 import sqlalchemy as sa
 from alembic import op
@@ -43,22 +45,33 @@ def upgrade() -> None:
         # Column already removed (e.g., fresh database created with new schema)
         return
 
-    # Safety check: Verify no tasks have JSON data that isn't in normalized table
-    # This prevents data loss if dual-write wasn't properly active
+    # Migrate any remaining JSON data to the normalized table
+    # This handles databases that were upgraded with an older version of migration 005
+    # that didn't include the data migration logic
     result = conn.execute(
-        sa.text("""
-            SELECT COUNT(*) FROM tasks
-            WHERE daily_allocations != '{}'
-            AND id NOT IN (SELECT DISTINCT task_id FROM daily_allocations)
-        """)
-    )
-    unmigrated_count = result.scalar()
-
-    if unmigrated_count and unmigrated_count > 0:
-        raise RuntimeError(
-            f"Cannot drop JSON column: {unmigrated_count} tasks have unmigrated "
-            "allocation data. Ensure dual-write was active before running this migration."
+        sa.text(
+            "SELECT id, daily_allocations FROM tasks "
+            "WHERE daily_allocations IS NOT NULL AND daily_allocations != '{}'"
         )
+    )
+    for row in result:
+        task_id = row[0]
+        json_data = json.loads(row[1])
+        for date_str, hours in json_data.items():
+            if hours > 0:
+                conn.execute(
+                    sa.text(
+                        "INSERT OR IGNORE INTO daily_allocations "
+                        "(task_id, date, hours, created_at) "
+                        "VALUES (:task_id, :date, :hours, :created_at)"
+                    ),
+                    {
+                        "task_id": task_id,
+                        "date": date_str,
+                        "hours": hours,
+                        "created_at": datetime.now(),
+                    },
+                )
 
     # SQLite requires batch mode for column removal
     with op.batch_alter_table("tasks") as batch_op:
