@@ -646,8 +646,9 @@ class SqliteTaskRepository(TaskRepository):
             results = session.execute(stmt).all()
 
             # Convert to dictionary: Row objects have tuple-like access
+            # Note: row[1] could be None if SUM aggregates zero rows (defensive check)
             return {
-                row[0]: float(row[1])  # type: ignore[misc, arg-type]
+                row[0]: float(row[1]) if row[1] is not None else 0.0  # type: ignore[misc, arg-type]
                 for row in results
             }
 
