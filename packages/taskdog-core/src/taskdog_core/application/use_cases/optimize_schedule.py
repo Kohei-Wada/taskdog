@@ -13,7 +13,6 @@ from taskdog_core.application.services.optimization.strategy_factory import (
 from taskdog_core.application.services.optimization_summary_builder import (
     OptimizationSummaryBuilder,
 )
-from taskdog_core.application.services.schedule_clearer import ScheduleClearer
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -50,7 +49,6 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         self.repository = repository
         self.default_start_time = default_start_time
         self.default_end_time = default_end_time
-        self.schedule_clearer = ScheduleClearer(repository)
         self.summary_builder = OptimizationSummaryBuilder(repository)
         self.holiday_checker = holiday_checker
 
@@ -166,9 +164,11 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
                 if task.id not in scheduled_task_ids and task.planned_start
             ]
 
-            # Clear schedules using ScheduleClearer service
+            # Clear schedules for failed tasks
             if tasks_to_clear:
-                self.schedule_clearer.clear_schedules(tasks_to_clear)
+                for task in tasks_to_clear:
+                    task.clear_schedule()
+                self.repository.save_all(tasks_to_clear)
 
         # Build optimization summary
         summary = self.summary_builder.build(
