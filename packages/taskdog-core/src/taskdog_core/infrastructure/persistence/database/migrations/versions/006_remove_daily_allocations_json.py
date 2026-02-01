@@ -87,14 +87,24 @@ def upgrade() -> None:
             )
 
     # SQLite requires batch mode for column removal
-    # IMPORTANT: Disable foreign keys before batch_alter_table to prevent
-    # ON DELETE CASCADE from deleting related records in task_tags
-    conn.execute(sa.text("PRAGMA foreign_keys=OFF"))
-    try:
-        with op.batch_alter_table("tasks") as batch_op:
-            batch_op.drop_column("daily_allocations")
-    finally:
-        conn.execute(sa.text("PRAGMA foreign_keys=ON"))
+    # batch_alter_table recreates the table, which triggers ON DELETE CASCADE
+    # on task_tags foreign key. We must preserve and restore task_tags data.
+    task_tags_data = conn.execute(
+        sa.text("SELECT task_id, tag_id FROM task_tags")
+    ).fetchall()
+
+    with op.batch_alter_table("tasks") as batch_op:
+        batch_op.drop_column("daily_allocations")
+
+    # Restore task_tags data that was deleted by CASCADE
+    for task_id, tag_id in task_tags_data:
+        conn.execute(
+            sa.text(
+                "INSERT OR IGNORE INTO task_tags (task_id, tag_id) "
+                "VALUES (:task_id, :tag_id)"
+            ),
+            {"task_id": task_id, "tag_id": tag_id},
+        )
 
 
 def downgrade() -> None:
