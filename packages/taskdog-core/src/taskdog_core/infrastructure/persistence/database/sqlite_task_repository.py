@@ -603,6 +603,54 @@ class SqliteTaskRepository(TaskRepository):
 
             return allocations
 
+    def get_aggregated_daily_allocations(
+        self,
+        task_ids: list[int],
+    ) -> dict[date, float]:
+        """Get aggregated daily allocations for specific tasks using SQL.
+
+        Uses SQL SUM/GROUP BY on the daily_allocations table for efficient
+        workload calculation, avoiding Python loops over all tasks.
+
+        Args:
+            task_ids: List of task IDs to aggregate allocations for
+
+        Returns:
+            Dictionary mapping date to total hours {date: hours}
+
+        Example:
+            >>> repo.get_aggregated_daily_allocations([1, 2, 3])
+            {date(2025, 1, 20): 6.0, date(2025, 1, 21): 4.5}
+
+        Note:
+            - Only returns dates with non-zero hours
+            - Returns empty dict if task_ids is empty
+            - Uses indexed task_id column for efficient filtering
+        """
+        if not task_ids:
+            return {}
+
+        with self.Session() as session:
+            # Build query: SELECT date, SUM(hours) FROM daily_allocations
+            #              WHERE task_id IN (...)
+            #              GROUP BY date
+            stmt = (
+                select(DailyAllocationModel.date, func.sum(DailyAllocationModel.hours))
+                .where(
+                    DailyAllocationModel.task_id.in_(task_ids)  # type: ignore[attr-defined]
+                )
+                .group_by(DailyAllocationModel.date)
+            )
+
+            # Execute query
+            results = session.execute(stmt).all()
+
+            # Convert to dictionary: Row objects have tuple-like access
+            return {
+                row[0]: float(row[1])  # type: ignore[misc, arg-type]
+                for row in results
+            }
+
     def close(self) -> None:
         """Close database connections and clean up resources.
 

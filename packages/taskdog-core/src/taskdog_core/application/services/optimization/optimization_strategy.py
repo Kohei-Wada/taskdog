@@ -1,6 +1,7 @@
 """Abstract base class for optimization strategies."""
 
 from abc import ABC, abstractmethod
+from datetime import date
 from typing import ClassVar
 
 from taskdog_core.application.dto.optimize_params import OptimizeParams
@@ -26,7 +27,7 @@ class OptimizationStrategy(ABC):
                 self.default_start_time = default_start_time
                 self.default_end_time = default_end_time
 
-            def optimize_tasks(self, tasks, context_tasks, params) -> OptimizeResult:
+            def optimize_tasks(self, tasks, existing_allocations, params) -> OptimizeResult:
                 # Custom implementation
     """
 
@@ -44,14 +45,15 @@ class OptimizationStrategy(ABC):
     def optimize_tasks(
         self,
         tasks: list[Task],
-        context_tasks: list[Task],
+        existing_allocations: dict[date, float],
         params: OptimizeParams,
     ) -> OptimizeResult:
         """Optimize task schedules.
 
         Args:
             tasks: List of tasks to schedule (already filtered by is_schedulable())
-            context_tasks: All tasks for calculating existing allocations (already filtered)
+            existing_allocations: Pre-aggregated daily allocations from existing tasks
+                (computed by UseCase via SQL, avoiding Python loops)
             params: Optimization parameters (start_date, max_hours_per_day, etc.)
 
         Returns:

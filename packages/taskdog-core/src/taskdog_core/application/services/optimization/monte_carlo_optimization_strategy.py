@@ -1,14 +1,11 @@
 """Monte Carlo optimization strategy implementation."""
 
 import random
-from datetime import time
+from datetime import date, time
 
 from taskdog_core.application.constants.optimization import MONTE_CARLO_NUM_SIMULATIONS
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
-from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
-    initialize_allocations,
-)
 from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
 )
@@ -54,18 +51,19 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             tuple[int | None, ...], float
         ] = {}  # Cache for evaluation results
         self._params: OptimizeParams | None = None
+        self._existing_allocations: dict[date, float] = {}
 
     def optimize_tasks(
         self,
         tasks: list[Task],
-        context_tasks: list[Task],
+        existing_allocations: dict[date, float],
         params: OptimizeParams,
     ) -> OptimizeResult:
         """Optimize task schedules using Monte Carlo simulation.
 
         Args:
             tasks: List of tasks to schedule (already filtered by is_schedulable())
-            context_tasks: All tasks in the system (for calculating existing allocations)
+            existing_allocations: Pre-aggregated daily allocations from existing tasks
             params: Optimization parameters (start_date, max_hours_per_day, etc.)
 
         Returns:
@@ -74,12 +72,12 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         if not tasks:
             return OptimizeResult()
 
-        # Store params for use in evaluation
+        # Store params and existing allocations for use in evaluation
         self._params = params
+        self._existing_allocations = existing_allocations
 
-        # Initialize daily allocations from context tasks
-        initial_allocations = initialize_allocations(context_tasks)
-        result = OptimizeResult(daily_allocations=dict(initial_allocations))
+        # Copy existing allocations to avoid mutating the input
+        result = OptimizeResult(daily_allocations=dict(existing_allocations))
 
         # Create greedy strategy instance for allocation
         greedy_strategy = GreedyOptimizationStrategy(
@@ -93,7 +91,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         # Run Monte Carlo simulation
         best_order = self._monte_carlo_simulation(
             tasks,
-            context_tasks,
             params,
             greedy_strategy,
         )
@@ -114,7 +111,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
     def _monte_carlo_simulation(
         self,
         schedulable_tasks: list[Task],
-        context_tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
     ) -> list[Task]:
@@ -122,7 +118,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         Args:
             schedulable_tasks: List of tasks to schedule
-            context_tasks: All tasks (for initializing allocations)
             params: Optimization parameters
             greedy_strategy: Greedy strategy instance
 
@@ -148,7 +143,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             # Evaluate this ordering (with caching)
             score = self._evaluate_ordering_cached(
                 random_order,
-                context_tasks,
                 params,
                 greedy_strategy,
             )
@@ -163,7 +157,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
     def _evaluate_ordering_cached(
         self,
         task_order: list[Task],
-        context_tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
     ) -> float:
@@ -171,7 +164,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         Args:
             task_order: Ordering of tasks to evaluate
-            context_tasks: All tasks (for initializing allocations)
             params: Optimization parameters
             greedy_strategy: Greedy strategy instance
 
@@ -188,7 +180,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         # Calculate score
         score = self._evaluate_ordering(
             task_order,
-            context_tasks,
             params,
             greedy_strategy,
         )
@@ -201,7 +192,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
     def _evaluate_ordering(
         self,
         task_order: list[Task],
-        context_tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
     ) -> float:
@@ -211,7 +201,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
 
         Args:
             task_order: Ordering of tasks to evaluate
-            context_tasks: All tasks (for initializing allocations)
             params: Optimization parameters
             greedy_strategy: Greedy strategy instance
 
@@ -219,8 +208,8 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             Score (higher is better)
         """
         # Simulate scheduling with this order
-        # Initialize daily allocations for simulation
-        daily_allocations = initialize_allocations(context_tasks)
+        # Use pre-computed existing allocations (copy to avoid mutation)
+        daily_allocations = dict(self._existing_allocations)
         scheduled_tasks = []
 
         for task in task_order:

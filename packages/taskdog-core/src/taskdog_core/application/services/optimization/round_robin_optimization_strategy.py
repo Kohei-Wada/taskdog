@@ -10,9 +10,6 @@ from taskdog_core.application.constants.optimization import (
 )
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
-from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
-    initialize_allocations,
-)
 from taskdog_core.application.services.optimization.optimization_strategy import (
     OptimizationStrategy,
 )
@@ -50,21 +47,19 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
     def optimize_tasks(
         self,
         tasks: list[Task],
-        context_tasks: list[Task],
+        existing_allocations: dict[date, float],
         params: OptimizeParams,
     ) -> OptimizeResult:
         """Optimize task schedules using round-robin algorithm.
 
         Args:
             tasks: List of tasks to schedule (already filtered by is_schedulable())
-            context_tasks: All tasks in the system (for calculating existing allocations)
+            existing_allocations: Pre-aggregated daily allocations from existing tasks
             params: Optimization parameters (start_date, max_hours_per_day, etc.)
 
         Returns:
             OptimizeResult containing modified tasks, daily allocations, and failures
         """
-        # Initialize daily allocations from context tasks
-        existing_allocations = initialize_allocations(context_tasks)
         result = OptimizeResult()
 
         if not tasks:

@@ -11,9 +11,6 @@ from taskdog_core.application.services.optimization.allocation_helpers import (
     prepare_task_for_allocation,
     set_planned_times,
 )
-from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
-    initialize_allocations,
-)
 from taskdog_core.application.services.optimization.optimization_strategy import (
     OptimizationStrategy,
 )
@@ -55,11 +52,12 @@ class BalancedOptimizationStrategy(OptimizationStrategy):
     def optimize_tasks(
         self,
         tasks: list[Task],
-        context_tasks: list[Task],
+        existing_allocations: dict[date, float],
         params: OptimizeParams,
     ) -> OptimizeResult:
         """Optimize task schedules using balanced distribution."""
-        daily_allocations = initialize_allocations(context_tasks)
+        # Copy existing allocations to avoid mutating the input
+        daily_allocations = dict(existing_allocations)
         result = OptimizeResult(daily_allocations=daily_allocations)
 
         sorted_tasks = self._sort_tasks(tasks, params.start_date)
