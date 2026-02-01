@@ -1,7 +1,6 @@
 """Base class for greedy-based optimization strategies."""
 
 from datetime import date, datetime, time, timedelta
-from typing import TYPE_CHECKING
 
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
@@ -18,9 +17,6 @@ from taskdog_core.application.sorters.optimization_task_sorter import (
 )
 from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
-
-if TYPE_CHECKING:
-    from taskdog_core.application.queries.workload import BaseWorkloadCalculator
 
 
 class GreedyBasedOptimizationStrategy(OptimizationStrategy):
@@ -54,7 +50,6 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         context_tasks: list[Task],
         params: OptimizeParams,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using greedy forward allocation.
 
@@ -62,12 +57,11 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
             tasks: List of tasks to schedule
             context_tasks: All tasks for calculating existing allocations
             params: Optimization parameters (start_date, max_hours_per_day, etc.)
-            workload_calculator: Optional pre-configured calculator
 
         Returns:
             OptimizeResult containing modified tasks, daily allocations, and failures
         """
-        daily_allocations = initialize_allocations(context_tasks, workload_calculator)
+        daily_allocations = initialize_allocations(context_tasks)
         result = OptimizeResult(daily_allocations=daily_allocations)
 
         sorted_tasks = self._sort_tasks(tasks, params.start_date)
@@ -186,7 +180,6 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
 
 def initialize_allocations(
     tasks: list[Task],
-    workload_calculator: "BaseWorkloadCalculator | None" = None,
 ) -> dict[date, float]:
     """Initialize daily allocations from existing scheduled tasks.
 
@@ -195,32 +188,19 @@ def initialize_allocations(
 
     Args:
         tasks: Tasks to include in workload calculation (already filtered by caller)
-        workload_calculator: Optional workload calculator for calculating task daily hours
-            (kept for backward compatibility but now uses strategy directly)
 
     Returns:
         Dictionary mapping dates to allocated hours
     """
-    from taskdog_core.application.queries.workload._strategies import (
-        WeekdayOnlyStrategy,
-    )
-
-    strategy = WeekdayOnlyStrategy()
     daily_allocations: dict[date, float] = {}
 
     for task in tasks:
-        # Skip tasks without schedules
-        if not (task.planned_start and task.estimated_duration):
+        # Skip tasks without schedules or daily_allocations
+        if not (task.planned_start and task.daily_allocations):
             continue
 
-        # Get daily allocations for this task
-        # Use task.daily_allocations if available, otherwise calculate using strategy
-        task_daily_hours = (
-            task.daily_allocations or strategy.compute_from_planned_period(task)
-        )
-
-        # Add to global daily_allocations
-        for date_obj, hours in task_daily_hours.items():
+        # Add task's daily allocations to global daily_allocations
+        for date_obj, hours in task.daily_allocations.items():
             daily_allocations[date_obj] = daily_allocations.get(date_obj, 0.0) + hours
 
     return daily_allocations

@@ -2,7 +2,6 @@
 
 import random
 from datetime import time
-from typing import TYPE_CHECKING
 
 from taskdog_core.application.constants.optimization import MONTE_CARLO_NUM_SIMULATIONS
 from taskdog_core.application.dto.optimize_params import OptimizeParams
@@ -20,9 +19,6 @@ from taskdog_core.application.services.optimization.schedule_fitness_calculator 
     ScheduleFitnessCalculator,
 )
 from taskdog_core.domain.entities.task import Task
-
-if TYPE_CHECKING:
-    from taskdog_core.application.queries.workload import BaseWorkloadCalculator
 
 
 class MonteCarloOptimizationStrategy(OptimizationStrategy):
@@ -64,7 +60,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         context_tasks: list[Task],
         params: OptimizeParams,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using Monte Carlo simulation.
 
@@ -72,7 +67,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             tasks: List of tasks to schedule (already filtered by is_schedulable())
             context_tasks: All tasks in the system (for calculating existing allocations)
             params: Optimization parameters (start_date, max_hours_per_day, etc.)
-            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             OptimizeResult containing modified tasks, daily allocations, and failures
@@ -84,7 +78,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self._params = params
 
         # Initialize daily allocations from context tasks
-        initial_allocations = initialize_allocations(context_tasks, workload_calculator)
+        initial_allocations = initialize_allocations(context_tasks)
         result = OptimizeResult(daily_allocations=dict(initial_allocations))
 
         # Create greedy strategy instance for allocation
@@ -102,7 +96,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             context_tasks,
             params,
             greedy_strategy,
-            workload_calculator,
         )
 
         # Schedule tasks according to best order using greedy allocation
@@ -124,7 +117,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         context_tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> list[Task]:
         """Run Monte Carlo simulation to find optimal task ordering.
 
@@ -133,7 +125,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             context_tasks: All tasks (for initializing allocations)
             params: Optimization parameters
             greedy_strategy: Greedy strategy instance
-            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             List of tasks in optimal order
@@ -160,7 +151,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
                 context_tasks,
                 params,
                 greedy_strategy,
-                workload_calculator,
             )
 
             # Track best ordering
@@ -176,7 +166,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         context_tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> float:
         """Evaluate ordering with caching to avoid redundant calculations.
 
@@ -185,7 +174,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             context_tasks: All tasks (for initializing allocations)
             params: Optimization parameters
             greedy_strategy: Greedy strategy instance
-            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             Score (higher is better)
@@ -203,7 +191,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             context_tasks,
             params,
             greedy_strategy,
-            workload_calculator,
         )
 
         # Cache the result
@@ -217,7 +204,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         context_tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> float:
         """Evaluate a task ordering by simulating scheduling.
 
@@ -228,14 +214,13 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
             context_tasks: All tasks (for initializing allocations)
             params: Optimization parameters
             greedy_strategy: Greedy strategy instance
-            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             Score (higher is better)
         """
         # Simulate scheduling with this order
         # Initialize daily allocations for simulation
-        daily_allocations = initialize_allocations(context_tasks, workload_calculator)
+        daily_allocations = initialize_allocations(context_tasks)
         scheduled_tasks = []
 
         for task in task_order:

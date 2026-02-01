@@ -1,14 +1,11 @@
 """Abstract base class for optimization strategies."""
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.domain.entities.task import Task
-
-if TYPE_CHECKING:
-    from taskdog_core.application.queries.workload import BaseWorkloadCalculator
 
 
 class OptimizationStrategy(ABC):
@@ -49,7 +46,6 @@ class OptimizationStrategy(ABC):
         tasks: list[Task],
         context_tasks: list[Task],
         params: OptimizeParams,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules.
 
@@ -57,7 +53,6 @@ class OptimizationStrategy(ABC):
             tasks: List of tasks to schedule (already filtered by is_schedulable())
             context_tasks: All tasks for calculating existing allocations (already filtered)
             params: Optimization parameters (start_date, max_hours_per_day, etc.)
-            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             OptimizeResult containing modified tasks, daily allocations, and failures

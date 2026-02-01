@@ -3,7 +3,6 @@
 import copy
 import random
 from datetime import date, time
-from typing import TYPE_CHECKING
 
 from taskdog_core.application.constants.optimization import (
     GENETIC_CROSSOVER_RATE,
@@ -28,9 +27,6 @@ from taskdog_core.application.services.optimization.schedule_fitness_calculator 
     ScheduleFitnessCalculator,
 )
 from taskdog_core.domain.entities.task import Task
-
-if TYPE_CHECKING:
-    from taskdog_core.application.queries.workload import BaseWorkloadCalculator
 
 
 class GeneticOptimizationStrategy(OptimizationStrategy):
@@ -81,7 +77,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         context_tasks: list[Task],
         params: OptimizeParams,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using genetic algorithm.
 
@@ -89,7 +84,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             tasks: List of tasks to schedule (already filtered by is_schedulable())
             context_tasks: All tasks in the system (for calculating existing allocations)
             params: Optimization parameters (start_date, max_hours_per_day, etc.)
-            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             OptimizeResult containing modified tasks, daily allocations, and failures
@@ -101,7 +95,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         self._params = params
 
         # Initialize daily allocations from context tasks
-        initial_allocations = initialize_allocations(context_tasks, workload_calculator)
+        initial_allocations = initialize_allocations(context_tasks)
         result = OptimizeResult(daily_allocations=dict(initial_allocations))
 
         # Create greedy strategy instance for allocation
@@ -118,7 +112,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             tasks,
             params,
             greedy_strategy,
-            workload_calculator,
         )
 
         # Reuse cached allocation results for the best order (performance optimization)
@@ -157,7 +150,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> list[Task]:
         """Run genetic algorithm to find optimal task ordering.
 
@@ -165,7 +157,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             tasks: List of tasks to schedule
             params: Optimization parameters
             greedy_strategy: Greedy strategy instance
-            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             List of tasks in optimal order
@@ -187,7 +178,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
                     individual,
                     params,
                     greedy_strategy,
-                    workload_calculator,
                 )[0]  # Extract fitness score only
                 for individual in population
             ]
@@ -239,7 +229,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
                 individual,
                 params,
                 greedy_strategy,
-                workload_calculator,
             )
             for individual in population
         ]
@@ -252,7 +241,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         task_order: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> tuple[float, dict[date, float], list[Task]]:
         """Evaluate fitness with caching to avoid redundant calculations.
 
@@ -260,7 +248,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             task_order: Ordering of tasks to evaluate
             params: Optimization parameters
             greedy_strategy: Greedy strategy instance
-            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             Tuple of (fitness_score, daily_allocations, scheduled_tasks)
@@ -277,7 +264,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             task_order,
             params,
             greedy_strategy,
-            workload_calculator,
         )
 
         # Cache the complete result (fitness + allocations + tasks)
@@ -290,7 +276,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         task_order: list[Task],
         params: OptimizeParams,
         greedy_strategy: GreedyOptimizationStrategy,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> tuple[float, dict[date, float], list[Task]]:
         """Evaluate fitness of a task ordering.
 
@@ -300,7 +285,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             task_order: Ordering of tasks to evaluate
             params: Optimization parameters
             greedy_strategy: Greedy strategy instance
-            workload_calculator: Optional pre-configured calculator for workload calculation
 
         Returns:
             Tuple of (fitness_score, daily_allocations, scheduled_tasks)
