@@ -182,3 +182,60 @@ class TaskRepository(ABC):
             Created task with ID assigned
         """
         pass
+
+    def get_daily_workload_totals(
+        self,
+        start_date: date,
+        end_date: date,
+        task_ids: list[int] | None = None,
+    ) -> dict[date, float]:
+        """Get daily workload totals using SQL aggregation.
+
+        This method uses SQL SUM/GROUP BY on the daily_allocations table for
+        efficient workload calculation, avoiding Python loops.
+
+        Args:
+            start_date: Start date of the calculation period
+            end_date: End date of the calculation period
+            task_ids: Optional list of task IDs to include. If None, includes all tasks.
+
+        Returns:
+            Dictionary mapping date to total hours {date: hours}
+
+        Notes:
+            - Default implementation falls back to empty dict (no optimization)
+            - Repositories should override this for SQL-level aggregation
+            - Only includes dates with non-zero hours
+        """
+        # Default implementation: fallback to empty dict (no optimization)
+        # Subclasses should override this method to use SQL aggregation
+        return {}
+
+    def get_daily_allocations_for_tasks(
+        self,
+        task_ids: list[int],
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> dict[int, dict[date, float]]:
+        """Get daily allocations for multiple tasks in a single query.
+
+        This method uses SQL to fetch daily allocations for multiple tasks
+        efficiently, avoiding N+1 query problems.
+
+        Args:
+            task_ids: List of task IDs to fetch allocations for
+            start_date: Optional start date filter (inclusive)
+            end_date: Optional end date filter (inclusive)
+
+        Returns:
+            Dictionary mapping task_id to {date: hours} allocations
+
+        Notes:
+            - Default implementation returns empty dict (no optimization)
+            - Repositories should override this for SQL-level fetching
+            - More efficient than loading full Task entities when only
+              allocations are needed
+        """
+        # Default implementation: fallback to empty dict (no optimization)
+        # Subclasses should override this method to use SQL fetching
+        return {}

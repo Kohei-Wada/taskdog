@@ -92,3 +92,81 @@ class TestCreateTaskUseCase:
         assert result.planned_end is None
         assert result.deadline is None
         assert result.estimated_duration is None
+
+    def test_execute_auto_calculates_daily_allocations(self):
+        """Test that daily_allocations is auto-calculated when all required fields are set."""
+        # Use a weekday-only period (Mon-Fri) for predictable calculation
+        # Mon 2025-01-20 to Fri 2025-01-24 = 5 weekdays
+        input_dto = CreateTaskInput(
+            name="Scheduled Task",
+            priority=1,
+            planned_start=datetime(2025, 1, 20, 9, 0, 0),  # Monday
+            planned_end=datetime(2025, 1, 24, 17, 0, 0),  # Friday
+            estimated_duration=10.0,  # 10 hours = 2 hours per day
+        )
+
+        result = self.use_case.execute(input_dto)
+
+        # Verify daily_allocations was calculated
+        assert result.daily_allocations is not None
+        assert len(result.daily_allocations) > 0
+
+        # Verify the persisted task has allocations
+        persisted_task = self.repository.get_by_id(result.id)
+        assert persisted_task is not None
+        assert persisted_task.daily_allocations
+        # 5 weekdays, 10 hours = 2 hours per day
+        assert len(persisted_task.daily_allocations) == 5
+        for _d, hours in persisted_task.daily_allocations.items():
+            assert hours == pytest.approx(2.0, rel=0.01)
+
+    def test_execute_no_allocations_without_estimated_duration(self):
+        """Test that daily_allocations is empty when estimated_duration is missing."""
+        input_dto = CreateTaskInput(
+            name="No Duration",
+            priority=1,
+            planned_start=datetime(2025, 1, 20, 9, 0, 0),
+            planned_end=datetime(2025, 1, 24, 17, 0, 0),
+            estimated_duration=None,  # Missing
+        )
+
+        result = self.use_case.execute(input_dto)
+
+        # Verify no allocations
+        persisted_task = self.repository.get_by_id(result.id)
+        assert persisted_task is not None
+        assert persisted_task.daily_allocations == {}
+
+    def test_execute_no_allocations_without_planned_start(self):
+        """Test that daily_allocations is empty when planned_start is missing."""
+        input_dto = CreateTaskInput(
+            name="No Start",
+            priority=1,
+            planned_start=None,  # Missing
+            planned_end=datetime(2025, 1, 24, 17, 0, 0),
+            estimated_duration=10.0,
+        )
+
+        result = self.use_case.execute(input_dto)
+
+        # Verify no allocations
+        persisted_task = self.repository.get_by_id(result.id)
+        assert persisted_task is not None
+        assert persisted_task.daily_allocations == {}
+
+    def test_execute_no_allocations_without_planned_end(self):
+        """Test that daily_allocations is empty when planned_end is missing."""
+        input_dto = CreateTaskInput(
+            name="No End",
+            priority=1,
+            planned_start=datetime(2025, 1, 20, 9, 0, 0),
+            planned_end=None,  # Missing
+            estimated_duration=10.0,
+        )
+
+        result = self.use_case.execute(input_dto)
+
+        # Verify no allocations
+        persisted_task = self.repository.get_by_id(result.id)
+        assert persisted_task is not None
+        assert persisted_task.daily_allocations == {}

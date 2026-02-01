@@ -23,6 +23,7 @@ from taskdog_core.infrastructure.persistence.database.engine_factory import (
     create_sqlite_engine,
 )
 from taskdog_core.infrastructure.persistence.database.models import (
+    DailyAllocationModel,
     TagModel,
     TaskModel,
     TaskTagModel,
@@ -484,6 +485,123 @@ class SqliteTaskRepository(TaskRepository):
                 )
 
             return list(session.scalars(stmt).all())
+
+    def get_daily_workload_totals(
+        self,
+        start_date: date,
+        end_date: date,
+        task_ids: list[int] | None = None,
+    ) -> dict[date, float]:
+        """Get daily workload totals using SQL aggregation.
+
+        Uses SQL SUM/GROUP BY on the daily_allocations table for efficient
+        workload calculation, avoiding Python loops over all tasks.
+
+        Args:
+            start_date: Start date of the calculation period
+            end_date: End date of the calculation period
+            task_ids: Optional list of task IDs to include. If None, includes all tasks.
+
+        Returns:
+            Dictionary mapping date to total hours {date: hours}
+
+        Example:
+            >>> repo.get_daily_workload_totals(date(2025, 1, 20), date(2025, 1, 24))
+            {date(2025, 1, 20): 6.0, date(2025, 1, 21): 4.5, date(2025, 1, 22): 3.0}
+
+        Note:
+            - Only returns dates with non-zero hours
+            - Uses indexed date column for efficient range queries
+            - Task filtering uses indexed task_id column
+        """
+        with self.Session() as session:
+            # Build base query: SELECT date, SUM(hours) FROM daily_allocations
+            #                   WHERE date BETWEEN :start AND :end
+            #                   GROUP BY date
+            stmt = (
+                select(DailyAllocationModel.date, func.sum(DailyAllocationModel.hours))
+                .where(DailyAllocationModel.date >= start_date)  # type: ignore[operator]
+                .where(DailyAllocationModel.date <= end_date)  # type: ignore[operator]
+            )
+
+            # Add task_id filter if specified
+            if task_ids is not None:
+                if not task_ids:
+                    # Empty task_ids list means no tasks to aggregate
+                    return {}
+                stmt = stmt.where(
+                    DailyAllocationModel.task_id.in_(task_ids)  # type: ignore[attr-defined]
+                )
+
+            # Group by date
+            stmt = stmt.group_by(DailyAllocationModel.date)
+
+            # Execute query
+            results = session.execute(stmt).all()
+
+            # Convert to dictionary: Row objects have tuple-like access
+            return {
+                row[0]: float(row[1])  # type: ignore[misc, arg-type]
+                for row in results
+            }
+
+    def get_daily_allocations_for_tasks(
+        self,
+        task_ids: list[int],
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> dict[int, dict[date, float]]:
+        """Get daily allocations for multiple tasks in a single query.
+
+        Uses SQL to fetch daily allocations for multiple tasks efficiently,
+        avoiding N+1 query problems when displaying Gantt charts.
+
+        Args:
+            task_ids: List of task IDs to fetch allocations for
+            start_date: Optional start date filter (inclusive)
+            end_date: Optional end date filter (inclusive)
+
+        Returns:
+            Dictionary mapping task_id to {date: hours} allocations
+
+        Example:
+            >>> repo.get_daily_allocations_for_tasks([1, 2, 3])
+            {
+                1: {date(2025, 1, 20): 2.0, date(2025, 1, 21): 2.0},
+                2: {date(2025, 1, 20): 4.0},
+            }
+        """
+        if not task_ids:
+            return {}
+
+        with self.Session() as session:
+            # Build query: SELECT task_id, date, hours FROM daily_allocations
+            #              WHERE task_id IN (...)
+            stmt = select(
+                DailyAllocationModel.task_id,
+                DailyAllocationModel.date,
+                DailyAllocationModel.hours,
+            ).where(
+                DailyAllocationModel.task_id.in_(task_ids)  # type: ignore[attr-defined]
+            )
+
+            # Add date range filters if specified
+            if start_date is not None:
+                stmt = stmt.where(DailyAllocationModel.date >= start_date)  # type: ignore[operator]
+            if end_date is not None:
+                stmt = stmt.where(DailyAllocationModel.date <= end_date)  # type: ignore[operator]
+
+            # Execute query
+            results = session.execute(stmt).all()
+
+            # Build result dictionary
+            allocations: dict[int, dict[date, float]] = {}
+            for task_id, alloc_date, hours in results:
+                if task_id not in allocations:
+                    allocations[task_id] = {}
+                allocations[task_id][alloc_date] = float(hours)
+
+            return allocations
 
     def close(self) -> None:
         """Close database connections and clean up resources.

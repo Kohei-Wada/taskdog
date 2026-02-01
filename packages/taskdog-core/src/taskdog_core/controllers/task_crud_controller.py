@@ -24,7 +24,9 @@ from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.domain.services.logger import Logger
+from taskdog_core.infrastructure.holiday_checker import HolidayChecker
 from taskdog_core.shared.config_manager import Config
 
 
@@ -63,6 +65,22 @@ class TaskCrudController(BaseTaskController):
         """
         super().__init__(repository, config, logger)
         self.notes_repository = notes_repository
+        self._holiday_checker = self._create_holiday_checker()
+
+    def _create_holiday_checker(self) -> IHolidayChecker | None:
+        """Create HolidayChecker from config country setting.
+
+        Returns:
+            HolidayChecker if country is configured, None otherwise
+        """
+        country = self.config.region.country if self.config.region else None
+        if not country or not isinstance(country, str):
+            return None
+        try:
+            return HolidayChecker(country)
+        except (ImportError, NotImplementedError):
+            # holidays package not installed or country not supported
+            return None
 
     def create_task(
         self,
@@ -95,7 +113,7 @@ class TaskCrudController(BaseTaskController):
         """
         self.logger.info(f"Creating task: name='{name}'", priority=priority)
 
-        use_case = CreateTaskUseCase(self.repository)
+        use_case = CreateTaskUseCase(self.repository, self._holiday_checker)
         request = CreateTaskInput(
             name=name,
             priority=priority,
@@ -150,7 +168,7 @@ class TaskCrudController(BaseTaskController):
         """
         self.logger.info(f"Updating task: task_id={task_id}", task_id=task_id)
 
-        use_case = UpdateTaskUseCase(self.repository)
+        use_case = UpdateTaskUseCase(self.repository, self._holiday_checker)
         request = UpdateTaskInput(
             task_id=task_id,
             name=name,

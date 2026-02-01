@@ -881,3 +881,225 @@ class TestSqliteTaskRepository:
             stmt = select(DailyAllocationModel).where(DailyAllocationModel.task_id == 1)
             records = session.scalars(stmt).all()
             assert len(records) == 0
+
+    # ====================================================================
+    # SQL Aggregation Tests for Daily Workload (get_daily_workload_totals)
+    # ====================================================================
+
+    def test_get_daily_workload_totals_returns_sum_by_date(self):
+        """Test get_daily_workload_totals aggregates hours by date."""
+        # Create two tasks with overlapping dates
+        task1 = Task(
+            id=1,
+            name="Task 1",
+            priority=1,
+            daily_allocations={
+                date(2025, 1, 20): 2.0,
+                date(2025, 1, 21): 3.0,
+            },
+        )
+        task2 = Task(
+            id=2,
+            name="Task 2",
+            priority=2,
+            daily_allocations={
+                date(2025, 1, 20): 4.0,  # Same date as task1
+                date(2025, 1, 22): 5.0,
+            },
+        )
+        self.repository.save_all([task1, task2])
+
+        # Get totals for the date range
+        totals = self.repository.get_daily_workload_totals(
+            start_date=date(2025, 1, 20),
+            end_date=date(2025, 1, 22),
+        )
+
+        # Verify aggregation
+        assert totals[date(2025, 1, 20)] == 6.0  # 2.0 + 4.0
+        assert totals[date(2025, 1, 21)] == 3.0  # only task1
+        assert totals[date(2025, 1, 22)] == 5.0  # only task2
+
+    def test_get_daily_workload_totals_filters_by_task_ids(self):
+        """Test get_daily_workload_totals can filter by specific task IDs."""
+        # Create three tasks
+        task1 = Task(
+            id=1,
+            name="Task 1",
+            priority=1,
+            daily_allocations={date(2025, 1, 20): 2.0},
+        )
+        task2 = Task(
+            id=2,
+            name="Task 2",
+            priority=2,
+            daily_allocations={date(2025, 1, 20): 3.0},
+        )
+        task3 = Task(
+            id=3,
+            name="Task 3",
+            priority=3,
+            daily_allocations={date(2025, 1, 20): 5.0},
+        )
+        self.repository.save_all([task1, task2, task3])
+
+        # Get totals for only task1 and task2
+        totals = self.repository.get_daily_workload_totals(
+            start_date=date(2025, 1, 20),
+            end_date=date(2025, 1, 20),
+            task_ids=[1, 2],
+        )
+
+        # Should only include task1 and task2
+        assert totals[date(2025, 1, 20)] == 5.0  # 2.0 + 3.0, not 10.0
+
+    def test_get_daily_workload_totals_respects_date_range(self):
+        """Test get_daily_workload_totals only includes dates in range."""
+        task = Task(
+            id=1,
+            name="Task",
+            priority=1,
+            daily_allocations={
+                date(2025, 1, 19): 1.0,  # Before range
+                date(2025, 1, 20): 2.0,  # In range
+                date(2025, 1, 21): 3.0,  # In range
+                date(2025, 1, 22): 4.0,  # After range
+            },
+        )
+        self.repository.save(task)
+
+        totals = self.repository.get_daily_workload_totals(
+            start_date=date(2025, 1, 20),
+            end_date=date(2025, 1, 21),
+        )
+
+        # Only dates within range should be included
+        assert date(2025, 1, 19) not in totals
+        assert totals[date(2025, 1, 20)] == 2.0
+        assert totals[date(2025, 1, 21)] == 3.0
+        assert date(2025, 1, 22) not in totals
+
+    def test_get_daily_workload_totals_returns_empty_for_no_allocations(self):
+        """Test get_daily_workload_totals returns empty dict when no allocations."""
+        # Create task without allocations
+        task = Task(id=1, name="No Allocations", priority=1)
+        self.repository.save(task)
+
+        totals = self.repository.get_daily_workload_totals(
+            start_date=date(2025, 1, 20),
+            end_date=date(2025, 1, 24),
+        )
+
+        assert totals == {}
+
+    def test_get_daily_workload_totals_returns_empty_for_empty_task_ids(self):
+        """Test get_daily_workload_totals returns empty dict when task_ids is empty list."""
+        task = Task(
+            id=1,
+            name="Task",
+            priority=1,
+            daily_allocations={date(2025, 1, 20): 5.0},
+        )
+        self.repository.save(task)
+
+        # Empty task_ids list should return empty result
+        totals = self.repository.get_daily_workload_totals(
+            start_date=date(2025, 1, 20),
+            end_date=date(2025, 1, 24),
+            task_ids=[],
+        )
+
+        assert totals == {}
+
+    # ====================================================================
+    # Bulk Allocation Fetch Tests (get_daily_allocations_for_tasks)
+    # ====================================================================
+
+    def test_get_daily_allocations_for_tasks_returns_allocations_by_task(self):
+        """Test get_daily_allocations_for_tasks returns allocations grouped by task ID."""
+        task1 = Task(
+            id=1,
+            name="Task 1",
+            priority=1,
+            daily_allocations={
+                date(2025, 1, 20): 2.0,
+                date(2025, 1, 21): 3.0,
+            },
+        )
+        task2 = Task(
+            id=2,
+            name="Task 2",
+            priority=2,
+            daily_allocations={
+                date(2025, 1, 20): 4.0,
+                date(2025, 1, 22): 5.0,
+            },
+        )
+        self.repository.save_all([task1, task2])
+
+        # Fetch allocations for both tasks
+        allocations = self.repository.get_daily_allocations_for_tasks([1, 2])
+
+        # Verify task 1 allocations
+        assert 1 in allocations
+        assert allocations[1] == {date(2025, 1, 20): 2.0, date(2025, 1, 21): 3.0}
+
+        # Verify task 2 allocations
+        assert 2 in allocations
+        assert allocations[2] == {date(2025, 1, 20): 4.0, date(2025, 1, 22): 5.0}
+
+    def test_get_daily_allocations_for_tasks_filters_by_date_range(self):
+        """Test get_daily_allocations_for_tasks respects date range filters."""
+        task = Task(
+            id=1,
+            name="Task",
+            priority=1,
+            daily_allocations={
+                date(2025, 1, 19): 1.0,  # Before range
+                date(2025, 1, 20): 2.0,  # In range
+                date(2025, 1, 21): 3.0,  # In range
+                date(2025, 1, 22): 4.0,  # After range
+            },
+        )
+        self.repository.save(task)
+
+        # Fetch with date range filter
+        allocations = self.repository.get_daily_allocations_for_tasks(
+            [1],
+            start_date=date(2025, 1, 20),
+            end_date=date(2025, 1, 21),
+        )
+
+        # Only dates within range should be included
+        assert allocations[1] == {date(2025, 1, 20): 2.0, date(2025, 1, 21): 3.0}
+
+    def test_get_daily_allocations_for_tasks_returns_empty_for_empty_list(self):
+        """Test get_daily_allocations_for_tasks returns empty dict for empty task list."""
+        task = Task(
+            id=1,
+            name="Task",
+            priority=1,
+            daily_allocations={date(2025, 1, 20): 5.0},
+        )
+        self.repository.save(task)
+
+        allocations = self.repository.get_daily_allocations_for_tasks([])
+
+        assert allocations == {}
+
+    def test_get_daily_allocations_for_tasks_excludes_tasks_without_allocations(self):
+        """Test get_daily_allocations_for_tasks excludes tasks with no allocations."""
+        task1 = Task(
+            id=1,
+            name="With Allocations",
+            priority=1,
+            daily_allocations={date(2025, 1, 20): 2.0},
+        )
+        task2 = Task(id=2, name="No Allocations", priority=2)
+        self.repository.save_all([task1, task2])
+
+        allocations = self.repository.get_daily_allocations_for_tasks([1, 2])
+
+        # Only task1 should be in result
+        assert 1 in allocations
+        assert 2 not in allocations

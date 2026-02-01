@@ -196,13 +196,16 @@ def initialize_allocations(
     Args:
         tasks: Tasks to include in workload calculation (already filtered by caller)
         workload_calculator: Optional workload calculator for calculating task daily hours
+            (kept for backward compatibility but now uses strategy directly)
 
     Returns:
         Dictionary mapping dates to allocated hours
     """
-    from taskdog_core.application.queries.workload import OptimizationWorkloadCalculator
+    from taskdog_core.application.queries.workload._strategies import (
+        WeekdayOnlyStrategy,
+    )
 
-    calculator = workload_calculator or OptimizationWorkloadCalculator()
+    strategy = WeekdayOnlyStrategy()
     daily_allocations: dict[date, float] = {}
 
     for task in tasks:
@@ -211,9 +214,9 @@ def initialize_allocations(
             continue
 
         # Get daily allocations for this task
-        # Use task.daily_allocations if available, otherwise calculate from WorkloadCalculator
-        task_daily_hours = task.daily_allocations or calculator.get_task_daily_hours(
-            task
+        # Use task.daily_allocations if available, otherwise calculate using strategy
+        task_daily_hours = (
+            task.daily_allocations or strategy.compute_from_planned_period(task)
         )
 
         # Add to global daily_allocations
