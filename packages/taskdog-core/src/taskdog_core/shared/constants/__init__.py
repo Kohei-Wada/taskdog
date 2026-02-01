@@ -16,11 +16,7 @@ from taskdog_core.shared.constants.config_defaults import (
     WORK_HOURS_END,
     WORK_HOURS_START,
 )
-from taskdog_core.shared.constants.file_management import (
-    CONFIG_FILE_NAME,
-    NOTE_FILE_EXTENSION,
-    NOTES_DIR_NAME,
-)
+from taskdog_core.shared.constants.file_management import CONFIG_FILE_NAME
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
 from taskdog_core.shared.constants.status_verbs import StatusVerbs
 from taskdog_core.shared.constants.time import (
@@ -61,8 +57,6 @@ __all__ = [
     "MAX_TASK_NAME_LENGTH",
     "MIN_HOURS_PER_DAY_EXCLUSIVE",
     "MIN_PRIORITY_EXCLUSIVE",
-    "NOTES_DIR_NAME",
-    "NOTE_FILE_EXTENSION",
     "SATURDAY",
     "SORT_SENTINEL_FUTURE",
     "SORT_SENTINEL_PAST",

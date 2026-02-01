@@ -40,21 +40,6 @@ class TestXDGDirectories:
             expected = Path("/tmp/test_config/taskdog")
             assert config_home == expected
 
-    def test_get_note_file(self):
-        """Test get_note_file returns correct path for task ID."""
-        with patch.dict(os.environ, {"XDG_DATA_HOME": "/tmp/test_data"}):
-            note_file = XDGDirectories.get_note_file(42)
-            # Note: get_note_file calls get_notes_dir which creates the directory
-            expected = Path("/tmp/test_data/taskdog/notes/42.md")
-            assert note_file == expected
-
-    def test_get_notes_dir(self):
-        """Test get_notes_dir returns correct path."""
-        with patch.dict(os.environ, {"XDG_DATA_HOME": "/tmp/test_data"}):
-            notes_dir = XDGDirectories.get_notes_dir()
-            expected = Path("/tmp/test_data/taskdog/notes")
-            assert notes_dir == expected
-
     def test_get_config_file(self):
         """Test get_config_file returns correct path."""
         with patch.dict(os.environ, {"XDG_CONFIG_HOME": "/tmp/test_config"}):
