@@ -1,8 +1,9 @@
 """SQLAlchemy ORM model for Task entity.
 
 This module defines the database schema for tasks using SQLAlchemy 2.0 ORM.
-Complex fields (daily_allocations, tags, depends_on) are
-stored as JSON TEXT columns for Phase 2 implementation.
+Tags are stored in normalized tables (tags/task_tags).
+Daily allocations are stored in the normalized daily_allocations table.
+depends_on is stored as JSON TEXT.
 """
 
 from datetime import datetime
@@ -25,9 +26,10 @@ class Base(DeclarativeBase):
 class TaskModel(Base):
     """SQLAlchemy ORM model for Task entity.
 
-    Maps to the 'tasks' table in the database. This model uses JSON TEXT columns
-    for complex fields (daily_allocations, tags, etc.) to maintain compatibility
-    with the existing JSON-based storage during the migration phase.
+    Maps to the 'tasks' table in the database.
+    Tags are stored in normalized tables via tag_models relationship.
+    Daily allocations are stored in normalized table via allocation_models relationship.
+    depends_on is stored as JSON TEXT.
 
     Schema corresponds to Task entity fields with SQLAlchemy types.
     """
@@ -62,9 +64,6 @@ class TaskModel(Base):
     is_fixed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Complex fields stored as JSON TEXT
-    # Format: {"2025-01-15": 2.0, "2025-01-16": 3.0}
-    daily_allocations: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
-
     # Format: [2, 3, 5]
     depends_on: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
 
@@ -78,6 +77,15 @@ class TaskModel(Base):
         secondary="task_tags",
         back_populates="tasks",
         lazy="selectin",
+    )
+
+    # Relationship to daily allocations (one-to-many)
+    # Daily allocations are stored in normalized schema (daily_allocations table).
+    allocation_models: Mapped[list["DailyAllocationModel"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "DailyAllocationModel",
+        back_populates="task",
+        lazy="selectin",
+        cascade="all, delete-orphan",
     )
 
     # Database indexes for frequently queried columns

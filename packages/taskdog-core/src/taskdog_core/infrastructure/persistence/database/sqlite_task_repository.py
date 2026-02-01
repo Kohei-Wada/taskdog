@@ -28,6 +28,7 @@ from taskdog_core.infrastructure.persistence.database.models import (
     TaskTagModel,
 )
 from taskdog_core.infrastructure.persistence.database.mutation_builders import (
+    DailyAllocationBuilder,
     TaskDeleteBuilder,
     TaskInsertBuilder,
     TaskTagRelationshipBuilder,
@@ -244,8 +245,8 @@ class SqliteTaskRepository(TaskRepository):
     def save(self, task: Task) -> None:
         """Save a task (create new or update existing).
 
-        Uses mutation builders to handle INSERT/UPDATE operations and
-        tag relationship management.
+        Uses mutation builders to handle INSERT/UPDATE operations,
+        tag relationship management, and daily allocation sync.
 
         Args:
             task: The task to save
@@ -256,6 +257,7 @@ class SqliteTaskRepository(TaskRepository):
             insert_builder = TaskInsertBuilder(session, self.mapper)
             update_builder = TaskUpdateBuilder(session, self.mapper)
             tag_builder = TaskTagRelationshipBuilder(session, tag_resolver)
+            allocation_builder = DailyAllocationBuilder(session)
 
             # Check if task exists
             existing_model = session.get(TaskModel, task.id)
@@ -270,13 +272,18 @@ class SqliteTaskRepository(TaskRepository):
             # Sync tag relationships
             tag_builder.sync_task_tags(existing_model, task.tags)
 
+            # Sync daily allocations to normalized table
+            allocation_builder.sync_daily_allocations(
+                existing_model, task.daily_allocations
+            )
+
             session.commit()
 
     def save_all(self, tasks: list[Task]) -> None:
         """Save multiple tasks in a single transaction.
 
-        Uses mutation builders to handle bulk INSERT/UPDATE operations and
-        tag relationship management.
+        Uses mutation builders to handle bulk INSERT/UPDATE operations,
+        tag relationship management, and daily allocation sync.
 
         Args:
             tasks: List of tasks to save
@@ -290,6 +297,7 @@ class SqliteTaskRepository(TaskRepository):
             insert_builder = TaskInsertBuilder(session, self.mapper)
             update_builder = TaskUpdateBuilder(session, self.mapper)
             tag_builder = TaskTagRelationshipBuilder(session, tag_resolver)
+            allocation_builder = DailyAllocationBuilder(session)
 
             # Bulk fetch existing tasks to avoid N+1 queries
             existing_ids = [t.id for t in tasks if t.id is not None]
@@ -313,6 +321,11 @@ class SqliteTaskRepository(TaskRepository):
 
                 # Sync tag relationships
                 tag_builder.sync_task_tags(existing_model, task.tags)
+
+                # Sync daily allocations to normalized table
+                allocation_builder.sync_daily_allocations(
+                    existing_model, task.daily_allocations
+                )
 
             session.commit()
 
@@ -360,12 +373,16 @@ class SqliteTaskRepository(TaskRepository):
             tag_resolver = TagResolver(session)
             insert_builder = TaskInsertBuilder(session, self.mapper)
             tag_builder = TaskTagRelationshipBuilder(session, tag_resolver)
+            allocation_builder = DailyAllocationBuilder(session)
 
             # Insert task (flush assigns ID via AUTOINCREMENT)
             model = insert_builder.insert_task(task)
 
             # Sync tag relationships
             tag_builder.sync_task_tags(model, task.tags)
+
+            # Sync daily allocations to normalized table
+            allocation_builder.sync_daily_allocations(model, task.daily_allocations)
 
             session.commit()
 

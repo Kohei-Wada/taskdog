@@ -10,8 +10,12 @@ The mutation builders:
 - TaskUpdateBuilder: Handles UPDATE operations for existing tasks
 - TaskDeleteBuilder: Handles DELETE operations for tasks
 - TaskTagRelationshipBuilder: Manages task-tag many-to-many relationships
+- DailyAllocationBuilder: Manages normalized daily allocation records
 """
 
+from taskdog_core.infrastructure.persistence.database.mutation_builders.daily_allocation_builder import (
+    DailyAllocationBuilder,
+)
 from taskdog_core.infrastructure.persistence.database.mutation_builders.task_delete_builder import (
     TaskDeleteBuilder,
 )
@@ -26,6 +30,7 @@ from taskdog_core.infrastructure.persistence.database.mutation_builders.task_upd
 )
 
 __all__ = [
+    "DailyAllocationBuilder",
     "TaskDeleteBuilder",
     "TaskInsertBuilder",
     "TaskTagRelationshipBuilder",

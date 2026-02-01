@@ -720,3 +720,164 @@ class TestSqliteTaskRepository:
             assert count == len(filtered_tasks), (
                 f"count_tasks({filters}) != len(get_filtered({filters}))"
             )
+
+    # ====================================================================
+    # Dual-Write Tests for Daily Allocations (Phase 2)
+    # ====================================================================
+
+    def test_save_writes_daily_allocations_to_normalized_table(self):
+        """Test save() writes daily_allocations to both JSON and normalized table."""
+        from sqlalchemy import select
+
+        from taskdog_core.infrastructure.persistence.database.models import (
+            DailyAllocationModel,
+        )
+
+        task = Task(
+            id=1,
+            name="Dual Write Test",
+            priority=1,
+            daily_allocations={date(2025, 1, 15): 2.0, date(2025, 1, 16): 3.5},
+        )
+
+        self.repository.save(task)
+
+        # Verify JSON column is populated (existing behavior)
+        retrieved = self.repository.get_by_id(1)
+        assert retrieved.daily_allocations == {
+            date(2025, 1, 15): 2.0,
+            date(2025, 1, 16): 3.5,
+        }
+
+        # Verify normalized table is also populated
+        with self.repository.Session() as session:
+            stmt = select(DailyAllocationModel).where(DailyAllocationModel.task_id == 1)
+            records = session.scalars(stmt).all()
+
+            assert len(records) == 2
+            records_by_date = {r.date: r.hours for r in records}
+            assert records_by_date[date(2025, 1, 15)] == 2.0
+            assert records_by_date[date(2025, 1, 16)] == 3.5
+
+    def test_save_all_writes_daily_allocations_to_normalized_table(self):
+        """Test save_all() writes daily_allocations to normalized table for all tasks."""
+        from sqlalchemy import select
+
+        from taskdog_core.infrastructure.persistence.database.models import (
+            DailyAllocationModel,
+        )
+
+        task1 = Task(
+            id=1,
+            name="Task 1",
+            priority=1,
+            daily_allocations={date(2025, 1, 15): 2.0},
+        )
+        task2 = Task(
+            id=2,
+            name="Task 2",
+            priority=2,
+            daily_allocations={date(2025, 1, 16): 3.0, date(2025, 1, 17): 4.0},
+        )
+
+        self.repository.save_all([task1, task2])
+
+        # Verify normalized table has all allocations
+        with self.repository.Session() as session:
+            stmt = select(DailyAllocationModel).order_by(DailyAllocationModel.task_id)
+            records = session.scalars(stmt).all()
+
+            assert len(records) == 3
+            task1_records = [r for r in records if r.task_id == 1]
+            task2_records = [r for r in records if r.task_id == 2]
+
+            assert len(task1_records) == 1
+            assert len(task2_records) == 2
+
+    def test_create_writes_daily_allocations_to_normalized_table(self):
+        """Test create() writes daily_allocations to normalized table."""
+        from sqlalchemy import select
+
+        from taskdog_core.infrastructure.persistence.database.models import (
+            DailyAllocationModel,
+        )
+
+        task = self.repository.create(
+            "Create Test",
+            priority=1,
+            daily_allocations={date(2025, 1, 20): 5.0},
+        )
+
+        # Verify normalized table is populated
+        with self.repository.Session() as session:
+            stmt = select(DailyAllocationModel).where(
+                DailyAllocationModel.task_id == task.id
+            )
+            records = session.scalars(stmt).all()
+
+            assert len(records) == 1
+            assert records[0].date == date(2025, 1, 20)
+            assert records[0].hours == 5.0
+
+    def test_update_replaces_daily_allocations_in_normalized_table(self):
+        """Test updating task replaces allocations in normalized table."""
+        from sqlalchemy import select
+
+        from taskdog_core.infrastructure.persistence.database.models import (
+            DailyAllocationModel,
+        )
+
+        # Create initial task with allocations
+        task = Task(
+            id=1,
+            name="Update Test",
+            priority=1,
+            daily_allocations={date(2025, 1, 15): 2.0},
+        )
+        self.repository.save(task)
+
+        # Update with different allocations
+        task.daily_allocations = {date(2025, 1, 20): 4.0, date(2025, 1, 21): 5.0}
+        self.repository.save(task)
+
+        # Verify normalized table has only new allocations
+        with self.repository.Session() as session:
+            stmt = select(DailyAllocationModel).where(DailyAllocationModel.task_id == 1)
+            records = session.scalars(stmt).all()
+
+            assert len(records) == 2
+            dates = {r.date for r in records}
+            assert date(2025, 1, 15) not in dates
+            assert date(2025, 1, 20) in dates
+            assert date(2025, 1, 21) in dates
+
+    def test_delete_task_cascades_to_normalized_allocations(self):
+        """Test deleting task also deletes normalized allocations (CASCADE)."""
+        from sqlalchemy import select
+
+        from taskdog_core.infrastructure.persistence.database.models import (
+            DailyAllocationModel,
+        )
+
+        task = Task(
+            id=1,
+            name="Delete Test",
+            priority=1,
+            daily_allocations={date(2025, 1, 15): 2.0, date(2025, 1, 16): 3.0},
+        )
+        self.repository.save(task)
+
+        # Verify allocations exist
+        with self.repository.Session() as session:
+            stmt = select(DailyAllocationModel).where(DailyAllocationModel.task_id == 1)
+            records = session.scalars(stmt).all()
+            assert len(records) == 2
+
+        # Delete task
+        self.repository.delete(1)
+
+        # Verify allocations are also deleted (CASCADE)
+        with self.repository.Session() as session:
+            stmt = select(DailyAllocationModel).where(DailyAllocationModel.task_id == 1)
+            records = session.scalars(stmt).all()
+            assert len(records) == 0

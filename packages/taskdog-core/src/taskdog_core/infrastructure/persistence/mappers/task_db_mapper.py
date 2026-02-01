@@ -1,18 +1,22 @@
 """Database mapper for Task entity to SQLAlchemy ORM model.
 
 This mapper handles conversion between Task domain entities and TaskModel
-ORM instances, including JSON serialization for complex fields.
+ORM instances.
 
 Phase 6 (Issue 228): Tags are stored exclusively in normalized tables (tags/task_tags).
 The mapper reads/writes tags via the TaskModel.tag_models relationship.
+
+Daily allocations are stored in the normalized daily_allocations table.
+The mapper reads via TaskModel.allocation_models relationship.
+Writes are handled by DailyAllocationBuilder in the repository.
 """
 
 import json
+from datetime import date
 from typing import Any
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.infrastructure.persistence.database.models.task_model import TaskModel
-from taskdog_core.shared.utils.datetime_parser import format_date_dict, parse_date_dict
 
 
 class TaskDbMapper:
@@ -21,7 +25,7 @@ class TaskDbMapper:
     This mapper:
     - Converts Task entities to TaskModel ORM instances
     - Converts TaskModel ORM instances back to Task entities
-    - Handles JSON serialization for complex fields (daily_allocations, tags, etc.)
+    - Handles JSON serialization for depends_on field
     - Maintains data integrity during conversions
     """
 
@@ -60,10 +64,8 @@ class TaskDbMapper:
         }
         # Fields requiring transformation
         result["status"] = task.status.value
-        result["daily_allocations"] = json.dumps(
-            format_date_dict(task.daily_allocations)
-        )
         result["depends_on"] = json.dumps(task.depends_on)
+        # Note: daily_allocations is handled by DailyAllocationBuilder, not here
         return result
 
     def to_dict(self, task: Task) -> dict[str, Any]:
@@ -111,14 +113,13 @@ class TaskDbMapper:
         assert model.updated_at is not None, "TaskModel.updated_at must not be None"
         assert model.is_fixed is not None, "TaskModel.is_fixed must not be None"
         assert model.is_archived is not None, "TaskModel.is_archived must not be None"
-        assert model.daily_allocations is not None, (
-            "TaskModel.daily_allocations must not be None"
-        )
         assert model.depends_on is not None, "TaskModel.depends_on must not be None"
 
-        # Parse JSON fields
-        daily_allocations = parse_date_dict(
-            json.loads(model.daily_allocations) if model.daily_allocations else {}
+        # Read daily allocations from normalized table (Phase 3)
+        daily_allocations: dict[date, float] = (
+            {alloc.date: alloc.hours for alloc in model.allocation_models}
+            if model.allocation_models
+            else {}
         )
         depends_on = json.loads(model.depends_on)
 
