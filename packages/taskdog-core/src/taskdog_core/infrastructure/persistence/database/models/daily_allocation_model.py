@@ -12,7 +12,11 @@ tuple is stored as a separate row, enabling:
 from datetime import date, datetime
 
 from sqlalchemy import Date, Float, ForeignKey, Index, Integer, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import (  # type: ignore[attr-defined]
+    Mapped,
+    mapped_column,
+    relationship,
+)
 
 from .task_model import Base
 
