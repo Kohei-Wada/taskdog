@@ -2,7 +2,6 @@
 
 from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
     GreedyBasedOptimizationStrategy,
-    initialize_allocations,
 )
 from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
@@ -19,5 +18,4 @@ __all__ = [
     "GreedyOptimizationStrategy",
     "OptimizationStrategy",
     "StrategyFactory",
-    "initialize_allocations",
 ]

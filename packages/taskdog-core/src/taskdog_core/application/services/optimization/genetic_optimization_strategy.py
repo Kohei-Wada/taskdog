@@ -14,9 +14,6 @@ from taskdog_core.application.constants.optimization import (
 )
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
-from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
-    initialize_allocations,
-)
 from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
     GreedyOptimizationStrategy,
 )
@@ -75,14 +72,14 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     def optimize_tasks(
         self,
         tasks: list[Task],
-        context_tasks: list[Task],
+        existing_allocations: dict[date, float],
         params: OptimizeParams,
     ) -> OptimizeResult:
         """Optimize task schedules using genetic algorithm.
 
         Args:
             tasks: List of tasks to schedule (already filtered by is_schedulable())
-            context_tasks: All tasks in the system (for calculating existing allocations)
+            existing_allocations: Pre-aggregated daily allocations from existing tasks
             params: Optimization parameters (start_date, max_hours_per_day, etc.)
 
         Returns:
@@ -94,9 +91,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         # Store params for use in evaluation
         self._params = params
 
-        # Initialize daily allocations from context tasks
-        initial_allocations = initialize_allocations(context_tasks)
-        result = OptimizeResult(daily_allocations=dict(initial_allocations))
+        # Copy existing allocations to avoid mutating the input
+        result = OptimizeResult(daily_allocations=dict(existing_allocations))
 
         # Create greedy strategy instance for allocation
         greedy_strategy = GreedyOptimizationStrategy(

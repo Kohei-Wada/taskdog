@@ -114,6 +114,13 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             all_tasks, input_dto.force_override, input_dto.task_ids
         )
 
+        # Pre-compute existing allocations using SQL aggregation (performance optimization)
+        # This avoids Python loops in strategies and uses SQL SUM/GROUP BY instead
+        workload_task_ids = [t.id for t in workload_tasks if t.id is not None]
+        existing_allocations = self.repository.get_aggregated_daily_allocations(
+            workload_task_ids
+        )
+
         # Get optimization strategy
         strategy = StrategyFactory.create(
             input_dto.algorithm_name, self.default_start_time, self.default_end_time
@@ -130,10 +137,10 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
 
         # Run optimization
         # Strategy responsibility: how to optimize
-        # Pass filtered workload_tasks instead of all_tasks
+        # Pass pre-computed existing_allocations instead of task list
         result = strategy.optimize_tasks(
             tasks=schedulable_tasks,
-            context_tasks=workload_tasks,
+            existing_allocations=existing_allocations,
             params=params,
         )
 

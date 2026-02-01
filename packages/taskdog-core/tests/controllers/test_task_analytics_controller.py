@@ -79,6 +79,7 @@ class TestTaskAnalyticsController:
         start_date = datetime(2025, 1, 1)
         max_hours_per_day = 8.0
         self.repository.get_all.return_value = []
+        self.repository.get_aggregated_daily_allocations.return_value = {}
         self.config.region.country = "JP"  # Set country for holiday checker
 
         # Act

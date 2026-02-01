@@ -23,9 +23,8 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
     """Base class for strategies that use greedy forward allocation.
 
     This class provides:
-    1. Common workflow: initialize allocations → sort tasks → allocate each task
+    1. Common workflow: use pre-computed allocations → sort tasks → allocate each task
     2. Greedy forward allocation algorithm (_allocate_task)
-    3. Daily allocation initialization from existing tasks
 
     Subclasses can customize behavior by overriding:
     - _sort_tasks(): Change task ordering (default: priority-based)
@@ -48,20 +47,21 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
     def optimize_tasks(
         self,
         tasks: list[Task],
-        context_tasks: list[Task],
+        existing_allocations: dict[date, float],
         params: OptimizeParams,
     ) -> OptimizeResult:
         """Optimize task schedules using greedy forward allocation.
 
         Args:
             tasks: List of tasks to schedule
-            context_tasks: All tasks for calculating existing allocations
+            existing_allocations: Pre-aggregated daily allocations from existing tasks
             params: Optimization parameters (start_date, max_hours_per_day, etc.)
 
         Returns:
             OptimizeResult containing modified tasks, daily allocations, and failures
         """
-        daily_allocations = initialize_allocations(context_tasks)
+        # Copy existing allocations to avoid mutating the input
+        daily_allocations = dict(existing_allocations)
         result = OptimizeResult(daily_allocations=daily_allocations)
 
         sorted_tasks = self._sort_tasks(tasks, params.start_date)
@@ -176,31 +176,3 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
         for date_obj, hours in task_daily_allocations.items():
             daily_allocations[date_obj] -= hours
         return None
-
-
-def initialize_allocations(
-    tasks: list[Task],
-) -> dict[date, float]:
-    """Initialize daily allocations from existing scheduled tasks.
-
-    This function is also used by RoundRobinOptimizationStrategy and other
-    strategies that need to account for existing task allocations.
-
-    Args:
-        tasks: Tasks to include in workload calculation (already filtered by caller)
-
-    Returns:
-        Dictionary mapping dates to allocated hours
-    """
-    daily_allocations: dict[date, float] = {}
-
-    for task in tasks:
-        # Skip tasks without schedules or daily_allocations
-        if not (task.planned_start and task.daily_allocations):
-            continue
-
-        # Add task's daily allocations to global daily_allocations
-        for date_obj, hours in task.daily_allocations.items():
-            daily_allocations[date_obj] = daily_allocations.get(date_obj, 0.0) + hours
-
-    return daily_allocations

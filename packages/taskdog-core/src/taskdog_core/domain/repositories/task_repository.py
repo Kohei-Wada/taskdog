@@ -239,3 +239,28 @@ class TaskRepository(ABC):
         # Default implementation: fallback to empty dict (no optimization)
         # Subclasses should override this method to use SQL fetching
         return {}
+
+    def get_aggregated_daily_allocations(
+        self,
+        task_ids: list[int],
+    ) -> dict[date, float]:
+        """Get aggregated daily allocations for specific tasks using SQL.
+
+        This method uses SQL SUM/GROUP BY to aggregate daily allocations
+        for the specified tasks, avoiding Python loops.
+
+        Args:
+            task_ids: List of task IDs to aggregate allocations for
+
+        Returns:
+            Dictionary mapping date to total hours {date: hours}
+
+        Notes:
+            - Default implementation returns empty dict (no optimization)
+            - Repositories should override this for SQL-level aggregation
+            - More efficient than loading Task entities and summing in Python
+            - Used by optimization strategies to get existing workload
+        """
+        # Default implementation: fallback to empty dict (no optimization)
+        # Subclasses should override this method to use SQL aggregation
+        return {}
