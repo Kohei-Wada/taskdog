@@ -25,7 +25,7 @@ class TaskDbMapper:
     This mapper:
     - Converts Task entities to TaskModel ORM instances
     - Converts TaskModel ORM instances back to Task entities
-    - Handles JSON serialization for complex fields (daily_allocations, tags, etc.)
+    - Handles JSON serialization for depends_on field
     - Maintains data integrity during conversions
     """
 

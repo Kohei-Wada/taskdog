@@ -272,7 +272,7 @@ class SqliteTaskRepository(TaskRepository):
             # Sync tag relationships
             tag_builder.sync_task_tags(existing_model, task.tags)
 
-            # Sync daily allocations (dual-write: both JSON and normalized table)
+            # Sync daily allocations to normalized table
             allocation_builder.sync_daily_allocations(
                 existing_model, task.daily_allocations
             )
@@ -322,7 +322,7 @@ class SqliteTaskRepository(TaskRepository):
                 # Sync tag relationships
                 tag_builder.sync_task_tags(existing_model, task.tags)
 
-                # Sync daily allocations (dual-write: both JSON and normalized table)
+                # Sync daily allocations to normalized table
                 allocation_builder.sync_daily_allocations(
                     existing_model, task.daily_allocations
                 )
@@ -381,7 +381,7 @@ class SqliteTaskRepository(TaskRepository):
             # Sync tag relationships
             tag_builder.sync_task_tags(model, task.tags)
 
-            # Sync daily allocations (dual-write: both JSON and normalized table)
+            # Sync daily allocations to normalized table
             allocation_builder.sync_daily_allocations(model, task.daily_allocations)
 
             session.commit()

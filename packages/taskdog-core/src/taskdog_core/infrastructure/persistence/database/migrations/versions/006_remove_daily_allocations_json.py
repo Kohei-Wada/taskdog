@@ -43,6 +43,23 @@ def upgrade() -> None:
         # Column already removed (e.g., fresh database created with new schema)
         return
 
+    # Safety check: Verify no tasks have JSON data that isn't in normalized table
+    # This prevents data loss if dual-write wasn't properly active
+    result = conn.execute(
+        sa.text("""
+            SELECT COUNT(*) FROM tasks
+            WHERE daily_allocations != '{}'
+            AND id NOT IN (SELECT DISTINCT task_id FROM daily_allocations)
+        """)
+    )
+    unmigrated_count = result.scalar()
+
+    if unmigrated_count and unmigrated_count > 0:
+        raise RuntimeError(
+            f"Cannot drop JSON column: {unmigrated_count} tasks have unmigrated "
+            "allocation data. Ensure dual-write was active before running this migration."
+        )
+
     # SQLite requires batch mode for column removal
     with op.batch_alter_table("tasks") as batch_op:
         batch_op.drop_column("daily_allocations")
