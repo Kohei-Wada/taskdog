@@ -56,26 +56,45 @@ def upgrade() -> None:
     )
     for row in result:
         task_id = row[0]
-        json_data = json.loads(row[1])
+        try:
+            json_data = json.loads(row[1])
+        except (json.JSONDecodeError, TypeError):
+            # Skip malformed JSON data
+            continue
         for date_str, hours in json_data.items():
-            if hours > 0:
-                conn.execute(
-                    sa.text(
-                        "INSERT OR IGNORE INTO daily_allocations "
-                        "(task_id, date, hours, created_at) "
-                        "VALUES (:task_id, :date, :hours, :created_at)"
-                    ),
-                    {
-                        "task_id": task_id,
-                        "date": date_str,
-                        "hours": hours,
-                        "created_at": datetime.now(),
-                    },
-                )
+            # Validate date format (YYYY-MM-DD)
+            if not (
+                isinstance(date_str, str)
+                and len(date_str) == 10
+                and date_str[4] == "-"
+                and date_str[7] == "-"
+            ):
+                continue
+            if not isinstance(hours, (int, float)) or hours <= 0:
+                continue
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO daily_allocations "
+                    "(task_id, date, hours, created_at) "
+                    "VALUES (:task_id, :date, :hours, :created_at)"
+                ),
+                {
+                    "task_id": task_id,
+                    "date": date_str,
+                    "hours": hours,
+                    "created_at": datetime.now(),
+                },
+            )
 
     # SQLite requires batch mode for column removal
-    with op.batch_alter_table("tasks") as batch_op:
-        batch_op.drop_column("daily_allocations")
+    # IMPORTANT: Disable foreign keys before batch_alter_table to prevent
+    # ON DELETE CASCADE from deleting related records in task_tags
+    conn.execute(sa.text("PRAGMA foreign_keys=OFF"))
+    try:
+        with op.batch_alter_table("tasks") as batch_op:
+            batch_op.drop_column("daily_allocations")
+    finally:
+        conn.execute(sa.text("PRAGMA foreign_keys=ON"))
 
 
 def downgrade() -> None:
