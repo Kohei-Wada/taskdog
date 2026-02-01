@@ -520,8 +520,8 @@ class SqliteTaskRepository(TaskRepository):
             #                   GROUP BY date
             stmt = (
                 select(DailyAllocationModel.date, func.sum(DailyAllocationModel.hours))
-                .where(DailyAllocationModel.date >= start_date)
-                .where(DailyAllocationModel.date <= end_date)
+                .where(DailyAllocationModel.date >= start_date)  # type: ignore[operator]
+                .where(DailyAllocationModel.date <= end_date)  # type: ignore[operator]
             )
 
             # Add task_id filter if specified
@@ -539,8 +539,11 @@ class SqliteTaskRepository(TaskRepository):
             # Execute query
             results = session.execute(stmt).all()
 
-            # Convert to dictionary
-            return {row[0]: float(row[1]) for row in results}
+            # Convert to dictionary: Row objects have tuple-like access
+            return {
+                row[0]: float(row[1])  # type: ignore[misc, arg-type]
+                for row in results
+            }
 
     def get_daily_allocations_for_tasks(
         self,
@@ -584,9 +587,9 @@ class SqliteTaskRepository(TaskRepository):
 
             # Add date range filters if specified
             if start_date is not None:
-                stmt = stmt.where(DailyAllocationModel.date >= start_date)
+                stmt = stmt.where(DailyAllocationModel.date >= start_date)  # type: ignore[operator]
             if end_date is not None:
-                stmt = stmt.where(DailyAllocationModel.date <= end_date)
+                stmt = stmt.where(DailyAllocationModel.date <= end_date)  # type: ignore[operator]
 
             # Execute query
             results = session.execute(stmt).all()

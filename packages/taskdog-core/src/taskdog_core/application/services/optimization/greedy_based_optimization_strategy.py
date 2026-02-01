@@ -201,7 +201,9 @@ def initialize_allocations(
     Returns:
         Dictionary mapping dates to allocated hours
     """
-    from taskdog_core.application.queries.workload._strategies import WeekdayOnlyStrategy
+    from taskdog_core.application.queries.workload._strategies import (
+        WeekdayOnlyStrategy,
+    )
 
     strategy = WeekdayOnlyStrategy()
     daily_allocations: dict[date, float] = {}
