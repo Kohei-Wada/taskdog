@@ -21,7 +21,7 @@ The repository uses UV workspace with five packages:
 
 - Depends on: taskdog-core
 - FastAPI application with automatic OpenAPI docs
-- API routers: tasks, lifecycle, relationships, analytics, audit
+- API routers: tasks, lifecycle, relationships, analytics, notes, audit, websocket
 - Pydantic models for request/response validation
 - Health check and comprehensive error handling
 
@@ -175,8 +175,8 @@ Clean Architecture with 5 layers across five packages: **Domain** ← **Applicat
 
 **Domain** (`packages/taskdog-core/src/taskdog_core/domain/`): Core business logic, no external dependencies
 
-- `entities/`: Task, TaskStatus, AuditLog
-- `services/`: TimeTracker (records timestamps)
+- `entities/`: Task, TaskStatus
+- `services/`: ILogger, ITimeProvider, IHolidayChecker (interfaces for testability)
 - `exceptions/`: TaskNotFoundException, TaskValidationError, TaskAlreadyFinishedError, TaskNotStartedError
 - `constants.py`: Domain constants (DEFAULT_PRIORITY, etc.)
 
@@ -188,10 +188,12 @@ Clean Architecture with 5 layers across five packages: **Domain** ← **Applicat
 - `validators/`: Field validation using Strategy Pattern + Registry
   - `TaskFieldValidatorRegistry`: Central registry for field validators
   - `StatusValidator`, `DependencyValidator` (validates dependencies are COMPLETED)
-- `services/`: WorkloadAllocator, OptimizationSummaryBuilder, TaskStatusService
+- `services/`: OptimizationSummaryBuilder, TaskStatusService, DependencyGraphService, TaskStatisticsCalculator
   - `optimization/`: 9 scheduling strategies (greedy, balanced, backward, priority_first, earliest_deadline, round_robin, dependency_aware, genetic, monte_carlo) + StrategyFactory
 - `sorters/`: TaskSorter (general queries), OptimizationTaskSorter (optimization-specific)
-- `queries/`: TaskQueryService, WorkloadCalculator (computes daily hours for read-only operations, CQRS-like)
+- `queries/`: TaskQueryService (CQRS-like read operations)
+  - `queries/workload/`: Workload calculation strategies (ActualScheduleStrategy, WeekdayOnlyStrategy, AllDaysStrategy)
+  - `queries/filters/`: Query filters (StatusFilter, DateRangeFilter, TagFilter, TodayFilter, ThisWeekFilter, etc.)
 - `dto/`: Input/Output DTOs (CreateTaskRequest, OptimizationResult, SchedulingFailure, etc.)
 
 **Infrastructure** (`packages/taskdog-core/src/taskdog_core/infrastructure/`): External concerns
@@ -237,7 +239,9 @@ Clean Architecture with 5 layers across five packages: **Domain** ← **Applicat
   - `lifecycle.py`: Task status changes (start, complete, pause, cancel, reopen)
   - `relationships.py`: Dependencies and tags
   - `analytics.py`: Statistics and reporting
+  - `notes.py`: Task notes management
   - `audit.py`: Audit log retrieval
+  - `websocket.py`: Real-time WebSocket connections
 - `models/`: Pydantic request/response models
 - `dependencies.py`: FastAPI dependency injection (repository, controllers)
 - `context.py`: ApiContext (similar to CliContext for DI)
@@ -266,7 +270,10 @@ Clean Architecture with 5 layers across five packages: **Domain** ← **Applicat
 - `app.py`: Textual application main screen
 - `commands/`: Command Pattern (CommandRegistry, CommandFactory, TUICommandBase)
 - `screens/`, `widgets/`, `forms/`: UI components
-- `services/task_service.py`: Facade wrapping TaskController + QueryController for TUI
+- `services/`: WebSocket and event handling
+  - `websocket_handler.py`: WebSocket connection management
+  - `event_handler_registry.py`: Event handler registration
+  - `task_ui_manager.py`: Task UI state management
 - `styles/`: TCSS stylesheets (included via package_data)
 
 **Additional UI Directories** (`packages/taskdog-ui/src/taskdog/`):
@@ -307,9 +314,11 @@ Clean Architecture with 5 layers across five packages: **Domain** ← **Applicat
 - Indexed queries for efficient lookups and filtering
 - Used by API server only (CLI/TUI access via HTTP API, not directly)
 
-**TimeTracker** (`packages/taskdog-core/src/taskdog_core/domain/services/time_tracker.py`):
+**Domain Services** (`packages/taskdog-core/src/taskdog_core/domain/services/`):
 
-- Records actual_start (→IN_PROGRESS), actual_end (→COMPLETED/CANCELED), clears both (→PENDING)
+- `ITimeProvider`: Interface for current time (enables testing with fixed timestamps)
+- `IHolidayChecker`: Interface for holiday checking (used by workload calculations)
+- `ILogger`: Interface for logging abstraction
 
 **Renderers** (`packages/taskdog-ui/src/taskdog/renderers/`)
 
@@ -319,7 +328,7 @@ Clean Architecture with 5 layers across five packages: **Domain** ← **Applicat
 
 **CLI Patterns** (`packages/taskdog-ui/src/taskdog/cli/`)
 
-- `update_helpers.py`: Shared helper for single-field updates (deadline, priority, estimate, rename)
+- `update_helpers.py`: Shared helper utilities for task update operations
 - `error_handler.py`: `@handle_task_errors`, `@handle_command_errors` decorators
 - Batch operations: Loop + per-task error handling (start, done, pause, rm, archive)
 
@@ -341,7 +350,7 @@ Clean Architecture with 5 layers across five packages: **Domain** ← **Applicat
 - `TUICommandBase`: Abstract base with helpers (get_selected_task, reload_tasks, notify_*)
 - `StatusChangeCommandBase`: Template Method for status changes
 - `CommandFactory`: Creates commands with DI
-- `TaskService`: Facade wrapping TaskController + QueryController for TUI
+- TUI services: WebSocketHandler, EventHandlerRegistry, TaskUIManager
 
 **API Patterns** (`packages/taskdog-server/src/taskdog_server/api/`)
 
@@ -415,11 +424,11 @@ Commands in `packages/taskdog-ui/src/taskdog/cli/commands/`, registered in `cli_
 
 **Audit**
 
-- `audit-logs [--limit N] [--task-id ID] [--operation OP]`: View audit logs
+- `audit-logs [--limit N] [--task-id ID] [--operation OP] [--client] [--since] [--until] [--failed]`: View audit logs
 
 **Interactive**
 
-- `note ID`: Edit markdown notes ($EDITOR)
+- `note ID [--content/-c] [--file/-f] [--append/-a]`: Edit markdown notes ($EDITOR or direct content/file)
 - `tui`: Full-screen TUI (Textual) with keyboard shortcuts
   - `a`: Add task, `s`: Start, `P`: Pause, `d`: Done, `c`: Cancel, `R`: Reopen
   - `x`: Archive (soft delete), `X`: Hard delete, `i`: Details, `e`: Edit, `v`: Edit note
@@ -482,10 +491,12 @@ The FastAPI server (`taskdog-server`) provides a REST API with automatic OpenAPI
 **Task Management** (`/api/v1/tasks/`)
 
 - `GET /api/v1/tasks/` - List tasks with filtering (status, tags, date ranges, archived)
+- `GET /api/v1/tasks/today` - Get today's tasks (deadline today, planned includes today, or IN_PROGRESS)
+- `GET /api/v1/tasks/week` - Get this week's tasks
 - `POST /api/v1/tasks/` - Create new task
 - `GET /api/v1/tasks/{task_id}` - Get task details
 - `PATCH /api/v1/tasks/{task_id}` - Update task fields
-- `DELETE /api/v1/tasks/{task_id}?hard=false` - Delete task (soft by default)
+- `DELETE /api/v1/tasks/{task_id}` - Hard delete task (permanent removal)
 
 **Lifecycle Operations** (`/api/v1/tasks/{task_id}/`)
 
@@ -523,13 +534,14 @@ The FastAPI server (`taskdog-server`) provides a REST API with automatic OpenAPI
 
 **Audit** (`/api/v1/`)
 
-- `GET /api/v1/audit-logs` - List audit logs with filtering (task_id, operation, limit)
+- `GET /api/v1/audit-logs` - List audit logs with filtering (task_id, operation, limit, client, since, until, failed)
+- `GET /api/v1/audit-logs/{log_id}` - Get single audit log by ID
 
 **Real-time Updates**:
 
 - `WebSocket /ws` - Real-time task notifications (task_created, task_updated, task_deleted, task_status_changed)
-  - Client ID-based connection management
-  - Excludes event broadcaster from receiving their own events via X-Client-ID header
+  - Client ID-based connection management via `token` query parameter
+  - UUID-based client identification for event filtering
 
 **System**
 

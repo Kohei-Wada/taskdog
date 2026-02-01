@@ -26,8 +26,9 @@ The optimization system schedules tasks by allocating work hours across calendar
 
 ### Key Components
 
-- **OptimizationStrategy** - Abstract base class (Template Method pattern)
-- **AllocationContext** - State container for optimization parameters
+- **OptimizationStrategy** - Abstract base class defining the interface
+- **GreedyBasedOptimizationStrategy** - Template Method base class for greedy-based strategies
+- **allocation_helpers** - Module with helper functions for task allocation
 - **StrategyFactory** - Creates strategy instances by name
 - **OptimizeScheduleUseCase** - Entry point orchestrating the optimization
 
@@ -35,30 +36,32 @@ The optimization system schedules tasks by allocating work hours across calendar
 
 ### Template Method Pattern
 
-The `OptimizationStrategy` base class defines the common workflow while allowing strategies to customize specific steps:
+The `GreedyBasedOptimizationStrategy` class defines the common workflow while allowing strategies to customize specific steps:
 
 ```python
-class OptimizationStrategy(ABC):
-    def optimize_tasks(self, ...):
+class GreedyBasedOptimizationStrategy(OptimizationStrategy):
+    def optimize_tasks(self, tasks, existing_allocations, params) -> OptimizeResult:
         # Template method defining the workflow
-        context = AllocationContext.create(...)  # 1. Initialize context
-        sorted_tasks = self._sort_schedulable_tasks(tasks, start_date)  # 2. Sort (customizable)
+        daily_allocations = dict(existing_allocations)  # 1. Copy pre-computed allocations
+        result = OptimizeResult(daily_allocations=daily_allocations)
+
+        sorted_tasks = self._sort_tasks(tasks, params.start_date)  # 2. Sort (customizable)
 
         for task in sorted_tasks:
-            updated_task = self._allocate_task(task, context)  # 3. Allocate (customizable)
+            updated_task = self._allocate_task(task, daily_allocations, params)  # 3. Allocate
             if updated_task:
-                updated_tasks.append(updated_task)
+                result.tasks.append(updated_task)
             else:
-                context.record_allocation_failure(task)
+                result.record_allocation_failure(task)
 
-        return updated_tasks, context.daily_allocations, context.failed_tasks
+        return result
 ```
 
 **Benefits:**
 
-- Eliminates code duplication across 9 strategies
+- Eliminates code duplication across greedy-based strategies
 - Ensures consistent behavior (initialization, failure recording, etc.)
-- Clear extension points via abstract methods
+- Clear extension points via virtual methods (`_sort_tasks`)
 
 ### Strategy Pattern
 
@@ -82,94 +85,109 @@ Strategies can be selected at runtime via `StrategyFactory`:
 strategy = StrategyFactory.create("greedy", default_start_time=time(9, 0), default_end_time=time(18, 0))
 ```
 
-### Context Object Pattern
+### Parameter Object Pattern
 
-`AllocationContext` encapsulates related parameters and mutable state:
+`OptimizeParams` encapsulates optimization constraints as a data transfer object:
 
 ```python
 @dataclass
-class AllocationContext:
-    # Constraints
+class OptimizeParams:
     start_date: datetime
     max_hours_per_day: float
-    holiday_checker: IHolidayChecker | None
-    current_time: datetime | None
+    holiday_checker: IHolidayChecker | None = None
+    current_time: datetime | None = None
+    include_all_days: bool = False
+```
 
-    # Mutable state
-    daily_allocations: dict[date, float]  # Accumulated hours per day
-    failed_tasks: list[SchedulingFailure]  # Tasks that couldn't be scheduled
+`OptimizeResult` encapsulates the optimization output:
+
+```python
+@dataclass
+class OptimizeResult:
+    tasks: list[Task] = field(default_factory=list)  # Successfully scheduled tasks
+    daily_allocations: dict[date, float] = field(default_factory=dict)  # Accumulated hours
+    failures: list[SchedulingFailure] = field(default_factory=list)  # Failed tasks
 ```
 
 **Benefits:**
 
-- Reduces parameter explosion (7 → 2 parameters per method)
-- Groups related constraints and state
+- Reduces parameter explosion via DTOs
+- Groups related constraints (input) and results (output)
 - Supports nested method calls (Genetic/Monte Carlo strategies)
-- Encapsulates initialization logic in `create()` factory
 
 ## Core Components
 
-### OptimizationStrategy (Base Class)
+### OptimizationStrategy (Abstract Base Class)
 
 **Location:** `packages/taskdog-core/src/taskdog_core/application/services/optimization/optimization_strategy.py`
 
 **Responsibilities:**
 
-- Defines template method `optimize_tasks()`
-- Provides protected helper methods for common operations
-- Enforces consistent workflow across all strategies
+- Defines abstract `optimize_tasks()` method
+- Enforces DISPLAY_NAME and DESCRIPTION class variables
+- Provides the interface for all optimization strategies
 
 **Abstract Methods (must be implemented by subclasses):**
 
 ```python
 @abstractmethod
-def _allocate_task(self, task: Task, context: AllocationContext) -> Task | None:
-    """Allocate time block for a single task."""
+def optimize_tasks(
+    self,
+    tasks: list[Task],
+    existing_allocations: dict[date, float],
+    params: OptimizeParams,
+) -> OptimizeResult:
+    """Optimize task schedules."""
     pass
 ```
 
-**Concrete Methods (can be overridden for custom sorting):**
+### GreedyBasedOptimizationStrategy (Template Method Base Class)
+
+**Location:** `packages/taskdog-core/src/taskdog_core/application/services/optimization/greedy_based_optimization_strategy.py`
+
+**Responsibilities:**
+
+- Implements the template method `optimize_tasks()`
+- Provides greedy forward allocation algorithm
+- Allows subclasses to customize sorting via `_sort_tasks()`
+
+**Virtual Methods (can be overridden for custom sorting):**
 
 ```python
-def _sort_schedulable_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
+def _sort_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
     """Default: Sort by deadline urgency, priority, task ID."""
     sorter = OptimizationTaskSorter(start_date)
     return sorter.sort_by_priority(tasks)
 ```
 
-**Protected Helper Methods:**
+### Allocation Helpers (Module Functions)
 
-| Method | Purpose |
-|--------|---------|
-| `_prepare_task_for_allocation()` | Validates task and creates deep copy |
-| `_calculate_available_hours()` | Computes available hours for a date |
-| `_set_planned_times()` | Sets planned_start, planned_end, daily_allocations |
-| `_rollback_allocations()` | Rolls back failed allocation |
+**Location:** `packages/taskdog-core/src/taskdog_core/application/services/optimization/allocation_helpers.py`
 
-### AllocationContext
+**Functions:**
 
-**Location:** `packages/taskdog-core/src/taskdog_core/application/services/optimization/allocation_context.py`
+| Function | Purpose |
+|----------|---------|
+| `prepare_task_for_allocation()` | Validates task and creates deep copy |
+| `calculate_available_hours()` | Computes available hours for a date |
+| `set_planned_times()` | Sets planned_start, planned_end, daily_allocations |
 
-**Factory Method:**
+### OptimizeParams (Input DTO)
 
-```python
-context = AllocationContext.create(
-    tasks=all_tasks_for_context,  # Tasks to include in workload calculation
-    start_date=start_date,
-    max_hours_per_day=max_hours_per_day,
-    holiday_checker=holiday_checker,
-    current_time=current_time,
-    workload_calculator=workload_calculator,
-)
-```
+**Location:** `packages/taskdog-core/src/taskdog_core/application/dto/optimize_params.py`
 
-The `create()` factory automatically initializes `daily_allocations` by computing existing workload from scheduled tasks.
+Contains optimization constraints passed from UseCase to Strategy.
 
-**Convenience Methods:**
+### OptimizeResult (Output DTO)
+
+**Location:** `packages/taskdog-core/src/taskdog_core/application/dto/optimize_result.py`
+
+Contains optimization results including scheduled tasks, allocations, and failures.
+
+**Convenience Method:**
 
 ```python
-context.record_failure(task, "Custom reason")
-context.record_allocation_failure(task)  # Generic failure message
+result.record_allocation_failure(task)  # Records failure with generic message
 ```
 
 ### StrategyFactory
@@ -194,10 +212,12 @@ Supported algorithms: `greedy`, `balanced`, `backward`, `priority_first`, `earli
 
 Entry point that:
 
-1. Filters schedulable tasks (`is_schedulable()`)
-2. Creates strategy via StrategyFactory
-3. Calls `strategy.optimize_tasks()`
-4. Returns OptimizationOutput with results
+1. Validates and filters schedulable tasks (`validate_schedulable()`)
+2. Pre-computes existing allocations via SQL aggregation (`repository.get_aggregated_daily_allocations()`)
+3. Creates strategy via StrategyFactory
+4. Creates OptimizeParams DTO with constraints
+5. Calls `strategy.optimize_tasks(tasks, existing_allocations, params)`
+6. Saves results and returns OptimizationOutput
 
 ## Optimization Strategies
 
@@ -398,67 +418,77 @@ Task A depends on Task B and Task C
 ```text
 OptimizeScheduleUseCase
   ↓
-  ├─ Filter schedulable tasks (is_schedulable())
+  ├─ Validate schedulable tasks (validate_schedulable())
+  ├─ Filter workload tasks (_filter_workload_tasks())
+  ├─ Pre-compute allocations (repository.get_aggregated_daily_allocations())
   ├─ Create strategy via StrategyFactory
-  └─ strategy.optimize_tasks()
+  ├─ Create OptimizeParams DTO
+  └─ strategy.optimize_tasks(tasks, existing_allocations, params)
        ↓
-       ├─ AllocationContext.create() [Initialize daily_allocations]
-       ├─ _sort_schedulable_tasks() [Strategy-specific]
+       ├─ Copy existing_allocations to daily_allocations
+       ├─ Create OptimizeResult
+       ├─ _sort_tasks() [Strategy-specific]
        └─ For each task:
-            ├─ _allocate_task() [Strategy-specific]
-            │   ├─ _prepare_task_for_allocation()
+            ├─ _allocate_task(task, daily_allocations, params)
+            │   ├─ prepare_task_for_allocation()
             │   ├─ Find available time slots
-            │   ├─ _calculate_available_hours()
-            │   ├─ Update context.daily_allocations
-            │   └─ _set_planned_times()
-            └─ Or: context.record_allocation_failure()
+            │   ├─ calculate_available_hours()
+            │   ├─ Update daily_allocations
+            │   └─ set_planned_times()
+            └─ Or: result.record_allocation_failure()
 ```
 
-### AllocationContext Initialization
+### Existing Allocations Pre-computation
 
 ```python
-AllocationContext.create(tasks=[...])
-  ↓
-  _initialize_allocations(tasks, workload_calculator)
-    ↓
-    For each task with schedule:
-      ├─ Get task.daily_allocations (if available)
-      ├─ Or: workload_calculator.get_task_daily_hours(task)
-      └─ Accumulate into daily_allocations dict
+# UseCase pre-computes via SQL aggregation for performance
+workload_task_ids = [t.id for t in workload_tasks if t.id is not None]
+existing_allocations = repository.get_aggregated_daily_allocations(workload_task_ids)
 ```
 
-**Result:** `daily_allocations` contains existing workload before optimization starts.
+**Result:** `existing_allocations` contains pre-aggregated workload before optimization starts.
+This uses SQL SUM/GROUP BY instead of Python loops for better performance.
 
 ### Allocation Loop
 
 ```python
 for task in sorted_tasks:
     # 1. Prepare
-    task_copy = _prepare_task_for_allocation(task)
-    if not task_copy:
+    task_copy = prepare_task_for_allocation(task)
+    if task_copy is None:
         continue
 
     # 2. Find time slots
     while remaining_hours > 0:
-        available = _calculate_available_hours(daily_allocations, date, ...)
+        available = calculate_available_hours(
+            daily_allocations, date_obj,
+            params.max_hours_per_day, params.current_time,
+            self.default_end_time
+        )
         if available > 0:
             allocated = min(remaining_hours, available)
-            daily_allocations[date] += allocated  # Update context
-            task_daily_allocations[date] = allocated
+            daily_allocations[date_obj] += allocated
+            task_daily_allocations[date_obj] = allocated
             remaining_hours -= allocated
 
     # 3. Set schedule
-    _set_planned_times(task_copy, start, end, task_daily_allocations)
+    set_planned_times(
+        task_copy, schedule_start, schedule_end,
+        task_daily_allocations,
+        self.default_start_time, self.default_end_time
+    )
 ```
 
-## Helper Methods
+## Helper Functions
 
-### `_prepare_task_for_allocation()`
+**Location:** `packages/taskdog-core/src/taskdog_core/application/services/optimization/allocation_helpers.py`
+
+### `prepare_task_for_allocation()`
 
 **Purpose:** Validate task and create deep copy for modification
 
 ```python
-def _prepare_task_for_allocation(self, task: Task) -> Task | None:
+def prepare_task_for_allocation(task: Task) -> Task | None:
     # Validate
     if not task.estimated_duration or task.estimated_duration <= 0:
         return None
@@ -476,31 +506,31 @@ def _prepare_task_for_allocation(self, task: Task) -> Task | None:
 **Usage:**
 
 ```python
-task_copy = self._prepare_task_for_allocation(task)
+task_copy = prepare_task_for_allocation(task)
 if task_copy is None:
     return None
 assert task_copy.estimated_duration is not None  # Type narrowing for mypy
 ```
 
-### `_calculate_available_hours()`
+### `calculate_available_hours()`
 
 **Purpose:** Calculate available hours for a specific date
 
 ```python
-def _calculate_available_hours(
-    self,
+def calculate_available_hours(
     daily_allocations: dict[date, float],
     date_obj: date,
     max_hours_per_day: float,
     current_time: datetime | None,
+    default_end_time: time,
 ) -> float:
     current_allocation = daily_allocations.get(date_obj, 0.0)
     available_from_max = max_hours_per_day - current_allocation
 
     # If today, account for remaining hours
     if current_time and date_obj == current_time.date():
-        end_hour = self.default_end_hour
         current_hour = current_time.hour + current_time.minute / 60.0
+        end_hour = default_end_time.hour + default_end_time.minute / 60.0
         remaining_hours_today = max(0.0, end_hour - current_hour)
         return min(available_from_max, remaining_hours_today)
 
@@ -513,53 +543,42 @@ def _calculate_available_hours(
 - Already allocated hours
 - Remaining hours for today (if current_time provided)
 
-### `_set_planned_times()`
+### `set_planned_times()`
 
 **Purpose:** Set planned_start, planned_end, and daily_allocations on task
 
 ```python
-def _set_planned_times(
-    self,
+def set_planned_times(
     task: Task,
     schedule_start: datetime,
     schedule_end: datetime,
     task_daily_allocations: dict[date, float],
+    default_start_time: time,
+    default_end_time: time,
 ) -> None:
     # Set start time to default_start_time (e.g., 9:00 AM)
     task.planned_start = schedule_start.replace(
-        hour=self.default_start_time.hour, minute=self.default_start_time.minute, second=0
+        hour=default_start_time.hour, minute=default_start_time.minute, second=0
     )
 
     # Set end time to default_end_time (e.g., 6:00 PM)
     task.planned_end = schedule_end.replace(
-        hour=self.default_end_time.hour, minute=self.default_end_time.minute, second=0
+        hour=default_end_time.hour, minute=default_end_time.minute, second=0
     )
 
     # Set daily allocations
     task.set_daily_allocations(task_daily_allocations)
 ```
 
-### `_rollback_allocations()`
+### Inline Rollback
 
-**Purpose:** Rollback failed allocations from daily_allocations
+Rollback is done inline within the allocation method when deadline is exceeded:
 
 ```python
-def _rollback_allocations(
-    self,
-    daily_allocations: dict[date, float],
-    task_allocations: dict[date, float],
-) -> None:
-    for date_obj, hours in task_allocations.items():
+if effective_deadline and current_date > effective_deadline:
+    # Rollback any partial allocations
+    for date_obj, hours in task_daily_allocations.items():
         daily_allocations[date_obj] -= hours
-```
-
-**Usage:**
-
-```python
-task_daily_allocations = {}
-# ... allocation logic ...
-if failed:
-    self._rollback_allocations(context.daily_allocations, task_daily_allocations)
     return None
 ```
 
@@ -570,15 +589,15 @@ if failed:
 1. **Create strategy class** (inherit from existing strategy or base class):
 
 ```python
-from taskdog_core.application.services.optimization.greedy_optimization_strategy import (
-    GreedyOptimizationStrategy,
+from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
+    GreedyBasedOptimizationStrategy,
 )
 
-class MyCustomOptimizationStrategy(GreedyOptimizationStrategy):
+class MyCustomOptimizationStrategy(GreedyBasedOptimizationStrategy):
     DISPLAY_NAME = "My Custom"
     DESCRIPTION = "Custom scheduling"
 
-    def _sort_schedulable_tasks(self, tasks, start_date):
+    def _sort_tasks(self, tasks, start_date):
         # Custom sorting logic
         return sorted(tasks, key=lambda t: my_custom_key(t))
 
@@ -610,34 +629,44 @@ class TestMyCustomOptimizationStrategy(BaseOptimizationStrategyTest):
         # ... test custom behavior ...
 ```
 
-### Using Helper Methods
+### Using Helper Functions
 
-**Best practice:** Always use base class helpers to avoid code duplication:
+**Best practice:** Always use helper functions from `allocation_helpers.py` to avoid code duplication:
 
 ```python
-def _allocate_task(self, task, context):
-    # ✅ GOOD: Use helper
-    task_copy = self._prepare_task_for_allocation(task)
+from taskdog_core.application.services.optimization.allocation_helpers import (
+    calculate_available_hours,
+    prepare_task_for_allocation,
+    set_planned_times,
+)
+
+def _allocate_task(self, task, daily_allocations, params):
+    # ✅ GOOD: Use helper function
+    task_copy = prepare_task_for_allocation(task)
     if task_copy is None:
         return None
 
     # ... allocation logic ...
 
-    available = self._calculate_available_hours(
-        context.daily_allocations, date_obj,
-        context.max_hours_per_day, context.current_time
+    available = calculate_available_hours(
+        daily_allocations, date_obj,
+        params.max_hours_per_day, params.current_time,
+        self.default_end_time
     )
 
-    # ✅ GOOD: Use helper
-    self._set_planned_times(task_copy, start, end, allocations)
+    # ✅ GOOD: Use helper function
+    set_planned_times(
+        task_copy, start, end, allocations,
+        self.default_start_time, self.default_end_time
+    )
     return task_copy
 
 # ❌ BAD: Duplicate logic
-def _allocate_task(self, task, context):
+def _allocate_task(self, task, daily_allocations, params):
     if not task.estimated_duration or task.estimated_duration <= 0:
         return None
     task_copy = copy.deepcopy(task)
-    # ... duplicates _prepare_task_for_allocation logic
+    # ... duplicates prepare_task_for_allocation logic
 ```
 
 ### Testing Guidelines
@@ -662,42 +691,45 @@ class TestMyStrategy(BaseOptimizationStrategyTest):
 
 ## Recent Refactorings
 
-### 1. Holiday Checker Bug Fix (Phase 1-1)
+### 1. SQL-Based Allocation Pre-computation
 
-**Problem:** GeneticOptimizationStrategy and MonteCarloOptimizationStrategy called non-existent `greedy_strategy._get_holiday_checker()`, causing `holiday_checker` to always be `None`.
-
-**Solution:**
-
-- Added `self.holiday_checker` instance variable
-- Store `holiday_checker` in `optimize_tasks()`
-- Pass `self.holiday_checker` to temporary contexts
-
-**Impact:** Metaheuristic strategies now properly respect holidays.
-
-### 2. Task Validation Helper Extraction (Phase 2)
-
-**Problem:** Greedy, Balanced, and Backward had identical validation logic (6 lines × 3 = 18 lines duplication).
+**Problem:** Python loops for workload calculation were inefficient for large task sets.
 
 **Solution:**
 
-- Extracted `_prepare_task_for_allocation()` to base class
-- Validates task, creates deep copy, defensive check
-- Returns `Task | None`
+- UseCase now pre-computes existing allocations via SQL aggregation
+- `repository.get_aggregated_daily_allocations()` uses SQL SUM/GROUP BY
+- Strategies receive pre-computed `existing_allocations` dict
 
-**Impact:** -15 lines, single source of truth for validation.
+**Impact:** Better performance, clearer separation of concerns.
 
-### 3. Dead Code Removal (Phase 2)
+### 2. Helper Function Extraction
 
-**Problem:** DependencyAwareOptimizationStrategy had `_calculate_dependency_depths()` that always returned 0 (vestigial from removed parent-child relationships).
+**Problem:** Greedy, Balanced, and Backward had identical validation/allocation logic duplicated.
 
 **Solution:**
 
-- Removed `_calculate_dependency_depths()` method
-- Simplified sorting logic to direct deadline/priority sort
+- Extracted helper functions to `allocation_helpers.py` module
+- `prepare_task_for_allocation()` validates task and creates deep copy
+- `calculate_available_hours()` computes available hours for a date
+- `set_planned_times()` sets schedule on task
 
-**Impact:** -15 lines, removed confusing dead code.
+**Impact:** Single source of truth for allocation logic, easier testing.
 
-### 4. Critical Path Method Implementation (Feature)
+### 3. GreedyBasedOptimizationStrategy Base Class
+
+**Problem:** Most strategies shared the same greedy forward allocation algorithm but duplicated code.
+
+**Solution:**
+
+- Created `GreedyBasedOptimizationStrategy` as intermediate base class
+- Implements template method `optimize_tasks()`
+- Provides `_allocate_task()` with greedy forward allocation
+- Subclasses override `_sort_tasks()` for custom sorting
+
+**Impact:** Eliminated duplication across 7 greedy-based strategies.
+
+### 4. Critical Path Method Implementation
 
 **Problem:** DependencyAwareOptimizationStrategy was functionally identical to Greedy (sorted by deadline/priority, ignored `depends_on` field).
 
@@ -728,9 +760,10 @@ sorted(tasks, key=lambda t: (-blocking_count[t.id], t.deadline or MAX, -t.priori
 The optimization system uses a clean Template Method + Strategy pattern architecture:
 
 - **9 different strategies** for different scheduling needs
-- **Template Method** eliminates duplication across strategies
-- **AllocationContext** manages state and constraints elegantly
-- **Helper methods** provide reusable building blocks
+- **Template Method** (`GreedyBasedOptimizationStrategy`) eliminates duplication across greedy-based strategies
+- **Parameter Objects** (`OptimizeParams`, `OptimizeResult`) manage input/output cleanly
+- **Helper functions** (`allocation_helpers.py`) provide reusable building blocks
+- **SQL pre-computation** improves performance for workload calculations
 - **Easy to extend** with new strategies
 
 This architecture balances flexibility (multiple algorithms) with maintainability (shared infrastructure).
