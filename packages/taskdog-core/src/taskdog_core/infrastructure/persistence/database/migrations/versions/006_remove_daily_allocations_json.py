@@ -17,7 +17,9 @@ Prerequisites:
 - Dual-write should have been active, ensuring all data is in the normalized table
 """
 
+import json
 from collections.abc import Sequence
+from datetime import datetime
 
 import sqlalchemy as sa
 from alembic import op
@@ -43,26 +45,66 @@ def upgrade() -> None:
         # Column already removed (e.g., fresh database created with new schema)
         return
 
-    # Safety check: Verify no tasks have JSON data that isn't in normalized table
-    # This prevents data loss if dual-write wasn't properly active
+    # Migrate any remaining JSON data to the normalized table
+    # This handles databases that were upgraded with an older version of migration 005
+    # that didn't include the data migration logic
     result = conn.execute(
-        sa.text("""
-            SELECT COUNT(*) FROM tasks
-            WHERE daily_allocations != '{}'
-            AND id NOT IN (SELECT DISTINCT task_id FROM daily_allocations)
-        """)
-    )
-    unmigrated_count = result.scalar()
-
-    if unmigrated_count and unmigrated_count > 0:
-        raise RuntimeError(
-            f"Cannot drop JSON column: {unmigrated_count} tasks have unmigrated "
-            "allocation data. Ensure dual-write was active before running this migration."
+        sa.text(
+            "SELECT id, daily_allocations FROM tasks "
+            "WHERE daily_allocations IS NOT NULL AND daily_allocations != '{}'"
         )
+    )
+    for row in result:
+        task_id = row[0]
+        try:
+            json_data = json.loads(row[1])
+        except (json.JSONDecodeError, TypeError):
+            # Skip malformed JSON data
+            continue
+        for date_str, hours in json_data.items():
+            # Validate date format (YYYY-MM-DD)
+            if not (
+                isinstance(date_str, str)
+                and len(date_str) == 10
+                and date_str[4] == "-"
+                and date_str[7] == "-"
+            ):
+                continue
+            if not isinstance(hours, (int, float)) or hours <= 0:
+                continue
+            conn.execute(
+                sa.text(
+                    "INSERT OR IGNORE INTO daily_allocations "
+                    "(task_id, date, hours, created_at) "
+                    "VALUES (:task_id, :date, :hours, :created_at)"
+                ),
+                {
+                    "task_id": task_id,
+                    "date": date_str,
+                    "hours": hours,
+                    "created_at": datetime.now(),
+                },
+            )
 
     # SQLite requires batch mode for column removal
+    # batch_alter_table recreates the table, which triggers ON DELETE CASCADE
+    # on task_tags foreign key. We must preserve and restore task_tags data.
+    task_tags_data = conn.execute(
+        sa.text("SELECT task_id, tag_id FROM task_tags")
+    ).fetchall()
+
     with op.batch_alter_table("tasks") as batch_op:
         batch_op.drop_column("daily_allocations")
+
+    # Restore task_tags data that was deleted by CASCADE
+    for task_id, tag_id in task_tags_data:
+        conn.execute(
+            sa.text(
+                "INSERT OR IGNORE INTO task_tags (task_id, tag_id) "
+                "VALUES (:task_id, :tag_id)"
+            ),
+            {"task_id": task_id, "tag_id": tag_id},
+        )
 
 
 def downgrade() -> None:

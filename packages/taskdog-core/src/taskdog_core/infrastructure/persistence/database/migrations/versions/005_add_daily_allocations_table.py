@@ -18,7 +18,9 @@ Allocations are automatically deleted when their parent task is deleted via
 ON DELETE CASCADE foreign key constraint.
 """
 
+import json
 from collections.abc import Sequence
+from datetime import datetime
 
 import sqlalchemy as sa
 from alembic import op
@@ -44,32 +46,79 @@ def upgrade() -> None:
     - UNIQUE (task_id, date): One allocation per task per date
     - CHECK (hours > 0): Hours must be positive
     """
-    # Check if table already exists (for databases created with create_all)
     conn = op.get_bind()
     inspector = sa.inspect(conn)
-    if "daily_allocations" in inspector.get_table_names():
-        return
+    table_exists = "daily_allocations" in inspector.get_table_names()
 
-    op.create_table(
-        "daily_allocations",
-        sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
-        sa.Column(
-            "task_id",
-            sa.Integer(),
-            sa.ForeignKey("tasks.id", ondelete="CASCADE"),
-            nullable=False,
-        ),
-        sa.Column("date", sa.Date(), nullable=False),
-        sa.Column("hours", sa.Float(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        # Constraints
-        sa.UniqueConstraint("task_id", "date", name="uq_daily_allocations_task_date"),
-        sa.CheckConstraint("hours > 0", name="ck_daily_allocations_hours_positive"),
-    )
+    # Create table if it doesn't exist
+    if not table_exists:
+        op.create_table(
+            "daily_allocations",
+            sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
+            sa.Column(
+                "task_id",
+                sa.Integer(),
+                sa.ForeignKey("tasks.id", ondelete="CASCADE"),
+                nullable=False,
+            ),
+            sa.Column("date", sa.Date(), nullable=False),
+            sa.Column("hours", sa.Float(), nullable=False),
+            sa.Column("created_at", sa.DateTime(), nullable=False),
+            # Constraints
+            sa.UniqueConstraint(
+                "task_id", "date", name="uq_daily_allocations_task_date"
+            ),
+            sa.CheckConstraint("hours > 0", name="ck_daily_allocations_hours_positive"),
+        )
 
-    # Create indexes for efficient queries
-    op.create_index("idx_daily_allocations_task_id", "daily_allocations", ["task_id"])
-    op.create_index("idx_daily_allocations_date", "daily_allocations", ["date"])
+        # Create indexes for efficient queries
+        op.create_index(
+            "idx_daily_allocations_task_id", "daily_allocations", ["task_id"]
+        )
+        op.create_index("idx_daily_allocations_date", "daily_allocations", ["date"])
+
+    # Migrate existing JSON data to normalized table
+    # This handles databases that skipped the dual-write period
+    # Always run this to ensure all JSON data is migrated (INSERT OR IGNORE handles duplicates)
+    columns = {col["name"] for col in inspector.get_columns("tasks")}
+    if "daily_allocations" in columns:
+        result = conn.execute(
+            sa.text(
+                "SELECT id, daily_allocations FROM tasks "
+                "WHERE daily_allocations IS NOT NULL AND daily_allocations != '{}'"
+            )
+        )
+        for row in result:
+            task_id = row[0]
+            try:
+                json_data = json.loads(row[1])
+            except (json.JSONDecodeError, TypeError):
+                # Skip malformed JSON data
+                continue
+            for date_str, hours in json_data.items():
+                # Validate date format (YYYY-MM-DD)
+                if not (
+                    isinstance(date_str, str)
+                    and len(date_str) == 10
+                    and date_str[4] == "-"
+                    and date_str[7] == "-"
+                ):
+                    continue
+                if not isinstance(hours, (int, float)) or hours <= 0:
+                    continue
+                conn.execute(
+                    sa.text(
+                        "INSERT OR IGNORE INTO daily_allocations "
+                        "(task_id, date, hours, created_at) "
+                        "VALUES (:task_id, :date, :hours, :created_at)"
+                    ),
+                    {
+                        "task_id": task_id,
+                        "date": date_str,
+                        "hours": hours,
+                        "created_at": datetime.now(),
+                    },
+                )
 
 
 def downgrade() -> None:
