@@ -1010,3 +1010,96 @@ class TestSqliteTaskRepository:
         )
 
         assert totals == {}
+
+    # ====================================================================
+    # Bulk Allocation Fetch Tests (get_daily_allocations_for_tasks)
+    # ====================================================================
+
+    def test_get_daily_allocations_for_tasks_returns_allocations_by_task(self):
+        """Test get_daily_allocations_for_tasks returns allocations grouped by task ID."""
+        task1 = Task(
+            id=1,
+            name="Task 1",
+            priority=1,
+            daily_allocations={
+                date(2025, 1, 20): 2.0,
+                date(2025, 1, 21): 3.0,
+            },
+        )
+        task2 = Task(
+            id=2,
+            name="Task 2",
+            priority=2,
+            daily_allocations={
+                date(2025, 1, 20): 4.0,
+                date(2025, 1, 22): 5.0,
+            },
+        )
+        self.repository.save_all([task1, task2])
+
+        # Fetch allocations for both tasks
+        allocations = self.repository.get_daily_allocations_for_tasks([1, 2])
+
+        # Verify task 1 allocations
+        assert 1 in allocations
+        assert allocations[1] == {date(2025, 1, 20): 2.0, date(2025, 1, 21): 3.0}
+
+        # Verify task 2 allocations
+        assert 2 in allocations
+        assert allocations[2] == {date(2025, 1, 20): 4.0, date(2025, 1, 22): 5.0}
+
+    def test_get_daily_allocations_for_tasks_filters_by_date_range(self):
+        """Test get_daily_allocations_for_tasks respects date range filters."""
+        task = Task(
+            id=1,
+            name="Task",
+            priority=1,
+            daily_allocations={
+                date(2025, 1, 19): 1.0,  # Before range
+                date(2025, 1, 20): 2.0,  # In range
+                date(2025, 1, 21): 3.0,  # In range
+                date(2025, 1, 22): 4.0,  # After range
+            },
+        )
+        self.repository.save(task)
+
+        # Fetch with date range filter
+        allocations = self.repository.get_daily_allocations_for_tasks(
+            [1],
+            start_date=date(2025, 1, 20),
+            end_date=date(2025, 1, 21),
+        )
+
+        # Only dates within range should be included
+        assert allocations[1] == {date(2025, 1, 20): 2.0, date(2025, 1, 21): 3.0}
+
+    def test_get_daily_allocations_for_tasks_returns_empty_for_empty_list(self):
+        """Test get_daily_allocations_for_tasks returns empty dict for empty task list."""
+        task = Task(
+            id=1,
+            name="Task",
+            priority=1,
+            daily_allocations={date(2025, 1, 20): 5.0},
+        )
+        self.repository.save(task)
+
+        allocations = self.repository.get_daily_allocations_for_tasks([])
+
+        assert allocations == {}
+
+    def test_get_daily_allocations_for_tasks_excludes_tasks_without_allocations(self):
+        """Test get_daily_allocations_for_tasks excludes tasks with no allocations."""
+        task1 = Task(
+            id=1,
+            name="With Allocations",
+            priority=1,
+            daily_allocations={date(2025, 1, 20): 2.0},
+        )
+        task2 = Task(id=2, name="No Allocations", priority=2)
+        self.repository.save_all([task1, task2])
+
+        allocations = self.repository.get_daily_allocations_for_tasks([1, 2])
+
+        # Only task1 should be in result
+        assert 1 in allocations
+        assert 2 not in allocations
