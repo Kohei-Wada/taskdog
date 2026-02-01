@@ -6,7 +6,6 @@ from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_schedule_input import OptimizeScheduleInput
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
-from taskdog_core.application.queries.workload import OptimizationWorkloadCalculator
 from taskdog_core.application.services.optimization.strategy_factory import (
     StrategyFactory,
 )
@@ -115,14 +114,6 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             all_tasks, input_dto.force_override, input_dto.task_ids
         )
 
-        # Create WorkloadCalculator for optimization context
-        # OptimizationWorkloadCalculator uses WeekdayOnlyStrategy by default,
-        # or AllDaysStrategy if include_all_days=True
-        workload_calculator = OptimizationWorkloadCalculator(
-            holiday_checker=self.holiday_checker,
-            include_all_days=input_dto.include_all_days,
-        )
-
         # Get optimization strategy
         strategy = StrategyFactory.create(
             input_dto.algorithm_name, self.default_start_time, self.default_end_time
@@ -137,14 +128,13 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             include_all_days=input_dto.include_all_days,
         )
 
-        # Run optimization with injected workload calculator
+        # Run optimization
         # Strategy responsibility: how to optimize
         # Pass filtered workload_tasks instead of all_tasks
         result = strategy.optimize_tasks(
             tasks=schedulable_tasks,
             context_tasks=workload_tasks,
             params=params,
-            workload_calculator=workload_calculator,
         )
 
         # Save successfully scheduled tasks (batch operation for performance)

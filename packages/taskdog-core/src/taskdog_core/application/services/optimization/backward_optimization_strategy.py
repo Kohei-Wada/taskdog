@@ -1,7 +1,6 @@
 """Backward optimization strategy implementation."""
 
 from datetime import date, datetime, time, timedelta
-from typing import TYPE_CHECKING
 
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
@@ -18,9 +17,6 @@ from taskdog_core.application.services.optimization.optimization_strategy import
 )
 from taskdog_core.application.utils.date_helper import is_workday
 from taskdog_core.domain.entities.task import Task
-
-if TYPE_CHECKING:
-    from taskdog_core.application.queries.workload import BaseWorkloadCalculator
 
 
 class BackwardOptimizationStrategy(OptimizationStrategy):
@@ -44,10 +40,9 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
         tasks: list[Task],
         context_tasks: list[Task],
         params: OptimizeParams,
-        workload_calculator: "BaseWorkloadCalculator | None" = None,
     ) -> OptimizeResult:
         """Optimize task schedules using backward allocation."""
-        daily_allocations = initialize_allocations(context_tasks, workload_calculator)
+        daily_allocations = initialize_allocations(context_tasks)
         result = OptimizeResult(daily_allocations=daily_allocations)
 
         sorted_tasks = self._sort_tasks(tasks, params.start_date)
