@@ -26,7 +26,6 @@ from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.domain.services.logger import Logger
-from taskdog_core.infrastructure.holiday_checker import HolidayChecker
 from taskdog_core.shared.config_manager import Config
 
 
@@ -54,6 +53,7 @@ class TaskCrudController(BaseTaskController):
         notes_repository: NotesRepository,
         config: Config,
         logger: Logger,
+        holiday_checker: IHolidayChecker | None = None,
     ):
         """Initialize the CRUD controller.
 
@@ -62,25 +62,11 @@ class TaskCrudController(BaseTaskController):
             notes_repository: Notes repository
             config: Application configuration
             logger: Logger for operation tracking
+            holiday_checker: Holiday checker for workload calculations (optional)
         """
         super().__init__(repository, config, logger)
         self.notes_repository = notes_repository
-        self._holiday_checker = self._create_holiday_checker()
-
-    def _create_holiday_checker(self) -> IHolidayChecker | None:
-        """Create HolidayChecker from config country setting.
-
-        Returns:
-            HolidayChecker if country is configured, None otherwise
-        """
-        country = self.config.region.country if self.config.region else None
-        if not country or not isinstance(country, str):
-            return None
-        try:
-            return HolidayChecker(country)
-        except (ImportError, NotImplementedError):
-            # holidays package not installed or country not supported
-            return None
+        self._holiday_checker = holiday_checker
 
     def create_task(
         self,
