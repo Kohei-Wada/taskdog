@@ -132,12 +132,31 @@ class TestTaskCrudController:
         assert self.controller.repository == self.repository
         assert self.controller.config == self.config
 
-    def test_create_holiday_checker_with_valid_country(self, repository):
-        """Test that HolidayChecker is created when country is configured."""
+    def test_holiday_checker_injected(self, repository):
+        """Test that HolidayChecker is properly injected via DI."""
         # Arrange
         notes_repository = MagicMock()
         config = MagicMock()
-        config.region.country = "JP"  # Valid country code
+        logger = Mock(spec=Logger)
+        holiday_checker = MagicMock()
+
+        # Act
+        controller = TaskCrudController(
+            repository=repository,
+            notes_repository=notes_repository,
+            config=config,
+            logger=logger,
+            holiday_checker=holiday_checker,
+        )
+
+        # Assert - HolidayChecker should be the injected instance
+        assert controller._holiday_checker is holiday_checker
+
+    def test_holiday_checker_defaults_to_none(self, repository):
+        """Test that HolidayChecker is None when not provided."""
+        # Arrange
+        notes_repository = MagicMock()
+        config = MagicMock()
         logger = Mock(spec=Logger)
 
         # Act
@@ -148,24 +167,5 @@ class TestTaskCrudController:
             logger=logger,
         )
 
-        # Assert - HolidayChecker should be created
-        assert controller._holiday_checker is not None
-
-    def test_create_holiday_checker_without_region(self, repository):
-        """Test that HolidayChecker is None when region is not configured."""
-        # Arrange
-        notes_repository = MagicMock()
-        config = MagicMock()
-        config.region = None  # No region configured
-        logger = Mock(spec=Logger)
-
-        # Act
-        controller = TaskCrudController(
-            repository=repository,
-            notes_repository=notes_repository,
-            config=config,
-            logger=logger,
-        )
-
-        # Assert - HolidayChecker should be None
+        # Assert - HolidayChecker should be None when not provided
         assert controller._holiday_checker is None
