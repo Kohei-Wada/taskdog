@@ -394,17 +394,27 @@ class TaskQueryService(QueryService):
         # DisplayWorkloadCalculator honors manually scheduled tasks while excluding weekends and holidays
         workload_calculator = DisplayWorkloadCalculator(holiday_checker)
 
-        # Calculate daily hours per task
+        # Calculate daily hours per task (used for individual task display)
+        # Also collect task IDs that should be included in workload calculation
         task_daily_hours: dict[int, dict[date, float]] = {}
+        workload_task_ids: list[int] = []
         for task in tasks:
+            assert task.id is not None, "Task must have ID (persisted entities)"
+
+            # Get daily hours for this task (from daily_allocations or calculated)
             daily_hours = workload_calculator.get_task_daily_hours(task)
             if daily_hours:
-                assert task.id is not None, "Task must have ID (persisted entities)"
                 task_daily_hours[task.id] = daily_hours
 
-        # Calculate daily workload totals
-        daily_workload = workload_calculator.calculate_daily_workload(
-            tasks, range_start, range_end
+            # Collect IDs for tasks that should count in workload
+            # Only include tasks with daily_allocations set (for SQL aggregation)
+            if task.should_count_in_workload() and task.daily_allocations:
+                workload_task_ids.append(task.id)
+
+        # Calculate daily workload totals using SQL aggregation
+        # Only tasks with daily_allocations are included (optimized)
+        daily_workload = self._calculate_daily_workload(
+            workload_task_ids, range_start, range_end
         )
 
         # Pre-compute holidays in the date range (batch operation)
@@ -430,6 +440,36 @@ class TaskQueryService(QueryService):
             holidays=holidays,
             total_estimated_duration=total_estimated,
         )
+
+    def _calculate_daily_workload(
+        self,
+        task_ids_with_allocations: list[int],
+        start_date: date,
+        end_date: date,
+    ) -> dict[date, float]:
+        """Calculate daily workload totals using SQL aggregation.
+
+        Uses SQL SUM/GROUP BY on the daily_allocations table for efficient
+        workload calculation. Tasks without daily_allocations are not included.
+
+        Args:
+            task_ids_with_allocations: Task IDs that have daily_allocations set
+            start_date: Start date of the calculation period
+            end_date: End date of the calculation period
+
+        Returns:
+            Dictionary mapping date to total hours {date: hours}
+
+        Note:
+            Tasks without daily_allocations are excluded from workload.
+            Run 'optimize' command to populate daily_allocations for existing tasks.
+        """
+        if hasattr(self.repository, "get_daily_workload_totals"):
+            return self.repository.get_daily_workload_totals(
+                start_date, end_date, task_ids_with_allocations
+            )
+        # Repository doesn't support SQL aggregation
+        return {}
 
     def _calculate_date_range(
         self,

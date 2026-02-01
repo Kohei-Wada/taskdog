@@ -176,13 +176,15 @@ class TestUpdateTaskUseCase:
         assert result.task.actual_start is not None
 
         # Verify all field names are in updated_fields
-        assert len(result.updated_fields) == 6
+        # daily_allocations is auto-calculated when schedule fields are set
+        assert len(result.updated_fields) == 7
         assert "status" in result.updated_fields
         assert "priority" in result.updated_fields
         assert "planned_start" in result.updated_fields
         assert "planned_end" in result.updated_fields
         assert "deadline" in result.updated_fields
         assert "estimated_duration" in result.updated_fields
+        assert "daily_allocations" in result.updated_fields
 
     @pytest.mark.parametrize(
         "target_status,description",
@@ -347,7 +349,11 @@ class TestUpdateTaskUseCase:
         assert "daily_allocations" in result.updated_fields
 
     def test_execute_does_not_add_daily_allocations_field_when_already_empty(self):
-        """Test that daily_allocations field is not added when already empty."""
+        """Test that daily_allocations field is not added when already empty.
+
+        When only changing planned dates but estimated_duration is missing,
+        allocations remain empty.
+        """
         # Use dynamic future dates to avoid test failures as time passes
         base_date = datetime.now() + timedelta(days=30)
         start_date = base_date.replace(hour=9, minute=0, second=0, microsecond=0)
@@ -358,12 +364,13 @@ class TestUpdateTaskUseCase:
             hour=9, minute=0, second=0, microsecond=0
         )
 
-        # daily_allocations is already empty by default
+        # Create task without estimated_duration (allocations can't be calculated)
         task = self.repository.create(
             name="Task without allocations",
             priority=1,
             planned_start=start_date,
             planned_end=end_date,
+            # No estimated_duration
         )
 
         # Update planned_start
@@ -375,3 +382,90 @@ class TestUpdateTaskUseCase:
         assert persisted_task.daily_allocations == {}  # type: ignore[union-attr]
         assert "planned_start" in result.updated_fields
         assert "daily_allocations" not in result.updated_fields
+
+    def test_execute_recalculates_daily_allocations_when_schedule_changes(self):
+        """Test that daily_allocations is recalculated when planned_start/end change."""
+        from taskdog_core.application.dto.create_task_input import CreateTaskInput
+        from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
+
+        # Use dynamic future dates (same pattern as other tests in this file)
+        base_datetime = datetime.now() + timedelta(days=30)
+        start_date = base_datetime.replace(hour=9, minute=0, second=0, microsecond=0)
+        # End date is 2 days later (gives us at least 3 weekdays in most cases)
+        end_date = (start_date + timedelta(days=2)).replace(
+            hour=17, minute=0, second=0, microsecond=0
+        )
+
+        create_use_case = CreateTaskUseCase(self.repository)
+        create_input = CreateTaskInput(
+            name="Task with schedule",
+            priority=1,
+            planned_start=start_date,
+            planned_end=end_date,
+            estimated_duration=10.0,
+        )
+        result = create_use_case.execute(create_input)
+        task_id = result.id
+
+        # Verify initial allocations were calculated
+        task = self.repository.get_by_id(task_id)
+        assert task is not None
+        initial_allocations = task.daily_allocations.copy()
+        assert initial_allocations, "Initial allocations should be calculated"
+
+        # Change planned_end to extend the period by 3 more days
+        new_end = end_date + timedelta(days=3)
+        input_dto = UpdateTaskInput(task_id=task_id, planned_end=new_end)
+        update_result = self.use_case.execute(input_dto)
+
+        # Verify allocations were recalculated (dates changed, so allocations should too)
+        assert "daily_allocations" in update_result.updated_fields
+        persisted_task = self.repository.get_by_id(task_id)
+        assert persisted_task is not None
+        # The allocations should be different (different date range)
+        assert persisted_task.daily_allocations != initial_allocations
+
+    def test_execute_recalculates_when_estimated_duration_changes(self):
+        """Test that daily_allocations is recalculated when estimated_duration changes."""
+        # Create a task with schedule
+        task = self.repository.create(
+            name="Task",
+            priority=1,
+            planned_start=datetime(2025, 1, 20, 9, 0, 0),  # Monday
+            planned_end=datetime(2025, 1, 24, 17, 0, 0),  # Friday (5 weekdays)
+            estimated_duration=10.0,  # 2h/day
+        )
+
+        # Change estimated_duration
+        input_dto = UpdateTaskInput(task_id=task.id, estimated_duration=20.0)  # 4h/day
+        result = self.use_case.execute(input_dto)
+
+        # Verify allocations were recalculated with new duration
+        assert "daily_allocations" in result.updated_fields
+        persisted_task = self.repository.get_by_id(task.id)
+        assert persisted_task is not None
+        # 20 hours / 5 weekdays = 4 hours per day
+        for _d, hours in persisted_task.daily_allocations.items():
+            assert hours == 4.0
+
+    def test_execute_clears_allocations_when_adding_third_field(self):
+        """Test allocations are calculated when adding the missing third field."""
+        # Create task with planned dates but no duration
+        task = self.repository.create(
+            name="Partial Task",
+            priority=1,
+            planned_start=datetime(2025, 1, 20, 9, 0, 0),
+            planned_end=datetime(2025, 1, 24, 17, 0, 0),
+            # No estimated_duration
+        )
+        assert task.daily_allocations == {}
+
+        # Add estimated_duration - now all three fields are present
+        input_dto = UpdateTaskInput(task_id=task.id, estimated_duration=10.0)
+        result = self.use_case.execute(input_dto)
+
+        # Verify allocations were calculated
+        assert "daily_allocations" in result.updated_fields
+        persisted_task = self.repository.get_by_id(task.id)
+        assert persisted_task is not None
+        assert len(persisted_task.daily_allocations) == 5  # 5 weekdays

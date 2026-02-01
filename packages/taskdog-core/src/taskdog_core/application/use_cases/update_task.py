@@ -2,15 +2,20 @@
 
 from dataclasses import replace
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from taskdog_core.application.dto.update_task_input import UpdateTaskInput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
+from taskdog_core.application.queries.workload import DisplayWorkloadCalculator
 from taskdog_core.application.use_cases.base import UseCase
 from taskdog_core.application.validators.validator_registry import (
     TaskFieldValidatorRegistry,
 )
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+
+if TYPE_CHECKING:
+    from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
@@ -20,14 +25,23 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
     Returns the updated task and list of updated field names.
     """
 
-    def __init__(self, repository: TaskRepository):
+    def __init__(
+        self,
+        repository: TaskRepository,
+        holiday_checker: "IHolidayChecker | None" = None,
+    ):
         """Initialize use case.
 
         Args:
             repository: Task repository for data access
+            holiday_checker: Optional holiday checker for excluding holidays
+                           from daily allocation calculations
         """
         self.repository = repository
         self.validator_registry = TaskFieldValidatorRegistry(repository)
+        self._workload_calculator = DisplayWorkloadCalculator(
+            holiday_checker=holiday_checker
+        )
 
     def _update_status(
         self,
@@ -91,17 +105,47 @@ class UpdateTaskUseCase(UseCase[UpdateTaskInput, TaskUpdateOutput]):
                 setattr(task, field_name, value)
                 updated_fields.append(field_name)
 
-        # Clear daily_allocations when manually setting planned schedule
-        # This ensures manual scheduling takes precedence over optimizer-generated allocations
+        # Recalculate daily_allocations when schedule-affecting fields change
+        # This handles both clearing old allocations and computing new ones
+        schedule_fields_changed = any(
+            f in updated_fields
+            for f in ("planned_start", "planned_end", "estimated_duration")
+        )
+        if schedule_fields_changed:
+            self._recalculate_daily_allocations(task, updated_fields)
+
+    def _recalculate_daily_allocations(
+        self, task: Task, updated_fields: list[str]
+    ) -> None:
+        """Recalculate daily_allocations based on current task fields.
+
+        If all required fields (planned_start, planned_end, estimated_duration) are present,
+        recalculates daily_allocations using ActualScheduleStrategy. Otherwise clears them.
+
+        Args:
+            task: Task to update
+            updated_fields: List to append field name to if allocations change
+        """
+        old_allocations = (
+            task.daily_allocations.copy() if task.daily_allocations else {}
+        )
+
+        if task.planned_start and task.planned_end and task.estimated_duration:
+            # Clear existing allocations first so calculator will compute fresh values
+            # (get_task_daily_hours returns existing allocations if present)
+            task.set_daily_allocations({})
+            # Recalculate allocations based on new schedule
+            new_allocations = self._workload_calculator.get_task_daily_hours(task)
+            task.set_daily_allocations(new_allocations)
+        else:
+            # Clear allocations if any required field is missing
+            task.set_daily_allocations({})
+
+        # Track if allocations actually changed
         if (
-            "planned_start" in updated_fields or "planned_end" in updated_fields
-        ) and task.daily_allocations:
-            task.clear_schedule()
-            # Re-set planned times since clear_schedule() clears them
-            if input_dto.planned_start:
-                task.planned_start = input_dto.planned_start
-            if input_dto.planned_end:
-                task.planned_end = input_dto.planned_end
+            task.daily_allocations != old_allocations
+            and "daily_allocations" not in updated_fields
+        ):
             updated_fields.append("daily_allocations")
 
     def execute(self, input_dto: UpdateTaskInput) -> TaskUpdateOutput:

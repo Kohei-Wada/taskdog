@@ -182,3 +182,31 @@ class TaskRepository(ABC):
             Created task with ID assigned
         """
         pass
+
+    def get_daily_workload_totals(
+        self,
+        start_date: date,
+        end_date: date,
+        task_ids: list[int] | None = None,
+    ) -> dict[date, float]:
+        """Get daily workload totals using SQL aggregation.
+
+        This method uses SQL SUM/GROUP BY on the daily_allocations table for
+        efficient workload calculation, avoiding Python loops.
+
+        Args:
+            start_date: Start date of the calculation period
+            end_date: End date of the calculation period
+            task_ids: Optional list of task IDs to include. If None, includes all tasks.
+
+        Returns:
+            Dictionary mapping date to total hours {date: hours}
+
+        Notes:
+            - Default implementation falls back to empty dict (no optimization)
+            - Repositories should override this for SQL-level aggregation
+            - Only includes dates with non-zero hours
+        """
+        # Default implementation: fallback to empty dict (no optimization)
+        # Subclasses should override this method to use SQL aggregation
+        return {}

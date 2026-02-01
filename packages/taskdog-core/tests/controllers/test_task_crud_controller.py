@@ -131,3 +131,41 @@ class TestTaskCrudController:
         assert self.controller.config is not None
         assert self.controller.repository == self.repository
         assert self.controller.config == self.config
+
+    def test_create_holiday_checker_with_valid_country(self, repository):
+        """Test that HolidayChecker is created when country is configured."""
+        # Arrange
+        notes_repository = MagicMock()
+        config = MagicMock()
+        config.region.country = "JP"  # Valid country code
+        logger = Mock(spec=Logger)
+
+        # Act
+        controller = TaskCrudController(
+            repository=repository,
+            notes_repository=notes_repository,
+            config=config,
+            logger=logger,
+        )
+
+        # Assert - HolidayChecker should be created
+        assert controller._holiday_checker is not None
+
+    def test_create_holiday_checker_without_region(self, repository):
+        """Test that HolidayChecker is None when region is not configured."""
+        # Arrange
+        notes_repository = MagicMock()
+        config = MagicMock()
+        config.region = None  # No region configured
+        logger = Mock(spec=Logger)
+
+        # Act
+        controller = TaskCrudController(
+            repository=repository,
+            notes_repository=notes_repository,
+            config=config,
+            logger=logger,
+        )
+
+        # Assert - HolidayChecker should be None
+        assert controller._holiday_checker is None
