@@ -44,6 +44,7 @@ class TestRunMigrations:
             assert "task_tags" in tables
             assert "audit_logs" in tables
             assert "notes" in tables
+            assert "daily_allocations" in tables
             assert "alembic_version" in tables
         finally:
             engine.dispose()
@@ -85,7 +86,7 @@ class TestRunMigrations:
             # Should now have alembic_version stamped
             inspector = inspect(engine)
             assert "alembic_version" in inspector.get_table_names()
-            assert get_current_revision(engine) == "004_add_notes_table"
+            assert get_current_revision(engine) == "005_add_daily_allocations_table"
         finally:
             engine.dispose()
 
@@ -99,7 +100,7 @@ class TestRunMigrations:
             run_migrations(engine)
 
             # Should still work and have correct revision
-            assert get_current_revision(engine) == "004_add_notes_table"
+            assert get_current_revision(engine) == "005_add_daily_allocations_table"
         finally:
             engine.dispose()
 
@@ -241,6 +242,41 @@ class TestRunMigrations:
         finally:
             engine.dispose()
 
+    def test_creates_daily_allocations_table_with_correct_schema(self) -> None:
+        """Test that daily_allocations table has the correct columns."""
+        engine = create_engine("sqlite:///:memory:")
+        try:
+            run_migrations(engine)
+
+            inspector = inspect(engine)
+            columns = {
+                col["name"] for col in inspector.get_columns("daily_allocations")
+            }
+
+            expected_columns = {"id", "task_id", "date", "hours", "created_at"}
+            assert columns == expected_columns
+        finally:
+            engine.dispose()
+
+    def test_creates_daily_allocations_table_indexes(self) -> None:
+        """Test that daily_allocations table has the correct indexes."""
+        engine = create_engine("sqlite:///:memory:")
+        try:
+            run_migrations(engine)
+
+            inspector = inspect(engine)
+            indexes = {
+                idx["name"] for idx in inspector.get_indexes("daily_allocations")
+            }
+
+            expected_indexes = {
+                "idx_daily_allocations_task_id",
+                "idx_daily_allocations_date",
+            }
+            assert expected_indexes.issubset(indexes)
+        finally:
+            engine.dispose()
+
 
 class TestGetCurrentRevision:
     """Tests for get_current_revision function."""
@@ -259,7 +295,7 @@ class TestGetCurrentRevision:
         try:
             run_migrations(engine)
 
-            assert get_current_revision(engine) == "004_add_notes_table"
+            assert get_current_revision(engine) == "005_add_daily_allocations_table"
         finally:
             engine.dispose()
 

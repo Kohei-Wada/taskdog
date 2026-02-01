@@ -23,6 +23,7 @@ def create_sqlite_engine(database_url: str, run_migration: bool = True) -> Engin
     - WAL mode for concurrent reads during writes
     - 30 second busy timeout for lock acquisition
     - NORMAL synchronous mode for balanced safety/performance
+    - Foreign key enforcement for ON DELETE CASCADE support
 
     Args:
         database_url: SQLAlchemy database URL (e.g., "sqlite:///path/to/db.sqlite")
@@ -44,6 +45,7 @@ def create_sqlite_engine(database_url: str, run_migration: bool = True) -> Engin
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.execute("PRAGMA busy_timeout=30000")
             cursor.execute("PRAGMA synchronous=NORMAL")
+            cursor.execute("PRAGMA foreign_keys=ON")
         finally:
             cursor.close()
 

@@ -23,8 +23,11 @@ class TestGetTaskDetailUseCase:
         """Initialize use case for each test."""
         self.repository = repository
         self.time_provider = FakeTimeProvider()
+        # Share the same engine as the task repository for foreign key constraints
         self.notes_repository = SqliteNotesRepository(
-            "sqlite:///:memory:", self.time_provider
+            "sqlite:///:memory:",
+            self.time_provider,
+            engine=repository.engine,
         )
         self.use_case = GetTaskDetailUseCase(self.repository, self.notes_repository)
 

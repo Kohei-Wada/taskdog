@@ -1,6 +1,7 @@
 """Tests for SqliteNotesRepository."""
 
 import sys
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -19,6 +20,26 @@ from taskdog_core.infrastructure.persistence.database.sqlite_notes_repository im
 )
 
 
+def _create_test_task(engine, task_id: int) -> None:
+    """Create a test task with the given ID for foreign key satisfaction."""
+    from sqlalchemy.orm import Session
+
+    from taskdog_core.infrastructure.persistence.database.models import TaskModel
+
+    with Session(engine) as session:
+        task = TaskModel(
+            id=task_id,
+            name=f"Test Task {task_id}",
+            priority=1,
+            status="PENDING",
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+            is_archived=False,
+        )
+        session.add(task)
+        session.commit()
+
+
 class TestSqliteNotesRepository:
     """Test suite for SqliteNotesRepository."""
 
@@ -34,6 +55,15 @@ class TestSqliteNotesRepository:
         yield repo
         repo.close()
 
+    @pytest.fixture
+    def create_task(self, repository: SqliteNotesRepository) -> Callable[[int], None]:
+        """Return a helper function to create tasks for foreign key satisfaction."""
+
+        def _create(task_id: int) -> None:
+            _create_test_task(repository.engine, task_id)
+
+        return _create
+
     def test_has_notes_returns_false_when_no_notes(
         self, repository: SqliteNotesRepository
     ):
@@ -41,9 +71,10 @@ class TestSqliteNotesRepository:
         assert repository.has_notes(999) is False
 
     def test_has_notes_returns_true_when_notes_exist(
-        self, repository: SqliteNotesRepository
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
     ):
         """Test has_notes returns True when note exists."""
+        create_task(1)
         repository.write_notes(1, "Test content")
 
         assert repository.has_notes(1) is True
@@ -55,18 +86,23 @@ class TestSqliteNotesRepository:
         assert repository.read_notes(999) is None
 
     def test_read_notes_returns_content_when_exists(
-        self, repository: SqliteNotesRepository
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
     ):
         """Test read_notes returns content when note exists."""
+        create_task(1)
         content = "# Task Notes\n\nThis is a test note."
         repository.write_notes(1, content)
 
         assert repository.read_notes(1) == content
 
     def test_write_notes_creates_new_note(
-        self, repository: SqliteNotesRepository, time_provider: FakeTimeProvider
+        self,
+        repository: SqliteNotesRepository,
+        time_provider: FakeTimeProvider,
+        create_task: Callable[[int], None],
     ):
         """Test write_notes creates new note with timestamps."""
+        create_task(1)
         content = "New note content"
         repository.write_notes(1, content)
 
@@ -74,9 +110,13 @@ class TestSqliteNotesRepository:
         assert result == content
 
     def test_write_notes_updates_existing_note(
-        self, repository: SqliteNotesRepository, time_provider: FakeTimeProvider
+        self,
+        repository: SqliteNotesRepository,
+        time_provider: FakeTimeProvider,
+        create_task: Callable[[int], None],
     ):
         """Test write_notes updates existing note."""
+        create_task(1)
         repository.write_notes(1, "Original content")
 
         # Advance time to verify updated_at changes
@@ -87,34 +127,40 @@ class TestSqliteNotesRepository:
         assert repository.read_notes(1) == "Updated content"
 
     def test_write_notes_handles_unicode_content(
-        self, repository: SqliteNotesRepository
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
     ):
         """Test write_notes handles Unicode and emoji content."""
+        create_task(1)
         content = "# タスクノート\n\n絵文字テスト: 🚀 ✅ 📝"
         repository.write_notes(1, content)
 
         assert repository.read_notes(1) == content
 
-    def test_write_notes_handles_empty_string(self, repository: SqliteNotesRepository):
+    def test_write_notes_handles_empty_string(
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
+    ):
         """Test write_notes can write empty string."""
+        create_task(1)
         repository.write_notes(1, "")
 
         assert repository.read_notes(1) == ""
         assert repository.has_notes(1) is True
 
     def test_write_notes_preserves_multiline_content(
-        self, repository: SqliteNotesRepository
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
     ):
         """Test write_notes preserves multiline content."""
+        create_task(1)
         content = "# Task\n\nLine 1\nLine 2\nLine 3\n\n## Section\n\nMore text"
         repository.write_notes(1, content)
 
         assert repository.read_notes(1) == content
 
     def test_delete_notes_removes_existing_note(
-        self, repository: SqliteNotesRepository
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
     ):
         """Test delete_notes removes existing note."""
+        create_task(1)
         repository.write_notes(1, "Test content")
         assert repository.has_notes(1) is True
 
@@ -144,9 +190,11 @@ class TestSqliteNotesRepository:
         assert result == set()
 
     def test_get_task_ids_with_notes_returns_ids_with_notes(
-        self, repository: SqliteNotesRepository
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
     ):
         """Test get_task_ids_with_notes returns only IDs that have notes."""
+        for i in range(1, 6):
+            create_task(i)
         repository.write_notes(1, "Note 1")
         repository.write_notes(3, "Note 3")
         repository.write_notes(5, "Note 5")
@@ -156,9 +204,10 @@ class TestSqliteNotesRepository:
         assert result == {1, 3, 5}
 
     def test_get_task_ids_with_notes_returns_empty_when_no_matches(
-        self, repository: SqliteNotesRepository
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
     ):
         """Test get_task_ids_with_notes returns empty set when no notes match."""
+        create_task(1)
         repository.write_notes(1, "Note 1")
 
         result = repository.get_task_ids_with_notes([2, 3, 4])
@@ -166,19 +215,24 @@ class TestSqliteNotesRepository:
         assert result == set()
 
     def test_get_task_ids_with_notes_handles_large_batch(
-        self, repository: SqliteNotesRepository
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
     ):
         """Test get_task_ids_with_notes handles large batch efficiently."""
         # Create notes for even-numbered tasks
         for i in range(0, 100, 2):
+            create_task(i)
             repository.write_notes(i, f"Note {i}")
 
         result = repository.get_task_ids_with_notes(list(range(100)))
 
         assert result == set(range(0, 100, 2))
 
-    def test_clear_removes_all_notes(self, repository: SqliteNotesRepository):
+    def test_clear_removes_all_notes(
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
+    ):
         """Test clear removes all notes from database."""
+        for i in range(1, 4):
+            create_task(i)
         repository.write_notes(1, "Note 1")
         repository.write_notes(2, "Note 2")
         repository.write_notes(3, "Note 3")
@@ -212,6 +266,15 @@ class TestMigrateFromFiles:
         notes.mkdir()
         return notes
 
+    @pytest.fixture
+    def create_task(self, repository: SqliteNotesRepository) -> Callable[[int], None]:
+        """Return a helper function to create tasks for foreign key satisfaction."""
+
+        def _create(task_id: int) -> None:
+            _create_test_task(repository.engine, task_id)
+
+        return _create
+
     def test_migrate_returns_zero_counts_when_dir_not_exists(
         self, repository: SqliteNotesRepository, tmp_path: Path
     ):
@@ -235,9 +298,14 @@ class TestMigrateFromFiles:
         assert result.errors == 0
 
     def test_migrate_imports_valid_md_files(
-        self, repository: SqliteNotesRepository, notes_dir: Path
+        self,
+        repository: SqliteNotesRepository,
+        notes_dir: Path,
+        create_task: Callable[[int], None],
     ):
         """Test migrate imports valid .md files."""
+        for i in range(1, 4):
+            create_task(i)
         (notes_dir / "1.md").write_text("Note for task 1", encoding="utf-8")
         (notes_dir / "2.md").write_text("Note for task 2", encoding="utf-8")
         (notes_dir / "3.md").write_text("Note for task 3", encoding="utf-8")
@@ -252,10 +320,15 @@ class TestMigrateFromFiles:
         assert repository.read_notes(3) == "Note for task 3"
 
     def test_migrate_skips_already_existing_notes(
-        self, repository: SqliteNotesRepository, notes_dir: Path
+        self,
+        repository: SqliteNotesRepository,
+        notes_dir: Path,
+        create_task: Callable[[int], None],
     ):
         """Test migrate skips notes that already exist in database."""
         # Pre-populate database
+        create_task(1)
+        create_task(2)
         repository.write_notes(1, "Existing note in DB")
 
         # Create file with different content
@@ -272,9 +345,14 @@ class TestMigrateFromFiles:
         assert repository.read_notes(2) == "Note for task 2"
 
     def test_migrate_skips_empty_files(
-        self, repository: SqliteNotesRepository, notes_dir: Path
+        self,
+        repository: SqliteNotesRepository,
+        notes_dir: Path,
+        create_task: Callable[[int], None],
     ):
         """Test migrate skips empty files."""
+        for i in range(1, 4):
+            create_task(i)
         (notes_dir / "1.md").write_text("", encoding="utf-8")
         (notes_dir / "2.md").write_text("   ", encoding="utf-8")  # whitespace only
         (notes_dir / "3.md").write_text("Valid content", encoding="utf-8")
@@ -287,9 +365,13 @@ class TestMigrateFromFiles:
         assert repository.read_notes(3) == "Valid content"
 
     def test_migrate_handles_invalid_filenames(
-        self, repository: SqliteNotesRepository, notes_dir: Path
+        self,
+        repository: SqliteNotesRepository,
+        notes_dir: Path,
+        create_task: Callable[[int], None],
     ):
         """Test migrate reports errors for non-numeric filenames."""
+        create_task(1)
         (notes_dir / "invalid.md").write_text("Content", encoding="utf-8")
         (notes_dir / "not_a_number.md").write_text("Content", encoding="utf-8")
         (notes_dir / "1.md").write_text("Valid note", encoding="utf-8")
@@ -302,9 +384,13 @@ class TestMigrateFromFiles:
         assert repository.read_notes(1) == "Valid note"
 
     def test_migrate_ignores_non_md_files(
-        self, repository: SqliteNotesRepository, notes_dir: Path
+        self,
+        repository: SqliteNotesRepository,
+        notes_dir: Path,
+        create_task: Callable[[int], None],
     ):
         """Test migrate ignores non-.md files."""
+        create_task(3)
         (notes_dir / "1.txt").write_text("Text file", encoding="utf-8")
         (notes_dir / "2.json").write_text('{"key": "value"}', encoding="utf-8")
         (notes_dir / "3.md").write_text("Valid note", encoding="utf-8")
@@ -317,9 +403,13 @@ class TestMigrateFromFiles:
         assert repository.read_notes(3) == "Valid note"
 
     def test_migrate_handles_unicode_content(
-        self, repository: SqliteNotesRepository, notes_dir: Path
+        self,
+        repository: SqliteNotesRepository,
+        notes_dir: Path,
+        create_task: Callable[[int], None],
     ):
         """Test migrate handles Unicode content correctly."""
+        create_task(1)
         content = "# 日本語タイトル\n\n絵文字: 🎯 📊 ✨"
         (notes_dir / "1.md").write_text(content, encoding="utf-8")
 
@@ -329,9 +419,14 @@ class TestMigrateFromFiles:
         assert repository.read_notes(1) == content
 
     def test_migrate_is_idempotent(
-        self, repository: SqliteNotesRepository, notes_dir: Path
+        self,
+        repository: SqliteNotesRepository,
+        notes_dir: Path,
+        create_task: Callable[[int], None],
     ):
         """Test migrate can be run multiple times safely."""
+        create_task(1)
+        create_task(2)
         (notes_dir / "1.md").write_text("Note 1", encoding="utf-8")
         (notes_dir / "2.md").write_text("Note 2", encoding="utf-8")
 
