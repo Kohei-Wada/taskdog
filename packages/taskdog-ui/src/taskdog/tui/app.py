@@ -135,13 +135,6 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             tooltip="Edit markdown notes for the selected task",
         ),
         Binding(
-            "t",
-            "toggle_completed",
-            "Toggle Done",
-            show=False,
-            tooltip="Toggle visibility of completed and canceled tasks",
-        ),
-        Binding(
             "/", "show_search", "Search", show=False, tooltip="Search for tasks by name"
         ),
         Binding(
@@ -238,7 +231,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         self.connection_manager = ConnectionStatusManager()
 
         # NOTE: All legacy state fields migrated to self.state (Phase 2 complete)
-        # - _gantt_sort_by, _gantt_reverse, _hide_completed → state (Step 2-3)
+        # - _gantt_sort_by, _gantt_reverse → state (Step 2-3)
         # - _all_tasks, _gantt_view_model → state (Step 4)
         # - viewmodels → state (Step 5)
 
@@ -455,18 +448,6 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         """Hide the search input and clear the filter."""
         if self.main_screen:
             self.main_screen.hide_search()
-
-    def action_toggle_completed(self) -> None:
-        """Toggle visibility of completed and canceled tasks."""
-        self.state.hide_completed = not self.state.hide_completed
-
-        # Reload tasks with new filter to recalculate gantt date range
-        if self.task_ui_manager:
-            self.task_ui_manager.load_tasks(keep_scroll_position=True)
-
-        # Show notification
-        status = "hidden" if self.state.hide_completed else "shown"
-        self.notify(f"Completed tasks {status}")
 
     def action_toggle_sort_reverse(self) -> None:
         """Toggle sort direction (ascending ⇔ descending)."""

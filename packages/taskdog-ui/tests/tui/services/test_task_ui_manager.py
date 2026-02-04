@@ -239,7 +239,6 @@ class TestTaskUIManager:
         # Setup state
         self.state.sort_by = "priority"
         self.state.sort_reverse = True
-        self.state.hide_completed = True
 
         task_data = create_task_data()
         self.task_data_loader.load_tasks.return_value = task_data
@@ -255,7 +254,6 @@ class TestTaskUIManager:
         call_kwargs = self.task_data_loader.load_tasks.call_args[1]
         assert call_kwargs["sort_by"] == "priority"
         assert call_kwargs["reverse"] is True
-        assert call_kwargs["hide_completed"] is True
 
     def test_update_cache_updates_state(self):
         """Test _update_cache updates TUIState correctly."""
@@ -409,40 +407,6 @@ class TestRecalculateGantt:
         assert (
             call_kwargs["sort_by"] == "priority"
         )  # Respects gantt_widget.get_sort_by()
-
-    def test_recalculate_gantt_applies_hide_completed_filter(self):
-        """Test recalculate_gantt respects hide_completed setting."""
-        # Setup
-        self.state.hide_completed = True
-
-        task = create_task_dto(1, "Test Task", TaskStatus.PENDING)
-        gantt = create_gantt_viewmodel()
-        filtered_gantt = create_gantt_viewmodel()
-
-        task_list_output = TaskListOutput(
-            tasks=[task],
-            total_count=1,
-            filtered_count=1,
-            gantt_data=MagicMock(),
-        )
-        self.task_data_loader.api_client.list_tasks.return_value = task_list_output
-        self.task_data_loader.gantt_presenter.present.return_value = gantt
-        self.task_data_loader.apply_display_filter.return_value = [task]
-        self.task_data_loader.filter_gantt_by_tasks.return_value = filtered_gantt
-
-        # Execute
-        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
-
-        # Verify filter methods were called
-        self.task_data_loader.apply_display_filter.assert_called_once_with([task], True)
-        self.task_data_loader.filter_gantt_by_tasks.assert_called_once_with(
-            gantt, [task]
-        )
-
-        # Verify widget was updated with filtered gantt
-        self.main_screen.gantt_widget.update_view_model_and_render.assert_called_once_with(
-            filtered_gantt
-        )
 
     def test_recalculate_gantt_handles_connection_error(self):
         """Test recalculate_gantt calls error callback on failure."""

@@ -98,7 +98,6 @@ class TaskUIManager:
                 all=False,  # Non-archived by default
                 sort_by=self.state.sort_by,
                 reverse=self.state.sort_reverse,
-                hide_completed=self.state.hide_completed,
                 date_range=date_range,
             )
         except ServerConnectionError as e:
@@ -238,15 +237,6 @@ class TaskUIManager:
         gantt_view_model = self.task_data_loader.gantt_presenter.present(
             task_list_output.gantt_data
         )
-
-        # Apply display filter based on hide_completed setting
-        if self.state.hide_completed:
-            filtered_tasks = self.task_data_loader.apply_display_filter(
-                task_list_output.tasks, self.state.hide_completed
-            )
-            gantt_view_model = self.task_data_loader.filter_gantt_by_tasks(
-                gantt_view_model, filtered_tasks
-            )
 
         return gantt_view_model
 

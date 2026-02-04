@@ -71,15 +71,14 @@ class TestTUIState:
 
     def test_default_values(self):
         """Test default state values are correctly initialized."""
-        assert self.state.hide_completed is False
         assert self.state.sort_by == "deadline"
         assert self.state.sort_reverse is False
         assert self.state.tasks_cache == []
         assert self.state.viewmodels_cache == []
         assert self.state.gantt_cache is None
 
-    def test_filtered_tasks_show_all(self):
-        """Test filtered_tasks returns all tasks when hide_completed=False."""
+    def test_filtered_tasks_returns_all(self):
+        """Test filtered_tasks returns all tasks from cache."""
         # Setup tasks with mixed statuses
         tasks = [
             create_task_dto(1, "Task 1", TaskStatus.COMPLETED),
@@ -87,60 +86,23 @@ class TestTUIState:
             create_task_dto(3, "Task 3", TaskStatus.CANCELED),
         ]
         self.state.tasks_cache = tasks
-        self.state.hide_completed = False
 
         # Should return all tasks
         filtered = self.state.filtered_tasks
         assert len(filtered) == 3
 
-    def test_filtered_tasks_hide_completed(self):
-        """Test filtered_tasks hides completed/canceled when hide_completed=True."""
-        # Setup tasks with mixed statuses
-        tasks = [
-            create_task_dto(1, "Task 1", TaskStatus.COMPLETED),
-            create_task_dto(2, "Task 2", TaskStatus.PENDING),
-            create_task_dto(3, "Task 3", TaskStatus.CANCELED),
-            create_task_dto(4, "Task 4", TaskStatus.IN_PROGRESS),
-        ]
-        self.state.tasks_cache = tasks
-        self.state.hide_completed = True
-
-        # Should return only non-finished tasks
-        filtered = self.state.filtered_tasks
-        assert len(filtered) == 2
-        assert filtered[0].id == 2
-        assert filtered[1].id == 4
-
-    def test_filtered_viewmodels_show_all(self):
-        """Test filtered_viewmodels returns all when hide_completed=False."""
+    def test_filtered_viewmodels_returns_all(self):
+        """Test filtered_viewmodels returns all viewmodels from cache."""
         # Setup viewmodels with mixed statuses
         vms = [
             create_task_viewmodel(1, "Task 1", TaskStatus.COMPLETED, True),
             create_task_viewmodel(2, "Task 2", TaskStatus.PENDING, False),
         ]
         self.state.viewmodels_cache = vms
-        self.state.hide_completed = False
 
         # Should return all
         filtered = self.state.filtered_viewmodels
         assert len(filtered) == 2
-
-    def test_filtered_viewmodels_hide_completed(self):
-        """Test filtered_viewmodels hides finished when hide_completed=True."""
-        # Setup viewmodels with mixed statuses
-        vms = [
-            create_task_viewmodel(1, "Task 1", TaskStatus.COMPLETED, True),
-            create_task_viewmodel(2, "Task 2", TaskStatus.PENDING, False),
-            create_task_viewmodel(3, "Task 3", TaskStatus.CANCELED, True),
-        ]
-        self.state.viewmodels_cache = vms
-        self.state.hide_completed = True
-
-        # Should return only non-finished
-        filtered = self.state.filtered_viewmodels
-        assert len(filtered) == 1
-        assert filtered[0].id == 2
-        assert filtered[0].is_finished is False
 
     def test_update_caches_atomically(self):
         """Test update_caches updates all fields atomically."""

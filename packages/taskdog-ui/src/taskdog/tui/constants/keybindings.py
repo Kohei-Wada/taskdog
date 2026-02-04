@@ -34,7 +34,6 @@ MAIN_FEATURES: str = """## Key Features
 
 - **Task Table** - Main view showing all your tasks
   - Use `j`/`k` or arrow keys to navigate
-  - Press `t` to toggle completed/canceled tasks
 
 - **Gantt Chart** - Visual timeline of your tasks
   - Shows task schedules and workload per day

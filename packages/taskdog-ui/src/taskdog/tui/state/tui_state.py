@@ -9,7 +9,6 @@ from dataclasses import dataclass, field
 from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.task_dto import TaskRowDto
-from taskdog_core.domain.entities.task import TaskStatus
 
 
 @dataclass
@@ -20,7 +19,6 @@ class TUIState:
     duplication and synchronization issues.
 
     State Categories:
-    - Filter Settings: hide_completed
     - Sort Settings: sort_by, sort_reverse
     - Data Caches: tasks_cache, viewmodels_cache, gantt_cache
 
@@ -28,10 +26,6 @@ class TUIState:
     application state, replacing scattered state fields across
     TaskdogTUI, GanttWidget, and TaskTable.
     """
-
-    # === Filter Settings ===
-    hide_completed: bool = False
-    """Whether to hide completed/canceled tasks (default: show all)."""
 
     # === Sort Settings ===
     sort_by: str = "deadline"
@@ -53,35 +47,21 @@ class TUIState:
     # === Computed Properties ===
     @property
     def filtered_tasks(self) -> list[TaskRowDto]:
-        """Get tasks after applying display filter.
+        """Get tasks for display.
 
         Returns:
-            Filtered task list based on hide_completed setting.
-            If hide_completed=False, returns all tasks.
-            If hide_completed=True, returns only non-finished tasks.
+            All tasks from cache.
         """
-        if not self.hide_completed:
-            return self.tasks_cache
-
-        return [
-            task
-            for task in self.tasks_cache
-            if task.status not in (TaskStatus.COMPLETED, TaskStatus.CANCELED)
-        ]
+        return self.tasks_cache
 
     @property
     def filtered_viewmodels(self) -> list[TaskRowViewModel]:
-        """Get ViewModels after applying display filter.
+        """Get ViewModels for display.
 
         Returns:
-            Filtered ViewModel list based on hide_completed setting.
-            If hide_completed=False, returns all ViewModels.
-            If hide_completed=True, returns only non-finished ViewModels.
+            All ViewModels from cache.
         """
-        if not self.hide_completed:
-            return self.viewmodels_cache
-
-        return [vm for vm in self.viewmodels_cache if not vm.is_finished]
+        return self.viewmodels_cache
 
     def clear_caches(self) -> None:
         """Clear all cached data.

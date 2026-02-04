@@ -209,10 +209,10 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         return self._viewmodel_map.get(self.cursor_row)
 
     def _get_all_viewmodels_from_state(self) -> list[TaskRowViewModel]:
-        """Get filtered viewmodels from app state.
+        """Get viewmodels from app state.
 
         Returns:
-            List of filtered TaskRowViewModel based on hide_completed setting
+            List of TaskRowViewModel from state cache
         """
         return self.tui_state.filtered_viewmodels
 
