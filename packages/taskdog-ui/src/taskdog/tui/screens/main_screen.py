@@ -8,7 +8,7 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Header
 
-from taskdog.tui.events import SearchQueryChanged
+from taskdog.tui.events import FilterChanged, SearchQueryChanged
 from taskdog.tui.state import TUIState
 from taskdog.tui.widgets.audit_log_widget import AuditLogWidget
 from taskdog.tui.widgets.custom_footer import CustomFooter
@@ -103,13 +103,35 @@ class MainScreen(Screen[None]):
     def on_search_query_changed(self, event: SearchQueryChanged) -> None:
         """Handle search query changes.
 
+        Updates TUIState with the new query and posts FilterChanged
+        to notify all widgets.
+
         Args:
             event: SearchQueryChanged event with the new query string
         """
-        # Filter tasks based on search query
+        if self.state:
+            self.state.set_filter(event.query)
+            self.post_message(FilterChanged(query=event.query))
+
+    def on_filter_changed(self, event: FilterChanged) -> None:
+        """Handle filter state changes.
+
+        Refreshes both TaskTable and GanttWidget with filtered data
+        from TUIState.
+
+        Args:
+            event: FilterChanged event
+        """
+        # Refresh TaskTable with filtered viewmodels
         if self.task_table:
-            self.task_table.filter_tasks(event.query)
-            self._update_search_result()
+            self.task_table.render_filtered_tasks()
+
+        # Refresh GanttWidget with filtered gantt
+        if self.gantt_widget:
+            self.gantt_widget.render_filtered_gantt()
+
+        # Update search result count
+        self._update_search_result()
 
     def on_custom_footer_submitted(self, event: CustomFooter.Submitted) -> None:
         """Handle Enter key press in search input.
@@ -131,28 +153,24 @@ class MainScreen(Screen[None]):
 
     def _refine_filter(self) -> None:
         """Add current search query to filter chain for progressive filtering."""
-        if not self.custom_footer or not self.task_table:
+        if not self.custom_footer or not self.state:
             return
 
         current_query = self.custom_footer.value
         if not current_query:
             return
 
-        # Add current query to filter chain
-        self.task_table.add_filter_to_chain(current_query)
+        # Add current query to filter chain in TUIState
+        self.state.add_to_filter_chain(current_query)
 
         # Clear search input for new query
         self.custom_footer.clear_input_only()
 
         # Update filter chain display
-        filter_chain = self.task_table.filter_chain
-        self.custom_footer.update_filter_chain(filter_chain)
+        self.custom_footer.update_filter_chain(self.state.filter_chain)
 
-        # Reapply filters to show refined results
-        self.task_table.filter_tasks("")
-
-        # Update search result count
-        self._update_search_result()
+        # Post FilterChanged to refresh all widgets
+        self.post_message(FilterChanged())
 
     def show_search(self) -> None:
         """Focus the search input."""
@@ -164,18 +182,21 @@ class MainScreen(Screen[None]):
         if self.custom_footer:
             self.custom_footer.clear()
 
-        if self.task_table:
-            self.task_table.clear_filter()  # type: ignore[no-untyped-call]
-            self.task_table.focus()
+        # Clear filters in TUIState
+        if self.state:
+            self.state.clear_filters()
 
-        # Update search result count after clearing filter
-        self._update_search_result()
+        # Post FilterChanged to refresh all widgets
+        self.post_message(FilterChanged(is_cleared=True))
+
+        if self.task_table:
+            self.task_table.focus()
 
     def _update_search_result(self) -> None:
         """Update the search result count display."""
-        if self.custom_footer and self.task_table:
-            matched = self.task_table.match_count
-            total = self.task_table.total_count
+        if self.custom_footer and self.state:
+            matched = self.state.match_count
+            total = self.state.total_count
             self.custom_footer.update_result(matched, total)
 
     # Delegate methods to task_table for compatibility

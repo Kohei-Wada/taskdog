@@ -118,3 +118,26 @@ class GanttResizeRequested(Message):
         self.display_days = display_days
         self.start_date = start_date
         self.end_date = end_date
+
+
+class FilterChanged(Message):
+    """Event sent when the search filter state changes.
+
+    This allows widgets to react to filter changes and refresh their display
+    with filtered data from TUIState.
+
+    Attributes:
+        query: The current search query string (may be empty)
+        is_cleared: Whether the filter was just cleared
+    """
+
+    def __init__(self, query: str = "", is_cleared: bool = False):
+        """Initialize the event.
+
+        Args:
+            query: The current search query string
+            is_cleared: Whether the filter was just cleared
+        """
+        super().__init__()
+        self.query = query
+        self.is_cleared = is_cleared

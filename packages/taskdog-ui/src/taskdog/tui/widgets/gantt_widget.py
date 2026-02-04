@@ -163,12 +163,13 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         self._render_gantt()
 
     def _get_gantt_from_state(self) -> GanttViewModel | None:
-        """Get gantt view model from app state.
+        """Get gantt view model from app state with filter applied.
 
         Returns:
-            GanttViewModel from app state cache, or None if not available
+            Filtered GanttViewModel if gantt_filter_enabled and filter active,
+            otherwise returns the full gantt_cache.
         """
-        return self.tui_state.gantt_cache
+        return self.tui_state.filtered_gantt
 
     def _render_gantt(self) -> None:
         """Render the gantt chart."""
@@ -229,7 +230,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
             self._show_error_message(e)
 
     def _update_title(self) -> None:
-        """Update title with date range and sort order."""
+        """Update title with date range, sort order, and filter status."""
         if not self._title_widget:
             return
 
@@ -241,10 +242,18 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         end_date = gantt_view_model.end_date
         # Access sort state from tui_state
         arrow = "↓" if self.tui_state.sort_reverse else "↑"
+
+        # Build filter indicator (always shown)
+        if self.tui_state.gantt_filter_enabled:
+            filter_indicator = " [green]🔍 Filter: ON[/green]"
+        else:
+            filter_indicator = " [dim]🔍 Filter: OFF[/dim]"
+
         title_text = (
             f"[bold yellow]Gantt Chart[/bold yellow] "
             f"[dim]({start_date} to {end_date})[/dim] "
             f"[dim]- sorted by: {self.tui_state.sort_by} {arrow}[/dim]"
+            f"{filter_indicator}"
         )
         self._title_widget.update(title_text)
 
@@ -350,6 +359,13 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         from taskdog.tui.events import GanttResizeRequested
 
         self.post_message(GanttResizeRequested(display_days, start_date, end_date))
+
+    def render_filtered_gantt(self) -> None:
+        """Render gantt from TUIState.filtered_gantt.
+
+        Called by MainScreen when filter state changes.
+        """
+        self._render_gantt()
 
     # Public API methods for external access
 
