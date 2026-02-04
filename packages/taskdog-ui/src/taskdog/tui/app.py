@@ -25,7 +25,7 @@ from taskdog.tui.constants.ui_settings import (
     SORT_KEY_LABELS,
 )
 from taskdog.tui.context import TUIContext
-from taskdog.tui.events import GanttResizeRequested, TasksRefreshed
+from taskdog.tui.events import FilterChanged, GanttResizeRequested, TasksRefreshed
 from taskdog.tui.palette.providers import (
     AuditCommandProvider,
     ExportCommandProvider,
@@ -178,6 +178,13 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Zoom",
             show=False,
             tooltip="Zoom: Toggle maximize/minimize for the focused widget",
+        ),
+        Binding(
+            "t",
+            "toggle_gantt_filter",
+            "Gantt Filter",
+            show=False,
+            tooltip="Toggle search filter for Gantt chart",
         ),
     ]
 
@@ -472,6 +479,13 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             focused = self.focused
             if focused and getattr(focused, "allow_maximize", False):
                 screen.maximize(focused)
+
+    def action_toggle_gantt_filter(self) -> None:
+        """Toggle search filter for Gantt chart."""
+        enabled = self.state.toggle_gantt_filter()
+        self.post_message(FilterChanged())
+        status = "enabled" if enabled else "disabled"
+        self.notify(f"Gantt filter {status}")
 
     def action_command_palette(self) -> None:
         """Show the command palette."""

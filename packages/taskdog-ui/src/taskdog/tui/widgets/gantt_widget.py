@@ -163,12 +163,13 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         self._render_gantt()
 
     def _get_gantt_from_state(self) -> GanttViewModel | None:
-        """Get gantt view model from app state.
+        """Get gantt view model from app state with filter applied.
 
         Returns:
-            GanttViewModel from app state cache, or None if not available
+            Filtered GanttViewModel if gantt_filter_enabled and filter active,
+            otherwise returns the full gantt_cache.
         """
-        return self.tui_state.gantt_cache
+        return self.tui_state.filtered_gantt
 
     def _render_gantt(self) -> None:
         """Render the gantt chart."""
@@ -350,6 +351,13 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         from taskdog.tui.events import GanttResizeRequested
 
         self.post_message(GanttResizeRequested(display_days, start_date, end_date))
+
+    def render_filtered_gantt(self) -> None:
+        """Render gantt from TUIState.filtered_gantt.
+
+        Called by MainScreen when filter state changes.
+        """
+        self._render_gantt()
 
     # Public API methods for external access
 
