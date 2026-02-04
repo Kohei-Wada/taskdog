@@ -192,3 +192,172 @@ class TestTaskSearchFilter:
     def test_is_case_sensitive(self, query, expected_case_sensitive):
         """Test smart case detection."""
         assert self.filter._is_case_sensitive(query) == expected_case_sensitive
+
+
+class TestTaskSearchFilterExclusion:
+    """Test TaskSearchFilter exclusion syntax (fzf-style !term)."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures with various statuses and tags."""
+        self.filter = TaskSearchFilter()
+
+        # Create test tasks with different statuses and tags
+        self.tasks = [
+            Task(
+                id=1,
+                name="Fix authentication bug",
+                priority=1,
+                status=TaskStatus.PENDING,
+                tags=["bug", "auth"],
+            ),
+            Task(
+                id=2,
+                name="Implement user registration",
+                priority=2,
+                status=TaskStatus.IN_PROGRESS,
+                tags=["feature"],
+            ),
+            Task(
+                id=3,
+                name="Update database schema",
+                priority=1,
+                status=TaskStatus.COMPLETED,
+                tags=["database"],
+            ),
+            Task(
+                id=4,
+                name="Write API documentation",
+                priority=3,
+                status=TaskStatus.PENDING,
+                tags=["docs", "urgent"],
+            ),
+            Task(
+                id=5,
+                name="Refactor login module",
+                priority=1,
+                status=TaskStatus.CANCELED,
+                tags=["auth"],
+            ),
+        ]
+
+    def test_exclude_term(self):
+        """Test !term excludes tasks containing the term."""
+        # Exclude tasks with "bug" in name or tags
+        filtered = self.filter.filter(self.tasks, "!bug")
+        assert len(filtered) == 4
+        filtered_ids = {task.id for task in filtered}
+        assert filtered_ids == {2, 3, 4, 5}  # Only task 1 has "bug"
+
+    def test_exclude_completed_shorthand(self):
+        """Test !completed excludes COMPLETED and CANCELED tasks."""
+        filtered = self.filter.filter(self.tasks, "!completed")
+        assert len(filtered) == 3
+        filtered_ids = {task.id for task in filtered}
+        assert filtered_ids == {1, 2, 4}  # PENDING and IN_PROGRESS only
+
+    def test_exclude_pending_shorthand(self):
+        """Test !pending excludes PENDING tasks."""
+        filtered = self.filter.filter(self.tasks, "!pending")
+        assert len(filtered) == 3
+        filtered_ids = {task.id for task in filtered}
+        assert filtered_ids == {2, 3, 5}  # IN_PROGRESS, COMPLETED, CANCELED
+
+    def test_exclude_in_progress_shorthand(self):
+        """Test !in_progress excludes IN_PROGRESS tasks."""
+        filtered = self.filter.filter(self.tasks, "!in_progress")
+        assert len(filtered) == 4
+        filtered_ids = {task.id for task in filtered}
+        assert filtered_ids == {1, 3, 4, 5}
+
+    def test_exclude_canceled_shorthand(self):
+        """Test !canceled excludes CANCELED tasks."""
+        filtered = self.filter.filter(self.tasks, "!canceled")
+        assert len(filtered) == 4
+        filtered_ids = {task.id for task in filtered}
+        assert filtered_ids == {1, 2, 3, 4}
+
+    def test_exclude_status_explicit(self):
+        """Test !status:VALUE excludes specific status."""
+        filtered = self.filter.filter(self.tasks, "!status:COMPLETED")
+        assert len(filtered) == 4
+        filtered_ids = {task.id for task in filtered}
+        assert filtered_ids == {1, 2, 4, 5}
+
+    def test_exclude_tag(self):
+        """Test !tag:tagname excludes tasks with specific tag."""
+        # Exclude tasks with "auth" tag
+        filtered = self.filter.filter(self.tasks, "!tag:auth")
+        assert len(filtered) == 3
+        filtered_ids = {task.id for task in filtered}
+        assert filtered_ids == {2, 3, 4}  # Tasks without "auth" tag
+
+    def test_exclude_tag_case_insensitive(self):
+        """Test !tag:TAGNAME is case-insensitive for tag matching."""
+        # Exclude tasks with "AUTH" tag (should match "auth")
+        filtered = self.filter.filter(self.tasks, "!tag:AUTH")
+        assert len(filtered) == 3
+        filtered_ids = {task.id for task in filtered}
+        assert filtered_ids == {2, 3, 4}
+
+    def test_include_and_exclude_combined(self):
+        """Test combining include and exclude terms (AND logic)."""
+        # Tasks containing "auth" but not completed
+        filtered = self.filter.filter(self.tasks, "auth !completed")
+        assert len(filtered) == 1
+        assert filtered[0].id == 1  # Only pending auth task
+
+    def test_multiple_excludes(self):
+        """Test multiple exclude terms (AND logic)."""
+        # Exclude both completed and urgent tagged tasks
+        filtered = self.filter.filter(self.tasks, "!completed !tag:urgent")
+        assert len(filtered) == 2
+        filtered_ids = {task.id for task in filtered}
+        assert filtered_ids == {1, 2}  # PENDING/IN_PROGRESS without urgent tag
+
+    def test_exclude_nonexistent_term(self):
+        """Test excluding nonexistent term returns all tasks."""
+        filtered = self.filter.filter(self.tasks, "!nonexistent")
+        assert len(filtered) == 5  # All tasks match
+
+    def test_exclude_nonexistent_tag(self):
+        """Test excluding nonexistent tag returns all tasks."""
+        filtered = self.filter.filter(self.tasks, "!tag:nonexistent")
+        assert len(filtered) == 5  # All tasks match
+
+    def test_complex_query(self):
+        """Test complex query with include, exclude, and tag exclusion."""
+        # Match tasks with priority 1, not completed, not auth tag
+        filtered = self.filter.filter(self.tasks, "1 !completed !tag:auth")
+        # Priority 1 tasks: 1, 3, 5
+        # Not completed: removes 3, 5
+        # Not auth tag: removes 1
+        assert len(filtered) == 0
+
+    def test_matches_method_with_exclude(self):
+        """Test matches method with exclusion syntax."""
+        task = self.tasks[0]  # "Fix authentication bug", PENDING, tags: ["bug", "auth"]
+
+        # Should match (not excluded)
+        assert self.filter.matches(task, "!completed") is True
+        assert self.filter.matches(task, "!tag:urgent") is True
+
+        # Should not match (excluded)
+        assert self.filter.matches(task, "!bug") is False
+        assert self.filter.matches(task, "!tag:auth") is False
+
+    def test_backward_compatibility(self):
+        """Test that existing queries without ! work as before."""
+        # Simple search
+        filtered = self.filter.filter(self.tasks, "auth")
+        assert len(filtered) == 2
+        filtered_ids = {task.id for task in filtered}
+        assert filtered_ids == {1, 5}  # Both have "auth" in name or tags
+
+        # Status search
+        filtered = self.filter.filter(self.tasks, "PENDING")
+        assert len(filtered) == 2
+
+        # Empty query returns all
+        filtered = self.filter.filter(self.tasks, "")
+        assert len(filtered) == 5
