@@ -11,7 +11,6 @@ from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
-from taskdog_core.domain.entities.task import TaskStatus
 
 
 @dataclass
@@ -64,7 +63,6 @@ class TaskDataLoader:
         all: bool = False,
         sort_by: str = "id",
         reverse: bool = False,
-        hide_completed: bool = False,
         date_range: tuple[date, date] | None = None,
     ) -> TaskData:
         """Load tasks from API and create ViewModels.
@@ -73,7 +71,6 @@ class TaskDataLoader:
             all: Include archived tasks (default: False)
             sort_by: Sort field name
             reverse: Sort direction (default: False for ascending)
-            hide_completed: Whether to hide completed/canceled tasks
             date_range: Optional (start_date, end_date) for gantt data
 
         Returns:
@@ -95,8 +92,8 @@ class TaskDataLoader:
         # Cache all tasks
         all_tasks = task_list_output.tasks
 
-        # Apply display filter
-        filtered_tasks = self.apply_display_filter(all_tasks, hide_completed)
+        # filtered_tasks is now identical to all_tasks (no hide_completed filter)
+        filtered_tasks = all_tasks
 
         # Create table ViewModels from ALL tasks (not filtered)
         # TUIState will handle filtering via filtered_viewmodels property
@@ -124,27 +121,6 @@ class TaskDataLoader:
             gantt_view_model=gantt_view_model,
             filtered_gantt_view_model=filtered_gantt_view_model,
         )
-
-    def apply_display_filter(
-        self, tasks: list[TaskRowDto], hide_completed: bool
-    ) -> list[TaskRowDto]:
-        """Apply display filter based on hide_completed setting.
-
-        Args:
-            tasks: List of all tasks
-            hide_completed: Whether to hide completed/canceled tasks
-
-        Returns:
-            Filtered list of tasks
-        """
-        if not hide_completed:
-            return tasks
-
-        return [
-            task
-            for task in tasks
-            if task.status not in (TaskStatus.COMPLETED, TaskStatus.CANCELED)
-        ]
 
     def filter_gantt_by_tasks(
         self, gantt_view_model: GanttViewModel, tasks: list[TaskRowDto]
