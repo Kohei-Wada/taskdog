@@ -47,7 +47,7 @@ class TUIState:
     filter_chain: list[str] = field(default_factory=list)
     """Progressive filter chain for refined searches."""
 
-    gantt_filter_enabled: bool = True
+    gantt_filter_enabled: bool = False
     """Whether to apply search filter to Gantt chart."""
 
     # === Data Caches ===
