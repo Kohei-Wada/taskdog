@@ -230,7 +230,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
             self._show_error_message(e)
 
     def _update_title(self) -> None:
-        """Update title with date range and sort order."""
+        """Update title with date range, sort order, and filter status."""
         if not self._title_widget:
             return
 
@@ -242,10 +242,18 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         end_date = gantt_view_model.end_date
         # Access sort state from tui_state
         arrow = "↓" if self.tui_state.sort_reverse else "↑"
+
+        # Build filter indicator (always shown)
+        if self.tui_state.gantt_filter_enabled:
+            filter_indicator = " [green]🔍 Filter: ON[/green]"
+        else:
+            filter_indicator = " [dim]🔍 Filter: OFF[/dim]"
+
         title_text = (
             f"[bold yellow]Gantt Chart[/bold yellow] "
             f"[dim]({start_date} to {end_date})[/dim] "
             f"[dim]- sorted by: {self.tui_state.sort_by} {arrow}[/dim]"
+            f"{filter_indicator}"
         )
         self._title_widget.update(title_text)
 
