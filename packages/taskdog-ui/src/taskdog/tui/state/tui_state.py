@@ -204,18 +204,14 @@ class TUIState:
             if task_id in filtered_ids
         }
 
-        # Recalculate daily_workload for filtered tasks
-        filtered_workload: dict[date, float] = {}
-        for daily_hours in filtered_daily_hours.values():
-            for d, hours in daily_hours.items():
-                filtered_workload[d] = filtered_workload.get(d, 0.0) + hours
-
+        # Use original daily_workload from cache (not recalculated for filtered tasks)
+        # Workload represents total scheduled work, independent of display filtering
         return GanttViewModel(
             start_date=self.gantt_cache.start_date,
             end_date=self.gantt_cache.end_date,
             tasks=filtered_tasks,
             task_daily_hours=filtered_daily_hours,
-            daily_workload=filtered_workload,
+            daily_workload=self.gantt_cache.daily_workload,
             holidays=self.gantt_cache.holidays,
             total_estimated_duration=sum(
                 t.estimated_duration or 0.0 for t in filtered_tasks
