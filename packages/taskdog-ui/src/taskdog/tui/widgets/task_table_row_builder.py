@@ -8,7 +8,6 @@ from rich.text import Text
 
 from taskdog.constants.colors import STATUS_STYLES
 from taskdog.constants.symbols import EMOJI_NOTE
-from taskdog.constants.table_dimensions import TASK_NAME_MAX_DISPLAY_LENGTH
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.formatters.duration_formatter import DurationFormatter
 from taskdog.view_models.task_view_model import TaskRowViewModel
@@ -54,7 +53,7 @@ class TaskTableRowBuilder:
             ColumnConfig(formatter=lambda vm: str(vm.id)),
             # Name column (left-aligned, strikethrough + dim for finished)
             ColumnConfig(
-                formatter=lambda vm: self._format_name(vm.name),
+                formatter=lambda vm: vm.name,
                 justification="left",
                 style_func=lambda vm: "strike dim" if vm.is_finished else None,
             ),
@@ -156,20 +155,6 @@ class TaskTableRowBuilder:
         fixed_indicator = "📌" if task_vm.is_fixed else ""
         note_indicator = EMOJI_NOTE if task_vm.has_notes else ""
         return fixed_indicator + note_indicator
-
-    @staticmethod
-    def _format_name(name: str) -> str:
-        """Format task name with truncation if needed.
-
-        Args:
-            name: Task name to format
-
-        Returns:
-            Formatted task name
-        """
-        if len(name) > TASK_NAME_MAX_DISPLAY_LENGTH:
-            return name[:TASK_NAME_MAX_DISPLAY_LENGTH] + "..."
-        return name
 
     @staticmethod
     def _format_tags(tags: list[str] | None) -> str:
