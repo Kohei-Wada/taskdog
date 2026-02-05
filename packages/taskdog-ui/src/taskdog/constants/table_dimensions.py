@@ -1,7 +1,7 @@
 """Table and UI dimension constants for presentation layer."""
 
 # Task Table Display Limits
-TASK_NAME_MAX_DISPLAY_LENGTH = 28
+TASK_NAME_COLUMN_WIDTH = 30
 PAGE_SCROLL_SIZE = 10
 
 # Gantt Chart Column Widths (CLI)

@@ -17,7 +17,7 @@ from textual.widgets import DataTable
 if TYPE_CHECKING:
     pass
 
-from taskdog.constants.table_dimensions import PAGE_SCROLL_SIZE
+from taskdog.constants.table_dimensions import PAGE_SCROLL_SIZE, TASK_NAME_COLUMN_WIDTH
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
@@ -100,7 +100,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         """Set up table columns."""
         self.add_column(Text("", justify="center"))
         self.add_column(Text("ID", justify="center"))
-        self.add_column(Text("Name", justify="center"))
+        self.add_column(Text("Name", justify="center"), width=TASK_NAME_COLUMN_WIDTH)
         self.add_column(Text("Status", justify="center"))
         self.add_column(Text("Priority", justify="center"))
         self.add_column(Text("Flags", justify="center"))
