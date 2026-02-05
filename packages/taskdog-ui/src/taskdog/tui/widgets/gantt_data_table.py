@@ -116,6 +116,10 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             gantt_view_model.holidays,
         )
 
+        # Fix the date header rows at the top during vertical scrolling
+        # Must be set after rows are added, not in __init__
+        self.fixed_rows = GANTT_HEADER_ROW_COUNT
+
         if gantt_view_model.is_empty():
             return
 
