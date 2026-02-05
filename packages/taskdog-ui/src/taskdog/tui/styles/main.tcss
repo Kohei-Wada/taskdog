@@ -55,6 +55,11 @@ MainScreen {
     border: round $primary;
 }
 
+/* Style for fixed header rows in Gantt table */
+#gantt-table > .datatable--fixed {
+    background: $surface;
+}
+
 /* Task table - main content */
 #task-table {
     width: 100%;
