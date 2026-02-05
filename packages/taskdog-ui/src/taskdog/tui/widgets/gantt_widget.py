@@ -178,11 +178,11 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
             return
 
         gantt_view_model = self._get_gantt_from_state()
-        if not gantt_view_model or gantt_view_model.is_empty():
+        if not gantt_view_model:
             self._show_empty_message()
             return
 
-        # Directly load the pre-computed gantt data
+        # Load gantt data (shows column headers even when empty, matching TaskTable behavior)
         self._load_gantt_data()
 
     def _display_table_message(self, column_label: str, message: str) -> None:
