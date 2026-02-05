@@ -108,15 +108,16 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             gantt_view_model.end_date,
         )
 
-        if gantt_view_model.is_empty():
-            return
-
         # Add date header rows (Month, Today marker, Day)
+        # Always add these to give Timeline column proper width
         self._add_date_header_rows(
             gantt_view_model.start_date,
             gantt_view_model.end_date,
             gantt_view_model.holidays,
         )
+
+        if gantt_view_model.is_empty():
+            return
 
         # Add task rows
         for idx, task_vm in enumerate(gantt_view_model.tasks):
