@@ -67,3 +67,4 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+        types_or: [python]
