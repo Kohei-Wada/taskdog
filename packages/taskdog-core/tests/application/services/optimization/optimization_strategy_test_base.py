@@ -1,6 +1,6 @@
 """Base test class for optimization strategy tests."""
 
-from datetime import datetime, time
+from datetime import datetime
 
 import pytest
 
@@ -29,13 +29,7 @@ class BaseOptimizationStrategyTest:
         """Set up test fixtures using repository from conftest."""
         self.repository = repository
         self.create_use_case = CreateTaskUseCase(self.repository)
-        # Use default time values directly instead of loading config
-        # to avoid tests depending on user's local config
-        self.optimize_use_case = OptimizeScheduleUseCase(
-            self.repository,
-            time(9, 0),  # default start time
-            time(18, 0),  # default end time
-        )
+        self.optimize_use_case = OptimizeScheduleUseCase(self.repository)
 
     def create_task(
         self,

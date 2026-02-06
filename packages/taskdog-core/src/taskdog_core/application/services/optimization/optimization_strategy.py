@@ -17,15 +17,9 @@ class OptimizationStrategy(ABC):
     - Implement optimize_tasks() method
 
     Example:
-        from datetime import time
-
         class MyStrategy(OptimizationStrategy):
             DISPLAY_NAME = "My Algorithm"
             DESCRIPTION = "Does something cool"
-
-            def __init__(self, default_start_time: time, default_end_time: time):
-                self.default_start_time = default_start_time
-                self.default_end_time = default_end_time
 
             def optimize_tasks(self, tasks, existing_allocations, params) -> OptimizeResult:
                 # Custom implementation

@@ -51,11 +51,11 @@ class TestPriorityFirstOptimizationStrategy(BaseOptimizationStrategyTest):
         )
 
         # High priority starts first (Monday)
-        assert updated_high.planned_start == datetime(2025, 10, 20, 9, 0, 0)
+        assert updated_high.planned_start == datetime(2025, 10, 20, 0, 0, 0)
         # Medium priority starts second (Tuesday)
-        assert updated_medium.planned_start == datetime(2025, 10, 21, 9, 0, 0)
+        assert updated_medium.planned_start == datetime(2025, 10, 21, 0, 0, 0)
         # Low priority starts last (Wednesday)
-        assert updated_low.planned_start == datetime(2025, 10, 22, 9, 0, 0)
+        assert updated_low.planned_start == datetime(2025, 10, 22, 0, 0, 0)
 
     def test_priority_first_ignores_deadlines(self):
         """Test that priority_first ignores deadlines and focuses only on priority."""
@@ -85,6 +85,6 @@ class TestPriorityFirstOptimizationStrategy(BaseOptimizationStrategyTest):
         assert updated_high_far is not None and updated_low_urgent is not None
 
         # High priority task scheduled first despite far deadline
-        assert updated_high_far.planned_start == datetime(2025, 10, 20, 9, 0, 0)
+        assert updated_high_far.planned_start == datetime(2025, 10, 20, 0, 0, 0)
         # Urgent task scheduled second despite earlier deadline
-        assert updated_low_urgent.planned_start == datetime(2025, 10, 21, 9, 0, 0)
+        assert updated_low_urgent.planned_start == datetime(2025, 10, 21, 0, 0, 0)

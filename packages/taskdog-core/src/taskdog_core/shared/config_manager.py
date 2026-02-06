@@ -7,13 +7,8 @@ Priority: Environment variables > TOML file > Default values
 from dataclasses import dataclass, field
 from datetime import time
 from pathlib import Path
-from typing import Any
 
 from taskdog_core.shared.config_loader import ConfigLoader
-from taskdog_core.shared.constants.config_defaults import (
-    WORK_HOURS_END,
-    WORK_HOURS_START,
-)
 from taskdog_core.shared.xdg_utils import XDGDirectories
 
 
@@ -91,22 +86,6 @@ def parse_time_value(value: int | str | None, default: time) -> time:
 
 
 @dataclass(frozen=True)
-class TimeConfig:
-    """Time-related configuration for business logic (optimization).
-
-    Note: UI input completion defaults (deadline_time, planned_start_time, etc.)
-    are handled by the CLI/TUI layer in CliConfig.input_defaults.
-
-    Attributes:
-        work_hours_start: Work day start time (for schedule optimization)
-        work_hours_end: Work day end time (for schedule optimization)
-    """
-
-    work_hours_start: time = WORK_HOURS_START
-    work_hours_end: time = WORK_HOURS_END
-
-
-@dataclass(frozen=True)
 class RegionConfig:
     """Region-related configuration.
 
@@ -137,12 +116,10 @@ class Config:
     """Taskdog configuration.
 
     Attributes:
-        time: Time-related settings
         region: Region-related settings (holidays, etc.)
         storage: Storage backend settings
     """
 
-    time: TimeConfig
     region: RegionConfig = field(default_factory=RegionConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
 
@@ -173,30 +150,10 @@ class ConfigManager:
         toml_data = ConfigLoader.load_toml(config_path)
 
         # Parse sections with fallback to defaults, then apply env overrides
-        time_data = toml_data.get("time", {})
         region_data = toml_data.get("region", {})
         storage_data = toml_data.get("storage", {})
 
-        # Parse work hours for optimization
-        # Note: UI input completion defaults are handled by CLI config (cli.toml)
-        work_hours_start_raw: Any = ConfigLoader.get_env(
-            "TIME_WORK_HOURS_START",
-            time_data.get("work_hours_start"),
-            str,
-        )
-        work_hours_end_raw: Any = ConfigLoader.get_env(
-            "TIME_WORK_HOURS_END",
-            time_data.get("work_hours_end"),
-            str,
-        )
-
         return Config(
-            time=TimeConfig(
-                work_hours_start=parse_time_value(
-                    work_hours_start_raw, WORK_HOURS_START
-                ),
-                work_hours_end=parse_time_value(work_hours_end_raw, WORK_HOURS_END),
-            ),
             region=RegionConfig(
                 country=ConfigLoader.get_env(
                     "REGION_COUNTRY",

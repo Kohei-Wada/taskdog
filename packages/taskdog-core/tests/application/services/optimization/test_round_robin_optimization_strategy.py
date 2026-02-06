@@ -82,7 +82,7 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
         for task in tasks:
             updated_task = self.repository.get_by_id(task.id)
             assert updated_task is not None
-            assert updated_task.planned_start == datetime(2025, 10, 20, 9, 0, 0)
+            assert updated_task.planned_start == datetime(2025, 10, 20, 0, 0, 0)
 
     def test_round_robin_stops_allocating_after_task_completion(self):
         """Test that round-robin stops allocating to completed tasks."""

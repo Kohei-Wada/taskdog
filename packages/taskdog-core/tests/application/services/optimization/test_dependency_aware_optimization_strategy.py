@@ -38,8 +38,8 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         updated_high_late = self.repository.get_by_id(high_late.id)
         assert updated_low_early is not None and updated_high_late is not None
 
-        assert updated_low_early.planned_start == datetime(2025, 10, 20, 9, 0, 0)
-        assert updated_high_late.planned_start == datetime(2025, 10, 21, 9, 0, 0)
+        assert updated_low_early.planned_start == datetime(2025, 10, 20, 0, 0, 0)
+        assert updated_high_late.planned_start == datetime(2025, 10, 21, 0, 0, 0)
 
     def test_dependency_aware_uses_priority_as_tiebreaker(self):
         """Test that priority is used when deadlines are equal."""
@@ -67,8 +67,8 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         updated_low = self.repository.get_by_id(low_priority.id)
         assert updated_high is not None and updated_low is not None
 
-        assert updated_high.planned_start == datetime(2025, 10, 20, 9, 0, 0)
-        assert updated_low.planned_start == datetime(2025, 10, 21, 9, 0, 0)
+        assert updated_high.planned_start == datetime(2025, 10, 20, 0, 0, 0)
+        assert updated_low.planned_start == datetime(2025, 10, 21, 0, 0, 0)
 
     def test_dependency_aware_schedules_no_deadline_tasks_last(self):
         """Test that tasks without deadlines are scheduled last."""
@@ -93,8 +93,8 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         updated_no = self.repository.get_by_id(no_deadline.id)
         assert updated_with is not None and updated_no is not None
 
-        assert updated_with.planned_start == datetime(2025, 10, 20, 9, 0, 0)
-        assert updated_no.planned_start == datetime(2025, 10, 21, 9, 0, 0)
+        assert updated_with.planned_start == datetime(2025, 10, 20, 0, 0, 0)
+        assert updated_no.planned_start == datetime(2025, 10, 21, 0, 0, 0)
 
     def test_dependency_aware_uses_greedy_allocation(self):
         """Test that dependency-aware strategy uses greedy allocation."""
@@ -181,8 +181,8 @@ class TestDependencyAwareOptimizationStrategy(BaseOptimizationStrategyTest):
         )
 
         # Earliest deadline should be first
-        assert updated_urgent.planned_start == datetime(2025, 10, 20, 9, 0, 0)
+        assert updated_urgent.planned_start == datetime(2025, 10, 20, 0, 0, 0)
         # Middle deadline should be second
-        assert updated_medium.planned_start == datetime(2025, 10, 21, 9, 0, 0)
+        assert updated_medium.planned_start == datetime(2025, 10, 21, 0, 0, 0)
         # Latest deadline should be last
-        assert updated_high.planned_start == datetime(2025, 10, 22, 9, 0, 0)
+        assert updated_high.planned_start == datetime(2025, 10, 22, 0, 0, 0)

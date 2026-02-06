@@ -2,7 +2,7 @@
 
 import copy
 import random
-from datetime import date, time
+from datetime import date
 
 from taskdog_core.application.constants.optimization import (
     GENETIC_CROSSOVER_RATE,
@@ -53,15 +53,8 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
     EARLY_TERMINATION_GENERATIONS = GENETIC_EARLY_TERMINATION_GENERATIONS
     TOURNAMENT_SIZE = GENETIC_TOURNAMENT_SIZE
 
-    def __init__(self, default_start_time: time, default_end_time: time):
-        """Initialize strategy with configuration.
-
-        Args:
-            default_start_time: Default start time for tasks (e.g., time(9, 0))
-            default_end_time: Default end time for tasks (e.g., time(18, 0))
-        """
-        self.default_start_time = default_start_time
-        self.default_end_time = default_end_time
+    def __init__(self) -> None:
+        """Initialize strategy."""
         self.fitness_calculator = ScheduleFitnessCalculator()
         # Cache for fitness evaluations: stores (fitness, daily_allocations, scheduled_tasks)
         self._fitness_cache: dict[
@@ -95,10 +88,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         result = OptimizeResult(daily_allocations=dict(existing_allocations))
 
         # Create greedy strategy instance for allocation
-        greedy_strategy = GreedyOptimizationStrategy(
-            self.default_start_time,
-            self.default_end_time,
-        )
+        greedy_strategy = GreedyOptimizationStrategy()
 
         # Clear fitness cache for new optimization run
         self._fitness_cache.clear()

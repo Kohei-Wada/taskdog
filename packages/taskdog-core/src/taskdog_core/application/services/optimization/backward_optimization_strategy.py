@@ -1,10 +1,11 @@
 """Backward optimization strategy implementation."""
 
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
 from taskdog_core.application.services.optimization.allocation_helpers import (
+    SCHEDULE_START_TIME,
     calculate_available_hours,
     prepare_task_for_allocation,
     set_planned_times,
@@ -27,10 +28,6 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
 
     DISPLAY_NAME = "Backward"
     DESCRIPTION = "Just-in-time from deadlines"
-
-    def __init__(self, default_start_time: time, default_end_time: time):
-        self.default_start_time = default_start_time
-        self.default_end_time = default_end_time
 
     def optimize_tasks(
         self,
@@ -104,7 +101,6 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
                 date_obj,
                 params.max_hours_per_day,
                 params.current_time,
-                self.default_end_time,
             )
 
             if available_hours > 0:
@@ -126,17 +122,15 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
 
         if schedule_start and schedule_end:
             start_with_time = schedule_start.replace(
-                hour=self.default_start_time.hour,
-                minute=self.default_start_time.minute,
-                second=0,
+                hour=SCHEDULE_START_TIME.hour,
+                minute=SCHEDULE_START_TIME.minute,
+                second=SCHEDULE_START_TIME.second,
             )
             set_planned_times(
                 task_copy,
                 start_with_time,
                 schedule_end,
                 task_daily_allocations,
-                self.default_start_time,
-                self.default_end_time,
             )
             return task_copy
 
