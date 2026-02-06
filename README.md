@@ -19,15 +19,6 @@ https://github.com/user-attachments/assets/47022478-078d-4ad9-ba7d-d1cd4016e105
 - **taskdog-ui**: CLI and TUI interfaces
 - **taskdog-mcp**: MCP server for Claude Desktop integration
 
-## Table of Contents
-
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [Docker](#docker)
-- [Commands](#commands)
-- [Development](#development)
-- [Contributing](#contributing)
-
 ## Documentation
 
 - **[Quick Start Guide](docs/QUICKSTART.md)** - Step-by-step setup in 5 minutes
@@ -82,69 +73,10 @@ taskdog tui
 ```bash
 cp .env.example .env   # Customize settings if needed
 docker compose up -d
+docker compose exec -it taskdog tui
 ```
 
 See [contrib/README.md](contrib/README.md) for detailed deployment options (Docker, systemd, launchd).
-
-## Commands
-
-**Common Commands:**
-
-```bash
-# Task management
-taskdog add "Task name" -p 150           # Create task with priority
-taskdog start 1                          # Start task
-taskdog done 1                           # Complete task
-taskdog rm 1                             # Archive task (soft delete)
-
-# Dependencies & Tags
-taskdog add-dependency 2 1               # Task 2 depends on task 1
-taskdog tags 1 backend api               # Set tags
-
-# Visualization
-taskdog table                            # Table view
-taskdog gantt                            # Gantt chart
-taskdog today                            # Today's tasks
-taskdog tui                              # Interactive TUI
-
-# Optimization
-taskdog optimize                         # Auto-schedule tasks
-taskdog optimize -a balanced             # Use balanced algorithm
-
-# Auditing
-taskdog audit-logs                       # View operation history
-```
-
-**See [CLI Commands Reference](docs/COMMANDS.md) for complete command documentation.**
-
-## Development
-
-**Requirements**: Python 3.11+, [uv](https://github.com/astral-sh/uv)
-
-**Quick start:**
-
-```bash
-# Setup
-make install-dev                    # Install with dev dependencies
-
-# Testing
-make test                           # Run all tests with coverage
-
-# Code Quality
-make lint                           # Lint code
-make format                         # Format code
-make check                          # Lint + typecheck
-```
-
-**Architecture**: UV workspace monorepo with Clean Architecture principles.
-
-- **taskdog-core**: Domain, Application, Infrastructure layers
-- **taskdog-client**: HTTP API client library
-- **taskdog-server**: FastAPI REST API (Presentation layer)
-- **taskdog-ui**: CLI/TUI interfaces (Presentation layer)
-- **taskdog-mcp**: MCP server for AI integration (Presentation layer)
-
-**See [CLAUDE.md](CLAUDE.md) for detailed development guide and architecture documentation.**
 
 ## Contributing
 
