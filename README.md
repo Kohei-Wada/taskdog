@@ -126,6 +126,10 @@ See [contrib/README.md](contrib/README.md) for detailed deployment options (Dock
 
 Taskdog includes a full-screen terminal user interface (TUI) for managing tasks interactively.
 
+```bash
+taskdog tui
+```
+
 **Features:**
 
 - Real-time task search and filtering
@@ -133,33 +137,7 @@ Taskdog includes a full-screen terminal user interface (TUI) for managing tasks 
 - Sort by deadline, priority, planned start, or ID
 - Visual status indicators with colors
 - Task details panel with dependencies
-
-**Keyboard Shortcuts:**
-
-- `a` - Add new task
-- `s` - Start selected task
-- `P` - Pause selected task
-- `d` - Complete (done) selected task
-- `c` - Cancel selected task
-- `R` - Reopen task
-- `x` - Archive task (soft delete)
-- `X` - Hard delete task (permanent)
-- `i` - Show task details
-- `e` - Edit task
-- `v` - Edit task note
-- `t` - Toggle visibility of completed/canceled tasks
-- `r` - Refresh task list
-- `Ctrl+T` - Toggle sort order (ascending/descending)
-- `/` - Focus search box
-- `Escape` - Clear/hide search
-- `Ctrl+P` or `Ctrl+\` - Command palette (for optimize and other commands)
-- `q` - Quit
-
-Launch the TUI with:
-
-```bash
-taskdog tui
-```
+- Command palette (`Ctrl+P`) for optimize and other commands
 
 ## API Server
 
