@@ -23,6 +23,7 @@ ENV/
 htmlcov/
 .tox/
 .nox/
+packages/*/tests/
 
 # Type checking
 .mypy_cache/
@@ -40,9 +41,22 @@ htmlcov/
 # Git
 .git/
 .gitignore
+.pre-commit-config.yaml
+.python-version
 
-# Documentation build
-docs/_build/
+# Documentation & metadata
+docs/
+*.md
+LICENSE
+Makefile
+
+# CI/CD & project config
+.github/
+.claude/
+contrib/
+
+# Scripts (demo_data files are explicitly copied in Dockerfile)
+scripts/bump_version.py
 
 # OS
 .DS_Store
