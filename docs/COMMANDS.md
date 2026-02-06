@@ -355,7 +355,7 @@ Export tasks to JSON or CSV format. Exports non-archived tasks by default.
 
 **Options:**
 
-- `--format FORMAT` - json (default) or csv
+- `--format FORMAT` - json (default), csv, or markdown
 - `-o/--output FILE` - Output file path
 - `-f/--fields LIST` - Custom field selection
 - `-a/--all` - Include archived tasks
@@ -369,27 +369,8 @@ Export tasks to JSON or CSV format. Exports non-archived tasks by default.
 ```bash
 taskdog export
 taskdog export --format csv -o tasks.csv
+taskdog export --format markdown -o tasks.md
 taskdog export --status pending -t backend
-```
-
-### report - Generate markdown report
-
-```bash
-taskdog report [OPTIONS]
-```
-
-Generate markdown workload report grouped by date. Useful for exporting to Notion or other documentation tools.
-
-**Options:**
-
-- Same filtering options as table/export
-
-**Examples:**
-
-```bash
-taskdog report
-taskdog report --start-date 2025-10-20 --end-date 2025-10-30
-taskdog report -t backend -o weekly-report.md
 ```
 
 ## Analytics

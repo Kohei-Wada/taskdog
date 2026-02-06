@@ -19,12 +19,26 @@ Choose your preferred deployment method:
 
 ```bash
 # Using Docker Compose (from repository root)
+cp .env.example .env   # Customize settings if needed
 docker compose up -d
 
 # Or build and run manually
 docker build -t taskdog-server .
 docker run -d -p 8000:8000 -v taskdog-data:/data taskdog-server
 ```
+
+**Using CLI inside the container:**
+
+```bash
+# Run CLI commands via docker exec
+docker compose exec taskdog-server taskdog table
+docker compose exec taskdog-server taskdog add "New task" -p 100
+
+# Load demo data
+docker compose exec taskdog-server python scripts/demo_data.py
+```
+
+**Configuration:** Copy [`.env.example`](../.env.example) to `.env` to customize port, region, and authentication settings.
 
 See the root [Dockerfile](../Dockerfile) and [docker-compose.yaml](../docker-compose.yaml) for details.
 
@@ -98,7 +112,6 @@ Edit `~/.config/taskdog/cli.toml`:
 
 ```toml
 [api]
-enabled = true
 host = "127.0.0.1"
 port = 8000
 ```
@@ -129,7 +142,7 @@ taskdog table
 
 **Error: "API mode is required"**
 
-- Set `enabled = true` in config file (see Method A above)
+- Configure host and port in config file (see Method A above)
 - Or set TASKDOG_API_URL environment variable (see Method B above)
 
 ### Starting the Service

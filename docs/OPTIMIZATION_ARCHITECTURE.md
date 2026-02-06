@@ -82,7 +82,7 @@ MonteCarloOptimizationStrategy   # Random sampling
 Strategies can be selected at runtime via `StrategyFactory`:
 
 ```python
-strategy = StrategyFactory.create("greedy", default_start_time=time(9, 0), default_end_time=time(18, 0))
+strategy = StrategyFactory.create("greedy")
 ```
 
 ### Parameter Object Pattern
@@ -95,7 +95,6 @@ class OptimizeParams:
     start_date: datetime
     max_hours_per_day: float
     holiday_checker: IHolidayChecker | None = None
-    current_time: datetime | None = None
     include_all_days: bool = False
 ```
 
@@ -199,8 +198,6 @@ Creates strategy instances by name:
 ```python
 strategy = StrategyFactory.create(
     algorithm_name="greedy",
-    default_start_time=time(9, 0),
-    default_end_time=time(18, 0),
 )
 ```
 
@@ -462,8 +459,7 @@ for task in sorted_tasks:
     while remaining_hours > 0:
         available = calculate_available_hours(
             daily_allocations, date_obj,
-            params.max_hours_per_day, params.current_time,
-            self.default_end_time
+            params.max_hours_per_day
         )
         if available > 0:
             allocated = min(remaining_hours, available)
@@ -474,8 +470,7 @@ for task in sorted_tasks:
     # 3. Set schedule
     set_planned_times(
         task_copy, schedule_start, schedule_end,
-        task_daily_allocations,
-        self.default_start_time, self.default_end_time
+        task_daily_allocations
     )
 ```
 
@@ -521,27 +516,15 @@ def calculate_available_hours(
     daily_allocations: dict[date, float],
     date_obj: date,
     max_hours_per_day: float,
-    current_time: datetime | None,
-    default_end_time: time,
 ) -> float:
     current_allocation = daily_allocations.get(date_obj, 0.0)
-    available_from_max = max_hours_per_day - current_allocation
-
-    # If today, account for remaining hours
-    if current_time and date_obj == current_time.date():
-        current_hour = current_time.hour + current_time.minute / 60.0
-        end_hour = default_end_time.hour + default_end_time.minute / 60.0
-        remaining_hours_today = max(0.0, end_hour - current_hour)
-        return min(available_from_max, remaining_hours_today)
-
-    return available_from_max
+    return max_hours_per_day - current_allocation
 ```
 
 **Handles:**
 
 - Maximum hours per day constraint
 - Already allocated hours
-- Remaining hours for today (if current_time provided)
 
 ### `set_planned_times()`
 
@@ -553,18 +536,10 @@ def set_planned_times(
     schedule_start: datetime,
     schedule_end: datetime,
     task_daily_allocations: dict[date, float],
-    default_start_time: time,
-    default_end_time: time,
 ) -> None:
-    # Set start time to default_start_time (e.g., 9:00 AM)
-    task.planned_start = schedule_start.replace(
-        hour=default_start_time.hour, minute=default_start_time.minute, second=0
-    )
-
-    # Set end time to default_end_time (e.g., 6:00 PM)
-    task.planned_end = schedule_end.replace(
-        hour=default_end_time.hour, minute=default_end_time.minute, second=0
-    )
+    # Set planned start and end dates
+    task.planned_start = schedule_start
+    task.planned_end = schedule_end
 
     # Set daily allocations
     task.set_daily_allocations(task_daily_allocations)
@@ -650,14 +625,12 @@ def _allocate_task(self, task, daily_allocations, params):
 
     available = calculate_available_hours(
         daily_allocations, date_obj,
-        params.max_hours_per_day, params.current_time,
-        self.default_end_time
+        params.max_hours_per_day
     )
 
     # ✅ GOOD: Use helper function
     set_planned_times(
-        task_copy, start, end, allocations,
-        self.default_start_time, self.default_end_time
+        task_copy, start, end, allocations
     )
     return task_copy
 

@@ -143,6 +143,14 @@ taskdog start 1
 taskdog tui
 ```
 
+### Load Demo Data (Optional)
+
+To quickly populate Taskdog with ~50 sample tasks (deadlines, dependencies, tags, notes):
+
+```bash
+docker compose exec taskdog-server python scripts/demo_data.py --no-confirm
+```
+
 ### TUI Keyboard Shortcuts
 
 Once in the TUI (`taskdog tui`):

@@ -158,7 +158,7 @@ Health check endpoint
 
 ```json
 {
-  "status": "healthy"
+  "status": "ok"
 }
 ```
 
@@ -480,7 +480,7 @@ Run schedule optimization
   "start_date": "2025-10-22",
   "max_hours_per_day": 8.0,
   "algorithm": "greedy",
-  "force": false
+  "force_override": false
 }
 ```
 
@@ -489,7 +489,7 @@ Run schedule optimization
 - `algorithm` - Algorithm to use (required)
 - `max_hours_per_day` - Daily hour limit (required)
 - `start_date` - Optimization start date (optional, default: today)
-- `force` - Force re-optimization even if tasks already scheduled (optional, default: true)
+- `force_override` - Whether to override existing schedules for non-fixed tasks (optional, default: true)
 
 **Available algorithms:**
 

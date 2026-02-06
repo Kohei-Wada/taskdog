@@ -24,6 +24,7 @@ https://github.com/user-attachments/assets/47022478-078d-4ad9-ba7d-d1cd4016e105
 - [Features](#features)
 - [Design Philosophy](#design-philosophy)
 - [Quick Start](#quick-start)
+- [Docker](#docker)
 - [Interactive TUI](#interactive-tui)
 - [API Server](#api-server)
 - [Commands](#commands)
@@ -95,6 +96,31 @@ taskdog add "My first task" --priority 10
 taskdog table
 taskdog tui
 ```
+
+## Docker
+
+Run Taskdog with Docker for isolated deployment:
+
+```bash
+# Quick start with Docker Compose
+cp .env.example .env   # Customize settings if needed
+docker compose up -d
+
+# Or build and run manually
+docker build -t taskdog-server .
+docker run -d -p 8000:8000 -v taskdog-data:/data taskdog-server
+```
+
+**Using CLI inside the container:**
+
+```bash
+docker compose exec taskdog-server taskdog table
+docker compose exec taskdog-server taskdog add "New task" -p 100
+```
+
+**API access from host:** `http://localhost:8000/docs`
+
+See [contrib/README.md](contrib/README.md) for detailed deployment options (Docker, systemd, launchd).
 
 ## Interactive TUI
 
