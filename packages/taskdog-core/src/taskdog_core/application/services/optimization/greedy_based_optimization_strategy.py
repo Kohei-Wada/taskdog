@@ -133,7 +133,6 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
                 daily_allocations,
                 date_obj,
                 params.max_hours_per_day,
-                params.current_time,
             )
 
             if available_hours > 0:

@@ -25,22 +25,6 @@ class TestOptimizeScheduleInput:
         assert dto.max_hours_per_day == 8.0
         assert dto.force_override is False
         assert dto.algorithm_name == "greedy"
-        assert dto.current_time is None
-
-    def test_create_with_current_time(self) -> None:
-        """Test creating DTO with current_time specified."""
-        start_date = datetime(2025, 1, 1, 9, 0)
-        current_time = datetime(2025, 1, 1, 10, 30)
-
-        dto = OptimizeScheduleInput(
-            start_date=start_date,
-            max_hours_per_day=8.0,
-            force_override=False,
-            algorithm_name="balanced",
-            current_time=current_time,
-        )
-
-        assert dto.current_time == current_time
 
     def test_create_with_force_override_true(self) -> None:
         """Test creating DTO with force_override=True."""
@@ -169,21 +153,6 @@ class TestOptimizeScheduleInput:
 
         assert dto.start_date.hour == 14
         assert dto.start_date.minute == 30
-
-    def test_current_time_after_start_date(self) -> None:
-        """Test current_time can be after start_date (for same-day start)."""
-        start_date = datetime(2025, 1, 1, 9, 0)
-        current_time = datetime(2025, 1, 1, 15, 30)
-
-        dto = OptimizeScheduleInput(
-            start_date=start_date,
-            max_hours_per_day=8.0,
-            force_override=False,
-            algorithm_name="greedy",
-            current_time=current_time,
-        )
-
-        assert dto.current_time > dto.start_date
 
     def test_fractional_max_hours(self) -> None:
         """Test fractional max_hours_per_day values."""

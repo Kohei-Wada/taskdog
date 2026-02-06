@@ -171,7 +171,6 @@ class TestBalancedOptimizationStrategyWithHolidays:
             start_date=datetime(2025, 12, 31, 9, 0, 0),
             max_hours_per_day=6.0,
             holiday_checker=holiday_checker,
-            current_time=None,
         )
         daily_allocations: dict[date, float] = {}
 
@@ -208,7 +207,6 @@ class TestBalancedOptimizationStrategyWithHolidays:
             start_date=datetime(2025, 12, 31, 9, 0, 0),
             max_hours_per_day=6.0,
             holiday_checker=None,
-            current_time=None,
         )
         daily_allocations: dict[date, float] = {}
 

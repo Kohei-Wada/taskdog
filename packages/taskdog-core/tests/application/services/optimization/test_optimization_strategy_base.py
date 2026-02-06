@@ -24,13 +24,11 @@ class TestOptimizationStrategyHelpers:
         daily_allocations: dict[date, float] = {}
         date_obj = date(2025, 10, 20)
         max_hours_per_day = 8.0
-        current_time = None
 
         available = calculate_available_hours(
             daily_allocations,
             date_obj,
             max_hours_per_day,
-            current_time,
         )
 
         assert available == 8.0
@@ -40,13 +38,11 @@ class TestOptimizationStrategyHelpers:
         daily_allocations = {date(2025, 10, 20): 3.0}
         date_obj = date(2025, 10, 20)
         max_hours_per_day = 8.0
-        current_time = None
 
         available = calculate_available_hours(
             daily_allocations,
             date_obj,
             max_hours_per_day,
-            current_time,
         )
 
         assert available == 5.0  # 8.0 - 3.0
@@ -56,94 +52,14 @@ class TestOptimizationStrategyHelpers:
         daily_allocations = {date(2025, 10, 20): 8.0}
         date_obj = date(2025, 10, 20)
         max_hours_per_day = 8.0
-        current_time = None
 
         available = calculate_available_hours(
             daily_allocations,
             date_obj,
             max_hours_per_day,
-            current_time,
         )
 
         assert available == 0.0
-
-    def test_calculate_available_hours_today_with_remaining_hours(self):
-        """Test available hours for today with remaining work hours."""
-        daily_allocations: dict[date, float] = {}
-        date_obj = date(2025, 10, 20)
-        max_hours_per_day = 8.0
-        # Current time: 2025-10-20 14:00 (2:00 PM)
-        # End hour: 23:59:59
-        # Remaining: ~9.98 hours, but capped by max_hours_per_day = 8.0
-        current_time = datetime(2025, 10, 20, 14, 0, 0)
-
-        available = calculate_available_hours(
-            daily_allocations,
-            date_obj,
-            max_hours_per_day,
-            current_time,
-        )
-
-        assert available == 8.0  # min(8.0, ~9.98)
-
-    def test_calculate_available_hours_today_with_allocation_and_time(self):
-        """Test available hours for today considering both allocation and time."""
-        daily_allocations = {date(2025, 10, 20): 2.0}
-        date_obj = date(2025, 10, 20)
-        max_hours_per_day = 8.0
-        # Current time: 2025-10-20 14:00 (2:00 PM)
-        # End hour: 23:59:59
-        # Available from max: 8.0 - 2.0 = 6.0 hours
-        # Remaining time: ~9.98 hours
-        # Result: min(6.0, ~9.98) = 6.0
-        current_time = datetime(2025, 10, 20, 14, 0, 0)
-
-        available = calculate_available_hours(
-            daily_allocations,
-            date_obj,
-            max_hours_per_day,
-            current_time,
-        )
-
-        assert available == 6.0
-
-    def test_calculate_available_hours_today_past_end_hour(self):
-        """Test available hours for today when current time is very late."""
-        daily_allocations: dict[date, float] = {}
-        date_obj = date(2025, 10, 20)
-        max_hours_per_day = 8.0
-        # Current time: 2025-10-20 23:59 - near end of day
-        # End hour: 23:59:59, remaining: ~0.98 minutes
-        current_time = datetime(2025, 10, 20, 23, 59, 0)
-
-        available = calculate_available_hours(
-            daily_allocations,
-            date_obj,
-            max_hours_per_day,
-            current_time,
-        )
-
-        # Very small remaining time (< 1 minute)
-        assert available < 0.02
-
-    def test_calculate_available_hours_with_minutes(self):
-        """Test available hours calculation with fractional hours (minutes)."""
-        daily_allocations: dict[date, float] = {}
-        date_obj = date(2025, 10, 20)
-        max_hours_per_day = 8.0
-        # Current time: 2025-10-20 14:30 (2:30 PM)
-        # End hour: 23:59:59
-        # Remaining: ~9.49 hours, but capped by max_hours_per_day = 8.0
-        current_time = datetime(2025, 10, 20, 14, 30, 0)
-
-        available = calculate_available_hours(
-            daily_allocations,
-            date_obj,
-            max_hours_per_day,
-            current_time,
-        )
-
-        assert available == 8.0
 
     def test_set_planned_times(self):
         """Test setting planned start, end, and daily allocations on task."""
