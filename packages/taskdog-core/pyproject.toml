@@ -45,6 +45,8 @@ packages = [
     "taskdog_core.application.queries",
     "taskdog_core.application.queries.filters",
     "taskdog_core.application.queries.strategies",
+    "taskdog_core.application.queries.workload",
+    "taskdog_core.application.queries.workload._strategies",
     "taskdog_core.application.sorters",
     "taskdog_core.application.validators",
     "taskdog_core.application.constants",

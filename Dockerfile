@@ -29,6 +29,9 @@ RUN set -e && \
 # Add virtual environment to PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
+# Copy demo scripts
+COPY scripts/ ./scripts/
+
 # Create non-root user and data directory
 RUN useradd -m -u 1000 taskdog \
     && mkdir -p /data \
