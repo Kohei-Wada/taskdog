@@ -40,7 +40,6 @@ def calculate_available_hours(
     daily_allocations: dict[date, float],
     date_obj: date,
     max_hours_per_day: float,
-    current_time: datetime | None,
 ) -> float:
     """Calculate available hours for a specific date.
 
@@ -48,21 +47,12 @@ def calculate_available_hours(
         daily_allocations: Current daily allocations
         date_obj: Date to check
         max_hours_per_day: Maximum work hours per day
-        current_time: Optional current time for today's remaining hours
 
     Returns:
-        Available hours (0.0 if fully allocated or past end time)
+        Available hours (0.0 if fully allocated)
     """
     current_allocation = daily_allocations.get(date_obj, 0.0)
-    available_from_max = max_hours_per_day - current_allocation
-
-    if current_time and date_obj == current_time.date():
-        current_hour = current_time.hour + current_time.minute / 60.0
-        end_hour = SCHEDULE_END_TIME.hour + SCHEDULE_END_TIME.minute / 60.0
-        remaining_hours_today = max(0.0, end_hour - current_hour)
-        return min(available_from_max, remaining_hours_today)
-
-    return available_from_max
+    return max_hours_per_day - current_allocation
 
 
 def set_planned_times(

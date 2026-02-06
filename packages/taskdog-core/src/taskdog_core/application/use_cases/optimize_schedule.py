@@ -123,7 +123,6 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             start_date=input_dto.start_date,
             max_hours_per_day=input_dto.max_hours_per_day,
             holiday_checker=self.holiday_checker,
-            current_time=input_dto.current_time,
             include_all_days=input_dto.include_all_days,
         )
 

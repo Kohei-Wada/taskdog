@@ -109,7 +109,6 @@ class TaskAnalyticsController(BaseTaskController):
             max_hours_per_day=max_hours_per_day,
             force_override=force_override,
             algorithm_name=algorithm,
-            current_time=datetime.now(),
             task_ids=task_ids,
             include_all_days=include_all_days,
         )
