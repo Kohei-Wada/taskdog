@@ -74,7 +74,7 @@ taskdog tui
 cp .env.example .env   # Customize settings if needed
 docker compose up -d
 docker compose exec -it taskdog-server scripts/demo_data.py
-docker compose exec -it taskdog-server tui
+docker compose exec -it taskdog-server taskdog tui
 docker compose down -v  # Stop and delete all data
 ```
 
