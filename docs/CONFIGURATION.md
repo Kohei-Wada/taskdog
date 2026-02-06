@@ -11,7 +11,6 @@ Complete guide to configuring Taskdog.
 - [Configuration Sections](#configuration-sections)
   - [API Settings](#api-settings-required)
   - [UI Settings](#ui-settings)
-  - [Time Settings](#time-settings)
   - [Region Settings](#region-settings)
   - [Storage Settings](#storage-settings)
 - [Data Storage](#data-storage)
@@ -120,23 +119,6 @@ theme = "textual-dark"        # TUI theme (default: "textual-dark")
   - `gruvbox` - Gruvbox color scheme
   - `solarized-light` - Solarized Light color scheme
 
-### Time Settings
-
-The `[time]` section configures business hours.
-
-```toml
-[time]
-default_start_time = "09:00"   # Business day start time (default: "09:00")
-default_end_time = "18:00"     # Business day end time (default: "18:00")
-```
-
-**Fields:**
-
-- `default_start_time` (string) - Business day start time in "HH:MM" format. Used when scheduling tasks without specific times.
-- `default_end_time` (string) - Business day end time in "HH:MM" format. Used for workload calculations.
-
-**Example:** With `default_start_time = "09:30"`, scheduling a task for "2025-10-22" will use "2025-10-22 09:30:00".
-
 ### Region Settings
 
 The `[region]` section configures regional settings for holiday checking.
@@ -211,8 +193,6 @@ These variables override core configuration (core.toml):
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `TASKDOG_TIME_DEFAULT_START_TIME` | string | `"09:00"` | Business day start time (HH:MM format) |
-| `TASKDOG_TIME_DEFAULT_END_TIME` | string | `"18:00"` | Business day end time (HH:MM format) |
 | `TASKDOG_REGION_COUNTRY` | string | `None` | ISO 3166-1 alpha-2 country code |
 | `TASKDOG_STORAGE_BACKEND` | string | `"sqlite"` | Storage backend type |
 | `TASKDOG_STORAGE_DATABASE_URL` | string | XDG path | Database file location |
@@ -296,11 +276,6 @@ Complete configuration with all options:
 [ui]
 theme = "tokyo-night"
 
-# Time Settings
-[time]
-default_start_time = "09:00"
-default_end_time = "18:00"
-
 # Region Settings
 [region]
 country = "JP"
@@ -379,13 +354,9 @@ enabled = false
 
 ### Work Schedule Configuration
 
-Configure for strict 9-18 schedule with US holidays:
+Configure for US holidays and optimization settings:
 
 ```toml
-[time]
-default_start_time = "09:00"
-default_end_time = "18:00"
-
 [region]
 country = "US"  # Avoid US holidays
 ```
@@ -469,8 +440,7 @@ backend = "sqlite"
 4. **Start with defaults** - Only configure what you need to change
 5. **Document custom settings** - Add comments explaining why you changed defaults
 6. **Test configuration changes** - Run `taskdog table` after config changes to verify
-7. **Use consistent time settings** - Match `default_start_time` with your actual work schedule
-8. **Set region for accurate holidays** - Helps optimizer avoid scheduling on holidays
+7. **Set region for accurate holidays** - Helps optimizer avoid scheduling on holidays
 
 ## See Also
 

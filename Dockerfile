@@ -2,7 +2,7 @@
 # https://github.com/Kohei-Wada/taskdog
 #
 # Build:
-#   docker build -f contrib/docker/Dockerfile -t taskdog-server .
+#   docker build -t taskdog-server .
 #
 # Run:
 #   docker run -d -p 8000:8000 -v taskdog-data:/data taskdog-server
@@ -28,6 +28,9 @@ RUN set -e && \
 
 # Add virtual environment to PATH
 ENV PATH="/app/.venv/bin:$PATH"
+
+# Copy demo scripts
+COPY scripts/ ./scripts/
 
 # Create non-root user and data directory
 RUN useradd -m -u 1000 taskdog \

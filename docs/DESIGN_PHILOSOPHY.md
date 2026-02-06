@@ -515,7 +515,7 @@ pip install taskdog taskdog-server
 
 - Python packages (taskdog-core, taskdog-server, taskdog-ui)
 - systemd/launchd service files for auto-start
-- **Basic Dockerfile** for containerized deployment (see `contrib/docker/`)
+- **Basic Dockerfile** for containerized deployment (see root `Dockerfile`)
 - Configuration examples
 
 ### What This Repository Does NOT Include
