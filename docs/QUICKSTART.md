@@ -78,14 +78,15 @@ EOF
 
 ```bash
 # Build and run the container
-docker build -f contrib/docker/Dockerfile -t taskdog-server .
+docker build -t taskdog-server .
 docker run -d --name taskdog-server -p 8000:8000 -v taskdog-data:/data taskdog-server
+
+# Or use Docker Compose
+docker compose up -d
 
 # Verify it's running
 curl http://localhost:8000/health
 ```
-
-See [contrib/docker/README.md](../contrib/docker/README.md) for more details.
 
 ### Option B: Manual Start (Quick Test)
 

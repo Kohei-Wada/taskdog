@@ -2,7 +2,7 @@
 # https://github.com/Kohei-Wada/taskdog
 #
 # Build:
-#   docker build -f contrib/docker/Dockerfile -t taskdog-server .
+#   docker build -t taskdog-server .
 #
 # Run:
 #   docker run -d -p 8000:8000 -v taskdog-data:/data taskdog-server

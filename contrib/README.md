@@ -6,9 +6,10 @@ This directory contains deployment configurations and infrastructure files for r
 
 | Directory | Description | Platform |
 |-----------|-------------|----------|
-| [docker/](docker/) | Docker container setup | Any (Docker) |
 | [systemd/](systemd/) | Systemd user service | Linux |
 | [launchd/](launchd/) | Launchd property list | macOS |
+
+Docker files (`Dockerfile`, `docker-compose.yaml`, `.env.example`) are located at the repository root for convenience.
 
 ## Quick Start
 
@@ -17,12 +18,15 @@ Choose your preferred deployment method:
 ### Docker (Recommended for isolation)
 
 ```bash
-# Build and run
-docker build -f contrib/docker/Dockerfile -t taskdog-server .
+# Using Docker Compose (from repository root)
+docker compose up -d
+
+# Or build and run manually
+docker build -t taskdog-server .
 docker run -d -p 8000:8000 -v taskdog-data:/data taskdog-server
 ```
 
-See [docker/README.md](docker/README.md) for details.
+See the root [Dockerfile](../Dockerfile) and [docker-compose.yaml](../docker-compose.yaml) for details.
 
 ### Systemd (Linux)
 
