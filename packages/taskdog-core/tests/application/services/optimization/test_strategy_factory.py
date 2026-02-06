@@ -1,7 +1,5 @@
 """Tests for StrategyFactory."""
 
-from datetime import time
-
 import pytest
 
 from taskdog_core.application.services.optimization.backward_optimization_strategy import (
@@ -66,13 +64,13 @@ class TestStrategyFactory:
     )
     def test_create_all_strategy_types(self, algo_name, expected_class):
         """Test create returns correct strategy type for each algorithm."""
-        strategy = StrategyFactory.create(algo_name, time(9, 0), time(18, 0))
+        strategy = StrategyFactory.create(algo_name)
         assert isinstance(strategy, expected_class)
 
     def test_create_with_unknown_algorithm_raises_error(self):
         """Test create raises ValueError for unknown algorithm."""
         with pytest.raises(ValueError) as exc_info:
-            StrategyFactory.create("unknown_algo", time(9, 0), time(18, 0))
+            StrategyFactory.create("unknown_algo")
 
         error_msg = str(exc_info.value)
         assert "Unknown optimization algorithm" in error_msg
@@ -81,10 +79,7 @@ class TestStrategyFactory:
 
     def test_create_defaults_to_greedy(self):
         """Test create uses 'greedy' as default algorithm when not specified."""
-        # When algorithm_name defaults to "greedy"
-        strategy = StrategyFactory.create(
-            default_start_time=time(9, 0), default_end_time=time(18, 0)
-        )
+        strategy = StrategyFactory.create()
 
         assert isinstance(strategy, GreedyOptimizationStrategy)
 
@@ -123,11 +118,11 @@ class TestStrategyFactory:
         metadata = StrategyFactory.get_algorithm_metadata()
 
         for algo_id, _, _ in metadata:
-            strategy = StrategyFactory.create(algo_id, time(9, 0), time(18, 0))
+            strategy = StrategyFactory.create(algo_id)
             assert strategy is not None
 
     @pytest.mark.parametrize("case_variant", ["Greedy", "GREEDY"])
     def test_create_is_case_sensitive(self, case_variant):
         """Test that algorithm names are case-sensitive."""
         with pytest.raises(ValueError):
-            StrategyFactory.create(case_variant, time(9, 0), time(18, 0))
+            StrategyFactory.create(case_variant)

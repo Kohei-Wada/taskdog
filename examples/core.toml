@@ -3,37 +3,12 @@
 # Copy this file to ~/.config/taskdog/core.toml (or $XDG_CONFIG_HOME/taskdog/core.toml)
 # to customize business logic defaults.
 #
-# This config is for CORE BUSINESS LOGIC (work hours, optimization, storage).
+# This config is for CORE BUSINESS LOGIC (region, storage).
 # For CLI/TUI infrastructure settings (API connection, input defaults), see cli.toml.
 # For server-specific settings (authentication), see server.toml.
 #
 # Note: Server host/port are configured via CLI arguments (taskdog-server --host --port),
 # not in this config file.
-
-# =============================================================================
-# Time Settings (Work Hours for Optimization)
-# =============================================================================
-#
-# Work hours used by the schedule optimization algorithm.
-# These define the daily working time window for task scheduling.
-
-[time]
-# Work day start time (default: "09:30")
-# Format: "HH:MM" (24-hour format)
-# Used by optimizer to determine when tasks can be scheduled
-work_hours_start = "09:30"
-
-# Work day end time (default: "18:30")
-# Format: "HH:MM" (24-hour format)
-# Used by optimizer to determine when tasks should end
-work_hours_end = "18:30"
-
-# Examples:
-# work_hours_start = "08:00"  # Start at 8:00 AM
-# work_hours_end = "17:00"    # End at 5:00 PM
-#
-# Note: UI input completion defaults (deadline_time, planned_start_time, etc.)
-# are configured separately in cli.toml [input_defaults] section.
 
 # =============================================================================
 # Region Settings
@@ -76,8 +51,6 @@ backend = "sqlite"
 #
 # Environment variables override settings in this file:
 #
-# - TASKDOG_TIME_WORK_HOURS_START: Work day start time
-# - TASKDOG_TIME_WORK_HOURS_END: Work day end time
 # - TASKDOG_REGION_COUNTRY: Country code for holidays
 # - TASKDOG_STORAGE_BACKEND: Storage backend type
 # - TASKDOG_STORAGE_DATABASE_URL: Database file path

@@ -30,8 +30,8 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         # Should be scheduled on Friday (closest to deadline)
         self.assert_task_scheduled(
             task,
-            expected_start=datetime(2025, 10, 24, 9, 0, 0),
-            expected_end=datetime(2025, 10, 24, 18, 0, 0),
+            expected_start=datetime(2025, 10, 24, 0, 0, 0),
+            expected_end=datetime(2025, 10, 24, 23, 59, 59),
         )
 
         # Re-fetch task from repository to verify allocations
@@ -58,8 +58,8 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         # Should start on Thursday, end on Friday
         self.assert_task_scheduled(
             task,
-            expected_start=datetime(2025, 10, 23, 9, 0, 0),
-            expected_end=datetime(2025, 10, 24, 18, 0, 0),
+            expected_start=datetime(2025, 10, 23, 0, 0, 0),
+            expected_end=datetime(2025, 10, 24, 23, 59, 59),
         )
 
         # 6h on Thursday, 6h on Friday
@@ -130,12 +130,12 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         # Task 1 (further deadline) is processed first, scheduled on Friday
         updated_task1 = self.repository.get_by_id(task1.id)
         assert updated_task1 is not None
-        assert updated_task1.planned_start == datetime(2025, 10, 24, 9, 0, 0)
+        assert updated_task1.planned_start == datetime(2025, 10, 24, 0, 0, 0)
 
         # Task 2 (closer deadline) is processed second, scheduled on Wednesday
         updated_task2 = self.repository.get_by_id(task2.id)
         assert updated_task2 is not None
-        assert updated_task2.planned_start == datetime(2025, 10, 22, 9, 0, 0)
+        assert updated_task2.planned_start == datetime(2025, 10, 22, 0, 0, 0)
 
     def test_backward_fails_when_deadline_before_start(self):
         """Test that backward strategy fails when deadline is before start date."""
@@ -169,8 +169,8 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         # Should be scheduled on Monday (deadline day)
         self.assert_task_scheduled(
             task,
-            expected_start=datetime(2025, 10, 27, 9, 0, 0),
-            expected_end=datetime(2025, 10, 27, 18, 0, 0),
+            expected_start=datetime(2025, 10, 27, 0, 0, 0),
+            expected_end=datetime(2025, 10, 27, 23, 59, 59),
         )
 
         # Only Monday in allocations (no weekend days)

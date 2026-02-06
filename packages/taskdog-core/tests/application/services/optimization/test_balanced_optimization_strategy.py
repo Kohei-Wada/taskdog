@@ -1,6 +1,6 @@
 """Tests for BalancedOptimizationStrategy."""
 
-from datetime import date, datetime, time
+from datetime import date, datetime
 
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.services.optimization.balanced_optimization_strategy import (
@@ -36,8 +36,8 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         # Should start Monday, end Friday
         self.assert_task_scheduled(
             task,
-            expected_start=datetime(2025, 10, 20, 9, 0, 0),
-            expected_end=datetime(2025, 10, 24, 18, 0, 0),
+            expected_start=datetime(2025, 10, 20, 0, 0, 0),
+            expected_end=datetime(2025, 10, 24, 23, 59, 59),
         )
 
         # Check daily allocations: 10h / 5 days = 2h/day
@@ -175,9 +175,7 @@ class TestBalancedOptimizationStrategyWithHolidays:
         )
         daily_allocations: dict[date, float] = {}
 
-        strategy = BalancedOptimizationStrategy(
-            default_start_time=time(9, 0), default_end_time=time(18, 0)
-        )
+        strategy = BalancedOptimizationStrategy()
         result = strategy._allocate_task(task, daily_allocations, params)
 
         assert result is not None
@@ -214,9 +212,7 @@ class TestBalancedOptimizationStrategyWithHolidays:
         )
         daily_allocations: dict[date, float] = {}
 
-        strategy = BalancedOptimizationStrategy(
-            default_start_time=time(9, 0), default_end_time=time(18, 0)
-        )
+        strategy = BalancedOptimizationStrategy()
         result = strategy._allocate_task(task, daily_allocations, params)
 
         assert result is not None

@@ -1,6 +1,5 @@
 """Factory for creating optimization strategy instances."""
 
-from datetime import time
 from typing import ClassVar
 
 from taskdog_core.application.services.optimization.backward_optimization_strategy import (
@@ -33,10 +32,6 @@ from taskdog_core.application.services.optimization.priority_first_optimization_
 from taskdog_core.application.services.optimization.round_robin_optimization_strategy import (
     RoundRobinOptimizationStrategy,
 )
-from taskdog_core.shared.constants.config_defaults import (
-    WORK_HOURS_END,
-    WORK_HOURS_START,
-)
 
 
 class StrategyFactory:
@@ -63,15 +58,11 @@ class StrategyFactory:
     def create(
         cls,
         algorithm_name: str = "greedy",
-        default_start_time: time = WORK_HOURS_START,
-        default_end_time: time = WORK_HOURS_END,
     ) -> OptimizationStrategy:
         """Create an optimization strategy instance.
 
         Args:
             algorithm_name: Name of the algorithm to use (default: "greedy")
-            default_start_time: Default start time for tasks (e.g., time(9, 0))
-            default_end_time: Default end time for tasks (e.g., time(18, 0))
 
         Returns:
             Instance of the requested optimization strategy
@@ -87,8 +78,7 @@ class StrategyFactory:
             )
 
         strategy_constructor = cls._strategies[algorithm_name]
-        # All concrete subclasses have __init__(default_start_time, default_end_time)
-        return strategy_constructor(default_start_time, default_end_time)  # type: ignore[call-arg]
+        return strategy_constructor()
 
     @classmethod
     def get_algorithm_metadata(cls) -> list[tuple[str, str, str]]:

@@ -40,8 +40,8 @@ class TestEarliestDeadlineOptimizationStrategy(BaseOptimizationStrategyTest):
         updated_task2 = self.repository.get_by_id(task2.id)
         assert updated_task1 is not None and updated_task2 is not None
 
-        assert updated_task1.planned_start == datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        assert updated_task2.planned_start == datetime(2025, 10, 21, 9, 0, 0)  # Tuesday
+        assert updated_task1.planned_start == datetime(2025, 10, 20, 0, 0, 0)  # Monday
+        assert updated_task2.planned_start == datetime(2025, 10, 21, 0, 0, 0)  # Tuesday
 
     def test_earliest_deadline_handles_no_deadline(self):
         """Test that EDF schedules tasks without deadlines last."""
@@ -67,8 +67,8 @@ class TestEarliestDeadlineOptimizationStrategy(BaseOptimizationStrategyTest):
         updated_task2 = self.repository.get_by_id(task2.id)
         assert updated_task1 is not None and updated_task2 is not None
 
-        assert updated_task1.planned_start == datetime(2025, 10, 20, 9, 0, 0)  # Monday
-        assert updated_task2.planned_start == datetime(2025, 10, 21, 9, 0, 0)  # Tuesday
+        assert updated_task1.planned_start == datetime(2025, 10, 20, 0, 0, 0)  # Monday
+        assert updated_task2.planned_start == datetime(2025, 10, 21, 0, 0, 0)  # Tuesday
 
     def test_earliest_deadline_respects_deadline_constraints(self):
         """Test that EDF fails tasks that cannot meet their deadlines."""
@@ -125,11 +125,11 @@ class TestEarliestDeadlineOptimizationStrategy(BaseOptimizationStrategyTest):
         )
 
         # Earliest deadline should be scheduled first
-        assert updated_low.planned_start == datetime(2025, 10, 20, 9, 0, 0)
+        assert updated_low.planned_start == datetime(2025, 10, 20, 0, 0, 0)
         # Middle deadline should be scheduled second
-        assert updated_medium.planned_start == datetime(2025, 10, 21, 9, 0, 0)
+        assert updated_medium.planned_start == datetime(2025, 10, 21, 0, 0, 0)
         # Latest deadline should be scheduled last
-        assert updated_high.planned_start == datetime(2025, 10, 22, 9, 0, 0)
+        assert updated_high.planned_start == datetime(2025, 10, 22, 0, 0, 0)
 
     def test_earliest_deadline_uses_greedy_allocation(self):
         """Test that EDF uses greedy forward allocation strategy."""

@@ -1,6 +1,6 @@
 """Base class for greedy-based optimization strategies."""
 
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, timedelta
 
 from taskdog_core.application.dto.optimize_params import OptimizeParams
 from taskdog_core.application.dto.optimize_result import OptimizeResult
@@ -32,17 +32,6 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
 
     DISPLAY_NAME = "Greedy"
     DESCRIPTION = "Front-loads tasks"
-
-    def __init__(self, default_start_time: time, default_end_time: time):
-        """Initialize strategy with configuration.
-
-        Args:
-            default_start_time: Default start time for tasks (e.g., time(9, 0))
-            default_end_time: Default end time for tasks (e.g., time(18, 0))
-        """
-        super().__init__()
-        self.default_start_time = default_start_time
-        self.default_end_time = default_end_time
 
     def optimize_tasks(
         self,
@@ -145,7 +134,6 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
                 date_obj,
                 params.max_hours_per_day,
                 params.current_time,
-                self.default_end_time,
             )
 
             if available_hours > 0:
@@ -168,8 +156,6 @@ class GreedyBasedOptimizationStrategy(OptimizationStrategy):
                 schedule_start,
                 schedule_end,
                 task_daily_allocations,
-                self.default_start_time,
-                self.default_end_time,
             )
             return task_copy
 

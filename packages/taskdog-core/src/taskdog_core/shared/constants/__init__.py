@@ -13,8 +13,6 @@ from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_PLANNED_END_TIME,
     DEFAULT_PLANNED_START_TIME,
     MAX_ESTIMATED_DURATION_HOURS,
-    WORK_HOURS_END,
-    WORK_HOURS_START,
 )
 from taskdog_core.shared.constants.file_management import CONFIG_FILE_NAME
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
@@ -64,7 +62,5 @@ __all__ = [
     "WEEKDAY_THRESHOLD",
     "WORKLOAD_COMFORTABLE_HOURS",
     "WORKLOAD_MODERATE_HOURS",
-    "WORK_HOURS_END",
-    "WORK_HOURS_START",
     "StatusVerbs",
 ]

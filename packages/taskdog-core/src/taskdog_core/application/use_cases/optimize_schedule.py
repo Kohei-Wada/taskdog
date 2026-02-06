@@ -1,6 +1,6 @@
 """Use case for optimizing task schedules."""
 
-from datetime import datetime, time
+from datetime import datetime
 
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.application.dto.optimize_params import OptimizeParams
@@ -33,21 +33,15 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
     def __init__(
         self,
         repository: TaskRepository,
-        default_start_time: time,
-        default_end_time: time,
         holiday_checker: IHolidayChecker | None = None,
     ):
         """Initialize use case.
 
         Args:
             repository: Task repository for data access
-            default_start_time: Default start time for tasks (e.g., time(9, 0))
-            default_end_time: Default end time for tasks (e.g., time(18, 0))
             holiday_checker: Holiday checker for workday validation (optional)
         """
         self.repository = repository
-        self.default_start_time = default_start_time
-        self.default_end_time = default_end_time
         self.summary_builder = OptimizationSummaryBuilder(repository)
         self.holiday_checker = holiday_checker
 
@@ -122,9 +116,7 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
         )
 
         # Get optimization strategy
-        strategy = StrategyFactory.create(
-            input_dto.algorithm_name, self.default_start_time, self.default_end_time
-        )
+        strategy = StrategyFactory.create(input_dto.algorithm_name)
 
         # Create OptimizeParams from input_dto
         params = OptimizeParams(

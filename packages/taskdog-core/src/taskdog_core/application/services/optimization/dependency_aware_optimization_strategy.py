@@ -1,6 +1,6 @@
 """Dependency-aware optimization strategy implementation using Critical Path Method."""
 
-from datetime import datetime, time
+from datetime import datetime
 
 from taskdog_core.application.services.optimization.greedy_based_optimization_strategy import (
     GreedyBasedOptimizationStrategy,
@@ -23,9 +23,6 @@ class DependencyAwareOptimizationStrategy(GreedyBasedOptimizationStrategy):
 
     DISPLAY_NAME = "Dependency Aware"
     DESCRIPTION = "Critical Path Method"
-
-    def __init__(self, default_start_time: time, default_end_time: time):
-        super().__init__(default_start_time, default_end_time)
 
     def _sort_tasks(self, tasks: list[Task], start_date: datetime) -> list[Task]:
         """Sort tasks using Critical Path Method (CPM)."""

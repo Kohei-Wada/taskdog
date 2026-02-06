@@ -30,8 +30,8 @@ class TestGreedyOptimizationStrategy(BaseOptimizationStrategyTest):
         # Should start on Monday, end on Tuesday (12h / 6h per day = 2 days)
         self.assert_task_scheduled(
             task,
-            expected_start=datetime(2025, 10, 20, 9, 0, 0),
-            expected_end=datetime(2025, 10, 21, 18, 0, 0),
+            expected_start=datetime(2025, 10, 20, 0, 0, 0),
+            expected_end=datetime(2025, 10, 21, 23, 59, 59),
         )
 
         # Check daily allocations: greedy fills each day to max
@@ -85,8 +85,8 @@ class TestGreedyOptimizationStrategy(BaseOptimizationStrategyTest):
         # Should start Friday, end Monday (skipping Saturday/Sunday)
         self.assert_task_scheduled(
             task,
-            expected_start=datetime(2025, 10, 24, 9, 0, 0),
-            expected_end=datetime(2025, 10, 27, 18, 0, 0),
+            expected_start=datetime(2025, 10, 24, 0, 0, 0),
+            expected_end=datetime(2025, 10, 27, 23, 59, 59),
         )
 
         # Verify no weekend allocations
