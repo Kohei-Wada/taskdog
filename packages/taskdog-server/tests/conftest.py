@@ -266,6 +266,7 @@ def app(
         notes_router,
         relationships_router,
         tasks_router,
+        websocket_router,
     )
 
     test_app.include_router(tasks_router, prefix="/api/v1/tasks", tags=["tasks"])
@@ -278,6 +279,7 @@ def app(
     test_app.include_router(notes_router, prefix="/api/v1/tasks", tags=["notes"])
     test_app.include_router(analytics_router, prefix="/api/v1", tags=["analytics"])
     test_app.include_router(audit_router, prefix="/api/v1/audit-logs", tags=["audit"])
+    test_app.include_router(websocket_router, tags=["websocket"])
 
     return test_app
 

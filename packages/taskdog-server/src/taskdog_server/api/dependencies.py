@@ -20,6 +20,9 @@ from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.domain.services.time_provider import ITimeProvider
 from taskdog_core.infrastructure.holiday_checker import HolidayChecker
+from taskdog_core.infrastructure.persistence.database.engine_factory import (
+    create_sqlite_engine,
+)
 from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (
     SqliteAuditLogRepository,
 )
@@ -76,8 +79,11 @@ def initialize_api_context(
         db_file = data_dir / "tasks.db"
         db_url = f"sqlite:///{db_file}"
 
-    # Initialize notes repository with database backend
-    notes_repository = SqliteNotesRepository(db_url, time_provider)
+    # Create a single shared engine for all repositories
+    engine = create_sqlite_engine(db_url)
+
+    # Initialize notes repository with database backend (shared engine)
+    notes_repository = SqliteNotesRepository(db_url, time_provider, engine=engine)
 
     # Auto-migrate notes from filesystem to database (idempotent)
     notes_dir = XDGDirectories.get_data_home(create=False) / "notes"
@@ -95,11 +101,11 @@ def initialize_api_context(
         with suppress(ImportError, NotImplementedError):
             holiday_checker = HolidayChecker(config.region.country)
 
-    # Initialize repository using factory based on storage config
-    repository = RepositoryFactory.create(config.storage)
+    # Initialize repository using factory based on storage config (shared engine)
+    repository = RepositoryFactory.create(config.storage, engine=engine)
 
-    # Initialize audit log repository (shares the same database)
-    audit_log_repository = SqliteAuditLogRepository(db_url)
+    # Initialize audit log repository (shared engine)
+    audit_log_repository = SqliteAuditLogRepository(db_url, engine=engine)
 
     # Initialize loggers for each controller
     query_logger = StandardLogger("taskdog_core.controllers.query_controller")
