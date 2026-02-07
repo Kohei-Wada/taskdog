@@ -615,7 +615,13 @@ class TestTaskLifecycleTools:
         )
 
         client.fix_actual_times.assert_called_once_with(
-            1, start_time, end_time, False, False
+            task_id=1,
+            actual_start=start_time,
+            actual_end=end_time,
+            actual_duration=None,
+            clear_start=False,
+            clear_end=False,
+            clear_duration=False,
         )
         assert result["id"] == 1
         assert result["actual_start"] == "2025-12-13T09:00:00"
@@ -643,7 +649,15 @@ class TestTaskLifecycleTools:
         fix_fn = mcp._tool_manager._tools["fix_actual_times"].fn
         result = fix_fn(task_id=1, clear_start=True, clear_end=True)
 
-        client.fix_actual_times.assert_called_once_with(1, None, None, True, True)
+        client.fix_actual_times.assert_called_once_with(
+            task_id=1,
+            actual_start=None,
+            actual_end=None,
+            actual_duration=None,
+            clear_start=True,
+            clear_end=True,
+            clear_duration=False,
+        )
         assert result["actual_start"] is None
         assert result["actual_end"] is None
         assert result["actual_duration_hours"] is None
@@ -661,6 +675,90 @@ class TestTaskLifecycleTools:
 
         with pytest.raises(ValueError, match="Invalid datetime format"):
             fix_fn(task_id=1, actual_start="invalid-date")
+
+    def test_fix_actual_times_with_duration(self) -> None:
+        """Test fix_actual_times with actual_duration parameter."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_lifecycle
+
+        client = create_mock_client()
+        fixed_task = create_mock_task_operation_output(
+            task_id=1, name="Fixed Task", status=TaskStatus.COMPLETED
+        )
+        fixed_task.actual_start = None
+        fixed_task.actual_end = None
+        fixed_task.actual_duration_hours = 2.5
+        client.fix_actual_times.return_value = fixed_task
+
+        mcp = FastMCP("test")
+        task_lifecycle.register_tools(mcp, client)
+
+        fix_fn = mcp._tool_manager._tools["fix_actual_times"].fn
+        result = fix_fn(task_id=1, actual_duration=2.5)
+
+        client.fix_actual_times.assert_called_once_with(
+            task_id=1,
+            actual_start=None,
+            actual_end=None,
+            actual_duration=2.5,
+            clear_start=False,
+            clear_end=False,
+            clear_duration=False,
+        )
+        assert result["actual_duration_hours"] == 2.5
+
+    def test_fix_actual_times_with_clear_duration(self) -> None:
+        """Test fix_actual_times with clear_duration flag."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_lifecycle
+
+        client = create_mock_client()
+        fixed_task = create_mock_task_operation_output(
+            task_id=1, name="Fixed Task", status=TaskStatus.COMPLETED
+        )
+        fixed_task.actual_start = None
+        fixed_task.actual_end = None
+        fixed_task.actual_duration_hours = None
+        client.fix_actual_times.return_value = fixed_task
+
+        mcp = FastMCP("test")
+        task_lifecycle.register_tools(mcp, client)
+
+        fix_fn = mcp._tool_manager._tools["fix_actual_times"].fn
+        result = fix_fn(task_id=1, clear_duration=True)
+
+        client.fix_actual_times.assert_called_once_with(
+            task_id=1,
+            actual_start=None,
+            actual_end=None,
+            actual_duration=None,
+            clear_start=False,
+            clear_end=False,
+            clear_duration=True,
+        )
+        assert result["actual_duration_hours"] is None
+
+    @pytest.mark.parametrize(
+        "invalid_duration",
+        [
+            pytest.param(0, id="zero"),
+            pytest.param(-1.0, id="negative"),
+            pytest.param(-0.5, id="negative_float"),
+        ],
+    )
+    def test_fix_actual_times_invalid_duration(self, invalid_duration: float) -> None:
+        """Test fix_actual_times raises ValueError for invalid duration."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_lifecycle
+
+        client = create_mock_client()
+        mcp = FastMCP("test")
+        task_lifecycle.register_tools(mcp, client)
+
+        fix_fn = mcp._tool_manager._tools["fix_actual_times"].fn
+
+        with pytest.raises(ValueError, match="actual_duration must be greater than 0"):
+            fix_fn(task_id=1, actual_duration=invalid_duration)
 
 
 class TestTaskQueryTools:

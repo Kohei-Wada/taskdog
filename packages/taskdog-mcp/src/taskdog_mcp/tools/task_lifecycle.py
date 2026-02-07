@@ -132,8 +132,10 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         task_id: int,
         actual_start: str | None = None,
         actual_end: str | None = None,
+        actual_duration: float | None = None,
         clear_start: bool = False,
         clear_end: bool = False,
+        clear_duration: bool = False,
     ) -> dict[str, Any]:
         """Fix actual start/end timestamps for a task.
 
@@ -143,8 +145,10 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             task_id: ID of the task to fix
             actual_start: New actual start in ISO format (e.g., '2025-12-13T09:00:00')
             actual_end: New actual end in ISO format (e.g., '2025-12-13T17:00:00')
+            actual_duration: Explicit duration in hours (e.g., 0.5 = 30min, 1.5 = 1h30m)
             clear_start: Clear actual_start timestamp
             clear_end: Clear actual_end timestamp
+            clear_duration: Clear actual_duration (use calculated value)
 
         Returns:
             Updated task data with new timestamps
@@ -155,8 +159,17 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         except ValueError as e:
             raise ValueError(f"Invalid datetime format: {e}") from e
 
+        if actual_duration is not None and actual_duration <= 0:
+            raise ValueError("actual_duration must be greater than 0")
+
         result = client.fix_actual_times(
-            task_id, start_dt, end_dt, clear_start, clear_end
+            task_id=task_id,
+            actual_start=start_dt,
+            actual_end=end_dt,
+            actual_duration=actual_duration,
+            clear_start=clear_start,
+            clear_end=clear_end,
+            clear_duration=clear_duration,
         )
 
         return {
