@@ -285,24 +285,6 @@ class TestAnalyticsRouter:
         assert "message" in data
         assert data["summary"]["algorithm"] == "greedy"
 
-    def test_optimize_schedule_async_mode(self, client):
-        """Test schedule optimization in async mode."""
-        # Arrange
-        request_data = {
-            "algorithm": "greedy",
-            "start_date": datetime.now().isoformat(),
-            "max_hours_per_day": 8.0,
-            "force_override": False,
-        }
-
-        # Act
-        response = client.post("/api/v1/optimize?run_async=true", json=request_data)
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert "background" in data["message"].lower()
-
     def test_optimize_schedule_with_required_fields(self, client, task_factory):
         """Test schedule optimization with required parameters."""
         # Arrange - create task

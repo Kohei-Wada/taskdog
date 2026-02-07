@@ -75,23 +75,6 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
 
         return TaskOperationResponse.from_dto(result)
 
-    endpoint.__name__ = f"{op.name}_task"
-    endpoint.__doc__ = f"""{op.description} (change status and update timestamps).
-
-    Args:
-        task_id: Task ID
-        controller: Lifecycle controller dependency
-        broadcaster: Event broadcaster dependency
-        audit_controller: Audit log controller dependency
-        client_name: Authenticated client name (for broadcast payload)
-
-    Returns:
-        Updated task data with {op.returns}
-
-    Raises:
-        HTTPException: 404 if task not found, 400 if validation fails
-    """
-
 
 # Generate all lifecycle endpoints
 for _op in OPERATIONS:

@@ -13,8 +13,7 @@ class OptimizeParams:
     """Immutable parameters for optimization strategies.
 
     This dataclass encapsulates all input parameters needed for task scheduling
-    optimization. Unlike AllocationContext, this contains only input parameters,
-    not accumulated state.
+    optimization. Contains only input parameters, not accumulated state.
 
     Attributes:
         start_date: Starting date for optimization

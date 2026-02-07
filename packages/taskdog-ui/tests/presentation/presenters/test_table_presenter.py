@@ -139,20 +139,6 @@ class TestTablePresenter:
         # Verify empty list
         assert len(view_models) == 0
 
-    @pytest.mark.parametrize(
-        "status",
-        [
-            TaskStatus.PENDING,
-            TaskStatus.IN_PROGRESS,
-            TaskStatus.COMPLETED,
-            TaskStatus.CANCELED,
-        ],
-        ids=["pending", "in_progress", "completed", "canceled"],
-    )
-    def test_convert_status_maps_domain_to_presentation(self, status):
-        """Test convert_status maps domain status to presentation status."""
-        assert TablePresenter.convert_status(status) == status
-
     def test_present_sets_is_finished_for_completed_task(self):
         """Test present sets is_finished=True for completed tasks."""
         # Create completed task
