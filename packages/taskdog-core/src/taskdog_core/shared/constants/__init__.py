@@ -34,7 +34,6 @@ DEFAULT_SCHEDULE_DAYS = 13  # Calendar days for ~2 weeks (10 weekdays)
 
 # === Sorting: Sentinel Values ===
 SORT_SENTINEL_FUTURE = datetime(9999, 12, 31, 23, 59, 59)
-SORT_SENTINEL_PAST = datetime(1, 1, 1, 0, 0, 0)
 
 # === Workload: Daily Hour Thresholds ===
 WORKLOAD_COMFORTABLE_HOURS = 6.0  # Green zone: comfortable daily load
@@ -57,7 +56,6 @@ __all__ = [
     "MIN_PRIORITY_EXCLUSIVE",
     "SATURDAY",
     "SORT_SENTINEL_FUTURE",
-    "SORT_SENTINEL_PAST",
     "SUNDAY",
     "WEEKDAY_THRESHOLD",
     "WORKLOAD_COMFORTABLE_HOURS",

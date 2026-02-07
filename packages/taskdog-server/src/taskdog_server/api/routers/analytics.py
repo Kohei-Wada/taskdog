@@ -1,6 +1,5 @@
 """Analytics endpoints (statistics, optimization, gantt chart)."""
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -267,37 +266,6 @@ async def get_gantt_chart(
     return convert_to_gantt_response(result)
 
 
-def run_optimization(
-    controller: AnalyticsControllerDep,
-    algorithm: str,
-    start_date: datetime,
-    max_hours_per_day: float,
-    force_override: bool,
-    task_ids: list[int] | None = None,
-    include_all_days: bool = False,
-) -> None:
-    """Background task to run schedule optimization.
-
-    Args:
-        controller: Analytics controller
-        algorithm: Algorithm name (required)
-        start_date: Optimization start date
-        max_hours_per_day: Maximum hours per day (required)
-        force_override: Force override existing schedules
-        task_ids: Specific task IDs to optimize
-        include_all_days: If True, schedule tasks on weekends and holidays too
-    """
-    # This runs in the background
-    controller.optimize_schedule(
-        algorithm=algorithm,
-        start_date=start_date,
-        max_hours_per_day=max_hours_per_day,
-        force_override=force_override,
-        task_ids=task_ids,
-        include_all_days=include_all_days,
-    )
-
-
 @router.post("/optimize", response_model=OptimizationResponse)
 async def optimize_schedule(
     request: OptimizeScheduleRequest,
@@ -306,7 +274,6 @@ async def optimize_schedule(
     audit_controller: AuditLogControllerDep,
     time_provider: TimeProviderDep,
     client_name: AuthenticatedClientDep,
-    run_async: bool = Query(False, description="Run optimization in background"),
 ) -> OptimizationResponse:
     """Optimize task schedules using specified algorithm.
 
@@ -316,7 +283,6 @@ async def optimize_schedule(
         broadcaster: Event broadcaster dependency
         time_provider: Time provider dependency
         client_name: Authenticated client name (used for broadcast exclusion)
-        run_async: If True, run in background and return immediately
 
     Returns:
         Optimization results with summary and failures
@@ -327,32 +293,6 @@ async def optimize_schedule(
     try:
         # Use current date if not specified
         start_date = request.start_date if request.start_date else time_provider.now()
-
-        if run_async:
-            # Add optimization to background tasks
-            broadcaster.add_background_task(
-                run_optimization,
-                controller,
-                request.algorithm,
-                start_date,
-                request.max_hours_per_day,
-                request.force_override,
-                request.task_ids,
-                request.include_all_days,
-            )
-            return OptimizationResponse(
-                summary=OptimizationSummary(
-                    total_tasks=0,
-                    scheduled_tasks=0,
-                    failed_tasks=0,
-                    total_hours=0.0,
-                    start_date=start_date.date(),
-                    end_date=start_date.date(),
-                    algorithm=request.algorithm,
-                ),
-                failures=[],
-                message="Optimization started in background. Check task schedules later.",
-            )
 
         # Run synchronously
         result = controller.optimize_schedule(

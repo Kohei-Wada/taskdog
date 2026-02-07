@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Protocol
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
-from taskdog_core.domain.entities.task import TaskStatus
 
 if TYPE_CHECKING:
     from taskdog_client import TaskdogApiClient
@@ -47,22 +46,6 @@ class TablePresenter:
         """
         self.notes_checker = notes_checker
 
-    @staticmethod
-    def convert_status(domain_status: TaskStatus) -> TaskStatus:
-        """Convert domain TaskStatus to presentation TaskStatus.
-
-        This maintains separation between domain and presentation layers while
-        ensuring the status values are properly converted.
-
-        Args:
-            domain_status: Domain layer TaskStatus
-
-        Returns:
-            TaskStatus (same as domain for simplicity)
-        """
-        # Direct return - using domain TaskStatus directly
-        return domain_status
-
     def present(self, output: TaskListOutput) -> list[TaskRowViewModel]:
         """Convert TaskListOutput DTO to list of TaskRowViewModels.
 
@@ -89,7 +72,7 @@ class TablePresenter:
         return TaskRowViewModel(
             id=task.id,
             name=task.name,
-            status=self.convert_status(task.status),
+            status=task.status,
             priority=task.priority,
             is_fixed=task.is_fixed,
             estimated_duration=task.estimated_duration,

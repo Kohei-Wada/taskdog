@@ -18,8 +18,6 @@ if TYPE_CHECKING:
 class TaskOperationResponse(BaseModel):
     """Response model for task write operations (create, update, status changes)."""
 
-    model_config = ConfigDict(from_attributes=True)
-
     id: int
     name: str
     status: TaskStatus
@@ -69,8 +67,6 @@ class TaskOperationResponse(BaseModel):
 
 class UpdateTaskResponse(BaseModel):
     """Response model for task update operations."""
-
-    model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
@@ -123,7 +119,7 @@ class UpdateTaskResponse(BaseModel):
 class TaskResponse(BaseModel):
     """Response model for task row data (list views)."""
 
-    model_config = ConfigDict(from_attributes=True, frozen=True)
+    model_config = ConfigDict(frozen=True)
 
     id: int
     name: str
@@ -149,7 +145,7 @@ class TaskResponse(BaseModel):
 class TaskDetailResponse(BaseModel):
     """Response model for detailed task view."""
 
-    model_config = ConfigDict(from_attributes=True, frozen=True)
+    model_config = ConfigDict(frozen=True)
 
     id: int
     name: str
@@ -235,7 +231,7 @@ class GanttDateRange(BaseModel):
 class GanttTaskResponse(BaseModel):
     """Task data for Gantt chart rendering."""
 
-    model_config = ConfigDict(from_attributes=True, frozen=True)
+    model_config = ConfigDict(frozen=True)
 
     id: int
     name: str
@@ -246,8 +242,6 @@ class GanttTaskResponse(BaseModel):
     actual_start: datetime | None = None
     actual_end: datetime | None = None
     deadline: datetime | None = None
-    is_fixed: bool = False
-    is_archived: bool = False
     daily_allocations: dict[str, float] = Field(default_factory=dict)
 
 

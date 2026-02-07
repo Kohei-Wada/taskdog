@@ -4,7 +4,6 @@ This module provides a unified class for broadcasting task change events
 to all connected WebSocket clients via FastAPI background tasks.
 """
 
-from collections.abc import Callable
 from typing import Any
 
 from fastapi import BackgroundTasks
@@ -31,21 +30,6 @@ class WebSocketEventBroadcaster:
         """
         self._manager = manager
         self._background_tasks = background_tasks
-
-    def add_background_task(
-        self, func: Callable[..., Any], *args: object, **kwargs: object
-    ) -> None:
-        """Add a task to run in the background.
-
-        Provides public access to schedule background tasks for
-        non-broadcast operations that need background execution.
-
-        Args:
-            func: The function to run in the background
-            *args: Positional arguments to pass to the function
-            **kwargs: Keyword arguments to pass to the function
-        """
-        self._background_tasks.add_task(func, *args, **kwargs)
 
     def task_created(
         self,

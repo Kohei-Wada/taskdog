@@ -47,8 +47,6 @@ def convert_to_gantt_response(gantt_output: GanttOutput) -> GanttResponse:
             actual_start=task.actual_start,
             actual_end=task.actual_end,
             deadline=task.deadline,
-            is_fixed=False,  # Not available in GanttTaskDto
-            is_archived=False,  # Not available in GanttTaskDto
             daily_allocations=format_date_dict(
                 gantt_output.task_daily_hours.get(task.id, {})
             ),
