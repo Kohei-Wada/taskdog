@@ -4,6 +4,8 @@ This factory provides a unified interface for creating SQLite repository
 implementations based on storage backend configuration.
 """
 
+from sqlalchemy.engine import Engine
+
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
@@ -21,11 +23,15 @@ class RepositoryFactory:
     """
 
     @staticmethod
-    def create(storage_config: StorageConfig) -> TaskRepository:
+    def create(
+        storage_config: StorageConfig, engine: Engine | None = None
+    ) -> TaskRepository:
         """Create a TaskRepository instance based on storage configuration.
 
         Args:
             storage_config: Storage backend configuration
+            engine: Optional shared SQLAlchemy Engine instance.
+                   Pass a shared engine to avoid redundant connection pools.
 
         Returns:
             TaskRepository instance (SqliteTaskRepository)
@@ -36,7 +42,9 @@ class RepositoryFactory:
         backend = storage_config.backend.lower()
 
         if backend == "sqlite":
-            return RepositoryFactory._create_sqlite_repository(storage_config)
+            return RepositoryFactory._create_sqlite_repository(
+                storage_config, engine=engine
+            )
         else:
             raise ValueError(
                 f"Unsupported storage backend: {storage_config.backend}. "
@@ -46,11 +54,13 @@ class RepositoryFactory:
     @staticmethod
     def _create_sqlite_repository(
         storage_config: StorageConfig,
+        engine: Engine | None = None,
     ) -> SqliteTaskRepository:
         """Create a SQLite-based repository instance.
 
         Args:
             storage_config: Storage configuration with optional database_url
+            engine: Optional shared SQLAlchemy Engine instance.
 
         Returns:
             SqliteTaskRepository with configured database URL
@@ -65,4 +75,4 @@ class RepositoryFactory:
             database_url = f"sqlite:///{db_file}"
 
         mapper = TaskDbMapper()
-        return SqliteTaskRepository(database_url, mapper)
+        return SqliteTaskRepository(database_url, mapper, engine=engine)
