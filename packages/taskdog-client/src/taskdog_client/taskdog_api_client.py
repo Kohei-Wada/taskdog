@@ -52,19 +52,15 @@ class TaskdogApiClient:
         """
         self.base_url = base_url
         self._base = BaseApiClient(base_url, timeout, api_key=api_key)
-        self._has_notes_cache: dict[int, bool] = {}
 
         # Initialize specialized clients
         self._tasks = TaskClient(self._base)
         self._lifecycle = LifecycleClient(self._base)
         self._relationships = RelationshipClient(self._base)
-        self._queries = QueryClient(self._base, self._has_notes_cache)
+        self._queries = QueryClient(self._base)
         self._analytics = AnalyticsClient(self._base)
         self._notes = NotesClient(self._base)
         self._audit = AuditClient(self._base)
-
-        # Share the notes cache with notes client
-        self._notes._has_notes_cache = self._has_notes_cache
 
     @property
     def client(self) -> httpx.Client:
@@ -388,10 +384,6 @@ class TaskdogApiClient:
     def delete_task_notes(self, task_id: int) -> None:
         """Delete task notes."""
         return self._notes.delete_task_notes(task_id)
-
-    def has_task_notes(self, task_id: int) -> bool:
-        """Check if task has notes."""
-        return self._notes.has_task_notes(task_id)
 
     # Audit log methods - delegate to AuditClient
 

@@ -117,24 +117,17 @@ def convert_to_update_task_output(data: dict[str, Any]) -> TaskUpdateOutput:
     )
 
 
-def convert_to_task_list_output(
-    data: dict[str, Any], has_notes_cache: dict[int, bool] | None = None
-) -> TaskListOutput:
+def convert_to_task_list_output(data: dict[str, Any]) -> TaskListOutput:
     """Convert API response to TaskListOutput.
 
     Args:
         data: API response data
-        has_notes_cache: Optional cache dictionary to populate with has_notes info
 
     Returns:
         TaskListOutput with task list and metadata
     """
     tasks = []
     for task in data["tasks"]:
-        # Cache has_notes information if cache provided
-        if has_notes_cache is not None:
-            has_notes_cache[task["id"]] = task.get("has_notes", False)
-
         # Parse datetime fields using utility
         dt_fields = _parse_datetime_fields(
             task,
@@ -161,6 +154,7 @@ def convert_to_task_list_output(
                 is_finished=task.get("is_finished", False),
                 created_at=_parse_required_datetime(task, "created_at"),
                 updated_at=_parse_required_datetime(task, "updated_at"),
+                has_notes=task.get("has_notes", False),
             )
         )
 

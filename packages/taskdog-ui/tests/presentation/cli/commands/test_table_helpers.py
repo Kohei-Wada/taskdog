@@ -49,7 +49,7 @@ class TestRenderTable:
             render_table(self.cli_context, mock_output)
 
             # Verify
-            mock_presenter_cls.assert_called_once_with(self.api_client)
+            mock_presenter_cls.assert_called_once_with()
             mock_presenter.present.assert_called_once_with(mock_output)
             mock_renderer_cls.assert_called_once_with(self.console_writer)
             mock_renderer.render.assert_called_once_with(mock_view_models, fields=None)

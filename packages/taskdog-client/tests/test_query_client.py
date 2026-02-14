@@ -14,8 +14,7 @@ class TestQueryClient:
     def setup(self):
         """Set up test fixtures."""
         self.mock_base = Mock()
-        self.notes_cache = {}
-        self.client = QueryClient(self.mock_base, self.notes_cache)
+        self.client = QueryClient(self.mock_base)
 
     @patch("taskdog_client.query_client.convert_to_task_list_output")
     def test_list_tasks(self, mock_convert):
@@ -55,7 +54,7 @@ class TestQueryClient:
         assert params["reverse"] == "true"
 
         assert result == mock_output
-        mock_convert.assert_called_once_with(mock_json, self.notes_cache)
+        mock_convert.assert_called_once_with(mock_json)
 
     @pytest.mark.parametrize(
         "method_name,converter_name,mock_json",

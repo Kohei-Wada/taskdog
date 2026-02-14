@@ -4,12 +4,10 @@ from taskdog_client.base_client import BaseApiClient
 
 
 class NotesClient:
-    """Client for task notes operations with caching.
+    """Client for task notes operations.
 
     Operations:
     - Get, update, delete notes
-    - Check note existence (with cache)
-    - Cache management
     """
 
     def __init__(self, base_client: BaseApiClient):
@@ -19,7 +17,6 @@ class NotesClient:
             base_client: Base API client for HTTP operations
         """
         self._base = base_client
-        self._has_notes_cache: dict[int, bool] = {}
 
     def get_task_notes(self, task_id: int) -> tuple[str, bool]:
         """Get task notes.
@@ -67,26 +64,3 @@ class NotesClient:
         response = self._base._safe_request("delete", f"/api/v1/tasks/{task_id}/notes")
         if response.status_code != 204:
             self._base._handle_error(response)
-
-    def has_task_notes(self, task_id: int) -> bool:
-        """Check if task has notes.
-
-        Uses cached information from list_tasks if available, otherwise queries API.
-
-        Args:
-            task_id: Task ID
-
-        Returns:
-            True if task has notes, False otherwise
-
-        Raises:
-            TaskNotFoundException: If task not found
-        """
-        # Use cache if available (populated by list_tasks)
-        if task_id in self._has_notes_cache:
-            return self._has_notes_cache[task_id]
-
-        # Fall back to API call
-        _, has_notes = self.get_task_notes(task_id)
-        self._has_notes_cache[task_id] = has_notes
-        return has_notes

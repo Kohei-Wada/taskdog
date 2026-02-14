@@ -250,7 +250,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         )
 
         # Initialize presenters for view models
-        self.table_presenter = TablePresenter(api_client)
+        self.table_presenter = TablePresenter()
         self.gantt_presenter = GanttPresenter()
 
         # Initialize TaskDataLoader for data fetching

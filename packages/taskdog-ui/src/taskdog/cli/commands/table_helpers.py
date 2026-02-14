@@ -17,10 +17,9 @@ def render_table(
         fields: Optional list of fields to display (None = all fields)
     """
     console_writer = ctx_obj.console_writer
-    api_client = ctx_obj.api_client
 
     # Convert DTO to ViewModels using Presenter
-    presenter = TablePresenter(api_client)
+    presenter = TablePresenter()
     task_view_models = presenter.present(output)
 
     # Render using ViewModels

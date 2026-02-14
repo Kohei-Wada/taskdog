@@ -256,8 +256,8 @@ class TestConvertToTaskListOutput:
         assert result.tasks[1].id == 2
         assert result.tasks[1].is_finished is True
 
-    def test_with_has_notes_cache(self):
-        """Test that has_notes cache is populated."""
+    def test_has_notes_set_on_task_row_dto(self):
+        """Test that has_notes is set directly on TaskRowDto."""
         data = {
             "tasks": [
                 {
@@ -307,11 +307,10 @@ class TestConvertToTaskListOutput:
             "filtered_count": 2,
         }
 
-        cache: dict[int, bool] = {}
-        convert_to_task_list_output(data, cache)
+        result = convert_to_task_list_output(data)
 
-        assert cache[1] is False
-        assert cache[2] is True
+        assert result.tasks[0].has_notes is False
+        assert result.tasks[1].has_notes is True
 
     def test_empty_task_list(self):
         """Test conversion with empty task list."""

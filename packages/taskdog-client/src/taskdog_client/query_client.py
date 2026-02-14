@@ -28,15 +28,13 @@ class QueryClient:
     - Tag statistics
     """
 
-    def __init__(self, base_client: BaseApiClient, has_notes_cache: dict[int, bool]):
+    def __init__(self, base_client: BaseApiClient):
         """Initialize query client.
 
         Args:
             base_client: Base API client for HTTP operations
-            has_notes_cache: Shared cache for has_notes information
         """
         self._base = base_client
-        self._has_notes_cache = has_notes_cache
 
     def _build_list_params(
         self,
@@ -120,7 +118,7 @@ class QueryClient:
 
         params = self._build_list_params(all, sort_by, reverse, status, tags, **extra)
         data = self._base._request_json("get", "/api/v1/tasks", params=params)
-        return convert_to_task_list_output(data, self._has_notes_cache)
+        return convert_to_task_list_output(data)
 
     def list_today_tasks(
         self,
@@ -147,7 +145,7 @@ class QueryClient:
         """
         params = self._build_list_params(all, sort_by, reverse, status)
         data = self._base._request_json("get", "/api/v1/tasks/today", params=params)
-        return convert_to_task_list_output(data, self._has_notes_cache)
+        return convert_to_task_list_output(data)
 
     def list_week_tasks(
         self,
@@ -174,7 +172,7 @@ class QueryClient:
         """
         params = self._build_list_params(all, sort_by, reverse, status)
         data = self._base._request_json("get", "/api/v1/tasks/week", params=params)
-        return convert_to_task_list_output(data, self._has_notes_cache)
+        return convert_to_task_list_output(data)
 
     def get_task_by_id(self, task_id: int) -> TaskByIdOutput:
         """Get task by ID.
