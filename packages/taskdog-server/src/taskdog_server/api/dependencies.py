@@ -360,11 +360,46 @@ ServerConfigDep = Annotated[ServerConfig, Depends(get_server_config)]
 ServerConfigWsDep = Annotated[ServerConfig, Depends(get_server_config_ws)]
 
 
+def _validate_api_key(
+    api_key: str | None,
+    server_config: ServerConfig,
+) -> str | None:
+    """Validate API key and return client name.
+
+    Shared validation logic for both HTTP and WebSocket authentication.
+
+    Args:
+        api_key: API key to validate
+        server_config: Server configuration with auth settings
+
+    Returns:
+        Client name if authenticated, None if auth is disabled
+
+    Raises:
+        ValueError: If authentication fails
+    """
+    if not server_config.auth.enabled:
+        return None
+
+    if not server_config.auth.api_keys:
+        raise ValueError("Authentication required but no API keys configured")
+
+    if api_key is None:
+        raise ValueError("API key required")
+
+    # Constant-time comparison to prevent timing attacks
+    for entry in server_config.auth.api_keys:
+        if secrets.compare_digest(entry.key, api_key):
+            return entry.name
+
+    raise ValueError("Invalid API key")
+
+
 def get_authenticated_client(
     api_key: Annotated[str | None, Depends(api_key_header)],
     server_config: ServerConfigDep,
 ) -> str | None:
-    """Validate API key and return client name.
+    """Validate API key and return client name (FastAPI dependency for HTTP endpoints).
 
     Args:
         api_key: API key from X-Api-Key header
@@ -376,27 +411,10 @@ def get_authenticated_client(
     Raises:
         HTTPException: 401 if authentication fails
     """
-    # If auth is disabled, allow all requests
-    if not server_config.auth.enabled:
-        return None
-
-    # Auth is enabled but no API keys configured - reject all
-    if not server_config.auth.api_keys:
-        raise HTTPException(
-            status_code=401,
-            detail="Authentication required but no API keys configured",
-        )
-
-    # API key required
-    if api_key is None:
-        raise HTTPException(status_code=401, detail="API key required")
-
-    # Validate API key using constant-time comparison to prevent timing attacks
-    for entry in server_config.auth.api_keys:
-        if secrets.compare_digest(entry.key, api_key):
-            return entry.name
-
-    raise HTTPException(status_code=401, detail="Invalid API key")
+    try:
+        return _validate_api_key(api_key, server_config)
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e)) from e
 
 
 AuthenticatedClientDep = Annotated[str | None, Depends(get_authenticated_client)]
@@ -421,21 +439,4 @@ def validate_api_key_for_websocket(
     Raises:
         ValueError: If authentication fails
     """
-    # If auth is disabled, allow all requests
-    if not server_config.auth.enabled:
-        return None
-
-    # Auth is enabled but no API keys configured - reject all
-    if not server_config.auth.api_keys:
-        raise ValueError("Authentication required but no API keys configured")
-
-    # API key required
-    if api_key is None:
-        raise ValueError("API key required")
-
-    # Validate API key using constant-time comparison to prevent timing attacks
-    for entry in server_config.auth.api_keys:
-        if secrets.compare_digest(entry.key, api_key):
-            return entry.name
-
-    raise ValueError("Invalid API key")
+    return _validate_api_key(api_key, server_config)
