@@ -63,15 +63,8 @@ def _parse_task_summary_list(data: list[dict[str, Any]] | None) -> list[TaskSumm
     """
     if not data:
         return []
-    return [
-        TaskSummaryDto(
-            id=d["id"],
-            name=d["name"],
-            estimated_duration=d.get("estimated_duration"),
-            actual_duration_hours=d.get("actual_duration_hours"),
-        )
-        for d in data
-    ]
+    # Each element d is a dict (never None), so _parse_task_summary always returns TaskSummaryDto
+    return [_parse_task_summary(d) for d in data]  # type: ignore[misc]
 
 
 def _parse_time_statistics(time_data: dict[str, Any]) -> TimeStatistics:

@@ -250,6 +250,7 @@ class TestTaskDetailResponse:
         assert response.id == 1
         assert response.daily_allocations == {"2024-01-15": 4.0, "2024-01-16": 4.0}
         assert response.notes == "# Test Notes"
+        assert response.has_notes is False
         assert response.is_schedulable is True
 
     def test_from_dto_converts_task_detail_output(self):
@@ -297,6 +298,7 @@ class TestTaskDetailResponse:
         assert response.tags == task_dto.tags
         assert response.is_active == task_dto.is_active
         assert response.is_schedulable == task_dto.is_schedulable
+        assert response.has_notes is True
         assert response.notes == "# Notes Content"
         # Check date dict conversion (date -> ISO string)
         assert response.daily_allocations == {"2024-01-15": 4.0, "2024-01-16": 4.0}
