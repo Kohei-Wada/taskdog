@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 
 import pytest
 
-from taskdog_core.application.dto.query_inputs import GetGanttDataInput, TimeRange
+from taskdog_core.application.dto.query_inputs import GetGanttDataInput
 from taskdog_core.application.queries.task_query_service import TaskQueryService
 from taskdog_core.application.use_cases.get_gantt_data import GetGanttDataUseCase
 from taskdog_core.domain.entities.task import TaskStatus
@@ -224,44 +224,6 @@ class TestGetGanttDataUseCase:
 
         assert result.tasks[0].name == "Sooner"
         assert result.tasks[1].name == "Later"
-
-    def test_execute_with_today_time_range(self):
-        """Test execute filters for today's tasks."""
-        today = date.today()
-        tomorrow = today + timedelta(days=1)
-
-        # Task with deadline today
-        self.repository.create(
-            name="Due today",
-            priority=1,
-            deadline=datetime.combine(today, datetime.min.time()),
-            planned_start=datetime.combine(today, datetime.min.time()),
-            planned_end=datetime.combine(today, datetime.min.time()),
-        )
-        # Task with deadline tomorrow
-        self.repository.create(
-            name="Due tomorrow",
-            priority=2,
-            deadline=datetime.combine(tomorrow, datetime.min.time()),
-            planned_start=datetime.combine(tomorrow, datetime.min.time()),
-            planned_end=datetime.combine(tomorrow, datetime.min.time()),
-        )
-        # In-progress task
-        self.repository.create(
-            name="In progress",
-            priority=3,
-            status=TaskStatus.IN_PROGRESS,
-            planned_start=datetime.combine(today, datetime.min.time()),
-            planned_end=datetime.combine(today, datetime.min.time()),
-        )
-
-        input_dto = GetGanttDataInput(include_archived=True, time_range=TimeRange.TODAY)
-        result = self.use_case.execute(input_dto)
-
-        names = [t.name for t in result.tasks]
-        assert "Due today" in names
-        assert "In progress" in names
-        assert "Due tomorrow" not in names
 
     def test_execute_returns_empty_for_no_tasks(self):
         """Test execute returns empty result when no tasks exist."""

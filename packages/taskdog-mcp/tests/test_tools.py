@@ -144,8 +144,6 @@ def create_mock_client() -> MagicMock:
     client.reopen_task = MagicMock()
     client.fix_actual_times = MagicMock()
     # Query methods
-    client.list_today_tasks = MagicMock()
-    client.list_week_tasks = MagicMock()
     client.get_tag_statistics = MagicMock()
     client.calculate_statistics = MagicMock()
     # Relationship methods
@@ -896,50 +894,6 @@ class TestTaskQueryTools:
         result = get_statistics_fn(period="all")
 
         assert result["average_completion_time_hours"] is None
-
-    @pytest.mark.parametrize(
-        ("tool_name", "client_method", "status", "sort_by"),
-        [
-            pytest.param(
-                "get_today_tasks", "list_today_tasks", "PENDING", "priority", id="today"
-            ),
-            pytest.param(
-                "get_week_tasks",
-                "list_week_tasks",
-                "IN_PROGRESS",
-                "deadline",
-                id="week",
-            ),
-        ],
-    )
-    def test_time_period_task_queries(
-        self, tool_name: str, client_method: str, status: str, sort_by: str
-    ) -> None:
-        """Test today/week task query tools."""
-        from mcp.server.fastmcp import FastMCP
-        from taskdog_mcp.tools import task_query
-
-        client = create_mock_client()
-        task1 = create_mock_task_row(task_id=1, name="Task 1")
-        task2 = create_mock_task_row(task_id=2, name="Task 2")
-        getattr(client, client_method).return_value = TaskListOutput(
-            tasks=[task1, task2],
-            total_count=2,
-            filtered_count=2,
-        )
-
-        mcp = FastMCP("test")
-        task_query.register_tools(mcp, client)
-
-        tool_fn = mcp._tool_manager._tools[tool_name].fn
-        result = tool_fn(status=status, sort_by=sort_by)
-
-        getattr(client, client_method).assert_called_once_with(
-            status=status, sort_by=sort_by
-        )
-        assert len(result["tasks"]) == 2
-        assert result["total"] == 2
-        assert result["tasks"][0]["id"] == 1
 
     def test_get_tag_statistics_returns_formatted_data(self) -> None:
         """Test get_tag_statistics returns properly formatted tag stats."""

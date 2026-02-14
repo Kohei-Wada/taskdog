@@ -120,60 +120,6 @@ class QueryClient:
         data = self._base._request_json("get", "/api/v1/tasks", params=params)
         return convert_to_task_list_output(data)
 
-    def list_today_tasks(
-        self,
-        all: bool = False,
-        status: str | None = None,
-        sort_by: str = "deadline",
-        reverse: bool = False,
-    ) -> TaskListOutput:
-        """List tasks relevant for today.
-
-        Includes tasks that:
-        - Have deadline today
-        - Have planned period including today
-        - Are IN_PROGRESS (regardless of dates)
-
-        Args:
-            all: Include archived tasks (default: False)
-            status: Filter by status
-            sort_by: Sort field (default: deadline)
-            reverse: Reverse sort order
-
-        Returns:
-            TaskListOutput with today's tasks
-        """
-        params = self._build_list_params(all, sort_by, reverse, status)
-        data = self._base._request_json("get", "/api/v1/tasks/today", params=params)
-        return convert_to_task_list_output(data)
-
-    def list_week_tasks(
-        self,
-        all: bool = False,
-        status: str | None = None,
-        sort_by: str = "deadline",
-        reverse: bool = False,
-    ) -> TaskListOutput:
-        """List tasks relevant for this week.
-
-        Includes tasks that:
-        - Have deadline within this week (Monday to Sunday)
-        - Have planned period overlapping this week
-        - Are IN_PROGRESS (regardless of dates)
-
-        Args:
-            all: Include archived tasks (default: False)
-            status: Filter by status
-            sort_by: Sort field (default: deadline)
-            reverse: Reverse sort order
-
-        Returns:
-            TaskListOutput with this week's tasks
-        """
-        params = self._build_list_params(all, sort_by, reverse, status)
-        data = self._base._request_json("get", "/api/v1/tasks/week", params=params)
-        return convert_to_task_list_output(data)
-
     def get_task_by_id(self, task_id: int) -> TaskByIdOutput:
         """Get task by ID.
 

@@ -193,7 +193,7 @@ Clean Architecture with 5 layers across five packages: **Domain** ← **Applicat
 - `sorters/`: TaskSorter (general queries), OptimizationTaskSorter (optimization-specific)
 - `queries/`: TaskQueryService (CQRS-like read operations)
   - `queries/workload/`: Workload calculation strategies (ActualScheduleStrategy, WeekdayOnlyStrategy, AllDaysStrategy)
-  - `queries/filters/`: Query filters (StatusFilter, DateRangeFilter, TagFilter, TodayFilter, ThisWeekFilter, etc.)
+  - `queries/filters/`: Query filters (StatusFilter, DateRangeFilter, TagFilter, etc.)
 - `dto/`: Input/Output DTOs (CreateTaskRequest, OptimizationResult, SchedulingFailure, etc.)
 
 **Infrastructure** (`packages/taskdog-core/src/taskdog_core/infrastructure/`): External concerns
@@ -383,8 +383,6 @@ Commands in `packages/taskdog-ui/src/taskdog/cli/commands/`, registered in `cli_
 
 - `add "Task name" [--priority N] [--fixed] [--depends-on ID] [--tag TAG]`: Create task (multiple -d/-t allowed)
 - `table [--sort FIELD] [--reverse] [--all] [--fields LIST] [--status STATUS] [--tag TAG] [--start-date] [--end-date]`: Table view with filtering
-- `today [--sort FIELD] [--reverse]`: Today's tasks (deadline today, planned includes today, or IN_PROGRESS)
-- `week [--sort FIELD] [--reverse]`: This week's tasks
 - `show ID [--raw]`: Task details + notes (markdown rendered or raw)
 
 **Status Management** (support multiple IDs)
@@ -417,8 +415,6 @@ Commands in `packages/taskdog-ui/src/taskdog/cli/commands/`, registered in `cli_
 - `gantt [--sort] [--reverse] [--all] [--status] [--tag] [--start-date] [--end-date]`: Gantt chart with workload summary (default sort: deadline, shows non-archived tasks by default)
 - `timeline [--date YYYY-MM-DD]`: Daily timeline showing actual work times (horizontal axis is hours, vertical is tasks)
 - `table [--sort] [--reverse] [--all] [--fields] [--status] [--tag] [--start-date] [--end-date]`: Task table with filtering (shows non-archived tasks by default)
-- `today`: Today's tasks (deadline today, planned includes today, or IN_PROGRESS)
-- `week`: This week's tasks
 - `export [--format json|csv] [--output] [--fields] [--all] [--status] [--tag]`: Export tasks (exports non-archived tasks by default)
 - `stats [--period all|7d|30d] [--focus all|basic|time|estimation|deadline|priority|trends]`: Analytics
 
@@ -491,8 +487,6 @@ The FastAPI server (`taskdog-server`) provides a REST API with automatic OpenAPI
 **Task Management** (`/api/v1/tasks/`)
 
 - `GET /api/v1/tasks/` - List tasks with filtering (status, tags, date ranges, archived)
-- `GET /api/v1/tasks/today` - Get today's tasks (deadline today, planned includes today, or IN_PROGRESS)
-- `GET /api/v1/tasks/week` - Get this week's tasks
 - `POST /api/v1/tasks/` - Create new task
 - `GET /api/v1/tasks/{task_id}` - Get task details
 - `PATCH /api/v1/tasks/{task_id}` - Update task fields

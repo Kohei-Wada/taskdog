@@ -5,7 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query, status
 
-from taskdog_core.application.dto.query_inputs import ListTasksInput, TimeRange
+from taskdog_core.application.dto.query_inputs import ListTasksInput
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.converters import (
     convert_to_task_detail_response,
@@ -163,94 +163,6 @@ async def list_tasks(
         gantt_end_date=gantt_end,
         holiday_checker=holiday_checker if include_gantt else None,
     )
-    return convert_to_task_list_response(result, notes_repo)
-
-
-@router.get("/today", response_model=TaskListResponse)
-async def list_today_tasks(
-    controller: QueryControllerDep,
-    notes_repo: NotesRepositoryDep,
-    _client_name: AuthenticatedClientDep,
-    all: Annotated[bool, Query(description="Include archived tasks")] = False,
-    status_filter: Annotated[
-        str | None, Query(alias="status", description="Filter by status")
-    ] = None,
-    sort: Annotated[str, Query(description="Sort field")] = "deadline",
-    reverse: Annotated[bool, Query(description="Reverse sort order")] = False,
-) -> TaskListResponse:
-    """List tasks relevant for today.
-
-    Includes tasks that meet any of these criteria:
-    - Deadline is today
-    - Planned period includes today (planned_start <= today <= planned_end)
-    - Status is IN_PROGRESS (regardless of dates)
-
-    Args:
-        controller: Query controller dependency
-        notes_repo: Notes repository dependency
-        all: Include archived tasks
-        status_filter: Filter by task status
-        sort: Sort field name
-        reverse: Reverse sort order
-
-    Returns:
-        List of tasks relevant for today
-    """
-    # Create Input DTO with TODAY time range (filter building is done in Use Case)
-    input_dto = ListTasksInput(
-        include_archived=all,
-        status=status_filter,
-        time_range=TimeRange.TODAY,
-        sort_by=sort,
-        reverse=reverse,
-    )
-
-    # Query tasks using Use Case pattern
-    result = controller.list_tasks(input_dto=input_dto)
-    return convert_to_task_list_response(result, notes_repo)
-
-
-@router.get("/week", response_model=TaskListResponse)
-async def list_week_tasks(
-    controller: QueryControllerDep,
-    notes_repo: NotesRepositoryDep,
-    _client_name: AuthenticatedClientDep,
-    all: Annotated[bool, Query(description="Include archived tasks")] = False,
-    status_filter: Annotated[
-        str | None, Query(alias="status", description="Filter by status")
-    ] = None,
-    sort: Annotated[str, Query(description="Sort field")] = "deadline",
-    reverse: Annotated[bool, Query(description="Reverse sort order")] = False,
-) -> TaskListResponse:
-    """List tasks relevant for this week.
-
-    Includes tasks that meet any of these criteria:
-    - Deadline is within this week (Monday to Sunday)
-    - Planned period overlaps with this week
-    - Status is IN_PROGRESS (regardless of dates)
-
-    Args:
-        controller: Query controller dependency
-        notes_repo: Notes repository dependency
-        all: Include archived tasks
-        status_filter: Filter by task status
-        sort: Sort field name
-        reverse: Reverse sort order
-
-    Returns:
-        List of tasks relevant for this week
-    """
-    # Create Input DTO with THIS_WEEK time range (filter building is done in Use Case)
-    input_dto = ListTasksInput(
-        include_archived=all,
-        status=status_filter,
-        time_range=TimeRange.THIS_WEEK,
-        sort_by=sort,
-        reverse=reverse,
-    )
-
-    # Query tasks using Use Case pattern
-    result = controller.list_tasks(input_dto=input_dto)
     return convert_to_task_list_response(result, notes_repo)
 
 

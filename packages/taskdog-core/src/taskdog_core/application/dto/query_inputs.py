@@ -14,13 +14,9 @@ class TimeRange(Enum):
 
     Attributes:
         CUSTOM: Custom date range (uses start_date/end_date)
-        TODAY: Tasks relevant to today
-        THIS_WEEK: Tasks relevant to this week
     """
 
     CUSTOM = "custom"
-    TODAY = "today"
-    THIS_WEEK = "this_week"
 
 
 @dataclass
@@ -37,7 +33,7 @@ class ListTasksInput:
         match_all_tags: If True, task must have all tags; if False, any tag matches
         start_date: Filter tasks with planned_start/end >= this date
         end_date: Filter tasks with planned_start/end <= this date
-        time_range: Preset time range (TODAY, THIS_WEEK, or CUSTOM)
+        time_range: Preset time range (CUSTOM)
         sort_by: Field to sort by (default: "id")
         reverse: Reverse sort order (default: False)
     """

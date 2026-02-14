@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 
 import pytest
 
-from taskdog_core.application.dto.query_inputs import ListTasksInput, TimeRange
+from taskdog_core.application.dto.query_inputs import ListTasksInput
 from taskdog_core.application.queries.task_query_service import TaskQueryService
 from taskdog_core.application.use_cases.list_tasks import ListTasksUseCase
 from taskdog_core.domain.entities.task import TaskStatus
@@ -153,87 +153,6 @@ class TestListTasksUseCase:
         assert result.tasks[0].name == "Soonest"
         assert result.tasks[1].name == "Sooner"
         assert result.tasks[2].name == "Later"
-
-    def test_execute_with_today_time_range(self):
-        """Test execute filters for today's tasks."""
-        today = date.today()
-        yesterday = today - timedelta(days=1)
-        tomorrow = today + timedelta(days=1)
-
-        # Task with deadline today
-        self.repository.create(
-            name="Due today",
-            priority=1,
-            deadline=datetime.combine(today, datetime.min.time()),
-        )
-        # Task with deadline tomorrow
-        self.repository.create(
-            name="Due tomorrow",
-            priority=2,
-            deadline=datetime.combine(tomorrow, datetime.min.time()),
-        )
-        # Task that was due yesterday
-        self.repository.create(
-            name="Due yesterday",
-            priority=3,
-            deadline=datetime.combine(yesterday, datetime.min.time()),
-        )
-        # Task with planned period including today
-        self.repository.create(
-            name="Planned for today",
-            priority=4,
-            planned_start=datetime.combine(yesterday, datetime.min.time()),
-            planned_end=datetime.combine(tomorrow, datetime.min.time()),
-        )
-        # In-progress task (should always be included)
-        self.repository.create(
-            name="In progress", priority=5, status=TaskStatus.IN_PROGRESS
-        )
-
-        input_dto = ListTasksInput(include_archived=True, time_range=TimeRange.TODAY)
-        result = self.use_case.execute(input_dto)
-
-        names = [t.name for t in result.tasks]
-        assert "Due today" in names
-        assert "Planned for today" in names
-        assert "In progress" in names
-        assert "Due tomorrow" not in names
-        assert "Due yesterday" not in names
-
-    def test_execute_with_this_week_time_range(self):
-        """Test execute filters for this week's tasks."""
-        today = date.today()
-        # Get start and end of current week (Monday to Sunday)
-        start_of_week = today - timedelta(days=today.weekday())
-        end_of_week = start_of_week + timedelta(days=6)
-        next_week = end_of_week + timedelta(days=1)
-
-        # Task with deadline this week
-        self.repository.create(
-            name="Due this week",
-            priority=1,
-            deadline=datetime.combine(end_of_week, datetime.min.time()),
-        )
-        # Task with deadline next week
-        self.repository.create(
-            name="Due next week",
-            priority=2,
-            deadline=datetime.combine(next_week, datetime.min.time()),
-        )
-        # In-progress task (should always be included)
-        self.repository.create(
-            name="In progress", priority=3, status=TaskStatus.IN_PROGRESS
-        )
-
-        input_dto = ListTasksInput(
-            include_archived=True, time_range=TimeRange.THIS_WEEK
-        )
-        result = self.use_case.execute(input_dto)
-
-        names = [t.name for t in result.tasks]
-        assert "Due this week" in names
-        assert "In progress" in names
-        assert "Due next week" not in names
 
     def test_execute_with_date_range(self):
         """Test execute filters by date range."""
