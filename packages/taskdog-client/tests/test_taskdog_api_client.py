@@ -309,11 +309,6 @@ class TestTaskdogApiClientDelegation:
         client.delete_task_notes(task_id=1)
         client._notes.delete_task_notes.assert_called_once_with(1)
 
-    def test_has_task_notes(self, client):
-        """Test has_task_notes delegates to NotesClient."""
-        client.has_task_notes(task_id=1)
-        client._notes.has_task_notes.assert_called_once_with(1)
-
     # Audit methods
     def test_list_audit_logs(self, client):
         """Test list_audit_logs delegates to AuditClient."""

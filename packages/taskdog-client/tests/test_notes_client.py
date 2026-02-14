@@ -73,25 +73,3 @@ class TestNotesClient:
         self.mock_base._safe_request.assert_called_once_with(
             "delete", "/api/v1/tasks/1/notes"
         )
-
-    def test_has_task_notes_from_cache(self):
-        """Test has_task_notes uses cache."""
-        self.client._has_notes_cache[1] = True
-
-        result = self.client.has_task_notes(task_id=1)
-
-        assert result is True
-        self.mock_base._safe_request.assert_not_called()
-
-    def test_has_task_notes_from_api(self):
-        """Test has_task_notes queries API when not cached."""
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"content": "Notes", "has_notes": True}
-        self.mock_base._safe_request.return_value = mock_response
-
-        result = self.client.has_task_notes(task_id=1)
-
-        assert result is True
-        # Should be cached now
-        assert self.client._has_notes_cache[1] is True

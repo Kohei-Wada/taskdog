@@ -163,19 +163,16 @@ class TestConverters:
             "filtered_count": 2,
         }
 
-        cache = {}
-        result = convert_to_task_list_output(data, cache)
+        result = convert_to_task_list_output(data)
 
         assert len(result.tasks) == 2
         assert result.total_count == 10
         assert result.filtered_count == 2
         assert result.tasks[0].id == 1
+        assert result.tasks[0].has_notes is False
         assert result.tasks[1].id == 2
         assert result.tasks[1].is_finished is True
-
-        # Check cache was populated
-        assert cache[1] is False
-        assert cache[2] is True
+        assert result.tasks[1].has_notes is True
 
     def test_convert_to_get_task_by_id_output(self):
         """Test convert_to_get_task_by_id_output."""

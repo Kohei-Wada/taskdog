@@ -125,6 +125,7 @@ class TaskRowDto:
     is_finished: bool
     created_at: datetime
     updated_at: datetime
+    has_notes: bool = False
 
     @classmethod
     def from_entity(cls, task: Task) -> TaskRowDto:
@@ -192,6 +193,7 @@ class TaskRowDto:
             "is_finished": self.is_finished,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
+            "has_notes": self.has_notes,
         }
 
 
