@@ -246,39 +246,12 @@ class SqliteTaskRepository(TaskRepository):
     def save(self, task: Task) -> None:
         """Save a task (create new or update existing).
 
-        Uses mutation builders to handle INSERT/UPDATE operations,
-        tag relationship management, and daily allocation sync.
+        Delegates to save_all() for consistent behavior.
 
         Args:
             task: The task to save
         """
-        with self.Session() as session:
-            # Create builders for this session
-            tag_resolver = TagResolver(session)
-            insert_builder = TaskInsertBuilder(session, self.mapper)
-            update_builder = TaskUpdateBuilder(session, self.mapper)
-            tag_builder = TaskTagRelationshipBuilder(session, tag_resolver)
-            allocation_builder = DailyAllocationBuilder(session)
-
-            # Check if task exists
-            existing_model = session.get(TaskModel, task.id)
-
-            if existing_model:
-                # Update existing task
-                update_builder.update_task(existing_model, task)
-            else:
-                # Insert new task
-                existing_model = insert_builder.insert_task(task)
-
-            # Sync tag relationships
-            tag_builder.sync_task_tags(existing_model, task.tags)
-
-            # Sync daily allocations to normalized table
-            allocation_builder.sync_daily_allocations(
-                existing_model, task.daily_allocations
-            )
-
-            session.commit()
+        self.save_all([task])
 
     def save_all(self, tasks: list[Task]) -> None:
         """Save multiple tasks in a single transaction.
