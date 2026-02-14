@@ -198,6 +198,6 @@ def convert_to_get_task_detail_output(data: dict[str, Any]) -> TaskDetailOutput:
 
     # Extract notes
     notes_content = data.get("notes")
-    has_notes = notes_content is not None and notes_content != ""
+    has_notes = data.get("has_notes", False)
 
     return TaskDetailOutput(task=task, notes_content=notes_content, has_notes=has_notes)

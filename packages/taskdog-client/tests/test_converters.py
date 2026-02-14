@@ -234,6 +234,7 @@ class TestConverters:
             "can_be_modified": True,
             "is_schedulable": True,
             "notes": "# Important notes\n\nSome details here.",
+            "has_notes": True,
         }
 
         result = convert_to_get_task_detail_output(data)
@@ -268,6 +269,7 @@ class TestConverters:
             "can_be_modified": True,
             "is_schedulable": True,
             "notes": None,
+            "has_notes": False,
         }
 
         result = convert_to_get_task_detail_output(data)

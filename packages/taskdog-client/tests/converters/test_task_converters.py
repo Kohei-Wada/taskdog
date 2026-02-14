@@ -492,15 +492,15 @@ class TestConvertToGetTaskDetailOutput:
     """Test cases for convert_to_get_task_detail_output."""
 
     @pytest.mark.parametrize(
-        "notes_value,expected_has_notes",
+        "notes_value,has_notes_value,expected_has_notes",
         [
-            ("# Important\n\nSome details here.", True),
-            (None, False),
-            ("", False),
+            ("# Important\n\nSome details here.", True, True),
+            (None, False, False),
+            ("", False, False),
         ],
         ids=["with_notes", "none_notes", "empty_notes"],
     )
-    def test_notes_handling(self, notes_value, expected_has_notes):
+    def test_notes_handling(self, notes_value, has_notes_value, expected_has_notes):
         """Test conversion with different notes values."""
         data = {
             "id": 1,
@@ -526,6 +526,7 @@ class TestConvertToGetTaskDetailOutput:
             "can_be_modified": True,
             "is_schedulable": True,
             "notes": notes_value,
+            "has_notes": has_notes_value,
         }
 
         result = convert_to_get_task_detail_output(data)

@@ -306,6 +306,7 @@ class TestConvertToTaskDetailResponse:
         assert response.name == "Test Task"
         assert response.priority == 1
         assert response.status == TaskStatus.PENDING
+        assert response.has_notes is False
         assert response.notes is None
         assert response.daily_allocations == {}
 
@@ -353,6 +354,7 @@ class TestConvertToTaskDetailResponse:
         assert response.depends_on == [2, 3]
         assert response.tags == ["backend", "api"]
         assert response.is_fixed is True
+        assert response.has_notes is True
         assert response.notes == "# Task Notes\n\nSome notes."
         # Check date conversion to ISO strings
         assert "2025-01-01" in response.daily_allocations
@@ -447,4 +449,5 @@ class TestConvertToTaskDetailResponse:
         response = convert_to_task_detail_response(dto)
 
         # Assert
+        assert response.has_notes is False
         assert response.notes == ""

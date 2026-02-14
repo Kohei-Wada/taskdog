@@ -168,6 +168,7 @@ class TaskDetailResponse(BaseModel):
     is_finished: bool = False
     can_be_modified: bool = False
     is_schedulable: bool = False
+    has_notes: bool = False
     notes: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -206,6 +207,7 @@ class TaskDetailResponse(BaseModel):
             is_finished=dto.task.is_finished,
             can_be_modified=dto.task.can_be_modified,
             is_schedulable=dto.task.is_schedulable,
+            has_notes=dto.has_notes,
             notes=dto.notes_content,
             created_at=dto.task.created_at,
             updated_at=dto.task.updated_at,
