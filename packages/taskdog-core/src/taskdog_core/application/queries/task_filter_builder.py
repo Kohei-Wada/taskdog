@@ -7,7 +7,7 @@ previously duplicated across API routes.
 
 from __future__ import annotations
 
-from taskdog_core.application.dto.query_inputs import ListTasksInput, TimeRange
+from taskdog_core.application.dto.query_inputs import ListTasksInput
 from taskdog_core.application.queries.filters.date_range_filter import DateRangeFilter
 from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
@@ -15,8 +15,6 @@ from taskdog_core.application.queries.filters.non_archived_filter import (
 from taskdog_core.application.queries.filters.status_filter import StatusFilter
 from taskdog_core.application.queries.filters.tag_filter import TagFilter
 from taskdog_core.application.queries.filters.task_filter import TaskFilter
-from taskdog_core.application.queries.filters.this_week_filter import ThisWeekFilter
-from taskdog_core.application.queries.filters.today_filter import TodayFilter
 from taskdog_core.domain.entities.task import TaskStatus
 
 
@@ -24,7 +22,7 @@ class TaskFilterBuilder:
     """Builds TaskFilter objects from query input DTOs.
 
     This service centralizes the filter composition logic, ensuring consistent
-    filter construction across all query endpoints (list, today, week, gantt).
+    filter construction across all query endpoints (list, gantt).
 
     The builder follows the Strategy pattern, creating appropriate filter
     compositions based on the input DTO parameters.
@@ -102,10 +100,7 @@ class TaskFilterBuilder:
     ) -> TaskFilter | None:
         """Apply time range filter based on input DTO.
 
-        Handles three cases:
-        1. TimeRange.TODAY - uses TodayFilter
-        2. TimeRange.THIS_WEEK - uses ThisWeekFilter
-        3. TimeRange.CUSTOM with dates - uses DateRangeFilter
+        Applies DateRangeFilter when custom date range is specified.
 
         Args:
             filter_obj: Current filter chain
@@ -114,14 +109,6 @@ class TaskFilterBuilder:
         Returns:
             Updated filter chain with time filter applied
         """
-        if input_dto.time_range == TimeRange.TODAY:
-            today_filter = TodayFilter()
-            return TaskFilterBuilder._compose(filter_obj, today_filter)
-
-        if input_dto.time_range == TimeRange.THIS_WEEK:
-            week_filter = ThisWeekFilter()
-            return TaskFilterBuilder._compose(filter_obj, week_filter)
-
         # Custom time range with explicit dates
         if input_dto.start_date is not None or input_dto.end_date is not None:
             date_filter = DateRangeFilter(

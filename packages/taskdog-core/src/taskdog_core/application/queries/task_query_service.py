@@ -249,8 +249,8 @@ class TaskQueryService(QueryService):
     def _get_remaining_filter(self, filter_obj: TaskFilter | None) -> TaskFilter | None:
         """Get filters that cannot be handled by SQL and need Python processing.
 
-        Some filters like TodayFilter have complex logic that cannot be easily
-        translated to SQL WHERE clauses and need to be applied in Python.
+        Some filters have complex logic that cannot be easily translated to
+        SQL WHERE clauses and need to be applied in Python.
 
         Args:
             filter_obj: Original filter object
@@ -264,10 +264,6 @@ class TaskQueryService(QueryService):
         from taskdog_core.application.queries.filters.incomplete_filter import (
             IncompleteFilter,
         )
-        from taskdog_core.application.queries.filters.this_week_filter import (
-            ThisWeekFilter,
-        )
-        from taskdog_core.application.queries.filters.today_filter import TodayFilter
 
         if not filter_obj:
             return None
@@ -277,12 +273,8 @@ class TaskQueryService(QueryService):
 
         current_filter = filter_obj
         while current_filter:
-            if isinstance(
-                current_filter, TodayFilter | ThisWeekFilter | IncompleteFilter
-            ):
-                # These filters have complex logic that needs Python processing
-                # - TodayFilter checks IN_PROGRESS status in addition to dates
-                # - IncompleteFilter uses task.is_finished property
+            if isinstance(current_filter, IncompleteFilter):
+                # IncompleteFilter uses task.is_finished property
                 complex_filters.append(current_filter)
             elif isinstance(current_filter, CompositeFilter):
                 # Check sub-filters in CompositeFilter

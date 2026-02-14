@@ -2,7 +2,7 @@
 
 from datetime import date, datetime, timedelta
 
-from taskdog_core.application.dto.query_inputs import ListTasksInput, TimeRange
+from taskdog_core.application.dto.query_inputs import ListTasksInput
 from taskdog_core.application.queries.task_filter_builder import TaskFilterBuilder
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
@@ -72,63 +72,6 @@ class TestTaskFilterBuilder:
 
         assert self._matches(result, both_tags) is True
         assert self._matches(result, one_tag) is False
-
-    def test_build_creates_today_filter(self):
-        """Test build creates TodayFilter when time_range is TODAY."""
-        input_dto = ListTasksInput(include_archived=True, time_range=TimeRange.TODAY)
-        result = TaskFilterBuilder.build(input_dto)
-
-        assert result is not None
-        today = date.today()
-        tomorrow = today + timedelta(days=1)
-
-        today_task = Task(
-            name="Today",
-            priority=1,
-            deadline=datetime.combine(today, datetime.min.time()),
-        )
-        tomorrow_task = Task(
-            name="Tomorrow",
-            priority=1,
-            deadline=datetime.combine(tomorrow, datetime.min.time()),
-        )
-        in_progress_task = Task(
-            name="In Progress", priority=1, status=TaskStatus.IN_PROGRESS
-        )
-
-        assert self._matches(result, today_task) is True
-        assert self._matches(result, tomorrow_task) is False
-        assert self._matches(result, in_progress_task) is True
-
-    def test_build_creates_this_week_filter(self):
-        """Test build creates ThisWeekFilter when time_range is THIS_WEEK."""
-        input_dto = ListTasksInput(
-            include_archived=True, time_range=TimeRange.THIS_WEEK
-        )
-        result = TaskFilterBuilder.build(input_dto)
-
-        assert result is not None
-        today = date.today()
-        end_of_week = today + timedelta(days=(6 - today.weekday()))
-        next_week = end_of_week + timedelta(days=7)
-
-        this_week_task = Task(
-            name="This Week",
-            priority=1,
-            deadline=datetime.combine(end_of_week, datetime.min.time()),
-        )
-        next_week_task = Task(
-            name="Next Week",
-            priority=1,
-            deadline=datetime.combine(next_week, datetime.min.time()),
-        )
-        in_progress_task = Task(
-            name="In Progress", priority=1, status=TaskStatus.IN_PROGRESS
-        )
-
-        assert self._matches(result, this_week_task) is True
-        assert self._matches(result, next_week_task) is False
-        assert self._matches(result, in_progress_task) is True
 
     def test_build_creates_date_range_filter(self):
         """Test build creates DateRangeFilter when start/end dates are specified."""

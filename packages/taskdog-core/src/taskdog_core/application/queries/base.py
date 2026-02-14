@@ -16,11 +16,10 @@ class QueryService:
         class TaskQueryService(QueryService):
             def __init__(self, repository):
                 super().__init__(repository)
-                self.today_filter = TodayFilter(repository)
 
-            def get_today_tasks(self, include_completed=False):
+            def get_filtered_tasks(self, filter_obj=None):
                 tasks = self.repository.get_all()
-                return self.today_filter.apply(tasks, include_completed)
+                return filter_obj.filter(tasks) if filter_obj else tasks
     """
 
     def __init__(self, repository: TaskRepository):

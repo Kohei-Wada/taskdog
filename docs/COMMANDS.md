@@ -296,40 +296,6 @@ taskdog gantt -s deadline
 taskdog gantt --start-date 2025-10-20 --end-date 2025-10-30
 ```
 
-### today - Today's tasks
-
-```bash
-taskdog today [--sort FIELD] [--reverse]
-```
-
-Show tasks relevant for today:
-
-- Deadline is today
-- Planned schedule includes today
-- Status is IN_PROGRESS
-
-**Examples:**
-
-```bash
-taskdog today
-taskdog today -s priority
-```
-
-### week - This week's tasks
-
-```bash
-taskdog week [--sort FIELD] [--reverse]
-```
-
-Show tasks relevant for this week (same filtering logic as today).
-
-**Examples:**
-
-```bash
-taskdog week
-taskdog week -s deadline
-```
-
 ### show - Task details
 
 ```bash

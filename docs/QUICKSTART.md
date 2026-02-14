@@ -285,7 +285,6 @@ Restart Claude Desktop after configuration.
 
 Ask Claude Desktop:
 
-- "Show me today's tasks"
 - "Create a task to review the PR"
 - "Start task 42"
 

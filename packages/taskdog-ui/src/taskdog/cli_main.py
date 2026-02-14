@@ -26,9 +26,7 @@ from taskdog.cli.commands.stats import stats_command
 from taskdog.cli.commands.table import table_command
 from taskdog.cli.commands.tags import tags_command
 from taskdog.cli.commands.timeline import timeline_command
-from taskdog.cli.commands.today import today_command
 from taskdog.cli.commands.update import update_command
-from taskdog.cli.commands.week import week_command
 from taskdog.cli.context import CliContext
 from taskdog.console.rich_console_writer import RichConsoleWriter
 from taskdog.infrastructure.cli_config_manager import load_cli_config
@@ -173,8 +171,6 @@ cli.add_command(pause_command)
 cli.add_command(done_command)
 cli.add_command(cancel_command)
 cli.add_command(gantt_command)
-cli.add_command(today_command)
-cli.add_command(week_command)
 cli.add_command(note_command)
 cli.add_command(show_command)
 cli.add_command(remove_dependency_command)

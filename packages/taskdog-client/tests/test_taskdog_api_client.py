@@ -263,16 +263,6 @@ class TestTaskdogApiClientDelegation:
         client.list_tasks(all=True, sort_by="priority")
         client._queries.list_tasks.assert_called_once()
 
-    def test_list_today_tasks(self, client):
-        """Test list_today_tasks delegates to QueryClient."""
-        client.list_today_tasks()
-        client._queries.list_today_tasks.assert_called_once()
-
-    def test_list_week_tasks(self, client):
-        """Test list_week_tasks delegates to QueryClient."""
-        client.list_week_tasks()
-        client._queries.list_week_tasks.assert_called_once()
-
     def test_get_task_by_id(self, client):
         """Test get_task_by_id delegates to QueryClient."""
         client.get_task_by_id(task_id=1)

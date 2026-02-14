@@ -7,7 +7,7 @@ MCP (Model Context Protocol) server for Taskdog, enabling Claude Desktop and oth
 - **Task Management**: Create, read, update, delete tasks via natural language
 - **Task Lifecycle**: Start, complete, pause, cancel, reopen tasks
 - **Task Decomposition**: AI-assisted breakdown of large tasks into subtasks
-- **Queries**: Get today's tasks, statistics, executable tasks
+- **Queries**: Get statistics, executable tasks, tag statistics
 
 ## Installation
 
@@ -96,8 +96,6 @@ Or with uv (for development):
 ### Queries
 
 - `get_statistics` - Get task statistics
-- `get_today_tasks` - Get today's tasks
-- `get_week_tasks` - Get this week's tasks
 - `get_tag_statistics` - Get tag statistics
 - `get_executable_tasks` - Get tasks AI can work on
 
@@ -114,7 +112,6 @@ Or with uv (for development):
 
 Ask Claude Desktop:
 
-- "Show me today's tasks"
 - "Create a task to write unit tests for the API"
 - "Start task 42"
 - "Complete task 42"
