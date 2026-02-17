@@ -4,7 +4,7 @@
 repos:
   # Ruff - fast Python linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.5
+    rev: v0.15.1
     hooks:
       # Run the linter
       - id: ruff
@@ -15,7 +15,7 @@ repos:
   # mypy - static type checker
   # Phase 2: mypy enabled with permissive settings
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.2
+    rev: v1.19.1
     hooks:
       - id: mypy
         additional_dependencies: [click>=8.3.0, rich>=14.2.0, fastapi>=0.115.0, pydantic>=2.10.0, httpx>=0.27.0, "uvicorn[standard]>=0.32.0"]
@@ -24,7 +24,7 @@ repos:
 
   # Markdown linter
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.17.2
+    rev: v0.21.0
     hooks:
       - id: markdownlint-cli2
         args: [--fix]
@@ -32,7 +32,7 @@ repos:
 
   # GitHub Actions linter
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.7
+    rev: v1.7.11
     hooks:
       - id: actionlint
 
@@ -52,7 +52,7 @@ repos:
 
   # Conventional Commits linter
   - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v4.0.0
+    rev: v4.3.0
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
