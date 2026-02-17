@@ -1,7 +1,7 @@
 version: 2
 updates:
-  # Monitor workspace root Python dependencies
-  - package-ecosystem: "pip"
+  # Monitor Python dependencies (uv workspace)
+  - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -22,39 +22,6 @@ updates:
     labels:
       - "dependencies"
       - "python"
-
-  # Monitor taskdog-core package
-  - package-ecosystem: "pip"
-    directory: "/packages/taskdog-core"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "taskdog-core"
-
-  # Monitor taskdog-server package
-  - package-ecosystem: "pip"
-    directory: "/packages/taskdog-server"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "taskdog-server"
-
-  # Monitor taskdog-ui package
-  - package-ecosystem: "pip"
-    directory: "/packages/taskdog-ui"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
-      - "taskdog-ui"
 
   # Monitor GitHub Actions
   - package-ecosystem: "github-actions"
