@@ -56,6 +56,23 @@ class TaskUIManager:
         self._on_auth_error = on_auth_error
         self._on_server_error = on_server_error
 
+    def _handle_api_error(
+        self, error: ServerConnectionError | AuthenticationError | ServerError
+    ) -> None:
+        """Dispatch API error to the appropriate callback.
+
+        Args:
+            error: The API error to handle
+        """
+        handlers: dict[type, Callable[..., None] | None] = {
+            ServerConnectionError: self._on_connection_error,
+            AuthenticationError: self._on_auth_error,
+            ServerError: self._on_server_error,
+        }
+        callback = handlers.get(type(error))
+        if callback:
+            callback(error)
+
     def load_tasks(self, keep_scroll_position: bool = False) -> None:
         """Load tasks and update UI.
 
@@ -100,20 +117,8 @@ class TaskUIManager:
                 reverse=self.state.sort_reverse,
                 date_range=date_range,
             )
-        except ServerConnectionError as e:
-            if self._on_connection_error:
-                self._on_connection_error(e)
-
-            return self._create_empty_task_data()
-        except AuthenticationError as e:
-            if self._on_auth_error:
-                self._on_auth_error(e)
-
-            return self._create_empty_task_data()
-        except ServerError as e:
-            if self._on_server_error:
-                self._on_server_error(e)
-
+        except (ServerConnectionError, AuthenticationError, ServerError) as e:
+            self._handle_api_error(e)
             return self._create_empty_task_data()
 
     def _create_empty_task_data(self) -> TaskData:
@@ -192,15 +197,8 @@ class TaskUIManager:
         try:
             gantt_view_model = self._fetch_gantt_for_range(start_date, end_date)
             self._update_gantt_ui(gantt_view_model)
-        except ServerConnectionError as e:
-            if self._on_connection_error:
-                self._on_connection_error(e)
-        except AuthenticationError as e:
-            if self._on_auth_error:
-                self._on_auth_error(e)
-        except ServerError as e:
-            if self._on_server_error:
-                self._on_server_error(e)
+        except (ServerConnectionError, AuthenticationError, ServerError) as e:
+            self._handle_api_error(e)
 
     def _fetch_gantt_for_range(
         self, start_date: date, end_date: date
