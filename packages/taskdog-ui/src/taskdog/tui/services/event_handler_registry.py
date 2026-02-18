@@ -5,7 +5,7 @@ to their appropriate handlers, replacing if-elif chains with a lookup table.
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
@@ -59,66 +59,63 @@ class EventHandlerRegistry:
         if client_id:
             self.app.api_client.set_client_id(client_id)
 
-    def _handle_task_created(self, message: dict[str, Any]) -> None:
-        """Handle task created event."""
+    def _handle_task_event(
+        self,
+        message: dict[str, Any],
+        action: str,
+        severity: Literal["information", "warning", "error"] = "information",
+        details_extractor: Callable[[dict[str, Any]], str] | None = None,
+    ) -> None:
+        """Handle common task event pattern.
+
+        Reloads tasks, refreshes audit panel, and shows a notification.
+
+        Args:
+            message: WebSocket message dictionary
+            action: Action performed (added, updated, deleted, status changed)
+            severity: Notification severity level
+            details_extractor: Optional callable to extract details from message
+        """
         self._reload_tasks()
         self._refresh_audit_panel()
         task_name = message.get("task_name", "Unknown")
         task_id = message.get("task_id")
         display_source = self._get_display_source(message)
+        details = details_extractor(message) if details_extractor else None
         msg = self._build_task_message(
-            "added", task_name, task_id=task_id, source_client_id=display_source
+            action,
+            task_name,
+            task_id=task_id,
+            details=details,
+            source_client_id=display_source,
         )
-        self.app.notify(msg, severity="information")
+        self.app.notify(msg, severity=severity)
+
+    def _handle_task_created(self, message: dict[str, Any]) -> None:
+        """Handle task created event."""
+        self._handle_task_event(message, "added")
 
     def _handle_task_updated(self, message: dict[str, Any]) -> None:
         """Handle task updated event."""
-        self._reload_tasks()
-        self._refresh_audit_panel()
-        task_name = message.get("task_name", "Unknown")
-        task_id = message.get("task_id")
-        display_source = self._get_display_source(message)
-        fields = message.get("updated_fields", [])
-        details = ", ".join(fields)
-        msg = self._build_task_message(
+        self._handle_task_event(
+            message,
             "updated",
-            task_name,
-            task_id=task_id,
-            details=details,
-            source_client_id=display_source,
+            details_extractor=lambda m: ", ".join(m.get("updated_fields", [])),
         )
-        self.app.notify(msg, severity="information")
 
     def _handle_task_deleted(self, message: dict[str, Any]) -> None:
         """Handle task deleted event."""
-        self._reload_tasks()
-        self._refresh_audit_panel()
-        task_name = message.get("task_name", "Unknown")
-        task_id = message.get("task_id")
-        display_source = self._get_display_source(message)
-        msg = self._build_task_message(
-            "deleted", task_name, task_id=task_id, source_client_id=display_source
-        )
-        self.app.notify(msg, severity="warning")
+        self._handle_task_event(message, "deleted", severity="warning")
 
     def _handle_task_status_changed(self, message: dict[str, Any]) -> None:
         """Handle task status changed event."""
-        self._reload_tasks()
-        self._refresh_audit_panel()
-        task_name = message.get("task_name", "Unknown")
-        task_id = message.get("task_id")
-        display_source = self._get_display_source(message)
-        old_status = message.get("old_status", "")
-        new_status = message.get("new_status", "")
-        details = f"{old_status} → {new_status}"
-        msg = self._build_task_message(
+        self._handle_task_event(
+            message,
             "status changed",
-            task_name,
-            task_id=task_id,
-            details=details,
-            source_client_id=display_source,
+            details_extractor=lambda m: (
+                f"{m.get('old_status', '')} → {m.get('new_status', '')}"
+            ),
         )
-        self.app.notify(msg, severity="information")
 
     def _handle_schedule_optimized(self, message: dict[str, Any]) -> None:
         """Handle schedule optimization WebSocket event.
