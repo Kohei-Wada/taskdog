@@ -109,6 +109,39 @@ class BaseModalDialog(ModalScreen[T]):
             return True  # Empty is valid when valid_empty=True
         return bool(input_widget.is_valid)
 
+    def _validate_input(self, input_widget: Input) -> bool:
+        """Validate an Input widget, focusing it if invalid.
+
+        Combines _is_input_valid check with focus-on-error behavior.
+
+        Args:
+            input_widget: Input widget to validate
+
+        Returns:
+            True if valid, False if invalid (widget is focused)
+        """
+        if not self._is_input_valid(input_widget):
+            input_widget.focus()
+            return False
+        return True
+
+    def _validate_required(self, input_widget: Input, field_name: str) -> bool:
+        """Validate that a required field has a non-empty value.
+
+        Shows a validation error and focuses the widget if empty.
+
+        Args:
+            input_widget: Input widget to check
+            field_name: Human-readable field name for the error message
+
+        Returns:
+            True if non-empty, False if empty (error shown, widget focused)
+        """
+        if not input_widget.value.strip():
+            self._show_validation_error(f"{field_name} is required", input_widget)
+            return False
+        return True
+
     @abstractmethod
     def compose(self) -> ComposeResult:
         """Compose the dialog layout.

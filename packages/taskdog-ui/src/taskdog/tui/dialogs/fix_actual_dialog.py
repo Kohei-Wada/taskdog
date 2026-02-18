@@ -200,17 +200,12 @@ class FixActualDialog(FormDialogBase[FixActualFormData | None]):
             actual_end_input,
             actual_duration_input,
         ]:
-            if not self._is_input_valid(input_widget):
-                input_widget.focus()
+            if not self._validate_input(input_widget):
                 return
 
         # Parse datetime fields using validators registered on Input widgets
-        actual_start = self._get_validator(actual_start_input, DateTimeValidator).parse(
-            actual_start_str
-        )
-        actual_end = self._get_validator(actual_end_input, DateTimeValidator).parse(
-            actual_end_str
-        )
+        actual_start = self._parse_datetime_field(actual_start_input)
+        actual_end = self._parse_datetime_field(actual_end_input)
 
         # Validate end is not before start (when both are provided)
         if actual_start and actual_end:

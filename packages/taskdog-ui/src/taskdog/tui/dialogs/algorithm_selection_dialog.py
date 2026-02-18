@@ -176,42 +176,27 @@ class AlgorithmSelectionDialog(
             return
         selected_algo = str(algorithm_select.value)
 
-        # Validate max hours (required)
-        max_hours_str = max_hours_input.value.strip()
-        if not max_hours_str:
-            self._show_validation_error(
-                "Max hours per day is required", max_hours_input
-            )
+        # Validate required fields and input validity
+        if not self._validate_required(max_hours_input, "Max hours per day"):
             return
-
-        # Validate start date (required)
-        start_date_str = start_date_input.value.strip()
-        if not start_date_str:
-            self._show_validation_error("Start date is required", start_date_input)
+        if not self._validate_required(start_date_input, "Start date"):
             return
-
-        # Check if inputs are valid (Textual shows validation error automatically)
-        if not max_hours_input.is_valid:
-            max_hours_input.focus()
+        if not self._validate_input(max_hours_input):
             return
-
-        if not start_date_input.is_valid:
-            start_date_input.focus()
+        if not self._validate_input(start_date_input):
             return
 
         # Parse values
-        max_hours = float(max_hours_str)
-
-        start_date_validator = StartDateTextualValidator()
-        start_date = start_date_validator.parse(start_date_str)
-
-        # Get force override value
-        force_override = force_checkbox.value
-
-        # Get include_all_days value
-        include_all_days = include_all_days_checkbox.value
+        max_hours = float(max_hours_input.value.strip())
+        start_date = StartDateTextualValidator().parse(start_date_input.value.strip())
 
         # Submit algorithm, max_hours, start_date, force_override, and include_all_days
         self.dismiss(
-            (selected_algo, max_hours, start_date, force_override, include_all_days)
+            (
+                selected_algo,
+                max_hours,
+                start_date,
+                force_checkbox.value,
+                include_all_days_checkbox.value,
+            )
         )

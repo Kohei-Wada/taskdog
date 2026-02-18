@@ -4,6 +4,7 @@ from abc import abstractmethod
 from typing import ClassVar, TypeVar
 
 from textual.binding import Binding
+from textual.widgets import Input
 
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 
@@ -60,6 +61,21 @@ class FormDialogBase(BaseModalDialog[T]):
     def action_focus_previous(self) -> None:
         """Move focus to the previous field (Ctrl+K)."""
         self.focus_previous()
+
+    def _parse_datetime_field(self, input_widget: Input) -> str | None:
+        """Parse a datetime value from an Input widget using its DateTimeValidator.
+
+        Args:
+            input_widget: Input widget with a DateTimeValidator attached
+
+        Returns:
+            Parsed datetime string (YYYY-MM-DD HH:MM:SS) or None if empty
+        """
+        from taskdog.tui.forms.validators import DateTimeValidator
+
+        return self._get_validator(input_widget, DateTimeValidator).parse(
+            input_widget.value
+        )
 
     @abstractmethod
     def _submit_form(self) -> None:
