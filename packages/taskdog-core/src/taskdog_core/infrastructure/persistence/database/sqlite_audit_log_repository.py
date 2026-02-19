@@ -18,6 +18,7 @@ from taskdog_core.application.dto.audit_log_dto import (
     AuditLogOutput,
     AuditQuery,
 )
+from taskdog_core.domain.repositories.audit_log_repository import AuditLogRepository
 from taskdog_core.infrastructure.persistence.database.engine_factory import (
     create_session_factory,
     create_sqlite_engine,
@@ -27,7 +28,7 @@ from taskdog_core.infrastructure.persistence.database.models.audit_log_model imp
 )
 
 
-class SqliteAuditLogRepository:
+class SqliteAuditLogRepository(AuditLogRepository):
     """SQLite implementation of audit log repository using SQLAlchemy ORM.
 
     This repository:
