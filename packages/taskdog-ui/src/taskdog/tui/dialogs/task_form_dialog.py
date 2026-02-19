@@ -9,6 +9,7 @@ from textual.widgets import Checkbox, Input, Label
 from taskdog.tui.dialogs.form_dialog import FormDialogBase
 from taskdog.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from taskdog.tui.forms.validators import DateTimeValidator
+from taskdog.tui.widgets.tag_input import TagInput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 if TYPE_CHECKING:
@@ -26,6 +27,7 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
         self,
         task: TaskDetailDto | None = None,
         input_defaults: "InputDefaultsConfig | None" = None,
+        available_tags: list[str] | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -34,11 +36,13 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
         Args:
             task: Existing task DTO for editing, or None for adding new task
             input_defaults: UI input completion defaults (uses hardcoded defaults if None)
+            available_tags: List of existing tags for suggestion dropdown
         """
         super().__init__(*args, **kwargs)
         self.task_to_edit = task
         self.is_edit_mode = task is not None
         self._input_defaults = input_defaults
+        self._available_tags = available_tags
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""
@@ -56,7 +60,7 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
 
             # Compose form fields using the common helper
             yield from TaskFormFields.compose_form_fields(
-                self.task_to_edit, self._input_defaults
+                self.task_to_edit, self._input_defaults, self._available_tags
             )
 
     def on_mount(self) -> None:
@@ -75,7 +79,7 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
         planned_start_input = self.query_one("#planned-start-input", Input)
         planned_end_input = self.query_one("#planned-end-input", Input)
         dependencies_input = self.query_one("#dependencies-input", Input)
-        tags_input = self.query_one("#tags-input", Input)
+        tags_input = self.query_one("#tags-input", TagInput)
         fixed_checkbox = self.query_one("#fixed-checkbox", Checkbox)
 
         # Clear previous error
@@ -133,7 +137,7 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
             dependencies_input.focus()
             return
 
-        if not self._is_input_valid(tags_input):
+        if not tags_input.is_valid:
             tags_input.focus()
             return
 

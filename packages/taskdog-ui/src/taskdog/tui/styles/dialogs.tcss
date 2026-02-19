@@ -129,6 +129,11 @@ StatsScreen {
     max-height: 50;  /* Accommodate planned_start/planned_end fields */
 }
 
+/* TagInput suggestion dropdown */
+TagInput ._non-focusable-option-list.visible {
+    max-height: 6;
+}
+
 /* Task Detail Screen */
 #detail-screen {
     max-height: 50;

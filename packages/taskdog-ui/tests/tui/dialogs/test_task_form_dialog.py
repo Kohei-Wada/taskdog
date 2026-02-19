@@ -146,6 +146,34 @@ class TestTaskFormDialogActions:
         assert callable(dialog.action_cancel)
 
 
+class TestTaskFormDialogAvailableTags:
+    """Test cases for available_tags parameter."""
+
+    def test_init_without_available_tags(self) -> None:
+        """Test that available_tags defaults to None."""
+        dialog = TaskFormDialog(task=None)
+        assert dialog._available_tags is None
+
+    def test_init_with_available_tags(self) -> None:
+        """Test that available_tags is stored."""
+        tags = ["work", "urgent", "client"]
+        dialog = TaskFormDialog(task=None, available_tags=tags)
+        assert dialog._available_tags == tags
+
+    def test_init_with_empty_available_tags(self) -> None:
+        """Test that empty available_tags list is stored."""
+        dialog = TaskFormDialog(task=None, available_tags=[])
+        assert dialog._available_tags == []
+
+    def test_edit_mode_with_available_tags(self) -> None:
+        """Test that available_tags works in edit mode."""
+        task = create_mock_task(tags=["existing"])
+        tags = ["work", "urgent", "existing"]
+        dialog = TaskFormDialog(task=task, available_tags=tags)
+        assert dialog._available_tags == tags
+        assert dialog.is_edit_mode is True
+
+
 class TestTaskFormDialogModeDetection:
     """Test cases for dialog mode detection logic."""
 

@@ -209,6 +209,23 @@ class TUICommandBase(ABC):  # noqa: B024
         """
         self.app.notify(message, severity="warning")
 
+    def fetch_available_tags(self) -> list[str]:
+        """Fetch existing tags sorted by usage count (desc) then alphabetically.
+
+        Returns:
+            List of tag names. Empty list if fetch fails.
+        """
+        try:
+            stats = self.context.api_client.get_tag_statistics()
+            # Sort by count descending, then alphabetically
+            sorted_tags = sorted(
+                stats.tag_counts.items(),
+                key=lambda item: (-item[1], item[0]),
+            )
+            return [tag for tag, _count in sorted_tags]
+        except Exception:
+            return []
+
     def manage_dependencies(
         self,
         task_id: int,

@@ -55,5 +55,8 @@ class AddCommand(TUICommandBase):
         input_defaults = (
             self.context.config.input_defaults if self.context.config else None
         )
-        dialog = TaskFormDialog(input_defaults=input_defaults)
+        available_tags = self.fetch_available_tags()
+        dialog = TaskFormDialog(
+            input_defaults=input_defaults, available_tags=available_tags
+        )
         self.app.push_screen(dialog, self.handle_error(handle_task_data))

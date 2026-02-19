@@ -42,7 +42,12 @@ class EditCommand(TUICommandBase):
         input_defaults = (
             self.context.config.input_defaults if self.context.config else None
         )
-        dialog = TaskFormDialog(task=original_task, input_defaults=input_defaults)
+        available_tags = self.fetch_available_tags()
+        dialog = TaskFormDialog(
+            task=original_task,
+            input_defaults=input_defaults,
+            available_tags=available_tags,
+        )
         self.app.push_screen(dialog, self.handle_error(handle_task_data))
 
     def _detect_changes(

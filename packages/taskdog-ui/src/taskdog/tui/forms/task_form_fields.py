@@ -11,6 +11,7 @@ from textual.widgets import Checkbox, Input, Label, Static
 
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.forms.validators import DateTimeValidator
+from taskdog.tui.widgets.tag_input import TagInput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_DEADLINE_TIME,
@@ -87,6 +88,7 @@ class TaskFormFields:
     def compose_form_fields(
         task: TaskDetailDto | None = None,
         input_defaults: "InputDefaultsConfig | None" = None,
+        available_tags: list[str] | None = None,
     ) -> ComposeResult:
         """Compose task form fields.
 
@@ -203,12 +205,11 @@ class TaskFormFields:
             tags_str = ""
             if task and task.tags:
                 tags_str = ",".join(task.tags)
-            yield Input(
+            yield TagInput(
                 placeholder="Optional: work,urgent,client-a (comma-separated tags)",
                 id="tags-input",
                 value=tags_str,
-                valid_empty=True,
-                validators=[Regex(r"^([a-zA-Z0-9_-]+\s*,\s*)*[a-zA-Z0-9_-]+$")],
+                available_tags=available_tags,
             )
 
             # Fixed field (checkbox)
