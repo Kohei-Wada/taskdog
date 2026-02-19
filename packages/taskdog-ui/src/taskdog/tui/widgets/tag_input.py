@@ -6,6 +6,7 @@ import re
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
+from textual.css.query import NoMatches
 from textual.events import Key
 from textual.message import Message
 from textual.widgets import Input, OptionList
@@ -111,7 +112,7 @@ class TagInput(Vertical):
         """Get the current input text value."""
         try:
             return str(self.query_one("#tag-text-input", Input).value)
-        except Exception:
+        except NoMatches:
             return self._initial_value
 
     @value.setter
@@ -119,7 +120,7 @@ class TagInput(Vertical):
         """Set the input text value."""
         try:
             self.query_one("#tag-text-input", Input).value = new_value
-        except Exception:
+        except NoMatches:
             self._initial_value = new_value
 
     @property
@@ -139,7 +140,7 @@ class TagInput(Vertical):
         """Check if the inner Input currently has focus."""
         try:
             return bool(self.query_one("#tag-text-input", Input).has_focus)
-        except Exception:
+        except NoMatches:
             return False
 
     def _get_current_fragment(self) -> str:
@@ -220,12 +221,13 @@ class TagInput(Vertical):
 
         option = option_list.get_option_at_index(highlighted)
         selected_tag = option.prompt
-        if not isinstance(selected_tag, str):
+        if not isinstance(selected_tag, str) or not selected_tag:
             return
 
         # Build new value: completed tags + selected tag + trailing comma
+        # Use lower() to match _get_completed_tags() for consistent dedup
         completed = self._get_completed_tags()
-        completed.append(selected_tag)
+        completed.append(selected_tag.lower())
         new_value = ",".join(completed) + ","
 
         input_widget = self.query_one("#tag-text-input", Input)
@@ -281,5 +283,5 @@ class TagInput(Vertical):
         """Focus the inner Input widget."""
         try:
             self.query_one("#tag-text-input", Input).focus(scroll_visible)
-        except Exception:
+        except NoMatches:
             super().focus(scroll_visible)
