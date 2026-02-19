@@ -133,7 +133,9 @@ def initialize_api_context(
     crud_controller = TaskCrudController(
         repository, notes_repository, config, crud_logger, holiday_checker
     )
-    audit_log_controller = AuditLogController(audit_log_repository, audit_log_logger)
+    audit_log_controller = AuditLogController(
+        audit_log_repository, audit_log_logger, time_provider
+    )
 
     return ApiContext(
         repository=repository,

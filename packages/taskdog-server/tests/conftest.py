@@ -229,7 +229,9 @@ def app(
     crud_controller = TaskCrudController(
         session_repository, session_notes_repository, mock_config, mock_logger
     )
-    audit_log_controller = AuditLogController(session_audit_log_repository, mock_logger)
+    audit_log_controller = AuditLogController(
+        session_audit_log_repository, mock_logger, SystemTimeProvider()
+    )
 
     # Create API context once
     api_context = ApiContext(
