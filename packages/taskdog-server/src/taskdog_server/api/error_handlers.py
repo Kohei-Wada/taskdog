@@ -9,6 +9,7 @@ from typing import Any, TypeVar
 
 from fastapi import HTTPException, status
 
+from taskdog_core.domain.exceptions.tag_exceptions import TagNotFoundException
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
@@ -45,7 +46,7 @@ def handle_task_errors(func: F) -> F:
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             return await func(*args, **kwargs)
-        except TaskNotFoundException as e:
+        except (TaskNotFoundException, TagNotFoundException) as e:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
             ) from e

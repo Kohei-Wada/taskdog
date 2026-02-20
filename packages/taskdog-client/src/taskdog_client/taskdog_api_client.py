@@ -18,6 +18,7 @@ from taskdog_client.query_client import QueryClient
 from taskdog_client.relationship_client import RelationshipClient
 from taskdog_client.task_client import TaskClient
 from taskdog_core.application.dto.audit_log_dto import AuditLogListOutput
+from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
@@ -243,6 +244,10 @@ class TaskdogApiClient:
     def set_task_tags(self, task_id: int, tags: list[str]) -> TaskOperationOutput:
         """Set task tags (replaces existing tags)."""
         return self._relationships.set_task_tags(task_id, tags)
+
+    def delete_tag(self, tag_name: str) -> DeleteTagOutput:
+        """Delete a tag from the system."""
+        return self._relationships.delete_tag(tag_name)
 
     # Analytics Controller methods - delegate to AnalyticsClient
 

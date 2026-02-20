@@ -395,6 +395,13 @@ class NotesResponse(BaseModel):
     has_notes: bool
 
 
+class DeleteTagResponse(BaseModel):
+    """Response model for tag deletion."""
+
+    tag_name: str
+    affected_task_count: int
+
+
 class AuditLogResponse(BaseModel):
     """Response model for a single audit log entry."""
 

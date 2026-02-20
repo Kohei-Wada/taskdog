@@ -125,6 +125,9 @@ ignore = [
 "packages/taskdog-core/src/taskdog_core/domain/exceptions/task_exceptions.py" = [
   "N818",
 ]  # TaskNotFoundException is widely used
+"packages/taskdog-core/src/taskdog_core/domain/exceptions/tag_exceptions.py" = [
+  "N818",
+]  # TagNotFoundException matches TaskNotFoundException naming convention
 "packages/*/tests/**/*.py" = ["SIM115", "RUF015"]  # Test code patterns are acceptable
 "scripts/**/*.py" = ["B904", "C901"]  # Migration scripts: exception chaining and complexity acceptable
 "packages/taskdog-server/src/taskdog_server/api/error_handlers.py" = ["UP047"]  # Type parameters require Python 3.12+
