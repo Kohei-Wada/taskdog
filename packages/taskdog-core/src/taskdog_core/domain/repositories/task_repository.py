@@ -183,6 +183,27 @@ class TaskRepository(ABC):
         """
         pass
 
+    def delete_tag(self, tag_name: str) -> int:
+        """Delete a tag from the system by name.
+
+        Removes the tag record. CASCADE delete automatically removes
+        all task_tags associations.
+
+        Args:
+            tag_name: Name of the tag to delete
+
+        Returns:
+            Number of tasks that were associated with the deleted tag
+
+        Raises:
+            TagNotFoundException: If tag with given name doesn't exist
+
+        Notes:
+            - Default implementation raises NotImplementedError
+            - Repositories should override this for actual tag deletion
+        """
+        raise NotImplementedError("delete_tag not implemented")
+
     def get_daily_workload_totals(
         self,
         start_date: date,

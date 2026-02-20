@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 
 from taskdog.cli.commands.tags import tags_command
+from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
@@ -158,6 +159,90 @@ class TestTagsCommand:
 
         # Execute
         result = self.runner.invoke(tags_command, [], obj=self.cli_context)
+
+        # Verify
+        assert result.exit_code == 0
+        self.console_writer.error.assert_called_once_with("managing tags", error)
+
+    def test_delete_tag_success(self):
+        """Test deleting a tag successfully."""
+        # Setup
+        self.api_client.delete_tag.return_value = DeleteTagOutput(
+            tag_name="urgent", affected_task_count=3
+        )
+
+        # Execute
+        result = self.runner.invoke(
+            tags_command, ["-d", "urgent"], obj=self.cli_context
+        )
+
+        # Verify
+        assert result.exit_code == 0
+        self.api_client.delete_tag.assert_called_once_with("urgent")
+        self.console_writer.success.assert_called_once_with(
+            "Deleted tag: urgent (removed from 3 tasks)"
+        )
+
+    def test_delete_tag_single_task(self):
+        """Test deleting a tag from a single task uses singular 'task'."""
+        # Setup
+        self.api_client.delete_tag.return_value = DeleteTagOutput(
+            tag_name="unique", affected_task_count=1
+        )
+
+        # Execute
+        result = self.runner.invoke(
+            tags_command, ["-d", "unique"], obj=self.cli_context
+        )
+
+        # Verify
+        assert result.exit_code == 0
+        self.console_writer.success.assert_called_once_with(
+            "Deleted tag: unique (removed from 1 task)"
+        )
+
+    def test_delete_tag_zero_tasks(self):
+        """Test deleting a tag with no task associations."""
+        # Setup
+        self.api_client.delete_tag.return_value = DeleteTagOutput(
+            tag_name="orphan", affected_task_count=0
+        )
+
+        # Execute
+        result = self.runner.invoke(
+            tags_command, ["-d", "orphan"], obj=self.cli_context
+        )
+
+        # Verify
+        assert result.exit_code == 0
+        self.console_writer.success.assert_called_once_with(
+            "Deleted tag: orphan (removed from 0 tasks)"
+        )
+
+    def test_delete_tag_not_found(self):
+        """Test deleting a non-existent tag shows error."""
+        # Setup
+        self.api_client.delete_tag.side_effect = TaskNotFoundException(
+            "Tag 'nonexistent' not found"
+        )
+
+        # Execute
+        result = self.runner.invoke(
+            tags_command, ["-d", "nonexistent"], obj=self.cli_context
+        )
+
+        # Verify
+        assert result.exit_code == 0
+        self.console_writer.validation_error.assert_called_once()
+
+    def test_delete_tag_general_exception(self):
+        """Test handling of general exception during tag deletion."""
+        # Setup
+        error = ValueError("Something went wrong")
+        self.api_client.delete_tag.side_effect = error
+
+        # Execute
+        result = self.runner.invoke(tags_command, ["-d", "test"], obj=self.cli_context)
 
         # Verify
         assert result.exit_code == 0

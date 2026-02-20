@@ -4,8 +4,11 @@ This controller handles operations related to task relationships and metadata:
 - add_dependency: Add dependency relationship between tasks (with cycle detection)
 - remove_dependency: Remove dependency relationship
 - set_task_tags: Replace all tags for a task
+- delete_tag: Delete a tag from the system
 """
 
+from taskdog_core.application.dto.delete_tag_input import DeleteTagInput
+from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
 from taskdog_core.application.dto.manage_dependencies_input import (
     AddDependencyInput,
     RemoveDependencyInput,
@@ -13,6 +16,7 @@ from taskdog_core.application.dto.manage_dependencies_input import (
 from taskdog_core.application.dto.set_task_tags_input import SetTaskTagsInput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.use_cases.add_dependency import AddDependencyUseCase
+from taskdog_core.application.use_cases.delete_tag import DeleteTagUseCase
 from taskdog_core.application.use_cases.remove_dependency import RemoveDependencyUseCase
 from taskdog_core.application.use_cases.set_task_tags import SetTaskTagsUseCase
 from taskdog_core.controllers.base_controller import BaseTaskController
@@ -100,4 +104,22 @@ class TaskRelationshipController(BaseTaskController):
         """
         use_case = SetTaskTagsUseCase(self.repository)
         request = SetTaskTagsInput(task_id=task_id, tags=tags)
+        return use_case.execute(request)
+
+    def delete_tag(self, tag_name: str) -> DeleteTagOutput:
+        """Delete a tag from the system.
+
+        Removes the tag and all its associations with tasks.
+
+        Args:
+            tag_name: Name of the tag to delete
+
+        Returns:
+            DeleteTagOutput with tag name and affected task count
+
+        Raises:
+            TagNotFoundException: If tag not found
+        """
+        use_case = DeleteTagUseCase(self.repository)
+        request = DeleteTagInput(tag_name=tag_name)
         return use_case.execute(request)

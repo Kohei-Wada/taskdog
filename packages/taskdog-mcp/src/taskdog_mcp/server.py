@@ -44,12 +44,14 @@ def create_mcp_server(config: McpConfig | None = None) -> FastMCP:
         task_decomposition,
         task_lifecycle,
         task_query,
+        task_tags,
     )
 
     task_crud.register_tools(mcp, client)
     task_lifecycle.register_tools(mcp, client)
     task_query.register_tools(mcp, client)
     task_decomposition.register_tools(mcp, client)
+    task_tags.register_tools(mcp, client)
 
     logger.info(
         f"MCP server '{config.server.name}' initialized, connecting to {base_url}"

@@ -75,3 +75,18 @@ class TestRelationshipClient:
             "delete", "/api/v1/tasks/1/dependencies/2"
         )
         assert result == mock_output
+
+    def test_delete_tag(self):
+        """Test delete_tag makes correct API call."""
+        self.mock_base._request_json.return_value = {
+            "tag_name": "urgent",
+            "affected_task_count": 3,
+        }
+
+        result = self.client.delete_tag(tag_name="urgent")
+
+        self.mock_base._request_json.assert_called_once_with(
+            "delete", "/api/v1/tags/urgent"
+        )
+        assert result.tag_name == "urgent"
+        assert result.affected_task_count == 3

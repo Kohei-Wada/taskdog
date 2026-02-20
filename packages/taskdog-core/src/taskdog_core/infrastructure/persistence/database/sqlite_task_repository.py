@@ -17,6 +17,7 @@ from sqlalchemy import func, select
 from sqlalchemy.engine import Engine
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.exceptions.tag_exceptions import TagNotFoundException
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.infrastructure.persistence.database.base_repository import (
     SqliteBaseRepository,
@@ -362,6 +363,41 @@ class SqliteTaskRepository(SqliteBaseRepository, TaskRepository):
 
             # Return task with assigned ID
             return self.mapper.from_model(model)
+
+    def delete_tag(self, tag_name: str) -> int:
+        """Delete a tag from the system by name.
+
+        Removes the tag record from the tags table. CASCADE delete
+        automatically removes all task_tags associations.
+
+        Args:
+            tag_name: Name of the tag to delete
+
+        Returns:
+            Number of tasks that were associated with the deleted tag
+
+        Raises:
+            TagNotFoundException: If tag with given name doesn't exist
+        """
+        with self.Session() as session:
+            # Find tag by name
+            stmt = select(TagModel).where(TagModel.name == tag_name)
+            tag = session.scalar(stmt)
+
+            if tag is None:
+                raise TagNotFoundException(tag_name)
+
+            # Count associated tasks before deletion
+            count_stmt = select(func.count(TaskTagModel.task_id)).where(
+                TaskTagModel.tag_id == tag.id
+            )
+            affected_count = session.scalar(count_stmt) or 0
+
+            # Delete tag (CASCADE removes task_tags)
+            session.delete(tag)
+            session.commit()
+
+            return affected_count
 
     def get_tag_counts(self) -> dict[str, int]:
         """Get all tags with their task counts using SQL aggregation.
