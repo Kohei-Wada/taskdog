@@ -7,25 +7,45 @@ from taskdog.cli.error_handler import handle_task_errors
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
-@click.command(name="tags", help="View or set task tags.")
+@click.command(name="tags", help="View, set, or delete task tags.")
 @click.argument("task_id", type=int, required=False)
 @click.argument("tags", nargs=-1)
+@click.option(
+    "-d",
+    "--delete",
+    "delete_tag_name",
+    type=str,
+    default=None,
+    help="Delete a tag by name (removes from all tasks).",
+)
 @click.pass_context
 @handle_task_errors("managing tags")
 def tags_command(
     ctx: click.Context,
     task_id: int | None,
     tags: tuple[str, ...],
+    delete_tag_name: str | None,
 ) -> None:
-    """View or set task tags.
+    """View, set, or delete task tags.
 
     Usage:
-        taskdog tags           - List all tags with task counts
-        taskdog tags ID        - Show tags for task ID
-        taskdog tags ID tag1 tag2  - Set tags for task ID (replaces existing tags)
+        taskdog tags              - List all tags with task counts
+        taskdog tags ID           - Show tags for task ID
+        taskdog tags ID tag1 tag2 - Set tags for task ID (replaces existing tags)
+        taskdog tags -d TAG_NAME  - Delete a tag from the system
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
+
+    # Delete tag mode
+    if delete_tag_name is not None:
+        delete_result = ctx_obj.api_client.delete_tag(delete_tag_name)
+        task_word = "task" if delete_result.affected_task_count == 1 else "tasks"
+        console_writer.success(
+            f"Deleted tag: {delete_result.tag_name} "
+            f"(removed from {delete_result.affected_task_count} {task_word})"
+        )
+        return
 
     # Case 1: No arguments - show all tags
     if task_id is None:

@@ -24,7 +24,6 @@ from taskdog.cli.commands.show import show_command
 from taskdog.cli.commands.start import start_command
 from taskdog.cli.commands.stats import stats_command
 from taskdog.cli.commands.table import table_command
-from taskdog.cli.commands.tag import tag_command
 from taskdog.cli.commands.tags import tags_command
 from taskdog.cli.commands.timeline import timeline_command
 from taskdog.cli.commands.update import update_command
@@ -180,7 +179,6 @@ cli.add_command(restore_command)
 cli.add_command(fix_actual_command)
 cli.add_command(optimize_command)
 cli.add_command(stats_command)
-cli.add_command(tag_command)
 cli.add_command(tags_command)
 cli.add_command(timeline_command)
 # Note: tui_command is lazy-loaded via LAZY_SUBCOMMANDS for performance
