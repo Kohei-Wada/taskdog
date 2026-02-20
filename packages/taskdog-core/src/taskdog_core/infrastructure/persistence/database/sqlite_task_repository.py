@@ -18,9 +18,8 @@ from sqlalchemy.engine import Engine
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.repositories.task_repository import TaskRepository
-from taskdog_core.infrastructure.persistence.database.engine_factory import (
-    create_session_factory,
-    create_sqlite_engine,
+from taskdog_core.infrastructure.persistence.database.base_repository import (
+    SqliteBaseRepository,
 )
 from taskdog_core.infrastructure.persistence.database.models import (
     DailyAllocationModel,
@@ -45,7 +44,7 @@ if TYPE_CHECKING:
     from taskdog_core.domain.services.time_provider import ITimeProvider
 
 
-class SqliteTaskRepository(TaskRepository):
+class SqliteTaskRepository(SqliteBaseRepository, TaskRepository):
     """SQLite implementation of TaskRepository using SQLAlchemy ORM.
 
     This repository:
@@ -71,22 +70,13 @@ class SqliteTaskRepository(TaskRepository):
             engine: SQLAlchemy Engine instance. If None, creates a new engine.
                    Pass a shared engine to avoid redundant connection pools.
         """
-        self.database_url = database_url
+        super().__init__(database_url, engine)
         self.mapper = mapper or TaskDbMapper()
         if time_provider is None:
             from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 
             time_provider = SystemTimeProvider()
         self._time_provider = time_provider
-
-        # Use provided engine or create a new one
-        self._owns_engine = engine is None
-        self.engine = (
-            engine if engine is not None else create_sqlite_engine(database_url)
-        )
-
-        # Create sessionmaker for managing database sessions
-        self.Session = create_session_factory(self.engine)
 
     def get_all(self) -> list[Task]:
         """Retrieve all tasks from database.
@@ -253,6 +243,20 @@ class SqliteTaskRepository(TaskRepository):
         """
         self.save_all([task])
 
+    def _create_builders(
+        self, session: Any
+    ) -> tuple[TaskInsertBuilder, TaskTagRelationshipBuilder, DailyAllocationBuilder]:
+        """Create mutation builder instances for a session.
+
+        Returns:
+            Tuple of (insert_builder, tag_builder, allocation_builder)
+        """
+        tag_resolver = TagResolver(session)
+        insert_builder = TaskInsertBuilder(session, self.mapper)
+        tag_builder = TaskTagRelationshipBuilder(session, tag_resolver)
+        allocation_builder = DailyAllocationBuilder(session)
+        return insert_builder, tag_builder, allocation_builder
+
     def save_all(self, tasks: list[Task]) -> None:
         """Save multiple tasks in a single transaction.
 
@@ -266,12 +270,10 @@ class SqliteTaskRepository(TaskRepository):
             return
 
         with self.Session() as session:
-            # Create builders for this session
-            tag_resolver = TagResolver(session)
-            insert_builder = TaskInsertBuilder(session, self.mapper)
+            insert_builder, tag_builder, allocation_builder = self._create_builders(
+                session
+            )
             update_builder = TaskUpdateBuilder(session, self.mapper)
-            tag_builder = TaskTagRelationshipBuilder(session, tag_resolver)
-            allocation_builder = DailyAllocationBuilder(session)
 
             # Bulk fetch existing tasks to avoid N+1 queries
             existing_ids = [t.id for t in tasks if t.id is not None]
@@ -343,11 +345,9 @@ class SqliteTaskRepository(TaskRepository):
         )
 
         with self.Session() as session:
-            # Create builders for this session
-            tag_resolver = TagResolver(session)
-            insert_builder = TaskInsertBuilder(session, self.mapper)
-            tag_builder = TaskTagRelationshipBuilder(session, tag_resolver)
-            allocation_builder = DailyAllocationBuilder(session)
+            insert_builder, tag_builder, allocation_builder = self._create_builders(
+                session
+            )
 
             # Insert task (flush assigns ID via AUTOINCREMENT)
             model = insert_builder.insert_task(task)
@@ -624,12 +624,3 @@ class SqliteTaskRepository(TaskRepository):
                 row[0]: float(row[1]) if row[1] is not None else 0.0  # type: ignore[misc, arg-type]
                 for row in results
             }
-
-    def close(self) -> None:
-        """Close database connections and clean up resources.
-
-        Should be called when the repository is no longer needed.
-        Only disposes the engine if this repository created it.
-        """
-        if self._owns_engine:
-            self.engine.dispose()

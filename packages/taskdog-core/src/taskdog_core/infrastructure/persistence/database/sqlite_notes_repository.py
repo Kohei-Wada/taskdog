@@ -16,9 +16,8 @@ from sqlalchemy.engine import Engine
 
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.services.time_provider import ITimeProvider
-from taskdog_core.infrastructure.persistence.database.engine_factory import (
-    create_session_factory,
-    create_sqlite_engine,
+from taskdog_core.infrastructure.persistence.database.base_repository import (
+    SqliteBaseRepository,
 )
 from taskdog_core.infrastructure.persistence.database.models.note_model import (
     NoteModel,
@@ -35,7 +34,7 @@ class MigrationResult:
     error_messages: list[str]
 
 
-class SqliteNotesRepository(NotesRepository):
+class SqliteNotesRepository(SqliteBaseRepository, NotesRepository):
     """SQLite implementation of notes repository using SQLAlchemy ORM.
 
     This repository:
@@ -59,17 +58,8 @@ class SqliteNotesRepository(NotesRepository):
             engine: SQLAlchemy Engine instance. If None, creates a new engine.
                    Pass a shared engine to avoid redundant connection pools.
         """
-        self.database_url = database_url
+        super().__init__(database_url, engine)
         self.time_provider = time_provider
-
-        # Use provided engine or create a new one
-        self._owns_engine = engine is None
-        self.engine = (
-            engine if engine is not None else create_sqlite_engine(database_url)
-        )
-
-        # Create sessionmaker for managing database sessions
-        self.Session = create_session_factory(self.engine)
 
     def has_notes(self, task_id: int) -> bool:
         """Check if task has associated notes.
@@ -256,11 +246,3 @@ class SqliteNotesRepository(NotesRepository):
         with self.Session() as session:
             session.execute(delete(NoteModel))
             session.commit()
-
-    def close(self) -> None:
-        """Close database connections and clean up resources.
-
-        Only disposes the engine if this repository created it.
-        """
-        if self._owns_engine:
-            self.engine.dispose()

@@ -19,16 +19,15 @@ from taskdog_core.application.dto.audit_log_dto import (
     AuditQuery,
 )
 from taskdog_core.domain.repositories.audit_log_repository import AuditLogRepository
-from taskdog_core.infrastructure.persistence.database.engine_factory import (
-    create_session_factory,
-    create_sqlite_engine,
+from taskdog_core.infrastructure.persistence.database.base_repository import (
+    SqliteBaseRepository,
 )
 from taskdog_core.infrastructure.persistence.database.models.audit_log_model import (
     AuditLogModel,
 )
 
 
-class SqliteAuditLogRepository(AuditLogRepository):
+class SqliteAuditLogRepository(SqliteBaseRepository, AuditLogRepository):
     """SQLite implementation of audit log repository using SQLAlchemy ORM.
 
     This repository:
@@ -46,16 +45,7 @@ class SqliteAuditLogRepository(AuditLogRepository):
             engine: SQLAlchemy Engine instance. If None, creates a new engine.
                    Pass a shared engine to avoid redundant connection pools.
         """
-        self.database_url = database_url
-
-        # Use provided engine or create a new one
-        self._owns_engine = engine is None
-        self.engine = (
-            engine if engine is not None else create_sqlite_engine(database_url)
-        )
-
-        # Create sessionmaker for managing database sessions
-        self.Session = create_session_factory(self.engine)
+        super().__init__(database_url, engine)
 
     def save(self, event: AuditEvent) -> None:
         """Persist an audit event to the database.
@@ -230,11 +220,3 @@ class SqliteAuditLogRepository(AuditLogRepository):
         with self.Session() as session:
             session.execute(delete(AuditLogModel))
             session.commit()
-
-    def close(self) -> None:
-        """Close database connections and clean up resources.
-
-        Only disposes the engine if this repository created it.
-        """
-        if self._owns_engine:
-            self.engine.dispose()
