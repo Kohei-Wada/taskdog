@@ -21,7 +21,7 @@ def get_css_paths() -> list[str | Path]:
             str(styles_dir / "main.tcss"),
             str(styles_dir / "dialogs.tcss"),
         ]
-    except Exception:
+    except (FileNotFoundError, ModuleNotFoundError):
         # Fallback to __file__ for development
         styles_dir = Path(__file__).parent.parent / "styles"
         return [
