@@ -125,5 +125,10 @@ def gantt_command(
 
     # Render using Presentation layer (display logic)
     console_writer = ctx_obj.console_writer
-    renderer = RichGanttRenderer(console_writer)
+    gantt_config = ctx_obj.config.gantt
+    renderer = RichGanttRenderer(
+        console_writer,
+        comfortable_hours=gantt_config.workload_comfortable_hours,
+        moderate_hours=gantt_config.workload_moderate_hours,
+    )
     renderer.render(gantt_view_model)

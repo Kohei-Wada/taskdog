@@ -162,7 +162,11 @@ class GanttCellFormatter:
 
     @staticmethod
     def build_workload_timeline(
-        daily_workload: dict[date, float], start_date: date, end_date: date
+        daily_workload: dict[date, float],
+        start_date: date,
+        end_date: date,
+        comfortable_hours: float = WORKLOAD_COMFORTABLE_HOURS,
+        moderate_hours: float = WORKLOAD_MODERATE_HOURS,
     ) -> Text:
         """Build workload summary timeline showing daily total hours.
 
@@ -170,6 +174,8 @@ class GanttCellFormatter:
             daily_workload: Pre-computed daily workload totals
             start_date: Start date of the chart
             end_date: End date of the chart
+            comfortable_hours: Threshold for green zone (at or below = green)
+            moderate_hours: Threshold for yellow zone (above comfortable, at or below = yellow)
 
         Returns:
             Rich Text object with workload summary
@@ -190,9 +196,9 @@ class GanttCellFormatter:
             # Color based on workload level (use original hours for threshold)
             if hours == 0:
                 style = "dim"
-            elif hours <= WORKLOAD_COMFORTABLE_HOURS:
+            elif hours <= comfortable_hours:
                 style = "bold green"
-            elif hours <= WORKLOAD_MODERATE_HOURS:
+            elif hours <= moderate_hours:
                 style = "bold yellow"
             else:
                 style = "bold red"

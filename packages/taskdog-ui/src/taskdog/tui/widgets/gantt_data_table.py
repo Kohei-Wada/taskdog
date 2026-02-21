@@ -15,6 +15,10 @@ from textual.widgets import DataTable
 from taskdog.constants.table_dimensions import TASK_NAME_COLUMN_WIDTH
 from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
+from taskdog_core.shared.constants import (
+    WORKLOAD_COMFORTABLE_HOURS,
+    WORKLOAD_MODERATE_HOURS,
+)
 
 # Constants
 GANTT_HEADER_ROW_COUNT = 3  # Number of header rows (Month, Week, Date)
@@ -81,7 +85,11 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         self.add_column(Text("Timeline", justify="center"))
 
     def load_gantt(
-        self, gantt_view_model: GanttViewModel, keep_scroll_position: bool = False
+        self,
+        gantt_view_model: GanttViewModel,
+        keep_scroll_position: bool = False,
+        comfortable_hours: float = WORKLOAD_COMFORTABLE_HOURS,
+        moderate_hours: float = WORKLOAD_MODERATE_HOURS,
     ) -> None:
         """Load Gantt data into the table.
 
@@ -89,6 +97,8 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             gantt_view_model: Presentation-ready Gantt data
             keep_scroll_position: Whether to preserve scroll position during refresh.
                                  Set to True for periodic updates to avoid scroll stuttering.
+            comfortable_hours: Workload threshold for green zone
+            moderate_hours: Workload threshold for yellow zone
         """
         # Save scroll position before refresh (both vertical and horizontal)
         # Note: scroll_y/scroll_x types from DataTable base class (type: ignore needed)
@@ -141,6 +151,8 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             gantt_view_model.start_date,
             gantt_view_model.end_date,
             gantt_view_model.total_estimated_duration,
+            comfortable_hours=comfortable_hours,
+            moderate_hours=moderate_hours,
         )
 
         # Restore scroll position to prevent stuttering
@@ -289,6 +301,8 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         start_date: date,
         end_date: date,
         total_estimated_duration: float = 0.0,
+        comfortable_hours: float = WORKLOAD_COMFORTABLE_HOURS,
+        moderate_hours: float = WORKLOAD_MODERATE_HOURS,
     ) -> None:
         """Add workload summary row.
 
@@ -297,10 +311,16 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             start_date: Start date of the chart
             end_date: End date of the chart
             total_estimated_duration: Sum of all estimated durations
+            comfortable_hours: Workload threshold for green zone
+            moderate_hours: Workload threshold for yellow zone
         """
         # Build workload timeline using the formatter
         workload_timeline = GanttCellFormatter.build_workload_timeline(
-            daily_workload, start_date, end_date
+            daily_workload,
+            start_date,
+            end_date,
+            comfortable_hours=comfortable_hours,
+            moderate_hours=moderate_hours,
         )
 
         # Format total estimated duration

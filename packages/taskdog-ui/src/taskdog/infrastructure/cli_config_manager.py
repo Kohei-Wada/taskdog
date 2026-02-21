@@ -10,6 +10,10 @@ from datetime import time
 
 from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.config_manager import parse_time_value
+from taskdog_core.shared.constants import (
+    WORKLOAD_COMFORTABLE_HOURS,
+    WORKLOAD_MODERATE_HOURS,
+)
 from taskdog_core.shared.constants.config_defaults import (
     DEFAULT_DEADLINE_TIME,
     DEFAULT_PLANNED_END_TIME,
@@ -78,6 +82,22 @@ class NotesConfig:
 
 
 @dataclass(frozen=True)
+class GanttConfig:
+    """Gantt chart display configuration.
+
+    Attributes:
+        workload_comfortable_hours: Daily hours threshold for green zone (comfortable).
+            Hours at or below this value are displayed in green.
+        workload_moderate_hours: Daily hours threshold for yellow zone (moderate).
+            Hours above comfortable but at or below this value are displayed in yellow.
+            Hours above this value are displayed in red.
+    """
+
+    workload_comfortable_hours: float = WORKLOAD_COMFORTABLE_HOURS
+    workload_moderate_hours: float = WORKLOAD_MODERATE_HOURS
+
+
+@dataclass(frozen=True)
 class CliConfig:
     """CLI/TUI configuration.
 
@@ -89,6 +109,7 @@ class CliConfig:
         ui: UI appearance settings (theme, etc.)
         notes: Notes settings (template path, etc.)
         input_defaults: UI input completion defaults (datetime fields)
+        gantt: Gantt chart display settings (workload thresholds)
         keybindings: Future: Custom keybindings for TUI (not yet implemented)
     """
 
@@ -96,6 +117,7 @@ class CliConfig:
     ui: UiConfig = field(default_factory=UiConfig)
     notes: NotesConfig = field(default_factory=NotesConfig)
     input_defaults: InputDefaultsConfig = field(default_factory=InputDefaultsConfig)
+    gantt: GanttConfig = field(default_factory=GanttConfig)
     keybindings: dict[str, str] = field(default_factory=dict)
 
 
@@ -109,6 +131,8 @@ def load_cli_config() -> CliConfig:
         TASKDOG_INPUT_DEADLINE_TIME: Default time for deadline input
         TASKDOG_INPUT_PLANNED_START_TIME: Default time for planned_start input
         TASKDOG_INPUT_PLANNED_END_TIME: Default time for planned_end input
+        TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS: Comfortable workload threshold
+        TASKDOG_GANTT_WORKLOAD_MODERATE_HOURS: Moderate workload threshold
 
     Returns:
         CliConfig with merged settings
@@ -127,6 +151,7 @@ def load_cli_config() -> CliConfig:
     ui_data = data.get("ui", {})
     notes_data = data.get("notes", {})
     input_defaults_data = data.get("input_defaults", {})
+    gantt_data = data.get("gantt", {})
     keybindings = data.get("keybindings", {})
 
     # Parse input_defaults with env var overrides
@@ -176,6 +201,22 @@ def load_cli_config() -> CliConfig:
             ),
             planned_end_time=parse_time_value(
                 planned_end_time_raw, DEFAULT_PLANNED_END_TIME
+            ),
+        ),
+        gantt=GanttConfig(
+            workload_comfortable_hours=ConfigLoader.get_env(
+                "GANTT_WORKLOAD_COMFORTABLE_HOURS",
+                gantt_data.get(
+                    "workload_comfortable_hours", WORKLOAD_COMFORTABLE_HOURS
+                ),
+                float,
+                log_errors=False,
+            ),
+            workload_moderate_hours=ConfigLoader.get_env(
+                "GANTT_WORKLOAD_MODERATE_HOURS",
+                gantt_data.get("workload_moderate_hours", WORKLOAD_MODERATE_HOURS),
+                float,
+                log_errors=False,
             ),
         ),
         keybindings=keybindings,
