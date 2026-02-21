@@ -5,6 +5,7 @@ from typing import Any, ClassVar, TypeVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
+from textual.css.query import NoMatches
 from textual.screen import ModalScreen
 from textual.validation import Validator
 from textual.widgets import Input, Static
@@ -51,7 +52,7 @@ class BaseModalDialog(ModalScreen[T]):
         try:
             error_message = self.query_one("#error-message", Static)
             error_message.update(f"[red]Error: {message}[/red]")
-        except Exception:
+        except NoMatches:
             # If error-message widget doesn't exist, skip error display
             # This allows dialogs without validation to not require the widget
             pass
@@ -66,7 +67,7 @@ class BaseModalDialog(ModalScreen[T]):
         try:
             error_message = self.query_one("#error-message", Static)
             error_message.update("")
-        except Exception:
+        except NoMatches:
             # If error-message widget doesn't exist, skip error clearing
             pass
 

@@ -5,6 +5,7 @@ from typing import ClassVar, TypeVar
 
 from textual.binding import Binding
 from textual.containers import VerticalScroll
+from textual.css.query import NoMatches
 
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
@@ -50,7 +51,7 @@ class ScrollableDialogBase(BaseModalDialog[T], ViNavigationMixin):
         """
         try:
             return self.query_one(self.scroll_container_id, VerticalScroll)
-        except Exception as e:
+        except NoMatches as e:
             raise RuntimeError(
                 f"Scroll container '{self.scroll_container_id}' not found or "
                 f"not a VerticalScroll widget in {self.__class__.__name__}"

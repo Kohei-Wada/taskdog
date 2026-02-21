@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from textual.app import App
+from textual.app import App, InvalidThemeError
 from textual.binding import Binding
 from textual.command import CommandPalette
 
@@ -316,7 +316,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         # Apply theme from config with fallback for invalid themes
         try:
             self.theme = self._theme
-        except Exception:
+        except InvalidThemeError:
             self.notify(
                 f"Invalid theme '{self._theme}'. Using default.",
                 severity="warning",
