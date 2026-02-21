@@ -492,13 +492,17 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         """Show the command palette."""
         self.push_screen(CommandPalette())
 
-    def toggle_audit_panel(self) -> None:
-        """Toggle the audit log side panel visibility.
+    def show_audit_logs(self) -> None:
+        """Toggle the audit log screen.
 
         Called from Command Palette via AuditCommandProvider.
         """
-        if self.main_screen:
-            self.main_screen.toggle_audit_panel()
+        from taskdog.tui.screens.audit_log_screen import AuditLogScreen
+
+        if isinstance(self.screen, AuditLogScreen):
+            self.pop_screen()
+        else:
+            self.push_screen(AuditLogScreen(api_client=self.api_client))
 
     def _refresh_elapsed_time(self) -> None:
         """Refresh the task table to update elapsed time for IN_PROGRESS tasks.

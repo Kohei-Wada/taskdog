@@ -162,31 +162,6 @@ class TestEventHandlerRegistry:
         self.registry.dispatch(message)
         self.mock_app.notify.assert_called_once()
 
-    def test_refresh_audit_panel_when_main_screen_exists(self) -> None:
-        """Test that audit panel is refreshed when main_screen exists."""
-        self.mock_app.main_screen = MagicMock()
-        self.mock_app.main_screen.refresh_audit_panel = MagicMock()
-        message = {
-            "type": "task_created",
-            "task_id": 1,
-            "task_name": "Task",
-        }
-        self.registry.dispatch(message)
-        # call_later is called twice: once for load_tasks, once for refresh_audit_panel
-        assert self.mock_app.call_later.call_count == 2
-
-    def test_refresh_audit_panel_skipped_when_no_main_screen(self) -> None:
-        """Test that audit panel refresh is skipped when main_screen is None."""
-        self.mock_app.main_screen = None
-        message = {
-            "type": "task_created",
-            "task_id": 1,
-            "task_name": "Task",
-        }
-        self.registry.dispatch(message)
-        # call_later is called only once for load_tasks
-        assert self.mock_app.call_later.call_count == 1
-
     def test_source_user_name_preferred_over_client_id(self) -> None:
         """Test that source_user_name is preferred over source_client_id."""
         message = {

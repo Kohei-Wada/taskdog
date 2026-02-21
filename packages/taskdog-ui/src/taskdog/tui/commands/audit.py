@@ -1,12 +1,15 @@
-"""Audit command for TUI - toggles audit log side panel."""
+"""Audit command for TUI - toggles audit log screen."""
 
 from taskdog.tui.commands.base import TUICommandBase
+from taskdog.tui.screens.audit_log_screen import AuditLogScreen
 
 
 class AuditCommand(TUICommandBase):
-    """Command to toggle the audit log side panel visibility."""
+    """Command to toggle the audit log screen."""
 
     def execute_impl(self) -> None:
-        """Execute the audit toggle command."""
-        if self.app.main_screen:
-            self.app.main_screen.toggle_audit_panel()
+        """Toggle the audit log screen (push if not shown, pop if shown)."""
+        if isinstance(self.app.screen, AuditLogScreen):
+            self.app.pop_screen()
+        else:
+            self.app.push_screen(AuditLogScreen(api_client=self.context.api_client))
