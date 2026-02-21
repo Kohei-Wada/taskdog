@@ -17,61 +17,37 @@ from taskdog_server.config.server_config_manager import (
 class TestGetAuthenticatedClient:
     """Tests for get_authenticated_client dependency."""
 
-    def test_auth_disabled_returns_none(self) -> None:
-        """When auth is disabled, return None without checking API key."""
+    @pytest.mark.parametrize("api_key", [None, "any-key"], ids=["no_key", "with_key"])
+    def test_auth_disabled_returns_none(self, api_key: str | None) -> None:
+        """When auth is disabled, return None regardless of API key."""
         config = ServerConfig(auth=AuthConfig(enabled=False))
 
-        result = get_authenticated_client(api_key=None, server_config=config)
+        result = get_authenticated_client(api_key=api_key, server_config=config)
 
         assert result is None
 
-    def test_auth_disabled_ignores_api_key(self) -> None:
-        """When auth is disabled, API key is ignored."""
-        config = ServerConfig(auth=AuthConfig(enabled=False))
-
-        result = get_authenticated_client(api_key="any-key", server_config=config)
-
-        assert result is None
-
-    def test_auth_enabled_no_keys_configured_raises_401(self) -> None:
-        """When auth is enabled but no keys configured, raise 401."""
-        config = ServerConfig(auth=AuthConfig(enabled=True, api_keys=()))
-
-        with pytest.raises(HTTPException) as exc_info:
-            get_authenticated_client(api_key="any-key", server_config=config)
-
-        assert exc_info.value.status_code == 401
-        assert "no API keys configured" in exc_info.value.detail
-
-    def test_auth_enabled_missing_api_key_raises_401(self) -> None:
-        """When auth is enabled and API key is missing, raise 401."""
-        config = ServerConfig(
-            auth=AuthConfig(
-                enabled=True,
-                api_keys=(ApiKeyEntry(name="test", key="sk-valid-key"),),
-            )
-        )
+    @pytest.mark.parametrize(
+        "api_keys,api_key,expected_detail",
+        [
+            ((), "any-key", "no API keys configured"),
+            ((ApiKeyEntry(name="test", key="sk-valid-key"),), None, "API key required"),
+            (
+                (ApiKeyEntry(name="test", key="sk-valid-key"),),
+                "sk-wrong-key",
+                "Invalid API key",
+            ),
+        ],
+        ids=["no_keys_configured", "missing_key", "invalid_key"],
+    )
+    def test_auth_enabled_raises_401(self, api_keys, api_key, expected_detail) -> None:
+        """When auth is enabled and authentication fails, raise 401."""
+        config = ServerConfig(auth=AuthConfig(enabled=True, api_keys=api_keys))
 
         with pytest.raises(HTTPException) as exc_info:
-            get_authenticated_client(api_key=None, server_config=config)
+            get_authenticated_client(api_key=api_key, server_config=config)
 
         assert exc_info.value.status_code == 401
-        assert "API key required" in exc_info.value.detail
-
-    def test_auth_enabled_invalid_api_key_raises_401(self) -> None:
-        """When auth is enabled and API key is invalid, raise 401."""
-        config = ServerConfig(
-            auth=AuthConfig(
-                enabled=True,
-                api_keys=(ApiKeyEntry(name="test", key="sk-valid-key"),),
-            )
-        )
-
-        with pytest.raises(HTTPException) as exc_info:
-            get_authenticated_client(api_key="sk-wrong-key", server_config=config)
-
-        assert exc_info.value.status_code == 401
-        assert "Invalid API key" in exc_info.value.detail
+        assert expected_detail in exc_info.value.detail
 
     def test_auth_enabled_valid_api_key_returns_client_name(self) -> None:
         """When auth is enabled and API key is valid, return client name."""
@@ -115,36 +91,25 @@ class TestValidateApiKeyForWebsocket:
 
         assert result is None
 
-    def test_auth_enabled_no_keys_configured_raises_error(self) -> None:
-        """When auth is enabled but no keys configured, raise ValueError."""
-        config = ServerConfig(auth=AuthConfig(enabled=True, api_keys=()))
+    @pytest.mark.parametrize(
+        "api_keys,api_key,expected_match",
+        [
+            ((), "any-key", "no API keys configured"),
+            ((ApiKeyEntry(name="test", key="sk-valid-key"),), None, "API key required"),
+            (
+                (ApiKeyEntry(name="test", key="sk-valid-key"),),
+                "sk-wrong-key",
+                "Invalid API key",
+            ),
+        ],
+        ids=["no_keys_configured", "missing_key", "invalid_key"],
+    )
+    def test_auth_enabled_raises_error(self, api_keys, api_key, expected_match) -> None:
+        """When auth is enabled and authentication fails, raise ValueError."""
+        config = ServerConfig(auth=AuthConfig(enabled=True, api_keys=api_keys))
 
-        with pytest.raises(ValueError, match="no API keys configured"):
-            validate_api_key_for_websocket(api_key="any-key", server_config=config)
-
-    def test_auth_enabled_missing_api_key_raises_error(self) -> None:
-        """When auth is enabled and API key is missing, raise ValueError."""
-        config = ServerConfig(
-            auth=AuthConfig(
-                enabled=True,
-                api_keys=(ApiKeyEntry(name="test", key="sk-valid-key"),),
-            )
-        )
-
-        with pytest.raises(ValueError, match="API key required"):
-            validate_api_key_for_websocket(api_key=None, server_config=config)
-
-    def test_auth_enabled_invalid_api_key_raises_error(self) -> None:
-        """When auth is enabled and API key is invalid, raise ValueError."""
-        config = ServerConfig(
-            auth=AuthConfig(
-                enabled=True,
-                api_keys=(ApiKeyEntry(name="test", key="sk-valid-key"),),
-            )
-        )
-
-        with pytest.raises(ValueError, match="Invalid API key"):
-            validate_api_key_for_websocket(api_key="sk-wrong-key", server_config=config)
+        with pytest.raises(ValueError, match=expected_match):
+            validate_api_key_for_websocket(api_key=api_key, server_config=config)
 
     def test_auth_enabled_valid_api_key_returns_client_name(self) -> None:
         """When auth is enabled and API key is valid, return client name."""
@@ -165,23 +130,17 @@ class TestValidateApiKeyForWebsocket:
 class TestAuthEndpointIntegration:
     """Integration tests for authentication in actual endpoints."""
 
-    def test_endpoint_without_api_key_returns_401(
-        self, session_client, sample_task
+    @pytest.mark.parametrize(
+        "headers",
+        [None, {"X-Api-Key": "invalid-key"}],
+        ids=["no_key", "invalid_key"],
+    )
+    def test_endpoint_returns_401_without_valid_key(
+        self, session_client, sample_task, headers
     ) -> None:
-        """Request without API key returns 401."""
-        # Use session_client directly (no auth headers)
-        response = session_client.get("/api/v1/tasks/")
-
-        assert response.status_code == 401
-
-    def test_endpoint_with_invalid_api_key_returns_401(
-        self, session_client, sample_task
-    ) -> None:
-        """Request with invalid API key returns 401."""
-        # Use session_client directly with invalid key
-        response = session_client.get(
-            "/api/v1/tasks/", headers={"X-Api-Key": "invalid-key"}
-        )
+        """Request without valid API key returns 401."""
+        kwargs = {"headers": headers} if headers else {}
+        response = session_client.get("/api/v1/tasks/", **kwargs)
 
         assert response.status_code == 401
 
