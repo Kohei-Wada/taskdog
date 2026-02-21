@@ -9,6 +9,7 @@ import pytest
 
 from taskdog.infrastructure.cli_config_manager import (
     CliConfig,
+    GanttConfig,
     UiConfig,
     load_cli_config,
 )
@@ -24,9 +25,20 @@ class TestCliConfig:
         original_env = {
             "TASKDOG_API_HOST": os.environ.get("TASKDOG_API_HOST"),
             "TASKDOG_API_PORT": os.environ.get("TASKDOG_API_PORT"),
+            "TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS": os.environ.get(
+                "TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS"
+            ),
+            "TASKDOG_GANTT_WORKLOAD_MODERATE_HOURS": os.environ.get(
+                "TASKDOG_GANTT_WORKLOAD_MODERATE_HOURS"
+            ),
         }
         # Clear env vars for clean tests
-        for key in ["TASKDOG_API_HOST", "TASKDOG_API_PORT"]:
+        for key in [
+            "TASKDOG_API_HOST",
+            "TASKDOG_API_PORT",
+            "TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS",
+            "TASKDOG_GANTT_WORKLOAD_MODERATE_HOURS",
+        ]:
             os.environ.pop(key, None)
 
         yield
@@ -168,3 +180,109 @@ theme = "nord"
                 assert config.api.port == 4000
                 # UI settings should come from file (no env var override)
                 assert config.ui.theme == "nord"
+
+    def test_gantt_config_defaults(self):
+        """Test GanttConfig default values."""
+        gantt_config = GanttConfig()
+        assert gantt_config.workload_comfortable_hours == 6.0
+        assert gantt_config.workload_moderate_hours == 8.0
+
+    def test_gantt_config_custom_values(self):
+        """Test GanttConfig with custom values."""
+        gantt_config = GanttConfig(
+            workload_comfortable_hours=4.0,
+            workload_moderate_hours=6.0,
+        )
+        assert gantt_config.workload_comfortable_hours == 4.0
+        assert gantt_config.workload_moderate_hours == 6.0
+
+    def test_default_config_includes_gantt(self):
+        """Test default CliConfig includes gantt with default values."""
+        config = CliConfig()
+        assert config.gantt.workload_comfortable_hours == 6.0
+        assert config.gantt.workload_moderate_hours == 8.0
+
+    def test_load_config_with_gantt_section(self):
+        """Test loading config with [gantt] section from TOML file."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_dir = Path(tmpdir)
+            config_path = config_dir / "cli.toml"
+            config_path.write_text(
+                """
+[gantt]
+workload_comfortable_hours = 4.0
+workload_moderate_hours = 6.0
+"""
+            )
+
+            with patch(
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
+                return_value=config_dir,
+            ):
+                config = load_cli_config()
+                assert config.gantt.workload_comfortable_hours == 4.0
+                assert config.gantt.workload_moderate_hours == 6.0
+
+    def test_load_config_without_gantt_section_uses_defaults(self):
+        """Test loading config without [gantt] section uses defaults."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_dir = Path(tmpdir)
+            config_path = config_dir / "cli.toml"
+            config_path.write_text(
+                """
+[api]
+host = "localhost"
+"""
+            )
+
+            with patch(
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
+                return_value=config_dir,
+            ):
+                config = load_cli_config()
+                assert config.gantt.workload_comfortable_hours == 6.0
+                assert config.gantt.workload_moderate_hours == 8.0
+
+    def test_gantt_env_vars_override_toml(self):
+        """Test environment variables override [gantt] TOML values."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_dir = Path(tmpdir)
+            config_path = config_dir / "cli.toml"
+            config_path.write_text(
+                """
+[gantt]
+workload_comfortable_hours = 4.0
+workload_moderate_hours = 6.0
+"""
+            )
+
+            os.environ["TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS"] = "5.0"
+            os.environ["TASKDOG_GANTT_WORKLOAD_MODERATE_HOURS"] = "9.0"
+
+            with patch(
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
+                return_value=config_dir,
+            ):
+                config = load_cli_config()
+                assert config.gantt.workload_comfortable_hours == 5.0
+                assert config.gantt.workload_moderate_hours == 9.0
+
+    def test_gantt_partial_toml_section(self):
+        """Test loading config with partial [gantt] section."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_dir = Path(tmpdir)
+            config_path = config_dir / "cli.toml"
+            config_path.write_text(
+                """
+[gantt]
+workload_comfortable_hours = 5.0
+"""
+            )
+
+            with patch(
+                "taskdog.infrastructure.cli_config_manager.XDGDirectories.get_config_home",
+                return_value=config_dir,
+            ):
+                config = load_cli_config()
+                assert config.gantt.workload_comfortable_hours == 5.0
+                assert config.gantt.workload_moderate_hours == 8.0  # default

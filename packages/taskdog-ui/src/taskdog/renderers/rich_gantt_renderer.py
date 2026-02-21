@@ -22,6 +22,10 @@ from taskdog.constants.table_styles import (
 from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
 from taskdog.renderers.rich_renderer_base import RichRendererBase
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
+from taskdog_core.shared.constants import (
+    WORKLOAD_COMFORTABLE_HOURS,
+    WORKLOAD_MODERATE_HOURS,
+)
 
 
 class RichGanttRenderer(RichRendererBase):
@@ -40,13 +44,19 @@ class RichGanttRenderer(RichRendererBase):
     def __init__(
         self,
         console_writer: ConsoleWriter,
+        comfortable_hours: float = WORKLOAD_COMFORTABLE_HOURS,
+        moderate_hours: float = WORKLOAD_MODERATE_HOURS,
     ):
         """Initialize the renderer.
 
         Args:
             console_writer: Console writer for output
+            comfortable_hours: Workload threshold for green zone
+            moderate_hours: Workload threshold for yellow zone
         """
         self.console_writer = console_writer
+        self._comfortable_hours = comfortable_hours
+        self._moderate_hours = moderate_hours
 
     def build_table(self, gantt_view_model: GanttViewModel) -> Table | None:
         """Build and return a Gantt chart Table object from GanttViewModel.
@@ -330,5 +340,9 @@ class RichGanttRenderer(RichRendererBase):
             Rich Text object with workload summary
         """
         return GanttCellFormatter.build_workload_timeline(
-            daily_workload, start_date, end_date
+            daily_workload,
+            start_date,
+            end_date,
+            comfortable_hours=self._comfortable_hours,
+            moderate_hours=self._moderate_hours,
         )

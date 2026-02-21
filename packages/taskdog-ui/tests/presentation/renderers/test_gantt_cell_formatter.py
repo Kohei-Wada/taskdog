@@ -364,6 +364,56 @@ class TestGanttCellFormatter:
         assert display == SYMBOL_EMPTY
         assert style == "dim"
 
+    def test_build_workload_timeline_custom_thresholds(self):
+        """Test that custom thresholds change workload color zones."""
+        daily_workload = {
+            date(2025, 10, 1): 3.0,  # Below custom comfortable (4.0) -> green
+            date(
+                2025, 10, 2
+            ): 5.0,  # Above custom comfortable, below moderate (6.0) -> yellow
+            date(2025, 10, 3): 7.0,  # Above custom moderate (6.0) -> red
+        }
+        start_date = date(2025, 10, 1)
+        end_date = date(2025, 10, 3)
+
+        result = GanttCellFormatter.build_workload_timeline(
+            daily_workload,
+            start_date,
+            end_date,
+            comfortable_hours=4.0,
+            moderate_hours=6.0,
+        )
+
+        assert isinstance(result, Text)
+        # Verify the spans have the correct styles
+        # 3h -> green, 5h -> yellow, 7h -> red
+        spans = result._spans
+        assert len(spans) == 3
+        assert spans[0].style == "bold green"
+        assert spans[1].style == "bold yellow"
+        assert spans[2].style == "bold red"
+
+    def test_build_workload_timeline_default_thresholds(self):
+        """Test that default thresholds match existing behavior."""
+        daily_workload = {
+            date(2025, 10, 1): 5.0,  # <= 6.0 -> green
+            date(2025, 10, 2): 7.0,  # <= 8.0 -> yellow
+            date(2025, 10, 3): 9.0,  # > 8.0 -> red
+        }
+        start_date = date(2025, 10, 1)
+        end_date = date(2025, 10, 3)
+
+        # Without explicit thresholds (uses defaults)
+        result = GanttCellFormatter.build_workload_timeline(
+            daily_workload, start_date, end_date
+        )
+
+        spans = result._spans
+        assert len(spans) == 3
+        assert spans[0].style == "bold green"
+        assert spans[1].style == "bold yellow"
+        assert spans[2].style == "bold red"
+
     def test_format_timeline_cell_planned_period_without_hours(self):
         """Test that cells in planned period without hours get light background."""
         parsed_dates = {

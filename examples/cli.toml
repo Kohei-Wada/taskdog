@@ -106,6 +106,32 @@ planned_end_time = "18:30"
 # template = "~/.config/taskdog/note_template.md"
 
 # =============================================================================
+# Gantt Chart Settings
+# =============================================================================
+#
+# Configure workload color thresholds for the Gantt chart's workload summary row.
+# The workload row shows daily total hours with color coding:
+#   - Green: at or below comfortable threshold
+#   - Yellow: above comfortable, at or below moderate threshold
+#   - Red: above moderate threshold
+
+[gantt]
+# Comfortable workload threshold in hours (default: 6.0)
+# Daily hours at or below this value are displayed in green.
+# Environment variable: TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS
+workload_comfortable_hours = 6.0
+
+# Moderate workload threshold in hours (default: 8.0)
+# Daily hours above comfortable but at or below this value are displayed in yellow.
+# Hours above this value are displayed in red.
+# Environment variable: TASKDOG_GANTT_WORKLOAD_MODERATE_HOURS
+workload_moderate_hours = 8.0
+
+# Examples:
+# - Part-time schedule: workload_comfortable_hours = 4.0, workload_moderate_hours = 6.0
+# - Longer workday: workload_comfortable_hours = 7.0, workload_moderate_hours = 10.0
+
+# =============================================================================
 # Environment Variables
 # =============================================================================
 #
@@ -120,6 +146,10 @@ planned_end_time = "18:30"
 # - TASKDOG_INPUT_DEADLINE_TIME: Default time for deadline input
 # - TASKDOG_INPUT_PLANNED_START_TIME: Default time for planned_start input
 # - TASKDOG_INPUT_PLANNED_END_TIME: Default time for planned_end input
+#
+# Gantt Chart:
+# - TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS: Comfortable workload threshold
+# - TASKDOG_GANTT_WORKLOAD_MODERATE_HOURS: Moderate workload threshold
 #
 # Examples:
 #

@@ -221,8 +221,12 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         try:
             gantt_view_model = self._get_gantt_from_state()
             if gantt_view_model and self._gantt_table:
+                gantt_config = self.app._cli_config.gantt  # type: ignore[attr-defined]
                 self._gantt_table.load_gantt(
-                    gantt_view_model, keep_scroll_position=self._keep_scroll_position
+                    gantt_view_model,
+                    keep_scroll_position=self._keep_scroll_position,
+                    comfortable_hours=gantt_config.workload_comfortable_hours,
+                    moderate_hours=gantt_config.workload_moderate_hours,
                 )
                 self._update_title()
                 self._update_legend()
