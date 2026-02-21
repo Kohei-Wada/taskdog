@@ -5,7 +5,6 @@ from typing import Any
 
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.dialogs.task_detail_dialog import TaskDetailDialog
-from taskdog.utils.note_editor import edit_task_note
 
 
 class ShowCommand(TUICommandBase):
@@ -58,23 +57,20 @@ class ShowCommand(TUICommandBase):
     def _edit_note(self, task_id: int) -> None:
         """Open editor for the task's note and re-display detail screen.
 
+        Delegates to NoteCommand with an explicit task_id and callback.
+
         Args:
             task_id: ID of the task to edit notes for
         """
-        # Get task via API client
-        output = self.context.api_client.get_task_by_id(task_id)
-        if not output.task:
-            self.notify_warning(f"Task #{task_id} not found")
-            return
+        from taskdog.tui.commands.note import NoteCommand
 
-        # Edit note using shared helper (uses API client via NotesProvider protocol)
-        edit_task_note(
-            task=output.task,
-            notes_provider=self.context.api_client,
-            app=self.app,
+        cmd = NoteCommand(
+            self.app,
+            self.context,
+            task_id=task_id,
             on_success=lambda name, id_: self._on_edit_success(name, id_),
-            on_error=self.notify_error,
         )
+        cmd.execute()
 
     def _on_edit_success(self, task_name: str, task_id: int) -> None:
         """Handle successful note edit.
