@@ -1,7 +1,5 @@
 """Tests for DeleteTagUseCase."""
 
-from pathlib import Path
-
 import pytest
 
 from taskdog_core.application.dto.create_task_input import CreateTaskInput
@@ -11,25 +9,15 @@ from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
 from taskdog_core.application.use_cases.delete_tag import DeleteTagUseCase
 from taskdog_core.application.use_cases.set_task_tags import SetTaskTagsUseCase
 from taskdog_core.domain.exceptions.tag_exceptions import TagNotFoundException
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
-from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
 
 class TestDeleteTagUseCase:
-    """Test cases for DeleteTagUseCase.
-
-    Uses its own isolated repository to avoid corrupting the shared
-    session-scoped tags table (delete_tag removes tag records).
-    """
+    """Test cases for DeleteTagUseCase."""
 
     @pytest.fixture(autouse=True)
-    def setup(self, tmp_path):
-        """Initialize use case with isolated repository for each test."""
-        db_path = Path(tmp_path) / "test_delete_tag.db"
-        database_url = f"sqlite:///{db_path}"
-        self.repository = SqliteTaskRepository(database_url, TaskDbMapper())
+    def setup(self, repository):
+        """Initialize use case with repository for each test."""
+        self.repository = repository
         self.use_case = DeleteTagUseCase(self.repository)
         self.set_tags_use_case = SetTaskTagsUseCase(self.repository)
 
@@ -45,9 +33,6 @@ class TestDeleteTagUseCase:
         self.set_tags_use_case.execute(
             SetTaskTagsInput(task_id=self.task2.id, tags=["work", "personal"])
         )
-        yield
-        if hasattr(self.repository, "close"):
-            self.repository.close()
 
     def test_execute_deletes_tag(self):
         """Test execute deletes a tag and returns correct output."""

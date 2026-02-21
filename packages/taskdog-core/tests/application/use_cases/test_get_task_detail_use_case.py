@@ -3,16 +3,13 @@
 from datetime import datetime
 
 import pytest
+from fixtures.repositories import InMemoryNotesRepository
 
 from taskdog_core.application.use_cases.get_task_detail import (
     GetTaskDetailInput,
     GetTaskDetailUseCase,
 )
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
-from taskdog_core.infrastructure.persistence.database.sqlite_notes_repository import (
-    SqliteNotesRepository,
-)
-from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestGetTaskDetailUseCase:
@@ -22,24 +19,8 @@ class TestGetTaskDetailUseCase:
     def setup(self, repository):
         """Initialize use case for each test."""
         self.repository = repository
-        self.time_provider = FakeTimeProvider()
-        # Share the same engine as the task repository for foreign key constraints
-        self.notes_repository = SqliteNotesRepository(
-            "sqlite:///:memory:",
-            self.time_provider,
-            engine=repository.engine,
-        )
+        self.notes_repository = InMemoryNotesRepository()
         self.use_case = GetTaskDetailUseCase(self.repository, self.notes_repository)
-
-    @pytest.fixture(autouse=True)
-    def teardown(self, request):
-        """Clean up notes repository after each test."""
-
-        def cleanup():
-            if hasattr(self, "notes_repository"):
-                self.notes_repository.clear()
-
-        request.addfinalizer(cleanup)
 
     def test_execute_returns_task_detail_dto(self):
         """Test execute returns TaskDetailDTO with task data."""
