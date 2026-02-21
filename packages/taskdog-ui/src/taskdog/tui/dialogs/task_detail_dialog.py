@@ -31,8 +31,8 @@ class TaskDetailDialog(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
     """Modal screen for displaying task details with tabs.
 
     Shows comprehensive information about a task across three tabs:
-    - Detail: Basic info (ID, name, priority, status), schedule, tracking
     - Notes: Markdown notes
+    - Detail: Basic info (ID, name, priority, status), schedule, tracking
     - Audit Log: Task-specific operation history (lazy-loaded)
     """
 
@@ -90,18 +90,18 @@ class TaskDetailDialog(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
 
             with TabbedContent(id="detail-tabs"):
                 with (
+                    TabPane("Notes", id="tab-notes"),
+                    VerticalScroll(id="notes-tab-scroll", classes="detail-tab-scroll"),
+                ):
+                    yield from self._compose_notes_tab()
+
+                with (
                     TabPane("Detail", id="tab-detail"),
                     VerticalScroll(id="detail-tab-scroll", classes="detail-tab-scroll"),
                 ):
                     yield from self._compose_basic_info_section()
                     yield from self._compose_schedule_section()
                     yield from self._compose_tracking_section()
-
-                with (
-                    TabPane("Notes", id="tab-notes"),
-                    VerticalScroll(id="notes-tab-scroll", classes="detail-tab-scroll"),
-                ):
-                    yield from self._compose_notes_tab()
 
                 with (
                     TabPane("Audit Log", id="tab-audit"),
