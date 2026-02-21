@@ -5,10 +5,13 @@ Tools for breaking down large tasks into smaller subtasks.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from mcp.server.fastmcp import FastMCP
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from taskdog_client import TaskdogApiClient
@@ -69,8 +72,8 @@ def _update_decomposition_notes(
 
         new_notes = (existing_notes or "") + note_addition
         client.update_task_notes(task_id, new_notes)
-    except Exception:
-        pass  # Notes update is optional
+    except Exception as e:
+        logger.warning(f"Failed to update notes for task {task_id}: {e}")
 
 
 def register_decomposition_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
