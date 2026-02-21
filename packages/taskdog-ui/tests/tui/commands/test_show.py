@@ -158,36 +158,25 @@ class TestShowCommandEditNote:
         self.mock_context = MagicMock()
         self.command = ShowCommand(self.mock_app, self.mock_context)
 
-    def test_edit_note_warns_when_task_not_found(self) -> None:
-        """Test warning when task is not found."""
-        output = MagicMock()
-        output.task = None
-        self.mock_context.api_client.get_task_by_id.return_value = output
-        self.command.notify_warning = MagicMock()
+    def test_edit_note_delegates_to_note_command(self) -> None:
+        """Test that _edit_note delegates to NoteCommand with correct args."""
+        from unittest.mock import patch
 
-        self.command._edit_note(999)
+        with patch(
+            "taskdog.tui.commands.note.NoteCommand", wraps=None
+        ) as mock_note_cmd_cls:
+            mock_cmd_instance = MagicMock()
+            mock_note_cmd_cls.return_value = mock_cmd_instance
 
-        self.command.notify_warning.assert_called_once()
-        assert "not found" in self.command.notify_warning.call_args[0][0].lower()
+            self.command._edit_note(42)
 
-    def test_edit_note_calls_edit_task_note(self) -> None:
-        """Test that edit_task_note is called."""
-        task = create_mock_task_dto(task_id=42)
-        output = MagicMock()
-        output.task = task
-        self.mock_context.api_client.get_task_by_id.return_value = output
-
-        with MagicMock() as mock_edit:
-            import taskdog.tui.commands.show as show_module
-
-            original = show_module.edit_task_note
-            show_module.edit_task_note = mock_edit
-
-            try:
-                self.command._edit_note(42)
-                mock_edit.assert_called_once()
-            finally:
-                show_module.edit_task_note = original
+            mock_note_cmd_cls.assert_called_once()
+            call_kwargs = mock_note_cmd_cls.call_args
+            assert call_kwargs[0][0] is self.mock_app
+            assert call_kwargs[0][1] is self.mock_context
+            assert call_kwargs[1]["task_id"] == 42
+            assert call_kwargs[1]["on_success"] is not None
+            mock_cmd_instance.execute.assert_called_once()
 
 
 class TestShowCommandOnEditSuccess:
