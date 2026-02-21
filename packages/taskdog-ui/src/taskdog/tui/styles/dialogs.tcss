@@ -143,7 +143,11 @@ StatsScreen {
     max-height: 80%;
 }
 
-#help-content {
+#help-tabs {
+    height: 1fr;
+}
+
+.help-tab-scroll {
     padding: 1;
     margin: 0;
     overflow-y: auto;
