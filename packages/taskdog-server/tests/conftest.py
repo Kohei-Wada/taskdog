@@ -31,6 +31,7 @@ from fixtures.pytest_fixtures import (  # noqa: E402, F401
     sample_task,
     task_factory,
 )
+from fixtures.repositories import InMemoryTaskRepository  # noqa: E402
 
 # Import from taskdog-core
 from taskdog_core.controllers.audit_log_controller import (  # noqa: E402
@@ -53,9 +54,6 @@ from taskdog_core.domain.services.logger import Logger  # noqa: E402
 from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (  # noqa: E402
     SqliteAuditLogRepository,
 )
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (  # noqa: E402
-    SqliteTaskRepository,
-)
 from taskdog_core.infrastructure.time_provider import SystemTimeProvider  # noqa: E402
 
 # Import server-specific modules
@@ -74,14 +72,11 @@ from taskdog_server.websocket.connection_manager import ConnectionManager  # noq
 
 @pytest.fixture(scope="session")
 def session_repository():
-    """Session-scoped in-memory repository with shared cache.
+    """Session-scoped in-memory repository shared across all tests.
 
-    The "file::memory:?cache=shared" syntax ensures all connections see the same data.
+    Uses InMemoryTaskRepository (pure Python dict-based) for faster test execution.
     """
-    repo = SqliteTaskRepository("sqlite:///file::memory:?cache=shared&uri=true")
-    yield repo
-    if hasattr(repo, "close"):
-        repo.close()
+    return InMemoryTaskRepository()
 
 
 @pytest.fixture(scope="session")
@@ -103,8 +98,7 @@ def audit_log_repository(session_audit_log_repository):
 @pytest.fixture
 def repository(session_repository):
     """Function-scoped fixture that clears data before each test."""
-    for task in session_repository.get_all():
-        session_repository.delete(task.id)
+    session_repository.clear()
     yield session_repository
 
 
