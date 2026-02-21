@@ -158,8 +158,12 @@ class TestShowCommandEditNote:
         self.mock_context = MagicMock()
         self.command = ShowCommand(self.mock_app, self.mock_context)
 
-    def test_edit_note_delegates_to_note_command(self) -> None:
-        """Test that _edit_note delegates to NoteCommand with correct args."""
+    def test_edit_note_delegates_to_note_command_without_on_success(self) -> None:
+        """Test that _edit_note delegates to NoteCommand without custom on_success.
+
+        NoteCommand uses its default behavior (reload_tasks) so the gantt
+        and task table refresh without racing against a detail dialog push.
+        """
         from unittest.mock import patch
 
         with patch(
@@ -175,35 +179,5 @@ class TestShowCommandEditNote:
             assert call_kwargs[0][0] is self.mock_app
             assert call_kwargs[0][1] is self.mock_context
             assert call_kwargs[1]["task_id"] == 42
-            assert call_kwargs[1]["on_success"] is not None
+            assert "on_success" not in call_kwargs[1]
             mock_cmd_instance.execute.assert_called_once()
-
-
-class TestShowCommandOnEditSuccess:
-    """Test cases for ShowCommand._on_edit_success."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self) -> None:
-        """Set up test fixtures."""
-        self.mock_app = MagicMock()
-        self.mock_context = MagicMock()
-        self.command = ShowCommand(self.mock_app, self.mock_context)
-
-    def test_does_not_show_explicit_notification(self) -> None:
-        """Test that no explicit notification is shown (handled via WebSocket)."""
-        self.command.notify_success = MagicMock()
-        self.command.execute = MagicMock()
-
-        self.command._on_edit_success("Test Task", 42)
-
-        # Notification is handled via WebSocket (task_updated event),
-        # not via explicit notify_success call
-        self.command.notify_success.assert_not_called()
-
-    def test_re_displays_detail_screen(self) -> None:
-        """Test that execute is called to re-display screen."""
-        self.command.execute = MagicMock()
-
-        self.command._on_edit_success("Task", 1)
-
-        self.command.execute.assert_called_once()
