@@ -4,7 +4,7 @@ A DataTable widget for displaying audit log entries with Vi-style navigation.
 Used by AuditLogScreen for full-page audit log display.
 """
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from rich.text import Text
 from textual.binding import Binding
@@ -39,7 +39,7 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
         Binding("ctrl+u", "page_up", "Page Up", show=False),
     ]
 
-    def __init__(self, **kwargs: object) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Initialize the audit log table."""
         super().__init__(**kwargs)
         self.cursor_type = "none"
