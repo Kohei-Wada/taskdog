@@ -6,8 +6,9 @@ Extracted from AuditLogWidget to be reusable across TUI components
 
 from typing import Any
 
+from rich.text import Text
 from textual.containers import Horizontal, Vertical
-from textual.widgets import Static
+from textual.widgets import DataTable, Static
 
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
 
@@ -127,3 +128,60 @@ def format_audit_value(value: Any) -> str:
     if isinstance(value, str) and len(value) > 15:
         return value[:15] + "..."
     return str(value)
+
+
+def create_audit_log_table(logs: list[AuditLogOutput]) -> DataTable:  # type: ignore[type-arg]
+    """Create a DataTable widget for displaying audit log entries.
+
+    Used by TaskDetailDialog for compact, tabular audit log display.
+    Resource info (ID, name) is omitted since the dialog already shows it.
+
+    Args:
+        logs: List of audit log entries to display
+
+    Returns:
+        DataTable widget with audit log data
+    """
+    table: DataTable = DataTable(  # type: ignore[type-arg]
+        id="audit-log-table",
+    )
+    table.cursor_type = "none"
+    table.zebra_stripes = True
+    table.can_focus = False
+
+    table.add_column(Text("Timestamp", justify="center"), key="timestamp")
+    table.add_column(Text("Operation", justify="center"), key="operation")
+    table.add_column(Text("Changes", justify="center"), key="changes", width=40)
+    table.add_column(Text("Client", justify="center"), key="client")
+    table.add_column(Text("St", justify="center"), key="status")
+
+    for log in logs:
+        ts = log.timestamp.strftime("%m-%d %H:%M:%S")
+
+        # Build changes/error text
+        if not log.success and log.error_message:
+            error_msg = (
+                log.error_message[:40] + "..."
+                if len(log.error_message) > 40
+                else log.error_message
+            )
+            changes_text = Text(error_msg, style="red")
+        else:
+            changes_str = format_audit_changes(log.old_values, log.new_values)
+            changes_text = Text(changes_str)
+
+        client = log.client_name or ""
+
+        status_text = (
+            Text("OK", style="green") if log.success else Text("ER", style="red")
+        )
+
+        table.add_row(
+            Text(ts),
+            Text(log.operation),
+            changes_text,
+            Text(client),
+            status_text,
+        )
+
+    return table

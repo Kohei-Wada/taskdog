@@ -13,7 +13,7 @@ from textual.widgets import Label, Markdown, Static, TabbedContent, TabPane, Tab
 from taskdog.constants.colors import STATUS_COLORS_BOLD
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
-from taskdog.tui.widgets.audit_log_entry_builder import create_audit_entry_widget
+from taskdog.tui.widgets.audit_log_entry_builder import create_audit_log_table
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
@@ -372,9 +372,8 @@ class TaskDetailDialog(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
             )
             return
 
-        for log in result.logs:
-            entry = create_audit_entry_widget(log)
-            scroll.mount(entry)
+        table = create_audit_log_table(result.logs)
+        scroll.mount(table)
 
     def _show_audit_error(self, message: str) -> None:
         """Show an error message in the audit tab."""
