@@ -126,3 +126,24 @@ Input {
     width: 100%;
     height: 100%;
 }
+
+/* Audit Log Screen (full-page modal without dimming) */
+AuditLogScreen {
+    background: $surface;
+}
+
+/* Audit Log Table */
+#audit-log-table {
+    width: 100%;
+    height: 1fr;
+    background: transparent;
+    border: round $primary;
+}
+
+#audit-log-table:blur {
+    border: round $primary;
+}
+
+#audit-log-table:focus {
+    border: round $accent;
+}
