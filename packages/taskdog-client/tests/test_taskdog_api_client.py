@@ -3,6 +3,7 @@
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 from taskdog_client.taskdog_api_client import TaskdogApiClient
 
@@ -118,7 +119,7 @@ class TestTaskdogApiClientLifecycle:
 
     def test_check_health_failure(self, client):
         """Test check_health returns False on failure."""
-        client._base._safe_request.side_effect = Exception("Connection error")
+        client._base._safe_request.side_effect = httpx.ConnectError("Connection error")
 
         assert client.check_health() is False
 

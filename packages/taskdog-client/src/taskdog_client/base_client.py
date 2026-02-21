@@ -86,7 +86,7 @@ class BaseApiClient:
                 return "; ".join(messages)
 
             return str(detail)
-        except Exception:
+        except (KeyError, TypeError, ValueError):
             return "Validation error"
 
     def _handle_error(self, response: httpx.Response) -> None:

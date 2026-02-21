@@ -119,7 +119,7 @@ class TaskdogApiClient:
         try:
             response = self._base._safe_request("get", "/health")
             return response.status_code == 200
-        except Exception:
+        except httpx.HTTPError:
             return False
 
     # CRUD Controller methods - delegate to TaskClient
