@@ -103,9 +103,11 @@ class InMemoryTaskRepository(TaskRepository):
         if tag_name not in self._tags:
             raise TagNotFoundException(tag_name)
         count = 0
-        for task in self._tasks.values():
+        for tid, task in list(self._tasks.items()):
             if tag_name in task.tags:
-                task.tags.remove(tag_name)
+                updated = deepcopy(task)
+                updated.tags.remove(tag_name)
+                self._tasks[tid] = updated
                 count += 1
         self._tags.discard(tag_name)
         return count
