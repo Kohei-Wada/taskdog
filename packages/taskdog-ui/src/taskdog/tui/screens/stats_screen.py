@@ -133,7 +133,6 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
 
     def _load_period(self, tab_id: str) -> None:
         """Start loading statistics for a tab in a background worker."""
-        self._loaded_periods[tab_id] = True
         self.app.run_worker(self._fetch_statistics(tab_id), exclusive=False)
 
     async def _fetch_statistics(self, tab_id: str) -> None:
@@ -154,7 +153,7 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
         # Remove placeholder and mount content
         try:
             placeholder = self.query_one(
-                f"#stats-{period.replace('d', 'd') if period != 'all' else 'all'}-placeholder",
+                f"#stats-{period}-placeholder",
                 Static,
             )
             placeholder.remove()
@@ -168,6 +167,9 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
 
         widgets = self._build_stats_widgets(view_model)
         scroll.mount(*widgets)
+
+        # Mark as successfully loaded only after mounting succeeds
+        self._loaded_periods[tab_id] = True
 
     def _build_stats_widgets(
         self, vm: StatisticsViewModel
