@@ -1,29 +1,19 @@
 """Tests for TaskQueryService."""
 
-import os
-import tempfile
 from datetime import datetime, timedelta
 
 import pytest
 
 from taskdog_core.application.queries.task_query_service import TaskQueryService
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
 
 
 class TestTaskQueryService:
     """Test cases for TaskQueryService."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
-        """Create temporary file and initialize service for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+    def setup(self, repository):
+        """Initialize service for each test."""
+        self.repository = repository
         self.query_service = TaskQueryService(self.repository)
 
         # Calculate date strings for testing
@@ -41,26 +31,14 @@ class TestTaskQueryService:
             hour=18
         )
 
-        yield
-
-        # Cleanup
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
-
     def test_get_all_tags_returns_tag_counts(self):
         """Test get_all_tags returns all unique tags with their counts."""
         # Create tasks with various tags
-        self.repository.create(
-            name="Task 1", priority=1, tags=frozenset(["work", "urgent"])
-        )
+        self.repository.create(name="Task 1", priority=1, tags=["work", "urgent"])
 
-        self.repository.create(
-            name="Task 2", priority=1, tags=frozenset(["work", "client-a"])
-        )
+        self.repository.create(name="Task 2", priority=1, tags=["work", "client-a"])
 
-        self.repository.create(name="Task 3", priority=1, tags=frozenset(["personal"]))
+        self.repository.create(name="Task 3", priority=1, tags=["personal"])
 
         self.repository.create(name="Task 4", priority=1)
 
@@ -94,11 +72,11 @@ class TestTaskQueryService:
 
     def test_get_all_tags_case_sensitivity(self):
         """Test that get_all_tags treats different cases as separate tags (Phase 4)."""
-        self.repository.create(name="Task 1", priority=1, tags=frozenset(["urgent"]))
+        self.repository.create(name="Task 1", priority=1, tags=["urgent"])
 
-        self.repository.create(name="Task 2", priority=1, tags=frozenset(["URGENT"]))
+        self.repository.create(name="Task 2", priority=1, tags=["URGENT"])
 
-        self.repository.create(name="Task 3", priority=1, tags=frozenset(["Urgent"]))
+        self.repository.create(name="Task 3", priority=1, tags=["Urgent"])
 
         result = self.query_service.get_all_tags()
 

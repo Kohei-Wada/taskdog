@@ -1,18 +1,14 @@
 """Tests for TablePresenter."""
 
-import os
-import tempfile
 from datetime import datetime, timedelta
 
 import pytest
+from fixtures.repositories import InMemoryTaskRepository
 
 from taskdog.presenters.table_presenter import TablePresenter
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
-    SqliteTaskRepository,
-)
 
 
 class TestTablePresenter:
@@ -20,20 +16,9 @@ class TestTablePresenter:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        """Create temporary file and initialize presenter for each test."""
-        self.test_file = tempfile.NamedTemporaryFile(
-            mode="w", delete=False, suffix=".db"
-        )
-        self.test_file.close()
-        self.test_filename = self.test_file.name
-        self.repository = SqliteTaskRepository(f"sqlite:///{self.test_filename}")
+        """Initialize presenter and repository for each test."""
+        self.repository = InMemoryTaskRepository()
         self.presenter = TablePresenter()
-        yield
-        # Teardown
-        if hasattr(self, "repository") and hasattr(self.repository, "close"):
-            self.repository.close()
-        if os.path.exists(self.test_filename):
-            os.unlink(self.test_filename)
 
     def _to_dto(self, task) -> TaskRowDto:
         """Convert Task entity to TaskRowDto."""

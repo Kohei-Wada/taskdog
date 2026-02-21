@@ -27,36 +27,20 @@ from fixtures.pytest_fixtures import (  # noqa: E402, F401
     sample_task,
     task_factory,
 )
-
-from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (  # noqa: E402
-    SqliteTaskRepository,
-)
+from fixtures.repositories import InMemoryTaskRepository  # noqa: E402
 
 # =============================================================================
 # Repository Fixtures
 # =============================================================================
 
 
-@pytest.fixture(scope="session")
-def session_repository():
-    """Session-scoped in-memory repository shared across all tests.
-
-    Using a single database connection for the entire test session
-    provides ~50-60% speedup compared to creating new databases.
-    """
-    repo = SqliteTaskRepository("sqlite:///:memory:")
-    yield repo
-    if hasattr(repo, "close"):
-        repo.close()
-
-
 @pytest.fixture
-def repository(session_repository):
-    """Function-scoped fixture that clears data before each test.
+def repository():
+    """Function-scoped in-memory repository for test isolation.
 
-    Inherits the session-scoped database but clears all tasks
-    before each test to ensure test isolation.
+    Uses InMemoryTaskRepository (pure Python dict-based) instead of
+    SqliteTaskRepository for faster test execution.
     """
-    for task in session_repository.get_all():
-        session_repository.delete(task.id)
-    yield session_repository
+    repo = InMemoryTaskRepository()
+    yield repo
+    repo.clear()
