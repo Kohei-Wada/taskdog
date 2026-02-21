@@ -75,7 +75,11 @@ StatsScreen {
 }
 
 /* Detail view components */
-#detail-content {
+#detail-tabs {
+    height: 1fr;
+}
+
+.detail-tab-scroll {
     padding: 1;
     margin: 0;
     overflow-y: auto;
