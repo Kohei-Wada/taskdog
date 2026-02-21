@@ -29,7 +29,7 @@ StatsScreen {
     width: auto;  /* Auto-adjust width based on content */
     min-width: 55;  /* Minimum width for simple yes/no confirmations */
     max-width: 90;  /* Maximum width to prevent too-wide dialogs */
-    max-height: 20;
+    max-height: 40%;
 }
 
 .dialog-standard {
@@ -96,12 +96,12 @@ StatsScreen {
 
 /* Algorithm Selection Dialog */
 #algorithm-dialog {
-    max-height: 28;
+    max-height: 60%;
 }
 
 /* Sort Selection Dialog */
 #sort-dialog {
-    max-height: 25;  /* Smaller than algorithm dialog (no input fields) */
+    max-height: 50%;  /* Smaller than algorithm dialog (no input fields) */
 }
 
 /* Confirmation Dialog */
@@ -112,7 +112,7 @@ StatsScreen {
 /* Fix Actual Dialog - special operation */
 #fix-actual-dialog {
     border: round $error;  /* Colored border for emphasis on timestamp correction */
-    max-height: 30;  /* 3 fields */
+    max-height: 60%;  /* 3 fields */
 }
 
 /* Warning message in fix actual dialog */
@@ -126,17 +126,17 @@ StatsScreen {
 /* Task Form Dialog (Add/Edit) */
 #add-task-dialog,
 #edit-task-dialog {
-    max-height: 50;  /* Accommodate planned_start/planned_end fields */
+    max-height: 80%;  /* Accommodate planned_start/planned_end fields */
 }
 
 /* Task Detail Screen */
 #detail-screen {
-    max-height: 50;
+    max-height: 80%;
 }
 
 /* Help Screen */
 #help-screen {
-    max-height: 50;
+    max-height: 80%;
 }
 
 #help-content {
@@ -168,7 +168,7 @@ StatsScreen {
 
 /* Stats Screen Container */
 #stats-screen {
-    max-height: 50;
+    max-height: 80%;
 }
 
 #stats-content {
