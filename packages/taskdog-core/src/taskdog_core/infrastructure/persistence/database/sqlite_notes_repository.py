@@ -13,6 +13,7 @@ from pathlib import Path
 
 from sqlalchemy import delete, select
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import SQLAlchemyError
 
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.services.time_provider import ITimeProvider
@@ -232,7 +233,7 @@ class SqliteNotesRepository(SqliteBaseRepository, NotesRepository):
                     session.add(note)
                     session.commit()
                 migrated += 1
-            except Exception as e:
+            except SQLAlchemyError as e:
                 errors += 1
                 error_messages.append(f"Failed to insert note for task {task_id}: {e}")
 
