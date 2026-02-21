@@ -75,7 +75,11 @@ StatsScreen {
 }
 
 /* Detail view components */
-#detail-content {
+#detail-tabs {
+    height: 1fr;
+}
+
+.detail-tab-scroll {
     padding: 1;
     margin: 0;
     overflow-y: auto;
@@ -171,7 +175,11 @@ StatsScreen {
     max-height: 80%;
 }
 
-#stats-content {
+#stats-tabs {
+    height: 1fr;
+}
+
+.stats-tab-scroll {
     padding: 1;
     margin: 0;
     overflow-y: auto;
@@ -184,12 +192,6 @@ StatsScreen {
 
 .section-spacer {
     height: 1;
-}
-
-#stats-footer {
-    text-align: center;
-    padding-top: 1;
-    border-top: solid $primary;
 }
 
 /* Stats section title */

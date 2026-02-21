@@ -108,6 +108,31 @@ class TestTaskDetailDialogInit:
         assert dialog.notes_content == ""
         assert dialog.has_notes is False
 
+    def test_api_client_defaults_to_none(self) -> None:
+        """Test that api_client defaults to None when not provided."""
+        detail = create_task_detail_output()
+
+        dialog = TaskDetailDialog(detail)
+
+        assert dialog._api_client is None
+
+    def test_api_client_stored_when_provided(self) -> None:
+        """Test that api_client is stored when provided."""
+        detail = create_task_detail_output()
+        mock_client = MagicMock()
+
+        dialog = TaskDetailDialog(detail, api_client=mock_client)
+
+        assert dialog._api_client is mock_client
+
+    def test_audit_loaded_initially_false(self) -> None:
+        """Test that _audit_loaded is initially False."""
+        detail = create_task_detail_output()
+
+        dialog = TaskDetailDialog(detail)
+
+        assert dialog._audit_loaded is False
+
 
 class TestTaskDetailDialogCreateDetailRow:
     """Test cases for _create_detail_row method."""
@@ -345,3 +370,31 @@ class TestTaskDetailDialogComposeTrackingSection:
 
         # Should have section label and actual start row
         assert len(widgets) > 0
+
+
+class TestTaskDetailDialogComposeNotesTab:
+    """Test cases for _compose_notes_tab method."""
+
+    def test_yields_markdown_when_notes_exist(self) -> None:
+        """Test that Markdown widget is yielded when notes exist."""
+        from textual.widgets import Markdown
+
+        detail = create_task_detail_output(notes_content="# Hello", has_notes=True)
+        dialog = TaskDetailDialog(detail)
+
+        widgets = list(dialog._compose_notes_tab())
+
+        assert len(widgets) == 1
+        assert isinstance(widgets[0], Markdown)
+
+    def test_yields_placeholder_when_no_notes(self) -> None:
+        """Test that placeholder is yielded when no notes exist."""
+        from textual.widgets import Static
+
+        detail = create_task_detail_output(notes_content="", has_notes=False)
+        dialog = TaskDetailDialog(detail)
+
+        widgets = list(dialog._compose_notes_tab())
+
+        assert len(widgets) == 1
+        assert isinstance(widgets[0], Static)

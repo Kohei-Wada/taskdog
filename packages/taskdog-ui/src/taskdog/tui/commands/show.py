@@ -36,7 +36,7 @@ class ShowCommand(TUICommandBase):
         except Exception as e:
             self.notify_error("Failed to fetch task details", e)
             return
-        detail_dialog = TaskDetailDialog(detail)
+        detail_dialog = TaskDetailDialog(detail, api_client=self.context.api_client)
         self.app.push_screen(detail_dialog, callback=self._handle_detail_screen_result)
 
     def _handle_detail_screen_result(self, result: Any) -> None:
