@@ -138,6 +138,12 @@ StatsScreen {
     max-height: 80%;
 }
 
+/* Audit log DataTable in detail dialog */
+#audit-log-table {
+    height: auto;
+    border: none;
+}
+
 /* Help Screen */
 #help-screen {
     max-height: 80%;
