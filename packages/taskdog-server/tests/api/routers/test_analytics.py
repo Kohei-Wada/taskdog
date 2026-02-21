@@ -2,6 +2,8 @@
 
 from datetime import date, datetime, timedelta
 
+import pytest
+
 from taskdog_core.domain.entities.task import TaskStatus
 
 
@@ -66,25 +68,12 @@ class TestAnalyticsRouter:
         assert "detail" in response.json()
         assert "Period must be one of" in response.json()["detail"]
 
-    def test_get_statistics_7d_period(self, client):
-        """Test getting statistics for last 7 days."""
-        # Act
-        response = client.get("/api/v1/statistics?period=7d")
-
-        # Assert
+    @pytest.mark.parametrize("period", ["7d", "30d"])
+    def test_get_statistics_valid_period(self, client, period):
+        """Test getting statistics for valid time periods."""
+        response = client.get(f"/api/v1/statistics?period={period}")
         assert response.status_code == 200
-        data = response.json()
-        assert "completion" in data
-
-    def test_get_statistics_30d_period(self, client):
-        """Test getting statistics for last 30 days."""
-        # Act
-        response = client.get("/api/v1/statistics?period=30d")
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert "completion" in data
+        assert "completion" in response.json()
 
     # ===== GET /tags/statistics Tests =====
 
@@ -394,62 +383,26 @@ class TestAnalyticsRouter:
         algorithm_names = [algo["name"] for algo in data]
         assert "greedy" in algorithm_names
 
-    def test_optimize_schedule_with_include_all_days(self, client, task_factory):
-        """Test schedule optimization with include_all_days flag."""
-        # Arrange - create task to optimize
+    @pytest.mark.parametrize(
+        "include_all_days", [True, False], ids=["with_weekends", "weekdays_only"]
+    )
+    def test_optimize_schedule_include_all_days(
+        self, client, task_factory, include_all_days
+    ):
+        """Test schedule optimization with and without include_all_days flag."""
         task_factory.create(
-            name="Weekend Task",
+            name="Task",
             priority=1,
             estimated_duration=10.0,
             status=TaskStatus.PENDING,
         )
-
-        # Friday as start date
-        start_date = datetime(2025, 10, 17, 9, 0, 0)  # Friday
-
         request_data = {
             "algorithm": "greedy",
-            "start_date": start_date.isoformat(),
+            "start_date": datetime(2025, 10, 17, 9, 0, 0).isoformat(),
             "max_hours_per_day": 6.0,
             "force_override": False,
-            "include_all_days": True,  # Include weekends
+            "include_all_days": include_all_days,
         }
-
-        # Act
         response = client.post("/api/v1/optimize", json=request_data)
-
-        # Assert
         assert response.status_code == 200
-        data = response.json()
-        assert "summary" in data
-        assert data["summary"]["scheduled_tasks"] == 1
-
-    def test_optimize_schedule_without_include_all_days(self, client, task_factory):
-        """Test schedule optimization without include_all_days flag (default)."""
-        # Arrange - create task to optimize
-        task_factory.create(
-            name="Weekday Task",
-            priority=1,
-            estimated_duration=10.0,
-            status=TaskStatus.PENDING,
-        )
-
-        # Friday as start date
-        start_date = datetime(2025, 10, 17, 9, 0, 0)  # Friday
-
-        request_data = {
-            "algorithm": "greedy",
-            "start_date": start_date.isoformat(),
-            "max_hours_per_day": 6.0,
-            "force_override": False,
-            "include_all_days": False,  # Skip weekends (default)
-        }
-
-        # Act
-        response = client.post("/api/v1/optimize", json=request_data)
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert "summary" in data
-        assert data["summary"]["scheduled_tasks"] == 1
+        assert response.json()["summary"]["scheduled_tasks"] == 1
