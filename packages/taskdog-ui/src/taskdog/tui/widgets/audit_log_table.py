@@ -10,7 +10,10 @@ from rich.text import Text
 from textual.binding import Binding
 from textual.widgets import DataTable
 
-from taskdog.tui.widgets.audit_log_entry_builder import format_audit_changes
+from taskdog.tui.widgets.audit_log_entry_builder import (
+    build_changes_text,
+    build_status_text,
+)
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
@@ -81,24 +84,12 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
 
             op_text = Text(log.operation, style=style)
 
-            # Changes or error
-            if not log.success and log.error_message:
-                error_msg = (
-                    log.error_message[:40] + "..."
-                    if len(log.error_message) > 40
-                    else log.error_message
-                )
-                changes_text = Text(error_msg, style="red")
-            else:
-                changes_str = format_audit_changes(log.old_values, log.new_values)
-                changes_text = Text(changes_str, style=style)
-
-            client_text = Text(log.client_name or "", style=style)
-
-            status_text = (
-                Text("OK", style="green") if log.success else Text("ER", style="red")
-            )
-
             self.add_row(
-                ts, id_text, name_text, op_text, changes_text, client_text, status_text
+                ts,
+                id_text,
+                name_text,
+                op_text,
+                build_changes_text(log, style),
+                Text(log.client_name or "", style=style),
+                build_status_text(log),
             )

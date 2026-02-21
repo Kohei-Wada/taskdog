@@ -1,7 +1,7 @@
-"""Shared utility for building audit log entry widgets.
+"""Shared utility for building audit log display data.
 
 Reusable across TUI components
-(e.g., AuditLogScreen, TaskDetailDialog audit tab).
+(e.g., AuditLogTable, TaskDetailDialog audit tab).
 """
 
 from typing import Any
@@ -10,6 +10,9 @@ from rich.text import Text
 from textual.widgets import DataTable
 
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
+
+MAX_CHANGES_LENGTH = 40
+MAX_ERROR_LENGTH = 40
 
 
 def format_audit_changes(
@@ -69,6 +72,40 @@ def format_audit_value(value: Any) -> str:
     return str(value)
 
 
+def build_changes_text(log: AuditLogOutput, style: str = "") -> Text:
+    """Build the changes/error column text for an audit log entry.
+
+    Args:
+        log: Audit log entry
+        style: Base style to apply (e.g., "red" for failed entries)
+
+    Returns:
+        Formatted Rich Text for changes column
+    """
+    if not log.success and log.error_message:
+        error_msg = (
+            log.error_message[:MAX_ERROR_LENGTH] + "..."
+            if len(log.error_message) > MAX_ERROR_LENGTH
+            else log.error_message
+        )
+        return Text(error_msg, style="red")
+
+    changes_str = format_audit_changes(log.old_values, log.new_values)
+    return Text(changes_str, style=style)
+
+
+def build_status_text(log: AuditLogOutput) -> Text:
+    """Build the status column text for an audit log entry.
+
+    Args:
+        log: Audit log entry
+
+    Returns:
+        "OK" in green or "ER" in red
+    """
+    return Text("OK", style="green") if log.success else Text("ER", style="red")
+
+
 def create_audit_log_table(logs: list[AuditLogOutput]) -> DataTable:  # type: ignore[type-arg]
     """Create a DataTable widget for displaying audit log entries.
 
@@ -97,30 +134,12 @@ def create_audit_log_table(logs: list[AuditLogOutput]) -> DataTable:  # type: ig
     for log in logs:
         ts = log.timestamp.strftime("%m-%d %H:%M:%S")
 
-        # Build changes/error text
-        if not log.success and log.error_message:
-            error_msg = (
-                log.error_message[:40] + "..."
-                if len(log.error_message) > 40
-                else log.error_message
-            )
-            changes_text = Text(error_msg, style="red")
-        else:
-            changes_str = format_audit_changes(log.old_values, log.new_values)
-            changes_text = Text(changes_str)
-
-        client = log.client_name or ""
-
-        status_text = (
-            Text("OK", style="green") if log.success else Text("ER", style="red")
-        )
-
         table.add_row(
             Text(ts),
             Text(log.operation),
-            changes_text,
-            Text(client),
-            status_text,
+            build_changes_text(log),
+            Text(log.client_name or ""),
+            build_status_text(log),
         )
 
     return table
