@@ -1,4 +1,4 @@
-"""Statistics screen for TUI."""
+"""Statistics dialog for TUI."""
 
 import asyncio
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -35,8 +35,8 @@ _TAB_PERIOD_MAP: dict[str, str] = {
 }
 
 
-class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
-    """Modal screen for displaying task statistics.
+class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
+    """Modal dialog for displaying task statistics.
 
     Shows comprehensive statistics across three period tabs:
     - All: All-time statistics
@@ -49,7 +49,7 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
     BINDINGS: ClassVar = [
         *ViNavigationMixin.VI_VERTICAL_BINDINGS,
         *ViNavigationMixin.VI_PAGE_BINDINGS,
-        Binding("q", "cancel", "Close", tooltip="Close the statistics screen"),
+        Binding("q", "cancel", "Close", tooltip="Close the statistics dialog"),
         Binding("escape", "cancel", "Close", show=False),
         Binding(
             "greater_than_sign",
@@ -75,7 +75,7 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
         api_client: TaskdogApiClient,
         **kwargs: Any,
     ):
-        """Initialize the statistics screen.
+        """Initialize the statistics dialog.
 
         Args:
             api_client: API client for fetching statistics
@@ -85,9 +85,9 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
         self._loaded_periods: dict[str, bool] = {}
 
     def compose(self) -> ComposeResult:
-        """Compose the screen layout."""
+        """Compose the dialog layout."""
         with Container(
-            id="stats-screen", classes="dialog-base dialog-wide"
+            id="stats-dialog", classes="dialog-base dialog-wide"
         ) as container:
             container.border_title = "Task Statistics"
 
@@ -133,6 +133,9 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
 
     def _load_period(self, tab_id: str) -> None:
         """Start loading statistics for a tab in a background worker."""
+        if self._loaded_periods.get(tab_id):
+            return
+        self._loaded_periods[tab_id] = True
         self.app.run_worker(self._fetch_statistics(tab_id), exclusive=False)
 
     async def _fetch_statistics(self, tab_id: str) -> None:
@@ -147,6 +150,7 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
             )
             view_model = StatisticsMapper.from_statistics_result(result)
         except Exception as e:
+            self._loaded_periods[tab_id] = False
             self.notify(f"Failed to load statistics: {e}", severity="error")
             return
 
@@ -167,9 +171,6 @@ class StatsScreen(BaseModalDialog[None], ViNavigationMixin):
 
         widgets = self._build_stats_widgets(view_model)
         scroll.mount(*widgets)
-
-        # Mark as successfully loaded only after mounting succeeds
-        self._loaded_periods[tab_id] = True
 
     def _build_stats_widgets(
         self, vm: StatisticsViewModel

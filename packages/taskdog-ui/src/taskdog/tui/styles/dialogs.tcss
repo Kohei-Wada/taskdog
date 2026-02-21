@@ -12,7 +12,7 @@ TaskFormDialog,
 TaskDetailDialog,
 FixActualDialog,
 HelpDialog,
-StatsScreen {
+StatsDialog {
     align: center middle;
 }
 
@@ -177,11 +177,11 @@ StatsScreen {
 }
 
 /* =============================================================================
-   Statistics Screen
+   Statistics Dialog
    ============================================================================= */
 
 /* Stats Screen Container */
-#stats-screen {
+#stats-dialog {
     max-height: 80%;
 }
 
@@ -196,6 +196,7 @@ StatsScreen {
 }
 
 .stats-section {
+    height: auto;
     padding: 0 1;
     margin-bottom: 1;
 }
