@@ -257,21 +257,17 @@ class TestWebSocketEventBroadcaster:
         }
         assert call_args[0][3] == "test-client-6"
 
-    def test_schedule_optimized_with_different_algorithms(self):
+    @pytest.mark.parametrize(
+        "algorithm",
+        ["greedy", "balanced", "backward", "priority_first", "genetic"],
+    )
+    def test_schedule_optimized_with_different_algorithms(self, algorithm):
         """Test schedule_optimized with various algorithms."""
-        algorithms = ["greedy", "balanced", "backward", "priority_first", "genetic"]
+        self.broadcaster.schedule_optimized(10, 0, algorithm)
 
-        for algorithm in algorithms:
-            # Reset mock for each iteration
-            self.mock_background_tasks.reset_mock()
-
-            # Act
-            self.broadcaster.schedule_optimized(10, 0, algorithm)
-
-            # Assert
-            self.mock_background_tasks.add_task.assert_called_once()
-            call_args = self.mock_background_tasks.add_task.call_args
-            assert call_args[0][2]["algorithm"] == algorithm
+        self.mock_background_tasks.add_task.assert_called_once()
+        call_args = self.mock_background_tasks.add_task.call_args
+        assert call_args[0][2]["algorithm"] == algorithm
 
     def test_multiple_broadcasts_in_sequence(self):
         """Test multiple broadcast calls are scheduled correctly."""

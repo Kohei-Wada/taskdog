@@ -112,39 +112,34 @@ key = "missing-name"
         assert len(config.auth.api_keys) == 1
         assert config.auth.api_keys[0].name == "valid-entry"
 
-    def test_environment_variable_override_enabled(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    @pytest.mark.parametrize(
+        "config_enabled,env_value,expected",
+        [
+            ("true", "false", False),
+            ("false", "true", True),
+        ],
+        ids=["env_disables", "env_enables"],
+    )
+    def test_environment_variable_overrides_config(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        config_enabled,
+        env_value,
+        expected,
     ) -> None:
         """TASKDOG_AUTH_ENABLED env var overrides config file."""
         config_path = tmp_path / "server.toml"
-        config_path.write_text("""
+        config_path.write_text(f"""
 [auth]
-enabled = true
+enabled = {config_enabled}
 """)
 
-        # Override with environment variable
-        monkeypatch.setenv("TASKDOG_AUTH_ENABLED", "false")
+        monkeypatch.setenv("TASKDOG_AUTH_ENABLED", env_value)
 
         config = ServerConfigManager.load(config_path)
 
-        assert config.auth.enabled is False
-
-    def test_environment_variable_enables_auth(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """TASKDOG_AUTH_ENABLED can enable auth when file says disabled."""
-        config_path = tmp_path / "server.toml"
-        config_path.write_text("""
-[auth]
-enabled = false
-""")
-
-        # Override with environment variable
-        monkeypatch.setenv("TASKDOG_AUTH_ENABLED", "true")
-
-        config = ServerConfigManager.load(config_path)
-
-        assert config.auth.enabled is True
+        assert config.auth.enabled is expected
 
 
 class TestApiKeyEntry:
