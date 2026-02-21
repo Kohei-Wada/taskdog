@@ -38,43 +38,22 @@ class TestTagFilter:
         )
         self.tasks = [self.task1, self.task2, self.task3, self.task4]
 
-    def test_filter_or_logic_single_tag(self):
-        """Test filter with OR logic (match_all=False) and single tag."""
-        tag_filter = TagFilter(tags=["work"], match_all=False)
+    @pytest.mark.parametrize(
+        "tags,match_all,expected_ids",
+        [
+            (["work"], False, [1, 3]),
+            (["work", "personal"], False, [1, 2, 3]),
+            (["work"], True, [1, 3]),
+            (["work", "urgent"], True, [1]),
+        ],
+        ids=["or_single", "or_multiple", "and_single", "and_multiple"],
+    )
+    def test_filter_match_logic(self, tags, match_all, expected_ids):
+        """Test filter with various tags and match_all combinations."""
+        tag_filter = TagFilter(tags=tags, match_all=match_all)
         result = tag_filter.filter(self.tasks)
-
-        assert len(result) == 2
-        assert result[0].id == 1
-        assert result[1].id == 3
-
-    def test_filter_or_logic_multiple_tags(self):
-        """Test filter with OR logic (match_all=False) and multiple tags."""
-        tag_filter = TagFilter(tags=["work", "personal"], match_all=False)
-        result = tag_filter.filter(self.tasks)
-
-        # Should match tasks with tag "work" OR "personal"
-        assert len(result) == 3
-        assert result[0].id == 1
-        assert result[1].id == 2
-        assert result[2].id == 3
-
-    def test_filter_and_logic_single_tag(self):
-        """Test filter with AND logic (match_all=True) and single tag."""
-        tag_filter = TagFilter(tags=["work"], match_all=True)
-        result = tag_filter.filter(self.tasks)
-
-        assert len(result) == 2
-        assert result[0].id == 1
-        assert result[1].id == 3
-
-    def test_filter_and_logic_multiple_tags(self):
-        """Test filter with AND logic (match_all=True) and multiple tags."""
-        tag_filter = TagFilter(tags=["work", "urgent"], match_all=True)
-        result = tag_filter.filter(self.tasks)
-
-        # Should match only tasks with BOTH "work" AND "urgent"
-        assert len(result) == 1
-        assert result[0].id == 1
+        assert len(result) == len(expected_ids)
+        assert [t.id for t in result] == expected_ids
 
     def test_filter_and_logic_no_match(self):
         """Test filter with AND logic where no task has all tags."""

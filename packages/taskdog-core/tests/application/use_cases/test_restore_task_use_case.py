@@ -100,34 +100,17 @@ class TestRestoreTaskUseCase:
         assert result.priority == original_priority
         assert result.estimated_duration == original_duration
 
-    def test_execute_restores_archived_completed_task(self):
-        """Test execute restores archived COMPLETED task with original status."""
-        # Create an archived completed task
-        task = self.repository.create(
-            name="Test Task", priority=1, status=TaskStatus.COMPLETED
-        )
+    @pytest.mark.parametrize(
+        "status",
+        [TaskStatus.COMPLETED, TaskStatus.CANCELED],
+        ids=["completed", "canceled"],
+    )
+    def test_execute_restores_archived_task_with_status(self, status):
+        """Test execute restores archived task with original status preserved."""
+        task = self.repository.create(name="Test Task", priority=1, status=status)
         task.is_archived = True
         self.repository.save(task)
-
         input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
-
-        # Verify archived flag cleared and status preserved
         assert result.is_archived is False
-        assert result.status == TaskStatus.COMPLETED
-
-    def test_execute_restores_archived_canceled_task(self):
-        """Test execute restores archived CANCELED task with original status."""
-        # Create an archived canceled task
-        task = self.repository.create(
-            name="Test Task", priority=1, status=TaskStatus.CANCELED
-        )
-        task.is_archived = True
-        self.repository.save(task)
-
-        input_dto = SingleTaskInput(task_id=task.id)
-        result = self.use_case.execute(input_dto)
-
-        # Verify archived flag cleared and status preserved
-        assert result.is_archived is False
-        assert result.status == TaskStatus.CANCELED
+        assert result.status == status

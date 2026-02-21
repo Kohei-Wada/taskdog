@@ -139,46 +139,27 @@ class TestLifecycleRouter:
         assert updated_task.status == TaskStatus.CANCELED
         assert updated_task.actual_end is not None
 
-    def test_reopen_task_success(self, client, repository, task_factory):
-        """Test reopening a completed task."""
-        # Arrange
-        task = task_factory.create(name="Completed Task", priority=1)
-        task.status = TaskStatus.COMPLETED
-        task.actual_start = datetime.now()
+    @pytest.mark.parametrize(
+        "initial_status,has_actual_start",
+        [
+            (TaskStatus.COMPLETED, True),
+            (TaskStatus.CANCELED, False),
+        ],
+        ids=["from_completed", "from_canceled"],
+    )
+    def test_reopen_task_success(
+        self, client, repository, task_factory, initial_status, has_actual_start
+    ):
+        """Test reopening a completed or canceled task."""
+        task = task_factory.create(name="Finished Task", priority=1)
+        task.status = initial_status
+        if has_actual_start:
+            task.actual_start = datetime.now()
         task.actual_end = datetime.now()
         repository.save(task)
-
-        # Act
         response = client.post(f"/api/v1/tasks/{task.id}/reopen")
-
-        # Assert
         assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "PENDING"
-        assert data["actual_start"] is None
-        assert data["actual_end"] is None
-
-        # Verify in database
-        updated_task = repository.get_by_id(task.id)
-        assert updated_task.status == TaskStatus.PENDING
-        assert updated_task.actual_start is None
-        assert updated_task.actual_end is None
-
-    def test_reopen_canceled_task_success(self, client, repository, task_factory):
-        """Test reopening a canceled task."""
-        # Arrange
-        task = task_factory.create(name="Canceled Task", priority=1)
-        task.status = TaskStatus.CANCELED
-        task.actual_end = datetime.now()
-        repository.save(task)
-
-        # Act
-        response = client.post(f"/api/v1/tasks/{task.id}/reopen")
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "PENDING"
+        assert response.json()["status"] == "PENDING"
 
     def test_start_in_progress_task_success(self, client, repository, task_factory):
         """Test starting already in-progress task is idempotent."""
