@@ -1,76 +1,15 @@
 """Shared utility for building audit log entry widgets.
 
-Extracted from AuditLogWidget to be reusable across TUI components
-(e.g., AuditLogWidget sidebar panel, TaskDetailDialog audit tab).
+Reusable across TUI components
+(e.g., AuditLogScreen, TaskDetailDialog audit tab).
 """
 
 from typing import Any
 
 from rich.text import Text
-from textual.containers import Horizontal, Vertical
-from textual.widgets import DataTable, Static
+from textual.widgets import DataTable
 
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
-
-
-def create_audit_entry_widget(log: AuditLogOutput) -> Vertical:
-    """Create a container widget for a log entry.
-
-    Args:
-        log: Audit log entry to display
-
-    Returns:
-        Vertical container with styled child widgets
-    """
-    children: list[Static | Horizontal] = []
-
-    # Line 1: Timestamp and status
-    ts = log.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-    status_text = "OK" if log.success else "ER"
-    status_class = "log-status-ok" if log.success else "log-status-error"
-    header = Horizontal(
-        Static(ts, classes="log-timestamp"),
-        Static(status_text, classes=status_class),
-        classes="log-header",
-    )
-    children.append(header)
-
-    # Line 2: Operation
-    children.append(Static(log.operation, classes="log-operation"))
-
-    # Line 3: Resource info (if exists)
-    if log.resource_id or log.resource_name:
-        parts: list[str] = []
-        if log.resource_id:
-            parts.append(f"#{log.resource_id}")
-        if log.resource_name:
-            name = (
-                log.resource_name[:30] + "..."
-                if len(log.resource_name) > 30
-                else log.resource_name
-            )
-            parts.append(name)
-        children.append(Static(" ".join(parts), classes="log-resource"))
-
-    # Line 4: Changes (if exists)
-    changes = format_audit_changes(log.old_values, log.new_values)
-    if changes:
-        children.append(Static(changes, classes="log-changes"))
-
-    # Line 5: Error message (if failed)
-    if not log.success and log.error_message:
-        error_msg = (
-            log.error_message[:40] + "..."
-            if len(log.error_message) > 40
-            else log.error_message
-        )
-        children.append(Static(error_msg, classes="log-error-message"))
-
-    # Line 6: Client (if exists)
-    if log.client_name:
-        children.append(Static(f"@{log.client_name}", classes="log-client"))
-
-    return Vertical(*children, classes="audit-log-entry")
 
 
 def format_audit_changes(

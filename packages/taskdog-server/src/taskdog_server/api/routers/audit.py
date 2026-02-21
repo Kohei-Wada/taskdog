@@ -41,7 +41,7 @@ async def list_audit_logs(
         str | None, Query(description="Filter by end datetime (ISO format)")
     ] = None,
     limit: Annotated[
-        int, Query(ge=1, le=1000, description="Maximum number of logs to return")
+        int, Query(ge=1, le=10000, description="Maximum number of logs to return")
     ] = 100,
     offset: Annotated[int, Query(ge=0, description="Number of logs to skip")] = 0,
 ) -> AuditLogListResponse:
@@ -56,7 +56,7 @@ async def list_audit_logs(
         success: Filter by success status
         start_date: Filter logs after this datetime (ISO format)
         end_date: Filter logs before this datetime (ISO format)
-        limit: Maximum number of logs to return (1-1000, default 100)
+        limit: Maximum number of logs to return (1-10000, default 100)
         offset: Number of logs to skip for pagination (default 0)
 
     Returns:

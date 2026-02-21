@@ -6,8 +6,8 @@ from taskdog.tui.palette.providers.base import SimpleSingleCommandProvider
 
 
 class AuditCommandProvider(SimpleSingleCommandProvider):
-    """Command provider for audit log panel toggle."""
+    """Command provider for audit log screen."""
 
     COMMAND_NAME = "Audit Logs"
-    COMMAND_HELP = "Toggle audit log side panel"
-    COMMAND_CALLBACK_NAME = "toggle_audit_panel"
+    COMMAND_HELP = "Show audit log screen"
+    COMMAND_CALLBACK_NAME = "show_audit_logs"
