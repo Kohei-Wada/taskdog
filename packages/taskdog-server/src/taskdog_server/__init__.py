@@ -3,9 +3,9 @@
 FastAPI-based REST API server for task management.
 """
 
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__ = version("taskdog-server")
-except Exception:
+except PackageNotFoundError:
     __version__ = "unknown"

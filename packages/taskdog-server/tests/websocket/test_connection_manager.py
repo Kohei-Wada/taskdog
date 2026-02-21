@@ -108,7 +108,7 @@ class TestConnectionManager:
         await self.manager.connect("client-3", mock_websocket3)
 
         # Simulate connection failure for client-2
-        mock_websocket2.send_json.side_effect = Exception("Connection broken")
+        mock_websocket2.send_json.side_effect = RuntimeError("Connection broken")
 
         message = {"type": "task_updated", "task_id": 123}
 
@@ -152,7 +152,7 @@ class TestConnectionManager:
         await self.manager.connect(client_id, mock_websocket)
 
         # Simulate connection failure
-        mock_websocket.send_json.side_effect = Exception("Connection broken")
+        mock_websocket.send_json.side_effect = RuntimeError("Connection broken")
 
         message = {"type": "task_detail", "task_id": 123}
 
@@ -246,7 +246,7 @@ class TestConnectionManager:
         """Test that broadcast failure logs a warning."""
         # Arrange
         mock_websocket = AsyncMock(spec=WebSocket)
-        mock_websocket.send_json.side_effect = Exception("Connection error")
+        mock_websocket.send_json.side_effect = RuntimeError("Connection error")
         client_id = "client-1"
         await self.manager.connect(client_id, mock_websocket)
 

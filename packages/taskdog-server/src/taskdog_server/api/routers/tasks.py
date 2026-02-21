@@ -223,7 +223,7 @@ async def update_task(
     try:
         old_task_output = query_controller.get_task_by_id(task_id)
         old_task = old_task_output.task if old_task_output else None
-    except Exception:
+    except TaskNotFoundException:
         old_task = None
 
     result = controller.update_task(

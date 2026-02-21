@@ -65,7 +65,7 @@ class ConnectionManager:
         for client_id, connection in self.active_connections.items():
             try:
                 await connection.send_json(message)
-            except Exception as e:
+            except (ConnectionError, RuntimeError) as e:
                 # Connection is broken, mark for removal
                 logger.warning(
                     f"Failed to send message to client {client_id}: {e}. Marking for disconnection."
@@ -90,7 +90,7 @@ class ConnectionManager:
 
         try:
             await self.active_connections[client_id].send_json(message)
-        except Exception as e:
+        except (ConnectionError, RuntimeError) as e:
             # Connection is broken, remove it
             logger.warning(
                 f"Failed to send personal message to client {client_id}: {e}. Disconnecting."

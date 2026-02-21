@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from fastapi import APIRouter
 
+from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import (
     AuditLogControllerDep,
     AuthenticatedClientDep,
@@ -115,7 +116,7 @@ async def fix_actual_times(
     try:
         old_task_output = query_controller.get_task_by_id(task_id)
         old_task = old_task_output.task if old_task_output else None
-    except Exception:
+    except TaskNotFoundException:
         old_task = None
 
     # Determine values to pass (Ellipsis = keep current)

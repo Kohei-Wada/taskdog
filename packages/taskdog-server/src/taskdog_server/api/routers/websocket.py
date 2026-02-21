@@ -4,6 +4,7 @@ This module provides WebSocket endpoints for clients to receive
 real-time notifications about task changes.
 """
 
+import logging
 import uuid
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
@@ -13,6 +14,8 @@ from taskdog_server.api.dependencies import (
     ServerConfigWsDep,
     validate_api_key_for_websocket,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -87,5 +90,6 @@ async def websocket_endpoint(
 
     except WebSocketDisconnect:
         manager.disconnect(client_id)
-    except Exception:
+    except Exception as e:
+        logger.warning(f"WebSocket connection error for client {client_id}: {e}")
         manager.disconnect(client_id)
