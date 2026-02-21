@@ -60,25 +60,33 @@ class TestShowCommand:
         self.command.notify_warning.assert_called_once()
         assert "no task selected" in self.command.notify_warning.call_args[0][0].lower()
 
-    def test_execute_impl_fetches_task_detail(self) -> None:
-        """Test that task detail is fetched from API."""
+    def test_execute_impl_runs_worker(self) -> None:
+        """Test that a worker is started for async fetch."""
         self.command.get_selected_task_id = MagicMock(return_value=42)
+
+        self.command.execute_impl()
+
+        self.mock_app.run_worker.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_fetch_and_show_detail_fetches_task_detail(self) -> None:
+        """Test that task detail is fetched from API in background thread."""
         task = create_mock_task_dto(task_id=42)
         detail = TaskDetailOutput(task=task, notes_content="", has_notes=False)
         self.mock_context.api_client.get_task_detail.return_value = detail
 
-        self.command.execute_impl()
+        await self.command._fetch_and_show_detail(42)
 
         self.mock_context.api_client.get_task_detail.assert_called_once_with(42)
 
-    def test_execute_impl_pushes_detail_dialog(self) -> None:
-        """Test that detail dialog is pushed."""
-        self.command.get_selected_task_id = MagicMock(return_value=42)
+    @pytest.mark.asyncio
+    async def test_fetch_and_show_detail_pushes_detail_dialog(self) -> None:
+        """Test that detail dialog is pushed after fetch."""
         task = create_mock_task_dto(task_id=42)
         detail = TaskDetailOutput(task=task, notes_content="", has_notes=False)
         self.mock_context.api_client.get_task_detail.return_value = detail
 
-        self.command.execute_impl()
+        await self.command._fetch_and_show_detail(42)
 
         self.mock_app.push_screen.assert_called_once()
 

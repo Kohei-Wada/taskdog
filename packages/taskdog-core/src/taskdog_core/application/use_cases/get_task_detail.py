@@ -54,11 +54,9 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, TaskDetailOutput]):
         """
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
 
-        # Use NotesRepository to check and read notes
-        has_notes = self.notes_repository.has_notes(input_dto.task_id)
-        notes_content = (
-            self.notes_repository.read_notes(input_dto.task_id) if has_notes else None
-        )
+        # Read notes in a single query (read_notes returns None if no notes exist)
+        notes_content = self.notes_repository.read_notes(input_dto.task_id)
+        has_notes = notes_content is not None
 
         # Convert Task entity to DTO
         task_dto = TaskDetailDto.from_entity(task)

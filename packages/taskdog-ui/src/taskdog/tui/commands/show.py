@@ -1,5 +1,6 @@
 """Show details command for TUI."""
 
+import asyncio
 from typing import Any
 
 from taskdog.tui.commands.base import TUICommandBase
@@ -17,10 +18,21 @@ class ShowCommand(TUICommandBase):
             self.notify_warning("No task selected")
             return
 
-        # Get task detail with notes via API client
-        detail = self.context.api_client.get_task_detail(task_id)
+        # Run HTTP call in background thread to avoid blocking the event loop
+        self.app.run_worker(
+            self._fetch_and_show_detail(task_id),
+            exclusive=True,
+        )
 
-        # Show task detail dialog with notes
+    async def _fetch_and_show_detail(self, task_id: int) -> None:
+        """Fetch task detail in a background thread and show the dialog.
+
+        Args:
+            task_id: ID of the task to show details for
+        """
+        detail = await asyncio.to_thread(
+            self.context.api_client.get_task_detail, task_id
+        )
         detail_dialog = TaskDetailDialog(detail)
         self.app.push_screen(detail_dialog, callback=self._handle_detail_screen_result)
 
