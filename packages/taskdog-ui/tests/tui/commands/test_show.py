@@ -90,6 +90,19 @@ class TestShowCommand:
 
         self.mock_app.push_screen.assert_called_once()
 
+    @pytest.mark.asyncio
+    async def test_fetch_and_show_detail_notifies_error_on_failure(self) -> None:
+        """Test that API errors are caught and shown as notifications."""
+        self.mock_context.api_client.get_task_detail.side_effect = ConnectionError(
+            "Connection refused"
+        )
+        self.command.notify_error = MagicMock()
+
+        await self.command._fetch_and_show_detail(42)
+
+        self.command.notify_error.assert_called_once()
+        self.mock_app.push_screen.assert_not_called()
+
 
 class TestShowCommandHandleDetailScreenResult:
     """Test cases for ShowCommand._handle_detail_screen_result."""

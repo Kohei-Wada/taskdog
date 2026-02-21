@@ -30,9 +30,13 @@ class ShowCommand(TUICommandBase):
         Args:
             task_id: ID of the task to show details for
         """
-        detail = await asyncio.to_thread(
-            self.context.api_client.get_task_detail, task_id
-        )
+        try:
+            detail = await asyncio.to_thread(
+                self.context.api_client.get_task_detail, task_id
+            )
+        except Exception as e:
+            self.notify_error("Failed to fetch task details", e)
+            return
         detail_dialog = TaskDetailDialog(detail)
         self.app.push_screen(detail_dialog, callback=self._handle_detail_screen_result)
 
