@@ -55,9 +55,11 @@ class ShowCommand(TUICommandBase):
                 self._edit_note(task_id)
 
     def _edit_note(self, task_id: int) -> None:
-        """Open editor for the task's note and re-display detail screen.
+        """Open editor for the task's note.
 
-        Delegates to NoteCommand with an explicit task_id and callback.
+        Delegates to NoteCommand with an explicit task_id.
+        After editing, returns to the main screen (no detail re-display)
+        so the gantt and task table can refresh without race conditions.
 
         Args:
             task_id: ID of the task to edit notes for
@@ -68,17 +70,5 @@ class ShowCommand(TUICommandBase):
             self.app,
             self.context,
             task_id=task_id,
-            on_success=lambda name, id_: self._on_edit_success(name, id_),
         )
         cmd.execute()
-
-    def _on_edit_success(self, task_name: str, task_id: int) -> None:
-        """Handle successful note edit.
-
-        Args:
-            task_name: Name of the task
-            task_id: ID of the task
-        """
-        # Notification is sent via WebSocket (task_updated event with "notes" field)
-        # Re-display detail screen with updated notes
-        self.execute()
