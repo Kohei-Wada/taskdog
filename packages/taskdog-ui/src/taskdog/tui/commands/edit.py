@@ -7,6 +7,7 @@ from taskdog.tui.events import TaskUpdated
 from taskdog.tui.forms.task_form_fields import TaskFormData
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
+from taskdog_core.domain.exceptions.task_exceptions import TaskError
 
 
 class EditCommand(TUICommandBase):
@@ -42,7 +43,20 @@ class EditCommand(TUICommandBase):
         input_defaults = (
             self.context.config.input_defaults if self.context.config else None
         )
-        dialog = TaskFormDialog(task=original_task, input_defaults=input_defaults)
+
+        # Fetch existing tags for auto-completion (graceful degradation on failure)
+        existing_tags: list[str] | None = None
+        try:
+            tag_stats = self.context.api_client.get_tag_statistics()
+            existing_tags = list(tag_stats.tag_counts.keys())
+        except TaskError:
+            pass
+
+        dialog = TaskFormDialog(
+            task=original_task,
+            input_defaults=input_defaults,
+            existing_tags=existing_tags,
+        )
         self.app.push_screen(dialog, self.handle_error(handle_task_data))
 
     def _detect_changes(

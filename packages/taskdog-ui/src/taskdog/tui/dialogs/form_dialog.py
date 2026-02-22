@@ -4,6 +4,7 @@ from abc import abstractmethod
 from typing import ClassVar, TypeVar
 
 from textual.binding import Binding
+from textual.widgets import Input
 
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 
@@ -47,6 +48,14 @@ class FormDialogBase(BaseModalDialog[T]):
             priority=True,
             tooltip="Move to previous form field",
         ),
+        Binding(
+            "ctrl+n",
+            "accept_suggestion",
+            "Accept suggestion",
+            show=False,
+            priority=True,
+            tooltip="Accept auto-completion suggestion",
+        ),
     ]
 
     def action_submit(self) -> None:
@@ -60,6 +69,12 @@ class FormDialogBase(BaseModalDialog[T]):
     def action_focus_previous(self) -> None:
         """Move focus to the previous field (Ctrl+K)."""
         self.focus_previous()
+
+    def action_accept_suggestion(self) -> None:
+        """Accept auto-completion suggestion on the focused input (Ctrl+N)."""
+        focused = self.focused
+        if isinstance(focused, Input):
+            focused.action_cursor_right()
 
     @abstractmethod
     def _submit_form(self) -> None:

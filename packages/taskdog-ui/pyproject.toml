@@ -55,6 +55,7 @@ packages = [
     "taskdog.tui.dialogs",
     "taskdog.tui.widgets",
     "taskdog.tui.forms",
+    "taskdog.tui.forms.suggesters",
     "taskdog.tui.forms.validators",
     "taskdog.tui.state",
     "taskdog.tui.styles",
