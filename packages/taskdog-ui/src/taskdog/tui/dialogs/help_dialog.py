@@ -25,16 +25,99 @@ _TAB_SCROLL_MAP: dict[str, str] = {
     "tab-getting-started": "help-getting-started-scroll",
     "tab-features": "help-features-scroll",
     "tab-tips": "help-tips-scroll",
+    "tab-keybindings": "help-keybindings-scroll",
 }
+
+# Category display order for the auto-generated Keybindings tab
+_CATEGORY_ORDER: list[str] = [
+    "Task Actions",
+    "Task Management",
+    "Selection",
+    "Navigation",
+    "View & Search",
+    "General",
+]
+
+# Action name → Category mapping for keybindings auto-generation
+_ACTION_CATEGORIES: dict[str, str] = {
+    # Task Actions
+    "add": "Task Actions",
+    "start": "Task Actions",
+    "done": "Task Actions",
+    "pause": "Task Actions",
+    "cancel": "Task Actions",
+    "reopen": "Task Actions",
+    # Task Management
+    "edit": "Task Management",
+    "fix_actual": "Task Management",
+    "show": "Task Management",
+    "note": "Task Management",
+    "rm": "Task Management",
+    "hard_delete": "Task Management",
+    # Selection
+    "toggle_selection": "Selection",
+    "select_all": "Selection",
+    "clear_selection": "Selection",
+    # Navigation
+    "cursor_down": "Navigation",
+    "cursor_up": "Navigation",
+    "vi_home": "Navigation",
+    "vi_end": "Navigation",
+    "vi_page_down": "Navigation",
+    "vi_page_up": "Navigation",
+    "vi_scroll_left": "Navigation",
+    "vi_scroll_right": "Navigation",
+    "vi_home_horizontal": "Navigation",
+    "vi_end_horizontal": "Navigation",
+    "focus_next": "Navigation",
+    "focus_previous": "Navigation",
+    # View & Search
+    "show_search": "View & Search",
+    "hide_search": "View & Search",
+    "toggle_sort_reverse": "View & Search",
+    "toggle_maximize": "View & Search",
+    "toggle_gantt_filter": "View & Search",
+    "stats": "View & Search",
+    "refresh": "View & Search",
+    # General
+    "quit": "General",
+    "show_help": "General",
+    "command_palette": "General",
+}
+
+# Special key name → display name mapping
+_KEY_DISPLAY_MAP: dict[str, str] = {
+    "greater_than_sign": ">",
+    "less_than_sign": "<",
+    "space": "Space",
+    "escape": "Escape",
+}
+
+
+def _format_key_display(key: str) -> str:
+    """Format a binding key string for user-friendly display.
+
+    Args:
+        key: Raw key string from Binding definition.
+
+    Returns:
+        Formatted key string for display.
+    """
+    if key in _KEY_DISPLAY_MAP:
+        return _KEY_DISPLAY_MAP[key]
+    if key.startswith("ctrl+"):
+        return "Ctrl+" + key[5:].upper()
+    return key
 
 
 class HelpDialog(BaseModalDialog[None], ViNavigationMixin):
     """Modal screen displaying help information and usage guide.
 
-    Organized into three tabs:
+    Organized into four tabs:
     - Getting Started: Overview and basic workflow
     - Features: Main features and command palette
     - Tips: Quick tips and bug report info
+    - Keybindings: Auto-generated keybinding reference from Binding definitions
     """
 
     BINDINGS: ClassVar = [
@@ -91,9 +174,22 @@ class HelpDialog(BaseModalDialog[None], ViNavigationMixin):
                     yield Static("", classes="help-spacer")
                     yield Markdown(BUG_REPORT_INFO, classes="help-section")
 
+                # Tab 4: Keybindings (auto-generated from Binding definitions)
+                with (
+                    TabPane("Keybindings", id="tab-keybindings"),
+                    VerticalScroll(
+                        id="help-keybindings-scroll",
+                        classes="help-tab-scroll",
+                    ),
+                ):
+                    yield Markdown(
+                        self._build_keybindings_content(),
+                        classes="help-section",
+                    )
+
             # Footer instruction
             yield Static(
-                "[dim]Press 'q' or Escape to close • '<' / '>' to switch tabs • Press Ctrl+P → 'Keys' for all keybindings[/dim]",
+                "[dim]Press 'q' or Escape to close • '<' / '>' to switch tabs[/dim]",
                 classes="help-footer",
             )
 
@@ -153,6 +249,65 @@ class HelpDialog(BaseModalDialog[None], ViNavigationMixin):
         widget = self._get_active_scroll_widget()
         if widget:
             widget.scroll_end(animate=False)
+
+    def _build_keybindings_content(self) -> str:
+        """Build keybindings reference from actual Binding definitions.
+
+        Collects bindings from TaskdogTUI, MainScreen, and TaskTable,
+        groups them by category, and generates a Markdown table.
+
+        Returns:
+            Markdown string with categorized keybinding tables.
+        """
+        from taskdog.tui.screens.main_screen import MainScreen
+        from taskdog.tui.widgets.task_table import TaskTable
+
+        # Collect bindings from all sources
+        all_bindings: list[Binding] = []
+        all_bindings.extend(type(self.app).BINDINGS)  # type: ignore[arg-type]
+        all_bindings.extend(MainScreen.BINDINGS)  # type: ignore[arg-type]
+        all_bindings.extend(TaskTable.BINDINGS)  # type: ignore[arg-type]
+
+        # Group by category, deduplicating by (key, action) pair
+        seen: set[tuple[str, str]] = set()
+        categories: dict[str, list[tuple[str, str]]] = {
+            cat: [] for cat in _CATEGORY_ORDER
+        }
+
+        for binding in all_bindings:
+            if not isinstance(binding, Binding):
+                continue
+            action = binding.action
+            key = binding.key
+            if (key, action) in seen:
+                continue
+            seen.add((key, action))
+
+            category = _ACTION_CATEGORIES.get(action)
+            if category is None:
+                continue
+
+            display_key = _format_key_display(key)
+            tooltip = binding.tooltip or binding.description
+            categories[category].append((display_key, tooltip))
+
+        # Add command palette entry (inherited from Textual's App base class)
+        categories["General"].append(("Ctrl+P / Ctrl+\\\\", "Open command palette"))
+
+        # Build Markdown content
+        lines: list[str] = ["## Keybindings Reference\n"]
+        for category in _CATEGORY_ORDER:
+            items = categories.get(category, [])
+            if not items:
+                continue
+            lines.append(f"### {category}\n")
+            lines.append("| Key | Description |")
+            lines.append("|-----|-------------|")
+            for key_display, desc in items:
+                lines.append(f"| `{key_display}` | {desc} |")
+            lines.append("")
+
+        return "\n".join(lines)
 
     def action_next_tab(self) -> None:
         """Switch to the next tab (> key)."""

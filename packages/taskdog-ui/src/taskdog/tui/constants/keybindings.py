@@ -43,8 +43,18 @@ MAIN_FEATURES: str = """## Key Features
   - Smart case: case-insensitive unless query contains uppercase
   - Press `Escape` to clear search
 
+- **Multi-Select & Batch Operations** - Operate on multiple tasks at once
+  - `Space` to toggle selection, `Ctrl+A` to select all, `Ctrl+N` to clear
+  - Batch start, complete, pause, cancel, archive, or delete selected tasks
+
 - **Notes** - Press `v` to edit markdown notes for any task
   - Opens your `$EDITOR` (vim, nano, etc.)
+
+- **Statistics** - Press `S` to view task statistics dashboard
+  - Completion rates, time tracking, and trends
+
+- **Zoom** - Press `z` to maximize/minimize the focused widget
+  - Toggle between full-screen and split view for table or Gantt chart
 
 - **Schedule Optimization** - Auto-schedule tasks based on deadlines
   - Access via `Ctrl+P` → Optimize
@@ -69,19 +79,19 @@ Press `Ctrl+P` to open the command palette:
 
 - **Export** - Export tasks to JSON, CSV, or Markdown
 
-- **Keys** - View all keyboard shortcuts
-  - Complete list of keybindings with descriptions
+- **Audit** - View audit logs of task operations
 
 **Tip**: Type to search, then press Enter to execute"""
 
 # Quick tips for new users
 QUICK_TIPS: list[str] = [
-    "Press [cyan]Ctrl+P[/cyan] then type [cyan]'Keys'[/cyan] to see all keyboard shortcuts",
     "Use [cyan]a[/cyan] → [cyan]s[/cyan] → [cyan]d[/cyan] workflow for quick task management",
     "Edit task details with [cyan]e[/cyan], add notes with [cyan]v[/cyan]",
-    "Archive tasks with [cyan]x[/cyan] (soft delete), restore them later",
+    "Archive with [cyan]x[/cyan] (soft delete) or permanently delete with [cyan]X[/cyan] (hard delete)",
     "Press [cyan]i[/cyan] to see full task details including notes",
     "Use [cyan]/[/cyan] for quick search, [cyan]Escape[/cyan] to clear",
+    "Select multiple tasks with [cyan]Space[/cyan], then batch operate ([cyan]s[/cyan]/[cyan]d[/cyan]/[cyan]x[/cyan]/...)",
+    "Check the [cyan]Keybindings[/cyan] tab for a complete list of keyboard shortcuts",
 ]
 
 # Bug reports and feedback
