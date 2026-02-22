@@ -29,6 +29,7 @@ from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 
 
 class TaskdogApiClient:
@@ -119,7 +120,7 @@ class TaskdogApiClient:
         try:
             response = self._base._safe_request("get", "/health")
             return response.status_code == 200
-        except httpx.HTTPError:
+        except (httpx.HTTPError, ServerConnectionError):
             return False
 
     # CRUD Controller methods - delegate to TaskClient
