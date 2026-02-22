@@ -123,6 +123,18 @@ class TestTaskdogApiClientLifecycle:
 
         assert client.check_health() is False
 
+    def test_check_health_returns_false_on_server_connection_error(self, client):
+        """Test check_health returns False when ServerConnectionError is raised."""
+        from taskdog_core.domain.exceptions.task_exceptions import (
+            ServerConnectionError,
+        )
+
+        client._base._safe_request.side_effect = ServerConnectionError(
+            "http://localhost:8000", ConnectionError("Connection refused")
+        )
+
+        assert client.check_health() is False
+
 
 class TestTaskdogApiClientDelegation:
     """Test cases for TaskdogApiClient delegation methods."""
