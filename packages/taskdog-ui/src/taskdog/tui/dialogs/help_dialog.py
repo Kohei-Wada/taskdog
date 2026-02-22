@@ -291,8 +291,8 @@ class HelpDialog(BaseModalDialog[None], ViNavigationMixin):
             tooltip = binding.tooltip or binding.description
             categories[category].append((display_key, tooltip))
 
-        # Add command palette entry (inherited from Textual's App base class)
-        categories["General"].append(("Ctrl+P / Ctrl+\\\\", "Open command palette"))
+        # Add command palette entry (configured via Textual's COMMAND_PALETTE_BINDING)
+        categories["General"].append(("Ctrl+P", "Open command palette"))
 
         # Build Markdown content
         lines: list[str] = ["## Keybindings Reference\n"]
