@@ -33,8 +33,8 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
     BINDINGS: ClassVar = [
         Binding("j", "scroll_down", "Down", show=False),
         Binding("k", "scroll_up", "Up", show=False),
-        Binding("g", "scroll_home", "Top", show=False),
-        Binding("G", "scroll_end", "Bottom", show=False),
+        Binding("g", "goto_top", "Top", show=False),
+        Binding("G", "goto_bottom", "Bottom", show=False),
         Binding("ctrl+d", "page_down", "Page Down", show=False),
         Binding("ctrl+u", "page_up", "Page Up", show=False),
     ]
@@ -44,6 +44,14 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
         super().__init__(**kwargs)
         self.cursor_type = "none"
         self.zebra_stripes = True
+
+    def action_goto_top(self) -> None:
+        """Scroll to the top of the table."""
+        self.scroll_home(animate=False)
+
+    def action_goto_bottom(self) -> None:
+        """Scroll to the bottom of the table."""
+        self.scroll_end(animate=False)
 
     def on_mount(self) -> None:
         """Set up table columns."""
