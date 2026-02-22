@@ -12,8 +12,6 @@
         <string>127.0.0.1</string>
         <string>--port</string>
         <string>8000</string>
-        <string>--workers</string>
-        <string>1</string>
     </array>
 
     <key>RunAtLoad</key>

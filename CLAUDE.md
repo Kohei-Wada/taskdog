@@ -114,7 +114,6 @@ cd packages/taskdog-server && PYTHONPATH=src uv run python -m taskdog_server.mai
 taskdog-server                   # Start on default 127.0.0.1:8000
 taskdog-server --host 0.0.0.0 --port 3000  # Custom host/port
 taskdog-server --reload          # Auto-reload for development
-taskdog-server --workers 4       # Production with multiple workers
 # API docs: http://localhost:8000/docs
 # Health check: http://localhost:8000/health
 

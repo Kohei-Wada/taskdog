@@ -65,5 +65,4 @@ ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
 
 # Start taskdog-server
-# Note: --workers 1 is required for WebSocket real-time sync
-ENTRYPOINT ["taskdog-server", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+ENTRYPOINT ["taskdog-server", "--host", "0.0.0.0", "--port", "8000"]

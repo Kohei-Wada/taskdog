@@ -37,7 +37,7 @@ taskdog-server
 With custom options:
 
 ```bash
-taskdog-server --host 0.0.0.0 --port 3000 --workers 4
+taskdog-server --host 0.0.0.0 --port 3000
 ```
 
 Development mode with auto-reload:
@@ -98,7 +98,7 @@ ws.onmessage = (event) => {
 - `task_status_changed` - Task status changed
 - `schedule_optimized` - Schedule optimization completed
 
-**Note:** WebSocket requires `--workers 1` (default). Multiple workers are not supported for WebSocket.
+**Note:** WebSocket uses an in-memory connection manager, so the server always runs as a single process.
 
 ## Configuration
 

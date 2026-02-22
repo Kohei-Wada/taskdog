@@ -4,10 +4,10 @@ This directory contains deployment configurations and infrastructure files for r
 
 ## Contents
 
-| Directory | Description | Platform |
-|-----------|-------------|----------|
-| [systemd/](systemd/) | Systemd user service | Linux |
-| [launchd/](launchd/) | Launchd property list | macOS |
+| Directory            | Description           | Platform |
+|----------------------|-----------------------|----------|
+| [systemd/](systemd/) | Systemd user service  | Linux    |
+| [launchd/](launchd/) | Launchd property list | macOS    |
 
 Docker files (`Dockerfile`, `docker-compose.yaml`, `.env.example`) are located at the repository root for convenience.
 
@@ -204,15 +204,12 @@ The default service configuration:
 
 - **Host**: 127.0.0.1 (local only)
 - **Port**: 8000
-- **Workers**: 1 (required for WebSocket real-time sync)
 - **Auto-restart**: Yes (on failure)
 - **Data directory**: `~/.local/share/taskdog/`
 
-**Note**: WebSocket real-time synchronization requires `--workers 1`. Multiple workers are not supported yet due to lack of inter-process communication (would require Redis Pub/Sub or similar).
-
 #### Customizing the Service
 
-To customize the service (host, port, workers, etc.), edit the service file:
+To customize the service (host, port, etc.), edit the service file:
 
 ```bash
 # Edit the service file
@@ -230,21 +227,13 @@ Example modifications:
 **Change host and port (listen on all interfaces):**
 
 ```ini
-ExecStart=%h/.local/bin/taskdog-server --host 0.0.0.0 --port 9000 --workers 1
+ExecStart=%h/.local/bin/taskdog-server --host 0.0.0.0 --port 9000
 ```
 
 **Enable development mode with auto-reload:**
 
 ```ini
 ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --reload
-```
-
-**WARNING: Multiple workers not supported with WebSocket**
-
-```ini
-# This will NOT work for WebSocket real-time sync:
-# ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000 --workers 4
-# Use --workers 1 for WebSocket support
 ```
 
 ### Troubleshooting
