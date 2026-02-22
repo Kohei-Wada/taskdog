@@ -17,7 +17,6 @@ Examples:
   taskdog-server --host 0.0.0.0         # Listen on all interfaces
   taskdog-server --port 3000            # Use custom port
   taskdog-server --reload               # Enable auto-reload for dev
-  taskdog-server --workers 4            # Use 4 worker processes
 
 The API will be available at:
   - Root: http://{host}:{port}/
@@ -46,13 +45,6 @@ The API will be available at:
         action="store_true",
         help="Enable auto-reload for development",
     )
-    parser.add_argument(
-        "--workers",
-        type=int,
-        default=1,
-        help="Number of worker processes (default: 1)",
-    )
-
     args = parser.parse_args()
 
     try:
@@ -69,18 +61,11 @@ The API will be available at:
     print(f"Health check: http://{args.host}:{args.port}/health")
     print()
 
-    if args.reload and args.workers > 1:
-        print(
-            "Warning: --reload and --workers cannot be used together. Using --reload only."
-        )
-        args.workers = 1
-
     uvicorn.run(
         "taskdog_server.api.app:app",
         host=args.host,
         port=args.port,
         reload=args.reload,
-        workers=args.workers,
         log_level="info",
     )
 

@@ -29,7 +29,6 @@ taskdog-server                           # Default: http://127.0.0.1:8000
 taskdog-server --host 0.0.0.0            # Bind to all interfaces
 taskdog-server --port 3000               # Custom port
 taskdog-server --reload                  # Auto-reload for development
-taskdog-server --workers 4               # Production with multiple workers
 ```
 
 ### Interactive Documentation
