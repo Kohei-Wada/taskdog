@@ -4,6 +4,7 @@ from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.dialogs.task_form_dialog import TaskFormDialog
 from taskdog.tui.events import TaskCreated
 from taskdog.tui.forms.task_form_fields import TaskFormData
+from taskdog_core.domain.exceptions.task_exceptions import TaskError
 
 
 class AddCommand(TUICommandBase):
@@ -61,7 +62,7 @@ class AddCommand(TUICommandBase):
         try:
             tag_stats = self.context.api_client.get_tag_statistics()
             existing_tags = list(tag_stats.tag_counts.keys())
-        except Exception:
+        except TaskError:
             pass
 
         dialog = TaskFormDialog(
