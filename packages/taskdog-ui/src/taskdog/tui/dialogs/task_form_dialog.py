@@ -7,6 +7,7 @@ from textual.containers import Container
 from textual.widgets import Checkbox, Input, Label
 
 from taskdog.tui.dialogs.form_dialog import FormDialogBase
+from taskdog.tui.forms.suggesters import CommaSeparatedSuggester
 from taskdog.tui.forms.task_form_fields import TaskFormData, TaskFormFields
 from taskdog.tui.forms.validators import DateTimeValidator
 from taskdog_core.application.dto.task_dto import TaskDetailDto
@@ -26,6 +27,7 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
         self,
         task: TaskDetailDto | None = None,
         input_defaults: "InputDefaultsConfig | None" = None,
+        existing_tags: list[str] | None = None,
         *args: Any,
         **kwargs: Any,
     ):
@@ -34,11 +36,13 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
         Args:
             task: Existing task DTO for editing, or None for adding new task
             input_defaults: UI input completion defaults (uses hardcoded defaults if None)
+            existing_tags: Known tag names for auto-completion suggestions
         """
         super().__init__(*args, **kwargs)
         self.task_to_edit = task
         self.is_edit_mode = task is not None
         self._input_defaults = input_defaults
+        self._existing_tags = existing_tags
 
     def compose(self) -> ComposeResult:
         """Compose the dialog layout."""
@@ -55,8 +59,13 @@ class TaskFormDialog(FormDialogBase[TaskFormData | None]):
             )
 
             # Compose form fields using the common helper
+            tag_suggester = (
+                CommaSeparatedSuggester(self._existing_tags)
+                if self._existing_tags
+                else None
+            )
             yield from TaskFormFields.compose_form_fields(
-                self.task_to_edit, self._input_defaults
+                self.task_to_edit, self._input_defaults, tag_suggester
             )
 
     def on_mount(self) -> None:

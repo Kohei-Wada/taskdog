@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from textual.app import ComposeResult
 from textual.containers import Vertical
+from textual.suggester import Suggester
 from textual.validation import Length, Number, Regex
 from textual.widgets import Checkbox, Input, Label, Static
 
@@ -87,6 +88,7 @@ class TaskFormFields:
     def compose_form_fields(
         task: TaskDetailDto | None = None,
         input_defaults: "InputDefaultsConfig | None" = None,
+        tag_suggester: Suggester | None = None,
     ) -> ComposeResult:
         """Compose task form fields.
 
@@ -209,6 +211,7 @@ class TaskFormFields:
                 value=tags_str,
                 valid_empty=True,
                 validators=[Regex(r"^([a-zA-Z0-9_-]+\s*,\s*)*[a-zA-Z0-9_-]+$")],
+                suggester=tag_suggester,
             )
 
             # Fixed field (checkbox)

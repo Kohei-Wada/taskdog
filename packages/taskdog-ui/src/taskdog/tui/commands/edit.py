@@ -42,7 +42,20 @@ class EditCommand(TUICommandBase):
         input_defaults = (
             self.context.config.input_defaults if self.context.config else None
         )
-        dialog = TaskFormDialog(task=original_task, input_defaults=input_defaults)
+
+        # Fetch existing tags for auto-completion (graceful degradation on failure)
+        existing_tags: list[str] | None = None
+        try:
+            tag_stats = self.context.api_client.get_tag_statistics()
+            existing_tags = list(tag_stats.tag_counts.keys())
+        except Exception:
+            pass
+
+        dialog = TaskFormDialog(
+            task=original_task,
+            input_defaults=input_defaults,
+            existing_tags=existing_tags,
+        )
         self.app.push_screen(dialog, self.handle_error(handle_task_data))
 
     def _detect_changes(
