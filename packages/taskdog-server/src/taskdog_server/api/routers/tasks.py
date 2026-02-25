@@ -1,6 +1,6 @@
 """CRUD endpoints for task management."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Query, status
@@ -32,6 +32,22 @@ from taskdog_server.api.models.responses import (
 from taskdog_server.api.utils import parse_iso_date
 
 router = APIRouter()
+
+
+def _serialize_audit_value(val: object) -> object:
+    """Serialize a value for JSON-safe audit logging."""
+    if hasattr(val, "value"):
+        val = val.value
+    if isinstance(val, datetime):
+        val = val.isoformat()
+    if isinstance(val, dict):
+        val = {
+            k.isoformat() if isinstance(k, (date, datetime)) else k: (
+                v.isoformat() if isinstance(v, (date, datetime)) else v
+            )
+            for k, v in val.items()
+        }
+    return val
 
 
 @router.post(
@@ -248,20 +264,8 @@ async def update_task(
     if old_task:
         for field in result.updated_fields:
             if hasattr(old_task, field) and hasattr(result.task, field):
-                old_val = getattr(old_task, field)
-                new_val = getattr(result.task, field)
-                # Handle enum values
-                if hasattr(old_val, "value"):
-                    old_val = old_val.value
-                if hasattr(new_val, "value"):
-                    new_val = new_val.value
-                # Handle datetime values (convert to ISO string for JSON)
-                if isinstance(old_val, datetime):
-                    old_val = old_val.isoformat()
-                if isinstance(new_val, datetime):
-                    new_val = new_val.isoformat()
-                old_values[field] = old_val
-                new_values[field] = new_val
+                old_values[field] = _serialize_audit_value(getattr(old_task, field))
+                new_values[field] = _serialize_audit_value(getattr(result.task, field))
 
     audit_controller.log_operation(
         operation="update_task",
