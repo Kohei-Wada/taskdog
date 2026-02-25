@@ -411,3 +411,38 @@ class TestTasksRouter:
                     )
                     # Should be valid ISO format
                     datetime.fromisoformat(value)
+
+    def test_update_task_daily_allocations_date_keys_serialized_in_audit_log(
+        self, client, task_factory, audit_log_repository
+    ):
+        """Test that daily_allocations with date keys are serialized in audit logs.
+
+        Regression test for #675: daily_allocations dict has date objects as keys,
+        which causes json.dumps() to fail with TypeError in the audit log repository.
+        The router must convert date keys to ISO strings before logging.
+        """
+        # Arrange - create a task with daily_allocations (simulating optimizer output)
+        today = date.today()
+        tomorrow = today + timedelta(days=1)
+        task = task_factory.create(
+            name="Allocation Test Task",
+            priority=1,
+            planned_start=datetime.combine(today, datetime.min.time()),
+            planned_end=datetime.combine(tomorrow, datetime.min.time()),
+            estimated_duration=8.0,
+            daily_allocations={today: 4.0, tomorrow: 4.0},
+        )
+
+        # Act - update the task's name to trigger audit log with daily_allocations in old values
+        response = client.patch(
+            f"/api/v1/tasks/{task.id}",
+            json={"name": "Updated Allocation Task"},
+        )
+
+        # Assert - request should succeed (no JSON serialization error)
+        assert response.status_code == 200
+
+        # Verify audit log was written successfully
+        query = AuditQuery(operation="update_task", limit=10, offset=0)
+        result = audit_log_repository.get_logs(query)
+        assert result.total_count >= 1
