@@ -137,22 +137,17 @@ class TaskQueryService(QueryService):
         if not filter_obj:
             return params
 
-        # Walk through filter chain and dispatch to handlers
-        current_filter = filter_obj
-        while current_filter:
-            if isinstance(current_filter, NonArchivedFilter):
-                self._handle_non_archived_filter(params)
-            elif isinstance(current_filter, StatusFilter):
-                self._handle_status_filter(params, current_filter)
-            elif isinstance(current_filter, TagFilter):
-                self._handle_tag_filter(params, current_filter)
-            elif isinstance(current_filter, DateRangeFilter):
-                self._handle_date_range_filter(params, current_filter)
-            elif isinstance(current_filter, CompositeFilter):
-                self._handle_composite_filter(params, current_filter)
-
-            # Move to next filter in chain
-            current_filter = getattr(current_filter, "_next", None)  # type: ignore[assignment]
+        # Dispatch to the appropriate handler based on filter type
+        if isinstance(filter_obj, CompositeFilter):
+            self._handle_composite_filter(params, filter_obj)
+        elif isinstance(filter_obj, NonArchivedFilter):
+            self._handle_non_archived_filter(params)
+        elif isinstance(filter_obj, StatusFilter):
+            self._handle_status_filter(params, filter_obj)
+        elif isinstance(filter_obj, TagFilter):
+            self._handle_tag_filter(params, filter_obj)
+        elif isinstance(filter_obj, DateRangeFilter):
+            self._handle_date_range_filter(params, filter_obj)
 
         return params
 
@@ -269,28 +264,22 @@ class TaskQueryService(QueryService):
             return None
 
         # Check if filter contains complex filters that need Python processing
-        complex_filters = []
+        if isinstance(filter_obj, IncompleteFilter):
+            # IncompleteFilter uses task.is_finished property
+            return filter_obj
 
-        current_filter = filter_obj
-        while current_filter:
-            if isinstance(current_filter, IncompleteFilter):
-                # IncompleteFilter uses task.is_finished property
-                complex_filters.append(current_filter)
-            elif isinstance(current_filter, CompositeFilter):
-                # Check sub-filters in CompositeFilter
-                for sub_filter in current_filter.filters:
-                    remaining = self._get_remaining_filter(sub_filter)
-                    if remaining:
-                        complex_filters.append(remaining)  # type: ignore[arg-type]
+        if isinstance(filter_obj, CompositeFilter):
+            # Check sub-filters in CompositeFilter
+            complex_filters: list[TaskFilter] = []
+            for sub_filter in filter_obj.filters:
+                remaining = self._get_remaining_filter(sub_filter)
+                if remaining:
+                    complex_filters.append(remaining)
 
-            current_filter = getattr(current_filter, "_next", None)  # type: ignore[assignment]
-
-        # If we have complex filters, compose them
-        if complex_filters:
             if len(complex_filters) == 1:
                 return complex_filters[0]
-            else:
-                return CompositeFilter(complex_filters)  # type: ignore[arg-type]
+            elif len(complex_filters) > 1:
+                return CompositeFilter(complex_filters)
 
         return None
 
