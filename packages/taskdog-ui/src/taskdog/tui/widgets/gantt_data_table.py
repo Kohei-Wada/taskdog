@@ -112,48 +112,50 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         # NOTE: No longer storing view model locally - just use parameter (Step 4)
         self._task_map.clear()
 
-        # Setup columns based on date range
-        self.setup_columns(
-            gantt_view_model.start_date,
-            gantt_view_model.end_date,
-        )
+        # Batch all table mutations to trigger a single layout reflow
+        with self.app.batch_update():
+            # Setup columns based on date range
+            self.setup_columns(
+                gantt_view_model.start_date,
+                gantt_view_model.end_date,
+            )
 
-        # Add date header rows (Month, Today marker, Day)
-        # Always add these to give Timeline column proper width
-        self._add_date_header_rows(
-            gantt_view_model.start_date,
-            gantt_view_model.end_date,
-            gantt_view_model.holidays,
-        )
-
-        # Fix the date header rows at the top during vertical scrolling
-        # Must be set after rows are added, not in __init__
-        self.fixed_rows = GANTT_HEADER_ROW_COUNT
-
-        if gantt_view_model.is_empty():
-            return
-
-        # Add task rows
-        for idx, task_vm in enumerate(gantt_view_model.tasks):
-            task_daily_hours = gantt_view_model.task_daily_hours.get(task_vm.id, {})
-            self._add_task_row(
-                task_vm,
-                task_daily_hours,
+            # Add date header rows (Month, Today marker, Day)
+            # Always add these to give Timeline column proper width
+            self._add_date_header_rows(
                 gantt_view_model.start_date,
                 gantt_view_model.end_date,
                 gantt_view_model.holidays,
             )
-            self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task_vm
 
-        # Add workload summary row
-        self._add_workload_row(
-            gantt_view_model.daily_workload,
-            gantt_view_model.start_date,
-            gantt_view_model.end_date,
-            gantt_view_model.total_estimated_duration,
-            comfortable_hours=comfortable_hours,
-            moderate_hours=moderate_hours,
-        )
+            # Fix the date header rows at the top during vertical scrolling
+            # Must be set after rows are added, not in __init__
+            self.fixed_rows = GANTT_HEADER_ROW_COUNT
+
+            if gantt_view_model.is_empty():
+                return
+
+            # Add task rows
+            for idx, task_vm in enumerate(gantt_view_model.tasks):
+                task_daily_hours = gantt_view_model.task_daily_hours.get(task_vm.id, {})
+                self._add_task_row(
+                    task_vm,
+                    task_daily_hours,
+                    gantt_view_model.start_date,
+                    gantt_view_model.end_date,
+                    gantt_view_model.holidays,
+                )
+                self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task_vm
+
+            # Add workload summary row
+            self._add_workload_row(
+                gantt_view_model.daily_workload,
+                gantt_view_model.start_date,
+                gantt_view_model.end_date,
+                gantt_view_model.total_estimated_duration,
+                comfortable_hours=comfortable_hours,
+                moderate_hours=moderate_hours,
+            )
 
         # Restore scroll position to prevent stuttering
         # Apply bounds check to handle cases where table dimensions changed
