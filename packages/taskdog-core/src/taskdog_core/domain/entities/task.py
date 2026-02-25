@@ -198,29 +198,7 @@ class Task:
             - Must not be fixed (always protected, even with force_override)
             - If force_override is False, must not have existing schedule
         """
-        # Skip archived tasks
-        if self.is_archived:
-            return False
-
-        # Skip finished tasks
-        if self.is_finished:
-            return False
-
-        # Skip IN_PROGRESS tasks (don't reschedule tasks already being worked on)
-        if self.status == TaskStatus.IN_PROGRESS:
-            return False
-
-        # Skip tasks without estimated duration
-        if not self.estimated_duration:
-            return False
-
-        # Skip fixed tasks (always, even with force_override)
-        # Fixed tasks represent immovable constraints (meetings, deadlines, etc.)
-        if self.is_fixed:
-            return False
-
-        # Allow scheduling if no existing schedule OR if force_override is True
-        return not (self.planned_start and not force_override)
+        return self.get_unschedulable_reason(force_override) is None
 
     def get_unschedulable_reason(self, force_override: bool = False) -> str | None:
         """Get the reason why a task is not schedulable.
@@ -230,10 +208,6 @@ class Task:
 
         Returns:
             Human-readable reason if task is not schedulable, None if schedulable
-
-        Note:
-            This method mirrors the logic in is_schedulable() to provide
-            detailed feedback for validation errors.
         """
         if self.is_archived:
             return "Task is archived"
