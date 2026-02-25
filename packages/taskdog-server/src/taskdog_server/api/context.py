@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from sqlalchemy import Engine
+from sqlalchemy.engine import Engine
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.query_controller import QueryController
