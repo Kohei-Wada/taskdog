@@ -9,6 +9,7 @@ from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
     DependencyNotMetError,
     TaskAlreadyFinishedError,
+    TaskAlreadyInProgressError,
     TaskNotStartedError,
     TaskValidationError,
 )
@@ -52,6 +53,16 @@ class TestStatusValidator:
             self.validator.validate(TaskStatus.COMPLETED, task, self.mock_repository)
 
         assert exc_info.value.task_id == 1
+
+    def test_validate_in_progress_to_in_progress_raises_error(self):
+        """Test that IN_PROGRESS task cannot be started again."""
+        task = Task(id=1, name="Test", status=TaskStatus.IN_PROGRESS, priority=1)
+
+        with pytest.raises(TaskAlreadyInProgressError) as exc_info:
+            self.validator.validate(TaskStatus.IN_PROGRESS, task, self.mock_repository)
+
+        assert exc_info.value.task_id == 1
+        assert "already IN_PROGRESS" in str(exc_info.value)
 
     @pytest.mark.parametrize(
         "scenario,current_status,target_status",

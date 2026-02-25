@@ -5,6 +5,7 @@ from taskdog_core.application.validators.field_validator import FieldValidator
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
+    TaskAlreadyInProgressError,
     TaskNotStartedError,
     TaskValidationError,
 )
@@ -66,6 +67,10 @@ class StatusValidator(FieldValidator):
         # Early check: Cannot restart finished tasks
         if task.is_finished:
             raise TaskAlreadyFinishedError(task_id, task.status.value, "start")
+
+        # Cannot start a task that is already in progress
+        if task.status == TaskStatus.IN_PROGRESS:
+            raise TaskAlreadyInProgressError(task_id)
 
         # Check dependencies: all dependencies must be COMPLETED
         DependencyValidator.validate_dependencies_met(task, repository)

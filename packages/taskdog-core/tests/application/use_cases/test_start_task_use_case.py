@@ -1,8 +1,13 @@
 """Tests for StartTaskUseCase."""
 
+from datetime import datetime
+
+import pytest
+
 from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.use_cases.start_task import StartTaskUseCase
 from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.domain.exceptions.task_exceptions import TaskAlreadyInProgressError
 from tests.application.use_cases.status_change_test_base import (
     BaseStatusChangeUseCaseTest,
 )
@@ -27,6 +32,22 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
         result = self.use_case.execute(input_dto)
 
         assert result.actual_end is None
+
+    def test_execute_with_in_progress_task_raises_error(self):
+        """Test that starting an already IN_PROGRESS task raises TaskAlreadyInProgressError."""
+        task = self.repository.create(
+            name="Test Task",
+            priority=1,
+            status=TaskStatus.IN_PROGRESS,
+            actual_start=datetime(2024, 1, 1, 10, 0, 0),
+        )
+
+        input_dto = SingleTaskInput(task_id=task.id)
+
+        with pytest.raises(TaskAlreadyInProgressError) as exc_info:
+            self.use_case.execute(input_dto)
+
+        assert exc_info.value.task_id == task.id
 
     def test_execute_without_parent_works_normally(self):
         """Test execute works normally for tasks without parent."""
