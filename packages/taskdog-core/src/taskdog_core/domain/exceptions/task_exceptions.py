@@ -40,6 +40,14 @@ class TaskAlreadyFinishedError(TaskValidationError):
         super().__init__(f"Cannot {operation} task {task_id}: task is already {status}")
 
 
+class TaskAlreadyInProgressError(TaskValidationError):
+    """Raised when trying to start a task that is already IN_PROGRESS."""
+
+    def __init__(self, task_id: int) -> None:
+        self.task_id = task_id
+        super().__init__(f"Cannot start task {task_id}: task is already IN_PROGRESS")
+
+
 class TaskNotStartedError(TaskValidationError):
     """Raised when trying to complete a task that hasn't been started yet."""
 

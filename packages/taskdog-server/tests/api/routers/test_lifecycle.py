@@ -161,8 +161,10 @@ class TestLifecycleRouter:
         assert response.status_code == 200
         assert response.json()["status"] == "PENDING"
 
-    def test_start_in_progress_task_success(self, client, repository, task_factory):
-        """Test starting already in-progress task is idempotent."""
+    def test_start_in_progress_task_returns_error(
+        self, client, repository, task_factory
+    ):
+        """Test starting already in-progress task returns 400 error."""
         # Arrange
         task = task_factory.create(name="In Progress Task", priority=1)
         task.status = TaskStatus.IN_PROGRESS
@@ -173,8 +175,5 @@ class TestLifecycleRouter:
         response = client.post(f"/api/v1/tasks/{task.id}/start")
 
         # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert data["status"] == "IN_PROGRESS"
-        # Start time should be preserved
-        assert data["actual_start"] is not None
+        assert response.status_code == 400
+        assert "already IN_PROGRESS" in response.json()["detail"]
