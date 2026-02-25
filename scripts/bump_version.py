@@ -9,6 +9,7 @@ Usage:
 
 import argparse
 import re
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
@@ -159,6 +160,20 @@ def bump_version(new_version: str, dry_run: bool) -> int:
                     print(f"  - {problem}")
                 return 1
             print("Verification passed - no old version references found.")
+
+        # Sync uv.lock with updated pyproject.toml versions
+        print()
+        print("Syncing uv.lock...")
+        result = subprocess.run(
+            ["uv", "lock"],
+            cwd=ROOT_DIR,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            print(f"ERROR: uv lock failed:\n{result.stderr}")
+            return 1
+        print("uv.lock updated.")
 
     return 0
 
