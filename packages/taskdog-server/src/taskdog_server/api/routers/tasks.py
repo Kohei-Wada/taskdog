@@ -42,7 +42,9 @@ def _serialize_audit_value(val: object) -> object:
         val = val.isoformat()
     if isinstance(val, dict):
         val = {
-            k.isoformat() if isinstance(k, (date, datetime)) else k: v
+            k.isoformat() if isinstance(k, (date, datetime)) else k: (
+                v.isoformat() if isinstance(v, (date, datetime)) else v
+            )
             for k, v in val.items()
         }
     return val
