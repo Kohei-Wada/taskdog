@@ -89,15 +89,9 @@ class TestDependencyInjection:
             # Cleanup
             if os.path.exists(config_path):
                 os.unlink(config_path)
-            # Close database connections to prevent ResourceWarning
-            # Use suppress to prevent cleanup exceptions from masking test failures
             if context is not None:
                 with suppress(Exception):
-                    if hasattr(context.repository, "close"):
-                        context.repository.close()
-                with suppress(Exception):
-                    if hasattr(context.audit_log_controller._repository, "close"):
-                        context.audit_log_controller._repository.close()
+                    context.close()
 
     def test_get_query_controller(self):
         """Test getting query controller from context."""
@@ -294,15 +288,9 @@ class TestInitializeApiContext:
         finally:
             if os.path.exists(config_path):
                 os.unlink(config_path)
-            # Close database connections to prevent ResourceWarning
-            # Use suppress to prevent cleanup exceptions from masking test failures
             if context is not None:
                 with suppress(Exception):
-                    if hasattr(context.repository, "close"):
-                        context.repository.close()
-                with suppress(Exception):
-                    if hasattr(context.audit_log_controller._repository, "close"):
-                        context.audit_log_controller._repository.close()
+                    context.close()
 
     def test_initialize_creates_holiday_checker_when_country_configured(self):
         """Test that holiday checker is created when country is configured."""
@@ -327,15 +315,9 @@ class TestInitializeApiContext:
         finally:
             if os.path.exists(config_path):
                 os.unlink(config_path)
-            # Close database connections to prevent ResourceWarning
-            # Use suppress to prevent cleanup exceptions from masking test failures
             if context is not None:
                 with suppress(Exception):
-                    if hasattr(context.repository, "close"):
-                        context.repository.close()
-                with suppress(Exception):
-                    if hasattr(context.audit_log_controller._repository, "close"):
-                        context.audit_log_controller._repository.close()
+                    context.close()
 
     def test_initialize_handles_missing_holiday_library_gracefully(self):
         """Test that initialization continues even if holiday library is missing."""
@@ -361,12 +343,6 @@ class TestInitializeApiContext:
         finally:
             if os.path.exists(config_path):
                 os.unlink(config_path)
-            # Close database connections to prevent ResourceWarning
-            # Use suppress to prevent cleanup exceptions from masking test failures
             if context is not None:
                 with suppress(Exception):
-                    if hasattr(context.repository, "close"):
-                        context.repository.close()
-                with suppress(Exception):
-                    if hasattr(context.audit_log_controller._repository, "close"):
-                        context.audit_log_controller._repository.close()
+                    context.close()

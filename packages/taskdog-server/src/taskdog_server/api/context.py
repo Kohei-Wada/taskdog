@@ -1,6 +1,8 @@
 """API context for dependency injection."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+from sqlalchemy import Engine
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.query_controller import QueryController
@@ -33,6 +35,7 @@ class ApiContext:
         holiday_checker: Holiday checker for workday validation (optional)
         time_provider: Time provider for current time (optional, defaults to SystemTimeProvider)
         audit_log_controller: Controller for audit log operations
+        engine: Shared SQLAlchemy engine (owned by this context)
     """
 
     repository: TaskRepository
@@ -46,3 +49,10 @@ class ApiContext:
     holiday_checker: IHolidayChecker | None
     time_provider: ITimeProvider
     audit_log_controller: AuditLogController
+    engine: Engine | None = field(default=None, repr=False)
+
+    def close(self) -> None:
+        """Dispose the shared engine to release database connections."""
+        if self.engine is not None:
+            self.engine.dispose()
+            self.engine = None

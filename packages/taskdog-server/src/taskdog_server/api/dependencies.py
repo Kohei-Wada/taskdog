@@ -149,6 +149,7 @@ def initialize_api_context(
         holiday_checker=holiday_checker,
         time_provider=time_provider,
         audit_log_controller=audit_log_controller,
+        engine=engine,
     )
 
 

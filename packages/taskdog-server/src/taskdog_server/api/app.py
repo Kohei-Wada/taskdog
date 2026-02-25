@@ -56,8 +56,8 @@ def create_app() -> FastAPI:
 
         yield
 
-        # Shutdown: Cleanup (if needed in the future)
-        pass
+        # Shutdown: Dispose shared database engine
+        api_context.close()
 
     app = FastAPI(
         title="Taskdog API",
