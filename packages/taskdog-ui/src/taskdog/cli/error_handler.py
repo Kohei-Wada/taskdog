@@ -7,7 +7,12 @@ from typing import Any, TypeVar, cast
 import click
 
 from taskdog.cli.context import CliContext
-from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
+from taskdog_core.domain.exceptions.task_exceptions import (
+    AuthenticationError,
+    ServerConnectionError,
+    ServerError,
+    TaskNotFoundException,
+)
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -41,6 +46,8 @@ def handle_task_errors(action_name: str) -> Callable[[F], F]:
             try:
                 return func(*args, **kwargs)
             except TaskNotFoundException as e:
+                console_writer.validation_error(str(e))
+            except (ServerConnectionError, AuthenticationError, ServerError) as e:
                 console_writer.validation_error(str(e))
             except Exception as e:
                 console_writer.error(action_name, e)
@@ -78,6 +85,8 @@ def handle_command_errors(action_name: str) -> Callable[[F], F]:
 
             try:
                 return func(*args, **kwargs)
+            except (ServerConnectionError, AuthenticationError, ServerError) as e:
+                console_writer.validation_error(str(e))
             except Exception as e:
                 console_writer.error(action_name, e)
 

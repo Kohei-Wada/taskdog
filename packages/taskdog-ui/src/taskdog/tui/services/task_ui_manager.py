@@ -120,6 +120,8 @@ class TaskUIManager:
         except (ServerConnectionError, AuthenticationError, ServerError) as e:
             self._handle_api_error(e)
             return self._create_empty_task_data()
+        except Exception:
+            return self._create_empty_task_data()
 
     def _create_empty_task_data(self) -> TaskData:
         """Create empty TaskData to avoid crash on errors.
@@ -199,6 +201,8 @@ class TaskUIManager:
             self._update_gantt_ui(gantt_view_model)
         except (ServerConnectionError, AuthenticationError, ServerError) as e:
             self._handle_api_error(e)
+        except Exception:
+            pass
 
     def _fetch_gantt_for_range(
         self, start_date: date, end_date: date

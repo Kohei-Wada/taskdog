@@ -6,10 +6,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from taskdog.tui.context import TUIContext
 from taskdog.tui.events import TasksRefreshed
-from taskdog_core.domain.exceptions.task_exceptions import (
-    ServerConnectionError,
-    TaskValidationError,
-)
+from taskdog_core.domain.exceptions.task_exceptions import TaskError
 
 if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
@@ -232,7 +229,7 @@ class TUICommandBase(ABC):  # noqa: B024
             for dep_id in remove_deps:
                 try:
                     self.context.api_client.remove_dependency(task_id, dep_id)
-                except (TaskValidationError, ServerConnectionError) as e:
+                except TaskError as e:
                     failed_operations.append(f"Remove {dep_id}: {e}")
 
         # Add dependencies
@@ -240,7 +237,7 @@ class TUICommandBase(ABC):  # noqa: B024
             for dep_id in add_deps:
                 try:
                     self.context.api_client.add_dependency(task_id, dep_id)
-                except (TaskValidationError, ServerConnectionError) as e:
+                except TaskError as e:
                     failed_operations.append(f"Add {dep_id}: {e}")
 
         return failed_operations

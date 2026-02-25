@@ -9,6 +9,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskAlreadyFinishedError,
     TaskNotFoundException,
     TaskNotStartedError,
+    TaskValidationError,
 )
 
 
@@ -73,7 +74,7 @@ class TestExecuteBatchOperation:
         assert self.console_writer.empty_line.call_count == 2
 
     def test_task_already_finished_error(self):
-        """Test handling of TaskAlreadyFinishedError."""
+        """Test handling of TaskAlreadyFinishedError via TaskValidationError."""
         task_ids = (1,)
         error = TaskAlreadyFinishedError(1, "COMPLETED")
         self.operation.side_effect = error
@@ -82,15 +83,14 @@ class TestExecuteBatchOperation:
             task_ids, self.operation, self.console_writer, self.operation_name
         )
 
-        # Verify error message contains task ID and status
+        # Verify error message uses exception's __str__ (contains task ID and status)
         self.console_writer.validation_error.assert_called_once()
         error_msg = self.console_writer.validation_error.call_args[0][0]
         assert "task 1" in error_msg
         assert "COMPLETED" in error_msg
-        assert self.operation_name in error_msg
 
     def test_task_not_started_error(self):
-        """Test handling of TaskNotStartedError."""
+        """Test handling of TaskNotStartedError via TaskValidationError."""
         task_ids = (1,)
         error = TaskNotStartedError(1)
         self.operation.side_effect = error
@@ -99,12 +99,26 @@ class TestExecuteBatchOperation:
             task_ids, self.operation, self.console_writer, self.operation_name
         )
 
-        # Verify error message contains task ID and suggestion
+        # Verify error message uses exception's __str__ (contains task ID and suggestion)
         self.console_writer.validation_error.assert_called_once()
         error_msg = self.console_writer.validation_error.call_args[0][0]
         assert "task 1" in error_msg
         assert "PENDING" in error_msg
         assert "taskdog start 1" in error_msg
+
+    def test_task_validation_error(self):
+        """Test handling of TaskValidationError (covers all validation subclasses)."""
+        task_ids = (1,)
+        error = TaskValidationError("Custom validation message")
+        self.operation.side_effect = error
+
+        execute_batch_operation(
+            task_ids, self.operation, self.console_writer, self.operation_name
+        )
+
+        self.console_writer.validation_error.assert_called_once()
+        error_msg = self.console_writer.validation_error.call_args[0][0]
+        assert "Custom validation message" in error_msg
 
     def test_general_exception(self):
         """Test handling of general exceptions."""

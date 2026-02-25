@@ -21,10 +21,7 @@ class TestTaskClient:
     @patch("taskdog_client.task_client.convert_to_task_operation_output")
     def test_create_task(self, mock_convert):
         """Test create_task makes correct API call."""
-        mock_response = Mock()
-        mock_response.status_code = 201
-        mock_response.json.return_value = {"id": 1, "name": "Test"}
-        self.mock_base._safe_request.return_value = mock_response
+        self.mock_base._request_json.return_value = {"id": 1, "name": "Test"}
 
         mock_output = Mock()
         mock_convert.return_value = mock_output
@@ -39,8 +36,8 @@ class TestTaskClient:
         )
 
         # Verify API call
-        self.mock_base._safe_request.assert_called_once()
-        call_args = self.mock_base._safe_request.call_args
+        self.mock_base._request_json.assert_called_once()
+        call_args = self.mock_base._request_json.call_args
         assert call_args[0][0] == "post"
         assert call_args[0][1] == "/api/v1/tasks"
 
@@ -54,18 +51,6 @@ class TestTaskClient:
         # Verify result
         assert result == mock_output
         mock_convert.assert_called_once()
-
-    @patch("taskdog_client.task_client.convert_to_task_operation_output")
-    def test_create_task_error_handling(self, mock_convert):
-        """Test create_task handles errors."""
-        mock_response = Mock()
-        mock_response.status_code = 400
-        self.mock_base._safe_request.return_value = mock_response
-
-        self.client.create_task(name="Test")
-
-        # Should call error handler
-        self.mock_base._handle_error.assert_called_once_with(mock_response)
 
     def test_build_update_payload_all_fields(self):
         """Test _build_update_payload with all fields."""

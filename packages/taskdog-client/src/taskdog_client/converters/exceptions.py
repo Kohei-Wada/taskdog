@@ -2,8 +2,10 @@
 
 from typing import Any
 
+from taskdog_core.domain.exceptions.task_exceptions import TaskError
 
-class ConversionError(Exception):
+
+class ConversionError(TaskError):
     """Error during API response to DTO conversion.
 
     This exception is raised when the converter encounters invalid or
