@@ -8,9 +8,8 @@ from collections.abc import Callable
 
 from taskdog.console.console_writer import ConsoleWriter
 from taskdog_core.domain.exceptions.task_exceptions import (
-    TaskAlreadyFinishedError,
     TaskNotFoundException,
-    TaskNotStartedError,
+    TaskValidationError,
 )
 
 
@@ -50,17 +49,8 @@ def execute_batch_operation(
             console_writer.validation_error(str(e))
             _add_spacing_if_batch(task_ids, console_writer)
 
-        except TaskAlreadyFinishedError as e:
-            console_writer.validation_error(
-                f"Cannot {operation_name} task {e.task_id}: Task is already {e.status}."
-            )
-            _add_spacing_if_batch(task_ids, console_writer)
-
-        except TaskNotStartedError as e:
-            console_writer.validation_error(
-                f"Cannot {operation_name} task {e.task_id}: Task is still PENDING. "
-                f"Start the task first with: taskdog start {e.task_id}"
-            )
+        except TaskValidationError as e:
+            console_writer.validation_error(str(e))
             _add_spacing_if_batch(task_ids, console_writer)
 
         except Exception as e:

@@ -8,10 +8,6 @@ from abc import abstractmethod
 
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.dialogs.confirmation_dialog import ConfirmationDialog
-from taskdog_core.domain.exceptions.task_exceptions import (
-    TaskNotFoundException,
-    TaskValidationError,
-)
 
 
 class BatchConfirmationCommandBase(TUICommandBase):
@@ -119,8 +115,7 @@ class BatchConfirmationCommandBase(TUICommandBase):
                 try:
                     self.execute_confirmed_action(task_id)
                     success_count += 1
-                except (TaskNotFoundException, TaskValidationError, Exception) as e:
-                    # All exceptions handled uniformly
+                except Exception as e:
                     self.notify_error(f"Task {task_id}", e)
                     failure_count += 1
 

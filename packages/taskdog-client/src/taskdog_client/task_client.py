@@ -69,11 +69,7 @@ class TaskClient:
             "tags": tags,
         }
 
-        response = self._base._safe_request("post", "/api/v1/tasks", json=payload)
-        if response.status_code != 201:
-            self._base._handle_error(response)
-
-        data = response.json()
+        data = self._base._request_json("post", "/api/v1/tasks", json=payload)
         return convert_to_task_operation_output(data)
 
     def _build_update_payload(

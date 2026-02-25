@@ -30,10 +30,7 @@ class NotesClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self._base._safe_request("get", f"/api/v1/tasks/{task_id}/notes")
-        if response.status_code != 200:
-            self._base._handle_error(response)
-        data = response.json()
+        data = self._base._request_json("get", f"/api/v1/tasks/{task_id}/notes")
         return data["content"], data["has_notes"]
 
     def update_task_notes(self, task_id: int, content: str) -> None:
@@ -46,11 +43,9 @@ class NotesClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self._base._safe_request(
+        self._base._request_json(
             "put", f"/api/v1/tasks/{task_id}/notes", json={"content": content}
         )
-        if response.status_code != 200:
-            self._base._handle_error(response)
 
     def delete_task_notes(self, task_id: int) -> None:
         """Delete task notes.
@@ -62,5 +57,5 @@ class NotesClient:
             TaskNotFoundException: If task not found
         """
         response = self._base._safe_request("delete", f"/api/v1/tasks/{task_id}/notes")
-        if response.status_code != 204:
+        if not response.is_success:
             self._base._handle_error(response)

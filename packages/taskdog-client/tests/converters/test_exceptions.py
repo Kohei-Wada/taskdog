@@ -3,6 +3,8 @@
 import pytest
 from taskdog_client.converters.exceptions import ConversionError
 
+from taskdog_core.domain.exceptions.task_exceptions import TaskError
+
 
 class TestConversionError:
     """Test cases for ConversionError exception."""
@@ -59,8 +61,9 @@ class TestConversionError:
         assert error.value == bad_value
 
     def test_error_is_exception(self):
-        """Test that ConversionError is an Exception."""
+        """Test that ConversionError is a TaskError and Exception."""
         error = ConversionError("Test error")
+        assert isinstance(error, TaskError)
         assert isinstance(error, Exception)
 
     def test_error_can_be_raised(self):
