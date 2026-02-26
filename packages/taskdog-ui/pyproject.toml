@@ -3,7 +3,7 @@ name = "taskdog-ui"
 version = "0.15.1"
 description = "CLI and TUI for Taskdog task management system"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 authors = [
     { name = "Kohei Wada" }
 ]

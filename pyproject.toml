@@ -3,7 +3,7 @@ name = "taskdog-workspace"
 version = "0.15.1"
 description = "Taskdog monorepo workspace"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 authors = [
     { name = "Kohei Wada" }
 ]
