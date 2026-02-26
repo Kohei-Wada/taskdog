@@ -46,8 +46,20 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         Returns:
             Dictionary with logs list and metadata
         """
-        start_date = datetime.fromisoformat(since) if since else None
-        end_date = datetime.fromisoformat(until) if until else None
+        try:
+            start_date = datetime.fromisoformat(since) if since else None
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid datetime format for 'since': {since}. "
+                "Expected ISO format (e.g., '2025-12-11T09:00:00')"
+            ) from e
+        try:
+            end_date = datetime.fromisoformat(until) if until else None
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid datetime format for 'until': {until}. "
+                "Expected ISO format (e.g., '2025-12-11T17:00:00')"
+            ) from e
         success = False if failed else None
 
         result = client.list_audit_logs(
