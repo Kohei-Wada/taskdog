@@ -13,11 +13,11 @@ https://github.com/user-attachments/assets/47022478-078d-4ad9-ba7d-d1cd4016e105
 
 **TUI (Textual)**
 
-![TUI](taskdog-tui.png)
+![TUI](docs/images/taskdog-tui.png)
 
 **Gantt Chart (CLI)**
 
-![Gantt Chart](taskdog-gantt.png)
+![Gantt Chart](docs/images/taskdog-gantt.png)
 
 **Architecture**: UV workspace monorepo with five packages:
 
