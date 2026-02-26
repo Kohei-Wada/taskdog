@@ -153,6 +153,9 @@ def create_mock_client() -> MagicMock:
     # Notes methods
     client.get_task_notes = MagicMock()
     client.update_task_notes = MagicMock()
+    # Audit methods
+    client.list_audit_logs = MagicMock()
+    client.get_audit_log = MagicMock()
     return client
 
 
@@ -1380,3 +1383,158 @@ class TestTaskDecompositionTools:
         # Decomposition succeeds even if notes update fails
         assert result["total_created"] == 1
         assert result["errors"] is None
+
+
+class TestTaskAuditTools:
+    """Test task audit log MCP tools."""
+
+    def test_list_audit_logs_returns_formatted_response(self) -> None:
+        """Test list_audit_logs tool formats response correctly."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_audit
+
+        from taskdog_core.application.dto.audit_log_dto import (
+            AuditLogListOutput,
+            AuditLogOutput,
+        )
+
+        client = create_mock_client()
+        client.list_audit_logs.return_value = AuditLogListOutput(
+            logs=[
+                AuditLogOutput(
+                    id=1,
+                    timestamp=datetime(2025, 12, 11, 10, 0, 0),
+                    client_name="claude-code",
+                    operation="create_task",
+                    resource_type="task",
+                    resource_id=42,
+                    resource_name="Test Task",
+                    old_values=None,
+                    new_values={"name": "Test Task"},
+                    success=True,
+                    error_message=None,
+                ),
+                AuditLogOutput(
+                    id=2,
+                    timestamp=datetime(2025, 12, 11, 11, 0, 0),
+                    client_name=None,
+                    operation="complete_task",
+                    resource_type="task",
+                    resource_id=42,
+                    resource_name="Test Task",
+                    old_values=None,
+                    new_values=None,
+                    success=True,
+                    error_message=None,
+                ),
+            ],
+            total_count=2,
+            limit=50,
+            offset=0,
+        )
+
+        mcp = FastMCP("test")
+        task_audit.register_tools(mcp, client)
+
+        list_fn = mcp._tool_manager._tools["list_audit_logs"].fn
+        result = list_fn()
+
+        client.list_audit_logs.assert_called_once_with(
+            client_filter=None,
+            operation=None,
+            resource_id=None,
+            success=None,
+            start_date=None,
+            end_date=None,
+            limit=50,
+        )
+        assert result["total_count"] == 2
+        assert len(result["logs"]) == 2
+        assert result["logs"][0]["id"] == 1
+        assert result["logs"][0]["operation"] == "create_task"
+        assert result["logs"][0]["resource_id"] == 42
+        assert result["logs"][0]["client_name"] == "claude-code"
+        assert result["logs"][1]["id"] == 2
+        assert "Found 2 audit log(s)" in result["message"]
+
+    def test_list_audit_logs_with_filters(self) -> None:
+        """Test list_audit_logs passes filters correctly."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_audit
+
+        from taskdog_core.application.dto.audit_log_dto import AuditLogListOutput
+
+        client = create_mock_client()
+        client.list_audit_logs.return_value = AuditLogListOutput(
+            logs=[],
+            total_count=0,
+            limit=10,
+            offset=0,
+        )
+
+        mcp = FastMCP("test")
+        task_audit.register_tools(mcp, client)
+
+        list_fn = mcp._tool_manager._tools["list_audit_logs"].fn
+        result = list_fn(
+            task_id=42,
+            operation="create_task",
+            client_name="cli",
+            since="2025-12-01T00:00:00",
+            until="2025-12-31T23:59:59",
+            failed=True,
+            limit=10,
+        )
+
+        client.list_audit_logs.assert_called_once_with(
+            client_filter="cli",
+            operation="create_task",
+            resource_id=42,
+            success=False,
+            start_date=datetime(2025, 12, 1, 0, 0, 0),
+            end_date=datetime(2025, 12, 31, 23, 59, 59),
+            limit=10,
+        )
+        assert result["total_count"] == 0
+        assert result["logs"] == []
+
+    def test_get_audit_log_returns_formatted_response(self) -> None:
+        """Test get_audit_log tool returns all fields including old/new values."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_audit
+
+        from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
+
+        client = create_mock_client()
+        client.get_audit_log.return_value = AuditLogOutput(
+            id=1,
+            timestamp=datetime(2025, 12, 11, 10, 0, 0),
+            client_name="claude-code",
+            operation="update_task",
+            resource_type="task",
+            resource_id=42,
+            resource_name="Test Task",
+            old_values={"priority": 50},
+            new_values={"priority": 80},
+            success=True,
+            error_message=None,
+        )
+
+        mcp = FastMCP("test")
+        task_audit.register_tools(mcp, client)
+
+        get_fn = mcp._tool_manager._tools["get_audit_log"].fn
+        result = get_fn(log_id=1)
+
+        client.get_audit_log.assert_called_once_with(1)
+        assert result["id"] == 1
+        assert result["timestamp"] == "2025-12-11T10:00:00"
+        assert result["operation"] == "update_task"
+        assert result["resource_type"] == "task"
+        assert result["resource_id"] == 42
+        assert result["resource_name"] == "Test Task"
+        assert result["client_name"] == "claude-code"
+        assert result["success"] is True
+        assert result["error_message"] is None
+        assert result["old_values"] == {"priority": 50}
+        assert result["new_values"] == {"priority": 80}

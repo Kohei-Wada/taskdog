@@ -17,7 +17,10 @@ from taskdog_client.notes_client import NotesClient
 from taskdog_client.query_client import QueryClient
 from taskdog_client.relationship_client import RelationshipClient
 from taskdog_client.task_client import TaskClient
-from taskdog_core.application.dto.audit_log_dto import AuditLogListOutput
+from taskdog_core.application.dto.audit_log_dto import (
+    AuditLogListOutput,
+    AuditLogOutput,
+)
 from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
@@ -397,3 +400,7 @@ class TaskdogApiClient:
             limit=limit,
             offset=offset,
         )
+
+    def get_audit_log(self, log_id: int) -> AuditLogOutput:
+        """Get a single audit log entry by ID."""
+        return self._audit.get_audit_log(log_id)

@@ -74,6 +74,18 @@ class AuditClient:
         data = self._base._request_json("get", "/api/v1/audit-logs", params=params)
         return self._convert_to_list_output(data)
 
+    def get_audit_log(self, log_id: int) -> AuditLogOutput:
+        """Get a single audit log entry by ID.
+
+        Args:
+            log_id: ID of the audit log entry to retrieve
+
+        Returns:
+            AuditLogOutput with the audit log details
+        """
+        data = self._base._request_json("get", f"/api/v1/audit-logs/{log_id}")
+        return self._convert_to_output(data)
+
     def _convert_to_output(self, data: dict[str, Any]) -> AuditLogOutput:
         """Convert API response to AuditLogOutput DTO."""
         # Parse timestamp with error handling for malformed data

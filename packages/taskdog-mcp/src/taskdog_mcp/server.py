@@ -40,6 +40,7 @@ def create_mcp_server(config: McpConfig | None = None) -> FastMCP:
 
     # Register all tools
     from taskdog_mcp.tools import (
+        task_audit,
         task_crud,
         task_decomposition,
         task_lifecycle,
@@ -52,6 +53,7 @@ def create_mcp_server(config: McpConfig | None = None) -> FastMCP:
     task_query.register_tools(mcp, client)
     task_decomposition.register_tools(mcp, client)
     task_tags.register_tools(mcp, client)
+    task_audit.register_tools(mcp, client)
 
     logger.info(
         f"MCP server '{config.server.name}' initialized, connecting to {base_url}"
