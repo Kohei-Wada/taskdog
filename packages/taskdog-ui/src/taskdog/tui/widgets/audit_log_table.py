@@ -71,33 +71,36 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
         Args:
             logs: List of audit log entries (newest first from API)
         """
-        self.clear(columns=False)
+        with self.app.batch_update():
+            self.clear(columns=False)
 
-        for log in logs:
-            style = "red" if not log.success else ""
+            for log in logs:
+                style = "red" if not log.success else ""
 
-            ts = Text(log.timestamp.strftime("%m-%d %H:%M:%S"), style=style)
-            id_text = Text(str(log.resource_id) if log.resource_id else "", style=style)
-
-            # Resource name (truncated)
-            if log.resource_name:
-                name = (
-                    log.resource_name[:MAX_RESOURCE_NAME_LENGTH] + "\u2026"
-                    if len(log.resource_name) > MAX_RESOURCE_NAME_LENGTH
-                    else log.resource_name
+                ts = Text(log.timestamp.strftime("%m-%d %H:%M:%S"), style=style)
+                id_text = Text(
+                    str(log.resource_id) if log.resource_id else "", style=style
                 )
-                name_text = Text(name, style=style)
-            else:
-                name_text = Text("", style=style)
 
-            op_text = Text(log.operation, style=style)
+                # Resource name (truncated)
+                if log.resource_name:
+                    name = (
+                        log.resource_name[:MAX_RESOURCE_NAME_LENGTH] + "\u2026"
+                        if len(log.resource_name) > MAX_RESOURCE_NAME_LENGTH
+                        else log.resource_name
+                    )
+                    name_text = Text(name, style=style)
+                else:
+                    name_text = Text("", style=style)
 
-            self.add_row(
-                ts,
-                id_text,
-                name_text,
-                op_text,
-                build_changes_text(log, style),
-                Text(log.client_name or "", style=style),
-                build_status_text(log),
-            )
+                op_text = Text(log.operation, style=style)
+
+                self.add_row(
+                    ts,
+                    id_text,
+                    name_text,
+                    op_text,
+                    build_changes_text(log, style),
+                    Text(log.client_name or "", style=style),
+                    build_status_text(log),
+                )
