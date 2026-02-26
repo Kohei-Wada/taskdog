@@ -11,6 +11,14 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 
 https://github.com/user-attachments/assets/47022478-078d-4ad9-ba7d-d1cd4016e105
 
+**TUI (Textual)**
+
+![TUI](taskdog-tui.png)
+
+**Gantt Chart (CLI)**
+
+![Gantt Chart](taskdog-gantt.png)
+
 **Architecture**: UV workspace monorepo with five packages:
 
 - **taskdog-core**: Core business logic and SQLite persistence
