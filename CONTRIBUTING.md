@@ -33,7 +33,9 @@ cd taskdog
 make install-dev
 ```
 
-This installs all packages with development dependencies in editable mode.
+This installs all packages with development dependencies in editable mode and
+automatically sets up pre-commit hooks (`pre-commit`, `commit-msg`, `pre-push`,
+`post-merge`) via `uv run pre-commit install`.
 
 3. **Verify installation:**
 

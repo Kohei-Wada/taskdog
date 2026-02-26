@@ -1,5 +1,5 @@
 .PHONY: help test test-core test-server test-ui test-client test-mcp test-all \
-        install install-dev install-core install-server install-ui install-client install-mcp \
+        install install-dev install-hooks install-core install-server install-ui install-client install-mcp \
         install-ui-only install-server-only reinstall \
         tool-install-ui tool-install-server check-deps \
         clean lint format typecheck check \
@@ -126,9 +126,16 @@ install-dev: ## Install all packages with development dependencies (for developm
 	cd packages/taskdog-server && uv pip install -e ".[dev]"
 	cd packages/taskdog-ui && uv pip install -e ".[dev]"
 	cd packages/taskdog-mcp && uv pip install -e ".[dev]"
+	$(MAKE) install-hooks
 	@echo ""
 	@echo "✓ Development environment ready!"
 	@echo ""
+
+install-hooks: ## Install pre-commit hooks via uv
+	uv run pre-commit install --install-hooks
+	uv run pre-commit install --hook-type commit-msg
+	uv run pre-commit install --hook-type pre-push
+	uv run pre-commit install --hook-type post-merge
 
 install-core: ## Install taskdog-core package only (for development)
 	@echo "Installing taskdog-core..."

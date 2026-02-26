@@ -68,3 +68,10 @@ repos:
         pass_filenames: false
         stages: [pre-push]
         types_or: [python]
+      - id: reinstall-hooks
+        name: Install pre-commit hooks
+        entry: uv run pre-commit install --install-hooks
+        language: system
+        always_run: true
+        pass_filenames: false
+        stages: [post-merge]
