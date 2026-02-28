@@ -15,7 +15,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.local/share/taskdog
+ReadWritePaths=%h/.local/share
 
 # Environment
 Environment="PYTHONUNBUFFERED=1"
