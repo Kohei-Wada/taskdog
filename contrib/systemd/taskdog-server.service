@@ -5,6 +5,7 @@ After=network.target
 
 [Service]
 Type=simple
+ExecStartPre=/usr/bin/mkdir -p %h/.local/share/taskdog
 ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=5
