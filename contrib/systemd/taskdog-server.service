@@ -5,6 +5,7 @@ After=network.target
 
 [Service]
 Type=simple
+ExecStartPre=/usr/bin/mkdir -p %h/.local/share/taskdog
 ExecStart=%h/.local/bin/taskdog-server --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=5
@@ -14,7 +15,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.local/share/taskdog
+ReadWritePaths=%h/.local/share
 
 # Environment
 Environment="PYTHONUNBUFFERED=1"
