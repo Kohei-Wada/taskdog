@@ -187,14 +187,6 @@ class MainScreen(Screen[None]):
             total = self.state.total_count
             self.custom_footer.update_result(matched, total)
 
-    # Delegate methods to task_table for compatibility
-
-    def load_tasks(self, view_models: list[TaskRowViewModel]) -> None:
-        """Load task ViewModels into the table."""
-        if self.task_table:
-            self.task_table.load_tasks(view_models)
-            self._update_search_result()
-
     def refresh_tasks(
         self, view_models: list[TaskRowViewModel], keep_scroll_position: bool = False
     ) -> None:
@@ -204,47 +196,6 @@ class MainScreen(Screen[None]):
                 view_models, keep_scroll_position=keep_scroll_position
             )
             self._update_search_result()
-
-    def get_selected_task_id(self) -> int | None:
-        """Get the ID of the currently selected task."""
-        if self.task_table:
-            return self.task_table.get_selected_task_id()
-        return None
-
-    def get_selected_task_vm(self) -> TaskRowViewModel | None:
-        """Get the currently selected task as a ViewModel."""
-        if self.task_table:
-            return self.task_table.get_selected_task_vm()
-        return None
-
-    def get_selected_task_ids(self) -> list[int]:
-        """Get all selected task IDs for batch operations."""
-        if self.task_table:
-            return self.task_table.get_selected_task_ids()
-        return []
-
-    def get_explicitly_selected_task_ids(self) -> list[int]:
-        """Get only explicitly selected task IDs (no cursor fallback)."""
-        if self.task_table:
-            return self.task_table.get_explicitly_selected_task_ids()
-        return []
-
-    def clear_task_selection(self) -> None:
-        """Clear all task selections."""
-        if self.task_table:
-            self.task_table.clear_selection()
-
-    def focus_table(self) -> None:
-        """Focus the task table."""
-        if self.task_table:
-            self.task_table.focus()
-
-    @property
-    def all_viewmodels(self) -> list[TaskRowViewModel]:
-        """Get all loaded ViewModels from the table."""
-        if self.task_table:
-            return self.task_table.all_viewmodels
-        return []
 
     def action_focus_next(self) -> None:
         """Move focus to the next widget (Ctrl+J)."""

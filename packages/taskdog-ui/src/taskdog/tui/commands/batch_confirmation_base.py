@@ -81,6 +81,45 @@ class BatchConfirmationCommandBase(TUICommandBase):
             Various exceptions depending on the operation
         """
 
+    def _process_confirmed_tasks(self, task_ids: list[int]) -> tuple[int, int]:
+        """Process each task in the batch after confirmation.
+
+        Args:
+            task_ids: List of task IDs to process
+
+        Returns:
+            Tuple of (success_count, failure_count)
+        """
+        success_count = 0
+        failure_count = 0
+
+        for task_id in task_ids:
+            try:
+                self.execute_confirmed_action(task_id)
+                success_count += 1
+            except Exception as e:
+                self.notify_error(f"Task {task_id}", e)
+                failure_count += 1
+
+        return success_count, failure_count
+
+    def _finalize_batch(self, success_count: int, failure_count: int) -> None:
+        """Clear selection, reload tasks, and show summary if needed.
+
+        Args:
+            success_count: Number of successfully processed tasks
+            failure_count: Number of failed tasks
+        """
+        self.clear_task_selection()
+        self.reload_tasks()
+
+        # Show result summary (only for failures - success notifications via WebSocket)
+        if failure_count > 0:
+            total = success_count + failure_count
+            self.notify_warning(
+                f"Completed {total} tasks: {success_count} succeeded, {failure_count} failed"
+            )
+
     def execute(self) -> None:
         """Execute batch operation with confirmation.
 
@@ -96,35 +135,10 @@ class BatchConfirmationCommandBase(TUICommandBase):
         task_count = len(task_ids)
 
         def handle_confirmation(confirmed: bool | None) -> None:
-            """Handle the confirmation response.
-
-            Args:
-                confirmed: True if user confirmed, False/None otherwise
-            """
             if not confirmed:
-                return  # User cancelled
-
-            success_count = 0
-            failure_count = 0
-
-            for task_id in task_ids:
-                try:
-                    self.execute_confirmed_action(task_id)
-                    success_count += 1
-                except Exception as e:
-                    self.notify_error(f"Task {task_id}", e)
-                    failure_count += 1
-
-            # Clear selection and reload tasks
-            self.clear_task_selection()
-            self.reload_tasks()
-
-            # Show result summary (only for failures - success notifications via WebSocket)
-            if failure_count > 0:
-                total = success_count + failure_count
-                self.notify_warning(
-                    f"Completed {total} tasks: {success_count} succeeded, {failure_count} failed"
-                )
+                return
+            success_count, failure_count = self._process_confirmed_tasks(task_ids)
+            self._finalize_batch(success_count, failure_count)
 
         # Show confirmation dialog
         dialog = ConfirmationDialog(
