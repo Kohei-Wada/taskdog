@@ -109,8 +109,7 @@ class TUICommandBase(ABC):  # noqa: B024
         """
         # Convert "AddTaskCommand" to "adding task"
         class_name = self.__class__.__name__
-        if class_name.endswith("Command"):
-            class_name = class_name[:-7]  # Remove "Command" suffix
+        class_name = class_name.removesuffix("Command")  # Remove "Command" suffix
 
         # Convert camel case to words: "AddTask" -> "Add Task"
         import re
@@ -119,8 +118,7 @@ class TUICommandBase(ABC):  # noqa: B024
         # Add "...ing" suffix if it doesn't already end with "ing"
         if not words.endswith("ing"):
             # Simple heuristic: if ends with 'e', drop it before adding 'ing'
-            if words.endswith("e"):
-                words = words[:-1]
+            words = words.removesuffix("e")
             words += "ing"
 
         return words
