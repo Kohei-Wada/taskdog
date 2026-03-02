@@ -27,7 +27,6 @@ class BatchStatusChangeCommandBase(TUICommandBase):
         Returns:
             TaskOperationOutput with task details after operation
         """
-        pass
 
     def execute(self) -> None:
         """Execute status change on all selected tasks.

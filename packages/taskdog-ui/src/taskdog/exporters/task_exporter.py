@@ -31,7 +31,6 @@ class TaskExporter(ABC):
         Returns:
             String representation of tasks in the target format
         """
-        pass
 
     def _filter_fields(self, task_dict: dict[str, Any]) -> dict[str, Any]:
         """Filter task dictionary to include only specified fields.

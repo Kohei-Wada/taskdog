@@ -53,4 +53,3 @@ class OptimizationStrategy(ABC):
         Returns:
             OptimizeResult containing modified tasks, daily allocations, and failures
         """
-        pass

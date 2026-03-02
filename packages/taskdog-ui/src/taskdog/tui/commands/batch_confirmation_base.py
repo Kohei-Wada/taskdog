@@ -24,7 +24,6 @@ class BatchConfirmationCommandBase(TUICommandBase):
         Returns:
             Title text for the confirmation dialog
         """
-        pass
 
     @abstractmethod
     def get_single_task_confirmation(self) -> str:
@@ -33,7 +32,6 @@ class BatchConfirmationCommandBase(TUICommandBase):
         Returns:
             Message text for confirming operation on one task
         """
-        pass
 
     @abstractmethod
     def get_multiple_tasks_confirmation_template(self) -> str:
@@ -47,7 +45,6 @@ class BatchConfirmationCommandBase(TUICommandBase):
         Example:
             "Archive {count} tasks?\\n\\nTasks will be soft-deleted..."
         """
-        pass
 
     def get_confirmation_message(self, task_count: int) -> str:
         """Return the confirmation dialog message for batch operation.
@@ -83,7 +80,6 @@ class BatchConfirmationCommandBase(TUICommandBase):
         Raises:
             Various exceptions depending on the operation
         """
-        pass
 
     def execute(self) -> None:
         """Execute batch operation with confirmation.

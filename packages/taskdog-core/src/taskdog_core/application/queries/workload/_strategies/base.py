@@ -66,7 +66,6 @@ class WorkloadCalculationStrategy(ABC):
             Dictionary mapping date to hours {date: hours}.
             Empty dict if task is missing required fields.
         """
-        pass
 
     def is_working_day(self, check_date: date) -> bool:
         """Check if a date is a working day (weekday and not a holiday).

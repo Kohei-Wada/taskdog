@@ -40,7 +40,6 @@ class UseCase[TInput, TOutput](ABC):
         Raises:
             Domain-specific exceptions as needed
         """
-        pass
 
     def _get_task_or_raise(self, repository: "TaskRepository", task_id: int) -> "Task":
         """Get task by ID or raise TaskNotFoundException.

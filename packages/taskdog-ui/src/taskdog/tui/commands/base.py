@@ -65,7 +65,6 @@ class TUICommandBase(ABC):  # noqa: B024
         """
         # Default implementation for backwards compatibility
         # Subclasses should override this method
-        pass
 
     def handle_error(self, callback_fn: F) -> F:
         """Wrap a callback function with error handling.

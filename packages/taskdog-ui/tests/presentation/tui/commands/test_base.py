@@ -13,7 +13,6 @@ class ConcreteCommand(TUICommandBase):
 
     def execute(self) -> None:
         """Dummy execute implementation."""
-        pass
 
 
 class ConcreteCommandWithImpl(TUICommandBase):

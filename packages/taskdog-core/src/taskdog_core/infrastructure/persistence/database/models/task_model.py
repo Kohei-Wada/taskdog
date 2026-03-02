@@ -20,8 +20,6 @@ from sqlalchemy.orm import (  # type: ignore[attr-defined]
 class Base(DeclarativeBase):
     """Base class for all ORM models."""
 
-    pass
-
 
 class TaskModel(Base):
     """SQLAlchemy ORM model for Task entity.

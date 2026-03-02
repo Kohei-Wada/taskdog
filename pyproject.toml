@@ -107,6 +107,7 @@ select = [
   "C90",  # mccabe
   "N",  # pep8-naming
   "SIM",  # simplify
+  "PIE",  # misc lints (unnecessary pass, etc.)
   "RUF",  # ruff-specific rules
 ]
 ignore = [

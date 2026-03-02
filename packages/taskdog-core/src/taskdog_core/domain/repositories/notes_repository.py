@@ -25,7 +25,6 @@ class NotesRepository(ABC):
         Returns:
             True if notes exist and have content
         """
-        pass
 
     @abstractmethod
     def read_notes(self, task_id: int) -> str | None:
@@ -37,7 +36,6 @@ class NotesRepository(ABC):
         Returns:
             Notes content as string, or None if not found or reading fails
         """
-        pass
 
     @abstractmethod
     def write_notes(self, task_id: int, content: str) -> None:
@@ -50,7 +48,6 @@ class NotesRepository(ABC):
         Raises:
             OSError: If writing fails
         """
-        pass
 
     @abstractmethod
     def ensure_notes_dir(self) -> None:
@@ -58,7 +55,6 @@ class NotesRepository(ABC):
 
         Creates necessary storage structure if it doesn't exist.
         """
-        pass
 
     @abstractmethod
     def delete_notes(self, task_id: int) -> None:
@@ -70,7 +66,6 @@ class NotesRepository(ABC):
         Note:
             Should not raise error if notes don't exist (idempotent operation)
         """
-        pass
 
     @abstractmethod
     def get_task_ids_with_notes(self, task_ids: list[int]) -> set[int]:
@@ -85,4 +80,3 @@ class NotesRepository(ABC):
         Returns:
             Set of task IDs that have notes
         """
-        pass

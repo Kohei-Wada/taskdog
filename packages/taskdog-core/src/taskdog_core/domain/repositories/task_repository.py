@@ -15,7 +15,6 @@ class TaskRepository(ABC):
         Returns:
             List of all tasks
         """
-        pass
 
     @abstractmethod
     def get_by_id(self, task_id: int) -> Task | None:
@@ -27,7 +26,6 @@ class TaskRepository(ABC):
         Returns:
             The task if found, None otherwise
         """
-        pass
 
     @abstractmethod
     def get_by_ids(self, task_ids: list[int]) -> dict[int, Task]:
@@ -45,7 +43,6 @@ class TaskRepository(ABC):
             - Prevents N+1 query problems in database implementations
             - O(n) time complexity where n is len(task_ids)
         """
-        pass
 
     def get_filtered(
         self,
@@ -144,7 +141,6 @@ class TaskRepository(ABC):
         Args:
             task: The task to save
         """
-        pass
 
     @abstractmethod
     def save_all(self, tasks: list[Task]) -> None:
@@ -158,7 +154,6 @@ class TaskRepository(ABC):
             - More efficient than multiple save() calls
             - Implementation-specific optimization possible
         """
-        pass
 
     @abstractmethod
     def delete(self, task_id: int) -> None:
@@ -167,7 +162,6 @@ class TaskRepository(ABC):
         Args:
             task_id: The ID of the task to delete
         """
-        pass
 
     @abstractmethod
     def create(self, name: str, priority: int | None = None, **kwargs: Any) -> Task:
@@ -181,7 +175,6 @@ class TaskRepository(ABC):
         Returns:
             Created task with ID assigned
         """
-        pass
 
     def delete_tag(self, tag_name: str) -> int:
         """Delete a tag from the system by name.

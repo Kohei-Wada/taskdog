@@ -69,4 +69,3 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
         """Override: PauseTask raises error for finished tasks, so this test is not applicable."""
         # PauseTask validates against finished tasks and raises error before any modifications
         # The base class test for this scenario is covered by test_execute_raises_error_for_finished_tasks
-        pass

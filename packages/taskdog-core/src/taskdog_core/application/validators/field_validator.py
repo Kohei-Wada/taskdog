@@ -26,4 +26,3 @@ class FieldValidator(ABC):
         Raises:
             TaskValidationError: If validation fails
         """
-        pass

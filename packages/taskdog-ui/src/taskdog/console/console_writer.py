@@ -22,7 +22,6 @@ class ConsoleWriter(ABC):
             action: Action verb (e.g., "Added", "Started", "Completed", "Updated")
             output: Task operation output DTO
         """
-        pass
 
     @abstractmethod
     def error(self, action: str, error: Exception) -> None:
@@ -32,7 +31,6 @@ class ConsoleWriter(ABC):
             action: Action being performed (e.g., "adding task", "starting task")
             error: Exception object
         """
-        pass
 
     @abstractmethod
     def validation_error(self, message: str) -> None:
@@ -41,7 +39,6 @@ class ConsoleWriter(ABC):
         Args:
             message: Error message to display
         """
-        pass
 
     @abstractmethod
     def warning(self, message: str) -> None:
@@ -50,7 +47,6 @@ class ConsoleWriter(ABC):
         Args:
             message: Warning message to display
         """
-        pass
 
     @abstractmethod
     def info(self, message: str) -> None:
@@ -59,7 +55,6 @@ class ConsoleWriter(ABC):
         Args:
             message: Information message to display
         """
-        pass
 
     @abstractmethod
     def success(self, message: str) -> None:
@@ -68,7 +63,6 @@ class ConsoleWriter(ABC):
         Args:
             message: Success message to display
         """
-        pass
 
     @abstractmethod
     def update_success(
@@ -86,7 +80,6 @@ class ConsoleWriter(ABC):
             value: New value of the field
             format_func: Optional function to format the value for display
         """
-        pass
 
     @abstractmethod
     def print(self, message: Any = "", **kwargs: Any) -> None:
@@ -99,12 +92,10 @@ class ConsoleWriter(ABC):
             message: Message to print (str or Rich renderable)
             **kwargs: Additional formatting options (implementation-specific)
         """
-        pass
 
     @abstractmethod
     def empty_line(self) -> None:
         """Print an empty line."""
-        pass
 
     @abstractmethod
     def get_width(self) -> int:
@@ -113,7 +104,6 @@ class ConsoleWriter(ABC):
         Returns:
             Console width in characters
         """
-        pass
 
     @abstractmethod
     def task_start_time(
@@ -125,7 +115,6 @@ class ConsoleWriter(ABC):
             output: Task operation output DTO
             was_already_in_progress: Whether the task was already in progress
         """
-        pass
 
     @abstractmethod
     def task_completion_details(self, output: TaskOperationOutput) -> None:
@@ -137,7 +126,6 @@ class ConsoleWriter(ABC):
         Args:
             output: Completed task output DTO
         """
-        pass
 
     @abstractmethod
     def task_fields_updated(
@@ -149,4 +137,3 @@ class ConsoleWriter(ABC):
             output: Task operation output of the updated task
             updated_fields: List of field names that were updated
         """
-        pass

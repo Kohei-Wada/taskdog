@@ -51,8 +51,6 @@ class TasksRefreshed(Message):
     of tasks from the repository.
     """
 
-    pass
-
 
 class TaskCreated(Message):
     """Event sent when a new task is created.

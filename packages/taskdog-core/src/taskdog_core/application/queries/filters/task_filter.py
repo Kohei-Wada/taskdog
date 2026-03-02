@@ -29,7 +29,6 @@ class TaskFilter(ABC):
         Returns:
             Filtered list of tasks matching the criteria
         """
-        pass
 
     def __rshift__(self, other: TaskFilter | None) -> TaskFilter:
         """Compose filters using the >> operator.

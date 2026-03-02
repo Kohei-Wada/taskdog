@@ -28,7 +28,7 @@ class ConcreteBatchConfirmCommand(BatchConfirmationCommandBase):
 
     def execute_confirmed_action(self, task_id: int) -> None:
         """Execute the action."""
-        pass  # Will be mocked
+        # Will be mocked
 
 
 class TestBatchConfirmationCommandBase:

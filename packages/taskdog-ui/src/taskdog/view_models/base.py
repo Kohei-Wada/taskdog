@@ -23,5 +23,3 @@ class BaseViewModel:
     2. Contain only presentation-ready data
     3. Not reference domain entities
     """
-
-    pass

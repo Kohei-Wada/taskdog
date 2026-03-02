@@ -29,7 +29,6 @@ class AuditLogRepository(ABC):
         Args:
             event: The audit event to save
         """
-        pass
 
     @abstractmethod
     def get_logs(self, query: AuditQuery) -> AuditLogListOutput:
@@ -41,7 +40,6 @@ class AuditLogRepository(ABC):
         Returns:
             AuditLogListOutput containing logs and pagination info
         """
-        pass
 
     @abstractmethod
     def get_by_id(self, log_id: int) -> AuditLogOutput | None:
@@ -53,7 +51,6 @@ class AuditLogRepository(ABC):
         Returns:
             The audit log if found, None otherwise
         """
-        pass
 
     @abstractmethod
     def count_logs(self, query: AuditQuery) -> int:
@@ -65,4 +62,3 @@ class AuditLogRepository(ABC):
         Returns:
             Number of logs matching the query
         """
-        pass

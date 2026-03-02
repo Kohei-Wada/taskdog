@@ -97,7 +97,6 @@ class StatusChangeUseCase[TInput: SingleTaskInput](
         Returns:
             The target TaskStatus (e.g., IN_PROGRESS, COMPLETED, CANCELED)
         """
-        pass
 
     def _should_validate(self) -> bool:
         """Determine if validation should be performed.
@@ -119,7 +118,6 @@ class StatusChangeUseCase[TInput: SingleTaskInput](
         Args:
             task: Task that will be updated
         """
-        pass
 
     def _after_status_change(self, task: Task) -> None:
         """Hook for post-processing after status change.
@@ -130,4 +128,3 @@ class StatusChangeUseCase[TInput: SingleTaskInput](
         Args:
             task: Task that was updated
         """
-        pass

@@ -4,8 +4,6 @@
 class TaskError(Exception):
     """Base exception for all task-related errors."""
 
-    pass
-
 
 class TaskNotFoundException(TaskError):
     """Raised when a task with given ID is not found."""
@@ -23,8 +21,6 @@ class TaskNotFoundException(TaskError):
 
 class TaskValidationError(TaskError):
     """Raised when task validation fails."""
-
-    pass
 
 
 class TaskAlreadyFinishedError(TaskValidationError):

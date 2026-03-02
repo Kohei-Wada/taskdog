@@ -236,7 +236,6 @@ class InMemoryNotesRepository:
 
     def ensure_notes_dir(self) -> None:
         """No-op for in-memory implementation."""
-        pass
 
     def get_task_ids_with_notes(self, task_ids: list[int]) -> set[int]:
         """Get task IDs that have notes from a list of task IDs."""

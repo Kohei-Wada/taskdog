@@ -123,7 +123,6 @@ class SqliteNotesRepository(SqliteBaseRepository, NotesRepository):
         This method exists for interface compatibility with file-based storage.
         Database storage doesn't need directory initialization.
         """
-        pass
 
     def delete_notes(self, task_id: int) -> None:
         """Delete notes for a task.
