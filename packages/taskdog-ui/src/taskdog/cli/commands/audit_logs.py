@@ -1,13 +1,16 @@
 """Audit logs command - Display operation history."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import click
 from rich.table import Table
 
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 
 
 def _parse_date_filter(date_str: str, end_of_day: bool = False) -> datetime:

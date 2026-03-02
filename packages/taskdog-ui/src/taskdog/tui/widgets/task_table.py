@@ -7,15 +7,12 @@ This module provides a data table widget for displaying tasks with:
 - Automatic formatting for all task fields
 """
 
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 from rich.text import Text
 from textual.binding import Binding
 from textual.coordinate import Coordinate
 from textual.widgets import DataTable
-
-if TYPE_CHECKING:
-    pass
 
 from taskdog.constants.table_dimensions import PAGE_SCROLL_SIZE, TASK_NAME_COLUMN_WIDTH
 from taskdog.tui.widgets.base_widget import TUIWidget

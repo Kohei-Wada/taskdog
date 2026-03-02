@@ -5,11 +5,11 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 from taskdog_client import TaskdogApiClient
 
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
 from taskdog.console.console_writer import ConsoleWriter
 from taskdog.infrastructure.cli_config_manager import CliConfig
@@ -17,6 +17,9 @@ from taskdog.utils.editor import get_editor
 from taskdog.utils.notes_template import get_note_template
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 
 
 def _read_content_from_source(
@@ -105,9 +108,7 @@ def _edit_with_editor(
         config: CLI configuration for custom template (optional)
     """
     existing_content, _ = api_client.get_task_notes(task_id)
-    editor_content = (
-        existing_content if existing_content else get_note_template(task, config)
-    )
+    editor_content = existing_content or get_note_template(task, config)
 
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".md", delete=False, encoding="utf-8"

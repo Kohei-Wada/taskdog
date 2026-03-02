@@ -1,13 +1,16 @@
 """Timeline command - Display actual work times for a day."""
 
 from datetime import date, datetime
+from typing import TYPE_CHECKING
 
 import click
 
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
 from taskdog.presenters.timeline_presenter import TimelinePresenter
 from taskdog.renderers.rich_timeline_renderer import RichTimelineRenderer
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 
 
 @click.command(

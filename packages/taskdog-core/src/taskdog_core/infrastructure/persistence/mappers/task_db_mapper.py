@@ -12,11 +12,13 @@ Writes are handled by DailyAllocationBuilder in the repository.
 """
 
 import json
-from datetime import date
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.infrastructure.persistence.database.models.task_model import TaskModel
+
+if TYPE_CHECKING:
+    from datetime import date
 
 
 class TaskDbMapper:

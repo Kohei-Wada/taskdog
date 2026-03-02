@@ -9,12 +9,15 @@ from __future__ import annotations
 
 import threading
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from alembic import command
 from alembic.config import Config as AlembicConfig
 from alembic.script import ScriptDirectory
 from sqlalchemy import inspect, text
-from sqlalchemy.engine import Engine
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
 
 # Lock for thread-safe migration execution
 _migration_lock = threading.Lock()

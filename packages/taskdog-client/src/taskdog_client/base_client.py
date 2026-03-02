@@ -1,8 +1,12 @@
 """Base HTTP client infrastructure for Taskdog API."""
 
+from __future__ import annotations
+
 import contextlib
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 import httpx  # type: ignore[import-not-found]
 
@@ -47,7 +51,7 @@ class BaseApiClient:
         """Close the HTTP client."""
         self.client.close()
 
-    def __enter__(self) -> "BaseApiClient":
+    def __enter__(self) -> BaseApiClient:
         """Context manager entry."""
         return self
 

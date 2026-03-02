@@ -1,12 +1,15 @@
 """Add command - Add a new task."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import click
 
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
 from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 
 
 @click.command(name="add", help="Add a new task.")

@@ -1,6 +1,5 @@
-from collections.abc import Callable
 from datetime import datetime
-from typing import ClassVar, Literal, cast
+from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
 from rich.table import Table
 
@@ -28,6 +27,9 @@ from taskdog_core.domain.constants import (
     SECONDS_PER_HOUR,
     SECONDS_PER_MINUTE,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 # Type alias for Rich table justify method
 JustifyMethod = Literal["default", "left", "center", "right", "full"]
@@ -214,7 +216,7 @@ class RichTableRenderer(RichRendererBase):
             justify_val = field_config.get("justify")
             valid_justify = {"default", "left", "center", "right", "full"}
             justify: JustifyMethod = (
-                cast(JustifyMethod, justify_val)
+                cast("JustifyMethod", justify_val)
                 if isinstance(justify_val, str) and justify_val in valid_justify
                 else "left"
             )

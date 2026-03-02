@@ -1,11 +1,13 @@
 """Helper functions for update commands to reduce duplication."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 
-from taskdog.cli.context import CliContext
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 
 
 def execute_single_field_update(

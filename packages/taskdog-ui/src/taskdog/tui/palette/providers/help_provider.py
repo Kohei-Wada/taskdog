@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from taskdog.tui.palette.providers.base import BaseListProvider
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from taskdog.tui.app import TaskdogTUI
 
 

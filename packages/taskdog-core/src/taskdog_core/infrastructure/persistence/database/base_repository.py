@@ -6,13 +6,16 @@ used by all SQLite repository implementations.
 
 from __future__ import annotations
 
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker
+from typing import TYPE_CHECKING
 
 from taskdog_core.infrastructure.persistence.database.engine_factory import (
     create_session_factory,
     create_sqlite_engine,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
+    from sqlalchemy.orm import sessionmaker
 
 
 class SqliteBaseRepository:

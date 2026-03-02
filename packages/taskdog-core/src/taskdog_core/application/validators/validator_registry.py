@@ -1,15 +1,17 @@
 """Registry for field validators."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from taskdog_core.application.validators.datetime_validator import DateTimeValidator
-from taskdog_core.application.validators.field_validator import FieldValidator
 from taskdog_core.application.validators.numeric_field_validator import (
     NumericFieldValidator,
 )
 from taskdog_core.application.validators.status_validator import StatusValidator
 from taskdog_core.domain.entities.task import Task
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+
+if TYPE_CHECKING:
+    from taskdog_core.application.validators.field_validator import FieldValidator
 
 
 class TaskFieldValidatorRegistry:

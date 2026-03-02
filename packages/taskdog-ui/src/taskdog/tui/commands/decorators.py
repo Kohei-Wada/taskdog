@@ -34,4 +34,4 @@ def require_selected_task[F: Callable[..., Any]](func: F) -> F:
             return None
         return func(self, *args, **kwargs)
 
-    return cast(F, wrapper)
+    return cast("F", wrapper)

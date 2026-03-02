@@ -111,6 +111,7 @@ select = [
   "RET",  # return statement simplification
   "PERF",  # performance anti-patterns
   "FURB",  # refurb modernization
+  "TCH",  # type-checking imports
   "RUF",  # ruff-specific rules
 ]
 ignore = [
@@ -129,6 +130,7 @@ ignore = [
 "packages/*/tests/**/*.py" = ["SIM115", "RUF015"]  # Test code patterns are acceptable
 "scripts/**/*.py" = ["B904", "C901"]  # Migration scripts: exception chaining and complexity acceptable
 "packages/taskdog-server/src/taskdog_server/api/error_handlers.py" = ["UP047"]  # Type parameters require Python 3.12+
+"packages/*/src/**/models/**/*.py" = ["TCH"]  # Pydantic models need runtime type access
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

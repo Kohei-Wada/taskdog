@@ -1,7 +1,7 @@
 """Statistics dialog for TUI."""
 
 import asyncio
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import Any, ClassVar
 
 from taskdog_client.taskdog_api_client import TaskdogApiClient
 from textual.app import ComposeResult
@@ -16,9 +16,6 @@ from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog.view_models.statistics_view_model import (
     StatisticsViewModel,
 )
-
-if TYPE_CHECKING:
-    pass
 
 # Mapping from tab pane ID to its VerticalScroll child ID
 _TAB_SCROLL_MAP: dict[str, str] = {

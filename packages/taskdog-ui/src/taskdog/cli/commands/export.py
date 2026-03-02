@@ -1,11 +1,11 @@
 """Export command - Export tasks to various formats."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import click
 
 from taskdog.cli.commands.common_options import date_range_options, filter_options
-from taskdog.cli.context import CliContext
 from taskdog.exporters import (
     CsvTaskExporter,
     JsonTaskExporter,
@@ -13,6 +13,9 @@ from taskdog.exporters import (
     TaskExporter,
 )
 from taskdog.shared.click_types.field_list import FieldList
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 
 # Valid fields for export
 VALID_FIELDS = {

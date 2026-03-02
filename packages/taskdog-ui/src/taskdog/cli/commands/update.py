@@ -1,12 +1,15 @@
 """Update command - Update task properties."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import click
 
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
 from taskdog_core.domain.entities.task import TaskStatus
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 
 
 def _validate_name(

@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import date
 from typing import TYPE_CHECKING, Any
 
 from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
 from taskdog_core.application.dto.task_dto import GanttTaskDto, TaskRowDto
 from taskdog_core.application.queries.base import QueryService
-from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.application.sorters.task_sorter import TaskSorter
-from taskdog_core.domain.entities.task import Task
-from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 if TYPE_CHECKING:
+    from datetime import date
+
     from taskdog_core.application.queries.filters.composite_filter import (
         CompositeFilter,
     )
@@ -22,6 +20,9 @@ if TYPE_CHECKING:
     )
     from taskdog_core.application.queries.filters.status_filter import StatusFilter
     from taskdog_core.application.queries.filters.tag_filter import TagFilter
+    from taskdog_core.application.queries.filters.task_filter import TaskFilter
+    from taskdog_core.domain.entities.task import Task
+    from taskdog_core.domain.repositories.task_repository import TaskRepository
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
     from taskdog_core.domain.services.time_provider import ITimeProvider
 
@@ -488,7 +489,7 @@ class TaskQueryService(QueryService):
         auto_end = max(dates)
 
         # Use provided dates if available, otherwise use auto-calculated
-        final_start = start_date if start_date else auto_start
-        final_end = end_date if end_date else auto_end
+        final_start = start_date or auto_start
+        final_end = end_date or auto_end
 
         return final_start, final_end

@@ -5,7 +5,6 @@ eliminating duplication and synchronization issues across components.
 """
 
 from dataclasses import dataclass, field
-from datetime import date
 from typing import TYPE_CHECKING
 
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
@@ -13,6 +12,8 @@ from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.task_dto import TaskRowDto
 
 if TYPE_CHECKING:
+    from datetime import date
+
     from taskdog.tui.widgets.task_search_filter import TaskSearchFilter
 
 
