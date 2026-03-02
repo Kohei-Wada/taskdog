@@ -117,7 +117,7 @@ class TestCreateTaskUseCase:
         assert persisted_task.daily_allocations
         # 5 weekdays, 10 hours = 2 hours per day
         assert len(persisted_task.daily_allocations) == 5
-        for _d, hours in persisted_task.daily_allocations.items():
+        for hours in persisted_task.daily_allocations.values():
             assert hours == pytest.approx(2.0, rel=0.01)
 
     def test_execute_no_allocations_without_estimated_duration(self):

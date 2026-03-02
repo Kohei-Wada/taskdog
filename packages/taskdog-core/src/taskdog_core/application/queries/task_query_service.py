@@ -467,18 +467,18 @@ class TaskQueryService(QueryService):
             return start_date, end_date
 
         # Collect dates from tasks
-        dates = []
-        for task in tasks:
-            # Collect all date fields
+        dates = [
+            dt.date()
+            for task in tasks
             for dt in [
                 task.planned_start,
                 task.planned_end,
                 task.actual_start,
                 task.actual_end,
                 task.deadline,
-            ]:
-                if dt:
-                    dates.append(dt.date())
+            ]
+            if dt
+        ]
 
         if not dates:
             return None

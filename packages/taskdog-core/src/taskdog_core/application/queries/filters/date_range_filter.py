@@ -46,16 +46,17 @@ class DateRangeFilter(TaskFilter):
         filtered = []
         for task in tasks:
             # Collect all date fields from the task
-            task_dates = []
-            for dt in [
-                task.planned_start,
-                task.planned_end,
-                task.actual_start,
-                task.actual_end,
-                task.deadline,
-            ]:
-                if dt:
-                    task_dates.append(dt.date())
+            task_dates = [
+                dt.date()
+                for dt in [
+                    task.planned_start,
+                    task.planned_end,
+                    task.actual_start,
+                    task.actual_end,
+                    task.deadline,
+                ]
+                if dt
+            ]
 
             # Include tasks with no dates (unscheduled tasks)
             if not task_dates:

@@ -44,7 +44,7 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
         assert len(updated_task.daily_allocations) == 5  # Mon-Fri
-        for _date_str, hours in updated_task.daily_allocations.items():
+        for hours in updated_task.daily_allocations.values():
             assert abs(hours - 2.0) < 1e-5
 
     def test_balanced_without_deadline_uses_default_period(self):
@@ -82,7 +82,7 @@ class TestBalancedOptimizationStrategy(BaseOptimizationStrategyTest):
         # Should respect max_hours_per_day
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
-        for _date_str, hours in updated_task.daily_allocations.items():
+        for hours in updated_task.daily_allocations.values():
             assert hours <= 6.0
 
         # Total should still be 12h
