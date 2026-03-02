@@ -110,6 +110,7 @@ select = [
   "PIE",  # misc lints (unnecessary pass, etc.)
   "RET",  # return statement simplification
   "PERF",  # performance anti-patterns
+  "FURB",  # refurb modernization
   "RUF",  # ruff-specific rules
 ]
 ignore = [
