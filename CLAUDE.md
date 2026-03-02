@@ -153,8 +153,8 @@ journalctl --user -u taskdog-server -f   # View logs in real-time
 
 **Type Checking:**
 
-- Mypy configured with progressive type checking (Phase 4)
-- Some modules temporarily ignored (see pyproject.toml `[[tool.mypy.overrides]]`)
+- Mypy configured with progressive type checking (Phase 4) - strict checking on all production code
+- Only `tests.*` excluded from `disallow_untyped_defs` (intentional flexibility for test code)
 - Run `make typecheck` before committing
 
 **Import Conventions:**

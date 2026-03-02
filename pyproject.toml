@@ -64,13 +64,6 @@ show_error_context = true
 module = "tests.*"
 disallow_untyped_defs = false
 
-[[tool.mypy.overrides]]
-module = ["taskdog_server.api.*", "taskdog_server.main", "taskdog.shared.server_manager"]
-disallow_untyped_defs = false
-disallow_any_generics = false
-disallow_untyped_calls = false
-check_untyped_defs = false
-
 # Ignore third-party library without type stubs
 [[tool.mypy.overrides]]
 module = "textual.*"

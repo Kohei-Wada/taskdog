@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -412,8 +412,8 @@ class AuditLogResponse(BaseModel):
     resource_type: str
     resource_id: int | None = None
     resource_name: str | None = None
-    old_values: dict | None = None
-    new_values: dict | None = None
+    old_values: dict[str, Any] | None = None
+    new_values: dict[str, Any] | None = None
     success: bool
     error_message: str | None = None
 
