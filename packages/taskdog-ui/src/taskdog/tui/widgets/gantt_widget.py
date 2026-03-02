@@ -82,50 +82,55 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         yield self._legend_widget
 
     # Vi-style scroll actions - delegate to gantt table
+
+    def _delegate_scroll(
+        self, method_name: str, *args: int | float | None, **kwargs: Any
+    ) -> None:
+        """Delegate a scroll action to the gantt table if available.
+
+        Args:
+            method_name: Name of the scroll method to call on _gantt_table
+            *args: Positional arguments to pass to the method
+            **kwargs: Keyword arguments to pass to the method
+        """
+        if self._gantt_table:
+            getattr(self._gantt_table, method_name)(*args, **kwargs)
+
     def action_scroll_down(self) -> None:
         """Scroll down one line."""
-        if self._gantt_table:
-            self._gantt_table.scroll_down()
+        self._delegate_scroll("scroll_down")
 
     def action_scroll_up(self) -> None:
         """Scroll up one line."""
-        if self._gantt_table:
-            self._gantt_table.scroll_up()
+        self._delegate_scroll("scroll_up")
 
     def action_scroll_home(self) -> None:
         """Scroll to top."""
-        if self._gantt_table:
-            self._gantt_table.scroll_home()
+        self._delegate_scroll("scroll_home")
 
     def action_scroll_end(self) -> None:
         """Scroll to bottom."""
-        if self._gantt_table:
-            self._gantt_table.scroll_end()
+        self._delegate_scroll("scroll_end")
 
     def action_page_down(self) -> None:
         """Scroll down half a page."""
-        if self._gantt_table:
-            self._gantt_table.scroll_page_down()
+        self._delegate_scroll("scroll_page_down")
 
     def action_page_up(self) -> None:
         """Scroll up half a page."""
-        if self._gantt_table:
-            self._gantt_table.scroll_page_up()
+        self._delegate_scroll("scroll_page_up")
 
     def action_scroll_left(self) -> None:
         """Scroll left."""
-        if self._gantt_table:
-            self._gantt_table.scroll_left()
+        self._delegate_scroll("scroll_left")
 
     def action_scroll_right(self) -> None:
         """Scroll right."""
-        if self._gantt_table:
-            self._gantt_table.scroll_right()
+        self._delegate_scroll("scroll_right")
 
     def action_scroll_home_horizontal(self) -> None:
         """Scroll to leftmost position (0 key)."""
-        if self._gantt_table:
-            self._gantt_table.scroll_to(0, None, animate=False)
+        self._delegate_scroll("scroll_to", 0, None, animate=False)
 
     def action_scroll_end_horizontal(self) -> None:
         """Scroll to rightmost position ($ key)."""

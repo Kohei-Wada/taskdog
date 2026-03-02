@@ -203,6 +203,20 @@ class TUICommandBase(ABC):  # noqa: B024
         """
         self.app.notify(message, severity="warning")
 
+    def fetch_existing_tags(self) -> list[str] | None:
+        """Fetch existing tags for auto-completion.
+
+        Gracefully degrades on failure by returning None.
+
+        Returns:
+            List of existing tag names, or None if fetch failed
+        """
+        try:
+            tag_stats = self.context.api_client.get_tag_statistics()
+            return list(tag_stats.tag_counts.keys())
+        except TaskError:
+            return None
+
     def manage_dependencies(
         self,
         task_id: int,
