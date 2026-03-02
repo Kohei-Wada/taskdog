@@ -38,8 +38,5 @@ class TagFilter(TaskFilter):
             return [
                 task for task in tasks if all(tag in task.tags for tag in self.tags)
             ]
-        else:
-            # OR logic: task must have at least one specified tag
-            return [
-                task for task in tasks if any(tag in task.tags for tag in self.tags)
-            ]
+        # OR logic: task must have at least one specified tag
+        return [task for task in tasks if any(tag in task.tags for tag in self.tags)]

@@ -24,9 +24,9 @@ class StartDateTextualValidator(Validator):
 
         if lower == "today":
             return today.strftime("%Y-%m-%d")
-        elif lower == "tomorrow":
+        if lower == "tomorrow":
             return (today + timedelta(days=1)).strftime("%Y-%m-%d")
-        elif lower == "yesterday":
+        if lower == "yesterday":
             return (today - timedelta(days=1)).strftime("%Y-%m-%d")
         return value
 

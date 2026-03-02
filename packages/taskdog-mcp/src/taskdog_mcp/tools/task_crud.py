@@ -232,12 +232,11 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         if hard:
             client.remove_task(task_id)
             return {"message": f"Task {task_id} permanently deleted"}
-        else:
-            result = client.archive_task(task_id)
-            return {
-                "id": result.id,
-                "message": f"Task '{result.name}' archived",
-            }
+        result = client.archive_task(task_id)
+        return {
+            "id": result.id,
+            "message": f"Task '{result.name}' archived",
+        }
 
     @mcp.tool()
     def restore_task(task_id: int) -> dict[str, Any]:

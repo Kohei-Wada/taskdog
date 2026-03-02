@@ -154,11 +154,11 @@ class TestAlgorithmSelectionDialogSubmit:
         def mock_query_one(selector: str, widget_type: type) -> MagicMock:
             if "algorithm" in selector:
                 return mock_select
-            elif "max-hours" in selector:
+            if "max-hours" in selector:
                 return mock_max_hours
-            elif "start-date" in selector:
+            if "start-date" in selector:
                 return mock_start_date
-            elif "force" in selector:
+            if "force" in selector:
                 return mock_checkbox
             return MagicMock()
 
@@ -214,11 +214,11 @@ class TestAlgorithmSelectionDialogSubmit:
         def mock_query_one(selector: str, widget_type: type) -> MagicMock:
             if "algorithm" in selector:
                 return mock_select
-            elif "max-hours" in selector:
+            if "max-hours" in selector:
                 return mock_max_hours
-            elif "start-date" in selector:
+            if "start-date" in selector:
                 return mock_start_date
-            elif "force" in selector:
+            if "force" in selector:
                 return mock_checkbox
             return MagicMock()
 
@@ -250,11 +250,11 @@ class TestAlgorithmSelectionDialogSubmit:
         def mock_query_one(selector: str, widget_type: type) -> MagicMock:
             if "algorithm" in selector:
                 return mock_select
-            elif "max-hours" in selector:
+            if "max-hours" in selector:
                 return mock_max_hours
-            elif "start-date" in selector:
+            if "start-date" in selector:
                 return mock_start_date
-            elif "force" in selector:
+            if "force" in selector:
                 return mock_checkbox
             return MagicMock()
 
@@ -286,11 +286,11 @@ class TestAlgorithmSelectionDialogSubmit:
         def mock_query_one(selector: str, widget_type: type) -> MagicMock:
             if "algorithm" in selector:
                 return mock_select
-            elif "max-hours" in selector:
+            if "max-hours" in selector:
                 return mock_max_hours
-            elif "start-date" in selector:
+            if "start-date" in selector:
                 return mock_start_date
-            elif "force" in selector:
+            if "force" in selector:
                 return mock_checkbox
             return MagicMock()
 
@@ -322,11 +322,11 @@ class TestAlgorithmSelectionDialogSubmit:
         def mock_query_one(selector: str, widget_type: type) -> MagicMock:
             if "algorithm" in selector:
                 return mock_select
-            elif "max-hours" in selector:
+            if "max-hours" in selector:
                 return mock_max_hours
-            elif "start-date" in selector:
+            if "start-date" in selector:
                 return mock_start_date
-            elif "force" in selector:
+            if "force" in selector:
                 return mock_checkbox
             return MagicMock()
 
@@ -358,11 +358,11 @@ class TestAlgorithmSelectionDialogSubmit:
         def mock_query_one(selector: str, widget_type: type) -> MagicMock:
             if "algorithm" in selector:
                 return mock_select
-            elif "max-hours" in selector:
+            if "max-hours" in selector:
                 return mock_max_hours
-            elif "start-date" in selector:
+            if "start-date" in selector:
                 return mock_start_date
-            elif "force" in selector:
+            if "force" in selector:
                 return mock_checkbox
             return MagicMock()
 

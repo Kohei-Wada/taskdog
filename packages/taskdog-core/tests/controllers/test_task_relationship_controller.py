@@ -52,7 +52,7 @@ class TestTaskRelationshipController:
         def get_by_id_side_effect(task_id_arg):
             if task_id_arg == task_id:
                 return task
-            elif task_id_arg == depends_on_id:
+            if task_id_arg == depends_on_id:
                 return dependency_task
             return None
 

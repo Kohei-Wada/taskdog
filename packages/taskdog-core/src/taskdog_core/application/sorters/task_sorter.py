@@ -61,8 +61,7 @@ class TaskSorter:
             # Priority defaults to descending (reverse=True)
             # If user passes reverse=True, we want ascending (reverse=False)
             return sorted(tasks, key=key_func, reverse=not reverse)
-        else:
-            return sorted(tasks, key=key_func, reverse=reverse)
+        return sorted(tasks, key=key_func, reverse=reverse)
 
     def _get_sort_key_function(self, sort_by: str) -> Callable[[Task], Any]:
         """Get the sort key function for the specified sort key.
@@ -76,32 +75,31 @@ class TaskSorter:
         if sort_by == "id":
             return lambda task: task.id
 
-        elif sort_by == "priority":
+        if sort_by == "priority":
             # Tasks with None priority are sorted last using tuple key
             # (0, priority) for tasks with priority, (1, 0) for tasks without
             # This ensures None-priority tasks always sort after prioritized tasks
-            return (
-                lambda task: (0, task.priority) if task.priority is not None else (1, 0)
+            return lambda task: (
+                (0, task.priority) if task.priority is not None else (1, 0)
             )
 
-        elif sort_by == "deadline":
+        if sort_by == "deadline":
             return lambda task: self._parse_date_for_sort(task.deadline)
 
-        elif sort_by == "name":
+        if sort_by == "name":
             return lambda task: task.name.lower()  # Case-insensitive sort
 
-        elif sort_by == "status":
+        if sort_by == "status":
             return lambda task: task.status.value
 
-        elif sort_by == "planned_start":
+        if sort_by == "planned_start":
             return lambda task: self._parse_date_for_sort(task.planned_start)
 
-        elif sort_by == "estimated_duration":
+        if sort_by == "estimated_duration":
             return lambda task: self._parse_numeric_for_sort(task.estimated_duration)
 
-        else:
-            # This should never happen due to validation in sort(), but required for type checking
-            raise ValueError(f"Unsupported sort_by value: {sort_by}")
+        # This should never happen due to validation in sort(), but required for type checking
+        raise ValueError(f"Unsupported sort_by value: {sort_by}")
 
     def _parse_date_for_sort(self, dt: datetime | None) -> datetime:
         """Prepare datetime for sorting, with None values sorted last.

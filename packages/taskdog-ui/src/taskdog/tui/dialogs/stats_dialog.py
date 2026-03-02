@@ -445,19 +445,17 @@ class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
         """Get CSS class for a rate value."""
         if rate >= 0.8:
             return "stats-value-success"
-        elif rate >= 0.5:
+        if rate >= 0.5:
             return "stats-value-warning"
-        else:
-            return "stats-value-error"
+        return "stats-value-error"
 
     def _get_estimation_accuracy_class(self, accuracy: float) -> str:
         """Get CSS class for estimation accuracy."""
         if 0.9 <= accuracy <= 1.1:
             return "stats-value-success"
-        elif 0.7 <= accuracy <= 1.3:
+        if 0.7 <= accuracy <= 1.3:
             return "stats-value-warning"
-        else:
-            return "stats-value-error"
+        return "stats-value-error"
 
     # ── Vi navigation (delegates to active tab's scroll widget) ──────────
 

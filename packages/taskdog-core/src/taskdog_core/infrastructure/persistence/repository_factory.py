@@ -45,11 +45,10 @@ class RepositoryFactory:
             return RepositoryFactory._create_sqlite_repository(
                 storage_config, engine=engine
             )
-        else:
-            raise ValueError(
-                f"Unsupported storage backend: {storage_config.backend}. "
-                f"Only 'sqlite' backend is supported."
-            )
+        raise ValueError(
+            f"Unsupported storage backend: {storage_config.backend}. "
+            f"Only 'sqlite' backend is supported."
+        )
 
     @staticmethod
     def _create_sqlite_repository(
