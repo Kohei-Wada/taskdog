@@ -103,7 +103,7 @@ class TestBackwardOptimizationStrategy(BaseOptimizationStrategyTest):
         # Should respect max_hours_per_day
         updated_task = self.repository.get_by_id(task.id)
         assert updated_task is not None
-        for _date_str, hours in updated_task.daily_allocations.items():
+        for hours in updated_task.daily_allocations.values():
             assert hours <= 6.0
 
         # Total should be 18h

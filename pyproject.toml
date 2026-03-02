@@ -109,6 +109,7 @@ select = [
   "SIM",  # simplify
   "PIE",  # misc lints (unnecessary pass, etc.)
   "RET",  # return statement simplification
+  "PERF",  # performance anti-patterns
   "RUF",  # ruff-specific rules
 ]
 ignore = [

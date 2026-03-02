@@ -445,7 +445,7 @@ class TestUpdateTaskUseCase:
         persisted_task = self.repository.get_by_id(task.id)
         assert persisted_task is not None
         # 20 hours / 5 weekdays = 4 hours per day
-        for _d, hours in persisted_task.daily_allocations.items():
+        for hours in persisted_task.daily_allocations.values():
             assert hours == 4.0
 
     def test_execute_clears_allocations_when_adding_third_field(self):

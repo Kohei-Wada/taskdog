@@ -58,12 +58,11 @@ class TaskSearchFilter:
         # Smart case: case-sensitive if query has uppercase
         case_sensitive = self._is_case_sensitive(query)
 
-        filtered = []
-        for vm in view_models:
-            if self._matches_all_tokens(vm, tokens, case_sensitive):
-                filtered.append(vm)
-
-        return filtered
+        return [
+            vm
+            for vm in view_models
+            if self._matches_all_tokens(vm, tokens, case_sensitive)
+        ]
 
     def matches(
         self, task_vm: TaskRowViewModel, query: str, case_sensitive: bool | None = None
