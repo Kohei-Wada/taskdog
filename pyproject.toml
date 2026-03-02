@@ -108,10 +108,12 @@ select = [
   "N",  # pep8-naming
   "SIM",  # simplify
   "PIE",  # misc lints (unnecessary pass, etc.)
+  "RET",  # return statement simplification
   "RUF",  # ruff-specific rules
 ]
 ignore = [
   "E501",  # line too long (handled by formatter)
+  "RET504",  # unnecessary assignment before return (intentional for readability)
 ]
 
 # Per-file ignores

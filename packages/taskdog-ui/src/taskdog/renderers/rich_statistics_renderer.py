@@ -390,10 +390,9 @@ class RichStatisticsRenderer:
         """
         if rate >= 0.8:
             return "green"
-        elif rate >= 0.5:
+        if rate >= 0.5:
             return "yellow"
-        else:
-            return "red"
+        return "red"
 
     def _get_estimation_accuracy_color(self, accuracy: float) -> str:
         """Get color for estimation accuracy.
@@ -408,8 +407,7 @@ class RichStatisticsRenderer:
         if 0.9 <= accuracy <= 1.1:
             return "green"
         # Moderate: 0.7 to 1.3
-        elif 0.7 <= accuracy <= 1.3:
+        if 0.7 <= accuracy <= 1.3:
             return "yellow"
         # Poor: outside that range
-        else:
-            return "red"
+        return "red"

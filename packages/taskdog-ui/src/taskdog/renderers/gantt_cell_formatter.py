@@ -283,12 +283,12 @@ class GanttCellFormatter:
         """
         if status == TaskStatus.IN_PROGRESS:
             return SYMBOL_IN_PROGRESS
-        elif status == TaskStatus.COMPLETED:
+        if status == TaskStatus.COMPLETED:
             return SYMBOL_COMPLETED
-        elif status == TaskStatus.CANCELED:
+        if status == TaskStatus.CANCELED:
             return SYMBOL_CANCELED
-        else:  # PENDING (should not appear in actual period normally)
-            return SYMBOL_PENDING
+        # PENDING (should not appear in actual period normally)
+        return SYMBOL_PENDING
 
     @staticmethod
     def _is_in_date_range(
@@ -331,14 +331,13 @@ class GanttCellFormatter:
             # Case 1: IN_PROGRESS - show from actual_start to today
             today = date.today()
             return bool(actual_start <= current_date <= today)
-        elif actual_start and actual_end:
+        if actual_start and actual_end:
             # Case 2: Both dates exist - show the complete range
             return bool(actual_start <= current_date <= actual_end)
-        elif actual_end and not actual_start:
+        if actual_end and not actual_start:
             # Case 3: Only actual_end (CANCELED without starting)
             return bool(current_date == actual_end)
-        else:
-            return False
+        return False
 
     @staticmethod
     def _determine_cell_background_color(
@@ -416,8 +415,7 @@ class GanttCellFormatter:
         if hours > 0:
             # Format: "4  " or "2.5" (right-aligned, 3 chars)
             return f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
-        else:
-            return SYMBOL_EMPTY
+        return SYMBOL_EMPTY
 
     @staticmethod
     def _get_weekend_holiday_background_color(
@@ -444,8 +442,7 @@ class GanttCellFormatter:
         weekday = current_date.weekday()
         if weekday == SATURDAY:
             return BACKGROUND_COLOR_SATURDAY
-        elif weekday == SUNDAY:
+        if weekday == SUNDAY:
             return BACKGROUND_COLOR_SUNDAY
-        else:
-            # Should not reach here (this method is only called for weekends/holidays)
-            return BACKGROUND_COLOR
+        # Should not reach here (this method is only called for weekends/holidays)
+        return BACKGROUND_COLOR

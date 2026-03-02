@@ -166,15 +166,14 @@ class ActualScheduleStrategy(WorkloadCalculationStrategy):
                     result[current_date] = hours_per_day
                 current_date += timedelta(days=1)
             return result
-        else:
-            # Period has only non-working days -> distribute across all days
-            total_days = (planned_end - planned_start).days + 1
-            if total_days == 0:
-                return {}
-            hours_per_day = task.estimated_duration / total_days
-            result = {}
-            current_date = planned_start
-            while current_date <= planned_end:
-                result[current_date] = hours_per_day
-                current_date += timedelta(days=1)
-            return result
+        # Period has only non-working days -> distribute across all days
+        total_days = (planned_end - planned_start).days + 1
+        if total_days == 0:
+            return {}
+        hours_per_day = task.estimated_duration / total_days
+        result = {}
+        current_date = planned_start
+        while current_date <= planned_end:
+            result[current_date] = hours_per_day
+            current_date += timedelta(days=1)
+        return result

@@ -205,13 +205,13 @@ class TestTUICommandBase:
         def add_side_effect(task_id, dep_id):
             if dep_id == 3:
                 raise TaskValidationError("Circular dependency detected")
-            return None
+            return
 
         # Mock remove_dependency to fail for dep 2
         def remove_side_effect(task_id, dep_id):
             if dep_id == 2:
                 raise TaskValidationError("Dependency not found")
-            return None
+            return
 
         self.context.api_client.add_dependency.side_effect = add_side_effect
         self.context.api_client.remove_dependency.side_effect = remove_side_effect

@@ -278,7 +278,7 @@ class TaskQueryService(QueryService):
 
             if len(complex_filters) == 1:
                 return complex_filters[0]
-            elif len(complex_filters) > 1:
+            if len(complex_filters) > 1:
                 return CompositeFilter(complex_filters)
 
         return None

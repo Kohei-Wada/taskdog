@@ -58,8 +58,7 @@ class BackwardOptimizationStrategy(OptimizationStrategy):
             if task.deadline:
                 days_until = (task.deadline - start_date).days
                 return (0, -days_until, task.id)
-            else:
-                return (1, 0, task.id)
+            return (1, 0, task.id)
 
         return sorted(tasks, key=deadline_key)
 

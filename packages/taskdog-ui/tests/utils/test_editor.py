@@ -48,7 +48,7 @@ class TestGetEditor:
         def side_effect(args, **kwargs):
             if args == ["which", "vim"]:
                 raise subprocess.CalledProcessError(1, "which")
-            return None  # nano found
+            return  # nano found
 
         mock_run.side_effect = side_effect
 
@@ -63,7 +63,7 @@ class TestGetEditor:
         def side_effect(args, **kwargs):
             if args == ["which", "vim"] or args == ["which", "nano"]:
                 raise subprocess.CalledProcessError(1, "which")
-            return None  # vi found
+            return  # vi found
 
         mock_run.side_effect = side_effect
 

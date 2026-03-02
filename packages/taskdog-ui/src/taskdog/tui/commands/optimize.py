@@ -54,9 +54,8 @@ class OptimizeCommand(TUICommandBase):
             ]
             failures_text = "\n".join(failure_lines)
             return f"{prefix}{failed_count} task(s) failed:\n{failures_text}"
-        else:
-            # Show summary only for many failures
-            return f"{prefix}{failed_count} tasks failed to schedule. Check gantt chart for details."
+        # Show summary only for many failures
+        return f"{prefix}{failed_count} tasks failed to schedule. Check gantt chart for details."
 
     def execute(self) -> None:
         """Execute the optimize command."""

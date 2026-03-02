@@ -144,19 +144,19 @@ class TaskSearchFilter:
                 token.value, searchable_fields, case_sensitive
             )
 
-        elif token.type == TokenType.EXCLUDE:
+        if token.type == TokenType.EXCLUDE:
             return not self._contains_in_fields(
                 token.value, searchable_fields, case_sensitive
             )
 
-        elif token.type == TokenType.EXCLUDE_STATUS:
+        if token.type == TokenType.EXCLUDE_STATUS:
             if token.value == "is_finished":
                 # !completed shorthand - exclude COMPLETED and CANCELED
                 return not task_vm.is_finished
             # Exclude specific status value
             return task_vm.status.value != token.value
 
-        elif token.type == TokenType.EXCLUDE_TAG:
+        if token.type == TokenType.EXCLUDE_TAG:
             # Case-insensitive tag comparison
             lower_tag = token.value.lower()
             return not any(t.lower() == lower_tag for t in task_vm.tags)

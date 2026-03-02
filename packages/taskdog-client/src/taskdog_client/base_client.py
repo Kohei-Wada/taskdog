@@ -103,18 +103,17 @@ class BaseApiClient:
         if response.status_code == 404:
             detail = response.json().get("detail", "Task not found")
             raise TaskNotFoundException(detail)
-        elif response.status_code in (400, 422):
+        if response.status_code in (400, 422):
             detail = self._extract_validation_error_detail(response)
             raise TaskValidationError(detail)
-        elif response.status_code == 401:
+        if response.status_code == 401:
             raise AuthenticationError("Authentication failed. Check your API key.")
-        elif response.status_code >= 500:
+        if response.status_code >= 500:
             detail = "Server error occurred"
             with contextlib.suppress(Exception):
                 detail = response.json().get("detail", detail)
             raise ServerError(response.status_code, detail)
-        else:
-            response.raise_for_status()
+        response.raise_for_status()
 
     def _request_json(self, method: str, *args: Any, **kwargs: Any) -> Any:
         """Execute HTTP request and return JSON response, handling errors.
