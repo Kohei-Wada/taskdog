@@ -224,7 +224,7 @@ class TestConfigManagerEnvVars:
         # Ensure no TASKDOG_ env vars are set
         taskdog_vars = [k for k in os.environ if k.startswith("TASKDOG_")]
 
-        with patch.dict(os.environ, {k: "" for k in taskdog_vars}, clear=False):
+        with patch.dict(os.environ, dict.fromkeys(taskdog_vars, ""), clear=False):
             # Remove the vars we just blanked
             for k in taskdog_vars:
                 os.environ.pop(k, None)
