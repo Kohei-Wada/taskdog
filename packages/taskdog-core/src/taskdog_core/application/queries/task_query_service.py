@@ -488,7 +488,7 @@ class TaskQueryService(QueryService):
         auto_end = max(dates)
 
         # Use provided dates if available, otherwise use auto-calculated
-        final_start = start_date if start_date else auto_start
-        final_end = end_date if end_date else auto_end
+        final_start = start_date or auto_start
+        final_end = end_date or auto_end
 
         return final_start, final_end

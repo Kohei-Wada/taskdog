@@ -292,7 +292,7 @@ async def optimize_schedule(
     """
     try:
         # Use current date if not specified
-        start_date = request.start_date if request.start_date else time_provider.now()
+        start_date = request.start_date or time_provider.now()
 
         # Run synchronously
         result = controller.optimize_schedule(

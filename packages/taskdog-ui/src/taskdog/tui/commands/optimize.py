@@ -62,7 +62,7 @@ class OptimizeCommand(TUICommandBase):
         # Get explicitly selected task IDs (empty list means optimize all)
         # Use get_explicitly_selected_task_ids() to avoid cursor fallback
         selected_ids = self.get_explicitly_selected_task_ids()
-        task_ids = selected_ids if selected_ids else None
+        task_ids = selected_ids or None
 
         def handle_optimization_settings(
             settings: tuple[str, float, datetime, bool, bool] | None,

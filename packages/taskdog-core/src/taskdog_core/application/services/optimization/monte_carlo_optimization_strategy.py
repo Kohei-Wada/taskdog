@@ -142,7 +142,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
                 best_score = score
                 best_order = random_order
 
-        return best_order if best_order else schedulable_tasks
+        return best_order or schedulable_tasks
 
     def _evaluate_ordering_cached(
         self,

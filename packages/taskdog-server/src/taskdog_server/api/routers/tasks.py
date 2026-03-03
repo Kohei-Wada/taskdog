@@ -273,8 +273,8 @@ async def update_task(
         resource_id=task_id,
         resource_name=result.task.name,
         client_name=client_name,
-        old_values=old_values if old_values else None,
-        new_values=new_values if new_values else None,
+        old_values=old_values or None,
+        new_values=new_values or None,
         success=True,
     )
 

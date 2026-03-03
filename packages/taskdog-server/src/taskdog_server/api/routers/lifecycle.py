@@ -171,7 +171,7 @@ async def fix_actual_times(
         resource_id=task_id,
         resource_name=result.name,
         client_name=client_name,
-        old_values=old_values if old_values else None,
+        old_values=old_values or None,
         new_values={
             "actual_start": result.actual_start.isoformat()
             if result.actual_start

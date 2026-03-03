@@ -39,7 +39,7 @@ def _create_single_subtask(
         name=subtask_data["name"],
         estimated_duration=subtask_data["estimated_duration"],
         priority=subtask_priority,
-        tags=subtask_tags if subtask_tags else None,
+        tags=subtask_tags or None,
     )
     # TaskOperationOutput is flat (id, name, status directly on result)
     return {
@@ -177,7 +177,7 @@ def register_decomposition_tools(mcp: FastMCP, client: TaskdogApiClient) -> None
             "group_tag": group_tag,
             "dependencies_created": create_dependencies and len(created_subtasks) > 1,
             "original_archived": archive_original and len(errors) == 0,
-            "errors": errors if errors else None,
+            "errors": errors or None,
             "message": f"Decomposed '{original_task.name}' into {len(created_subtasks)} subtasks (total: {total_hours}h)",
         }
 

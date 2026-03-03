@@ -78,7 +78,7 @@ class TaskDataLoader:
         """
         # Fetch tasks from API with optional gantt data in a single request
         include_gantt = date_range is not None
-        gantt_start_date, gantt_end_date = date_range if date_range else (None, None)
+        gantt_start_date, gantt_end_date = date_range or (None, None)
 
         task_list_output = self.api_client.list_tasks(
             all=all,

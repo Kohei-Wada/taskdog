@@ -58,7 +58,7 @@ async def websocket_endpoint(
     client_id = str(uuid.uuid4())
 
     # Use authenticated client name, or "anonymous" if auth is disabled
-    user_name = client_name if client_name else "anonymous"
+    user_name = client_name or "anonymous"
 
     await manager.connect(client_id, websocket, user_name)
     try:

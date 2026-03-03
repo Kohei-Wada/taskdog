@@ -105,9 +105,7 @@ def _edit_with_editor(
         config: CLI configuration for custom template (optional)
     """
     existing_content, _ = api_client.get_task_notes(task_id)
-    editor_content = (
-        existing_content if existing_content else get_note_template(task, config)
-    )
+    editor_content = existing_content or get_note_template(task, config)
 
     with tempfile.NamedTemporaryFile(
         mode="w", suffix=".md", delete=False, encoding="utf-8"

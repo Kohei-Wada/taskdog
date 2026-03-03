@@ -55,7 +55,7 @@ def _create_temp_notes_file(
     """
     # task.id is guaranteed to be int in TaskDetailDto (not Optional)
     existing_content, _ = notes_provider.get_task_notes(task.id)
-    content = existing_content if existing_content else get_note_template(task, config)
+    content = existing_content or get_note_template(task, config)
 
     # Create temporary file with .md suffix
     with tempfile.NamedTemporaryFile(

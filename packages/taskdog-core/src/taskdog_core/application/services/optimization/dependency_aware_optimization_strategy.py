@@ -39,9 +39,7 @@ class DependencyAwareOptimizationStrategy(GreedyBasedOptimizationStrategy):
         def critical_path_key(task: Task) -> tuple[int, datetime, int]:
             task_id = task.id if task.id is not None else 0
             blocking = blocking_count.get(task_id, 0)
-            deadline_val = (
-                task.deadline if task.deadline else datetime(9999, 12, 31, 23, 59, 59)
-            )
+            deadline_val = task.deadline or datetime(9999, 12, 31, 23, 59, 59)
             priority_val = task.priority if task.priority is not None else 0
 
             return (
