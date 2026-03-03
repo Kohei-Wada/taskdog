@@ -273,7 +273,7 @@ class TestTaskdogApiClientDelegation:
     # Query methods
     def test_list_tasks(self, client):
         """Test list_tasks delegates to QueryClient."""
-        client.list_tasks(all=True, sort_by="priority")
+        client.list_tasks(include_archived=True, sort_by="priority")
         client._queries.list_tasks.assert_called_once()
 
     def test_get_task_by_id(self, client):

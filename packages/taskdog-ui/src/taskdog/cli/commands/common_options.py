@@ -13,7 +13,7 @@ def filter_options() -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     Usage:
         @click.command()
         @filter_options()
-        def my_command(ctx, all, status, ...):
+        def my_command(ctx, include_archived, status, ...):
             pass
     """
 
@@ -30,6 +30,7 @@ def filter_options() -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         @click.option(
             "--all",
             "-a",
+            "include_archived",
             is_flag=True,
             help="Show all tasks including completed, canceled, and archived",
         )

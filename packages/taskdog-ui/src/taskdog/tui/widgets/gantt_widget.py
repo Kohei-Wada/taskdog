@@ -57,7 +57,9 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         self._task_ids: list[int] = []
         # NOTE: _gantt_view_model removed - now accessed via self.app.state.gantt_cache (Step 4)
         # NOTE: _sort_by and _reverse removed - now accessed via self.app.state (Step 2)
-        self._filter_all: bool = False  # Include archived tasks flag for recalculation
+        self._filter_include_archived: bool = (
+            False  # Include archived tasks flag for recalculation
+        )
         self._keep_scroll_position: bool = False  # Preserve scroll position on refresh
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
@@ -144,7 +146,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         gantt_view_model: GanttViewModel,
         sort_by: str = "deadline",
         reverse: bool = False,
-        all: bool = False,
+        include_archived: bool = False,
         keep_scroll_position: bool = False,
     ) -> None:
         """Update the gantt chart with new gantt data.
@@ -154,7 +156,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
             gantt_view_model: Presentation-ready gantt data
             sort_by: Sort order for tasks (kept for compatibility, value comes from app.state)
             reverse: Sort direction (kept for compatibility, value comes from app.state)
-            all: Include archived tasks (default: False)
+            include_archived: Include archived tasks (default: False)
             keep_scroll_position: Whether to preserve scroll position during refresh.
                                  Set to True for periodic updates to avoid scroll stuttering.
         """
@@ -163,7 +165,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         self.tui_state.gantt_cache = gantt_view_model
         # NOTE: sort_by and reverse parameters kept for API compatibility,
         # but actual values are read from self.tui_state
-        self._filter_all = all
+        self._filter_include_archived = include_archived
         self._keep_scroll_position = keep_scroll_position
         self._render_gantt()
 
@@ -378,13 +380,13 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
 
     # Public API methods for external access
 
-    def get_filter_all(self) -> bool:
+    def get_filter_include_archived(self) -> bool:
         """Get current archive filter setting.
 
         Returns:
             Whether to include archived tasks
         """
-        return self._filter_all
+        return self._filter_include_archived
 
     def get_sort_by(self) -> str:
         """Get current sort order.

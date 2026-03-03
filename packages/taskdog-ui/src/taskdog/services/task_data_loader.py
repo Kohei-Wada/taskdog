@@ -60,7 +60,7 @@ class TaskDataLoader:
 
     def load_tasks(
         self,
-        all: bool = False,
+        include_archived: bool = False,
         sort_by: str = "id",
         reverse: bool = False,
         date_range: tuple[date, date] | None = None,
@@ -68,7 +68,7 @@ class TaskDataLoader:
         """Load tasks from API and create ViewModels.
 
         Args:
-            all: Include archived tasks (default: False)
+            include_archived: Include archived tasks (default: False)
             sort_by: Sort field name
             reverse: Sort direction (default: False for ascending)
             date_range: Optional (start_date, end_date) for gantt data
@@ -81,7 +81,7 @@ class TaskDataLoader:
         gantt_start_date, gantt_end_date = date_range or (None, None)
 
         task_list_output = self.api_client.list_tasks(
-            all=all,
+            include_archived=include_archived,
             sort_by=sort_by,
             reverse=reverse,
             include_gantt=include_gantt,

@@ -37,6 +37,7 @@ VALID_FIELDS = {
 )
 @click.option(
     "--format",
+    "export_format",
     type=click.Choice(["json", "csv", "markdown"]),
     default="json",
     help="Output format (default: json).",
@@ -67,11 +68,11 @@ VALID_FIELDS = {
 @click.pass_context
 def export_command(
     ctx: click.Context,
-    format: str,
+    export_format: str,
     output: str | None,
     fields: list[str] | None,
     tag: tuple[str, ...],
-    all: bool,
+    include_archived: bool,
     status: str | None,
     start_date: datetime | None,
     end_date: datetime | None,
@@ -109,7 +110,7 @@ def export_command(
 
         # Get filtered tasks via API client (export uses default id sorting)
         result = api_client.list_tasks(
-            all=all,
+            include_archived=include_archived,
             status=status,
             tags=tags,
             start_date=start_date,
@@ -122,14 +123,14 @@ def export_command(
         # fields is already parsed and validated by FieldList Click type
         # Create appropriate exporter based on format
         exporter: TaskExporter
-        if format == "json":
+        if export_format == "json":
             exporter = JsonTaskExporter(field_list=fields)
-        elif format == "csv":
+        elif export_format == "csv":
             exporter = CsvTaskExporter(field_list=fields)
-        elif format == "markdown":
+        elif export_format == "markdown":
             exporter = MarkdownTableExporter(field_list=fields)
         else:
-            raise ValueError(f"Unsupported format: {format}")
+            raise ValueError(f"Unsupported format: {export_format}")
 
         # Export tasks
         tasks_data = exporter.export(tasks)

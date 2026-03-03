@@ -98,6 +98,7 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = [
+  "A",  # flake8-builtins
   "E",  # pycodestyle errors
   "W",  # pycodestyle warnings
   "F",  # pyflakes

@@ -123,7 +123,7 @@ class TestExportCommand:
         # Verify
         assert result.exit_code == 0
         call_kwargs = self.api_client.list_tasks.call_args[1]
-        assert call_kwargs["all"] is True
+        assert call_kwargs["include_archived"] is True
 
     @patch("taskdog.cli.commands.export.JsonTaskExporter")
     def test_export_with_status_filter(self, mock_exporter_class):

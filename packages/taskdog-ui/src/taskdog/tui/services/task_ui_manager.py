@@ -112,7 +112,7 @@ class TaskUIManager:
             date_range = self._calculate_gantt_date_range()
 
             return self.task_data_loader.load_tasks(
-                all=False,  # Non-archived by default
+                include_archived=False,  # Non-archived by default
                 sort_by=self.state.sort_by,
                 reverse=self.state.sort_reverse,
                 date_range=date_range,
@@ -176,7 +176,7 @@ class TaskUIManager:
                 gantt_view_model=task_data.filtered_gantt_view_model,
                 sort_by=self.state.sort_by,
                 reverse=self.state.sort_reverse,
-                all=False,  # Non-archived by default
+                include_archived=False,  # Non-archived by default
                 keep_scroll_position=keep_scroll_position,
             )
 
@@ -221,11 +221,11 @@ class TaskUIManager:
         sort_by = self.state.sort_by
         main_screen = self._get_main_screen()
         if main_screen and main_screen.gantt_widget:
-            all_tasks = main_screen.gantt_widget.get_filter_all()
+            all_tasks = main_screen.gantt_widget.get_filter_include_archived()
             sort_by = main_screen.gantt_widget.get_sort_by()
 
         task_list_output = self.task_data_loader.api_client.list_tasks(
-            all=all_tasks,
+            include_archived=all_tasks,
             sort_by=sort_by,
             reverse=self.state.sort_reverse,
             include_gantt=True,

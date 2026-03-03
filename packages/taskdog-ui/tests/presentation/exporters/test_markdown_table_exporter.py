@@ -14,7 +14,7 @@ class TestMarkdownTableExporter:
 
     def _create_task_dto(
         self,
-        id: int,
+        task_id: int,
         name: str,
         priority: int,
         status: TaskStatus,
@@ -33,7 +33,7 @@ class TestMarkdownTableExporter:
     ) -> TaskRowDto:
         """Helper to create TaskRowDto with default values."""
         return TaskRowDto(
-            id=id,
+            id=task_id,
             name=name,
             priority=priority,
             status=status,
@@ -57,7 +57,7 @@ class TestMarkdownTableExporter:
         """Test basic markdown table export."""
         tasks = [
             self._create_task_dto(
-                id=1,
+                task_id=1,
                 name="Task 1",
                 priority=5,
                 status=TaskStatus.PENDING,
@@ -65,7 +65,7 @@ class TestMarkdownTableExporter:
                 estimated_duration=8.0,
             ),
             self._create_task_dto(
-                id=2,
+                task_id=2,
                 name="Task 2",
                 priority=3,
                 status=TaskStatus.COMPLETED,
@@ -92,7 +92,7 @@ class TestMarkdownTableExporter:
         """Test markdown export with specific fields."""
         tasks = [
             self._create_task_dto(
-                id=1,
+                task_id=1,
                 name="Task 1",
                 priority=5,
                 status=TaskStatus.PENDING,
@@ -113,7 +113,7 @@ class TestMarkdownTableExporter:
         """Test that None values are displayed as '-'."""
         tasks = [
             self._create_task_dto(
-                id=1,
+                task_id=1,
                 name="Task 1",
                 priority=5,
                 status=TaskStatus.PENDING,
@@ -134,7 +134,7 @@ class TestMarkdownTableExporter:
         """Test datetime formatting in export."""
         tasks = [
             self._create_task_dto(
-                id=1,
+                task_id=1,
                 name="Task 1",
                 priority=5,
                 status=TaskStatus.PENDING,

@@ -30,7 +30,7 @@ class TestQueryClient:
         mock_convert.return_value = mock_output
 
         result = self.client.list_tasks(
-            all=False,
+            include_archived=False,
             status="pending",
             tags=["urgent"],
             start_date=date(2025, 1, 1),
@@ -93,7 +93,7 @@ class TestQueryClient:
         mock_convert.return_value = mock_output
 
         result = self.client.get_gantt_data(
-            all=False,
+            include_archived=False,
             status="in_progress",
             sort_by="deadline",
             reverse=False,

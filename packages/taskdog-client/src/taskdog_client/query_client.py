@@ -38,7 +38,7 @@ class QueryClient:
 
     def _build_list_params(
         self,
-        all: bool,
+        include_archived: bool,
         sort_by: str,
         reverse: bool,
         status: str | None = None,
@@ -48,7 +48,7 @@ class QueryClient:
         """Build common parameters for list operations.
 
         Args:
-            all: Include archived tasks
+            include_archived: Include archived tasks
             sort_by: Sort field
             reverse: Reverse sort order
             status: Filter by status
@@ -59,7 +59,7 @@ class QueryClient:
             Dictionary of query parameters
         """
         params: dict[str, Any] = {
-            "all": str(all).lower(),
+            "all": str(include_archived).lower(),
             "sort": sort_by,
             "reverse": str(reverse).lower(),
         }
@@ -76,7 +76,7 @@ class QueryClient:
 
     def list_tasks(
         self,
-        all: bool = False,
+        include_archived: bool = False,
         status: str | None = None,
         tags: list[str] | None = None,
         start_date: date | None = None,
@@ -90,7 +90,7 @@ class QueryClient:
         """List tasks with optional filtering and sorting.
 
         Args:
-            all: Include archived tasks (default: False)
+            include_archived: Include archived tasks (default: False)
             status: Filter by status (e.g., "pending", "in_progress", "completed", "canceled")
             tags: Filter by tags (OR logic)
             start_date: Filter by start date
@@ -116,7 +116,9 @@ class QueryClient:
             if gantt_end_date:
                 extra["gantt_end_date"] = gantt_end_date.isoformat()
 
-        params = self._build_list_params(all, sort_by, reverse, status, tags, **extra)
+        params = self._build_list_params(
+            include_archived, sort_by, reverse, status, tags, **extra
+        )
         data = self._base._request_json("get", "/api/v1/tasks", params=params)
         return convert_to_task_list_output(data)
 
@@ -152,7 +154,7 @@ class QueryClient:
 
     def get_gantt_data(
         self,
-        all: bool = False,
+        include_archived: bool = False,
         status: str | None = None,
         tags: list[str] | None = None,
         filter_start_date: date | None = None,
@@ -165,7 +167,7 @@ class QueryClient:
         """Get Gantt chart data.
 
         Args:
-            all: Include archived tasks (default: False)
+            include_archived: Include archived tasks (default: False)
             status: Filter by status
             tags: Filter by tags (OR logic)
             filter_start_date: Filter tasks by start date
@@ -193,7 +195,9 @@ class QueryClient:
         if end_date:
             extra["end_date"] = end_date.isoformat()
 
-        params = self._build_list_params(all, sort_by, reverse, status, tags, **extra)
+        params = self._build_list_params(
+            include_archived, sort_by, reverse, status, tags, **extra
+        )
         data = self._base._request_json("get", "/api/v1/gantt", params=params)
         return convert_to_gantt_output(data)
 

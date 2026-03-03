@@ -114,7 +114,9 @@ async def list_tasks(
     notes_repo: NotesRepositoryDep,
     holiday_checker: HolidayCheckerDep,
     _client_name: AuthenticatedClientDep,
-    all: Annotated[bool, Query(description="Include archived tasks")] = False,
+    include_archived: Annotated[
+        bool, Query(alias="all", description="Include archived tasks")
+    ] = False,
     status_filter: Annotated[
         str | None, Query(alias="status", description="Filter by status")
     ] = None,
@@ -140,7 +142,7 @@ async def list_tasks(
     Args:
         controller: Query controller dependency
         holiday_checker: Holiday checker dependency
-        all: Include archived tasks
+        include_archived: Include archived tasks
         status_filter: Filter by task status
         tags: Filter by tags (OR logic)
         start_date: Filter by start date (ISO format)
@@ -162,7 +164,7 @@ async def list_tasks(
 
     # Create Input DTO (filter building is done in Use Case)
     input_dto = ListTasksInput(
-        include_archived=all,
+        include_archived=include_archived,
         status=status_filter,
         tags=tags or [],
         start_date=start,

@@ -61,7 +61,7 @@ class TestGanttCommand:
         # Verify
         assert result.exit_code == 0
         call_kwargs = self.api_client.get_gantt_data.call_args[1]
-        assert call_kwargs["all"] is True
+        assert call_kwargs["include_archived"] is True
 
     @patch("taskdog.cli.commands.gantt.RichGanttRenderer")
     @patch("taskdog.cli.commands.gantt.GanttPresenter")

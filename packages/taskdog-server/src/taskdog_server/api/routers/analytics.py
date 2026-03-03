@@ -207,7 +207,9 @@ async def get_gantt_chart(
     controller: QueryControllerDep,
     holiday_checker: HolidayCheckerDep,
     _client_name: AuthenticatedClientDep,
-    all: Annotated[bool, Query(description="Include archived tasks")] = False,
+    include_archived: Annotated[
+        bool, Query(alias="all", description="Include archived tasks")
+    ] = False,
     status_filter: Annotated[
         str | None, Query(alias="status", description="Filter by status")
     ] = None,
@@ -228,7 +230,7 @@ async def get_gantt_chart(
     Args:
         controller: Query controller dependency
         holiday_checker: Holiday checker dependency
-        all: Include archived tasks
+        include_archived: Include archived tasks
         status_filter: Filter by task status
         tags: Filter by tags (OR logic)
         start_date: Chart start date
@@ -245,7 +247,7 @@ async def get_gantt_chart(
 
     # Create Input DTO (filter building is done in Use Case)
     input_dto = GetGanttDataInput(
-        include_archived=all,
+        include_archived=include_archived,
         status=status_filter,
         tags=tags or [],
         start_date=start,

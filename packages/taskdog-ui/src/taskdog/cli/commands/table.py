@@ -41,7 +41,7 @@ from taskdog.shared.click_types.field_list import FieldList
 @handle_command_errors("displaying tasks")
 def table_command(
     ctx: click.Context,
-    all: bool,
+    include_archived: bool,
     status: str | None,
     sort: str,
     reverse: bool,
@@ -77,7 +77,7 @@ def table_command(
 
     # Get filtered and sorted tasks via API client
     result = ctx_obj.api_client.list_tasks(
-        all=all,
+        include_archived=include_archived,
         status=status,
         tags=tags,
         start_date=start_date.date() if start_date else None,

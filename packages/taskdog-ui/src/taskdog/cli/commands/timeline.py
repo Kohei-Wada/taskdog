@@ -71,7 +71,7 @@ def timeline_command(
     # Get all tasks (we'll filter by actual_start/end in the presenter)
     # Include all statuses since we want to show completed work too
     task_list = ctx_obj.api_client.list_tasks(
-        all=True,  # Include archived to show historical work
+        include_archived=True,  # Include archived to show historical work
         sort_by="id",
         reverse=False,
     )

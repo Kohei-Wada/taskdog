@@ -43,7 +43,7 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             Dictionary with tasks list and metadata
         """
         result = client.list_tasks(
-            all=include_archived,
+            include_archived=include_archived,
             status=status,
             tags=tags,
             sort_by=sort_by,

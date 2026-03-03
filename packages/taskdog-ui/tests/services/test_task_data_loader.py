@@ -46,7 +46,7 @@ class TestTaskDataLoader:
 
         # Execute
         result = self.loader.load_tasks(
-            all=False,
+            include_archived=False,
             sort_by="deadline",
             date_range=None,
         )
@@ -110,7 +110,7 @@ class TestTaskDataLoader:
 
         # Execute with date range
         result = self.loader.load_tasks(
-            all=False,
+            include_archived=False,
             sort_by="deadline",
             date_range=(date(2025, 1, 1), date(2025, 1, 7)),
         )

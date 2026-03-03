@@ -377,7 +377,7 @@ class TestTaskCrudTools:
         )
 
         client.list_tasks.assert_called_once_with(
-            all=True,
+            include_archived=True,
             status="PENDING",
             tags=["test"],
             sort_by="priority",

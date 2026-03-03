@@ -330,7 +330,7 @@ class TestRecalculateGantt:
         self.main_screen = MagicMock()
         self.main_screen.gantt_widget = MagicMock()
         # Setup default return values for gantt_widget methods
-        self.main_screen.gantt_widget.get_filter_all.return_value = False
+        self.main_screen.gantt_widget.get_filter_include_archived.return_value = False
         self.main_screen.gantt_widget.get_sort_by.return_value = "deadline"
         self.on_connection_error = MagicMock()
 
@@ -366,7 +366,7 @@ class TestRecalculateGantt:
 
         # Verify API was called with parameters from gantt_widget
         self.task_data_loader.api_client.list_tasks.assert_called_once_with(
-            all=False,  # from gantt_widget.get_filter_all()
+            include_archived=False,  # from gantt_widget.get_filter_include_archived()
             sort_by="deadline",  # from gantt_widget.get_sort_by()
             reverse=self.state.sort_reverse,
             include_gantt=True,
@@ -385,7 +385,7 @@ class TestRecalculateGantt:
     def test_recalculate_gantt_respects_gantt_widget_filter_state(self):
         """Test recalculate_gantt uses filter/sort state from gantt_widget."""
         # Setup - gantt_widget has "all tasks" filter enabled
-        self.main_screen.gantt_widget.get_filter_all.return_value = True
+        self.main_screen.gantt_widget.get_filter_include_archived.return_value = True
         self.main_screen.gantt_widget.get_sort_by.return_value = "priority"
 
         gantt = create_gantt_viewmodel()
@@ -403,7 +403,9 @@ class TestRecalculateGantt:
 
         # Verify API was called with filter state from gantt_widget
         call_kwargs = self.task_data_loader.api_client.list_tasks.call_args[1]
-        assert call_kwargs["all"] is True  # Respects gantt_widget.get_filter_all()
+        assert (
+            call_kwargs["include_archived"] is True
+        )  # Respects gantt_widget.get_filter_include_archived()
         assert (
             call_kwargs["sort_by"] == "priority"
         )  # Respects gantt_widget.get_sort_by()
@@ -487,7 +489,7 @@ class TestErrorHandling:
             date.today(),
             date.today() + timedelta(days=7),
         )
-        self.main_screen.gantt_widget.get_filter_all.return_value = False
+        self.main_screen.gantt_widget.get_filter_include_archived.return_value = False
         self.main_screen.gantt_widget.get_sort_by.return_value = "deadline"
         self.on_connection_error = MagicMock()
         self.on_auth_error = MagicMock()

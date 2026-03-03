@@ -298,7 +298,7 @@ class TaskdogApiClient:
 
     def list_tasks(
         self,
-        all: bool = False,
+        include_archived: bool = False,
         status: str | None = None,
         tags: list[str] | None = None,
         start_date: date | None = None,
@@ -311,7 +311,7 @@ class TaskdogApiClient:
     ) -> TaskListOutput:
         """List tasks with optional filtering and sorting."""
         return self._queries.list_tasks(
-            all,
+            include_archived,
             status,
             tags,
             start_date,
@@ -333,7 +333,7 @@ class TaskdogApiClient:
 
     def get_gantt_data(
         self,
-        all: bool = False,
+        include_archived: bool = False,
         status: str | None = None,
         tags: list[str] | None = None,
         filter_start_date: date | None = None,
@@ -345,7 +345,7 @@ class TaskdogApiClient:
     ) -> GanttOutput:
         """Get Gantt chart data."""
         return self._queries.get_gantt_data(
-            all,
+            include_archived,
             status,
             tags,
             filter_start_date,

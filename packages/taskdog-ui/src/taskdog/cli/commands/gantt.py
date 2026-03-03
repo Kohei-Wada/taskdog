@@ -78,7 +78,7 @@ def gantt_command(
     tag: tuple[str, ...],
     start_date: datetime | None,
     end_date: datetime | None,
-    all: bool,
+    include_archived: bool,
     status: str | None,
     sort: str,
     reverse: bool,
@@ -110,7 +110,7 @@ def gantt_command(
 
     # Get Gantt data via API client
     gantt_result = ctx_obj.api_client.get_gantt_data(
-        all=all,
+        include_archived=include_archived,
         status=status,
         tags=tags,
         sort_by=sort,

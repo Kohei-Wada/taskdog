@@ -34,7 +34,7 @@ class TestTableCommand:
         # Verify
         assert result.exit_code == 0
         self.api_client.list_tasks.assert_called_once_with(
-            all=False,
+            include_archived=False,
             status=None,
             tags=None,
             start_date=None,
@@ -57,7 +57,7 @@ class TestTableCommand:
         # Verify
         assert result.exit_code == 0
         call_kwargs = self.api_client.list_tasks.call_args[1]
-        assert call_kwargs["all"] is True
+        assert call_kwargs["include_archived"] is True
 
     @patch("taskdog.cli.commands.table.render_table")
     def test_with_status_filter(self, mock_render_table):
