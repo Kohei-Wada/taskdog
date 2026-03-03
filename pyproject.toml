@@ -103,6 +103,7 @@ select = [
   "W",  # pycodestyle warnings
   "F",  # pyflakes
   "I",  # isort
+  "ISC",  # flake8-implicit-str-concat
   "UP",  # pyupgrade
   "B",  # flake8-bugbear
   "C90",  # mccabe
