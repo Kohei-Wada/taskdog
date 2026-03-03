@@ -65,7 +65,6 @@ packages = [
     "taskdog.constants",
     "taskdog.presenters",
     "taskdog.view_models",
-    "taskdog.mappers",
     "taskdog.utils",
     "taskdog.shared",
     "taskdog.shared.click_types",

@@ -22,7 +22,7 @@ class TestStatsCommand:
         self.cli_context.api_client = self.api_client
 
     @patch("taskdog.cli.commands.stats.RichStatisticsRenderer")
-    @patch("taskdog.cli.commands.stats.StatisticsMapper")
+    @patch("taskdog.cli.commands.stats.StatisticsPresenter")
     def test_basic_display(self, mock_mapper_class, mock_renderer_class):
         """Test basic stats display."""
         # Setup
@@ -46,7 +46,7 @@ class TestStatsCommand:
         mock_renderer.render.assert_called_once_with(mock_view_model, focus="all")
 
     @patch("taskdog.cli.commands.stats.RichStatisticsRenderer")
-    @patch("taskdog.cli.commands.stats.StatisticsMapper")
+    @patch("taskdog.cli.commands.stats.StatisticsPresenter")
     def test_with_period_option(self, mock_mapper_class, mock_renderer_class):
         """Test stats with --period option."""
         # Setup
@@ -65,7 +65,7 @@ class TestStatsCommand:
         self.api_client.calculate_statistics.assert_called_once_with(period="7d")
 
     @patch("taskdog.cli.commands.stats.RichStatisticsRenderer")
-    @patch("taskdog.cli.commands.stats.StatisticsMapper")
+    @patch("taskdog.cli.commands.stats.StatisticsPresenter")
     def test_with_focus_option(self, mock_mapper_class, mock_renderer_class):
         """Test stats with --focus option."""
         # Setup
@@ -120,7 +120,7 @@ class TestStatsCommand:
         )
 
     @patch("taskdog.cli.commands.stats.RichStatisticsRenderer")
-    @patch("taskdog.cli.commands.stats.StatisticsMapper")
+    @patch("taskdog.cli.commands.stats.StatisticsPresenter")
     def test_period_30d(self, mock_mapper_class, mock_renderer_class):
         """Test stats with 30d period."""
         # Setup
@@ -144,7 +144,7 @@ class TestStatsCommand:
         ids=["basic", "time", "estimation", "deadline", "priority", "trends"],
     )
     @patch("taskdog.cli.commands.stats.RichStatisticsRenderer")
-    @patch("taskdog.cli.commands.stats.StatisticsMapper")
+    @patch("taskdog.cli.commands.stats.StatisticsPresenter")
     def test_focus_options(self, mock_mapper_class, mock_renderer_class, focus):
         """Test different focus options."""
         # Setup

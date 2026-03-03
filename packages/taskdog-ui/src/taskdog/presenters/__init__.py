@@ -6,6 +6,7 @@ ensure the presentation layer remains independent from domain entities.
 """
 
 from taskdog.presenters.gantt_presenter import GanttPresenter
+from taskdog.presenters.statistics_presenter import StatisticsPresenter
 from taskdog.presenters.table_presenter import TablePresenter
 
-__all__ = ["GanttPresenter", "TablePresenter"]
+__all__ = ["GanttPresenter", "StatisticsPresenter", "TablePresenter"]

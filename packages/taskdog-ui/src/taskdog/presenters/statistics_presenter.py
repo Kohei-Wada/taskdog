@@ -1,6 +1,6 @@
-"""Mapper for converting StatisticsOutput DTO to StatisticsViewModel.
+"""Presenter for converting StatisticsOutput DTO to StatisticsViewModel.
 
-This mapper extracts necessary fields from TaskSummaryDto and creates
+This presenter extracts necessary fields from TaskSummaryDto and creates
 presentation-ready view models.
 """
 
@@ -18,8 +18,8 @@ from taskdog_core.application.dto.statistics_output import (
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
 
 
-class StatisticsMapper:
-    """Mapper for converting StatisticsOutput to StatisticsViewModel.
+class StatisticsPresenter:
+    """Presenter for converting StatisticsOutput to StatisticsViewModel.
 
     This class is responsible for:
     1. Extracting necessary fields from TaskSummaryDto
@@ -41,14 +41,14 @@ class StatisticsMapper:
         # Convert TimeStatistics if present
         time_stats_vm = None
         if statistics_result.time_stats:
-            time_stats_vm = StatisticsMapper._map_time_statistics(
+            time_stats_vm = StatisticsPresenter._map_time_statistics(
                 statistics_result.time_stats
             )
 
         # Convert EstimationAccuracyStatistics if present
         estimation_stats_vm = None
         if statistics_result.estimation_stats:
-            estimation_stats_vm = StatisticsMapper._map_estimation_statistics(
+            estimation_stats_vm = StatisticsPresenter._map_estimation_statistics(
                 statistics_result.estimation_stats
             )
 
@@ -74,13 +74,13 @@ class StatisticsMapper:
         """
         longest_task_vm = None
         if time_stats.longest_task:
-            longest_task_vm = StatisticsMapper._map_task_to_summary(
+            longest_task_vm = StatisticsPresenter._map_task_to_summary(
                 time_stats.longest_task
             )
 
         shortest_task_vm = None
         if time_stats.shortest_task:
-            shortest_task_vm = StatisticsMapper._map_task_to_summary(
+            shortest_task_vm = StatisticsPresenter._map_task_to_summary(
                 time_stats.shortest_task
             )
 
@@ -106,12 +106,12 @@ class StatisticsMapper:
             EstimationAccuracyStatisticsViewModel with TaskSummaryViewModel
         """
         best_estimated_tasks_vm = [
-            StatisticsMapper._map_task_to_summary(task)
+            StatisticsPresenter._map_task_to_summary(task)
             for task in estimation_stats.best_estimated_tasks
         ]
 
         worst_estimated_tasks_vm = [
-            StatisticsMapper._map_task_to_summary(task)
+            StatisticsPresenter._map_task_to_summary(task)
             for task in estimation_stats.worst_estimated_tasks
         ]
 

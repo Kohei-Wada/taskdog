@@ -10,7 +10,7 @@ from textual.containers import Container, Horizontal, Vertical, VerticalScroll
 from textual.css.query import NoMatches
 from textual.widgets import Label, Static, TabbedContent, TabPane, Tabs
 
-from taskdog.mappers.statistics_mapper import StatisticsMapper
+from taskdog.presenters.statistics_presenter import StatisticsPresenter
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog.view_models.statistics_view_model import (
@@ -148,7 +148,7 @@ class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
                 self._api_client.calculate_statistics,
                 period=period,
             )
-            view_model = StatisticsMapper.from_statistics_result(result)
+            view_model = StatisticsPresenter.from_statistics_result(result)
         except Exception as e:
             self._loaded_periods[tab_id] = False
             self.notify(f"Failed to load statistics: {e}", severity="error")
