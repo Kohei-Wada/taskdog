@@ -2,6 +2,8 @@
 
 # Task Table Display Limits
 TASK_NAME_COLUMN_WIDTH = 30
+STATUS_COLUMN_WIDTH = 13
+ESTIMATED_COLUMN_WIDTH = 14
 PAGE_SCROLL_SIZE = 10
 
 # Gantt Chart Column Widths (CLI)
