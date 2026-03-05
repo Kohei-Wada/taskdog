@@ -33,6 +33,9 @@ jobs:
       - name: Run linter
         run: make lint
 
+      - name: Run spell checker
+        run: uv tool run codespell
+
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest

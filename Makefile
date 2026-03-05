@@ -2,7 +2,7 @@
         install install-dev install-hooks install-core install-server install-ui install-client install-mcp \
         install-ui-only install-server-only reinstall \
         tool-install-ui tool-install-server check-deps \
-        clean lint format typecheck check \
+        clean lint format typecheck spell check \
         lint-core lint-client lint-server lint-ui lint-mcp \
         typecheck-core typecheck-client typecheck-server typecheck-ui typecheck-mcp \
         bump-version show-version
@@ -255,7 +255,10 @@ typecheck-server: typecheck-taskdog-server ## Type check taskdog-server
 typecheck-ui: typecheck-taskdog-ui ## Type check taskdog-ui
 typecheck-mcp: typecheck-taskdog-mcp ## Type check taskdog-mcp
 
-check: lint typecheck ## Run all code quality checks (lint + typecheck)
+spell: ## Run spell checker
+	uv tool run codespell
+
+check: lint typecheck spell ## Run all code quality checks (lint + typecheck + spell)
 	@echo ""
 	@echo "✓ All code quality checks passed!"
 	@echo ""

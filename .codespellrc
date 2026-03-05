@@ -1,0 +1,3 @@
+[codespell]
+skip = .git,*.egg-info,*.pyc,__pycache__,.mypy_cache,.ruff_cache,.venv,uv.lock
+ignore-words-list = selectin,re-use
