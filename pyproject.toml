@@ -112,6 +112,7 @@ select = [
   "RET",  # return statement simplification
   "C4",  # flake8-comprehensions
   "PERF",  # performance anti-patterns
+  "PTH",  # flake8-use-pathlib
   "FURB",  # refurb modernization
   "RUF",  # ruff-specific rules
 ]

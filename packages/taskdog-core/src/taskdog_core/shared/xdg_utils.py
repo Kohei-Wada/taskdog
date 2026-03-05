@@ -25,7 +25,7 @@ class XDGDirectories:
         Args:
             create: Create directory if it doesn't exist (default: True)
         """
-        base_dir = os.getenv("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
+        base_dir = os.getenv("XDG_DATA_HOME", str(Path("~/.local/share").expanduser()))
         data_dir = Path(base_dir) / cls.APP_NAME
 
         if create:
@@ -43,7 +43,7 @@ class XDGDirectories:
         Args:
             create: Create directory if it doesn't exist (default: True)
         """
-        base_dir = os.getenv("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+        base_dir = os.getenv("XDG_CONFIG_HOME", str(Path("~/.config").expanduser()))
         config_dir = Path(base_dir) / cls.APP_NAME
 
         if create:

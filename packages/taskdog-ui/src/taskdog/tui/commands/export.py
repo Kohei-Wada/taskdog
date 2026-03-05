@@ -79,7 +79,7 @@ class ExportCommand(TUICommandBase):
             tasks_data = exporter.export(tasks)
 
             # Write to file
-            with open(output_path, "w", encoding="utf-8") as f:
+            with output_path.open("w", encoding="utf-8") as f:
                 f.write(tasks_data)
 
             # Show success notification
