@@ -52,7 +52,7 @@ def stats_command(ctx: click.Context, period: str, focus: str) -> None:
         return
 
     # Convert DTO to ViewModel (Mapper applies presentation logic)
-    view_model = StatisticsPresenter.from_statistics_result(result)
+    view_model = StatisticsPresenter().present(result)
 
     # Render statistics
     renderer = RichStatisticsRenderer(console_writer)

@@ -59,7 +59,7 @@ class TestStatisticsPresenter:
         )
 
         # Execute
-        result = StatisticsPresenter.from_statistics_result(statistics_output)
+        result = StatisticsPresenter().present(statistics_output)
 
         # Verify
         assert isinstance(result, StatisticsViewModel)
@@ -98,7 +98,7 @@ class TestStatisticsPresenter:
         )
 
         # Execute
-        result = StatisticsPresenter.from_statistics_result(statistics_output)
+        result = StatisticsPresenter().present(statistics_output)
 
         # Verify
         assert result.time_stats is not None
@@ -138,7 +138,7 @@ class TestStatisticsPresenter:
         )
 
         # Execute
-        result = StatisticsPresenter.from_statistics_result(statistics_output)
+        result = StatisticsPresenter().present(statistics_output)
 
         # Verify
         assert result.time_stats is not None
@@ -174,7 +174,7 @@ class TestStatisticsPresenter:
         )
 
         # Execute
-        result = StatisticsPresenter.from_statistics_result(statistics_output)
+        result = StatisticsPresenter().present(statistics_output)
 
         # Verify
         assert result.estimation_stats is not None
@@ -215,7 +215,7 @@ class TestStatisticsPresenter:
         )
 
         # Execute
-        result = StatisticsPresenter.from_statistics_result(statistics_output)
+        result = StatisticsPresenter().present(statistics_output)
 
         # Verify - deadline_stats is passed through directly
         assert result.deadline_stats == deadline_stats
@@ -243,7 +243,7 @@ class TestStatisticsPresenter:
         )
 
         # Execute
-        result = StatisticsPresenter.from_statistics_result(statistics_output)
+        result = StatisticsPresenter().present(statistics_output)
 
         # Verify - trend_stats is passed through directly
         assert result.trend_stats == trend_stats
@@ -298,7 +298,7 @@ class TestStatisticsPresenter:
         )
 
         # Execute
-        result = StatisticsPresenter.from_statistics_result(statistics_output)
+        result = StatisticsPresenter().present(statistics_output)
 
         # Verify all stats are present
         assert result.task_stats is not None
@@ -318,7 +318,7 @@ class TestMapTaskToSummary:
         task_dto = TaskSummaryDto(id=42, name="Test Task")
 
         # Execute
-        result = StatisticsPresenter._map_task_to_summary(task_dto)
+        result = StatisticsPresenter()._map_task_to_summary(task_dto)
 
         # Verify
         assert isinstance(result, TaskSummaryViewModel)
