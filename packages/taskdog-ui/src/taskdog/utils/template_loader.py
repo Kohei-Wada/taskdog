@@ -1,7 +1,7 @@
 """Template loader for custom note templates."""
 
-import os
 from datetime import datetime
+from pathlib import Path
 
 from taskdog.infrastructure.cli_config_manager import CliConfig
 from taskdog_core.application.dto.task_dto import TaskDetailDto
@@ -20,13 +20,13 @@ def load_note_template(config: CliConfig | None, task: TaskDetailDto) -> str | N
     if config is None or config.notes.template is None:
         return None
 
-    template_path = os.path.expanduser(config.notes.template)
+    template_path = Path(config.notes.template).expanduser()
 
-    if not os.path.isfile(template_path):
+    if not template_path.is_file():
         return None
 
     try:
-        with open(template_path, encoding="utf-8") as f:
+        with template_path.open(encoding="utf-8") as f:
             template = f.read()
         return _expand_template_variables(template, task)
     except (OSError, UnicodeDecodeError):

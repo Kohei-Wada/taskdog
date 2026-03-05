@@ -1,6 +1,7 @@
 """Tests for template_loader utility."""
 
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 from taskdog.utils.template_loader import _expand_template_variables, load_note_template
@@ -64,33 +65,31 @@ class TestLoadNoteTemplate:
 
         assert result is None
 
-    @patch("os.path.isfile")
-    @patch("os.path.expanduser")
+    @patch("pathlib.Path.is_file", return_value=False)
+    @patch("pathlib.Path.expanduser")
     def test_returns_none_when_file_not_found(
         self, mock_expanduser: MagicMock, mock_isfile: MagicMock
     ) -> None:
         """Test that non-existent file returns None."""
         config = MagicMock()
         config.notes.template = "~/template.md"
-        mock_expanduser.return_value = "/home/user/template.md"
-        mock_isfile.return_value = False
+        mock_expanduser.return_value = Path("/home/user/template.md")
         task = create_mock_task()
 
         result = load_note_template(config, task)
 
         assert result is None
 
-    @patch("builtins.open", mock_open(read_data="# Task: {{task_name}}"))
-    @patch("os.path.isfile")
-    @patch("os.path.expanduser")
+    @patch("pathlib.Path.is_file", return_value=True)
+    @patch("pathlib.Path.expanduser")
+    @patch("pathlib.Path.open", mock_open(read_data="# Task: {{task_name}}"))
     def test_loads_and_expands_template(
         self, mock_expanduser: MagicMock, mock_isfile: MagicMock
     ) -> None:
         """Test successful template loading and expansion."""
         config = MagicMock()
         config.notes.template = "~/template.md"
-        mock_expanduser.return_value = "/home/user/template.md"
-        mock_isfile.return_value = True
+        mock_expanduser.return_value = Path("/home/user/template.md")
         task = create_mock_task(name="My Task")
 
         result = load_note_template(config, task)
@@ -98,17 +97,16 @@ class TestLoadNoteTemplate:
         assert result is not None
         assert "My Task" in result
 
-    @patch("builtins.open")
-    @patch("os.path.isfile")
-    @patch("os.path.expanduser")
+    @patch("pathlib.Path.is_file", return_value=True)
+    @patch("pathlib.Path.expanduser")
+    @patch("pathlib.Path.open")
     def test_returns_none_on_oserror(
-        self, mock_expanduser: MagicMock, mock_isfile: MagicMock, mock_file: MagicMock
+        self, mock_file: MagicMock, mock_expanduser: MagicMock, mock_isfile: MagicMock
     ) -> None:
         """Test that OSError returns None."""
         config = MagicMock()
         config.notes.template = "~/template.md"
-        mock_expanduser.return_value = "/home/user/template.md"
-        mock_isfile.return_value = True
+        mock_expanduser.return_value = Path("/home/user/template.md")
         mock_file.side_effect = OSError("Permission denied")
         task = create_mock_task()
 
@@ -116,17 +114,16 @@ class TestLoadNoteTemplate:
 
         assert result is None
 
-    @patch("builtins.open")
-    @patch("os.path.isfile")
-    @patch("os.path.expanduser")
+    @patch("pathlib.Path.is_file", return_value=True)
+    @patch("pathlib.Path.expanduser")
+    @patch("pathlib.Path.open")
     def test_returns_none_on_unicode_decode_error(
-        self, mock_expanduser: MagicMock, mock_isfile: MagicMock, mock_file: MagicMock
+        self, mock_file: MagicMock, mock_expanduser: MagicMock, mock_isfile: MagicMock
     ) -> None:
         """Test that UnicodeDecodeError returns None."""
         config = MagicMock()
         config.notes.template = "~/template.md"
-        mock_expanduser.return_value = "/home/user/template.md"
-        mock_isfile.return_value = True
+        mock_expanduser.return_value = Path("/home/user/template.md")
         mock_file.side_effect = UnicodeDecodeError("utf-8", b"", 0, 1, "invalid")
         task = create_mock_task()
 
@@ -134,18 +131,20 @@ class TestLoadNoteTemplate:
 
         assert result is None
 
-    @patch("os.path.expanduser")
-    def test_expands_user_home_in_path(self, mock_expanduser: MagicMock) -> None:
+    @patch("pathlib.Path.is_file", return_value=False)
+    @patch("pathlib.Path.expanduser")
+    def test_expands_user_home_in_path(
+        self, mock_expanduser: MagicMock, mock_isfile: MagicMock
+    ) -> None:
         """Test that ~ is expanded in path."""
         config = MagicMock()
         config.notes.template = "~/notes/template.md"
-        mock_expanduser.return_value = "/home/user/notes/template.md"
+        mock_expanduser.return_value = Path("/home/user/notes/template.md")
         task = create_mock_task()
 
-        with patch("os.path.isfile", return_value=False):
-            load_note_template(config, task)
+        load_note_template(config, task)
 
-        mock_expanduser.assert_called_once_with("~/notes/template.md")
+        mock_expanduser.assert_called_once()
 
 
 class TestExpandTemplateVariables:

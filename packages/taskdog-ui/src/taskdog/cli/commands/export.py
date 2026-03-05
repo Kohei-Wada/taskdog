@@ -1,6 +1,7 @@
 """Export command - Export tasks to various formats."""
 
 from datetime import datetime
+from pathlib import Path
 
 import click
 
@@ -137,7 +138,7 @@ def export_command(
 
         # Output to file or stdout
         if output:
-            with open(output, "w", encoding="utf-8") as f:
+            with Path(output).open("w", encoding="utf-8") as f:
                 f.write(tasks_data)
             console_writer.success(f"Exported {len(tasks)} tasks to {output}")
         else:

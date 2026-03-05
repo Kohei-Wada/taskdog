@@ -1,6 +1,5 @@
 """Tests for FastAPI dependency injection."""
 
-import os
 import tempfile
 from contextlib import suppress
 from pathlib import Path
@@ -87,8 +86,9 @@ class TestDependencyInjection:
                 assert context.crud_controller is not None
         finally:
             # Cleanup
-            if os.path.exists(config_path):
-                os.unlink(config_path)
+            config_file = Path(config_path)
+            if config_file.exists():
+                config_file.unlink()
             if context is not None:
                 with suppress(Exception):
                     context.close()
@@ -286,8 +286,9 @@ class TestInitializeApiContext:
                 assert context.analytics_controller is not None
                 assert context.crud_controller is not None
         finally:
-            if os.path.exists(config_path):
-                os.unlink(config_path)
+            config_file = Path(config_path)
+            if config_file.exists():
+                config_file.unlink()
             if context is not None:
                 with suppress(Exception):
                     context.close()
@@ -313,8 +314,9 @@ class TestInitializeApiContext:
                 # Assert - holiday checker should be created
                 assert context.holiday_checker is not None
         finally:
-            if os.path.exists(config_path):
-                os.unlink(config_path)
+            config_file = Path(config_path)
+            if config_file.exists():
+                config_file.unlink()
             if context is not None:
                 with suppress(Exception):
                     context.close()
@@ -341,8 +343,9 @@ class TestInitializeApiContext:
                 assert context is not None
                 # Holiday checker may be None if it failed to initialize
         finally:
-            if os.path.exists(config_path):
-                os.unlink(config_path)
+            config_file = Path(config_path)
+            if config_file.exists():
+                config_file.unlink()
             if context is not None:
                 with suppress(Exception):
                     context.close()
