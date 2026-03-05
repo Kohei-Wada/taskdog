@@ -7,7 +7,7 @@ used by all SQLite repository implementations.
 from __future__ import annotations
 
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from taskdog_core.infrastructure.persistence.database.engine_factory import (
     create_session_factory,
@@ -34,7 +34,7 @@ class SqliteBaseRepository:
         )
 
         # Create sessionmaker for managing database sessions
-        self.Session: sessionmaker = create_session_factory(self.engine)
+        self.Session: sessionmaker[Session] = create_session_factory(self.engine)
 
     def close(self) -> None:
         """Close database connections and clean up resources.

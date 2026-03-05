@@ -9,7 +9,7 @@ from typing import Any
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from taskdog_core.infrastructure.persistence.database.migration_runner import (
     run_migrations,
@@ -58,7 +58,7 @@ def create_sqlite_engine(database_url: str, run_migration: bool = True) -> Engin
     return engine
 
 
-def create_session_factory(engine: Engine) -> sessionmaker:  # type: ignore[type-arg]
+def create_session_factory(engine: Engine) -> sessionmaker[Session]:
     """Create a sessionmaker bound to the given engine.
 
     Args:
