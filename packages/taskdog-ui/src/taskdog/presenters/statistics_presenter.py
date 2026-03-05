@@ -26,8 +26,8 @@ class StatisticsPresenter:
     2. Converting DTO data to presentation-ready ViewModels
     """
 
-    @staticmethod
-    def from_statistics_result(
+    def present(
+        self,
         statistics_result: StatisticsOutput,
     ) -> StatisticsViewModel:
         """Convert StatisticsOutput DTO to StatisticsViewModel.
@@ -41,14 +41,12 @@ class StatisticsPresenter:
         # Convert TimeStatistics if present
         time_stats_vm = None
         if statistics_result.time_stats:
-            time_stats_vm = StatisticsPresenter._map_time_statistics(
-                statistics_result.time_stats
-            )
+            time_stats_vm = self._map_time_statistics(statistics_result.time_stats)
 
         # Convert EstimationAccuracyStatistics if present
         estimation_stats_vm = None
         if statistics_result.estimation_stats:
-            estimation_stats_vm = StatisticsPresenter._map_estimation_statistics(
+            estimation_stats_vm = self._map_estimation_statistics(
                 statistics_result.estimation_stats
             )
 
@@ -62,8 +60,9 @@ class StatisticsPresenter:
             trend_stats=statistics_result.trend_stats,
         )
 
-    @staticmethod
-    def _map_time_statistics(time_stats: TimeStatistics) -> TimeStatisticsViewModel:
+    def _map_time_statistics(
+        self, time_stats: TimeStatistics
+    ) -> TimeStatisticsViewModel:
         """Convert TimeStatistics to TimeStatisticsViewModel.
 
         Args:
@@ -74,15 +73,11 @@ class StatisticsPresenter:
         """
         longest_task_vm = None
         if time_stats.longest_task:
-            longest_task_vm = StatisticsPresenter._map_task_to_summary(
-                time_stats.longest_task
-            )
+            longest_task_vm = self._map_task_to_summary(time_stats.longest_task)
 
         shortest_task_vm = None
         if time_stats.shortest_task:
-            shortest_task_vm = StatisticsPresenter._map_task_to_summary(
-                time_stats.shortest_task
-            )
+            shortest_task_vm = self._map_task_to_summary(time_stats.shortest_task)
 
         return TimeStatisticsViewModel(
             total_work_hours=time_stats.total_work_hours,
@@ -93,8 +88,8 @@ class StatisticsPresenter:
             tasks_with_time_tracking=time_stats.tasks_with_time_tracking,
         )
 
-    @staticmethod
     def _map_estimation_statistics(
+        self,
         estimation_stats: EstimationAccuracyStatistics,
     ) -> EstimationAccuracyStatisticsViewModel:
         """Convert EstimationAccuracyStatistics to EstimationAccuracyStatisticsViewModel.
@@ -106,12 +101,12 @@ class StatisticsPresenter:
             EstimationAccuracyStatisticsViewModel with TaskSummaryViewModel
         """
         best_estimated_tasks_vm = [
-            StatisticsPresenter._map_task_to_summary(task)
+            self._map_task_to_summary(task)
             for task in estimation_stats.best_estimated_tasks
         ]
 
         worst_estimated_tasks_vm = [
-            StatisticsPresenter._map_task_to_summary(task)
+            self._map_task_to_summary(task)
             for task in estimation_stats.worst_estimated_tasks
         ]
 
@@ -125,8 +120,7 @@ class StatisticsPresenter:
             worst_estimated_tasks=worst_estimated_tasks_vm,
         )
 
-    @staticmethod
-    def _map_task_to_summary(task: TaskSummaryDto) -> TaskSummaryViewModel:
+    def _map_task_to_summary(self, task: TaskSummaryDto) -> TaskSummaryViewModel:
         """Convert a TaskSummaryDto to TaskSummaryViewModel.
 
         Args:

@@ -31,7 +31,7 @@ class TestStatsCommand:
         self.api_client.calculate_statistics.return_value = mock_result
 
         mock_view_model = MagicMock()
-        mock_mapper_class.from_statistics_result.return_value = mock_view_model
+        mock_mapper_class.return_value.present.return_value = mock_view_model
 
         mock_renderer = MagicMock()
         mock_renderer_class.return_value = mock_renderer
@@ -42,7 +42,7 @@ class TestStatsCommand:
         # Verify
         assert result.exit_code == 0
         self.api_client.calculate_statistics.assert_called_once_with(period="all")
-        mock_mapper_class.from_statistics_result.assert_called_once_with(mock_result)
+        mock_mapper_class.return_value.present.assert_called_once_with(mock_result)
         mock_renderer.render.assert_called_once_with(mock_view_model, focus="all")
 
     @patch("taskdog.cli.commands.stats.RichStatisticsRenderer")
@@ -53,7 +53,7 @@ class TestStatsCommand:
         mock_result = MagicMock()
         mock_result.task_stats.total_tasks = 10
         self.api_client.calculate_statistics.return_value = mock_result
-        mock_mapper_class.from_statistics_result.return_value = MagicMock()
+        mock_mapper_class.return_value.present.return_value = MagicMock()
 
         # Execute
         result = self.runner.invoke(
@@ -72,7 +72,7 @@ class TestStatsCommand:
         mock_result = MagicMock()
         mock_result.task_stats.total_tasks = 10
         self.api_client.calculate_statistics.return_value = mock_result
-        mock_mapper_class.from_statistics_result.return_value = MagicMock()
+        mock_mapper_class.return_value.present.return_value = MagicMock()
 
         mock_renderer = MagicMock()
         mock_renderer_class.return_value = mock_renderer
@@ -127,7 +127,7 @@ class TestStatsCommand:
         mock_result = MagicMock()
         mock_result.task_stats.total_tasks = 10
         self.api_client.calculate_statistics.return_value = mock_result
-        mock_mapper_class.from_statistics_result.return_value = MagicMock()
+        mock_mapper_class.return_value.present.return_value = MagicMock()
 
         # Execute
         result = self.runner.invoke(
@@ -151,7 +151,7 @@ class TestStatsCommand:
         mock_result = MagicMock()
         mock_result.task_stats.total_tasks = 10
         self.api_client.calculate_statistics.return_value = mock_result
-        mock_mapper_class.from_statistics_result.return_value = MagicMock()
+        mock_mapper_class.return_value.present.return_value = MagicMock()
 
         mock_renderer = MagicMock()
         mock_renderer_class.return_value = mock_renderer

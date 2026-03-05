@@ -148,7 +148,7 @@ class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
                 self._api_client.calculate_statistics,
                 period=period,
             )
-            view_model = StatisticsPresenter.from_statistics_result(result)
+            view_model = StatisticsPresenter().present(result)
         except Exception as e:
             self._loaded_periods[tab_id] = False
             self.notify(f"Failed to load statistics: {e}", severity="error")

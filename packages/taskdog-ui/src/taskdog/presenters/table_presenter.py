@@ -26,9 +26,9 @@ class TablePresenter:
         Returns:
             List of TaskRowViewModels ready for rendering
         """
-        return [self._task_to_view_model(task) for task in output.tasks]
+        return [self._map_task_to_view_model(task) for task in output.tasks]
 
-    def _task_to_view_model(self, task: TaskRowDto) -> TaskRowViewModel:
+    def _map_task_to_view_model(self, task: TaskRowDto) -> TaskRowViewModel:
         """Convert a TaskRowDto to TaskRowViewModel.
 
         Args:
