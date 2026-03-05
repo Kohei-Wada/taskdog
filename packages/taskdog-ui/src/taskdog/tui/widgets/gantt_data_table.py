@@ -74,7 +74,7 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
 
         # Add fixed columns with centered headers
         self.add_column(Text("ID", justify="center"))
-        self.add_column(Text("Task", justify="center"), width=TASK_NAME_COLUMN_WIDTH)
+        self.add_column(Text("Name", justify="center"), width=TASK_NAME_COLUMN_WIDTH)
         self.add_column(
             Text("Estimated[h]", justify="center"), width=ESTIMATED_COLUMN_WIDTH
         )
