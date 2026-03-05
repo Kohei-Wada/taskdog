@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     pass
 
 from taskdog.constants.table_dimensions import (
+    ESTIMATED_COLUMN_WIDTH,
     PAGE_SCROLL_SIZE,
     STATUS_COLUMN_WIDTH,
     TASK_NAME_COLUMN_WIDTH,
@@ -108,7 +109,9 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         self.add_column(Text("Status", justify="center"), width=STATUS_COLUMN_WIDTH)
         self.add_column(Text("Priority", justify="center"))
         self.add_column(Text("Flags", justify="center"))
-        self.add_column(Text("Estimated[h]", justify="center"))
+        self.add_column(
+            Text("Estimated[h]", justify="center"), width=ESTIMATED_COLUMN_WIDTH
+        )
         self.add_column(Text("Actual[h]", justify="center"))
         self.add_column(Text("Deadline", justify="center"))
         self.add_column(Text("Planned Start", justify="center"))
