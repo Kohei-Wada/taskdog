@@ -21,6 +21,7 @@ from taskdog.constants.table_dimensions import (
     CHARS_PER_DAY,
     DEFAULT_GANTT_WIDGET_WIDTH,
     MIN_CONSOLE_WIDTH,
+    MIN_GANTT_DISPLAY_DAYS,
     MIN_TIMELINE_WIDTH,
 )
 from taskdog.tui.widgets.base_widget import TUIWidget
@@ -316,7 +317,8 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         timeline_width = max(console_width - actual_fixed_width, MIN_TIMELINE_WIDTH)
         max_days = timeline_width // CHARS_PER_DAY
         weeks = max(max_days // DAYS_PER_WEEK, 1)
-        return weeks * DAYS_PER_WEEK
+        calculated_days = weeks * DAYS_PER_WEEK
+        return max(calculated_days, MIN_GANTT_DISPLAY_DAYS)
 
     def _calculate_date_range_for_display(self, display_days: int) -> tuple[date, date]:
         """Calculate start and end dates based on display days.
