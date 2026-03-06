@@ -181,6 +181,41 @@ class TestRichTableRenderer:
         assert result == expected
 
     @pytest.mark.parametrize(
+        "is_fixed,has_notes,expected",
+        [
+            (False, False, ""),
+            (True, False, "📌"),
+            (False, True, "📝"),
+            (True, True, "📌📝"),
+        ],
+        ids=["no_flags", "fixed_only", "notes_only", "both_flags"],
+    )
+    def test_get_field_value_flags_field(self, is_fixed, has_notes, expected):
+        """Test _get_field_value returns combined flags for fixed and notes."""
+        task = TaskRowViewModel(
+            id=99,
+            name="Test",
+            priority=1,
+            status=TaskStatus.PENDING,
+            is_fixed=is_fixed,
+            depends_on=[],
+            tags=[],
+            has_notes=has_notes,
+            estimated_duration=None,
+            actual_duration_hours=None,
+            planned_start=None,
+            planned_end=None,
+            actual_start=None,
+            actual_end=None,
+            deadline=None,
+            created_at=None,
+            updated_at=None,
+            is_finished=False,
+        )
+        result = self.renderer._get_field_value(task, "flags")
+        assert result == expected
+
+    @pytest.mark.parametrize(
         "depends_on,expected",
         [
             ([], "-"),
@@ -217,7 +252,7 @@ class TestRichTableRenderer:
     @pytest.mark.parametrize(
         "tags,expected",
         [
-            ([], "-"),
+            ([], ""),
             (["solo"], "solo"),
             (["urgent", "backend"], "urgent, backend"),
         ],
@@ -248,20 +283,13 @@ class TestRichTableRenderer:
         result = self.renderer._get_field_value(task, "tags")
         assert result == expected
 
-    @pytest.mark.parametrize(
-        "field_name,expected",
-        [
-            ("planned_start", "2025-01-01 09:00"),
-            ("planned_end", "2025-01-05 18:00"),
-            ("actual_start", "2025-01-01 09:30"),
-            ("actual_end", "2025-01-05 17:45"),
-            ("deadline", "2025-01-10 23:59"),
-        ],
-        ids=["planned_start", "planned_end", "actual_start", "actual_end", "deadline"],
-    )
-    def test_get_field_value_datetime_fields(self, field_name, expected):
-        """Test _get_field_value formats datetime fields correctly."""
-        result = self.renderer._get_field_value(self.task2, field_name)
+    def test_get_field_value_datetime_fields_use_year_aware_format(self):
+        """Test _get_field_value formats datetime fields with year-aware format."""
+        # task2 has 2025 dates — uses DateTimeFormatter.format_datetime (year-aware)
+        from taskdog.formatters.date_time_formatter import DateTimeFormatter
+
+        result = self.renderer._get_field_value(self.task2, "planned_start")
+        expected = DateTimeFormatter.format_datetime(datetime(2025, 1, 1, 9, 0))
         assert result == expected
 
     def test_get_field_value_returns_dash_for_none_datetime(self) -> None:
@@ -272,9 +300,9 @@ class TestRichTableRenderer:
     @pytest.mark.parametrize(
         "field_name,duration_value,expected",
         [
-            ("estimated_duration", 10.5, "10.5h"),
+            ("estimated_duration", 10.5, "10.5"),
             ("estimated_duration", None, "-"),
-            ("actual_duration", 12.0, "12.0h"),
+            ("actual_duration", 12.0, "12.0"),
             ("actual_duration", None, "-"),
         ],
         ids=[
@@ -287,7 +315,7 @@ class TestRichTableRenderer:
     def test_get_field_value_duration_fields(
         self, field_name, duration_value, expected
     ):
-        """Test _get_field_value formats duration fields with 'h' suffix or dash."""
+        """Test _get_field_value formats duration fields without 'h' suffix."""
         if "estimated" in field_name:
             task = TaskRowViewModel(
                 id=99,
@@ -379,14 +407,14 @@ class TestRichTableRenderer:
     @pytest.mark.parametrize(
         "tags,expected",
         [
-            ([], "-"),
+            ([], ""),
             (["solo"], "solo"),
             (["urgent", "backend"], "urgent, backend"),
         ],
         ids=["empty_list", "single_tag", "multiple_tags"],
     )
     def test_format_tags(self, tags, expected):
-        """Test _format_tags returns dash for empty list or joins tags with comma."""
+        """Test _format_tags returns empty string for empty list or joins tags with comma."""
         task = TaskRowViewModel(
             id=99,
             name="Test",
@@ -444,19 +472,6 @@ class TestRichTableRenderer:
         result = self.renderer._format_dependencies(task)
         assert result == expected
 
-    @pytest.mark.parametrize(
-        "dt_value,expected",
-        [
-            (None, "-"),
-            (datetime(2025, 3, 15, 14, 30, 45), "2025-03-15 14:30"),
-        ],
-        ids=["none", "datetime_object"],
-    )
-    def test_format_datetime(self, dt_value, expected):
-        """Test _format_datetime handles None and datetime objects."""
-        result = self.renderer._format_datetime(dt_value)
-        assert result == expected
-
     def test_render_multiple_tasks(self) -> None:
         """Test render handles multiple tasks correctly."""
         tasks = [self.task1, self.task2]
@@ -472,8 +487,7 @@ class TestRichTableRenderer:
             "name",
             "status",
             "priority",
-            "note",
-            "is_fixed",
+            "flags",
             "estimated_duration",
             "actual_duration",
         ],
@@ -482,8 +496,7 @@ class TestRichTableRenderer:
             "name",
             "status",
             "priority",
-            "note",
-            "is_fixed",
+            "flags",
             "estimated_duration",
             "actual_duration",
         ],
@@ -499,6 +512,7 @@ class TestRichTableRenderer:
             "name",
             "note",
             "priority",
+            "flags",
             "status",
             "planned_start",
             "planned_end",
@@ -518,6 +532,7 @@ class TestRichTableRenderer:
             "name",
             "note",
             "priority",
+            "flags",
             "status",
             "planned_start",
             "planned_end",

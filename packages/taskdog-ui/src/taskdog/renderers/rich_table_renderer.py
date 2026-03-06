@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from datetime import datetime
 from typing import ClassVar, Literal, cast
 
 from rich.table import Table
@@ -16,6 +15,7 @@ from taskdog.constants.column_headers import (
     HEADER_ELAPSED,
     HEADER_ESTIMATED,
     HEADER_FIXED,
+    HEADER_FLAGS,
     HEADER_ID,
     HEADER_NAME,
     HEADER_NOTE,
@@ -26,6 +26,7 @@ from taskdog.constants.column_headers import (
     HEADER_TAGS,
     HEADER_UPDATED_AT,
 )
+from taskdog.constants.symbols import EMOJI_NOTE
 from taskdog.constants.table_styles import (
     COLUMN_DATETIME_NO_WRAP,
     COLUMN_DATETIME_STYLE,
@@ -42,13 +43,9 @@ from taskdog.constants.table_styles import (
     format_table_title,
 )
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
+from taskdog.formatters.duration_formatter import DurationFormatter
 from taskdog.renderers.rich_renderer_base import RichRendererBase
 from taskdog.view_models.task_view_model import TaskRowViewModel
-from taskdog_core.domain.constants import (
-    SECONDS_PER_DAY,
-    SECONDS_PER_HOUR,
-    SECONDS_PER_MINUTE,
-)
 
 # Type alias for Rich table justify method
 JustifyMethod = Literal["default", "left", "center", "right", "full"]
@@ -78,6 +75,11 @@ class RichTableRenderer(RichRendererBase):
             "header": HEADER_PRIORITY,
             "justify": "center",
             "style": COLUMN_PRIORITY_STYLE,
+            "no_wrap": True,
+        },
+        "flags": {
+            "header": HEADER_FLAGS,
+            "justify": "center",
             "no_wrap": True,
         },
         "status": {
@@ -169,8 +171,7 @@ class RichTableRenderer(RichRendererBase):
         "name",
         "status",
         "priority",
-        "note",
-        "is_fixed",
+        "flags",
         "estimated_duration",
         "actual_duration",
         "deadline",
@@ -271,27 +272,46 @@ class RichTableRenderer(RichRendererBase):
             "name": lambda t: (
                 f"[strike dim]{t.name}[/strike dim]" if t.is_finished else t.name
             ),
-            "note": lambda t: "📝" if t.has_notes else "",
+            "note": lambda t: EMOJI_NOTE if t.has_notes else "",
             "priority": lambda t: str(t.priority),
+            "flags": lambda t: self._format_flags(t),
             "status": lambda t: self._format_status(t),
             "is_fixed": lambda t: "📌" if t.is_fixed else "",
             "depends_on": lambda t: self._format_dependencies(t),
             "tags": lambda t: self._format_tags(t),
-            "planned_start": lambda t: self._format_datetime(t.planned_start),
-            "planned_end": lambda t: self._format_datetime(t.planned_end),
-            "actual_start": lambda t: self._format_datetime(t.actual_start),
-            "actual_end": lambda t: self._format_datetime(t.actual_end),
-            "deadline": lambda t: self._format_datetime(t.deadline),
+            "planned_start": lambda t: DateTimeFormatter.format_datetime(
+                t.planned_start
+            ),
+            "planned_end": lambda t: DateTimeFormatter.format_datetime(t.planned_end),
+            "actual_start": lambda t: DateTimeFormatter.format_datetime(t.actual_start),
+            "actual_end": lambda t: DateTimeFormatter.format_datetime(t.actual_end),
+            "deadline": lambda t: DateTimeFormatter.format_datetime(t.deadline),
             "duration": lambda t: self._format_duration_info(t),
-            "estimated_duration": lambda t: self._format_estimated_duration(t),
-            "actual_duration": lambda t: self._format_actual_duration(t),
-            "elapsed": lambda t: self._format_elapsed(t),
-            "created_at": lambda t: self._format_datetime(t.created_at),
-            "updated_at": lambda t: self._format_datetime(t.updated_at),
+            "estimated_duration": lambda t: DurationFormatter.format_estimated_duration(
+                t
+            ),
+            "actual_duration": lambda t: DurationFormatter.format_actual_duration(t),
+            "elapsed": lambda t: DurationFormatter.format_elapsed_time(t),
+            "created_at": lambda t: DateTimeFormatter.format_datetime(t.created_at),
+            "updated_at": lambda t: DateTimeFormatter.format_datetime(t.updated_at),
         }
 
         extractor = field_extractors.get(field_name)
         return extractor(task) if extractor else "-"
+
+    @staticmethod
+    def _format_flags(task: TaskRowViewModel) -> str:
+        """Format task flags (fixed indicator + note indicator).
+
+        Args:
+            task: TaskRowViewModel to extract flags from
+
+        Returns:
+            Formatted flags string
+        """
+        fixed_indicator = "📌" if task.is_fixed else ""
+        note_indicator = EMOJI_NOTE if task.has_notes else ""
+        return fixed_indicator + note_indicator
 
     def _format_tags(self, task: TaskRowViewModel) -> str:
         """Format task tags for display.
@@ -300,10 +320,10 @@ class RichTableRenderer(RichRendererBase):
             task: TaskRowViewModel to extract tags from
 
         Returns:
-            Formatted tags string (e.g., "work, urgent" or "-")
+            Formatted tags string (e.g., "work, urgent" or "")
         """
         if not task.tags:
-            return "-"
+            return ""
         return ", ".join(task.tags)
 
     def _format_status(self, task: TaskRowViewModel) -> str:
@@ -317,19 +337,6 @@ class RichTableRenderer(RichRendererBase):
         """
         status_style = self._get_status_style(task.status)
         return f"[{status_style}]{task.status.value}[/{status_style}]"
-
-    def _format_datetime(self, dt: datetime | None) -> str:
-        """Format datetime for display.
-
-        Args:
-            dt: datetime object or None
-
-        Returns:
-            Formatted datetime string or "-"
-        """
-        if not dt:
-            return "-"
-        return DateTimeFormatter.format_datetime_compact(dt)
 
     def _format_dependencies(self, task: TaskRowViewModel) -> str:
         """Format task dependencies for display.
@@ -365,60 +372,3 @@ class RichTableRenderer(RichRendererBase):
             duration_parts.append(f"A:{task.actual_duration_hours}h")
 
         return " / ".join(duration_parts)
-
-    def _format_estimated_duration(self, task: TaskRowViewModel) -> str:
-        """Format estimated duration for display.
-
-        Args:
-            task: TaskRowViewModel to format estimated duration for
-
-        Returns:
-            Formatted estimated duration string (e.g., "5h" or "-")
-        """
-        if not task.estimated_duration:
-            return "-"
-        return f"{task.estimated_duration}h"
-
-    def _format_actual_duration(self, task: TaskRowViewModel) -> str:
-        """Format actual duration for display.
-
-        Args:
-            task: TaskRowViewModel to format actual duration for
-
-        Returns:
-            Formatted actual duration string (e.g., "3h" or "-")
-        """
-        if not task.actual_duration_hours:
-            return "-"
-        return f"{task.actual_duration_hours}h"
-
-    def _format_elapsed(self, task: TaskRowViewModel) -> str:
-        """Format elapsed time for IN_PROGRESS tasks.
-
-        Args:
-            task: TaskRowViewModel to format elapsed time for
-
-        Returns:
-            Formatted elapsed time string (e.g., "15:04:38" or "3d 15:04:38")
-        """
-        from datetime import datetime
-
-        from taskdog_core.domain.entities.task import TaskStatus
-
-        if task.status != TaskStatus.IN_PROGRESS or not task.actual_start:
-            return "-"
-
-        # Calculate elapsed time
-        elapsed_seconds = int((datetime.now() - task.actual_start).total_seconds())
-
-        # Convert to days, hours, minutes, seconds
-        days = elapsed_seconds // SECONDS_PER_DAY
-        remaining_seconds = elapsed_seconds % SECONDS_PER_DAY
-        hours = remaining_seconds // SECONDS_PER_HOUR
-        minutes = (remaining_seconds % SECONDS_PER_HOUR) // SECONDS_PER_MINUTE
-        seconds = remaining_seconds % SECONDS_PER_MINUTE
-
-        # Format based on duration
-        if days > 0:
-            return f"{days}d {hours}:{minutes:02d}:{seconds:02d}"
-        return f"{hours}:{minutes:02d}:{seconds:02d}"
