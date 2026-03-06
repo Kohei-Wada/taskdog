@@ -45,6 +45,14 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
         self.cursor_type = "none"
         self.zebra_stripes = True
 
+    def action_scroll_down(self) -> None:
+        """Scroll down one line."""
+        self.scroll_down(animate=False)
+
+    def action_scroll_up(self) -> None:
+        """Scroll up one line."""
+        self.scroll_up(animate=False)
+
     def action_goto_top(self) -> None:
         """Scroll to the top of the table."""
         self.scroll_home(animate=False)
