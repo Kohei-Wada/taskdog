@@ -6,6 +6,13 @@ from rich.text import Text
 
 from taskdog.console.console_writer import ConsoleWriter
 from taskdog.constants.colors import GANTT_COLUMN_EST_HOURS_COLOR
+from taskdog.constants.column_headers import (
+    GANTT_WORKLOAD_LABEL,
+    HEADER_ESTIMATED,
+    HEADER_ID,
+    HEADER_NAME,
+    HEADER_TIMELINE,
+)
 from taskdog.constants.table_dimensions import (
     GANTT_TABLE_EST_HOURS_WIDTH,
     GANTT_TABLE_ID_WIDTH,
@@ -105,23 +112,23 @@ class RichGanttRenderer(RichRendererBase):
             table: Rich Table object to add columns to
         """
         table.add_column(
-            "ID",
+            HEADER_ID,
             justify="right",
             style=COLUMN_ID_STYLE,
             no_wrap=True,
             width=GANTT_TABLE_ID_WIDTH,
         )
         table.add_column(
-            "Task", style=COLUMN_NAME_STYLE, min_width=GANTT_TABLE_TASK_MIN_WIDTH
+            HEADER_NAME, style=COLUMN_NAME_STYLE, min_width=GANTT_TABLE_TASK_MIN_WIDTH
         )
         table.add_column(
-            "Est.\\[h]",
+            HEADER_ESTIMATED.replace("[", "\\["),
             justify="right",
             style=GANTT_COLUMN_EST_HOURS_COLOR,
             no_wrap=True,
             width=GANTT_TABLE_EST_HOURS_WIDTH,
         )
-        table.add_column("Timeline", style=COLUMN_NAME_STYLE)
+        table.add_column(HEADER_TIMELINE, style=COLUMN_NAME_STYLE)
 
     def _add_date_header_row(
         self, table: Table, gantt_view_model: GanttViewModel
@@ -180,7 +187,9 @@ class RichGanttRenderer(RichRendererBase):
         )
         table.add_row(
             "",
-            "[bold yellow]Workload\\[h][/bold yellow]",
+            "[bold yellow]{}[/bold yellow]".format(
+                GANTT_WORKLOAD_LABEL.replace("[", "\\[")
+            ),
             f"[bold yellow]{total_est_str}[/bold yellow]",
             workload_timeline,
         )

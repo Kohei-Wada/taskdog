@@ -5,6 +5,27 @@ from typing import ClassVar, Literal, cast
 from rich.table import Table
 
 from taskdog.console.console_writer import ConsoleWriter
+from taskdog.constants.column_headers import (
+    HEADER_ACTUAL,
+    HEADER_ACTUAL_END,
+    HEADER_ACTUAL_START,
+    HEADER_CREATED_AT,
+    HEADER_DEADLINE,
+    HEADER_DEPENDENCIES,
+    HEADER_DURATION,
+    HEADER_ELAPSED,
+    HEADER_ESTIMATED,
+    HEADER_FIXED,
+    HEADER_ID,
+    HEADER_NAME,
+    HEADER_NOTE,
+    HEADER_PLANNED_END,
+    HEADER_PLANNED_START,
+    HEADER_PRIORITY,
+    HEADER_STATUS,
+    HEADER_TAGS,
+    HEADER_UPDATED_AT,
+)
 from taskdog.constants.table_styles import (
     COLUMN_DATETIME_NO_WRAP,
     COLUMN_DATETIME_STYLE,
@@ -39,103 +60,103 @@ class RichTableRenderer(RichRendererBase):
     # Field definitions: field_name -> column configuration
     FIELD_DEFINITIONS: ClassVar[dict[str, dict[str, str | bool]]] = {
         "id": {
-            "header": "ID",
+            "header": HEADER_ID,
             "justify": "right",
             "style": COLUMN_ID_STYLE,
             "no_wrap": True,
         },
         "name": {
-            "header": "Name",
+            "header": HEADER_NAME,
             "style": COLUMN_NAME_STYLE,
         },
         "note": {
-            "header": "Note",
+            "header": HEADER_NOTE,
             "justify": COLUMN_NOTE_JUSTIFY,
             "no_wrap": True,
         },
         "priority": {
-            "header": "Priority",
+            "header": HEADER_PRIORITY,
             "justify": "center",
             "style": COLUMN_PRIORITY_STYLE,
             "no_wrap": True,
         },
         "status": {
-            "header": "Status",
+            "header": HEADER_STATUS,
             "justify": COLUMN_STATUS_JUSTIFY,
         },
         "planned_start": {
-            "header": "Plan Start",
+            "header": HEADER_PLANNED_START,
             "style": COLUMN_DATETIME_STYLE,
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "planned_end": {
-            "header": "Plan End",
+            "header": HEADER_PLANNED_END,
             "style": COLUMN_DATETIME_STYLE,
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "actual_start": {
-            "header": "Actual Start",
+            "header": HEADER_ACTUAL_START,
             "style": COLUMN_DATETIME_STYLE,
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "actual_end": {
-            "header": "Actual End",
+            "header": HEADER_ACTUAL_END,
             "style": COLUMN_DATETIME_STYLE,
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "deadline": {
-            "header": "Deadline",
+            "header": HEADER_DEADLINE,
             "style": COLUMN_DEADLINE_STYLE,
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "duration": {
-            "header": "Duration",
+            "header": HEADER_DURATION,
             "justify": "right",
             "style": COLUMN_DURATION_STYLE,
             "no_wrap": True,
         },
         "estimated_duration": {
-            "header": "Est",
+            "header": HEADER_ESTIMATED,
             "justify": "center",
             "style": COLUMN_DURATION_STYLE,
             "no_wrap": True,
         },
         "actual_duration": {
-            "header": "Actual",
+            "header": HEADER_ACTUAL,
             "justify": "center",
             "style": COLUMN_DURATION_STYLE,
             "no_wrap": True,
         },
         "elapsed": {
-            "header": "Elapsed",
+            "header": HEADER_ELAPSED,
             "justify": "center",
             "style": "cyan",
             "no_wrap": True,
         },
         "created_at": {
-            "header": "Created At",
+            "header": HEADER_CREATED_AT,
             "style": "dim",
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "updated_at": {
-            "header": "Updated At",
+            "header": HEADER_UPDATED_AT,
             "style": "dim",
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "depends_on": {
-            "header": "Dependencies",
+            "header": HEADER_DEPENDENCIES,
             "justify": "center",
             "style": "cyan",
             "no_wrap": True,
         },
         "is_fixed": {
-            "header": "Fixed",
+            "header": HEADER_FIXED,
             "justify": "center",
             "style": "yellow",
             "no_wrap": True,
         },
         "tags": {
-            "header": "Tags",
+            "header": HEADER_TAGS,
             "justify": "left",
             "style": "magenta",
             "no_wrap": False,
@@ -210,7 +231,8 @@ class RichTableRenderer(RichRendererBase):
         # Add columns dynamically based on selected fields
         for field_name in fields:
             field_config = self.FIELD_DEFINITIONS[field_name]
-            header = str(field_config["header"])
+            # Escape '[' for Rich markup (e.g. "Estimated[h]" → "Estimated\[h]")
+            header = str(field_config["header"]).replace("[", "\\[")
             justify_val = field_config.get("justify")
             valid_justify = {"default", "left", "center", "right", "full"}
             justify: JustifyMethod = (

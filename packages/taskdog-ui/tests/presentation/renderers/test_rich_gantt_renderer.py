@@ -98,7 +98,7 @@ class TestRichGanttRendererBuildTable:
         assert result is None
 
     def test_build_table_returns_table_with_correct_columns(self) -> None:
-        """Table has 4 columns: ID, Task, Est.[h], Timeline."""
+        """Table has 4 columns: ID, Name, Estimated[h], Timeline."""
         model = self._create_gantt_view_model()
 
         table = self.renderer.build_table(model)
@@ -108,8 +108,8 @@ class TestRichGanttRendererBuildTable:
 
         column_headers = [col.header for col in table.columns]
         assert str(column_headers[0]) == "ID"
-        assert str(column_headers[1]) == "Task"
-        assert str(column_headers[2]) == "Est.\\[h]"
+        assert str(column_headers[1]) == "Name"
+        assert str(column_headers[2]) == "Estimated\\[h]"
         assert str(column_headers[3]) == "Timeline"
 
     def test_build_table_includes_date_header_row(self) -> None:

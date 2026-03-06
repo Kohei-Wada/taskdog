@@ -12,6 +12,13 @@ from rich.text import Text
 from textual.binding import Binding
 from textual.widgets import DataTable
 
+from taskdog.constants.column_headers import (
+    GANTT_WORKLOAD_LABEL,
+    HEADER_ESTIMATED,
+    HEADER_ID,
+    HEADER_NAME,
+    HEADER_TIMELINE,
+)
 from taskdog.constants.table_dimensions import (
     ESTIMATED_COLUMN_WIDTH,
     TASK_NAME_COLUMN_WIDTH,
@@ -73,10 +80,12 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         self._date_columns.clear()
 
         # Add fixed columns with centered headers
-        self.add_column(Text("ID", justify="center"))
-        self.add_column(Text("Name", justify="center"), width=TASK_NAME_COLUMN_WIDTH)
+        self.add_column(Text(HEADER_ID, justify="center"))
         self.add_column(
-            Text("Estimated[h]", justify="center"), width=ESTIMATED_COLUMN_WIDTH
+            Text(HEADER_NAME, justify="center"), width=TASK_NAME_COLUMN_WIDTH
+        )
+        self.add_column(
+            Text(HEADER_ESTIMATED, justify="center"), width=ESTIMATED_COLUMN_WIDTH
         )
 
         # Add single Timeline column (contains all dates)
@@ -87,7 +96,7 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             self._date_columns.append(current_date)
 
         # Single Timeline column with centered header
-        self.add_column(Text("Timeline", justify="center"))
+        self.add_column(Text(HEADER_TIMELINE, justify="center"))
 
     def load_gantt(
         self,
@@ -337,7 +346,7 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
 
         self.add_row(
             Text("", justify="center"),
-            Text("Est. Workload[h]", style="bold yellow", justify="center"),
+            Text(GANTT_WORKLOAD_LABEL, style="bold yellow", justify="center"),
             Text(total_est_str, style="bold yellow", justify="center"),
             workload_timeline,
         )
