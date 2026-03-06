@@ -96,6 +96,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
             **kwargs: Keyword arguments to pass to the method
         """
         if self._gantt_table:
+            kwargs.setdefault("animate", False)
             getattr(self._gantt_table, method_name)(*args, **kwargs)
 
     def action_scroll_down(self) -> None:
@@ -123,12 +124,16 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         self._delegate_scroll("scroll_page_up")
 
     def action_scroll_left(self) -> None:
-        """Scroll left."""
-        self._delegate_scroll("scroll_left")
+        """Scroll left by one day."""
+        if self._gantt_table:
+            self._gantt_table.scroll_x = max(
+                0, self._gantt_table.scroll_x - CHARS_PER_DAY
+            )
 
     def action_scroll_right(self) -> None:
-        """Scroll right."""
-        self._delegate_scroll("scroll_right")
+        """Scroll right by one day."""
+        if self._gantt_table:
+            self._gantt_table.scroll_x = self._gantt_table.scroll_x + CHARS_PER_DAY
 
     def action_scroll_home_horizontal(self) -> None:
         """Scroll to leftmost position (0 key)."""
