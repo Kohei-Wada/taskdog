@@ -28,13 +28,20 @@ from taskdog.constants.column_headers import (
 )
 from taskdog.constants.symbols import EMOJI_NOTE
 from taskdog.constants.table_styles import (
+    COLUMN_CREATED_AT_STYLE,
     COLUMN_DATETIME_NO_WRAP,
     COLUMN_DATETIME_STYLE,
     COLUMN_DEADLINE_STYLE,
+    COLUMN_DEPENDENCIES_STYLE,
     COLUMN_DURATION_STYLE,
+    COLUMN_ELAPSED_STYLE,
+    COLUMN_FINISHED_STYLE,
+    COLUMN_FIXED_STYLE,
     COLUMN_ID_STYLE,
     COLUMN_NAME_STYLE,
     COLUMN_PRIORITY_STYLE,
+    COLUMN_TAGS_STYLE,
+    COLUMN_UPDATED_AT_STYLE,
     JUSTIFY_ACTUAL,
     JUSTIFY_ACTUAL_END,
     JUSTIFY_ACTUAL_START,
@@ -156,37 +163,37 @@ class RichTableRenderer(RichRendererBase):
         "elapsed": {
             "header": HEADER_ELAPSED,
             "justify": JUSTIFY_ELAPSED,
-            "style": "cyan",
+            "style": COLUMN_ELAPSED_STYLE,
             "no_wrap": True,
         },
         "created_at": {
             "header": HEADER_CREATED_AT,
             "justify": JUSTIFY_CREATED_AT,
-            "style": "dim",
+            "style": COLUMN_CREATED_AT_STYLE,
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "updated_at": {
             "header": HEADER_UPDATED_AT,
             "justify": JUSTIFY_UPDATED_AT,
-            "style": "dim",
+            "style": COLUMN_UPDATED_AT_STYLE,
             "no_wrap": COLUMN_DATETIME_NO_WRAP,
         },
         "depends_on": {
             "header": HEADER_DEPENDENCIES,
             "justify": JUSTIFY_DEPENDENCIES,
-            "style": "cyan",
+            "style": COLUMN_DEPENDENCIES_STYLE,
             "no_wrap": True,
         },
         "is_fixed": {
             "header": HEADER_FIXED,
             "justify": JUSTIFY_FIXED,
-            "style": "yellow",
+            "style": COLUMN_FIXED_STYLE,
             "no_wrap": True,
         },
         "tags": {
             "header": HEADER_TAGS,
             "justify": JUSTIFY_TAGS,
-            "style": "magenta",
+            "style": COLUMN_TAGS_STYLE,
             "no_wrap": False,
         },
     }
@@ -296,7 +303,9 @@ class RichTableRenderer(RichRendererBase):
         field_extractors: dict[str, Callable[[TaskRowViewModel], str]] = {
             "id": lambda t: str(t.id),
             "name": lambda t: (
-                f"[strike dim]{t.name}[/strike dim]" if t.is_finished else t.name
+                f"[{COLUMN_FINISHED_STYLE}]{t.name}[/{COLUMN_FINISHED_STYLE}]"
+                if t.is_finished
+                else t.name
             ),
             "note": lambda t: EMOJI_NOTE if t.has_notes else "",
             "priority": lambda t: str(t.priority),

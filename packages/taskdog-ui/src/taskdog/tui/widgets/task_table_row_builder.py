@@ -8,6 +8,7 @@ from rich.text import Text
 from taskdog.constants.colors import STATUS_STYLES
 from taskdog.constants.symbols import EMOJI_NOTE
 from taskdog.constants.table_styles import (
+    COLUMN_FINISHED_STYLE,
     JUSTIFY_ACTUAL,
     JUSTIFY_ACTUAL_END,
     JUSTIFY_ACTUAL_START,
@@ -75,7 +76,7 @@ class TaskTableRowBuilder:
             ColumnConfig(
                 formatter=lambda vm: vm.name,
                 justification=JUSTIFY_NAME,
-                style_func=lambda vm: "strike dim" if vm.is_finished else None,
+                style_func=lambda vm: COLUMN_FINISHED_STYLE if vm.is_finished else None,
             ),
             # Status column (color-coded)
             ColumnConfig(
