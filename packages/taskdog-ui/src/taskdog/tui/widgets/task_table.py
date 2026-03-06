@@ -40,6 +40,23 @@ from taskdog.constants.table_dimensions import (
     STATUS_COLUMN_WIDTH,
     TASK_NAME_COLUMN_WIDTH,
 )
+from taskdog.constants.table_styles import (
+    JUSTIFY_ACTUAL,
+    JUSTIFY_ACTUAL_END,
+    JUSTIFY_ACTUAL_START,
+    JUSTIFY_DEADLINE,
+    JUSTIFY_DEPENDENCIES,
+    JUSTIFY_ELAPSED,
+    JUSTIFY_ESTIMATED,
+    JUSTIFY_FLAGS,
+    JUSTIFY_ID,
+    JUSTIFY_NAME,
+    JUSTIFY_PLANNED_END,
+    JUSTIFY_PLANNED_START,
+    JUSTIFY_PRIORITY,
+    JUSTIFY_STATUS,
+    JUSTIFY_TAGS,
+)
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
@@ -121,27 +138,28 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
     def setup_columns(self) -> None:
         """Set up table columns."""
         self.add_column(Text("", justify="center"))
-        self.add_column(Text(HEADER_ID, justify="center"))
+        self.add_column(Text(HEADER_ID, justify=JUSTIFY_ID))
         self.add_column(
-            Text(HEADER_NAME, justify="center"), width=TASK_NAME_COLUMN_WIDTH
+            Text(HEADER_NAME, justify=JUSTIFY_NAME), width=TASK_NAME_COLUMN_WIDTH
         )
         self.add_column(
-            Text(HEADER_STATUS, justify="center"), width=STATUS_COLUMN_WIDTH
+            Text(HEADER_STATUS, justify=JUSTIFY_STATUS), width=STATUS_COLUMN_WIDTH
         )
-        self.add_column(Text(HEADER_PRIORITY, justify="center"))
-        self.add_column(Text(HEADER_FLAGS, justify="center"))
+        self.add_column(Text(HEADER_PRIORITY, justify=JUSTIFY_PRIORITY))
+        self.add_column(Text(HEADER_FLAGS, justify=JUSTIFY_FLAGS))
         self.add_column(
-            Text(HEADER_ESTIMATED, justify="center"), width=ESTIMATED_COLUMN_WIDTH
+            Text(HEADER_ESTIMATED, justify=JUSTIFY_ESTIMATED),
+            width=ESTIMATED_COLUMN_WIDTH,
         )
-        self.add_column(Text(HEADER_ACTUAL, justify="center"))
-        self.add_column(Text(HEADER_DEADLINE, justify="center"))
-        self.add_column(Text(HEADER_PLANNED_START, justify="center"))
-        self.add_column(Text(HEADER_PLANNED_END, justify="center"))
-        self.add_column(Text(HEADER_ACTUAL_START, justify="center"))
-        self.add_column(Text(HEADER_ACTUAL_END, justify="center"))
-        self.add_column(Text(HEADER_ELAPSED, justify="center"))
-        self.add_column(Text(HEADER_DEPENDENCIES, justify="center"))
-        self.add_column(Text(HEADER_TAGS, justify="center"))
+        self.add_column(Text(HEADER_ACTUAL, justify=JUSTIFY_ACTUAL))
+        self.add_column(Text(HEADER_DEADLINE, justify=JUSTIFY_DEADLINE))
+        self.add_column(Text(HEADER_PLANNED_START, justify=JUSTIFY_PLANNED_START))
+        self.add_column(Text(HEADER_PLANNED_END, justify=JUSTIFY_PLANNED_END))
+        self.add_column(Text(HEADER_ACTUAL_START, justify=JUSTIFY_ACTUAL_START))
+        self.add_column(Text(HEADER_ACTUAL_END, justify=JUSTIFY_ACTUAL_END))
+        self.add_column(Text(HEADER_ELAPSED, justify=JUSTIFY_ELAPSED))
+        self.add_column(Text(HEADER_DEPENDENCIES, justify=JUSTIFY_DEPENDENCIES))
+        self.add_column(Text(HEADER_TAGS, justify=JUSTIFY_TAGS))
 
     def load_tasks(self, view_models: list[TaskRowViewModel]) -> None:
         """Load task ViewModels into the table.

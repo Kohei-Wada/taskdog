@@ -2,12 +2,29 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Literal
 
 from rich.text import Text
 
 from taskdog.constants.colors import STATUS_STYLES
 from taskdog.constants.symbols import EMOJI_NOTE
+from taskdog.constants.table_styles import (
+    JUSTIFY_ACTUAL,
+    JUSTIFY_ACTUAL_END,
+    JUSTIFY_ACTUAL_START,
+    JUSTIFY_DEADLINE,
+    JUSTIFY_DEPENDENCIES,
+    JUSTIFY_ELAPSED,
+    JUSTIFY_ESTIMATED,
+    JUSTIFY_FLAGS,
+    JUSTIFY_ID,
+    JUSTIFY_NAME,
+    JUSTIFY_PLANNED_END,
+    JUSTIFY_PLANNED_START,
+    JUSTIFY_PRIORITY,
+    JUSTIFY_STATUS,
+    JUSTIFY_TAGS,
+    JustifyValue,
+)
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.formatters.duration_formatter import DurationFormatter
 from taskdog.view_models.task_view_model import TaskRowViewModel
@@ -24,7 +41,7 @@ class ColumnConfig:
     """
 
     formatter: Callable[[TaskRowViewModel], str]
-    justification: Literal["left", "center", "right"] = "center"
+    justification: JustifyValue = "center"
     style_func: Callable[[TaskRowViewModel], str | None] | None = None
 
 
@@ -50,68 +67,92 @@ class TaskTableRowBuilder:
         """
         return [
             # ID column
-            ColumnConfig(formatter=lambda vm: str(vm.id)),
+            ColumnConfig(
+                formatter=lambda vm: str(vm.id),
+                justification=JUSTIFY_ID,
+            ),
             # Name column (left-aligned, strikethrough + dim for finished)
             ColumnConfig(
                 formatter=lambda vm: vm.name,
-                justification="left",
+                justification=JUSTIFY_NAME,
                 style_func=lambda vm: "strike dim" if vm.is_finished else None,
             ),
             # Status column (color-coded)
             ColumnConfig(
                 formatter=lambda vm: vm.status.value,
+                justification=JUSTIFY_STATUS,
                 style_func=lambda vm: STATUS_STYLES.get(vm.status.value, "white"),
             ),
             # Priority column
-            ColumnConfig(formatter=lambda vm: str(vm.priority)),
+            ColumnConfig(
+                formatter=lambda vm: str(vm.priority),
+                justification=JUSTIFY_PRIORITY,
+            ),
             # Flags column (fixed indicator + note indicator)
-            ColumnConfig(formatter=lambda vm: self._format_flags(vm)),
+            ColumnConfig(
+                formatter=lambda vm: self._format_flags(vm),
+                justification=JUSTIFY_FLAGS,
+            ),
             # Estimated duration column
             ColumnConfig(
                 formatter=lambda vm: self.duration_formatter.format_estimated_duration(
                     vm
-                )
+                ),
+                justification=JUSTIFY_ESTIMATED,
             ),
             # Actual duration column
             ColumnConfig(
-                formatter=lambda vm: self.duration_formatter.format_actual_duration(vm)
+                formatter=lambda vm: self.duration_formatter.format_actual_duration(vm),
+                justification=JUSTIFY_ACTUAL,
             ),
             # Deadline column
             ColumnConfig(
-                formatter=lambda vm: self.date_formatter.format_deadline(vm.deadline)
+                formatter=lambda vm: self.date_formatter.format_deadline(vm.deadline),
+                justification=JUSTIFY_DEADLINE,
             ),
             # Planned start column
             ColumnConfig(
                 formatter=lambda vm: self.date_formatter.format_planned_start(
                     vm.planned_start
-                )
+                ),
+                justification=JUSTIFY_PLANNED_START,
             ),
             # Planned end column
             ColumnConfig(
                 formatter=lambda vm: self.date_formatter.format_planned_end(
                     vm.planned_end
-                )
+                ),
+                justification=JUSTIFY_PLANNED_END,
             ),
             # Actual start column
             ColumnConfig(
                 formatter=lambda vm: self.date_formatter.format_actual_start(
                     vm.actual_start
-                )
+                ),
+                justification=JUSTIFY_ACTUAL_START,
             ),
             # Actual end column
             ColumnConfig(
                 formatter=lambda vm: self.date_formatter.format_actual_end(
                     vm.actual_end
-                )
+                ),
+                justification=JUSTIFY_ACTUAL_END,
             ),
             # Elapsed time column
             ColumnConfig(
-                formatter=lambda vm: self.duration_formatter.format_elapsed_time(vm)
+                formatter=lambda vm: self.duration_formatter.format_elapsed_time(vm),
+                justification=JUSTIFY_ELAPSED,
             ),
             # Dependencies column
-            ColumnConfig(formatter=lambda vm: self._format_dependencies(vm.depends_on)),
+            ColumnConfig(
+                formatter=lambda vm: self._format_dependencies(vm.depends_on),
+                justification=JUSTIFY_DEPENDENCIES,
+            ),
             # Tags column
-            ColumnConfig(formatter=lambda vm: self._format_tags(vm.tags)),
+            ColumnConfig(
+                formatter=lambda vm: self._format_tags(vm.tags),
+                justification=JUSTIFY_TAGS,
+            ),
         ]
 
     def build_row(self, task_vm: TaskRowViewModel) -> tuple[Text, ...]:
