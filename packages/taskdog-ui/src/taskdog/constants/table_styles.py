@@ -22,6 +22,13 @@ COLUMN_PRIORITY_STYLE = "yellow"
 COLUMN_DATETIME_STYLE = "green"
 COLUMN_DEADLINE_STYLE = "magenta"
 COLUMN_DURATION_STYLE = "cyan"
+COLUMN_ELAPSED_STYLE = "cyan"
+COLUMN_CREATED_AT_STYLE = "dim"
+COLUMN_UPDATED_AT_STYLE = "dim"
+COLUMN_DEPENDENCIES_STYLE = "cyan"
+COLUMN_FIXED_STYLE = "yellow"
+COLUMN_TAGS_STYLE = "magenta"
+COLUMN_FINISHED_STYLE = "strike dim"
 COLUMN_FIELD_LABEL_STYLE = "cyan"  # For detail view field labels
 
 # Column justify (shared between CLI and TUI)
