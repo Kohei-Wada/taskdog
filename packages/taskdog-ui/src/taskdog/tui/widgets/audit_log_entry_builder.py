@@ -71,8 +71,14 @@ def format_audit_changes(
 
     # Limit to 2 changes to keep it compact
     if len(changes) > 2:
-        return ", ".join(changes[:2]) + f" (+{len(changes) - 2})"
-    return ", ".join(changes)
+        result = ", ".join(changes[:2]) + f" (+{len(changes) - 2})"
+    else:
+        result = ", ".join(changes)
+
+    # Truncate to max_length if needed
+    if len(result) > max_length:
+        return result[: max_length - 3] + "..."
+    return result
 
 
 def format_audit_value(value: Any) -> str:
