@@ -7,6 +7,11 @@ import click
 from taskdog.cli.commands.common_options import filter_options, sort_options
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
+from taskdog.constants.table_dimensions import (
+    CHARS_PER_DAY,
+    GANTT_CLI_FIXED_COLUMNS_WIDTH,
+    MIN_TIMELINE_WIDTH,
+)
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.renderers.rich_gantt_renderer import RichGanttRenderer
 
@@ -67,7 +72,7 @@ EXAMPLE:
     "--end-date",
     "-e",
     type=click.DateTime(),
-    help="End date for the chart (YYYY-MM-DD). Defaults to last task date.",
+    help="End date for the chart (YYYY-MM-DD). Defaults to fit terminal width.",
 )
 @sort_options(default_sort="deadline")
 @filter_options()
@@ -106,7 +111,16 @@ def gantt_command(
         today = date.today()
         start_date_obj = today - timedelta(days=today.weekday())
 
-    end_date_obj = end_date.date() if end_date else None
+    if end_date:
+        end_date_obj: date | None = end_date.date()
+    else:
+        # Auto-fit to terminal width when end_date not specified
+        terminal_width = ctx_obj.console_writer.get_width()
+        timeline_width = max(
+            terminal_width - GANTT_CLI_FIXED_COLUMNS_WIDTH, MIN_TIMELINE_WIDTH
+        )
+        max_days = timeline_width // CHARS_PER_DAY
+        end_date_obj = start_date_obj + timedelta(days=max_days - 1)
 
     # Get Gantt data via API client
     gantt_result = ctx_obj.api_client.get_gantt_data(

@@ -16,6 +16,7 @@ class TestGanttCommand:
         """Set up test fixtures."""
         self.runner = CliRunner()
         self.console_writer = MagicMock()
+        self.console_writer.get_width.return_value = 200
         self.api_client = MagicMock()
         self.cli_context = MagicMock()
         self.cli_context.console_writer = self.console_writer

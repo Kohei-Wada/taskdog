@@ -16,7 +16,7 @@ from taskdog.constants.column_headers import (
 from taskdog.constants.table_dimensions import (
     GANTT_TABLE_EST_HOURS_WIDTH,
     GANTT_TABLE_ID_WIDTH,
-    GANTT_TABLE_TASK_MIN_WIDTH,
+    TASK_NAME_COLUMN_WIDTH,
 )
 from taskdog.constants.table_styles import (
     COLUMN_ID_STYLE,
@@ -119,7 +119,7 @@ class RichGanttRenderer(RichRendererBase):
             width=GANTT_TABLE_ID_WIDTH,
         )
         table.add_column(
-            HEADER_NAME, style=COLUMN_NAME_STYLE, min_width=GANTT_TABLE_TASK_MIN_WIDTH
+            HEADER_NAME, style=COLUMN_NAME_STYLE, width=TASK_NAME_COLUMN_WIDTH
         )
         table.add_column(
             HEADER_ESTIMATED.replace("[", "\\["),

@@ -14,6 +14,8 @@ GANTT_TABLE_EST_HOURS_WIDTH = 7
 # Gantt Chart Timeline Dimensions
 MIN_TIMELINE_WIDTH = 30
 CHARS_PER_DAY = 3
+# Fixed columns overhead for CLI Gantt: ID(4) + Name(30) + Est(7) + padding(8) + borders(5)
+GANTT_CLI_FIXED_COLUMNS_WIDTH = 54
 
 # Gantt Widget Dimensions (TUI)
 DEFAULT_GANTT_WIDGET_WIDTH = 120
