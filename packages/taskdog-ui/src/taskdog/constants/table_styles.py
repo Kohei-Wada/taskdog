@@ -53,6 +53,21 @@ JUSTIFY_DURATION: JustifyValue = "right"
 JUSTIFY_CREATED_AT: JustifyValue = "center"
 JUSTIFY_UPDATED_AT: JustifyValue = "center"
 
+# Audit log column styles
+COLUMN_AUDIT_ID_STYLE = "dim"
+COLUMN_AUDIT_STATUS_OK_STYLE = "green"
+COLUMN_AUDIT_STATUS_FAIL_STYLE = "red"
+
+# Audit log column justify
+JUSTIFY_AUDIT_TIMESTAMP: JustifyValue = "center"
+JUSTIFY_AUDIT_ID: JustifyValue = "center"
+JUSTIFY_AUDIT_NAME: JustifyValue = "left"
+JUSTIFY_AUDIT_OPERATION: JustifyValue = "center"
+JUSTIFY_AUDIT_CHANGES: JustifyValue = "left"
+JUSTIFY_AUDIT_CLIENT: JustifyValue = "center"
+JUSTIFY_AUDIT_STATUS: JustifyValue = "center"
+JUSTIFY_AUDIT_RESOURCE: JustifyValue = "left"
+
 # Datetime formatting
 COLUMN_DATETIME_NO_WRAP = True
 

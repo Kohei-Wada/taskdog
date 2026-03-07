@@ -7,6 +7,32 @@ from rich.table import Table
 
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
+from taskdog.constants.column_headers import (
+    HEADER_AUDIT_CHANGES,
+    HEADER_AUDIT_CLIENT,
+    HEADER_AUDIT_OPERATION,
+    HEADER_AUDIT_RESOURCE,
+    HEADER_AUDIT_STATUS,
+    HEADER_AUDIT_TIMESTAMP,
+    HEADER_ID,
+)
+from taskdog.constants.table_dimensions import (
+    AUDIT_CHANGES_WIDTH,
+    AUDIT_CLIENT_WIDTH,
+    AUDIT_ID_WIDTH,
+    AUDIT_OPERATION_WIDTH,
+    AUDIT_STATUS_WIDTH,
+    AUDIT_TIMESTAMP_WIDTH,
+)
+from taskdog.constants.table_styles import (
+    COLUMN_AUDIT_ID_STYLE,
+    COLUMN_AUDIT_STATUS_FAIL_STYLE,
+    COLUMN_AUDIT_STATUS_OK_STYLE,
+    JUSTIFY_AUDIT_CHANGES,
+    TABLE_HEADER_STYLE,
+    format_table_title,
+)
+from taskdog.tui.widgets.audit_log_entry_builder import format_audit_changes
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
 
 
@@ -36,6 +62,18 @@ def _format_resource(log: AuditLogOutput) -> str:
     if log.resource_name:
         return log.resource_name
     return "[dim]-[/dim]"
+
+
+def _format_changes(log: AuditLogOutput) -> str:
+    """Format changes display for audit log entry."""
+    if not log.success and log.error_message:
+        error_msg = log.error_message[:AUDIT_CHANGES_WIDTH]
+        if len(log.error_message) > AUDIT_CHANGES_WIDTH:
+            error_msg += "..."
+        return f"[red]{error_msg}[/red]"
+    return format_audit_changes(
+        log.old_values, log.new_values, max_length=AUDIT_CHANGES_WIDTH
+    )
 
 
 @click.command(
@@ -142,25 +180,40 @@ def audit_logs_command(
 
     # Create Rich table
     table = Table(
-        title=f"Audit Logs ({len(result.logs)} of {result.total_count})",
+        title=format_table_title(
+            f"Audit Logs ({len(result.logs)} of {result.total_count})"
+        ),
         show_header=True,
-        header_style="bold cyan",
+        header_style=TABLE_HEADER_STYLE,
     )
-    table.add_column("ID", style="dim", width=6)
-    table.add_column("Timestamp", width=19)
-    table.add_column("Client", width=15)
-    table.add_column("Operation", width=18)
-    table.add_column("Resource")
-    table.add_column("Status", width=8)
+    table.add_column(HEADER_ID, style=COLUMN_AUDIT_ID_STYLE, width=AUDIT_ID_WIDTH)
+    table.add_column(HEADER_AUDIT_TIMESTAMP, width=AUDIT_TIMESTAMP_WIDTH)
+    table.add_column(HEADER_AUDIT_RESOURCE)
+    table.add_column(HEADER_AUDIT_OPERATION, width=AUDIT_OPERATION_WIDTH)
+    table.add_column(
+        HEADER_AUDIT_CHANGES,
+        width=AUDIT_CHANGES_WIDTH,
+        justify=JUSTIFY_AUDIT_CHANGES,
+    )
+    table.add_column(HEADER_AUDIT_CLIENT, width=AUDIT_CLIENT_WIDTH)
+    table.add_column(HEADER_AUDIT_STATUS, width=AUDIT_STATUS_WIDTH)
 
     for log in result.logs:
+        status_style = (
+            COLUMN_AUDIT_STATUS_OK_STYLE
+            if log.success
+            else COLUMN_AUDIT_STATUS_FAIL_STYLE
+        )
+        status_label = "OK" if log.success else "FAILED"
+        changes = _format_changes(log)
         table.add_row(
             str(log.id),
             log.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-            log.client_name or "[dim]anonymous[/dim]",
-            log.operation,
             _format_resource(log),
-            "[green]OK[/green]" if log.success else "[red]FAILED[/red]",
+            log.operation,
+            changes,
+            log.client_name or "[dim]anonymous[/dim]",
+            f"[{status_style}]{status_label}[/{status_style}]",
         )
 
     console_writer.print(table)
