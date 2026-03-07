@@ -1,6 +1,6 @@
 [project]
 name = "taskdog-workspace"
-version = "0.15.3"
+version = "0.15.4"
 description = "Taskdog monorepo workspace"
 readme = "README.md"
 requires-python = ">=3.12"
