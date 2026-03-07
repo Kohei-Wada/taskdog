@@ -27,3 +27,12 @@ HEADER_TIMELINE = "Timeline"
 
 # Gantt workload row label
 GANTT_WORKLOAD_LABEL = "Est. Workload[h]"
+
+# Audit Log Table headers
+HEADER_AUDIT_TIMESTAMP = "Timestamp"
+HEADER_AUDIT_CLIENT = "Client"
+HEADER_AUDIT_OPERATION = "Operation"
+HEADER_AUDIT_RESOURCE = "Resource"
+HEADER_AUDIT_STATUS = "Status"
+HEADER_AUDIT_CHANGES = "Changes"
+HEADER_AUDIT_STATUS_SHORT = "St"

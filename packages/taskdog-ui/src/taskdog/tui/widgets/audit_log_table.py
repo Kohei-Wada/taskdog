@@ -10,6 +10,30 @@ from rich.text import Text
 from textual.binding import Binding
 from textual.widgets import DataTable
 
+from taskdog.constants.column_headers import (
+    HEADER_AUDIT_CHANGES,
+    HEADER_AUDIT_CLIENT,
+    HEADER_AUDIT_OPERATION,
+    HEADER_AUDIT_STATUS_SHORT,
+    HEADER_AUDIT_TIMESTAMP,
+    HEADER_ID,
+    HEADER_NAME,
+)
+from taskdog.constants.table_dimensions import (
+    AUDIT_TUI_CHANGES_WIDTH,
+    AUDIT_TUI_ID_WIDTH,
+    AUDIT_TUI_NAME_WIDTH,
+    AUDIT_TUI_STATUS_WIDTH,
+)
+from taskdog.constants.table_styles import (
+    JUSTIFY_AUDIT_CHANGES,
+    JUSTIFY_AUDIT_CLIENT,
+    JUSTIFY_AUDIT_ID,
+    JUSTIFY_AUDIT_NAME,
+    JUSTIFY_AUDIT_OPERATION,
+    JUSTIFY_AUDIT_STATUS,
+    JUSTIFY_AUDIT_TIMESTAMP,
+)
 from taskdog.tui.widgets.audit_log_entry_builder import (
     build_changes_text,
     build_status_text,
@@ -17,8 +41,6 @@ from taskdog.tui.widgets.audit_log_entry_builder import (
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
-
-MAX_RESOURCE_NAME_LENGTH = 25
 
 
 class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-arg]
@@ -63,15 +85,37 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
 
     def on_mount(self) -> None:
         """Set up table columns."""
-        self.add_column(Text("Timestamp", justify="center"), key="timestamp")
-        self.add_column(Text("ID", justify="center"), key="id", width=5)
         self.add_column(
-            Text("Name", justify="center"), key="name", width=MAX_RESOURCE_NAME_LENGTH
+            Text(HEADER_AUDIT_TIMESTAMP, justify=JUSTIFY_AUDIT_TIMESTAMP),
+            key="timestamp",
         )
-        self.add_column(Text("Operation", justify="center"), key="operation")
-        self.add_column(Text("Changes", justify="center"), key="changes", width=40)
-        self.add_column(Text("Client", justify="center"), key="client")
-        self.add_column(Text("St", justify="center"), key="status", width=4)
+        self.add_column(
+            Text(HEADER_ID, justify=JUSTIFY_AUDIT_ID),
+            key="id",
+            width=AUDIT_TUI_ID_WIDTH,
+        )
+        self.add_column(
+            Text(HEADER_NAME, justify=JUSTIFY_AUDIT_NAME),
+            key="name",
+            width=AUDIT_TUI_NAME_WIDTH,
+        )
+        self.add_column(
+            Text(HEADER_AUDIT_OPERATION, justify=JUSTIFY_AUDIT_OPERATION),
+            key="operation",
+        )
+        self.add_column(
+            Text(HEADER_AUDIT_CHANGES, justify=JUSTIFY_AUDIT_CHANGES),
+            key="changes",
+            width=AUDIT_TUI_CHANGES_WIDTH,
+        )
+        self.add_column(
+            Text(HEADER_AUDIT_CLIENT, justify=JUSTIFY_AUDIT_CLIENT), key="client"
+        )
+        self.add_column(
+            Text(HEADER_AUDIT_STATUS_SHORT, justify=JUSTIFY_AUDIT_STATUS),
+            key="status",
+            width=AUDIT_TUI_STATUS_WIDTH,
+        )
 
     def load_logs(self, logs: list[AuditLogOutput]) -> None:
         """Load audit log entries into the table.
@@ -93,8 +137,8 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
                 # Resource name (truncated)
                 if log.resource_name:
                     name = (
-                        log.resource_name[:MAX_RESOURCE_NAME_LENGTH] + "\u2026"
-                        if len(log.resource_name) > MAX_RESOURCE_NAME_LENGTH
+                        log.resource_name[:AUDIT_TUI_NAME_WIDTH] + "\u2026"
+                        if len(log.resource_name) > AUDIT_TUI_NAME_WIDTH
                         else log.resource_name
                     )
                     name_text = Text(name, style=style)

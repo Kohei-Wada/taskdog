@@ -9,6 +9,25 @@ from typing import Any
 from rich.text import Text
 from textual.widgets import DataTable
 
+from taskdog.constants.column_headers import (
+    HEADER_AUDIT_CHANGES,
+    HEADER_AUDIT_CLIENT,
+    HEADER_AUDIT_OPERATION,
+    HEADER_AUDIT_STATUS_SHORT,
+    HEADER_AUDIT_TIMESTAMP,
+)
+from taskdog.constants.table_dimensions import (
+    AUDIT_TUI_CHANGES_WIDTH,
+)
+from taskdog.constants.table_styles import (
+    COLUMN_AUDIT_STATUS_FAIL_STYLE,
+    COLUMN_AUDIT_STATUS_OK_STYLE,
+    JUSTIFY_AUDIT_CHANGES,
+    JUSTIFY_AUDIT_CLIENT,
+    JUSTIFY_AUDIT_OPERATION,
+    JUSTIFY_AUDIT_STATUS,
+    JUSTIFY_AUDIT_TIMESTAMP,
+)
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
 
 MAX_CHANGES_LENGTH = 40
@@ -18,12 +37,14 @@ MAX_ERROR_LENGTH = 40
 def format_audit_changes(
     old_values: dict[str, Any] | None,
     new_values: dict[str, Any] | None,
+    max_length: int = MAX_CHANGES_LENGTH,
 ) -> str:
     """Format changes between old and new values.
 
     Args:
         old_values: Values before the change
         new_values: Values after the change
+        max_length: Maximum length for the result string
 
     Returns:
         Formatted change string (e.g., "priority: 3 -> 5")
@@ -50,8 +71,14 @@ def format_audit_changes(
 
     # Limit to 2 changes to keep it compact
     if len(changes) > 2:
-        return ", ".join(changes[:2]) + f" (+{len(changes) - 2})"
-    return ", ".join(changes)
+        result = ", ".join(changes[:2]) + f" (+{len(changes) - 2})"
+    else:
+        result = ", ".join(changes)
+
+    # Truncate to max_length if needed
+    if len(result) > max_length:
+        return result[: max_length - 3] + "..."
+    return result
 
 
 def format_audit_value(value: Any) -> str:
@@ -103,7 +130,11 @@ def build_status_text(log: AuditLogOutput) -> Text:
     Returns:
         "OK" in green or "ER" in red
     """
-    return Text("OK", style="green") if log.success else Text("ER", style="red")
+    return (
+        Text("OK", style=COLUMN_AUDIT_STATUS_OK_STYLE)
+        if log.success
+        else Text("ER", style=COLUMN_AUDIT_STATUS_FAIL_STYLE)
+    )
 
 
 def create_audit_log_table(logs: list[AuditLogOutput]) -> DataTable:  # type: ignore[type-arg]
@@ -125,11 +156,23 @@ def create_audit_log_table(logs: list[AuditLogOutput]) -> DataTable:  # type: ig
     table.zebra_stripes = True
     table.can_focus = False
 
-    table.add_column(Text("Timestamp", justify="center"), key="timestamp")
-    table.add_column(Text("Operation", justify="center"), key="operation")
-    table.add_column(Text("Changes", justify="center"), key="changes", width=40)
-    table.add_column(Text("Client", justify="center"), key="client")
-    table.add_column(Text("St", justify="center"), key="status")
+    table.add_column(
+        Text(HEADER_AUDIT_TIMESTAMP, justify=JUSTIFY_AUDIT_TIMESTAMP), key="timestamp"
+    )
+    table.add_column(
+        Text(HEADER_AUDIT_OPERATION, justify=JUSTIFY_AUDIT_OPERATION), key="operation"
+    )
+    table.add_column(
+        Text(HEADER_AUDIT_CHANGES, justify=JUSTIFY_AUDIT_CHANGES),
+        key="changes",
+        width=AUDIT_TUI_CHANGES_WIDTH,
+    )
+    table.add_column(
+        Text(HEADER_AUDIT_CLIENT, justify=JUSTIFY_AUDIT_CLIENT), key="client"
+    )
+    table.add_column(
+        Text(HEADER_AUDIT_STATUS_SHORT, justify=JUSTIFY_AUDIT_STATUS), key="status"
+    )
 
     for log in logs:
         ts = log.timestamp.strftime("%m-%d %H:%M:%S")
