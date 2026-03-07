@@ -12,17 +12,9 @@ from rich.text import Text
 from textual.binding import Binding
 from textual.widgets import DataTable
 
-from taskdog.constants.column_headers import (
-    GANTT_WORKLOAD_LABEL,
-    HEADER_ESTIMATED,
-    HEADER_ID,
-    HEADER_NAME,
-    HEADER_TIMELINE,
-)
-from taskdog.constants.table_dimensions import (
-    ESTIMATED_COLUMN_WIDTH,
-    TASK_NAME_COLUMN_WIDTH,
-)
+from taskdog.constants.common import HEADER_ESTIMATED, HEADER_ID, HEADER_NAME
+from taskdog.constants.gantt import GANTT_WORKLOAD_LABEL, HEADER_TIMELINE
+from taskdog.constants.task_table import ESTIMATED_COLUMN_WIDTH, TASK_NAME_COLUMN_WIDTH
 from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from taskdog_core.shared.constants import (

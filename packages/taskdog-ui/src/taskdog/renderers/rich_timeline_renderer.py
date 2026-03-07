@@ -8,30 +8,22 @@ from rich.table import Table
 from rich.text import Text
 
 from taskdog.console.console_writer import ConsoleWriter
-from taskdog.constants.table_dimensions import (
-    GANTT_TABLE_ID_WIDTH,
-    GANTT_TABLE_TASK_MIN_WIDTH,
-)
-from taskdog.constants.table_styles import (
+from taskdog.constants.common import (
     COLUMN_ID_STYLE,
     COLUMN_NAME_STYLE,
     TABLE_BORDER_STYLE,
     TABLE_HEADER_STYLE,
     TABLE_PADDING,
-    format_table_title,
 )
+from taskdog.constants.formatting import format_table_title
+from taskdog.constants.gantt import GANTT_TABLE_ID_WIDTH, GANTT_TABLE_TASK_MIN_WIDTH
+from taskdog.constants.timeline import CHARS_PER_HOUR, TIMELINE_TABLE_DURATION_WIDTH
 from taskdog.renderers.rich_renderer_base import RichRendererBase
-from taskdog.renderers.timeline_cell_formatter import (
-    CHARS_PER_HOUR,
-    TimelineCellFormatter,
-)
+from taskdog.renderers.timeline_cell_formatter import TimelineCellFormatter
 from taskdog.view_models.timeline_view_model import (
     TimelineTaskRowViewModel,
     TimelineViewModel,
 )
-
-# Column width for duration display
-TIMELINE_TABLE_DURATION_WIDTH = 6
 
 
 class RichTimelineRenderer(RichRendererBase):

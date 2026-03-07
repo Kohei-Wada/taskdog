@@ -6,25 +6,27 @@ from dataclasses import dataclass
 from rich.text import Text
 
 from taskdog.constants.colors import STATUS_STYLES
-from taskdog.constants.symbols import EMOJI_NOTE
-from taskdog.constants.table_styles import (
+from taskdog.constants.common import (
     COLUMN_FINISHED_STYLE,
+    JUSTIFY_ESTIMATED,
+    JUSTIFY_ID,
+    JUSTIFY_NAME,
+    JustifyValue,
+)
+from taskdog.constants.symbols import EMOJI_NOTE
+from taskdog.constants.task_table import (
     JUSTIFY_ACTUAL,
     JUSTIFY_ACTUAL_END,
     JUSTIFY_ACTUAL_START,
     JUSTIFY_DEADLINE,
     JUSTIFY_DEPENDENCIES,
     JUSTIFY_ELAPSED,
-    JUSTIFY_ESTIMATED,
     JUSTIFY_FLAGS,
-    JUSTIFY_ID,
-    JUSTIFY_NAME,
     JUSTIFY_PLANNED_END,
     JUSTIFY_PLANNED_START,
     JUSTIFY_PRIORITY,
     JUSTIFY_STATUS,
     JUSTIFY_TAGS,
-    JustifyValue,
 )
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.formatters.duration_formatter import DurationFormatter

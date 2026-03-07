@@ -6,13 +6,13 @@ from rich.table import Table
 
 from taskdog.console.console_writer import ConsoleWriter
 from taskdog.constants.colors import STATUS_STYLES
-from taskdog.constants.table_styles import (
+from taskdog.constants.common import (
     COLUMN_FIELD_LABEL_STYLE,
     PANEL_BORDER_STYLE_PRIMARY,
     PANEL_BORDER_STYLE_SECONDARY,
     TABLE_PADDING,
-    format_table_title,
 )
+from taskdog.constants.formatting import format_table_title
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto

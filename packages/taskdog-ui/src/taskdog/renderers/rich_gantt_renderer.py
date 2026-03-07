@@ -5,27 +5,25 @@ from rich.table import Table
 from rich.text import Text
 
 from taskdog.console.console_writer import ConsoleWriter
-from taskdog.constants.colors import GANTT_COLUMN_EST_HOURS_COLOR
-from taskdog.constants.column_headers import (
-    GANTT_WORKLOAD_LABEL,
+from taskdog.constants.common import (
+    COLUMN_ID_STYLE,
+    COLUMN_NAME_STYLE,
     HEADER_ESTIMATED,
     HEADER_ID,
     HEADER_NAME,
-    HEADER_TIMELINE,
-)
-from taskdog.constants.table_dimensions import (
-    GANTT_TABLE_EST_HOURS_WIDTH,
-    GANTT_TABLE_ID_WIDTH,
-    TASK_NAME_COLUMN_WIDTH,
-)
-from taskdog.constants.table_styles import (
-    COLUMN_ID_STYLE,
-    COLUMN_NAME_STYLE,
     TABLE_BORDER_STYLE,
     TABLE_HEADER_STYLE,
     TABLE_PADDING,
-    format_table_title,
 )
+from taskdog.constants.formatting import format_table_title
+from taskdog.constants.gantt import (
+    GANTT_COLUMN_EST_HOURS_COLOR,
+    GANTT_TABLE_EST_HOURS_WIDTH,
+    GANTT_TABLE_ID_WIDTH,
+    GANTT_WORKLOAD_LABEL,
+    HEADER_TIMELINE,
+)
+from taskdog.constants.task_table import TASK_NAME_COLUMN_WIDTH
 from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
 from taskdog.renderers.rich_renderer_base import RichRendererBase
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel

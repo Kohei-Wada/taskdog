@@ -1,10 +1,19 @@
 """Presentation layer constants.
 
-This module provides convenient re-exports of all presentation constants.
+This module re-exports cross-cutting constants (colors, icons, symbols, common).
+Feature-specific constants should be imported directly from their modules:
+  - taskdog.constants.gantt
+  - taskdog.constants.task_table
+  - taskdog.constants.audit_log
+  - taskdog.constants.timeline
 """
 
 # Re-export color constants
 from taskdog.constants.colors import (
+    BACKGROUND_COLOR,
+    BACKGROUND_COLOR_DEADLINE,
+    BACKGROUND_COLOR_SATURDAY,
+    BACKGROUND_COLOR_SUNDAY,
     STATUS_COLORS_BOLD,
     STATUS_STYLES,
     STYLE_ERROR,
@@ -12,6 +21,27 @@ from taskdog.constants.colors import (
     STYLE_SUCCESS,
     STYLE_WARNING,
 )
+
+# Re-export common constants
+from taskdog.constants.common import (
+    COLUMN_DATETIME_NO_WRAP,
+    COLUMN_FIELD_LABEL_STYLE,
+    COLUMN_FINISHED_STYLE,
+    COLUMN_ID_STYLE,
+    COLUMN_NAME_STYLE,
+    JUSTIFY_ESTIMATED,
+    JUSTIFY_ID,
+    JUSTIFY_NAME,
+    PANEL_BORDER_STYLE_PRIMARY,
+    PANEL_BORDER_STYLE_SECONDARY,
+    TABLE_BORDER_STYLE,
+    TABLE_HEADER_STYLE,
+    TABLE_PADDING,
+    TABLE_TITLE_COLOR,
+)
+
+# Re-export formatting utility
+from taskdog.constants.formatting import format_table_title
 
 # Re-export icon constants
 from taskdog.constants.icons import (
@@ -23,10 +53,6 @@ from taskdog.constants.icons import (
 
 # Re-export symbol constants
 from taskdog.constants.symbols import (
-    BACKGROUND_COLOR,
-    BACKGROUND_COLOR_DEADLINE,
-    BACKGROUND_COLOR_SATURDAY,
-    BACKGROUND_COLOR_SUNDAY,
     SYMBOL_CANCELED,
     SYMBOL_COMPLETED,
     SYMBOL_EMPTY,
@@ -36,118 +62,23 @@ from taskdog.constants.symbols import (
     SYMBOL_PLANNED,
 )
 
-# Re-export table style constants
-from taskdog.constants.table_styles import (
-    COLUMN_AUDIT_ID_STYLE,
-    COLUMN_AUDIT_STATUS_FAIL_STYLE,
-    COLUMN_AUDIT_STATUS_OK_STYLE,
-    COLUMN_CREATED_AT_STYLE,
-    COLUMN_DATETIME_NO_WRAP,
-    COLUMN_DATETIME_STYLE,
-    COLUMN_DEADLINE_STYLE,
-    COLUMN_DEPENDENCIES_STYLE,
-    COLUMN_DURATION_STYLE,
-    COLUMN_ELAPSED_STYLE,
-    COLUMN_FIELD_LABEL_STYLE,
-    COLUMN_FINISHED_STYLE,
-    COLUMN_FIXED_STYLE,
-    COLUMN_ID_STYLE,
-    COLUMN_NAME_STYLE,
-    COLUMN_PRIORITY_STYLE,
-    COLUMN_TAGS_STYLE,
-    COLUMN_UPDATED_AT_STYLE,
-    JUSTIFY_ACTUAL,
-    JUSTIFY_ACTUAL_END,
-    JUSTIFY_ACTUAL_START,
-    JUSTIFY_AUDIT_CHANGES,
-    JUSTIFY_AUDIT_CLIENT,
-    JUSTIFY_AUDIT_ID,
-    JUSTIFY_AUDIT_NAME,
-    JUSTIFY_AUDIT_OPERATION,
-    JUSTIFY_AUDIT_RESOURCE,
-    JUSTIFY_AUDIT_STATUS,
-    JUSTIFY_AUDIT_TIMESTAMP,
-    JUSTIFY_CREATED_AT,
-    JUSTIFY_DEADLINE,
-    JUSTIFY_DEPENDENCIES,
-    JUSTIFY_DURATION,
-    JUSTIFY_ELAPSED,
-    JUSTIFY_ESTIMATED,
-    JUSTIFY_FIXED,
-    JUSTIFY_FLAGS,
-    JUSTIFY_ID,
-    JUSTIFY_NAME,
-    JUSTIFY_NOTE,
-    JUSTIFY_PLANNED_END,
-    JUSTIFY_PLANNED_START,
-    JUSTIFY_PRIORITY,
-    JUSTIFY_STATUS,
-    JUSTIFY_TAGS,
-    JUSTIFY_UPDATED_AT,
-    PANEL_BORDER_STYLE_PRIMARY,
-    PANEL_BORDER_STYLE_SECONDARY,
-    TABLE_BORDER_STYLE,
-    TABLE_HEADER_STYLE,
-    TABLE_PADDING,
-    TABLE_TITLE_COLOR,
-    format_table_title,
-)
-
 __all__ = [
     "BACKGROUND_COLOR",
     "BACKGROUND_COLOR_DEADLINE",
     "BACKGROUND_COLOR_SATURDAY",
     "BACKGROUND_COLOR_SUNDAY",
-    "COLUMN_AUDIT_ID_STYLE",
-    "COLUMN_AUDIT_STATUS_FAIL_STYLE",
-    "COLUMN_AUDIT_STATUS_OK_STYLE",
-    "COLUMN_CREATED_AT_STYLE",
     "COLUMN_DATETIME_NO_WRAP",
-    "COLUMN_DATETIME_STYLE",
-    "COLUMN_DEADLINE_STYLE",
-    "COLUMN_DEPENDENCIES_STYLE",
-    "COLUMN_DURATION_STYLE",
-    "COLUMN_ELAPSED_STYLE",
     "COLUMN_FIELD_LABEL_STYLE",
     "COLUMN_FINISHED_STYLE",
-    "COLUMN_FIXED_STYLE",
     "COLUMN_ID_STYLE",
     "COLUMN_NAME_STYLE",
-    "COLUMN_PRIORITY_STYLE",
-    "COLUMN_TAGS_STYLE",
-    "COLUMN_UPDATED_AT_STYLE",
     "ICON_ERROR",
     "ICON_INFO",
     "ICON_SUCCESS",
     "ICON_WARNING",
-    "JUSTIFY_ACTUAL",
-    "JUSTIFY_ACTUAL_END",
-    "JUSTIFY_ACTUAL_START",
-    "JUSTIFY_AUDIT_CHANGES",
-    "JUSTIFY_AUDIT_CLIENT",
-    "JUSTIFY_AUDIT_ID",
-    "JUSTIFY_AUDIT_NAME",
-    "JUSTIFY_AUDIT_OPERATION",
-    "JUSTIFY_AUDIT_RESOURCE",
-    "JUSTIFY_AUDIT_STATUS",
-    "JUSTIFY_AUDIT_TIMESTAMP",
-    "JUSTIFY_CREATED_AT",
-    "JUSTIFY_DEADLINE",
-    "JUSTIFY_DEPENDENCIES",
-    "JUSTIFY_DURATION",
-    "JUSTIFY_ELAPSED",
     "JUSTIFY_ESTIMATED",
-    "JUSTIFY_FIXED",
-    "JUSTIFY_FLAGS",
     "JUSTIFY_ID",
     "JUSTIFY_NAME",
-    "JUSTIFY_NOTE",
-    "JUSTIFY_PLANNED_END",
-    "JUSTIFY_PLANNED_START",
-    "JUSTIFY_PRIORITY",
-    "JUSTIFY_STATUS",
-    "JUSTIFY_TAGS",
-    "JUSTIFY_UPDATED_AT",
     "PANEL_BORDER_STYLE_PRIMARY",
     "PANEL_BORDER_STYLE_SECONDARY",
     "STATUS_COLORS_BOLD",

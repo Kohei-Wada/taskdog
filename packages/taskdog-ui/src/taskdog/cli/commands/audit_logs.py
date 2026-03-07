@@ -7,31 +7,26 @@ from rich.table import Table
 
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
-from taskdog.constants.column_headers import (
-    HEADER_AUDIT_CHANGES,
-    HEADER_AUDIT_CLIENT,
-    HEADER_AUDIT_OPERATION,
-    HEADER_AUDIT_RESOURCE,
-    HEADER_AUDIT_STATUS,
-    HEADER_AUDIT_TIMESTAMP,
-    HEADER_ID,
-)
-from taskdog.constants.table_dimensions import (
+from taskdog.constants.audit_log import (
     AUDIT_CHANGES_WIDTH,
     AUDIT_CLIENT_WIDTH,
     AUDIT_ID_WIDTH,
     AUDIT_OPERATION_WIDTH,
     AUDIT_STATUS_WIDTH,
     AUDIT_TIMESTAMP_WIDTH,
-)
-from taskdog.constants.table_styles import (
     COLUMN_AUDIT_ID_STYLE,
     COLUMN_AUDIT_STATUS_FAIL_STYLE,
     COLUMN_AUDIT_STATUS_OK_STYLE,
+    HEADER_AUDIT_CHANGES,
+    HEADER_AUDIT_CLIENT,
+    HEADER_AUDIT_OPERATION,
+    HEADER_AUDIT_RESOURCE,
+    HEADER_AUDIT_STATUS,
+    HEADER_AUDIT_TIMESTAMP,
     JUSTIFY_AUDIT_CHANGES,
-    TABLE_HEADER_STYLE,
-    format_table_title,
 )
+from taskdog.constants.common import HEADER_ID, TABLE_HEADER_STYLE
+from taskdog.constants.formatting import format_table_title
 from taskdog.tui.widgets.audit_log_entry_builder import format_audit_changes
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
 

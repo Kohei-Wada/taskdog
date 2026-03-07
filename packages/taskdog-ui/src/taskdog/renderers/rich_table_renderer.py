@@ -4,7 +4,34 @@ from typing import ClassVar, Literal, cast
 from rich.table import Table
 
 from taskdog.console.console_writer import ConsoleWriter
-from taskdog.constants.column_headers import (
+from taskdog.constants.common import (
+    COLUMN_DATETIME_NO_WRAP,
+    COLUMN_FINISHED_STYLE,
+    COLUMN_ID_STYLE,
+    COLUMN_NAME_STYLE,
+    HEADER_ESTIMATED,
+    HEADER_ID,
+    HEADER_NAME,
+    JUSTIFY_ESTIMATED,
+    JUSTIFY_ID,
+    JUSTIFY_NAME,
+    TABLE_BORDER_STYLE,
+    TABLE_HEADER_STYLE,
+    TABLE_PADDING,
+)
+from taskdog.constants.formatting import format_table_title
+from taskdog.constants.symbols import EMOJI_NOTE
+from taskdog.constants.task_table import (
+    COLUMN_CREATED_AT_STYLE,
+    COLUMN_DATETIME_STYLE,
+    COLUMN_DEADLINE_STYLE,
+    COLUMN_DEPENDENCIES_STYLE,
+    COLUMN_DURATION_STYLE,
+    COLUMN_ELAPSED_STYLE,
+    COLUMN_FIXED_STYLE,
+    COLUMN_PRIORITY_STYLE,
+    COLUMN_TAGS_STYLE,
+    COLUMN_UPDATED_AT_STYLE,
     HEADER_ACTUAL,
     HEADER_ACTUAL_END,
     HEADER_ACTUAL_START,
@@ -13,11 +40,8 @@ from taskdog.constants.column_headers import (
     HEADER_DEPENDENCIES,
     HEADER_DURATION,
     HEADER_ELAPSED,
-    HEADER_ESTIMATED,
     HEADER_FIXED,
     HEADER_FLAGS,
-    HEADER_ID,
-    HEADER_NAME,
     HEADER_NOTE,
     HEADER_PLANNED_END,
     HEADER_PLANNED_START,
@@ -25,23 +49,6 @@ from taskdog.constants.column_headers import (
     HEADER_STATUS,
     HEADER_TAGS,
     HEADER_UPDATED_AT,
-)
-from taskdog.constants.symbols import EMOJI_NOTE
-from taskdog.constants.table_styles import (
-    COLUMN_CREATED_AT_STYLE,
-    COLUMN_DATETIME_NO_WRAP,
-    COLUMN_DATETIME_STYLE,
-    COLUMN_DEADLINE_STYLE,
-    COLUMN_DEPENDENCIES_STYLE,
-    COLUMN_DURATION_STYLE,
-    COLUMN_ELAPSED_STYLE,
-    COLUMN_FINISHED_STYLE,
-    COLUMN_FIXED_STYLE,
-    COLUMN_ID_STYLE,
-    COLUMN_NAME_STYLE,
-    COLUMN_PRIORITY_STYLE,
-    COLUMN_TAGS_STYLE,
-    COLUMN_UPDATED_AT_STYLE,
     JUSTIFY_ACTUAL,
     JUSTIFY_ACTUAL_END,
     JUSTIFY_ACTUAL_START,
@@ -50,11 +57,8 @@ from taskdog.constants.table_styles import (
     JUSTIFY_DEPENDENCIES,
     JUSTIFY_DURATION,
     JUSTIFY_ELAPSED,
-    JUSTIFY_ESTIMATED,
     JUSTIFY_FIXED,
     JUSTIFY_FLAGS,
-    JUSTIFY_ID,
-    JUSTIFY_NAME,
     JUSTIFY_NOTE,
     JUSTIFY_PLANNED_END,
     JUSTIFY_PLANNED_START,
@@ -62,10 +66,6 @@ from taskdog.constants.table_styles import (
     JUSTIFY_STATUS,
     JUSTIFY_TAGS,
     JUSTIFY_UPDATED_AT,
-    TABLE_BORDER_STYLE,
-    TABLE_HEADER_STYLE,
-    TABLE_PADDING,
-    format_table_title,
 )
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.formatters.duration_formatter import DurationFormatter

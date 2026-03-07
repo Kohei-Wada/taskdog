@@ -6,17 +6,17 @@ and creates presentation-ready view models for the Timeline chart.
 
 from datetime import date, datetime, time
 
+from taskdog.constants.timeline import (
+    DEFAULT_END_HOUR,
+    DEFAULT_START_HOUR,
+    MIN_DISPLAY_HOURS,
+)
 from taskdog.view_models.timeline_view_model import (
     TimelineTaskRowViewModel,
     TimelineViewModel,
 )
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
-
-# Default display hours
-DEFAULT_START_HOUR = 8
-DEFAULT_END_HOUR = 18
-MIN_DISPLAY_HOURS = 2  # Minimum hours to show in timeline
 
 
 class TimelinePresenter:

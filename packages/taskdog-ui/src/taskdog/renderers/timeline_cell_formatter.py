@@ -9,12 +9,12 @@ from datetime import time
 from rich.text import Text
 
 from taskdog.constants.colors import STATUS_COLORS_BOLD
+from taskdog.constants.timeline import (
+    CHARS_PER_HOUR,
+    TIMELINE_BAR_CHAR,
+    TIMELINE_EMPTY_CHAR,
+)
 from taskdog_core.domain.entities.task import TaskStatus
-
-# Timeline constants
-CHARS_PER_HOUR = 4  # Number of characters per hour in the timeline
-TIMELINE_BAR_CHAR = "█"  # Full block character for work bars
-TIMELINE_EMPTY_CHAR = " "  # Space for empty cells
 
 
 class TimelineCellFormatter:

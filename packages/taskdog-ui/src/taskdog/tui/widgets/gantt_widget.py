@@ -16,7 +16,7 @@ from textual.containers import Vertical
 from textual.events import Resize
 from textual.widgets import Static
 
-from taskdog.constants.table_dimensions import (
+from taskdog.constants.gantt import (
     BORDER_WIDTH,
     CHARS_PER_DAY,
     DEFAULT_GANTT_WIDGET_WIDTH,

@@ -7,7 +7,7 @@ import click
 from taskdog.cli.commands.common_options import filter_options, sort_options
 from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
-from taskdog.constants.table_dimensions import (
+from taskdog.constants.gantt import (
     CHARS_PER_DAY,
     GANTT_CLI_FIXED_COLUMNS_WIDTH,
     MIN_TIMELINE_WIDTH,

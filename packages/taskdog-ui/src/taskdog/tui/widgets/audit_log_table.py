@@ -10,22 +10,16 @@ from rich.text import Text
 from textual.binding import Binding
 from textual.widgets import DataTable
 
-from taskdog.constants.column_headers import (
+from taskdog.constants.audit_log import (
+    AUDIT_TUI_CHANGES_WIDTH,
+    AUDIT_TUI_ID_WIDTH,
+    AUDIT_TUI_NAME_WIDTH,
+    AUDIT_TUI_STATUS_WIDTH,
     HEADER_AUDIT_CHANGES,
     HEADER_AUDIT_CLIENT,
     HEADER_AUDIT_OPERATION,
     HEADER_AUDIT_STATUS_SHORT,
     HEADER_AUDIT_TIMESTAMP,
-    HEADER_ID,
-    HEADER_NAME,
-)
-from taskdog.constants.table_dimensions import (
-    AUDIT_TUI_CHANGES_WIDTH,
-    AUDIT_TUI_ID_WIDTH,
-    AUDIT_TUI_NAME_WIDTH,
-    AUDIT_TUI_STATUS_WIDTH,
-)
-from taskdog.constants.table_styles import (
     JUSTIFY_AUDIT_CHANGES,
     JUSTIFY_AUDIT_CLIENT,
     JUSTIFY_AUDIT_ID,
@@ -34,6 +28,7 @@ from taskdog.constants.table_styles import (
     JUSTIFY_AUDIT_STATUS,
     JUSTIFY_AUDIT_TIMESTAMP,
 )
+from taskdog.constants.common import HEADER_ID, HEADER_NAME
 from taskdog.tui.widgets.audit_log_entry_builder import (
     build_changes_text,
     build_status_text,

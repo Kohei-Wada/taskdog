@@ -4,7 +4,7 @@ from rich.table import Table
 from rich.text import Text
 
 from taskdog.console.console_writer import ConsoleWriter
-from taskdog.constants.table_styles import TABLE_BORDER_STYLE, TABLE_HEADER_STYLE
+from taskdog.constants.common import TABLE_BORDER_STYLE, TABLE_HEADER_STYLE
 from taskdog.view_models.statistics_view_model import (
     StatisticsViewModel,
     TaskSummaryViewModel,

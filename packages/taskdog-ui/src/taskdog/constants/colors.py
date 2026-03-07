@@ -24,10 +24,10 @@ STATUS_COLORS_BOLD = {
     "CANCELED": "bold red",
 }
 
-# Gantt Chart Column Header Colors (Gantt-specific)
-GANTT_COLUMN_EST_HOURS_COLOR = "yellow"
-
-# Gantt Chart Day Header Colors
-DAY_STYLE_SATURDAY = "blue"
-DAY_STYLE_SUNDAY = "red"
-DAY_STYLE_WEEKDAY = "cyan"
+# Background colors for Gantt chart
+BACKGROUND_COLOR = "rgb(100,100,100)"  # Weekday (allocated hours)
+BACKGROUND_COLOR_SATURDAY = "rgb(100,100,150)"  # Saturday (blueish, allocated hours)
+BACKGROUND_COLOR_SUNDAY = "rgb(150,100,100)"  # Sunday (reddish, allocated hours)
+BACKGROUND_COLOR_HOLIDAY = "rgb(200,150,100)"  # Holiday (orange-ish, allocated hours)
+BACKGROUND_COLOR_PLANNED_LIGHT = "rgb(60,60,60)"  # Planned period (no allocation yet)
+BACKGROUND_COLOR_DEADLINE = "rgb(200,100,0)"  # Deadline (orange)

@@ -13,18 +13,20 @@ from typing import Any
 from rich.text import Text
 
 from taskdog.constants.colors import (
-    DAY_STYLE_SATURDAY,
-    DAY_STYLE_SUNDAY,
-    DAY_STYLE_WEEKDAY,
-    STATUS_COLORS_BOLD,
-)
-from taskdog.constants.symbols import (
     BACKGROUND_COLOR,
     BACKGROUND_COLOR_DEADLINE,
     BACKGROUND_COLOR_HOLIDAY,
     BACKGROUND_COLOR_PLANNED_LIGHT,
     BACKGROUND_COLOR_SATURDAY,
     BACKGROUND_COLOR_SUNDAY,
+    STATUS_COLORS_BOLD,
+)
+from taskdog.constants.gantt import (
+    DAY_STYLE_SATURDAY,
+    DAY_STYLE_SUNDAY,
+    DAY_STYLE_WEEKDAY,
+)
+from taskdog.constants.symbols import (
     SYMBOL_CANCELED,
     SYMBOL_COMPLETED,
     SYMBOL_EMPTY,

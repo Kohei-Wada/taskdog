@@ -17,45 +17,43 @@ from textual.widgets import DataTable
 if TYPE_CHECKING:
     pass
 
-from taskdog.constants.column_headers import (
+from taskdog.constants.common import (
+    HEADER_ESTIMATED,
+    HEADER_ID,
+    HEADER_NAME,
+    JUSTIFY_ESTIMATED,
+    JUSTIFY_ID,
+    JUSTIFY_NAME,
+)
+from taskdog.constants.task_table import (
+    ESTIMATED_COLUMN_WIDTH,
     HEADER_ACTUAL,
     HEADER_ACTUAL_END,
     HEADER_ACTUAL_START,
     HEADER_DEADLINE,
     HEADER_DEPENDENCIES,
     HEADER_ELAPSED,
-    HEADER_ESTIMATED,
     HEADER_FLAGS,
-    HEADER_ID,
-    HEADER_NAME,
     HEADER_PLANNED_END,
     HEADER_PLANNED_START,
     HEADER_PRIORITY,
     HEADER_STATUS,
     HEADER_TAGS,
-)
-from taskdog.constants.table_dimensions import (
-    ESTIMATED_COLUMN_WIDTH,
-    PAGE_SCROLL_SIZE,
-    STATUS_COLUMN_WIDTH,
-    TASK_NAME_COLUMN_WIDTH,
-)
-from taskdog.constants.table_styles import (
     JUSTIFY_ACTUAL,
     JUSTIFY_ACTUAL_END,
     JUSTIFY_ACTUAL_START,
     JUSTIFY_DEADLINE,
     JUSTIFY_DEPENDENCIES,
     JUSTIFY_ELAPSED,
-    JUSTIFY_ESTIMATED,
     JUSTIFY_FLAGS,
-    JUSTIFY_ID,
-    JUSTIFY_NAME,
     JUSTIFY_PLANNED_END,
     JUSTIFY_PLANNED_START,
     JUSTIFY_PRIORITY,
     JUSTIFY_STATUS,
     JUSTIFY_TAGS,
+    PAGE_SCROLL_SIZE,
+    STATUS_COLUMN_WIDTH,
+    TASK_NAME_COLUMN_WIDTH,
 )
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder

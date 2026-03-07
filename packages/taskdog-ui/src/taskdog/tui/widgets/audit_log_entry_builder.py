@@ -9,19 +9,15 @@ from typing import Any
 from rich.text import Text
 from textual.widgets import DataTable
 
-from taskdog.constants.column_headers import (
+from taskdog.constants.audit_log import (
+    AUDIT_TUI_CHANGES_WIDTH,
+    COLUMN_AUDIT_STATUS_FAIL_STYLE,
+    COLUMN_AUDIT_STATUS_OK_STYLE,
     HEADER_AUDIT_CHANGES,
     HEADER_AUDIT_CLIENT,
     HEADER_AUDIT_OPERATION,
     HEADER_AUDIT_STATUS_SHORT,
     HEADER_AUDIT_TIMESTAMP,
-)
-from taskdog.constants.table_dimensions import (
-    AUDIT_TUI_CHANGES_WIDTH,
-)
-from taskdog.constants.table_styles import (
-    COLUMN_AUDIT_STATUS_FAIL_STYLE,
-    COLUMN_AUDIT_STATUS_OK_STYLE,
     JUSTIFY_AUDIT_CHANGES,
     JUSTIFY_AUDIT_CLIENT,
     JUSTIFY_AUDIT_OPERATION,
