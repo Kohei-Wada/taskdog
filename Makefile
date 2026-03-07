@@ -67,6 +67,7 @@ install: check-deps ## Install all commands globally with uv tool (recommended)
 	@echo ""
 ifeq ($(PLATFORM),linux)
 	@echo "Setting up systemd user service..."
+	@mkdir -p ~/.local/share/taskdog
 	@mkdir -p ~/.config/systemd/user
 	@cp contrib/systemd/taskdog-server.service ~/.config/systemd/user/
 	@systemctl --user daemon-reload
