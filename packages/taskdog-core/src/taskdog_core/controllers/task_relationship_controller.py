@@ -20,9 +20,6 @@ from taskdog_core.application.use_cases.delete_tag import DeleteTagUseCase
 from taskdog_core.application.use_cases.remove_dependency import RemoveDependencyUseCase
 from taskdog_core.application.use_cases.set_task_tags import SetTaskTagsUseCase
 from taskdog_core.controllers.base_controller import BaseTaskController
-from taskdog_core.domain.repositories.task_repository import TaskRepository
-from taskdog_core.domain.services.logger import Logger
-from taskdog_core.shared.config_manager import Config
 
 
 class TaskRelationshipController(BaseTaskController):
@@ -39,16 +36,6 @@ class TaskRelationshipController(BaseTaskController):
         config: Application configuration (inherited from BaseTaskController)
         logger: Optional logger (inherited from BaseTaskController)
     """
-
-    def __init__(self, repository: TaskRepository, config: Config, logger: Logger):
-        """Initialize the relationship controller.
-
-        Args:
-            repository: Task repository
-            config: Application configuration
-            logger: Logger for operation tracking
-        """
-        super().__init__(repository, config, logger)
 
     def add_dependency(self, task_id: int, depends_on_id: int) -> TaskOperationOutput:
         """Add a dependency to a task.
