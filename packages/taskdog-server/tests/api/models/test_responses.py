@@ -26,8 +26,10 @@ from taskdog_server.api.models.responses import (
     TagStatisticsItem,
     TagStatisticsResponse,
     TaskDetailResponse,
+    TaskFieldsBase,
     TaskListResponse,
     TaskOperationResponse,
+    TaskReadResponseBase,
     TaskResponse,
     TimeStatistics,
     TrendData,
@@ -178,6 +180,62 @@ class TestUpdateTaskResponse:
         assert response.priority == task.priority
         assert response.tags == task.tags
         assert response.updated_fields == ["name", "priority", "tags"]
+
+    def test_inherits_actual_duration_from_operation_response(self):
+        """Test that actual_duration is inherited from TaskOperationResponse."""
+        # Arrange
+        now = datetime.now()
+        task = TaskOperationOutput(
+            id=1,
+            name="Task with duration",
+            status=TaskStatus.COMPLETED,
+            priority=3,
+            deadline=now,
+            estimated_duration=4.0,
+            planned_start=now,
+            planned_end=now,
+            actual_start=now,
+            actual_end=now,
+            actual_duration=3.5,
+            depends_on=[],
+            tags=[],
+            is_fixed=False,
+            is_archived=False,
+            actual_duration_hours=3.5,
+            daily_allocations={},
+        )
+        dto = TaskUpdateOutput(task=task, updated_fields=["name"])
+
+        # Act
+        response = UpdateTaskResponse.from_dto(dto)
+
+        # Assert
+        assert response.actual_duration == 3.5
+        assert response.actual_duration_hours == 3.5
+
+
+class TestInheritanceStructure:
+    """Test cases for the response model inheritance hierarchy."""
+
+    def test_task_operation_response_inherits_from_fields_base(self):
+        """Test TaskOperationResponse extends TaskFieldsBase."""
+        assert issubclass(TaskOperationResponse, TaskFieldsBase)
+
+    def test_update_task_response_inherits_from_operation_response(self):
+        """Test UpdateTaskResponse extends TaskOperationResponse."""
+        assert issubclass(UpdateTaskResponse, TaskOperationResponse)
+
+    def test_task_read_response_base_inherits_from_fields_base(self):
+        """Test TaskReadResponseBase extends TaskFieldsBase."""
+        assert issubclass(TaskReadResponseBase, TaskFieldsBase)
+
+    def test_task_response_inherits_from_read_response_base(self):
+        """Test TaskResponse extends TaskReadResponseBase."""
+        assert issubclass(TaskResponse, TaskReadResponseBase)
+
+    def test_task_detail_response_inherits_from_read_response_base(self):
+        """Test TaskDetailResponse extends TaskReadResponseBase."""
+        assert issubclass(TaskDetailResponse, TaskReadResponseBase)
 
 
 class TestTaskResponse:
