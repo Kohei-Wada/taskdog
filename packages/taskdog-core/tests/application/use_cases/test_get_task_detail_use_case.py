@@ -5,10 +5,8 @@ from datetime import datetime
 import pytest
 from fixtures.repositories import InMemoryNotesRepository
 
-from taskdog_core.application.use_cases.get_task_detail import (
-    GetTaskDetailInput,
-    GetTaskDetailUseCase,
-)
+from taskdog_core.application.dto.base import SingleTaskInput
+from taskdog_core.application.use_cases.get_task_detail import GetTaskDetailUseCase
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
@@ -26,7 +24,7 @@ class TestGetTaskDetailUseCase:
         """Test execute returns TaskDetailDTO with task data."""
         task = self.repository.create(name="Test Task", priority=1)
 
-        input_dto = GetTaskDetailInput(task.id)
+        input_dto = SingleTaskInput(task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.task.id == task.id
@@ -42,7 +40,7 @@ class TestGetTaskDetailUseCase:
         notes_content = "# Test Notes\n\nThis is a test note."
         self.notes_repository.write_notes(task.id, notes_content)
 
-        input_dto = GetTaskDetailInput(task.id)
+        input_dto = SingleTaskInput(task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.has_notes is True
@@ -52,7 +50,7 @@ class TestGetTaskDetailUseCase:
         """Test execute handles missing notes gracefully."""
         task = self.repository.create(name="Test Task", priority=1)
 
-        input_dto = GetTaskDetailInput(task.id)
+        input_dto = SingleTaskInput(task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.has_notes is False
@@ -60,7 +58,7 @@ class TestGetTaskDetailUseCase:
 
     def test_execute_with_invalid_task_raises_error(self):
         """Test execute with non-existent task raises TaskNotFoundException."""
-        input_dto = GetTaskDetailInput(task_id=999)
+        input_dto = SingleTaskInput(task_id=999)
 
         with pytest.raises(TaskNotFoundException) as exc_info:
             self.use_case.execute(input_dto)
@@ -78,7 +76,7 @@ class TestGetTaskDetailUseCase:
             estimated_duration=2.5,
         )
 
-        input_dto = GetTaskDetailInput(task.id)
+        input_dto = SingleTaskInput(task.id)
         result = self.use_case.execute(input_dto)
 
         assert result.task.name == "Complex Task"

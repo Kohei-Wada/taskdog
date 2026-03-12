@@ -8,6 +8,7 @@ and filter construction.
 from datetime import date
 from typing import TYPE_CHECKING
 
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.query_inputs import GetGanttDataInput, ListTasksInput
@@ -20,10 +21,7 @@ from taskdog_core.application.services.optimization.strategy_factory import (
     StrategyFactory,
 )
 from taskdog_core.application.use_cases.get_gantt_data import GetGanttDataUseCase
-from taskdog_core.application.use_cases.get_task_detail import (
-    GetTaskDetailInput,
-    GetTaskDetailUseCase,
-)
+from taskdog_core.application.use_cases.get_task_detail import GetTaskDetailUseCase
 from taskdog_core.application.use_cases.list_tasks import ListTasksUseCase
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
@@ -204,7 +202,7 @@ class QueryController:
             )
 
         use_case = GetTaskDetailUseCase(self.repository, self.notes_repository)
-        return use_case.execute(GetTaskDetailInput(task_id))
+        return use_case.execute(SingleTaskInput(task_id=task_id))
 
     def get_algorithm_metadata(self) -> list[tuple[str, str, str]]:
         """Get metadata for all available optimization algorithms.

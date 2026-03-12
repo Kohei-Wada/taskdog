@@ -1,5 +1,6 @@
 """Use case for getting task detail with notes."""
 
+from taskdog_core.application.dto.base import SingleTaskInput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.application.use_cases.base import UseCase
@@ -7,23 +8,7 @@ from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 
-class GetTaskDetailInput:
-    """Input for getting task detail.
-
-    Attributes:
-        task_id: ID of the task to retrieve
-    """
-
-    def __init__(self, task_id: int):
-        """Initialize input.
-
-        Args:
-            task_id: ID of the task to retrieve
-        """
-        self.task_id = task_id
-
-
-class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, TaskDetailOutput]):
+class GetTaskDetailUseCase(UseCase[SingleTaskInput, TaskDetailOutput]):
     """Use case for retrieving task details with notes.
 
     This use case fetches a task by ID and its associated notes file
@@ -40,7 +25,7 @@ class GetTaskDetailUseCase(UseCase[GetTaskDetailInput, TaskDetailOutput]):
         self.repository = repository
         self.notes_repository = notes_repository
 
-    def execute(self, input_dto: GetTaskDetailInput) -> TaskDetailOutput:
+    def execute(self, input_dto: SingleTaskInput) -> TaskDetailOutput:
         """Execute task detail retrieval.
 
         Args:
