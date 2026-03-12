@@ -15,8 +15,8 @@ if TYPE_CHECKING:
     from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 
 
-class TaskOperationResponse(BaseModel):
-    """Response model for task write operations (create, update, status changes)."""
+class TaskFieldsBase(BaseModel):
+    """Common fields shared by all task Response models."""
 
     id: int
     name: str
@@ -28,12 +28,17 @@ class TaskOperationResponse(BaseModel):
     planned_end: datetime | None = None
     actual_start: datetime | None = None
     actual_end: datetime | None = None
-    actual_duration: float | None = None
+    actual_duration_hours: float | None = None
     depends_on: list[int] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
     is_fixed: bool = False
     is_archived: bool = False
-    actual_duration_hours: float | None = None
+
+
+class TaskOperationResponse(TaskFieldsBase):
+    """Response model for task write operations (create, update, status changes)."""
+
+    actual_duration: float | None = None
 
     @classmethod
     def from_dto(cls, dto: TaskOperationOutput) -> TaskOperationResponse:
@@ -65,28 +70,13 @@ class TaskOperationResponse(BaseModel):
         )
 
 
-class UpdateTaskResponse(BaseModel):
-    """Response model for task update operations."""
+class UpdateTaskResponse(TaskOperationResponse):
+    """Response model for task update operations (PATCH). Includes updated_fields."""
 
-    id: int
-    name: str
-    status: TaskStatus
-    priority: int | None = None
-    deadline: datetime | None = None
-    estimated_duration: float | None = None
-    planned_start: datetime | None = None
-    planned_end: datetime | None = None
-    actual_start: datetime | None = None
-    actual_end: datetime | None = None
-    depends_on: list[int] = Field(default_factory=list)
-    tags: list[str] = Field(default_factory=list)
-    is_fixed: bool = False
-    is_archived: bool = False
-    actual_duration_hours: float | None = None
     updated_fields: list[str] = Field(default_factory=list)
 
     @classmethod
-    def from_dto(cls, dto: TaskUpdateOutput) -> UpdateTaskResponse:
+    def from_dto(cls, dto: TaskUpdateOutput) -> UpdateTaskResponse:  # type: ignore[override]
         """Convert TaskUpdateOutput DTO to response model.
 
         Args:
@@ -107,6 +97,7 @@ class UpdateTaskResponse(BaseModel):
             planned_end=task.planned_end,
             actual_start=task.actual_start,
             actual_end=task.actual_end,
+            actual_duration=task.actual_duration,
             depends_on=task.depends_on,
             tags=task.tags,
             is_fixed=task.is_fixed,
@@ -116,62 +107,29 @@ class UpdateTaskResponse(BaseModel):
         )
 
 
-class TaskResponse(BaseModel):
+class TaskReadResponseBase(TaskFieldsBase):
+    """Common fields for read-oriented Response models."""
+
+    model_config = ConfigDict(frozen=True)
+
+    is_finished: bool = False
+    has_notes: bool = False
+    created_at: datetime
+    updated_at: datetime
+
+
+class TaskResponse(TaskReadResponseBase):
     """Response model for task row data (list views)."""
 
-    model_config = ConfigDict(frozen=True)
 
-    id: int
-    name: str
-    priority: int | None = None
-    status: TaskStatus
-    planned_start: datetime | None = None
-    planned_end: datetime | None = None
-    deadline: datetime | None = None
-    estimated_duration: float | None = None
-    actual_start: datetime | None = None
-    actual_end: datetime | None = None
-    actual_duration_hours: float | None = None
-    depends_on: list[int] = Field(default_factory=list)
-    tags: list[str] = Field(default_factory=list)
-    is_fixed: bool = False
-    is_archived: bool = False
-    is_finished: bool = False
-    has_notes: bool = False
-    created_at: datetime
-    updated_at: datetime
-
-
-class TaskDetailResponse(BaseModel):
+class TaskDetailResponse(TaskReadResponseBase):
     """Response model for detailed task view."""
 
-    model_config = ConfigDict(frozen=True)
-
-    id: int
-    name: str
-    priority: int | None = None
-    status: TaskStatus
-    planned_start: datetime | None = None
-    planned_end: datetime | None = None
-    deadline: datetime | None = None
-    estimated_duration: float | None = None
-    actual_start: datetime | None = None
-    actual_end: datetime | None = None
-    depends_on: list[int] = Field(default_factory=list)
-    tags: list[str] = Field(default_factory=list)
-    is_fixed: bool = False
-    is_archived: bool = False
     daily_allocations: dict[str, float] = Field(default_factory=dict)
-    # Computed properties
-    actual_duration_hours: float | None = None
     is_active: bool = False
-    is_finished: bool = False
     can_be_modified: bool = False
     is_schedulable: bool = False
-    has_notes: bool = False
     notes: str | None = None
-    created_at: datetime
-    updated_at: datetime
 
     @classmethod
     def from_dto(cls, dto: TaskDetailOutput) -> TaskDetailResponse:
