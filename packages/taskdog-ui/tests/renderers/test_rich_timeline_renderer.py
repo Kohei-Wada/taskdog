@@ -39,7 +39,6 @@ class TestRichTimelineRenderer:
             formatted_name = f"[strike dim]{name}[/strike dim]"
         return TimelineTaskRowViewModel(
             task_id=task_id,
-            name=name,
             formatted_name=formatted_name,
             actual_start=actual_start,
             actual_end=actual_end,

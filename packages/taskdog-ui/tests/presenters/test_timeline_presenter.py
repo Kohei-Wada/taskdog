@@ -99,7 +99,7 @@ class TestTimelinePresenter:
 
         row = result.rows[0]
         assert row.task_id == 1
-        assert row.name == "Task A"
+        assert row.formatted_name == "[strike dim]Task A[/strike dim]"
         assert row.actual_start == time(9, 0)
         assert row.actual_end == time(12, 0)
         assert row.duration_hours == 3.0

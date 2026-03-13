@@ -83,9 +83,7 @@ class TestTaskDataLoader:
 
         gantt_task_vm = TaskGanttRowViewModel(
             id=1,
-            name="Task 1",
             formatted_name="Task 1",
-            estimated_duration=None,
             formatted_estimated_duration="-",
             status=TaskStatus.PENDING,
             planned_start=None,
@@ -135,9 +133,7 @@ class TestTaskDataLoader:
 
         gantt_task1 = TaskGanttRowViewModel(
             id=1,
-            name="Task 1",
             formatted_name="Task 1",
-            estimated_duration=None,
             formatted_estimated_duration="-",
             status=TaskStatus.PENDING,
             planned_start=None,
@@ -149,9 +145,7 @@ class TestTaskDataLoader:
         )
         gantt_task2 = TaskGanttRowViewModel(
             id=2,
-            name="Task 2",
             formatted_name="Task 2",
-            estimated_duration=None,
             formatted_estimated_duration="-",
             status=TaskStatus.PENDING,
             planned_start=None,
@@ -163,9 +157,7 @@ class TestTaskDataLoader:
         )
         gantt_task3 = TaskGanttRowViewModel(
             id=3,
-            name="Task 3",
             formatted_name="Task 3",
-            estimated_duration=None,
             formatted_estimated_duration="-",
             status=TaskStatus.PENDING,
             planned_start=None,
