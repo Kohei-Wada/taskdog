@@ -1,11 +1,11 @@
 """Audit logs command - Display operation history."""
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 import click
 from rich.table import Table
 
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
 from taskdog.constants.audit_log import (
     AUDIT_CHANGES_WIDTH,
@@ -29,6 +29,9 @@ from taskdog.constants.common import HEADER_ID, TABLE_HEADER_STYLE
 from taskdog.constants.formatting import format_table_title
 from taskdog.tui.widgets.audit_log_entry_builder import format_audit_changes
 from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 
 
 def _parse_date_filter(date_str: str, end_of_day: bool = False) -> datetime:

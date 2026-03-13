@@ -1,8 +1,6 @@
 """Optimization data converters."""
 
-from datetime import date as date_type
-from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from taskdog_core.application.dto.optimization_output import (
     OptimizationOutput,
@@ -13,6 +11,10 @@ from taskdog_core.application.dto.task_dto import TaskSummaryDto
 from taskdog_core.shared.utils.datetime_parser import parse_iso_date
 
 from .exceptions import ConversionError
+
+if TYPE_CHECKING:
+    from datetime import date as date_type
+    from datetime import datetime
 
 
 def _parse_optimization_summary(

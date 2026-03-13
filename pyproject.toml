@@ -115,6 +115,7 @@ select = [
   "PTH",  # flake8-use-pathlib
   "FURB",  # refurb modernization
   "RUF",  # ruff-specific rules
+  "TC",  # flake8-type-checking
 ]
 ignore = [
   "E501",  # line too long (handled by formatter)
@@ -132,6 +133,7 @@ ignore = [
 "packages/*/tests/**/*.py" = ["SIM115", "RUF015"]  # Test code patterns are acceptable
 "scripts/**/*.py" = ["B904", "C901"]  # Migration scripts: exception chaining and complexity acceptable
 "packages/taskdog-server/src/taskdog_server/api/error_handlers.py" = ["UP047"]  # Type parameters require Python 3.12+
+"packages/taskdog-server/src/taskdog_server/api/models/**/*.py" = ["TC001", "TC003"]  # Pydantic models need runtime type access
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

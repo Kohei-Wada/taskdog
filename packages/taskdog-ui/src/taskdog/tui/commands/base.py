@@ -96,7 +96,7 @@ class TUICommandBase(ABC):  # noqa: B024
                 self.notify_error(f"Error {action_name}", e)
                 return None
 
-        return cast(F, wrapper)
+        return cast("F", wrapper)
 
     def get_action_name(self) -> str:
         """Return the action name for error messages (e.g., "adding task").

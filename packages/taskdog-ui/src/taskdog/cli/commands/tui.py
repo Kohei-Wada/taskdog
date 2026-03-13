@@ -1,12 +1,15 @@
 """TUI command - Launch the Text User Interface."""
 
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse, urlunparse
 
 import click
 from taskdog_client import WebSocketClient
 
-from taskdog.cli.context import CliContext
 from taskdog.tui.app import TaskdogTUI
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 
 
 def _get_websocket_url(base_url: str) -> str:

@@ -7,15 +7,19 @@ previously duplicated across API routes.
 
 from __future__ import annotations
 
-from taskdog_core.application.dto.query_inputs import ListTasksInput
+from typing import TYPE_CHECKING
+
 from taskdog_core.application.queries.filters.date_range_filter import DateRangeFilter
 from taskdog_core.application.queries.filters.non_archived_filter import (
     NonArchivedFilter,
 )
 from taskdog_core.application.queries.filters.status_filter import StatusFilter
 from taskdog_core.application.queries.filters.tag_filter import TagFilter
-from taskdog_core.application.queries.filters.task_filter import TaskFilter
 from taskdog_core.domain.entities.task import TaskStatus
+
+if TYPE_CHECKING:
+    from taskdog_core.application.dto.query_inputs import ListTasksInput
+    from taskdog_core.application.queries.filters.task_filter import TaskFilter
 
 
 class TaskFilterBuilder:

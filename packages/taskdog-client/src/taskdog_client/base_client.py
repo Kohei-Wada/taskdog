@@ -1,8 +1,7 @@
 """Base HTTP client infrastructure for Taskdog API."""
 
 import contextlib
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx  # type: ignore[import-not-found]
 
@@ -13,6 +12,9 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class BaseApiClient:

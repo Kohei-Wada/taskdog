@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from functools import partial
 from typing import TYPE_CHECKING
 
@@ -12,6 +11,8 @@ from taskdog.tui.palette.providers.base import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from taskdog.tui.app import TaskdogTUI
 
 

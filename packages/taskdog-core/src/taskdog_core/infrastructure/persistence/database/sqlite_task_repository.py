@@ -10,11 +10,9 @@ The repository uses TagResolver to manage tag relationships when saving tasks.
 
 from __future__ import annotations
 
-from datetime import date
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import func, select
-from sqlalchemy.engine import Engine
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 from taskdog_core.domain.exceptions.tag_exceptions import TagNotFoundException
@@ -42,6 +40,10 @@ from taskdog_core.infrastructure.persistence.mappers.tag_resolver import TagReso
 from taskdog_core.infrastructure.persistence.mappers.task_db_mapper import TaskDbMapper
 
 if TYPE_CHECKING:
+    from datetime import date
+
+    from sqlalchemy.engine import Engine
+
     from taskdog_core.domain.services.time_provider import ITimeProvider
 
 

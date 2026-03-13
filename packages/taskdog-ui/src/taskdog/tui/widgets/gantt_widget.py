@@ -5,10 +5,7 @@ like date range management and automatic resizing.
 """
 
 from datetime import date, timedelta
-from typing import TYPE_CHECKING, Any, ClassVar
-
-if TYPE_CHECKING:
-    pass
+from typing import Any, ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding

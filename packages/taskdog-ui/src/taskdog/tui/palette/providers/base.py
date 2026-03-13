@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 
 from textual.command import DiscoveryHit, Hit, Hits, Provider
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from taskdog.tui.app import TaskdogTUI
 
 
