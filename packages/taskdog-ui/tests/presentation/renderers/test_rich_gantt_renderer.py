@@ -22,9 +22,7 @@ class TestRichGanttRendererBuildTable:
         # Sample task view models
         self.task1 = TaskGanttRowViewModel(
             id=1,
-            name="Task 1",
             formatted_name="Task 1",
-            estimated_duration=8.0,
             formatted_estimated_duration="8.0",
             status=TaskStatus.PENDING,
             planned_start=date(2025, 1, 1),
@@ -37,9 +35,7 @@ class TestRichGanttRendererBuildTable:
 
         self.task2 = TaskGanttRowViewModel(
             id=2,
-            name="Task 2",
             formatted_name="[strike dim]Task 2[/strike dim]",
-            estimated_duration=4.0,
             formatted_estimated_duration="4.0",
             status=TaskStatus.COMPLETED,
             planned_start=date(2025, 1, 2),
@@ -162,9 +158,7 @@ class TestRichGanttRendererBuildTable:
             tasks=[
                 TaskGanttRowViewModel(
                     id=1,
-                    name="Task without estimate",
                     formatted_name="Task without estimate",
-                    estimated_duration=None,
                     formatted_estimated_duration="-",
                     status=TaskStatus.PENDING,
                     planned_start=date(2025, 1, 1),
@@ -222,9 +216,7 @@ class TestRichGanttRendererRender:
             tasks=[
                 TaskGanttRowViewModel(
                     id=1,
-                    name="Task 1",
                     formatted_name="Task 1",
-                    estimated_duration=4.0,
                     formatted_estimated_duration="4.0",
                     status=TaskStatus.PENDING,
                     planned_start=date(2025, 1, 1),

@@ -68,9 +68,7 @@ class GanttPresenter:
 
         return TaskGanttRowViewModel(
             id=task.id,
-            name=task.name,
             formatted_name=formatted_name,
-            estimated_duration=task.estimated_duration,
             formatted_estimated_duration=formatted_estimated_duration,
             status=task.status,
             planned_start=task.planned_start.date() if task.planned_start else None,

@@ -139,7 +139,6 @@ class TimelinePresenter:
 
         return TimelineTaskRowViewModel(
             task_id=task_row.id,
-            name=task_row.name,
             formatted_name=formatted_name,
             actual_start=start_time,
             actual_end=end_time,
