@@ -81,7 +81,8 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         yield self._gantt_table
 
         # Legend at bottom (fixed - not scrollable)
-        self._legend_widget = Static("", id="gantt-legend")
+        # Built as markup string so Textual resolves CSS variables like $primary.
+        self._legend_widget = Static(self._build_legend_markup(), id="gantt-legend")
         yield self._legend_widget
 
     # Vi-style scroll actions - delegate to gantt table
@@ -242,7 +243,6 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
                     moderate_hours=gantt_config.workload_moderate_hours,
                 )
                 self._update_title()
-                self._update_legend()
         except Exception as e:
             self._show_error_message(e)
 
@@ -274,13 +274,51 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         )
         self._title_widget.update(title_text)
 
-    def _update_legend(self) -> None:
-        """Update legend with gantt chart symbols."""
-        if not self._legend_widget or not self._gantt_table:
-            return
+    @staticmethod
+    def _build_legend_markup() -> str:
+        """Build legend as a markup string.
 
-        legend_text = self._gantt_table.get_legend_text()
-        self._legend_widget.update(legend_text)
+        Using markup instead of Rich Text so that Textual CSS variables
+        like ``$primary`` are resolved by the Static widget.
+        """
+        from taskdog.constants.colors import (
+            BACKGROUND_COLOR,
+            BACKGROUND_COLOR_DEADLINE,
+            BACKGROUND_COLOR_HOLIDAY,
+            BACKGROUND_COLOR_PLANNED_LIGHT,
+            BACKGROUND_COLOR_SATURDAY,
+            BACKGROUND_COLOR_SUNDAY,
+        )
+        from taskdog.constants.symbols import (
+            SYMBOL_CANCELED,
+            SYMBOL_COMPLETED,
+            SYMBOL_IN_PROGRESS,
+            SYMBOL_TODAY,
+        )
+
+        return (
+            "[bold $primary]Legend: [/bold $primary]"
+            f"[on {BACKGROUND_COLOR_PLANNED_LIGHT}]   [/on {BACKGROUND_COLOR_PLANNED_LIGHT}]"
+            "[dim] Planned period  [/dim]"
+            f"[on {BACKGROUND_COLOR}]   [/on {BACKGROUND_COLOR}]"
+            "[dim] Allocated hours  [/dim]"
+            f"[bold blue]{SYMBOL_IN_PROGRESS}[/bold blue]"
+            "[dim] IN_PROGRESS  [/dim]"
+            f"[bold green]{SYMBOL_COMPLETED}[/bold green]"
+            "[dim] COMPLETED  [/dim]"
+            f"[bold red]{SYMBOL_CANCELED}[/bold red]"
+            "[dim] CANCELED  [/dim]"
+            f"[on {BACKGROUND_COLOR_DEADLINE}]   [/on {BACKGROUND_COLOR_DEADLINE}]"
+            "[dim] Deadline  [/dim]"
+            f"[bold yellow]{SYMBOL_TODAY}[/bold yellow]"
+            "[dim] Today  [/dim]"
+            f"[on {BACKGROUND_COLOR_HOLIDAY}]   [/on {BACKGROUND_COLOR_HOLIDAY}]"
+            "[dim] Holiday  [/dim]"
+            f"[on {BACKGROUND_COLOR_SATURDAY}]   [/on {BACKGROUND_COLOR_SATURDAY}]"
+            "[dim] Saturday  [/dim]"
+            f"[on {BACKGROUND_COLOR_SUNDAY}]   [/on {BACKGROUND_COLOR_SUNDAY}]"
+            "[dim] Sunday[/dim]"
+        )
 
     def _show_error_message(self, error: Exception) -> None:
         """Show error message when rendering fails.
