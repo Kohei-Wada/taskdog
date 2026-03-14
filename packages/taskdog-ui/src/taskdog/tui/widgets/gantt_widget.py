@@ -267,7 +267,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
             filter_indicator = " [dim]🔍 Filter: OFF[/dim]"
 
         title_text = (
-            f"[bold yellow]Gantt Chart[/bold yellow] "
+            f"[bold $primary]Gantt Chart[/bold $primary] "
             f"[dim]({start_date} to {end_date})[/dim] "
             f"[dim]- sorted by: {self.tui_state.sort_by} {arrow}[/dim]"
             f"{filter_indicator}"
