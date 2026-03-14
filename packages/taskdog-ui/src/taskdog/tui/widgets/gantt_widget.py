@@ -295,6 +295,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
             SYMBOL_IN_PROGRESS,
             SYMBOL_TODAY,
         )
+        from taskdog_core.domain.entities.task import TaskStatus
 
         return (
             "[bold $primary]Legend: [/bold $primary]"
@@ -303,11 +304,11 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
             f"[on {BACKGROUND_COLOR}]   [/on {BACKGROUND_COLOR}]"
             "[dim] Allocated hours  [/dim]"
             f"[bold blue]{SYMBOL_IN_PROGRESS}[/bold blue]"
-            "[dim] IN_PROGRESS  [/dim]"
+            f"[dim] {TaskStatus.IN_PROGRESS.value}  [/dim]"
             f"[bold green]{SYMBOL_COMPLETED}[/bold green]"
-            "[dim] COMPLETED  [/dim]"
+            f"[dim] {TaskStatus.COMPLETED.value}  [/dim]"
             f"[bold red]{SYMBOL_CANCELED}[/bold red]"
-            "[dim] CANCELED  [/dim]"
+            f"[dim] {TaskStatus.CANCELED.value}  [/dim]"
             f"[on {BACKGROUND_COLOR_DEADLINE}]   [/on {BACKGROUND_COLOR_DEADLINE}]"
             "[dim] Deadline  [/dim]"
             f"[bold yellow]{SYMBOL_TODAY}[/bold yellow]"
