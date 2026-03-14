@@ -2,31 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import TYPE_CHECKING
-
-from taskdog.tui.palette.providers.base import BaseListProvider
-
-if TYPE_CHECKING:
-    from taskdog.tui.app import TaskdogTUI
+from taskdog.tui.palette.providers.base import SimpleSingleCommandProvider
 
 
-class OptimizeCommandProvider(BaseListProvider):
+class OptimizeCommandProvider(SimpleSingleCommandProvider):
     """Command provider for optimization commands."""
 
-    def get_options(self, app: TaskdogTUI) -> list[tuple[str, Callable[[], None], str]]:
-        """Return optimize command options with callbacks.
-
-        Args:
-            app: TaskdogTUI application instance
-
-        Returns:
-            List of (command_name, callback, help_text) tuples
-        """
-        return [
-            (
-                "Optimize",
-                app.search_optimize,
-                "Optimize schedule with selected algorithm",
-            ),
-        ]
+    COMMAND_NAME = "Optimize"
+    COMMAND_HELP = "Optimize schedule with selected algorithm"
+    COMMAND_CALLBACK_NAME = "search_optimize"
