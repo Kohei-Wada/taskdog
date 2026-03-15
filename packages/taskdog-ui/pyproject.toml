@@ -14,7 +14,7 @@ dependencies = [
     "taskdog-client==0.15.5",
     "click>=8.3.0",
     "rich>=14.2.0",
-    "textual>=0.88.0",
+    "textual>=8.0.0",
     "websockets>=14.0",
 ]
 
