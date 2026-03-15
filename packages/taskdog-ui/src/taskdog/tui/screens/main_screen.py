@@ -6,6 +6,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import Screen
+from textual.timer import Timer
 from textual.widgets import Header
 
 from taskdog.tui.events import FilterChanged, SearchQueryChanged
@@ -52,6 +53,7 @@ class MainScreen(Screen[None]):
         self.task_table: TaskTable | None = None
         self.gantt_widget: GanttWidget | None = None
         self.custom_footer: CustomFooter | None = None
+        self._search_debounce_timer: Timer | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout.
@@ -89,37 +91,46 @@ class MainScreen(Screen[None]):
             self.task_table.focus()
 
     def on_search_query_changed(self, event: SearchQueryChanged) -> None:
-        """Handle search query changes.
+        """Handle search query changes with debounce.
 
-        Updates TUIState with the new query and posts FilterChanged
-        to notify all widgets.
+        Updates TUIState immediately but debounces FilterChanged posting
+        to avoid expensive re-renders on every keystroke.
 
         Args:
             event: SearchQueryChanged event with the new query string
         """
         if self.state:
             self.state.set_filter(event.query)
-            self.post_message(FilterChanged(query=event.query))
+
+            # Cancel previous debounce timer
+            if self._search_debounce_timer is not None:
+                self._search_debounce_timer.stop()
+
+            query = event.query
+
+            def _fire_filter_changed() -> None:
+                self.post_message(FilterChanged(query=query))
+
+            self._search_debounce_timer = self.set_timer(0.15, _fire_filter_changed)
 
     def on_filter_changed(self, event: FilterChanged) -> None:
         """Handle filter state changes.
 
-        Refreshes both TaskTable and GanttWidget with filtered data
-        from TUIState.
+        Refreshes TaskTable with filtered data. Only refreshes GanttWidget
+        when gantt_filter_enabled is True to avoid expensive re-renders.
 
         Args:
             event: FilterChanged event
         """
-        # Refresh TaskTable with filtered viewmodels
-        if self.task_table:
-            self.task_table.render_filtered_tasks()
+        if self.task_table and self.state:
+            filtered = self.state.filtered_viewmodels
+            self.task_table.render_filtered_tasks(filtered)
+            if self.custom_footer:
+                self.custom_footer.update_result(len(filtered), self.state.total_count)
 
-        # Refresh GanttWidget with filtered gantt
-        if self.gantt_widget:
+        # Only refresh Gantt when gantt filtering is enabled
+        if self.gantt_widget and self.state and self.state.gantt_filter_enabled:
             self.gantt_widget.render_filtered_gantt()
-
-        # Update search result count
-        self._update_search_result()
 
     def on_custom_footer_submitted(self, event: CustomFooter.Submitted) -> None:
         """Handle Enter key press in search input.

@@ -295,12 +295,19 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
             if saved_scroll_x is not None:
                 self.scroll_x = saved_scroll_x
 
-    def render_filtered_tasks(self) -> None:
+    def render_filtered_tasks(
+        self, viewmodels: list[TaskRowViewModel] | None = None
+    ) -> None:
         """Render tasks from TUIState.filtered_viewmodels.
 
         Called by MainScreen when filter state changes.
+
+        Args:
+            viewmodels: Pre-computed filtered viewmodels. If None, reads from TUIState.
         """
-        self._render_tasks(self.tui_state.filtered_viewmodels)
+        self._render_tasks(
+            viewmodels if viewmodels is not None else self.tui_state.filtered_viewmodels
+        )
 
     # Legacy methods kept for backward compatibility
     # Filter state is now managed by TUIState
