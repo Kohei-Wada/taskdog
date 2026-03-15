@@ -92,12 +92,14 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         self._date_columns.clear()
 
         # Add fixed columns with centered headers
-        self.add_column(Text(HEADER_ID, justify="center"))
+        # Pad headers with spaces to compensate for cell_padding=0
+        self.add_column(Text(f" {HEADER_ID} ", justify="center"))
         self.add_column(
-            Text(HEADER_NAME, justify="center"), width=TASK_NAME_COLUMN_WIDTH
+            Text(f" {HEADER_NAME} ", justify="center"), width=TASK_NAME_COLUMN_WIDTH
         )
         self.add_column(
-            Text(HEADER_ESTIMATED, justify="center"), width=ESTIMATED_COLUMN_WIDTH
+            Text(f" {HEADER_ESTIMATED} ", justify="center"),
+            width=ESTIMATED_COLUMN_WIDTH,
         )
 
         # Add one column per date
@@ -247,9 +249,9 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         )
 
         self.add_row(
-            Text(task_id, justify="center"),
-            Text.from_markup(task_name, justify="left"),
-            Text(est_hours, justify="center"),
+            Text(f" {task_id} ", justify="center"),
+            Text.from_markup(f" {task_name} ", justify="left"),
+            Text(f" {est_hours} ", justify="center"),
             *date_cells,
         )
 
@@ -354,8 +356,8 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
 
         self.add_row(
             Text("", justify="center"),
-            Text(GANTT_WORKLOAD_LABEL, style="bold yellow", justify="center"),
-            Text(total_est_str, style="bold yellow", justify="center"),
+            Text(f" {GANTT_WORKLOAD_LABEL} ", style="bold yellow", justify="center"),
+            Text(f" {total_est_str} ", style="bold yellow", justify="center"),
             *workload_cells,
         )
 
