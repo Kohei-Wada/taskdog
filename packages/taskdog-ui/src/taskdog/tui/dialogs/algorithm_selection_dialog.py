@@ -171,7 +171,7 @@ class AlgorithmSelectionDialog(
         self._clear_validation_error()
 
         # Validate algorithm selection
-        if algorithm_select.value is Select.BLANK:
+        if algorithm_select.value is Select.NULL:
             self._show_validation_error("Please select an algorithm", algorithm_select)
             return
         selected_algo = str(algorithm_select.value)

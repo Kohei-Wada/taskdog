@@ -179,7 +179,7 @@ class TestAlgorithmSelectionDialogSubmit:
         dialog._show_validation_error = MagicMock()
 
         mock_select = MagicMock()
-        mock_select.value = Select.BLANK
+        mock_select.value = Select.NULL
 
         def mock_query_one(selector: str, widget_type: type) -> MagicMock:
             if "algorithm" in selector:
