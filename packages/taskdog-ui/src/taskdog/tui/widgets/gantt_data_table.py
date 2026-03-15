@@ -43,9 +43,9 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         Binding("k", "cursor_up", "Up", show=False),
         Binding("h", "cursor_left", "Left", show=False),
         Binding("l", "cursor_right", "Right", show=False),
-        # g/G -> jump to top/bottom
-        Binding("g", "scroll_home", "Top", show=False),
-        Binding("G", "scroll_end", "Bottom", show=False),
+        # g/G -> move cursor to top/bottom row
+        Binding("g", "cursor_top", "Top", show=False),
+        Binding("G", "cursor_bottom", "Bottom", show=False),
         # w/b -> jump by one week (7 columns)
         Binding("w", "cursor_forward_week", "Week Forward", show=False),
         Binding("b", "cursor_backward_week", "Week Backward", show=False),
@@ -358,6 +358,15 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             Text(total_est_str, style="bold yellow", justify="center"),
             *workload_cells,
         )
+
+    def action_cursor_top(self) -> None:
+        """Move cursor to the first row (g key)."""
+        self.move_cursor(row=0)
+
+    def action_cursor_bottom(self) -> None:
+        """Move cursor to the last row (G key)."""
+        if self.row_count > 0:
+            self.move_cursor(row=self.row_count - 1)
 
     def action_cursor_forward_week(self) -> None:
         """Move cursor forward by one week (w key)."""
