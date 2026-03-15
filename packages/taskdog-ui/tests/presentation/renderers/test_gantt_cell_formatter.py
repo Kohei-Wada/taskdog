@@ -436,3 +436,104 @@ class TestGanttCellFormatter:
         # Should show empty symbol but with planned period background
         assert display == SYMBOL_EMPTY
         assert "on rgb" in style  # Has light background color
+
+    def test_build_date_header_cells(self):
+        """Test building per-date header cells."""
+        start_date = date(2025, 10, 1)
+        end_date = date(2025, 10, 5)
+
+        month_cells, today_cells, day_cells = (
+            GanttCellFormatter.build_date_header_cells(start_date, end_date, set())
+        )
+
+        # Should have 5 cells each
+        assert len(month_cells) == 5
+        assert len(today_cells) == 5
+        assert len(day_cells) == 5
+
+        # All should be Text objects
+        assert all(isinstance(c, Text) for c in month_cells)
+        assert all(isinstance(c, Text) for c in today_cells)
+        assert all(isinstance(c, Text) for c in day_cells)
+
+        # First month cell should contain "Oct"
+        assert "Oct" in month_cells[0].plain
+        # Subsequent month cells should be empty (same month)
+        assert month_cells[1].plain == ""
+
+        # Day cells should contain day numbers
+        assert "1" in day_cells[0].plain
+        assert "5" in day_cells[4].plain
+
+    def test_build_date_header_cells_month_change(self):
+        """Test that month cells show new month name when month changes."""
+        start_date = date(2025, 10, 31)
+        end_date = date(2025, 11, 2)
+
+        month_cells, _, _ = GanttCellFormatter.build_date_header_cells(
+            start_date, end_date, set()
+        )
+
+        assert len(month_cells) == 3
+        assert "Oct" in month_cells[0].plain
+        assert "Nov" in month_cells[1].plain
+        assert month_cells[2].plain == ""
+
+    def test_build_date_header_cells_today_marker(self):
+        """Test that today's date gets a marker cell."""
+        today = date.today()
+
+        _, today_cells, _ = GanttCellFormatter.build_date_header_cells(
+            today, today, set()
+        )
+
+        assert len(today_cells) == 1
+        assert SYMBOL_TODAY in today_cells[0].plain
+
+    def test_build_workload_cells(self):
+        """Test building per-date workload cells."""
+        daily_workload = {
+            date(2025, 10, 1): 4.0,
+            date(2025, 10, 2): 6.5,
+            date(2025, 10, 3): 8.5,
+            date(2025, 10, 4): 0.0,
+        }
+        start_date = date(2025, 10, 1)
+        end_date = date(2025, 10, 4)
+
+        cells = GanttCellFormatter.build_workload_cells(
+            daily_workload, start_date, end_date
+        )
+
+        assert len(cells) == 4
+        assert all(isinstance(c, Text) for c in cells)
+
+        # Check ceiled values
+        assert "4" in cells[0].plain
+        assert "7" in cells[1].plain  # 6.5 -> 7 (ceil)
+        assert "9" in cells[2].plain  # 8.5 -> 9 (ceil)
+        assert "0" in cells[3].plain
+
+    def test_build_workload_cells_custom_thresholds(self):
+        """Test workload cells with custom thresholds."""
+        daily_workload = {
+            date(2025, 10, 1): 3.0,
+            date(2025, 10, 2): 5.0,
+            date(2025, 10, 3): 7.0,
+        }
+        start_date = date(2025, 10, 1)
+        end_date = date(2025, 10, 3)
+
+        cells = GanttCellFormatter.build_workload_cells(
+            daily_workload,
+            start_date,
+            end_date,
+            comfortable_hours=4.0,
+            moderate_hours=6.0,
+        )
+
+        assert len(cells) == 3
+        # Check styles: 3h -> green, 5h -> yellow, 7h -> red
+        assert cells[0].style == "bold green"
+        assert cells[1].style == "bold yellow"
+        assert cells[2].style == "bold red"

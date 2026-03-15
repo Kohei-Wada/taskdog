@@ -13,7 +13,7 @@ from textual.binding import Binding
 from textual.widgets import DataTable
 
 from taskdog.constants.common import HEADER_ESTIMATED, HEADER_ID, HEADER_NAME
-from taskdog.constants.gantt import GANTT_WORKLOAD_LABEL, HEADER_TIMELINE
+from taskdog.constants.gantt import CHARS_PER_DAY, GANTT_WORKLOAD_LABEL
 from taskdog.constants.task_table import ESTIMATED_COLUMN_WIDTH, TASK_NAME_COLUMN_WIDTH
 from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
@@ -45,8 +45,10 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         self.cursor_type = "none"
         self.zebra_stripes = True
         self.can_focus = False
+        # Remove cell padding so date columns render at exact CHARS_PER_DAY width
+        self.cell_padding = 0
 
-        # Remove cell padding to match CLI spacing (no extra spaces between dates)
+        # Remove widget padding
         self.styles.padding = (0, 0)
 
         # Internal state
@@ -80,15 +82,12 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             Text(HEADER_ESTIMATED, justify="center"), width=ESTIMATED_COLUMN_WIDTH
         )
 
-        # Add single Timeline column (contains all dates)
-        # Store date range for later use
+        # Add one column per date
         days = (end_date - start_date).days + 1
         for day_offset in range(days):
             current_date = start_date + timedelta(days=day_offset)
             self._date_columns.append(current_date)
-
-        # Single Timeline column with centered header
-        self.add_column(Text(HEADER_TIMELINE, justify="center"))
+            self.add_column(Text("", justify="center"), width=CHARS_PER_DAY)
 
     def load_gantt(
         self,
@@ -182,30 +181,17 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             end_date: End date of the chart
             holidays: Set of holiday dates for styling
         """
-        # Get the three header lines from the formatter
-        month_line, today_line, day_line = GanttCellFormatter.build_date_header_lines(
-            start_date, end_date, holidays
+        # Get per-date header cells from the formatter
+        month_cells, today_cells, day_cells = (
+            GanttCellFormatter.build_date_header_cells(start_date, end_date, holidays)
         )
 
-        # Add three separate rows for month, today marker, and day with centered cells
-        self.add_row(
-            Text("", justify="center"),
-            Text("", justify="center"),
-            Text("", justify="center"),
-            month_line,
-        )
-        self.add_row(
-            Text("", justify="center"),
-            Text("", justify="center"),
-            Text("", justify="center"),
-            today_line,
-        )
-        self.add_row(
-            Text("", justify="center"),
-            Text("", justify="center"),
-            Text("", justify="center"),
-            day_line,
-        )
+        empty = Text("", justify="center")
+
+        # Add three separate rows for month, today marker, and day
+        self.add_row(empty, empty, empty, *month_cells)
+        self.add_row(empty, empty, empty, *today_cells)
+        self.add_row(empty, empty, empty, *day_cells)
 
     def _add_task_row(
         self,
@@ -225,7 +211,7 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             holidays: Set of holiday dates for styling
         """
         task_id, task_name, est_hours = self._format_task_metadata(task_vm)
-        timeline = self._build_timeline(
+        date_cells = self._build_timeline_cells(
             task_vm, task_daily_hours, start_date, end_date, holidays
         )
 
@@ -233,7 +219,7 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             Text(task_id, justify="center"),
             Text.from_markup(task_name, justify="left"),
             Text(est_hours, justify="center"),
-            timeline,
+            *date_cells,
         )
 
     def _format_task_metadata(
@@ -254,15 +240,15 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
 
         return task_id, task_name, est_hours
 
-    def _build_timeline(
+    def _build_timeline_cells(
         self,
         task_vm: TaskGanttRowViewModel,
         task_daily_hours: dict[date, float],
         start_date: date,
         end_date: date,
         holidays: set[date],
-    ) -> Text:
-        """Build timeline visualization for a task.
+    ) -> list[Text]:
+        """Build timeline cells for a task, one Text per date.
 
         Args:
             task_vm: Task ViewModel to build timeline for
@@ -272,7 +258,7 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             holidays: Set of holiday dates for styling
 
         Returns:
-            Rich Text object with formatted timeline
+            List of Rich Text objects, one per date
         """
         days = (end_date - start_date).days + 1
 
@@ -285,13 +271,12 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             "deadline": task_vm.deadline,
         }
 
-        timeline = Text()
+        cells: list[Text] = []
 
         for day_offset in range(days):
             current_date = start_date + timedelta(days=day_offset)
             hours = task_daily_hours.get(current_date, 0.0)
 
-            # Get formatted cell from formatter
             display, style = GanttCellFormatter.format_timeline_cell(
                 current_date,
                 hours,
@@ -299,9 +284,9 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
                 task_vm.status,
                 holidays,
             )
-            timeline.append(display, style=style)
+            cells.append(Text(display, style=style, justify="center"))
 
-        return timeline
+        return cells
 
     def _add_workload_row(
         self,
@@ -322,8 +307,8 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             comfortable_hours: Workload threshold for green zone
             moderate_hours: Workload threshold for yellow zone
         """
-        # Build workload timeline using the formatter
-        workload_timeline = GanttCellFormatter.build_workload_timeline(
+        # Build per-date workload cells using the formatter
+        workload_cells = GanttCellFormatter.build_workload_cells(
             daily_workload,
             start_date,
             end_date,
@@ -340,7 +325,7 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             Text("", justify="center"),
             Text(GANTT_WORKLOAD_LABEL, style="bold yellow", justify="center"),
             Text(total_est_str, style="bold yellow", justify="center"),
-            workload_timeline,
+            *workload_cells,
         )
 
     def get_legend_text(self) -> Text:

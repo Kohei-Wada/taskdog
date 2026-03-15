@@ -163,6 +163,112 @@ class GanttCellFormatter:
         return month_line, today_line, day_line
 
     @staticmethod
+    def build_date_header_cells(
+        start_date: date,
+        end_date: date,
+        holidays: set[date],
+    ) -> tuple[list[Text], list[Text], list[Text]]:
+        """Build date header cells (Month, Today marker, Day) as per-date lists.
+
+        Args:
+            start_date: Start date of the chart
+            end_date: End date of the chart
+            holidays: Set of holiday dates for day styling
+
+        Returns:
+            Tuple of three lists of Rich Text objects (month_cells, today_cells, day_cells)
+        """
+        days = (end_date - start_date).days + 1
+
+        month_cells: list[Text] = []
+        today_cells: list[Text] = []
+        day_cells: list[Text] = []
+
+        current_month = None
+        today = date.today()
+
+        for day_offset in range(days):
+            current_date = start_date + timedelta(days=day_offset)
+            month = current_date.month
+            day = current_date.day
+            weekday = current_date.weekday()
+            is_today = current_date == today
+
+            # Month cell: show month name when it changes
+            if month != current_month:
+                month_str = current_date.strftime("%b")
+                month_cells.append(
+                    Text(month_str, style="bold yellow", justify="center")
+                )
+                current_month = month
+            else:
+                month_cells.append(Text("", style="dim", justify="center"))
+
+            # Today marker cell
+            if is_today:
+                today_cells.append(
+                    Text(SYMBOL_TODAY, style="bold yellow", justify="center")
+                )
+            else:
+                today_cells.append(Text("", style="dim", justify="center"))
+
+            # Day number cell
+            day_str = str(day)
+            if current_date in holidays:
+                day_style = "bold yellow"
+            elif weekday == SATURDAY:
+                day_style = DAY_STYLE_SATURDAY
+            elif weekday == SUNDAY:
+                day_style = DAY_STYLE_SUNDAY
+            else:
+                day_style = DAY_STYLE_WEEKDAY
+            day_cells.append(Text(day_str, style=day_style, justify="center"))
+
+        return month_cells, today_cells, day_cells
+
+    @staticmethod
+    def build_workload_cells(
+        daily_workload: dict[date, float],
+        start_date: date,
+        end_date: date,
+        comfortable_hours: float = WORKLOAD_COMFORTABLE_HOURS,
+        moderate_hours: float = WORKLOAD_MODERATE_HOURS,
+    ) -> list[Text]:
+        """Build workload summary as per-date cells.
+
+        Args:
+            daily_workload: Pre-computed daily workload totals
+            start_date: Start date of the chart
+            end_date: End date of the chart
+            comfortable_hours: Threshold for green zone
+            moderate_hours: Threshold for yellow zone
+
+        Returns:
+            List of Rich Text objects, one per date
+        """
+        days = (end_date - start_date).days + 1
+
+        cells: list[Text] = []
+        for day_offset in range(days):
+            current_date = start_date + timedelta(days=day_offset)
+            hours = daily_workload.get(current_date, 0.0)
+            hours_ceiled = math.ceil(hours)
+            display = str(hours_ceiled)
+
+            if hours == 0:
+                style = "dim"
+            elif hours <= comfortable_hours:
+                style = "bold green"
+            elif hours <= moderate_hours:
+                style = "bold yellow"
+            else:
+                style = "bold red"
+
+            cells.append(Text(display, style=style, justify="center"))
+
+        return cells
+
+    @staticmethod
     def build_workload_timeline(
         daily_workload: dict[date, float],
         start_date: date,
