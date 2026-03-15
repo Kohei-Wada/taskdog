@@ -6,6 +6,7 @@ consistent visualization across different interfaces.
 """
 
 import math
+from dataclasses import dataclass
 from datetime import date, timedelta
 from enum import Enum
 from typing import Any
@@ -41,6 +42,26 @@ from taskdog_core.shared.constants import (
     WORKLOAD_COMFORTABLE_HOURS,
     WORKLOAD_MODERATE_HOURS,
 )
+
+
+@dataclass(frozen=True)
+class DateMetadata:
+    """Pre-computed metadata for a single date in the Gantt timeline.
+
+    Caches weekday, holiday, and weekend lookups so they are computed once
+    per date instead of once per task x date.
+    """
+
+    date: date
+    weekday: int
+    is_holiday: bool
+    is_weekend: bool
+    is_today: bool
+    weekend_holiday_bg_color: str | None
+
+    @property
+    def is_weekend_or_holiday(self) -> bool:
+        return self.is_weekend or self.is_holiday
 
 
 class GanttCellFormatter:
@@ -364,6 +385,178 @@ class GanttCellFormatter:
             "actual_end": task.actual_end.date() if task.actual_end else None,
             "deadline": task.deadline.date() if task.deadline else None,
         }
+
+    @staticmethod
+    def precompute_date_metadata(
+        dates: list[date],
+        holidays: set[date],
+        today: date,
+    ) -> list[DateMetadata]:
+        """Pre-compute metadata for each date in the timeline.
+
+        Args:
+            dates: List of dates in the timeline
+            holidays: Set of holiday dates
+            today: Current date (computed once by caller)
+
+        Returns:
+            List of DateMetadata, one per date, in the same order as input
+        """
+        result: list[DateMetadata] = []
+        for d in dates:
+            wd = d.weekday()
+            is_holiday = d in holidays
+            is_weekend = wd in (SATURDAY, SUNDAY)
+
+            # Pre-compute weekend/holiday background color
+            if is_holiday:
+                bg = BACKGROUND_COLOR_HOLIDAY
+            elif wd == SATURDAY:
+                bg = BACKGROUND_COLOR_SATURDAY
+            elif wd == SUNDAY:
+                bg = BACKGROUND_COLOR_SUNDAY
+            else:
+                bg = None
+
+            result.append(
+                DateMetadata(
+                    date=d,
+                    weekday=wd,
+                    is_holiday=is_holiday,
+                    is_weekend=is_weekend,
+                    is_today=d == today,
+                    weekend_holiday_bg_color=bg,
+                )
+            )
+        return result
+
+    @staticmethod
+    def format_timeline_cells_batch(
+        dates: list[date],
+        date_metadata: list[DateMetadata],
+        task_daily_hours: dict[date, float],
+        status: TaskStatus,
+        planned_start: date | None,
+        planned_end: date | None,
+        actual_start: date | None,
+        actual_end: date | None,
+        deadline: date | None,
+        today: date,
+    ) -> list[tuple[str, str]]:
+        """Format all timeline cells for one task in batch.
+
+        This is a TUI-optimized version of format_timeline_cell() that avoids
+        redundant per-cell computations by using pre-computed DateMetadata and
+        resolving task-level constants once before the loop.
+
+        Args:
+            dates: List of dates in the timeline
+            date_metadata: Pre-computed metadata for each date
+            task_daily_hours: Daily hours allocation for this task
+            status: Task status
+            planned_start: Planned start date (or None)
+            planned_end: Planned end date (or None)
+            actual_start: Actual start date (or None)
+            actual_end: Actual end date (or None)
+            deadline: Deadline date (or None)
+            today: Current date
+
+        Returns:
+            List of (display_text, style_string) tuples, one per date
+        """
+        # Pre-compute task-level constants
+        is_finished = status in (TaskStatus.COMPLETED, TaskStatus.CANCELED)
+        has_planned_range = planned_start is not None and planned_end is not None
+
+        # Resolve actual_end for IN_PROGRESS tasks (use today)
+        effective_actual_end = actual_end
+        if actual_start and not actual_end:
+            effective_actual_end = today
+
+        # Pre-compute status symbol and color (used only in actual period)
+        status_symbol = GanttCellFormatter.get_status_symbol(status)
+        status_color = GanttCellFormatter.get_status_color(status)
+
+        results: list[tuple[str, str]] = []
+
+        for i, current_date in enumerate(dates):
+            meta = date_metadata[i]
+            hours = task_daily_hours.get(current_date, 0.0)
+
+            # Determine actual period membership (inlined _is_in_actual_period)
+            is_actual = False
+            if actual_start and effective_actual_end:
+                is_actual = actual_start <= current_date <= effective_actual_end
+            elif actual_end and not actual_start:
+                is_actual = current_date == actual_end
+
+            if is_actual:
+                display = f" {status_symbol} "
+                # Determine bg color for actual period
+                is_deadline = deadline is not None and current_date == deadline
+                bg_color = GanttCellFormatter._bg_color_batch(
+                    meta, hours, False, is_deadline, is_finished
+                )
+                style = f"{status_color} on {bg_color}" if bg_color else status_color
+                results.append((display, style))
+                continue
+
+            # Determine planned period membership (inlined _is_in_date_range)
+            is_planned = (
+                has_planned_range and planned_start <= current_date <= planned_end  # type: ignore[operator]
+            )
+            is_deadline = deadline is not None and current_date == deadline
+
+            # Determine background color (inlined _determine_cell_background_color)
+            bg_color = GanttCellFormatter._bg_color_batch(
+                meta, hours, is_planned, is_deadline, is_finished
+            )
+
+            # Format hours display (inlined _format_hours_display)
+            if is_finished:
+                display = SYMBOL_EMPTY
+            elif hours > 0:
+                display = (
+                    f"{int(hours):2d} " if hours == int(hours) else f"{hours:3.1f}"
+                )
+            else:
+                display = SYMBOL_EMPTY
+
+            style = f"on {bg_color}" if bg_color else "dim"
+            results.append((display, style))
+
+        return results
+
+    @staticmethod
+    def _bg_color_batch(
+        meta: DateMetadata,
+        hours: float,
+        is_planned: bool,
+        is_deadline: bool,
+        is_finished: bool,
+    ) -> str | None:
+        """Determine background color using pre-computed DateMetadata.
+
+        Same logic as _determine_cell_background_color but avoids redundant
+        weekday() and holiday set lookups.
+        """
+        if is_deadline:
+            return BACKGROUND_COLOR_DEADLINE
+
+        if is_finished:
+            return None
+
+        if hours > 0:
+            if meta.is_weekend_or_holiday:
+                return meta.weekend_holiday_bg_color
+            return BACKGROUND_COLOR
+
+        if is_planned:
+            if meta.is_weekend_or_holiday:
+                return meta.weekend_holiday_bg_color
+            return BACKGROUND_COLOR_PLANNED_LIGHT
+
+        return None
 
     @staticmethod
     def get_status_color(status: TaskStatus | str) -> str:

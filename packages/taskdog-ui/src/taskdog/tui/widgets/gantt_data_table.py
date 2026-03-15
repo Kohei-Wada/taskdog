@@ -15,7 +15,7 @@ from textual.widgets import DataTable
 from taskdog.constants.common import HEADER_ESTIMATED, HEADER_ID, HEADER_NAME
 from taskdog.constants.gantt import CHARS_PER_DAY, GANTT_WORKLOAD_LABEL
 from taskdog.constants.task_table import ESTIMATED_COLUMN_WIDTH, TASK_NAME_COLUMN_WIDTH
-from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
+from taskdog.renderers.gantt_cell_formatter import DateMetadata, GanttCellFormatter
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from taskdog_core.shared.constants import (
     WORKLOAD_COMFORTABLE_HOURS,
@@ -164,15 +164,21 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             if gantt_view_model.is_empty():
                 return
 
+            # Pre-compute shared date metadata (once for all tasks)
+            today = date.today()
+            date_metadata = GanttCellFormatter.precompute_date_metadata(
+                self._date_columns, gantt_view_model.holidays, today
+            )
+
             # Add task rows
             for idx, task_vm in enumerate(gantt_view_model.tasks):
                 task_daily_hours = gantt_view_model.task_daily_hours.get(task_vm.id, {})
                 self._add_task_row(
                     task_vm,
                     task_daily_hours,
-                    gantt_view_model.start_date,
-                    gantt_view_model.end_date,
-                    gantt_view_model.holidays,
+                    self._date_columns,
+                    date_metadata,
+                    today,
                 )
                 self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task_vm
 
@@ -230,22 +236,22 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         self,
         task_vm: TaskGanttRowViewModel,
         task_daily_hours: dict[date, float],
-        start_date: date,
-        end_date: date,
-        holidays: set[date],
+        dates: list[date],
+        date_metadata: list[DateMetadata],
+        today: date,
     ) -> None:
         """Add a task row to the Gantt table.
 
         Args:
             task_vm: Task ViewModel to add
             task_daily_hours: Daily hours allocation for this task
-            start_date: Start date of the chart
-            end_date: End date of the chart
-            holidays: Set of holiday dates for styling
+            dates: Pre-computed list of dates in the timeline
+            date_metadata: Pre-computed metadata for each date
+            today: Current date (computed once by caller)
         """
         task_id, task_name, est_hours = self._format_task_metadata(task_vm)
         date_cells = self._build_timeline_cells(
-            task_vm, task_daily_hours, start_date, end_date, holidays
+            task_vm, task_daily_hours, dates, date_metadata, today
         )
 
         self.add_row(
@@ -277,49 +283,40 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         self,
         task_vm: TaskGanttRowViewModel,
         task_daily_hours: dict[date, float],
-        start_date: date,
-        end_date: date,
-        holidays: set[date],
+        dates: list[date],
+        date_metadata: list[DateMetadata],
+        today: date,
     ) -> list[Text]:
         """Build timeline cells for a task, one Text per date.
+
+        Uses the batch formatter to avoid redundant per-cell computations.
 
         Args:
             task_vm: Task ViewModel to build timeline for
             task_daily_hours: Daily hours allocation
-            start_date: Start date of timeline
-            end_date: End date of timeline
-            holidays: Set of holiday dates for styling
+            dates: Pre-computed list of dates in the timeline
+            date_metadata: Pre-computed metadata for each date
+            today: Current date (computed once by caller)
 
         Returns:
             List of Rich Text objects, one per date
         """
-        days = (end_date - start_date).days + 1
+        cell_data = GanttCellFormatter.format_timeline_cells_batch(
+            dates,
+            date_metadata,
+            task_daily_hours,
+            task_vm.status,
+            task_vm.planned_start,
+            task_vm.planned_end,
+            task_vm.actual_start,
+            task_vm.actual_end,
+            task_vm.deadline,
+            today,
+        )
 
-        # Create parsed_dates dict from ViewModel (dates are already converted)
-        parsed_dates = {
-            "planned_start": task_vm.planned_start,
-            "planned_end": task_vm.planned_end,
-            "actual_start": task_vm.actual_start,
-            "actual_end": task_vm.actual_end,
-            "deadline": task_vm.deadline,
-        }
-
-        cells: list[Text] = []
-
-        for day_offset in range(days):
-            current_date = start_date + timedelta(days=day_offset)
-            hours = task_daily_hours.get(current_date, 0.0)
-
-            display, style = GanttCellFormatter.format_timeline_cell(
-                current_date,
-                hours,
-                parsed_dates,
-                task_vm.status,
-                holidays,
-            )
-            cells.append(Text(display, style=style, justify="center"))
-
-        return cells
+        return [
+            Text(display, style=style, justify="center") for display, style in cell_data
+        ]
 
     def _add_workload_row(
         self,
