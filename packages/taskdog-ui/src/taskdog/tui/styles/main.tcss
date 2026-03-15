@@ -25,7 +25,7 @@ MainScreen {
     margin-bottom: 1;
 }
 
-#gantt-widget:focus {
+#gantt-widget:focus-within {
     border: round $accent;
 }
 

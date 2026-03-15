@@ -54,7 +54,7 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the gantt widget."""
         super().__init__(*args, **kwargs)
-        self.can_focus = True
+        self.can_focus = False
         self._task_ids: list[int] = []
         # NOTE: _gantt_view_model removed - now accessed via self.app.state.gantt_cache (Step 4)
         # NOTE: _sort_by and _reverse removed - now accessed via self.app.state (Step 2)
