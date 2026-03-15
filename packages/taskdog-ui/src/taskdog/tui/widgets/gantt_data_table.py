@@ -21,6 +21,7 @@ from taskdog_core.shared.constants import (
     WORKLOAD_COMFORTABLE_HOURS,
     WORKLOAD_MODERATE_HOURS,
 )
+from taskdog_core.shared.constants.time import DAYS_PER_WEEK
 
 # Constants
 GANTT_HEADER_ROW_COUNT = 3  # Number of header rows (Month, Week, Date)
@@ -45,6 +46,9 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         # g/G -> jump to top/bottom
         Binding("g", "scroll_home", "Top", show=False),
         Binding("G", "scroll_end", "Bottom", show=False),
+        # w/b -> jump by one week (7 columns)
+        Binding("w", "cursor_forward_week", "Week Forward", show=False),
+        Binding("b", "cursor_backward_week", "Week Backward", show=False),
         # 0/$ -> jump to leftmost/rightmost column
         Binding("0", "cursor_home_horizontal", "Line Start", show=False),
         Binding("$", "cursor_end_horizontal", "Line End", show=False),
@@ -341,6 +345,16 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             Text(total_est_str, style="bold yellow", justify="center"),
             *workload_cells,
         )
+
+    def action_cursor_forward_week(self) -> None:
+        """Move cursor forward by one week (w key)."""
+        new_col = min(self.cursor_column + DAYS_PER_WEEK, len(self.columns) - 1)
+        self.move_cursor(column=new_col)
+
+    def action_cursor_backward_week(self) -> None:
+        """Move cursor backward by one week (b key)."""
+        new_col = max(self.cursor_column - DAYS_PER_WEEK, 0)
+        self.move_cursor(column=new_col)
 
     def action_cursor_home_horizontal(self) -> None:
         """Move cursor to the first column (0 key)."""
