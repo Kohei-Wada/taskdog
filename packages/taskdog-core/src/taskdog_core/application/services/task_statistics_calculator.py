@@ -160,12 +160,8 @@ class TaskStatisticsCalculator:
         )
 
         # Convert to DTOs (tasks must have IDs)
-        if longest_task.id is None:
-            raise ValueError("Longest task must have an ID")
-        if shortest_task.id is None:
-            raise ValueError("Shortest task must have an ID")
-        longest_task_dto = TaskSummaryDto(id=longest_task.id, name=longest_task.name)
-        shortest_task_dto = TaskSummaryDto(id=shortest_task.id, name=shortest_task.name)
+        longest_task_dto = self._to_summary_dto(longest_task)
+        shortest_task_dto = self._to_summary_dto(shortest_task)
 
         return TimeStatistics(
             total_work_hours=round(total_hours, 1),
@@ -246,17 +242,8 @@ class TaskStatisticsCalculator:
         worst_tasks = [t[0] for t in tasks_with_accuracy[-3:][::-1]]
 
         # Convert to DTOs (tasks must have IDs)
-        best_tasks_dto = []
-        for t in best_tasks:
-            if t.id is None:
-                raise ValueError("Task must have an ID")
-            best_tasks_dto.append(TaskSummaryDto(id=t.id, name=t.name))
-
-        worst_tasks_dto = []
-        for t in worst_tasks:
-            if t.id is None:
-                raise ValueError("Task must have an ID")
-            worst_tasks_dto.append(TaskSummaryDto(id=t.id, name=t.name))
+        best_tasks_dto = [self._to_summary_dto(t) for t in best_tasks]
+        worst_tasks_dto = [self._to_summary_dto(t) for t in worst_tasks]
 
         return EstimationAccuracyStatistics(
             total_tasks_with_estimation=len(estimated_tasks),
@@ -368,6 +355,13 @@ class TaskStatisticsCalculator:
             high_priority_completion_rate=round(high_completion_rate, 2),
             priority_completion_map=dict(priority_map),
         )
+
+    @staticmethod
+    def _to_summary_dto(task: Task) -> TaskSummaryDto:
+        """Convert a Task to TaskSummaryDto, validating that it has an ID."""
+        if task.id is None:
+            raise ValueError("Task must have an ID")
+        return TaskSummaryDto(id=task.id, name=task.name)
 
     def _calculate_trends(self, tasks: list[Task]) -> TrendStatistics:
         """Calculate trend statistics over time.
