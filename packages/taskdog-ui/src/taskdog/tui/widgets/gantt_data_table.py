@@ -35,16 +35,30 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
     - Status-based coloring
     """
 
-    # No bindings - read-only display
-    # Note: Base DataTable uses list[Binding | tuple] but list is invariant
-    BINDINGS: ClassVar[list[Binding]] = []  # type: ignore[assignment]
+    # Vi-style cell navigation bindings
+    BINDINGS: ClassVar[list[Binding]] = [  # type: ignore[assignment]
+        # h/j/k/l -> DataTable built-in cursor movement
+        Binding("j", "cursor_down", "Down", show=False),
+        Binding("k", "cursor_up", "Up", show=False),
+        Binding("h", "cursor_left", "Left", show=False),
+        Binding("l", "cursor_right", "Right", show=False),
+        # g/G -> jump to top/bottom
+        Binding("g", "scroll_home", "Top", show=False),
+        Binding("G", "scroll_end", "Bottom", show=False),
+        # 0/$ -> jump to leftmost/rightmost column
+        Binding("0", "cursor_home_horizontal", "Line Start", show=False),
+        Binding("$", "cursor_end_horizontal", "Line End", show=False),
+        # Ctrl+d/u -> page scroll
+        Binding("ctrl+d", "page_down", "Page Down", show=False),
+        Binding("ctrl+u", "page_up", "Page Up", show=False),
+    ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the Gantt data table."""
         super().__init__(*args, **kwargs)
-        self.cursor_type = "none"
+        self.cursor_type = "cell"
         self.zebra_stripes = True
-        self.can_focus = False
+        self.can_focus = True
         # Remove cell padding so date columns render at exact CHARS_PER_DAY width
         self.cell_padding = 0
 
@@ -327,6 +341,15 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             Text(total_est_str, style="bold yellow", justify="center"),
             *workload_cells,
         )
+
+    def action_cursor_home_horizontal(self) -> None:
+        """Move cursor to the first column (0 key)."""
+        self.move_cursor(column=0)
+
+    def action_cursor_end_horizontal(self) -> None:
+        """Move cursor to the last column ($ key)."""
+        if self.columns:
+            self.move_cursor(column=len(self.columns) - 1)
 
     def get_legend_text(self) -> Text:
         """Build legend text for the Gantt chart.
