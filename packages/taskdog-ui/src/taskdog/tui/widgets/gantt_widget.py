@@ -426,6 +426,16 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
 
     # Public API methods for external access
 
+    def get_selected_task_id(self) -> int | None:
+        """Get the task ID at the current Gantt cursor row.
+
+        Returns:
+            Task ID if cursor is on a task row, None otherwise.
+        """
+        if self._gantt_table:
+            return self._gantt_table.get_selected_task_id()
+        return None
+
     def get_filter_include_archived(self) -> bool:
         """Get current archive filter setting.
 

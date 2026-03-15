@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from taskdog.tui.context import TUIContext
 from taskdog.tui.events import TasksRefreshed
+from taskdog.tui.widgets.gantt_data_table import GanttDataTable
 from taskdog_core.domain.exceptions.task_exceptions import TaskError
 
 if TYPE_CHECKING:
@@ -126,9 +127,16 @@ class TUICommandBase(ABC):  # noqa: B024
     def get_selected_task_id(self) -> int | None:
         """Get the ID of the currently selected task.
 
+        When a GanttDataTable cell is focused, returns the task at the
+        Gantt cursor row. Otherwise falls back to TaskTable selection.
+
         Returns:
             The selected task ID, or None if no task is selected
         """
+        # If Gantt cell is focused, get task from Gantt cursor row
+        if isinstance(self.app.focused, GanttDataTable):
+            return self.app.focused.get_selected_task_id()
+
         if not self.app.main_screen or not self.app.main_screen.task_table:
             return None
         return self.app.main_screen.task_table.get_selected_task_id()
@@ -136,12 +144,17 @@ class TUICommandBase(ABC):  # noqa: B024
     def get_selected_task_ids(self) -> list[int]:
         """Get all selected task IDs for batch operations.
 
-        If no tasks are selected, returns current cursor position task ID.
-        This maintains backward compatibility with single-task operations.
+        When a GanttDataTable cell is focused, returns single task at cursor.
+        Otherwise returns TaskTable multi-selection or cursor fallback.
 
         Returns:
             List of selected task IDs, or [current_task_id] if none selected
         """
+        # Gantt: single selection only
+        if isinstance(self.app.focused, GanttDataTable):
+            task_id = self.app.focused.get_selected_task_id()
+            return [task_id] if task_id is not None else []
+
         if not self.app.main_screen or not self.app.main_screen.task_table:
             return []
         return self.app.main_screen.task_table.get_selected_task_ids()

@@ -123,13 +123,17 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             comfortable_hours: Workload threshold for green zone
             moderate_hours: Workload threshold for yellow zone
         """
-        # Save scroll position before refresh (both vertical and horizontal)
+        # Save scroll and cursor position before refresh
         # Note: scroll_y/scroll_x types from DataTable base class (type: ignore needed)
         saved_scroll_y: float | None = (
             self.scroll_y if keep_scroll_position else None  # type: ignore[has-type]
         )
         saved_scroll_x: float | None = (
             self.scroll_x if keep_scroll_position else None  # type: ignore[has-type]
+        )
+        saved_cursor_row: int | None = self.cursor_row if keep_scroll_position else None
+        saved_cursor_col: int | None = (
+            self.cursor_column if keep_scroll_position else None
         )
 
         # NOTE: No longer storing view model locally - just use parameter (Step 4)
@@ -188,6 +192,15 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         if saved_scroll_x is not None:
             max_scroll_x = max(0, self.virtual_size.width - self.size.width)
             self.scroll_x = min(saved_scroll_x, max_scroll_x)
+
+        # Restore cursor position with bounds check
+        if saved_cursor_row is not None and saved_cursor_col is not None:
+            max_row = max(self.row_count - 1, 0)
+            max_col = max(len(self.columns) - 1, 0)
+            self.move_cursor(
+                row=min(saved_cursor_row, max_row),
+                column=min(saved_cursor_col, max_col),
+            )
 
     def _add_date_header_rows(
         self, start_date: date, end_date: date, holidays: set[date]
@@ -364,6 +377,23 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         """Move cursor to the last column ($ key)."""
         if self.columns:
             self.move_cursor(column=len(self.columns) - 1)
+
+    def get_selected_task_id(self) -> int | None:
+        """Get the task ID at the current cursor row.
+
+        Returns:
+            Task ID if cursor is on a task row, None if on header/workload row.
+        """
+        task_vm = self._task_map.get(self.cursor_row)
+        return task_vm.id if task_vm else None
+
+    def get_selected_task_vm(self) -> TaskGanttRowViewModel | None:
+        """Get the TaskGanttRowViewModel at the current cursor row.
+
+        Returns:
+            TaskGanttRowViewModel if cursor is on a task row, None otherwise.
+        """
+        return self._task_map.get(self.cursor_row)
 
     def get_legend_text(self) -> Text:
         """Build legend text for the Gantt chart.
