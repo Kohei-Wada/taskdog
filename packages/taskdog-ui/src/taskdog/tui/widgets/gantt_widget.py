@@ -5,13 +5,9 @@ like date range management and automatic resizing.
 """
 
 from datetime import date, timedelta
-from typing import TYPE_CHECKING, Any, ClassVar
-
-if TYPE_CHECKING:
-    pass
+from typing import Any
 
 from textual.app import ComposeResult
-from textual.binding import Binding
 from textual.containers import Vertical
 from textual.events import Resize
 from textual.widgets import Static
@@ -26,12 +22,11 @@ from taskdog.constants.gantt import (
 )
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.gantt_data_table import GanttDataTable
-from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog_core.shared.constants.time import DAYS_PER_WEEK
 
 
-class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
+class GanttWidget(Vertical, TUIWidget):
     """A widget for displaying gantt chart using GanttDataTable.
 
     This widget manages the GanttDataTable and handles date range calculations
@@ -46,18 +41,11 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
     # Allow maximize for this widget (same as TaskTable)
     allow_maximize = True
 
-    # Vi-style bindings for scrolling (delegated to gantt table)
-    BINDINGS: ClassVar[list[Binding | tuple[str, str] | tuple[str, str, str]]] = list(
-        ViNavigationMixin.VI_SCROLL_ALL_BINDINGS
-    )
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the gantt widget."""
         super().__init__(*args, **kwargs)
         self.can_focus = False
         self._task_ids: list[int] = []
-        # NOTE: _gantt_view_model removed - now accessed via self.app.state.gantt_cache (Step 4)
-        # NOTE: _sort_by and _reverse removed - now accessed via self.app.state (Step 2)
         self._filter_include_archived: bool = (
             False  # Include archived tasks flag for recalculation
         )
@@ -84,68 +72,6 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         # Built as markup string so Textual resolves CSS variables like $primary.
         self._legend_widget = Static(self._build_legend_markup(), id="gantt-legend")
         yield self._legend_widget
-
-    # Vi-style scroll actions - delegate to gantt table
-
-    def _delegate_scroll(
-        self, method_name: str, *args: int | float | None, **kwargs: Any
-    ) -> None:
-        """Delegate a scroll action to the gantt table if available.
-
-        Args:
-            method_name: Name of the scroll method to call on _gantt_table
-            *args: Positional arguments to pass to the method
-            **kwargs: Keyword arguments to pass to the method
-        """
-        if self._gantt_table:
-            kwargs.setdefault("animate", False)
-            getattr(self._gantt_table, method_name)(*args, **kwargs)
-
-    def action_scroll_down(self) -> None:
-        """Scroll down one line."""
-        self._delegate_scroll("scroll_down")
-
-    def action_scroll_up(self) -> None:
-        """Scroll up one line."""
-        self._delegate_scroll("scroll_up")
-
-    def action_scroll_home(self) -> None:
-        """Scroll to top."""
-        self._delegate_scroll("scroll_home")
-
-    def action_scroll_end(self) -> None:
-        """Scroll to bottom."""
-        self._delegate_scroll("scroll_end")
-
-    def action_page_down(self) -> None:
-        """Scroll down half a page."""
-        self._delegate_scroll("scroll_page_down")
-
-    def action_page_up(self) -> None:
-        """Scroll up half a page."""
-        self._delegate_scroll("scroll_page_up")
-
-    def action_scroll_left(self) -> None:
-        """Scroll left by one day."""
-        if self._gantt_table:
-            self._gantt_table.scroll_x = max(
-                0, self._gantt_table.scroll_x - CHARS_PER_DAY
-            )
-
-    def action_scroll_right(self) -> None:
-        """Scroll right by one day."""
-        if self._gantt_table:
-            self._gantt_table.scroll_x = self._gantt_table.scroll_x + CHARS_PER_DAY
-
-    def action_scroll_home_horizontal(self) -> None:
-        """Scroll to leftmost position (0 key)."""
-        self._delegate_scroll("scroll_to", 0, None, animate=False)
-
-    def action_scroll_end_horizontal(self) -> None:
-        """Scroll to rightmost position ($ key)."""
-        if self._gantt_table:
-            max_x = getattr(self._gantt_table, "max_scroll_x", 0)
-            self._gantt_table.scroll_to(max_x, None, animate=False)
 
     def update_gantt(
         self,
