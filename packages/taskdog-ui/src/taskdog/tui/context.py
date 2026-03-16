@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from taskdog_client import TaskdogApiClient
 
     from taskdog.infrastructure.cli_config_manager import CliConfig
+    from taskdog.tui.selection import SelectionProvider
 
 
 @dataclass
@@ -25,8 +26,10 @@ class TUIContext:
         api_client: API client for server communication (required)
         state: TUI application state (shared with app instance)
         config: CLI configuration (optional, for custom templates etc.)
+        selection: Selection provider for resolving task selection from widgets
     """
 
     api_client: "TaskdogApiClient"
     state: TUIState
+    selection: "SelectionProvider"
     config: "CliConfig | None" = None

@@ -36,6 +36,7 @@ from taskdog.tui.palette.providers import (
     SortOptionsProvider,
 )
 from taskdog.tui.screens.main_screen import MainScreen
+from taskdog.tui.selection import AppSelectionProvider
 from taskdog.tui.services import ConnectionMonitor, TaskUIManager, WebSocketHandler
 from taskdog.tui.state import ConnectionStatusManager, TUIState
 from taskdog.tui.utils.css_loader import get_css_paths
@@ -237,10 +238,11 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         # Initialize connection status manager (observer pattern)
         self.connection_manager = ConnectionStatusManager()
 
-        # Initialize TUIContext with API client, state, and config
+        # Initialize TUIContext with API client, state, selection, and config
         self.context = TUIContext(
             api_client=self.api_client,
             state=self.state,  # Share same state instance
+            selection=AppSelectionProvider(self),
             config=self._cli_config,
         )
 
