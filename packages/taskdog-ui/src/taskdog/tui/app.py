@@ -465,7 +465,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         """Toggle search filter for Gantt chart."""
         enabled = self.state.toggle_gantt_filter()
         # Post to current screen so MainScreen's on_filter_changed handler receives it
-        self.screen.post_message(FilterChanged())
+        self.screen.post_message(FilterChanged(gantt_filter_toggled=True))
         status = "enabled" if enabled else "disabled"
         self.notify(f"Gantt filter {status}")
 

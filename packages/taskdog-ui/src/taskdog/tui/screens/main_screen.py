@@ -127,7 +127,7 @@ class MainScreen(Screen[None]):
         # Refresh Gantt on filter changes: full rebuild only when gantt filtering
         # is enabled; otherwise just update the title indicator
         if self.gantt_widget and self.state:
-            if self.state.gantt_filter_enabled:
+            if self.state.gantt_filter_enabled or event.gantt_filter_toggled:
                 self.gantt_widget.render_filtered_gantt()
             else:
                 self.gantt_widget.update_title_only()
