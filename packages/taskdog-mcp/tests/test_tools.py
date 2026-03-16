@@ -150,6 +150,7 @@ def create_mock_client() -> MagicMock:
     client.add_dependency = MagicMock()
     client.remove_dependency = MagicMock()
     client.set_task_tags = MagicMock()
+    client.delete_tag = MagicMock()
     # Notes methods
     client.get_task_notes = MagicMock()
     client.update_task_notes = MagicMock()
@@ -1538,3 +1539,71 @@ class TestTaskAuditTools:
         assert result["error_message"] is None
         assert result["old_values"] == {"priority": 50}
         assert result["new_values"] == {"priority": 80}
+
+
+class TestTaskTagTools:
+    """Test task tag MCP tools."""
+
+    def test_delete_tag_returns_formatted_response(self) -> None:
+        """Test delete_tag tool formats response correctly."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_tags
+
+        from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
+
+        client = create_mock_client()
+        client.delete_tag.return_value = DeleteTagOutput(
+            tag_name="bug", affected_task_count=3
+        )
+
+        mcp = FastMCP("test")
+        task_tags.register_tools(mcp, client)
+
+        delete_tag_fn = mcp._tool_manager._tools["delete_tag"].fn
+        result = delete_tag_fn(tag_name="bug")
+
+        assert result["tag_name"] == "bug"
+        assert result["affected_task_count"] == 3
+        assert "bug" in result["message"]
+        assert "3" in result["message"]
+
+    def test_delete_tag_with_zero_affected_tasks(self) -> None:
+        """Test delete_tag when tag exists but no tasks have it."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_tags
+
+        from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
+
+        client = create_mock_client()
+        client.delete_tag.return_value = DeleteTagOutput(
+            tag_name="unused", affected_task_count=0
+        )
+
+        mcp = FastMCP("test")
+        task_tags.register_tools(mcp, client)
+
+        delete_tag_fn = mcp._tool_manager._tools["delete_tag"].fn
+        result = delete_tag_fn(tag_name="unused")
+
+        assert result["tag_name"] == "unused"
+        assert result["affected_task_count"] == 0
+
+    def test_delete_tag_calls_client_with_correct_name(self) -> None:
+        """Test delete_tag passes tag name to client correctly."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_tags
+
+        from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
+
+        client = create_mock_client()
+        client.delete_tag.return_value = DeleteTagOutput(
+            tag_name="bug", affected_task_count=1
+        )
+
+        mcp = FastMCP("test")
+        task_tags.register_tools(mcp, client)
+
+        delete_tag_fn = mcp._tool_manager._tools["delete_tag"].fn
+        delete_tag_fn(tag_name="bug")
+
+        client.delete_tag.assert_called_once_with("bug")
