@@ -237,11 +237,6 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         # Initialize connection status manager (observer pattern)
         self.connection_manager = ConnectionStatusManager()
 
-        # NOTE: All legacy state fields migrated to self.state (Phase 2 complete)
-        # - _gantt_sort_by, _gantt_reverse → state (Step 2-3)
-        # - _all_tasks, _gantt_view_model → state (Step 4)
-        # - viewmodels → state (Step 5)
-
         # Initialize TUIContext with API client, state, and config
         self.context = TUIContext(
             api_client=self.api_client,

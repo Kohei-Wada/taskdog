@@ -389,20 +389,6 @@ class GanttWidget(Vertical, TUIWidget):
         self._keep_scroll_position = keep_scroll_position
         self.call_after_refresh(self._render_gantt)
 
-    def calculate_display_days(self, widget_width: int | None = None) -> int:
-        """Calculate optimal number of days to display based on widget width.
-
-        Public interface for display day calculation. This is useful for
-        determining date ranges before loading gantt data.
-
-        Args:
-            widget_width: Widget width to use for calculation. If None, uses self.size.width.
-
-        Returns:
-            Number of days to display (rounded to weeks)
-        """
-        return self._calculate_display_days(widget_width)
-
     def calculate_date_range(
         self, widget_width: int | None = None
     ) -> tuple[date, date]:

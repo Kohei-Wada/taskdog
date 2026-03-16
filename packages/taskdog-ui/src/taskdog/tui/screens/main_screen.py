@@ -45,7 +45,7 @@ class MainScreen(Screen[None]):
         """Initialize the main screen.
 
         Args:
-            state: TUI state for connection status (optional for backward compatibility)
+            state: TUI state for connection status (optional)
         """
         super().__init__()
         self.state = state

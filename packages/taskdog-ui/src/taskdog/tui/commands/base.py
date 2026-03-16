@@ -60,11 +60,11 @@ class TUICommandBase(ABC):  # noqa: B024
         Subclasses should override this method to define their specific behavior.
         This method is called by execute() within a try-except block.
 
-        For backwards compatibility, if not overridden, this will do nothing.
+        If not overridden, this will do nothing.
         Commands that override execute() directly (like StatusChangeCommandBase
         or dialog-based commands) don't need to implement this.
         """
-        # Default implementation for backwards compatibility
+        # Default: no-op
         # Subclasses should override this method
 
     def handle_error(self, callback_fn: F) -> F:

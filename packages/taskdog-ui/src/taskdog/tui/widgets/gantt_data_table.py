@@ -73,7 +73,6 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         self._task_map: dict[
             int, TaskGanttRowViewModel
         ] = {}  # Maps row index to TaskViewModel
-        # NOTE: _gantt_view_model removed - data passed as parameter to load_gantt (Step 4)
         self._date_columns: list[date] = []  # Columns representing dates
 
     def setup_columns(
@@ -138,7 +137,6 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             self.cursor_column if keep_scroll_position else None
         )
 
-        # NOTE: No longer storing view model locally - just use parameter (Step 4)
         self._task_map.clear()
 
         # Batch all table mutations to trigger a single layout reflow
