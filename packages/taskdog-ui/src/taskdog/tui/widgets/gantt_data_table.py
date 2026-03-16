@@ -26,6 +26,7 @@ from taskdog_core.shared.constants.time import DAYS_PER_WEEK
 
 # Constants
 GANTT_HEADER_ROW_COUNT = 3  # Number of header rows (Month, Week, Date)
+GANTT_FIXED_COLUMN_COUNT = 3  # Number of fixed columns (ID, Name, Est)
 
 
 class GanttDataTable(DataTable):  # type: ignore[type-arg]
@@ -56,6 +57,8 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         # Ctrl+d/u -> page scroll
         Binding("ctrl+d", "page_down", "Page Down", show=False),
         Binding("ctrl+u", "page_up", "Page Up", show=False),
+        # T -> jump to today
+        Binding("T", "jump_to_today", "Today", show=False),
     ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -605,6 +608,17 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         """Move cursor to the last column ($ key)."""
         if self.columns:
             self.move_cursor(column=len(self.columns) - 1)
+
+    def action_jump_to_today(self) -> None:
+        """Jump cursor to today's date column (T key)."""
+        today = date.today()
+        try:
+            date_index = self._date_columns.index(today)
+        except ValueError:
+            self.app.notify("Today is not in the visible range", severity="warning")
+            return
+        # Fixed columns: ID, Name, Est (3 columns before date columns)
+        self.move_cursor(column=date_index + GANTT_FIXED_COLUMN_COUNT)
 
     def get_selected_task_id(self) -> int | None:
         """Get the task ID at the current cursor row.
