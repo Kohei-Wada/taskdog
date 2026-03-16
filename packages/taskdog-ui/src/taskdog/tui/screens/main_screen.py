@@ -128,9 +128,13 @@ class MainScreen(Screen[None]):
             if self.custom_footer:
                 self.custom_footer.update_result(len(filtered), self.state.total_count)
 
-        # Always refresh Gantt on filter changes so the title indicator updates
+        # Refresh Gantt on filter changes: full rebuild only when gantt filtering
+        # is enabled; otherwise just update the title indicator
         if self.gantt_widget and self.state:
-            self.gantt_widget.render_filtered_gantt()
+            if self.state.gantt_filter_enabled:
+                self.gantt_widget.render_filtered_gantt()
+            else:
+                self.gantt_widget.update_title_only()
 
     def on_custom_footer_submitted(self, event: CustomFooter.Submitted) -> None:
         """Handle Enter key press in search input.

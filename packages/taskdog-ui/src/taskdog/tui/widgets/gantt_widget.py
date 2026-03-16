@@ -424,6 +424,10 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         """
         self._render_gantt()
 
+    def update_title_only(self) -> None:
+        """Update only the Gantt title without rebuilding the data table."""
+        self._update_title()
+
     # Public API methods for external access
 
     def get_selected_task_id(self) -> int | None:
