@@ -78,9 +78,10 @@ Custom keybindings for the TUI. Not yet implemented.
 Environment variables have the highest priority and override settings from `cli.toml`.
 
 | Variable | Description | Default |
-|----------|-------------|---------|
+| -------- | ----------- | ------- |
 | `TASKDOG_API_HOST` | API server hostname | `127.0.0.1` |
 | `TASKDOG_API_PORT` | API server port | `8000` |
+| `TASKDOG_GANTT_MIN_DISPLAY_DAYS` | Minimum days in TUI Gantt chart | `56` |
 
 ### Examples
 

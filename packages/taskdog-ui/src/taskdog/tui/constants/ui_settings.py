@@ -10,7 +10,6 @@ through CliConfig.input_defaults, not from this module.
 
 __all__ = [
     "AUTO_REFRESH_INTERVAL_SECONDS",
-    "DEFAULT_GANTT_DISPLAY_DAYS",
     "MAX_HOURS_PER_DAY",
     "OPTIMIZATION_FAILURE_DETAIL_THRESHOLD",
     "SORT_KEY_LABELS",
@@ -28,10 +27,6 @@ MAX_HOURS_PER_DAY = 24
 # Optimization display settings
 OPTIMIZATION_FAILURE_DETAIL_THRESHOLD = 5
 """Maximum number of failed tasks to display details for in optimization results."""
-
-# Gantt chart display settings
-DEFAULT_GANTT_DISPLAY_DAYS = 28
-"""Default number of days to display in Gantt chart (4 weeks)."""
 
 # Table display settings
 TAGS_MAX_DISPLAY_LENGTH = 18

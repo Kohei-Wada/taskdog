@@ -4,8 +4,8 @@ from collections.abc import Callable
 from datetime import date, timedelta
 from typing import TYPE_CHECKING
 
+from taskdog.constants.gantt import MIN_GANTT_DISPLAY_DAYS
 from taskdog.services.task_data_loader import TaskData, TaskDataLoader
-from taskdog.tui.constants.ui_settings import DEFAULT_GANTT_DISPLAY_DAYS
 from taskdog.tui.state import TUIState
 from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog_core.application.dto.task_list_output import TaskListOutput
@@ -90,7 +90,7 @@ class TaskUIManager:
         # Fallback when gantt_widget is not available
         today = date.today()
         start_date = today - timedelta(days=today.weekday())
-        end_date = start_date + timedelta(days=DEFAULT_GANTT_DISPLAY_DAYS - 1)
+        end_date = start_date + timedelta(days=MIN_GANTT_DISPLAY_DAYS - 1)
         return (start_date, end_date)
 
     def _fetch_task_data(self) -> TaskData:
