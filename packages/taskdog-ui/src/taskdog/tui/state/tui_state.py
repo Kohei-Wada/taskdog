@@ -144,15 +144,6 @@ class TUIState:
         return {vm.id for vm in self.filtered_viewmodels}
 
     @property
-    def filtered_tasks(self) -> list[TaskRowDto]:
-        """Get tasks for display.
-
-        Returns:
-            All tasks from cache.
-        """
-        return self.tasks_cache
-
-    @property
     def filtered_viewmodels(self) -> list[TaskRowViewModel]:
         """Get ViewModels for display, with filter applied.
 
@@ -232,18 +223,6 @@ class TUIState:
             total_estimated_duration=self.gantt_cache.total_estimated_duration,
         )
 
-    def clear_caches(self) -> None:
-        """Clear all cached data.
-
-        Called when forcing a full refresh from the API.
-        Resets all cache fields to their initial empty state.
-        Note: Does not clear filter state - filters persist across refreshes.
-        """
-        self.tasks_cache.clear()
-        self.viewmodels_cache.clear()
-        self.gantt_cache = None
-        self._invalidate_filtered_cache()
-
     def update_caches(
         self,
         tasks: list[TaskRowDto],
@@ -273,11 +252,3 @@ class TUIState:
         if gantt is not None:
             self.gantt_cache = gantt
         self._invalidate_filtered_cache()
-
-    def invalidate_gantt_cache(self) -> None:
-        """Invalidate only Gantt cache.
-
-        Useful when Gantt needs to be recalculated (e.g., on resize)
-        without reloading all task data.
-        """
-        self.gantt_cache = None

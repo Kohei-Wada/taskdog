@@ -77,20 +77,6 @@ class TestTUIState:
         assert self.state.viewmodels_cache == []
         assert self.state.gantt_cache is None
 
-    def test_filtered_tasks_returns_all(self):
-        """Test filtered_tasks returns all tasks from cache."""
-        # Setup tasks with mixed statuses
-        tasks = [
-            create_task_dto(1, "Task 1", TaskStatus.COMPLETED),
-            create_task_dto(2, "Task 2", TaskStatus.PENDING),
-            create_task_dto(3, "Task 3", TaskStatus.CANCELED),
-        ]
-        self.state.tasks_cache = tasks
-
-        # Should return all tasks
-        filtered = self.state.filtered_tasks
-        assert len(filtered) == 3
-
     def test_filtered_viewmodels_returns_all(self):
         """Test filtered_viewmodels returns all viewmodels from cache."""
         # Setup viewmodels with mixed statuses
@@ -162,51 +148,3 @@ class TestTUIState:
 
         assert "must have same length" in str(exc_info.value)
         assert "2 != 1" in str(exc_info.value)
-
-    def test_clear_caches(self):
-        """Test clear_caches removes all cached data."""
-        # Setup initial caches
-        self.state.tasks_cache = [create_task_dto(1, "Task 1", TaskStatus.PENDING)]
-        self.state.viewmodels_cache = [
-            create_task_viewmodel(1, "Task 1", TaskStatus.PENDING, False)
-        ]
-        self.state.gantt_cache = GanttViewModel(
-            start_date=date.today(),
-            end_date=date.today(),
-            tasks=[],
-            task_daily_hours={},
-            daily_workload={},
-            holidays=set(),
-        )
-
-        # Clear all caches
-        self.state.clear_caches()
-
-        # Verify all caches are cleared
-        assert self.state.tasks_cache == []
-        assert self.state.viewmodels_cache == []
-        assert self.state.gantt_cache is None
-
-    def test_invalidate_gantt_cache(self):
-        """Test invalidate_gantt_cache only clears gantt cache."""
-        # Setup initial caches
-        self.state.tasks_cache = [create_task_dto(1, "Task 1", TaskStatus.PENDING)]
-        self.state.viewmodels_cache = [
-            create_task_viewmodel(1, "Task 1", TaskStatus.PENDING, False)
-        ]
-        self.state.gantt_cache = GanttViewModel(
-            start_date=date.today(),
-            end_date=date.today(),
-            tasks=[],
-            task_daily_hours={},
-            daily_workload={},
-            holidays=set(),
-        )
-
-        # Invalidate only gantt cache
-        self.state.invalidate_gantt_cache()
-
-        # Verify only gantt cache is cleared
-        assert len(self.state.tasks_cache) == 1
-        assert len(self.state.viewmodels_cache) == 1
-        assert self.state.gantt_cache is None
