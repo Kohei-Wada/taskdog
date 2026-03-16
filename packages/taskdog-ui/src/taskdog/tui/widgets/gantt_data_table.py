@@ -10,6 +10,7 @@ from typing import Any, ClassVar
 
 from rich.text import Text
 from textual.binding import Binding
+from textual.coordinate import Coordinate
 from textual.widgets import DataTable
 
 from taskdog.constants.common import HEADER_ESTIMATED, HEADER_ID, HEADER_NAME
@@ -74,6 +75,7 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             int, TaskGanttRowViewModel
         ] = {}  # Maps row index to TaskViewModel
         self._date_columns: list[date] = []  # Columns representing dates
+        self._prev_date_range: tuple[date, date] | None = None  # For diff detection
 
     def setup_columns(
         self,
@@ -117,6 +119,12 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
     ) -> None:
         """Load Gantt data into the table.
 
+        Uses a 2-pass rendering strategy:
+        - Fast path: when date range is unchanged, updates cells in-place
+          via update_cell_at() to preserve cursor/hover state.
+        - Full rebuild: when date range changes or on first load, clears
+          and reconstructs the entire table.
+
         Args:
             gantt_view_model: Presentation-ready Gantt data
             keep_scroll_position: Whether to preserve scroll position during refresh.
@@ -124,8 +132,53 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             comfortable_hours: Workload threshold for green zone
             moderate_hours: Workload threshold for yellow zone
         """
+        new_range = (gantt_view_model.start_date, gantt_view_model.end_date)
+        can_diff = (
+            self._prev_date_range is not None and self._prev_date_range == new_range
+        )
+
+        if can_diff:
+            self._differential_update(
+                gantt_view_model,
+                comfortable_hours=comfortable_hours,
+                moderate_hours=moderate_hours,
+            )
+        else:
+            self._full_rebuild(
+                gantt_view_model,
+                keep_scroll_position=keep_scroll_position,
+                comfortable_hours=comfortable_hours,
+                moderate_hours=moderate_hours,
+            )
+
+        self._prev_date_range = new_range
+
+    def reset_diff_state(self) -> None:
+        """Reset differential rendering state.
+
+        Forces the next load_gantt() call to perform a full rebuild.
+        Call this when the table is cleared for error/empty messages.
+        """
+        self._prev_date_range = None
+
+    def _full_rebuild(
+        self,
+        gantt_view_model: GanttViewModel,
+        keep_scroll_position: bool = False,
+        comfortable_hours: float = WORKLOAD_COMFORTABLE_HOURS,
+        moderate_hours: float = WORKLOAD_MODERATE_HOURS,
+    ) -> None:
+        """Full table rebuild — clears all columns/rows and reconstructs.
+
+        Used on first load or when the date range changes.
+
+        Args:
+            gantt_view_model: Presentation-ready Gantt data
+            keep_scroll_position: Whether to preserve scroll position
+            comfortable_hours: Workload threshold for green zone
+            moderate_hours: Workload threshold for yellow zone
+        """
         # Save scroll and cursor position before refresh
-        # Note: scroll_y/scroll_x types from DataTable base class (type: ignore needed)
         saved_scroll_y: float | None = (
             self.scroll_y if keep_scroll_position else None  # type: ignore[has-type]
         )
@@ -148,15 +201,16 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             )
 
             # Add date header rows (Month, Today marker, Day)
-            # Always add these to give Timeline column proper width
-            self._add_date_header_rows(
+            header_cells = self._build_header_row_cells(
                 gantt_view_model.start_date,
                 gantt_view_model.end_date,
                 gantt_view_model.holidays,
             )
+            empty = Text("", justify="center")
+            for row_cells in header_cells:
+                self.add_row(empty, empty, empty, *row_cells)
 
             # Fix the date header rows at the top during vertical scrolling
-            # Must be set after rows are added, not in __init__
             self.fixed_rows = GANTT_HEADER_ROW_COUNT
 
             if gantt_view_model.is_empty():
@@ -171,17 +225,14 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             # Add task rows
             for idx, task_vm in enumerate(gantt_view_model.tasks):
                 task_daily_hours = gantt_view_model.task_daily_hours.get(task_vm.id, {})
-                self._add_task_row(
-                    task_vm,
-                    task_daily_hours,
-                    self._date_columns,
-                    date_metadata,
-                    today,
+                cells = self._build_task_row_cells(
+                    task_vm, task_daily_hours, self._date_columns, date_metadata, today
                 )
+                self.add_row(*cells)
                 self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task_vm
 
             # Add workload summary row
-            self._add_workload_row(
+            workload_cells = self._build_workload_row_cells(
                 gantt_view_model.daily_workload,
                 gantt_view_model.start_date,
                 gantt_view_model.end_date,
@@ -189,9 +240,9 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
                 comfortable_hours=comfortable_hours,
                 moderate_hours=moderate_hours,
             )
+            self.add_row(*workload_cells)
 
         # Restore scroll position to prevent stuttering
-        # Apply bounds check to handle cases where table dimensions changed
         if saved_scroll_y is not None:
             max_scroll_y = max(0, self.virtual_size.height - self.size.height)
             self.scroll_y = min(saved_scroll_y, max_scroll_y)
@@ -208,56 +259,226 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
                 column=min(saved_cursor_col, max_col),
             )
 
-    def _add_date_header_rows(
-        self, start_date: date, end_date: date, holidays: set[date]
+    def _differential_update(
+        self,
+        gantt_view_model: GanttViewModel,
+        comfortable_hours: float = WORKLOAD_COMFORTABLE_HOURS,
+        moderate_hours: float = WORKLOAD_MODERATE_HOURS,
     ) -> None:
-        """Add date header rows (Month, Today marker, Day) as separate rows.
+        """In-place cell update — preserves cursor/scroll state automatically.
+
+        Row layout: rows 0-2 = headers, rows 3..3+N-1 = tasks, row 3+N = workload.
+
+        Args:
+            gantt_view_model: Presentation-ready Gantt data
+            comfortable_hours: Workload threshold for green zone
+            moderate_hours: Workload threshold for yellow zone
+        """
+        self._task_map.clear()
+
+        with self.app.batch_update():
+            # 1. Update header rows in-place (today marker may change)
+            header_rows = self._build_header_row_cells(
+                gantt_view_model.start_date,
+                gantt_view_model.end_date,
+                gantt_view_model.holidays,
+            )
+            empty = Text("", justify="center")
+            for row_idx, row_cells in enumerate(header_rows):
+                self._update_cells_in_place(row_idx, [empty, empty, empty, *row_cells])
+
+            # 2. Compute new task cells
+            today = date.today()
+            date_metadata = GanttCellFormatter.precompute_date_metadata(
+                self._date_columns, gantt_view_model.holidays, today
+            )
+
+            new_task_count = len(gantt_view_model.tasks)
+            # Previous task count = total rows - headers - workload
+            prev_total_rows = self.row_count
+            prev_task_count = max(prev_total_rows - GANTT_HEADER_ROW_COUNT - 1, 0)
+
+            if new_task_count == prev_task_count:
+                # Same count: update all task rows + workload in-place
+                for idx, task_vm in enumerate(gantt_view_model.tasks):
+                    task_daily_hours = gantt_view_model.task_daily_hours.get(
+                        task_vm.id, {}
+                    )
+                    cells = self._build_task_row_cells(
+                        task_vm,
+                        task_daily_hours,
+                        self._date_columns,
+                        date_metadata,
+                        today,
+                    )
+                    self._update_cells_in_place(GANTT_HEADER_ROW_COUNT + idx, cells)
+                    self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task_vm
+
+                # Update workload row in-place
+                workload_cells = self._build_workload_row_cells(
+                    gantt_view_model.daily_workload,
+                    gantt_view_model.start_date,
+                    gantt_view_model.end_date,
+                    gantt_view_model.total_estimated_duration,
+                    comfortable_hours=comfortable_hours,
+                    moderate_hours=moderate_hours,
+                )
+                self._update_cells_in_place(
+                    GANTT_HEADER_ROW_COUNT + new_task_count, workload_cells
+                )
+
+            elif new_task_count > prev_task_count:
+                # More tasks: remove old workload row, update existing tasks,
+                # add new task rows, then add new workload row
+                if prev_task_count > 0:
+                    # Remove old workload row
+                    workload_row_idx = GANTT_HEADER_ROW_COUNT + prev_task_count
+                    row_key, _ = self.coordinate_to_cell_key(
+                        Coordinate(workload_row_idx, 0)
+                    )
+                    self.remove_row(row_key)
+
+                # Update existing task rows
+                for idx in range(prev_task_count):
+                    task_vm = gantt_view_model.tasks[idx]
+                    task_daily_hours = gantt_view_model.task_daily_hours.get(
+                        task_vm.id, {}
+                    )
+                    cells = self._build_task_row_cells(
+                        task_vm,
+                        task_daily_hours,
+                        self._date_columns,
+                        date_metadata,
+                        today,
+                    )
+                    self._update_cells_in_place(GANTT_HEADER_ROW_COUNT + idx, cells)
+                    self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task_vm
+
+                # Add new task rows
+                for idx in range(prev_task_count, new_task_count):
+                    task_vm = gantt_view_model.tasks[idx]
+                    task_daily_hours = gantt_view_model.task_daily_hours.get(
+                        task_vm.id, {}
+                    )
+                    cells = self._build_task_row_cells(
+                        task_vm,
+                        task_daily_hours,
+                        self._date_columns,
+                        date_metadata,
+                        today,
+                    )
+                    self.add_row(*cells)
+                    self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task_vm
+
+                # Add new workload row
+                workload_cells = self._build_workload_row_cells(
+                    gantt_view_model.daily_workload,
+                    gantt_view_model.start_date,
+                    gantt_view_model.end_date,
+                    gantt_view_model.total_estimated_duration,
+                    comfortable_hours=comfortable_hours,
+                    moderate_hours=moderate_hours,
+                )
+                self.add_row(*workload_cells)
+
+            else:
+                # Fewer tasks: update remaining task rows, remove excess + old workload,
+                # then add new workload row
+                for idx in range(new_task_count):
+                    task_vm = gantt_view_model.tasks[idx]
+                    task_daily_hours = gantt_view_model.task_daily_hours.get(
+                        task_vm.id, {}
+                    )
+                    cells = self._build_task_row_cells(
+                        task_vm,
+                        task_daily_hours,
+                        self._date_columns,
+                        date_metadata,
+                        today,
+                    )
+                    self._update_cells_in_place(GANTT_HEADER_ROW_COUNT + idx, cells)
+                    self._task_map[idx + GANTT_HEADER_ROW_COUNT] = task_vm
+
+                # Remove excess task rows + old workload row (from end)
+                rows_to_remove = (
+                    prev_task_count - new_task_count
+                ) + 1  # +1 for workload
+                for _ in range(rows_to_remove):
+                    last_row_idx = self.row_count - 1
+                    row_key, _ = self.coordinate_to_cell_key(
+                        Coordinate(last_row_idx, 0)
+                    )
+                    self.remove_row(row_key)
+
+                # Add new workload row
+                workload_cells = self._build_workload_row_cells(
+                    gantt_view_model.daily_workload,
+                    gantt_view_model.start_date,
+                    gantt_view_model.end_date,
+                    gantt_view_model.total_estimated_duration,
+                    comfortable_hours=comfortable_hours,
+                    moderate_hours=moderate_hours,
+                )
+                self.add_row(*workload_cells)
+
+    def _update_cells_in_place(self, row_idx: int, cells: list[Text]) -> None:
+        """Update all cells in a row using update_cell_at().
+
+        Args:
+            row_idx: Row index to update
+            cells: List of Text values, one per column
+        """
+        for col_idx, value in enumerate(cells):
+            self.update_cell_at(Coordinate(row_idx, col_idx), value)
+
+    def _build_header_row_cells(
+        self, start_date: date, end_date: date, holidays: set[date]
+    ) -> tuple[list[Text], list[Text], list[Text]]:
+        """Build date header cells (Month, Today marker, Day).
 
         Args:
             start_date: Start date of the chart
             end_date: End date of the chart
             holidays: Set of holiday dates for styling
+
+        Returns:
+            Tuple of (month_cells, today_cells, day_cells) lists
         """
-        # Get per-date header cells from the formatter
-        month_cells, today_cells, day_cells = (
-            GanttCellFormatter.build_date_header_cells(start_date, end_date, holidays)
+        return GanttCellFormatter.build_date_header_cells(
+            start_date, end_date, holidays
         )
 
-        empty = Text("", justify="center")
-
-        # Add three separate rows for month, today marker, and day
-        self.add_row(empty, empty, empty, *month_cells)
-        self.add_row(empty, empty, empty, *today_cells)
-        self.add_row(empty, empty, empty, *day_cells)
-
-    def _add_task_row(
+    def _build_task_row_cells(
         self,
         task_vm: TaskGanttRowViewModel,
         task_daily_hours: dict[date, float],
         dates: list[date],
         date_metadata: list[DateMetadata],
         today: date,
-    ) -> None:
-        """Add a task row to the Gantt table.
+    ) -> list[Text]:
+        """Build all cells for a task row.
 
         Args:
-            task_vm: Task ViewModel to add
+            task_vm: Task ViewModel
             task_daily_hours: Daily hours allocation for this task
             dates: Pre-computed list of dates in the timeline
             date_metadata: Pre-computed metadata for each date
-            today: Current date (computed once by caller)
+            today: Current date
+
+        Returns:
+            List of Text cells: [ID, Name, Est, *date_cells]
         """
         task_id, task_name, est_hours = self._format_task_metadata(task_vm)
         date_cells = self._build_timeline_cells(
             task_vm, task_daily_hours, dates, date_metadata, today
         )
 
-        self.add_row(
+        return [
             Text(f" {task_id} ", justify="center"),
             Text.from_markup(f" {task_name} ", justify="left"),
             Text(f" {est_hours} ", justify="center"),
             *date_cells,
-        )
+        ]
 
     def _format_task_metadata(
         self, task_vm: TaskGanttRowViewModel
@@ -316,7 +537,7 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             Text(display, style=style, justify="center") for display, style in cell_data
         ]
 
-    def _add_workload_row(
+    def _build_workload_row_cells(
         self,
         daily_workload: dict[date, float],
         start_date: date,
@@ -324,8 +545,8 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         total_estimated_duration: float = 0.0,
         comfortable_hours: float = WORKLOAD_COMFORTABLE_HOURS,
         moderate_hours: float = WORKLOAD_MODERATE_HOURS,
-    ) -> None:
-        """Add workload summary row.
+    ) -> list[Text]:
+        """Build all cells for the workload summary row.
 
         Args:
             daily_workload: Pre-computed daily workload totals
@@ -334,8 +555,10 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             total_estimated_duration: Sum of all estimated durations
             comfortable_hours: Workload threshold for green zone
             moderate_hours: Workload threshold for yellow zone
+
+        Returns:
+            List of Text cells for the workload row
         """
-        # Build per-date workload cells using the formatter
         workload_cells = GanttCellFormatter.build_workload_cells(
             daily_workload,
             start_date,
@@ -344,17 +567,16 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             moderate_hours=moderate_hours,
         )
 
-        # Format total estimated duration
         total_est_str = (
             f"{total_estimated_duration:.1f}" if total_estimated_duration > 0 else "-"
         )
 
-        self.add_row(
+        return [
             Text("", justify="center"),
             Text(f" {GANTT_WORKLOAD_LABEL} ", style="bold yellow", justify="center"),
             Text(f" {total_est_str} ", style="bold yellow", justify="center"),
             *workload_cells,
-        )
+        ]
 
     def action_cursor_top(self) -> None:
         """Move cursor to the first row (g key)."""
