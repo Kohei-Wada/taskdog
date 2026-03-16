@@ -66,6 +66,11 @@ class TUIState:
     )
     """Lazily initialized search filter instance."""
 
+    _filtered_cache: list[TaskRowViewModel] | None = field(
+        default=None, repr=False, compare=False
+    )
+    """Cached result of filtered_viewmodels computation."""
+
     def _get_search_filter(self) -> "TaskSearchFilter":
         """Get or create the search filter instance (lazy initialization).
 
@@ -78,6 +83,10 @@ class TUIState:
             self._search_filter = TaskSearchFilter()
         return self._search_filter
 
+    def _invalidate_filtered_cache(self) -> None:
+        """Invalidate the filtered viewmodels cache."""
+        self._filtered_cache = None
+
     # === Filter Methods ===
     def set_filter(self, query: str) -> None:
         """Set the current search query.
@@ -86,6 +95,7 @@ class TUIState:
             query: Search query string
         """
         self.current_query = query
+        self._invalidate_filtered_cache()
 
     def add_to_filter_chain(self, query: str) -> None:
         """Add current query to filter chain for progressive filtering.
@@ -97,11 +107,13 @@ class TUIState:
             self.filter_chain.append(query)
             # Clear current query after adding to chain
             self.current_query = ""
+            self._invalidate_filtered_cache()
 
     def clear_filters(self) -> None:
         """Clear all filters (current query and filter chain)."""
         self.current_query = ""
         self.filter_chain = []
+        self._invalidate_filtered_cache()
 
     def toggle_gantt_filter(self) -> bool:
         """Toggle Gantt filter enabled/disabled.
@@ -147,6 +159,9 @@ class TUIState:
         Returns:
             Filtered ViewModels based on current query and filter chain.
         """
+        if self._filtered_cache is not None:
+            return self._filtered_cache
+
         search_filter = self._get_search_filter()
         filtered_vms = self.viewmodels_cache
 
@@ -158,6 +173,7 @@ class TUIState:
         if self.current_query:
             filtered_vms = search_filter.filter(filtered_vms, self.current_query)
 
+        self._filtered_cache = filtered_vms
         return filtered_vms
 
     @property
@@ -226,6 +242,7 @@ class TUIState:
         self.tasks_cache.clear()
         self.viewmodels_cache.clear()
         self.gantt_cache = None
+        self._invalidate_filtered_cache()
 
     def update_caches(
         self,
@@ -255,6 +272,7 @@ class TUIState:
         self.viewmodels_cache = viewmodels
         if gantt is not None:
             self.gantt_cache = gantt
+        self._invalidate_filtered_cache()
 
     def invalidate_gantt_cache(self) -> None:
         """Invalidate only Gantt cache.
