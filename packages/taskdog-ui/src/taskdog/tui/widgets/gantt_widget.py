@@ -131,6 +131,7 @@ class GanttWidget(Vertical, TUIWidget):
         if not self._gantt_table:
             return
         self._gantt_table.clear(columns=True)
+        self._gantt_table.reset_diff_state()
         # Add column with max width to fill the entire table
         from rich.text import Text
 
