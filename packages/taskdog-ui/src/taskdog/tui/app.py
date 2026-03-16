@@ -36,7 +36,7 @@ from taskdog.tui.palette.providers import (
     SortOptionsProvider,
 )
 from taskdog.tui.screens.main_screen import MainScreen
-from taskdog.tui.services import TaskUIManager, WebSocketHandler
+from taskdog.tui.services import ConnectionMonitor, TaskUIManager, WebSocketHandler
 from taskdog.tui.state import ConnectionStatusManager, TUIState
 from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -273,6 +273,14 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         self.websocket_client = websocket_client
         self.websocket_client.set_callback(self._handle_websocket_message)
 
+        # Initialize connection monitor (non-blocking health checks)
+        self.connection_monitor = ConnectionMonitor(
+            app=self,
+            api_client=self.api_client,
+            websocket_client=self.websocket_client,
+            connection_manager=self.connection_manager,
+        )
+
     def _handle_websocket_message(self, message: dict[str, Any]) -> None:
         """Handle incoming WebSocket messages.
 
@@ -345,11 +353,11 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         # Start auto-refresh timer for elapsed time updates
         self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
         # Start connection monitoring timer (check every 3 seconds)
-        self.set_interval(3.0, self._check_connection_status)
+        self.set_interval(3.0, self.connection_monitor.check)
         # Connect to WebSocket for real-time updates
         await self.websocket_client.connect()
         # Initial connection status check (delayed to allow WebSocket connection to stabilize)
-        self.call_later(self._check_connection_status)
+        self.call_later(self.connection_monitor.check)
 
     async def on_unmount(self) -> None:
         """Called when app is unmounted."""
@@ -540,18 +548,3 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         """
         if self.task_ui_manager:
             self.task_ui_manager.recalculate_gantt(event.start_date, event.end_date)
-
-    def _check_connection_status(self) -> None:
-        """Check API and WebSocket connection status.
-
-        Updates ConnectionStatusManager which notifies subscribed widgets
-        via observer pattern.
-        """
-        # Check API connection via health endpoint
-        api_connected = self.api_client.check_health()
-
-        # Check WebSocket connection
-        ws_connected = self.websocket_client.is_connected()
-
-        # Update connection manager (observers will be notified automatically)
-        self.connection_manager.update(api_connected, ws_connected)
