@@ -105,12 +105,9 @@ class MainScreen(Screen[None]):
             if self._search_debounce_timer is not None:
                 self._search_debounce_timer.stop()
 
-            query = event.query
-
-            def _fire_filter_changed() -> None:
-                self.post_message(FilterChanged(query=query))
-
-            self._search_debounce_timer = self.set_timer(0.15, _fire_filter_changed)
+            self._search_debounce_timer = self.set_timer(
+                0.15, lambda: self.post_message(FilterChanged())
+            )
 
     def on_filter_changed(self, event: FilterChanged) -> None:
         """Handle filter state changes.
@@ -189,7 +186,7 @@ class MainScreen(Screen[None]):
             self.state.clear_filters()
 
         # Post FilterChanged to refresh all widgets
-        self.post_message(FilterChanged(is_cleared=True))
+        self.post_message(FilterChanged())
 
         if self.task_table:
             self.task_table.focus()

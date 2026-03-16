@@ -255,14 +255,6 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
             return None
         return self._viewmodel_map.get(self.cursor_row)
 
-    def _get_all_viewmodels_from_state(self) -> list[TaskRowViewModel]:
-        """Get all (unfiltered) viewmodels from app state.
-
-        Returns:
-            List of TaskRowViewModel from state cache (unfiltered)
-        """
-        return self.tui_state.viewmodels_cache
-
     def refresh_tasks(self, keep_scroll_position: bool = False) -> None:
         """Refresh the table from TUIState.filtered_viewmodels.
 
@@ -298,101 +290,6 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         Called by MainScreen when filter state changes.
         """
         self._render_tasks(self.tui_state.filtered_viewmodels)
-
-    # Legacy methods kept for backward compatibility
-    # Filter state is now managed by TUIState
-
-    def filter_tasks(self, query: str) -> None:
-        """Filter task ViewModels based on search query.
-
-        DEPRECATED: Use TUIState.set_filter() and post FilterChanged instead.
-        This method is kept for backward compatibility.
-
-        Args:
-            query: Search query string
-        """
-        self.tui_state.set_filter(query)
-        self._render_tasks(self.tui_state.filtered_viewmodels)
-
-    def clear_filter(self) -> None:
-        """Clear the current filter and filter chain, then show all ViewModels.
-
-        DEPRECATED: Use TUIState.clear_filters() and post FilterChanged instead.
-        This method is kept for backward compatibility.
-        """
-        self.tui_state.clear_filters()
-        self._render_tasks(self.tui_state.filtered_viewmodels)
-
-    @property
-    def is_filtered(self) -> bool:
-        """Check if a filter is currently active.
-
-        Delegates to TUIState.is_filtered.
-        """
-        return self.tui_state.is_filtered
-
-    @property
-    def current_query(self) -> str:
-        """Get the current search query.
-
-        Delegates to TUIState.current_query.
-        """
-        return self.tui_state.current_query
-
-    @property
-    def filter_chain(self) -> list[str]:
-        """Get the current filter chain.
-
-        Delegates to TUIState.filter_chain.
-
-        Returns:
-            List of filter queries applied in order
-        """
-        return self.tui_state.filter_chain.copy()
-
-    def add_filter_to_chain(self, query: str) -> None:
-        """Add current query to filter chain for progressive filtering.
-
-        DEPRECATED: Use TUIState.add_to_filter_chain() and post FilterChanged instead.
-        This method is kept for backward compatibility.
-
-        Args:
-            query: Filter query to add to the chain
-        """
-        self.tui_state.add_to_filter_chain(query)
-
-    def clear_filter_chain(self) -> None:
-        """Clear all filters in the filter chain.
-
-        DEPRECATED: Use TUIState.clear_filters() and post FilterChanged instead.
-        This method is kept for backward compatibility.
-        """
-        self.tui_state.filter_chain.clear()
-
-    @property
-    def match_count(self) -> int:
-        """Get the number of currently displayed (matched) tasks.
-
-        Delegates to TUIState.match_count.
-        """
-        return self.tui_state.match_count
-
-    @property
-    def total_count(self) -> int:
-        """Get the total number of tasks (unfiltered).
-
-        Delegates to TUIState.total_count.
-        """
-        return self.tui_state.total_count
-
-    @property
-    def all_viewmodels(self) -> list[TaskRowViewModel]:
-        """Get all loaded ViewModels (unfiltered).
-
-        Returns:
-            List of all TaskRowViewModel from app state cache
-        """
-        return self._get_all_viewmodels_from_state()
 
     def _safe_move_cursor(self, row: int) -> None:
         """Safely move cursor to specified row if table has rows.

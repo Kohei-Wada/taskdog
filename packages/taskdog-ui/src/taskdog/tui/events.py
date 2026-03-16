@@ -122,20 +122,6 @@ class FilterChanged(Message):
     """Event sent when the search filter state changes.
 
     This allows widgets to react to filter changes and refresh their display
-    with filtered data from TUIState.
-
-    Attributes:
-        query: The current search query string (may be empty)
-        is_cleared: Whether the filter was just cleared
+    with filtered data from TUIState. The actual filter state is read from
+    TUIState, not from this event.
     """
-
-    def __init__(self, query: str = "", is_cleared: bool = False):
-        """Initialize the event.
-
-        Args:
-            query: The current search query string
-            is_cleared: Whether the filter was just cleared
-        """
-        super().__init__()
-        self.query = query
-        self.is_cleared = is_cleared
