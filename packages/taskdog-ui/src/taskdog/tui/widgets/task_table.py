@@ -59,6 +59,10 @@ from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 from taskdog.view_models.task_view_model import TaskRowViewModel
+from taskdog_core.domain.entities.task import TaskStatus
+
+# Column index for elapsed time (0=checkbox, 1=ID, ..., 13=Elapsed)
+_ELAPSED_COL_INDEX = 13
 
 
 class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-arg]
@@ -523,6 +527,16 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
             List of explicitly selected task IDs, or empty list if none selected
         """
         return sorted(self._selected_task_ids) if self._selected_task_ids else []
+
+    def refresh_elapsed_only(self) -> None:
+        """Update only the elapsed column for IN_PROGRESS tasks."""
+        for idx, task_vm in self._viewmodel_map.items():
+            if task_vm.status == TaskStatus.IN_PROGRESS:
+                elapsed_text = Text(
+                    self._row_builder.duration_formatter.format_elapsed_time(task_vm),
+                    justify=JUSTIFY_ELAPSED,
+                )
+                self.update_cell_at(Coordinate(idx, _ELAPSED_COL_INDEX), elapsed_text)
 
     def clear_selection(self) -> None:
         """Clear all selections (called after batch operations)."""

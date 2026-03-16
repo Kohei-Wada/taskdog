@@ -505,21 +505,9 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             self.push_screen(AuditLogScreen(api_client=self.api_client))
 
     def _refresh_elapsed_time(self) -> None:
-        """Refresh the task table to update elapsed time for IN_PROGRESS tasks.
-
-        This is called every second by the auto-refresh timer.
-        Only updates the table display without reloading from repository.
-        """
+        """Refresh elapsed time for IN_PROGRESS tasks only."""
         if self.main_screen and self.main_screen.task_table:
-            # Get current ViewModels from the table (already loaded in memory)
-            view_models = self.main_screen.task_table.all_viewmodels
-            if view_models:
-                # Refresh the table display with current ViewModels
-                # This will recalculate elapsed time for IN_PROGRESS tasks
-                # Keep scroll position to avoid stuttering during user navigation
-                self.main_screen.task_table.refresh_tasks(
-                    view_models, keep_scroll_position=True
-                )
+            self.main_screen.task_table.refresh_elapsed_only()
 
     # Event handlers for task operations
     def _handle_task_change_event(self, event: Any) -> None:
