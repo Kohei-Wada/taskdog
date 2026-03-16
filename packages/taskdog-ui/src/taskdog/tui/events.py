@@ -124,4 +124,12 @@ class FilterChanged(Message):
     This allows widgets to react to filter changes and refresh their display
     with filtered data from TUIState. The actual filter state is read from
     TUIState, not from this event.
+
+    Attributes:
+        gantt_filter_toggled: True when this event was triggered by toggling
+            the gantt filter on/off, requiring a full gantt rebuild.
     """
+
+    def __init__(self, gantt_filter_toggled: bool = False) -> None:
+        super().__init__()
+        self.gantt_filter_toggled = gantt_filter_toggled
