@@ -114,13 +114,13 @@ class TestTaskUIManager:
         self.main_screen = MagicMock()
         self.main_screen.gantt_widget = MagicMock()
         self.main_screen.task_table = MagicMock()
-        self.on_connection_error = MagicMock()
+        self.on_error = MagicMock()
 
         self.manager = TaskUIManager(
             state=self.state,
             task_data_loader=self.task_data_loader,
             main_screen_provider=lambda: self.main_screen,
-            on_connection_error=self.on_connection_error,
+            on_error=self.on_error,
         )
 
     def test_init_with_dependencies(self):
@@ -128,7 +128,7 @@ class TestTaskUIManager:
         assert self.manager.state is self.state
         assert self.manager.task_data_loader is self.task_data_loader
         assert self.manager._get_main_screen is not None
-        assert self.manager._on_connection_error is self.on_connection_error
+        assert self.manager._on_error is self.on_error
 
     def test_load_tasks_updates_cache_and_ui(self):
         """Test load_tasks fetches data, updates cache, and refreshes UI."""
@@ -223,8 +223,10 @@ class TestTaskUIManager:
         # Execute
         result = self.manager._fetch_task_data()
 
-        # Verify error callback was called
-        self.on_connection_error.assert_called_once()
+        # Verify error callback was called with the error
+        self.on_error.assert_called_once()
+        error_arg = self.on_error.call_args[0][0]
+        assert isinstance(error_arg, ServerConnectionError)
 
         # Verify empty TaskData is returned
         assert result.all_tasks == []
@@ -328,7 +330,7 @@ class TestRecalculateGantt:
         # Setup default return values for gantt_widget methods
         self.main_screen.gantt_widget.get_filter_include_archived.return_value = False
         self.main_screen.gantt_widget.get_sort_by.return_value = "deadline"
-        self.on_connection_error = MagicMock()
+        self.on_error = MagicMock()
 
         # Setup mock API client and presenter on task_data_loader
         self.task_data_loader.api_client = MagicMock()
@@ -338,7 +340,7 @@ class TestRecalculateGantt:
             state=self.state,
             task_data_loader=self.task_data_loader,
             main_screen_provider=lambda: self.main_screen,
-            on_connection_error=self.on_connection_error,
+            on_error=self.on_error,
         )
 
     def test_recalculate_gantt_fetches_and_updates_widget(self):
@@ -417,8 +419,10 @@ class TestRecalculateGantt:
         # Execute
         self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
 
-        # Verify error callback was called
-        self.on_connection_error.assert_called_once()
+        # Verify error callback was called with the error
+        self.on_error.assert_called_once()
+        error_arg = self.on_error.call_args[0][0]
+        assert isinstance(error_arg, ServerConnectionError)
 
         # Verify widget was NOT updated
         self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
@@ -430,7 +434,7 @@ class TestRecalculateGantt:
             state=self.state,
             task_data_loader=self.task_data_loader,
             main_screen_provider=lambda: None,
-            on_connection_error=self.on_connection_error,
+            on_error=self.on_error,
         )
 
         gantt = create_gantt_viewmodel()
@@ -486,9 +490,7 @@ class TestErrorHandling:
         )
         self.main_screen.gantt_widget.get_filter_include_archived.return_value = False
         self.main_screen.gantt_widget.get_sort_by.return_value = "deadline"
-        self.on_connection_error = MagicMock()
-        self.on_auth_error = MagicMock()
-        self.on_server_error = MagicMock()
+        self.on_error = MagicMock()
 
         # Setup mock API client and presenter on task_data_loader
         self.task_data_loader.api_client = MagicMock()
@@ -498,24 +500,23 @@ class TestErrorHandling:
             state=self.state,
             task_data_loader=self.task_data_loader,
             main_screen_provider=lambda: self.main_screen,
-            on_connection_error=self.on_connection_error,
-            on_auth_error=self.on_auth_error,
-            on_server_error=self.on_server_error,
+            on_error=self.on_error,
         )
 
     def test_fetch_task_data_handles_authentication_error(self):
-        """Test _fetch_task_data calls auth error callback."""
+        """Test _fetch_task_data calls error callback with AuthenticationError."""
         self.task_data_loader.load_tasks.side_effect = AuthenticationError(
             message="Unauthorized",
         )
 
         result = self.manager._fetch_task_data()
 
-        self.on_auth_error.assert_called_once()
+        self.on_error.assert_called_once()
+        assert isinstance(self.on_error.call_args[0][0], AuthenticationError)
         assert result.all_tasks == []
 
     def test_fetch_task_data_handles_server_error(self):
-        """Test _fetch_task_data calls server error callback."""
+        """Test _fetch_task_data calls error callback with ServerError."""
         self.task_data_loader.load_tasks.side_effect = ServerError(
             status_code=500,
             message="Internal Server Error",
@@ -523,22 +524,24 @@ class TestErrorHandling:
 
         result = self.manager._fetch_task_data()
 
-        self.on_server_error.assert_called_once()
+        self.on_error.assert_called_once()
+        assert isinstance(self.on_error.call_args[0][0], ServerError)
         assert result.all_tasks == []
 
     def test_recalculate_gantt_handles_authentication_error(self):
-        """Test recalculate_gantt calls auth error callback."""
+        """Test recalculate_gantt calls error callback with AuthenticationError."""
         self.task_data_loader.api_client.list_tasks.side_effect = AuthenticationError(
             message="Unauthorized",
         )
 
         self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
 
-        self.on_auth_error.assert_called_once()
+        self.on_error.assert_called_once()
+        assert isinstance(self.on_error.call_args[0][0], AuthenticationError)
         self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
 
     def test_recalculate_gantt_handles_server_error(self):
-        """Test recalculate_gantt calls server error callback."""
+        """Test recalculate_gantt calls error callback with ServerError."""
         self.task_data_loader.api_client.list_tasks.side_effect = ServerError(
             status_code=500,
             message="Internal Server Error",
@@ -546,7 +549,8 @@ class TestErrorHandling:
 
         self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
 
-        self.on_server_error.assert_called_once()
+        self.on_error.assert_called_once()
+        assert isinstance(self.on_error.call_args[0][0], ServerError)
         self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
 
 
@@ -657,7 +661,6 @@ class TestTaskUIManagerWithoutErrorCallback:
             state=state,
             task_data_loader=task_data_loader,
             main_screen_provider=lambda: main_screen,
-            on_connection_error=None,  # No callback
         )
 
         original_error = ConnectionError("Connection refused")

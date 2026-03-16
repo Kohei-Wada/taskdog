@@ -35,9 +35,10 @@ class TaskUIManager:
         state: TUIState,
         task_data_loader: TaskDataLoader,
         main_screen_provider: Callable[[], "MainScreen | None"],
-        on_connection_error: Callable[[ServerConnectionError], None] | None = None,
-        on_auth_error: Callable[[AuthenticationError], None] | None = None,
-        on_server_error: Callable[[ServerError], None] | None = None,
+        on_error: Callable[
+            [ServerConnectionError | AuthenticationError | ServerError], None
+        ]
+        | None = None,
     ):
         """Initialize TaskUIManager.
 
@@ -45,33 +46,23 @@ class TaskUIManager:
             state: Shared TUIState instance
             task_data_loader: Service for loading task data
             main_screen_provider: Callable that returns current MainScreen (lazy access)
-            on_connection_error: Optional callback for connection errors
-            on_auth_error: Optional callback for authentication errors
-            on_server_error: Optional callback for server errors (5xx)
+            on_error: Optional callback for API errors (connection, auth, server)
         """
         self.state = state
         self.task_data_loader = task_data_loader
         self._get_main_screen = main_screen_provider
-        self._on_connection_error = on_connection_error
-        self._on_auth_error = on_auth_error
-        self._on_server_error = on_server_error
+        self._on_error = on_error
 
     def _handle_api_error(
         self, error: ServerConnectionError | AuthenticationError | ServerError
     ) -> None:
-        """Dispatch API error to the appropriate callback.
+        """Delegate API error to the error callback.
 
         Args:
             error: The API error to handle
         """
-        handlers: dict[type, Callable[..., None] | None] = {
-            ServerConnectionError: self._on_connection_error,
-            AuthenticationError: self._on_auth_error,
-            ServerError: self._on_server_error,
-        }
-        callback = handlers.get(type(error))
-        if callback:
-            callback(error)
+        if self._on_error:
+            self._on_error(error)
 
     def load_tasks(self, keep_scroll_position: bool = False) -> None:
         """Load tasks and update UI.

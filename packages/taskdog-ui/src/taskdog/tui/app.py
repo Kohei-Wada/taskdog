@@ -336,9 +336,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             state=self.state,
             task_data_loader=self.task_data_loader,
             main_screen_provider=lambda: self.main_screen,
-            on_connection_error=self._handle_connection_error,
-            on_auth_error=self._handle_auth_error,
-            on_server_error=self._handle_server_error,
+            on_error=self._handle_api_error,
         )
 
         # Load tasks after screen is fully mounted
@@ -361,43 +359,21 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         # Disconnect WebSocket
         await self.websocket_client.disconnect()
 
-    def _handle_connection_error(self, error: ServerConnectionError) -> None:
-        """Handle connection errors from TaskUIManager.
+    def _handle_api_error(
+        self, error: ServerConnectionError | AuthenticationError | ServerError
+    ) -> None:
+        """Handle API errors from TaskUIManager.
 
         Args:
-            error: ServerConnectionError from API call
+            error: API error (connection, auth, or server error)
         """
-        self.notify(
-            f"Server connection failed: {
-                error.original_error.__class__.__name__
-            }. Press 'r' to retry.",
-            severity="error",
-            timeout=10,
-        )
-
-    def _handle_auth_error(self, error: AuthenticationError) -> None:
-        """Handle authentication errors from TaskUIManager.
-
-        Args:
-            error: AuthenticationError from API call
-        """
-        self.notify(
-            f"Authentication failed: {error}. Check your API key.",
-            severity="error",
-            timeout=10,
-        )
-
-    def _handle_server_error(self, error: ServerError) -> None:
-        """Handle server errors (5xx) from TaskUIManager.
-
-        Args:
-            error: ServerError from API call
-        """
-        self.notify(
-            f"Server error: {error}. Press 'r' to retry.",
-            severity="error",
-            timeout=10,
-        )
+        if isinstance(error, ServerConnectionError):
+            msg = f"Server connection failed: {error.original_error.__class__.__name__}. Press 'r' to retry."
+        elif isinstance(error, AuthenticationError):
+            msg = f"Authentication failed: {error}. Check your API key."
+        else:
+            msg = f"Server error: {error}. Press 'r' to retry."
+        self.notify(msg, severity="error", timeout=10)
 
     def search_sort(self) -> None:
         """Show a fuzzy search command palette containing all sort options.
