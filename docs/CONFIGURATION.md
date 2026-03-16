@@ -192,7 +192,7 @@ Environment variables take precedence over config file settings. This is useful 
 These variables override core configuration (core.toml):
 
 | Variable | Type | Default | Description |
-|----------|------|---------|-------------|
+| -------- | ---- | ------- | ----------- |
 | `TASKDOG_REGION_COUNTRY` | string | `None` | ISO 3166-1 alpha-2 country code |
 | `TASKDOG_STORAGE_BACKEND` | string | `"sqlite"` | Storage backend type |
 | `TASKDOG_STORAGE_DATABASE_URL` | string | XDG path | Database file location |
@@ -211,10 +211,11 @@ export TASKDOG_REGION_COUNTRY=US
 These variables configure how CLI/TUI connect to the API server:
 
 | Variable | Type | Default | Description |
-|----------|------|---------|-------------|
+| -------- | ---- | ------- | ----------- |
 | `TASKDOG_API_HOST` | string | `"127.0.0.1"` | API server host |
 | `TASKDOG_API_PORT` | int | `8000` | API server port |
 | `TASKDOG_API_KEY` | string | `None` | API key for authentication |
+| `TASKDOG_GANTT_MIN_DISPLAY_DAYS` | int | `56` | Minimum days in TUI Gantt chart |
 
 **Example:**
 

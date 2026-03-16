@@ -201,7 +201,7 @@ class TestTaskUIManager:
         # Execute
         start_date, end_date = manager._calculate_gantt_date_range()
 
-        # Verify fallback dates (this week's Monday to DEFAULT_GANTT_DISPLAY_DAYS later)
+        # Verify fallback dates (this week's Monday to MIN_GANTT_DISPLAY_DAYS later)
         today = date.today()
         expected_start = today - timedelta(days=today.weekday())
         assert start_date == expected_start

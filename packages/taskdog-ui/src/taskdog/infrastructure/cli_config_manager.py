@@ -8,6 +8,7 @@ infrastructure settings (API connection, future UI preferences).
 from dataclasses import dataclass, field
 from datetime import time
 
+from taskdog.constants.gantt import MIN_GANTT_DISPLAY_DAYS
 from taskdog_core.shared.config_loader import ConfigLoader
 from taskdog_core.shared.config_manager import parse_time_value
 from taskdog_core.shared.constants import (
@@ -91,10 +92,13 @@ class GanttConfig:
         workload_moderate_hours: Daily hours threshold for yellow zone (moderate).
             Hours above comfortable but at or below this value are displayed in yellow.
             Hours above this value are displayed in red.
+        min_display_days: Minimum number of days to display in TUI Gantt chart.
+            The chart will never show fewer days than this value.
     """
 
     workload_comfortable_hours: float = WORKLOAD_COMFORTABLE_HOURS
     workload_moderate_hours: float = WORKLOAD_MODERATE_HOURS
+    min_display_days: int = MIN_GANTT_DISPLAY_DAYS
 
 
 @dataclass(frozen=True)
@@ -133,6 +137,7 @@ def load_cli_config() -> CliConfig:
         TASKDOG_INPUT_PLANNED_END_TIME: Default time for planned_end input
         TASKDOG_GANTT_WORKLOAD_COMFORTABLE_HOURS: Comfortable workload threshold
         TASKDOG_GANTT_WORKLOAD_MODERATE_HOURS: Moderate workload threshold
+        TASKDOG_GANTT_MIN_DISPLAY_DAYS: Minimum days to display in TUI Gantt chart
 
     Returns:
         CliConfig with merged settings
@@ -216,6 +221,12 @@ def load_cli_config() -> CliConfig:
                 "GANTT_WORKLOAD_MODERATE_HOURS",
                 gantt_data.get("workload_moderate_hours", WORKLOAD_MODERATE_HOURS),
                 float,
+                log_errors=False,
+            ),
+            min_display_days=ConfigLoader.get_env(
+                "GANTT_MIN_DISPLAY_DAYS",
+                gantt_data.get("min_display_days", MIN_GANTT_DISPLAY_DAYS),
+                int,
                 log_errors=False,
             ),
         ),

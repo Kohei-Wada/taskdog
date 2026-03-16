@@ -276,7 +276,11 @@ class GanttWidget(Vertical, TUIWidget):
         max_days = timeline_width // CHARS_PER_DAY
         weeks = max(max_days // DAYS_PER_WEEK, 1)
         calculated_days = weeks * DAYS_PER_WEEK
-        return max(calculated_days, MIN_GANTT_DISPLAY_DAYS)
+        try:
+            min_days: int = self.app._cli_config.gantt.min_display_days  # type: ignore[attr-defined]
+        except (AttributeError, TypeError):
+            min_days = MIN_GANTT_DISPLAY_DAYS
+        return max(calculated_days, min_days)
 
     def _calculate_date_range_for_display(self, display_days: int) -> tuple[date, date]:
         """Calculate start and end dates based on display days.
