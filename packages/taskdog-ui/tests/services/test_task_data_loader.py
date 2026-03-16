@@ -54,10 +54,8 @@ class TestTaskDataLoader:
         # Verify
         assert isinstance(result, TaskData)
         assert len(result.all_tasks) == 2
-        assert len(result.filtered_tasks) == 2
         assert len(result.table_view_models) == 2
         assert result.gantt_view_model is None
-        assert result.filtered_gantt_view_model is None
 
         # Verify API call
         self.api_client.list_tasks.assert_called_once()
@@ -115,7 +113,6 @@ class TestTaskDataLoader:
 
         # Verify
         assert result.gantt_view_model is not None
-        assert result.filtered_gantt_view_model is not None
         assert len(result.gantt_view_model.tasks) == 1
 
         # Verify API call now uses include_gantt instead of get_gantt_data
@@ -125,64 +122,3 @@ class TestTaskDataLoader:
         assert call_args.kwargs["include_gantt"] is True
         assert call_args.kwargs["gantt_start_date"] == date(2025, 1, 1)
         assert call_args.kwargs["gantt_end_date"] == date(2025, 1, 7)
-
-    def test_filter_gantt_by_tasks(self):
-        """Test filtering gantt view model by tasks."""
-        task1 = Task(id=1, name="Task 1", priority=1, status=TaskStatus.PENDING)
-        task2 = Task(id=2, name="Task 2", priority=2, status=TaskStatus.PENDING)
-
-        gantt_task1 = TaskGanttRowViewModel(
-            id=1,
-            formatted_name="Task 1",
-            formatted_estimated_duration="-",
-            status=TaskStatus.PENDING,
-            planned_start=None,
-            planned_end=None,
-            actual_start=None,
-            actual_end=None,
-            deadline=None,
-            is_finished=False,
-        )
-        gantt_task2 = TaskGanttRowViewModel(
-            id=2,
-            formatted_name="Task 2",
-            formatted_estimated_duration="-",
-            status=TaskStatus.PENDING,
-            planned_start=None,
-            planned_end=None,
-            actual_start=None,
-            actual_end=None,
-            deadline=None,
-            is_finished=False,
-        )
-        gantt_task3 = TaskGanttRowViewModel(
-            id=3,
-            formatted_name="Task 3",
-            formatted_estimated_duration="-",
-            status=TaskStatus.PENDING,
-            planned_start=None,
-            planned_end=None,
-            actual_start=None,
-            actual_end=None,
-            deadline=None,
-            is_finished=False,
-        )
-
-        gantt_view_model = GanttViewModel(
-            tasks=[gantt_task1, gantt_task2, gantt_task3],
-            task_daily_hours={},
-            daily_workload={},
-            start_date=date(2025, 1, 1),
-            end_date=date(2025, 1, 7),
-            holidays=set(),
-        )
-
-        # Filter to only show task1 and task2
-        result = self.loader.filter_gantt_by_tasks(gantt_view_model, [task1, task2])
-
-        assert len(result.tasks) == 2
-        task_ids = {t.id for t in result.tasks}
-        assert task_ids == {1, 2}
-        # Other properties should be preserved
-        assert result.start_date == gantt_view_model.start_date
-        assert result.end_date == gantt_view_model.end_date

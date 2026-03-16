@@ -19,19 +19,15 @@ class TaskData:
 
     Attributes:
         all_tasks: All tasks loaded from API (cached)
-        filtered_tasks: Tasks after applying display filter
         task_list_output: Original TaskListOutput from API
         table_view_models: ViewModels for table display
         gantt_view_model: Full gantt view model (cached)
-        filtered_gantt_view_model: Gantt view model after display filter
     """
 
     all_tasks: list[TaskRowDto]
-    filtered_tasks: list[TaskRowDto]
     task_list_output: TaskListOutput
     table_view_models: list[TaskRowViewModel]
     gantt_view_model: GanttViewModel | None = None
-    filtered_gantt_view_model: GanttViewModel | None = None
 
 
 class TaskDataLoader:
@@ -89,14 +85,10 @@ class TaskDataLoader:
             gantt_end_date=gantt_end_date,
         )
 
-        # Cache all tasks
         all_tasks = task_list_output.tasks
 
-        # filtered_tasks is now identical to all_tasks (no hide_completed filter)
-        filtered_tasks = all_tasks
-
-        # Create table ViewModels from ALL tasks (not filtered)
-        # TUIState will handle filtering via filtered_viewmodels property
+        # Create table ViewModels from all tasks
+        # TUIState will handle search filtering via filtered_viewmodels property
         all_tasks_output = TaskListOutput(
             tasks=all_tasks,
             total_count=task_list_output.total_count,
@@ -106,45 +98,12 @@ class TaskDataLoader:
 
         # Convert gantt data from response if present
         gantt_view_model = None
-        filtered_gantt_view_model = None
         if task_list_output.gantt_data:
             gantt_view_model = self.gantt_presenter.present(task_list_output.gantt_data)
-            filtered_gantt_view_model = self.filter_gantt_by_tasks(
-                gantt_view_model, filtered_tasks
-            )
 
         return TaskData(
             all_tasks=all_tasks,
-            filtered_tasks=filtered_tasks,
             task_list_output=task_list_output,
             table_view_models=table_view_models,
             gantt_view_model=gantt_view_model,
-            filtered_gantt_view_model=filtered_gantt_view_model,
-        )
-
-    def filter_gantt_by_tasks(
-        self, gantt_view_model: GanttViewModel, tasks: list[TaskRowDto]
-    ) -> GanttViewModel:
-        """Filter gantt view model to match displayed tasks.
-
-        Args:
-            gantt_view_model: Full gantt view model
-            tasks: List of tasks to display
-
-        Returns:
-            Filtered GanttViewModel
-        """
-        filtered_task_ids = {t.id for t in tasks}
-        filtered_gantt_tasks = [
-            task for task in gantt_view_model.tasks if task.id in filtered_task_ids
-        ]
-
-        return GanttViewModel(
-            tasks=filtered_gantt_tasks,
-            task_daily_hours=gantt_view_model.task_daily_hours,
-            daily_workload=gantt_view_model.daily_workload,
-            start_date=gantt_view_model.start_date,
-            end_date=gantt_view_model.end_date,
-            holidays=gantt_view_model.holidays,
-            total_estimated_duration=gantt_view_model.total_estimated_duration,
         )

@@ -138,11 +138,9 @@ class TaskUIManager:
 
         return TaskData(
             all_tasks=[],
-            filtered_tasks=[],
             task_list_output=empty_task_list_output,
             table_view_models=[],
             gantt_view_model=None,
-            filtered_gantt_view_model=None,
         )
 
     def _update_cache(self, task_data: TaskData) -> None:
@@ -160,6 +158,9 @@ class TaskUIManager:
     def _refresh_ui(self, task_data: TaskData, keep_scroll_position: bool) -> None:
         """Refresh UI widgets with task data.
 
+        State caches are already updated by _update_cache() before this is called.
+        GanttWidget reads from TUIState.gantt_cache (set by _update_cache).
+
         Args:
             task_data: TaskData object containing view models
             keep_scroll_position: Whether to preserve scroll position
@@ -168,23 +169,17 @@ class TaskUIManager:
         if not main_screen:
             return
 
-        # Update Gantt widget
-        if main_screen.gantt_widget and task_data.filtered_gantt_view_model:
-            task_ids = [t.id for t in task_data.filtered_tasks]
+        # Update Gantt widget (reads gantt data from TUIState.gantt_cache)
+        if main_screen.gantt_widget and task_data.gantt_view_model:
+            task_ids = [t.id for t in task_data.all_tasks]
             main_screen.gantt_widget.update_gantt(
                 task_ids=task_ids,
-                gantt_view_model=task_data.filtered_gantt_view_model,
-                sort_by=self.state.sort_by,
-                reverse=self.state.sort_reverse,
-                include_archived=False,  # Non-archived by default
+                include_archived=False,
                 keep_scroll_position=keep_scroll_position,
             )
 
-        # Update Table widget (via main_screen to update search result count)
-        main_screen.refresh_tasks(
-            task_data.table_view_models,
-            keep_scroll_position=keep_scroll_position,
-        )
+        # Update Table widget (reads from TUIState.filtered_viewmodels)
+        main_screen.refresh_tasks(keep_scroll_position=keep_scroll_position)
 
     def recalculate_gantt(self, start_date: date, end_date: date) -> None:
         """Recalculate gantt data for a new date range.
@@ -243,14 +238,17 @@ class TaskUIManager:
         return gantt_view_model
 
     def _update_gantt_ui(self, gantt_view_model: GanttViewModel | None) -> None:
-        """Update gantt widget with new view model.
+        """Update gantt cache in State and tell widget to re-render.
 
         Args:
             gantt_view_model: New gantt view model to display
         """
-        main_screen = self._get_main_screen()
-        if not main_screen or not main_screen.gantt_widget:
+        if not gantt_view_model:
             return
 
-        if gantt_view_model:
-            main_screen.gantt_widget.update_view_model_and_render(gantt_view_model)
+        # Write to State first (single source of truth)
+        self.state.gantt_cache = gantt_view_model
+
+        main_screen = self._get_main_screen()
+        if main_screen and main_screen.gantt_widget:
+            main_screen.gantt_widget.update_view_model_and_render()

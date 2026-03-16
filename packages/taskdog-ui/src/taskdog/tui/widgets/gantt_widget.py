@@ -150,28 +150,21 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
     def update_gantt(
         self,
         task_ids: list[int],
-        gantt_view_model: GanttViewModel,
-        sort_by: str = "deadline",
-        reverse: bool = False,
         include_archived: bool = False,
         keep_scroll_position: bool = False,
     ) -> None:
-        """Update the gantt chart with new gantt data.
+        """Update the gantt chart with new data from TUIState.gantt_cache.
+
+        The caller (TaskUIManager) must set TUIState.gantt_cache before calling this.
+        This widget only reads from State and renders.
 
         Args:
-            task_ids: List of task IDs (used for recalculating date range on resize)
-            gantt_view_model: Presentation-ready gantt data
-            sort_by: Sort order for tasks (kept for compatibility, value comes from app.state)
-            reverse: Sort direction (kept for compatibility, value comes from app.state)
+            task_ids: List of task IDs (used to detect if data exists on resize)
             include_archived: Include archived tasks (default: False)
             keep_scroll_position: Whether to preserve scroll position during refresh.
                                  Set to True for periodic updates to avoid scroll stuttering.
         """
         self._task_ids = task_ids
-        # Store gantt view model in app state (Step 4)
-        self.tui_state.gantt_cache = gantt_view_model
-        # NOTE: sort_by and reverse parameters kept for API compatibility,
-        # but actual values are read from self.tui_state
         self._filter_include_archived = include_archived
         self._keep_scroll_position = keep_scroll_position
         self._render_gantt()
@@ -457,21 +450,16 @@ class GanttWidget(Vertical, ViNavigationMixin, TUIWidget):
         # Access sort state from tui_state (single source of truth)
         return self.tui_state.sort_by
 
-    def update_view_model_and_render(
-        self, gantt_view_model: GanttViewModel, keep_scroll_position: bool = False
-    ) -> None:
-        """Update gantt view model and trigger re-render.
+    def update_view_model_and_render(self, keep_scroll_position: bool = False) -> None:
+        """Re-render gantt from TUIState.gantt_cache.
 
-        This method updates the internal view model and schedules a re-render
-        after the next refresh cycle.
+        The caller (TaskUIManager) must update TUIState.gantt_cache before calling this.
+        This widget only reads from State and renders.
 
         Args:
-            gantt_view_model: New GanttViewModel to display
             keep_scroll_position: Whether to preserve scroll position during refresh.
                                  Set to True for periodic updates to avoid scroll stuttering.
         """
-        # Store in app state (Step 4)
-        self.tui_state.gantt_cache = gantt_view_model
         self._keep_scroll_position = keep_scroll_position
         self.call_after_refresh(self._render_gantt)
 

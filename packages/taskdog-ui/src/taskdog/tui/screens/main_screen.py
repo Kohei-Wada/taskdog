@@ -14,7 +14,6 @@ from taskdog.tui.state import TUIState
 from taskdog.tui.widgets.custom_footer import CustomFooter
 from taskdog.tui.widgets.gantt_widget import GanttWidget
 from taskdog.tui.widgets.task_table import TaskTable
-from taskdog.view_models.task_view_model import TaskRowViewModel
 
 
 class MainScreen(Screen[None]):
@@ -123,8 +122,8 @@ class MainScreen(Screen[None]):
             event: FilterChanged event
         """
         if self.task_table and self.state:
+            self.task_table.render_filtered_tasks()
             filtered = self.state.filtered_viewmodels
-            self.task_table.render_filtered_tasks(filtered)
             if self.custom_footer:
                 self.custom_footer.update_result(len(filtered), self.state.total_count)
 
@@ -202,14 +201,10 @@ class MainScreen(Screen[None]):
             total = self.state.total_count
             self.custom_footer.update_result(matched, total)
 
-    def refresh_tasks(
-        self, view_models: list[TaskRowViewModel], keep_scroll_position: bool = False
-    ) -> None:
-        """Refresh the table with updated ViewModels."""
+    def refresh_tasks(self, keep_scroll_position: bool = False) -> None:
+        """Refresh the table from TUIState."""
         if self.task_table:
-            self.task_table.refresh_tasks(
-                view_models, keep_scroll_position=keep_scroll_position
-            )
+            self.task_table.refresh_tasks(keep_scroll_position=keep_scroll_position)
             self._update_search_result()
 
     def action_focus_next(self) -> None:

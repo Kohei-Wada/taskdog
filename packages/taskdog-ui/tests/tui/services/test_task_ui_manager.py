@@ -92,7 +92,6 @@ def create_task_data(
     viewmodels = viewmodels or []
     return TaskData(
         all_tasks=tasks,
-        filtered_tasks=tasks,
         task_list_output=TaskListOutput(
             tasks=tasks,
             total_count=len(tasks),
@@ -101,7 +100,6 @@ def create_task_data(
         ),
         table_view_models=viewmodels,
         gantt_view_model=gantt,
-        filtered_gantt_view_model=gantt,
     )
 
 
@@ -230,7 +228,6 @@ class TestTaskUIManager:
 
         # Verify empty TaskData is returned
         assert result.all_tasks == []
-        assert result.filtered_tasks == []
         assert result.table_view_models == []
         assert result.gantt_view_model is None
 
@@ -287,7 +284,7 @@ class TestTaskUIManager:
         manager._refresh_ui(task_data, keep_scroll_position=False)
 
     def test_refresh_ui_updates_gantt_widget(self):
-        """Test _refresh_ui updates gantt widget with filtered data."""
+        """Test _refresh_ui updates gantt widget (reads from State cache)."""
         # Setup
         task = create_task_dto(1, "Test Task", TaskStatus.PENDING)
         vm = create_task_viewmodel(1, "Test Task", TaskStatus.PENDING)
@@ -297,11 +294,10 @@ class TestTaskUIManager:
         # Execute
         self.manager._refresh_ui(task_data, keep_scroll_position=False)
 
-        # Verify gantt widget was updated
+        # Verify gantt widget was told to render
         self.main_screen.gantt_widget.update_gantt.assert_called_once()
         call_kwargs = self.main_screen.gantt_widget.update_gantt.call_args[1]
         assert call_kwargs["task_ids"] == [1]
-        assert call_kwargs["gantt_view_model"] == gantt
 
     def test_refresh_ui_updates_task_table(self):
         """Test _refresh_ui updates task table with viewmodels."""
@@ -315,7 +311,7 @@ class TestTaskUIManager:
 
         # Verify task table was updated via main_screen
         self.main_screen.refresh_tasks.assert_called_once_with(
-            [vm], keep_scroll_position=True
+            keep_scroll_position=True
         )
 
 
@@ -377,10 +373,9 @@ class TestRecalculateGantt:
         # Verify presenter was called
         self.task_data_loader.gantt_presenter.present.assert_called_once()
 
-        # Verify widget was updated
-        self.main_screen.gantt_widget.update_view_model_and_render.assert_called_once_with(
-            gantt
-        )
+        # Verify State was updated and widget was told to render
+        assert self.state.gantt_cache == gantt
+        self.main_screen.gantt_widget.update_view_model_and_render.assert_called_once()
 
     def test_recalculate_gantt_respects_gantt_widget_filter_state(self):
         """Test recalculate_gantt uses filter/sort state from gantt_widget."""
@@ -571,10 +566,8 @@ class TestCreateEmptyTaskData:
         result = manager._create_empty_task_data()
 
         assert result.all_tasks == []
-        assert result.filtered_tasks == []
         assert result.table_view_models == []
         assert result.gantt_view_model is None
-        assert result.filtered_gantt_view_model is None
         assert result.task_list_output.total_count == 0
         assert result.task_list_output.filtered_count == 0
 
@@ -610,8 +603,8 @@ class TestRefreshUIEdgeCases:
         # Verify task table was still updated
         self.main_screen.refresh_tasks.assert_called_once()
 
-    def test_refresh_ui_without_filtered_gantt(self):
-        """Test _refresh_ui handles None filtered_gantt_view_model gracefully."""
+    def test_refresh_ui_without_gantt_view_model(self):
+        """Test _refresh_ui handles None gantt_view_model gracefully."""
         self.main_screen.gantt_widget = MagicMock()
 
         manager = TaskUIManager(
@@ -620,12 +613,11 @@ class TestRefreshUIEdgeCases:
             main_screen_provider=lambda: self.main_screen,
         )
 
-        # Create task_data with None filtered_gantt_view_model
+        # Create task_data with None gantt_view_model
         task = create_task_dto(1, "Test Task", TaskStatus.PENDING)
         vm = create_task_viewmodel(1, "Test Task", TaskStatus.PENDING)
         task_data = TaskData(
             all_tasks=[task],
-            filtered_tasks=[task],
             task_list_output=TaskListOutput(
                 tasks=[task],
                 total_count=1,
@@ -634,7 +626,6 @@ class TestRefreshUIEdgeCases:
             ),
             table_view_models=[vm],
             gantt_view_model=None,
-            filtered_gantt_view_model=None,  # None gantt
         )
 
         # Execute - should not raise

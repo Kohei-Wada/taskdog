@@ -263,13 +263,10 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         """
         return self.tui_state.viewmodels_cache
 
-    def refresh_tasks(
-        self, view_models: list[TaskRowViewModel], keep_scroll_position: bool = False
-    ) -> None:
-        """Refresh the table with updated ViewModels while maintaining cursor position.
+    def refresh_tasks(self, keep_scroll_position: bool = False) -> None:
+        """Refresh the table from TUIState.filtered_viewmodels.
 
         Args:
-            view_models: List of TaskRowViewModel to display (kept for API compatibility)
             keep_scroll_position: Whether to preserve scroll position during refresh.
                                  Set to True for periodic updates to avoid scroll stuttering.
         """
@@ -283,11 +280,7 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
             self.scroll_x if keep_scroll_position else None  # type: ignore[has-type]
         )
 
-        # NOTE: view_models parameter ignored - data is read from app.state (Step 5)
-        # Filter is applied by TUIState.filtered_viewmodels
-        filtered_vms = self.tui_state.filtered_viewmodels
-
-        self._render_tasks(filtered_vms)
+        self._render_tasks(self.tui_state.filtered_viewmodels)
 
         # Always restore cursor position if still valid
         if 0 <= current_row < len(self._viewmodel_map):
@@ -299,19 +292,12 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
             if saved_scroll_x is not None:
                 self.scroll_x = saved_scroll_x
 
-    def render_filtered_tasks(
-        self, viewmodels: list[TaskRowViewModel] | None = None
-    ) -> None:
+    def render_filtered_tasks(self) -> None:
         """Render tasks from TUIState.filtered_viewmodels.
 
         Called by MainScreen when filter state changes.
-
-        Args:
-            viewmodels: Pre-computed filtered viewmodels. If None, reads from TUIState.
         """
-        self._render_tasks(
-            viewmodels if viewmodels is not None else self.tui_state.filtered_viewmodels
-        )
+        self._render_tasks(self.tui_state.filtered_viewmodels)
 
     # Legacy methods kept for backward compatibility
     # Filter state is now managed by TUIState
