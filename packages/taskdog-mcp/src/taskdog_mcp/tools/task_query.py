@@ -7,9 +7,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from mcp.server.fastmcp import FastMCP
-
 if TYPE_CHECKING:
+    from mcp.server.fastmcp import FastMCP
     from taskdog_client import TaskdogApiClient
 
 
