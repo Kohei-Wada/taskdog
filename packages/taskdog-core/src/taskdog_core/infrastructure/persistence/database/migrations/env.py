@@ -9,13 +9,17 @@ This is necessary for in-memory SQLite databases where new connections
 create separate databases.
 """
 
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
-from sqlalchemy.engine import Engine
 
 from taskdog_core.infrastructure.persistence.database.models.task_model import Base
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
 
 # This is the Alembic Config object, which provides access to values
 # within the .ini file (or programmatic config) in use.

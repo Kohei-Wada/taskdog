@@ -1,6 +1,8 @@
 """Use case for optimizing task schedules."""
 
-from datetime import datetime
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.application.dto.optimize_params import OptimizeParams
@@ -19,8 +21,12 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskNotSchedulableError,
 )
-from taskdog_core.domain.repositories.task_repository import TaskRepository
-from taskdog_core.domain.services.holiday_checker import IHolidayChecker
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from taskdog_core.domain.repositories.task_repository import TaskRepository
+    from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
 
 class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]):

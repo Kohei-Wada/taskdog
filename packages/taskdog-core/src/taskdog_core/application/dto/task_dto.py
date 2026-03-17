@@ -7,13 +7,12 @@ the Task entity directly to the presentation layer.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from taskdog_core.domain.entities.task import TaskStatus
-
 if TYPE_CHECKING:
-    from taskdog_core.domain.entities.task import Task
+    from datetime import date, datetime
+
+    from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
 @dataclass(frozen=True)
