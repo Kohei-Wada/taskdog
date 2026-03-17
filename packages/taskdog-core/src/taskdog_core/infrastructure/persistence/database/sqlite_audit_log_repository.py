@@ -7,10 +7,12 @@ SQLAlchemy 2.0 ORM. It stores all API operations for accountability and review.
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.engine import Engine
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
 
 from taskdog_core.application.dto.audit_log_dto import (
     AuditEvent,

@@ -9,20 +9,25 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from sqlalchemy import delete, select
-from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
-from taskdog_core.domain.services.time_provider import ITimeProvider
 from taskdog_core.infrastructure.persistence.database.base_repository import (
     SqliteBaseRepository,
 )
 from taskdog_core.infrastructure.persistence.database.models.note_model import (
     NoteModel,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from sqlalchemy.engine import Engine
+
+    from taskdog_core.domain.services.time_provider import ITimeProvider
 
 
 @dataclass

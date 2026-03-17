@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
-from taskdog_core.domain.entities.task import Task
+if TYPE_CHECKING:
+    from taskdog_core.domain.entities.task import Task
 
 
 class TaskFilter(ABC):
