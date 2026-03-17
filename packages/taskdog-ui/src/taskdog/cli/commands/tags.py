@@ -1,9 +1,15 @@
 """Tags command - Manage task tags."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import click
 
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 

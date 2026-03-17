@@ -1,9 +1,15 @@
 """Stats command - Display task statistics and analytics."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import click
 
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 from taskdog.presenters.statistics_presenter import StatisticsPresenter
 from taskdog.renderers.rich_statistics_renderer import RichStatisticsRenderer
 

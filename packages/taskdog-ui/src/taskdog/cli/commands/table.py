@@ -1,6 +1,8 @@
 """Table command - Display tasks in flat table format."""
 
-from datetime import datetime
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import click
 
@@ -10,8 +12,12 @@ from taskdog.cli.commands.common_options import (
     sort_options,
 )
 from taskdog.cli.commands.table_helpers import render_table
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from taskdog.cli.context import CliContext
 from taskdog.shared.click_types.field_list import FieldList
 
 

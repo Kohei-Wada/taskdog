@@ -1,13 +1,19 @@
 """Optimize command - Auto-generate optimal task schedules."""
 
-from datetime import datetime
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 import click
 
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
-from taskdog.console.console_writer import ConsoleWriter
-from taskdog_core.application.dto.optimization_output import OptimizationOutput
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from taskdog.cli.context import CliContext
+    from taskdog.console.console_writer import ConsoleWriter
+    from taskdog_core.application.dto.optimization_output import OptimizationOutput
 
 
 def _show_failed_tasks(

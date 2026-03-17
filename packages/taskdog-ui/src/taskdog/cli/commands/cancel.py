@@ -1,9 +1,15 @@
 """Cancel command - Mark a task as canceled."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import click
 
 from taskdog.cli.commands.batch_helpers import execute_batch_operation
-from taskdog.cli.context import CliContext
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 from taskdog_core.shared.constants import StatusVerbs
 
 

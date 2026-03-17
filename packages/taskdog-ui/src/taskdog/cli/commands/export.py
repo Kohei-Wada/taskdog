@@ -1,12 +1,18 @@
 """Export command - Export tasks to various formats."""
 
-from datetime import datetime
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
 from taskdog.cli.commands.common_options import date_range_options, filter_options
-from taskdog.cli.context import CliContext
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from taskdog.cli.context import CliContext
 from taskdog.exporters import (
     CsvTaskExporter,
     JsonTaskExporter,

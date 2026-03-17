@@ -1,12 +1,17 @@
 """Fix-actual command - Correct actual start/end timestamps and duration."""
 
-from datetime import datetime
-from typing import Any, cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, cast
 
 import click
 
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_task_errors
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from taskdog.cli.context import CliContext
 
 # Sentinel value for "clear" - distinct from None (not provided)
 CLEAR_SENTINEL = "CLEAR"
@@ -32,7 +37,7 @@ class ClearableDateTimeType(click.ParamType):
             return None
         if value == "" or value == CLEAR_SENTINEL:
             return CLEAR_SENTINEL
-        return cast(datetime, self._inner.convert(value, param, ctx))
+        return cast("datetime", self._inner.convert(value, param, ctx))
 
 
 class ClearableFloatType(click.ParamType):

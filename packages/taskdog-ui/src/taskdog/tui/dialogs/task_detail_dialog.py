@@ -1,10 +1,10 @@
 """Task detail dialog for TUI."""
 
-import asyncio
-from typing import Any, ClassVar
+from __future__ import annotations
 
-from taskdog_client.taskdog_api_client import TaskdogApiClient
-from textual.app import ComposeResult
+import asyncio
+from typing import TYPE_CHECKING, Any, ClassVar
+
 from textual.binding import Binding
 from textual.containers import Container, VerticalScroll
 from textual.css.query import NoMatches
@@ -15,9 +15,14 @@ from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.audit_log_entry_builder import create_audit_log_table
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
-from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
-from taskdog_core.application.dto.task_dto import TaskDetailDto
 from taskdog_core.shared.constants.formats import DATETIME_FORMAT
+
+if TYPE_CHECKING:
+    from taskdog_client.taskdog_api_client import TaskdogApiClient
+    from textual.app import ComposeResult
+
+    from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
+    from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 # Mapping from tab pane ID to its VerticalScroll child ID
 _TAB_SCROLL_MAP: dict[str, str] = {

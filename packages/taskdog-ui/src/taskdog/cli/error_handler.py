@@ -1,12 +1,15 @@
 """Common error handling decorators for CLI commands."""
 
+from __future__ import annotations
+
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import click
 
-from taskdog.cli.context import CliContext
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 from taskdog_core.domain.exceptions.task_exceptions import (
     AuthenticationError,
     ServerConnectionError,
@@ -52,7 +55,7 @@ def handle_task_errors(action_name: str) -> Callable[[F], F]:
             except Exception as e:
                 console_writer.error(action_name, e)
 
-        return cast(F, wrapper)
+        return cast("F", wrapper)
 
     return decorator
 
@@ -90,6 +93,6 @@ def handle_command_errors(action_name: str) -> Callable[[F], F]:
             except Exception as e:
                 console_writer.error(action_name, e)
 
-        return cast(F, wrapper)
+        return cast("F", wrapper)
 
     return decorator

@@ -1,19 +1,24 @@
 """Main screen for the TUI."""
 
-from typing import ClassVar
+from __future__ import annotations
 
-from textual.app import ComposeResult
+from typing import TYPE_CHECKING, ClassVar
+
 from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import Screen
-from textual.timer import Timer
 from textual.widgets import Header
 
 from taskdog.tui.events import FilterChanged, SearchQueryChanged
-from taskdog.tui.state import TUIState
 from taskdog.tui.widgets.custom_footer import CustomFooter
 from taskdog.tui.widgets.gantt_widget import GanttWidget
 from taskdog.tui.widgets.task_table import TaskTable
+
+if TYPE_CHECKING:
+    from textual.app import ComposeResult
+    from textual.timer import Timer
+
+    from taskdog.tui.state import TUIState
 
 
 class MainScreen(Screen[None]):

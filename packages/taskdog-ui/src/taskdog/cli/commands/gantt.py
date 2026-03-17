@@ -1,12 +1,17 @@
 """Gantt command - Display tasks in Gantt chart format."""
 
+from __future__ import annotations
+
 from datetime import date, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import click
 
 from taskdog.cli.commands.common_options import filter_options, sort_options
-from taskdog.cli.context import CliContext
 from taskdog.cli.error_handler import handle_command_errors
+
+if TYPE_CHECKING:
+    from taskdog.cli.context import CliContext
 from taskdog.constants.gantt import (
     CHARS_PER_DAY,
     GANTT_CLI_FIXED_COLUMNS_WIDTH,

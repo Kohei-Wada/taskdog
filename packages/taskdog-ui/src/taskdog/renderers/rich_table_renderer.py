@@ -1,9 +1,9 @@
-from collections.abc import Callable
-from typing import ClassVar, Literal, cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
 from rich.table import Table
 
-from taskdog.console.console_writer import ConsoleWriter
 from taskdog.constants.common import (
     COLUMN_DATETIME_NO_WRAP,
     COLUMN_FINISHED_STYLE,
@@ -70,7 +70,12 @@ from taskdog.constants.task_table import (
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.formatters.duration_formatter import DurationFormatter
 from taskdog.renderers.rich_renderer_base import RichRendererBase
-from taskdog.view_models.task_view_model import TaskRowViewModel
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from taskdog.console.console_writer import ConsoleWriter
+    from taskdog.view_models.task_view_model import TaskRowViewModel
 
 # Type alias for Rich table justify method
 JustifyMethod = Literal["default", "left", "center", "right", "full"]
@@ -270,7 +275,7 @@ class RichTableRenderer(RichRendererBase):
             justify_val = field_config.get("justify")
             valid_justify = {"default", "left", "center", "right", "full"}
             justify: JustifyMethod = (
-                cast(JustifyMethod, justify_val)
+                cast("JustifyMethod", justify_val)
                 if isinstance(justify_val, str) and justify_val in valid_justify
                 else "left"
             )
