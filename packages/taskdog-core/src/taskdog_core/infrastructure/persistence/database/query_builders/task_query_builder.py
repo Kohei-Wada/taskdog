@@ -10,7 +10,7 @@ The builder supports the hybrid filtering architecture where simple filters
 
 from datetime import date
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.sql.expression import ColumnElement
 from sqlalchemy.sql.selectable import Select
 
@@ -109,19 +109,24 @@ class TaskQueryBuilder:
 
         Note:
             Uses SQL JOIN with tags and task_tags tables for efficiency.
-            AND logic: Creates multiple subqueries (one per tag)
-            OR logic: Creates single subquery with IN clause
+            AND logic: Single subquery with GROUP BY + HAVING COUNT
+            OR logic: Single subquery with IN clause
         """
         if tags:
             if match_all:
                 # AND logic: task must have ALL specified tags
-                for tag in tags:
-                    tag_subquery = (
-                        select(TaskTagModel.task_id)
-                        .join(TagModel, TaskTagModel.tag_id == TagModel.id)
-                        .where(TagModel.name == tag)
+                # Single query with GROUP BY + HAVING COUNT instead of N subqueries
+                unique_tag_count = len(set(tags))
+                tag_subquery = (
+                    select(TaskTagModel.task_id)
+                    .join(TagModel, TaskTagModel.tag_id == TagModel.id)
+                    .where(TagModel.name.in_(tags))  # type: ignore[attr-defined]
+                    .group_by(TaskTagModel.task_id)
+                    .having(
+                        func.count(func.distinct(TagModel.name)) == unique_tag_count
                     )
-                    self._stmt = self._stmt.where(TaskModel.id.in_(tag_subquery))  # type: ignore[attr-defined]
+                )
+                self._stmt = self._stmt.where(TaskModel.id.in_(tag_subquery))  # type: ignore[attr-defined]
             else:
                 # OR logic: task must have ANY of the specified tags
                 tag_subquery = (
