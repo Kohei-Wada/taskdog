@@ -34,7 +34,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        assert result.actual_start is None
+        assert result.task.actual_start is None
 
     def test_execute_clears_actual_end_time(self):
         """Test execute clears actual end timestamp if present."""
@@ -50,7 +50,7 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        assert result.actual_end is None
+        assert result.task.actual_end is None
 
     def test_execute_with_pending_task_is_idempotent(self):
         """Test execute works correctly when task is already PENDING."""
@@ -61,9 +61,9 @@ class TestPauseTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        assert result.status == TaskStatus.PENDING
-        assert result.actual_start is None
-        assert result.actual_end is None
+        assert result.task.status == TaskStatus.PENDING
+        assert result.task.actual_start is None
+        assert result.task.actual_end is None
 
     def test_execute_does_not_modify_finished_task_state(self):
         """Override: PauseTask raises error for finished tasks, so this test is not applicable."""

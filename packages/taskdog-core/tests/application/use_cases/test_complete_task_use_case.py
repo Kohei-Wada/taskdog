@@ -38,7 +38,7 @@ class TestCompleteTaskUseCase(BaseStatusChangeUseCaseTest):
         result = self.use_case.execute(input_dto)
 
         # actual_start should remain unchanged
-        assert result.actual_start == datetime(2025, 10, 12, 10, 0, 0)
+        assert result.task.actual_start == datetime(2025, 10, 12, 10, 0, 0)
 
     def test_execute_with_pending_task_raises_error(self):
         """Test execute with PENDING task raises TaskNotStartedError."""

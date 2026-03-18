@@ -17,6 +17,7 @@ from taskdog_core.application.dto.statistics_output import (
     TimeStatistics,
     TrendStatistics,
 )
+from taskdog_core.application.dto.status_change_output import StatusChangeOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 
 __all__ = [
@@ -30,6 +31,7 @@ __all__ = [
     "PriorityDistributionStatistics",
     "SingleTaskInput",
     "StatisticsOutput",
+    "StatusChangeOutput",
     "TaskDetailOutput",
     "TaskStatistics",
     "TimeRange",
