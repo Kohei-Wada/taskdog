@@ -166,6 +166,14 @@ class OptimizeScheduleRequest(BaseModel):
     )
 
 
+class BulkTaskIdsRequest(BaseModel):
+    """Request model for bulk operations that take a list of task IDs."""
+
+    task_ids: list[int] = Field(
+        ..., min_length=1, description="List of task IDs to operate on"
+    )
+
+
 class UpdateNotesRequest(BaseModel):
     """Request model for updating task notes."""
 

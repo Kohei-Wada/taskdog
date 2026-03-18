@@ -1,6 +1,10 @@
 """Data Transfer Objects."""
 
 from taskdog_core.application.dto.base import SingleTaskInput
+from taskdog_core.application.dto.bulk_operation_output import (
+    BulkOperationOutput,
+    BulkTaskResultOutput,
+)
 from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
 from taskdog_core.application.dto.query_inputs import (
     GetGanttDataInput,
@@ -20,6 +24,8 @@ from taskdog_core.application.dto.statistics_output import (
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 
 __all__ = [
+    "BulkOperationOutput",
+    "BulkTaskResultOutput",
     "CalculateStatisticsInput",
     "DeadlineComplianceStatistics",
     "EstimationAccuracyStatistics",

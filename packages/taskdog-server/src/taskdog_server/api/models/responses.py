@@ -383,3 +383,22 @@ class AuditLogListResponse(BaseModel):
     total_count: int
     limit: int
     offset: int
+
+
+class BulkTaskResult(BaseModel):
+    """Result for a single task within a bulk operation."""
+
+    task_id: int
+    success: bool
+    task: TaskOperationResponse | None = None
+    error: str | None = None
+
+
+class BulkOperationResponse(BaseModel):
+    """Response model for bulk task operations."""
+
+    operation: str
+    total: int
+    succeeded: int
+    failed: int
+    results: list[BulkTaskResult]
