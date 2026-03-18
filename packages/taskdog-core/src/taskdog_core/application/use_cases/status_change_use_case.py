@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 
 from taskdog_core.application.dto.base import SingleTaskInput
+from taskdog_core.application.dto.status_change_output import StatusChangeOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.services.task_status_service import TaskStatusService
 from taskdog_core.application.use_cases.base import UseCase
@@ -14,7 +15,7 @@ from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 
 class StatusChangeUseCase[TInput: SingleTaskInput](
-    UseCase[TInput, TaskOperationOutput], ABC
+    UseCase[TInput, StatusChangeOutput], ABC
 ):
     """Base use case for status change operations.
 
@@ -49,7 +50,7 @@ class StatusChangeUseCase[TInput: SingleTaskInput](
         self.validator_registry = TaskFieldValidatorRegistry(repository)
         self.status_service = TaskStatusService()
 
-    def execute(self, input_dto: TInput) -> TaskOperationOutput:
+    def execute(self, input_dto: TInput) -> StatusChangeOutput:
         """Execute status change workflow (Template Method).
 
         This method defines the common workflow for all status changes.
@@ -59,7 +60,7 @@ class StatusChangeUseCase[TInput: SingleTaskInput](
             input_dto: Input data containing task_id
 
         Returns:
-            TaskOperationOutput DTO containing updated task information
+            StatusChangeOutput containing updated task and old status
 
         Raises:
             TaskNotFoundException: If task doesn't exist
@@ -67,6 +68,9 @@ class StatusChangeUseCase[TInput: SingleTaskInput](
         """
         # 1. Get task from repository
         task = self._get_task_or_raise(self.repository, input_dto.task_id)
+
+        # Record old status before any changes
+        old_status = task.status
 
         # 2. Pre-processing hook (optional)
         self._before_status_change(task)
@@ -86,7 +90,10 @@ class StatusChangeUseCase[TInput: SingleTaskInput](
         # 6. Post-processing hook (optional)
         self._after_status_change(task)
 
-        return TaskOperationOutput.from_task(task)
+        return StatusChangeOutput(
+            task=TaskOperationOutput.from_task(task),
+            old_status=old_status,
+        )
 
     @abstractmethod
     def _get_target_status(self) -> TaskStatus:

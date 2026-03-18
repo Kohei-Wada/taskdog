@@ -31,7 +31,7 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        assert result.actual_end is None
+        assert result.task.actual_end is None
 
     def test_execute_with_in_progress_task_raises_error(self):
         """Test that starting an already IN_PROGRESS task raises TaskAlreadyInProgressError."""
@@ -56,5 +56,5 @@ class TestStartTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        assert result.status == TaskStatus.IN_PROGRESS
-        assert result.actual_start is not None
+        assert result.task.status == TaskStatus.IN_PROGRESS
+        assert result.task.actual_start is not None

@@ -49,9 +49,9 @@ class TestReopenTaskUseCase:
         input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        assert result.status == TaskStatus.PENDING
-        assert result.actual_start is None
-        assert result.actual_end is None
+        assert result.task.status == TaskStatus.PENDING
+        assert result.task.actual_start is None
+        assert result.task.actual_end is None
 
     def test_execute_persists_changes(self):
         """Test execute saves changes to repository."""
@@ -124,7 +124,7 @@ class TestReopenTaskUseCase:
         result = self.use_case.execute(input_dto)
 
         # Should succeed even though dependency is not completed
-        assert result.status == TaskStatus.PENDING
+        assert result.task.status == TaskStatus.PENDING
 
     def test_execute_with_missing_dependency_succeeds(self):
         """Test that reopen succeeds even with missing dependencies."""
@@ -140,7 +140,7 @@ class TestReopenTaskUseCase:
         result = self.use_case.execute(input_dto)
 
         # Should succeed even though dependency doesn't exist
-        assert result.status == TaskStatus.PENDING
+        assert result.task.status == TaskStatus.PENDING
 
     def test_execute_with_no_dependencies_succeeds(self):
         """Test execute with no dependencies succeeds."""
@@ -151,4 +151,4 @@ class TestReopenTaskUseCase:
         input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        assert result.status == TaskStatus.PENDING
+        assert result.task.status == TaskStatus.PENDING

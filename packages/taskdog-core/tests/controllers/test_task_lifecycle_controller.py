@@ -68,10 +68,10 @@ class TestTaskLifecycleController:
             ),
         ],
     )
-    def test_lifecycle_operation_returns_task_operation_output(
+    def test_lifecycle_operation_returns_status_change_output(
         self, operation_name, method_name, initial_status, actual_start, actual_end
     ):
-        """Test that lifecycle operations return TaskOperationOutput."""
+        """Test that lifecycle operations return StatusChangeOutput."""
         # Arrange
         task_id = 1
         task = Task(
@@ -91,8 +91,9 @@ class TestTaskLifecycleController:
 
         # Assert
         assert result is not None
-        assert result.id == task_id
-        assert result.name == "Test Task"
+        assert result.task.id == task_id
+        assert result.task.name == "Test Task"
+        assert result.old_status == initial_status
 
     def test_controller_inherits_from_base_controller(self):
         """Test that controller has repository and config from base class."""

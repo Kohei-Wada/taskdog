@@ -23,21 +23,16 @@ class LifecycleOperation:
     """Configuration for a lifecycle endpoint."""
 
     name: str
-    old_status: str
     description: str
     returns: str
 
 
 OPERATIONS = [
-    LifecycleOperation("start", "PENDING", "Start a task", "actual_start timestamp"),
-    LifecycleOperation(
-        "complete", "IN_PROGRESS", "Complete a task", "actual_end timestamp"
-    ),
-    LifecycleOperation("pause", "IN_PROGRESS", "Pause a task", "cleared timestamps"),
-    LifecycleOperation(
-        "cancel", "IN_PROGRESS", "Cancel a task", "actual_end timestamp"
-    ),
-    LifecycleOperation("reopen", "COMPLETED", "Reopen a task", "cleared timestamps"),
+    LifecycleOperation("start", "Start a task", "actual_start timestamp"),
+    LifecycleOperation("complete", "Complete a task", "actual_end timestamp"),
+    LifecycleOperation("pause", "Pause a task", "cleared timestamps"),
+    LifecycleOperation("cancel", "Cancel a task", "actual_end timestamp"),
+    LifecycleOperation("reopen", "Reopen a task", "cleared timestamps"),
 ]
 
 
@@ -59,21 +54,23 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
     ) -> TaskOperationResponse:
         controller_method = getattr(controller, f"{op.name}_task")
         result = controller_method(task_id)
-        broadcaster.task_status_changed(result, op.old_status, client_name)
+        broadcaster.task_status_changed(
+            result.task, result.old_status.value, client_name
+        )
 
         # Audit log
         audit_controller.log_operation(
             operation=f"{op.name}_task",
             resource_type="task",
             resource_id=task_id,
-            resource_name=result.name,
+            resource_name=result.task.name,
             client_name=client_name,
-            old_values={"status": op.old_status},
-            new_values={"status": result.status.value},
+            old_values={"status": result.old_status.value},
+            new_values={"status": result.task.status.value},
             success=True,
         )
 
-        return TaskOperationResponse.from_dto(result)
+        return TaskOperationResponse.from_dto(result.task)
 
 
 # Generate all lifecycle endpoints

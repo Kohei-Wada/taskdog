@@ -30,9 +30,9 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        assert result.status == TaskStatus.CANCELED
-        assert result.actual_end is not None
-        assert result.actual_start is None
+        assert result.task.status == TaskStatus.CANCELED
+        assert result.task.actual_end is not None
+        assert result.task.actual_start is None
 
     def test_execute_can_cancel_in_progress_task(self):
         """Test execute can cancel IN_PROGRESS task."""
@@ -46,6 +46,6 @@ class TestCancelTaskUseCase(BaseStatusChangeUseCaseTest):
         input_dto = SingleTaskInput(task_id=task.id)
         result = self.use_case.execute(input_dto)
 
-        assert result.status == TaskStatus.CANCELED
-        assert result.actual_start is not None
-        assert result.actual_end is not None
+        assert result.task.status == TaskStatus.CANCELED
+        assert result.task.actual_start is not None
+        assert result.task.actual_end is not None
