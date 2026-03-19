@@ -37,6 +37,9 @@ from fixtures.repositories import InMemoryTaskRepository  # noqa: E402
 from taskdog_core.controllers.audit_log_controller import (  # noqa: E402
     AuditLogController,
 )
+from taskdog_core.controllers.bulk_task_controller import (  # noqa: E402
+    BulkTaskController,
+)
 from taskdog_core.controllers.query_controller import QueryController  # noqa: E402
 from taskdog_core.controllers.task_analytics_controller import (  # noqa: E402
     TaskAnalyticsController,
@@ -226,6 +229,9 @@ def app(
     audit_log_controller = AuditLogController(
         session_audit_log_repository, mock_logger, SystemTimeProvider()
     )
+    bulk_controller = BulkTaskController(
+        lifecycle_controller, crud_controller, query_controller
+    )
 
     # Create API context once
     api_context = ApiContext(
@@ -240,6 +246,7 @@ def app(
         holiday_checker=None,
         time_provider=SystemTimeProvider(),
         audit_log_controller=audit_log_controller,
+        bulk_controller=bulk_controller,
     )
 
     # Create FastAPI app once with all routers

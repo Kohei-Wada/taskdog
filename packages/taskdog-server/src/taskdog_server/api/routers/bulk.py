@@ -4,23 +4,12 @@ from dataclasses import dataclass
 
 from fastapi import APIRouter
 
-from taskdog_core.controllers.audit_log_controller import AuditLogController
-from taskdog_core.controllers.query_controller import QueryController
-from taskdog_core.controllers.task_crud_controller import TaskCrudController
-from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleController
-from taskdog_core.domain.exceptions.task_exceptions import (
-    TaskAlreadyFinishedError,
-    TaskNotFoundException,
-    TaskNotStartedError,
-    TaskValidationError,
-)
+from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 from taskdog_server.api.dependencies import (
     AuditLogControllerDep,
     AuthenticatedClientDep,
-    CrudControllerDep,
+    BulkTaskControllerDep,
     EventBroadcasterDep,
-    LifecycleControllerDep,
-    QueryControllerDep,
 )
 from taskdog_server.api.models.requests import BulkTaskIdsRequest
 from taskdog_server.api.models.responses import (
@@ -31,13 +20,6 @@ from taskdog_server.api.models.responses import (
 from taskdog_server.websocket.broadcaster import WebSocketEventBroadcaster
 
 router = APIRouter()
-
-_TASK_ERRORS = (
-    TaskNotFoundException,
-    TaskValidationError,
-    TaskAlreadyFinishedError,
-    TaskNotStartedError,
-)
 
 
 @dataclass(frozen=True)
@@ -54,6 +36,7 @@ class BulkCrudOperation:
 
     name: str
     description: str
+    audit_operation: str
 
 
 LIFECYCLE_OPERATIONS = [
@@ -65,170 +48,44 @@ LIFECYCLE_OPERATIONS = [
 ]
 
 CRUD_OPERATIONS = [
-    BulkCrudOperation("archive", "Archive multiple tasks"),
-    BulkCrudOperation("restore", "Restore multiple tasks"),
-    BulkCrudOperation("delete", "Delete multiple tasks permanently"),
+    BulkCrudOperation("archive", "Archive multiple tasks", "archive_task"),
+    BulkCrudOperation("restore", "Restore multiple tasks", "restore_task"),
+    BulkCrudOperation("delete", "Delete multiple tasks permanently", "delete_task"),
 ]
 
 
-def _execute_bulk_lifecycle(
-    task_ids: list[int],
-    operation_name: str,
-    controller: TaskLifecycleController,
+def _to_response(output: BulkOperationOutput) -> BulkOperationResponse:
+    """Convert core DTO to Pydantic response model."""
+    return BulkOperationResponse(
+        results=[
+            BulkTaskResult(
+                task_id=r.task_id,
+                success=r.success,
+                task=TaskOperationResponse.from_dto(r.task) if r.task else None,
+                error=r.error,
+            )
+            for r in output.results
+        ]
+    )
+
+
+def _broadcast(
     broadcaster: WebSocketEventBroadcaster,
-    audit_controller: AuditLogController,
+    operation: str,
+    output: BulkOperationOutput,
+    task_ids: list[int],
     client_name: str | None,
-) -> BulkOperationResponse:
-    """Execute a lifecycle operation on multiple tasks."""
-    results: list[BulkTaskResult] = []
-
-    method_name = f"{operation_name}_task"
-    if not hasattr(controller, method_name):
-        raise ValueError(f"Invalid lifecycle operation: {operation_name}")
-
-    for task_id in task_ids:
-        try:
-            controller_method = getattr(controller, method_name)
-            result = controller_method(task_id)
-
-            audit_controller.log_operation(
-                operation=f"{operation_name}_task",
-                resource_type="task",
-                resource_id=task_id,
-                resource_name=result.task.name,
-                client_name=client_name,
-                old_values={"status": result.old_status.value},
-                new_values={"status": result.task.status.value},
-                success=True,
-            )
-
-            results.append(
-                BulkTaskResult(
-                    task_id=task_id,
-                    success=True,
-                    task=TaskOperationResponse.from_dto(result.task),
-                )
-            )
-        except _TASK_ERRORS as e:
-            results.append(
-                BulkTaskResult(
-                    task_id=task_id,
-                    success=False,
-                    error=str(e),
-                )
-            )
-
-    success_ids = [r.task_id for r in results if r.success]
-    failure_count = sum(1 for r in results if not r.success)
+) -> None:
+    """Send a single bulk_operation_completed WebSocket event."""
+    success_count = sum(1 for r in output.results if r.success)
+    failure_count = sum(1 for r in output.results if not r.success)
     broadcaster.bulk_operation_completed(
-        operation=operation_name,
-        success_count=len(success_ids),
+        operation=operation,
+        success_count=success_count,
         failure_count=failure_count,
         task_ids=task_ids,
         source_user_name=client_name,
     )
-
-    return BulkOperationResponse(results=results)
-
-
-def _execute_bulk_crud(
-    task_ids: list[int],
-    operation_name: str,
-    controller: TaskCrudController,
-    query_controller: QueryController,
-    broadcaster: WebSocketEventBroadcaster,
-    audit_controller: AuditLogController,
-    client_name: str | None,
-) -> BulkOperationResponse:
-    """Execute a CRUD operation (archive/restore/delete) on multiple tasks."""
-    results: list[BulkTaskResult] = []
-
-    for task_id in task_ids:
-        try:
-            if operation_name == "archive":
-                result = controller.archive_task(task_id)
-                audit_controller.log_operation(
-                    operation="archive_task",
-                    resource_type="task",
-                    resource_id=task_id,
-                    resource_name=result.name,
-                    client_name=client_name,
-                    old_values={"is_archived": False},
-                    new_values={"is_archived": True},
-                    success=True,
-                )
-                results.append(
-                    BulkTaskResult(
-                        task_id=task_id,
-                        success=True,
-                        task=TaskOperationResponse.from_dto(result),
-                    )
-                )
-
-            elif operation_name == "restore":
-                result = controller.restore_task(task_id)
-                audit_controller.log_operation(
-                    operation="restore_task",
-                    resource_type="task",
-                    resource_id=task_id,
-                    resource_name=result.name,
-                    client_name=client_name,
-                    old_values={"is_archived": True},
-                    new_values={"is_archived": False},
-                    success=True,
-                )
-                results.append(
-                    BulkTaskResult(
-                        task_id=task_id,
-                        success=True,
-                        task=TaskOperationResponse.from_dto(result),
-                    )
-                )
-
-            elif operation_name == "delete":
-                task_output = query_controller.get_task_by_id(task_id)
-                if task_output is None or task_output.task is None:
-                    raise TaskNotFoundException(f"Task {task_id} not found")
-                task_name = task_output.task.name
-                controller.remove_task(task_id)
-                audit_controller.log_operation(
-                    operation="delete_task",
-                    resource_type="task",
-                    resource_id=task_id,
-                    resource_name=task_name,
-                    client_name=client_name,
-                    success=True,
-                )
-                results.append(
-                    BulkTaskResult(
-                        task_id=task_id,
-                        success=True,
-                    )
-                )
-
-            else:
-                raise ValueError(f"Invalid CRUD operation: {operation_name}")
-
-        except _TASK_ERRORS as e:
-            results.append(
-                BulkTaskResult(
-                    task_id=task_id,
-                    success=False,
-                    error=str(e),
-                )
-            )
-
-    success_ids = [r.task_id for r in results if r.success]
-    failure_count = sum(1 for r in results if not r.success)
-    broadcaster.bulk_operation_completed(
-        operation=operation_name,
-        success_count=len(success_ids),
-        failure_count=failure_count,
-        task_ids=task_ids,
-        source_user_name=client_name,
-    )
-
-    return BulkOperationResponse(results=results)
 
 
 def _create_bulk_lifecycle_endpoint(op: BulkLifecycleOperation) -> None:
@@ -241,19 +98,28 @@ def _create_bulk_lifecycle_endpoint(op: BulkLifecycleOperation) -> None:
     )
     async def endpoint(
         request: BulkTaskIdsRequest,
-        controller: LifecycleControllerDep,
+        bulk_controller: BulkTaskControllerDep,
         broadcaster: EventBroadcasterDep,
         audit_controller: AuditLogControllerDep,
         client_name: AuthenticatedClientDep,
     ) -> BulkOperationResponse:
-        return _execute_bulk_lifecycle(
-            request.task_ids,
-            op.name,
-            controller,
-            broadcaster,
-            audit_controller,
-            client_name,
-        )
+        output = bulk_controller.bulk_lifecycle(request.task_ids, op.name)
+
+        for r in output.results:
+            if r.success and r.task is not None:
+                audit_controller.log_operation(
+                    operation=f"{op.name}_task",
+                    resource_type="task",
+                    resource_id=r.task_id,
+                    resource_name=r.task.name,
+                    client_name=client_name,
+                    old_values={"status": r.old_status} if r.old_status else None,
+                    new_values={"status": r.task.status.value},
+                    success=True,
+                )
+
+        _broadcast(broadcaster, op.name, output, request.task_ids, client_name)
+        return _to_response(output)
 
 
 def _create_bulk_crud_endpoint(op: BulkCrudOperation) -> None:
@@ -266,21 +132,38 @@ def _create_bulk_crud_endpoint(op: BulkCrudOperation) -> None:
     )
     async def endpoint(
         request: BulkTaskIdsRequest,
-        controller: CrudControllerDep,
-        query_controller: QueryControllerDep,
+        bulk_controller: BulkTaskControllerDep,
         broadcaster: EventBroadcasterDep,
         audit_controller: AuditLogControllerDep,
         client_name: AuthenticatedClientDep,
     ) -> BulkOperationResponse:
-        return _execute_bulk_crud(
-            request.task_ids,
-            op.name,
-            controller,
-            query_controller,
-            broadcaster,
-            audit_controller,
-            client_name,
-        )
+        method = getattr(bulk_controller, f"bulk_{op.name}")
+        output: BulkOperationOutput = method(request.task_ids)
+
+        for r in output.results:
+            if r.success:
+                resource_name = r.task.name if r.task else r.task_name
+                old_values = None
+                new_values = None
+                if op.name == "archive":
+                    old_values = {"is_archived": False}
+                    new_values = {"is_archived": True}
+                elif op.name == "restore":
+                    old_values = {"is_archived": True}
+                    new_values = {"is_archived": False}
+                audit_controller.log_operation(
+                    operation=op.audit_operation,
+                    resource_type="task",
+                    resource_id=r.task_id,
+                    resource_name=resource_name,
+                    client_name=client_name,
+                    old_values=old_values,
+                    new_values=new_values,
+                    success=True,
+                )
+
+        _broadcast(broadcaster, op.name, output, request.task_ids, client_name)
+        return _to_response(output)
 
 
 # Generate all bulk endpoints

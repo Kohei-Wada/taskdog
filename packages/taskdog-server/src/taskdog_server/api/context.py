@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from sqlalchemy.engine import Engine
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
+from taskdog_core.controllers.bulk_task_controller import BulkTaskController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -49,6 +50,7 @@ class ApiContext:
     holiday_checker: IHolidayChecker | None
     time_provider: ITimeProvider
     audit_log_controller: AuditLogController
+    bulk_controller: BulkTaskController | None = None
     engine: Engine | None = field(default=None, repr=False)
 
     def close(self) -> None:

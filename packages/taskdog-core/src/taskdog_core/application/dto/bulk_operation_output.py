@@ -13,6 +13,8 @@ class BulkTaskResultOutput:
     success: bool
     task: TaskOperationOutput | None
     error: str | None
+    old_status: str | None = None
+    task_name: str | None = None
 
 
 @dataclass
