@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING
 
 import click
 
-from taskdog.cli.commands.batch_helpers import execute_batch_operation
-
 if TYPE_CHECKING:
     from taskdog.cli.context import CliContext
 
@@ -33,20 +31,26 @@ def rm_command(ctx: click.Context, task_ids: tuple[int, ...], hard: bool) -> Non
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
 
-    def remove_single_task(task_id: int) -> None:
-        if hard:
-            # Hard delete: permanently remove from database
-            ctx_obj.api_client.remove_task(task_id)
-            console_writer.success(f"Permanently deleted task with ID: {task_id}")
-        else:
-            # Archive: set is_archived flag (preserves original status)
-            task = ctx_obj.api_client.archive_task(task_id)
-            # Use task_success to avoid Rich-specific markup
-            console_writer.task_success("Archived (status preserved)", task)
-            console_writer.info(
-                f"Use 'taskdog restore {task_id}' to restore this task."
-            )
-
-    execute_batch_operation(
-        task_ids, remove_single_task, console_writer, "removing task"
-    )
+    if hard:
+        results = ctx_obj.api_client.bulk_delete(list(task_ids))
+        for result in results.results:
+            if result.success:
+                console_writer.success(
+                    f"Permanently deleted task with ID: {result.task_id}"
+                )
+            elif result.error is not None:
+                console_writer.validation_error(result.error)
+            if len(task_ids) > 1:
+                console_writer.empty_line()
+    else:
+        results = ctx_obj.api_client.bulk_archive(list(task_ids))
+        for result in results.results:
+            if result.success and result.task is not None:
+                console_writer.task_success("Archived (status preserved)", result.task)
+                console_writer.info(
+                    f"Use 'taskdog restore {result.task_id}' to restore this task."
+                )
+            elif result.error is not None:
+                console_writer.validation_error(result.error)
+            if len(task_ids) > 1:
+                console_writer.empty_line()

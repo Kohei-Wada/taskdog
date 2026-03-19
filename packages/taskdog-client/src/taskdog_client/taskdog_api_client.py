@@ -12,6 +12,7 @@ import httpx  # type: ignore[import-not-found]
 from taskdog_client.analytics_client import AnalyticsClient
 from taskdog_client.audit_client import AuditClient
 from taskdog_client.base_client import BaseApiClient
+from taskdog_client.bulk_client import BulkClient
 from taskdog_client.lifecycle_client import LifecycleClient
 from taskdog_client.notes_client import NotesClient
 from taskdog_client.query_client import QueryClient
@@ -21,6 +22,7 @@ from taskdog_core.application.dto.audit_log_dto import (
     AuditLogListOutput,
     AuditLogOutput,
 )
+from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
@@ -66,6 +68,7 @@ class TaskdogApiClient:
         self._analytics = AnalyticsClient(self._base)
         self._notes = NotesClient(self._base)
         self._audit = AuditClient(self._base)
+        self._bulk = BulkClient(self._base)
 
     @property
     def client(self) -> httpx.Client:
@@ -404,3 +407,37 @@ class TaskdogApiClient:
     def get_audit_log(self, log_id: int) -> AuditLogOutput:
         """Get a single audit log entry by ID."""
         return self._audit.get_audit_log(log_id)
+
+    # Bulk operation methods - delegate to BulkClient
+
+    def bulk_start(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Start multiple tasks in a single request."""
+        return self._bulk.bulk_start(task_ids)
+
+    def bulk_complete(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Complete multiple tasks in a single request."""
+        return self._bulk.bulk_complete(task_ids)
+
+    def bulk_pause(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Pause multiple tasks in a single request."""
+        return self._bulk.bulk_pause(task_ids)
+
+    def bulk_cancel(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Cancel multiple tasks in a single request."""
+        return self._bulk.bulk_cancel(task_ids)
+
+    def bulk_reopen(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Reopen multiple tasks in a single request."""
+        return self._bulk.bulk_reopen(task_ids)
+
+    def bulk_archive(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Archive multiple tasks in a single request."""
+        return self._bulk.bulk_archive(task_ids)
+
+    def bulk_restore(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Restore multiple tasks in a single request."""
+        return self._bulk.bulk_restore(task_ids)
+
+    def bulk_delete(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Delete multiple tasks permanently in a single request."""
+        return self._bulk.bulk_delete(task_ids)

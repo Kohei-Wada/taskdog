@@ -1,36 +1,28 @@
 """Tests for start command."""
 
 from taskdog.cli.commands.start import start_command
-from taskdog_core.domain.entities.task import Task, TaskStatus
-from tests.presentation.cli.commands.batch_command_test_base import BaseBatchCommandTest
+from taskdog_core.shared.constants import StatusVerbs
+from tests.presentation.cli.commands.bulk_command_test_base import (
+    BaseBulkCommandTest,
+    make_success_result,
+)
 
 
-class TestStartCommand(BaseBatchCommandTest):
+class TestStartCommand(BaseBulkCommandTest):
     """Test cases for start command."""
 
     command_func = start_command
-    use_case_path = "presentation.cli.commands.start.TaskController"
-    controller_method = "start_task"
-    controller_attr = "api_client"
-    action_verb = "Started"
-    action_name = "start"
+    bulk_method = "bulk_start"
+    action_verb = StatusVerbs.STARTED
 
-    def test_start_already_in_progress_task(self):
-        """Test starting a task that is already in progress."""
-        # Setup
-        task = Task(id=1, name="Test Task", priority=5, status=TaskStatus.IN_PROGRESS)
+    def test_start_shows_start_time(self):
+        """Test that start command shows task start time."""
+        result_item = make_success_result(1)
+        self._set_bulk_return([result_item])
 
-        self.repository.get_by_id.return_value = task
-        self.api_client.start_task.return_value = task
-
-        # Execute
         result = self.runner.invoke(start_command, ["1"], obj=self.cli_context)
 
-        # Verify
         assert result.exit_code == 0
-        # Should still show success message
-        self.console_writer.task_success.assert_called_once()
-        # task_start_time should be called
-        self.console_writer.task_start_time.assert_called_once()
-        # Note: The command always passes was_already_in_progress=False as a keyword argument
-        # The API client handles the actual status check
+        self.console_writer.task_start_time.assert_called_once_with(
+            result_item.task, was_already_in_progress=False
+        )

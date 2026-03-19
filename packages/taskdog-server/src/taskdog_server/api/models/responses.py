@@ -172,6 +172,21 @@ class TaskDetailResponse(TaskReadResponseBase):
         )
 
 
+class BulkTaskResult(BaseModel):
+    """Result for a single task in a bulk operation."""
+
+    task_id: int
+    success: bool
+    task: TaskOperationResponse | None = None
+    error: str | None = None
+
+
+class BulkOperationResponse(BaseModel):
+    """Response model for bulk task operations."""
+
+    results: list[BulkTaskResult]
+
+
 class TaskListResponse(BaseModel):
     """Response model for task list queries."""
 

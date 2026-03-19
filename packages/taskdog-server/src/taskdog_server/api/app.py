@@ -12,6 +12,7 @@ from taskdog_server.api.middleware import LoggingMiddleware
 from taskdog_server.api.routers import (
     analytics_router,
     audit_router,
+    bulk_router,
     lifecycle_router,
     notes_router,
     relationships_router,
@@ -70,6 +71,7 @@ def create_app() -> FastAPI:
     app.add_middleware(LoggingMiddleware)
 
     # Register routers
+    app.include_router(bulk_router, prefix="/api/v1/tasks", tags=["bulk"])
     app.include_router(tasks_router, prefix="/api/v1/tasks", tags=["tasks"])
     app.include_router(lifecycle_router, prefix="/api/v1/tasks", tags=["lifecycle"])
     app.include_router(

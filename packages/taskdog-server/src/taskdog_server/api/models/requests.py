@@ -143,6 +143,14 @@ class FixActualTimesRequest(BaseModel):
         return self
 
 
+class BulkTaskIdsRequest(BaseModel):
+    """Request model for bulk task operations."""
+
+    task_ids: list[int] = Field(
+        ..., min_length=1, description="List of task IDs to operate on"
+    )
+
+
 class OptimizeScheduleRequest(BaseModel):
     """Request model for schedule optimization."""
 
