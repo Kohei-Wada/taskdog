@@ -40,6 +40,8 @@ class BulkClient:
 
     def _parse_bulk_response(self, data: dict[str, Any]) -> BulkOperationOutput:
         """Parse bulk operation response JSON into DTO."""
+        if "results" not in data:
+            raise ValueError("Invalid bulk operation response: missing 'results' key")
         results: list[BulkTaskResultOutput] = []
         for item in data["results"]:
             task = None

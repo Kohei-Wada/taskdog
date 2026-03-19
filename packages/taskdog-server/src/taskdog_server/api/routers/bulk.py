@@ -82,9 +82,13 @@ def _execute_bulk_lifecycle(
     """Execute a lifecycle operation on multiple tasks."""
     results: list[BulkTaskResult] = []
 
+    method_name = f"{operation_name}_task"
+    if not hasattr(controller, method_name):
+        raise ValueError(f"Invalid lifecycle operation: {operation_name}")
+
     for task_id in task_ids:
         try:
-            controller_method = getattr(controller, f"{operation_name}_task")
+            controller_method = getattr(controller, method_name)
             result = controller_method(task_id)
 
             broadcaster.task_status_changed(
@@ -198,6 +202,9 @@ def _execute_bulk_crud(
                         success=True,
                     )
                 )
+
+            else:
+                raise ValueError(f"Invalid CRUD operation: {operation_name}")
 
         except _TASK_ERRORS as e:
             results.append(
