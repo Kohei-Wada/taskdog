@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
+
 import httpx  # type: ignore[import-not-found]
 
 from taskdog_core.domain.exceptions.task_exceptions import (
@@ -118,6 +120,28 @@ class BaseApiClient:
                 detail = response.json().get("detail", detail)
             raise ServerError(response.status_code, detail)
         response.raise_for_status()
+
+    def lifecycle_operation(self, task_id: int, operation: str) -> TaskOperationOutput:
+        """Execute a lifecycle operation on a task.
+
+        Generic helper for lifecycle operations (start, complete, pause, etc.)
+        that follow the same pattern: POST to /api/v1/tasks/{id}/{operation}.
+
+        Args:
+            task_id: Task ID
+            operation: Operation name (e.g., "start", "complete", "archive")
+
+        Returns:
+            TaskOperationOutput with updated task data
+
+        Raises:
+            TaskNotFoundException: If task not found
+            TaskValidationError: If validation fails
+        """
+        from taskdog_client.converters import convert_to_task_operation_output
+
+        data = self._request_json("post", f"/api/v1/tasks/{task_id}/{operation}")
+        return convert_to_task_operation_output(data)
 
     def _request_json(self, method: str, *args: Any, **kwargs: Any) -> Any:
         """Execute HTTP request and return JSON response, handling errors.

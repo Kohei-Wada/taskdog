@@ -172,26 +172,6 @@ class TaskClient:
         )
         return convert_to_update_task_output(data)
 
-    def _lifecycle_operation(self, task_id: int, operation: str) -> TaskOperationOutput:
-        """Execute a lifecycle operation on a task.
-
-        Generic helper for lifecycle operations (archive, restore)
-        that follow the same pattern.
-
-        Args:
-            task_id: Task ID
-            operation: Operation name (e.g., "archive", "restore")
-
-        Returns:
-            TaskOperationOutput with updated task data
-
-        Raises:
-            TaskNotFoundException: If task not found
-            TaskValidationError: If validation fails
-        """
-        data = self._base._request_json("post", f"/api/v1/tasks/{task_id}/{operation}")
-        return convert_to_task_operation_output(data)
-
     def archive_task(self, task_id: int) -> TaskOperationOutput:
         """Archive (soft delete) a task.
 
@@ -204,7 +184,7 @@ class TaskClient:
         Raises:
             TaskNotFoundException: If task not found
         """
-        return self._lifecycle_operation(task_id, "archive")
+        return self._base.lifecycle_operation(task_id, "archive")
 
     def restore_task(self, task_id: int) -> TaskOperationOutput:
         """Restore an archived task.
@@ -219,7 +199,7 @@ class TaskClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If not archived
         """
-        return self._lifecycle_operation(task_id, "restore")
+        return self._base.lifecycle_operation(task_id, "restore")
 
     def remove_task(self, task_id: int) -> None:
         """Permanently delete a task.
