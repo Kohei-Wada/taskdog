@@ -91,10 +91,6 @@ def _execute_bulk_lifecycle(
             controller_method = getattr(controller, method_name)
             result = controller_method(task_id)
 
-            broadcaster.task_status_changed(
-                result.task, result.old_status.value, client_name
-            )
-
             audit_controller.log_operation(
                 operation=f"{operation_name}_task",
                 resource_type="task",
@@ -122,6 +118,16 @@ def _execute_bulk_lifecycle(
                 )
             )
 
+    success_ids = [r.task_id for r in results if r.success]
+    failure_count = sum(1 for r in results if not r.success)
+    broadcaster.bulk_operation_completed(
+        operation=operation_name,
+        success_count=len(success_ids),
+        failure_count=failure_count,
+        task_ids=task_ids,
+        source_user_name=client_name,
+    )
+
     return BulkOperationResponse(results=results)
 
 
@@ -141,7 +147,6 @@ def _execute_bulk_crud(
         try:
             if operation_name == "archive":
                 result = controller.archive_task(task_id)
-                broadcaster.task_updated(result, ["is_archived"], client_name)
                 audit_controller.log_operation(
                     operation="archive_task",
                     resource_type="task",
@@ -162,7 +167,6 @@ def _execute_bulk_crud(
 
             elif operation_name == "restore":
                 result = controller.restore_task(task_id)
-                broadcaster.task_updated(result, ["is_archived"], client_name)
                 audit_controller.log_operation(
                     operation="restore_task",
                     resource_type="task",
@@ -187,7 +191,6 @@ def _execute_bulk_crud(
                     raise TaskNotFoundException(f"Task {task_id} not found")
                 task_name = task_output.task.name
                 controller.remove_task(task_id)
-                broadcaster.task_deleted(task_id, task_name, client_name)
                 audit_controller.log_operation(
                     operation="delete_task",
                     resource_type="task",
@@ -214,6 +217,16 @@ def _execute_bulk_crud(
                     error=str(e),
                 )
             )
+
+    success_ids = [r.task_id for r in results if r.success]
+    failure_count = sum(1 for r in results if not r.success)
+    broadcaster.bulk_operation_completed(
+        operation=operation_name,
+        success_count=len(success_ids),
+        failure_count=failure_count,
+        task_ids=task_ids,
+        source_user_name=client_name,
+    )
 
     return BulkOperationResponse(results=results)
 

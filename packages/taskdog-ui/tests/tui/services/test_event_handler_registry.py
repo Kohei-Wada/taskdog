@@ -34,6 +34,7 @@ class TestEventHandlerRegistry:
             "task_deleted",
             "task_status_changed",
             "schedule_optimized",
+            "bulk_operation_completed",
         ]
         for event_type in expected_handlers:
             assert event_type in self.registry._handlers
@@ -244,6 +245,47 @@ class TestEventHandlerRegistry:
         }
         self.registry.dispatch(message)
         self.mock_app.notify.assert_called_once()
+
+    def test_dispatch_bulk_operation_completed_all_success(self) -> None:
+        """Test bulk_operation_completed with all tasks succeeding."""
+        message = {
+            "type": "bulk_operation_completed",
+            "operation": "start",
+            "success_count": 3,
+            "failure_count": 0,
+            "task_ids": [1, 2, 3],
+        }
+        self.registry.dispatch(message)
+        self.mock_app.call_later.assert_called_once()
+        self.mock_app.notify.assert_called_once()
+        call_args = self.mock_app.notify.call_args
+        assert "3/3" in call_args[0][0]
+        assert call_args.kwargs.get("severity") == "information"
+
+    def test_dispatch_bulk_operation_completed_with_failures(self) -> None:
+        """Test bulk_operation_completed with some failures shows warning."""
+        message = {
+            "type": "bulk_operation_completed",
+            "operation": "archive",
+            "success_count": 2,
+            "failure_count": 1,
+            "task_ids": [1, 2, 3],
+        }
+        self.registry.dispatch(message)
+        self.mock_app.call_later.assert_called_once()
+        self.mock_app.notify.assert_called_once()
+        call_args = self.mock_app.notify.call_args
+        assert "2/3" in call_args[0][0]
+        assert call_args.kwargs.get("severity") == "warning"
+
+    def test_dispatch_bulk_operation_completed_defaults(self) -> None:
+        """Test bulk_operation_completed with missing fields uses defaults."""
+        message = {"type": "bulk_operation_completed"}
+        self.registry.dispatch(message)
+        self.mock_app.notify.assert_called_once()
+        call_args = self.mock_app.notify.call_args
+        assert "0/0" in call_args[0][0]
+        assert "unknown" in call_args[0][0]
 
     def test_reload_tasks_called_with_keep_scroll_position(self) -> None:
         """Test that reload_tasks is called with keep_scroll_position=True."""
