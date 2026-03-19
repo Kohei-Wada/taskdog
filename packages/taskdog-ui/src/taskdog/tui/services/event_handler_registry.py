@@ -36,6 +36,9 @@ class EventHandlerRegistry:
         self._handlers["task_deleted"] = self._handle_task_deleted
         self._handlers["task_status_changed"] = self._handle_task_status_changed
         self._handlers["schedule_optimized"] = self._handle_schedule_optimized
+        self._handlers["bulk_operation_completed"] = (
+            self._handle_bulk_operation_completed
+        )
 
     def dispatch(self, message: dict[str, Any]) -> None:
         """Dispatch event to registered handler.
@@ -134,6 +137,19 @@ class EventHandlerRegistry:
             algorithm, scheduled_count, failed_count
         )
         self.app.notify(msg, severity="information")
+
+    def _handle_bulk_operation_completed(self, message: dict[str, Any]) -> None:
+        """Handle bulk operation completed event."""
+        self._reload_tasks()
+        operation = message.get("operation", "unknown")
+        success_count = message.get("success_count", 0)
+        failure_count = message.get("failure_count", 0)
+        total = success_count + failure_count
+        msg = f"Bulk {operation}: {success_count}/{total} succeeded"
+        if failure_count > 0:
+            self.app.notify(msg, severity="warning")
+        else:
+            self.app.notify(msg, severity="information")
 
     def _reload_tasks(self) -> None:
         """Reload tasks via TaskUIManager."""

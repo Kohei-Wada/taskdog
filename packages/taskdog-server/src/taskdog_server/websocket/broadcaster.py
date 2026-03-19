@@ -153,6 +153,31 @@ class WebSocketEventBroadcaster:
         }
         self._schedule_broadcast("schedule_optimized", payload, source_user_name)
 
+    def bulk_operation_completed(
+        self,
+        operation: str,
+        success_count: int,
+        failure_count: int,
+        task_ids: list[int],
+        source_user_name: str | None = None,
+    ) -> None:
+        """Schedule a bulk operation completed broadcast.
+
+        Args:
+            operation: The bulk operation name (e.g., "start", "archive")
+            success_count: Number of successfully processed tasks
+            failure_count: Number of failed tasks
+            task_ids: List of all task IDs in the bulk operation
+            source_user_name: User name who triggered the event (for payload info)
+        """
+        payload = {
+            "operation": operation,
+            "success_count": success_count,
+            "failure_count": failure_count,
+            "task_ids": task_ids,
+        }
+        self._schedule_broadcast("bulk_operation_completed", payload, source_user_name)
+
     def _schedule_broadcast(
         self,
         event_type: str,

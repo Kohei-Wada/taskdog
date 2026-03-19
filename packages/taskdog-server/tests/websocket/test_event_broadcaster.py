@@ -269,6 +269,49 @@ class TestWebSocketEventBroadcaster:
         call_args = self.mock_background_tasks.add_task.call_args
         assert call_args[0][2]["algorithm"] == algorithm
 
+    def test_bulk_operation_completed_schedules_broadcast(self):
+        """Test bulk_operation_completed schedules background task."""
+        # Arrange
+        task_ids = [1, 2, 3]
+        source_user_name = "test-client"
+
+        # Act
+        self.broadcaster.bulk_operation_completed(
+            operation="start",
+            success_count=2,
+            failure_count=1,
+            task_ids=task_ids,
+            source_user_name=source_user_name,
+        )
+
+        # Assert
+        self.mock_background_tasks.add_task.assert_called_once()
+        call_args = self.mock_background_tasks.add_task.call_args
+        assert call_args[0][0] == self.broadcaster._broadcast
+        assert call_args[0][1] == "bulk_operation_completed"
+        assert call_args[0][2] == {
+            "operation": "start",
+            "success_count": 2,
+            "failure_count": 1,
+            "task_ids": [1, 2, 3],
+        }
+        assert call_args[0][3] == "test-client"
+
+    def test_bulk_operation_completed_without_source_user(self):
+        """Test bulk_operation_completed with no source user."""
+        # Act
+        self.broadcaster.bulk_operation_completed(
+            operation="archive",
+            success_count=3,
+            failure_count=0,
+            task_ids=[1, 2, 3],
+        )
+
+        # Assert
+        self.mock_background_tasks.add_task.assert_called_once()
+        call_args = self.mock_background_tasks.add_task.call_args
+        assert call_args[0][3] is None
+
     def test_multiple_broadcasts_in_sequence(self):
         """Test multiple broadcast calls are scheduled correctly."""
         # Arrange
