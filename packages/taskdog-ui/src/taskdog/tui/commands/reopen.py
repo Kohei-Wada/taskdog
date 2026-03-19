@@ -1,6 +1,7 @@
 """Reopen task command for TUI."""
 
 from taskdog.tui.commands.batch_command_base import BatchCommandBase
+from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 
 
 class ReopenCommand(BatchCommandBase):
@@ -14,6 +15,6 @@ class ReopenCommand(BatchCommandBase):
             "Reopen {count} tasks?\n\nAll will be set to: PENDING",
         )
 
-    def execute_single_task(self, task_id: int) -> None:
-        """Reopen the task via API client."""
-        self.context.api_client.reopen_task(task_id)
+    def execute_bulk(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Reopen tasks via Bulk API."""
+        return self.context.api_client.bulk_reopen(task_ids)

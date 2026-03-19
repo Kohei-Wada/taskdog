@@ -8,21 +8,22 @@ from abc import abstractmethod
 
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.dialogs.confirmation_dialog import ConfirmationDialog
+from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 
 
 class BatchCommandBase(TUICommandBase):
     """Template for batch task commands with optional confirmation.
 
-    Subclasses implement execute_single_task() for the actual operation.
+    Subclasses implement execute_bulk() for the actual operation.
     Override get_confirmation_config() to require confirmation before execution.
     """
 
     @abstractmethod
-    def execute_single_task(self, task_id: int) -> None:
-        """Execute operation on a single task.
+    def execute_bulk(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Execute bulk operation on multiple tasks.
 
         Args:
-            task_id: ID of task to operate on
+            task_ids: IDs of tasks to operate on
         """
 
     def get_confirmation_config(self) -> tuple[str, str, str] | None:
@@ -90,15 +91,18 @@ class BatchCommandBase(TUICommandBase):
 
     def _process_tasks(self, task_ids: list[int]) -> tuple[int, int]:
         """Process tasks and return (success_count, failure_count)."""
+        result = self.execute_bulk(task_ids)
         success_count = 0
         failure_count = 0
 
-        for task_id in task_ids:
-            try:
-                self.execute_single_task(task_id)
+        for item in result.results:
+            if item.success:
                 success_count += 1
-            except Exception as e:
-                self.notify_error(f"Task {task_id}", e)
+            else:
+                self.notify_error(
+                    f"Task {item.task_id}",
+                    Exception(item.error or "Unknown error"),
+                )
                 failure_count += 1
 
         return success_count, failure_count

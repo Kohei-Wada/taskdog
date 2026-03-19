@@ -1,11 +1,12 @@
 """Pause task command for TUI."""
 
 from taskdog.tui.commands.batch_command_base import BatchCommandBase
+from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 
 
 class PauseCommand(BatchCommandBase):
     """Command to pause the selected task(s)."""
 
-    def execute_single_task(self, task_id: int) -> None:
-        """Pause the task via API client."""
-        self.context.api_client.pause_task(task_id)
+    def execute_bulk(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Pause tasks via Bulk API."""
+        return self.context.api_client.bulk_pause(task_ids)

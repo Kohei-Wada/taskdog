@@ -1,28 +1,52 @@
 """Tests for BatchCommandBase."""
 
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 
 from taskdog.tui.commands.batch_command_base import BatchCommandBase
-from taskdog_core.domain.exceptions.task_exceptions import (
-    TaskNotFoundException,
-    TaskValidationError,
+from taskdog_core.application.dto.bulk_operation_output import (
+    BulkOperationOutput,
+    BulkTaskResultOutput,
 )
+
+
+def _make_bulk_output(
+    task_ids: list[int],
+    *,
+    failures: dict[int, str] | None = None,
+) -> BulkOperationOutput:
+    """Helper to create BulkOperationOutput for tests."""
+    failures = failures or {}
+    results = []
+    for tid in task_ids:
+        if tid in failures:
+            results.append(
+                BulkTaskResultOutput(
+                    task_id=tid, success=False, task=None, error=failures[tid]
+                )
+            )
+        else:
+            results.append(
+                BulkTaskResultOutput(task_id=tid, success=True, task=None, error=None)
+            )
+    return BulkOperationOutput(results=results)
 
 
 class ConcreteBatchCommand(BatchCommandBase):
     """Concrete implementation without confirmation for testing."""
 
-    def execute_single_task(self, task_id: int) -> None:
-        """Execute on single task."""
+    def execute_bulk(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Execute bulk operation."""
+        return _make_bulk_output(task_ids)
 
 
 class ConcreteBatchCommandWithConfirmation(BatchCommandBase):
     """Concrete implementation with confirmation for testing."""
 
-    def execute_single_task(self, task_id: int) -> None:
-        """Execute on single task."""
+    def execute_bulk(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Execute bulk operation."""
+        return _make_bulk_output(task_ids)
 
     def get_confirmation_config(self) -> tuple[str, str, str]:
         """Return confirmation config."""
@@ -58,32 +82,32 @@ class TestBatchCommandBaseNoConfirmation:
     def test_execute_processes_single_task(self) -> None:
         """Test processing a single task."""
         self.command.get_selected_task_ids = MagicMock(return_value=[42])
-        self.command.execute_single_task = MagicMock()
+        self.command.execute_bulk = MagicMock(return_value=_make_bulk_output([42]))
         self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
 
-        self.command.execute_single_task.assert_called_once_with(42)
+        self.command.execute_bulk.assert_called_once_with([42])
         self.command.clear_task_selection.assert_called_once()
         self.command.reload_tasks.assert_called_once()
 
     def test_execute_processes_multiple_tasks(self) -> None:
         """Test processing multiple tasks."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1, 2, 3])
-        self.command.execute_single_task = MagicMock()
+        self.command.execute_bulk = MagicMock(return_value=_make_bulk_output([1, 2, 3]))
         self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
         self.command.execute()
 
-        assert self.command.execute_single_task.call_count == 3
+        self.command.execute_bulk.assert_called_once_with([1, 2, 3])
 
     def test_execute_handles_task_error(self) -> None:
         """Test error handling for failed task."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1])
-        self.command.execute_single_task = MagicMock(
-            side_effect=Exception("Task failed")
+        self.command.execute_bulk = MagicMock(
+            return_value=_make_bulk_output([1], failures={1: "Task failed"})
         )
         self.command.notify_error = MagicMock()
         self.command.clear_task_selection = MagicMock()
@@ -108,7 +132,7 @@ class TestBatchCommandBaseProcessTasks:
 
     def test_returns_correct_success_count(self) -> None:
         """Test that success count is correct."""
-        self.command.execute_single_task = MagicMock()
+        self.command.execute_bulk = MagicMock(return_value=_make_bulk_output([1, 2, 3]))
 
         success, failure = self.command._process_tasks([1, 2, 3])
 
@@ -117,7 +141,9 @@ class TestBatchCommandBaseProcessTasks:
 
     def test_returns_correct_failure_count(self) -> None:
         """Test that failure count is correct."""
-        self.command.execute_single_task = MagicMock(side_effect=Exception("Error"))
+        self.command.execute_bulk = MagicMock(
+            return_value=_make_bulk_output([1, 2], failures={1: "Error", 2: "Error"})
+        )
         self.command.notify_error = MagicMock()
 
         success, failure = self.command._process_tasks([1, 2])
@@ -127,8 +153,8 @@ class TestBatchCommandBaseProcessTasks:
 
     def test_returns_mixed_counts(self) -> None:
         """Test mixed success and failure counts."""
-        self.command.execute_single_task = MagicMock(
-            side_effect=[None, Exception("Error"), None]
+        self.command.execute_bulk = MagicMock(
+            return_value=_make_bulk_output([1, 2, 3], failures={2: "Error"})
         )
         self.command.notify_error = MagicMock()
 
@@ -158,8 +184,8 @@ class TestBatchCommandBaseShowSummary:
     def test_no_summary_for_single_task_failure(self) -> None:
         """Test no summary for single task failure (error already shown per-task)."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1])
-        self.command.execute_single_task = MagicMock(
-            side_effect=Exception("Task failed")
+        self.command.execute_bulk = MagicMock(
+            return_value=_make_bulk_output([1], failures={1: "Task failed"})
         )
         self.command.notify_error = MagicMock()
         self.command.clear_task_selection = MagicMock()
@@ -223,31 +249,31 @@ class TestBatchCommandBaseWithConfirmation:
     def test_does_nothing_when_cancelled(self) -> None:
         """Test that nothing happens when user cancels."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1])
-        self.command.execute_single_task = MagicMock()
+        self.command.execute_bulk = MagicMock()
 
         self.command.execute()
 
         callback_wrapper = self.mock_app.push_screen.call_args[0][1]
         callback_wrapper(False)
 
-        self.command.execute_single_task.assert_not_called()
+        self.command.execute_bulk.assert_not_called()
 
     def test_does_nothing_when_result_is_none(self) -> None:
         """Test that nothing happens when result is None."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1])
-        self.command.execute_single_task = MagicMock()
+        self.command.execute_bulk = MagicMock()
 
         self.command.execute()
 
         callback_wrapper = self.mock_app.push_screen.call_args[0][1]
         callback_wrapper(None)
 
-        self.command.execute_single_task.assert_not_called()
+        self.command.execute_bulk.assert_not_called()
 
     def test_executes_action_when_confirmed(self) -> None:
         """Test that action is executed when confirmed."""
         self.command.get_selected_task_ids = MagicMock(return_value=[42])
-        self.command.execute_single_task = MagicMock()
+        self.command.execute_bulk = MagicMock(return_value=_make_bulk_output([42]))
         self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
@@ -256,12 +282,12 @@ class TestBatchCommandBaseWithConfirmation:
         callback_wrapper = self.mock_app.push_screen.call_args[0][1]
         callback_wrapper(True)
 
-        self.command.execute_single_task.assert_called_once_with(42)
+        self.command.execute_bulk.assert_called_once_with([42])
 
     def test_executes_action_for_multiple_tasks(self) -> None:
         """Test that action is executed for all tasks."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1, 2, 3])
-        self.command.execute_single_task = MagicMock()
+        self.command.execute_bulk = MagicMock(return_value=_make_bulk_output([1, 2, 3]))
         self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
@@ -270,13 +296,12 @@ class TestBatchCommandBaseWithConfirmation:
         callback_wrapper = self.mock_app.push_screen.call_args[0][1]
         callback_wrapper(True)
 
-        assert self.command.execute_single_task.call_count == 3
-        self.command.execute_single_task.assert_has_calls([call(1), call(2), call(3)])
+        self.command.execute_bulk.assert_called_once_with([1, 2, 3])
 
     def test_clears_selection_after_execution(self) -> None:
         """Test that selection is cleared after execution."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1])
-        self.command.execute_single_task = MagicMock()
+        self.command.execute_bulk = MagicMock(return_value=_make_bulk_output([1]))
         self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()
 
@@ -289,10 +314,10 @@ class TestBatchCommandBaseWithConfirmation:
         self.command.reload_tasks.assert_called_once()
 
     def test_handles_task_not_found_error(self) -> None:
-        """Test error handling for TaskNotFoundException."""
+        """Test error handling for task not found in bulk result."""
         self.command.get_selected_task_ids = MagicMock(return_value=[999])
-        self.command.execute_single_task = MagicMock(
-            side_effect=TaskNotFoundException(999)
+        self.command.execute_bulk = MagicMock(
+            return_value=_make_bulk_output([999], failures={999: "Task not found: 999"})
         )
         self.command.notify_error = MagicMock()
         self.command.clear_task_selection = MagicMock()
@@ -306,10 +331,10 @@ class TestBatchCommandBaseWithConfirmation:
         self.command.notify_error.assert_called_once()
 
     def test_handles_task_validation_error(self) -> None:
-        """Test error handling for TaskValidationError."""
+        """Test error handling for validation error in bulk result."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1])
-        self.command.execute_single_task = MagicMock(
-            side_effect=TaskValidationError("Invalid operation")
+        self.command.execute_bulk = MagicMock(
+            return_value=_make_bulk_output([1], failures={1: "Invalid operation"})
         )
         self.command.notify_error = MagicMock()
         self.command.clear_task_selection = MagicMock()
@@ -323,10 +348,10 @@ class TestBatchCommandBaseWithConfirmation:
         self.command.notify_error.assert_called_once()
 
     def test_handles_generic_exception(self) -> None:
-        """Test error handling for generic exceptions."""
+        """Test error handling for generic error in bulk result."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1])
-        self.command.execute_single_task = MagicMock(
-            side_effect=Exception("Generic error")
+        self.command.execute_bulk = MagicMock(
+            return_value=_make_bulk_output([1], failures={1: "Generic error"})
         )
         self.command.notify_error = MagicMock()
         self.command.clear_task_selection = MagicMock()
@@ -342,8 +367,8 @@ class TestBatchCommandBaseWithConfirmation:
     def test_shows_warning_on_partial_failure(self) -> None:
         """Test warning is shown when some tasks fail."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1, 2, 3])
-        self.command.execute_single_task = MagicMock(
-            side_effect=[None, Exception("Error"), None]
+        self.command.execute_bulk = MagicMock(
+            return_value=_make_bulk_output([1, 2, 3], failures={2: "Error"})
         )
         self.command.notify_error = MagicMock()
         self.command.notify_warning = MagicMock()
@@ -363,7 +388,7 @@ class TestBatchCommandBaseWithConfirmation:
     def test_no_warning_when_all_succeed(self) -> None:
         """Test no warning when all tasks succeed."""
         self.command.get_selected_task_ids = MagicMock(return_value=[1, 2])
-        self.command.execute_single_task = MagicMock()
+        self.command.execute_bulk = MagicMock(return_value=_make_bulk_output([1, 2]))
         self.command.notify_warning = MagicMock()
         self.command.clear_task_selection = MagicMock()
         self.command.reload_tasks = MagicMock()

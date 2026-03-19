@@ -1,6 +1,7 @@
 """Hard delete task command for TUI."""
 
 from taskdog.tui.commands.batch_command_base import BatchCommandBase
+from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 
 
 class HardDeleteCommand(BatchCommandBase):
@@ -18,6 +19,6 @@ class HardDeleteCommand(BatchCommandBase):
             "[!] All tasks will be completely removed from the database.",
         )
 
-    def execute_single_task(self, task_id: int) -> None:
-        """Permanently delete the task (hard delete)."""
-        self.context.api_client.remove_task(task_id)
+    def execute_bulk(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Permanently delete tasks (hard delete) via Bulk API."""
+        return self.context.api_client.bulk_delete(task_ids)

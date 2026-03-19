@@ -1,6 +1,7 @@
 """Delete task command for TUI."""
 
 from taskdog.tui.commands.batch_command_base import BatchCommandBase
+from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 
 
 class RmCommand(BatchCommandBase):
@@ -18,6 +19,6 @@ class RmCommand(BatchCommandBase):
             "(Use Shift+X for permanent deletion)",
         )
 
-    def execute_single_task(self, task_id: int) -> None:
-        """Archive the task (soft delete)."""
-        self.context.api_client.archive_task(task_id)
+    def execute_bulk(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Archive tasks (soft delete) via Bulk API."""
+        return self.context.api_client.bulk_archive(task_ids)

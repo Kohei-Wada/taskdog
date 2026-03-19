@@ -1,6 +1,7 @@
 """Cancel task command for TUI."""
 
 from taskdog.tui.commands.batch_command_base import BatchCommandBase
+from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 
 
 class CancelCommand(BatchCommandBase):
@@ -14,6 +15,6 @@ class CancelCommand(BatchCommandBase):
             "Are you sure you want to cancel {count} tasks?",
         )
 
-    def execute_single_task(self, task_id: int) -> None:
-        """Cancel the task via API client."""
-        self.context.api_client.cancel_task(task_id)
+    def execute_bulk(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Cancel tasks via Bulk API."""
+        return self.context.api_client.bulk_cancel(task_ids)
