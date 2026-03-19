@@ -258,6 +258,7 @@ def app(
     from taskdog_server.api.routers import (
         analytics_router,
         audit_router,
+        bulk_router,
         lifecycle_router,
         notes_router,
         relationships_router,
@@ -266,6 +267,7 @@ def app(
         websocket_router,
     )
 
+    test_app.include_router(bulk_router, prefix="/api/v1/tasks", tags=["bulk"])
     test_app.include_router(tasks_router, prefix="/api/v1/tasks", tags=["tasks"])
     test_app.include_router(
         lifecycle_router, prefix="/api/v1/tasks", tags=["lifecycle"]

@@ -1,32 +1,28 @@
 """Tests for done command."""
 
 from taskdog.cli.commands.done import done_command
-from taskdog_core.domain.exceptions.task_exceptions import TaskNotStartedError
-from tests.presentation.cli.commands.batch_command_test_base import BaseBatchCommandTest
+from taskdog_core.shared.constants import StatusVerbs
+from tests.presentation.cli.commands.bulk_command_test_base import (
+    BaseBulkCommandTest,
+    make_success_result,
+)
 
 
-class TestDoneCommand(BaseBatchCommandTest):
+class TestDoneCommand(BaseBulkCommandTest):
     """Test cases for done command."""
 
     command_func = done_command
-    use_case_path = "presentation.cli.commands.done.TaskController"
-    controller_method = "complete_task"
-    controller_attr = "api_client"
-    action_verb = "Completed"
-    action_name = "complete"
+    bulk_method = "bulk_complete"
+    action_verb = StatusVerbs.COMPLETED
 
-    def test_complete_not_started_task(self):
-        """Test completing a task that hasn't been started."""
-        # Setup
-        self.api_client.complete_task.side_effect = TaskNotStartedError(1)
+    def test_complete_shows_completion_details(self):
+        """Test that done command shows completion details."""
+        result_item = make_success_result(1)
+        self._set_bulk_return([result_item])
 
-        # Execute
         result = self.runner.invoke(done_command, ["1"], obj=self.cli_context)
 
-        # Verify
         assert result.exit_code == 0
-        self.console_writer.validation_error.assert_called_once()
-        error_msg = self.console_writer.validation_error.call_args[0][0]
-        assert "task 1" in error_msg
-        assert "PENDING" in error_msg
-        assert "taskdog start 1" in error_msg
+        self.console_writer.task_completion_details.assert_called_once_with(
+            result_item.task
+        )
