@@ -12,7 +12,6 @@ class LifecycleClient:
 
     Operations:
     - Start, complete, pause, cancel, reopen tasks
-    - Generic lifecycle operation helper
     """
 
     def __init__(self, base_client: BaseApiClient):
@@ -22,26 +21,6 @@ class LifecycleClient:
             base_client: Base API client for HTTP operations
         """
         self._base = base_client
-
-    def _lifecycle_operation(self, task_id: int, operation: str) -> TaskOperationOutput:
-        """Execute a lifecycle operation on a task.
-
-        Generic helper for lifecycle operations (start, complete, pause, cancel, reopen)
-        that follow the same pattern.
-
-        Args:
-            task_id: Task ID
-            operation: Operation name (e.g., "start", "complete", "pause")
-
-        Returns:
-            TaskOperationOutput with updated task data
-
-        Raises:
-            TaskNotFoundException: If task not found
-            TaskValidationError: If validation fails
-        """
-        data = self._base._request_json("post", f"/api/v1/tasks/{task_id}/{operation}")
-        return convert_to_task_operation_output(data)
 
     def start_task(self, task_id: int) -> TaskOperationOutput:
         """Start a task.
@@ -56,7 +35,7 @@ class LifecycleClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        return self._lifecycle_operation(task_id, "start")
+        return self._base.lifecycle_operation(task_id, "start")
 
     def complete_task(self, task_id: int) -> TaskOperationOutput:
         """Complete a task.
@@ -71,7 +50,7 @@ class LifecycleClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        return self._lifecycle_operation(task_id, "complete")
+        return self._base.lifecycle_operation(task_id, "complete")
 
     def pause_task(self, task_id: int) -> TaskOperationOutput:
         """Pause a task.
@@ -86,7 +65,7 @@ class LifecycleClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        return self._lifecycle_operation(task_id, "pause")
+        return self._base.lifecycle_operation(task_id, "pause")
 
     def cancel_task(self, task_id: int) -> TaskOperationOutput:
         """Cancel a task.
@@ -101,7 +80,7 @@ class LifecycleClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        return self._lifecycle_operation(task_id, "cancel")
+        return self._base.lifecycle_operation(task_id, "cancel")
 
     def reopen_task(self, task_id: int) -> TaskOperationOutput:
         """Reopen a task.
@@ -116,7 +95,7 @@ class LifecycleClient:
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails
         """
-        return self._lifecycle_operation(task_id, "reopen")
+        return self._base.lifecycle_operation(task_id, "reopen")
 
     def fix_actual_times(
         self,

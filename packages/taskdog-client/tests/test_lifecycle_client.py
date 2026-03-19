@@ -1,6 +1,6 @@
 """Tests for LifecycleClient."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from taskdog_client.lifecycle_client import LifecycleClient
@@ -16,38 +16,36 @@ class TestLifecycleClient:
         self.client = LifecycleClient(self.mock_base)
 
     @pytest.mark.parametrize(
-        "method_name,expected_endpoint",
+        "method_name,expected_operation",
         [
-            ("start_task", "/api/v1/tasks/1/start"),
-            ("complete_task", "/api/v1/tasks/1/complete"),
-            ("pause_task", "/api/v1/tasks/1/pause"),
-            ("cancel_task", "/api/v1/tasks/1/cancel"),
-            ("reopen_task", "/api/v1/tasks/1/reopen"),
+            ("start_task", "start"),
+            ("complete_task", "complete"),
+            ("pause_task", "pause"),
+            ("cancel_task", "cancel"),
+            ("reopen_task", "reopen"),
         ],
         ids=["start_task", "complete_task", "pause_task", "cancel_task", "reopen_task"],
     )
-    @patch("taskdog_client.lifecycle_client.convert_to_task_operation_output")
-    def test_lifecycle_operation_makes_correct_api_call(
-        self, mock_convert, method_name, expected_endpoint
+    def test_lifecycle_operation_delegates_to_base(
+        self, method_name, expected_operation
     ):
-        """Test lifecycle operations make correct API calls."""
-        self.mock_base._request_json.return_value = {"id": 1}
-
+        """Test lifecycle operations delegate to base client."""
         mock_output = Mock()
-        mock_convert.return_value = mock_output
+        self.mock_base.lifecycle_operation.return_value = mock_output
 
         method = getattr(self.client, method_name)
         result = method(task_id=1)
 
-        self.mock_base._request_json.assert_called_once_with("post", expected_endpoint)
+        self.mock_base.lifecycle_operation.assert_called_once_with(
+            1, expected_operation
+        )
         assert result == mock_output
 
-    @patch("taskdog_client.lifecycle_client.convert_to_task_operation_output")
-    def test_lifecycle_operation_error_handling(self, mock_convert):
-        """Test lifecycle operations propagate errors from _request_json."""
+    def test_lifecycle_operation_error_handling(self):
+        """Test lifecycle operations propagate errors from base client."""
         from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
-        self.mock_base._request_json.side_effect = TaskNotFoundException(
+        self.mock_base.lifecycle_operation.side_effect = TaskNotFoundException(
             "Task not found"
         )
 

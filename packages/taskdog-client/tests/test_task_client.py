@@ -118,27 +118,24 @@ class TestTaskClient:
         assert result == mock_output
 
     @pytest.mark.parametrize(
-        "method_name,expected_endpoint",
+        "method_name,expected_operation",
         [
-            ("archive_task", "/api/v1/tasks/1/archive"),
-            ("restore_task", "/api/v1/tasks/1/restore"),
+            ("archive_task", "archive"),
+            ("restore_task", "restore"),
         ],
         ids=["archive_task", "restore_task"],
     )
-    @patch("taskdog_client.task_client.convert_to_task_operation_output")
-    def test_archive_restore_operations(
-        self, mock_convert, method_name, expected_endpoint
-    ):
-        """Test archive/restore operations make correct API calls."""
-        self.mock_base._request_json.return_value = {"id": 1}
-
+    def test_archive_restore_operations(self, method_name, expected_operation):
+        """Test archive/restore operations delegate to base client."""
         mock_output = Mock()
-        mock_convert.return_value = mock_output
+        self.mock_base.lifecycle_operation.return_value = mock_output
 
         method = getattr(self.client, method_name)
         result = method(task_id=1)
 
-        self.mock_base._request_json.assert_called_once_with("post", expected_endpoint)
+        self.mock_base.lifecycle_operation.assert_called_once_with(
+            1, expected_operation
+        )
         assert result == mock_output
 
     def test_remove_task(self):
