@@ -9,12 +9,15 @@ from abc import abstractmethod
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.dialogs.confirmation_dialog import ConfirmationDialog
 from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
+from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
 
 class BatchCommandBase(TUICommandBase):
     """Template for batch task commands with optional confirmation.
 
     Subclasses implement execute_bulk() for the actual operation.
+    For single-task operations, override execute_single() to use individual API
+    endpoints for better WebSocket notification granularity.
     Override get_confirmation_config() to require confirmation before execution.
     """
 
@@ -25,6 +28,14 @@ class BatchCommandBase(TUICommandBase):
         Args:
             task_ids: IDs of tasks to operate on
         """
+
+    def execute_single(self, task_id: int) -> TaskOperationOutput:
+        """Execute operation on a single task via individual API.
+
+        Override this in subclasses that have individual API endpoints.
+        Default implementation falls back to execute_bulk.
+        """
+        raise NotImplementedError
 
     def get_confirmation_config(self) -> tuple[str, str, str] | None:
         """Return confirmation dialog config, or None to skip confirmation.
@@ -90,7 +101,21 @@ class BatchCommandBase(TUICommandBase):
             self._show_summary(success_count, failure_count)
 
     def _process_tasks(self, task_ids: list[int]) -> tuple[int, int]:
-        """Process tasks and return (success_count, failure_count)."""
+        """Process tasks and return (success_count, failure_count).
+
+        Uses individual API for single-task operations when execute_single
+        is implemented, falling back to bulk API otherwise.
+        """
+        if len(task_ids) == 1:
+            try:
+                self.execute_single(task_ids[0])
+                return 1, 0
+            except NotImplementedError:
+                pass
+            except Exception as e:
+                self.notify_error(f"Task {task_ids[0]}", e)
+                return 0, 1
+
         result = self.execute_bulk(task_ids)
         success_count = 0
         failure_count = 0

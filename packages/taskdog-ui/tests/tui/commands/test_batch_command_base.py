@@ -9,6 +9,7 @@ from taskdog_core.application.dto.bulk_operation_output import (
     BulkOperationOutput,
     BulkTaskResultOutput,
 )
+from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 
 
 def _make_bulk_output(
@@ -35,6 +36,18 @@ def _make_bulk_output(
 
 class ConcreteBatchCommand(BatchCommandBase):
     """Concrete implementation without confirmation for testing."""
+
+    def execute_bulk(self, task_ids: list[int]) -> BulkOperationOutput:
+        """Execute bulk operation."""
+        return _make_bulk_output(task_ids)
+
+
+class ConcreteBatchCommandWithSingle(BatchCommandBase):
+    """Concrete implementation with execute_single for testing."""
+
+    def execute_single(self, task_id: int) -> TaskOperationOutput:
+        """Execute single operation."""
+        return MagicMock(spec=TaskOperationOutput)
 
     def execute_bulk(self, task_ids: list[int]) -> BulkOperationOutput:
         """Execute bulk operation."""
@@ -399,6 +412,72 @@ class TestBatchCommandBaseWithConfirmation:
         callback_wrapper(True)
 
         self.command.notify_warning.assert_not_called()
+
+
+class TestBatchCommandBaseSingleTaskApi:
+    """Test cases for single-task API dispatch via execute_single."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
+        """Set up test fixtures."""
+        self.mock_app = MagicMock()
+        self.mock_context = MagicMock()
+        self.command = ConcreteBatchCommandWithSingle(self.mock_app, self.mock_context)
+
+    def test_single_task_uses_execute_single(self) -> None:
+        """Test that single task calls execute_single instead of execute_bulk."""
+        self.command.execute_single = MagicMock(
+            return_value=MagicMock(spec=TaskOperationOutput)
+        )
+        self.command.execute_bulk = MagicMock()
+        self.command.get_selected_task_ids = MagicMock(return_value=[42])
+        self.command.clear_task_selection = MagicMock()
+        self.command.reload_tasks = MagicMock()
+
+        self.command.execute()
+
+        self.command.execute_single.assert_called_once_with(42)
+        self.command.execute_bulk.assert_not_called()
+
+    def test_multiple_tasks_uses_execute_bulk(self) -> None:
+        """Test that multiple tasks still use execute_bulk."""
+        self.command.execute_single = MagicMock()
+        self.command.execute_bulk = MagicMock(return_value=_make_bulk_output([1, 2]))
+        self.command.get_selected_task_ids = MagicMock(return_value=[1, 2])
+        self.command.clear_task_selection = MagicMock()
+        self.command.reload_tasks = MagicMock()
+
+        self.command.execute()
+
+        self.command.execute_single.assert_not_called()
+        self.command.execute_bulk.assert_called_once_with([1, 2])
+
+    def test_single_task_error_notifies(self) -> None:
+        """Test that execute_single errors are properly notified."""
+        self.command.execute_single = MagicMock(
+            side_effect=Exception("Task already started")
+        )
+        self.command.notify_error = MagicMock()
+        self.command.get_selected_task_ids = MagicMock(return_value=[42])
+        self.command.clear_task_selection = MagicMock()
+        self.command.reload_tasks = MagicMock()
+
+        self.command.execute()
+
+        self.command.notify_error.assert_called_once()
+        assert self.command.notify_error.call_args[0][0] == "Task 42"
+
+    def test_fallback_to_bulk_when_execute_single_not_implemented(self) -> None:
+        """Test fallback to execute_bulk when execute_single raises NotImplementedError."""
+        command = ConcreteBatchCommand(self.mock_app, self.mock_context)
+        command.get_selected_task_ids = MagicMock(return_value=[42])
+        command.execute_bulk = MagicMock(return_value=_make_bulk_output([42]))
+        command.clear_task_selection = MagicMock()
+        command.reload_tasks = MagicMock()
+
+        command.execute()
+
+        command.execute_bulk.assert_called_once_with([42])
 
 
 class TestBatchCommandBaseConfirmationConfig:
