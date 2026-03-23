@@ -231,13 +231,16 @@ class TaskCrudController(BaseTaskController):
 
         return result
 
-    def remove_task(self, task_id: int) -> None:
+    def remove_task(self, task_id: int) -> TaskOperationOutput:
         """Remove a task (hard delete).
 
         Permanently deletes the task and its associated notes from storage.
 
         Args:
             task_id: ID of the task to remove
+
+        Returns:
+            TaskOperationOutput containing the deleted task's information
 
         Raises:
             TaskNotFoundException: If task not found
@@ -248,8 +251,10 @@ class TaskCrudController(BaseTaskController):
 
         use_case = RemoveTaskUseCase(self.repository, self.notes_repository)
         request = SingleTaskInput(task_id=task_id)
-        use_case.execute(request)
+        result = use_case.execute(request)
 
         self.logger.info(
             f"Task removed successfully: task_id={task_id}", task_id=task_id
         )
+
+        return result

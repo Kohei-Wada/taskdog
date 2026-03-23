@@ -189,7 +189,7 @@ class TaskdogApiClient:
         """Restore an archived task."""
         return self._tasks.restore_task(task_id)
 
-    def remove_task(self, task_id: int) -> None:
+    def remove_task(self, task_id: int) -> TaskOperationOutput:
         """Permanently delete a task."""
         return self._tasks.remove_task(task_id)
 

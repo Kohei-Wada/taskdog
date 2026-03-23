@@ -6,7 +6,6 @@ from typing import Annotated
 from fastapi import APIRouter, Query, status
 
 from taskdog_core.application.dto.query_inputs import ListTasksInput
-from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.converters import (
     convert_to_task_detail_response,
     convert_to_task_list_response,
@@ -371,47 +370,43 @@ async def restore_task(
     return TaskOperationResponse.from_dto(result)
 
 
-@router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{task_id}")
 @handle_task_errors
 async def delete_task(
     task_id: int,
     controller: CrudControllerDep,
-    query_controller: QueryControllerDep,
     broadcaster: EventBroadcasterDep,
     audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
-) -> None:
+) -> TaskOperationResponse:
     """Permanently delete a task.
 
     Args:
         task_id: Task ID
         controller: CRUD controller dependency
-        query_controller: Query controller dependency (for fetching task name before deletion)
         broadcaster: Event broadcaster dependency
         audit_controller: Audit log controller dependency
         client_name: Authenticated client name (for broadcast payload)
 
+    Returns:
+        Deleted task data
+
     Raises:
         HTTPException: 404 if task not found
     """
-    # Get task name before deletion for notification
-    task_output = query_controller.get_task_by_id(task_id)
-    if task_output is None or task_output.task is None:
-        raise TaskNotFoundException(f"Task {task_id} not found")
-    task_name = task_output.task.name
-
-    # Delete task
-    controller.remove_task(task_id)
+    result = controller.remove_task(task_id)
 
     # Broadcast WebSocket event in background
-    broadcaster.task_deleted(task_id, task_name, client_name)
+    broadcaster.task_deleted(task_id, result.name, client_name)
 
     # Audit log
     audit_controller.log_operation(
         operation="delete_task",
         resource_type="task",
         resource_id=task_id,
-        resource_name=task_name,
+        resource_name=result.name,
         client_name=client_name,
         success=True,
     )
+
+    return TaskOperationResponse.from_dto(result)

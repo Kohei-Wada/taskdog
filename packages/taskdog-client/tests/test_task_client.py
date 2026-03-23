@@ -139,23 +139,14 @@ class TestTaskClient:
         assert result == mock_output
 
     def test_remove_task(self):
-        """Test remove_task makes correct API call."""
-        mock_response = Mock()
-        mock_response.is_success = True
-        self.mock_base._safe_request.return_value = mock_response
+        """Test remove_task makes correct API call and returns TaskOperationOutput."""
+        mock_data = {"id": 1, "name": "Task 1", "status": "PENDING", "priority": 50}
+        self.mock_base._request_json.return_value = mock_data
 
-        self.client.remove_task(task_id=1)
+        result = self.client.remove_task(task_id=1)
 
-        self.mock_base._safe_request.assert_called_once_with(
+        self.mock_base._request_json.assert_called_once_with(
             "delete", "/api/v1/tasks/1"
         )
-
-    def test_remove_task_not_found(self):
-        """Test remove_task handles not found error."""
-        mock_response = Mock()
-        mock_response.is_success = False
-        self.mock_base._safe_request.return_value = mock_response
-
-        self.client.remove_task(task_id=999)
-
-        self.mock_base._handle_error.assert_called_once_with(mock_response)
+        assert result.id == 1
+        assert result.name == "Task 1"

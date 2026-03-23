@@ -123,13 +123,15 @@ class TestTaskFilter:
         "composed_factory,expected_filter_count",
         [
             (
-                lambda: (PendingOnlyFilter() >> HighPriorityFilter())
-                >> ConcreteFilter(),
+                lambda: (
+                    (PendingOnlyFilter() >> HighPriorityFilter()) >> ConcreteFilter()
+                ),
                 3,
             ),
             (
-                lambda: PendingOnlyFilter()
-                >> (HighPriorityFilter() >> ConcreteFilter()),
+                lambda: (
+                    PendingOnlyFilter() >> (HighPriorityFilter() >> ConcreteFilter())
+                ),
                 3,
             ),
         ],

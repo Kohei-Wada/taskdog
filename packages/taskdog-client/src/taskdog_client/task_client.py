@@ -201,15 +201,17 @@ class TaskClient:
         """
         return self._base.lifecycle_operation(task_id, "restore")
 
-    def remove_task(self, task_id: int) -> None:
+    def remove_task(self, task_id: int) -> TaskOperationOutput:
         """Permanently delete a task.
 
         Args:
             task_id: Task ID
 
+        Returns:
+            TaskOperationOutput with deleted task data
+
         Raises:
             TaskNotFoundException: If task not found
         """
-        response = self._base._safe_request("delete", f"/api/v1/tasks/{task_id}")
-        if not response.is_success:
-            self._base._handle_error(response)
+        data = self._base._request_json("delete", f"/api/v1/tasks/{task_id}")
+        return convert_to_task_operation_output(data)

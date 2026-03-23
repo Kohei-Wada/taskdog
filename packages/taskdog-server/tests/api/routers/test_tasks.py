@@ -311,7 +311,10 @@ class TestTasksRouter:
         response = client.delete(f"/api/v1/tasks/{task.id}")
 
         # Assert
-        assert response.status_code == 204
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == task.id
+        assert data["name"] == "Test Task"
 
         # Verify task is deleted
         deleted_task = repository.get_by_id(task.id)
