@@ -21,7 +21,7 @@ class TaskGanttRowViewModel(BaseViewModel):
 
     Attributes:
         id: Task ID
-        formatted_name: Task name with presentation formatting (strikethrough, etc.)
+        name: Task name (plain text, no formatting applied)
         formatted_estimated_duration: Formatted duration string (e.g., "8.0", "-")
         status: Task status (needed for timeline cell formatting)
         planned_start: Planned start date (None if not set)
@@ -33,7 +33,7 @@ class TaskGanttRowViewModel(BaseViewModel):
     """
 
     id: int
-    formatted_name: str
+    name: str
     formatted_estimated_duration: str
     status: TaskStatus
     planned_start: date | None

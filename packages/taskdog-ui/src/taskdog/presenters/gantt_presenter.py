@@ -5,8 +5,6 @@ presentation logic (formatting, strikethrough) to create presentation-ready
 view models.
 """
 
-from rich.markup import escape
-
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.task_dto import GanttTaskDto
@@ -49,7 +47,6 @@ class GanttPresenter:
         """Convert a GanttTaskDto to TaskGanttRowViewModel.
 
         Applies presentation logic:
-        - Adds strikethrough to task name if finished
         - Formats estimated duration as string
 
         Args:
@@ -58,13 +55,6 @@ class GanttPresenter:
         Returns:
             TaskGanttRowViewModel with presentation-ready data
         """
-        # Apply strikethrough + dim for finished tasks
-        # Escape Rich markup characters (e.g. square brackets) in task names
-        escaped_name = escape(task.name)
-        formatted_name = escaped_name
-        if task.is_finished:
-            formatted_name = f"[strike dim]{escaped_name}[/strike dim]"
-
         # Format estimated duration
         formatted_estimated_duration = self._format_estimated_duration(
             task.estimated_duration
@@ -72,7 +62,7 @@ class GanttPresenter:
 
         return TaskGanttRowViewModel(
             id=task.id,
-            formatted_name=formatted_name,
+            name=task.name,
             formatted_estimated_duration=formatted_estimated_duration,
             status=task.status,
             planned_start=task.planned_start.date() if task.planned_start else None,

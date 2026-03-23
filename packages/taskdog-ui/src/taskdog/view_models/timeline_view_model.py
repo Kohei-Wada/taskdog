@@ -20,7 +20,7 @@ class TimelineTaskRowViewModel(BaseViewModel):
 
     Attributes:
         task_id: Task ID
-        formatted_name: Task name with presentation formatting (strikethrough, etc.)
+        name: Task name (plain text, no formatting applied)
         actual_start: Actual start time on the target date
         actual_end: Actual end time on the target date
         duration_hours: Work duration in hours for this date
@@ -29,7 +29,7 @@ class TimelineTaskRowViewModel(BaseViewModel):
     """
 
     task_id: int
-    formatted_name: str
+    name: str
     actual_start: time
     actual_end: time
     duration_hours: float
