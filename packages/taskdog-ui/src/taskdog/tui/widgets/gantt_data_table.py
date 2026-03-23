@@ -8,6 +8,7 @@ like task selection, date range adjustment, and filtering.
 from datetime import date, timedelta
 from typing import Any, ClassVar
 
+from rich.markup import escape
 from rich.text import Text
 from textual.binding import Binding
 from textual.coordinate import Coordinate
@@ -494,9 +495,14 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         Returns:
             Tuple of (task_id, task_name, estimated_hours)
         """
-        # Use pre-formatted values from ViewModel
+        # Apply Rich markup escape and strikethrough for finished tasks
         task_id = str(task_vm.id)
-        task_name = task_vm.formatted_name
+        escaped_name = escape(task_vm.name)
+        task_name = (
+            f"[strike dim]{escaped_name}[/strike dim]"
+            if task_vm.is_finished
+            else escaped_name
+        )
         est_hours = task_vm.formatted_estimated_duration
 
         return task_id, task_name, est_hours

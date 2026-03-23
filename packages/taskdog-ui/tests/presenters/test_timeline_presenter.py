@@ -99,13 +99,13 @@ class TestTimelinePresenter:
 
         row = result.rows[0]
         assert row.task_id == 1
-        assert row.formatted_name == "[strike dim]Task A[/strike dim]"
+        assert row.name == "Task A"
         assert row.actual_start == time(9, 0)
         assert row.actual_end == time(12, 0)
         assert row.duration_hours == 3.0
 
     def test_present_task_name_with_square_brackets(self):
-        """Test that square brackets in task names are escaped for Rich markup."""
+        """Test that square brackets in task names are preserved as plain text."""
         actual_start = datetime(2026, 1, 30, 9, 0, 0)
         actual_end = datetime(2026, 1, 30, 12, 0, 0)
         tasks = [
@@ -120,28 +120,7 @@ class TestTimelinePresenter:
         task_list = self._create_task_list_output(tasks)
         result = self.presenter.present(task_list, self.target_date)
 
-        assert result.rows[0].formatted_name == "\\[tracker] My task"
-
-    def test_present_task_name_with_square_brackets_finished(self):
-        """Test that square brackets are escaped even with strikethrough."""
-        actual_start = datetime(2026, 1, 30, 9, 0, 0)
-        actual_end = datetime(2026, 1, 30, 12, 0, 0)
-        tasks = [
-            self._create_task_row_dto(
-                1,
-                "[tracker] Done task",
-                TaskStatus.COMPLETED,
-                actual_start,
-                actual_end,
-            ),
-        ]
-        task_list = self._create_task_list_output(tasks)
-        result = self.presenter.present(task_list, self.target_date)
-
-        assert (
-            result.rows[0].formatted_name
-            == "[strike dim]\\[tracker] Done task[/strike dim]"
-        )
+        assert result.rows[0].name == "[tracker] My task"
 
     def test_present_task_on_different_date(self):
         """Test with a task that has work on a different date."""
@@ -218,8 +197,8 @@ class TestTimelinePresenter:
         assert result.start_hour == 7
         assert result.end_hour == 20
 
-    def test_present_finished_task_strikethrough(self):
-        """Test that finished tasks have strikethrough formatting."""
+    def test_present_finished_task_preserves_plain_name(self):
+        """Test that finished tasks have plain text name (formatting is Renderer's job)."""
         tasks = [
             self._create_task_row_dto(
                 1,
@@ -240,9 +219,9 @@ class TestTimelinePresenter:
         result = self.presenter.present(task_list, self.target_date)
 
         assert result.rows[0].is_finished is True
-        assert "[strike dim]" in result.rows[0].formatted_name
+        assert result.rows[0].name == "Completed Task"
         assert result.rows[1].is_finished is True
-        assert "[strike dim]" in result.rows[1].formatted_name
+        assert result.rows[1].name == "Canceled Task"
 
     def test_present_total_work_hours(self):
         """Test that total work hours is calculated correctly."""

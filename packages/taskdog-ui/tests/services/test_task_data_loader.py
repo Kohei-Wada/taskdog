@@ -81,7 +81,7 @@ class TestTaskDataLoader:
 
         gantt_task_vm = TaskGanttRowViewModel(
             id=1,
-            formatted_name="Task 1",
+            name="Task 1",
             formatted_estimated_duration="-",
             status=TaskStatus.PENDING,
             planned_start=None,

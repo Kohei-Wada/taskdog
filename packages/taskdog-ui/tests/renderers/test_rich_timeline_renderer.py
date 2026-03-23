@@ -34,12 +34,9 @@ class TestRichTimelineRenderer:
         is_finished: bool = True,
     ) -> TimelineTaskRowViewModel:
         """Create a TimelineTaskRowViewModel for testing."""
-        formatted_name = name
-        if is_finished:
-            formatted_name = f"[strike dim]{name}[/strike dim]"
         return TimelineTaskRowViewModel(
             task_id=task_id,
-            formatted_name=formatted_name,
+            name=name,
             actual_start=actual_start,
             actual_end=actual_end,
             duration_hours=duration_hours,

@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from typing import Any
 
+from rich.markup import escape
 from rich.table import Table
 from rich.text import Text
 
@@ -262,8 +263,13 @@ class RichGanttRenderer(RichRendererBase):
             end_date: End date of the chart
             holidays: Set of holiday dates for styling
         """
-        # Use pre-formatted name (strikethrough already applied by mapper)
-        task_name = task_vm.formatted_name
+        # Apply Rich markup escape and strikethrough for finished tasks
+        escaped_name = escape(task_vm.name)
+        task_name = (
+            f"[strike dim]{escaped_name}[/strike dim]"
+            if task_vm.is_finished
+            else escaped_name
+        )
 
         # Use pre-formatted estimated duration
         estimated_hours = task_vm.formatted_estimated_duration

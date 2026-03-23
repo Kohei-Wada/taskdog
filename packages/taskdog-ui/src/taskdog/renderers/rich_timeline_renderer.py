@@ -4,6 +4,7 @@ This module renders the Timeline chart as a Rich Table, showing
 actual work times on a horizontal time axis for a specific day.
 """
 
+from rich.markup import escape
 from rich.table import Table
 from rich.text import Text
 
@@ -162,9 +163,17 @@ class RichTimelineRenderer(RichRendererBase):
         # Format duration
         duration_str = TimelineCellFormatter.format_duration(row_vm.duration_hours)
 
+        # Apply Rich markup escape and strikethrough for finished tasks
+        escaped_name = escape(row_vm.name)
+        task_name = (
+            f"[strike dim]{escaped_name}[/strike dim]"
+            if row_vm.is_finished
+            else escaped_name
+        )
+
         table.add_row(
             str(row_vm.task_id),
-            row_vm.formatted_name,
+            task_name,
             timeline_bar,
             duration_str,
         )
