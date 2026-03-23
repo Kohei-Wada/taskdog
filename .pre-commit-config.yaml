@@ -4,7 +4,7 @@
 repos:
   # Ruff - fast Python linter and formatter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.6
+    rev: v0.15.7
     hooks:
       # Run the linter
       - id: ruff
@@ -24,7 +24,7 @@ repos:
 
   # Markdown linter
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.21.0
+    rev: v0.22.0
     hooks:
       - id: markdownlint-cli2
         args: [--fix]
