@@ -80,6 +80,25 @@ class TestGanttPresenter:
         assert result.tasks[0].formatted_name == "[strike dim]Done task[/strike dim]"
         assert result.tasks[0].is_finished is True
 
+    def test_present_task_name_with_square_brackets_not_finished(self):
+        task = self._make_task(name="[tracker] My task", is_finished=False)
+        result = self.presenter.present(self._make_gantt_output([task]))
+
+        assert result.tasks[0].formatted_name == "\\[tracker] My task"
+
+    def test_present_task_name_with_square_brackets_finished(self):
+        task = self._make_task(
+            name="[tracker] Done task",
+            status=TaskStatus.COMPLETED,
+            is_finished=True,
+        )
+        result = self.presenter.present(self._make_gantt_output([task]))
+
+        assert (
+            result.tasks[0].formatted_name
+            == "[strike dim]\\[tracker] Done task[/strike dim]"
+        )
+
     def test_present_estimated_duration_formatted(self):
         task = self._make_task(estimated_duration=4.5)
         result = self.presenter.present(self._make_gantt_output([task]))

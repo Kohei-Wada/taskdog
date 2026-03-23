@@ -6,6 +6,8 @@ and creates presentation-ready view models for the Timeline chart.
 
 from datetime import date, datetime, time
 
+from rich.markup import escape
+
 from taskdog.constants.timeline import (
     DEFAULT_END_HOUR,
     DEFAULT_START_HOUR,
@@ -133,9 +135,11 @@ class TimelinePresenter:
         is_finished = task_row.is_finished
 
         # Apply strikethrough for finished tasks
-        formatted_name = task_row.name
+        # Escape Rich markup characters (e.g. square brackets) in task names
+        escaped_name = escape(task_row.name)
+        formatted_name = escaped_name
         if is_finished:
-            formatted_name = f"[strike dim]{task_row.name}[/strike dim]"
+            formatted_name = f"[strike dim]{escaped_name}[/strike dim]"
 
         return TimelineTaskRowViewModel(
             task_id=task_row.id,

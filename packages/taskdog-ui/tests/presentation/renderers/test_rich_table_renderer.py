@@ -145,6 +145,45 @@ class TestRichTableRenderer:
             assert "[strike dim]" not in result
 
     @pytest.mark.parametrize(
+        "name,is_finished,expected",
+        [
+            ("[tracker] Task", False, "\\[tracker] Task"),
+            (
+                "[tracker] Task",
+                True,
+                "[strike dim]\\[tracker] Task[/strike dim]",
+            ),
+        ],
+        ids=["brackets_unfinished", "brackets_finished"],
+    )
+    def test_get_field_value_name_with_square_brackets(
+        self, name, is_finished, expected
+    ):
+        """Test that square brackets in task names are escaped for Rich markup."""
+        task = TaskRowViewModel(
+            id=self.task1.id,
+            name=name,
+            priority=self.task1.priority,
+            status=TaskStatus.COMPLETED if is_finished else self.task1.status,
+            planned_start=self.task1.planned_start,
+            planned_end=self.task1.planned_end,
+            actual_start=self.task1.actual_start,
+            actual_end=self.task1.actual_end,
+            deadline=self.task1.deadline,
+            estimated_duration=self.task1.estimated_duration,
+            actual_duration_hours=self.task1.actual_duration_hours,
+            is_fixed=self.task1.is_fixed,
+            depends_on=self.task1.depends_on,
+            tags=self.task1.tags,
+            is_finished=is_finished,
+            has_notes=self.task1.has_notes,
+            created_at=self.task1.created_at,
+            updated_at=self.task1.updated_at,
+        )
+        result = self.renderer._get_field_value(task, "name")
+        assert result == expected
+
+    @pytest.mark.parametrize(
         "has_notes,expected",
         [
             (True, "📝"),

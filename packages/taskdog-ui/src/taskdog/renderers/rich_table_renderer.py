@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar, Literal, cast
 
+from rich.markup import escape
 from rich.table import Table
 
 from taskdog.constants.common import (
@@ -308,9 +309,9 @@ class RichTableRenderer(RichRendererBase):
         field_extractors: dict[str, Callable[[TaskRowViewModel], str]] = {
             "id": lambda t: str(t.id),
             "name": lambda t: (
-                f"[{COLUMN_FINISHED_STYLE}]{t.name}[/{COLUMN_FINISHED_STYLE}]"
+                f"[{COLUMN_FINISHED_STYLE}]{escape(t.name)}[/{COLUMN_FINISHED_STYLE}]"
                 if t.is_finished
-                else t.name
+                else escape(t.name)
             ),
             "note": lambda t: EMOJI_NOTE if t.has_notes else "",
             "priority": lambda t: str(t.priority),

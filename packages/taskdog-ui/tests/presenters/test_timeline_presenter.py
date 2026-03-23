@@ -104,6 +104,45 @@ class TestTimelinePresenter:
         assert row.actual_end == time(12, 0)
         assert row.duration_hours == 3.0
 
+    def test_present_task_name_with_square_brackets(self):
+        """Test that square brackets in task names are escaped for Rich markup."""
+        actual_start = datetime(2026, 1, 30, 9, 0, 0)
+        actual_end = datetime(2026, 1, 30, 12, 0, 0)
+        tasks = [
+            self._create_task_row_dto(
+                1,
+                "[tracker] My task",
+                TaskStatus.IN_PROGRESS,
+                actual_start,
+                actual_end,
+            ),
+        ]
+        task_list = self._create_task_list_output(tasks)
+        result = self.presenter.present(task_list, self.target_date)
+
+        assert result.rows[0].formatted_name == "\\[tracker] My task"
+
+    def test_present_task_name_with_square_brackets_finished(self):
+        """Test that square brackets are escaped even with strikethrough."""
+        actual_start = datetime(2026, 1, 30, 9, 0, 0)
+        actual_end = datetime(2026, 1, 30, 12, 0, 0)
+        tasks = [
+            self._create_task_row_dto(
+                1,
+                "[tracker] Done task",
+                TaskStatus.COMPLETED,
+                actual_start,
+                actual_end,
+            ),
+        ]
+        task_list = self._create_task_list_output(tasks)
+        result = self.presenter.present(task_list, self.target_date)
+
+        assert (
+            result.rows[0].formatted_name
+            == "[strike dim]\\[tracker] Done task[/strike dim]"
+        )
+
     def test_present_task_on_different_date(self):
         """Test with a task that has work on a different date."""
         actual_start = datetime(2026, 1, 29, 9, 0, 0)
