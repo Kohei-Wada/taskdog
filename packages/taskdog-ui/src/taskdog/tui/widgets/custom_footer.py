@@ -65,7 +65,7 @@ class CustomFooter(Container):
         # Row 1: Status bar (keybindings + connection status)
         with Horizontal(id="footer-status-row"):
             yield Static(
-                " [bold]q[/] Quit  [bold]a[/] Add  [bold]r[/] Refresh  [bold]S[/] Stats  [bold]?[/] Help  [bold]Ctrl+P[/] Palette",
+                " [bold]j[/]/[bold]k[/] Navigate  [bold]Ctrl+J[/]/[bold]K[/] Focus  [bold]q[/] Quit  [bold]a[/] Add  [bold]s[/] Start  [bold]d[/] Done  [bold]x[/] Archive  [bold]?[/] Help  [bold]Ctrl+P[/] Palette",
                 id="footer-keybindings",
             )
             yield Static("🔴 Offline", id="footer-connection-status")
