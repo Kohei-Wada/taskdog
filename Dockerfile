@@ -7,35 +7,12 @@
 # Run:
 #   docker run -d -p 8000:8000 -v taskdog-data:/data taskdog-server
 
-# Stage 1: Builder - build wheels using uv
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
-
-WORKDIR /app
-
-# Copy dependency metadata first (changes infrequently -> better layer caching)
-COPY pyproject.toml uv.lock ./
-COPY packages/taskdog-core/pyproject.toml packages/taskdog-core/pyproject.toml
-COPY packages/taskdog-client/pyproject.toml packages/taskdog-client/pyproject.toml
-COPY packages/taskdog-server/pyproject.toml packages/taskdog-server/pyproject.toml
-COPY packages/taskdog-ui/pyproject.toml packages/taskdog-ui/pyproject.toml
-
-# Copy source code (changes frequently)
-COPY packages/ ./packages/
-
-# Build wheels for all packages
-RUN uv build --package taskdog-core --wheel --out-dir /wheels && \
-    uv build --package taskdog-client --wheel --out-dir /wheels && \
-    uv build --package taskdog-server --wheel --out-dir /wheels && \
-    uv build --package taskdog-ui --wheel --out-dir /wheels
-
-# Stage 2: Runtime - minimal image with only what's needed
 FROM python:3.13-slim-bookworm
 
 WORKDIR /app
 
-# Install wheels from builder stage
-COPY --from=builder /wheels /tmp/wheels
-RUN pip install --no-cache-dir /tmp/wheels/*.whl && rm -rf /tmp/wheels
+# Install packages from PyPI
+RUN pip install --no-cache-dir taskdog-ui[server]
 
 # Copy demo scripts
 COPY scripts/demo_data.py scripts/demo_data.json ./scripts/
