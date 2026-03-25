@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir taskdog-ui[server]
 
 # Copy demo scripts and entrypoint
 COPY scripts/demo_data.py scripts/demo_data.json ./scripts/
-COPY scripts/docker-demo-entrypoint.sh ./scripts/
+COPY --chmod=755 scripts/docker-demo-entrypoint.sh ./scripts/
 
 # Create non-root user and data directory
 RUN useradd -m -u 1000 taskdog \

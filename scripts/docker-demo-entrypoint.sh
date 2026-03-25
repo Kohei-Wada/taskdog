@@ -5,11 +5,22 @@ set -e
 taskdog-server --host 0.0.0.0 --port 8000 &
 SERVER_PID=$!
 
+# Check if process is still running
+sleep 0.1
+if ! ps -p $SERVER_PID > /dev/null 2>&1; then
+    echo "ERROR: taskdog-server failed to start"
+    exit 1
+fi
+
 # Wait for server to be ready
 echo "Starting taskdog-server..."
 for i in $(seq 1 30); do
     if python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" 2>/dev/null; then
         break
+    fi
+    if [ "$i" -eq 30 ]; then
+        echo "ERROR: Server failed to start within 15 seconds"
+        exit 1
     fi
     sleep 0.5
 done
