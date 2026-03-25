@@ -34,6 +34,7 @@ jobs:
     environment: pypi
     permissions:
       id-token: write
+      attestations: write
     strategy:
       max-parallel: 1
       matrix:
@@ -58,9 +59,9 @@ jobs:
           enable-cache: true
 
       - name: Build package
-        run: uv build packages/${{ matrix.package }}
+        run: uv build packages/${{ matrix.package }} --out-dir dist/
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: packages/${{ matrix.package }}/dist/
+          packages-dir: dist/
