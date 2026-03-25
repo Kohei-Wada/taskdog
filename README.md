@@ -30,7 +30,11 @@ docker run --rm -it ghcr.io/kohei-wada/taskdog:demo
 The TUI works inside the container, but some keybindings (e.g., `Ctrl+P` for command palette) may conflict with Docker's key sequences. For the best experience, run the server in a container and connect from your host:
 
 ```bash
-docker run --rm -d -p 8000:8000 ghcr.io/kohei-wada/taskdog:demo
+docker run --rm -d -p 8000:8000 --name taskdog-demo ghcr.io/kohei-wada/taskdog:demo
+
+# Wait for the server and demo data to be ready (~15s)
+docker logs -f taskdog-demo 2>&1 | grep -m1 "Server ready"
+
 uvx --from taskdog-ui taskdog tui
 ```
 
