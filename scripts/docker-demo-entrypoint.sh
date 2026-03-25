@@ -2,12 +2,12 @@
 set -e
 
 # Start taskdog-server in background
-taskdog-server --host 0.0.0.0 --port 8000 &
+taskdog-server --host 0.0.0.0 --port 8000 > /dev/null 2>&1 &
 SERVER_PID=$!
 
 # Check if process is still running
-sleep 0.1
-if ! ps -p $SERVER_PID > /dev/null 2>&1; then
+sleep 0.5
+if ! kill -0 $SERVER_PID 2>/dev/null; then
     echo "ERROR: taskdog-server failed to start"
     exit 1
 fi
