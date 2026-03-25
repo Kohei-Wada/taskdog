@@ -1,0 +1,38 @@
+# Taskdog Demo Dockerfile
+# https://github.com/Kohei-Wada/taskdog
+#
+# Try taskdog with demo data in one command:
+#   docker run --rm -it ghcr.io/kohei-wada/taskdog:demo
+#
+# For a faster TUI experience, run the server in the background
+# and connect from your host:
+#   docker run --rm -d -p 8000:8000 ghcr.io/kohei-wada/taskdog:demo
+#   uvx --from taskdog-ui taskdog tui
+
+FROM python:3.13-slim-bookworm
+
+WORKDIR /app
+
+# Install packages from PyPI
+RUN pip install --no-cache-dir taskdog-ui[server]
+
+# Copy demo scripts and entrypoint
+COPY scripts/demo_data.py scripts/demo_data.json ./scripts/
+COPY --chmod=755 scripts/docker-demo-entrypoint.sh ./scripts/
+
+# Create non-root user and data directory
+RUN useradd -m -u 1000 taskdog \
+    && mkdir -p /data \
+    && chown -R taskdog:taskdog /data /app
+
+USER taskdog
+
+# Expose API port
+EXPOSE 8000
+
+# Environment variables
+ENV TASKDOG_STORAGE_DATABASE_URL=sqlite:////data/tasks.db
+ENV TERM=xterm-256color
+ENV COLORTERM=truecolor
+
+ENTRYPOINT ["./scripts/docker-demo-entrypoint.sh"]
