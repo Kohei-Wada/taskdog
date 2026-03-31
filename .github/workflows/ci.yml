@@ -127,7 +127,7 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run security audit
-        run: uv tool run pip-audit --skip-editable --progress-spinner off --ignore-vuln CVE-2026-4539  # pygments 2.19.2 - remove when fixed version is released
+        run: uv tool run pip-audit --skip-editable --progress-spinner off
 
   build:
     name: Build (${{ matrix.package }})
