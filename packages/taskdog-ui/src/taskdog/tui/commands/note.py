@@ -1,6 +1,8 @@
 """Edit note command for TUI."""
 
+import subprocess
 from collections.abc import Callable
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from taskdog.tui.commands.base import TUICommandBase
@@ -44,6 +46,16 @@ class NoteCommand(TUICommandBase):
         """
         self.reload_tasks()
 
+    def _editor_runner(self, editor: str, path: Path) -> None:
+        """Run editor with TUI suspended.
+
+        Args:
+            editor: Editor command
+            path: Path to file to edit
+        """
+        with self.app.suspend():
+            subprocess.run([editor, str(path)], check=True)
+
     def execute_impl(self) -> None:
         """Execute the edit note command."""
         task_id = self._task_id or self.get_selected_task_id()
@@ -61,7 +73,7 @@ class NoteCommand(TUICommandBase):
         edit_task_note(
             task=output.task,
             notes_provider=self.context.api_client,
-            app=self.app,
+            editor_runner=self._editor_runner,
             on_success=self._on_success
             or (lambda name, id_: self._on_note_saved(name, id_)),
             on_error=self.notify_error,

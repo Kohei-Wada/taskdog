@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 import select
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import click
 
 from taskdog.cli.error_handler import handle_task_errors
-from taskdog.utils.editor import get_editor
-from taskdog.utils.notes_template import get_note_template
+from taskdog.utils.note_editor import edit_task_note
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 if TYPE_CHECKING:
@@ -22,7 +19,6 @@ if TYPE_CHECKING:
     from taskdog.cli.context import CliContext
     from taskdog.console.console_writer import ConsoleWriter
     from taskdog.infrastructure.cli_config_manager import CliConfig
-    from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 
 def _read_content_from_source(
@@ -94,14 +90,14 @@ def _save_content_directly(
         console_writer.error("saving notes", e)
 
 
-def _edit_with_editor(
+def _edit_with_editor_via_shared(
     task_id: int,
-    task: TaskDetailDto,
+    task: object,
     api_client: TaskdogApiClient,
     console_writer: ConsoleWriter,
     config: CliConfig | None = None,
 ) -> None:
-    """Edit note using $EDITOR.
+    """Edit note using $EDITOR via shared note_editor utility.
 
     Args:
         task_id: Task ID
@@ -110,42 +106,24 @@ def _edit_with_editor(
         console_writer: Console writer
         config: CLI configuration for custom template (optional)
     """
-    existing_content, _ = api_client.get_task_notes(task_id)
-    editor_content = existing_content or get_note_template(task, config)
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".md", delete=False, encoding="utf-8"
-    ) as tmp:
-        tmp.write(editor_content)
-        temp_path = Path(tmp.name)
+    def on_success(name: str, tid: int) -> None:
+        console_writer.success(f"Notes saved for task #{tid}")
 
-    try:
-        try:
-            editor = get_editor()
-        except RuntimeError as e:
-            console_writer.error("finding editor", e)
-            return
-
-        console_writer.info(f"Opening {editor}...")
-        try:
-            subprocess.run([editor, str(temp_path)], check=True)
-            edited_content = temp_path.read_text(encoding="utf-8")
-            # Normalize trailing whitespace for comparison
-            # (editors like vim may add trailing newline)
-            if edited_content.rstrip() == editor_content.rstrip():
-                console_writer.info("No changes to save")
-                return
-            api_client.update_task_notes(task_id, edited_content)
-            console_writer.success(f"Notes saved for task #{task_id}")
-        except subprocess.CalledProcessError as e:
-            console_writer.error("running editor", e)
-        except KeyboardInterrupt:
+    def on_error(action: str, e: Exception) -> None:
+        if isinstance(e, RuntimeError) and "interrupted" in str(e).lower():
             print("\n")
             console_writer.warning("Editor interrupted")
-        except (OSError, UnicodeDecodeError) as e:
-            console_writer.error("saving notes", e)
-    finally:
-        temp_path.unlink(missing_ok=True)
+        else:
+            console_writer.error(action, e)
+
+    edit_task_note(
+        task=task,  # type: ignore[arg-type]
+        notes_provider=api_client,
+        on_success=on_success,
+        on_error=on_error,
+        config=config,
+    )
 
 
 @click.command(
@@ -215,4 +193,6 @@ def note_command(
         _save_content_directly(task_id, new_content, append, api_client, console_writer)
     else:
         # No input source, use editor mode
-        _edit_with_editor(task_id, task, api_client, console_writer, ctx_obj.config)
+        _edit_with_editor_via_shared(
+            task_id, task, api_client, console_writer, ctx_obj.config
+        )

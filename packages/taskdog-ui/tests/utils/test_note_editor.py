@@ -146,12 +146,14 @@ class TestExecuteEdit:
         mock_edit_save.return_value = True  # Notes were changed
         task = create_mock_task(task_id=42, name="Test Task")
         notes_provider = MagicMock()
-        app = MagicMock()
+        editor_runner = MagicMock()
         on_success = MagicMock()
         on_error = MagicMock()
         temp_path = Path("/tmp/test.md")
 
-        _execute_edit(temp_path, task, notes_provider, app, on_success, on_error)
+        _execute_edit(
+            temp_path, task, notes_provider, editor_runner, on_success, on_error
+        )
 
         on_success.assert_called_once_with("Test Task", 42)
         on_error.assert_not_called()
@@ -164,12 +166,14 @@ class TestExecuteEdit:
         mock_edit_save.return_value = False  # No changes made
         task = create_mock_task(task_id=42, name="Test Task")
         notes_provider = MagicMock()
-        app = MagicMock()
+        editor_runner = MagicMock()
         on_success = MagicMock()
         on_error = MagicMock()
         temp_path = Path("/tmp/test.md")
 
-        _execute_edit(temp_path, task, notes_provider, app, on_success, on_error)
+        _execute_edit(
+            temp_path, task, notes_provider, editor_runner, on_success, on_error
+        )
 
         on_success.assert_not_called()
         on_error.assert_not_called()
@@ -182,12 +186,14 @@ class TestExecuteEdit:
         mock_edit_save.side_effect = RuntimeError("No editor found")
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
+        editor_runner = MagicMock()
         on_success = MagicMock()
         on_error = MagicMock()
         temp_path = Path("/tmp/test.md")
 
-        _execute_edit(temp_path, task, notes_provider, app, on_success, on_error)
+        _execute_edit(
+            temp_path, task, notes_provider, editor_runner, on_success, on_error
+        )
 
         on_error.assert_called_once()
         assert "finding editor" in on_error.call_args[0][0]
@@ -201,12 +207,14 @@ class TestExecuteEdit:
         mock_edit_save.side_effect = subprocess.CalledProcessError(1, "vim")
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
+        editor_runner = MagicMock()
         on_success = MagicMock()
         on_error = MagicMock()
         temp_path = Path("/tmp/test.md")
 
-        _execute_edit(temp_path, task, notes_provider, app, on_success, on_error)
+        _execute_edit(
+            temp_path, task, notes_provider, editor_runner, on_success, on_error
+        )
 
         on_error.assert_called_once()
         assert "running editor" in on_error.call_args[0][0]
@@ -219,12 +227,14 @@ class TestExecuteEdit:
         mock_edit_save.side_effect = KeyboardInterrupt()
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
+        editor_runner = MagicMock()
         on_success = MagicMock()
         on_error = MagicMock()
         temp_path = Path("/tmp/test.md")
 
-        _execute_edit(temp_path, task, notes_provider, app, on_success, on_error)
+        _execute_edit(
+            temp_path, task, notes_provider, editor_runner, on_success, on_error
+        )
 
         on_error.assert_called_once()
         assert "editor" in on_error.call_args[0][0]
@@ -235,12 +245,14 @@ class TestExecuteEdit:
         mock_edit_save.side_effect = OSError("Permission denied")
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
+        editor_runner = MagicMock()
         on_success = MagicMock()
         on_error = MagicMock()
         temp_path = Path("/tmp/test.md")
 
-        _execute_edit(temp_path, task, notes_provider, app, on_success, on_error)
+        _execute_edit(
+            temp_path, task, notes_provider, editor_runner, on_success, on_error
+        )
 
         on_error.assert_called_once()
         assert "saving notes" in on_error.call_args[0][0]
@@ -258,9 +270,8 @@ class TestEditTaskNote:
         mock_prepare.return_value = None
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
 
-        edit_task_note(task, notes_provider, app)
+        edit_task_note(task, notes_provider)
 
         mock_execute.assert_not_called()
 
@@ -274,9 +285,8 @@ class TestEditTaskNote:
         mock_prepare.return_value = temp_path
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
 
-        edit_task_note(task, notes_provider, app)
+        edit_task_note(task, notes_provider)
 
         temp_path.unlink.assert_called_once_with(missing_ok=True)
 
@@ -291,10 +301,9 @@ class TestEditTaskNote:
         mock_execute.side_effect = RuntimeError("Unexpected error")
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
 
         with pytest.raises(RuntimeError):
-            edit_task_note(task, notes_provider, app)
+            edit_task_note(task, notes_provider)
 
         temp_path.unlink.assert_called_once_with(missing_ok=True)
 
@@ -308,95 +317,116 @@ class TestEditTaskNote:
         mock_prepare.return_value = temp_path
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
         on_success = MagicMock()
         on_error = MagicMock()
 
-        edit_task_note(
-            task, notes_provider, app, on_success=on_success, on_error=on_error
-        )
+        edit_task_note(task, notes_provider, on_success=on_success, on_error=on_error)
 
         mock_execute.assert_called_once()
-        call_args = mock_execute.call_args
-        assert call_args[0][4] == on_success
-        assert call_args[0][5] == on_error
+        call_args = mock_execute.call_args[0]
+        assert call_args[4] == on_success
+        assert call_args[5] == on_error
+
+    @patch("taskdog.utils.note_editor._execute_edit")
+    @patch("taskdog.utils.note_editor._prepare_temp_file")
+    def test_uses_default_editor_runner_when_none(
+        self, mock_prepare: MagicMock, mock_execute: MagicMock
+    ) -> None:
+        """Test that default editor runner is used when none is provided."""
+        from taskdog.utils.note_editor import _default_editor_runner
+
+        temp_path = MagicMock(spec=Path)
+        mock_prepare.return_value = temp_path
+        task = create_mock_task()
+        notes_provider = MagicMock()
+
+        edit_task_note(task, notes_provider)
+
+        mock_execute.assert_called_once()
+        call_args = mock_execute.call_args[0]
+        assert call_args[3] == _default_editor_runner
+
+    @patch("taskdog.utils.note_editor._execute_edit")
+    @patch("taskdog.utils.note_editor._prepare_temp_file")
+    def test_uses_custom_editor_runner(
+        self, mock_prepare: MagicMock, mock_execute: MagicMock
+    ) -> None:
+        """Test that custom editor runner is used when provided."""
+        temp_path = MagicMock(spec=Path)
+        mock_prepare.return_value = temp_path
+        task = create_mock_task()
+        notes_provider = MagicMock()
+        custom_runner = MagicMock()
+
+        edit_task_note(task, notes_provider, editor_runner=custom_runner)
+
+        mock_execute.assert_called_once()
+        call_args = mock_execute.call_args[0]
+        assert call_args[3] == custom_runner
 
 
 class TestEditAndSaveNotes:
     """Test cases for _edit_and_save_notes function."""
 
-    @patch("taskdog.utils.note_editor.subprocess.run")
     @patch("taskdog.utils.note_editor.get_editor")
     def test_returns_true_when_content_changed(
-        self, mock_get_editor: MagicMock, mock_run: MagicMock, tmp_path: Path
+        self, mock_get_editor: MagicMock, tmp_path: Path
     ) -> None:
         """Test returns True when notes are changed."""
         from taskdog.utils.note_editor import _edit_and_save_notes
 
         mock_get_editor.return_value = "vim"
-        mock_run.return_value = MagicMock(returncode=0)
 
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
-        app.suspend.return_value.__enter__ = MagicMock()
-        app.suspend.return_value.__exit__ = MagicMock(return_value=False)
 
         # Create temp file with original content
         temp_file = tmp_path / "notes.md"
         temp_file.write_text("original content", encoding="utf-8")
 
         # Simulate editor changing the content
-        def mock_editor_changes_content(*args, **kwargs):
-            temp_file.write_text("modified content", encoding="utf-8")
-            return MagicMock(returncode=0)
+        def mock_editor_runner(editor: str, path: Path) -> None:
+            path.write_text("modified content", encoding="utf-8")
 
-        mock_run.side_effect = mock_editor_changes_content
-
-        result = _edit_and_save_notes(temp_file, task, notes_provider, app)
+        result = _edit_and_save_notes(
+            temp_file, task, notes_provider, mock_editor_runner
+        )
 
         assert result is True
         notes_provider.update_task_notes.assert_called_once_with(
             task.id, "modified content"
         )
 
-    @patch("taskdog.utils.note_editor.subprocess.run")
     @patch("taskdog.utils.note_editor.get_editor")
     def test_returns_false_when_content_unchanged(
-        self, mock_get_editor: MagicMock, mock_run: MagicMock, tmp_path: Path
+        self, mock_get_editor: MagicMock, tmp_path: Path
     ) -> None:
         """Test returns False when notes are unchanged."""
         from taskdog.utils.note_editor import _edit_and_save_notes
 
         mock_get_editor.return_value = "vim"
-        mock_run.return_value = MagicMock(returncode=0)
 
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
-        app.suspend.return_value.__enter__ = MagicMock()
-        app.suspend.return_value.__exit__ = MagicMock(return_value=False)
 
         # Create temp file with original content
         temp_file = tmp_path / "notes.md"
         temp_file.write_text("original content", encoding="utf-8")
 
         # Simulate editor NOT changing the content
-        def mock_editor_no_changes(*args, **kwargs):
-            # Content remains the same
-            return MagicMock(returncode=0)
+        def mock_editor_runner(editor: str, path: Path) -> None:
+            pass  # Content remains the same
 
-        mock_run.side_effect = mock_editor_no_changes
-
-        result = _edit_and_save_notes(temp_file, task, notes_provider, app)
+        result = _edit_and_save_notes(
+            temp_file, task, notes_provider, mock_editor_runner
+        )
 
         assert result is False
         notes_provider.update_task_notes.assert_not_called()
 
-    @patch("taskdog.utils.note_editor.subprocess.run")
     @patch("taskdog.utils.note_editor.get_editor")
     def test_returns_false_when_only_trailing_newline_added(
-        self, mock_get_editor: MagicMock, mock_run: MagicMock, tmp_path: Path
+        self, mock_get_editor: MagicMock, tmp_path: Path
     ) -> None:
         """Test returns False when editor only adds trailing newline."""
         from taskdog.utils.note_editor import _edit_and_save_notes
@@ -405,22 +435,18 @@ class TestEditAndSaveNotes:
 
         task = create_mock_task()
         notes_provider = MagicMock()
-        app = MagicMock()
-        app.suspend.return_value.__enter__ = MagicMock()
-        app.suspend.return_value.__exit__ = MagicMock(return_value=False)
 
         # Create temp file with original content (no trailing newline)
         temp_file = tmp_path / "notes.md"
         temp_file.write_text("original content", encoding="utf-8")
 
         # Simulate vim adding trailing newline on save
-        def mock_vim_adds_newline(*args, **kwargs):
-            temp_file.write_text("original content\n", encoding="utf-8")
-            return MagicMock(returncode=0)
+        def mock_editor_runner(editor: str, path: Path) -> None:
+            path.write_text("original content\n", encoding="utf-8")
 
-        mock_run.side_effect = mock_vim_adds_newline
-
-        result = _edit_and_save_notes(temp_file, task, notes_provider, app)
+        result = _edit_and_save_notes(
+            temp_file, task, notes_provider, mock_editor_runner
+        )
 
         # Should be treated as no change
         assert result is False

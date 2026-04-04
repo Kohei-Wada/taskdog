@@ -1,17 +1,17 @@
-"""Note editing utilities for TUI."""
+"""Note editing utilities."""
 
 import subprocess
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Protocol
-
-from textual.app import App
+from typing import Protocol
 
 from taskdog.infrastructure.cli_config_manager import CliConfig
 from taskdog.utils.editor import get_editor
 from taskdog.utils.notes_template import get_note_template
 from taskdog_core.application.dto.task_dto import TaskDetailDto
+
+EditorRunner = Callable[[str, Path], None]
 
 
 class NotesProvider(Protocol):
@@ -36,6 +36,16 @@ class NotesProvider(Protocol):
             content: Notes content
         """
         ...
+
+
+def _default_editor_runner(editor: str, path: Path) -> None:
+    """Run editor directly via subprocess.
+
+    Args:
+        editor: Editor command
+        path: Path to file to edit
+    """
+    subprocess.run([editor, str(path)], check=True)
 
 
 def _create_temp_notes_file(
@@ -69,7 +79,7 @@ def _edit_and_save_notes(
     temp_path: Path,
     task: TaskDetailDto,
     notes_provider: NotesProvider,
-    app: App[Any],
+    editor_runner: EditorRunner,
 ) -> bool:
     """Open editor and save edited content.
 
@@ -77,7 +87,7 @@ def _edit_and_save_notes(
         temp_path: Path to temporary notes file
         task: Task DTO being edited
         notes_provider: Notes provider for saving
-        app: Textual app instance (for suspend)
+        editor_runner: Callable to run the editor
 
     Returns:
         True if notes were changed and saved, False if no changes
@@ -89,8 +99,6 @@ def _edit_and_save_notes(
         OSError: If file operations fail
         UnicodeDecodeError: If file encoding is invalid
     """
-    # task.id is guaranteed to be int in TaskDetailDto (not Optional)
-
     # Get editor
     editor = get_editor()
 
@@ -98,8 +106,7 @@ def _edit_and_save_notes(
     original_content = temp_path.read_text(encoding="utf-8")
 
     # Open editor
-    with app.suspend():
-        subprocess.run([editor, str(temp_path)], check=True)
+    editor_runner(editor, temp_path)
 
     # Read edited content
     edited_content = temp_path.read_text(encoding="utf-8")
@@ -143,7 +150,7 @@ def _execute_edit(
     temp_path: Path,
     task: TaskDetailDto,
     notes_provider: NotesProvider,
-    app: App[Any],
+    editor_runner: EditorRunner,
     on_success: Callable[[str, int], None] | None,
     on_error: Callable[[str, Exception], None] | None,
 ) -> None:
@@ -153,12 +160,12 @@ def _execute_edit(
         temp_path: Path to temporary file
         task: Task DTO being edited
         notes_provider: Notes provider
-        app: Textual app instance
+        editor_runner: Callable to run the editor
         on_success: Success callback (called only if notes were changed)
         on_error: Error callback
     """
     try:
-        changed = _edit_and_save_notes(temp_path, task, notes_provider, app)
+        changed = _edit_and_save_notes(temp_path, task, notes_provider, editor_runner)
         if changed and on_success:
             on_success(task.name, task.id)
     except RuntimeError as e:
@@ -178,7 +185,7 @@ def _execute_edit(
 def edit_task_note(
     task: TaskDetailDto,
     notes_provider: NotesProvider,
-    app: App[Any],
+    editor_runner: EditorRunner | None = None,
     on_success: Callable[[str, int], None] | None = None,
     on_error: Callable[[str, Exception], None] | None = None,
     config: CliConfig | None = None,
@@ -191,12 +198,12 @@ def edit_task_note(
     Args:
         task: Task DTO whose note to edit
         notes_provider: Notes provider (API client or NotesRepository)
-        app: Textual app instance (for suspend)
+        editor_runner: Callable to run the editor. Defaults to direct subprocess call.
         on_success: Optional callback (task_name, task_id) on successful edit
         on_error: Optional callback (action, exception) on error
         config: CLI configuration for custom template (optional)
     """
-    # task.id is guaranteed to be int in TaskDetailDto (not Optional)
+    runner = editor_runner or _default_editor_runner
 
     # Prepare temporary file
     temp_path = _prepare_temp_file(task, notes_provider, on_error, config)
@@ -205,7 +212,7 @@ def edit_task_note(
 
     # Execute edit operation
     try:
-        _execute_edit(temp_path, task, notes_provider, app, on_success, on_error)
+        _execute_edit(temp_path, task, notes_provider, runner, on_success, on_error)
     finally:
         # Always clean up temporary file
         temp_path.unlink(missing_ok=True)

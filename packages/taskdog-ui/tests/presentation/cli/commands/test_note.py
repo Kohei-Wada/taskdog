@@ -302,7 +302,9 @@ class TestNoteCommand:
         # Mock _read_content_from_source to return None (no stdin/file/content)
         with (
             patch("taskdog.cli.commands.note._read_content_from_source") as mock_read,
-            patch("taskdog.cli.commands.note._edit_with_editor") as mock_edit,
+            patch(
+                "taskdog.cli.commands.note._edit_with_editor_via_shared"
+            ) as mock_edit,
         ):
             mock_read.return_value = None
 
@@ -413,196 +415,66 @@ class TestNoteCommand:
             # Verify: should return None to fall back to editor mode
             assert result is None
 
-    def test_editor_not_found(self):
-        """Test error when $EDITOR is not found."""
-        from taskdog.cli.commands.note import _edit_with_editor
+    def test_edit_with_editor_via_shared_calls_edit_task_note(self):
+        """Test that _edit_with_editor_via_shared delegates to edit_task_note."""
+        from taskdog.cli.commands.note import _edit_with_editor_via_shared
 
-        self.api_client.get_task_notes.return_value = ("", False)
-
-        with patch("taskdog.cli.commands.note.get_editor") as mock_get_editor:
-            mock_get_editor.side_effect = RuntimeError("No editor found")
-
-            # Execute
-            _edit_with_editor(
+        with patch("taskdog.cli.commands.note.edit_task_note") as mock_edit:
+            _edit_with_editor_via_shared(
                 1, self.mock_task, self.api_client, self.console_writer, None
             )
 
-            # Verify
+            mock_edit.assert_called_once()
+            call_kwargs = mock_edit.call_args[1]
+            assert call_kwargs["task"] == self.mock_task
+            assert call_kwargs["notes_provider"] == self.api_client
+            assert call_kwargs["config"] is None
+            assert callable(call_kwargs["on_success"])
+            assert callable(call_kwargs["on_error"])
+
+    def test_edit_with_editor_via_shared_on_success_callback(self):
+        """Test that on_success callback writes success message."""
+        from taskdog.cli.commands.note import _edit_with_editor_via_shared
+
+        with patch("taskdog.cli.commands.note.edit_task_note") as mock_edit:
+            _edit_with_editor_via_shared(
+                1, self.mock_task, self.api_client, self.console_writer, None
+            )
+
+            # Extract and call the on_success callback
+            on_success = mock_edit.call_args[1]["on_success"]
+            on_success("Test Task", 1)
+
+            self.console_writer.success.assert_called_once_with(
+                "Notes saved for task #1"
+            )
+
+    def test_edit_with_editor_via_shared_on_error_callback(self):
+        """Test that on_error callback handles errors correctly."""
+        from taskdog.cli.commands.note import _edit_with_editor_via_shared
+
+        with patch("taskdog.cli.commands.note.edit_task_note") as mock_edit:
+            _edit_with_editor_via_shared(
+                1, self.mock_task, self.api_client, self.console_writer, None
+            )
+
+            # Extract and call the on_error callback with a regular error
+            on_error = mock_edit.call_args[1]["on_error"]
+            on_error("finding editor", RuntimeError("No editor found"))
+
             self.console_writer.error.assert_called_once()
-            assert "finding editor" in self.console_writer.error.call_args[0][0]
 
-    def test_editor_execution_error(self):
-        """Test error when editor returns non-zero exit code."""
-        import subprocess
+    def test_edit_with_editor_via_shared_on_error_interrupt(self):
+        """Test that on_error callback handles keyboard interrupt correctly."""
+        from taskdog.cli.commands.note import _edit_with_editor_via_shared
 
-        from taskdog.cli.commands.note import _edit_with_editor
-
-        self.api_client.get_task_notes.return_value = ("existing content", True)
-
-        with (
-            patch("taskdog.cli.commands.note.get_editor") as mock_get_editor,
-            patch("taskdog.cli.commands.note.subprocess.run") as mock_run,
-            patch("taskdog.cli.commands.note.tempfile.NamedTemporaryFile") as mock_tmp,
-            patch("taskdog.cli.commands.note.Path") as mock_path_cls,
-        ):
-            mock_get_editor.return_value = "vim"
-            mock_run.side_effect = subprocess.CalledProcessError(1, "vim")
-
-            # Setup temp file mock
-            mock_file = MagicMock()
-            mock_file.__enter__ = MagicMock(return_value=mock_file)
-            mock_file.__exit__ = MagicMock(return_value=False)
-            mock_file.name = "/tmp/test.md"
-            mock_tmp.return_value = mock_file
-
-            mock_path = MagicMock()
-            mock_path_cls.return_value = mock_path
-
-            # Execute
-            _edit_with_editor(
+        with patch("taskdog.cli.commands.note.edit_task_note") as mock_edit:
+            _edit_with_editor_via_shared(
                 1, self.mock_task, self.api_client, self.console_writer, None
             )
 
-            # Verify
-            self.console_writer.error.assert_called()
+            # Extract and call the on_error callback with interrupt
+            on_error = mock_edit.call_args[1]["on_error"]
+            on_error("editor", RuntimeError("Editor interrupted"))
 
-    def test_editor_keyboard_interrupt(self):
-        """Test handling of keyboard interrupt during editing."""
-        from taskdog.cli.commands.note import _edit_with_editor
-
-        self.api_client.get_task_notes.return_value = ("existing content", True)
-
-        with (
-            patch("taskdog.cli.commands.note.get_editor") as mock_get_editor,
-            patch("taskdog.cli.commands.note.subprocess.run") as mock_run,
-            patch("taskdog.cli.commands.note.tempfile.NamedTemporaryFile") as mock_tmp,
-            patch("taskdog.cli.commands.note.Path") as mock_path_cls,
-        ):
-            mock_get_editor.return_value = "vim"
-            mock_run.side_effect = KeyboardInterrupt()
-
-            # Setup temp file mock
-            mock_file = MagicMock()
-            mock_file.__enter__ = MagicMock(return_value=mock_file)
-            mock_file.__exit__ = MagicMock(return_value=False)
-            mock_file.name = "/tmp/test.md"
-            mock_tmp.return_value = mock_file
-
-            mock_path = MagicMock()
-            mock_path_cls.return_value = mock_path
-
-            # Execute
-            _edit_with_editor(
-                1, self.mock_task, self.api_client, self.console_writer, None
-            )
-
-            # Verify
             self.console_writer.warning.assert_called_once_with("Editor interrupted")
-
-    def test_editor_save_oserror(self):
-        """Test error handling when saving edited content fails."""
-        from taskdog.cli.commands.note import _edit_with_editor
-
-        self.api_client.get_task_notes.return_value = ("existing content", True)
-
-        with (
-            patch("taskdog.cli.commands.note.get_editor") as mock_get_editor,
-            patch("taskdog.cli.commands.note.subprocess.run") as mock_run,
-            patch("taskdog.cli.commands.note.tempfile.NamedTemporaryFile") as mock_tmp,
-            patch("taskdog.cli.commands.note.Path") as mock_path_cls,
-        ):
-            mock_get_editor.return_value = "vim"
-            mock_run.return_value = MagicMock(returncode=0)
-
-            # Setup temp file mock
-            mock_file = MagicMock()
-            mock_file.__enter__ = MagicMock(return_value=mock_file)
-            mock_file.__exit__ = MagicMock(return_value=False)
-            mock_file.name = "/tmp/test.md"
-            mock_tmp.return_value = mock_file
-
-            mock_path = MagicMock()
-            mock_path.read_text.side_effect = OSError("Cannot read file")
-            mock_path_cls.return_value = mock_path
-
-            # Execute
-            _edit_with_editor(
-                1, self.mock_task, self.api_client, self.console_writer, None
-            )
-
-            # Verify
-            self.console_writer.error.assert_called()
-
-    def test_editor_no_changes_skips_save(self):
-        """Test that no API call is made when content is unchanged."""
-        from taskdog.cli.commands.note import _edit_with_editor
-
-        original_content = "existing content"
-        self.api_client.get_task_notes.return_value = (original_content, True)
-
-        with (
-            patch("taskdog.cli.commands.note.get_editor") as mock_get_editor,
-            patch("taskdog.cli.commands.note.subprocess.run") as mock_run,
-            patch("taskdog.cli.commands.note.tempfile.NamedTemporaryFile") as mock_tmp,
-            patch("taskdog.cli.commands.note.Path") as mock_path_cls,
-        ):
-            mock_get_editor.return_value = "vim"
-            mock_run.return_value = MagicMock(returncode=0)
-
-            # Setup temp file mock
-            mock_file = MagicMock()
-            mock_file.__enter__ = MagicMock(return_value=mock_file)
-            mock_file.__exit__ = MagicMock(return_value=False)
-            mock_file.name = "/tmp/test.md"
-            mock_tmp.return_value = mock_file
-
-            mock_path = MagicMock()
-            # Return the same content (no changes)
-            mock_path.read_text.return_value = original_content
-            mock_path_cls.return_value = mock_path
-
-            # Execute
-            _edit_with_editor(
-                1, self.mock_task, self.api_client, self.console_writer, None
-            )
-
-            # Verify: API should NOT be called
-            self.api_client.update_task_notes.assert_not_called()
-            self.console_writer.info.assert_called_with("No changes to save")
-
-    def test_editor_trailing_newline_added_by_vim_skips_save(self):
-        """Test that editor adding trailing newline doesn't trigger save."""
-        from taskdog.cli.commands.note import _edit_with_editor
-
-        original_content = "existing content"  # No trailing newline
-        self.api_client.get_task_notes.return_value = (original_content, True)
-
-        with (
-            patch("taskdog.cli.commands.note.get_editor") as mock_get_editor,
-            patch("taskdog.cli.commands.note.subprocess.run") as mock_run,
-            patch("taskdog.cli.commands.note.tempfile.NamedTemporaryFile") as mock_tmp,
-            patch("taskdog.cli.commands.note.Path") as mock_path_cls,
-        ):
-            mock_get_editor.return_value = "vim"
-            mock_run.return_value = MagicMock(returncode=0)
-
-            # Setup temp file mock
-            mock_file = MagicMock()
-            mock_file.__enter__ = MagicMock(return_value=mock_file)
-            mock_file.__exit__ = MagicMock(return_value=False)
-            mock_file.name = "/tmp/test.md"
-            mock_tmp.return_value = mock_file
-
-            mock_path = MagicMock()
-            # Return content with trailing newline (vim adds this)
-            mock_path.read_text.return_value = original_content + "\n"
-            mock_path_cls.return_value = mock_path
-
-            # Execute
-            _edit_with_editor(
-                1, self.mock_task, self.api_client, self.console_writer, None
-            )
-
-            # Verify: API should NOT be called (trailing newline is normalized)
-            self.api_client.update_task_notes.assert_not_called()
-            self.console_writer.info.assert_called_with("No changes to save")
