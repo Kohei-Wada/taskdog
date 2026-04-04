@@ -1,7 +1,7 @@
 """Editor utilities for opening files in user's preferred editor."""
 
 import os
-import subprocess
+import shutil
 
 
 def get_editor() -> str:
@@ -20,17 +20,8 @@ def get_editor() -> str:
 
     # Fallback to common editors
     for fallback in ["vim", "nano", "vi"]:
-        # Check if editor exists in PATH
-        try:
-            subprocess.run(
-                ["which", fallback],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
+        if shutil.which(fallback):
             return fallback
-        except subprocess.CalledProcessError:
-            continue
 
     # No editor found
     raise RuntimeError(
