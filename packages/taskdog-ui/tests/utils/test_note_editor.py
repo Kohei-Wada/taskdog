@@ -329,11 +329,11 @@ class TestEditTaskNote:
 
     @patch("taskdog.utils.note_editor._execute_edit")
     @patch("taskdog.utils.note_editor._prepare_temp_file")
-    def test_uses_default_editor_runner_when_none(
+    def test_usesdefault_editor_runner_when_none(
         self, mock_prepare: MagicMock, mock_execute: MagicMock
     ) -> None:
         """Test that default editor runner is used when none is provided."""
-        from taskdog.utils.note_editor import _default_editor_runner
+        from taskdog.utils.note_editor import default_editor_runner
 
         temp_path = MagicMock(spec=Path)
         mock_prepare.return_value = temp_path
@@ -344,7 +344,7 @@ class TestEditTaskNote:
 
         mock_execute.assert_called_once()
         call_args = mock_execute.call_args[0]
-        assert call_args[3] == _default_editor_runner
+        assert call_args[3] == default_editor_runner
 
     @patch("taskdog.utils.note_editor._execute_edit")
     @patch("taskdog.utils.note_editor._prepare_temp_file")
