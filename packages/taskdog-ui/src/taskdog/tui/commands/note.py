@@ -1,12 +1,11 @@
 """Edit note command for TUI."""
 
-import subprocess
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from taskdog.tui.commands.base import TUICommandBase
-from taskdog.utils.note_editor import edit_task_note
+from taskdog.utils.note_editor import default_editor_runner, edit_task_note
 
 if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
@@ -54,7 +53,7 @@ class NoteCommand(TUICommandBase):
             path: Path to file to edit
         """
         with self.app.suspend():
-            subprocess.run([editor, str(path)], check=True)
+            default_editor_runner(editor, path)
 
     def execute_impl(self) -> None:
         """Execute the edit note command."""

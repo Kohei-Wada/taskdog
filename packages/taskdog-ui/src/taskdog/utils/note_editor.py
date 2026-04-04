@@ -38,7 +38,7 @@ class NotesProvider(Protocol):
         ...
 
 
-def _default_editor_runner(editor: str, path: Path) -> None:
+def default_editor_runner(editor: str, path: Path) -> None:
     """Run editor directly via subprocess.
 
     Args:
@@ -203,7 +203,7 @@ def edit_task_note(
         on_error: Optional callback (action, exception) on error
         config: CLI configuration for custom template (optional)
     """
-    runner = editor_runner or _default_editor_runner
+    runner = editor_runner or default_editor_runner
 
     # Prepare temporary file
     temp_path = _prepare_temp_file(task, notes_provider, on_error, config)
