@@ -50,7 +50,7 @@ class ApiContext:
     holiday_checker: IHolidayChecker | None
     time_provider: ITimeProvider
     audit_log_controller: AuditLogController
-    bulk_controller: BulkTaskController | None = None
+    bulk_controller: BulkTaskController
     engine: Engine | None = field(default=None, repr=False)
 
     def close(self) -> None:

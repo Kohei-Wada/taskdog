@@ -3,6 +3,7 @@
 from unittest.mock import Mock
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
+from taskdog_core.controllers.bulk_task_controller import BulkTaskController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -35,6 +36,7 @@ class TestApiContext:
         self.mock_holiday_checker = Mock(spec=IHolidayChecker)
         self.mock_time_provider = Mock(spec=ITimeProvider)
         self.mock_audit_log_controller = Mock(spec=AuditLogController)
+        self.mock_bulk_controller = Mock(spec=BulkTaskController)
 
     def test_create_context_with_all_dependencies(self):
         """Test creating ApiContext with all dependencies."""
@@ -51,6 +53,7 @@ class TestApiContext:
             holiday_checker=self.mock_holiday_checker,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            bulk_controller=self.mock_bulk_controller,
         )
 
         # Assert
@@ -81,6 +84,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            bulk_controller=self.mock_bulk_controller,
         )
 
         # Assert
@@ -101,6 +105,7 @@ class TestApiContext:
             holiday_checker=self.mock_holiday_checker,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            bulk_controller=self.mock_bulk_controller,
         )
 
         # Assert - verify all attributes are accessible
@@ -133,6 +138,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            bulk_controller=self.mock_bulk_controller,
         )
 
         context2 = ApiContext(
@@ -147,6 +153,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            bulk_controller=self.mock_bulk_controller,
         )
 
         # Assert
@@ -170,6 +177,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            bulk_controller=self.mock_bulk_controller,
         )
 
         context2 = ApiContext(
@@ -184,6 +192,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            bulk_controller=self.mock_bulk_controller,
         )
 
         # Assert
@@ -204,6 +213,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            bulk_controller=self.mock_bulk_controller,
         )
 
         # Assert - verify all five controllers are present
@@ -238,6 +248,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            bulk_controller=self.mock_bulk_controller,
         )
 
         assert context.time_provider is time_provider

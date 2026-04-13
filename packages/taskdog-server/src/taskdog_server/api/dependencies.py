@@ -238,8 +238,6 @@ def get_audit_log_controller(context: ApiContextDep) -> AuditLogController:
 
 def get_bulk_controller(context: ApiContextDep) -> BulkTaskController:
     """Get bulk task controller from context."""
-    if context.bulk_controller is None:
-        raise RuntimeError("BulkTaskController not initialized in ApiContext.")
     return context.bulk_controller
 
 
