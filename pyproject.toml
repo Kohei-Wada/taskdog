@@ -156,7 +156,7 @@ section-order = [
 
 # Build system - workspace root doesn't build directly
 [build-system]
-requires = ["setuptools>=68.0.0"]
+requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
 
 # Workspace root has no packages (prevent auto-discovery of contrib/, packages/, etc.)
