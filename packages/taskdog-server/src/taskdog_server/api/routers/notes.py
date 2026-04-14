@@ -2,13 +2,11 @@
 
 from fastapi import APIRouter, status
 
-from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 from taskdog_server.api.dependencies import (
     AuditLogControllerDep,
     AuthenticatedClientDep,
     EventBroadcasterDep,
-    NotesRepositoryDep,
-    RepositoryDep,
+    NotesControllerDep,
 )
 from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import UpdateNotesRequest
@@ -21,16 +19,14 @@ router = APIRouter()
 @handle_task_errors
 async def get_task_notes(
     task_id: int,
-    repository: RepositoryDep,
-    notes_repo: NotesRepositoryDep,
+    controller: NotesControllerDep,
     _client_name: AuthenticatedClientDep,
 ) -> NotesResponse:
     """Get task notes.
 
     Args:
         task_id: Task ID
-        repository: Task repository dependency
-        notes_repo: Notes repository dependency
+        controller: Notes controller dependency
 
     Returns:
         Notes content and metadata
@@ -38,16 +34,10 @@ async def get_task_notes(
     Raises:
         HTTPException: 404 if task not found
     """
-    # Verify task exists
-    task = repository.get_by_id(task_id)
-    if task is None:
-        raise TaskNotFoundException(task_id)
-
-    # Get notes
-    has_notes = notes_repo.has_notes(task_id)
-    content = notes_repo.read_notes(task_id) or ""
-
-    return NotesResponse(task_id=task_id, content=content, has_notes=has_notes)
+    result = controller.get_notes(task_id)
+    return NotesResponse(
+        task_id=result.task_id, content=result.content, has_notes=result.has_notes
+    )
 
 
 @router.put("/{task_id}/notes", response_model=NotesResponse)
@@ -55,8 +45,7 @@ async def get_task_notes(
 async def update_task_notes(
     task_id: int,
     request: UpdateNotesRequest,
-    repository: RepositoryDep,
-    notes_repo: NotesRepositoryDep,
+    controller: NotesControllerDep,
     broadcaster: EventBroadcasterDep,
     audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
@@ -66,8 +55,7 @@ async def update_task_notes(
     Args:
         task_id: Task ID
         request: Notes content
-        repository: Task repository dependency
-        notes_repo: Notes repository dependency
+        controller: Notes controller dependency
         broadcaster: Event broadcaster dependency
         client_name: Authenticated client name (used for broadcast exclusion)
 
@@ -77,38 +65,32 @@ async def update_task_notes(
     Raises:
         HTTPException: 404 if task not found
     """
-    # Verify task exists
-    task = repository.get_by_id(task_id)
-    if task is None:
-        raise TaskNotFoundException(task_id)
-
-    # Update notes
-    notes_repo.write_notes(task_id, request.content)
-    has_notes = notes_repo.has_notes(task_id)
+    result = controller.update_notes(task_id, request.content)
 
     # Broadcast WebSocket event in background (exclude the requester by client name)
-    broadcaster.task_notes_updated(task_id, task.name, client_name)
+    broadcaster.task_notes_updated(task_id, result.task_name, client_name)
 
     # Audit log
     audit_controller.log_operation(
         operation="update_notes",
         resource_type="task",
         resource_id=task_id,
-        resource_name=task.name,
+        resource_name=result.task_name,
         client_name=client_name,
-        new_values={"has_notes": has_notes},
+        new_values={"has_notes": result.has_notes},
         success=True,
     )
 
-    return NotesResponse(task_id=task_id, content=request.content, has_notes=has_notes)
+    return NotesResponse(
+        task_id=result.task_id, content=result.content, has_notes=result.has_notes
+    )
 
 
 @router.delete("/{task_id}/notes", status_code=status.HTTP_204_NO_CONTENT)
 @handle_task_errors
 async def delete_task_notes(
     task_id: int,
-    repository: RepositoryDep,
-    notes_repo: NotesRepositoryDep,
+    controller: NotesControllerDep,
     broadcaster: EventBroadcasterDep,
     audit_controller: AuditLogControllerDep,
     client_name: AuthenticatedClientDep,
@@ -117,31 +99,24 @@ async def delete_task_notes(
 
     Args:
         task_id: Task ID
-        repository: Task repository dependency
-        notes_repo: Notes repository dependency
+        controller: Notes controller dependency
         broadcaster: Event broadcaster dependency
         client_name: Authenticated client name (used for broadcast exclusion)
 
     Raises:
         HTTPException: 404 if task not found
     """
-    # Verify task exists
-    task = repository.get_by_id(task_id)
-    if task is None:
-        raise TaskNotFoundException(task_id)
-
-    # Delete notes by writing empty content
-    notes_repo.write_notes(task_id, "")
+    result = controller.delete_notes(task_id)
 
     # Broadcast WebSocket event in background (exclude the requester by client name)
-    broadcaster.task_notes_updated(task_id, task.name, client_name)
+    broadcaster.task_notes_updated(task_id, result.task_name, client_name)
 
     # Audit log
     audit_controller.log_operation(
         operation="delete_notes",
         resource_type="task",
         resource_id=task_id,
-        resource_name=task.name,
+        resource_name=result.task_name,
         client_name=client_name,
         success=True,
     )

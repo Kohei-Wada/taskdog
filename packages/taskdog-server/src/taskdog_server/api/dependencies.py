@@ -9,6 +9,7 @@ from fastapi.security import APIKeyHeader
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.bulk_task_controller import BulkTaskController
+from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -116,6 +117,7 @@ def initialize_api_context(
         repository, notes_repository, config, holiday_checker
     )
     audit_log_controller = AuditLogController(audit_log_repository, time_provider)
+    notes_controller = NotesController(repository, notes_repository)
 
     bulk_controller = BulkTaskController(
         lifecycle_controller, crud_controller, query_controller
@@ -133,6 +135,7 @@ def initialize_api_context(
         holiday_checker=holiday_checker,
         time_provider=time_provider,
         audit_log_controller=audit_log_controller,
+        notes_controller=notes_controller,
         bulk_controller=bulk_controller,
         engine=engine,
     )
@@ -215,6 +218,11 @@ def get_audit_log_controller(context: ApiContextDep) -> AuditLogController:
     return context.audit_log_controller
 
 
+def get_notes_controller(context: ApiContextDep) -> NotesController:
+    """Get notes controller from context."""
+    return context.notes_controller
+
+
 def get_bulk_controller(context: ApiContextDep) -> BulkTaskController:
     """Get bulk task controller from context."""
     return context.bulk_controller
@@ -281,6 +289,7 @@ NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
 TimeProviderDep = Annotated[ITimeProvider, Depends(get_time_provider)]
 AuditLogControllerDep = Annotated[AuditLogController, Depends(get_audit_log_controller)]
+NotesControllerDep = Annotated[NotesController, Depends(get_notes_controller)]
 BulkTaskControllerDep = Annotated[BulkTaskController, Depends(get_bulk_controller)]
 ConnectionManagerDep = Annotated[ConnectionManager, Depends(get_connection_manager)]
 ConnectionManagerWsDep = Annotated[

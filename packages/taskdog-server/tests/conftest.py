@@ -39,6 +39,7 @@ from taskdog_core.controllers.audit_log_controller import (  # noqa: E402
 from taskdog_core.controllers.bulk_task_controller import (  # noqa: E402
     BulkTaskController,
 )
+from taskdog_core.controllers.notes_controller import NotesController  # noqa: E402
 from taskdog_core.controllers.query_controller import QueryController  # noqa: E402
 from taskdog_core.controllers.task_analytics_controller import (  # noqa: E402
     TaskAnalyticsController,
@@ -216,6 +217,7 @@ def app(
     audit_log_controller = AuditLogController(
         session_audit_log_repository, SystemTimeProvider()
     )
+    notes_controller = NotesController(session_repository, session_notes_repository)
     bulk_controller = BulkTaskController(
         lifecycle_controller, crud_controller, query_controller
     )
@@ -233,6 +235,7 @@ def app(
         holiday_checker=None,
         time_provider=SystemTimeProvider(),
         audit_log_controller=audit_log_controller,
+        notes_controller=notes_controller,
         bulk_controller=bulk_controller,
     )
 

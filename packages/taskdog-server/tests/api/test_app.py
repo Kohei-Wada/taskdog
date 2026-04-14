@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.bulk_task_controller import BulkTaskController
+from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -66,6 +67,9 @@ class TestApp:
             holiday_checker=None,
             time_provider=SystemTimeProvider(),
             audit_log_controller=self.mock_audit_log_controller,
+            notes_controller=NotesController(
+                self.mock_repository, self.mock_notes_repository
+            ),
             bulk_controller=BulkTaskController(
                 lifecycle_controller=lifecycle_controller,
                 crud_controller=crud_controller,
