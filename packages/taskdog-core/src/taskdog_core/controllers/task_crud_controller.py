@@ -8,6 +8,7 @@ This controller handles standard CRUD operations:
 - remove_task: Hard delete (permanent removal)
 """
 
+import logging
 from datetime import datetime
 
 from taskdog_core.application.dto.base import SingleTaskInput
@@ -25,8 +26,9 @@ from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
-from taskdog_core.domain.services.logger import Logger
 from taskdog_core.shared.config_manager import Config
+
+logger = logging.getLogger(__name__)
 
 
 class TaskCrudController(BaseTaskController):
@@ -52,7 +54,6 @@ class TaskCrudController(BaseTaskController):
         repository: TaskRepository,
         notes_repository: NotesRepository,
         config: Config,
-        logger: Logger,
         holiday_checker: IHolidayChecker | None = None,
     ):
         """Initialize the CRUD controller.
@@ -61,10 +62,9 @@ class TaskCrudController(BaseTaskController):
             repository: Task repository
             notes_repository: Notes repository
             config: Application configuration
-            logger: Logger for operation tracking
             holiday_checker: Holiday checker for workload calculations (optional)
         """
-        super().__init__(repository, config, logger)
+        super().__init__(repository, config)
         self.notes_repository = notes_repository
         self._holiday_checker = holiday_checker
 
@@ -97,7 +97,7 @@ class TaskCrudController(BaseTaskController):
         Raises:
             TaskValidationError: If task validation fails
         """
-        self.logger.info(f"Creating task: name='{name}'", priority=priority)
+        logger.info(f"Creating task: name='{name}', priority={priority}")
 
         use_case = CreateTaskUseCase(self.repository, self._holiday_checker)
         request = CreateTaskInput(
@@ -112,9 +112,7 @@ class TaskCrudController(BaseTaskController):
         )
         result = use_case.execute(request)
 
-        self.logger.info(
-            f"Task created successfully: id={result.id}", task_id=result.id
-        )
+        logger.info(f"Task created successfully: id={result.id}")
 
         return result
 
@@ -152,7 +150,7 @@ class TaskCrudController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If validation fails for any field
         """
-        self.logger.info(f"Updating task: task_id={task_id}", task_id=task_id)
+        logger.info(f"Updating task: task_id={task_id}")
 
         use_case = UpdateTaskUseCase(self.repository, self._holiday_checker)
         request = UpdateTaskInput(
@@ -169,10 +167,8 @@ class TaskCrudController(BaseTaskController):
         )
         result = use_case.execute(request)
 
-        self.logger.info(
-            f"Task updated successfully: task_id={task_id}, fields={result.updated_fields}",
-            task_id=task_id,
-            updated_fields=result.updated_fields,
+        logger.info(
+            f"Task updated successfully: task_id={task_id}, fields={result.updated_fields}"
         )
 
         return result
@@ -192,15 +188,13 @@ class TaskCrudController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be archived
         """
-        self.logger.info(f"Archiving task: task_id={task_id}", task_id=task_id)
+        logger.info(f"Archiving task: task_id={task_id}")
 
         use_case = ArchiveTaskUseCase(self.repository)
         request = SingleTaskInput(task_id=task_id)
         result = use_case.execute(request)
 
-        self.logger.info(
-            f"Task archived successfully: task_id={task_id}", task_id=task_id
-        )
+        logger.info(f"Task archived successfully: task_id={task_id}")
 
         return result
 
@@ -219,15 +213,13 @@ class TaskCrudController(BaseTaskController):
             TaskNotFoundException: If task not found
             TaskValidationError: If task cannot be restored
         """
-        self.logger.info(f"Restoring task: task_id={task_id}", task_id=task_id)
+        logger.info(f"Restoring task: task_id={task_id}")
 
         use_case = RestoreTaskUseCase(self.repository)
         request = SingleTaskInput(task_id=task_id)
         result = use_case.execute(request)
 
-        self.logger.info(
-            f"Task restored successfully: task_id={task_id}", task_id=task_id
-        )
+        logger.info(f"Task restored successfully: task_id={task_id}")
 
         return result
 
@@ -245,16 +237,12 @@ class TaskCrudController(BaseTaskController):
         Raises:
             TaskNotFoundException: If task not found
         """
-        self.logger.info(
-            f"Removing task permanently: task_id={task_id}", task_id=task_id
-        )
+        logger.info(f"Removing task permanently: task_id={task_id}")
 
         use_case = RemoveTaskUseCase(self.repository, self.notes_repository)
         request = SingleTaskInput(task_id=task_id)
         result = use_case.execute(request)
 
-        self.logger.info(
-            f"Task removed successfully: task_id={task_id}", task_id=task_id
-        )
+        logger.info(f"Task removed successfully: task_id={task_id}")
 
         return result

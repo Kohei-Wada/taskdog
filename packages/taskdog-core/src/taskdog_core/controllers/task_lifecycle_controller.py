@@ -49,7 +49,6 @@ class TaskLifecycleController(BaseTaskController):
     Attributes:
         repository: Task repository (inherited from BaseTaskController)
         config: Application configuration (inherited from BaseTaskController)
-        logger: Optional logger (inherited from BaseTaskController)
     """
 
     def _execute_status_change(

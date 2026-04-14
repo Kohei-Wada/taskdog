@@ -20,7 +20,6 @@ from taskdog_core.application.use_cases.optimize_schedule import OptimizeSchedul
 from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
-from taskdog_core.domain.services.logger import Logger
 from taskdog_core.shared.config_manager import Config
 
 
@@ -37,7 +36,6 @@ class TaskAnalyticsController(BaseTaskController):
         repository: Task repository (inherited from BaseTaskController)
         config: Application configuration (inherited from BaseTaskController)
         holiday_checker: Holiday checker for workday validation (optional)
-        logger: Optional logger (inherited from BaseTaskController)
     """
 
     def __init__(
@@ -45,7 +43,6 @@ class TaskAnalyticsController(BaseTaskController):
         repository: TaskRepository,
         config: Config,
         holiday_checker: IHolidayChecker | None,
-        logger: Logger,
     ):
         """Initialize the analytics controller.
 
@@ -53,9 +50,8 @@ class TaskAnalyticsController(BaseTaskController):
             repository: Task repository
             config: Application configuration
             holiday_checker: Holiday checker for workday validation (optional)
-            logger: Logger for operation tracking
         """
-        super().__init__(repository, config, logger)
+        super().__init__(repository, config)
         self.holiday_checker = holiday_checker
 
     def calculate_statistics(self, period: str = "all") -> StatisticsOutput:

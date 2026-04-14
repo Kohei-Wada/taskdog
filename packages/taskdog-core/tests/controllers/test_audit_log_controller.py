@@ -1,7 +1,7 @@
 """Tests for AuditLogController."""
 
 from datetime import datetime
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -13,7 +13,6 @@ from taskdog_core.application.dto.audit_log_dto import (
 )
 from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.domain.repositories.audit_log_repository import AuditLogRepository
-from taskdog_core.domain.services.logger import Logger
 from taskdog_core.domain.services.time_provider import ITimeProvider
 
 
@@ -24,11 +23,8 @@ class TestAuditLogController:
     def setup(self):
         """Set up test fixtures."""
         self.repository = Mock(spec=AuditLogRepository)
-        self.logger = Mock(spec=Logger)
         self.time_provider = Mock(spec=ITimeProvider)
-        self.controller = AuditLogController(
-            self.repository, self.logger, self.time_provider
-        )
+        self.controller = AuditLogController(self.repository, self.time_provider)
 
     def test_save_delegates_to_repository(self):
         """Test that save delegates to repository.save."""
@@ -44,7 +40,8 @@ class TestAuditLogController:
 
         self.repository.save.assert_called_once_with(event)
 
-    def test_save_logs_debug_message(self):
+    @patch("taskdog_core.controllers.audit_log_controller.logger")
+    def test_save_logs_debug_message(self, mock_logger):
         """Test that save calls logger.debug."""
         event = AuditEvent(
             timestamp=datetime(2026, 1, 1, 12, 0),
@@ -56,8 +53,8 @@ class TestAuditLogController:
 
         self.controller.save(event)
 
-        self.logger.debug.assert_called_once()
-        log_message = self.logger.debug.call_args[0][0]
+        mock_logger.debug.assert_called_once()
+        log_message = mock_logger.debug.call_args[0][0]
         assert "create_task" in log_message
         assert "task" in log_message
         assert "42" in log_message

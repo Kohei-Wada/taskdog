@@ -6,7 +6,6 @@ Task fixtures are imported from taskdog-core's shared fixtures module.
 
 import sys
 from pathlib import Path
-from unittest.mock import Mock
 
 import pytest
 from fastapi import FastAPI
@@ -53,7 +52,6 @@ from taskdog_core.controllers.task_lifecycle_controller import (  # noqa: E402
 from taskdog_core.controllers.task_relationship_controller import (  # noqa: E402
     TaskRelationshipController,
 )
-from taskdog_core.domain.services.logger import Logger  # noqa: E402
 from taskdog_core.infrastructure.persistence.database.sqlite_audit_log_repository import (  # noqa: E402
     SqliteAuditLogRepository,
 )
@@ -149,12 +147,6 @@ def auth_headers():
     return {"X-Api-Key": TEST_API_KEY}
 
 
-@pytest.fixture(scope="session")
-def mock_logger():
-    """Mock logger for controllers."""
-    return Mock(spec=Logger)
-
-
 # =============================================================================
 # FastAPI App and Client Fixtures
 # =============================================================================
@@ -206,28 +198,23 @@ def app(
     session_notes_repository,
     session_audit_log_repository,
     mock_config,
-    mock_logger,
     server_config,
 ):
     """FastAPI application with all routers (session-scoped)."""
     # Create controllers once (reused across all tests)
-    query_controller = QueryController(
-        session_repository, session_notes_repository, mock_logger
-    )
-    lifecycle_controller = TaskLifecycleController(
-        session_repository, mock_config, mock_logger
-    )
+    query_controller = QueryController(session_repository, session_notes_repository)
+    lifecycle_controller = TaskLifecycleController(session_repository, mock_config)
     relationship_controller = TaskRelationshipController(
-        session_repository, mock_config, mock_logger
+        session_repository, mock_config
     )
     analytics_controller = TaskAnalyticsController(
-        session_repository, mock_config, None, mock_logger
+        session_repository, mock_config, None
     )
     crud_controller = TaskCrudController(
-        session_repository, session_notes_repository, mock_config, mock_logger
+        session_repository, session_notes_repository, mock_config
     )
     audit_log_controller = AuditLogController(
-        session_audit_log_repository, mock_logger, SystemTimeProvider()
+        session_audit_log_repository, SystemTimeProvider()
     )
     bulk_controller = BulkTaskController(
         lifecycle_controller, crud_controller, query_controller

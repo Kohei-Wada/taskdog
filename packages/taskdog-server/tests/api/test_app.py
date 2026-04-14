@@ -15,7 +15,6 @@ from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleCont
 from taskdog_core.controllers.task_relationship_controller import (
     TaskRelationshipController,
 )
-from taskdog_core.domain.services.logger import Logger
 from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_server import __version__
 from taskdog_server.api.context import ApiContext
@@ -35,27 +34,23 @@ class TestApp:
         self.mock_config = MagicMock()
         self.mock_config.region.country = None
 
-        # Create mock logger for controllers
-        self.mock_logger = Mock(spec=Logger)
-
         # Create controllers with mocked dependencies
         query_controller = QueryController(
-            self.mock_repository, self.mock_notes_repository, self.mock_logger
+            self.mock_repository, self.mock_notes_repository
         )
         lifecycle_controller = TaskLifecycleController(
-            self.mock_repository, self.mock_config, self.mock_logger
+            self.mock_repository, self.mock_config
         )
         relationship_controller = TaskRelationshipController(
-            self.mock_repository, self.mock_config, self.mock_logger
+            self.mock_repository, self.mock_config
         )
         analytics_controller = TaskAnalyticsController(
-            self.mock_repository, self.mock_config, None, self.mock_logger
+            self.mock_repository, self.mock_config, None
         )
         crud_controller = TaskCrudController(
             self.mock_repository,
             self.mock_notes_repository,
             self.mock_config,
-            self.mock_logger,
         )
 
         # Create API context

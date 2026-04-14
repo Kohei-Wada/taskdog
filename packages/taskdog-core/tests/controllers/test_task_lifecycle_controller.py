@@ -7,7 +7,6 @@ import pytest
 
 from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleController
 from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_core.domain.services.logger import Logger
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
@@ -21,11 +20,9 @@ class TestTaskLifecycleController:
         """Set up test fixtures."""
         self.repository = Mock(spec=SqliteTaskRepository)
         self.config = MagicMock()
-        self.logger = Mock(spec=Logger)
         self.controller = TaskLifecycleController(
             repository=self.repository,
             config=self.config,
-            logger=self.logger,
         )
 
     @pytest.mark.parametrize(

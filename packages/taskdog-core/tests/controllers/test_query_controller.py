@@ -1,7 +1,6 @@
 """Tests for QueryController."""
 
 from datetime import date, datetime, timedelta
-from unittest.mock import Mock
 
 import pytest
 
@@ -11,7 +10,6 @@ from taskdog_core.application.dto.query_inputs import (
 )
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.domain.services.logger import Logger
 
 
 class TestQueryController:
@@ -21,8 +19,7 @@ class TestQueryController:
     def setup(self, repository):
         """Initialize controller for each test."""
         self.repository = repository
-        self.logger = Mock(spec=Logger)
-        self.controller = QueryController(self.repository, None, self.logger)
+        self.controller = QueryController(self.repository, None)
 
     def test_list_tasks_returns_output_dto(self):
         """Test list_tasks returns TaskListOutput with correct structure."""

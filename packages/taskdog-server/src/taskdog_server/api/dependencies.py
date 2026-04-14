@@ -35,7 +35,6 @@ from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_core.shared.config_manager import Config, ConfigManager
 from taskdog_server.api.context import ApiContext
 from taskdog_server.config.server_config_manager import ServerConfig
-from taskdog_server.infrastructure.logging.standard_logger import StandardLogger
 from taskdog_server.websocket.broadcaster import WebSocketEventBroadcaster
 from taskdog_server.websocket.connection_manager import ConnectionManager
 
@@ -108,35 +107,15 @@ def initialize_api_context(
     # Initialize audit log repository (shared engine)
     audit_log_repository = SqliteAuditLogRepository(db_url, engine=engine)
 
-    # Initialize loggers for each controller
-    query_logger = StandardLogger("taskdog_core.controllers.query_controller")
-    lifecycle_logger = StandardLogger(
-        "taskdog_core.controllers.task_lifecycle_controller"
-    )
-    relationship_logger = StandardLogger(
-        "taskdog_core.controllers.task_relationship_controller"
-    )
-    analytics_logger = StandardLogger(
-        "taskdog_core.controllers.task_analytics_controller"
-    )
-    crud_logger = StandardLogger("taskdog_core.controllers.task_crud_controller")
-    audit_log_logger = StandardLogger("taskdog_core.controllers.audit_log_controller")
-
-    # Initialize controllers with loggers
-    query_controller = QueryController(repository, notes_repository, query_logger)
-    lifecycle_controller = TaskLifecycleController(repository, config, lifecycle_logger)
-    relationship_controller = TaskRelationshipController(
-        repository, config, relationship_logger
-    )
-    analytics_controller = TaskAnalyticsController(
-        repository, config, holiday_checker, analytics_logger
-    )
+    # Initialize controllers
+    query_controller = QueryController(repository, notes_repository)
+    lifecycle_controller = TaskLifecycleController(repository, config)
+    relationship_controller = TaskRelationshipController(repository, config)
+    analytics_controller = TaskAnalyticsController(repository, config, holiday_checker)
     crud_controller = TaskCrudController(
-        repository, notes_repository, config, crud_logger, holiday_checker
+        repository, notes_repository, config, holiday_checker
     )
-    audit_log_controller = AuditLogController(
-        audit_log_repository, audit_log_logger, time_provider
-    )
+    audit_log_controller = AuditLogController(audit_log_repository, time_provider)
 
     bulk_controller = BulkTaskController(
         lifecycle_controller, crud_controller, query_controller
