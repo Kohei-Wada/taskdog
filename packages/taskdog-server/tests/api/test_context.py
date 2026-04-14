@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
 from taskdog_core.controllers.bulk_task_controller import BulkTaskController
+from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
@@ -36,6 +37,7 @@ class TestApiContext:
         self.mock_holiday_checker = Mock(spec=IHolidayChecker)
         self.mock_time_provider = Mock(spec=ITimeProvider)
         self.mock_audit_log_controller = Mock(spec=AuditLogController)
+        self.mock_notes_controller = Mock(spec=NotesController)
         self.mock_bulk_controller = Mock(spec=BulkTaskController)
 
     def test_create_context_with_all_dependencies(self):
@@ -53,6 +55,7 @@ class TestApiContext:
             holiday_checker=self.mock_holiday_checker,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
         )
 
@@ -84,6 +87,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
         )
 
@@ -105,6 +109,7 @@ class TestApiContext:
             holiday_checker=self.mock_holiday_checker,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
         )
 
@@ -138,6 +143,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
         )
 
@@ -153,6 +159,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
         )
 
@@ -177,6 +184,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
         )
 
@@ -192,6 +200,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
         )
 
@@ -213,6 +222,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=self.mock_time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
         )
 
@@ -248,6 +258,7 @@ class TestApiContext:
             holiday_checker=None,
             time_provider=time_provider,
             audit_log_controller=self.mock_audit_log_controller,
+            notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
         )
 
