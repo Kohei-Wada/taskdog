@@ -1,12 +1,11 @@
 """Tests for TaskCrudController."""
 
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 import pytest
 
 from taskdog_core.controllers.task_crud_controller import TaskCrudController
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.domain.services.logger import Logger
 
 
 class TestTaskCrudController:
@@ -18,12 +17,10 @@ class TestTaskCrudController:
         self.repository = repository
         self.notes_repository = MagicMock()
         self.config = MagicMock()
-        self.logger = Mock(spec=Logger)
         self.controller = TaskCrudController(
             repository=self.repository,
             notes_repository=self.notes_repository,
             config=self.config,
-            logger=self.logger,
         )
 
     def test_create_task_returns_task_operation_output(self):
@@ -137,7 +134,6 @@ class TestTaskCrudController:
         # Arrange
         notes_repository = MagicMock()
         config = MagicMock()
-        logger = Mock(spec=Logger)
         holiday_checker = MagicMock()
 
         # Act
@@ -145,7 +141,6 @@ class TestTaskCrudController:
             repository=repository,
             notes_repository=notes_repository,
             config=config,
-            logger=logger,
             holiday_checker=holiday_checker,
         )
 
@@ -157,14 +152,12 @@ class TestTaskCrudController:
         # Arrange
         notes_repository = MagicMock()
         config = MagicMock()
-        logger = Mock(spec=Logger)
 
         # Act
         controller = TaskCrudController(
             repository=repository,
             notes_repository=notes_repository,
             config=config,
-            logger=logger,
         )
 
         # Assert - HolidayChecker should be None when not provided

@@ -5,6 +5,7 @@ following Clean Architecture by ensuring all access to the audit log
 repository goes through the application layer.
 """
 
+import logging
 from typing import Any
 
 from taskdog_core.application.dto.audit_log_dto import (
@@ -14,8 +15,9 @@ from taskdog_core.application.dto.audit_log_dto import (
     AuditQuery,
 )
 from taskdog_core.domain.repositories.audit_log_repository import AuditLogRepository
-from taskdog_core.domain.services.logger import Logger
 from taskdog_core.domain.services.time_provider import ITimeProvider
+
+logger = logging.getLogger(__name__)
 
 
 class AuditLogController:
@@ -28,24 +30,20 @@ class AuditLogController:
 
     Attributes:
         repository: Audit log repository for data persistence
-        logger: Logger for operation tracking
     """
 
     def __init__(
         self,
         repository: AuditLogRepository,
-        logger: Logger,
         time_provider: ITimeProvider,
     ) -> None:
         """Initialize the audit log controller.
 
         Args:
             repository: Audit log repository for persistence
-            logger: Logger for tracking operations
             time_provider: Time provider for timestamps
         """
         self._repository = repository
-        self._logger = logger
         self._time_provider = time_provider
 
     def save(self, event: AuditEvent) -> None:
@@ -55,7 +53,7 @@ class AuditLogController:
             event: The audit event to save
         """
         self._repository.save(event)
-        self._logger.debug(
+        logger.debug(
             f"Audit log saved: operation={event.operation}, "
             f"resource_type={event.resource_type}, "
             f"resource_id={event.resource_id}"

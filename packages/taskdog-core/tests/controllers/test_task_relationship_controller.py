@@ -8,7 +8,6 @@ from taskdog_core.controllers.task_relationship_controller import (
     TaskRelationshipController,
 )
 from taskdog_core.domain.entities.task import Task, TaskStatus
-from taskdog_core.domain.services.logger import Logger
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
@@ -22,11 +21,9 @@ class TestTaskRelationshipController:
         """Set up test fixtures."""
         self.repository = Mock(spec=SqliteTaskRepository)
         self.config = MagicMock()
-        self.logger = Mock(spec=Logger)
         self.controller = TaskRelationshipController(
             repository=self.repository,
             config=self.config,
-            logger=self.logger,
         )
 
     def test_add_dependency_returns_task_operation_output(self):

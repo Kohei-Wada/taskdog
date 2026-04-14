@@ -34,7 +34,6 @@ class TaskRelationshipController(BaseTaskController):
     Attributes:
         repository: Task repository (inherited from BaseTaskController)
         config: Application configuration (inherited from BaseTaskController)
-        logger: Optional logger (inherited from BaseTaskController)
     """
 
     def add_dependency(self, task_id: int, depends_on_id: int) -> TaskOperationOutput:

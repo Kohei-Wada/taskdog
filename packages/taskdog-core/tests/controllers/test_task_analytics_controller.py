@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, Mock
 import pytest
 
 from taskdog_core.controllers.task_analytics_controller import TaskAnalyticsController
-from taskdog_core.domain.services.logger import Logger
 from taskdog_core.infrastructure.persistence.database.sqlite_task_repository import (
     SqliteTaskRepository,
 )
@@ -20,12 +19,10 @@ class TestTaskAnalyticsController:
         """Set up test fixtures."""
         self.repository = Mock(spec=SqliteTaskRepository)
         self.config = MagicMock()
-        self.logger = Mock(spec=Logger)
         self.controller = TaskAnalyticsController(
             repository=self.repository,
             config=self.config,
             holiday_checker=None,
-            logger=self.logger,
         )
 
     def test_calculate_statistics_with_valid_period_all(self):
