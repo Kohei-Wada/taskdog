@@ -4,7 +4,6 @@ This module renders the Timeline chart as a Rich Table, showing
 actual work times on a horizontal time axis for a specific day.
 """
 
-from rich.markup import escape
 from rich.table import Table
 from rich.text import Text
 
@@ -19,6 +18,7 @@ from taskdog.constants.common import (
 from taskdog.constants.formatting import format_table_title
 from taskdog.constants.gantt import GANTT_TABLE_ID_WIDTH, GANTT_TABLE_TASK_MIN_WIDTH
 from taskdog.constants.timeline import CHARS_PER_HOUR, TIMELINE_TABLE_DURATION_WIDTH
+from taskdog.formatters.text_formatter import format_finished_name
 from taskdog.renderers.rich_renderer_base import RichRendererBase
 from taskdog.renderers.timeline_cell_formatter import TimelineCellFormatter
 from taskdog.view_models.timeline_view_model import (
@@ -163,13 +163,7 @@ class RichTimelineRenderer(RichRendererBase):
         # Format duration
         duration_str = TimelineCellFormatter.format_duration(row_vm.duration_hours)
 
-        # Apply Rich markup escape and strikethrough for finished tasks
-        escaped_name = escape(row_vm.name)
-        task_name = (
-            f"[strike dim]{escaped_name}[/strike dim]"
-            if row_vm.is_finished
-            else escaped_name
-        )
+        task_name = format_finished_name(row_vm.name, row_vm.is_finished)
 
         table.add_row(
             str(row_vm.task_id),

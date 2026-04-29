@@ -129,6 +129,20 @@ class TestRichGanttRendererBuildTable:
         # Note: add_section() doesn't add a row, just a visual separator
         assert len(table.rows) == 4
 
+    def test_build_table_applies_strikethrough_to_finished_tasks(self) -> None:
+        """Finished tasks have strikethrough markup, others do not."""
+        model = self._create_gantt_view_model()
+
+        table = self.renderer.build_table(model)
+
+        assert table is not None
+        # Name column is index 1; cells include date header + task rows + summary
+        name_cells = [str(c) for c in table.columns[1]._cells]
+        finished_cell = next(c for c in name_cells if "Task 2" in c)
+        unfinished_cell = next(c for c in name_cells if "Task 1" in c)
+        assert finished_cell == "[strike dim]Task 2[/strike dim]"
+        assert unfinished_cell == "Task 1"
+
     def test_build_table_includes_workload_summary(self) -> None:
         """Table includes workload summary row with total estimated hours."""
         model = self._create_gantt_view_model()

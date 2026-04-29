@@ -107,6 +107,30 @@ class TestRichTimelineRenderer:
         # Check that the table has the expected columns
         assert len(result.columns) == 4  # ID, Task, Timeline, Time
 
+    def test_build_table_applies_strikethrough_to_finished_tasks(self):
+        """Finished tasks have strikethrough markup, others do not."""
+        rows = [
+            self._create_row_vm(
+                task_id=1,
+                name="Done Task",
+                status=TaskStatus.COMPLETED,
+                is_finished=True,
+            ),
+            self._create_row_vm(
+                task_id=2,
+                name="Active Task",
+                status=TaskStatus.IN_PROGRESS,
+                is_finished=False,
+            ),
+        ]
+        timeline_vm = self._create_timeline_vm(rows=rows, total_work_hours=6.0)
+        result = self.renderer.build_table(timeline_vm)
+
+        assert result is not None
+        name_cells = [str(c) for c in result.columns[1]._cells]
+        assert "[strike dim]Done Task[/strike dim]" in name_cells
+        assert "Active Task" in name_cells
+
 
 class TestTimelineCellFormatter:
     """Test cases for TimelineCellFormatter."""

@@ -1,7 +1,6 @@
 from datetime import date, timedelta
 from typing import Any
 
-from rich.markup import escape
 from rich.table import Table
 from rich.text import Text
 
@@ -25,6 +24,7 @@ from taskdog.constants.gantt import (
     HEADER_TIMELINE,
 )
 from taskdog.constants.task_table import TASK_NAME_COLUMN_WIDTH
+from taskdog.formatters.text_formatter import format_finished_name
 from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
 from taskdog.renderers.rich_renderer_base import RichRendererBase
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
@@ -263,13 +263,7 @@ class RichGanttRenderer(RichRendererBase):
             end_date: End date of the chart
             holidays: Set of holiday dates for styling
         """
-        # Apply Rich markup escape and strikethrough for finished tasks
-        escaped_name = escape(task_vm.name)
-        task_name = (
-            f"[strike dim]{escaped_name}[/strike dim]"
-            if task_vm.is_finished
-            else escaped_name
-        )
+        task_name = format_finished_name(task_vm.name, task_vm.is_finished)
 
         # Use pre-formatted estimated duration
         estimated_hours = task_vm.formatted_estimated_duration

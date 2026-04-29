@@ -8,7 +8,6 @@ like task selection, date range adjustment, and filtering.
 from datetime import date, timedelta
 from typing import Any, ClassVar
 
-from rich.markup import escape
 from rich.text import Text
 from textual.binding import Binding
 from textual.coordinate import Coordinate
@@ -17,6 +16,7 @@ from textual.widgets import DataTable
 from taskdog.constants.common import HEADER_ESTIMATED, HEADER_ID, HEADER_NAME
 from taskdog.constants.gantt import CHARS_PER_DAY, GANTT_WORKLOAD_LABEL
 from taskdog.constants.task_table import ESTIMATED_COLUMN_WIDTH, TASK_NAME_COLUMN_WIDTH
+from taskdog.formatters.text_formatter import format_finished_name
 from taskdog.renderers.gantt_cell_formatter import DateMetadata, GanttCellFormatter
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from taskdog_core.shared.constants import (
@@ -495,14 +495,8 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         Returns:
             Tuple of (task_id, task_name, estimated_hours)
         """
-        # Apply Rich markup escape and strikethrough for finished tasks
         task_id = str(task_vm.id)
-        escaped_name = escape(task_vm.name)
-        task_name = (
-            f"[strike dim]{escaped_name}[/strike dim]"
-            if task_vm.is_finished
-            else escaped_name
-        )
+        task_name = format_finished_name(task_vm.name, task_vm.is_finished)
         est_hours = task_vm.formatted_estimated_duration
 
         return task_id, task_name, est_hours
