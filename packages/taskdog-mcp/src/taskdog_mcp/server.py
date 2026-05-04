@@ -44,6 +44,7 @@ def create_mcp_server(config: McpConfig | None = None) -> FastMCP:
         task_crud,
         task_decomposition,
         task_lifecycle,
+        task_optimization,
         task_query,
         task_tags,
     )
@@ -54,6 +55,7 @@ def create_mcp_server(config: McpConfig | None = None) -> FastMCP:
     task_decomposition.register_tools(mcp, client)
     task_tags.register_tools(mcp, client)
     task_audit.register_tools(mcp, client)
+    task_optimization.register_tools(mcp, client)
 
     logger.info(
         f"MCP server '{config.server.name}' initialized, connecting to {base_url}"

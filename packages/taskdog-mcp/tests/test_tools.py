@@ -146,6 +146,9 @@ def create_mock_client() -> MagicMock:
     # Query methods
     client.get_tag_statistics = MagicMock()
     client.calculate_statistics = MagicMock()
+    # Optimization methods
+    client.optimize_schedule = MagicMock()
+    client.get_algorithm_metadata = MagicMock()
     # Relationship methods
     client.add_dependency = MagicMock()
     client.remove_dependency = MagicMock()
@@ -1607,3 +1610,254 @@ class TestTaskTagTools:
         delete_tag_fn(tag_name="bug")
 
         client.delete_tag.assert_called_once_with("bug")
+
+
+def _make_optimization_output(
+    successful: list[tuple[int, str]] | None = None,
+    failed: list[tuple[int, str, str]] | None = None,
+) -> Any:
+    """Build an OptimizationOutput with simple test data."""
+    from datetime import date
+
+    from taskdog_core.application.dto.optimization_output import (
+        OptimizationOutput,
+        SchedulingFailure,
+    )
+    from taskdog_core.application.dto.optimization_summary import OptimizationSummary
+    from taskdog_core.application.dto.task_dto import TaskSummaryDto
+
+    successful_tasks = [
+        TaskSummaryDto(id=tid, name=name) for tid, name in successful or []
+    ]
+    failed_tasks = [
+        SchedulingFailure(
+            task=TaskSummaryDto(id=tid, name=name),
+            reason=reason,
+        )
+        for tid, name, reason in failed or []
+    ]
+    return OptimizationOutput(
+        successful_tasks=successful_tasks,
+        failed_tasks=failed_tasks,
+        daily_allocations={date(2025, 12, 15): 6.0, date(2025, 12, 16): 4.0},
+        summary=OptimizationSummary(
+            new_count=len(successful_tasks),
+            rescheduled_count=0,
+            total_hours=10.0,
+            deadline_conflicts=0,
+            days_span=2,
+            unscheduled_tasks=[f.task for f in failed_tasks],
+            overloaded_days=[],
+        ),
+        task_states_before={},
+    )
+
+
+class TestTaskOptimizationTools:
+    """Test task optimization MCP tools."""
+
+    def test_optimize_schedule_returns_formatted_response(self) -> None:
+        """Test optimize_schedule returns successful_tasks, daily_allocations, summary."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_optimization
+
+        client = create_mock_client()
+        client.optimize_schedule.return_value = _make_optimization_output(
+            successful=[(1, "Task A"), (2, "Task B")],
+        )
+
+        mcp = FastMCP("test")
+        task_optimization.register_tools(mcp, client)
+
+        optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
+        result = optimize_fn(algorithm="greedy", max_hours_per_day=8.0)
+
+        client.optimize_schedule.assert_called_once_with(
+            algorithm="greedy",
+            start_date=None,
+            max_hours_per_day=8.0,
+            force_override=False,
+            task_ids=None,
+            include_all_days=False,
+        )
+        assert result["algorithm"] == "greedy"
+        assert len(result["successful_tasks"]) == 2
+        assert result["successful_tasks"][0] == {"id": 1, "name": "Task A"}
+        assert result["failed_tasks"] == []
+        assert result["daily_allocations"] == {"2025-12-15": 6.0, "2025-12-16": 4.0}
+        assert result["summary"]["new_count"] == 2
+        assert result["summary"]["total_hours"] == 10.0
+        assert result["summary"]["days_span"] == 2
+        assert "Optimized 2 task(s)" in result["message"]
+
+    def test_optimize_schedule_with_failures(self) -> None:
+        """Test optimize_schedule reports partial failures."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_optimization
+
+        client = create_mock_client()
+        client.optimize_schedule.return_value = _make_optimization_output(
+            successful=[(1, "Task A")],
+            failed=[(2, "Task B", "deadline too tight")],
+        )
+
+        mcp = FastMCP("test")
+        task_optimization.register_tools(mcp, client)
+
+        optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
+        result = optimize_fn(algorithm="balanced", max_hours_per_day=6.0)
+
+        assert len(result["successful_tasks"]) == 1
+        assert result["failed_tasks"] == [
+            {"id": 2, "name": "Task B", "reason": "deadline too tight"}
+        ]
+        assert "1 task(s)" in result["message"]
+        assert "1 could not be scheduled" in result["message"]
+
+    def test_optimize_schedule_all_failed(self) -> None:
+        """Test optimize_schedule when no tasks could be scheduled."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_optimization
+
+        client = create_mock_client()
+        client.optimize_schedule.return_value = _make_optimization_output(
+            successful=[],
+            failed=[
+                (1, "Task A", "missing estimated_duration"),
+                (2, "Task B", "circular dependency"),
+            ],
+        )
+
+        mcp = FastMCP("test")
+        task_optimization.register_tools(mcp, client)
+
+        optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
+        result = optimize_fn(algorithm="greedy", max_hours_per_day=8.0)
+
+        assert result["successful_tasks"] == []
+        assert len(result["failed_tasks"]) == 2
+        assert "All 2 task(s) failed" in result["message"]
+
+    def test_optimize_schedule_no_tasks(self) -> None:
+        """Test optimize_schedule when there's nothing to optimize."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_optimization
+
+        client = create_mock_client()
+        client.optimize_schedule.return_value = _make_optimization_output()
+
+        mcp = FastMCP("test")
+        task_optimization.register_tools(mcp, client)
+
+        optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
+        result = optimize_fn(algorithm="greedy", max_hours_per_day=8.0)
+
+        assert result["successful_tasks"] == []
+        assert result["failed_tasks"] == []
+        assert "No tasks were optimized" in result["message"]
+
+    def test_optimize_schedule_passes_all_arguments(self) -> None:
+        """Test optimize_schedule forwards all arguments to the client."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_optimization
+
+        client = create_mock_client()
+        client.optimize_schedule.return_value = _make_optimization_output(
+            successful=[(1, "Task A")],
+        )
+
+        mcp = FastMCP("test")
+        task_optimization.register_tools(mcp, client)
+
+        optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
+        optimize_fn(
+            algorithm="dependency_aware",
+            max_hours_per_day=4.0,
+            start_date="2025-12-15T09:00:00",
+            task_ids=[1, 2, 3],
+            force_override=True,
+            include_all_days=True,
+        )
+
+        client.optimize_schedule.assert_called_once_with(
+            algorithm="dependency_aware",
+            start_date=datetime(2025, 12, 15, 9, 0, 0),
+            max_hours_per_day=4.0,
+            force_override=True,
+            task_ids=[1, 2, 3],
+            include_all_days=True,
+        )
+
+    @pytest.mark.parametrize(
+        "invalid_date",
+        [
+            pytest.param("not-a-date", id="garbage"),
+            pytest.param("2025-13-01", id="invalid_month"),
+        ],
+    )
+    def test_optimize_schedule_invalid_datetime(self, invalid_date: str) -> None:
+        """Test optimize_schedule raises ValueError for invalid datetime."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_optimization
+
+        client = create_mock_client()
+        mcp = FastMCP("test")
+        task_optimization.register_tools(mcp, client)
+
+        optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
+
+        with pytest.raises(ValueError, match="Invalid datetime format"):
+            optimize_fn(
+                algorithm="greedy",
+                max_hours_per_day=8.0,
+                start_date=invalid_date,
+            )
+
+    @pytest.mark.parametrize(
+        "invalid_hours",
+        [
+            pytest.param(0, id="zero"),
+            pytest.param(-1.0, id="negative"),
+        ],
+    )
+    def test_optimize_schedule_invalid_max_hours(self, invalid_hours: float) -> None:
+        """Test optimize_schedule rejects non-positive max_hours_per_day."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_optimization
+
+        client = create_mock_client()
+        mcp = FastMCP("test")
+        task_optimization.register_tools(mcp, client)
+
+        optimize_fn = mcp._tool_manager._tools["optimize_schedule"].fn
+
+        with pytest.raises(
+            ValueError, match="max_hours_per_day must be greater than 0"
+        ):
+            optimize_fn(algorithm="greedy", max_hours_per_day=invalid_hours)
+
+    def test_list_algorithms_returns_metadata(self) -> None:
+        """Test list_algorithms returns formatted algorithm list."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_optimization
+
+        client = create_mock_client()
+        client.get_algorithm_metadata.return_value = [
+            ("greedy", "Greedy", "Front-load tasks by priority"),
+            ("balanced", "Balanced", "Distribute hours evenly across days"),
+        ]
+
+        mcp = FastMCP("test")
+        task_optimization.register_tools(mcp, client)
+
+        list_fn = mcp._tool_manager._tools["list_algorithms"].fn
+        result = list_fn()
+
+        client.get_algorithm_metadata.assert_called_once()
+        assert result["total"] == 2
+        assert len(result["algorithms"]) == 2
+        assert result["algorithms"][0] == {
+            "name": "greedy",
+            "display_name": "Greedy",
+            "description": "Front-load tasks by priority",
+        }
