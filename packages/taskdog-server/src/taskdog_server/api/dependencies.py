@@ -34,6 +34,7 @@ from taskdog_core.infrastructure.persistence.database.sqlite_notes_repository im
 from taskdog_core.infrastructure.persistence.repository_factory import RepositoryFactory
 from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_core.shared.config_manager import Config, ConfigManager
+from taskdog_core.shared.xdg_utils import XDGDirectories
 from taskdog_server.api.context import ApiContext
 from taskdog_server.config.server_config_manager import ServerConfig
 from taskdog_server.websocket.broadcaster import WebSocketEventBroadcaster
@@ -58,12 +59,6 @@ def initialize_api_context(
     Returns:
         ApiContext: Initialized context with all controllers
     """
-    import logging
-
-    from taskdog_core.shared.xdg_utils import XDGDirectories
-
-    logger = logging.getLogger("taskdog_server.api.dependencies")
-
     # Load configuration if not provided
     if config is None:
         config = ConfigManager.load()
@@ -85,16 +80,6 @@ def initialize_api_context(
 
     # Initialize notes repository with database backend (shared engine)
     notes_repository = SqliteNotesRepository(db_url, time_provider, engine=engine)
-
-    # Auto-migrate notes from filesystem to database (idempotent)
-    notes_dir = XDGDirectories.get_data_home(create=False) / "notes"
-    if notes_dir.exists():
-        result = notes_repository.migrate_from_files(notes_dir)
-        if result.migrated > 0:
-            logger.info(f"Migrated {result.migrated} notes from files to database")
-        if result.errors > 0:
-            for msg in result.error_messages:
-                logger.warning(f"Note migration error: {msg}")
 
     # Initialize HolidayChecker if country is configured
     holiday_checker = None
