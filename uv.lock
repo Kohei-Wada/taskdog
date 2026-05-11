@@ -376,14 +376,14 @@ wheels = [
 
 [[package]]
 name = "holidays"
-version = "0.89"
+version = "0.96"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-dateutil" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/86/7b/4edaf587b45eb5f59d791d1c88255fdaef6010119dd14683c827ad65bd12/holidays-0.89.tar.gz", hash = "sha256:9e7a08d9a704382be0ce70d148087aae95da51c0e77d73b4f8f1a17bdc3729bf", size = 829350, upload-time = "2026-01-19T20:01:14.484Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3e/dd/068cb4636a3cb433251e7d018d145f1a8c3c57c6fb0452d022561a35c46a/holidays-0.96.tar.gz", hash = "sha256:9d4d15bc28fa690969b82f07a1d6571aa14d4073cc98802510c08dfe3b1f2d25", size = 906699, upload-time = "2026-05-04T17:37:21.258Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/84/84/854304ac830642625a050047096fdc9697c7e09c3645588aeb723488fc01/holidays-0.89-py3-none-any.whl", hash = "sha256:b132a10e8a112d97c17df042b2421c0e7a35f50e2f55975fceb4bd465bb6c658", size = 1348788, upload-time = "2026-01-19T20:01:12.889Z" },
+    { url = "https://files.pythonhosted.org/packages/00/a2/05cbe4e2309a08a09bbfab04d3d37d687b5852abf7d037fea19313d2eb60/holidays-0.96-py3-none-any.whl", hash = "sha256:9d4f06603090304584f685b2f3d9f4289eb5c52b83fca472f922cb83cc3fb93f", size = 1473213, upload-time = "2026-05-04T17:37:18.933Z" },
 ]
 
 [[package]]
@@ -1362,13 +1362,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "alembic", specifier = ">=1.18.4" },
-    { name = "holidays", specifier = ">=0.60.0" },
+    { name = "alembic", specifier = ">=1.13.0" },
+    { name = "holidays", specifier = ">=0.96" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7.0" },
-    { name = "sqlalchemy", specifier = ">=2.0.49" },
+    { name = "sqlalchemy", specifier = ">=2.0.0" },
 ]
 provides-extras = ["dev"]
 
@@ -1468,7 +1468,7 @@ server = [
 
 [package.metadata]
 requires-dist = [
-    { name = "click", specifier = ">=8.3.3" },
+    { name = "click", specifier = ">=8.3.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.0.0" },
