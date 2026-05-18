@@ -2,22 +2,21 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 import click
 
 from taskdog.cli.error_handler import handle_task_errors
 
 if TYPE_CHECKING:
-    from datetime import datetime
-
     from taskdog.cli.context import CliContext
 
 # Sentinel value for "clear" - distinct from None (not provided)
 CLEAR_SENTINEL = "CLEAR"
 
 
-class ClearableDateTimeType(click.ParamType):
+class ClearableDateTimeType(click.ParamType[datetime | str | None]):
     """DateTime type that treats empty string as 'clear' command.
 
     Requires full datetime input (YYYY-MM-DD HH:MM:SS) for accurate timestamps.
@@ -37,10 +36,10 @@ class ClearableDateTimeType(click.ParamType):
             return None
         if value == "" or value == CLEAR_SENTINEL:
             return CLEAR_SENTINEL
-        return cast("datetime", self._inner.convert(value, param, ctx))
+        return self._inner.convert(value, param, ctx)
 
 
-class ClearableFloatType(click.ParamType):
+class ClearableFloatType(click.ParamType[float | str | None]):
     """Float type that treats empty string as 'clear' command."""
 
     name = "FLOAT"

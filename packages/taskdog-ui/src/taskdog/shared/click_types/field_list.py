@@ -5,7 +5,7 @@ from typing import Any
 import click
 
 
-class FieldList(click.ParamType):
+class FieldList(click.ParamType[list[str] | None]):
     """Parse comma-separated field list with optional validation.
 
     Accepts a comma-separated string of field names and returns a list of

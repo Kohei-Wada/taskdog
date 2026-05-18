@@ -5,7 +5,7 @@ from typing import Any
 import click
 
 
-class PositiveFloat(click.ParamType):
+class PositiveFloat(click.ParamType[float]):
     """A Click parameter type that only accepts positive float values.
 
     This type ensures that the value is:
@@ -50,7 +50,7 @@ class PositiveFloat(click.ParamType):
         return float_value
 
 
-class PositiveInt(click.ParamType):
+class PositiveInt(click.ParamType[int]):
     """A Click parameter type that only accepts positive integer values.
 
     This type ensures that the value is:
