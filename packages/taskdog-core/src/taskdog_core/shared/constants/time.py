@@ -1,7 +1,7 @@
 """Time and duration-related constants.
 
-Note: Physical constants SECONDS_PER_HOUR and MIN_FILE_SIZE_FOR_CONTENT
-have been moved to domain.constants to comply with Clean Architecture principles.
+Note: The physical constant SECONDS_PER_HOUR has been moved to
+domain.constants to comply with Clean Architecture principles.
 """
 
 # Calendar
