@@ -2,7 +2,7 @@
         install install-dev install-hooks install-core install-server install-ui install-client install-mcp \
         install-ui-only install-server-only reinstall \
         tool-install-ui tool-install-server check-deps \
-        clean lint format typecheck spell check \
+        clean lint format typecheck spell deadcode check \
         lint-core lint-client lint-server lint-ui lint-mcp \
         typecheck-core typecheck-client typecheck-server typecheck-ui typecheck-mcp \
         bump-version show-version
@@ -259,7 +259,10 @@ typecheck-mcp: typecheck-taskdog-mcp ## Type check taskdog-mcp
 spell: ## Run spell checker
 	uv tool run codespell
 
-check: lint typecheck spell ## Run all code quality checks (lint + typecheck + spell)
+deadcode: ## Detect dead code with vulture (config + whitelist in pyproject.toml)
+	uv run --with vulture vulture
+
+check: lint typecheck spell deadcode ## Run all code quality checks (lint + typecheck + spell + deadcode)
 	@echo ""
 	@echo "✓ All code quality checks passed!"
 	@echo ""

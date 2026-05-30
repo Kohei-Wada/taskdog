@@ -27,23 +27,6 @@ class TaskUpdated(Message):
         self.task_id = task_id
 
 
-class TaskDeleted(Message):
-    """Event sent when a task is deleted.
-
-    Attributes:
-        task_id: ID of the deleted task
-    """
-
-    def __init__(self, task_id: int):
-        """Initialize the event.
-
-        Args:
-            task_id: ID of the deleted task
-        """
-        super().__init__()
-        self.task_id = task_id
-
-
 class TasksRefreshed(Message):
     """Event sent when the task list should be refreshed.
 

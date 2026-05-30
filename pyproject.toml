@@ -94,6 +94,10 @@ ignore_missing_imports = true
 line-length = 88
 target-version = "py312"
 src = ["src", "tests"]
+# vulture whitelist is a list of bare names for vulture, not real Python.
+# force-exclude makes ruff honor this even when pre-commit passes the file explicitly.
+extend-exclude = ["vulture_whitelist.py"]
+force-exclude = true
 
 [tool.ruff.lint]
 select = [
@@ -152,6 +156,50 @@ section-order = [
   "third-party",
   "first-party",
   "local-folder",
+]
+
+# Dead-code detection
+[tool.vulture]
+min_confidence = 60
+paths = ["packages", "vulture_whitelist.py"]
+exclude = ["*/migrations/*", "*/tests/*", "*/build/*", "*/.venv/*"]
+# Framework-registered callables are reached dynamically, not by direct call.
+ignore_decorators = [
+  "@router.*",
+  "@app.*",
+  "@*.tool",
+  "@*.command",
+  "@event.listens_for",
+  "@field_validator",
+  "@model_validator",
+  "@command_registry.register",
+]
+# Textual calls handlers/attributes by naming convention, not by reference.
+ignore_names = [
+  "on_*",
+  "action_*",
+  "watch_*",
+  "compose",
+  "search_*",
+  "discover",
+  "search",
+  "get_suggestion",
+  "border_title",
+  "BINDINGS",
+  "TITLE",
+  "CSS_PATH",
+  "ENABLE_MOUSE",
+  "ALLOW_IN_MAXIMIZED_VIEW",
+  "model_config",
+  # Textual widget configuration attributes (set on self, read by the framework)
+  "cursor_type",
+  "zebra_stripes",
+  "can_focus",
+  "cell_padding",
+  "fixed_rows",
+  "caption",
+  "caption_justify",
+  "bubble",
 ]
 
 # Build system - workspace root doesn't build directly

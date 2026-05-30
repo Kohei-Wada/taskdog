@@ -39,6 +39,9 @@ jobs:
       - name: Run spell checker
         run: uv tool run codespell
 
+      - name: Detect dead code
+        run: make deadcode
+
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest

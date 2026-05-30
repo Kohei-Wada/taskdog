@@ -43,7 +43,6 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         self._evaluation_cache: dict[
             tuple[int | None, ...], float
         ] = {}  # Cache for evaluation results
-        self._params: OptimizeParams | None = None
         self._existing_allocations: dict[date, float] = {}
 
     def optimize_tasks(
@@ -65,8 +64,7 @@ class MonteCarloOptimizationStrategy(OptimizationStrategy):
         if not tasks:
             return OptimizeResult()
 
-        # Store params and existing allocations for use in evaluation
-        self._params = params
+        # Store existing allocations for use in evaluation
         self._existing_allocations = existing_allocations
 
         # Copy existing allocations to avoid mutating the input
