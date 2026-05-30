@@ -1388,6 +1388,7 @@ source = { editable = "packages/taskdog-core" }
 dependencies = [
     { name = "alembic" },
     { name = "holidays" },
+    { name = "pydantic" },
     { name = "sqlalchemy" },
 ]
 
@@ -1404,6 +1405,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.13.0" },
     { name = "holidays", specifier = ">=0.60.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
+    { name = "pydantic", specifier = ">=2.10.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7.0" },

@@ -62,44 +62,6 @@ def _parse_datetime_fields(
     return {field: _parse_optional_datetime(data, field) for field in fields}
 
 
-def _parse_required_datetime(data: dict[str, Any], field: str) -> datetime:
-    """Parse required datetime field from API response.
-
-    Args:
-        data: Dictionary containing datetime fields
-        field: Field name to extract
-
-    Returns:
-        Parsed datetime value
-
-    Raises:
-        ConversionError: If field is missing or value is malformed
-    """
-    value = data.get(field)
-    if value is None:
-        raise ConversionError(
-            f"Required datetime field '{field}' is missing or None",
-            field=field,
-            value=value,
-        )
-
-    try:
-        result = _core_parse_datetime(value)
-        if result is None:
-            raise ConversionError(
-                f"Required datetime field '{field}' parsed to None",
-                field=field,
-                value=value,
-            )
-        return result
-    except (ValueError, TypeError) as e:
-        raise ConversionError(
-            f"Failed to parse required datetime field '{field}': {value}",
-            field=field,
-            value=value,
-        ) from e
-
-
 def _parse_date_dict(data: dict[str, Any], field: str) -> dict[date_type, float]:
     """Parse dictionary with ISO date string keys to date object keys.
 

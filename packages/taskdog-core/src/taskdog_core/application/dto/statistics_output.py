@@ -2,11 +2,12 @@
 
 from dataclasses import dataclass
 
+from pydantic import BaseModel
+
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
 
 
-@dataclass
-class TaskStatistics:
+class TaskStatistics(BaseModel):
     """Basic task statistics.
 
     Attributes:
@@ -26,8 +27,7 @@ class TaskStatistics:
     completion_rate: float
 
 
-@dataclass
-class TimeStatistics:
+class TimeStatistics(BaseModel):
     """Time tracking statistics.
 
     Attributes:
@@ -47,8 +47,7 @@ class TimeStatistics:
     tasks_with_time_tracking: int
 
 
-@dataclass
-class EstimationAccuracyStatistics:
+class EstimationAccuracyStatistics(BaseModel):
     """Estimation accuracy statistics.
 
     Attributes:
@@ -70,8 +69,7 @@ class EstimationAccuracyStatistics:
     worst_estimated_tasks: list[TaskSummaryDto]
 
 
-@dataclass
-class DeadlineComplianceStatistics:
+class DeadlineComplianceStatistics(BaseModel):
     """Deadline compliance statistics.
 
     Attributes:
@@ -89,8 +87,7 @@ class DeadlineComplianceStatistics:
     average_delay_days: float
 
 
-@dataclass
-class PriorityDistributionStatistics:
+class PriorityDistributionStatistics(BaseModel):
     """Priority distribution statistics.
 
     Attributes:
@@ -108,8 +105,7 @@ class PriorityDistributionStatistics:
     priority_completion_map: dict[int, int]
 
 
-@dataclass
-class TrendStatistics:
+class TrendStatistics(BaseModel):
     """Trend statistics over time.
 
     Attributes:
@@ -125,8 +121,7 @@ class TrendStatistics:
     monthly_completion_trend: dict[str, int]
 
 
-@dataclass
-class StatisticsOutput:
+class StatisticsOutput(BaseModel):
     """Complete statistics result.
 
     Attributes:

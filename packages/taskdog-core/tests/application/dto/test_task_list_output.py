@@ -122,12 +122,12 @@ class TestTaskListOutput:
 
         assert dto1 != dto2
 
-    def test_tasks_list_is_immutable_reference(self, task1, task2) -> None:
-        """Test that tasks list reference is preserved."""
+    def test_tasks_list_contents_preserved(self, task1, task2) -> None:
+        """Test that the tasks list contents are preserved."""
         tasks = [task1, task2]
         dto = TaskListOutput(tasks=tasks, total_count=2, filtered_count=2)
 
-        assert dto.tasks is tasks
+        assert dto.tasks == tasks
 
     def test_repr_includes_counts(self) -> None:
         """Test that repr includes count information."""

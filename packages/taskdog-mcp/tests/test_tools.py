@@ -851,7 +851,13 @@ class TestTaskQueryTools:
             ),
             estimation_stats=None,
             deadline_stats=None,
-            priority_stats=None,
+            priority_stats=PriorityDistributionStatistics(
+                high_priority_count=0,
+                medium_priority_count=0,
+                low_priority_count=0,
+                high_priority_completion_rate=0.0,
+                priority_completion_map={},
+            ),
             trend_stats=None,
         )
 
@@ -890,7 +896,13 @@ class TestTaskQueryTools:
             time_stats=None,
             estimation_stats=None,
             deadline_stats=None,
-            priority_stats=None,
+            priority_stats=PriorityDistributionStatistics(
+                high_priority_count=0,
+                medium_priority_count=0,
+                low_priority_count=0,
+                high_priority_completion_rate=0.0,
+                priority_completion_map={},
+            ),
             trend_stats=None,
         )
 

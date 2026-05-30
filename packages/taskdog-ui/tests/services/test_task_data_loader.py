@@ -9,6 +9,7 @@ from taskdog.services.task_data_loader import TaskData, TaskDataLoader
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.gantt_output import GanttOutput
+from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
@@ -36,7 +37,9 @@ class TestTaskDataLoader:
         task2 = Task(id=2, name="Task 2", priority=2, status=TaskStatus.COMPLETED)
 
         task_list_output = TaskListOutput(
-            tasks=[task1, task2], total_count=2, filtered_count=2
+            tasks=[TaskRowDto.from_entity(task1), TaskRowDto.from_entity(task2)],
+            total_count=2,
+            filtered_count=2,
         )
         self.api_client.list_tasks.return_value = task_list_output
 
@@ -72,7 +75,7 @@ class TestTaskDataLoader:
         gantt_output = Mock(spec=GanttOutput)
 
         task_list_output = TaskListOutput(
-            tasks=[task1],
+            tasks=[TaskRowDto.from_entity(task1)],
             total_count=1,
             filtered_count=1,
             gantt_data=gantt_output,  # Include gantt data in response

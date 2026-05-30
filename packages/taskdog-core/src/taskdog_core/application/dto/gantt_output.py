@@ -9,14 +9,14 @@ Design Principle:
 - Presentation layer: Decides how to display (colors, styles, layout)
 """
 
-from dataclasses import dataclass
 from datetime import date
+
+from pydantic import BaseModel
 
 from taskdog_core.application.dto.task_dto import GanttTaskDto
 
 
-@dataclass
-class GanttDateRange:
+class GanttDateRange(BaseModel):
     """Date range for the Gantt chart.
 
     Attributes:
@@ -37,8 +37,7 @@ class GanttDateRange:
         return (self.end_date - self.start_date).days + 1
 
 
-@dataclass
-class GanttOutput:
+class GanttOutput(BaseModel):
     """Complete Gantt chart data result.
 
     This DTO contains only business data needed for Gantt visualization.

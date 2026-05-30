@@ -71,7 +71,10 @@ class TestTaskDetailDialogInit:
 
     def test_raises_value_error_when_task_is_none(self) -> None:
         """Test that ValueError is raised when task is None."""
-        detail = TaskDetailOutput(task=None, notes_content="", has_notes=False)
+        # model_construct bypasses validation to build the invalid task=None case
+        detail = TaskDetailOutput.model_construct(
+            task=None, notes_content="", has_notes=False
+        )
 
         with pytest.raises(ValueError) as exc_info:
             TaskDetailDialog(detail)
@@ -244,8 +247,9 @@ class TestTaskDetailDialogActionNote:
     def test_action_note_does_nothing_when_id_is_none(self) -> None:
         """Test that action_note does nothing when task ID is None."""
         task = create_mock_task_dto()
-        task_with_no_id = TaskDetailDto(
-            id=None,  # type: ignore[arg-type]  # Testing edge case
+        # model_construct bypasses validation to build the invalid id=None edge case
+        task_with_no_id = TaskDetailDto.model_construct(
+            id=None,
             name=task.name,
             priority=task.priority,
             status=task.status,

@@ -1,12 +1,11 @@
 """DTO for optimization summary data."""
 
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
 
 
-@dataclass
-class OptimizationSummary:
+class OptimizationSummary(BaseModel):
     """Summary data from schedule optimization.
 
     Attributes:

@@ -1,13 +1,13 @@
 """Output DTO for task write operations."""
 
-from dataclasses import dataclass
 from datetime import datetime
+
+from pydantic import BaseModel
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-@dataclass
-class TaskOperationOutput:
+class TaskOperationOutput(BaseModel):
     """Generic output DTO for task write operations.
 
     This DTO is used by TaskController to return task operation results
@@ -38,19 +38,19 @@ class TaskOperationOutput:
     name: str
     status: TaskStatus
     priority: int | None
-    deadline: datetime | None
-    estimated_duration: float | None
-    planned_start: datetime | None
-    planned_end: datetime | None
-    actual_start: datetime | None
-    actual_end: datetime | None
-    actual_duration: float | None
-    depends_on: list[int]
-    tags: list[str]
-    is_fixed: bool
-    is_archived: bool
-    actual_duration_hours: float | None
-    daily_allocations: dict[str, float]
+    deadline: datetime | None = None
+    estimated_duration: float | None = None
+    planned_start: datetime | None = None
+    planned_end: datetime | None = None
+    actual_start: datetime | None = None
+    actual_end: datetime | None = None
+    actual_duration: float | None = None
+    depends_on: list[int] = []
+    tags: list[str] = []
+    is_fixed: bool = False
+    is_archived: bool = False
+    actual_duration_hours: float | None = None
+    daily_allocations: dict[str, float] = {}
 
     @classmethod
     def from_task(cls, task: Task) -> "TaskOperationOutput":

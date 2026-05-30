@@ -7,7 +7,6 @@ from taskdog_client.converters.datetime_utils import (
     _parse_date_dict,
     _parse_datetime_fields,
     _parse_optional_datetime,
-    _parse_required_datetime,
 )
 from taskdog_client.converters.exceptions import ConversionError
 
@@ -113,47 +112,6 @@ class TestParseDatetimeFields:
 
         assert result["planned_start"] is None
         assert result["planned_end"] is None
-
-
-class TestParseRequiredDatetime:
-    """Test cases for _parse_required_datetime."""
-
-    def test_valid_datetime(self):
-        """Test parsing valid required datetime."""
-        data = {"created_at": "2025-01-01T00:00:00"}
-        result = _parse_required_datetime(data, "created_at")
-
-        assert result == datetime(2025, 1, 1, 0, 0, 0)
-
-    def test_missing_field_raises_error(self):
-        """Test that missing field raises ConversionError."""
-        data = {}
-
-        with pytest.raises(ConversionError) as exc_info:
-            _parse_required_datetime(data, "created_at")
-
-        assert exc_info.value.field == "created_at"
-        assert "missing" in str(exc_info.value).lower()
-
-    def test_none_value_raises_error(self):
-        """Test that None value raises ConversionError."""
-        data = {"created_at": None}
-
-        with pytest.raises(ConversionError) as exc_info:
-            _parse_required_datetime(data, "created_at")
-
-        assert exc_info.value.field == "created_at"
-        assert exc_info.value.value is None
-
-    def test_invalid_format_raises_error(self):
-        """Test that invalid format raises ConversionError."""
-        data = {"created_at": "invalid-datetime"}
-
-        with pytest.raises(ConversionError) as exc_info:
-            _parse_required_datetime(data, "created_at")
-
-        assert exc_info.value.field == "created_at"
-        assert exc_info.value.value == "invalid-datetime"
 
 
 class TestParseDateDict:

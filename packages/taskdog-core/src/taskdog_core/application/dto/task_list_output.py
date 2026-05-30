@@ -4,17 +4,13 @@ This DTO provides a presentation-agnostic representation of task list query resu
 containing the filtered tasks along with metadata for pagination and statistics.
 """
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from pydantic import BaseModel
 
+from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.task_dto import TaskRowDto
 
-if TYPE_CHECKING:
-    from taskdog_core.application.dto.gantt_output import GanttOutput
 
-
-@dataclass
-class TaskListOutput:
+class TaskListOutput(BaseModel):
     """Output DTO for task list queries.
 
     Contains filtered and sorted tasks along with count metadata.
@@ -30,5 +26,5 @@ class TaskListOutput:
     tasks: list[TaskRowDto]
     total_count: int
     filtered_count: int
-    gantt_data: "GanttOutput | None" = None
+    gantt_data: GanttOutput | None = None
     task_ids_with_notes: set[int] | None = None
