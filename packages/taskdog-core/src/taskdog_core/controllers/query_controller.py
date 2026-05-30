@@ -104,7 +104,6 @@ class QueryController:
                 match_all_tags=input_dto.match_all_tags,
                 start_date=input_dto.start_date,
                 end_date=input_dto.end_date,
-                time_range=input_dto.time_range,
                 sort_by=input_dto.sort_by,
                 reverse=input_dto.reverse,
                 chart_start_date=gantt_start_date,
