@@ -23,15 +23,14 @@ class LifecycleOperation:
 
     name: str
     description: str
-    returns: str
 
 
 OPERATIONS = [
-    LifecycleOperation("start", "Start a task", "actual_start timestamp"),
-    LifecycleOperation("complete", "Complete a task", "actual_end timestamp"),
-    LifecycleOperation("pause", "Pause a task", "cleared timestamps"),
-    LifecycleOperation("cancel", "Cancel a task", "actual_end timestamp"),
-    LifecycleOperation("reopen", "Reopen a task", "cleared timestamps"),
+    LifecycleOperation("start", "Start a task"),
+    LifecycleOperation("complete", "Complete a task"),
+    LifecycleOperation("pause", "Pause a task"),
+    LifecycleOperation("cancel", "Cancel a task"),
+    LifecycleOperation("reopen", "Reopen a task"),
 ]
 
 

@@ -60,7 +60,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         self._fitness_cache: dict[
             tuple[int | None, ...], tuple[float, dict[date, float], list[Task]]
         ] = {}
-        self._params: OptimizeParams | None = None
 
     def optimize_tasks(
         self,
@@ -80,9 +79,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         """
         if not tasks:
             return OptimizeResult()
-
-        # Store params for use in evaluation
-        self._params = params
 
         # Copy existing allocations to avoid mutating the input
         result = OptimizeResult(daily_allocations=dict(existing_allocations))

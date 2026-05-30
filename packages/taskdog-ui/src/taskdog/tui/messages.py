@@ -9,30 +9,6 @@ class TUIMessageBuilder:
     """Centralized message formatting for TUI notifications."""
 
     @staticmethod
-    def task_action(
-        action: str, task_name: str, task_id: int, source_client_id: str | None = None
-    ) -> str:
-        """Standard format for task actions.
-
-        Args:
-            action: The action performed (e.g., "Started", "Completed", "Added task")
-            task_name: Name of the task
-            task_id: Task ID
-            source_client_id: Optional client ID that performed the action (for remote operations)
-
-        Returns:
-            Formatted message string
-
-        Examples:
-            - Local: "Started: Task name (ID: 123)"
-            - Remote: "Task started: Task name by client_abc"
-        """
-        base_msg = f"{action}: {task_name} (ID: {task_id})"
-        if source_client_id:
-            base_msg += f" by {source_client_id}"
-        return base_msg
-
-    @staticmethod
     def task_updated(
         task_id: int, fields: list[str], source_client_id: str | None = None
     ) -> str:
@@ -55,24 +31,6 @@ class TUIMessageBuilder:
         if source_client_id:
             base_msg += f" by {source_client_id}"
         return base_msg
-
-    @staticmethod
-    def batch_success(action: str, count: int) -> str:
-        """Standard format for batch operation success messages.
-
-        Args:
-            action: The action performed (e.g., "Canceled", "Archived")
-            count: Number of tasks affected
-
-        Returns:
-            Formatted message string
-
-        Examples:
-            - "Canceled 1 task"
-            - "Archived 5 tasks"
-        """
-        singular = "task" if count == 1 else "tasks"
-        return f"{action} {count} {singular}"
 
     @staticmethod
     def websocket_event(
@@ -106,22 +64,6 @@ class TUIMessageBuilder:
         if source_client_id:
             base_msg += f" by {source_client_id}"
         return base_msg
-
-    @staticmethod
-    def note_saved(task_name: str, task_id: int) -> str:
-        """Standard format for note save confirmation.
-
-        Args:
-            task_name: Name of the task
-            task_id: Task ID
-
-        Returns:
-            Formatted message string
-
-        Example:
-            "Note saved for task: Task name (ID: 123)"
-        """
-        return f"Note saved for task: {task_name} (ID: {task_id})"
 
     @staticmethod
     def schedule_optimized(

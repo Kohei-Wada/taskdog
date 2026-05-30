@@ -3,39 +3,6 @@
 from taskdog.tui.messages import TUIMessageBuilder
 
 
-class TestTUIMessageBuilderTaskAction:
-    """Test cases for task_action method."""
-
-    def test_basic_action_message(self) -> None:
-        """Test basic action message without source."""
-        result = TUIMessageBuilder.task_action("Started", "My Task", 123)
-
-        assert result == "Started: My Task (ID: 123)"
-
-    def test_action_message_with_source(self) -> None:
-        """Test action message with source client ID."""
-        result = TUIMessageBuilder.task_action(
-            "Completed", "My Task", 456, source_client_id="client_abc"
-        )
-
-        assert result == "Completed: My Task (ID: 456) by client_abc"
-
-    def test_action_message_with_empty_source(self) -> None:
-        """Test action message with empty source is excluded."""
-        result = TUIMessageBuilder.task_action("Paused", "Task", 1, source_client_id="")
-
-        assert result == "Paused: Task (ID: 1)"
-        assert "by" not in result
-
-    def test_various_actions(self) -> None:
-        """Test various action types."""
-        actions = ["Added task", "Deleted", "Archived", "Reopened"]
-
-        for action in actions:
-            result = TUIMessageBuilder.task_action(action, "Test", 1)
-            assert result.startswith(f"{action}:")
-
-
 class TestTUIMessageBuilderTaskUpdated:
     """Test cases for task_updated method."""
 
@@ -64,34 +31,6 @@ class TestTUIMessageBuilderTaskUpdated:
         result = TUIMessageBuilder.task_updated(1, [])
 
         assert result == "Updated task 1: "
-
-
-class TestTUIMessageBuilderBatchSuccess:
-    """Test cases for batch_success method."""
-
-    def test_single_task_uses_singular(self) -> None:
-        """Test that single task uses singular form."""
-        result = TUIMessageBuilder.batch_success("Canceled", 1)
-
-        assert result == "Canceled 1 task"
-
-    def test_multiple_tasks_uses_plural(self) -> None:
-        """Test that multiple tasks use plural form."""
-        result = TUIMessageBuilder.batch_success("Archived", 5)
-
-        assert result == "Archived 5 tasks"
-
-    def test_zero_tasks_uses_plural(self) -> None:
-        """Test that zero tasks use plural form."""
-        result = TUIMessageBuilder.batch_success("Deleted", 0)
-
-        assert result == "Deleted 0 tasks"
-
-    def test_two_tasks_uses_plural(self) -> None:
-        """Test that two tasks use plural form."""
-        result = TUIMessageBuilder.batch_success("Started", 2)
-
-        assert result == "Started 2 tasks"
 
 
 class TestTUIMessageBuilderWebsocketEvent:
@@ -150,22 +89,6 @@ class TestTUIMessageBuilderWebsocketEvent:
 
         assert result == "Task created: Task (ID: 1)"
         assert "()" not in result
-
-
-class TestTUIMessageBuilderNoteSaved:
-    """Test cases for note_saved method."""
-
-    def test_note_saved_message(self) -> None:
-        """Test note saved message format."""
-        result = TUIMessageBuilder.note_saved("My Task", 123)
-
-        assert result == "Note saved for task: My Task (ID: 123)"
-
-    def test_note_saved_with_special_characters(self) -> None:
-        """Test note saved with special characters in name."""
-        result = TUIMessageBuilder.note_saved("Task: [Important]", 456)
-
-        assert result == "Note saved for task: Task: [Important] (ID: 456)"
 
 
 class TestTUIMessageBuilderScheduleOptimized:

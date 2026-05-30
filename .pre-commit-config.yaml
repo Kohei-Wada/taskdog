@@ -75,6 +75,13 @@ repos:
         pass_filenames: false
         stages: [pre-push]
         types_or: [python]
+      - id: vulture
+        name: Detect dead code (vulture)
+        entry: make deadcode
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        types_or: [python]
       - id: reinstall-hooks
         name: Install pre-commit hooks
         entry: uv run pre-commit install --install-hooks
