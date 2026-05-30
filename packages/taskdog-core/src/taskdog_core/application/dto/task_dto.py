@@ -7,12 +7,15 @@ the Task entity directly to the presentation layer.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from datetime import date, datetime
+from pydantic import BaseModel, ConfigDict
 
-    from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
+
+if TYPE_CHECKING:
+    from taskdog_core.domain.entities.task import Task
 
 
 @dataclass(frozen=True)
@@ -196,13 +199,14 @@ class TaskRowDto:
         }
 
 
-@dataclass(frozen=True)
-class TaskDetailDto:
+class TaskDetailDto(BaseModel):
     """Complete task information for detail views.
 
     Contains all task data needed for display and editing,
     without exposing the Task entity.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     id: int
     name: str
@@ -213,7 +217,7 @@ class TaskDetailDto:
     deadline: datetime | None
     actual_start: datetime | None
     actual_end: datetime | None
-    actual_duration: float | None
+    actual_duration: float | None = None
     estimated_duration: float | None
     daily_allocations: dict[date, float]
     is_fixed: bool

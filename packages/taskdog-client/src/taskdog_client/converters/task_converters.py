@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from pydantic import ValidationError
+
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import TaskDetailDto, TaskRowDto
@@ -11,10 +13,10 @@ from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 from taskdog_core.domain.entities.task import TaskStatus
 
 from .datetime_utils import (
-    _parse_date_dict,
     _parse_datetime_fields,
     _parse_required_datetime,
 )
+from .exceptions import ConversionError
 from .gantt_converters import convert_to_gantt_output
 
 
@@ -29,38 +31,20 @@ def _build_task_detail_dto(data: dict[str, Any]) -> TaskDetailDto:
 
     Returns:
         TaskDetailDto with all task data populated
-    """
-    # Parse datetime fields with error handling
-    dt_fields = _parse_datetime_fields(
-        data, ["planned_start", "planned_end", "deadline", "actual_start", "actual_end"]
-    )
 
-    # Build and return TaskDetailDto with safe parsing
-    return TaskDetailDto(
-        id=data["id"],
-        name=data["name"],
-        priority=data["priority"],
-        status=TaskStatus(data["status"]),
-        planned_start=dt_fields["planned_start"],
-        planned_end=dt_fields["planned_end"],
-        deadline=dt_fields["deadline"],
-        actual_start=dt_fields["actual_start"],
-        actual_end=dt_fields["actual_end"],
-        actual_duration=data.get("actual_duration"),
-        estimated_duration=data.get("estimated_duration"),
-        daily_allocations=_parse_date_dict(data, "daily_allocations"),
-        is_fixed=data.get("is_fixed", False),
-        depends_on=data.get("depends_on", []),
-        tags=data.get("tags", []),
-        is_archived=data.get("is_archived", False),
-        created_at=_parse_required_datetime(data, "created_at"),
-        updated_at=_parse_required_datetime(data, "updated_at"),
-        actual_duration_hours=data.get("actual_duration_hours"),
-        is_active=data.get("is_active", False),
-        is_finished=data.get("is_finished", False),
-        can_be_modified=data.get("can_be_modified", False),
-        is_schedulable=data.get("is_schedulable", False),
-    )
+    Raises:
+        ConversionError: If the response data cannot be validated into the DTO
+    """
+    try:
+        return TaskDetailDto.model_validate(data)
+    except ValidationError as e:
+        first_error = e.errors()[0]
+        field = str(first_error["loc"][0]) if first_error["loc"] else None
+        raise ConversionError(
+            f"Failed to convert response to TaskDetailDto: {e}",
+            field=field,
+            value=data.get(field) if field else None,
+        ) from e
 
 
 def convert_to_task_operation_output(data: dict[str, Any]) -> TaskOperationOutput:

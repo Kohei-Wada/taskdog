@@ -244,8 +244,9 @@ class TestTaskDetailDialogActionNote:
     def test_action_note_does_nothing_when_id_is_none(self) -> None:
         """Test that action_note does nothing when task ID is None."""
         task = create_mock_task_dto()
-        task_with_no_id = TaskDetailDto(
-            id=None,  # type: ignore[arg-type]  # Testing edge case
+        # model_construct bypasses validation to build the invalid id=None edge case
+        task_with_no_id = TaskDetailDto.model_construct(
+            id=None,
             name=task.name,
             priority=task.priority,
             status=task.status,
