@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from taskdog_core.shared.config_manager import ConfigManager
 from taskdog_server import __version__
 from taskdog_server.api.dependencies import initialize_api_context
+from taskdog_server.api.error_handlers import register_exception_handlers
 from taskdog_server.api.middleware import LoggingMiddleware
 from taskdog_server.api.routers import (
     analytics_router,
@@ -69,6 +70,9 @@ def create_app() -> FastAPI:
 
     # Add logging middleware (should be first to log all requests)
     app.add_middleware(LoggingMiddleware)
+
+    # Translate domain exceptions to HTTP responses app-wide
+    register_exception_handlers(app)
 
     # Register routers
     app.include_router(bulk_router, prefix="/api/v1/tasks", tags=["bulk"])

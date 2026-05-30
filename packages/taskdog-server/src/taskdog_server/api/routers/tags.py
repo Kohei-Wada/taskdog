@@ -7,14 +7,12 @@ from taskdog_server.api.dependencies import (
     AuthenticatedClientDep,
     RelationshipControllerDep,
 )
-from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.responses import DeleteTagResponse
 
 router = APIRouter()
 
 
 @router.delete("/{tag_name}", response_model=DeleteTagResponse)
-@handle_task_errors
 async def delete_tag(
     tag_name: str,
     controller: RelationshipControllerDep,

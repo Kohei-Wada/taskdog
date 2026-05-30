@@ -1,59 +1,47 @@
-"""FastAPI error handling decorators.
+"""FastAPI exception handlers.
 
-Provides reusable decorators for common error handling patterns in API endpoints.
+Registers application-wide handlers that translate domain exceptions into
+appropriate HTTP responses, so individual endpoints don't need to repeat
+try/except blocks.
 """
 
-from collections.abc import Callable
-from functools import wraps
-from typing import Any
-
-from fastapi import HTTPException, status
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 
 from taskdog_core.domain.exceptions.tag_exceptions import TagNotFoundException
 from taskdog_core.domain.exceptions.task_exceptions import (
-    TaskAlreadyFinishedError,
     TaskNotFoundException,
-    TaskNotStartedError,
     TaskValidationError,
 )
 
 
-def handle_task_errors[F: Callable[..., Any]](func: F) -> F:
-    """Decorator for common task operation error handling.
+async def _not_found_handler(_request: Request, exc: Exception) -> JSONResponse:
+    """Map not-found domain exceptions to 404 NOT_FOUND."""
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
+    )
 
-    Catches domain exceptions and converts them to appropriate HTTP exceptions:
-    - TaskNotFoundException → 404 NOT_FOUND
-    - TaskValidationError, TaskAlreadyFinishedError, TaskNotStartedError → 400 BAD_REQUEST
 
-    Usage:
-        @router.post("/{task_id}/start")
-        @handle_task_errors
-        async def start_task(task_id: int, ...):
-            result = controller.start_task(task_id)
-            return convert_to_response(result)
+async def _bad_request_handler(_request: Request, exc: Exception) -> JSONResponse:
+    """Map validation domain exceptions to 400 BAD_REQUEST."""
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exc)}
+    )
+
+
+def register_exception_handlers(app: FastAPI) -> None:
+    """Register domain exception handlers on the FastAPI app.
+
+    - TaskNotFoundException, TagNotFoundException -> 404 NOT_FOUND
+    - TaskValidationError (and subclasses) -> 400 BAD_REQUEST
+
+    Starlette resolves handlers by walking the exception's MRO, so registering
+    TaskValidationError also covers TaskAlreadyFinishedError, TaskNotStartedError,
+    and the other validation subclasses.
 
     Args:
-        func: Async function to wrap with error handling
-
-    Returns:
-        Wrapped function with automatic error handling
+        app: FastAPI application instance
     """
-
-    @wraps(func)
-    async def wrapper(*args: Any, **kwargs: Any) -> Any:
-        try:
-            return await func(*args, **kwargs)
-        except (TaskNotFoundException, TagNotFoundException) as e:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
-            ) from e
-        except (
-            TaskValidationError,
-            TaskAlreadyFinishedError,
-            TaskNotStartedError,
-        ) as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-            ) from e
-
-    return wrapper  # type: ignore[return-value]
+    app.add_exception_handler(TaskNotFoundException, _not_found_handler)
+    app.add_exception_handler(TagNotFoundException, _not_found_handler)
+    app.add_exception_handler(TaskValidationError, _bad_request_handler)

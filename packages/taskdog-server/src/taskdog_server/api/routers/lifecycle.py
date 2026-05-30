@@ -11,7 +11,6 @@ from taskdog_server.api.dependencies import (
     LifecycleControllerDep,
     QueryControllerDep,
 )
-from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import FixActualTimesRequest
 from taskdog_server.api.models.responses import TaskOperationResponse
 
@@ -44,7 +43,6 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
     """
 
     @router.post(f"/{{task_id}}/{op.name}", response_model=TaskOperationResponse)
-    @handle_task_errors
     async def endpoint(
         task_id: int,
         controller: LifecycleControllerDep,
@@ -79,7 +77,6 @@ for _op in OPERATIONS:
 
 
 @router.post("/{task_id}/fix-actual", response_model=TaskOperationResponse)
-@handle_task_errors
 async def fix_actual_times(
     task_id: int,
     request: FixActualTimesRequest,

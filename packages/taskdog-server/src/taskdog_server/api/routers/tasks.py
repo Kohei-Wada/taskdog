@@ -19,7 +19,6 @@ from taskdog_server.api.dependencies import (
     HolidayCheckerDep,
     QueryControllerDep,
 )
-from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import CreateTaskRequest, UpdateTaskRequest
 from taskdog_server.api.models.responses import (
     TaskDetailResponse,
@@ -51,7 +50,6 @@ def _serialize_audit_value(val: object) -> object:
 @router.post(
     "", response_model=TaskOperationResponse, status_code=status.HTTP_201_CREATED
 )
-@handle_task_errors
 async def create_task(
     request: CreateTaskRequest,
     controller: CrudControllerDep,
@@ -182,7 +180,6 @@ async def list_tasks(
 
 
 @router.get("/{task_id}", response_model=TaskDetailResponse)
-@handle_task_errors
 async def get_task(
     task_id: int,
     controller: QueryControllerDep,
@@ -205,7 +202,6 @@ async def get_task(
 
 
 @router.patch("/{task_id}", response_model=UpdateTaskResponse)
-@handle_task_errors
 async def update_task(
     task_id: int,
     request: UpdateTaskRequest,
@@ -281,7 +277,6 @@ async def update_task(
 
 
 @router.post("/{task_id}/archive", response_model=TaskOperationResponse)
-@handle_task_errors
 async def archive_task(
     task_id: int,
     controller: CrudControllerDep,
@@ -325,7 +320,6 @@ async def archive_task(
 
 
 @router.post("/{task_id}/restore", response_model=TaskOperationResponse)
-@handle_task_errors
 async def restore_task(
     task_id: int,
     controller: CrudControllerDep,
@@ -369,7 +363,6 @@ async def restore_task(
 
 
 @router.delete("/{task_id}")
-@handle_task_errors
 async def delete_task(
     task_id: int,
     controller: CrudControllerDep,
