@@ -220,7 +220,11 @@ __marimo__/
 
 # Git worktrees
 .worktrees/
+.claude/worktrees/
 
 # Claude Code
 # Local settings are developer-specific (auto-approved commands, etc.)
 .claude/*.local.json
+
+# Generated demo media (uploaded to GitHub, not committed)
+assets/
