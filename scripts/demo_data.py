@@ -159,7 +159,7 @@ class DemoDataLoader:
 
     def load(self) -> dict[str, Any]:
         """Load and parse JSON data file."""
-        with open(self.data_file, encoding="utf-8") as f:
+        with self.data_file.open(encoding="utf-8") as f:
             return json.load(f)
 
     def resolve_date(self, days: int) -> str:
@@ -222,10 +222,12 @@ class DemoDataCreator:
         client: TaskdogAPIClient,
         loader: DemoDataLoader,
         max_workers: int = 5,
+        optimize: bool = True,
     ):
         self.client = client
         self.loader = loader
         self.max_workers = max_workers
+        self.optimize = optimize
         self.task_id_map: dict[str, int] = {}  # T1 -> actual_id
 
     def run(self) -> None:
@@ -237,8 +239,7 @@ class DemoDataCreator:
         all_tasks = []
         for project in data["projects"]:
             print(f"{BLUE}[{project['name']}]{NC}")
-            for task in project["tasks"]:
-                all_tasks.append(task)
+            all_tasks.extend(project["tasks"])
 
         self._create_tasks_parallel(all_tasks)
 
@@ -259,10 +260,12 @@ class DemoDataCreator:
         progress = data.get("progress", {})
         self._simulate_progress(progress)
 
-        # Phase 6: Run optimization
-        print(f"\n{BLUE}Running schedule optimization...{NC}")
-        opt_config = data.get("optimization", {})
-        self._run_optimization(opt_config)
+        # Phase 6: Run optimization (skippable so the initial state has no
+        # planned schedule — e.g. for demo recordings that optimize on camera)
+        if self.optimize:
+            print(f"\n{BLUE}Running schedule optimization...{NC}")
+            opt_config = data.get("optimization", {})
+            self._run_optimization(opt_config)
 
         # Summary
         self._print_summary(data)
@@ -517,6 +520,11 @@ def main() -> int:
         default=None,
         help="API key for authentication (X-Api-Key header)",
     )
+    parser.add_argument(
+        "--no-optimize",
+        action="store_true",
+        help="Skip the final schedule optimization (leaves tasks unscheduled)",
+    )
     args = parser.parse_args()
 
     # Check data file exists
@@ -564,7 +572,9 @@ def main() -> int:
 
     # Create demo data
     loader = DemoDataLoader()
-    creator = DemoDataCreator(client, loader, max_workers=args.workers)
+    creator = DemoDataCreator(
+        client, loader, max_workers=args.workers, optimize=not args.no_optimize
+    )
 
     try:
         creator.run()
