@@ -6,17 +6,6 @@ providing a presentation-agnostic interface for the Application layer.
 
 from dataclasses import dataclass, field
 from datetime import date
-from enum import Enum
-
-
-class TimeRange(Enum):
-    """Time range presets for task queries.
-
-    Attributes:
-        CUSTOM: Custom date range (uses start_date/end_date)
-    """
-
-    CUSTOM = "custom"
 
 
 @dataclass
@@ -33,7 +22,6 @@ class ListTasksInput:
         match_all_tags: If True, task must have all tags; if False, any tag matches
         start_date: Filter tasks with planned_start/end >= this date
         end_date: Filter tasks with planned_start/end <= this date
-        time_range: Preset time range (CUSTOM)
         sort_by: Field to sort by (default: "id")
         reverse: Reverse sort order (default: False)
     """
@@ -44,7 +32,6 @@ class ListTasksInput:
     match_all_tags: bool = False
     start_date: date | None = None
     end_date: date | None = None
-    time_range: TimeRange = TimeRange.CUSTOM
     sort_by: str = "id"
     reverse: bool = False
 

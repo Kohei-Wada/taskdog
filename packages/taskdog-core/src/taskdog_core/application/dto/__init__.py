@@ -5,7 +5,6 @@ from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutpu
 from taskdog_core.application.dto.query_inputs import (
     GetGanttDataInput,
     ListTasksInput,
-    TimeRange,
 )
 from taskdog_core.application.dto.statistics_output import (
     CalculateStatisticsInput,
@@ -34,7 +33,6 @@ __all__ = [
     "StatusChangeOutput",
     "TaskDetailOutput",
     "TaskStatistics",
-    "TimeRange",
     "TimeStatistics",
     "TrendStatistics",
 ]

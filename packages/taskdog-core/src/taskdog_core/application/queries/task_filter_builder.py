@@ -41,7 +41,7 @@ class TaskFilterBuilder:
         1. Archive filter (if not include_archived)
         2. Status filter (if status specified)
         3. Tag filter (if tags specified)
-        4. Time range / date filter (based on time_range)
+        4. Date range filter (if start_date/end_date specified)
 
         Args:
             input_dto: The query input parameters
@@ -74,8 +74,8 @@ class TaskFilterBuilder:
             )
             filter_obj = TaskFilterBuilder._compose(filter_obj, tag_filter)
 
-        # Time range filter
-        filter_obj = TaskFilterBuilder._apply_time_range(filter_obj, input_dto)
+        # Date range filter
+        filter_obj = TaskFilterBuilder._apply_date_range(filter_obj, input_dto)
 
         return filter_obj
 
@@ -98,22 +98,21 @@ class TaskFilterBuilder:
         return existing >> new_filter
 
     @staticmethod
-    def _apply_time_range(
+    def _apply_date_range(
         filter_obj: TaskFilter | None,
         input_dto: ListTasksInput,
     ) -> TaskFilter | None:
-        """Apply time range filter based on input DTO.
+        """Apply date range filter based on input DTO.
 
-        Applies DateRangeFilter when custom date range is specified.
+        Applies DateRangeFilter when start_date and/or end_date are specified.
 
         Args:
             filter_obj: Current filter chain
-            input_dto: Query input with time range parameters
+            input_dto: Query input with date range parameters
 
         Returns:
-            Updated filter chain with time filter applied
+            Updated filter chain with date filter applied
         """
-        # Custom time range with explicit dates
         if input_dto.start_date is not None or input_dto.end_date is not None:
             date_filter = DateRangeFilter(
                 start_date=input_dto.start_date,
