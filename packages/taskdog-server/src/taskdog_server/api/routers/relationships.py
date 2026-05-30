@@ -8,7 +8,6 @@ from taskdog_server.api.dependencies import (
     EventBroadcasterDep,
     RelationshipControllerDep,
 )
-from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import (
     AddDependencyRequest,
     SetTaskTagsRequest,
@@ -19,7 +18,6 @@ router = APIRouter()
 
 
 @router.post("/{task_id}/dependencies", response_model=TaskOperationResponse)
-@handle_task_errors
 async def add_dependency(
     task_id: int,
     request: AddDependencyRequest,
@@ -66,7 +64,6 @@ async def add_dependency(
 @router.delete(
     "/{task_id}/dependencies/{depends_on_id}", response_model=TaskOperationResponse
 )
-@handle_task_errors
 async def remove_dependency(
     task_id: int,
     depends_on_id: int,
@@ -111,7 +108,6 @@ async def remove_dependency(
 
 
 @router.put("/{task_id}/tags", response_model=TaskOperationResponse)
-@handle_task_errors
 async def set_task_tags(
     task_id: int,
     request: SetTaskTagsRequest,

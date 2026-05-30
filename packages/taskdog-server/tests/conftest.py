@@ -251,6 +251,11 @@ def app(
     test_app.state.server_config = server_config
     test_app.state.connection_manager = ConnectionManager()
 
+    # Mirror production app: translate domain exceptions to HTTP responses
+    from taskdog_server.api.error_handlers import register_exception_handlers
+
+    register_exception_handlers(test_app)
+
     # Import and register all routers
     from taskdog_server.api.routers import (
         analytics_router,

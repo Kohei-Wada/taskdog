@@ -8,7 +8,6 @@ from taskdog_server.api.dependencies import (
     EventBroadcasterDep,
     NotesControllerDep,
 )
-from taskdog_server.api.error_handlers import handle_task_errors
 from taskdog_server.api.models.requests import UpdateNotesRequest
 from taskdog_server.api.models.responses import NotesResponse
 
@@ -16,7 +15,6 @@ router = APIRouter()
 
 
 @router.get("/{task_id}/notes", response_model=NotesResponse)
-@handle_task_errors
 async def get_task_notes(
     task_id: int,
     controller: NotesControllerDep,
@@ -41,7 +39,6 @@ async def get_task_notes(
 
 
 @router.put("/{task_id}/notes", response_model=NotesResponse)
-@handle_task_errors
 async def update_task_notes(
     task_id: int,
     request: UpdateNotesRequest,
@@ -87,7 +84,6 @@ async def update_task_notes(
 
 
 @router.delete("/{task_id}/notes", status_code=status.HTTP_204_NO_CONTENT)
-@handle_task_errors
 async def delete_task_notes(
     task_id: int,
     controller: NotesControllerDep,
