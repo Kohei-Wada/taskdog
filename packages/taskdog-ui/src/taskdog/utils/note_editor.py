@@ -11,7 +11,7 @@ from taskdog.utils.editor import get_editor
 from taskdog.utils.notes_template import get_note_template
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 
-EditorRunner = Callable[[str, Path], None]
+type EditorRunner = Callable[[str, Path], None]
 
 
 class NotesProvider(Protocol):

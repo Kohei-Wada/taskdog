@@ -5,7 +5,7 @@ Provides reusable decorators for common error handling patterns in API endpoints
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, TypeVar
+from typing import Any
 
 from fastapi import HTTPException, status
 
@@ -17,11 +17,8 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskValidationError,
 )
 
-# Type variable for generic decorator
-F = TypeVar("F", bound=Callable[..., Any])
 
-
-def handle_task_errors(func: F) -> F:
+def handle_task_errors[F: Callable[..., Any]](func: F) -> F:
     """Decorator for common task operation error handling.
 
     Catches domain exceptions and converts them to appropriate HTTP exceptions:

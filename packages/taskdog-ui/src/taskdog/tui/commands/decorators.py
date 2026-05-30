@@ -2,9 +2,7 @@
 
 from collections.abc import Callable
 from functools import wraps
-from typing import Any, TypeVar, cast
-
-F = TypeVar("F", bound=Callable[..., Any])
+from typing import Any, cast
 
 
 def require_selected_task[F: Callable[..., Any]](func: F) -> F:

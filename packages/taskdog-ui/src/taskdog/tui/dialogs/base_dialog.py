@@ -1,7 +1,7 @@
 """Base dialog class for TUI modal screens."""
 
 from abc import abstractmethod
-from typing import Any, ClassVar, TypeVar
+from typing import Any, ClassVar
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -10,11 +10,8 @@ from textual.screen import ModalScreen
 from textual.validation import Validator
 from textual.widgets import Input, Static
 
-T = TypeVar("T")
-V = TypeVar("V", bound=Validator)
 
-
-class BaseModalDialog(ModalScreen[T]):
+class BaseModalDialog[T](ModalScreen[T]):
     """Base class for modal dialog screens.
 
     Provides common functionality:
@@ -71,7 +68,9 @@ class BaseModalDialog(ModalScreen[T]):
             # If error-message widget doesn't exist, skip error clearing
             pass
 
-    def _get_validator(self, input_widget: Input, validator_type: type[V]) -> V:
+    def _get_validator[V: Validator](
+        self, input_widget: Input, validator_type: type[V]
+    ) -> V:
         """Get a validator of a specific type from an Input widget.
 
         Args:

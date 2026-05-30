@@ -1,17 +1,15 @@
 """Base class for form dialogs with standard navigation."""
 
 from abc import abstractmethod
-from typing import ClassVar, TypeVar
+from typing import ClassVar
 
 from textual.binding import Binding
 from textual.widgets import Input
 
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 
-T = TypeVar("T")
 
-
-class FormDialogBase(BaseModalDialog[T]):
+class FormDialogBase[T](BaseModalDialog[T]):
     """Base class for form dialogs with standard navigation.
 
     Provides:
