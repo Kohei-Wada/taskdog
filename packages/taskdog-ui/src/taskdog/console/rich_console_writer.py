@@ -1,6 +1,5 @@
 """Rich Console implementation of ConsoleWriter."""
 
-from collections.abc import Callable
 from typing import Any
 
 from rich.console import Console
@@ -91,28 +90,6 @@ class RichConsoleWriter(ConsoleWriter):
         """
         self._console.print(
             f"[{STYLE_SUCCESS}]{ICON_SUCCESS}[/{STYLE_SUCCESS}] {message}"
-        )
-
-    def update_success(
-        self,
-        output: TaskOperationOutput,
-        field_name: str,
-        value: Any,
-        format_func: Callable[[Any], str] | None = None,
-    ) -> None:
-        """Print standardized update success message.
-
-        Args:
-            output: Task operation output of the updated task
-            field_name: Name of the field that was updated
-            value: New value of the field
-            format_func: Optional function to format the value for display
-        """
-        formatted_value = format_func(value) if format_func else str(value)
-        self._console.print(
-            f"[{STYLE_SUCCESS}]{ICON_SUCCESS}[/{STYLE_SUCCESS}] Set {field_name} for "
-            f"[bold]{output.name}[/bold] (ID: [cyan]{output.id}[/cyan]): "
-            f"[magenta]{formatted_value}[/magenta]"
         )
 
     def print(self, message: Any = "", **kwargs: Any) -> None:

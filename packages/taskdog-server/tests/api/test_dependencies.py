@@ -16,10 +16,8 @@ from taskdog_server.api.dependencies import (
     get_crud_controller,
     get_holiday_checker,
     get_lifecycle_controller,
-    get_notes_repository,
     get_query_controller,
     get_relationship_controller,
-    get_repository,
     initialize_api_context,
 )
 
@@ -157,32 +155,6 @@ class TestDependencyInjection:
 
         # Assert
         assert controller == mock_controller
-
-    def test_get_repository(self):
-        """Test getting repository from context."""
-        # Arrange
-        mock_repository = MagicMock()
-        mock_context = MagicMock(spec=ApiContext)
-        mock_context.repository = mock_repository
-
-        # Act
-        repository = get_repository(mock_context)
-
-        # Assert
-        assert repository == mock_repository
-
-    def test_get_notes_repository(self):
-        """Test getting notes repository from context."""
-        # Arrange
-        mock_notes_repo = MagicMock()
-        mock_context = MagicMock(spec=ApiContext)
-        mock_context.notes_repository = mock_notes_repo
-
-        # Act
-        notes_repo = get_notes_repository(mock_context)
-
-        # Assert
-        assert notes_repo == mock_notes_repo
 
     def test_get_holiday_checker_returns_none_when_not_configured(self):
         """Test getting holiday checker when not configured."""

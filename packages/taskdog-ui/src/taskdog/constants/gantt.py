@@ -1,7 +1,5 @@
 """Gantt chart constants (CLI/TUI shared)."""
 
-from taskdog.constants.common import JustifyValue
-
 # Gantt-specific headers
 HEADER_TIMELINE = "Timeline"
 GANTT_WORKLOAD_LABEL = "Est. Workload[h]"
@@ -28,6 +26,3 @@ GANTT_COLUMN_EST_HOURS_COLOR = "yellow"
 DAY_STYLE_SATURDAY = "blue"
 DAY_STYLE_SUNDAY = "red"
 DAY_STYLE_WEEKDAY = "cyan"
-
-# Gantt-specific justify
-JUSTIFY_ESTIMATED_GANTT: JustifyValue = "center"

@@ -111,28 +111,3 @@ class ConfigLoader:
                     default,
                 )
             return default
-
-    @staticmethod
-    def get_env_list(
-        key: str,
-        default: list[str],
-        prefix: str = "TASKDOG_",
-    ) -> list[str]:
-        """Get comma-separated list from environment variable.
-
-        Args:
-            key: Environment variable key (without prefix)
-            default: Default value if environment variable is not set
-            prefix: Environment variable prefix (default: "TASKDOG_")
-
-        Returns:
-            List parsed from comma-separated environment variable,
-            or default if not set
-        """
-        env_key = f"{prefix}{key}"
-        value = os.environ.get(env_key)
-
-        if value is None or value.strip() == "":
-            return default
-
-        return [item.strip() for item in value.split(",") if item.strip()]

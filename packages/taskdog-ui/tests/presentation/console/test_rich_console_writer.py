@@ -60,24 +60,6 @@ class RichConsoleWriterTest(unittest.TestCase):
         output = self.string_io.getvalue()
         self.assertIn("This is information", output)
 
-    def test_update_success(self):
-        """Test update_success method."""
-        self.writer.update_success(self.test_task, "priority", 3)
-        output = self.string_io.getvalue()
-        self.assertIn("Set priority for", output)
-        self.assertIn("Test Task", output)
-        self.assertIn("ID:", output)
-        self.assertIn("1", output)
-        self.assertIn("3", output)
-
-    def test_update_success_with_formatter(self):
-        """Test update_success with custom formatter."""
-        self.writer.update_success(self.test_task, "duration", 2.5, lambda x: f"{x}h")
-        output = self.string_io.getvalue()
-        self.assertIn("Set duration for", output)
-        self.assertIn("2", output)
-        self.assertIn("5h", output)
-
     def test_print(self):
         """Test print method."""
         self.writer.print("Hello, World!")

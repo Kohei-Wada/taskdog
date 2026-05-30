@@ -17,8 +17,6 @@ from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleCont
 from taskdog_core.controllers.task_relationship_controller import (
     TaskRelationshipController,
 )
-from taskdog_core.domain.repositories.notes_repository import NotesRepository
-from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.domain.services.time_provider import ITimeProvider
 from taskdog_core.infrastructure.holiday_checker import HolidayChecker
@@ -178,16 +176,6 @@ def get_crud_controller(context: ApiContextDep) -> TaskCrudController:
     return context.crud_controller
 
 
-def get_repository(context: ApiContextDep) -> TaskRepository:
-    """Get task repository from context."""
-    return context.repository
-
-
-def get_notes_repository(context: ApiContextDep) -> NotesRepository:
-    """Get notes repository from context."""
-    return context.notes_repository
-
-
 def get_holiday_checker(context: ApiContextDep) -> IHolidayChecker | None:
     """Get holiday checker from context (may be None)."""
     return context.holiday_checker
@@ -269,8 +257,6 @@ AnalyticsControllerDep = Annotated[
     TaskAnalyticsController, Depends(get_analytics_controller)
 ]
 CrudControllerDep = Annotated[TaskCrudController, Depends(get_crud_controller)]
-RepositoryDep = Annotated[TaskRepository, Depends(get_repository)]
-NotesRepositoryDep = Annotated[NotesRepository, Depends(get_notes_repository)]
 HolidayCheckerDep = Annotated[IHolidayChecker | None, Depends(get_holiday_checker)]
 TimeProviderDep = Annotated[ITimeProvider, Depends(get_time_provider)]
 AuditLogControllerDep = Annotated[AuditLogController, Depends(get_audit_log_controller)]

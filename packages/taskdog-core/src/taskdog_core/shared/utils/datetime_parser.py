@@ -70,23 +70,6 @@ def parse_date_set(date_strings: Iterable[str]) -> set[date]:
     return result
 
 
-def parse_date_dict[T](str_dict: dict[str, T]) -> dict[date, T]:
-    """Parse dictionary with ISO date string keys to date object keys.
-
-    Args:
-        str_dict: Dictionary with ISO date string keys
-
-    Returns:
-        Dictionary with date object keys
-
-    Raises:
-        ValueError: If any date key is malformed
-    """
-    if not str_dict:
-        return {}
-    return {datetime.fromisoformat(k).date(): v for k, v in str_dict.items()}
-
-
 def format_date_dict[T](date_dict: dict[date, T]) -> dict[str, T]:
     """Format dictionary with date keys to ISO string keys.
 

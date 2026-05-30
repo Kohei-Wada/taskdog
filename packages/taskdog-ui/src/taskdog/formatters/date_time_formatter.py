@@ -167,20 +167,6 @@ class DateTimeFormatter:
         return dt.strftime(DATETIME_FORMAT)
 
     @staticmethod
-    def format_datetime_compact(dt: datetime | None) -> str:
-        """Format datetime without seconds (YYYY-MM-DD HH:MM).
-
-        Args:
-            dt: Datetime to format, or None
-
-        Returns:
-            Formatted datetime string, or "-" if dt is None
-        """
-        if not dt:
-            return "-"
-        return dt.strftime("%Y-%m-%d %H:%M")
-
-    @staticmethod
     def format_datetime_full(dt: datetime | None) -> str:
         """Format datetime with full format (YYYY-MM-DD HH:MM:SS).
 

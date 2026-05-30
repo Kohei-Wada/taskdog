@@ -1,6 +1,6 @@
 """Unit tests for GanttCellFormatter."""
 
-from datetime import date, datetime
+from datetime import date
 
 import pytest
 from rich.text import Text
@@ -12,50 +12,11 @@ from taskdog.constants.symbols import (
     SYMBOL_TODAY,
 )
 from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
 
 
 class TestGanttCellFormatter:
     """Test cases for GanttCellFormatter."""
-
-    def test_parse_task_dates_with_all_dates(self):
-        """Test parsing task dates when all dates are present."""
-        task = Task(
-            id=1,
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.IN_PROGRESS,
-            planned_start=datetime(2025, 10, 1, 9, 0, 0),
-            planned_end=datetime(2025, 10, 5, 18, 0, 0),
-            deadline=datetime(2025, 10, 10, 18, 0, 0),
-            actual_start=datetime(2025, 10, 1, 9, 0, 0),
-            actual_end=None,
-        )
-
-        result = GanttCellFormatter.parse_task_dates(task)
-
-        assert result["planned_start"] == date(2025, 10, 1)
-        assert result["planned_end"] == date(2025, 10, 5)
-        assert result["deadline"] == date(2025, 10, 10)
-        assert result["actual_start"] == date(2025, 10, 1)
-        assert result["actual_end"] is None
-
-    def test_parse_task_dates_with_no_dates(self):
-        """Test parsing task dates when no dates are present."""
-        task = Task(
-            id=1,
-            name="Test Task",
-            priority=1,
-            status=TaskStatus.PENDING,
-        )
-
-        result = GanttCellFormatter.parse_task_dates(task)
-
-        assert result["planned_start"] is None
-        assert result["planned_end"] is None
-        assert result["deadline"] is None
-        assert result["actual_start"] is None
-        assert result["actual_end"] is None
 
     def test_format_timeline_cell_actual_period(self):
         """Test formatting a cell in the actual period."""
