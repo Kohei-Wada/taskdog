@@ -8,6 +8,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from taskdog_mcp.tools.serializers import iso, task_result
+
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
     from taskdog_client import TaskdogApiClient
@@ -34,15 +36,11 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             Updated task data with status change confirmation
         """
         result = client.start_task(task_id)
-        return {
-            "id": result.id,
-            "name": result.name,
-            "status": result.status.value,
-            "actual_start": result.actual_start.isoformat()
-            if result.actual_start
-            else None,
-            "message": f"Task '{result.name}' started",
-        }
+        return task_result(
+            result,
+            f"Task '{result.name}' started",
+            actual_start=iso(result.actual_start),
+        )
 
     @mcp.tool()
     def complete_task(task_id: int) -> dict[str, Any]:
@@ -57,14 +55,12 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             Updated task data with completion confirmation
         """
         result = client.complete_task(task_id)
-        return {
-            "id": result.id,
-            "name": result.name,
-            "status": result.status.value,
-            "actual_end": result.actual_end.isoformat() if result.actual_end else None,
-            "actual_duration_hours": result.actual_duration_hours,
-            "message": f"Task '{result.name}' completed",
-        }
+        return task_result(
+            result,
+            f"Task '{result.name}' completed",
+            actual_end=iso(result.actual_end),
+            actual_duration_hours=result.actual_duration_hours,
+        )
 
     @mcp.tool()
     def pause_task(task_id: int) -> dict[str, Any]:
@@ -79,12 +75,7 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             Updated task data
         """
         result = client.pause_task(task_id)
-        return {
-            "id": result.id,
-            "name": result.name,
-            "status": result.status.value,
-            "message": f"Task '{result.name}' paused",
-        }
+        return task_result(result, f"Task '{result.name}' paused")
 
     @mcp.tool()
     def cancel_task(task_id: int) -> dict[str, Any]:
@@ -99,12 +90,7 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             Updated task data
         """
         result = client.cancel_task(task_id)
-        return {
-            "id": result.id,
-            "name": result.name,
-            "status": result.status.value,
-            "message": f"Task '{result.name}' canceled",
-        }
+        return task_result(result, f"Task '{result.name}' canceled")
 
     @mcp.tool()
     def reopen_task(task_id: int) -> dict[str, Any]:
@@ -119,12 +105,7 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             Updated task data
         """
         result = client.reopen_task(task_id)
-        return {
-            "id": result.id,
-            "name": result.name,
-            "status": result.status.value,
-            "message": f"Task '{result.name}' reopened",
-        }
+        return task_result(result, f"Task '{result.name}' reopened")
 
     @mcp.tool()
     def fix_actual_times(
@@ -171,14 +152,10 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             clear_duration=clear_duration,
         )
 
-        return {
-            "id": result.id,
-            "name": result.name,
-            "status": result.status.value,
-            "actual_start": result.actual_start.isoformat()
-            if result.actual_start
-            else None,
-            "actual_end": result.actual_end.isoformat() if result.actual_end else None,
-            "actual_duration_hours": result.actual_duration_hours,
-            "message": f"Fixed actual times for task '{result.name}'",
-        }
+        return task_result(
+            result,
+            f"Fixed actual times for task '{result.name}'",
+            actual_start=iso(result.actual_start),
+            actual_end=iso(result.actual_end),
+            actual_duration_hours=result.actual_duration_hours,
+        )

@@ -8,6 +8,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from taskdog_mcp.tools.serializers import iso, str_list, task_result
+
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
     from taskdog_client import TaskdogApiClient
@@ -55,8 +57,8 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
                     "name": t.name,
                     "status": t.status.value,
                     "priority": t.priority,
-                    "deadline": t.deadline.isoformat() if t.deadline else None,
-                    "tags": list(t.tags) if t.tags else [],
+                    "deadline": iso(t.deadline),
+                    "tags": str_list(t.tags),
                     "estimated_duration": t.estimated_duration,
                     "is_archived": t.is_archived,
                 }
@@ -82,15 +84,13 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             "name": task.name,
             "status": task.status.value,
             "priority": task.priority,
-            "deadline": task.deadline.isoformat() if task.deadline else None,
-            "planned_start": task.planned_start.isoformat()
-            if task.planned_start
-            else None,
-            "planned_end": task.planned_end.isoformat() if task.planned_end else None,
+            "deadline": iso(task.deadline),
+            "planned_start": iso(task.planned_start),
+            "planned_end": iso(task.planned_end),
             "estimated_duration": task.estimated_duration,
             "actual_duration_hours": task.actual_duration_hours,
-            "tags": list(task.tags) if task.tags else [],
-            "depends_on": list(task.depends_on) if task.depends_on else [],
+            "tags": str_list(task.tags),
+            "depends_on": str_list(task.depends_on),
             "is_fixed": task.is_fixed,
             "is_archived": task.is_archived,
             "notes": result.notes_content,
@@ -146,13 +146,11 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             planned_start=planned_start_dt,
             planned_end=planned_end_dt,
         )
-        return {
-            "id": result.id,
-            "name": result.name,
-            "status": result.status.value,
-            "priority": result.priority,
-            "message": f"Task '{result.name}' created successfully",
-        }
+        return task_result(
+            result,
+            f"Task '{result.name}' created successfully",
+            priority=result.priority,
+        )
 
     @mcp.tool()
     def update_task(
@@ -209,13 +207,11 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         )
         # TaskUpdateOutput has .task (TaskOperationOutput) and .updated_fields
         task = result.task
-        return {
-            "id": task.id,
-            "name": task.name,
-            "status": task.status.value,
-            "priority": task.priority,
-            "message": f"Task '{task.name}' updated successfully",
-        }
+        return task_result(
+            task,
+            f"Task '{task.name}' updated successfully",
+            priority=task.priority,
+        )
 
     @mcp.tool()
     def delete_task(task_id: int, hard: bool = False) -> dict[str, Any]:
@@ -248,9 +244,4 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             Restored task data
         """
         result = client.restore_task(task_id)
-        return {
-            "id": result.id,
-            "name": result.name,
-            "status": result.status.value,
-            "message": f"Task '{result.name}' restored",
-        }
+        return task_result(result, f"Task '{result.name}' restored")
