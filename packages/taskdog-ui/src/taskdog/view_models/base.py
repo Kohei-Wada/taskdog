@@ -1,14 +1,14 @@
 """Base classes for Presentation layer ViewModels.
 
-ViewModels are immutable data structures that contain only the data needed for
-presentation/rendering. Unlike DTOs which may contain domain entities, ViewModels
-should contain only primitive types and presentation-ready formatted strings.
+ViewModels are immutable data structures holding the data a renderer needs,
+free of domain entities. Some ViewModels add computed/formatted fields; others
+(e.g. TaskRowViewModel) are plain data carriers and the renderer does the
+formatting.
 
 Design principles:
 - ViewModels are frozen dataclasses (immutable)
 - ViewModels do NOT contain domain entities (Task, etc.)
-- ViewModels contain presentation-ready data (formatted strings, computed values)
-- Conversion from DTOs/Entities to ViewModels is done by Mappers
+- Conversion from DTOs to ViewModels is done by presenters/ (e.g. TablePresenter)
 """
 
 from dataclasses import dataclass
@@ -20,6 +20,5 @@ class BaseViewModel:
 
     All ViewModels should:
     1. Be immutable (frozen=True)
-    2. Contain only presentation-ready data
-    3. Not reference domain entities
+    2. Not reference domain entities
     """
