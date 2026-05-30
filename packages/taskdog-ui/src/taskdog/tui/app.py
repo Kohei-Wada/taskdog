@@ -1,6 +1,6 @@
 """Taskdog TUI application."""
 
-from pathlib import Path
+from pathlib import PurePath
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from textual.app import App, InvalidThemeError
@@ -39,7 +39,6 @@ from taskdog.tui.screens.main_screen import MainScreen
 from taskdog.tui.selection import AppSelectionProvider
 from taskdog.tui.services import ConnectionMonitor, TaskUIManager, WebSocketHandler
 from taskdog.tui.state import ConnectionStatusManager, TUIState
-from taskdog.tui.utils.css_loader import get_css_paths
 from taskdog_core.domain.exceptions.task_exceptions import (
     AuthenticationError,
     ServerConnectionError,
@@ -198,10 +197,13 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         HelpCommandProvider,
     }
 
-    # Load CSS from external files
-    # Note: get_css_paths() returns list[str | Path], but App expects list[str | PurePath]
-    # Path is a subclass of PurePath, but list is invariant so we need type: ignore
-    CSS_PATH: ClassVar[list[str | Path]] = get_css_paths()  # type: ignore[assignment]
+    # CSS paths are resolved relative to this module's directory by Textual.
+    CSS_PATH: ClassVar[list[str | PurePath]] = [
+        "styles/theme.tcss",
+        "styles/components.tcss",
+        "styles/main.tcss",
+        "styles/dialogs.tcss",
+    ]
 
     # Enable mouse support
     ENABLE_MOUSE: ClassVar[bool] = True
