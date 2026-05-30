@@ -1,14 +1,14 @@
 """DTOs for optimization results."""
 
-from dataclasses import dataclass
 from datetime import date, datetime
+
+from pydantic import BaseModel
 
 from taskdog_core.application.dto.optimization_summary import OptimizationSummary
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
 
 
-@dataclass
-class SchedulingFailure:
+class SchedulingFailure(BaseModel):
     """Information about a task scheduling failure.
 
     Attributes:
@@ -20,8 +20,7 @@ class SchedulingFailure:
     reason: str
 
 
-@dataclass
-class OptimizationOutput:
+class OptimizationOutput(BaseModel):
     """Complete result of schedule optimization.
 
     This DTO encapsulates all information from the optimization process,

@@ -1,13 +1,13 @@
 """Output DTO for task write operations."""
 
-from dataclasses import dataclass
 from datetime import datetime
+
+from pydantic import BaseModel
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
 
 
-@dataclass
-class TaskOperationOutput:
+class TaskOperationOutput(BaseModel):
     """Generic output DTO for task write operations.
 
     This DTO is used by TaskController to return task operation results

@@ -4,11 +4,10 @@ This DTO provides a presentation-agnostic representation of tag usage statistics
 containing tag counts and metadata for display or API responses.
 """
 
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class TagStatisticsOutput:
+class TagStatisticsOutput(BaseModel):
     """Output DTO for tag statistics.
 
     Contains tag usage statistics across all tasks.

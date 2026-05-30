@@ -12,6 +12,7 @@ from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import (
     GanttTaskDto,
     TaskDetailDto,
+    TaskRowDto,
 )
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
@@ -124,7 +125,7 @@ class TestConvertToTaskListResponse:
             updated_at=now,
         )
         dto = TaskListOutput(
-            tasks=[task],
+            tasks=[TaskRowDto.from_entity(task)],
             total_count=10,
             filtered_count=1,
             gantt_data=None,
@@ -156,7 +157,7 @@ class TestConvertToTaskListResponse:
             updated_at=now,
         )
         dto = TaskListOutput(
-            tasks=[task],
+            tasks=[TaskRowDto.from_entity(task)],
             total_count=1,
             filtered_count=1,
             gantt_data=None,
@@ -203,7 +204,7 @@ class TestConvertToTaskListResponse:
             holidays={date(2025, 1, 4)},
         )
         dto = TaskListOutput(
-            tasks=[task],
+            tasks=[TaskRowDto.from_entity(task)],
             total_count=1,
             filtered_count=1,
             gantt_data=gantt_output,
@@ -249,7 +250,7 @@ class TestConvertToTaskListResponse:
             updated_at=now,
         )
         dto = TaskListOutput(
-            tasks=[task1, task2],
+            tasks=[TaskRowDto.from_entity(task1), TaskRowDto.from_entity(task2)],
             total_count=2,
             filtered_count=2,
             gantt_data=None,

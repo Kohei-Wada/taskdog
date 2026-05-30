@@ -1,13 +1,12 @@
 """Output DTO for update_task operation."""
 
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.domain.entities.task import Task
 
 
-@dataclass
-class TaskUpdateOutput:
+class TaskUpdateOutput(BaseModel):
     """Output DTO for update_task operation.
 
     This DTO wraps TaskOperationOutput and adds metadata about which

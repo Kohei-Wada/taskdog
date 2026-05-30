@@ -71,7 +71,10 @@ class TestTaskDetailDialogInit:
 
     def test_raises_value_error_when_task_is_none(self) -> None:
         """Test that ValueError is raised when task is None."""
-        detail = TaskDetailOutput(task=None, notes_content="", has_notes=False)
+        # model_construct bypasses validation to build the invalid task=None case
+        detail = TaskDetailOutput.model_construct(
+            task=None, notes_content="", has_notes=False
+        )
 
         with pytest.raises(ValueError) as exc_info:
             TaskDetailDialog(detail)

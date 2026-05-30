@@ -1,12 +1,11 @@
 """DTO for task detail information."""
 
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 from taskdog_core.application.dto.task_dto import TaskDetailDto
 
 
-@dataclass
-class TaskDetailOutput:
+class TaskDetailOutput(BaseModel):
     """Result DTO for task detail with notes.
 
     Attributes:

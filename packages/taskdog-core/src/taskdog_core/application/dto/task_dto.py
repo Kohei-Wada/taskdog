@@ -6,7 +6,6 @@ the Task entity directly to the presentation layer.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
@@ -18,13 +17,14 @@ if TYPE_CHECKING:
     from taskdog_core.domain.entities.task import Task
 
 
-@dataclass(frozen=True)
-class TaskSummaryDto:
+class TaskSummaryDto(BaseModel):
     """Minimal task information for lists and references.
 
     Used when only basic task identification is needed.
     Includes optional duration fields for statistics display.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     id: int
     name: str
@@ -54,12 +54,13 @@ class TaskSummaryDto:
         )
 
 
-@dataclass(frozen=True)
-class GanttTaskDto:
+class GanttTaskDto(BaseModel):
     """Task data for Gantt chart display.
 
     Contains only the fields needed for Gantt visualization.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     id: int
     name: str
@@ -102,12 +103,13 @@ class GanttTaskDto:
         )
 
 
-@dataclass(frozen=True)
-class TaskRowDto:
+class TaskRowDto(BaseModel):
     """Task data for table row display.
 
     Contains all fields needed for table visualization.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     id: int
     name: str
