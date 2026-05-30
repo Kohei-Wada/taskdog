@@ -107,13 +107,6 @@ class SqliteNotesRepository(SqliteBaseRepository, NotesRepository):
                 session.add(note)
             session.commit()
 
-    def ensure_notes_dir(self) -> None:
-        """No-op for database-based storage.
-
-        This method exists for interface compatibility with file-based storage.
-        Database storage doesn't need directory initialization.
-        """
-
     def delete_notes(self, task_id: int) -> None:
         """Delete notes for a task.
 

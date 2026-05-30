@@ -326,7 +326,6 @@ Clean Architecture with 5 layers across five packages: **Domain** ← **Applicat
 
 **CLI Patterns** (`packages/taskdog-ui/src/taskdog/cli/`)
 
-- `update_helpers.py`: Shared helper utilities for task update operations
 - `error_handler.py`: `@handle_task_errors`, `@handle_command_errors` decorators
 - Batch operations: Loop + per-task error handling (start, done, pause, rm, archive)
 

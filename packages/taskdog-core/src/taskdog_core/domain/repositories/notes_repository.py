@@ -50,13 +50,6 @@ class NotesRepository(ABC):
         """
 
     @abstractmethod
-    def ensure_notes_dir(self) -> None:
-        """Ensure notes storage is initialized.
-
-        Creates necessary storage structure if it doesn't exist.
-        """
-
-    @abstractmethod
     def delete_notes(self, task_id: int) -> None:
         """Delete notes for a task.
 

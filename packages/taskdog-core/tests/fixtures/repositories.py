@@ -234,9 +234,6 @@ class InMemoryNotesRepository:
         if task_id in self._notes:
             del self._notes[task_id]
 
-    def ensure_notes_dir(self) -> None:
-        """No-op for in-memory implementation."""
-
     def get_task_ids_with_notes(self, task_ids: list[int]) -> set[int]:
         """Get task IDs that have notes from a list of task IDs."""
         return {task_id for task_id in task_ids if self.has_notes(task_id)}

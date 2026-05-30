@@ -1,7 +1,6 @@
 """Abstract interface for console output."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 from typing import Any
 
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
@@ -62,23 +61,6 @@ class ConsoleWriter(ABC):
 
         Args:
             message: Success message to display
-        """
-
-    @abstractmethod
-    def update_success(
-        self,
-        output: TaskOperationOutput,
-        field_name: str,
-        value: Any,
-        format_func: Callable[[Any], str] | None = None,
-    ) -> None:
-        """Print standardized update success message.
-
-        Args:
-            output: Task operation output of the updated task
-            field_name: Name of the field that was updated
-            value: New value of the field
-            format_func: Optional function to format the value for display
         """
 
     @abstractmethod

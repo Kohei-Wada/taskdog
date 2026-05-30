@@ -35,7 +35,7 @@ from taskdog.constants.symbols import (
     SYMBOL_PENDING,
     SYMBOL_TODAY,
 )
-from taskdog_core.domain.entities.task import Task, TaskStatus
+from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.shared.constants import (
     SATURDAY,
     SUNDAY,
@@ -366,25 +366,6 @@ class GanttCellFormatter:
         legend.append("   ", style=f"on {BACKGROUND_COLOR_SUNDAY}")
         legend.append(" Sunday", style="dim")
         return legend
-
-    @staticmethod
-    def parse_task_dates(task: Task) -> dict[str, Any]:
-        """Parse all task dates into a dictionary.
-
-        Args:
-            task: Task to parse dates from
-
-        Returns:
-            Dictionary with parsed dates (planned_start, planned_end, actual_start,
-            actual_end, deadline)
-        """
-        return {
-            "planned_start": task.planned_start.date() if task.planned_start else None,
-            "planned_end": task.planned_end.date() if task.planned_end else None,
-            "actual_start": task.actual_start.date() if task.actual_start else None,
-            "actual_end": task.actual_end.date() if task.actual_end else None,
-            "deadline": task.deadline.date() if task.deadline else None,
-        }
 
     @staticmethod
     def precompute_date_metadata(

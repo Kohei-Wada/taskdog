@@ -307,76 +307,6 @@ class TestSqliteTaskRepository:
         tag_counts = self.repository.get_tag_counts()
         assert tag_counts == {}
 
-    def test_get_task_ids_by_tags_or_logic(self):
-        """Test get_task_ids_by_tags with OR logic (Phase 3)."""
-        # Create tasks with various tags
-        task1 = self.repository.create("Task 1", priority=1, tags=["urgent", "backend"])
-        task2 = self.repository.create(
-            "Task 2", priority=1, tags=["urgent", "frontend"]
-        )
-        task3 = self.repository.create("Task 3", priority=1, tags=["backend"])
-        task4 = self.repository.create("Task 4", priority=1, tags=["other"])
-
-        # OR logic: tasks with 'urgent' OR 'backend'
-        task_ids = self.repository.get_task_ids_by_tags(
-            ["urgent", "backend"], match_all=False
-        )
-
-        # Should return task1 (has both), task2 (has urgent), task3 (has backend)
-        assert len(task_ids) == 3
-        assert task1.id in task_ids
-        assert task2.id in task_ids
-        assert task3.id in task_ids
-        assert task4.id not in task_ids
-
-    def test_get_task_ids_by_tags_and_logic(self):
-        """Test get_task_ids_by_tags with AND logic (Phase 3)."""
-        # Create tasks with various tags
-        task1 = self.repository.create("Task 1", priority=1, tags=["urgent", "backend"])
-        task2 = self.repository.create(
-            "Task 2", priority=1, tags=["urgent", "backend", "frontend"]
-        )
-        task3 = self.repository.create("Task 3", priority=1, tags=["urgent"])
-        task4 = self.repository.create("Task 4", priority=1, tags=["backend"])
-
-        # AND logic: tasks with 'urgent' AND 'backend'
-        task_ids = self.repository.get_task_ids_by_tags(
-            ["urgent", "backend"], match_all=True
-        )
-
-        # Should return task1 and task2 (both have urgent AND backend)
-        assert len(task_ids) == 2
-        assert task1.id in task_ids
-        assert task2.id in task_ids
-        assert task3.id not in task_ids
-        assert task4.id not in task_ids
-
-    def test_get_task_ids_by_tags_with_empty_list(self):
-        """Test get_task_ids_by_tags with empty tag list returns all tasks (Phase 3)."""
-        task1 = self.repository.create("Task 1", priority=1, tags=["urgent"])
-        task2 = self.repository.create("Task 2", priority=1, tags=["backend"])
-        task3 = self.repository.create("Task 3", priority=1, tags=[])
-
-        # Empty tag list should return all task IDs
-        task_ids = self.repository.get_task_ids_by_tags([], match_all=False)
-
-        assert len(task_ids) == 3
-        assert task1.id in task_ids
-        assert task2.id in task_ids
-        assert task3.id in task_ids
-
-    def test_get_task_ids_by_tags_with_nonexistent_tag(self):
-        """Test get_task_ids_by_tags with nonexistent tag returns empty (Phase 3)."""
-        _ = self.repository.create("Task 1", priority=1, tags=["urgent"])
-        _ = self.repository.create("Task 2", priority=1, tags=["backend"])
-
-        # Nonexistent tag should return empty list
-        task_ids = self.repository.get_task_ids_by_tags(
-            ["nonexistent"], match_all=False
-        )
-
-        assert task_ids == []
-
     # ====================================================================
     # Phase 4: Edge Case Tests
     # ====================================================================
@@ -484,11 +414,6 @@ class TestSqliteTaskRepository:
         tag_counts = self.repository.get_tag_counts()
         # Should have at least 10 categories + 100 tasks + 5 batches = ~115 unique tags
         assert len(tag_counts) > 100
-
-        # Test filter by tags performance
-        task_ids = self.repository.get_task_ids_by_tags(["category-0"], match_all=False)
-        # Should find 10 tasks in category-0 (tasks 0-9)
-        assert len(task_ids) == 10
 
     def test_concurrent_tag_creation_same_name(self):
         """Test creating same tag from multiple tasks doesn't cause duplicates (Phase 4)."""

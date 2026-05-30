@@ -175,11 +175,6 @@ class TestSqliteNotesRepository:
 
         assert repository.has_notes(999) is False
 
-    def test_ensure_notes_dir_is_noop(self, repository: SqliteNotesRepository):
-        """Test ensure_notes_dir does nothing for database storage."""
-        # Should not raise any exception
-        repository.ensure_notes_dir()
-
     def test_get_task_ids_with_notes_returns_empty_set_for_empty_list(
         self, repository: SqliteNotesRepository
     ):
