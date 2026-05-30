@@ -420,13 +420,14 @@ class TestConverterErrorHandling:
         assert exc_info.value.value == "invalid-datetime-format"
 
     def test_invalid_date_type_raises_conversion_error(self):
-        """Test that invalid date type (int instead of string) raises ConversionError."""
+        """Test that an uncoercible date type raises ConversionError."""
+        bad_value = ["not", "a", "date"]
         data = {
             "id": 1,
             "name": "Test Task",
             "status": "PENDING",
             "priority": 50,
-            "deadline": 12345,  # Invalid type (should be string)
+            "deadline": bad_value,  # Invalid type (not coercible to datetime)
             "planned_start": None,
             "planned_end": None,
             "actual_start": None,
@@ -437,7 +438,7 @@ class TestConverterErrorHandling:
             convert_to_task_operation_output(data)
 
         assert exc_info.value.field == "deadline"
-        assert exc_info.value.value == 12345
+        assert exc_info.value.value == bad_value
 
     def test_invalid_date_dict_raises_conversion_error(self):
         """Test that invalid date dictionary keys raise ConversionError."""
