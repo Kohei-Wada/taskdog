@@ -8,6 +8,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
+from taskdog_mcp.tools.serializers import str_list
+
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
     from taskdog_client import TaskdogApiClient
@@ -108,7 +110,7 @@ def register_decomposition_tools(mcp: FastMCP, client: TaskdogApiClient) -> None
         original = client.get_task_detail(task_id)
         # TaskDetailOutput has .task (TaskDetailDto)
         original_task = original.task
-        original_tags = list(original_task.tags) if original_task.tags else []
+        original_tags = str_list(original_task.tags)
 
         created_subtasks: list[dict[str, Any]] = []
         errors: list[dict[str, Any]] = []
@@ -202,7 +204,7 @@ def register_relationship_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         return {
             "id": result.id,
             "name": result.name,
-            "depends_on": list(result.depends_on) if result.depends_on else [],
+            "depends_on": str_list(result.depends_on),
             "message": f"Task {task_id} now depends on task {depends_on_id}",
         }
 
@@ -221,7 +223,7 @@ def register_relationship_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         return {
             "id": result.id,
             "name": result.name,
-            "depends_on": list(result.depends_on) if result.depends_on else [],
+            "depends_on": str_list(result.depends_on),
             "message": f"Removed dependency: task {task_id} no longer depends on task {depends_on_id}",
         }
 
@@ -240,7 +242,7 @@ def register_relationship_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         return {
             "id": result.id,
             "name": result.name,
-            "tags": list(result.tags) if result.tags else [],
+            "tags": str_list(result.tags),
             "message": f"Tags updated for task '{result.name}'",
         }
 

@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from taskdog_mcp.tools.serializers import iso, str_list
+
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
     from taskdog_client import TaskdogApiClient
@@ -107,10 +109,10 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
                     "name": t.name,
                     "status": t.status.value,
                     "priority": t.priority,
-                    "deadline": t.deadline.isoformat() if t.deadline else None,
+                    "deadline": iso(t.deadline),
                     "estimated_duration": t.estimated_duration,
-                    "tags": list(t.tags) if t.tags else [],
-                    "depends_on": list(t.depends_on) if t.depends_on else [],
+                    "tags": str_list(t.tags),
+                    "depends_on": str_list(t.depends_on),
                 }
                 for t in limited_tasks
             ],
