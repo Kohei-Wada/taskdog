@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from taskdog_core.domain.entities.task import TaskStatus
 
@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 
 class TaskFieldsBase(BaseModel):
     """Common fields shared by all task Response models."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     id: int
     name: str
@@ -50,24 +52,7 @@ class TaskOperationResponse(TaskFieldsBase):
         Returns:
             TaskOperationResponse for API response
         """
-        return cls(
-            id=dto.id,
-            name=dto.name,
-            status=dto.status,
-            priority=dto.priority,
-            deadline=dto.deadline,
-            estimated_duration=dto.estimated_duration,
-            planned_start=dto.planned_start,
-            planned_end=dto.planned_end,
-            actual_start=dto.actual_start,
-            actual_end=dto.actual_end,
-            actual_duration=dto.actual_duration,
-            depends_on=dto.depends_on,
-            tags=dto.tags,
-            is_fixed=dto.is_fixed,
-            is_archived=dto.is_archived,
-            actual_duration_hours=dto.actual_duration_hours,
-        )
+        return cls.model_validate(dto)
 
 
 class UpdateTaskResponse(TaskOperationResponse):
@@ -85,25 +70,8 @@ class UpdateTaskResponse(TaskOperationResponse):
         Returns:
             UpdateTaskResponse for API response
         """
-        task = dto.task
-        return cls(
-            id=task.id,
-            name=task.name,
-            status=task.status,
-            priority=task.priority,
-            deadline=task.deadline,
-            estimated_duration=task.estimated_duration,
-            planned_start=task.planned_start,
-            planned_end=task.planned_end,
-            actual_start=task.actual_start,
-            actual_end=task.actual_end,
-            actual_duration=task.actual_duration,
-            depends_on=task.depends_on,
-            tags=task.tags,
-            is_fixed=task.is_fixed,
-            is_archived=task.is_archived,
-            actual_duration_hours=task.actual_duration_hours,
-            updated_fields=dto.updated_fields,
+        return cls.model_validate(dto.task).model_copy(
+            update={"updated_fields": dto.updated_fields}
         )
 
 
@@ -131,6 +99,17 @@ class TaskDetailResponse(TaskReadResponseBase):
     is_schedulable: bool = False
     notes: str | None = None
 
+    @field_validator("daily_allocations", mode="before")
+    @classmethod
+    def _isoformat_allocation_keys(cls, value: Any) -> Any:
+        """Convert date keys (from the DTO) to ISO format strings."""
+        if isinstance(value, dict):
+            return {
+                key.isoformat() if isinstance(key, date) else key: hours
+                for key, hours in value.items()
+            }
+        return value
+
     @classmethod
     def from_dto(cls, dto: TaskDetailOutput) -> TaskDetailResponse:
         """Convert TaskDetailOutput DTO to response model.
@@ -141,34 +120,8 @@ class TaskDetailResponse(TaskReadResponseBase):
         Returns:
             TaskDetailResponse for API response
         """
-        return cls(
-            id=dto.task.id,
-            name=dto.task.name,
-            priority=dto.task.priority,
-            status=dto.task.status,
-            planned_start=dto.task.planned_start,
-            planned_end=dto.task.planned_end,
-            deadline=dto.task.deadline,
-            estimated_duration=dto.task.estimated_duration,
-            actual_start=dto.task.actual_start,
-            actual_end=dto.task.actual_end,
-            depends_on=dto.task.depends_on,
-            tags=dto.task.tags,
-            is_fixed=dto.task.is_fixed,
-            is_archived=dto.task.is_archived,
-            daily_allocations={
-                dt.isoformat(): hours
-                for dt, hours in dto.task.daily_allocations.items()
-            },
-            actual_duration_hours=dto.task.actual_duration_hours,
-            is_active=dto.task.is_active,
-            is_finished=dto.task.is_finished,
-            can_be_modified=dto.task.can_be_modified,
-            is_schedulable=dto.task.is_schedulable,
-            has_notes=dto.has_notes,
-            notes=dto.notes_content,
-            created_at=dto.task.created_at,
-            updated_at=dto.task.updated_at,
+        return cls.model_validate(dto.task).model_copy(
+            update={"has_notes": dto.has_notes, "notes": dto.notes_content}
         )
 
 
