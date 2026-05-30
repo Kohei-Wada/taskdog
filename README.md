@@ -9,7 +9,7 @@ A task management system with CLI/TUI interfaces and REST API server, featuring 
 
 Designed for individual use. Stores tasks locally in SQLite database.
 
-https://github.com/user-attachments/assets/47022478-078d-4ad9-ba7d-d1cd4016e105
+https://github.com/user-attachments/assets/2c0de3ec-fa3d-4f41-ae01-acbff04931e3
 
 **TUI (Textual)**
 
