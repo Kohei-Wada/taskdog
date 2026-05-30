@@ -11,6 +11,9 @@ Designed for individual use. Stores tasks locally in SQLite database.
 
 https://github.com/user-attachments/assets/2c0de3ec-fa3d-4f41-ae01-acbff04931e3
 
+<details>
+<summary>Screenshots</summary>
+
 **TUI (Textual)**
 
 ![TUI](docs/images/taskdog-tui.png)
@@ -18,6 +21,8 @@ https://github.com/user-attachments/assets/2c0de3ec-fa3d-4f41-ae01-acbff04931e3
 **Gantt Chart (CLI)**
 
 ![Gantt Chart](docs/images/taskdog-gantt.png)
+
+</details>
 
 ## Try It Out
 
@@ -79,12 +84,19 @@ For complete setup including API key configuration, see **[Quick Start Guide](do
 
 - **Multiple Interfaces**: CLI, full-screen TUI, and REST API
 - **Schedule Optimization**: 9 algorithms (greedy, genetic, monte carlo, etc.)
+- **Search & Filter**: fzf-style queries, progressive filter chains, multi-field sort
 - **Time Tracking**: Automatic tracking with planned vs actual comparison
 - **Gantt Chart**: Visual timeline with workload analysis
 - **Task Dependencies**: With circular dependency detection
 - **Markdown Notes**: Editor integration with Rich rendering
 - **Audit Logging**: Track all task operations
 - **MCP Integration**: Claude Desktop support via Model Context Protocol
+
+### Search, filter & sort
+
+Maximize the task list, sort it from the command palette, then narrow it down with `/` search, `Ctrl+U` to re-search, and `Ctrl+R` to build a progressive filter chain (substring + status/tag exclusion):
+
+https://github.com/user-attachments/assets/dcb44390-7b10-49a0-bdfc-01a03d7751f9
 
 ## Architecture
 
