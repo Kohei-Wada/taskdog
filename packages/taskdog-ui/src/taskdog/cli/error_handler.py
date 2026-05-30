@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import wraps
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import click
 
@@ -17,10 +17,8 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
 )
 
-F = TypeVar("F", bound=Callable[..., Any])
 
-
-def handle_task_errors(action_name: str) -> Callable[[F], F]:
+def handle_task_errors[F: Callable[..., Any]](action_name: str) -> Callable[[F], F]:
     """Decorator for task-specific error handling in CLI commands.
 
     Use this for commands that operate on specific task IDs (add, update, remove).
@@ -60,7 +58,7 @@ def handle_task_errors(action_name: str) -> Callable[[F], F]:
     return decorator
 
 
-def handle_command_errors(action_name: str) -> Callable[[F], F]:
+def handle_command_errors[F: Callable[..., Any]](action_name: str) -> Callable[[F], F]:
     """Decorator for general command error handling.
 
     Use this for commands that don't operate on specific task IDs (tree, table, gantt, today).

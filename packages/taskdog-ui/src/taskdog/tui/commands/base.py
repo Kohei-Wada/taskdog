@@ -2,7 +2,7 @@
 
 from abc import ABC
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from taskdog.tui.context import TUIContext
 from taskdog.tui.events import TasksRefreshed
@@ -10,8 +10,6 @@ from taskdog_core.domain.exceptions.task_exceptions import TaskError
 
 if TYPE_CHECKING:
     from taskdog.tui.app import TaskdogTUI
-
-F = TypeVar("F", bound=Callable[..., Any])
 
 
 class TUICommandBase(ABC):  # noqa: B024
@@ -66,7 +64,7 @@ class TUICommandBase(ABC):  # noqa: B024
         # Default: no-op
         # Subclasses should override this method
 
-    def handle_error(self, callback_fn: F) -> F:
+    def handle_error[F: Callable[..., Any]](self, callback_fn: F) -> F:
         """Wrap a callback function with error handling.
 
         This is useful for dialog callbacks or async operations where

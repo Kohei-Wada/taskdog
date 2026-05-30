@@ -1,7 +1,7 @@
 """Base class for scrollable dialogs with Vi navigation."""
 
 from abc import abstractmethod
-from typing import ClassVar, TypeVar
+from typing import ClassVar
 
 from textual.binding import Binding
 from textual.containers import VerticalScroll
@@ -10,10 +10,8 @@ from textual.css.query import NoMatches
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
 
-T = TypeVar("T")
 
-
-class ScrollableDialogBase(BaseModalDialog[T], ViNavigationMixin):
+class ScrollableDialogBase[T](BaseModalDialog[T], ViNavigationMixin):
     """Base class for scrollable read-only dialogs with Vi navigation.
 
     Provides:

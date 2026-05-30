@@ -29,7 +29,7 @@ from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 
 # Type alias for use case factory function
-StatusChangeUseCaseFactory = Callable[
+type StatusChangeUseCaseFactory = Callable[
     [TaskRepository], StatusChangeUseCase[SingleTaskInput]
 ]
 
