@@ -1,24 +1,16 @@
 """Workload calculation module.
 
-This module provides workload strategies for different use cases:
+This module provides the workload strategy used to distribute task hours:
 
-- ActualScheduleStrategy: For Gantt charts (honors manual schedules)
-- WeekdayOnlyStrategy: For task creation/update (weekdays only)
-- AllDaysStrategy: For future use (includes weekends)
+- ActualScheduleStrategy: distributes hours across the planned period, honoring
+  weekdays/holidays (used for task creation/update and Gantt chart display).
 
 ## Quick Start
 
 ```python
-# For display (Gantt charts, reports)
 from taskdog_core.application.queries.workload._strategies import ActualScheduleStrategy
 
 strategy = ActualScheduleStrategy(holiday_checker)
-daily_hours = strategy.compute_from_planned_period(task)
-
-# For task creation/update
-from taskdog_core.application.queries.workload._strategies import WeekdayOnlyStrategy
-
-strategy = WeekdayOnlyStrategy()
 daily_hours = strategy.compute_from_planned_period(task)
 ```
 """

@@ -120,11 +120,6 @@ class ActualScheduleStrategy(WorkloadCalculationStrategy):
       strategy = ActualScheduleStrategy()
       # Mon-Wed with Tue holiday -> hours on Mon, Tue, Wed (holiday not excluded)
       ```
-
-    ## When NOT to Use
-
-    - Optimization/auto-scheduling (use WeekdayOnlyStrategy)
-    - Capacity planning assuming 5-day week (use WeekdayOnlyStrategy)
     """
 
     def compute_from_planned_period(self, task: Task) -> dict[date, float]:
