@@ -1555,6 +1555,29 @@ class TestTaskAuditTools:
         assert result["old_values"] == {"priority": 50}
         assert result["new_values"] == {"priority": 80}
 
+    @pytest.mark.parametrize(
+        ("field", "value"),
+        [
+            pytest.param("since", "garbage", id="since-garbage"),
+            pytest.param("since", "2025-13-01T00:00:00", id="since-invalid_month"),
+            pytest.param("until", "garbage", id="until-garbage"),
+            pytest.param("until", "2025-13-01T00:00:00", id="until-invalid_month"),
+        ],
+    )
+    def test_list_audit_logs_invalid_datetime(self, field: str, value: str) -> None:
+        """Test list_audit_logs raises ValueError for invalid since/until."""
+        from mcp.server.fastmcp import FastMCP
+        from taskdog_mcp.tools import task_audit
+
+        client = create_mock_client()
+        mcp = FastMCP("test")
+        task_audit.register_tools(mcp, client)
+
+        list_fn = mcp._tool_manager._tools["list_audit_logs"].fn
+
+        with pytest.raises(ValueError, match=f"Invalid datetime format for '{field}'"):
+            list_fn(**{field: value})
+
 
 class TestTaskTagTools:
     """Test task tag MCP tools."""
