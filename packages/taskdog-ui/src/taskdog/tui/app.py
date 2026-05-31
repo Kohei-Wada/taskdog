@@ -338,6 +338,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             state=self.state,
             task_data_loader=self.task_data_loader,
             main_screen_provider=lambda: self.main_screen,
+            app=self,
             on_error=self._handle_api_error,
         )
 

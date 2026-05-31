@@ -1,5 +1,6 @@
 """Task UI Manager for orchestrating data lifecycle in TUI."""
 
+import asyncio
 from collections.abc import Callable
 from datetime import date, timedelta
 from typing import TYPE_CHECKING
@@ -16,6 +17,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 )
 
 if TYPE_CHECKING:
+    from taskdog.tui.app import TaskdogTUI
     from taskdog.tui.screens.main_screen import MainScreen
 
 
@@ -35,6 +37,7 @@ class TaskUIManager:
         state: TUIState,
         task_data_loader: TaskDataLoader,
         main_screen_provider: Callable[[], "MainScreen | None"],
+        app: "TaskdogTUI",
         on_error: Callable[
             [ServerConnectionError | AuthenticationError | ServerError], None
         ]
@@ -46,11 +49,13 @@ class TaskUIManager:
             state: Shared TUIState instance
             task_data_loader: Service for loading task data
             main_screen_provider: Callable that returns current MainScreen (lazy access)
+            app: The running app, used to dispatch background workers
             on_error: Optional callback for API errors (connection, auth, server)
         """
         self.state = state
         self.task_data_loader = task_data_loader
         self._get_main_screen = main_screen_provider
+        self._app = app
         self._on_error = on_error
 
     def _handle_api_error(
@@ -65,17 +70,83 @@ class TaskUIManager:
             self._on_error(error)
 
     def load_tasks(self, keep_scroll_position: bool = False) -> None:
-        """Load tasks and update UI.
+        """Load tasks and update the UI without blocking the event loop.
 
-        Performs a complete reload cycle: fetches data from API,
-        updates internal caches, and refreshes all UI components.
+        Samples widget geometry and sort state on the main thread, then runs the
+        blocking fetch + transform in a background thread via a worker so first
+        paint and interaction are not blocked by the synchronous HTTP round-trip.
+        UI mutations happen back on the main thread once the worker resumes.
+
+        Uses an exclusive worker group so that a reload arriving mid-flight
+        (e.g. a websocket task change) supersedes the in-flight load: last
+        result wins.
 
         Args:
             keep_scroll_position: Whether to preserve scroll position during refresh
         """
-        task_data = self._fetch_task_data()
+        # Sample anything that must be read on the main thread (widget geometry,
+        # shared state) BEFORE handing off to the worker thread.
+        date_range = self._calculate_gantt_date_range()
+        sort_by = self.state.sort_by
+        sort_reverse = self.state.sort_reverse
+        self._app.run_worker(
+            self._load_tasks_worker(
+                date_range, sort_by, sort_reverse, keep_scroll_position
+            ),
+            group="load_tasks",
+            exclusive=True,
+        )
+
+    async def _load_tasks_worker(
+        self,
+        date_range: tuple[date, date],
+        sort_by: str,
+        sort_reverse: bool,
+        keep_scroll_position: bool,
+    ) -> None:
+        """Fetch + transform off-thread, then apply the result on the main thread.
+
+        The blocking fetch/transform runs via asyncio.to_thread; error handling
+        and all UI/state mutation happen after the await, back on the event loop.
+        """
+        try:
+            task_data = await asyncio.to_thread(
+                self._load_task_data, date_range, sort_by, sort_reverse
+            )
+        except (ServerConnectionError, AuthenticationError, ServerError) as e:
+            self._handle_api_error(e)
+            task_data = self._create_empty_task_data()
+        except Exception:
+            task_data = self._create_empty_task_data()
+
+        # Back on the event-loop thread: safe to touch state and widgets.
+        if self._get_main_screen() is None:
+            return
         self._update_cache(task_data)
         self._refresh_ui(task_data, keep_scroll_position)
+
+    def _load_task_data(
+        self, date_range: tuple[date, date], sort_by: str, sort_reverse: bool
+    ) -> TaskData:
+        """Fetch and transform task data from the API.
+
+        Pure and blocking, so it is safe to run in a worker thread. Raises on API
+        errors; the caller handles them on the main thread.
+
+        Args:
+            date_range: (start, end) for the Gantt payload
+            sort_by: Sort field name
+            sort_reverse: Sort direction
+
+        Returns:
+            TaskData with all tasks, table view models, and gantt view model
+        """
+        return self.task_data_loader.load_tasks(
+            include_archived=False,  # Non-archived by default
+            sort_by=sort_by,
+            reverse=sort_reverse,
+            date_range=date_range,
+        )
 
     def _calculate_gantt_date_range(self) -> tuple[date, date]:
         """Calculate the date range for Gantt chart display.
@@ -92,27 +163,6 @@ class TaskUIManager:
         start_date = today - timedelta(days=today.weekday())
         end_date = start_date + timedelta(days=MIN_GANTT_DISPLAY_DAYS - 1)
         return (start_date, end_date)
-
-    def _fetch_task_data(self) -> TaskData:
-        """Fetch task data using TaskDataLoader.
-
-        Returns:
-            TaskData object containing all task information
-        """
-        try:
-            date_range = self._calculate_gantt_date_range()
-
-            return self.task_data_loader.load_tasks(
-                include_archived=False,  # Non-archived by default
-                sort_by=self.state.sort_by,
-                reverse=self.state.sort_reverse,
-                date_range=date_range,
-            )
-        except (ServerConnectionError, AuthenticationError, ServerError) as e:
-            self._handle_api_error(e)
-            return self._create_empty_task_data()
-        except Exception:
-            return self._create_empty_task_data()
 
     def _create_empty_task_data(self) -> TaskData:
         """Create empty TaskData to avoid crash on errors.
