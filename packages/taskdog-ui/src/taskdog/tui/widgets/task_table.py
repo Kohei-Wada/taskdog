@@ -36,6 +36,8 @@ from taskdog.constants.task_table import (
     HEADER_PRIORITY,
     HEADER_STATUS,
     HEADER_TAGS,
+    HORIZONTAL_FAST_SCROLL_SIZE,
+    HORIZONTAL_SCROLL_SIZE,
     JUSTIFY_ACTUAL,
     JUSTIFY_ACTUAL_END,
     JUSTIFY_ACTUAL_START,
@@ -93,6 +95,21 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
         *ViNavigationMixin.VI_PAGE_BINDINGS,
         *ViNavigationMixin.VI_HORIZONTAL_BINDINGS,
         *ViNavigationMixin.VI_HORIZONTAL_JUMP_BINDINGS,
+        # w/b: fast horizontal scroll (mirrors the gantt week-jump bindings)
+        Binding(
+            "w",
+            "vi_scroll_right_fast",
+            "Fast Right",
+            show=False,
+            tooltip="Scroll right fast (Vi-style)",
+        ),
+        Binding(
+            "b",
+            "vi_scroll_left_fast",
+            "Fast Left",
+            show=False,
+            tooltip="Scroll left fast (Vi-style)",
+        ),
         # Selection bindings
         Binding(
             "space",
@@ -317,15 +334,19 @@ class TaskTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-a
 
     def action_vi_scroll_left(self) -> None:
         """Scroll table left (h key)."""
-        # Scroll left by one column width (approximate)
-        scroll_amount = 10
-        self.scroll_x = max(0, self.scroll_x - scroll_amount)
+        self.scroll_x = max(0, self.scroll_x - HORIZONTAL_SCROLL_SIZE)
 
     def action_vi_scroll_right(self) -> None:
         """Scroll table right (l key)."""
-        # Scroll right by one column width (approximate)
-        scroll_amount = 10
-        self.scroll_x = self.scroll_x + scroll_amount
+        self.scroll_x = self.scroll_x + HORIZONTAL_SCROLL_SIZE
+
+    def action_vi_scroll_left_fast(self) -> None:
+        """Scroll table left fast (b key)."""
+        self.scroll_x = max(0, self.scroll_x - HORIZONTAL_FAST_SCROLL_SIZE)
+
+    def action_vi_scroll_right_fast(self) -> None:
+        """Scroll table right fast (w key)."""
+        self.scroll_x = self.scroll_x + HORIZONTAL_FAST_SCROLL_SIZE
 
     def action_vi_home_horizontal(self) -> None:
         """Scroll table to leftmost position (0 key)."""
