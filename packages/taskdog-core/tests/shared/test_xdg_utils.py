@@ -13,9 +13,18 @@ class TestXDGDirectories:
     def test_get_data_home_default(self):
         """Test get_data_home with default XDG_DATA_HOME."""
         # Use patch.dict with clear=True to ensure complete environment isolation
-        with patch.dict(os.environ, {}, clear=True):
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch(
+                "taskdog_core.shared.xdg_utils.platform.system", return_value="Linux"
+            ),
+            patch(
+                "taskdog_core.shared.xdg_utils.Path.home",
+                return_value=Path("/home/test"),
+            ),
+        ):
             data_home = XDGDirectories.get_data_home(create=False)
-            expected = Path.home() / ".local" / "share" / "taskdog"
+            expected = Path("/home/test/.local/share/taskdog")
             assert data_home == expected
 
     def test_get_data_home_custom(self):
@@ -28,9 +37,86 @@ class TestXDGDirectories:
     def test_get_config_home_default(self):
         """Test get_config_home with default XDG_CONFIG_HOME."""
         # Use patch.dict with clear=True to ensure complete environment isolation
-        with patch.dict(os.environ, {}, clear=True):
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch(
+                "taskdog_core.shared.xdg_utils.platform.system", return_value="Linux"
+            ),
+            patch(
+                "taskdog_core.shared.xdg_utils.Path.home",
+                return_value=Path("/home/test"),
+            ),
+        ):
             config_home = XDGDirectories.get_config_home(create=False)
-            expected = Path.home() / ".config" / "taskdog"
+            expected = Path("/home/test/.config/taskdog")
+            assert config_home == expected
+
+    def test_get_data_home_windows_default(self):
+        """Test get_data_home with Windows LOCALAPPDATA."""
+        with (
+            patch.dict(
+                os.environ, {"LOCALAPPDATA": "C:/Users/test/AppData/Local"}, clear=True
+            ),
+            patch(
+                "taskdog_core.shared.xdg_utils.platform.system", return_value="Windows"
+            ),
+        ):
+            data_home = XDGDirectories.get_data_home(create=False)
+            expected = Path("C:/Users/test/AppData/Local/taskdog")
+            assert data_home == expected
+
+    def test_get_config_home_windows_default(self):
+        """Test get_config_home with Windows APPDATA."""
+        with (
+            patch.dict(
+                os.environ,
+                {"APPDATA": "C:/Users/test/AppData/Roaming"},
+                clear=True,
+            ),
+            patch(
+                "taskdog_core.shared.xdg_utils.platform.system", return_value="Windows"
+            ),
+        ):
+            config_home = XDGDirectories.get_config_home(create=False)
+            expected = Path("C:/Users/test/AppData/Roaming/taskdog")
+            assert config_home == expected
+
+    def test_xdg_data_home_overrides_windows_default(self):
+        """Test XDG_DATA_HOME remains higher priority on Windows."""
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "XDG_DATA_HOME": "/tmp/xdg-data",
+                    "LOCALAPPDATA": "C:/Users/test/AppData/Local",
+                },
+                clear=True,
+            ),
+            patch(
+                "taskdog_core.shared.xdg_utils.platform.system", return_value="Windows"
+            ),
+        ):
+            data_home = XDGDirectories.get_data_home(create=False)
+            expected = Path("/tmp/xdg-data/taskdog")
+            assert data_home == expected
+
+    def test_xdg_config_home_overrides_windows_default(self):
+        """Test XDG_CONFIG_HOME remains higher priority on Windows."""
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "XDG_CONFIG_HOME": "/tmp/xdg-config",
+                    "APPDATA": "C:/Users/test/AppData/Roaming",
+                },
+                clear=True,
+            ),
+            patch(
+                "taskdog_core.shared.xdg_utils.platform.system", return_value="Windows"
+            ),
+        ):
+            config_home = XDGDirectories.get_config_home(create=False)
+            expected = Path("/tmp/xdg-config/taskdog")
             assert config_home == expected
 
     def test_get_config_home_custom(self):

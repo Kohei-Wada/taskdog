@@ -1,7 +1,15 @@
 """Editor utilities for opening files in user's preferred editor."""
 
 import os
+import platform
 import shutil
+
+
+def _fallback_editors() -> list[str]:
+    """Return platform-appropriate editor fallbacks."""
+    if platform.system() == "Windows":
+        return ["code", "notepad", "vim"]
+    return ["vim", "nano", "vi"]
 
 
 def get_editor() -> str:
@@ -19,11 +27,13 @@ def get_editor() -> str:
         return editor
 
     # Fallback to common editors
-    for fallback in ["vim", "nano", "vi"]:
+    fallbacks = _fallback_editors()
+    for fallback in fallbacks:
         if shutil.which(fallback):
             return fallback
 
     # No editor found
     raise RuntimeError(
-        "No editor found. Please set $EDITOR environment variable or install vim, nano, or vi."
+        "No editor found. Please set $EDITOR environment variable "
+        f"or install one of: {', '.join(fallbacks)}."
     )
