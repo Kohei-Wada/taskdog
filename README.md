@@ -51,6 +51,8 @@ uvx --from taskdog-ui taskdog tui
 
 **Supported Platforms**: Linux, macOS
 
+**Experimental**: Windows (WSL2 recommended; native support is still being hardened)
+
 ### Recommended (with systemd/launchd service)
 
 ```bash
@@ -79,6 +81,14 @@ taskdog tui
 ```
 
 For complete setup including API key configuration, see **[Quick Start Guide](docs/QUICKSTART.md)**.
+
+### Windows users
+
+- WSL2 is recommended and follows the same setup flow as Linux.
+- Native Windows support is experimental. By default, data is stored under
+  `%LOCALAPPDATA%\taskdog` and configuration under `%APPDATA%\taskdog`.
+- The editor integration checks `%EDITOR%` first, then falls back to `code`,
+  `notepad`, and `vim`.
 
 ## Features
 
