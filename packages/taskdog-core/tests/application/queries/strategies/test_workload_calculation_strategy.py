@@ -6,7 +6,6 @@ import pytest
 
 from taskdog_core.application.queries.workload._strategies import (
     ActualScheduleStrategy,
-    WeekdayOnlyStrategy,
 )
 from taskdog_core.domain.entities.task import Task
 
@@ -21,89 +20,6 @@ class MockHolidayChecker:
     def is_holiday(self, check_date: date) -> bool:
         """Check if a date is a holiday."""
         return check_date in self.holidays
-
-
-class TestWeekdayOnlyStrategy:
-    """Test cases for WeekdayOnlyStrategy."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        """Set up test fixtures."""
-        self.strategy = WeekdayOnlyStrategy()
-
-    def test_distributes_hours_across_weekdays_only(self):
-        """Test that hours are distributed only across weekdays."""
-        # Task scheduled Friday to Tuesday (5 days, 3 weekdays)
-        task = Task(
-            id=1,
-            name="Test Task",
-            priority=1,
-            planned_start=datetime(2025, 1, 10, 9, 0, 0),  # Friday
-            planned_end=datetime(2025, 1, 14, 18, 0, 0),  # Tuesday
-            estimated_duration=6.0,
-        )
-
-        result = self.strategy.compute_from_planned_period(task)
-
-        # Should have entries for Friday (10th), Monday (13th), Tuesday (14th)
-        # 6 hours / 3 weekdays = 2 hours per day
-        assert len(result) == 3
-        assert result[task.planned_start.date()] == pytest.approx(2.0)  # Friday
-        assert result[datetime(2025, 1, 13).date()] == pytest.approx(2.0)  # Monday
-        assert result[task.planned_end.date()] == pytest.approx(2.0)  # Tuesday
-
-        # Weekend should NOT be in result
-        assert datetime(2025, 1, 11).date() not in result  # Saturday
-        assert datetime(2025, 1, 12).date() not in result  # Sunday
-
-    def test_returns_empty_dict_for_weekend_only_task(self):
-        """Test that weekend-only tasks return empty dict."""
-        # Task scheduled Saturday to Sunday only
-        task = Task(
-            id=1,
-            name="Weekend Task",
-            priority=1,
-            planned_start=datetime(2025, 1, 11, 9, 0, 0),  # Saturday
-            planned_end=datetime(2025, 1, 12, 18, 0, 0),  # Sunday
-            estimated_duration=10.0,
-        )
-
-        result = self.strategy.compute_from_planned_period(task)
-
-        # Should return empty dict (no weekdays in period)
-        assert result == {}
-
-    def test_returns_empty_dict_for_missing_fields(self):
-        """Test that tasks with missing fields return empty dict."""
-        # No planned_start
-        task1 = Task(
-            id=1,
-            name="No Start",
-            priority=1,
-            planned_end=datetime(2025, 1, 14, 18, 0, 0),
-            estimated_duration=6.0,
-        )
-        assert self.strategy.compute_from_planned_period(task1) == {}
-
-        # No planned_end
-        task2 = Task(
-            id=2,
-            name="No End",
-            priority=1,
-            planned_start=datetime(2025, 1, 10, 9, 0, 0),
-            estimated_duration=6.0,
-        )
-        assert self.strategy.compute_from_planned_period(task2) == {}
-
-        # No estimated_duration
-        task3 = Task(
-            id=3,
-            name="No Duration",
-            priority=1,
-            planned_start=datetime(2025, 1, 10, 9, 0, 0),
-            planned_end=datetime(2025, 1, 14, 18, 0, 0),
-        )
-        assert self.strategy.compute_from_planned_period(task3) == {}
 
 
 class TestActualScheduleStrategy:

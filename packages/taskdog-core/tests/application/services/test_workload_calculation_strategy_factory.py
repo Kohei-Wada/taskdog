@@ -1,8 +1,8 @@
 """Tests for workload strategies.
 
 Strategies are used directly for workload calculation:
-- ActualScheduleStrategy: For Gantt charts (honors manual schedules)
-- WeekdayOnlyStrategy: For task creation/update (weekdays only)
+- ActualScheduleStrategy: distributes hours across the planned period
+  (task creation/update and Gantt chart display)
 """
 
 from unittest.mock import Mock

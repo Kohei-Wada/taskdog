@@ -782,7 +782,7 @@ class TestOptimizeScheduleUseCase:
         """Test fixed task on weekend is counted even without daily_allocations.
 
         When a fixed task is scheduled on Saturday but doesn't have daily_allocations
-        set, the workload calculator should still count its hours using AllDaysStrategy.
+        set, the workload calculator should still count its hours toward the day.
         """
         # Create a fixed task on Saturday without daily_allocations
         fixed_task_input = CreateTaskInput(
