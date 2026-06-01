@@ -78,6 +78,14 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
         """Scroll to the bottom of the table."""
         self.scroll_end(animate=False)
 
+    def action_page_down(self) -> None:
+        """Scroll down by half a page without animation."""
+        self.scroll_page_down(animate=False)
+
+    def action_page_up(self) -> None:
+        """Scroll up by half a page without animation."""
+        self.scroll_page_up(animate=False)
+
     def on_mount(self) -> None:
         """Set up table columns."""
         self.add_column(
