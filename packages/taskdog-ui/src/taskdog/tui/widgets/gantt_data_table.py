@@ -636,11 +636,3 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             TaskGanttRowViewModel if cursor is on a task row, None otherwise.
         """
         return self._task_map.get(self.cursor_row)
-
-    def get_legend_text(self) -> Text:
-        """Build legend text for the Gantt chart.
-
-        Returns:
-            Rich Text object with legend
-        """
-        return GanttCellFormatter.build_legend()
