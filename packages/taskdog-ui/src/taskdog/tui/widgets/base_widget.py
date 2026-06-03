@@ -7,6 +7,7 @@ access to the TUI application state.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from taskdog.infrastructure.cli_config_manager import CliConfig
     from taskdog.tui.app import TaskdogTUI
     from taskdog.tui.state import TUIState
 
@@ -58,3 +59,12 @@ class TUIWidget:
             This is a convenience property equivalent to self.tui_app.state
         """
         return self.tui_app.state
+
+    @property
+    def cli_config(self) -> "CliConfig":
+        """Get reference to the CLI configuration.
+
+        Returns:
+            The CliConfig instance from the app
+        """
+        return self.tui_app.cli_config
