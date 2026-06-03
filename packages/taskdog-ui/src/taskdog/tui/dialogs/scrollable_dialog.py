@@ -55,30 +55,10 @@ class ScrollableDialogBase[T](BaseModalDialog[T], ViNavigationMixin):
                 f"not a VerticalScroll widget in {self.__class__.__name__}"
             ) from e
 
-    def action_vi_down(self) -> None:
-        """Scroll down one line (j key)."""
-        self._get_scroll_widget().scroll_relative(y=1, animate=False)
+    def _get_active_scroll_widget(self) -> VerticalScroll:
+        """Return the single scroll container for Vi navigation.
 
-    def action_vi_up(self) -> None:
-        """Scroll up one line (k key)."""
-        self._get_scroll_widget().scroll_relative(y=-1, animate=False)
-
-    def action_vi_page_down(self) -> None:
-        """Scroll down half page (Ctrl+D)."""
-        scroll_widget = self._get_scroll_widget()
-        scroll_widget.scroll_relative(y=scroll_widget.size.height // 2, animate=False)
-
-    def action_vi_page_up(self) -> None:
-        """Scroll up half page (Ctrl+U)."""
-        scroll_widget = self._get_scroll_widget()
-        scroll_widget.scroll_relative(
-            y=-(scroll_widget.size.height // 2), animate=False
-        )
-
-    def action_vi_home(self) -> None:
-        """Scroll to top (g key)."""
-        self._get_scroll_widget().scroll_home(animate=False)
-
-    def action_vi_end(self) -> None:
-        """Scroll to bottom (G key)."""
-        self._get_scroll_widget().scroll_end(animate=False)
+        Plugs into ViNavigationMixin's action_vi_* methods. Raises (via
+        _get_scroll_widget) if the container is misconfigured.
+        """
+        return self._get_scroll_widget()
