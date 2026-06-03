@@ -13,7 +13,6 @@ from taskdog.constants.common import (
     JUSTIFY_NAME,
     JustifyValue,
 )
-from taskdog.constants.symbols import EMOJI_NOTE
 from taskdog.constants.task_table import (
     JUSTIFY_ACTUAL,
     JUSTIFY_ACTUAL_END,
@@ -30,6 +29,11 @@ from taskdog.constants.task_table import (
 )
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.formatters.duration_formatter import DurationFormatter
+from taskdog.formatters.text_formatter import (
+    format_dependencies,
+    format_flags,
+    format_tags,
+)
 from taskdog.view_models.task_view_model import TaskRowViewModel
 
 
@@ -93,7 +97,7 @@ class TaskTableRowBuilder:
             ),
             # Flags column (fixed indicator + note indicator)
             ColumnConfig(
-                formatter=lambda vm: self._format_flags(vm),
+                formatter=lambda vm: format_flags(vm.is_fixed, vm.has_notes),
                 justification=JUSTIFY_FLAGS,
             ),
             # Estimated duration column
@@ -148,12 +152,12 @@ class TaskTableRowBuilder:
             ),
             # Dependencies column
             ColumnConfig(
-                formatter=lambda vm: self._format_dependencies(vm.depends_on),
+                formatter=lambda vm: format_dependencies(vm.depends_on),
                 justification=JUSTIFY_DEPENDENCIES,
             ),
             # Tags column
             ColumnConfig(
-                formatter=lambda vm: self._format_tags(vm.tags),
+                formatter=lambda vm: format_tags(vm.tags),
                 justification=JUSTIFY_TAGS,
             ),
         ]
@@ -185,45 +189,3 @@ class TaskTableRowBuilder:
         if style:
             text.stylize(style)
         return text
-
-    @staticmethod
-    def _format_flags(task_vm: TaskRowViewModel) -> str:
-        """Format task flags (fixed indicator + note indicator).
-
-        Args:
-            task_vm: TaskRowViewModel to extract flags from
-
-        Returns:
-            Formatted flags string
-        """
-        fixed_indicator = "📌" if task_vm.is_fixed else ""
-        note_indicator = EMOJI_NOTE if task_vm.has_notes else ""
-        return fixed_indicator + note_indicator
-
-    @staticmethod
-    def _format_tags(tags: list[str] | None) -> str:
-        """Format task tags.
-
-        Args:
-            tags: List of tags to format
-
-        Returns:
-            Formatted tags string
-        """
-        if not tags:
-            return ""
-        return ", ".join(tags)
-
-    @staticmethod
-    def _format_dependencies(depends_on: list[int] | None) -> str:
-        """Format task dependencies for display.
-
-        Args:
-            depends_on: List of dependency task IDs
-
-        Returns:
-            Formatted dependencies string (e.g., "1,2,3" or "-")
-        """
-        if not depends_on:
-            return "-"
-        return ",".join(str(dep_id) for dep_id in depends_on)

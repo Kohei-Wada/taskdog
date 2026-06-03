@@ -16,3 +16,4 @@ SYMBOL_CANCELED = "x"  # lowercase x - task canceled
 
 # UI Emojis
 EMOJI_NOTE = "📝"  # Note indicator in task table
+EMOJI_FIXED = "📌"  # Fixed-task indicator in task table

@@ -291,7 +291,7 @@ class TestRichTableRenderer:
     @pytest.mark.parametrize(
         "tags,expected",
         [
-            ([], ""),
+            ([], "-"),
             (["solo"], "solo"),
             (["urgent", "backend"], "urgent, backend"),
         ],
@@ -442,74 +442,6 @@ class TestRichTableRenderer:
         # This shouldn't happen in practice due to validation, but test the fallback
         result = self.renderer._get_field_value(self.task1, "unknown_field")
         assert result == "-"
-
-    @pytest.mark.parametrize(
-        "tags,expected",
-        [
-            ([], ""),
-            (["solo"], "solo"),
-            (["urgent", "backend"], "urgent, backend"),
-        ],
-        ids=["empty_list", "single_tag", "multiple_tags"],
-    )
-    def test_format_tags(self, tags, expected):
-        """Test _format_tags returns empty string for empty list or joins tags with comma."""
-        task = TaskRowViewModel(
-            id=99,
-            name="Test",
-            priority=1,
-            status=TaskStatus.PENDING,
-            is_fixed=False,
-            depends_on=[],
-            tags=tags,
-            has_notes=False,
-            estimated_duration=None,
-            actual_duration_hours=None,
-            planned_start=None,
-            planned_end=None,
-            actual_start=None,
-            actual_end=None,
-            deadline=None,
-            created_at=None,
-            updated_at=None,
-            is_finished=False,
-        )
-        result = self.renderer._format_tags(task)
-        assert result == expected
-
-    @pytest.mark.parametrize(
-        "depends_on,expected",
-        [
-            ([], "-"),
-            ([10], "10"),
-            ([1, 3], "1,3"),
-        ],
-        ids=["empty_list", "single_dependency", "multiple_dependencies"],
-    )
-    def test_format_dependencies(self, depends_on, expected):
-        """Test _format_dependencies returns dash for empty list or formats IDs."""
-        task = TaskRowViewModel(
-            id=99,
-            name="Test",
-            priority=1,
-            status=TaskStatus.PENDING,
-            is_fixed=False,
-            depends_on=depends_on,
-            tags=[],
-            has_notes=False,
-            estimated_duration=None,
-            actual_duration_hours=None,
-            planned_start=None,
-            planned_end=None,
-            actual_start=None,
-            actual_end=None,
-            deadline=None,
-            created_at=None,
-            updated_at=None,
-            is_finished=False,
-        )
-        result = self.renderer._format_dependencies(task)
-        assert result == expected
 
     def test_render_multiple_tasks(self) -> None:
         """Test render handles multiple tasks correctly."""
