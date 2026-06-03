@@ -155,7 +155,7 @@ class GanttWidget(Vertical, TUIWidget):
         try:
             gantt_view_model = self._get_gantt_from_state()
             if gantt_view_model and self._gantt_table:
-                gantt_config = self.app._cli_config.gantt  # type: ignore[attr-defined]
+                gantt_config = self.cli_config.gantt
                 self._gantt_table.load_gantt(
                     gantt_view_model,
                     keep_scroll_position=self._keep_scroll_position,
@@ -278,7 +278,7 @@ class GanttWidget(Vertical, TUIWidget):
         weeks = max(max_days // DAYS_PER_WEEK, 1)
         calculated_days = weeks * DAYS_PER_WEEK
         try:
-            min_days: int = self.app._cli_config.gantt.min_display_days  # type: ignore[attr-defined]
+            min_days: int = self.cli_config.gantt.min_display_days
         except (AttributeError, TypeError):
             min_days = MIN_GANTT_DISPLAY_DAYS
         return max(calculated_days, min_days)

@@ -290,6 +290,11 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         """
         self.websocket_handler.handle_message(message)
 
+    @property
+    def cli_config(self) -> "CliConfig":
+        """Public accessor for the CLI configuration."""
+        return self._cli_config
+
     def __getattr__(self, name: str) -> Any:
         """Dynamically handle action_* methods by delegating to command_factory.
 
