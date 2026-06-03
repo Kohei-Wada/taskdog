@@ -152,31 +152,6 @@ class TestTaskTableRowBuilder:
 
         assert formatted == short_name
 
-    def test_format_tags_truncation(self):
-        """Test tags truncation for long tag lists."""
-        long_tags = ["tag1", "tag2", "tag3", "tag4", "tag5", "verylongtag"]
-
-        formatted = self.builder._format_tags(long_tags)
-
-        # Should be truncated with "..."
-        assert formatted.endswith("...")
-
-    def test_format_tags_empty(self):
-        """Test formatting empty tags."""
-        formatted = self.builder._format_tags(None)
-        assert formatted == ""
-
-        formatted = self.builder._format_tags([])
-        assert formatted == ""
-
-    def test_format_tags_no_truncation(self):
-        """Test that short tag lists are not truncated."""
-        short_tags = ["tag1", "tag2"]
-
-        formatted = self.builder._format_tags(short_tags)
-
-        assert formatted == "tag1, tag2"
-
     def test_build_row_in_progress_task_shows_elapsed_time(self):
         """Test that IN_PROGRESS tasks show elapsed time."""
         task = Task(

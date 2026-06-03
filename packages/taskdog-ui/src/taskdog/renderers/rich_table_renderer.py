@@ -21,7 +21,7 @@ from taskdog.constants.common import (
     TABLE_PADDING,
 )
 from taskdog.constants.formatting import format_table_title
-from taskdog.constants.symbols import EMOJI_NOTE
+from taskdog.constants.symbols import EMOJI_FIXED, EMOJI_NOTE
 from taskdog.constants.task_table import (
     COLUMN_CREATED_AT_STYLE,
     COLUMN_DATETIME_STYLE,
@@ -70,6 +70,11 @@ from taskdog.constants.task_table import (
 )
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
 from taskdog.formatters.duration_formatter import DurationFormatter
+from taskdog.formatters.text_formatter import (
+    format_dependencies,
+    format_flags,
+    format_tags,
+)
 from taskdog.renderers.rich_renderer_base import RichRendererBase
 
 if TYPE_CHECKING:
@@ -315,11 +320,11 @@ class RichTableRenderer(RichRendererBase):
             ),
             "note": lambda t: EMOJI_NOTE if t.has_notes else "",
             "priority": lambda t: str(t.priority),
-            "flags": lambda t: self._format_flags(t),
+            "flags": lambda t: format_flags(t.is_fixed, t.has_notes),
             "status": lambda t: self._format_status(t),
-            "is_fixed": lambda t: "📌" if t.is_fixed else "",
-            "depends_on": lambda t: self._format_dependencies(t),
-            "tags": lambda t: self._format_tags(t),
+            "is_fixed": lambda t: EMOJI_FIXED if t.is_fixed else "",
+            "depends_on": lambda t: format_dependencies(t.depends_on),
+            "tags": lambda t: format_tags(t.tags),
             "planned_start": lambda t: DateTimeFormatter.format_datetime(
                 t.planned_start
             ),
@@ -340,33 +345,6 @@ class RichTableRenderer(RichRendererBase):
         extractor = field_extractors.get(field_name)
         return extractor(task) if extractor else "-"
 
-    @staticmethod
-    def _format_flags(task: TaskRowViewModel) -> str:
-        """Format task flags (fixed indicator + note indicator).
-
-        Args:
-            task: TaskRowViewModel to extract flags from
-
-        Returns:
-            Formatted flags string
-        """
-        fixed_indicator = "📌" if task.is_fixed else ""
-        note_indicator = EMOJI_NOTE if task.has_notes else ""
-        return fixed_indicator + note_indicator
-
-    def _format_tags(self, task: TaskRowViewModel) -> str:
-        """Format task tags for display.
-
-        Args:
-            task: TaskRowViewModel to extract tags from
-
-        Returns:
-            Formatted tags string (e.g., "work, urgent" or "")
-        """
-        if not task.tags:
-            return ""
-        return ", ".join(task.tags)
-
     def _format_status(self, task: TaskRowViewModel) -> str:
         """Format status with color styling.
 
@@ -378,19 +356,6 @@ class RichTableRenderer(RichRendererBase):
         """
         status_style = self._get_status_style(task.status)
         return f"[{status_style}]{task.status.value}[/{status_style}]"
-
-    def _format_dependencies(self, task: TaskRowViewModel) -> str:
-        """Format task dependencies for display.
-
-        Args:
-            task: TaskRowViewModel to extract dependencies from
-
-        Returns:
-            Formatted dependencies string (e.g., "1,2,3" or "-")
-        """
-        if not task.depends_on:
-            return "-"
-        return ",".join(str(dep_id) for dep_id in task.depends_on)
 
     def _format_duration_info(self, task: TaskRowViewModel) -> str:
         """Format duration information for a task.
