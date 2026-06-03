@@ -64,6 +64,50 @@ class DateMetadata:
         return self.is_weekend or self.is_holiday
 
 
+@dataclass(frozen=True)
+class LegendSegment:
+    """A single styled segment of the Gantt legend.
+
+    Dialect-neutral single source of truth shared by the CLI (Rich Text)
+    and TUI (Textual markup) renderers. ``accent`` segments leave the color
+    to the renderer: the CLI uses a literal color, the TUI uses ``$primary``.
+    """
+
+    text: str
+    style: str
+    accent: bool = False
+
+
+# Single source for the Gantt legend. Renderers translate it into their own
+# dialect (Rich Text for CLI, Textual markup for TUI).
+LEGEND_SPEC: list[LegendSegment] = [
+    LegendSegment("Legend: ", "bold", accent=True),
+    LegendSegment("   ", f"on {BACKGROUND_COLOR_PLANNED_LIGHT}"),
+    LegendSegment(" Planned period  ", "dim"),
+    LegendSegment("   ", f"on {BACKGROUND_COLOR}"),
+    LegendSegment(" Allocated hours  ", "dim"),
+    LegendSegment(SYMBOL_IN_PROGRESS, "bold blue"),
+    LegendSegment(f" {TaskStatus.IN_PROGRESS.value}  ", "dim"),
+    LegendSegment(SYMBOL_COMPLETED, "bold green"),
+    LegendSegment(f" {TaskStatus.COMPLETED.value}  ", "dim"),
+    LegendSegment(SYMBOL_CANCELED, "bold red"),
+    LegendSegment(f" {TaskStatus.CANCELED.value}  ", "dim"),
+    LegendSegment("   ", f"on {BACKGROUND_COLOR_DEADLINE}"),
+    LegendSegment(" Deadline  ", "dim"),
+    LegendSegment(SYMBOL_TODAY, "bold yellow"),
+    LegendSegment(" Today  ", "dim"),
+    LegendSegment("   ", f"on {BACKGROUND_COLOR_HOLIDAY}"),
+    LegendSegment(" Holiday  ", "dim"),
+    LegendSegment("   ", f"on {BACKGROUND_COLOR_SATURDAY}"),
+    LegendSegment(" Saturday  ", "dim"),
+    LegendSegment("   ", f"on {BACKGROUND_COLOR_SUNDAY}"),
+    LegendSegment(" Sunday", "dim"),
+]
+
+# Accent color for the CLI legend title (Textual resolves $primary instead).
+LEGEND_ACCENT_CLI = "yellow"
+
+
 class GanttCellFormatter:
     """Formatter for Gantt chart cells and headers.
 
@@ -344,27 +388,9 @@ class GanttCellFormatter:
             Rich Text object with legend
         """
         legend = Text()
-        legend.append("Legend: ", style="bold yellow")
-        legend.append("   ", style=f"on {BACKGROUND_COLOR_PLANNED_LIGHT}")
-        legend.append(" Planned period  ", style="dim")
-        legend.append("   ", style=f"on {BACKGROUND_COLOR}")
-        legend.append(" Allocated hours  ", style="dim")
-        legend.append(SYMBOL_IN_PROGRESS, style="bold blue")
-        legend.append(f" {TaskStatus.IN_PROGRESS.value}  ", style="dim")
-        legend.append(SYMBOL_COMPLETED, style="bold green")
-        legend.append(f" {TaskStatus.COMPLETED.value}  ", style="dim")
-        legend.append(SYMBOL_CANCELED, style="bold red")
-        legend.append(f" {TaskStatus.CANCELED.value}  ", style="dim")
-        legend.append("   ", style=f"on {BACKGROUND_COLOR_DEADLINE}")
-        legend.append(" Deadline  ", style="dim")
-        legend.append(SYMBOL_TODAY, style="bold yellow")
-        legend.append(" Today  ", style="dim")
-        legend.append("   ", style=f"on {BACKGROUND_COLOR_HOLIDAY}")
-        legend.append(" Holiday  ", style="dim")
-        legend.append("   ", style=f"on {BACKGROUND_COLOR_SATURDAY}")
-        legend.append(" Saturday  ", style="dim")
-        legend.append("   ", style=f"on {BACKGROUND_COLOR_SUNDAY}")
-        legend.append(" Sunday", style="dim")
+        for seg in LEGEND_SPEC:
+            style = f"{seg.style} {LEGEND_ACCENT_CLI}" if seg.accent else seg.style
+            legend.append(seg.text, style=style)
         return legend
 
     @staticmethod

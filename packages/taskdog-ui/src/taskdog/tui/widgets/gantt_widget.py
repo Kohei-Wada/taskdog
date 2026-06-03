@@ -20,6 +20,7 @@ from taskdog.constants.gantt import (
     MIN_GANTT_DISPLAY_DAYS,
     MIN_TIMELINE_WIDTH,
 )
+from taskdog.renderers.gantt_cell_formatter import LEGEND_SPEC
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.gantt_data_table import GanttDataTable
 from taskdog.view_models.gantt_view_model import GanttViewModel
@@ -196,50 +197,17 @@ class GanttWidget(Vertical, TUIWidget):
 
     @staticmethod
     def _build_legend_markup() -> str:
-        """Build legend as a markup string.
+        """Build the legend as a Textual markup string from the shared spec.
 
-        Using markup instead of Rich Text so that Textual CSS variables
-        like ``$primary`` are resolved by the Static widget.
+        Markup (not Rich Text) is used so Textual resolves CSS variables like
+        ``$primary`` when the Static renders it. The accent segment defers its
+        color to ``$primary``; the CLI renderer uses a literal color instead.
         """
-        from taskdog.constants.colors import (
-            BACKGROUND_COLOR,
-            BACKGROUND_COLOR_DEADLINE,
-            BACKGROUND_COLOR_HOLIDAY,
-            BACKGROUND_COLOR_PLANNED_LIGHT,
-            BACKGROUND_COLOR_SATURDAY,
-            BACKGROUND_COLOR_SUNDAY,
-        )
-        from taskdog.constants.symbols import (
-            SYMBOL_CANCELED,
-            SYMBOL_COMPLETED,
-            SYMBOL_IN_PROGRESS,
-            SYMBOL_TODAY,
-        )
-        from taskdog_core.domain.entities.task import TaskStatus
-
-        return (
-            "[bold $primary]Legend: [/bold $primary]"
-            f"[on {BACKGROUND_COLOR_PLANNED_LIGHT}]   [/on {BACKGROUND_COLOR_PLANNED_LIGHT}]"
-            "[dim] Planned period  [/dim]"
-            f"[on {BACKGROUND_COLOR}]   [/on {BACKGROUND_COLOR}]"
-            "[dim] Allocated hours  [/dim]"
-            f"[bold blue]{SYMBOL_IN_PROGRESS}[/bold blue]"
-            f"[dim] {TaskStatus.IN_PROGRESS.value}  [/dim]"
-            f"[bold green]{SYMBOL_COMPLETED}[/bold green]"
-            f"[dim] {TaskStatus.COMPLETED.value}  [/dim]"
-            f"[bold red]{SYMBOL_CANCELED}[/bold red]"
-            f"[dim] {TaskStatus.CANCELED.value}  [/dim]"
-            f"[on {BACKGROUND_COLOR_DEADLINE}]   [/on {BACKGROUND_COLOR_DEADLINE}]"
-            "[dim] Deadline  [/dim]"
-            f"[bold yellow]{SYMBOL_TODAY}[/bold yellow]"
-            "[dim] Today  [/dim]"
-            f"[on {BACKGROUND_COLOR_HOLIDAY}]   [/on {BACKGROUND_COLOR_HOLIDAY}]"
-            "[dim] Holiday  [/dim]"
-            f"[on {BACKGROUND_COLOR_SATURDAY}]   [/on {BACKGROUND_COLOR_SATURDAY}]"
-            "[dim] Saturday  [/dim]"
-            f"[on {BACKGROUND_COLOR_SUNDAY}]   [/on {BACKGROUND_COLOR_SUNDAY}]"
-            "[dim] Sunday[/dim]"
-        )
+        parts = []
+        for seg in LEGEND_SPEC:
+            style = f"{seg.style} $primary" if seg.accent else seg.style
+            parts.append(f"[{style}]{seg.text}[/{style}]")
+        return "".join(parts)
 
     def _show_error_message(self, error: Exception) -> None:
         """Show error message when rendering fails.
