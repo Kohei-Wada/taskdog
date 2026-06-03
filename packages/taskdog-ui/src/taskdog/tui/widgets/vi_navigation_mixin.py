@@ -1,29 +1,26 @@
 """Vi-style navigation mixin for TUI widgets.
 
-This module provides a mixin class for adding Vi-style keybindings to Textual widgets.
-Different widget types can use appropriate binding sets based on their navigation needs.
+Provides Vi-style keybindings AND their default scroll behavior. Scroll-based
+widgets only need to implement ``_get_active_scroll_widget()``; the action
+methods here delegate to it. Cursor-based consumers (e.g. Select overlays,
+DataTables) override the ``action_vi_*`` methods instead.
 """
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from textual.binding import Binding
 
+if TYPE_CHECKING:
+    from textual.containers import VerticalScroll
+
 
 class ViNavigationMixin:
-    """Mixin providing Vi-style keybindings for navigation.
+    """Mixin providing Vi-style keybindings and scroll behavior.
 
-    This mixin provides common Vi-style keyboard shortcuts that can be used
-    across different widget types. Widgets should:
-    1. Include this mixin in their inheritance
-    2. Use appropriate BINDINGS class variable sets
-    3. Implement corresponding action_* methods
-
-    The mixin provides several binding sets for different use cases:
-    - VI_VERTICAL_BINDINGS: Basic vertical navigation (j/k/g/G)
-    - VI_PAGE_BINDINGS: Half-page scrolling (Ctrl+d/u)
-    - VI_HORIZONTAL_BINDINGS: Horizontal scrolling (h/l)
-    - VI_HORIZONTAL_JUMP_BINDINGS: Jump to horizontal edges (0/$)
-    - VI_ALL_BINDINGS: Complete set of all Vi bindings
+    Binding sets are exposed as class variables so widgets can compose the
+    subset they need into their own ``BINDINGS``. The ``action_vi_*`` methods
+    implement the default (scroll-based) behavior, delegating to
+    ``_get_active_scroll_widget()``.
     """
 
     # Basic vertical navigation (j/k for up/down, g/G for top/bottom)
@@ -92,43 +89,40 @@ class ViNavigationMixin:
         ),
     ]
 
-    # Complete set of all Vi bindings
-    VI_ALL_BINDINGS: ClassVar = (
-        VI_VERTICAL_BINDINGS
-        + VI_PAGE_BINDINGS
-        + VI_HORIZONTAL_BINDINGS
-        + VI_HORIZONTAL_JUMP_BINDINGS
-    )
+    def _get_active_scroll_widget(self) -> "VerticalScroll | None":
+        """Return the scroll widget the vi actions should act on.
 
-    # Scroll-compatible bindings for VerticalScroll containers
-    # These map to built-in scroll_* actions instead of vi_* actions
-    VI_SCROLL_BINDINGS: ClassVar = [
-        Binding("j", "scroll_down", "Down", show=False),
-        Binding("k", "scroll_up", "Up", show=False),
-        Binding("g", "scroll_home", "Top", show=False),
-        Binding("G", "scroll_end", "Bottom", show=False),
-        Binding("ctrl+d", "page_down", "Page Down", show=False),
-        Binding("ctrl+u", "page_up", "Page Up", show=False),
-    ]
+        Default returns None (actions become no-ops). Scroll-based subclasses
+        override this; cursor-based consumers override the action_vi_* methods.
+        """
+        return None
 
-    # Complete scroll bindings including horizontal scroll and jump
-    # For widgets that need full Vi-style navigation with scroll_* actions
-    VI_SCROLL_ALL_BINDINGS: ClassVar = [
-        # Vertical navigation
-        Binding("j", "scroll_down", "Down", show=False),
-        Binding("k", "scroll_up", "Up", show=False),
-        Binding("g", "scroll_home", "Top", show=False),
-        Binding("G", "scroll_end", "Bottom", show=False),
-        Binding("ctrl+d", "page_down", "Page Down", show=False),
-        Binding("ctrl+u", "page_up", "Page Up", show=False),
-        # Horizontal navigation
-        Binding("h", "scroll_left", "Left", show=False),
-        Binding("l", "scroll_right", "Right", show=False),
-        # Horizontal jump (0 = line start, $ = line end)
-        Binding("0", "scroll_home_horizontal", "Line Start", show=False),
-        Binding("$", "scroll_end_horizontal", "Line End", show=False),
-    ]
+    def action_vi_down(self) -> None:
+        """Scroll down one line (j key)."""
+        if (widget := self._get_active_scroll_widget()) is not None:
+            widget.scroll_relative(y=1, animate=False)
 
-    # Note: Widgets must implement action_vi_* methods corresponding to the bindings
-    # they use. Default implementations are not provided as behavior varies by widget type.
-    # For scroll containers, use VI_SCROLL_BINDINGS which map to built-in scroll actions.
+    def action_vi_up(self) -> None:
+        """Scroll up one line (k key)."""
+        if (widget := self._get_active_scroll_widget()) is not None:
+            widget.scroll_relative(y=-1, animate=False)
+
+    def action_vi_page_down(self) -> None:
+        """Scroll down half a page (Ctrl+D)."""
+        if (widget := self._get_active_scroll_widget()) is not None:
+            widget.scroll_relative(y=widget.size.height // 2, animate=False)
+
+    def action_vi_page_up(self) -> None:
+        """Scroll up half a page (Ctrl+U)."""
+        if (widget := self._get_active_scroll_widget()) is not None:
+            widget.scroll_relative(y=-(widget.size.height // 2), animate=False)
+
+    def action_vi_home(self) -> None:
+        """Scroll to top (g key)."""
+        if (widget := self._get_active_scroll_widget()) is not None:
+            widget.scroll_home(animate=False)
+
+    def action_vi_end(self) -> None:
+        """Scroll to bottom (G key)."""
+        if (widget := self._get_active_scroll_widget()) is not None:
+            widget.scroll_end(animate=False)

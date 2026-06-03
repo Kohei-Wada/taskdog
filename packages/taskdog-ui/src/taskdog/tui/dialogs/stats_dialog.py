@@ -473,42 +473,6 @@ class StatsDialog(BaseModalDialog[None], ViNavigationMixin):
         except NoMatches:
             return None
 
-    def action_vi_down(self) -> None:
-        """Scroll down one line (j key)."""
-        widget = self._get_active_scroll_widget()
-        if widget:
-            widget.scroll_relative(y=1, animate=False)
-
-    def action_vi_up(self) -> None:
-        """Scroll up one line (k key)."""
-        widget = self._get_active_scroll_widget()
-        if widget:
-            widget.scroll_relative(y=-1, animate=False)
-
-    def action_vi_page_down(self) -> None:
-        """Scroll down half page (Ctrl+D)."""
-        widget = self._get_active_scroll_widget()
-        if widget:
-            widget.scroll_relative(y=widget.size.height // 2, animate=False)
-
-    def action_vi_page_up(self) -> None:
-        """Scroll up half page (Ctrl+U)."""
-        widget = self._get_active_scroll_widget()
-        if widget:
-            widget.scroll_relative(y=-(widget.size.height // 2), animate=False)
-
-    def action_vi_home(self) -> None:
-        """Scroll to top (g key)."""
-        widget = self._get_active_scroll_widget()
-        if widget:
-            widget.scroll_home(animate=False)
-
-    def action_vi_end(self) -> None:
-        """Scroll to bottom (G key)."""
-        widget = self._get_active_scroll_widget()
-        if widget:
-            widget.scroll_end(animate=False)
-
     # ── Tab switching ──────────────────────────────────────────────────
 
     def action_next_tab(self) -> None:
