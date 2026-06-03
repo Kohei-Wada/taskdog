@@ -29,11 +29,12 @@ from taskdog.constants.audit_log import (
 )
 from taskdog.constants.common import HEADER_ID, TABLE_HEADER_STYLE
 from taskdog.constants.formatting import format_table_title
-from taskdog.tui.widgets.audit_log_entry_builder import format_audit_changes
+from taskdog.formatters.audit_log_formatter import compact_changes, truncate_error
+from taskdog.presenters.audit_log_presenter import AuditLogPresenter
 
 if TYPE_CHECKING:
     from taskdog.cli.context import CliContext
-    from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
+    from taskdog.view_models.audit_log_view_model import AuditLogRowViewModel
 
 
 def _parse_date_filter(date_str: str, end_of_day: bool = False) -> datetime:
@@ -53,27 +54,23 @@ def _parse_date_filter(date_str: str, end_of_day: bool = False) -> datetime:
         return datetime.fromisoformat(f"{date_str}{suffix}")
 
 
-def _format_resource(log: AuditLogOutput) -> str:
+def _format_resource(row: AuditLogRowViewModel) -> str:
     """Format resource display for audit log entry."""
-    if log.resource_id and log.resource_name:
-        return f"[cyan]#{log.resource_id}[/cyan] {log.resource_name}"
-    if log.resource_id:
-        return f"[cyan]#{log.resource_id}[/cyan]"
-    if log.resource_name:
-        return log.resource_name
+    if row.resource_id and row.resource_name:
+        return f"[cyan]#{row.resource_id}[/cyan] {row.resource_name}"
+    if row.resource_id:
+        return f"[cyan]#{row.resource_id}[/cyan]"
+    if row.resource_name:
+        return row.resource_name
     return "[dim]-[/dim]"
 
 
-def _format_changes(log: AuditLogOutput) -> str:
+def _format_changes(row: AuditLogRowViewModel) -> str:
     """Format changes display for audit log entry."""
-    if not log.success and log.error_message:
-        error_msg = log.error_message[:AUDIT_CHANGES_WIDTH]
-        if len(log.error_message) > AUDIT_CHANGES_WIDTH:
-            error_msg += "..."
+    if not row.success and row.error_message:
+        error_msg = truncate_error(row.error_message, AUDIT_CHANGES_WIDTH)
         return f"[red]{error_msg}[/red]"
-    return format_audit_changes(
-        log.old_values, log.new_values, max_length=AUDIT_CHANGES_WIDTH
-    )
+    return compact_changes(row.changes, AUDIT_CHANGES_WIDTH)
 
 
 @click.command(
@@ -174,14 +171,16 @@ def audit_logs_command(
         limit=limit,
     )
 
-    if not result.logs:
+    view_model = AuditLogPresenter().present(result)
+
+    if not view_model.rows:
         console_writer.info("No audit logs found matching the criteria.")
         return
 
     # Create Rich table
     table = Table(
         title=format_table_title(
-            f"Audit Logs ({len(result.logs)} of {result.total_count})"
+            f"Audit Logs ({len(view_model.rows)} of {view_model.total_count})"
         ),
         show_header=True,
         header_style=TABLE_HEADER_STYLE,
@@ -198,29 +197,28 @@ def audit_logs_command(
     table.add_column(HEADER_AUDIT_CLIENT, width=AUDIT_CLIENT_WIDTH)
     table.add_column(HEADER_AUDIT_STATUS, width=AUDIT_STATUS_WIDTH)
 
-    for log in result.logs:
+    for row in view_model.rows:
         status_style = (
             COLUMN_AUDIT_STATUS_OK_STYLE
-            if log.success
+            if row.success
             else COLUMN_AUDIT_STATUS_FAIL_STYLE
         )
-        status_label = "OK" if log.success else "FAILED"
-        changes = _format_changes(log)
+        status_label = "OK" if row.success else "FAILED"
         table.add_row(
-            str(log.id),
-            log.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
-            _format_resource(log),
-            log.operation,
-            changes,
-            log.client_name or "[dim]anonymous[/dim]",
+            str(row.id),
+            row.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            _format_resource(row),
+            row.operation,
+            _format_changes(row),
+            row.client_name or "[dim]anonymous[/dim]",
             f"[{status_style}]{status_label}[/{status_style}]",
         )
 
     console_writer.print(table)
 
     # Show pagination info if there are more logs
-    if result.total_count > len(result.logs):
+    if view_model.total_count > len(view_model.rows):
         console_writer.info(
-            f"Showing {len(result.logs)} of {result.total_count} logs. "
+            f"Showing {len(view_model.rows)} of {view_model.total_count} logs. "
             f"Use --limit to see more."
         )

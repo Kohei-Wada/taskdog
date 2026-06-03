@@ -8,6 +8,7 @@ from textual.binding import Binding
 from textual.screen import ModalScreen
 from textual.widgets import Header
 
+from taskdog.presenters.audit_log_presenter import AuditLogPresenter
 from taskdog.tui.widgets.audit_log_table import AuditLogTable
 
 
@@ -55,8 +56,9 @@ class AuditLogScreen(ModalScreen[None]):
         try:
             since = datetime.now() - timedelta(days=7)
             result = self._api_client.list_audit_logs(start_date=since, limit=10000)
+            view_model = AuditLogPresenter().present(result)
             table = self.query_one("#audit-log-table", AuditLogTable)
-            table.load_logs(result.logs)
+            table.load_logs(view_model.rows)
         except Exception as e:
             self.app.notify(f"Failed to load audit logs: {e}", severity="error")
             self.app.pop_screen()

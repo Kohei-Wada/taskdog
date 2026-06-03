@@ -35,7 +35,7 @@ from taskdog.tui.widgets.audit_log_entry_builder import (
 )
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
-from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
+from taskdog.view_models.audit_log_view_model import AuditLogRowViewModel
 
 
 class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[type-arg]
@@ -120,42 +120,42 @@ class AuditLogTable(DataTable, TUIWidget, ViNavigationMixin):  # type: ignore[ty
             width=AUDIT_TUI_STATUS_WIDTH,
         )
 
-    def load_logs(self, logs: list[AuditLogOutput]) -> None:
+    def load_logs(self, rows: tuple[AuditLogRowViewModel, ...]) -> None:
         """Load audit log entries into the table.
 
         Args:
-            logs: List of audit log entries (newest first from API)
+            rows: Audit log row view models (newest first from API)
         """
         with self.app.batch_update():
             self.clear(columns=False)
 
-            for log in logs:
-                style = "red" if not log.success else ""
+            for row in rows:
+                style = "red" if not row.success else ""
 
-                ts = Text(log.timestamp.strftime("%m-%d %H:%M:%S"), style=style)
+                ts = Text(row.timestamp.strftime("%m-%d %H:%M:%S"), style=style)
                 id_text = Text(
-                    str(log.resource_id) if log.resource_id else "", style=style
+                    str(row.resource_id) if row.resource_id else "", style=style
                 )
 
                 # Resource name (truncated)
-                if log.resource_name:
+                if row.resource_name:
                     name = (
-                        log.resource_name[:AUDIT_TUI_NAME_WIDTH] + "\u2026"
-                        if len(log.resource_name) > AUDIT_TUI_NAME_WIDTH
-                        else log.resource_name
+                        row.resource_name[:AUDIT_TUI_NAME_WIDTH] + "\u2026"
+                        if len(row.resource_name) > AUDIT_TUI_NAME_WIDTH
+                        else row.resource_name
                     )
                     name_text = Text(name, style=style)
                 else:
                     name_text = Text("", style=style)
 
-                op_text = Text(log.operation, style=style)
+                op_text = Text(row.operation, style=style)
 
                 self.add_row(
                     ts,
                     id_text,
                     name_text,
                     op_text,
-                    build_changes_text(log, style),
-                    Text(log.client_name or "", style=style),
-                    build_status_text(log),
+                    build_changes_text(row, style),
+                    Text(row.client_name or "", style=style),
+                    build_status_text(row),
                 )

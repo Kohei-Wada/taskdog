@@ -4,8 +4,6 @@ Reusable across TUI components
 (e.g., AuditLogTable, TaskDetailDialog audit tab).
 """
 
-from typing import Any
-
 from rich.text import Text
 from textual.widgets import DataTable
 
@@ -24,123 +22,55 @@ from taskdog.constants.audit_log import (
     JUSTIFY_AUDIT_STATUS,
     JUSTIFY_AUDIT_TIMESTAMP,
 )
-from taskdog_core.application.dto.audit_log_dto import AuditLogOutput
+from taskdog.formatters.audit_log_formatter import compact_changes, truncate_error
+from taskdog.view_models.audit_log_view_model import AuditLogRowViewModel
 
-MAX_CHANGES_LENGTH = 40
+MAX_CHANGES_LENGTH = AUDIT_TUI_CHANGES_WIDTH
 MAX_ERROR_LENGTH = 40
 
 
-def format_audit_changes(
-    old_values: dict[str, Any] | None,
-    new_values: dict[str, Any] | None,
-    max_length: int = MAX_CHANGES_LENGTH,
-) -> str:
-    """Format changes between old and new values.
-
-    Args:
-        old_values: Values before the change
-        new_values: Values after the change
-        max_length: Maximum length for the result string
-
-    Returns:
-        Formatted change string (e.g., "priority: 3 -> 5")
-    """
-    if not old_values and not new_values:
-        return ""
-
-    changes: list[str] = []
-
-    all_keys: set[str] = set()
-    if old_values:
-        all_keys.update(old_values.keys())
-    if new_values:
-        all_keys.update(new_values.keys())
-
-    for key in sorted(all_keys):
-        old_val = old_values.get(key) if old_values else None
-        new_val = new_values.get(key) if new_values else None
-
-        if old_val != new_val:
-            old_str = format_audit_value(old_val)
-            new_str = format_audit_value(new_val)
-            changes.append(f"{key}: {old_str} \u2192 {new_str}")
-
-    # Limit to 2 changes to keep it compact
-    if len(changes) > 2:
-        result = ", ".join(changes[:2]) + f" (+{len(changes) - 2})"
-    else:
-        result = ", ".join(changes)
-
-    # Truncate to max_length if needed
-    if len(result) > max_length:
-        return result[: max_length - 3] + "..."
-    return result
-
-
-def format_audit_value(value: Any) -> str:
-    """Format a single value for display.
-
-    Args:
-        value: Value to format
-
-    Returns:
-        Formatted string representation
-    """
-    if value is None:
-        return "\u2205"
-    if isinstance(value, bool):
-        return "\u2713" if value else "\u2717"
-    if isinstance(value, str) and len(value) > 15:
-        return value[:15] + "..."
-    return str(value)
-
-
-def build_changes_text(log: AuditLogOutput, style: str = "") -> Text:
+def build_changes_text(row: AuditLogRowViewModel, style: str = "") -> Text:
     """Build the changes/error column text for an audit log entry.
 
     Args:
-        log: Audit log entry
+        row: Audit log row view model
         style: Base style to apply (e.g., "red" for failed entries)
 
     Returns:
         Formatted Rich Text for changes column
     """
-    if not log.success and log.error_message:
-        error_msg = (
-            log.error_message[:MAX_ERROR_LENGTH] + "..."
-            if len(log.error_message) > MAX_ERROR_LENGTH
-            else log.error_message
-        )
-        return Text(error_msg, style="red")
+    if not row.success and row.error_message:
+        return Text(truncate_error(row.error_message, MAX_ERROR_LENGTH), style="red")
 
-    changes_str = format_audit_changes(log.old_values, log.new_values)
-    return Text(changes_str, style=style)
+    return Text(compact_changes(row.changes, MAX_CHANGES_LENGTH), style=style)
 
 
-def build_status_text(log: AuditLogOutput) -> Text:
+def build_status_text(row: AuditLogRowViewModel) -> Text:
     """Build the status column text for an audit log entry.
 
     Args:
-        log: Audit log entry
+        row: Audit log row view model
 
     Returns:
         "OK" in green or "ER" in red
     """
     return (
         Text("OK", style=COLUMN_AUDIT_STATUS_OK_STYLE)
-        if log.success
+        if row.success
         else Text("ER", style=COLUMN_AUDIT_STATUS_FAIL_STYLE)
     )
 
 
-def create_audit_log_table(logs: list[AuditLogOutput]) -> DataTable:  # type: ignore[type-arg]
+def create_audit_log_table(
+    rows: tuple[AuditLogRowViewModel, ...],
+) -> DataTable:  # type: ignore[type-arg]
     """Create a DataTable widget for displaying audit log entries.
 
     Used by TaskDetailDialog for compact, tabular audit log display.
     Resource info (ID, name) is omitted since the dialog already shows it.
 
     Args:
-        logs: List of audit log entries to display
+        rows: Audit log row view models to display
 
     Returns:
         DataTable widget with audit log data
@@ -170,15 +100,15 @@ def create_audit_log_table(logs: list[AuditLogOutput]) -> DataTable:  # type: ig
         Text(HEADER_AUDIT_STATUS_SHORT, justify=JUSTIFY_AUDIT_STATUS), key="status"
     )
 
-    for log in logs:
-        ts = log.timestamp.strftime("%m-%d %H:%M:%S")
+    for row in rows:
+        ts = row.timestamp.strftime("%m-%d %H:%M:%S")
 
         table.add_row(
             Text(ts),
-            Text(log.operation),
-            build_changes_text(log),
-            Text(log.client_name or ""),
-            build_status_text(log),
+            Text(row.operation),
+            build_changes_text(row),
+            Text(row.client_name or ""),
+            build_status_text(row),
         )
 
     return table

@@ -12,6 +12,7 @@ from textual.widgets import Label, Markdown, Static, TabbedContent, TabPane, Tab
 
 from taskdog.constants.colors import STATUS_COLORS_BOLD
 from taskdog.formatters.date_time_formatter import DateTimeFormatter
+from taskdog.presenters.audit_log_presenter import AuditLogPresenter
 from taskdog.tui.dialogs.base_dialog import BaseModalDialog
 from taskdog.tui.widgets.audit_log_entry_builder import create_audit_log_table
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
@@ -368,7 +369,9 @@ class TaskDetailDialog(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
         except NoMatches:
             return
 
-        if not result.logs:
+        view_model = AuditLogPresenter().present(result)
+
+        if not view_model.rows:
             scroll.mount(
                 Static(
                     "[dim]No audit logs for this task.[/dim]",
@@ -377,7 +380,7 @@ class TaskDetailDialog(BaseModalDialog[tuple[str, int] | None], ViNavigationMixi
             )
             return
 
-        table = create_audit_log_table(result.logs)
+        table = create_audit_log_table(view_model.rows)
         scroll.mount(table)
 
     def _show_audit_error(self, message: str) -> None:
