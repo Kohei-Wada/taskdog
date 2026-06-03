@@ -4,6 +4,11 @@ ViewModels transform Application layer DTOs into presentation-ready data structu
 They contain only the data needed for rendering in CLI/TUI, without domain entities.
 """
 
+from taskdog.view_models.audit_log_view_model import (
+    AuditChangeViewModel,
+    AuditLogRowViewModel,
+    AuditLogViewModel,
+)
 from taskdog.view_models.base import BaseViewModel
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from taskdog.view_models.statistics_view_model import (
@@ -15,6 +20,9 @@ from taskdog.view_models.statistics_view_model import (
 from taskdog.view_models.task_view_model import TaskRowViewModel
 
 __all__ = [
+    "AuditChangeViewModel",
+    "AuditLogRowViewModel",
+    "AuditLogViewModel",
     "BaseViewModel",
     "EstimationAccuracyStatisticsViewModel",
     "GanttViewModel",
