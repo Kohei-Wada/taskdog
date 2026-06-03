@@ -11,6 +11,7 @@ from textual.reactive import reactive
 from textual.widgets import Input, Static
 
 from taskdog.tui.events import SearchQueryChanged
+from taskdog.tui.widgets.base_widget import TUIWidget
 
 if TYPE_CHECKING:
     from taskdog.tui.state import ConnectionStatus
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
 SEARCH_INPUT_ID = "footer-search-input"
 
 
-class CustomFooter(Container):
+class CustomFooter(Container, TUIWidget):
     """Custom footer with status bar and search input (Vim-style).
 
     Layout (2 rows):
@@ -84,12 +85,10 @@ class CustomFooter(Container):
     def on_mount(self) -> None:
         """Called when widget is mounted to the DOM."""
         # Subscribe to connection status changes via observer pattern
-        self.app.connection_manager.subscribe(  # type: ignore[attr-defined]
-            self._on_connection_status_changed
-        )
+        self.tui_app.connection_manager.subscribe(self._on_connection_status_changed)
 
         # Initialize from current status
-        status = self.app.connection_manager.status  # type: ignore[attr-defined]
+        status = self.tui_app.connection_manager.status
         self.is_api_connected = status.is_api_connected
         self.is_websocket_connected = status.is_websocket_connected
         self._update_connection_status()
@@ -97,9 +96,7 @@ class CustomFooter(Container):
     def on_unmount(self) -> None:
         """Called when widget is unmounted from the DOM."""
         # Unsubscribe to prevent memory leaks
-        self.app.connection_manager.unsubscribe(  # type: ignore[attr-defined]
-            self._on_connection_status_changed
-        )
+        self.tui_app.connection_manager.unsubscribe(self._on_connection_status_changed)
 
     def _on_connection_status_changed(self, status: "ConnectionStatus") -> None:
         """Handle connection status change from ConnectionStatusManager.
@@ -124,7 +121,7 @@ class CustomFooter(Container):
         Returns:
             Server address in host:port format
         """
-        base_url: str = self.app.api_client.base_url  # type: ignore[attr-defined]
+        base_url: str = self.tui_app.api_client.base_url
         # Remove protocol (http:// or https://)
         if "://" in base_url:
             base_url = base_url.split("://", 1)[1]
