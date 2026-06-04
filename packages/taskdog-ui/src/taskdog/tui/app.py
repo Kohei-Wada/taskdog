@@ -14,7 +14,9 @@ if TYPE_CHECKING:
     from textual.timer import Timer
 
     from taskdog.infrastructure.cli_config_manager import CliConfig
-    from taskdog.tui.services.task_ui_manager import FetchParams
+    from taskdog.services.task_data_loader import TaskData
+    from taskdog.tui.services.task_ui_manager import FetchParams, GanttFetchParams
+    from taskdog.view_models.gantt_view_model import GanttViewModel
 
 from taskdog_client import WebSocketClient
 
@@ -26,6 +28,7 @@ from taskdog.tui.commands.factory import CommandFactory
 from taskdog.tui.constants.command_mapping import ACTION_TO_COMMAND_MAP
 from taskdog.tui.constants.ui_settings import (
     AUTO_REFRESH_INTERVAL_SECONDS,
+    GANTT_LOADING_DELAY_SECONDS,
     RELOAD_DEBOUNCE_SECONDS,
     SORT_KEY_LABELS,
 )
@@ -280,6 +283,9 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         # Debounce timer for the single reload funnel (request_reload)
         self._reload_timer: Timer | None = None
 
+        # Delayed-loading-indicator timer for gantt zoom/pan
+        self._gantt_loading_timer: Timer | None = None
+
         # Initialize WebSocket client for real-time updates
         self.websocket_client = websocket_client
         self.websocket_client.set_callback(self._handle_websocket_message)
@@ -358,12 +364,10 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             on_error=self._handle_api_error,
         )
 
-        # Load tasks after screen is fully mounted
-        def _load_tasks_if_ready() -> None:
-            if self.task_ui_manager:
-                self.task_ui_manager.load_tasks()
-
-        self.call_after_refresh(_load_tasks_if_ready)
+        # Load tasks after screen is fully mounted. Routed through the reload
+        # funnel so the initial fetch runs off the UI thread; the loading
+        # indicator set in MainScreen.on_mount is cleared when it completes.
+        self.call_after_refresh(self.request_reload)
         # Start auto-refresh timer for elapsed time updates
         self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
         # Start connection monitoring timer (check every 3 seconds)
@@ -558,7 +562,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             task_data = mgr.fetch_with_params(params)
         except (ServerConnectionError, AuthenticationError, ServerError) as e:
             if not worker.is_cancelled:
-                self.call_from_thread(mgr.handle_api_error, e)
+                self.call_from_thread(self._finish_reload, mgr, None, e)
             return
         except Exception:
             # Unexpected (non-API) error — a real bug. Log it instead of
@@ -566,7 +570,25 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             logger.exception("Unexpected error during task reload")
             task_data = mgr.empty_task_data()
         if not worker.is_cancelled:
-            self.call_from_thread(mgr.apply_task_data, task_data, True)
+            self.call_from_thread(self._finish_reload, mgr, task_data, None)
+
+    def _finish_reload(
+        self,
+        mgr: TaskUIManager,
+        task_data: "TaskData | None",
+        error: "ServerConnectionError | AuthenticationError | ServerError | None",
+    ) -> None:
+        """Apply reload result (or surface error), then drop the loading state."""
+        if error is not None:
+            mgr.handle_api_error(error)
+        elif task_data is not None:
+            mgr.apply_task_data(task_data, keep_scroll_position=True)
+        # Clear the startup loading indicator (no-op on later reloads).
+        if self.main_screen:
+            if self.main_screen.gantt_widget:
+                self.main_screen.gantt_widget.loading = False
+            if self.main_screen.task_table:
+                self.main_screen.task_table.loading = False
 
     # Event handlers for task operations
     def _handle_task_change_event(self, event: Any) -> None:
@@ -588,13 +610,77 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
     on_tasks_refreshed = _handle_task_change_event
 
     def on_gantt_resize_requested(self, event: GanttResizeRequested) -> None:
-        """Handle gantt resize event.
+        """Handle gantt resize/pan: recalculate gantt data off the UI thread.
 
-        Delegates to TaskUIManager for recalculating gantt data
-        with the new date range.
+        The fetch runs in an exclusive thread worker so zooming/panning never
+        freezes the chart; a loading indicator is shown only if the fetch is
+        slow enough to notice.
 
         Args:
             event: GanttResizeRequested event containing display parameters
         """
-        if self.task_ui_manager:
-            self.task_ui_manager.recalculate_gantt(event.start_date, event.end_date)
+        mgr = self.task_ui_manager
+        if not mgr:
+            return
+        params = mgr.gather_gantt_params(event.start_date, event.end_date)
+        self._schedule_gantt_loading()
+        self.run_worker(
+            lambda: self._gantt_reload_in_thread(mgr, params),
+            group="gantt",
+            exclusive=True,
+            thread=True,
+        )
+
+    def _gantt_reload_in_thread(
+        self, mgr: TaskUIManager, params: "GanttFetchParams"
+    ) -> None:
+        """Worker body: fetch gantt in a thread, apply on the UI thread."""
+        worker = get_current_worker()
+        try:
+            gantt_view_model = mgr.fetch_gantt(params)
+        except (ServerConnectionError, AuthenticationError, ServerError) as e:
+            if not worker.is_cancelled:
+                self.call_from_thread(self._finish_gantt_reload, mgr, None, e)
+            return
+        except Exception:
+            logger.exception("Unexpected error recalculating gantt")
+            if not worker.is_cancelled:
+                self.call_from_thread(self._clear_gantt_loading)
+            return
+        if not worker.is_cancelled:
+            self.call_from_thread(
+                self._finish_gantt_reload, mgr, gantt_view_model, None
+            )
+
+    def _finish_gantt_reload(
+        self,
+        mgr: TaskUIManager,
+        gantt_view_model: "GanttViewModel | None",
+        error: "ServerConnectionError | AuthenticationError | ServerError | None",
+    ) -> None:
+        """Apply gantt result (or surface error), then drop the loading state."""
+        if error is not None:
+            mgr.handle_api_error(error)
+        else:
+            mgr.apply_gantt(gantt_view_model)
+        self._clear_gantt_loading()
+
+    def _schedule_gantt_loading(self) -> None:
+        """Arm a delayed loading indicator for the gantt (avoids flicker)."""
+        if self._gantt_loading_timer is not None:
+            self._gantt_loading_timer.stop()
+        self._gantt_loading_timer = self.set_timer(
+            GANTT_LOADING_DELAY_SECONDS, self._show_gantt_loading
+        )
+
+    def _show_gantt_loading(self) -> None:
+        self._gantt_loading_timer = None
+        if self.main_screen and self.main_screen.gantt_widget:
+            self.main_screen.gantt_widget.loading = True
+
+    def _clear_gantt_loading(self) -> None:
+        if self._gantt_loading_timer is not None:
+            self._gantt_loading_timer.stop()
+            self._gantt_loading_timer = None
+        if self.main_screen and self.main_screen.gantt_widget:
+            self.main_screen.gantt_widget.loading = False

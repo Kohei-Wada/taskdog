@@ -38,6 +38,21 @@ class FetchParams:
     date_range: tuple[date, date]
 
 
+@dataclass(frozen=True)
+class GanttFetchParams:
+    """Parameters for a gantt-only fetch (zoom/pan), gathered on the UI thread.
+
+    Like FetchParams but scoped to the gantt recalculation: it carries the
+    explicit chart window instead of deriving it from the widget.
+    """
+
+    start_date: date
+    end_date: date
+    sort_by: str
+    reverse: bool
+    include_archived: bool
+
+
 class TaskUIManager:
     """Manages task data lifecycle for TUI.
 
@@ -236,62 +251,58 @@ class TaskUIManager:
         # Update Table widget (reads from TUIState.filtered_viewmodels)
         main_screen.refresh_tasks(keep_scroll_position=keep_scroll_position)
 
-    def recalculate_gantt(self, start_date: date, end_date: date) -> None:
-        """Recalculate gantt data for a new date range.
-
-        Called when gantt widget is resized and needs recalculation
-        with a different date range.
-
-        Args:
-            start_date: New start date for gantt range
-            end_date: New end date for gantt range
-        """
-        try:
-            gantt_view_model = self._fetch_gantt_for_range(start_date, end_date)
-            self._update_gantt_ui(gantt_view_model)
-        except (ServerConnectionError, AuthenticationError, ServerError) as e:
-            self.handle_api_error(e)
-        except Exception:
-            logger.exception("Unexpected error recalculating gantt")
-
-    def _fetch_gantt_for_range(
-        self, start_date: date, end_date: date
-    ) -> GanttViewModel | None:
-        """Fetch gantt data for specific date range.
+    def gather_gantt_params(self, start_date: date, end_date: date) -> GanttFetchParams:
+        """Collect gantt fetch inputs from UI/state. Must run on the UI thread.
 
         Args:
             start_date: Start date for gantt range
             end_date: End date for gantt range
 
         Returns:
-            GanttViewModel or None if no data
+            GanttFetchParams snapshot to hand to ``fetch_gantt``.
         """
-        # Get current sort state from gantt widget if available
         sort_by = self.state.sort_by
         main_screen = self._get_main_screen()
         if main_screen and main_screen.gantt_widget:
             sort_by = main_screen.gantt_widget.get_sort_by()
 
-        task_list_output = self.task_data_loader.api_client.list_tasks(
-            include_archived=self.state.show_archived,
+        return GanttFetchParams(
+            start_date=start_date,
+            end_date=end_date,
             sort_by=sort_by,
             reverse=self.state.sort_reverse,
+            include_archived=self.state.show_archived,
+        )
+
+    def fetch_gantt(self, params: GanttFetchParams) -> GanttViewModel | None:
+        """Fetch gantt data for the given params. Thread-safe; touches no UI.
+
+        Raises the underlying API exception on failure.
+
+        Args:
+            params: Snapshot from ``gather_gantt_params``.
+
+        Returns:
+            GanttViewModel, or None when there is no gantt data.
+        """
+        task_list_output = self.task_data_loader.api_client.list_tasks(
+            include_archived=params.include_archived,
+            sort_by=params.sort_by,
+            reverse=params.reverse,
             include_gantt=True,
-            gantt_start_date=start_date,
-            gantt_end_date=end_date,
+            gantt_start_date=params.start_date,
+            gantt_end_date=params.end_date,
         )
 
         if not task_list_output.gantt_data:
             return None
 
-        gantt_view_model = self.task_data_loader.gantt_presenter.present(
+        return self.task_data_loader.gantt_presenter.present(
             task_list_output.gantt_data
         )
 
-        return gantt_view_model
-
-    def _update_gantt_ui(self, gantt_view_model: GanttViewModel | None) -> None:
-        """Update gantt cache in State and tell widget to re-render.
+    def apply_gantt(self, gantt_view_model: GanttViewModel | None) -> None:
+        """Update gantt cache and re-render. Must run on the UI thread.
 
         Args:
             gantt_view_model: New gantt view model to display
