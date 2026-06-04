@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta
 
 import pytest
 
-from taskdog_core.application.dto.audit_log_dto import AuditQuery
+from taskdog_core.domain.entities.audit_log import AuditQuery
 from taskdog_core.domain.entities.task import TaskStatus
 
 
@@ -400,11 +400,11 @@ class TestTasksRouter:
 
         # Verify audit log contains properly serialized datetime values
         query = AuditQuery(operation="update_task", limit=10, offset=0)
-        result = audit_log_repository.get_logs(query)
-        assert result.total_count >= 1
+        logs = audit_log_repository.get_logs(query)
+        assert len(logs) >= 1
 
         # Check that new_values contains ISO-formatted strings, not datetime objects
-        update_log = result.logs[0]
+        update_log = logs[0]
         if update_log.new_values:
             for key, value in update_log.new_values.items():
                 if "planned" in key:
@@ -447,5 +447,5 @@ class TestTasksRouter:
 
         # Verify audit log was written successfully
         query = AuditQuery(operation="update_task", limit=10, offset=0)
-        result = audit_log_repository.get_logs(query)
-        assert result.total_count >= 1
+        logs = audit_log_repository.get_logs(query)
+        assert len(logs) >= 1

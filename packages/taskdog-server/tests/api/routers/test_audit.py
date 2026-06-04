@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from taskdog_core.application.dto.audit_log_dto import AuditEvent
+from taskdog_core.domain.entities.audit_log import AuditLog
 
 
 class TestAuditLogsRouter:
@@ -50,7 +50,7 @@ class TestAuditLogsRouter:
         """Test filtering audit logs by operation type."""
         # Arrange - create a specific audit log
         audit_log_repository.save(
-            AuditEvent(
+            AuditLog(
                 timestamp=datetime.now(),
                 client_name="test-client",
                 operation="complete_task",
@@ -76,7 +76,7 @@ class TestAuditLogsRouter:
         """Test filtering audit logs by client name."""
         # Arrange - create audit logs with different clients
         audit_log_repository.save(
-            AuditEvent(
+            AuditLog(
                 timestamp=datetime.now(),
                 client_name="claude-code",
                 operation="create_task",
@@ -90,7 +90,7 @@ class TestAuditLogsRouter:
             )
         )
         audit_log_repository.save(
-            AuditEvent(
+            AuditLog(
                 timestamp=datetime.now(),
                 client_name="web-ui",
                 operation="create_task",
@@ -117,7 +117,7 @@ class TestAuditLogsRouter:
         # Arrange - create audit logs with different resource IDs
         for i in range(3):
             audit_log_repository.save(
-                AuditEvent(
+                AuditLog(
                     timestamp=datetime.now(),
                     client_name="test",
                     operation="update_task",
@@ -144,7 +144,7 @@ class TestAuditLogsRouter:
         # Arrange - create multiple audit logs
         for i in range(15):
             audit_log_repository.save(
-                AuditEvent(
+                AuditLog(
                     timestamp=datetime.now(),
                     client_name="test",
                     operation="test_operation",
@@ -182,7 +182,7 @@ class TestAuditLogsRouter:
         """Test filtering audit logs by success status."""
         # Arrange - create success and failure logs
         audit_log_repository.save(
-            AuditEvent(
+            AuditLog(
                 timestamp=datetime.now(),
                 client_name="test",
                 operation="success_op",
@@ -196,7 +196,7 @@ class TestAuditLogsRouter:
             )
         )
         audit_log_repository.save(
-            AuditEvent(
+            AuditLog(
                 timestamp=datetime.now(),
                 client_name="test",
                 operation="failed_op",
@@ -222,7 +222,7 @@ class TestAuditLogsRouter:
         """Test getting a single audit log by ID."""
         # Arrange - create an audit log
         audit_log_repository.save(
-            AuditEvent(
+            AuditLog(
                 timestamp=datetime.now(),
                 client_name="test-client",
                 operation="get_by_id_test",

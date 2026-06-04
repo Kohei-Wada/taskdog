@@ -6,12 +6,7 @@ abstracting away implementation details like database operations.
 
 from abc import ABC, abstractmethod
 
-from taskdog_core.application.dto.audit_log_dto import (
-    AuditEvent,
-    AuditLogListOutput,
-    AuditLogOutput,
-    AuditQuery,
-)
+from taskdog_core.domain.entities.audit_log import AuditLog, AuditQuery
 
 
 class AuditLogRepository(ABC):
@@ -23,26 +18,26 @@ class AuditLogRepository(ABC):
     """
 
     @abstractmethod
-    def save(self, event: AuditEvent) -> None:
-        """Persist an audit event.
+    def save(self, log: AuditLog) -> None:
+        """Persist an audit log record.
 
         Args:
-            event: The audit event to save
+            log: The audit log to save
         """
 
     @abstractmethod
-    def get_logs(self, query: AuditQuery) -> AuditLogListOutput:
+    def get_logs(self, query: AuditQuery) -> list[AuditLog]:
         """Query audit logs with filtering and pagination.
 
         Args:
             query: Query parameters for filtering
 
         Returns:
-            AuditLogListOutput containing logs and pagination info
+            The matching audit logs (already ordered and paginated)
         """
 
     @abstractmethod
-    def get_by_id(self, log_id: int) -> AuditLogOutput | None:
+    def get_by_id(self, log_id: int) -> AuditLog | None:
         """Get a single audit log by ID.
 
         Args:
