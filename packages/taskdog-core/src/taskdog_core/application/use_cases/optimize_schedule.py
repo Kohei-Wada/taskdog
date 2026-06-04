@@ -66,6 +66,14 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
             NoSchedulableTasksError: If no tasks can be scheduled
             Exception: If optimization fails
         """
+        # Create and validate OptimizeParams from input_dto before any strategy work.
+        params = OptimizeParams(
+            start_date=input_dto.start_date,
+            max_hours_per_day=input_dto.max_hours_per_day,
+            holiday_checker=self.holiday_checker,
+            include_all_days=input_dto.include_all_days,
+        )
+
         # Get all tasks and backup their states before optimization
         all_tasks = self.repository.get_all()
         task_states_before: dict[int, datetime | None] = {
@@ -123,14 +131,6 @@ class OptimizeScheduleUseCase(UseCase[OptimizeScheduleInput, OptimizationOutput]
 
         # Get optimization strategy
         strategy = StrategyFactory.create(input_dto.algorithm_name)
-
-        # Create OptimizeParams from input_dto
-        params = OptimizeParams(
-            start_date=input_dto.start_date,
-            max_hours_per_day=input_dto.max_hours_per_day,
-            holiday_checker=self.holiday_checker,
-            include_all_days=input_dto.include_all_days,
-        )
 
         # Run optimization
         # Strategy responsibility: how to optimize
