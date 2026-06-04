@@ -9,7 +9,7 @@ from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.shared.utils.datetime_parser import parse_iso_date
 
 from .datetime_utils import _parse_date_dict, _parse_date_set, _parse_datetime_fields
-from .exceptions import ConversionError
+from .exceptions import ConversionError, require_key
 
 
 def _parse_date_range(data: dict[str, Any]) -> GanttDateRange:
@@ -25,14 +25,15 @@ def _parse_date_range(data: dict[str, Any]) -> GanttDateRange:
         ConversionError: If date parsing fails
     """
     try:
-        start_date = parse_iso_date(data["date_range"]["start_date"])
-        end_date = parse_iso_date(data["date_range"]["end_date"])
+        date_range = require_key(data, "date_range")
+        start_date = parse_iso_date(require_key(date_range, "start_date"))
+        end_date = parse_iso_date(require_key(date_range, "end_date"))
 
         if start_date is None or end_date is None:
             raise ConversionError(
                 "date_range start_date or end_date is missing",
                 field="date_range",
-                value=data["date_range"],
+                value=date_range,
             )
 
         return GanttDateRange(start_date=start_date, end_date=end_date)
@@ -54,7 +55,7 @@ def _parse_gantt_tasks(data: dict[str, Any]) -> list[GanttTaskDto]:
         List of GanttTaskDto
     """
     tasks = []
-    for task in data["tasks"]:
+    for task in require_key(data, "tasks"):
         dt_fields = _parse_datetime_fields(
             task,
             ["planned_start", "planned_end", "actual_start", "actual_end", "deadline"],
@@ -62,16 +63,17 @@ def _parse_gantt_tasks(data: dict[str, Any]) -> list[GanttTaskDto]:
 
         tasks.append(
             GanttTaskDto(
-                id=task["id"],
-                name=task["name"],
-                status=TaskStatus[task["status"].upper()],
+                id=require_key(task, "id"),
+                name=require_key(task, "name"),
+                status=TaskStatus[require_key(task, "status").upper()],
                 estimated_duration=task.get("estimated_duration"),
                 planned_start=dt_fields["planned_start"],
                 planned_end=dt_fields["planned_end"],
                 actual_start=dt_fields["actual_start"],
                 actual_end=dt_fields["actual_end"],
                 deadline=dt_fields["deadline"],
-                is_finished=task["status"].upper() in ["COMPLETED", "CANCELED"],
+                is_finished=require_key(task, "status").upper()
+                in ["COMPLETED", "CANCELED"],
             )
         )
     return tasks
@@ -93,7 +95,7 @@ def _parse_task_daily_hours(
     """
     try:
         result: dict[int, dict[date, float]] = {}
-        for task_id, daily_hours in data["task_daily_hours"].items():
+        for task_id, daily_hours in require_key(data, "task_daily_hours").items():
             result[int(task_id)] = _parse_date_dict(
                 {"daily_hours": daily_hours}, "daily_hours"
             )

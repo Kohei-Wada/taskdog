@@ -11,7 +11,7 @@ from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 
-from .exceptions import ConversionError
+from .exceptions import ConversionError, require_key
 from .gantt_converters import convert_to_gantt_output
 
 
@@ -100,7 +100,7 @@ def convert_to_task_list_output(data: dict[str, Any]) -> TaskListOutput:
     Returns:
         TaskListOutput with task list and metadata
     """
-    tasks = [_model_validate(TaskRowDto, task) for task in data["tasks"]]
+    tasks = [_model_validate(TaskRowDto, task) for task in require_key(data, "tasks")]
 
     # Convert gantt data if present (separate reshaping converter)
     gantt_data = None
@@ -109,8 +109,8 @@ def convert_to_task_list_output(data: dict[str, Any]) -> TaskListOutput:
 
     return TaskListOutput(
         tasks=tasks,
-        total_count=data["total_count"],
-        filtered_count=data["filtered_count"],
+        total_count=require_key(data, "total_count"),
+        filtered_count=require_key(data, "filtered_count"),
         gantt_data=gantt_data,
     )
 

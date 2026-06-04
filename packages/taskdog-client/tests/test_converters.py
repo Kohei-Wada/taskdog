@@ -397,6 +397,49 @@ class TestConverters:
 class TestConverterErrorHandling:
     """Test cases for error handling in converters (Phase 3 refactoring)."""
 
+    @pytest.mark.parametrize(
+        ("converter", "data", "field"),
+        [
+            (
+                convert_to_task_list_output,
+                {"total_count": 0, "filtered_count": 0},
+                "tasks",
+            ),
+            (
+                convert_to_optimization_output,
+                {
+                    "summary": {
+                        "scheduled_tasks": 1,
+                        "total_hours": 1.0,
+                        "start_date": "2025-01-01",
+                        "end_date": "2025-01-01",
+                    }
+                },
+                "failures",
+            ),
+            (
+                convert_to_gantt_output,
+                {
+                    "date_range": {
+                        "start_date": "2025-01-01",
+                        "end_date": "2025-01-31",
+                    },
+                    "tasks": [],
+                    "daily_workload": {},
+                    "holidays": [],
+                },
+                "task_daily_hours",
+            ),
+        ],
+    )
+    def test_missing_response_keys_raise_conversion_error(self, converter, data, field):
+        """Test that hand-written converters wrap missing keys."""
+        with pytest.raises(ConversionError) as exc_info:
+            converter(data)
+
+        assert exc_info.value.field == field
+        assert isinstance(exc_info.value.__cause__, KeyError)
+
     def test_invalid_datetime_format_raises_conversion_error(self):
         """Test that invalid datetime format raises ConversionError."""
         data = {
