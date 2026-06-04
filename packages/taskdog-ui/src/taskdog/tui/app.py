@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from textual.timer import Timer
 
     from taskdog.infrastructure.cli_config_manager import CliConfig
+    from taskdog.services.task_data_loader import TaskData
     from taskdog.tui.services.task_ui_manager import FetchParams, GanttFetchParams
     from taskdog.view_models.gantt_view_model import GanttViewModel
 
@@ -363,12 +364,10 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             on_error=self._handle_api_error,
         )
 
-        # Load tasks after screen is fully mounted
-        def _load_tasks_if_ready() -> None:
-            if self.task_ui_manager:
-                self.task_ui_manager.load_tasks()
-
-        self.call_after_refresh(_load_tasks_if_ready)
+        # Load tasks after screen is fully mounted. Routed through the reload
+        # funnel so the initial fetch runs off the UI thread; the loading
+        # indicator set in MainScreen.on_mount is cleared when it completes.
+        self.call_after_refresh(self.request_reload)
         # Start auto-refresh timer for elapsed time updates
         self.set_interval(AUTO_REFRESH_INTERVAL_SECONDS, self._refresh_elapsed_time)
         # Start connection monitoring timer (check every 3 seconds)
@@ -563,7 +562,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             task_data = mgr.fetch_with_params(params)
         except (ServerConnectionError, AuthenticationError, ServerError) as e:
             if not worker.is_cancelled:
-                self.call_from_thread(mgr.handle_api_error, e)
+                self.call_from_thread(self._finish_reload, mgr, None, e)
             return
         except Exception:
             # Unexpected (non-API) error — a real bug. Log it instead of
@@ -571,7 +570,25 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             logger.exception("Unexpected error during task reload")
             task_data = mgr.empty_task_data()
         if not worker.is_cancelled:
-            self.call_from_thread(mgr.apply_task_data, task_data, True)
+            self.call_from_thread(self._finish_reload, mgr, task_data, None)
+
+    def _finish_reload(
+        self,
+        mgr: TaskUIManager,
+        task_data: "TaskData | None",
+        error: "ServerConnectionError | AuthenticationError | ServerError | None",
+    ) -> None:
+        """Apply reload result (or surface error), then drop the loading state."""
+        if error is not None:
+            mgr.handle_api_error(error)
+        elif task_data is not None:
+            mgr.apply_task_data(task_data, keep_scroll_position=True)
+        # Clear the startup loading indicator (no-op on later reloads).
+        if self.main_screen:
+            if self.main_screen.gantt_widget:
+                self.main_screen.gantt_widget.loading = False
+            if self.main_screen.task_table:
+                self.main_screen.task_table.loading = False
 
     # Event handlers for task operations
     def _handle_task_change_event(self, event: Any) -> None:

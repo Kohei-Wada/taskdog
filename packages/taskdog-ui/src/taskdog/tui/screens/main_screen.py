@@ -85,13 +85,15 @@ class MainScreen(Screen[None]):
 
     def on_mount(self) -> None:
         """Called when screen is mounted."""
-        # Initialize gantt with empty message
+        # Show a loading indicator until the initial data load completes
+        # (cleared by the app once the first reload finishes).
         if self.gantt_widget:
-            self.gantt_widget.update("Loading gantt chart...")
+            self.gantt_widget.loading = True
 
         # Setup task table columns
         if self.task_table:
             self.task_table.setup_columns()  # type: ignore[no-untyped-call]
+            self.task_table.loading = True
             self.task_table.focus()
 
     def on_search_query_changed(self, event: SearchQueryChanged) -> None:
