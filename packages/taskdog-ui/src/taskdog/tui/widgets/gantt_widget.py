@@ -21,6 +21,7 @@ from taskdog.constants.gantt import (
     MIN_TIMELINE_WIDTH,
 )
 from taskdog.renderers.gantt_cell_formatter import LEGEND_SPEC
+from taskdog.tui.events import GanttPanRequested
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.gantt_data_table import GanttDataTable
 from taskdog.view_models.gantt_view_model import GanttViewModel
@@ -47,9 +48,7 @@ class GanttWidget(Vertical, TUIWidget):
         super().__init__(*args, **kwargs)
         self.can_focus = False
         self._task_ids: list[int] = []
-        self._filter_include_archived: bool = (
-            False  # Include archived tasks flag for recalculation
-        )
+        self._pan_offset_days: int = 0  # Window shift through time (days from today)
         self._keep_scroll_position: bool = False  # Preserve scroll position on refresh
         self._gantt_table: GanttDataTable | None = None
         self._title_widget: Static | None = None
@@ -77,7 +76,6 @@ class GanttWidget(Vertical, TUIWidget):
     def update_gantt(
         self,
         task_ids: list[int],
-        include_archived: bool = False,
         keep_scroll_position: bool = False,
     ) -> None:
         """Update the gantt chart with new data from TUIState.gantt_cache.
@@ -87,12 +85,10 @@ class GanttWidget(Vertical, TUIWidget):
 
         Args:
             task_ids: List of task IDs (used to detect if data exists on resize)
-            include_archived: Include archived tasks (default: False)
             keep_scroll_position: Whether to preserve scroll position during refresh.
                                  Set to True for periodic updates to avoid scroll stuttering.
         """
         self._task_ids = task_ids
-        self._filter_include_archived = include_archived
         self._keep_scroll_position = keep_scroll_position
         self._render_gantt()
 
@@ -263,7 +259,11 @@ class GanttWidget(Vertical, TUIWidget):
             Tuple of (start_date, end_date)
         """
         today = date.today()
-        start_date = today - timedelta(days=today.weekday())
+        start_date = (
+            today
+            - timedelta(days=today.weekday())
+            + timedelta(days=self._pan_offset_days)
+        )
         end_date = start_date + timedelta(days=display_days - 1)
         return start_date, end_date
 
@@ -309,6 +309,27 @@ class GanttWidget(Vertical, TUIWidget):
 
         self.post_message(GanttResizeRequested(display_days, start_date, end_date))
 
+    def on_gantt_pan_requested(self, event: GanttPanRequested) -> None:
+        """Shift the gantt window through time and refetch the new range.
+
+        Keeps the window width constant (so render cost stays flat) and moves
+        its anchor; the existing resize path re-fetches gantt data for the new
+        date range.
+
+        Args:
+            event: Pan request carrying a week delta or a reset flag.
+        """
+        event.stop()
+        if event.reset:
+            if self._pan_offset_days == 0:
+                return
+            self._pan_offset_days = 0
+        else:
+            self._pan_offset_days += event.weeks * DAYS_PER_WEEK
+
+        display_days = self._calculate_display_days()
+        self._recalculate_gantt_for_width(display_days)
+
     def render_filtered_gantt(self) -> None:
         """Render gantt from TUIState.filtered_gantt.
 
@@ -331,14 +352,6 @@ class GanttWidget(Vertical, TUIWidget):
         if self._gantt_table:
             return self._gantt_table.get_selected_task_id()
         return None
-
-    def get_filter_include_archived(self) -> bool:
-        """Get current archive filter setting.
-
-        Returns:
-            Whether to include archived tasks
-        """
-        return self._filter_include_archived
 
     def get_sort_by(self) -> str:
         """Get current sort order.

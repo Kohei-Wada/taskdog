@@ -27,6 +27,7 @@ from taskdog.tui.constants.ui_settings import (
 from taskdog.tui.context import TUIContext
 from taskdog.tui.events import FilterChanged, GanttResizeRequested, TasksRefreshed
 from taskdog.tui.palette.providers import (
+    ArchiveCommandProvider,
     AuditCommandProvider,
     ExportCommandProvider,
     ExportFormatProvider,
@@ -190,6 +191,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
 
     # Register custom command providers
     COMMANDS = App.COMMANDS | {
+        ArchiveCommandProvider,
         AuditCommandProvider,
         SortCommandProvider,
         OptimizeCommandProvider,
@@ -479,6 +481,17 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
     def action_command_palette(self) -> None:
         """Show the command palette."""
         self.push_screen(CommandPalette())
+
+    def toggle_archive(self) -> None:
+        """Toggle inclusion of archived tasks in the task list.
+
+        Called from Command Palette via ArchiveCommandProvider.
+        """
+        self.state.show_archived = not self.state.show_archived
+        if self.task_ui_manager:
+            self.task_ui_manager.load_tasks(keep_scroll_position=True)
+        status = "shown" if self.state.show_archived else "hidden"
+        self.notify(f"Archived tasks {status}")
 
     def show_audit_logs(self) -> None:
         """Toggle the audit log screen.

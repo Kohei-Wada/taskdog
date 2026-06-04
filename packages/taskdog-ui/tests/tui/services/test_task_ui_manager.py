@@ -343,7 +343,6 @@ class TestRecalculateGantt:
         self.main_screen = MagicMock()
         self.main_screen.gantt_widget = MagicMock()
         # Setup default return values for gantt_widget methods
-        self.main_screen.gantt_widget.get_filter_include_archived.return_value = False
         self.main_screen.gantt_widget.get_sort_by.return_value = "deadline"
         self.on_error = MagicMock()
 
@@ -377,13 +376,13 @@ class TestRecalculateGantt:
         # Execute
         self.manager.recalculate_gantt(start_date, end_date)
 
-        # Verify API was called with parameters from gantt_widget
+        # Verify API was called with parameters from state/gantt_widget
         self.task_data_loader.api_client.list_tasks.assert_called_once_with(
-            include_archived=False,  # from gantt_widget.get_filter_include_archived()
+            include_archived=False,  # from state.show_archived (default)
             sort_by="deadline",  # from gantt_widget.get_sort_by()
             reverse=self.state.sort_reverse,
             include_gantt=True,
-            gantt_start_date=start_date,
+            gantt_start_date=start_date,  # honored when archived not shown
             gantt_end_date=end_date,
         )
 
@@ -394,10 +393,15 @@ class TestRecalculateGantt:
         assert self.state.gantt_cache == gantt
         self.main_screen.gantt_widget.update_view_model_and_render.assert_called_once()
 
-    def test_recalculate_gantt_respects_gantt_widget_filter_state(self):
-        """Test recalculate_gantt uses filter/sort state from gantt_widget."""
-        # Setup - gantt_widget has "all tasks" filter enabled
-        self.main_screen.gantt_widget.get_filter_include_archived.return_value = True
+    def test_recalculate_gantt_respects_show_archived_state(self):
+        """Test recalculate_gantt respects state.show_archived on zoom/pan.
+
+        When archived tasks are shown they must be included for the requested
+        (fixed-width) window; the requested start/end are honored verbatim
+        (the window is moved by panning, not auto-expanded).
+        """
+        # Setup - archived tasks are shown
+        self.state.show_archived = True
         self.main_screen.gantt_widget.get_sort_by.return_value = "priority"
 
         gantt = create_gantt_viewmodel()
@@ -413,14 +417,12 @@ class TestRecalculateGantt:
         # Execute
         self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
 
-        # Verify API was called with filter state from gantt_widget
+        # Verify API was called with archived included and the exact window
         call_kwargs = self.task_data_loader.api_client.list_tasks.call_args[1]
-        assert (
-            call_kwargs["include_archived"] is True
-        )  # Respects gantt_widget.get_filter_include_archived()
-        assert (
-            call_kwargs["sort_by"] == "priority"
-        )  # Respects gantt_widget.get_sort_by()
+        assert call_kwargs["include_archived"] is True  # Respects state.show_archived
+        assert call_kwargs["gantt_start_date"] == date(2024, 1, 1)  # Honored verbatim
+        assert call_kwargs["gantt_end_date"] == date(2024, 1, 31)
+        assert call_kwargs["sort_by"] == "priority"  # Respects gantt_widget sort
 
     def test_recalculate_gantt_handles_connection_error(self):
         """Test recalculate_gantt calls error callback on failure."""
@@ -503,7 +505,6 @@ class TestErrorHandling:
             date.today(),
             date.today() + timedelta(days=7),
         )
-        self.main_screen.gantt_widget.get_filter_include_archived.return_value = False
         self.main_screen.gantt_widget.get_sort_by.return_value = "deadline"
         self.on_error = MagicMock()
 

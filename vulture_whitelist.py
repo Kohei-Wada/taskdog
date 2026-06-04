@@ -3,6 +3,7 @@ estimation  # unused variable (packages/taskdog-server/src/taskdog_server/api/mo
 trends  # unused variable (packages/taskdog-server/src/taskdog_server/api/models/responses.py:270)
 _.format_commands  # Click override called via duck-typing (packages/taskdog-ui/src/taskdog/cli_main.py:138)
 _.show_audit_logs  # unused method (packages/taskdog-ui/src/taskdog/tui/app.py:478)
+_.toggle_archive  # palette callback via getattr (packages/taskdog-ui/src/taskdog/tui/app.py)
 SelectionProvider  # unused import (packages/taskdog-ui/src/taskdog/tui/context.py:12)
 SelectionProvider  # unused class (packages/taskdog-ui/src/taskdog/tui/selection.py:9)
 last_update  # unused variable (packages/taskdog-ui/src/taskdog/tui/state/connection_status.py:19)

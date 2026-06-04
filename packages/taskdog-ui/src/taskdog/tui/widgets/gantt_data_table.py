@@ -18,6 +18,7 @@ from taskdog.constants.gantt import CHARS_PER_DAY, GANTT_WORKLOAD_LABEL
 from taskdog.constants.task_table import ESTIMATED_COLUMN_WIDTH, TASK_NAME_COLUMN_WIDTH
 from taskdog.formatters.text_formatter import format_finished_name
 from taskdog.renderers.gantt_cell_formatter import DateMetadata, GanttCellFormatter
+from taskdog.tui.events import GanttPanRequested
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from taskdog_core.shared.constants import (
     WORKLOAD_COMFORTABLE_HOURS,
@@ -52,6 +53,9 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         # w/b -> jump by one week (7 columns)
         Binding("w", "cursor_forward_week", "Week Forward", show=False),
         Binding("b", "cursor_backward_week", "Week Backward", show=False),
+        # H/L -> pan the whole window one week into the past / future
+        Binding("H", "pan_backward", "Pan Past", show=False),
+        Binding("L", "pan_forward", "Pan Future", show=False),
         # 0/$ -> jump to leftmost/rightmost column
         Binding("0", "cursor_home_horizontal", "Line Start", show=False),
         Binding("$", "cursor_end_horizontal", "Line End", show=False),
@@ -610,15 +614,28 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
             self.move_cursor(column=len(self.columns) - 1)
 
     def action_jump_to_today(self) -> None:
-        """Jump cursor to today's date column (T key)."""
+        """Jump back to today (T key).
+
+        If today is in the visible window, move the cursor to it; otherwise the
+        window has been panned away, so reset the pan back to the current week.
+        """
         today = date.today()
         try:
             date_index = self._date_columns.index(today)
         except ValueError:
-            self.app.notify("Today is not in the visible range", severity="warning")
+            # Today is outside the panned window: snap the window back.
+            self.post_message(GanttPanRequested(reset=True))
             return
         # Fixed columns: ID, Name, Est (3 columns before date columns)
         self.move_cursor(column=date_index + GANTT_FIXED_COLUMN_COUNT)
+
+    def action_pan_backward(self) -> None:
+        """Pan the gantt window one week into the past (H key)."""
+        self.post_message(GanttPanRequested(weeks=-1))
+
+    def action_pan_forward(self) -> None:
+        """Pan the gantt window one week into the future (L key)."""
+        self.post_message(GanttPanRequested(weeks=1))
 
     def get_selected_task_id(self) -> int | None:
         """Get the task ID at the current cursor row.
