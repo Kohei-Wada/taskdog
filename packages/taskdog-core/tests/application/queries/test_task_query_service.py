@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from taskdog_core.application.queries.task_query_service import TaskQueryService
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestTaskQueryService:
@@ -14,7 +15,7 @@ class TestTaskQueryService:
     def setup(self, repository):
         """Initialize service for each test."""
         self.repository = repository
-        self.query_service = TaskQueryService(self.repository)
+        self.query_service = TaskQueryService(self.repository, FakeTimeProvider())
 
         # Calculate date strings for testing
         self.today = datetime.now().date()

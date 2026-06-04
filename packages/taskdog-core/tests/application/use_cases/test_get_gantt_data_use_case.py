@@ -8,6 +8,7 @@ from taskdog_core.application.dto.query_inputs import GetGanttDataInput
 from taskdog_core.application.queries.task_query_service import TaskQueryService
 from taskdog_core.application.use_cases.get_gantt_data import GetGanttDataUseCase
 from taskdog_core.domain.entities.task import TaskStatus
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestGetGanttDataUseCase:
@@ -17,7 +18,7 @@ class TestGetGanttDataUseCase:
     def setup(self, repository):
         """Initialize use case for each test."""
         self.repository = repository
-        self.query_service = TaskQueryService(self.repository)
+        self.query_service = TaskQueryService(self.repository, FakeTimeProvider())
         self.use_case = GetGanttDataUseCase(self.query_service)
 
     def test_execute_returns_gantt_output(self):

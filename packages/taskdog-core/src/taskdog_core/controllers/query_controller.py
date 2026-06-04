@@ -25,6 +25,7 @@ from taskdog_core.application.use_cases.get_task_detail import GetTaskDetailUseC
 from taskdog_core.application.use_cases.list_tasks import ListTasksUseCase
 from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
+from taskdog_core.domain.services.time_provider import ITimeProvider
 
 if TYPE_CHECKING:
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
@@ -48,16 +49,20 @@ class QueryController:
         self,
         repository: TaskRepository,
         notes_repository: NotesRepository | None,
+        time_provider: ITimeProvider,
     ):
         """Initialize the query controller.
 
         Args:
             repository: Task repository
             notes_repository: Notes repository (optional, required for get_task_detail)
+            time_provider: Provider for current time, supplied by the caller
         """
         self.repository = repository
         self.notes_repository = notes_repository
-        self.query_service: TaskQueryService = TaskQueryService(repository)
+        self.query_service: TaskQueryService = TaskQueryService(
+            repository, time_provider
+        )
 
     def list_tasks(
         self,

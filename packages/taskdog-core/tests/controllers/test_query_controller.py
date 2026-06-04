@@ -10,6 +10,7 @@ from taskdog_core.application.dto.query_inputs import (
 )
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.domain.entities.task import TaskStatus
+from tests.helpers.time_provider import FakeTimeProvider
 
 
 class TestQueryController:
@@ -19,7 +20,7 @@ class TestQueryController:
     def setup(self, repository):
         """Initialize controller for each test."""
         self.repository = repository
-        self.controller = QueryController(self.repository, None)
+        self.controller = QueryController(self.repository, None, FakeTimeProvider())
 
     def test_list_tasks_returns_output_dto(self):
         """Test list_tasks returns TaskListOutput with correct structure."""
