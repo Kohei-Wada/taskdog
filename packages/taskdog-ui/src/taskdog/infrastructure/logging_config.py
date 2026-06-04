@@ -18,7 +18,9 @@ _BACKUP_COUNT = 3
 _LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 # Logger namespaces whose records should reach the TUI log file.
-_TARGET_LOGGERS = ("taskdog", "taskdog_core")
+# `taskdog_client` is a separate root (not a child of `taskdog`), so it must be
+# listed explicitly or the WebSocket client's records would be dropped.
+_TARGET_LOGGERS = ("taskdog", "taskdog_core", "taskdog_client")
 
 
 def configure_tui_logging(level: str | None = None) -> Path:

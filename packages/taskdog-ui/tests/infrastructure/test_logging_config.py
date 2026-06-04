@@ -15,7 +15,7 @@ class TestConfigureTuiLogging:
     """configure_tui_logging routes taskdog logs to a state-dir file."""
 
     def _cleanup(self) -> None:
-        for name in ("taskdog", "taskdog_core"):
+        for name in ("taskdog", "taskdog_core", "taskdog_client"):
             log = logging.getLogger(name)
             for h in [h for h in log.handlers if getattr(h, "_taskdog_tui", False)]:
                 log.removeHandler(h)
@@ -32,6 +32,19 @@ class TestConfigureTuiLogging:
 
             assert log_file.exists()
             assert "boom" in log_file.read_text(encoding="utf-8")
+        finally:
+            self._cleanup()
+
+    def test_captures_taskdog_client_records(self, tmp_path):
+        """WebSocket client logs (taskdog_client.*) must reach the file."""
+        with patch.dict(os.environ, {"XDG_STATE_HOME": str(tmp_path)}):
+            log_file = configure_tui_logging()
+        try:
+            logging.getLogger("taskdog_client.websocket").info("ws connected")
+            for h in logging.getLogger("taskdog_client").handlers:
+                h.flush()
+
+            assert "ws connected" in log_file.read_text(encoding="utf-8")
         finally:
             self._cleanup()
 
