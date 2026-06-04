@@ -37,20 +37,16 @@ class TaskQueryService(QueryService):
     def __init__(
         self,
         repository: TaskRepository,
-        time_provider: ITimeProvider | None = None,
+        time_provider: ITimeProvider,
     ) -> None:
         """Initialize query service with repository.
 
         Args:
             repository: Task repository for data access
-            time_provider: Provider for current time. Defaults to SystemTimeProvider.
+            time_provider: Provider for current time, supplied by the caller.
         """
         super().__init__(repository)
         self.sorter = TaskSorter()
-        if time_provider is None:
-            from taskdog_core.infrastructure.time_provider import SystemTimeProvider
-
-            time_provider = SystemTimeProvider()
         self._time_provider = time_provider
 
     def get_filtered_tasks_as_dtos(

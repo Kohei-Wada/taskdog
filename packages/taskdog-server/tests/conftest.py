@@ -203,7 +203,9 @@ def app(
 ):
     """FastAPI application with all routers (session-scoped)."""
     # Create controllers once (reused across all tests)
-    query_controller = QueryController(session_repository, session_notes_repository)
+    query_controller = QueryController(
+        session_repository, session_notes_repository, SystemTimeProvider()
+    )
     lifecycle_controller = TaskLifecycleController(session_repository, mock_config)
     relationship_controller = TaskRelationshipController(
         session_repository, mock_config

@@ -37,7 +37,7 @@ class TestApp:
 
         # Create controllers with mocked dependencies
         query_controller = QueryController(
-            self.mock_repository, self.mock_notes_repository
+            self.mock_repository, self.mock_notes_repository, SystemTimeProvider()
         )
         lifecycle_controller = TaskLifecycleController(
             self.mock_repository, self.mock_config
