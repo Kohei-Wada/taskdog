@@ -119,8 +119,8 @@ class TestTaskCrudController:
         deleted_task = self.repository.get_by_id(task.id)
         assert deleted_task is None
 
-        # Assert - notes deletion should be called
-        self.notes_repository.delete_notes.assert_called_once_with(task.id)
+        # Assert - notes deletion should be handled by repository, not called separately
+        self.notes_repository.delete_notes.assert_not_called()
 
     def test_controller_inherits_from_base_controller(self):
         """Test that controller has repository and config from base class."""

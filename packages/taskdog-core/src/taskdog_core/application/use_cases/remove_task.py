@@ -40,10 +40,8 @@ class RemoveTaskUseCase(UseCase[SingleTaskInput, TaskOperationOutput]):
         # Capture task info before deletion
         result = TaskOperationOutput.from_task(task)
 
-        # Delete notes first (idempotent - won't fail if notes don't exist)
-        self.notes_repository.delete_notes(input_dto.task_id)
-
-        # Then delete the task
+        # Delete the task and its associated notes atomically
+        # (SqliteTaskRepository handles both in a single transaction)
         self.repository.delete(input_dto.task_id)
 
         return result
