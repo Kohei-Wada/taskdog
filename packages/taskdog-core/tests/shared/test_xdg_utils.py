@@ -34,6 +34,27 @@ class TestXDGDirectories:
             expected = Path("/tmp/test_data/taskdog")
             assert data_home == expected
 
+    def test_get_state_home_custom(self):
+        """Test get_state_home with custom XDG_STATE_HOME."""
+        with patch.dict(os.environ, {"XDG_STATE_HOME": "/tmp/test_state"}):
+            state_home = XDGDirectories.get_state_home(create=False)
+            assert state_home == Path("/tmp/test_state/taskdog")
+
+    def test_get_state_home_default(self):
+        """Test get_state_home defaults to ~/.local/state on Linux."""
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch(
+                "taskdog_core.shared.xdg_utils.platform.system", return_value="Linux"
+            ),
+            patch(
+                "taskdog_core.shared.xdg_utils.Path.home",
+                return_value=Path("/home/test"),
+            ),
+        ):
+            state_home = XDGDirectories.get_state_home(create=False)
+            assert state_home == Path("/home/test/.local/state/taskdog")
+
     def test_get_config_home_default(self):
         """Test get_config_home with default XDG_CONFIG_HOME."""
         # Use patch.dict with clear=True to ensure complete environment isolation

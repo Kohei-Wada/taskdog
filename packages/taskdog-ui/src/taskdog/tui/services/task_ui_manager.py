@@ -1,5 +1,6 @@
 """Task UI Manager for orchestrating data lifecycle in TUI."""
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -18,6 +19,8 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 
 if TYPE_CHECKING:
     from taskdog.tui.screens.main_screen import MainScreen
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -173,6 +176,7 @@ class TaskUIManager:
             self.handle_api_error(e)
             return self.empty_task_data()
         except Exception:
+            logger.exception("Unexpected error fetching task data")
             return self.empty_task_data()
 
     def empty_task_data(self) -> TaskData:
@@ -248,7 +252,7 @@ class TaskUIManager:
         except (ServerConnectionError, AuthenticationError, ServerError) as e:
             self.handle_api_error(e)
         except Exception:
-            pass
+            logger.exception("Unexpected error recalculating gantt")
 
     def _fetch_gantt_for_range(
         self, start_date: date, end_date: date

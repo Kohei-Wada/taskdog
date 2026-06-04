@@ -41,6 +41,16 @@ class XDGDirectories:
         return Path.home() / ".config"
 
     @classmethod
+    def _default_state_base(cls) -> Path:
+        """Get platform default base directory for state data (e.g. logs)."""
+        if platform.system() == "Windows":
+            local_app_data = os.getenv("LOCALAPPDATA")
+            if local_app_data:
+                return Path(local_app_data)
+            return Path.home() / "AppData" / "Local"
+        return Path.home() / ".local" / "state"
+
+    @classmethod
     def get_data_home(cls, create: bool = True) -> Path:
         """Get application data directory for taskdog.
 
@@ -75,6 +85,24 @@ class XDGDirectories:
             config_dir.mkdir(parents=True, exist_ok=True)
 
         return config_dir
+
+    @classmethod
+    def get_state_home(cls, create: bool = True) -> Path:
+        """Get state directory for taskdog (logs, runtime state).
+
+        Returns:
+            Path to $XDG_STATE_HOME/taskdog, or the platform default.
+
+        Args:
+            create: Create directory if it doesn't exist (default: True)
+        """
+        base_dir = Path(os.getenv("XDG_STATE_HOME") or cls._default_state_base())
+        state_dir = Path(base_dir) / cls.APP_NAME
+
+        if create:
+            state_dir.mkdir(parents=True, exist_ok=True)
+
+        return state_dir
 
     @classmethod
     def get_config_file(cls) -> Path:

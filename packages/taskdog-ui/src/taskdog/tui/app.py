@@ -1,5 +1,6 @@
 """Taskdog TUI application."""
 
+import logging
 from pathlib import PurePath
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -49,6 +50,8 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     ServerConnectionError,
     ServerError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class TaskdogTUI(App):  # type: ignore[type-arg]
@@ -558,6 +561,9 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
                 self.call_from_thread(mgr.handle_api_error, e)
             return
         except Exception:
+            # Unexpected (non-API) error — a real bug. Log it instead of
+            # silently showing an empty list, then degrade to empty data.
+            logger.exception("Unexpected error during task reload")
             task_data = mgr.empty_task_data()
         if not worker.is_cancelled:
             self.call_from_thread(mgr.apply_task_data, task_data, True)
