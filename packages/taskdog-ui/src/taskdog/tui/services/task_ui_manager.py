@@ -80,6 +80,10 @@ class TaskUIManager:
     def _calculate_gantt_date_range(self) -> tuple[date, date]:
         """Calculate the date range for Gantt chart display.
 
+        The window has a fixed width; the gantt widget's pan offset shifts it
+        through time, so archived/past tasks are viewed by panning rather than
+        unbounded expansion.
+
         Returns:
             Tuple of (start_date, end_date) for Gantt chart
         """
@@ -103,7 +107,7 @@ class TaskUIManager:
             date_range = self._calculate_gantt_date_range()
 
             return self.task_data_loader.load_tasks(
-                include_archived=False,  # Non-archived by default
+                include_archived=self.state.show_archived,
                 sort_by=self.state.sort_by,
                 reverse=self.state.sort_reverse,
                 date_range=date_range,
@@ -165,7 +169,6 @@ class TaskUIManager:
             task_ids = [t.id for t in task_data.all_tasks]
             main_screen.gantt_widget.update_gantt(
                 task_ids=task_ids,
-                include_archived=False,
                 keep_scroll_position=keep_scroll_position,
             )
 
@@ -202,16 +205,14 @@ class TaskUIManager:
         Returns:
             GanttViewModel or None if no data
         """
-        # Get current filter/sort state from gantt widget if available
-        all_tasks = False  # Default to non-archived
+        # Get current sort state from gantt widget if available
         sort_by = self.state.sort_by
         main_screen = self._get_main_screen()
         if main_screen and main_screen.gantt_widget:
-            all_tasks = main_screen.gantt_widget.get_filter_include_archived()
             sort_by = main_screen.gantt_widget.get_sort_by()
 
         task_list_output = self.task_data_loader.api_client.list_tasks(
-            include_archived=all_tasks,
+            include_archived=self.state.show_archived,
             sort_by=sort_by,
             reverse=self.state.sort_reverse,
             include_gantt=True,
@@ -242,4 +243,7 @@ class TaskUIManager:
 
         main_screen = self._get_main_screen()
         if main_screen and main_screen.gantt_widget:
-            main_screen.gantt_widget.update_view_model_and_render()
+            # Preserve cursor/scroll on zoom & pan (range change = full rebuild)
+            main_screen.gantt_widget.update_view_model_and_render(
+                keep_scroll_position=True
+            )

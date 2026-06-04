@@ -53,6 +53,9 @@ class TUIState:
     gantt_filter_enabled: bool = False
     """Whether to apply search filter to Gantt chart."""
 
+    show_archived: bool = False
+    """Whether to include archived tasks in the task list."""
+
     # === Data Caches ===
     tasks_cache: list[TaskRowDto] = field(default_factory=list)
     """Cache of all tasks (DTO format) from last API fetch."""

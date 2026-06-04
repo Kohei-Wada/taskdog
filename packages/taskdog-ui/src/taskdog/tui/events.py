@@ -101,6 +101,25 @@ class GanttResizeRequested(Message):
         self.end_date = end_date
 
 
+class GanttPanRequested(Message):
+    """Event sent when the user pans the gantt window through time.
+
+    The gantt window has a fixed width; panning shifts its anchor backward
+    (into the past) or forward without changing the width, keeping the rendered
+    column count — and thus cost — constant regardless of history size.
+
+    Attributes:
+        weeks: Number of weeks to shift (negative = past, positive = future).
+            Ignored when reset is True.
+        reset: When True, snap the window back to the current week (today).
+    """
+
+    def __init__(self, weeks: int = 0, reset: bool = False) -> None:
+        super().__init__()
+        self.weeks = weeks
+        self.reset = reset
+
+
 class FilterChanged(Message):
     """Event sent when the search filter state changes.
 
