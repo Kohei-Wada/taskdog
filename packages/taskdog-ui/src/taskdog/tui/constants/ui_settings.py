@@ -12,6 +12,7 @@ __all__ = [
     "AUTO_REFRESH_INTERVAL_SECONDS",
     "MAX_HOURS_PER_DAY",
     "OPTIMIZATION_FAILURE_DETAIL_THRESHOLD",
+    "RELOAD_DEBOUNCE_SECONDS",
     "SORT_KEY_LABELS",
     "TAGS_MAX_DISPLAY_LENGTH",
 ]
@@ -19,6 +20,13 @@ __all__ = [
 # Auto-refresh settings
 AUTO_REFRESH_INTERVAL_SECONDS = 1.0
 """Interval in seconds for auto-refreshing elapsed time display."""
+
+RELOAD_DEBOUNCE_SECONDS = 0.1
+"""Debounce window for coalescing rapid task-list reload triggers.
+
+A single change can fire both a local refresh and its WebSocket echo (and
+batch operations fire many events); collapsing them within this window into
+one reload avoids redundant full reloads."""
 
 # Time validation constants
 MAX_HOURS_PER_DAY = 24

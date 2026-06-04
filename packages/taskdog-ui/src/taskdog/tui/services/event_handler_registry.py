@@ -152,11 +152,8 @@ class EventHandlerRegistry:
             self.app.notify(msg, severity="information")
 
     def _reload_tasks(self) -> None:
-        """Reload tasks via TaskUIManager."""
-        if self.app.task_ui_manager:
-            self.app.call_later(
-                self.app.task_ui_manager.load_tasks, keep_scroll_position=True
-            )
+        """Reload tasks via the app's single debounced reload funnel."""
+        self.app.request_reload()
 
     def _get_display_source(self, message: dict[str, Any]) -> str | None:
         """Get display source (user name or client ID) if different from this client.
