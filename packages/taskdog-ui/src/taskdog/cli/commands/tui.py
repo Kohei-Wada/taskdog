@@ -10,6 +10,7 @@ from taskdog_client import WebSocketClient
 
 if TYPE_CHECKING:
     from taskdog.cli.context import CliContext
+from taskdog.infrastructure.logging_config import configure_tui_logging
 from taskdog.tui.app import TaskdogTUI
 
 
@@ -50,6 +51,9 @@ def tui_command(ctx: click.Context) -> None:
     ctx_obj: CliContext = ctx.obj
     api_client = ctx_obj.api_client
     cli_config = ctx_obj.config
+
+    # Route logs to a file; the TUI owns the terminal so stdout/stderr can't be used
+    configure_tui_logging()
 
     # Initialize WebSocket client for real-time updates
     ws_url = _get_websocket_url(api_client.base_url)
