@@ -9,6 +9,7 @@ from textual.command import CommandPalette
 
 if TYPE_CHECKING:
     from taskdog_client import TaskdogApiClient
+    from textual.timer import Timer
 
     from taskdog.infrastructure.cli_config_manager import CliConfig
 
@@ -22,6 +23,7 @@ from taskdog.tui.commands.factory import CommandFactory
 from taskdog.tui.constants.command_mapping import ACTION_TO_COMMAND_MAP
 from taskdog.tui.constants.ui_settings import (
     AUTO_REFRESH_INTERVAL_SECONDS,
+    RELOAD_DEBOUNCE_SECONDS,
     SORT_KEY_LABELS,
 )
 from taskdog.tui.context import TUIContext
@@ -270,6 +272,9 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         # TaskUIManager will be initialized in on_mount (needs MainScreen)
         self.task_ui_manager: TaskUIManager | None = None
 
+        # Debounce timer for the single reload funnel (request_reload)
+        self._reload_timer: Timer | None = None
+
         # Initialize WebSocket client for real-time updates
         self.websocket_client = websocket_client
         self.websocket_client.set_callback(self._handle_websocket_message)
@@ -451,8 +456,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         self.state.sort_reverse = not self.state.sort_reverse
 
         # Reload tasks with new sort direction
-        if self.task_ui_manager:
-            self.task_ui_manager.load_tasks(keep_scroll_position=True)
+        self.request_reload()
 
         # Show notification with current direction
         direction = "descending" if self.state.sort_reverse else "ascending"
@@ -488,8 +492,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         Called from Command Palette via ArchiveCommandProvider.
         """
         self.state.show_archived = not self.state.show_archived
-        if self.task_ui_manager:
-            self.task_ui_manager.load_tasks(keep_scroll_position=True)
+        self.request_reload()
         status = "shown" if self.state.show_archived else "hidden"
         self.notify(f"Archived tasks {status}")
 
@@ -510,9 +513,28 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         if self.main_screen and self.main_screen.task_table:
             self.main_screen.task_table.refresh_elapsed_only()
 
+    def request_reload(self) -> None:
+        """Single, debounced funnel for task-list reloads.
+
+        Every "data changed" trigger — local command events, WebSocket
+        broadcasts, batch completions — routes here. A change often fires both
+        a local event and its own WebSocket echo; debouncing collapses those
+        (and rapid batch events) into a single reload instead of several full
+        reloads.
+        """
+        if self._reload_timer is not None:
+            self._reload_timer.stop()
+        self._reload_timer = self.set_timer(RELOAD_DEBOUNCE_SECONDS, self._flush_reload)
+
+    def _flush_reload(self) -> None:
+        """Run the coalesced reload (called when the debounce window elapses)."""
+        self._reload_timer = None
+        if self.task_ui_manager:
+            self.task_ui_manager.load_tasks(keep_scroll_position=True)
+
     # Event handlers for task operations
     def _handle_task_change_event(self, event: Any) -> None:
-        """Handle any task change event by reloading tasks.
+        """Handle any task change event by requesting a reload.
 
         This generic handler is used for all task modification events
         (created, updated, deleted, refreshed) as they all require
@@ -521,8 +543,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         Args:
             event: Task change event (TaskCreated/Updated/Deleted/Refreshed)
         """
-        if self.task_ui_manager:
-            self.task_ui_manager.load_tasks(keep_scroll_position=True)
+        self.request_reload()
 
     # Alias all task change event handlers to the generic handler
     on_task_created = _handle_task_change_event

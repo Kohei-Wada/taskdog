@@ -15,7 +15,6 @@ class TestEventHandlerRegistry:
         self.mock_app.api_client = MagicMock()
         self.mock_app.api_client.client_id = "test-client-id"
         self.mock_app.task_ui_manager = MagicMock()
-        self.mock_app.call_later = MagicMock()
         self.mock_app.notify = MagicMock()
         # Set main_screen to None by default to avoid audit panel refresh
         self.mock_app.main_screen = None
@@ -59,7 +58,7 @@ class TestEventHandlerRegistry:
             "task_name": "New Task",
         }
         self.registry.dispatch(message)
-        self.mock_app.call_later.assert_called_once()
+        self.mock_app.request_reload.assert_called_once()
         self.mock_app.notify.assert_called_once()
 
     def test_dispatch_task_updated_shows_fields(self) -> None:
@@ -71,7 +70,7 @@ class TestEventHandlerRegistry:
             "updated_fields": ["priority", "deadline"],
         }
         self.registry.dispatch(message)
-        self.mock_app.call_later.assert_called_once()
+        self.mock_app.request_reload.assert_called_once()
         self.mock_app.notify.assert_called_once()
 
     def test_dispatch_task_deleted_shows_warning(self) -> None:
@@ -82,7 +81,7 @@ class TestEventHandlerRegistry:
             "task_name": "Deleted Task",
         }
         self.registry.dispatch(message)
-        self.mock_app.call_later.assert_called_once()
+        self.mock_app.request_reload.assert_called_once()
         self.mock_app.notify.assert_called_once()
         # Verify warning severity
         call_args = self.mock_app.notify.call_args
@@ -98,7 +97,7 @@ class TestEventHandlerRegistry:
             "new_status": "IN_PROGRESS",
         }
         self.registry.dispatch(message)
-        self.mock_app.call_later.assert_called_once()
+        self.mock_app.request_reload.assert_called_once()
         self.mock_app.notify.assert_called_once()
 
     def test_dispatch_schedule_optimized(self) -> None:
@@ -110,7 +109,7 @@ class TestEventHandlerRegistry:
             "algorithm": "greedy",
         }
         self.registry.dispatch(message)
-        self.mock_app.call_later.assert_called_once()
+        self.mock_app.request_reload.assert_called_once()
         self.mock_app.notify.assert_called_once()
 
     def test_dispatch_unknown_event_type_ignored(self) -> None:
@@ -256,7 +255,7 @@ class TestEventHandlerRegistry:
             "task_ids": [1, 2, 3],
         }
         self.registry.dispatch(message)
-        self.mock_app.call_later.assert_called_once()
+        self.mock_app.request_reload.assert_called_once()
         self.mock_app.notify.assert_called_once()
         call_args = self.mock_app.notify.call_args
         assert "3/3" in call_args[0][0]
@@ -272,7 +271,7 @@ class TestEventHandlerRegistry:
             "task_ids": [1, 2, 3],
         }
         self.registry.dispatch(message)
-        self.mock_app.call_later.assert_called_once()
+        self.mock_app.request_reload.assert_called_once()
         self.mock_app.notify.assert_called_once()
         call_args = self.mock_app.notify.call_args
         assert "2/3" in call_args[0][0]
@@ -287,18 +286,15 @@ class TestEventHandlerRegistry:
         assert "0/0" in call_args[0][0]
         assert "unknown" in call_args[0][0]
 
-    def test_reload_tasks_called_with_keep_scroll_position(self) -> None:
-        """Test that reload_tasks is called with keep_scroll_position=True."""
+    def test_reload_routes_through_request_reload_funnel(self) -> None:
+        """Reloads are delegated to the app's single debounced reload funnel."""
         message = {
             "type": "task_created",
             "task_id": 1,
             "task_name": "Task",
         }
         self.registry.dispatch(message)
-        # Verify call_later was called with load_tasks and keep_scroll_position=True
-        call_args = self.mock_app.call_later.call_args_list[0]
-        assert call_args[0][0] == self.mock_app.task_ui_manager.load_tasks
-        assert call_args[1]["keep_scroll_position"] is True
+        self.mock_app.request_reload.assert_called_once_with()
 
 
 class TestWebSocketHandler:
@@ -311,7 +307,6 @@ class TestWebSocketHandler:
         self.mock_app.api_client = MagicMock()
         self.mock_app.api_client.client_id = "test-client-id"
         self.mock_app.task_ui_manager = MagicMock()
-        self.mock_app.call_later = MagicMock()
         self.mock_app.notify = MagicMock()
 
     def test_handle_message_delegates_to_registry(self) -> None:
