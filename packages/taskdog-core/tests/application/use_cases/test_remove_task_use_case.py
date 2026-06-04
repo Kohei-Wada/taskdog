@@ -31,8 +31,8 @@ class TestRemoveTaskUseCase:
         # Verify task removed
         assert self.repository.get_by_id(task.id) is None
 
-        # Verify notes deletion was called
-        self.notes_repository.delete_notes.assert_called_once_with(task.id)
+        # Verify notes deletion was not called separately (handled by repository)
+        self.notes_repository.delete_notes.assert_not_called()
 
     def test_remove_nonexistent_task(self):
         """Test removing a task that doesn't exist."""
