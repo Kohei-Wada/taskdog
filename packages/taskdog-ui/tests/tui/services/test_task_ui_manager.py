@@ -10,6 +10,7 @@ from taskdog.tui.services.task_ui_manager import TaskUIManager
 from taskdog.tui.state.tui_state import TUIState
 from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog.view_models.task_view_model import TaskRowViewModel
+from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import TaskStatus
@@ -75,6 +76,20 @@ def create_gantt_viewmodel() -> GanttViewModel:
     return GanttViewModel(
         start_date=date.today(),
         end_date=date.today() + timedelta(days=7),
+        tasks=[],
+        task_daily_hours={},
+        daily_workload={},
+        holidays=set(),
+    )
+
+
+def create_gantt_output() -> GanttOutput:
+    """Helper to create a minimal GanttOutput for list_tasks responses."""
+    return GanttOutput(
+        date_range=GanttDateRange(
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=7),
+        ),
         tasks=[],
         task_daily_hours={},
         daily_workload={},
@@ -351,7 +366,7 @@ class TestRecalculateGantt:
             tasks=[],
             total_count=0,
             filtered_count=0,
-            gantt_data=MagicMock(),
+            gantt_data=create_gantt_output(),
         )
         self.task_data_loader.api_client.list_tasks.return_value = task_list_output
         self.task_data_loader.gantt_presenter.present.return_value = gantt
@@ -390,7 +405,7 @@ class TestRecalculateGantt:
             tasks=[],
             total_count=0,
             filtered_count=0,
-            gantt_data=MagicMock(),
+            gantt_data=create_gantt_output(),
         )
         self.task_data_loader.api_client.list_tasks.return_value = task_list_output
         self.task_data_loader.gantt_presenter.present.return_value = gantt
@@ -442,7 +457,7 @@ class TestRecalculateGantt:
             tasks=[],
             total_count=0,
             filtered_count=0,
-            gantt_data=MagicMock(),
+            gantt_data=create_gantt_output(),
         )
         self.task_data_loader.api_client.list_tasks.return_value = task_list_output
         self.task_data_loader.gantt_presenter.present.return_value = gantt

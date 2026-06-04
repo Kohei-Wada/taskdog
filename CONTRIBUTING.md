@@ -153,8 +153,8 @@ make format
 
 ### Test Framework
 
-- **Framework**: `unittest` (Python standard library)
-- **Coverage Tool**: `coverage`
+- **Framework**: `pytest` (with `pytest-cov`, `pytest-asyncio`)
+- **Coverage Tool**: `pytest-cov`
 
 ### Writing Tests
 
@@ -177,10 +177,10 @@ make test-ui
 # All test commands include coverage (sorted by coverage: low → high)
 
 # Run single test file (from package directory)
-cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest tests/test_module.py
+cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/test_module.py -v
 
 # Run specific test method
-cd packages/taskdog-core && PYTHONPATH=src uv run python -m unittest tests.test_module.TestClass.test_method
+cd packages/taskdog-core && PYTHONPATH=src uv run python -m pytest tests/test_module.py::TestClass::test_method -v
 ```
 
 ### Coverage Requirements
