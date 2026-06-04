@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from taskdog_core.domain.exceptions.task_exceptions import TaskValidationError
+
 if TYPE_CHECKING:
     from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 
@@ -26,3 +28,11 @@ class OptimizeParams:
     max_hours_per_day: float
     holiday_checker: "IHolidayChecker | None" = None
     include_all_days: bool = False
+
+    def __post_init__(self) -> None:
+        """Validate optimization parameters."""
+        if self.max_hours_per_day <= 0:
+            raise TaskValidationError(
+                f"Max hours per day must be greater than 0 "
+                f"(got {self.max_hours_per_day})"
+            )

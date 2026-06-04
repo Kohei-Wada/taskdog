@@ -9,11 +9,13 @@ from taskdog_core.application.use_cases.create_task import CreateTaskUseCase
 from taskdog_core.application.use_cases.optimize_schedule import (
     OptimizeScheduleInput,
     OptimizeScheduleUseCase,
+    StrategyFactory,
 )
 from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import (
     NoSchedulableTasksError,
     TaskNotFoundException,
+    TaskValidationError,
 )
 
 
@@ -59,6 +61,33 @@ class TestOptimizeScheduleUseCase:
         # Verify daily_allocations
         assert task.daily_allocations is not None
         assert task.daily_allocations[date(2025, 10, 15)] == 4.0
+
+    @pytest.mark.parametrize("algorithm_name", ["greedy", "backward"])
+    @pytest.mark.parametrize("max_hours_per_day", [0.0, -1.0])
+    def test_optimize_rejects_non_positive_max_hours_before_strategy(
+        self, algorithm_name, max_hours_per_day, monkeypatch
+    ):
+        """Test invalid max_hours_per_day raises before any strategy is created."""
+
+        def fail_if_strategy_is_created(*args, **kwargs):
+            raise AssertionError("Strategy should not be created for invalid params")
+
+        monkeypatch.setattr(StrategyFactory, "create", fail_if_strategy_is_created)
+
+        optimize_input = OptimizeScheduleInput(
+            start_date=datetime(2025, 10, 15, 18, 0, 0),
+            max_hours_per_day=max_hours_per_day,
+            force_override=False,
+            algorithm_name=algorithm_name,
+        )
+
+        with pytest.raises(TaskValidationError) as exc_info:
+            self.optimize_use_case.execute(optimize_input)
+
+        assert (
+            f"Max hours per day must be greater than 0 (got {max_hours_per_day})"
+            == str(exc_info.value)
+        )
 
     def test_optimize_multiple_tasks_same_day(self):
         """Test optimizing multiple tasks that fit in one day."""
