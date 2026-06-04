@@ -1,6 +1,7 @@
 completion  # unused variable (packages/taskdog-server/src/taskdog_server/api/models/responses.py:265)
 estimation  # unused variable (packages/taskdog-server/src/taskdog_server/api/models/responses.py:267)
 trends  # unused variable (packages/taskdog-server/src/taskdog_server/api/models/responses.py:270)
+_.format_commands  # Click override called via duck-typing (packages/taskdog-ui/src/taskdog/cli_main.py:138)
 _.show_audit_logs  # unused method (packages/taskdog-ui/src/taskdog/tui/app.py:478)
 SelectionProvider  # unused import (packages/taskdog-ui/src/taskdog/tui/context.py:12)
 SelectionProvider  # unused class (packages/taskdog-ui/src/taskdog/tui/selection.py:9)
