@@ -1,11 +1,13 @@
 """Tests for CLI main entry point and global options."""
 
+import importlib
 from unittest.mock import MagicMock, patch
 
+import click
 import pytest
 from click.testing import CliRunner
 
-from taskdog.cli_main import cli
+from taskdog.cli_main import LAZY_SUBCOMMANDS, cli
 
 
 class TestCliGlobalOptions:
@@ -217,3 +219,46 @@ class TestCliGlobalOptions:
         assert result.exit_code == 0
         assert "--api-key" in result.output
         assert "API key for authentication" in result.output
+
+
+class TestLazySubcommands:
+    """Guards for the lazy command registry (see LAZY_SUBCOMMANDS)."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.runner = CliRunner()
+
+    def test_help_lists_every_command(self):
+        """--help must list every registered command."""
+        result = self.runner.invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        for name in LAZY_SUBCOMMANDS:
+            assert name in result.output
+
+    def test_help_does_not_import_heavy_subcommand_modules(self):
+        """--help lists commands from static summaries, importing none of them.
+
+        This is the whole point of the registry: rendering help must not drag in
+        heavy per-command deps (rich.markdown, markdown_it, Textual via ``tui``).
+        """
+        import sys
+
+        for path, _ in LAZY_SUBCOMMANDS.values():
+            sys.modules.pop(path.rsplit(".", 1)[0], None)
+        sys.modules.pop("textual", None)
+
+        result = self.runner.invoke(cli, ["--help"])
+        assert result.exit_code == 0
+        assert "textual" not in sys.modules
+
+    @pytest.mark.parametrize("name", sorted(LAZY_SUBCOMMANDS))
+    def test_each_command_loads_and_summary_matches(self, name):
+        """Each command imports cleanly and its static summary stays in sync."""
+        import_path, summary = LAZY_SUBCOMMANDS[name]
+        modname, attr = import_path.rsplit(".", 1)
+        command = getattr(importlib.import_module(modname), attr)
+
+        assert isinstance(command, click.Command)
+        assert command.name == name
+        # The registry summary must not drift from the command's own help.
+        assert command.get_short_help_str(10**6) == summary

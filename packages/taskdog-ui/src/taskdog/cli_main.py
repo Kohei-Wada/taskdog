@@ -5,75 +5,157 @@ import click
 from rich.console import Console
 
 from taskdog import __version__
-from taskdog.cli.commands.add import add_command
-from taskdog.cli.commands.add_dependency import add_dependency_command
-from taskdog.cli.commands.audit_logs import audit_logs_command
-from taskdog.cli.commands.cancel import cancel_command
-from taskdog.cli.commands.done import done_command
-from taskdog.cli.commands.export import export_command
-from taskdog.cli.commands.fix_actual import fix_actual_command
-from taskdog.cli.commands.gantt import gantt_command
-from taskdog.cli.commands.note import note_command
-from taskdog.cli.commands.optimize import optimize_command
-from taskdog.cli.commands.pause import pause_command
-from taskdog.cli.commands.remove_dependency import remove_dependency_command
-from taskdog.cli.commands.reopen import reopen_command
-from taskdog.cli.commands.restore import restore_command
-from taskdog.cli.commands.rm import rm_command
-from taskdog.cli.commands.show import show_command
-from taskdog.cli.commands.start import start_command
-from taskdog.cli.commands.stats import stats_command
-from taskdog.cli.commands.table import table_command
-from taskdog.cli.commands.tags import tags_command
-from taskdog.cli.commands.timeline import timeline_command
-from taskdog.cli.commands.update import update_command
 from taskdog.cli.context import CliContext
 from taskdog.console.rich_console_writer import RichConsoleWriter
 from taskdog.infrastructure.cli_config_manager import load_cli_config
 
-# Lazy-loaded subcommands for performance optimization
-# These commands have heavy dependencies (e.g., Textual) that slow down CLI startup
-LAZY_SUBCOMMANDS: dict[str, str] = {
-    "tui": "taskdog.cli.commands.tui.tui_command",
+# Registry of every subcommand: name -> (import path "module.attr", summary).
+#
+# The summary is kept here as a static string so `taskdog --help` can list all
+# commands WITHOUT importing them — importing a command drags in heavy deps
+# (rich, markdown_it, pydantic DTOs, Textual for `tui`) and dominates startup.
+# Each command module is imported only when that command is actually invoked.
+# This mirrors pip's `commands_dict` registry.
+LAZY_SUBCOMMANDS: dict[str, tuple[str, str]] = {
+    "add": ("taskdog.cli.commands.add.add_command", "Add a new task."),
+    "add-dependency": (
+        "taskdog.cli.commands.add_dependency.add_dependency_command",
+        "Add a dependency to a task.",
+    ),
+    "audit-logs": (
+        "taskdog.cli.commands.audit_logs.audit_logs_command",
+        "Display operation history (audit logs).",
+    ),
+    "cancel": (
+        "taskdog.cli.commands.cancel.cancel_command",
+        "Mark task(s) as canceled.",
+    ),
+    "done": ("taskdog.cli.commands.done.done_command", "Mark task(s) as completed."),
+    "export": (
+        "taskdog.cli.commands.export.export_command",
+        "Export tasks to various formats (exports non-archived tasks by default).",
+    ),
+    "fix-actual": (
+        "taskdog.cli.commands.fix_actual.fix_actual_command",
+        "Correct actual start/end timestamps and duration for a task.",
+    ),
+    "gantt": (
+        "taskdog.cli.commands.gantt.gantt_command",
+        "Display tasks in Gantt chart format with workload analysis.",
+    ),
+    "note": ("taskdog.cli.commands.note.note_command", "Edit task notes in markdown."),
+    "optimize": (
+        "taskdog.cli.commands.optimize.optimize_command",
+        "Auto-generate optimal schedules for tasks based on priority, deadlines, and workload.",
+    ),
+    "pause": (
+        "taskdog.cli.commands.pause.pause_command",
+        "Pause task(s) and reset time tracking (sets status to PENDING).",
+    ),
+    "remove-dependency": (
+        "taskdog.cli.commands.remove_dependency.remove_dependency_command",
+        "Remove a dependency from a task.",
+    ),
+    "reopen": (
+        "taskdog.cli.commands.reopen.reopen_command",
+        "Reopen completed or canceled task(s).",
+    ),
+    "restore": (
+        "taskdog.cli.commands.restore.restore_command",
+        "Restore archived task(s).",
+    ),
+    "rm": (
+        "taskdog.cli.commands.rm.rm_command",
+        "Remove task(s) (archive by default, --hard for permanent deletion).",
+    ),
+    "show": (
+        "taskdog.cli.commands.show.show_command",
+        "Show task details and notes with markdown rendering.",
+    ),
+    "start": (
+        "taskdog.cli.commands.start.start_command",
+        "Start working on task(s) (sets status to IN_PROGRESS).",
+    ),
+    "stats": (
+        "taskdog.cli.commands.stats.stats_command",
+        "Display task statistics and analytics.",
+    ),
+    "table": (
+        "taskdog.cli.commands.table.table_command",
+        "Display tasks in flat table format (shows non-archived tasks by default).",
+    ),
+    "tags": (
+        "taskdog.cli.commands.tags.tags_command",
+        "View, set, or delete task tags.",
+    ),
+    "timeline": (
+        "taskdog.cli.commands.timeline.timeline_command",
+        "Display actual work times for a specific day.",
+    ),
+    "update": (
+        "taskdog.cli.commands.update.update_command",
+        "Update multiple task properties at once.",
+    ),
+    "tui": (
+        "taskdog.cli.commands.tui.tui_command",
+        "Launch the Text User Interface for interactive task management.",
+    ),
 }
 
 
 class TaskdogGroup(click.Group):
     """Custom Click Group with lazy loading and ASCII art help display.
 
-    Implements Click's LazyGroup pattern to defer loading of heavy subcommands
-    (like TUI with Textual) until they are actually invoked.
-    See: https://click.palletsprojects.com/en/stable/complex/
+    Implements Click's LazyGroup pattern (see
+    https://click.palletsprojects.com/en/stable/complex/) so that no subcommand
+    module is imported until the command is actually invoked. ``--help`` lists
+    commands from the static summaries in ``LAZY_SUBCOMMANDS`` instead of
+    importing them, keeping startup fast.
     """
 
     def __init__(
         self,
         *args: Any,
-        lazy_subcommands: dict[str, str] | None = None,
+        lazy_subcommands: dict[str, tuple[str, str]] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self.lazy_subcommands = lazy_subcommands or {}
 
     def list_commands(self, ctx: click.Context) -> list[str]:
-        """List all commands including lazy-loaded ones."""
-        base = super().list_commands(ctx)
-        lazy = sorted(self.lazy_subcommands.keys())
-        return base + lazy
+        """List all commands (eager + lazy), sorted."""
+        return sorted({*super().list_commands(ctx), *self.lazy_subcommands})
 
     def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
-        """Get a command, loading lazily if necessary."""
+        """Get a command, importing it lazily on first use."""
         if cmd_name in self.lazy_subcommands:
-            return self._lazy_load(cmd_name)
+            import_path = self.lazy_subcommands[cmd_name][0]
+            modname, attr = import_path.rsplit(".", 1)
+            cmd: click.Command = getattr(importlib.import_module(modname), attr)
+            return cmd
         return super().get_command(ctx, cmd_name)
 
-    def _lazy_load(self, cmd_name: str) -> click.Command:
-        """Lazily load a command from its import path."""
-        import_path = self.lazy_subcommands[cmd_name]
-        modname, attr = import_path.rsplit(".", 1)
-        mod = importlib.import_module(modname)
-        cmd: click.Command = getattr(mod, attr)
-        return cmd
+    def format_commands(self, ctx: click.Context, formatter: Any) -> None:
+        """List commands using static summaries so help imports nothing."""
+        names = self.list_commands(ctx)
+        if not names:
+            return
+        limit = formatter.width - 6 - max(len(name) for name in names)
+        rows = []
+        for name in names:
+            if name in self.lazy_subcommands:
+                summary = self.lazy_subcommands[name][1]
+                if len(summary) > limit:
+                    summary = summary[: max(limit - 3, 0)].rstrip() + "..."
+            else:
+                cmd = super().get_command(ctx, name)
+                if cmd is None or cmd.hidden:
+                    continue
+                summary = cmd.get_short_help_str(limit)
+            rows.append((name, summary))
+        if rows:
+            with formatter.section("Commands"):
+                formatter.write_dl(rows)
 
     def format_help(self, ctx: click.Context, formatter: Any) -> None:
         """Override format_help to add ASCII art before help text."""
@@ -158,30 +240,6 @@ def cli(
         config=config,
     )
 
-
-cli.add_command(add_command)
-cli.add_command(add_dependency_command)
-cli.add_command(audit_logs_command)
-cli.add_command(table_command)
-cli.add_command(export_command)
-cli.add_command(rm_command)
-cli.add_command(update_command)
-cli.add_command(start_command)
-cli.add_command(pause_command)
-cli.add_command(done_command)
-cli.add_command(cancel_command)
-cli.add_command(gantt_command)
-cli.add_command(note_command)
-cli.add_command(show_command)
-cli.add_command(remove_dependency_command)
-cli.add_command(reopen_command)
-cli.add_command(restore_command)
-cli.add_command(fix_actual_command)
-cli.add_command(optimize_command)
-cli.add_command(stats_command)
-cli.add_command(tags_command)
-cli.add_command(timeline_command)
-# Note: tui_command is lazy-loaded via LAZY_SUBCOMMANDS for performance
 
 if __name__ == "__main__":
     cli()
