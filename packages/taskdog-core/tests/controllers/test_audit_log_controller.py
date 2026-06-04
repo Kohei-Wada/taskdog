@@ -6,12 +6,11 @@ from unittest.mock import Mock, patch
 import pytest
 
 from taskdog_core.application.dto.audit_log_dto import (
-    AuditEvent,
     AuditLogListOutput,
     AuditLogOutput,
-    AuditQuery,
 )
 from taskdog_core.controllers.audit_log_controller import AuditLogController
+from taskdog_core.domain.entities.audit_log import AuditLog, AuditQuery
 from taskdog_core.domain.repositories.audit_log_repository import AuditLogRepository
 from taskdog_core.domain.services.time_provider import ITimeProvider
 
@@ -28,7 +27,7 @@ class TestAuditLogController:
 
     def test_save_delegates_to_repository(self):
         """Test that save delegates to repository.save."""
-        event = AuditEvent(
+        log = AuditLog(
             timestamp=datetime(2026, 1, 1, 12, 0),
             operation="create_task",
             resource_type="task",
@@ -36,14 +35,14 @@ class TestAuditLogController:
             resource_id=1,
         )
 
-        self.controller.save(event)
+        self.controller.save(log)
 
-        self.repository.save.assert_called_once_with(event)
+        self.repository.save.assert_called_once_with(log)
 
     @patch("taskdog_core.controllers.audit_log_controller.logger")
     def test_save_logs_debug_message(self, mock_logger):
         """Test that save calls logger.debug."""
-        event = AuditEvent(
+        log = AuditLog(
             timestamp=datetime(2026, 1, 1, 12, 0),
             operation="create_task",
             resource_type="task",
@@ -51,7 +50,7 @@ class TestAuditLogController:
             resource_id=42,
         )
 
-        self.controller.save(event)
+        self.controller.save(log)
 
         mock_logger.debug.assert_called_once()
         log_message = mock_logger.debug.call_args[0][0]
@@ -59,8 +58,8 @@ class TestAuditLogController:
         assert "task" in log_message
         assert "42" in log_message
 
-    def test_log_operation_creates_event_with_correct_fields(self):
-        """Test that log_operation constructs AuditEvent with correct fields."""
+    def test_log_operation_creates_log_with_correct_fields(self):
+        """Test that log_operation constructs an AuditLog with correct fields."""
         fixed_time = datetime(2026, 2, 19, 10, 30)
         self.time_provider.now.return_value = fixed_time
 
@@ -75,17 +74,19 @@ class TestAuditLogController:
             new_values={"status": "COMPLETED"},
         )
 
-        saved_event = self.repository.save.call_args[0][0]
-        assert saved_event.timestamp == fixed_time
-        assert saved_event.operation == "complete_task"
-        assert saved_event.resource_type == "task"
-        assert saved_event.success is True
-        assert saved_event.client_name == "test-client"
-        assert saved_event.resource_id == 5
-        assert saved_event.resource_name == "My Task"
-        assert saved_event.old_values == {"status": "IN_PROGRESS"}
-        assert saved_event.new_values == {"status": "COMPLETED"}
-        assert saved_event.error_message is None
+        saved = self.repository.save.call_args[0][0]
+        assert isinstance(saved, AuditLog)
+        assert saved.id is None
+        assert saved.timestamp == fixed_time
+        assert saved.operation == "complete_task"
+        assert saved.resource_type == "task"
+        assert saved.success is True
+        assert saved.client_name == "test-client"
+        assert saved.resource_id == 5
+        assert saved.resource_name == "My Task"
+        assert saved.old_values == {"status": "IN_PROGRESS"}
+        assert saved.new_values == {"status": "COMPLETED"}
+        assert saved.error_message is None
 
     def test_log_operation_uses_time_provider(self):
         """Test that log_operation uses time_provider.now(), not datetime.now()."""
@@ -99,8 +100,8 @@ class TestAuditLogController:
         )
 
         self.time_provider.now.assert_called_once()
-        saved_event = self.repository.save.call_args[0][0]
-        assert saved_event.timestamp == injected_time
+        saved = self.repository.save.call_args[0][0]
+        assert saved.timestamp == injected_time
 
     def test_log_operation_optional_fields_default_to_none(self):
         """Test that optional fields are None when omitted."""
@@ -112,65 +113,62 @@ class TestAuditLogController:
             success=False,
         )
 
-        saved_event = self.repository.save.call_args[0][0]
-        assert saved_event.client_name is None
-        assert saved_event.resource_id is None
-        assert saved_event.resource_name is None
-        assert saved_event.old_values is None
-        assert saved_event.new_values is None
-        assert saved_event.error_message is None
+        saved = self.repository.save.call_args[0][0]
+        assert saved.client_name is None
+        assert saved.resource_id is None
+        assert saved.resource_name is None
+        assert saved.old_values is None
+        assert saved.new_values is None
+        assert saved.error_message is None
 
-    def test_get_logs_delegates_to_repository(self):
-        """Test that get_logs delegates to repository and returns its result."""
+    def test_get_logs_maps_entities_to_output(self):
+        """get_logs maps repository entities into a paginated output DTO."""
         query = AuditQuery(operation="create_task", limit=50)
-        expected_output = AuditLogListOutput(
-            logs=[
-                AuditLogOutput(
-                    id=1,
-                    timestamp=datetime(2026, 1, 1),
-                    client_name=None,
-                    operation="create_task",
-                    resource_type="task",
-                    resource_id=1,
-                    resource_name="Task 1",
-                    old_values=None,
-                    new_values=None,
-                    success=True,
-                    error_message=None,
-                )
-            ],
-            total_count=1,
-            limit=50,
-            offset=0,
-        )
-        self.repository.get_logs.return_value = expected_output
+        self.repository.get_logs.return_value = [
+            AuditLog(
+                id=1,
+                timestamp=datetime(2026, 1, 1),
+                operation="create_task",
+                resource_type="task",
+                success=True,
+                resource_id=1,
+                resource_name="Task 1",
+            )
+        ]
+        self.repository.count_logs.return_value = 1
 
         result = self.controller.get_logs(query)
 
         self.repository.get_logs.assert_called_once_with(query)
-        assert result is expected_output
+        self.repository.count_logs.assert_called_once_with(query)
+        assert isinstance(result, AuditLogListOutput)
+        assert result.total_count == 1
+        assert result.limit == 50
+        assert result.offset == 0
+        assert len(result.logs) == 1
+        assert isinstance(result.logs[0], AuditLogOutput)
+        assert result.logs[0].id == 1
+        assert result.logs[0].operation == "create_task"
 
-    def test_get_by_id_delegates_to_repository(self):
-        """Test that get_by_id delegates to repository."""
-        expected_output = AuditLogOutput(
+    def test_get_by_id_maps_entity_to_output(self):
+        """get_by_id maps the repository entity to an output DTO."""
+        self.repository.get_by_id.return_value = AuditLog(
             id=7,
             timestamp=datetime(2026, 1, 1),
-            client_name="cli",
             operation="start_task",
             resource_type="task",
+            success=True,
+            client_name="cli",
             resource_id=3,
             resource_name="Task 3",
-            old_values=None,
-            new_values=None,
-            success=True,
-            error_message=None,
         )
-        self.repository.get_by_id.return_value = expected_output
 
         result = self.controller.get_by_id(7)
 
         self.repository.get_by_id.assert_called_once_with(7)
-        assert result is expected_output
+        assert isinstance(result, AuditLogOutput)
+        assert result.id == 7
+        assert result.operation == "start_task"
 
     def test_get_by_id_returns_none_when_not_found(self):
         """Test that get_by_id returns None when log is not found."""

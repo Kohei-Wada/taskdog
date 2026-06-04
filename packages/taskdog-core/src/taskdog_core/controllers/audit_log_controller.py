@@ -9,11 +9,10 @@ import logging
 from typing import Any
 
 from taskdog_core.application.dto.audit_log_dto import (
-    AuditEvent,
     AuditLogListOutput,
     AuditLogOutput,
-    AuditQuery,
 )
+from taskdog_core.domain.entities.audit_log import AuditLog, AuditQuery
 from taskdog_core.domain.repositories.audit_log_repository import AuditLogRepository
 from taskdog_core.domain.services.time_provider import ITimeProvider
 
@@ -46,17 +45,17 @@ class AuditLogController:
         self._repository = repository
         self._time_provider = time_provider
 
-    def save(self, event: AuditEvent) -> None:
-        """Save an audit event to the database.
+    def save(self, log: AuditLog) -> None:
+        """Save an audit log record to the database.
 
         Args:
-            event: The audit event to save
+            log: The audit log to save
         """
-        self._repository.save(event)
+        self._repository.save(log)
         logger.debug(
-            f"Audit log saved: operation={event.operation}, "
-            f"resource_type={event.resource_type}, "
-            f"resource_id={event.resource_id}"
+            f"Audit log saved: operation={log.operation}, "
+            f"resource_type={log.resource_type}, "
+            f"resource_id={log.resource_id}"
         )
 
     def log_operation(
@@ -74,7 +73,7 @@ class AuditLogController:
     ) -> None:
         """Log an operation with a convenience method.
 
-        This is a shortcut for creating an AuditEvent and calling save().
+        This is a shortcut for creating an AuditLog and calling save().
 
         Args:
             operation: The operation type (e.g., 'create_task')
@@ -87,7 +86,7 @@ class AuditLogController:
             new_values: Values after the change
             error_message: Error message if the operation failed
         """
-        event = AuditEvent(
+        log = AuditLog(
             timestamp=self._time_provider.now(),
             operation=operation,
             resource_type=resource_type,
@@ -99,7 +98,7 @@ class AuditLogController:
             new_values=new_values,
             error_message=error_message,
         )
-        self.save(event)
+        self.save(log)
 
     def get_logs(self, query: AuditQuery) -> AuditLogListOutput:
         """Query audit logs with filtering and pagination.
@@ -110,7 +109,14 @@ class AuditLogController:
         Returns:
             AuditLogListOutput containing logs and pagination info
         """
-        return self._repository.get_logs(query)
+        logs = self._repository.get_logs(query)
+        total_count = self._repository.count_logs(query)
+        return AuditLogListOutput(
+            logs=[AuditLogOutput.from_entity(log) for log in logs],
+            total_count=total_count,
+            limit=query.limit,
+            offset=query.offset,
+        )
 
     def get_by_id(self, log_id: int) -> AuditLogOutput | None:
         """Get a single audit log by ID.
@@ -121,7 +127,8 @@ class AuditLogController:
         Returns:
             AuditLogOutput if found, None otherwise
         """
-        return self._repository.get_by_id(log_id)
+        log = self._repository.get_by_id(log_id)
+        return AuditLogOutput.from_entity(log) if log is not None else None
 
     def count_logs(self, query: AuditQuery) -> int:
         """Count audit logs matching the query.

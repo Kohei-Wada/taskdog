@@ -14,12 +14,7 @@ from sqlalchemy import delete, func, select
 if TYPE_CHECKING:
     from sqlalchemy.engine import Engine
 
-from taskdog_core.application.dto.audit_log_dto import (
-    AuditEvent,
-    AuditLogListOutput,
-    AuditLogOutput,
-    AuditQuery,
-)
+from taskdog_core.domain.entities.audit_log import AuditLog, AuditQuery
 from taskdog_core.domain.repositories.audit_log_repository import AuditLogRepository
 from taskdog_core.infrastructure.persistence.database.base_repository import (
     SqliteBaseRepository,
@@ -49,65 +44,47 @@ class SqliteAuditLogRepository(SqliteBaseRepository, AuditLogRepository):
         """
         super().__init__(database_url, engine)
 
-    def save(self, event: AuditEvent) -> None:
-        """Persist an audit event to the database.
+    def save(self, log: AuditLog) -> None:
+        """Persist an audit log record to the database.
 
         Args:
-            event: The audit event to save
+            log: The audit log to save
         """
         with self.Session() as session:
             model = AuditLogModel(
-                timestamp=event.timestamp,
-                client_name=event.client_name,
-                operation=event.operation,
-                resource_type=event.resource_type,
-                resource_id=event.resource_id,
-                resource_name=event.resource_name,
-                old_values=json.dumps(event.old_values) if event.old_values else None,
-                new_values=json.dumps(event.new_values) if event.new_values else None,
-                success=event.success,
-                error_message=event.error_message,
+                timestamp=log.timestamp,
+                client_name=log.client_name,
+                operation=log.operation,
+                resource_type=log.resource_type,
+                resource_id=log.resource_id,
+                resource_name=log.resource_name,
+                old_values=json.dumps(log.old_values) if log.old_values else None,
+                new_values=json.dumps(log.new_values) if log.new_values else None,
+                success=log.success,
+                error_message=log.error_message,
             )
             session.add(model)
             session.commit()
 
-    def get_logs(self, query: AuditQuery) -> AuditLogListOutput:
+    def get_logs(self, query: AuditQuery) -> list[AuditLog]:
         """Query audit logs with filtering and pagination.
 
         Args:
             query: Query parameters for filtering
 
         Returns:
-            AuditLogListOutput containing logs and pagination info
+            The matching audit logs, newest first
         """
         with self.Session() as session:
-            # Build base query
             stmt = select(AuditLogModel)
             stmt = self._apply_filters(stmt, query)
-
-            # Get total count before pagination
-            count_stmt = select(func.count(AuditLogModel.id))
-            count_stmt = self._apply_filters(count_stmt, query)
-            total_count = session.scalar(count_stmt) or 0
-
-            # Apply ordering and pagination
             stmt = stmt.order_by(AuditLogModel.timestamp.desc())  # type: ignore[attr-defined]
             stmt = stmt.offset(query.offset).limit(query.limit)
 
-            # Execute query
             models = session.scalars(stmt).all()
+            return [self._model_to_entity(model) for model in models]
 
-            # Convert to output DTOs
-            logs = [self._model_to_output(model) for model in models]
-
-            return AuditLogListOutput(
-                logs=logs,
-                total_count=total_count,
-                limit=query.limit,
-                offset=query.offset,
-            )
-
-    def get_by_id(self, log_id: int) -> AuditLogOutput | None:
+    def get_by_id(self, log_id: int) -> AuditLog | None:
         """Get a single audit log by ID.
 
         Args:
@@ -120,7 +97,7 @@ class SqliteAuditLogRepository(SqliteBaseRepository, AuditLogRepository):
             model = session.get(AuditLogModel, log_id)
             if model is None:
                 return None
-            return self._model_to_output(model)
+            return self._model_to_entity(model)
 
     def count_logs(self, query: AuditQuery) -> int:
         """Count audit logs matching the query.
@@ -173,14 +150,14 @@ class SqliteAuditLogRepository(SqliteBaseRepository, AuditLogRepository):
 
         return stmt
 
-    def _model_to_output(self, model: AuditLogModel) -> AuditLogOutput:
-        """Convert an AuditLogModel to AuditLogOutput DTO.
+    def _model_to_entity(self, model: AuditLogModel) -> AuditLog:
+        """Convert an AuditLogModel to an AuditLog domain entity.
 
         Args:
             model: The database model (must be a persisted model with all required fields)
 
         Returns:
-            AuditLogOutput DTO
+            AuditLog entity
         """
         # These assertions ensure the model is a persisted instance with valid data
         assert model.id is not None
@@ -200,7 +177,7 @@ class SqliteAuditLogRepository(SqliteBaseRepository, AuditLogRepository):
         except json.JSONDecodeError:
             new_values = None
 
-        return AuditLogOutput(
+        return AuditLog(
             id=model.id,
             timestamp=model.timestamp,
             client_name=model.client_name,

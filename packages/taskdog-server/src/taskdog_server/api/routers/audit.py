@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from taskdog_core.application.dto.audit_log_dto import AuditQuery
+from taskdog_core.domain.entities.audit_log import AuditQuery
 from taskdog_server.api.dependencies import (
     AuditLogControllerDep,
     AuthenticatedClientDep,
