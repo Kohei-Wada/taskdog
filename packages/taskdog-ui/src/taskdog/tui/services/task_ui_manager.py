@@ -1,6 +1,7 @@
 """Task UI Manager for orchestrating data lifecycle in TUI."""
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import TYPE_CHECKING
 
@@ -17,6 +18,21 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 
 if TYPE_CHECKING:
     from taskdog.tui.screens.main_screen import MainScreen
+
+
+@dataclass(frozen=True)
+class FetchParams:
+    """Parameters for a task-list fetch, gathered on the UI thread.
+
+    Captures all UI/state-derived inputs (sort, archive filter, gantt window)
+    up front so the actual fetch can run on a worker thread without touching
+    any widget or app state.
+    """
+
+    include_archived: bool
+    sort_by: str
+    reverse: bool
+    date_range: tuple[date, date]
 
 
 class TaskUIManager:
@@ -53,10 +69,10 @@ class TaskUIManager:
         self._get_main_screen = main_screen_provider
         self._on_error = on_error
 
-    def _handle_api_error(
+    def handle_api_error(
         self, error: ServerConnectionError | AuthenticationError | ServerError
     ) -> None:
-        """Delegate API error to the error callback.
+        """Delegate API error to the error callback (UI thread only).
 
         Args:
             error: The API error to handle
@@ -65,15 +81,62 @@ class TaskUIManager:
             self._on_error(error)
 
     def load_tasks(self, keep_scroll_position: bool = False) -> None:
-        """Load tasks and update UI.
+        """Load tasks and update UI synchronously.
 
-        Performs a complete reload cycle: fetches data from API,
-        updates internal caches, and refreshes all UI components.
+        Performs a complete reload cycle on the calling thread: fetches data
+        from the API, updates internal caches, and refreshes all UI components.
+        Used for the initial load and tests; the app's debounced funnel runs
+        the same steps off the UI thread (see ``gather_fetch_params`` /
+        ``fetch_with_params`` / ``apply_task_data``).
 
         Args:
             keep_scroll_position: Whether to preserve scroll position during refresh
         """
         task_data = self._fetch_task_data()
+        self.apply_task_data(task_data, keep_scroll_position)
+
+    def gather_fetch_params(self) -> FetchParams:
+        """Collect fetch inputs from UI/state. Must run on the UI thread.
+
+        Returns:
+            FetchParams snapshot to hand to ``fetch_with_params``.
+        """
+        return FetchParams(
+            include_archived=self.state.show_archived,
+            sort_by=self.state.sort_by,
+            reverse=self.state.sort_reverse,
+            date_range=self._calculate_gantt_date_range(),
+        )
+
+    def fetch_with_params(self, params: FetchParams) -> TaskData:
+        """Fetch task data for the given params. Thread-safe; touches no UI.
+
+        Raises the underlying API exception on failure so the caller can
+        decide how to surface it (the UI-thread error callback must not run
+        here).
+
+        Args:
+            params: Snapshot from ``gather_fetch_params``.
+
+        Returns:
+            Loaded TaskData.
+        """
+        return self.task_data_loader.load_tasks(
+            include_archived=params.include_archived,
+            sort_by=params.sort_by,
+            reverse=params.reverse,
+            date_range=params.date_range,
+        )
+
+    def apply_task_data(
+        self, task_data: TaskData, keep_scroll_position: bool = False
+    ) -> None:
+        """Update caches and refresh widgets. Must run on the UI thread.
+
+        Args:
+            task_data: Data to cache and render
+            keep_scroll_position: Whether to preserve scroll position during refresh
+        """
         self._update_cache(task_data)
         self._refresh_ui(task_data, keep_scroll_position)
 
@@ -98,28 +161,22 @@ class TaskUIManager:
         return (start_date, end_date)
 
     def _fetch_task_data(self) -> TaskData:
-        """Fetch task data using TaskDataLoader.
+        """Fetch task data, handling API errors gracefully (UI thread).
 
         Returns:
-            TaskData object containing all task information
+            TaskData object containing all task information (empty on error)
         """
+        params = self.gather_fetch_params()
         try:
-            date_range = self._calculate_gantt_date_range()
-
-            return self.task_data_loader.load_tasks(
-                include_archived=self.state.show_archived,
-                sort_by=self.state.sort_by,
-                reverse=self.state.sort_reverse,
-                date_range=date_range,
-            )
+            return self.fetch_with_params(params)
         except (ServerConnectionError, AuthenticationError, ServerError) as e:
-            self._handle_api_error(e)
-            return self._create_empty_task_data()
+            self.handle_api_error(e)
+            return self.empty_task_data()
         except Exception:
-            return self._create_empty_task_data()
+            return self.empty_task_data()
 
-    def _create_empty_task_data(self) -> TaskData:
-        """Create empty TaskData to avoid crash on errors.
+    def empty_task_data(self) -> TaskData:
+        """Create empty TaskData to avoid crash on errors. Thread-safe.
 
         Returns:
             Empty TaskData object
@@ -189,7 +246,7 @@ class TaskUIManager:
             gantt_view_model = self._fetch_gantt_for_range(start_date, end_date)
             self._update_gantt_ui(gantt_view_model)
         except (ServerConnectionError, AuthenticationError, ServerError) as e:
-            self._handle_api_error(e)
+            self.handle_api_error(e)
         except Exception:
             pass
 

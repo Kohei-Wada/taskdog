@@ -6,12 +6,14 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from textual.app import App, InvalidThemeError
 from textual.binding import Binding
 from textual.command import CommandPalette
+from textual.worker import get_current_worker
 
 if TYPE_CHECKING:
     from taskdog_client import TaskdogApiClient
     from textual.timer import Timer
 
     from taskdog.infrastructure.cli_config_manager import CliConfig
+    from taskdog.tui.services.task_ui_manager import FetchParams
 
 from taskdog_client import WebSocketClient
 
@@ -527,10 +529,38 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         self._reload_timer = self.set_timer(RELOAD_DEBOUNCE_SECONDS, self._flush_reload)
 
     def _flush_reload(self) -> None:
-        """Run the coalesced reload (called when the debounce window elapses)."""
+        """Run the coalesced reload off the UI thread (debounce elapsed).
+
+        Fetch inputs are gathered here (UI thread), the blocking API fetch runs
+        in an exclusive thread worker, and results are applied back on the UI
+        thread — so reloads never freeze the interface. The exclusive group
+        means a newer reload supersedes an in-flight one.
+        """
         self._reload_timer = None
-        if self.task_ui_manager:
-            self.task_ui_manager.load_tasks(keep_scroll_position=True)
+        mgr = self.task_ui_manager
+        if not mgr:
+            return
+        params = mgr.gather_fetch_params()
+        self.run_worker(
+            lambda: self._reload_in_thread(mgr, params),
+            group="reload",
+            exclusive=True,
+            thread=True,
+        )
+
+    def _reload_in_thread(self, mgr: TaskUIManager, params: "FetchParams") -> None:
+        """Worker body: fetch in a thread, apply on the UI thread."""
+        worker = get_current_worker()
+        try:
+            task_data = mgr.fetch_with_params(params)
+        except (ServerConnectionError, AuthenticationError, ServerError) as e:
+            if not worker.is_cancelled:
+                self.call_from_thread(mgr.handle_api_error, e)
+            return
+        except Exception:
+            task_data = mgr.empty_task_data()
+        if not worker.is_cancelled:
+            self.call_from_thread(mgr.apply_task_data, task_data, True)
 
     # Event handlers for task operations
     def _handle_task_change_event(self, event: Any) -> None:

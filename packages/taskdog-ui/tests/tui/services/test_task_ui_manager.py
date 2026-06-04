@@ -269,6 +269,57 @@ class TestTaskUIManager:
         assert call_kwargs["sort_by"] == "priority"
         assert call_kwargs["reverse"] is True
 
+    def test_gather_fetch_params_snapshots_state_and_range(self):
+        """gather_fetch_params captures sort/archive/state and gantt window."""
+        self.state.sort_by = "priority"
+        self.state.sort_reverse = True
+        self.state.show_archived = True
+        window = (date.today(), date.today() + timedelta(days=7))
+        self.main_screen.gantt_widget.calculate_date_range.return_value = window
+
+        params = self.manager.gather_fetch_params()
+
+        assert params.include_archived is True
+        assert params.sort_by == "priority"
+        assert params.reverse is True
+        assert params.date_range == window
+
+    def test_fetch_with_params_raises_on_api_error(self):
+        """fetch_with_params propagates API errors (no UI-thread handling)."""
+        from taskdog.tui.services.task_ui_manager import FetchParams
+
+        self.task_data_loader.load_tasks.side_effect = ServerConnectionError(
+            base_url="http://localhost:8000",
+            original_error=ConnectionError("refused"),
+        )
+        params = FetchParams(
+            include_archived=False,
+            sort_by="id",
+            reverse=False,
+            date_range=(date.today(), date.today() + timedelta(days=7)),
+        )
+
+        with pytest.raises(ServerConnectionError):
+            self.manager.fetch_with_params(params)
+
+        # The error callback must NOT fire here (it is UI-thread only)
+        self.on_error.assert_not_called()
+
+    def test_apply_task_data_updates_cache_and_refreshes(self):
+        """apply_task_data writes caches and refreshes widgets."""
+        task = create_task_dto(1, "Test Task", TaskStatus.PENDING)
+        vm = create_task_viewmodel(1, "Test Task", TaskStatus.PENDING)
+        gantt = create_gantt_viewmodel()
+        task_data = create_task_data([task], [vm], gantt)
+
+        self.manager.apply_task_data(task_data, keep_scroll_position=True)
+
+        assert self.state.gantt_cache == gantt
+        assert len(self.state.viewmodels_cache) == 1
+        self.main_screen.refresh_tasks.assert_called_once_with(
+            keep_scroll_position=True
+        )
+
     def test_update_cache_updates_state(self):
         """Test _update_cache updates TUIState correctly."""
         # Setup
@@ -583,7 +634,7 @@ class TestCreateEmptyTaskData:
             main_screen_provider=lambda: None,
         )
 
-        result = manager._create_empty_task_data()
+        result = manager.empty_task_data()
 
         assert result.all_tasks == []
         assert result.table_view_models == []
