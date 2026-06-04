@@ -10,6 +10,7 @@ through CliConfig.input_defaults, not from this module.
 
 __all__ = [
     "AUTO_REFRESH_INTERVAL_SECONDS",
+    "GANTT_LOADING_DELAY_SECONDS",
     "MAX_HOURS_PER_DAY",
     "OPTIMIZATION_FAILURE_DETAIL_THRESHOLD",
     "RELOAD_DEBOUNCE_SECONDS",
@@ -27,6 +28,12 @@ RELOAD_DEBOUNCE_SECONDS = 0.1
 A single change can fire both a local refresh and its WebSocket echo (and
 batch operations fire many events); collapsing them within this window into
 one reload avoids redundant full reloads."""
+
+GANTT_LOADING_DELAY_SECONDS = 0.15
+"""Delay before showing the gantt loading indicator on zoom/pan.
+
+Fast fetches finish before this elapses, so the indicator only appears for
+fetches slow enough to be noticeable — avoiding flicker on quick refreshes."""
 
 # Time validation constants
 MAX_HOURS_PER_DAY = 24

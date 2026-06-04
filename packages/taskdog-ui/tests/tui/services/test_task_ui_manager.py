@@ -408,122 +408,57 @@ class TestRecalculateGantt:
             on_error=self.on_error,
         )
 
-    def test_recalculate_gantt_fetches_and_updates_widget(self):
-        """Test recalculate_gantt fetches data and updates widget."""
-        # Setup
-        gantt = create_gantt_viewmodel()
-        task_list_output = TaskListOutput(
-            tasks=[],
-            total_count=0,
-            filtered_count=0,
-            gantt_data=create_gantt_output(),
-        )
-        self.task_data_loader.api_client.list_tasks.return_value = task_list_output
-        self.task_data_loader.gantt_presenter.present.return_value = gantt
-
-        start_date = date(2024, 1, 1)
-        end_date = date(2024, 1, 31)
-
-        # Execute
-        self.manager.recalculate_gantt(start_date, end_date)
-
-        # Verify API was called with parameters from state/gantt_widget
-        self.task_data_loader.api_client.list_tasks.assert_called_once_with(
-            include_archived=False,  # from state.show_archived (default)
-            sort_by="deadline",  # from gantt_widget.get_sort_by()
-            reverse=self.state.sort_reverse,
-            include_gantt=True,
-            gantt_start_date=start_date,  # honored when archived not shown
-            gantt_end_date=end_date,
-        )
-
-        # Verify presenter was called
-        self.task_data_loader.gantt_presenter.present.assert_called_once()
-
-        # Verify State was updated and widget was told to render
-        assert self.state.gantt_cache == gantt
-        self.main_screen.gantt_widget.update_view_model_and_render.assert_called_once()
-
-    def test_recalculate_gantt_respects_show_archived_state(self):
-        """Test recalculate_gantt respects state.show_archived on zoom/pan.
-
-        When archived tasks are shown they must be included for the requested
-        (fixed-width) window; the requested start/end are honored verbatim
-        (the window is moved by panning, not auto-expanded).
-        """
-        # Setup - archived tasks are shown
+    def test_gather_gantt_params_snapshots_window_and_sort(self):
+        """gather_gantt_params captures the window plus sort/archive state."""
+        self.state.sort_reverse = True
         self.state.show_archived = True
         self.main_screen.gantt_widget.get_sort_by.return_value = "priority"
 
+        params = self.manager.gather_gantt_params(date(2024, 1, 1), date(2024, 1, 31))
+
+        assert params.start_date == date(2024, 1, 1)
+        assert params.end_date == date(2024, 1, 31)
+        assert params.sort_by == "priority"
+        assert params.reverse is True
+        assert params.include_archived is True
+
+    def test_fetch_gantt_raises_on_api_error(self):
+        """fetch_gantt propagates API errors (no UI-thread handling)."""
+        from taskdog.tui.services.task_ui_manager import GanttFetchParams
+
+        self.task_data_loader.api_client.list_tasks.side_effect = ServerError("boom")
+        params = GanttFetchParams(
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 1, 31),
+            sort_by="id",
+            reverse=False,
+            include_archived=False,
+        )
+
+        with pytest.raises(ServerError):
+            self.manager.fetch_gantt(params)
+        self.on_error.assert_not_called()
+
+    def test_apply_gantt_updates_cache_and_renders(self):
+        """apply_gantt writes the gantt cache and re-renders the widget."""
         gantt = create_gantt_viewmodel()
-        task_list_output = TaskListOutput(
-            tasks=[],
-            total_count=0,
-            filtered_count=0,
-            gantt_data=create_gantt_output(),
-        )
-        self.task_data_loader.api_client.list_tasks.return_value = task_list_output
-        self.task_data_loader.gantt_presenter.present.return_value = gantt
 
-        # Execute
-        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
+        self.manager.apply_gantt(gantt)
 
-        # Verify API was called with archived included and the exact window
-        call_kwargs = self.task_data_loader.api_client.list_tasks.call_args[1]
-        assert call_kwargs["include_archived"] is True  # Respects state.show_archived
-        assert call_kwargs["gantt_start_date"] == date(2024, 1, 1)  # Honored verbatim
-        assert call_kwargs["gantt_end_date"] == date(2024, 1, 31)
-        assert call_kwargs["sort_by"] == "priority"  # Respects gantt_widget sort
-
-    def test_recalculate_gantt_handles_connection_error(self):
-        """Test recalculate_gantt calls error callback on failure."""
-        # Setup
-        original_error = ConnectionError("Connection refused")
-        self.task_data_loader.api_client.list_tasks.side_effect = ServerConnectionError(
-            base_url="http://localhost:8000",
-            original_error=original_error,
+        assert self.state.gantt_cache == gantt
+        self.main_screen.gantt_widget.update_view_model_and_render.assert_called_once_with(
+            keep_scroll_position=True
         )
 
-        # Execute
-        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
-
-        # Verify error callback was called with the error
-        self.on_error.assert_called_once()
-        error_arg = self.on_error.call_args[0][0]
-        assert isinstance(error_arg, ServerConnectionError)
-
-        # Verify widget was NOT updated
+    def test_apply_gantt_ignores_none(self):
+        """apply_gantt is a no-op when there is no gantt data."""
+        self.manager.apply_gantt(None)
         self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
 
-    def test_recalculate_gantt_without_main_screen(self):
-        """Test recalculate_gantt handles missing main_screen gracefully."""
-        # Setup - no main_screen
-        manager = TaskUIManager(
-            state=self.state,
-            task_data_loader=self.task_data_loader,
-            main_screen_provider=lambda: None,
-            on_error=self.on_error,
-        )
+    def test_fetch_gantt_returns_none_without_gantt_data(self):
+        """fetch_gantt returns None (and skips the presenter) on empty data."""
+        from taskdog.tui.services.task_ui_manager import GanttFetchParams
 
-        gantt = create_gantt_viewmodel()
-        task_list_output = TaskListOutput(
-            tasks=[],
-            total_count=0,
-            filtered_count=0,
-            gantt_data=create_gantt_output(),
-        )
-        self.task_data_loader.api_client.list_tasks.return_value = task_list_output
-        self.task_data_loader.gantt_presenter.present.return_value = gantt
-
-        # Execute - should not raise
-        manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
-
-        # Verify no error was raised and API was still called
-        self.task_data_loader.api_client.list_tasks.assert_called_once()
-
-    def test_recalculate_gantt_without_gantt_data(self):
-        """Test recalculate_gantt handles None gantt_data gracefully."""
-        # Setup - no gantt_data in response
         task_list_output = TaskListOutput(
             tasks=[],
             total_count=0,
@@ -531,15 +466,18 @@ class TestRecalculateGantt:
             gantt_data=None,
         )
         self.task_data_loader.api_client.list_tasks.return_value = task_list_output
+        params = GanttFetchParams(
+            start_date=date(2024, 1, 1),
+            end_date=date(2024, 1, 31),
+            sort_by="id",
+            reverse=False,
+            include_archived=False,
+        )
 
-        # Execute - should not raise
-        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
+        result = self.manager.fetch_gantt(params)
 
-        # Verify presenter was NOT called
+        assert result is None
         self.task_data_loader.gantt_presenter.present.assert_not_called()
-
-        # Verify widget was NOT updated
-        self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
 
 
 class TestErrorHandling:
@@ -594,31 +532,6 @@ class TestErrorHandling:
         self.on_error.assert_called_once()
         assert isinstance(self.on_error.call_args[0][0], ServerError)
         assert result.all_tasks == []
-
-    def test_recalculate_gantt_handles_authentication_error(self):
-        """Test recalculate_gantt calls error callback with AuthenticationError."""
-        self.task_data_loader.api_client.list_tasks.side_effect = AuthenticationError(
-            message="Unauthorized",
-        )
-
-        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
-
-        self.on_error.assert_called_once()
-        assert isinstance(self.on_error.call_args[0][0], AuthenticationError)
-        self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
-
-    def test_recalculate_gantt_handles_server_error(self):
-        """Test recalculate_gantt calls error callback with ServerError."""
-        self.task_data_loader.api_client.list_tasks.side_effect = ServerError(
-            status_code=500,
-            message="Internal Server Error",
-        )
-
-        self.manager.recalculate_gantt(date(2024, 1, 1), date(2024, 1, 31))
-
-        self.on_error.assert_called_once()
-        assert isinstance(self.on_error.call_args[0][0], ServerError)
-        self.main_screen.gantt_widget.update_view_model_and_render.assert_not_called()
 
 
 class TestCreateEmptyTaskData:
