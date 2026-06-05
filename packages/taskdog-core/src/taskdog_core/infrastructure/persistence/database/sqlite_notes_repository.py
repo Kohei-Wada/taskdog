@@ -107,19 +107,6 @@ class SqliteNotesRepository(SqliteBaseRepository, NotesRepository):
                 session.add(note)
             session.commit()
 
-    def delete_notes(self, task_id: int) -> None:
-        """Delete notes for a task.
-
-        Args:
-            task_id: Task ID
-
-        Note:
-            Does not raise error if notes don't exist (idempotent operation)
-        """
-        with self.Session() as session:
-            session.execute(delete(NoteModel).where(NoteModel.task_id == task_id))
-            session.commit()
-
     def get_task_ids_with_notes(self, task_ids: list[int]) -> set[int]:
         """Get task IDs that have notes from a list of task IDs.
 

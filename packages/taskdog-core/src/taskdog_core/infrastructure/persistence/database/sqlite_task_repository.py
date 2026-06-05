@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import delete as sa_delete
 from sqlalchemy import func, select
 
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -23,7 +22,6 @@ from taskdog_core.infrastructure.persistence.database.base_repository import (
 )
 from taskdog_core.infrastructure.persistence.database.models import (
     DailyAllocationModel,
-    NoteModel,
     TagModel,
     TaskModel,
     TaskTagModel,
@@ -311,21 +309,16 @@ class SqliteTaskRepository(SqliteBaseRepository, TaskRepository):
             session.commit()
 
     def delete(self, task_id: int) -> None:
-        """Delete a task and its associated notes by ID.
+        """Delete a task by its ID.
 
-        Uses TaskDeleteBuilder to handle DELETE operation.
-        Notes are deleted in the same transaction as the task to ensure
-        atomicity (both succeed or both fail together).
+        Uses TaskDeleteBuilder to handle the DELETE operation. Associated
+        notes (and other child records like task_tags) are removed in the
+        same transaction by the ``ON DELETE CASCADE`` foreign keys.
 
         Args:
             task_id: The ID of the task to delete
         """
         with self.Session() as session:
-            # Delete associated notes first (idempotent — no-op if none exist)
-            session.execute(
-                sa_delete(NoteModel).where(NoteModel.task_id == task_id)
-            )
-            # Then delete the task (CASCADE handles related records like task_tags)
             delete_builder = TaskDeleteBuilder(session)
             delete_builder.delete_task(task_id)
             session.commit()

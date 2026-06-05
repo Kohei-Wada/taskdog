@@ -155,26 +155,6 @@ class TestSqliteNotesRepository:
 
         assert repository.read_notes(1) == content
 
-    def test_delete_notes_removes_existing_note(
-        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
-    ):
-        """Test delete_notes removes existing note."""
-        create_task(1)
-        repository.write_notes(1, "Test content")
-        assert repository.has_notes(1) is True
-
-        repository.delete_notes(1)
-
-        assert repository.has_notes(1) is False
-        assert repository.read_notes(1) is None
-
-    def test_delete_notes_is_idempotent(self, repository: SqliteNotesRepository):
-        """Test delete_notes doesn't raise when note doesn't exist."""
-        # Should not raise any exception
-        repository.delete_notes(999)
-
-        assert repository.has_notes(999) is False
-
     def test_get_task_ids_with_notes_returns_empty_set_for_empty_list(
         self, repository: SqliteNotesRepository
     ):

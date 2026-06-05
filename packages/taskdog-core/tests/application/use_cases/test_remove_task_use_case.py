@@ -1,7 +1,5 @@
 """Tests for RemoveTaskUseCase."""
 
-from unittest.mock import MagicMock
-
 import pytest
 
 from taskdog_core.application.dto.base import SingleTaskInput
@@ -16,8 +14,7 @@ class TestRemoveTaskUseCase:
     def setup(self, repository):
         """Set up test fixtures."""
         self.repository = repository
-        self.notes_repository = MagicMock()
-        self.use_case = RemoveTaskUseCase(self.repository, self.notes_repository)
+        self.use_case = RemoveTaskUseCase(self.repository)
 
     def test_remove_task(self):
         """Test removing a task."""
@@ -28,11 +25,8 @@ class TestRemoveTaskUseCase:
         input_dto = SingleTaskInput(task_id=task.id)
         self.use_case.execute(input_dto)
 
-        # Verify task removed
+        # Verify task removed (associated notes cascade via FK)
         assert self.repository.get_by_id(task.id) is None
-
-        # Verify notes deletion was not called separately (handled by repository)
-        self.notes_repository.delete_notes.assert_not_called()
 
     def test_remove_nonexistent_task(self):
         """Test removing a task that doesn't exist."""

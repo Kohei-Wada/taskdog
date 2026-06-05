@@ -50,7 +50,6 @@ class TestApp:
         )
         crud_controller = TaskCrudController(
             self.mock_repository,
-            self.mock_notes_repository,
             self.mock_config,
         )
 

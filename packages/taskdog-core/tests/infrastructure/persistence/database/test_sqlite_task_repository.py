@@ -807,6 +807,46 @@ class TestSqliteTaskRepository:
             records = session.scalars(stmt).all()
             assert len(records) == 0
 
+    def test_delete_task_cascades_to_notes(self):
+        """Test deleting task also deletes its note (CASCADE).
+
+        The explicit note deletion was removed in favor of the ON DELETE
+        CASCADE foreign key; this guards that the database still cleans up
+        notes when a task is deleted.
+        """
+        from sqlalchemy import select
+
+        from taskdog_core.infrastructure.persistence.database.models import NoteModel
+
+        task = Task(id=1, name="Delete Test", priority=1)
+        self.repository.save(task)
+
+        # Attach a note directly to the task
+        now = datetime(2025, 1, 15, 12, 0, 0)
+        with self.repository.Session() as session:
+            session.add(
+                NoteModel(
+                    task_id=1,
+                    content="some notes",
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+            session.commit()
+
+        # Verify note exists
+        with self.repository.Session() as session:
+            stmt = select(NoteModel).where(NoteModel.task_id == 1)
+            assert len(session.scalars(stmt).all()) == 1
+
+        # Delete task
+        self.repository.delete(1)
+
+        # Verify note is also deleted (CASCADE)
+        with self.repository.Session() as session:
+            stmt = select(NoteModel).where(NoteModel.task_id == 1)
+            assert len(session.scalars(stmt).all()) == 0
+
     # ====================================================================
     # SQL Aggregation Tests for Daily Workload (get_daily_workload_totals)
     # ====================================================================

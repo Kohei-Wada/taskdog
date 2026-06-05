@@ -50,17 +50,6 @@ class NotesRepository(ABC):
         """
 
     @abstractmethod
-    def delete_notes(self, task_id: int) -> None:
-        """Delete notes for a task.
-
-        Args:
-            task_id: Task ID
-
-        Note:
-            Should not raise error if notes don't exist (idempotent operation)
-        """
-
-    @abstractmethod
     def get_task_ids_with_notes(self, task_ids: list[int]) -> set[int]:
         """Get task IDs that have notes from a list of task IDs.
 
