@@ -1,9 +1,15 @@
 """Task lifecycle endpoints (status changes with time tracking)."""
 
 from dataclasses import dataclass
+from typing import Any
 
 from fastapi import APIRouter
 
+from taskdog_server.api.audit_helpers import (
+    capture_old_task,
+    log_task_operation,
+    serialize_audit_value,
+)
 from taskdog_server.api.dependencies import (
     AuditLogControllerDep,
     AuthenticatedClientDep,
@@ -55,16 +61,13 @@ def _create_lifecycle_endpoint(op: LifecycleOperation) -> None:
             result.task, result.old_status.value, client_name
         )
 
-        # Audit log
-        audit_controller.log_operation(
+        log_task_operation(
+            audit_controller,
             operation=f"{op.name}_task",
-            resource_type="task",
-            resource_id=task_id,
-            resource_name=result.task.name,
+            task=result.task,
             client_name=client_name,
             old_values={"status": result.old_status.value},
             new_values={"status": result.task.status.value},
-            success=True,
         )
 
         return TaskOperationResponse.from_dto(result.task)
@@ -105,11 +108,7 @@ async def fix_actual_times(
         HTTPException: 404 if task not found, 400 if validation fails
     """
     # Get old values before update for audit trail
-    try:
-        old_task_output = query_controller.get_task_by_id(task_id)
-        old_task = old_task_output.task if old_task_output else None
-    except Exception:
-        old_task = None
+    old_task = capture_old_task(query_controller, task_id)
 
     # Determine values to pass (Ellipsis = keep current)
     actual_start = (
@@ -143,38 +142,24 @@ async def fix_actual_times(
         result, ["actual_start", "actual_end", "actual_duration"], client_name
     )
 
-    # Audit log with old values
-    old_values: dict[str, str | None] = {}
-    if old_task:
-        old_values["actual_start"] = (
-            old_task.actual_start.isoformat() if old_task.actual_start else None
-        )
-        old_values["actual_end"] = (
-            old_task.actual_end.isoformat() if old_task.actual_end else None
-        )
-        old_values["actual_duration"] = (
-            str(old_task.actual_duration)
-            if old_task.actual_duration is not None
-            else None
-        )
+    # Audit log with old/new values; actual_duration stays a string to preserve
+    # the existing log format, datetimes go through the shared serializer.
+    def _actual_values(task: Any) -> dict[str, Any]:
+        return {
+            "actual_start": serialize_audit_value(task.actual_start),
+            "actual_end": serialize_audit_value(task.actual_end),
+            "actual_duration": str(task.actual_duration)
+            if task.actual_duration is not None
+            else None,
+        }
 
-    audit_controller.log_operation(
+    log_task_operation(
+        audit_controller,
         operation="fix_actual_times",
-        resource_type="task",
-        resource_id=task_id,
-        resource_name=result.name,
+        task=result,
         client_name=client_name,
-        old_values=old_values or None,
-        new_values={
-            "actual_start": result.actual_start.isoformat()
-            if result.actual_start
-            else None,
-            "actual_end": result.actual_end.isoformat() if result.actual_end else None,
-            "actual_duration": str(result.actual_duration)
-            if result.actual_duration is not None
-            else None,
-        },
-        success=True,
+        old_values=_actual_values(old_task) if old_task else None,
+        new_values=_actual_values(result),
     )
 
     return TaskOperationResponse.from_dto(result)

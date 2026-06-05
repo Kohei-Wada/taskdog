@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from taskdog_server.api.audit_helpers import log_task_operation
 from taskdog_server.api.dependencies import (
     AuditLogControllerDep,
     AuthenticatedClientDep,
@@ -47,15 +48,12 @@ async def add_dependency(
     # Broadcast WebSocket event in background
     broadcaster.task_updated(result, ["depends_on"], client_name)
 
-    # Audit log
-    audit_controller.log_operation(
+    log_task_operation(
+        audit_controller,
         operation="add_dependency",
-        resource_type="task",
-        resource_id=task_id,
-        resource_name=result.name,
+        task=result,
         client_name=client_name,
         new_values={"added_dependency": request.depends_on_id},
-        success=True,
     )
 
     return TaskOperationResponse.from_dto(result)
@@ -93,15 +91,12 @@ async def remove_dependency(
     # Broadcast WebSocket event in background
     broadcaster.task_updated(result, ["depends_on"], client_name)
 
-    # Audit log
-    audit_controller.log_operation(
+    log_task_operation(
+        audit_controller,
         operation="remove_dependency",
-        resource_type="task",
-        resource_id=task_id,
-        resource_name=result.name,
+        task=result,
         client_name=client_name,
         old_values={"removed_dependency": depends_on_id},
-        success=True,
     )
 
     return TaskOperationResponse.from_dto(result)
@@ -137,15 +132,12 @@ async def set_task_tags(
     # Broadcast WebSocket event in background
     broadcaster.task_updated(result, ["tags"], client_name)
 
-    # Audit log
-    audit_controller.log_operation(
+    log_task_operation(
+        audit_controller,
         operation="set_tags",
-        resource_type="task",
-        resource_id=task_id,
-        resource_name=result.name,
+        task=result,
         client_name=client_name,
         new_values={"tags": list(result.tags)},
-        success=True,
     )
 
     return TaskOperationResponse.from_dto(result)
