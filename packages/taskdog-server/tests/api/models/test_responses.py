@@ -16,7 +16,6 @@ from taskdog_server.api.models.responses import (
     EstimationStatistics,
     GanttDateRange,
     GanttResponse,
-    GanttTaskResponse,
     NotesResponse,
     OptimizationResponse,
     OptimizationSummary,
@@ -404,28 +403,8 @@ class TestGanttResponse:
         assert range_obj.start_date == start
         assert range_obj.end_date == end
 
-    def test_create_gantt_task_response(self):
-        """Test creating Gantt task response."""
-        # Arrange
-        now = datetime.now()
-
-        # Act
-        task = GanttTaskResponse(
-            id=1,
-            name="Test Task",
-            status=TaskStatus.PENDING,
-            estimated_duration=8.0,
-            planned_start=now,
-            planned_end=now,
-            daily_allocations={"2024-01-15": 4.0, "2024-01-16": 4.0},
-        )
-
-        # Assert
-        assert task.id == 1
-        assert task.daily_allocations == {"2024-01-15": 4.0, "2024-01-16": 4.0}
-
     def test_create_gantt_response(self):
-        """Test creating complete Gantt response."""
+        """Test creating complete Gantt overlay response."""
         # Arrange
         start = date(2024, 1, 15)
         end = date(2024, 1, 20)
@@ -434,7 +413,6 @@ class TestGanttResponse:
         # Act
         response = GanttResponse(
             date_range=date_range,
-            tasks=[],
             task_daily_hours={1: {"2024-01-15": 4.0}},
             daily_workload={"2024-01-15": 8.0, "2024-01-16": 6.0},
             holidays=["2024-01-16"],

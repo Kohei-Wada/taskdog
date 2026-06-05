@@ -1,19 +1,18 @@
 """DTOs for Gantt chart data.
 
-These DTOs provide a presentation-agnostic representation of Gantt chart data,
-containing only business data (no presentation logic like colors or styles).
-This enables multi-client support (CLI, TUI, Web, API) and future extensibility.
+The Gantt overlay carries only the data that is unique to the Gantt view
+(daily allocations, workload totals, holidays, date range). Task data itself
+is shared with the table via the canonical ``TaskRowDto`` list and joined by
+task id, so the overlay never duplicates task fields.
 
 Design Principle:
-- Application layer: Returns raw business data (tasks, dates, hours)
+- Application layer: Returns raw business data (allocations, workload, dates)
 - Presentation layer: Decides how to display (colors, styles, layout)
 """
 
 from datetime import date
 
 from pydantic import BaseModel
-
-from taskdog_core.application.dto.task_dto import GanttTaskDto
 
 
 class GanttDateRange(BaseModel):
@@ -37,25 +36,20 @@ class GanttDateRange(BaseModel):
         return (self.end_date - self.start_date).days + 1
 
 
-class GanttOutput(BaseModel):
-    """Complete Gantt chart data result.
+class GanttOverlay(BaseModel):
+    """Gantt-specific overlay data, joined to the shared task list by id.
 
-    This DTO contains only business data needed for Gantt visualization.
+    This DTO contains only the business data that is unique to the Gantt view.
+    Task fields (name, status, dates, ...) are not duplicated here; consumers
+    join this overlay with the shared ``TaskRowDto`` list using ``task.id``.
+
     Presentation layers (CLI, TUI, Web) are responsible for:
     - Determining visual representation (colors, styles, symbols)
     - Calculating display flags (is_planned, is_actual, is_deadline)
     - Formatting the data for their specific rendering technology
 
-    Design notes:
-    - Contains filtered and sorted tasks
-    - Pre-computed daily hour allocations per task
-    - Pre-computed daily workload totals
-    - Serializable for API responses (REST, gRPC, WebSocket)
-    - Language-agnostic structure enables multi-language clients
-
     Attributes:
         date_range: Date range covered by the chart
-        tasks: Filtered and sorted task DTOs for display
         task_daily_hours: Daily hour allocations per task (task.id -> {date: hours})
         daily_workload: Daily workload totals across all tasks
         holidays: Set of holiday dates in the chart range
@@ -63,16 +57,7 @@ class GanttOutput(BaseModel):
     """
 
     date_range: GanttDateRange
-    tasks: list[GanttTaskDto]
     task_daily_hours: dict[int, dict[date, float]]
     daily_workload: dict[date, float]
     holidays: set[date]
     total_estimated_duration: float = 0.0
-
-    def is_empty(self) -> bool:
-        """Check if the Gantt chart has any task data.
-
-        Returns:
-            True if no tasks are present
-        """
-        return len(self.tasks) == 0

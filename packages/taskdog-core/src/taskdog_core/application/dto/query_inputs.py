@@ -24,6 +24,9 @@ class ListTasksInput:
         end_date: Filter tasks with planned_start/end <= this date
         sort_by: Field to sort by (default: "id")
         reverse: Reverse sort order (default: False)
+        include_gantt: If True, also build the Gantt overlay from the same fetch
+        chart_start_date: Start date for the Gantt chart display range
+        chart_end_date: End date for the Gantt chart display range
     """
 
     include_archived: bool = False
@@ -34,18 +37,6 @@ class ListTasksInput:
     end_date: date | None = None
     sort_by: str = "id"
     reverse: bool = False
-
-
-@dataclass
-class GetGanttDataInput(ListTasksInput):
-    """Input DTO for GetGanttDataUseCase.
-
-    Extends ListTasksInput with Gantt chart-specific parameters.
-
-    Attributes:
-        chart_start_date: Start date for Gantt chart display
-        chart_end_date: End date for Gantt chart display
-    """
-
+    include_gantt: bool = False
     chart_start_date: date | None = None
     chart_end_date: date | None = None

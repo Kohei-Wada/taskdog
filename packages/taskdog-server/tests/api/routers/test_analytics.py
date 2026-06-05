@@ -122,11 +122,12 @@ class TestAnalyticsRouter:
         # Assert
         assert response.status_code == 200
         data = response.json()
-        assert "date_range" in data
         assert "tasks" in data
         assert len(data["tasks"]) == 0
-        assert "daily_workload" in data
-        assert "holidays" in data
+        # Gantt-specific data lives in the overlay
+        assert "date_range" in data["gantt"]
+        assert "daily_workload" in data["gantt"]
+        assert "holidays" in data["gantt"]
 
     def test_get_gantt_chart_with_tasks(self, client, task_factory):
         """Test getting Gantt chart data with scheduled tasks."""
@@ -151,7 +152,9 @@ class TestAnalyticsRouter:
         data = response.json()
         assert len(data["tasks"]) == 1
         assert data["tasks"][0]["name"] == "Scheduled Task"
-        assert "daily_allocations" in data["tasks"][0]
+        # Per-task allocations live in the overlay keyed by task id
+        task_id = data["tasks"][0]["id"]
+        assert str(task_id) in data["gantt"]["task_daily_hours"]
 
     def test_get_gantt_chart_with_status_filter(self, client, repository, task_factory):
         """Test getting Gantt chart data with status filter."""
@@ -200,7 +203,7 @@ class TestAnalyticsRouter:
         # Assert
         assert response.status_code == 200
         data = response.json()
-        assert "date_range" in data
+        assert "date_range" in data["gantt"]
 
     def test_get_gantt_chart_include_archived(self, client, task_factory):
         """Test getting Gantt chart data including archived tasks."""

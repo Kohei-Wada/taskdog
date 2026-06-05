@@ -12,7 +12,7 @@ from taskdog_core.application.dto.task_operation_output import TaskOperationOutp
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
 
 from .exceptions import ConversionError, require_key
-from .gantt_converters import convert_to_gantt_output
+from .gantt_converters import convert_to_gantt_overlay
 
 
 def _model_validate[M: BaseModel](model_cls: type[M], data: dict[str, Any]) -> M:
@@ -102,10 +102,10 @@ def convert_to_task_list_output(data: dict[str, Any]) -> TaskListOutput:
     """
     tasks = [_model_validate(TaskRowDto, task) for task in require_key(data, "tasks")]
 
-    # Convert gantt data if present (separate reshaping converter)
+    # Convert gantt overlay if present (separate reshaping converter)
     gantt_data = None
     if data.get("gantt"):
-        gantt_data = convert_to_gantt_output(data["gantt"])
+        gantt_data = convert_to_gantt_overlay(data["gantt"])
 
     return TaskListOutput(
         tasks=tasks,

@@ -1,56 +1,54 @@
-"""Presenter for converting GanttOutput DTO to GanttViewModel.
+"""Presenter for building a GanttViewModel from shared tasks + a Gantt overlay.
 
-This presenter extracts necessary fields from GanttTaskDto and applies
-presentation logic (formatting, strikethrough) to create presentation-ready
-view models.
+The presenter joins the canonical ``TaskRowDto`` list (shared with the table)
+with the Gantt overlay and applies presentation logic (formatting,
+strikethrough) to create presentation-ready view models.
 """
 
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
-from taskdog_core.application.dto.gantt_output import GanttOutput
-from taskdog_core.application.dto.task_dto import GanttTaskDto
+from taskdog_core.application.dto.gantt_overlay import GanttOverlay
+from taskdog_core.application.dto.task_dto import TaskRowDto
 
 
 class GanttPresenter:
-    """Presenter for converting GanttOutput to GanttViewModel.
+    """Presenter for building a GanttViewModel.
 
     This class is responsible for:
-    1. Extracting necessary fields from Task entities
+    1. Extracting necessary fields from the shared task list
     2. Applying presentation logic (strikethrough, formatting)
-    3. Converting domain data to presentation-ready ViewModels
+    3. Joining task data with the Gantt overlay into ViewModels
     """
 
-    def present(self, gantt_result: GanttOutput) -> GanttViewModel:
-        """Convert GanttOutput DTO to GanttViewModel.
+    def present(self, tasks: list[TaskRowDto], overlay: GanttOverlay) -> GanttViewModel:
+        """Build a GanttViewModel from the shared task list and overlay.
 
         Args:
-            gantt_result: Application layer DTO with GanttTaskDto
+            tasks: Canonical task DTOs (shared with the table view)
+            overlay: Gantt-specific overlay (dates, allocations, workload)
 
         Returns:
-            GanttViewModel with TaskGanttRowViewModel
+            GanttViewModel with TaskGanttRowViewModel rows
         """
-        # Convert each GanttTaskDto to TaskGanttRowViewModel
-        task_view_models = [
-            self._map_task_to_view_model(task) for task in gantt_result.tasks
-        ]
+        task_view_models = [self._map_task_to_view_model(task) for task in tasks]
 
         return GanttViewModel(
-            start_date=gantt_result.date_range.start_date,
-            end_date=gantt_result.date_range.end_date,
+            start_date=overlay.date_range.start_date,
+            end_date=overlay.date_range.end_date,
             tasks=task_view_models,
-            task_daily_hours=gantt_result.task_daily_hours,
-            daily_workload=gantt_result.daily_workload,
-            holidays=gantt_result.holidays,
-            total_estimated_duration=gantt_result.total_estimated_duration,
+            task_daily_hours=overlay.task_daily_hours,
+            daily_workload=overlay.daily_workload,
+            holidays=overlay.holidays,
+            total_estimated_duration=overlay.total_estimated_duration,
         )
 
-    def _map_task_to_view_model(self, task: GanttTaskDto) -> TaskGanttRowViewModel:
-        """Convert a GanttTaskDto to TaskGanttRowViewModel.
+    def _map_task_to_view_model(self, task: TaskRowDto) -> TaskGanttRowViewModel:
+        """Convert a TaskRowDto to TaskGanttRowViewModel.
 
         Applies presentation logic:
         - Formats estimated duration as string
 
         Args:
-            task: GanttTaskDto from application layer
+            task: TaskRowDto from the shared task list
 
         Returns:
             TaskGanttRowViewModel with presentation-ready data

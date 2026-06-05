@@ -1,117 +1,12 @@
 """Tests for datetime utility functions."""
 
-from datetime import date, datetime
+from datetime import date
 
 import pytest
 from taskdog_client.converters.datetime_utils import (
     _parse_date_dict,
-    _parse_datetime_fields,
-    _parse_optional_datetime,
 )
 from taskdog_client.converters.exceptions import ConversionError
-
-
-class TestParseOptionalDatetime:
-    """Test cases for _parse_optional_datetime."""
-
-    def test_valid_datetime(self):
-        """Test parsing valid ISO datetime string."""
-        data = {"deadline": "2025-12-31T23:59:00"}
-        result = _parse_optional_datetime(data, "deadline")
-
-        assert result == datetime(2025, 12, 31, 23, 59, 0)
-
-    def test_valid_datetime_with_microseconds(self):
-        """Test parsing datetime with microseconds."""
-        data = {"created_at": "2025-01-15T10:30:45.123456"}
-        result = _parse_optional_datetime(data, "created_at")
-
-        assert result == datetime(2025, 1, 15, 10, 30, 45, 123456)
-
-    def test_none_value(self):
-        """Test that None value returns None."""
-        data = {"deadline": None}
-        result = _parse_optional_datetime(data, "deadline")
-
-        assert result is None
-
-    def test_missing_field(self):
-        """Test that missing field returns None."""
-        data = {}
-        result = _parse_optional_datetime(data, "deadline")
-
-        assert result is None
-
-    def test_invalid_format_raises_error(self):
-        """Test that invalid format raises ConversionError."""
-        data = {"deadline": "invalid-datetime"}
-
-        with pytest.raises(ConversionError) as exc_info:
-            _parse_optional_datetime(data, "deadline")
-
-        assert exc_info.value.field == "deadline"
-        assert exc_info.value.value == "invalid-datetime"
-
-    def test_invalid_type_raises_error(self):
-        """Test that invalid type raises ConversionError."""
-        data = {"deadline": 12345}
-
-        with pytest.raises(ConversionError) as exc_info:
-            _parse_optional_datetime(data, "deadline")
-
-        assert exc_info.value.field == "deadline"
-        assert exc_info.value.value == 12345
-
-
-class TestParseDatetimeFields:
-    """Test cases for _parse_datetime_fields."""
-
-    def test_multiple_valid_fields(self):
-        """Test parsing multiple datetime fields."""
-        data = {
-            "planned_start": "2025-01-01T09:00:00",
-            "planned_end": "2025-01-05T17:00:00",
-            "deadline": "2025-01-10T23:59:00",
-        }
-        fields = ["planned_start", "planned_end", "deadline"]
-
-        result = _parse_datetime_fields(data, fields)
-
-        assert result["planned_start"] == datetime(2025, 1, 1, 9, 0, 0)
-        assert result["planned_end"] == datetime(2025, 1, 5, 17, 0, 0)
-        assert result["deadline"] == datetime(2025, 1, 10, 23, 59, 0)
-
-    def test_mixed_values_and_nulls(self):
-        """Test parsing fields with some None values."""
-        data = {
-            "planned_start": "2025-01-01T09:00:00",
-            "planned_end": None,
-            "deadline": None,
-        }
-        fields = ["planned_start", "planned_end", "deadline"]
-
-        result = _parse_datetime_fields(data, fields)
-
-        assert result["planned_start"] == datetime(2025, 1, 1, 9, 0, 0)
-        assert result["planned_end"] is None
-        assert result["deadline"] is None
-
-    def test_empty_fields_list(self):
-        """Test parsing with empty fields list."""
-        data = {"deadline": "2025-01-01T00:00:00"}
-        result = _parse_datetime_fields(data, [])
-
-        assert result == {}
-
-    def test_all_missing_fields(self):
-        """Test parsing with all missing fields."""
-        data = {}
-        fields = ["planned_start", "planned_end"]
-
-        result = _parse_datetime_fields(data, fields)
-
-        assert result["planned_start"] is None
-        assert result["planned_end"] is None
 
 
 class TestParseDateDict:

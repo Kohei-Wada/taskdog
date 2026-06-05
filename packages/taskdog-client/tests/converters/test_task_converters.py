@@ -359,19 +359,6 @@ class TestConvertToTaskListOutput:
                     "start_date": "2025-01-01",
                     "end_date": "2025-01-31",
                 },
-                "tasks": [
-                    {
-                        "id": 1,
-                        "name": "Task 1",
-                        "status": "PENDING",
-                        "estimated_duration": 5.0,
-                        "planned_start": "2025-01-05T09:00:00",
-                        "planned_end": "2025-01-10T17:00:00",
-                        "actual_start": None,
-                        "actual_end": None,
-                        "deadline": None,
-                    }
-                ],
                 "task_daily_hours": {"1": {"2025-01-05": 2.0}},
                 "daily_workload": {"2025-01-05": 2.0},
                 "holidays": [],
@@ -382,6 +369,7 @@ class TestConvertToTaskListOutput:
 
         assert result.gantt_data is not None
         assert result.gantt_data.date_range.start_date == date(2025, 1, 1)
+        assert result.gantt_data.task_daily_hours[1][date(2025, 1, 5)] == 2.0
 
 
 class TestBuildTaskDetailDto:

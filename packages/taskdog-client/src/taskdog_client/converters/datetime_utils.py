@@ -1,7 +1,6 @@
 """Datetime parsing utilities for converters."""
 
 from datetime import date as date_type
-from datetime import datetime
 from typing import Any
 
 from taskdog_core.shared.utils.datetime_parser import (
@@ -10,56 +9,8 @@ from taskdog_core.shared.utils.datetime_parser import (
 from taskdog_core.shared.utils.datetime_parser import (
     parse_iso_date as _core_parse_date,
 )
-from taskdog_core.shared.utils.datetime_parser import (
-    parse_iso_datetime as _core_parse_datetime,
-)
 
 from .exceptions import ConversionError
-
-
-def _parse_optional_datetime(data: dict[str, Any], field: str) -> datetime | None:
-    """Parse ISO datetime from dict, returning None if field missing/None.
-
-    Args:
-        data: Dictionary containing datetime fields
-        field: Field name to extract
-
-    Returns:
-        Parsed datetime or None if field is missing/None
-
-    Raises:
-        ConversionError: If datetime value is present but malformed
-    """
-    value = data.get(field)
-    if value is None:
-        return None
-
-    try:
-        result = _core_parse_datetime(value)
-        if result is None and value:
-            raise ValueError(f"Failed to parse non-empty datetime value: {value}")
-        return result
-    except (ValueError, TypeError) as e:
-        raise ConversionError(
-            f"Failed to parse datetime field '{field}': {value}",
-            field=field,
-            value=value,
-        ) from e
-
-
-def _parse_datetime_fields(
-    data: dict[str, Any], fields: list[str]
-) -> dict[str, datetime | None]:
-    """Parse multiple datetime fields from API response.
-
-    Args:
-        data: Dictionary containing datetime fields
-        fields: List of field names to parse
-
-    Returns:
-        Dictionary mapping field names to parsed datetime values
-    """
-    return {field: _parse_optional_datetime(data, field) for field in fields}
 
 
 def _parse_date_dict(data: dict[str, Any], field: str) -> dict[date_type, float]:

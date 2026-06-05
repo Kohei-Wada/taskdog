@@ -24,7 +24,6 @@ from taskdog_core.application.dto.audit_log_dto import (
 )
 from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutput
 from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
-from taskdog_core.application.dto.gantt_output import GanttOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
 from taskdog_core.application.dto.statistics_output import StatisticsOutput
@@ -345,8 +344,8 @@ class TaskdogApiClient:
         reverse: bool = False,
         start_date: date | None = None,
         end_date: date | None = None,
-    ) -> GanttOutput:
-        """Get Gantt chart data."""
+    ) -> TaskListOutput:
+        """Get Gantt chart data (shared task list + Gantt overlay)."""
         return self._queries.get_gantt_data(
             include_archived,
             status,

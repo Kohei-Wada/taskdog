@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from taskdog_core.application.dto.query_inputs import GetGanttDataInput
+from taskdog_core.application.dto.query_inputs import ListTasksInput
 
 if TYPE_CHECKING:
     from taskdog_core.application.dto.task_dto import TaskSummaryDto
@@ -14,7 +14,7 @@ from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
     TaskValidationError,
 )
-from taskdog_server.api.converters import convert_to_gantt_response
+from taskdog_server.api.converters import convert_to_task_list_response
 from taskdog_server.api.dependencies import (
     AnalyticsControllerDep,
     AuditLogControllerDep,
@@ -29,7 +29,6 @@ from taskdog_server.api.models.responses import (
     CompletionStatistics,
     DeadlineStatistics,
     EstimationStatistics,
-    GanttResponse,
     OptimizationResponse,
     OptimizationSummary,
     PriorityDistribution,
@@ -37,6 +36,7 @@ from taskdog_server.api.models.responses import (
     StatisticsResponse,
     TagStatisticsItem,
     TagStatisticsResponse,
+    TaskListResponse,
     TaskSummaryResponse,
     TimeStatistics,
     TrendData,
@@ -204,7 +204,7 @@ async def get_tag_statistics(
     return TagStatisticsResponse(tags=tags, total_tags=result.total_tags)
 
 
-@router.get("/gantt", response_model=GanttResponse)
+@router.get("/gantt", response_model=TaskListResponse)
 async def get_gantt_chart(
     controller: QueryControllerDep,
     holiday_checker: HolidayCheckerDep,
@@ -226,8 +226,11 @@ async def get_gantt_chart(
     ] = None,
     sort: Annotated[str, Query(description="Sort field")] = "deadline",
     reverse: Annotated[bool, Query(description="Reverse sort order")] = False,
-) -> GanttResponse:
+) -> TaskListResponse:
     """Get Gantt chart data with workload calculations.
+
+    Returns the shared task list plus the Gantt overlay (daily hours, workload,
+    holidays); clients join them by task id.
 
     Args:
         controller: Query controller dependency
@@ -241,14 +244,14 @@ async def get_gantt_chart(
         reverse: Reverse sort order
 
     Returns:
-        Gantt chart data with tasks, daily hours, workload, and holidays
+        Task list with the Gantt overlay populated
     """
     # Parse date strings to date objects
     start = parse_iso_date(start_date)
     end = parse_iso_date(end_date)
 
     # Create Input DTO (filter building is done in Use Case)
-    input_dto = GetGanttDataInput(
+    input_dto = ListTasksInput(
         include_archived=include_archived,
         status=status_filter,
         tags=tags or [],
@@ -256,18 +259,19 @@ async def get_gantt_chart(
         end_date=end,
         sort_by=sort,
         reverse=reverse,
-        chart_start_date=start,
-        chart_end_date=end,
     )
 
-    # Query gantt data using Use Case pattern
-    result = controller.get_gantt_data(
+    # Single fetch builds both the task list and the Gantt overlay
+    result = controller.list_tasks(
         input_dto=input_dto,
+        include_gantt=True,
+        gantt_start_date=start,
+        gantt_end_date=end,
         holiday_checker=holiday_checker,
     )
 
     # Convert DTO to response model using shared converter
-    return convert_to_gantt_response(result)
+    return convert_to_task_list_response(result)
 
 
 @router.post("/optimize", response_model=OptimizationResponse)

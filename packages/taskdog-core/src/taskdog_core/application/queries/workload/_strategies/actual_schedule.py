@@ -102,7 +102,7 @@ class ActualScheduleStrategy(WorkloadCalculationStrategy):
 
     ## Use Cases
 
-    - TaskQueryService.get_gantt_data() <- **Primary use case**
+    - TaskQueryService.build_gantt_overlay() <- **Primary use case**
     - Report generation
     - Workload summaries
     - Any display/visualization layer

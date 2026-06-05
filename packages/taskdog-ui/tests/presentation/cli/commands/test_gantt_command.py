@@ -44,7 +44,9 @@ class TestGanttCommand:
         # Verify
         assert result.exit_code == 0
         self.api_client.get_gantt_data.assert_called_once()
-        mock_presenter.present.assert_called_once_with(mock_gantt_result)
+        mock_presenter.present.assert_called_once_with(
+            mock_gantt_result.tasks, mock_gantt_result.gantt_data
+        )
         mock_renderer.render.assert_called_once_with(mock_view_model)
 
     @patch("taskdog.cli.commands.gantt.RichGanttRenderer")

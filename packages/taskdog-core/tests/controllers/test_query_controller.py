@@ -4,10 +4,7 @@ from datetime import date, datetime, timedelta
 
 import pytest
 
-from taskdog_core.application.dto.query_inputs import (
-    GetGanttDataInput,
-    ListTasksInput,
-)
+from taskdog_core.application.dto.query_inputs import ListTasksInput
 from taskdog_core.controllers.query_controller import QueryController
 from taskdog_core.domain.entities.task import TaskStatus
 from tests.helpers.time_provider import FakeTimeProvider
@@ -90,8 +87,8 @@ class TestQueryController:
         assert len(result.tasks) == 1
         assert result.tasks[0].name == "Active"
 
-    def test_get_gantt_data_returns_output_dto(self):
-        """Test get_gantt_data returns GanttOutput."""
+    def test_list_tasks_with_gantt_returns_shared_tasks_and_overlay(self):
+        """include_gantt yields the shared task list plus a Gantt overlay."""
         # Create test task with schedule
         today = date.today()
         self.repository.create(
@@ -105,18 +102,16 @@ class TestQueryController:
             estimated_duration=16.0,
         )
 
-        # Get gantt data using Input DTO
-        input_dto = GetGanttDataInput(include_archived=True)
-        result = self.controller.get_gantt_data(input_dto)
+        input_dto = ListTasksInput(include_archived=True)
+        result = self.controller.list_tasks(input_dto, include_gantt=True)
 
-        # Verify result structure
-        assert result is not None
-        assert result.date_range is not None
-        assert result.tasks is not None
+        # Tasks come from the shared list; overlay carries Gantt-only data
         assert len(result.tasks) == 1
+        assert result.gantt_data is not None
+        assert result.gantt_data.date_range is not None
 
-    def test_get_gantt_data_with_date_range(self):
-        """Test get_gantt_data with custom date range."""
+    def test_list_tasks_with_gantt_date_range(self):
+        """Chart date range drives the overlay date range."""
         # Create test task
         today = date.today()
         self.repository.create(
@@ -129,22 +124,22 @@ class TestQueryController:
             ),
         )
 
-        # Get gantt data with date range using Input DTO
         start_date = today
         end_date = today + timedelta(days=5)
-        input_dto = GetGanttDataInput(
-            include_archived=True,
-            chart_start_date=start_date,
-            chart_end_date=end_date,
+        input_dto = ListTasksInput(include_archived=True)
+        result = self.controller.list_tasks(
+            input_dto,
+            include_gantt=True,
+            gantt_start_date=start_date,
+            gantt_end_date=end_date,
         )
-        result = self.controller.get_gantt_data(input_dto)
 
         # Verify date range
-        assert result.date_range.start_date == start_date
-        assert result.date_range.end_date == end_date
+        assert result.gantt_data.date_range.start_date == start_date
+        assert result.gantt_data.date_range.end_date == end_date
 
-    def test_get_gantt_data_calculates_total_estimated_duration(self):
-        """Test get_gantt_data calculates total_estimated_duration correctly."""
+    def test_list_tasks_with_gantt_calculates_total_estimated_duration(self):
+        """Overlay total_estimated_duration sums task estimates."""
         # Create test tasks with different estimated durations
         today = date.today()
         self.repository.create(
@@ -178,16 +173,17 @@ class TestQueryController:
             # No estimated_duration - should be ignored in calculation
         )
 
-        # Get gantt data using Input DTO
-        input_dto = GetGanttDataInput(include_archived=True)
-        result = self.controller.get_gantt_data(input_dto)
+        input_dto = ListTasksInput(include_archived=True)
+        result = self.controller.list_tasks(input_dto, include_gantt=True)
 
         # Verify total_estimated_duration (8.0 + 16.5 = 24.5)
-        assert result.total_estimated_duration == 24.5
+        assert result.gantt_data.total_estimated_duration == 24.5
         assert len(result.tasks) == 3
 
-    def test_get_gantt_data_total_estimated_duration_zero_when_no_estimates(self):
-        """Test get_gantt_data returns zero total when no tasks have estimated durations."""
+    def test_list_tasks_with_gantt_total_estimated_duration_zero_when_no_estimates(
+        self,
+    ):
+        """Overlay total is zero when no tasks have estimated durations."""
         # Create test task without estimated_duration
         today = date.today()
         self.repository.create(
@@ -200,12 +196,11 @@ class TestQueryController:
             ),
         )
 
-        # Get gantt data using Input DTO
-        input_dto = GetGanttDataInput(include_archived=True)
-        result = self.controller.get_gantt_data(input_dto)
+        input_dto = ListTasksInput(include_archived=True)
+        result = self.controller.list_tasks(input_dto, include_gantt=True)
 
         # Verify total_estimated_duration is 0.0
-        assert result.total_estimated_duration == 0.0
+        assert result.gantt_data.total_estimated_duration == 0.0
 
     def test_get_tag_statistics_returns_output_dto(self):
         """Test get_tag_statistics returns TagStatisticsOutput."""

@@ -54,55 +54,6 @@ class TaskSummaryDto(BaseModel):
         )
 
 
-class GanttTaskDto(BaseModel):
-    """Task data for Gantt chart display.
-
-    Contains only the fields needed for Gantt visualization.
-    """
-
-    model_config = ConfigDict(frozen=True)
-
-    id: int
-    name: str
-    status: TaskStatus
-    estimated_duration: float | None
-    planned_start: datetime | None
-    planned_end: datetime | None
-    actual_start: datetime | None
-    actual_end: datetime | None
-    deadline: datetime | None
-    is_finished: bool
-
-    @classmethod
-    def from_entity(cls, task: Task) -> GanttTaskDto:
-        """Convert Task entity to GanttTaskDto.
-
-        Args:
-            task: Task entity to convert
-
-        Returns:
-            GanttTaskDto with fields needed for Gantt visualization
-
-        Raises:
-            ValueError: If task.id is None
-        """
-        if task.id is None:
-            raise ValueError("Task must have an ID")
-
-        return cls(
-            id=task.id,
-            name=task.name,
-            status=task.status,
-            estimated_duration=task.estimated_duration,
-            planned_start=task.planned_start,
-            planned_end=task.planned_end,
-            actual_start=task.actual_start,
-            actual_end=task.actual_end,
-            deadline=task.deadline,
-            is_finished=task.is_finished,
-        )
-
-
 class TaskRowDto(BaseModel):
     """Task data for table row display.
 

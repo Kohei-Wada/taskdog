@@ -298,7 +298,7 @@ class TaskUIManager:
             return None
 
         return self.task_data_loader.gantt_presenter.present(
-            task_list_output.gantt_data
+            task_list_output.tasks, task_list_output.gantt_data
         )
 
     def apply_gantt(self, gantt_view_model: GanttViewModel | None) -> None:

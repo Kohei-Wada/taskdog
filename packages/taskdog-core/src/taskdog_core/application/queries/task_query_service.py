@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
-from taskdog_core.application.dto.task_dto import GanttTaskDto, TaskRowDto
+from taskdog_core.application.dto.gantt_overlay import GanttDateRange, GanttOverlay
 from taskdog_core.application.queries.base import QueryService
 from taskdog_core.application.sorters.task_sorter import TaskSorter
 
@@ -48,25 +47,6 @@ class TaskQueryService(QueryService):
         super().__init__(repository)
         self.sorter = TaskSorter()
         self._time_provider = time_provider
-
-    def get_filtered_tasks_as_dtos(
-        self,
-        filter_obj: TaskFilter | None = None,
-        sort_by: str = "id",
-        reverse: bool = False,
-    ) -> list[TaskRowDto]:
-        """Get filtered tasks as TaskRowDto list.
-
-        Args:
-            filter_obj: Optional filter to apply
-            sort_by: Sort key
-            reverse: Reverse sort order
-
-        Returns:
-            List of TaskRowDto
-        """
-        tasks = self.get_filtered_tasks(filter_obj, sort_by, reverse)
-        return [TaskRowDto.from_entity(task) for task in tasks]
 
     def get_filtered_tasks(
         self,
@@ -304,47 +284,36 @@ class TaskQueryService(QueryService):
 
         return tag_counts
 
-    def get_gantt_data(
+    def build_gantt_overlay(
         self,
-        filter_obj: TaskFilter | None = None,
-        sort_by: str = "id",
-        reverse: bool = False,
+        tasks: list[Task],
         start_date: date | None = None,
         end_date: date | None = None,
         holiday_checker: IHolidayChecker | None = None,
-    ) -> GanttOutput:
-        """Get Gantt chart data with business logic pre-computed.
+    ) -> GanttOverlay:
+        """Build the Gantt overlay from an already-fetched task list.
 
-        This method handles business data processing:
-        - Filtering and sorting tasks
-        - Calculating date ranges
-        - Computing daily workload allocations per task
-        - Computing daily workload totals
-        - Pre-computing holiday dates in the range
+        The overlay holds only Gantt-specific business data (daily allocations,
+        workload totals, holidays, date range). Task fields are not duplicated;
+        consumers join this overlay with the shared task list by id.
 
-        Presentation logic (colors, styles, display flags) is handled
-        by the renderer layer.
+        Taking the tasks as an argument lets callers (table + Gantt) share a
+        single fetch instead of re-querying the same filtered set.
 
         Args:
-            filter_obj: Optional filter object to apply
-            sort_by: Sort key (id, priority, deadline, name, status, planned_start)
-            reverse: Reverse sort order (default: False)
-            start_date: Optional start date (auto-calculated if not provided)
-            end_date: Optional end date (auto-calculated if not provided)
+            tasks: Filtered and sorted task entities (shared with the table)
+            start_date: Optional chart start date (auto-calculated if not provided)
+            end_date: Optional chart end date (auto-calculated if not provided)
             holiday_checker: Optional holiday checker for pre-computing holidays
 
         Returns:
-            GanttOutput containing business data for Gantt visualization
+            GanttOverlay containing Gantt-specific business data
         """
-        # Get filtered and sorted tasks
-        tasks = self.get_filtered_tasks(filter_obj, sort_by, reverse)
-
         if not tasks:
-            # Return empty result with today's date range
+            # Return empty overlay with today's date range
             today = self._time_provider.today()
-            return GanttOutput(
+            return GanttOverlay(
                 date_range=GanttDateRange(start_date=today, end_date=today),
-                tasks=[],
                 task_daily_hours={},
                 daily_workload={},
                 holidays=set(),
@@ -356,10 +325,8 @@ class TaskQueryService(QueryService):
         if date_range is None:
             # No dates available in tasks
             today = self._time_provider.today()
-            task_dtos = [GanttTaskDto.from_entity(task) for task in tasks]
-            return GanttOutput(
+            return GanttOverlay(
                 date_range=GanttDateRange(start_date=today, end_date=today),
-                tasks=task_dtos,
                 task_daily_hours={},
                 daily_workload={},
                 holidays=set(),
@@ -394,9 +361,6 @@ class TaskQueryService(QueryService):
         if holiday_checker:
             holidays = holiday_checker.get_holidays_in_range(range_start, range_end)
 
-        # Convert tasks to DTOs
-        task_dtos = [GanttTaskDto.from_entity(task) for task in tasks]
-
         # Calculate total estimated duration
         total_estimated = sum(
             task.estimated_duration
@@ -404,9 +368,8 @@ class TaskQueryService(QueryService):
             if task.estimated_duration is not None
         )
 
-        return GanttOutput(
+        return GanttOverlay(
             date_range=GanttDateRange(start_date=range_start, end_date=range_end),
-            tasks=task_dtos,
             task_daily_hours=task_daily_hours,
             daily_workload=daily_workload,
             holidays=holidays,

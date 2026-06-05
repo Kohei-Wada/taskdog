@@ -96,10 +96,12 @@ class TaskDataLoader:
         )
         table_view_models = self.table_presenter.present(all_tasks_output)
 
-        # Convert gantt data from response if present
+        # Build gantt view model by joining the shared tasks with the overlay
         gantt_view_model = None
         if task_list_output.gantt_data:
-            gantt_view_model = self.gantt_presenter.present(task_list_output.gantt_data)
+            gantt_view_model = self.gantt_presenter.present(
+                all_tasks, task_list_output.gantt_data
+            )
 
         return TaskData(
             all_tasks=all_tasks,
