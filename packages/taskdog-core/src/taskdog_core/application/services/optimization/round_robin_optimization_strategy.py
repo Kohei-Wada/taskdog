@@ -82,7 +82,7 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
         task_daily_allocations: dict[int, dict[date, float]] = {
             task.id: {} for task in schedulable_tasks if task.id is not None
         }
-        daily_allocations: dict[date, float] = {}
+        daily_allocations: dict[date, float] = dict(existing_allocations)
 
         # Track start and end dates for each task
         task_start_dates: dict[int, datetime] = {}
@@ -230,7 +230,9 @@ class RoundRobinOptimizationStrategy(OptimizationStrategy):
                     task_start_dates[task_id] = current_date
                 task_end_dates[task_id] = current_date
 
-            daily_allocations[date_obj] = daily_total
+            daily_allocations[date_obj] = (
+                daily_allocations.get(date_obj, 0.0) + daily_total
+            )
 
             # Move to next day
             current_date += timedelta(days=1)

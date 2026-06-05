@@ -2,6 +2,7 @@
 
 from datetime import date, datetime
 
+from taskdog_core.domain.entities.task import TaskStatus
 from tests.application.services.optimization.optimization_strategy_test_base import (
     BaseOptimizationStrategyTest,
 )
@@ -177,6 +178,49 @@ class TestRoundRobinOptimizationStrategy(BaseOptimizationStrategyTest):
             abs(updated_task.daily_allocations.get(date(2025, 10, 21), 0.0) - 6.0)
             < 1e-5
         )
+
+    def test_round_robin_result_includes_existing_allocations(self):
+        """Test result totals include fixed/in-progress allocations plus new hours."""
+        fixed_task = self.create_task(
+            "Fixed Task",
+            estimated_duration=3.0,
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
+            is_fixed=True,
+        )
+        fixed_task.planned_start = datetime(2025, 10, 20, 9, 0, 0)
+        fixed_task.planned_end = datetime(2025, 10, 20, 12, 0, 0)
+        fixed_task.daily_allocations = {date(2025, 10, 20): 3.0}
+        self.repository.save(fixed_task)
+
+        in_progress_task = self.create_task(
+            "In Progress Task",
+            estimated_duration=1.0,
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
+        )
+        in_progress_task.status = TaskStatus.IN_PROGRESS
+        in_progress_task.planned_start = datetime(2025, 10, 20, 12, 0, 0)
+        in_progress_task.planned_end = datetime(2025, 10, 20, 13, 0, 0)
+        in_progress_task.daily_allocations = {date(2025, 10, 20): 1.0}
+        self.repository.save(in_progress_task)
+
+        regular_task = self.create_task(
+            "Regular Task",
+            estimated_duration=2.0,
+            deadline=datetime(2025, 10, 31, 18, 0, 0),
+        )
+
+        result = self.optimize_schedule(
+            start_date=datetime(2025, 10, 20, 9, 0, 0),
+            max_hours_per_day=6.0,
+            force_override=True,
+        )
+
+        assert len(result.successful_tasks) == 1
+        assert result.daily_allocations[date(2025, 10, 20)] == 6.0
+
+        updated_regular = self.repository.get_by_id(regular_task.id)
+        assert updated_regular is not None
+        assert updated_regular.daily_allocations == {date(2025, 10, 20): 2.0}
 
     def test_round_robin_adjusts_allocation_as_tasks_complete(self):
         """Test that round-robin adjusts allocation as tasks complete."""
