@@ -1,13 +1,16 @@
-# Taskdog
+<h1 align="center">Taskdog</h1>
 
-[![CI](https://github.com/Kohei-Wada/taskdog/actions/workflows/ci.yml/badge.svg)](https://github.com/Kohei-Wada/taskdog/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/taskdog-ui)](https://pypi.org/project/taskdog-ui/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
+<p align="center">
+  <a href="https://github.com/Kohei-Wada/taskdog/actions/workflows/ci.yml"><img src="https://github.com/Kohei-Wada/taskdog/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://pypi.org/project/taskdog-ui/"><img src="https://img.shields.io/pypi/v/taskdog-ui" alt="PyPI"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.12%2B-blue" alt="Python Version"></a>
+</p>
 
-A task management system with CLI/TUI interfaces and REST API server, featuring time tracking, schedule optimization, and beautiful terminal output.
-
-Designed for individual use. Stores tasks locally in SQLite database.
+<p align="center">
+  A task management system with CLI/TUI interfaces and REST API server, featuring time tracking, schedule optimization, and beautiful terminal output.<br>
+  Designed for individual use. Stores tasks locally in SQLite database.
+</p>
 
 https://github.com/user-attachments/assets/2c0de3ec-fa3d-4f41-ae01-acbff04931e3
 
@@ -71,7 +74,15 @@ pip install taskdog-ui[server]
 
 You'll need to manage the server process yourself (e.g., `taskdog-server &`).
 
-### Usage
+### Windows users
+
+- WSL2 is recommended and follows the same setup flow as Linux.
+- Native Windows support is experimental. By default, data is stored under
+  `%LOCALAPPDATA%\taskdog` and configuration under `%APPDATA%\taskdog`.
+- The editor integration checks `%EDITOR%` first, then falls back to `code`,
+  `notepad`, and `vim`.
+
+## Usage
 
 ```bash
 taskdog add "My first task" --priority 10
@@ -81,14 +92,6 @@ taskdog tui
 ```
 
 For complete setup including API key configuration, see **[Quick Start Guide](docs/QUICKSTART.md)**.
-
-### Windows users
-
-- WSL2 is recommended and follows the same setup flow as Linux.
-- Native Windows support is experimental. By default, data is stored under
-  `%LOCALAPPDATA%\taskdog` and configuration under `%APPDATA%\taskdog`.
-- The editor integration checks `%EDITOR%` first, then falls back to `code`,
-  `notepad`, and `vim`.
 
 ## Features
 
@@ -108,6 +111,15 @@ Maximize the task list, sort it from the command palette, then narrow it down wi
 
 https://github.com/user-attachments/assets/dcb44390-7b10-49a0-bdfc-01a03d7751f9
 
+## Documentation
+
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Step-by-step setup
+- **[CLI Commands Reference](docs/COMMANDS.md)** - Complete command documentation
+- **[API Reference](docs/API.md)** - REST API endpoints and examples
+- **[Configuration Guide](docs/CONFIGURATION.md)** - All configuration options
+- **[Design Philosophy](docs/DESIGN_PHILOSOPHY.md)** - Why Taskdog works this way
+- **[Deployment Guide](contrib/README.md)** - Docker, systemd, launchd
+
 ## Architecture
 
 UV workspace monorepo with five packages:
@@ -119,15 +131,6 @@ UV workspace monorepo with five packages:
 | [taskdog-server](packages/taskdog-server) | FastAPI REST API server | [![PyPI](https://img.shields.io/pypi/v/taskdog-server)](https://pypi.org/project/taskdog-server/) |
 | [taskdog-ui](packages/taskdog-ui) | CLI and TUI interfaces | [![PyPI](https://img.shields.io/pypi/v/taskdog-ui)](https://pypi.org/project/taskdog-ui/) |
 | [taskdog-mcp](packages/taskdog-mcp) | MCP server for Claude Desktop | [![PyPI](https://img.shields.io/pypi/v/taskdog-mcp)](https://pypi.org/project/taskdog-mcp/) |
-
-## Documentation
-
-- **[Quick Start Guide](docs/QUICKSTART.md)** - Step-by-step setup
-- **[CLI Commands Reference](docs/COMMANDS.md)** - Complete command documentation
-- **[API Reference](docs/API.md)** - REST API endpoints and examples
-- **[Configuration Guide](docs/CONFIGURATION.md)** - All configuration options
-- **[Design Philosophy](docs/DESIGN_PHILOSOPHY.md)** - Why Taskdog works this way
-- **[Deployment Guide](contrib/README.md)** - Docker, systemd, launchd
 
 ## Contributing
 
