@@ -16,7 +16,7 @@ from taskdog_core.application.dto.optimization_summary import OptimizationSummar
 from taskdog_core.application.dto.task_dto import TaskSummaryDto
 from taskdog_core.shared.utils.datetime_parser import parse_iso_date
 
-from .exceptions import ConversionError
+from .exceptions import ConversionError, require_key
 
 
 def _parse_optimization_summary(
@@ -36,8 +36,8 @@ def _parse_optimization_summary(
     """
     # Calculate days span from start_date and end_date
     try:
-        start_date = parse_iso_date(summary_data["start_date"])
-        end_date = parse_iso_date(summary_data["end_date"])
+        start_date = parse_iso_date(require_key(summary_data, "start_date"))
+        end_date = parse_iso_date(require_key(summary_data, "end_date"))
 
         if start_date is None or end_date is None:
             raise ConversionError(
@@ -56,13 +56,14 @@ def _parse_optimization_summary(
 
     # Create TaskSummaryDto objects for unscheduled tasks from failures
     unscheduled_tasks = [
-        TaskSummaryDto(id=f["task_id"], name=f["task_name"]) for f in failures
+        TaskSummaryDto(id=require_key(f, "task_id"), name=require_key(f, "task_name"))
+        for f in failures
     ]
 
     return OptimizationSummary(
-        new_count=summary_data["scheduled_tasks"],
+        new_count=require_key(summary_data, "scheduled_tasks"),
         rescheduled_count=0,  # API doesn't distinguish between new and rescheduled
-        total_hours=summary_data["total_hours"],
+        total_hours=require_key(summary_data, "total_hours"),
         deadline_conflicts=0,  # Not provided by API
         days_span=days_span,
         unscheduled_tasks=unscheduled_tasks,
@@ -83,8 +84,11 @@ def _parse_scheduling_failures(
     """
     return [
         SchedulingFailure(
-            task=TaskSummaryDto(id=f["task_id"], name=f["task_name"]),
-            reason=f["reason"],
+            task=TaskSummaryDto(
+                id=require_key(f, "task_id"),
+                name=require_key(f, "task_name"),
+            ),
+            reason=require_key(f, "reason"),
         )
         for f in failures_data
     ]
@@ -116,12 +120,14 @@ def convert_to_optimization_output(data: dict[str, Any]) -> OptimizationOutput:
     Returns:
         OptimizationOutput with all optimization results
     """
-    summary = _parse_optimization_summary(data["summary"], data["failures"])
-    failures = _parse_scheduling_failures(data["failures"])
+    summary_data = require_key(data, "summary")
+    failures_data = require_key(data, "failures")
+    summary = _parse_optimization_summary(summary_data, failures_data)
+    failures = _parse_scheduling_failures(failures_data)
 
     # Note: API response doesn't include successful_tasks details
     # We'll create minimal TaskSummaryDto objects
-    successful_count = data["summary"]["scheduled_tasks"]
+    successful_count = require_key(summary_data, "scheduled_tasks")
     successful_tasks = [
         TaskSummaryDto(id=i, name=f"Task {i}") for i in range(successful_count)
     ]

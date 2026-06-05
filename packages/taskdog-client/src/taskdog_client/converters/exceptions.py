@@ -31,3 +31,15 @@ class ConversionError(TaskError):
         self.field = field
         self.value = value
         super().__init__(message)
+
+
+def require_key(data: dict[str, Any], key: str) -> Any:
+    """Return a required API response key or raise ConversionError."""
+    try:
+        return data[key]
+    except KeyError as e:
+        raise ConversionError(
+            f"Missing required key {key!r} in API response",
+            field=key,
+            value=data,
+        ) from e
