@@ -23,7 +23,6 @@ from taskdog_core.application.use_cases.restore_task import RestoreTaskUseCase
 from taskdog_core.application.use_cases.update_task import UpdateTaskUseCase
 from taskdog_core.controllers.base_controller import BaseTaskController
 from taskdog_core.domain.entities.task import TaskStatus
-from taskdog_core.domain.repositories.notes_repository import NotesRepository
 from taskdog_core.domain.repositories.task_repository import TaskRepository
 from taskdog_core.domain.services.holiday_checker import IHolidayChecker
 from taskdog_core.shared.config_manager import Config
@@ -46,13 +45,11 @@ class TaskCrudController(BaseTaskController):
     Attributes:
         repository: Task repository (inherited from BaseTaskController)
         config: Application configuration (inherited from BaseTaskController)
-        notes_repository: Notes repository for managing task notes
     """
 
     def __init__(
         self,
         repository: TaskRepository,
-        notes_repository: NotesRepository,
         config: Config,
         holiday_checker: IHolidayChecker | None = None,
     ):
@@ -60,12 +57,10 @@ class TaskCrudController(BaseTaskController):
 
         Args:
             repository: Task repository
-            notes_repository: Notes repository
             config: Application configuration
             holiday_checker: Holiday checker for workload calculations (optional)
         """
         super().__init__(repository, config)
-        self.notes_repository = notes_repository
         self._holiday_checker = holiday_checker
 
     def create_task(
@@ -239,7 +234,7 @@ class TaskCrudController(BaseTaskController):
         """
         logger.info(f"Removing task permanently: task_id={task_id}")
 
-        use_case = RemoveTaskUseCase(self.repository, self.notes_repository)
+        use_case = RemoveTaskUseCase(self.repository)
         request = SingleTaskInput(task_id=task_id)
         result = use_case.execute(request)
 

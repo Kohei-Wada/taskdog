@@ -15,11 +15,9 @@ class TestTaskCrudController:
     def setup(self, repository):
         """Set up test fixtures."""
         self.repository = repository
-        self.notes_repository = MagicMock()
         self.config = MagicMock()
         self.controller = TaskCrudController(
             repository=self.repository,
-            notes_repository=self.notes_repository,
             config=self.config,
         )
 
@@ -115,12 +113,9 @@ class TestTaskCrudController:
         # Act
         self.controller.remove_task(task.id)
 
-        # Assert - task should no longer exist
+        # Assert - task should no longer exist (associated notes cascade via FK)
         deleted_task = self.repository.get_by_id(task.id)
         assert deleted_task is None
-
-        # Assert - notes deletion should be handled by repository, not called separately
-        self.notes_repository.delete_notes.assert_not_called()
 
     def test_controller_inherits_from_base_controller(self):
         """Test that controller has repository and config from base class."""
@@ -132,14 +127,12 @@ class TestTaskCrudController:
     def test_holiday_checker_injected(self, repository):
         """Test that HolidayChecker is properly injected via DI."""
         # Arrange
-        notes_repository = MagicMock()
         config = MagicMock()
         holiday_checker = MagicMock()
 
         # Act
         controller = TaskCrudController(
             repository=repository,
-            notes_repository=notes_repository,
             config=config,
             holiday_checker=holiday_checker,
         )
@@ -150,13 +143,11 @@ class TestTaskCrudController:
     def test_holiday_checker_defaults_to_none(self, repository):
         """Test that HolidayChecker is None when not provided."""
         # Arrange
-        notes_repository = MagicMock()
         config = MagicMock()
 
         # Act
         controller = TaskCrudController(
             repository=repository,
-            notes_repository=notes_repository,
             config=config,
         )
 

@@ -79,7 +79,7 @@ repository = SqliteTaskRepository("sqlite:///tasks.db")
 config = ConfigManager()
 
 # Create controller
-crud_controller = TaskCrudController(repository, notes_repository, config)
+crud_controller = TaskCrudController(repository, config)
 
 # Create a task
 from taskdog_core.application.dto.task_request import CreateTaskRequest
