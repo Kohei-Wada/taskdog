@@ -1,11 +1,15 @@
 """CRUD endpoints for task management."""
 
-from datetime import date, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Query, status
 
 from taskdog_core.application.dto.query_inputs import ListTasksInput
+from taskdog_server.api.audit_helpers import (
+    capture_old_task,
+    diff_task_fields,
+    log_task_operation,
+)
 from taskdog_server.api.converters import (
     convert_to_task_detail_response,
     convert_to_task_list_response,
@@ -29,22 +33,6 @@ from taskdog_server.api.models.responses import (
 from taskdog_server.api.utils import parse_iso_date
 
 router = APIRouter()
-
-
-def _serialize_audit_value(val: object) -> object:
-    """Serialize a value for JSON-safe audit logging."""
-    if hasattr(val, "value"):
-        val = val.value
-    if isinstance(val, datetime):
-        val = val.isoformat()
-    if isinstance(val, dict):
-        val = {
-            k.isoformat() if isinstance(k, (date, datetime)) else k: (
-                v.isoformat() if isinstance(v, (date, datetime)) else v
-            )
-            for k, v in val.items()
-        }
-    return val
 
 
 @router.post(
@@ -86,19 +74,16 @@ async def create_task(
     # Broadcast WebSocket event in background
     broadcaster.task_created(result, client_name)
 
-    # Audit log
-    audit_controller.log_operation(
+    log_task_operation(
+        audit_controller,
         operation="create_task",
-        resource_type="task",
-        resource_id=result.id,
-        resource_name=result.name,
+        task=result,
         client_name=client_name,
         new_values={
             "name": result.name,
             "priority": result.priority,
             "status": result.status.value,
         },
-        success=True,
     )
 
     return TaskOperationResponse.from_dto(result)
@@ -228,14 +213,9 @@ async def update_task(
     Raises:
         HTTPException: 404 if task not found, 400 if validation fails
     """
-    # Get old values before update for audit trail
-    # Handle potential errors gracefully - if we can't get old values,
-    # proceed with update but log without old values
-    try:
-        old_task_output = query_controller.get_task_by_id(task_id)
-        old_task = old_task_output.task if old_task_output else None
-    except Exception:
-        old_task = None
+    # Get old values before update for audit trail; if unavailable, the update
+    # still proceeds and is logged without old values.
+    old_task = capture_old_task(query_controller, task_id)
 
     result = controller.update_task(
         task_id=task_id,
@@ -253,24 +233,16 @@ async def update_task(
     # Broadcast WebSocket event in background
     broadcaster.task_updated(result.task, result.updated_fields, client_name)
 
-    # Audit log with old/new values for updated fields
-    old_values = {}
-    new_values = {}
-    if old_task:
-        for field in result.updated_fields:
-            if hasattr(old_task, field) and hasattr(result.task, field):
-                old_values[field] = _serialize_audit_value(getattr(old_task, field))
-                new_values[field] = _serialize_audit_value(getattr(result.task, field))
-
-    audit_controller.log_operation(
+    old_values, new_values = diff_task_fields(
+        old_task, result.task, result.updated_fields
+    )
+    log_task_operation(
+        audit_controller,
         operation="update_task",
-        resource_type="task",
-        resource_id=task_id,
-        resource_name=result.task.name,
+        task=result.task,
         client_name=client_name,
-        old_values=old_values or None,
-        new_values=new_values or None,
-        success=True,
+        old_values=old_values,
+        new_values=new_values,
     )
 
     return convert_to_update_task_response(result)
@@ -304,16 +276,13 @@ async def archive_task(
     # Broadcast WebSocket event in background
     broadcaster.task_updated(result, ["is_archived"], client_name)
 
-    # Audit log
-    audit_controller.log_operation(
+    log_task_operation(
+        audit_controller,
         operation="archive_task",
-        resource_type="task",
-        resource_id=task_id,
-        resource_name=result.name,
+        task=result,
         client_name=client_name,
         old_values={"is_archived": False},
         new_values={"is_archived": True},
-        success=True,
     )
 
     return TaskOperationResponse.from_dto(result)
@@ -347,16 +316,13 @@ async def restore_task(
     # Broadcast WebSocket event in background
     broadcaster.task_updated(result, ["is_archived"], client_name)
 
-    # Audit log
-    audit_controller.log_operation(
+    log_task_operation(
+        audit_controller,
         operation="restore_task",
-        resource_type="task",
-        resource_id=task_id,
-        resource_name=result.name,
+        task=result,
         client_name=client_name,
         old_values={"is_archived": True},
         new_values={"is_archived": False},
-        success=True,
     )
 
     return TaskOperationResponse.from_dto(result)
@@ -390,14 +356,11 @@ async def delete_task(
     # Broadcast WebSocket event in background
     broadcaster.task_deleted(task_id, result.name, client_name)
 
-    # Audit log
-    audit_controller.log_operation(
+    log_task_operation(
+        audit_controller,
         operation="delete_task",
-        resource_type="task",
-        resource_id=task_id,
-        resource_name=result.name,
+        task=result,
         client_name=client_name,
-        success=True,
     )
 
     return TaskOperationResponse.from_dto(result)
