@@ -84,10 +84,15 @@ class TestQueryClient:
             )
             assert result == mock_output
 
-    @patch("taskdog_client.query_client.convert_to_gantt_output")
+    @patch("taskdog_client.query_client.convert_to_task_list_output")
     def test_get_gantt_data(self, mock_convert):
         """Test get_gantt_data makes correct API call."""
-        self.mock_base._request_json.return_value = {"date_range": {}, "tasks": []}
+        self.mock_base._request_json.return_value = {
+            "tasks": [],
+            "total_count": 0,
+            "filtered_count": 0,
+            "gantt": {"date_range": {}},
+        }
 
         mock_output = Mock()
         mock_convert.return_value = mock_output

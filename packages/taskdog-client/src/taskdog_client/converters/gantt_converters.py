@@ -1,14 +1,12 @@
-"""Gantt chart data converters."""
+"""Gantt overlay data converters."""
 
 from datetime import date
 from typing import Any
 
-from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
-from taskdog_core.application.dto.task_dto import GanttTaskDto
-from taskdog_core.domain.entities.task import TaskStatus
+from taskdog_core.application.dto.gantt_overlay import GanttDateRange, GanttOverlay
 from taskdog_core.shared.utils.datetime_parser import parse_iso_date
 
-from .datetime_utils import _parse_date_dict, _parse_date_set, _parse_datetime_fields
+from .datetime_utils import _parse_date_dict, _parse_date_set
 from .exceptions import ConversionError, require_key
 
 
@@ -43,40 +41,6 @@ def _parse_date_range(data: dict[str, Any]) -> GanttDateRange:
             field="date_range",
             value=data.get("date_range"),
         ) from e
-
-
-def _parse_gantt_tasks(data: dict[str, Any]) -> list[GanttTaskDto]:
-    """Parse tasks from API response.
-
-    Args:
-        data: API response data containing tasks
-
-    Returns:
-        List of GanttTaskDto
-    """
-    tasks = []
-    for task in require_key(data, "tasks"):
-        dt_fields = _parse_datetime_fields(
-            task,
-            ["planned_start", "planned_end", "actual_start", "actual_end", "deadline"],
-        )
-
-        tasks.append(
-            GanttTaskDto(
-                id=require_key(task, "id"),
-                name=require_key(task, "name"),
-                status=TaskStatus[require_key(task, "status").upper()],
-                estimated_duration=task.get("estimated_duration"),
-                planned_start=dt_fields["planned_start"],
-                planned_end=dt_fields["planned_end"],
-                actual_start=dt_fields["actual_start"],
-                actual_end=dt_fields["actual_end"],
-                deadline=dt_fields["deadline"],
-                is_finished=require_key(task, "status").upper()
-                in ["COMPLETED", "CANCELED"],
-            )
-        )
-    return tasks
 
 
 def _parse_task_daily_hours(
@@ -138,21 +102,20 @@ def _parse_holidays(data: dict[str, Any]) -> set[date]:
     return _parse_date_set(data, "holidays")
 
 
-def convert_to_gantt_output(data: dict[str, Any]) -> GanttOutput:
-    """Convert API response to GanttOutput.
+def convert_to_gantt_overlay(data: dict[str, Any]) -> GanttOverlay:
+    """Convert an API Gantt overlay payload to a GanttOverlay DTO.
 
     Args:
-        data: API response data
+        data: API response data (the ``gantt`` overlay object)
 
     Returns:
-        GanttOutput with Gantt chart data
+        GanttOverlay with Gantt-specific data (no task fields)
 
     Raises:
         ConversionError: If date parsing fails
     """
-    return GanttOutput(
+    return GanttOverlay(
         date_range=_parse_date_range(data),
-        tasks=_parse_gantt_tasks(data),
         task_daily_hours=_parse_task_daily_hours(data),
         daily_workload=_parse_daily_workload(data),
         holidays=_parse_holidays(data),

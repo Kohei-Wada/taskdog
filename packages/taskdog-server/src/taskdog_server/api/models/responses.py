@@ -156,28 +156,14 @@ class GanttDateRange(BaseModel):
     end_date: date
 
 
-class GanttTaskResponse(BaseModel):
-    """Task data for Gantt chart rendering."""
-
-    model_config = ConfigDict(frozen=True)
-
-    id: int
-    name: str
-    status: TaskStatus
-    estimated_duration: float | None = None
-    planned_start: datetime | None = None
-    planned_end: datetime | None = None
-    actual_start: datetime | None = None
-    actual_end: datetime | None = None
-    deadline: datetime | None = None
-    daily_allocations: dict[str, float] = Field(default_factory=dict)
-
-
 class GanttResponse(BaseModel):
-    """Response model for Gantt chart data."""
+    """Gantt overlay data, joined to the shared task list by id.
+
+    Task fields are not duplicated here; clients join this overlay with the
+    ``tasks`` list from the same response using ``task.id``.
+    """
 
     date_range: GanttDateRange
-    tasks: list[GanttTaskResponse]
     task_daily_hours: dict[int, dict[str, float]]
     daily_workload: dict[str, float]
     holidays: list[str] = Field(default_factory=list)

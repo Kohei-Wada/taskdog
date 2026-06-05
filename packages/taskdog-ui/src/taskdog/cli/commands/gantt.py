@@ -138,9 +138,11 @@ def gantt_command(
         end_date=end_date_obj,
     )
 
-    # Convert DTO to ViewModel (Presenter applies presentation logic)
+    # Build ViewModel by joining the shared task list with the Gantt overlay
+    # (the /gantt endpoint always returns the overlay)
+    assert gantt_result.gantt_data is not None
     presenter = GanttPresenter()
-    gantt_view_model = presenter.present(gantt_result)
+    gantt_view_model = presenter.present(gantt_result.tasks, gantt_result.gantt_data)
 
     # Render using Presentation layer (display logic)
     console_writer = ctx_obj.console_writer

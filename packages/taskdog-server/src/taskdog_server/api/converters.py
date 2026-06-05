@@ -4,7 +4,7 @@ This module contains all conversion functions that transform use case DTOs
 from taskdog-core into Pydantic response models for the API.
 """
 
-from taskdog_core.application.dto.gantt_output import GanttOutput
+from taskdog_core.application.dto.gantt_overlay import GanttOverlay
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
@@ -12,7 +12,6 @@ from taskdog_core.shared.utils.datetime_parser import format_date_dict
 from taskdog_server.api.models.responses import (
     GanttDateRange,
     GanttResponse,
-    GanttTaskResponse,
     TaskDetailResponse,
     TaskListResponse,
     TaskResponse,
@@ -25,56 +24,39 @@ def convert_to_update_task_response(dto: TaskUpdateOutput) -> UpdateTaskResponse
     return UpdateTaskResponse.from_dto(dto)
 
 
-def convert_to_gantt_response(gantt_output: GanttOutput) -> GanttResponse:
-    """Convert GanttOutput DTO to Pydantic response model.
+def convert_to_gantt_response(overlay: GanttOverlay) -> GanttResponse:
+    """Convert a GanttOverlay DTO to its Pydantic response model.
+
+    The overlay carries no task data; clients join it with the shared task
+    list by id.
 
     Args:
-        gantt_output: GanttOutput DTO from controller
+        overlay: GanttOverlay DTO from the controller
 
     Returns:
         GanttResponse with all date keys converted to ISO format strings
     """
-    # Convert tasks
-    gantt_tasks = [
-        GanttTaskResponse(
-            id=task.id,
-            name=task.name,
-            status=task.status,
-            estimated_duration=task.estimated_duration,
-            planned_start=task.planned_start,
-            planned_end=task.planned_end,
-            actual_start=task.actual_start,
-            actual_end=task.actual_end,
-            deadline=task.deadline,
-            daily_allocations=format_date_dict(
-                gantt_output.task_daily_hours.get(task.id, {})
-            ),
-        )
-        for task in gantt_output.tasks
-    ]
-
     # Convert task_daily_hours (nested dict with date keys)
     task_daily_hours = {
         task_id: format_date_dict(daily_hours)
-        for task_id, daily_hours in gantt_output.task_daily_hours.items()
+        for task_id, daily_hours in overlay.task_daily_hours.items()
     }
 
     # Convert daily_workload
-    daily_workload = format_date_dict(gantt_output.daily_workload)
+    daily_workload = format_date_dict(overlay.daily_workload)
 
     # Convert holidays (set of dates to list of ISO strings)
-    holidays = [holiday.isoformat() for holiday in gantt_output.holidays]
+    holidays = [holiday.isoformat() for holiday in overlay.holidays]
 
     return GanttResponse(
         date_range=GanttDateRange(
-            start_date=gantt_output.date_range.start_date,
-            end_date=gantt_output.date_range.end_date,
+            start_date=overlay.date_range.start_date,
+            end_date=overlay.date_range.end_date,
         ),
-        tasks=gantt_tasks,
         task_daily_hours=task_daily_hours,
         daily_workload=daily_workload,
         holidays=holidays,
-        total_estimated_duration=gantt_output.total_estimated_duration,
+        total_estimated_duration=overlay.total_estimated_duration,
     )
 
 

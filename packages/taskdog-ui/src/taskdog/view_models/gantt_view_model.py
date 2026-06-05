@@ -48,8 +48,8 @@ class TaskGanttRowViewModel(BaseViewModel):
 class GanttViewModel(BaseViewModel):
     """ViewModel for complete Gantt chart data.
 
-    This is the presentation-ready version of GanttOutput, containing
-    TaskGanttRowViewModel instead of Task entities.
+    This is the presentation-ready view built from the shared task list and
+    the Gantt overlay, containing TaskGanttRowViewModel instead of Task entities.
 
     Attributes:
         start_date: Start date of the chart

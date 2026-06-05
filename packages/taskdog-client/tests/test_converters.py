@@ -5,7 +5,7 @@ from datetime import date, datetime
 import pytest
 from taskdog_client.converters import (
     ConversionError,
-    convert_to_gantt_output,
+    convert_to_gantt_overlay,
     convert_to_get_task_by_id_output,
     convert_to_get_task_detail_output,
     convert_to_optimization_output,
@@ -295,26 +295,13 @@ class TestConverters:
         assert result.tag_counts["backend"] == 8
         assert result.tag_counts["frontend"] == 3
 
-    def test_convert_to_gantt_output(self):
-        """Test convert_to_gantt_output."""
+    def test_convert_to_gantt_overlay(self):
+        """Test convert_to_gantt_overlay."""
         data = {
             "date_range": {
                 "start_date": "2025-01-01",
                 "end_date": "2025-01-31",
             },
-            "tasks": [
-                {
-                    "id": 1,
-                    "name": "Task 1",
-                    "status": "pending",
-                    "estimated_duration": 5.0,
-                    "planned_start": "2025-01-05T09:00:00",
-                    "planned_end": "2025-01-10T17:00:00",
-                    "actual_start": None,
-                    "actual_end": None,
-                    "deadline": "2025-01-15T23:59:00",
-                }
-            ],
             "task_daily_hours": {
                 "1": {
                     "2025-01-05": 2.0,
@@ -328,13 +315,11 @@ class TestConverters:
             "holidays": ["2025-01-01", "2025-01-13"],
         }
 
-        result = convert_to_gantt_output(data)
+        result = convert_to_gantt_overlay(data)
 
         assert result.date_range.start_date.isoformat() == "2025-01-01"
         assert result.date_range.end_date.isoformat() == "2025-01-31"
-        assert len(result.tasks) == 1
-        assert result.tasks[0].id == 1
-        assert result.tasks[0].name == "Task 1"
+        assert result.task_daily_hours[1][datetime(2025, 1, 5).date()] == 2.0
         assert len(result.holidays) == 2
         assert datetime(2025, 1, 1).date() in result.holidays
 
@@ -418,13 +403,12 @@ class TestConverterErrorHandling:
                 "failures",
             ),
             (
-                convert_to_gantt_output,
+                convert_to_gantt_overlay,
                 {
                     "date_range": {
                         "start_date": "2025-01-01",
                         "end_date": "2025-01-31",
                     },
-                    "tasks": [],
                     "daily_workload": {},
                     "holidays": [],
                 },

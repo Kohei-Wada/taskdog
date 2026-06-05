@@ -10,7 +10,7 @@ from taskdog.tui.services.task_ui_manager import TaskUIManager
 from taskdog.tui.state.tui_state import TUIState
 from taskdog.view_models.gantt_view_model import GanttViewModel
 from taskdog.view_models.task_view_model import TaskRowViewModel
-from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
+from taskdog_core.application.dto.gantt_overlay import GanttDateRange, GanttOverlay
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import TaskStatus
@@ -83,14 +83,13 @@ def create_gantt_viewmodel() -> GanttViewModel:
     )
 
 
-def create_gantt_output() -> GanttOutput:
-    """Helper to create a minimal GanttOutput for list_tasks responses."""
-    return GanttOutput(
+def create_gantt_output() -> GanttOverlay:
+    """Helper to create a minimal Gantt overlay for list_tasks responses."""
+    return GanttOverlay(
         date_range=GanttDateRange(
             start_date=date.today(),
             end_date=date.today() + timedelta(days=7),
         ),
-        tasks=[],
         task_daily_hours={},
         daily_workload={},
         holidays=set(),

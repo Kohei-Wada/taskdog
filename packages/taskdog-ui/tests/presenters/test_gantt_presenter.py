@@ -4,8 +4,8 @@ from datetime import date, datetime
 
 from taskdog.presenters.gantt_presenter import GanttPresenter
 from taskdog.view_models.gantt_view_model import GanttViewModel
-from taskdog_core.application.dto.gantt_output import GanttDateRange, GanttOutput
-from taskdog_core.application.dto.task_dto import GanttTaskDto
+from taskdog_core.application.dto.gantt_overlay import GanttDateRange, GanttOverlay
+from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.domain.entities.task import TaskStatus
 
 
@@ -27,25 +27,31 @@ class TestGanttPresenter:
         actual_start: datetime | None = None,
         actual_end: datetime | None = None,
         deadline: datetime | None = None,
-    ) -> GanttTaskDto:
-        return GanttTaskDto(
+    ) -> TaskRowDto:
+        now = datetime(2026, 1, 1, 0, 0)
+        return TaskRowDto(
             id=task_id,
             name=name,
+            priority=1,
             status=status,
-            is_finished=is_finished,
-            estimated_duration=estimated_duration,
             planned_start=planned_start,
             planned_end=planned_end,
+            deadline=deadline,
             actual_start=actual_start,
             actual_end=actual_end,
-            deadline=deadline,
+            estimated_duration=estimated_duration,
+            actual_duration_hours=None,
+            is_fixed=False,
+            depends_on=[],
+            tags=[],
+            is_archived=False,
+            is_finished=is_finished,
+            created_at=now,
+            updated_at=now,
         )
 
-    def _make_gantt_output(
-        self, tasks: list[GanttTaskDto] | None = None
-    ) -> GanttOutput:
-        return GanttOutput(
-            tasks=tasks or [],
+    def _make_overlay(self) -> GanttOverlay:
+        return GanttOverlay(
             date_range=GanttDateRange(
                 start_date=date(2026, 1, 1), end_date=date(2026, 1, 7)
             ),
@@ -56,7 +62,7 @@ class TestGanttPresenter:
         )
 
     def test_present_empty(self):
-        result = self.presenter.present(self._make_gantt_output())
+        result = self.presenter.present([], self._make_overlay())
 
         assert isinstance(result, GanttViewModel)
         assert result.tasks == []
@@ -65,7 +71,7 @@ class TestGanttPresenter:
 
     def test_present_task_name_not_finished(self):
         task = self._make_task(name="My task", is_finished=False)
-        result = self.presenter.present(self._make_gantt_output([task]))
+        result = self.presenter.present([task], self._make_overlay())
 
         assert result.tasks[0].name == "My task"
 
@@ -75,26 +81,26 @@ class TestGanttPresenter:
             status=TaskStatus.COMPLETED,
             is_finished=True,
         )
-        result = self.presenter.present(self._make_gantt_output([task]))
+        result = self.presenter.present([task], self._make_overlay())
 
         assert result.tasks[0].name == "Done task"
         assert result.tasks[0].is_finished is True
 
     def test_present_task_name_with_square_brackets(self):
         task = self._make_task(name="[tracker] My task", is_finished=False)
-        result = self.presenter.present(self._make_gantt_output([task]))
+        result = self.presenter.present([task], self._make_overlay())
 
         assert result.tasks[0].name == "[tracker] My task"
 
     def test_present_estimated_duration_formatted(self):
         task = self._make_task(estimated_duration=4.5)
-        result = self.presenter.present(self._make_gantt_output([task]))
+        result = self.presenter.present([task], self._make_overlay())
 
         assert result.tasks[0].formatted_estimated_duration == "4.5"
 
     def test_present_estimated_duration_none(self):
         task = self._make_task(estimated_duration=None)
-        result = self.presenter.present(self._make_gantt_output([task]))
+        result = self.presenter.present([task], self._make_overlay())
 
         assert result.tasks[0].formatted_estimated_duration == "-"
 
@@ -106,7 +112,7 @@ class TestGanttPresenter:
             actual_end=datetime(2026, 1, 4, 17, 0),
             deadline=datetime(2026, 1, 6, 23, 59),
         )
-        result = self.presenter.present(self._make_gantt_output([task]))
+        result = self.presenter.present([task], self._make_overlay())
 
         row = result.tasks[0]
         assert row.planned_start == date(2026, 1, 2)
@@ -117,7 +123,7 @@ class TestGanttPresenter:
 
     def test_present_dates_none(self):
         task = self._make_task()
-        result = self.presenter.present(self._make_gantt_output([task]))
+        result = self.presenter.present([task], self._make_overlay())
 
         row = result.tasks[0]
         assert row.planned_start is None
@@ -127,8 +133,7 @@ class TestGanttPresenter:
         assert row.deadline is None
 
     def test_present_preserves_metadata(self):
-        output = GanttOutput(
-            tasks=[self._make_task()],
+        overlay = GanttOverlay(
             date_range=GanttDateRange(
                 start_date=date(2026, 3, 1), end_date=date(2026, 3, 31)
             ),
@@ -137,7 +142,7 @@ class TestGanttPresenter:
             holidays={date(2026, 3, 20)},
             total_estimated_duration=8.0,
         )
-        result = self.presenter.present(output)
+        result = self.presenter.present([self._make_task()], overlay)
 
         assert result.task_daily_hours == {1: {date(2026, 3, 1): 4.0}}
         assert result.daily_workload == {date(2026, 3, 1): 4.0}
@@ -151,7 +156,7 @@ class TestGanttPresenter:
                 task_id=2, name="Task B", is_finished=True, status=TaskStatus.COMPLETED
             ),
         ]
-        result = self.presenter.present(self._make_gantt_output(tasks))
+        result = self.presenter.present(tasks, self._make_overlay())
 
         assert len(result.tasks) == 2
         assert result.tasks[0].id == 1

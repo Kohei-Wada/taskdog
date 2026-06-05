@@ -4,13 +4,12 @@ from datetime import date, datetime
 
 import pytest
 
-from taskdog_core.application.dto.gantt_output import (
+from taskdog_core.application.dto.gantt_overlay import (
     GanttDateRange,
-    GanttOutput,
+    GanttOverlay,
 )
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_dto import (
-    GanttTaskDto,
     TaskDetailDto,
     TaskRowDto,
 )
@@ -171,7 +170,7 @@ class TestConvertToTaskListResponse:
         assert response.tasks[0].has_notes is True
 
     def test_convert_task_list_with_gantt_data(self):
-        """Test converting task list with gantt data."""
+        """Test converting task list with the Gantt overlay."""
         # Arrange
         now = datetime.now()
         task = Task(
@@ -182,23 +181,10 @@ class TestConvertToTaskListResponse:
             created_at=now,
             updated_at=now,
         )
-        gantt_task = GanttTaskDto(
-            id=1,
-            name="Test Task",
-            status=TaskStatus.PENDING,
-            estimated_duration=8.0,
-            planned_start=now,
-            planned_end=now,
-            actual_start=None,
-            actual_end=None,
-            deadline=None,
-            is_finished=False,
-        )
         start_date = date(2025, 1, 1)
         end_date = date(2025, 1, 5)
-        gantt_output = GanttOutput(
+        overlay = GanttOverlay(
             date_range=GanttDateRange(start_date=start_date, end_date=end_date),
-            tasks=[gantt_task],
             task_daily_hours={1: {date(2025, 1, 1): 4.0, date(2025, 1, 2): 4.0}},
             daily_workload={date(2025, 1, 1): 8.0, date(2025, 1, 2): 8.0},
             holidays={date(2025, 1, 4)},
@@ -207,20 +193,20 @@ class TestConvertToTaskListResponse:
             tasks=[TaskRowDto.from_entity(task)],
             total_count=1,
             filtered_count=1,
-            gantt_data=gantt_output,
+            gantt_data=overlay,
             task_ids_with_notes=set(),
         )
 
         # Act
         response = convert_to_task_list_response(dto)
 
-        # Assert
+        # Assert: tasks come from the shared list; overlay holds Gantt-only data
+        assert len(response.tasks) == 1
+        assert response.tasks[0].id == 1
+        assert response.tasks[0].name == "Test Task"
         assert response.gantt is not None
         assert response.gantt.date_range.start_date == start_date
         assert response.gantt.date_range.end_date == end_date
-        assert len(response.gantt.tasks) == 1
-        assert response.gantt.tasks[0].id == 1
-        assert response.gantt.tasks[0].name == "Test Task"
         # Check date conversion to ISO strings
         assert "2025-01-01" in response.gantt.task_daily_hours[1]
         assert "2025-01-02" in response.gantt.task_daily_hours[1]

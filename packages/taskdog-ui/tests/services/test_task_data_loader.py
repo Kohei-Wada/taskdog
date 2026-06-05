@@ -8,7 +8,7 @@ import pytest
 from taskdog.services.task_data_loader import TaskData, TaskDataLoader
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
 from taskdog.view_models.task_view_model import TaskRowViewModel
-from taskdog_core.application.dto.gantt_output import GanttOutput
+from taskdog_core.application.dto.gantt_overlay import GanttOverlay
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import Task, TaskStatus
@@ -71,14 +71,14 @@ class TestTaskDataLoader:
         # Setup mocks
         task1 = Task(id=1, name="Task 1", priority=1, status=TaskStatus.PENDING)
 
-        # Mock gantt data within task_list_output
-        gantt_output = Mock(spec=GanttOutput)
+        # Mock gantt overlay within task_list_output
+        overlay = Mock(spec=GanttOverlay)
 
         task_list_output = TaskListOutput(
             tasks=[TaskRowDto.from_entity(task1)],
             total_count=1,
             filtered_count=1,
-            gantt_data=gantt_output,  # Include gantt data in response
+            gantt_data=overlay,  # Include gantt overlay in response
         )
         self.api_client.list_tasks.return_value = task_list_output
 
