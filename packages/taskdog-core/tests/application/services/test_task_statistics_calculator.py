@@ -185,6 +185,23 @@ class TestTaskStatisticsCalculator:
         assert result.trend_stats.last_7_days_completed == 1
         assert result.trend_stats.last_30_days_completed == 2
 
+    def test_weekly_trend_uses_iso_week_year(self):
+        """Test weekly trend keys use ISO week-year at year boundaries."""
+        tasks = [
+            Task(
+                name="Year boundary task",
+                priority=10,
+                id=1,
+                actual_end=datetime(2024, 12, 30, 12, 0),
+                status=TaskStatus.COMPLETED,
+            ),
+        ]
+
+        result = self.calculator.calculate_all(tasks)
+
+        assert result.trend_stats is not None
+        assert result.trend_stats.weekly_completion_trend == {"2025-W01": 1}
+
     def test_filter_by_period_7d(self):
         """Test filtering tasks by 7-day period."""
         now = datetime.now()

@@ -395,7 +395,8 @@ class TaskStatisticsCalculator:
 
                 # Weekly trend (ISO week)
                 week_start = end_dt - timedelta(days=end_dt.weekday())
-                week_key = week_start.strftime("%Y-W%U")
+                iso_week = week_start.isocalendar()
+                week_key = f"{iso_week.year}-W{iso_week.week:02d}"
                 weekly_trend[week_key] += 1
 
                 # Monthly trend
