@@ -156,7 +156,7 @@ class TestGanttCommand:
         result = self.runner.invoke(gantt_command, [], obj=self.cli_context)
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.error.assert_called_once_with(
             "displaying Gantt chart", error
         )

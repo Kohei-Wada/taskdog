@@ -106,7 +106,7 @@ class TestRmCommand:
 
         result = self.runner.invoke(rm_command, ["999"], obj=self.cli_context)
 
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_task_not_found_hard_delete(self):
@@ -119,7 +119,7 @@ class TestRmCommand:
 
         result = self.runner.invoke(rm_command, ["999", "--hard"], obj=self.cli_context)
 
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_archive_restore_hint(self):

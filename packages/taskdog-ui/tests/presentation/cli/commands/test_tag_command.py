@@ -86,7 +86,7 @@ class TestTagListCommand(_TagCommandFixture):
 
         result = self.runner.invoke(list_command, ["999"], obj=self.cli_context)
 
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -96,7 +96,7 @@ class TestTagListCommand(_TagCommandFixture):
 
         result = self.runner.invoke(list_command, [], obj=self.cli_context)
 
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.error.assert_called_once_with("listing tags", error)
 
 
@@ -139,7 +139,7 @@ class TestTagSetCommand(_TagCommandFixture):
 
         result = self.runner.invoke(set_command, ["999", "work"], obj=self.cli_context)
 
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once()
 
 
@@ -196,7 +196,7 @@ class TestTagRemoveCommand(_TagCommandFixture):
             remove_command, ["nonexistent"], obj=self.cli_context
         )
 
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_delete_tag_general_exception(self):
@@ -206,5 +206,5 @@ class TestTagRemoveCommand(_TagCommandFixture):
 
         result = self.runner.invoke(remove_command, ["test"], obj=self.cli_context)
 
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.error.assert_called_once_with("deleting tag", error)

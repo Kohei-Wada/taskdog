@@ -66,7 +66,7 @@ class TestShowCommand:
         result = self.runner.invoke(show_command, ["999"], obj=self.cli_context)
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -79,7 +79,7 @@ class TestShowCommand:
         result = self.runner.invoke(show_command, ["1"], obj=self.cli_context)
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.error.assert_called_once_with("showing task", error)
 
     def test_missing_task_id(self):

@@ -221,7 +221,7 @@ class TestUpdateCommand:
         )
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_general_exception(self):
@@ -236,7 +236,7 @@ class TestUpdateCommand:
         )
 
         # Verify
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.error.assert_called_once_with("updating task", error)
 
     def test_missing_task_id(self):

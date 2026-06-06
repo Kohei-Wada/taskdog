@@ -359,7 +359,7 @@ class TestNoteCommand:
         )
 
         # Verify - handle_task_errors catches TaskNotFoundException
-        assert result.exit_code == 0
+        assert result.exit_code != 0
         self.console_writer.validation_error.assert_called_once()
 
     def test_file_read_oserror(self):
