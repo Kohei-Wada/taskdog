@@ -2,6 +2,7 @@
 
 from taskdog_server.api.routers.analytics import router as analytics_router
 from taskdog_server.api.routers.audit import router as audit_router
+from taskdog_server.api.routers.backup import router as backup_router
 from taskdog_server.api.routers.bulk import router as bulk_router
 from taskdog_server.api.routers.lifecycle import router as lifecycle_router
 from taskdog_server.api.routers.notes import router as notes_router
@@ -13,6 +14,7 @@ from taskdog_server.api.routers.websocket import router as websocket_router
 __all__ = [
     "analytics_router",
     "audit_router",
+    "backup_router",
     "bulk_router",
     "lifecycle_router",
     "notes_router",

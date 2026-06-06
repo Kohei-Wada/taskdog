@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from sqlalchemy.engine import Engine
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
+from taskdog_core.controllers.backup_controller import BackupController
 from taskdog_core.controllers.bulk_task_controller import BulkTaskController
 from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
@@ -53,6 +54,7 @@ class ApiContext:
     audit_log_controller: AuditLogController
     notes_controller: NotesController
     bulk_controller: BulkTaskController
+    backup_controller: BackupController
     engine: Engine | None = field(default=None, repr=False)
 
     def close(self) -> None:

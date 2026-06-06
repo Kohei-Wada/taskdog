@@ -3,6 +3,7 @@
 from unittest.mock import Mock
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
+from taskdog_core.controllers.backup_controller import BackupController
 from taskdog_core.controllers.bulk_task_controller import BulkTaskController
 from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
@@ -39,6 +40,7 @@ class TestApiContext:
         self.mock_audit_log_controller = Mock(spec=AuditLogController)
         self.mock_notes_controller = Mock(spec=NotesController)
         self.mock_bulk_controller = Mock(spec=BulkTaskController)
+        self.mock_backup_controller = Mock(spec=BackupController)
 
     def test_create_context_with_all_dependencies(self):
         """Test creating ApiContext with all dependencies."""
@@ -57,6 +59,7 @@ class TestApiContext:
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
+            backup_controller=self.mock_backup_controller,
         )
 
         # Assert
@@ -89,6 +92,7 @@ class TestApiContext:
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
+            backup_controller=self.mock_backup_controller,
         )
 
         # Assert
@@ -111,6 +115,7 @@ class TestApiContext:
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
+            backup_controller=self.mock_backup_controller,
         )
 
         # Assert - verify all attributes are accessible
@@ -145,6 +150,7 @@ class TestApiContext:
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
+            backup_controller=self.mock_backup_controller,
         )
 
         context2 = ApiContext(
@@ -161,6 +167,7 @@ class TestApiContext:
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
+            backup_controller=self.mock_backup_controller,
         )
 
         # Assert
@@ -186,6 +193,7 @@ class TestApiContext:
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
+            backup_controller=self.mock_backup_controller,
         )
 
         context2 = ApiContext(
@@ -202,6 +210,7 @@ class TestApiContext:
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
+            backup_controller=self.mock_backup_controller,
         )
 
         # Assert
@@ -224,6 +233,7 @@ class TestApiContext:
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
+            backup_controller=self.mock_backup_controller,
         )
 
         # Assert - verify all five controllers are present
@@ -260,6 +270,7 @@ class TestApiContext:
             audit_log_controller=self.mock_audit_log_controller,
             notes_controller=self.mock_notes_controller,
             bulk_controller=self.mock_bulk_controller,
+            backup_controller=self.mock_backup_controller,
         )
 
         assert context.time_provider is time_provider

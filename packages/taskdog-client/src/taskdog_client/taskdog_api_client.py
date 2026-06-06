@@ -5,12 +5,14 @@ clients while maintaining a simple public API.
 """
 
 from datetime import date, datetime
+from pathlib import Path
 from typing import Any
 
 import httpx  # type: ignore[import-not-found]
 
 from taskdog_client.analytics_client import AnalyticsClient
 from taskdog_client.audit_client import AuditClient
+from taskdog_client.backup_client import BackupClient
 from taskdog_client.base_client import BaseApiClient
 from taskdog_client.bulk_client import BulkClient
 from taskdog_client.lifecycle_client import LifecycleClient
@@ -26,6 +28,7 @@ from taskdog_core.application.dto.bulk_operation_output import BulkOperationOutp
 from taskdog_core.application.dto.delete_tag_output import DeleteTagOutput
 from taskdog_core.application.dto.get_task_by_id_output import TaskByIdOutput
 from taskdog_core.application.dto.optimization_output import OptimizationOutput
+from taskdog_core.application.dto.restore_result import RestoreResultDTO
 from taskdog_core.application.dto.statistics_output import StatisticsOutput
 from taskdog_core.application.dto.tag_statistics_output import TagStatisticsOutput
 from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
@@ -68,6 +71,7 @@ class TaskdogApiClient:
         self._notes = NotesClient(self._base)
         self._audit = AuditClient(self._base)
         self._bulk = BulkClient(self._base)
+        self._backup = BackupClient(self._base)
 
     @property
     def client(self) -> httpx.Client:
@@ -406,6 +410,16 @@ class TaskdogApiClient:
     def get_audit_log(self, log_id: int) -> AuditLogOutput:
         """Get a single audit log entry by ID."""
         return self._audit.get_audit_log(log_id)
+
+    # Backup/restore methods - delegate to BackupClient
+
+    def backup(self, output_path: Path) -> None:
+        """Download a physical database snapshot to output_path."""
+        return self._backup.backup(output_path)
+
+    def restore(self, file_path: Path) -> RestoreResultDTO:
+        """Upload a database snapshot to stage a restore (applied on restart)."""
+        return self._backup.restore(file_path)
 
     # Bulk operation methods - delegate to BulkClient
 

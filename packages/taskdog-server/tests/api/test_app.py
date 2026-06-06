@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from taskdog_core.controllers.audit_log_controller import AuditLogController
+from taskdog_core.controllers.backup_controller import BackupController
 from taskdog_core.controllers.bulk_task_controller import BulkTaskController
 from taskdog_core.controllers.notes_controller import NotesController
 from taskdog_core.controllers.query_controller import QueryController
@@ -15,6 +16,9 @@ from taskdog_core.controllers.task_crud_controller import TaskCrudController
 from taskdog_core.controllers.task_lifecycle_controller import TaskLifecycleController
 from taskdog_core.controllers.task_relationship_controller import (
     TaskRelationshipController,
+)
+from taskdog_core.infrastructure.persistence.database.sqlite_backup_store import (
+    SqliteBackupStore,
 )
 from taskdog_core.infrastructure.time_provider import SystemTimeProvider
 from taskdog_server import __version__
@@ -74,6 +78,7 @@ class TestApp:
                 crud_controller=crud_controller,
                 query_controller=query_controller,
             ),
+            backup_controller=BackupController(SqliteBackupStore("sqlite:///:memory:")),
         )
 
         # Create app using create_app (lifespan will set its own context)
