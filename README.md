@@ -66,6 +66,16 @@ make install
 
 This installs the CLI/TUI and server, and sets up a systemd (Linux) or launchd (macOS) service so the server starts automatically.
 
+### Arch Linux (AUR)
+
+```bash
+yay -S taskdog
+```
+
+Installs the CLI/TUI, server, and MCP binaries plus the systemd **user** service
+(enable per-user with `systemctl --user enable --now taskdog-server`). See
+[`contrib/aur/`](contrib/aur/) for packaging details.
+
 ### From PyPI
 
 ```bash
