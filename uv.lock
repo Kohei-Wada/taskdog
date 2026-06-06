@@ -1452,6 +1452,7 @@ source = { editable = "packages/taskdog-server" }
 dependencies = [
     { name = "fastapi" },
     { name = "pydantic" },
+    { name = "python-multipart" },
     { name = "taskdog-core" },
     { name = "uvicorn", extra = ["standard"] },
 ]
@@ -1475,6 +1476,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
+    { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.7.0" },
     { name = "taskdog-core", editable = "packages/taskdog-core" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.48.0" },
