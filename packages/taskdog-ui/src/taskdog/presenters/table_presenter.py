@@ -4,6 +4,7 @@ This presenter extracts necessary fields from TaskRowDto within TaskListOutput
 and creates presentation-ready view models for table/list display.
 """
 
+from taskdog.view_models.status import TaskStatus
 from taskdog.view_models.task_view_model import TaskRowViewModel
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
@@ -40,7 +41,7 @@ class TablePresenter:
         return TaskRowViewModel(
             id=task.id,
             name=task.name,
-            status=task.status,
+            status=TaskStatus(task.status.value),
             priority=task.priority,
             is_fixed=task.is_fixed,
             estimated_duration=task.estimated_duration,

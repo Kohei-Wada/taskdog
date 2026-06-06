@@ -14,7 +14,7 @@ from taskdog.constants.timeline import (
     TIMELINE_BAR_CHAR,
     TIMELINE_EMPTY_CHAR,
 )
-from taskdog_core.domain.entities.task import TaskStatus
+from taskdog.view_models.status import TaskStatus
 
 
 class TimelineCellFormatter:

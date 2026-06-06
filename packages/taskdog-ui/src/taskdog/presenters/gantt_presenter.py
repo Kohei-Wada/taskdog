@@ -6,6 +6,7 @@ strikethrough) to create presentation-ready view models.
 """
 
 from taskdog.view_models.gantt_view_model import GanttViewModel, TaskGanttRowViewModel
+from taskdog.view_models.status import TaskStatus
 from taskdog_core.application.dto.gantt_overlay import GanttOverlay
 from taskdog_core.application.dto.task_dto import TaskRowDto
 
@@ -62,7 +63,7 @@ class GanttPresenter:
             id=task.id,
             name=task.name,
             formatted_estimated_duration=formatted_estimated_duration,
-            status=task.status,
+            status=TaskStatus(task.status.value),
             planned_start=task.planned_start.date() if task.planned_start else None,
             planned_end=task.planned_end.date() if task.planned_end else None,
             actual_start=task.actual_start.date() if task.actual_start else None,

@@ -6,8 +6,8 @@ import pytest
 from rich.text import Text
 
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
+from taskdog.view_models.status import TaskStatus
 from taskdog.view_models.task_view_model import TaskRowViewModel
-from taskdog_core.domain.entities.task import TaskStatus
 
 
 def make_vm(**overrides: object) -> TaskRowViewModel:

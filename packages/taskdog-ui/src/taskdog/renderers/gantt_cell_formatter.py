@@ -35,7 +35,7 @@ from taskdog.constants.symbols import (
     SYMBOL_PENDING,
     SYMBOL_TODAY,
 )
-from taskdog_core.domain.entities.task import TaskStatus
+from taskdog.view_models.status import TaskStatus
 from taskdog_core.shared.constants import (
     SATURDAY,
     SUNDAY,

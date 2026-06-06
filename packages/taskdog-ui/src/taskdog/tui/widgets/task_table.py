@@ -57,8 +57,8 @@ from taskdog.constants.task_table import (
 from taskdog.tui.widgets.base_widget import TUIWidget
 from taskdog.tui.widgets.task_table_row_builder import TaskTableRowBuilder
 from taskdog.tui.widgets.vi_navigation_mixin import ViNavigationMixin
+from taskdog.view_models.status import TaskStatus
 from taskdog.view_models.task_view_model import TaskRowViewModel
-from taskdog_core.domain.entities.task import TaskStatus
 
 # Column index for elapsed time (0=checkbox, 1=ID, ..., 13=Elapsed)
 _ELAPSED_COL_INDEX = 13

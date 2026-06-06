@@ -12,7 +12,7 @@ from taskdog.constants.symbols import (
     SYMBOL_TODAY,
 )
 from taskdog.renderers.gantt_cell_formatter import GanttCellFormatter
-from taskdog_core.domain.entities.task import TaskStatus
+from taskdog.view_models.status import TaskStatus
 
 
 class TestGanttCellFormatter:

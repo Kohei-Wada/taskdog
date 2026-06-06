@@ -35,7 +35,6 @@ from taskdog_core.application.dto.task_detail_output import TaskDetailOutput
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
-from taskdog_core.domain.entities.task import TaskStatus
 from taskdog_core.domain.exceptions.task_exceptions import ServerConnectionError
 
 
@@ -162,7 +161,7 @@ class TaskdogApiClient:
         task_id: int,
         name: str | None = None,
         priority: int | None = None,
-        status: TaskStatus | None = None,
+        status: str | None = None,
         planned_start: datetime | None = None,
         planned_end: datetime | None = None,
         deadline: datetime | None = None,
