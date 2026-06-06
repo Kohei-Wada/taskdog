@@ -1,4 +1,4 @@
-"""Restore-db command - Upload a database snapshot to be applied on restart."""
+"""`db restore` - Upload a database snapshot to be applied on restart."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 @click.command(
-    name="restore-db",
+    name="restore",
     help="Restore the database from a physical .db snapshot (applied on restart).",
 )
 @click.argument(
@@ -26,15 +26,15 @@ if TYPE_CHECKING:
     help="Skip the confirmation prompt.",
 )
 @click.pass_context
-def restore_db_command(ctx: click.Context, file_path: str, yes: bool) -> None:
+def restore_command(ctx: click.Context, file_path: str, yes: bool) -> None:
     """Upload a `.db` snapshot to replace the server database.
 
     This is destructive: the snapshot is staged now and replaces the live
     database the next time the server starts. Restart the server to apply.
 
     Examples:
-        taskdog restore-db ./taskdog-backup-20250101-120000.db
-        taskdog restore-db backup.db --yes
+        taskdog db restore ./taskdog-backup-20250101-120000.db
+        taskdog db restore backup.db --yes
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

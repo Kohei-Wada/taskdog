@@ -158,10 +158,10 @@ taskdog restore 2 3  # Batch operation
 
 ## Dependencies
 
-### add-dependency - Add task dependency
+### dep add - Add task dependency
 
 ```bash
-taskdog add-dependency TASK_ID DEPENDS_ON_ID
+taskdog dep add TASK_ID DEPENDS_ON_ID
 ```
 
 Add a dependency relationship. Includes circular dependency detection.
@@ -169,13 +169,13 @@ Add a dependency relationship. Includes circular dependency detection.
 **Examples:**
 
 ```bash
-taskdog add-dependency 2 1  # Task 2 depends on task 1
+taskdog dep add 2 1  # Task 2 depends on task 1
 ```
 
-### remove-dependency - Remove task dependency
+### dep rm - Remove task dependency
 
 ```bash
-taskdog remove-dependency TASK_ID DEP_ID
+taskdog dep rm TASK_ID DEP_ID
 ```
 
 Remove a dependency relationship.
@@ -183,25 +183,27 @@ Remove a dependency relationship.
 **Examples:**
 
 ```bash
-taskdog remove-dependency 2 1
+taskdog dep rm 2 1
 ```
 
 ## Tags Management
 
-### tags - Manage tags
+### tag - Manage tags
 
 ```bash
-taskdog tags              # List all tags with counts
-taskdog tags ID           # Show tags for a task
-taskdog tags ID TAG1...   # Set tags for a task (replaces existing)
+taskdog tag list            # List all tags with counts
+taskdog tag list ID         # Show tags for a task
+taskdog tag set ID TAG1...  # Set tags for a task (replaces existing)
+taskdog tag rm TAG_NAME     # Delete a tag from all tasks
 ```
 
 **Examples:**
 
 ```bash
-taskdog tags                    # List all tags
-taskdog tags 1                  # Show task 1's tags
-taskdog tags 1 urgent backend   # Set tags for task 1
+taskdog tag list                    # List all tags
+taskdog tag list 1                  # Show task 1's tags
+taskdog tag set 1 urgent backend    # Set tags for task 1
+taskdog tag rm urgent               # Delete the "urgent" tag everywhere
 ```
 
 ## Optimization
@@ -244,10 +246,10 @@ taskdog optimize -f  # Force re-optimization
 
 ## Visualization
 
-### table - Table view
+### list - Table view
 
 ```bash
-taskdog table [OPTIONS]
+taskdog list [OPTIONS]
 ```
 
 Display tasks in table format with filtering and sorting.
@@ -266,10 +268,10 @@ Display tasks in table format with filtering and sorting.
 **Examples:**
 
 ```bash
-taskdog table
-taskdog table -s priority -r
-taskdog table --status pending --tag backend
-taskdog table -a  # Show archived tasks too
+taskdog list
+taskdog list -s priority -r
+taskdog list --status pending --tag backend
+taskdog list -a  # Show archived tasks too
 ```
 
 ### gantt - Gantt chart
@@ -278,7 +280,7 @@ taskdog table -a  # Show archived tasks too
 taskdog gantt [OPTIONS]
 ```
 
-Display visual timeline with workload analysis. Supports same filter/sort options as table.
+Display visual timeline with workload analysis. Supports same filter/sort options as list.
 
 **Features:**
 
@@ -418,13 +420,13 @@ Tasks can be organized with tags for better categorization and filtering.
 taskdog add "Backend API" --tag backend --tag api
 
 # Manage tags
-taskdog tags                    # List all tags with counts
-taskdog tags 1                  # Show tags for task 1
-taskdog tags 1 urgent backend   # Set tags (replaces existing)
+taskdog tag list                # List all tags with counts
+taskdog tag list 1              # Show tags for task 1
+taskdog tag set 1 urgent backend  # Set tags (replaces existing)
 
 # Filter by tags
-taskdog table --tag backend     # Show tasks with 'backend' tag
-taskdog table --tag api --tag db  # OR logic: tasks with 'api' OR 'db'
+taskdog list --tag backend     # Show tasks with 'backend' tag
+taskdog list --tag api --tag db  # OR logic: tasks with 'api' OR 'db'
 ```
 
 **Tag behavior:**

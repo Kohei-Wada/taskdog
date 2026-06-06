@@ -165,11 +165,11 @@ workload_moderate_hours = 8.0
 #   export TASKDOG_API_PORT=3000
 #   export TASKDOG_API_KEY=sk-your-api-key
 #   export TASKDOG_INPUT_DEADLINE_TIME=17:00
-#   taskdog table
+#   taskdog list
 #
 # Or inline:
 #
-#   TASKDOG_API_KEY=sk-your-key taskdog table
+#   TASKDOG_API_KEY=sk-your-key taskdog list
 
 # =============================================================================
 # Notes

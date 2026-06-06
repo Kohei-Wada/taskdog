@@ -471,7 +471,7 @@ class DemoDataCreator:
         print(f"  • {pending} pending tasks")
         print()
         print(f"{BLUE}Useful commands:{NC}")
-        print("  taskdog table          - View all tasks")
+        print("  taskdog list          - View all tasks")
         print("  taskdog gantt          - View Gantt chart")
         print("  taskdog today          - View today's tasks")
         print("  taskdog show <ID>      - View task details with notes")

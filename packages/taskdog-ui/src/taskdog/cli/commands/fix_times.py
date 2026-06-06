@@ -1,4 +1,4 @@
-"""Fix-actual command - Correct actual start/end timestamps and duration."""
+"""Fix-times command - Correct actual start/end timestamps and duration."""
 
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ class ClearableFloatType(click.ParamType[float | str | None]):
 
 
 @click.command(
-    name="fix-actual",
+    name="fix-times",
     help="Correct actual start/end timestamps and duration for a task.",
 )
 @click.argument("task_id", type=int)
@@ -86,7 +86,7 @@ class ClearableFloatType(click.ParamType[float | str | None]):
 )
 @click.pass_context
 @handle_task_errors("fixing actual times")
-def fix_actual_command(
+def fix_times_command(
     ctx: click.Context,
     task_id: int,
     start: datetime | str | None,
@@ -102,12 +102,12 @@ def fix_actual_command(
     Use empty string "" to clear a value.
 
     Examples:
-        taskdog fix-actual 5 --start "2025-12-13 09:00:00"
-        taskdog fix-actual 5 --start "2025-12-13 09:00:00" --end "2025-12-13 17:00:00"
-        taskdog fix-actual 5 --duration 8
-        taskdog fix-actual 5 --start "2025-12-01 09:00:00" --end "2025-12-03 18:00:00" --duration 16
-        taskdog fix-actual 5 --start ""      # Clear actual_start
-        taskdog fix-actual 5 --duration ""   # Clear actual_duration
+        taskdog fix-times 5 --start "2025-12-13 09:00:00"
+        taskdog fix-times 5 --start "2025-12-13 09:00:00" --end "2025-12-13 17:00:00"
+        taskdog fix-times 5 --duration 8
+        taskdog fix-times 5 --start "2025-12-01 09:00:00" --end "2025-12-03 18:00:00" --duration 16
+        taskdog fix-times 5 --start ""      # Clear actual_start
+        taskdog fix-times 5 --duration ""   # Clear actual_duration
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

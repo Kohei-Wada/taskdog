@@ -78,7 +78,7 @@ taskdog add "Integration testing" --tag web --priority 5 --depends-on 4 5
 taskdog add "Deployment" --tag web --priority 4 --depends-on 6
 
 # View the entire project
-taskdog table --tag web
+taskdog list --tag web
 taskdog gantt --tag web  # Visualize dependencies
 ```
 
@@ -269,7 +269,7 @@ Redmine supports task hierarchies but faces these issues:
 This is fundamentally different from team projects:
 
 | Scenario | Individual | Team (e.g., 10 people) |
-|----------|-----------|------------------------|
+| --- | --- | --- |
 | Concurrent IN_PROGRESS tasks | 1-3 tasks | 10-30+ tasks |
 | Need for hierarchy | Low (mental tracking) | High (organizational clarity) |
 | Task visibility | All in your head | Needs explicit structure |
@@ -321,7 +321,7 @@ taskdog add "Blog: Outline" --tag blog --priority 7 --depends-on 1
 taskdog add "Blog: Write draft" --tag blog --priority 6 --depends-on 2
 taskdog add "Blog: Edit and publish" --tag blog --priority 5 --depends-on 3
 
-taskdog table --tag blog  # See all related tasks
+taskdog list --tag blog  # See all related tasks
 ```
 
 **Solution 2: Checklist in Notes**

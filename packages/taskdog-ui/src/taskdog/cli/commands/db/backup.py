@@ -1,4 +1,4 @@
-"""Backup command - Download a physical snapshot of the database."""
+"""`db backup` - Download a physical snapshot of the database."""
 
 from __future__ import annotations
 
@@ -30,8 +30,8 @@ def backup_command(ctx: click.Context, output: str | None) -> None:
     intended for real recovery.
 
     Examples:
-        taskdog backup                       # save to ./taskdog-backup-<ts>.db
-        taskdog backup -o /backups/tasks.db  # save to a specific path
+        taskdog db backup                       # save to ./taskdog-backup-<ts>.db
+        taskdog db backup -o /backups/tasks.db  # save to a specific path
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

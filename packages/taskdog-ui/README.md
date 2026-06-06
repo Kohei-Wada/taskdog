@@ -86,7 +86,7 @@ export TASKDOG_API_PORT=8000
 
 ```bash
 # Test that CLI can connect to server
-taskdog table
+taskdog list
 ```
 
 ## Usage
@@ -100,7 +100,7 @@ taskdog table
 taskdog add "Implement feature" --priority 3
 
 # View tasks
-taskdog table
+taskdog list
 taskdog gantt
 
 # Task lifecycle

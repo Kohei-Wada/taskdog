@@ -440,7 +440,7 @@ backend = "sqlite"
 3. **Backup database regularly** - `cp` database file before major changes
 4. **Start with defaults** - Only configure what you need to change
 5. **Document custom settings** - Add comments explaining why you changed defaults
-6. **Test configuration changes** - Run `taskdog table` after config changes to verify
+6. **Test configuration changes** - Run `taskdog list` after config changes to verify
 7. **Set region for accurate holidays** - Helps optimizer avoid scheduling on holidays
 
 ## See Also
