@@ -78,6 +78,20 @@ class TestSqliteNotesRepository:
 
         assert repository.has_notes(1) is True
 
+    def test_has_notes_false_after_delete_clears_content(
+        self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
+    ):
+        """Regression for #991: blanking content (the delete path) reports no notes."""
+        create_task(1)
+        repository.write_notes(1, "Test content")
+        assert repository.has_notes(1) is True
+
+        repository.write_notes(1, "")  # delete_notes path
+
+        assert repository.has_notes(1) is False
+        assert repository.read_notes(1) == ""
+        assert repository.get_task_ids_with_notes([1]) == set()
+
     def test_read_notes_returns_none_when_no_notes(
         self, repository: SqliteNotesRepository
     ):
@@ -138,12 +152,12 @@ class TestSqliteNotesRepository:
     def test_write_notes_handles_empty_string(
         self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
     ):
-        """Test write_notes can write empty string."""
+        """Empty content is stored but does not count as having notes."""
         create_task(1)
         repository.write_notes(1, "")
 
         assert repository.read_notes(1) == ""
-        assert repository.has_notes(1) is True
+        assert repository.has_notes(1) is False
 
     def test_write_notes_preserves_multiline_content(
         self, repository: SqliteNotesRepository, create_task: Callable[[int], None]
