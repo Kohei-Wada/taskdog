@@ -110,14 +110,19 @@ class GanttPanRequested(Message):
 
     Attributes:
         weeks: Number of weeks to shift (negative = past, positive = future).
-            Ignored when reset is True.
+            Ignored when reset is True or to_date is set.
         reset: When True, snap the window back to the current week (today).
+        to_date: When set, jump the window so the week containing this date is
+            visible (absolute jump). Takes precedence over weeks and reset.
     """
 
-    def __init__(self, weeks: int = 0, reset: bool = False) -> None:
+    def __init__(
+        self, weeks: int = 0, reset: bool = False, to_date: date | None = None
+    ) -> None:
         super().__init__()
         self.weeks = weeks
         self.reset = reset
+        self.to_date = to_date
 
 
 class FilterChanged(Message):

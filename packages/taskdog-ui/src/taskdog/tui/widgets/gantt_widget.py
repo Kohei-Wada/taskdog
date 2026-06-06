@@ -311,10 +311,13 @@ class GanttWidget(Vertical, TUIWidget):
         date range.
 
         Args:
-            event: Pan request carrying a week delta or a reset flag.
+            event: Pan request carrying a week delta, a reset flag, or a target
+                date to jump to.
         """
         event.stop()
-        if event.reset:
+        if event.to_date is not None:
+            self._pan_offset_days = self._offset_for_date(event.to_date)
+        elif event.reset:
             if self._pan_offset_days == 0:
                 return
             self._pan_offset_days = 0
@@ -323,6 +326,18 @@ class GanttWidget(Vertical, TUIWidget):
 
         display_days = self._calculate_display_days()
         self._recalculate_gantt_for_width(display_days)
+
+    @staticmethod
+    def _offset_for_date(target: date) -> int:
+        """Pan offset (days from today) that puts target's week at the window start.
+
+        The window always starts on a Monday; this aligns the offset so the
+        Monday of target's week becomes the visible window start.
+        """
+        today = date.today()
+        this_monday = today - timedelta(days=today.weekday())
+        target_monday = target - timedelta(days=target.weekday())
+        return (target_monday - this_monday).days
 
     def render_filtered_gantt(self) -> None:
         """Render gantt from TUIState.filtered_gantt.

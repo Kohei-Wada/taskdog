@@ -64,3 +64,20 @@ class TestPanHandler:
         widget.on_gantt_pan_requested(GanttPanRequested(reset=True))
         assert widget._pan_offset_days == 0
         widget._recalculate_gantt_for_width.assert_not_called()
+
+    def test_jump_to_date_sets_offset_to_that_week(self) -> None:
+        widget = self._widget()
+        target = _this_monday() + timedelta(days=3 * DAYS_PER_WEEK + 2)  # mid-week
+        widget.on_gantt_pan_requested(GanttPanRequested(to_date=target))
+        # Window start lands on the Monday of the target's week.
+        assert widget._pan_offset_days == 3 * DAYS_PER_WEEK
+        start, _ = widget._calculate_date_range_for_display(7)
+        assert start == _this_monday() + timedelta(days=3 * DAYS_PER_WEEK)
+        widget._recalculate_gantt_for_width.assert_called_once()
+
+    def test_jump_to_past_date_sets_negative_offset(self) -> None:
+        widget = self._widget()
+        target = _this_monday() - timedelta(days=10)
+        widget.on_gantt_pan_requested(GanttPanRequested(to_date=target))
+        target_monday = target - timedelta(days=target.weekday())
+        assert widget._pan_offset_days == (target_monday - _this_monday()).days
