@@ -5,10 +5,14 @@ Tools for creating, reading, updating, and deleting tasks.
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from taskdog_mcp.tools.serializers import iso, str_list, task_result
+from taskdog_mcp.tools.serializers import (
+    iso,
+    parse_iso_datetime,
+    str_list,
+    task_result,
+)
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
@@ -122,19 +126,9 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         Returns:
             Created task data with ID
         """
-        try:
-            deadline_dt = datetime.fromisoformat(deadline) if deadline else None
-            planned_start_dt = (
-                datetime.fromisoformat(planned_start) if planned_start else None
-            )
-            planned_end_dt = (
-                datetime.fromisoformat(planned_end) if planned_end else None
-            )
-        except ValueError as e:
-            raise ValueError(
-                f"Invalid datetime format. Use ISO format "
-                f"(e.g., '2025-12-11T09:00:00'): {e}"
-            ) from e
+        deadline_dt = parse_iso_datetime(deadline, "deadline")
+        planned_start_dt = parse_iso_datetime(planned_start, "planned_start")
+        planned_end_dt = parse_iso_datetime(planned_end, "planned_end")
 
         result = client.create_task(
             name=name,
@@ -180,19 +174,9 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         Returns:
             Updated task data
         """
-        try:
-            deadline_dt = datetime.fromisoformat(deadline) if deadline else None
-            planned_start_dt = (
-                datetime.fromisoformat(planned_start) if planned_start else None
-            )
-            planned_end_dt = (
-                datetime.fromisoformat(planned_end) if planned_end else None
-            )
-        except ValueError as e:
-            raise ValueError(
-                f"Invalid datetime format. Use ISO format "
-                f"(e.g., '2025-12-11T09:00:00'): {e}"
-            ) from e
+        deadline_dt = parse_iso_datetime(deadline, "deadline")
+        planned_start_dt = parse_iso_datetime(planned_start, "planned_start")
+        planned_end_dt = parse_iso_datetime(planned_end, "planned_end")
 
         result = client.update_task(
             task_id=task_id,

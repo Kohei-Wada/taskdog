@@ -5,8 +5,9 @@ Tools for retrieving audit logs.
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Any
+
+from taskdog_mcp.tools.serializers import parse_iso_datetime
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
@@ -45,20 +46,8 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         Returns:
             Dictionary with logs list and metadata
         """
-        try:
-            start_date = datetime.fromisoformat(since) if since else None
-        except ValueError as e:
-            raise ValueError(
-                f"Invalid datetime format for 'since': {since}. "
-                "Expected ISO format (e.g., '2025-12-11T09:00:00')"
-            ) from e
-        try:
-            end_date = datetime.fromisoformat(until) if until else None
-        except ValueError as e:
-            raise ValueError(
-                f"Invalid datetime format for 'until': {until}. "
-                "Expected ISO format (e.g., '2025-12-11T17:00:00')"
-            ) from e
+        start_date = parse_iso_datetime(since, "since")
+        end_date = parse_iso_datetime(until, "until")
         success = False if failed else None
 
         result = client.list_audit_logs(

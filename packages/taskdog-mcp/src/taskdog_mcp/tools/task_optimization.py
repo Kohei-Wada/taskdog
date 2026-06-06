@@ -6,8 +6,9 @@ optimization algorithms.
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Any
+
+from taskdog_mcp.tools.serializers import parse_iso_datetime
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
@@ -57,10 +58,7 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
             Optimization result with successful_tasks, failed_tasks,
             daily_allocations, and summary metrics.
         """
-        try:
-            start_dt = datetime.fromisoformat(start_date) if start_date else None
-        except ValueError as e:
-            raise ValueError(f"Invalid datetime format: {e}") from e
+        start_dt = parse_iso_datetime(start_date, "start_date")
 
         if max_hours_per_day <= 0:
             raise ValueError("max_hours_per_day must be greater than 0")
