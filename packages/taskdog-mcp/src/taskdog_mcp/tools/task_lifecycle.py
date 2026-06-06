@@ -5,10 +5,9 @@ Tools for changing task status (start, complete, pause, cancel, reopen).
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from taskdog_mcp.tools.serializers import iso, task_result
+from taskdog_mcp.tools.serializers import iso, parse_iso_datetime, task_result
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
@@ -133,11 +132,8 @@ def register_tools(mcp: FastMCP, client: TaskdogApiClient) -> None:
         Returns:
             Updated task data with new timestamps
         """
-        try:
-            start_dt = datetime.fromisoformat(actual_start) if actual_start else None
-            end_dt = datetime.fromisoformat(actual_end) if actual_end else None
-        except ValueError as e:
-            raise ValueError(f"Invalid datetime format: {e}") from e
+        start_dt = parse_iso_datetime(actual_start, "actual_start")
+        end_dt = parse_iso_datetime(actual_end, "actual_end")
 
         if actual_duration is not None and actual_duration <= 0:
             raise ValueError("actual_duration must be greater than 0")

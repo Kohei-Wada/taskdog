@@ -1896,3 +1896,35 @@ class TestTaskOptimizationTools:
             "display_name": "Greedy",
             "description": "Front-load tasks by priority",
         }
+
+
+class TestParseIsoDatetime:
+    """Tests for the shared parse_iso_datetime serializer helper."""
+
+    def test_parses_valid_iso_string(self) -> None:
+        from taskdog_mcp.tools.serializers import parse_iso_datetime
+
+        assert parse_iso_datetime("2025-12-11T09:00:00") == datetime(
+            2025, 12, 11, 9, 0, 0
+        )
+
+    @pytest.mark.parametrize("value", [None, ""])
+    def test_returns_none_for_empty(self, value: str | None) -> None:
+        from taskdog_mcp.tools.serializers import parse_iso_datetime
+
+        assert parse_iso_datetime(value) is None
+
+    def test_invalid_without_field_name(self) -> None:
+        from taskdog_mcp.tools.serializers import parse_iso_datetime
+
+        with pytest.raises(ValueError, match="Invalid datetime format: 'nope'"):
+            parse_iso_datetime("nope")
+
+    def test_invalid_with_field_name_preserves_field_and_value(self) -> None:
+        from taskdog_mcp.tools.serializers import parse_iso_datetime
+
+        with pytest.raises(
+            ValueError,
+            match="Invalid datetime format for 'since': 'nope'",
+        ):
+            parse_iso_datetime("nope", "since")
