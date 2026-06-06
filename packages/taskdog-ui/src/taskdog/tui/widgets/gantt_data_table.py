@@ -64,6 +64,8 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
         Binding("ctrl+u", "page_up", "Page Up", show=False),
         # T -> jump to today
         Binding("T", "jump_to_today", "Today", show=False),
+        # Enter -> jump window to the selected task's actual period
+        Binding("enter", "jump_to_task_period", "Jump to Task Period", show=False),
     ]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -636,6 +638,21 @@ class GanttDataTable(DataTable):  # type: ignore[type-arg]
     def action_pan_forward(self) -> None:
         """Pan the gantt window one week into the future (L key)."""
         self.post_message(GanttPanRequested(weeks=1))
+
+    def action_jump_to_task_period(self) -> None:
+        """Pan the window to the period of the task under the cursor (Enter key).
+
+        Anchors on actual_start, falling back to planned_start then deadline.
+        If the task has none of these dates, this is a no-op with a hint.
+        """
+        task_vm = self.get_selected_task_vm()
+        if task_vm is None:
+            return
+        anchor = task_vm.actual_start or task_vm.planned_start or task_vm.deadline
+        if anchor is None:
+            self.notify("Task has no dates to jump to", severity="warning")
+            return
+        self.post_message(GanttPanRequested(to_date=anchor))
 
     def get_selected_task_id(self) -> int | None:
         """Get the task ID at the current cursor row.

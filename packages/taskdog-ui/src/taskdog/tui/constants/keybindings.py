@@ -80,6 +80,7 @@ Press `/` (or `Ctrl+R`) to filter, `Escape` to clear.
 Visual timeline with workload per day.
 
 - `w`/`b` jump one week forward/back, `T` jump to today
+- `Enter` jumps the window to the selected task's actual period
 - `H`/`L` pan into the past/future, `0`/`$` go to row start/end
 - Lifecycle keys work on the task under the Gantt cursor too
 - `t` toggles the search filter for the Gantt view
