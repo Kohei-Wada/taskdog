@@ -445,6 +445,11 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         """Show the help screen with keybindings and usage instructions."""
         self.command_factory.execute("show_help")
 
+    def _refresh_mode_badges(self) -> None:
+        """Refresh the footer mode badges to reflect current toggle/sort state."""
+        if self.main_screen and self.main_screen.custom_footer:
+            self.main_screen.custom_footer.update_mode_badges(self.state)
+
     def set_sort_order(self, sort_key: str) -> None:
         """Set the sort order for Gantt chart and task list.
 
@@ -457,6 +462,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
 
         # Post TasksRefreshed event to trigger UI refresh with new sort order
         self.post_message(TasksRefreshed())
+        self._refresh_mode_badges()
 
         # Show notification message with current direction
         sort_label = SORT_KEY_LABELS.get(sort_key, sort_key)
@@ -480,6 +486,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
 
         # Reload tasks with new sort direction
         self.request_reload()
+        self._refresh_mode_badges()
 
         # Show notification with current direction
         direction = "descending" if self.state.sort_reverse else "ascending"
@@ -502,6 +509,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         enabled = self.state.toggle_gantt_filter()
         # Post to current screen so MainScreen's on_filter_changed handler receives it
         self.screen.post_message(FilterChanged(gantt_filter_toggled=True))
+        self._refresh_mode_badges()
         status = "enabled" if enabled else "disabled"
         self.notify(f"Gantt filter {status}")
 
@@ -516,6 +524,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         """
         self.state.show_archived = not self.state.show_archived
         self.request_reload()
+        self._refresh_mode_badges()
         status = "shown" if self.state.show_archived else "hidden"
         self.notify(f"Archived tasks {status}")
 

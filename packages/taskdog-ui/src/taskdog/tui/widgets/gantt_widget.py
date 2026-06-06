@@ -164,7 +164,11 @@ class GanttWidget(Vertical, TUIWidget):
             self._show_error_message(e)
 
     def _update_title(self) -> None:
-        """Update title with date range, sort order, and filter status."""
+        """Update title with the date range only.
+
+        Sort and filter status are intentionally omitted here; the custom footer
+        is the single home for those mode badges.
+        """
         if not self._title_widget:
             return
 
@@ -174,20 +178,10 @@ class GanttWidget(Vertical, TUIWidget):
 
         start_date = gantt_view_model.start_date
         end_date = gantt_view_model.end_date
-        # Access sort state from tui_state
-        arrow = "↓" if self.tui_state.sort_reverse else "↑"
-
-        # Build filter indicator (always shown)
-        if self.tui_state.gantt_filter_enabled:
-            filter_indicator = " [green]🔍 Filter: ON[/green]"
-        else:
-            filter_indicator = " [dim]🔍 Filter: OFF[/dim]"
 
         title_text = (
             f"[bold $primary]Gantt Chart[/bold $primary] "
-            f"[dim]({start_date} to {end_date})[/dim] "
-            f"[dim]- sorted by: {self.tui_state.sort_by} {arrow}[/dim]"
-            f"{filter_indicator}"
+            f"[dim]({start_date} to {end_date})[/dim]"
         )
         self._title_widget.update(title_text)
 

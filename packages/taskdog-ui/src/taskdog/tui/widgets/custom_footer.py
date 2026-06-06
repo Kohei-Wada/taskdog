@@ -10,21 +10,56 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.widgets import Input, Static
 
+from taskdog.tui.constants.ui_settings import SORT_KEY_LABELS
 from taskdog.tui.events import SearchQueryChanged
 from taskdog.tui.widgets.base_widget import TUIWidget
 
 if TYPE_CHECKING:
-    from taskdog.tui.state import ConnectionStatus
+    from taskdog.tui.state import ConnectionStatus, TUIState
 
 # Constants
 SEARCH_INPUT_ID = "footer-search-input"
+
+
+def format_mode_badges(
+    *,
+    gantt_filter_enabled: bool,
+    show_archived: bool,
+    sort_by: str,
+    sort_reverse: bool,
+) -> str:
+    """Render the persistent mode-state badges shown in the footer status row.
+
+    Boolean toggles appear only while active to reduce noise; the sort state is
+    always shown. Square brackets are avoided so the text never collides with
+    Textual content markup. This footer is the single home for the Gantt filter
+    state — the Gantt widget no longer renders its own filter indicator.
+
+    Args:
+        gantt_filter_enabled: Whether the search filter is applied to the Gantt.
+        show_archived: Whether archived tasks are included in the list.
+        sort_by: Current sort field key.
+        sort_reverse: Sort direction (True=descending).
+
+    Returns:
+        A ` · `-joined badge string, e.g. "gantt-filter · archived · ↓ Deadline".
+    """
+    parts: list[str] = []
+    if gantt_filter_enabled:
+        parts.append("gantt-filter")
+    if show_archived:
+        parts.append("archived")
+    arrow = "↓" if sort_reverse else "↑"
+    sort_label = SORT_KEY_LABELS.get(sort_by, sort_by)
+    parts.append(f"{arrow} {sort_label}")
+    return " · ".join(parts)
 
 
 class CustomFooter(Container, TUIWidget):
     """Custom footer with status bar and search input (Vim-style).
 
     Layout (2 rows):
-    - Row 1 (Status bar): Keybindings (left) + Connection status (right)
+    - Row 1 (Status bar): Keybindings (left) + Mode badges + Connection status (right)
     - Row 2 (Search bar): Filter chain + Search input + Result count
 
     Subscribes to ConnectionStatusManager for automatic updates via observer pattern.
@@ -63,12 +98,13 @@ class CustomFooter(Container, TUIWidget):
         Returns:
             Iterable of widgets to display
         """
-        # Row 1: Status bar (keybindings + connection status)
+        # Row 1: Status bar (keybindings + mode badges + connection status)
         with Horizontal(id="footer-status-row"):
             yield Static(
-                " [bold]j[/]/[bold]k[/] Navigate  [bold]Ctrl+J[/]/[bold]K[/] Focus  [bold]q[/] Quit  [bold]a[/] Add  [bold]s[/] Start  [bold]d[/] Done  [bold]x[/] Archive  [bold]?[/] Help  [bold]Ctrl+P[/] Palette",
+                " [bold]j[/]/[bold]k[/] Nav  [bold]a[/] Add  [bold]s[/] Start  [bold]d[/] Done  [bold]q[/] Quit  [bold]?[/] Help  [bold]Ctrl+P[/] Palette",
                 id="footer-keybindings",
             )
+            yield Static("", id="footer-mode-badges")
             yield Static("🔴 Offline", id="footer-connection-status")
 
         # Row 2: Search bar (container with filter chain, input, and result count)
@@ -92,6 +128,9 @@ class CustomFooter(Container, TUIWidget):
         self.is_api_connected = status.is_api_connected
         self.is_websocket_connected = status.is_websocket_connected
         self._update_connection_status()
+
+        # Initialize mode badges from current app state
+        self.update_mode_badges(self.tui_app.state)
 
     def on_unmount(self) -> None:
         """Called when widget is unmounted from the DOM."""
@@ -150,6 +189,22 @@ class CustomFooter(Container, TUIWidget):
         # Remove all status classes and add the current one
         status_widget.remove_class("status-online", "status-partial", "status-offline")
         status_widget.add_class(status_class)
+
+    def update_mode_badges(self, state: "TUIState") -> None:
+        """Refresh the persistent mode-state badges from app state.
+
+        Args:
+            state: Current TUI application state.
+        """
+        badges = self.query_one("#footer-mode-badges", Static)
+        badges.update(
+            format_mode_badges(
+                gantt_filter_enabled=state.gantt_filter_enabled,
+                show_archived=state.show_archived,
+                sort_by=state.sort_by,
+                sort_reverse=state.sort_reverse,
+            )
+        )
 
     # Search input methods
 
