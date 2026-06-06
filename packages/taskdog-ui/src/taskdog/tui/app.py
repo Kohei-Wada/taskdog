@@ -275,7 +275,12 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         self.command_factory = CommandFactory(self, self.context)
 
         # Initialize WebSocket handler for message processing
-        self.websocket_handler = WebSocketHandler(self)
+        self.websocket_handler = WebSocketHandler(
+            notify=self.notify,
+            reload_tasks=self.request_reload,
+            set_client_id=self.api_client.set_client_id,
+            get_client_id=lambda: self.api_client.client_id,
+        )
 
         # TaskUIManager will be initialized in on_mount (needs MainScreen)
         self.task_ui_manager: TaskUIManager | None = None
