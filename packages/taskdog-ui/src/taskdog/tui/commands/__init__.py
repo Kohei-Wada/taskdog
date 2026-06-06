@@ -2,6 +2,7 @@
 
 from taskdog.tui.commands.add import AddCommand
 from taskdog.tui.commands.audit import AuditCommand
+from taskdog.tui.commands.backup import BackupCommand
 from taskdog.tui.commands.base import TUICommandBase
 from taskdog.tui.commands.cancel import CancelCommand
 from taskdog.tui.commands.done import DoneCommand
@@ -23,6 +24,7 @@ from taskdog.tui.commands.stats import StatsCommand
 COMMANDS: dict[str, type[TUICommandBase]] = {
     "add": AddCommand,
     "audit": AuditCommand,
+    "backup": BackupCommand,
     "cancel": CancelCommand,
     "done": DoneCommand,
     "edit": EditCommand,

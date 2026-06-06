@@ -37,6 +37,7 @@ from taskdog.tui.events import FilterChanged, GanttResizeRequested, TasksRefresh
 from taskdog.tui.palette.providers import (
     ArchiveCommandProvider,
     AuditCommandProvider,
+    BackupCommandProvider,
     ExportCommandProvider,
     ExportFormatProvider,
     HelpCommandProvider,
@@ -206,6 +207,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         SortCommandProvider,
         OptimizeCommandProvider,
         ExportCommandProvider,
+        BackupCommandProvider,
         HelpCommandProvider,
     }
 
@@ -431,6 +433,13 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
                 placeholder="Select export format…",
             ),
         )
+
+    def run_backup(self) -> None:
+        """Back up the database to a file.
+
+        Called from the Command Palette via BackupCommandProvider.
+        """
+        self.command_factory.execute("backup")
 
     def search_help(self) -> None:
         """Show the help screen with keybindings and usage instructions."""

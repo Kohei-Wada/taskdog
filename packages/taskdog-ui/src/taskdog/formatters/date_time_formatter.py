@@ -153,6 +153,15 @@ class DateTimeFormatter:
         return datetime.now().strftime("%Y%m%d")
 
     @staticmethod
+    def format_timestamp_for_filename() -> str:
+        """Format current timestamp for filename (YYYYMMDD-HHMMSS).
+
+        Returns:
+            Current timestamp formatted as YYYYMMDD-HHMMSS
+        """
+        return datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    @staticmethod
     def format_datetime_for_export(dt: datetime | None) -> str:
         """Format datetime for export (CSV/Markdown).
 
