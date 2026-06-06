@@ -51,44 +51,9 @@ Repository = "https://github.com/Kohei-Wada/taskdog"
 requires = ["setuptools>=68.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = [
-    "taskdog",
-    "taskdog.formatters",
-    "taskdog.services",
-    "taskdog.cli",
-    "taskdog.cli.commands",
-    "taskdog.cli.commands.audit",
-    "taskdog.cli.commands.db",
-    "taskdog.cli.commands.dep",
-    "taskdog.cli.commands.tag",
-    "taskdog.tui",
-    "taskdog.tui.commands",
-    "taskdog.tui.constants",
-    "taskdog.tui.palette",
-    "taskdog.tui.palette.providers",
-    "taskdog.tui.services",
-    "taskdog.tui.utils",
-    "taskdog.tui.screens",
-    "taskdog.tui.dialogs",
-    "taskdog.tui.widgets",
-    "taskdog.tui.forms",
-    "taskdog.tui.forms.suggesters",
-    "taskdog.tui.forms.validators",
-    "taskdog.tui.state",
-    "taskdog.tui.styles",
-    "taskdog.console",
-    "taskdog.renderers",
-    "taskdog.exporters",
-    "taskdog.constants",
-    "taskdog.presenters",
-    "taskdog.view_models",
-    "taskdog.utils",
-    "taskdog.shared",
-    "taskdog.shared.click_types",
-    "taskdog.infrastructure",
-]
-package-dir = { "" = "src" }
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["taskdog*"]
 
 [tool.setuptools.package-data]
 taskdog = ["py.typed"]
