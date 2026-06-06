@@ -2,6 +2,7 @@
 
 from taskdog.tui.palette.providers.archive_provider import ArchiveCommandProvider
 from taskdog.tui.palette.providers.audit_provider import AuditCommandProvider
+from taskdog.tui.palette.providers.backup_provider import BackupCommandProvider
 from taskdog.tui.palette.providers.base import BaseListProvider
 from taskdog.tui.palette.providers.export_providers import (
     EXPORT_FORMATS,
@@ -19,6 +20,7 @@ __all__ = [
     "EXPORT_FORMATS",
     "ArchiveCommandProvider",
     "AuditCommandProvider",
+    "BackupCommandProvider",
     "BaseListProvider",
     "ExportCommandProvider",
     "ExportFormatProvider",
