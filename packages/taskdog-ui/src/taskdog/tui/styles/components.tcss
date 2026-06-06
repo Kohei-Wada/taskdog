@@ -47,6 +47,15 @@
     padding: 0 1;
 }
 
+#footer-mode-badges {
+    width: auto;
+    height: auto;
+    content-align: right middle;
+    padding: 0 1;
+    color: $accent;
+    text-style: bold;
+}
+
 #footer-connection-status {
     width: auto;
     height: auto;
