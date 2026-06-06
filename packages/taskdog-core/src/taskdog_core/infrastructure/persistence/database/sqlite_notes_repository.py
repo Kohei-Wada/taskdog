@@ -55,15 +55,21 @@ class SqliteNotesRepository(SqliteBaseRepository, NotesRepository):
     def has_notes(self, task_id: int) -> bool:
         """Check if task has associated notes.
 
+        Notes are content-based: an empty note row (left behind by
+        ``delete_notes``) counts as no notes.
+
         Args:
             task_id: Task ID
 
         Returns:
-            True if notes exist in database
+            True if a note with non-empty content exists in database
         """
         with self.Session() as session:
             result = session.execute(
-                select(NoteModel.task_id).where(NoteModel.task_id == task_id)
+                select(NoteModel.task_id).where(
+                    NoteModel.task_id == task_id,
+                    NoteModel.content != "",
+                )
             ).scalar()
             return result is not None
 
@@ -124,7 +130,10 @@ class SqliteNotesRepository(SqliteBaseRepository, NotesRepository):
 
         with self.Session() as session:
             result = session.execute(
-                select(NoteModel.task_id).where(NoteModel.task_id.in_(task_ids))  # type: ignore[attr-defined]
+                select(NoteModel.task_id).where(
+                    NoteModel.task_id.in_(task_ids),  # type: ignore[attr-defined]
+                    NoteModel.content != "",
+                )
             ).scalars()
             return set(result)
 
