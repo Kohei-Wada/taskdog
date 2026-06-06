@@ -4,7 +4,8 @@
 Usage:
     python scripts/bump_version.py --current       # Show current version
     python scripts/bump_version.py 0.8.0 --dry-run # Preview changes
-    python scripts/bump_version.py 0.8.0           # Update all versions
+    python scripts/bump_version.py 0.8.0           # Update versions, commit, and tag v0.8.0
+    python scripts/bump_version.py 0.8.0 --no-git  # Update versions without git commit/tag
 """
 
 import argparse
@@ -38,7 +39,7 @@ def discover_pyproject_files() -> list[Path]:
 def get_current_version() -> str:
     """Get current version from root pyproject.toml."""
     root_pyproject = ROOT_DIR / "pyproject.toml"
-    with open(root_pyproject, "rb") as f:
+    with root_pyproject.open("rb") as f:
         data = tomllib.load(f)
     return data["project"]["version"]
 
@@ -99,13 +100,45 @@ def verify_no_old_versions(old_version: str) -> list[str]:
 
         # Check for old version in dependencies
         old_dep_matches = re.findall(rf"taskdog-\w+=={re.escape(old_version)}", content)
-        for match in old_dep_matches:
-            problems.append(f"{relative_path}: {match} still present")
+        problems.extend(
+            f"{relative_path}: {match} still present" for match in old_dep_matches
+        )
 
     return problems
 
 
-def bump_version(new_version: str, dry_run: bool) -> int:
+def git_commit_and_tag(new_version: str, pyproject_files: list[Path]) -> int:
+    """Commit version changes and create a release tag."""
+    tag = f"v{new_version}"
+    paths = [str(f.relative_to(ROOT_DIR)) for f in pyproject_files]
+    paths.append("uv.lock")
+
+    def run(cmd: list[str]) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(cmd, cwd=ROOT_DIR, capture_output=True, text=True)
+
+    add = run(["git", "add", *paths])
+    if add.returncode != 0:
+        print(f"ERROR: git add failed:\n{add.stderr}")
+        return 1
+
+    commit = run(
+        ["git", "commit", "-m", f"chore(release): bump version to {new_version}"]
+    )
+    if commit.returncode != 0:
+        print(f"ERROR: git commit failed:\n{commit.stdout}{commit.stderr}")
+        return 1
+    print(f"Committed version bump: {new_version}")
+
+    tag_result = run(["git", "tag", tag])
+    if tag_result.returncode != 0:
+        print(f"ERROR: git tag failed:\n{tag_result.stderr}")
+        return 1
+    print(f"Created tag: {tag}")
+
+    return 0
+
+
+def bump_version(new_version: str, dry_run: bool, no_git: bool) -> int:
     """Bump version across all packages."""
     if not validate_version(new_version):
         print(f"Error: Invalid version format '{new_version}'. Expected X.Y.Z")
@@ -175,6 +208,16 @@ def bump_version(new_version: str, dry_run: bool) -> int:
             return 1
         print("uv.lock updated.")
 
+        # Commit the bump and create a release tag
+        if no_git:
+            print()
+            print("Skipping git commit/tag (--no-git).")
+        elif current != new_version:
+            print()
+            rc = git_commit_and_tag(new_version, pyproject_files)
+            if rc != 0:
+                return rc
+
     return 0
 
 
@@ -197,6 +240,11 @@ def main() -> int:
         action="store_true",
         help="Show what would be changed without making changes",
     )
+    parser.add_argument(
+        "--no-git",
+        action="store_true",
+        help="Skip git commit and tag creation",
+    )
 
     args = parser.parse_args()
 
@@ -207,7 +255,7 @@ def main() -> int:
     if not args.version:
         parser.error("version is required (or use --current to show current version)")
 
-    return bump_version(args.version, args.dry_run)
+    return bump_version(args.version, args.dry_run, args.no_git)
 
 
 if __name__ == "__main__":
