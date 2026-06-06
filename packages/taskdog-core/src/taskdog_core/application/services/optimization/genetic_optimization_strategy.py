@@ -5,6 +5,7 @@ import random
 from datetime import date
 
 from taskdog_core.application.constants.optimization import (
+    DEFAULT_OPTIMIZATION_SEED,
     GENETIC_CROSSOVER_RATE,
     GENETIC_EARLY_TERMINATION_GENERATIONS,
     GENETIC_GENERATIONS,
@@ -60,6 +61,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         self._fitness_cache: dict[
             tuple[int | None, ...], tuple[float, dict[date, float], list[Task]]
         ] = {}
+        self._rng = random.Random()
 
     def optimize_tasks(
         self,
@@ -88,6 +90,11 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         # Clear fitness cache for new optimization run
         self._fitness_cache.clear()
+
+        # Seed a local RNG per run so identical input + seed is reproducible
+        self._rng.seed(
+            params.seed if params.seed is not None else DEFAULT_OPTIMIZATION_SEED
+        )
 
         # Run genetic algorithm to find best task order
         best_order = self._genetic_algorithm(
@@ -145,7 +152,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
         """
         # Generate initial population
         population = [
-            random.sample(tasks, len(tasks)) for _ in range(self.POPULATION_SIZE)
+            self._rng.sample(tasks, len(tasks)) for _ in range(self.POPULATION_SIZE)
         ]
 
         # Track best fitness for early termination
@@ -188,17 +195,17 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
             # Generate offspring
             while len(next_generation) < self.POPULATION_SIZE:
-                parent1 = random.choice(parents)
-                parent2 = random.choice(parents)
+                parent1 = self._rng.choice(parents)
+                parent2 = self._rng.choice(parents)
 
                 # Crossover
-                if random.random() < self.CROSSOVER_RATE:
+                if self._rng.random() < self.CROSSOVER_RATE:
                     child = self._crossover(parent1, parent2)
                 else:
                     child = copy.copy(parent1)
 
                 # Mutation
-                if random.random() < self.MUTATION_RATE:
+                if self._rng.random() < self.MUTATION_RATE:
                     child = self._mutate(child)
 
                 next_generation.append(child)
@@ -308,7 +315,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         for _ in range(len(population)):
             # Select random individuals for tournament
-            tournament_indices = random.sample(
+            tournament_indices = self._rng.sample(
                 range(len(population)), self.TOURNAMENT_SIZE
             )
             # Choose best from tournament
@@ -334,7 +341,7 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
             return list(parent1)
 
         # Select two random crossover points
-        start, end = sorted(random.sample(range(size), 2))
+        start, end = sorted(self._rng.sample(range(size), 2))
 
         # Copy segment from parent1
         child: list[Task | None] = [None] * size
@@ -367,6 +374,6 @@ class GeneticOptimizationStrategy(OptimizationStrategy):
 
         mutated = copy.copy(individual)
         # Swap two random positions
-        idx1, idx2 = random.sample(range(len(mutated)), 2)
+        idx1, idx2 = self._rng.sample(range(len(mutated)), 2)
         mutated[idx1], mutated[idx2] = mutated[idx2], mutated[idx1]
         return mutated

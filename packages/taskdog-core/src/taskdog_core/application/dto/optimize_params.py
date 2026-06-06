@@ -22,12 +22,15 @@ class OptimizeParams:
         max_hours_per_day: Maximum work hours per day
         holiday_checker: Optional holiday checker for workday validation
         include_all_days: If True, schedule tasks on weekends and holidays too (default: False)
+        seed: Seed for randomized strategies (genetic, monte_carlo). None falls back
+            to a fixed default so identical input yields an identical schedule.
     """
 
     start_date: datetime
     max_hours_per_day: float
     holiday_checker: "IHolidayChecker | None" = None
     include_all_days: bool = False
+    seed: int | None = None
 
     def __post_init__(self) -> None:
         """Validate optimization parameters."""

@@ -17,6 +17,10 @@ MONTE_CARLO_NUM_SIMULATIONS = (
     50  # Number of random simulations to run (reduced from 100 for performance)
 )
 
+# Default seed for randomized strategies (genetic, monte_carlo) so identical
+# input yields an identical schedule unless an explicit seed is provided.
+DEFAULT_OPTIMIZATION_SEED = 0
+
 # Round Robin Parameters
 ROUND_ROBIN_MAX_ITERATIONS = 10000  # Safety limit to prevent infinite loops
 
