@@ -11,18 +11,20 @@ class TestEventHandlerRegistry:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         """Set up test fixtures."""
-        self.mock_app = MagicMock()
-        self.mock_app.api_client = MagicMock()
-        self.mock_app.api_client.client_id = "test-client-id"
-        self.mock_app.task_ui_manager = MagicMock()
-        self.mock_app.notify = MagicMock()
-        # Set main_screen to None by default to avoid audit panel refresh
-        self.mock_app.main_screen = None
+        self.notify = MagicMock()
+        self.reload_tasks = MagicMock()
+        self.set_client_id = MagicMock()
+        self.get_client_id = MagicMock(return_value="test-client-id")
 
         # Import here to avoid circular import issues
         from taskdog.tui.services.event_handler_registry import EventHandlerRegistry
 
-        self.registry = EventHandlerRegistry(self.mock_app)
+        self.registry = EventHandlerRegistry(
+            notify=self.notify,
+            reload_tasks=self.reload_tasks,
+            set_client_id=self.set_client_id,
+            get_client_id=self.get_client_id,
+        )
 
     def test_handlers_registered(self) -> None:
         """Test that all expected handlers are registered."""
@@ -42,13 +44,13 @@ class TestEventHandlerRegistry:
         """Test that connected event sets client ID in API client."""
         message = {"type": "connected", "client_id": "new-client-id"}
         self.registry.dispatch(message)
-        self.mock_app.api_client.set_client_id.assert_called_once_with("new-client-id")
+        self.set_client_id.assert_called_once_with("new-client-id")
 
     def test_dispatch_connected_without_client_id(self) -> None:
         """Test that connected event without client_id doesn't fail."""
         message = {"type": "connected"}
         self.registry.dispatch(message)
-        self.mock_app.api_client.set_client_id.assert_not_called()
+        self.set_client_id.assert_not_called()
 
     def test_dispatch_task_created_reloads_tasks(self) -> None:
         """Test that task_created event triggers task reload."""
@@ -58,8 +60,8 @@ class TestEventHandlerRegistry:
             "task_name": "New Task",
         }
         self.registry.dispatch(message)
-        self.mock_app.request_reload.assert_called_once()
-        self.mock_app.notify.assert_called_once()
+        self.reload_tasks.assert_called_once()
+        self.notify.assert_called_once()
 
     def test_dispatch_task_updated_shows_fields(self) -> None:
         """Test that task_updated event shows updated fields."""
@@ -70,8 +72,8 @@ class TestEventHandlerRegistry:
             "updated_fields": ["priority", "deadline"],
         }
         self.registry.dispatch(message)
-        self.mock_app.request_reload.assert_called_once()
-        self.mock_app.notify.assert_called_once()
+        self.reload_tasks.assert_called_once()
+        self.notify.assert_called_once()
 
     def test_dispatch_task_deleted_shows_warning(self) -> None:
         """Test that task_deleted event shows warning notification."""
@@ -81,10 +83,10 @@ class TestEventHandlerRegistry:
             "task_name": "Deleted Task",
         }
         self.registry.dispatch(message)
-        self.mock_app.request_reload.assert_called_once()
-        self.mock_app.notify.assert_called_once()
+        self.reload_tasks.assert_called_once()
+        self.notify.assert_called_once()
         # Verify warning severity
-        call_args = self.mock_app.notify.call_args
+        call_args = self.notify.call_args
         assert call_args.kwargs.get("severity") == "warning"
 
     def test_dispatch_task_status_changed_shows_transition(self) -> None:
@@ -97,8 +99,8 @@ class TestEventHandlerRegistry:
             "new_status": "IN_PROGRESS",
         }
         self.registry.dispatch(message)
-        self.mock_app.request_reload.assert_called_once()
-        self.mock_app.notify.assert_called_once()
+        self.reload_tasks.assert_called_once()
+        self.notify.assert_called_once()
 
     def test_dispatch_schedule_optimized(self) -> None:
         """Test that schedule_optimized event shows optimization result."""
@@ -109,22 +111,22 @@ class TestEventHandlerRegistry:
             "algorithm": "greedy",
         }
         self.registry.dispatch(message)
-        self.mock_app.request_reload.assert_called_once()
-        self.mock_app.notify.assert_called_once()
+        self.reload_tasks.assert_called_once()
+        self.notify.assert_called_once()
 
     def test_dispatch_unknown_event_type_ignored(self) -> None:
         """Test that unknown event types are silently ignored."""
         message = {"type": "unknown_event_type"}
         # Should not raise
         self.registry.dispatch(message)
-        self.mock_app.notify.assert_not_called()
+        self.notify.assert_not_called()
 
     def test_dispatch_without_type_ignored(self) -> None:
         """Test that messages without type are silently ignored."""
         message = {"data": "something"}
         # Should not raise
         self.registry.dispatch(message)
-        self.mock_app.notify.assert_not_called()
+        self.notify.assert_not_called()
 
     def test_source_client_id_hidden_when_same(self) -> None:
         """Test that source client ID is not shown when same as this client."""
@@ -132,7 +134,7 @@ class TestEventHandlerRegistry:
             "type": "task_created",
             "task_id": 1,
             "task_name": "Task",
-            "source_client_id": "test-client-id",  # Same as mock_app.api_client.client_id
+            "source_client_id": "test-client-id",  # Same as get_client_id() return
         }
         self.registry.dispatch(message)
         # The source should not be displayed in the notification
@@ -149,18 +151,6 @@ class TestEventHandlerRegistry:
         }
         result = self.registry._get_display_source(message)
         assert result == "other-client-id"
-
-    def test_no_task_ui_manager_does_not_fail(self) -> None:
-        """Test that events don't fail when task_ui_manager is None."""
-        self.mock_app.task_ui_manager = None
-        message = {
-            "type": "task_created",
-            "task_id": 1,
-            "task_name": "Task",
-        }
-        # Should not raise
-        self.registry.dispatch(message)
-        self.mock_app.notify.assert_called_once()
 
     def test_source_user_name_preferred_over_client_id(self) -> None:
         """Test that source_user_name is preferred over source_client_id."""
@@ -216,13 +206,13 @@ class TestEventHandlerRegistry:
         """Test that dispatch ignores non-string type values."""
         message = {"type": 123}  # Integer type
         self.registry.dispatch(message)
-        self.mock_app.notify.assert_not_called()
+        self.notify.assert_not_called()
 
     def test_schedule_optimized_uses_defaults(self) -> None:
         """Test schedule_optimized with missing fields uses defaults."""
         message = {"type": "schedule_optimized"}
         self.registry.dispatch(message)
-        self.mock_app.notify.assert_called_once()
+        self.notify.assert_called_once()
         # Should not raise and should show notification
 
     def test_task_updated_without_fields(self) -> None:
@@ -233,7 +223,7 @@ class TestEventHandlerRegistry:
             "task_name": "Updated Task",
         }
         self.registry.dispatch(message)
-        self.mock_app.notify.assert_called_once()
+        self.notify.assert_called_once()
 
     def test_task_status_changed_without_statuses(self) -> None:
         """Test task_status_changed with missing status fields."""
@@ -243,7 +233,7 @@ class TestEventHandlerRegistry:
             "task_name": "Task",
         }
         self.registry.dispatch(message)
-        self.mock_app.notify.assert_called_once()
+        self.notify.assert_called_once()
 
     def test_dispatch_bulk_operation_completed_all_success(self) -> None:
         """Test bulk_operation_completed with all tasks succeeding."""
@@ -255,9 +245,9 @@ class TestEventHandlerRegistry:
             "task_ids": [1, 2, 3],
         }
         self.registry.dispatch(message)
-        self.mock_app.request_reload.assert_called_once()
-        self.mock_app.notify.assert_called_once()
-        call_args = self.mock_app.notify.call_args
+        self.reload_tasks.assert_called_once()
+        self.notify.assert_called_once()
+        call_args = self.notify.call_args
         assert "3/3" in call_args[0][0]
         assert call_args.kwargs.get("severity") == "information"
 
@@ -271,9 +261,9 @@ class TestEventHandlerRegistry:
             "task_ids": [1, 2, 3],
         }
         self.registry.dispatch(message)
-        self.mock_app.request_reload.assert_called_once()
-        self.mock_app.notify.assert_called_once()
-        call_args = self.mock_app.notify.call_args
+        self.reload_tasks.assert_called_once()
+        self.notify.assert_called_once()
+        call_args = self.notify.call_args
         assert "2/3" in call_args[0][0]
         assert call_args.kwargs.get("severity") == "warning"
 
@@ -281,8 +271,8 @@ class TestEventHandlerRegistry:
         """Test bulk_operation_completed with missing fields uses defaults."""
         message = {"type": "bulk_operation_completed"}
         self.registry.dispatch(message)
-        self.mock_app.notify.assert_called_once()
-        call_args = self.mock_app.notify.call_args
+        self.notify.assert_called_once()
+        call_args = self.notify.call_args
         assert "0/0" in call_args[0][0]
         assert "unknown" in call_args[0][0]
 
@@ -294,7 +284,7 @@ class TestEventHandlerRegistry:
             "task_name": "Task",
         }
         self.registry.dispatch(message)
-        self.mock_app.request_reload.assert_called_once_with()
+        self.reload_tasks.assert_called_once_with()
 
 
 class TestWebSocketHandler:
@@ -303,19 +293,23 @@ class TestWebSocketHandler:
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         """Set up test fixtures."""
-        self.mock_app = MagicMock()
-        self.mock_app.api_client = MagicMock()
-        self.mock_app.api_client.client_id = "test-client-id"
-        self.mock_app.task_ui_manager = MagicMock()
-        self.mock_app.notify = MagicMock()
+        self.notify = MagicMock()
+        self.reload_tasks = MagicMock()
+        self.set_client_id = MagicMock()
+        self.get_client_id = MagicMock(return_value="test-client-id")
 
     def test_handle_message_delegates_to_registry(self) -> None:
         """Test that WebSocketHandler delegates to EventHandlerRegistry."""
         from taskdog.tui.services.websocket_handler import WebSocketHandler
 
-        handler = WebSocketHandler(self.mock_app)
+        handler = WebSocketHandler(
+            notify=self.notify,
+            reload_tasks=self.reload_tasks,
+            set_client_id=self.set_client_id,
+            get_client_id=self.get_client_id,
+        )
         message = {"type": "connected", "client_id": "new-client"}
 
         handler.handle_message(message)
 
-        self.mock_app.api_client.set_client_id.assert_called_once_with("new-client")
+        self.set_client_id.assert_called_once_with("new-client")

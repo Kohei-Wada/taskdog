@@ -5,10 +5,18 @@ to their appropriate handlers, replacing if-elif chains with a lookup table.
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal, Protocol
 
-if TYPE_CHECKING:
-    from taskdog.tui.app import TaskdogTUI
+
+class NotifyFn(Protocol):
+    """Callable that surfaces a notification to the user."""
+
+    def __call__(
+        self,
+        message: str,
+        *,
+        severity: Literal["information", "warning", "error"] = ...,
+    ) -> None: ...
 
 
 class EventHandlerRegistry:
@@ -18,13 +26,26 @@ class EventHandlerRegistry:
     dispatch mechanism for incoming WebSocket messages.
     """
 
-    def __init__(self, app: "TaskdogTUI"):
+    def __init__(
+        self,
+        *,
+        notify: NotifyFn,
+        reload_tasks: Callable[[], None],
+        set_client_id: Callable[[str], None],
+        get_client_id: Callable[[], str | None],
+    ) -> None:
         """Initialize the event handler registry.
 
         Args:
-            app: The TaskdogTUI application instance
+            notify: Show a notification to the user.
+            reload_tasks: Trigger the app's debounced task-list reload.
+            set_client_id: Record this client's ID (from the connected event).
+            get_client_id: Read this client's current ID.
         """
-        self.app = app
+        self._notify = notify
+        self._reload_tasks = reload_tasks
+        self._set_client_id = set_client_id
+        self._get_client_id = get_client_id
         self._handlers: dict[str, Callable[[dict[str, Any]], None]] = {}
         self._register_handlers()
 
@@ -60,7 +81,7 @@ class EventHandlerRegistry:
         """
         client_id = message.get("client_id")
         if client_id:
-            self.app.api_client.set_client_id(client_id)
+            self._set_client_id(client_id)
 
     def _handle_task_event(
         self,
@@ -91,7 +112,7 @@ class EventHandlerRegistry:
             details=details,
             source_client_id=display_source,
         )
-        self.app.notify(msg, severity=severity)
+        self._notify(msg, severity=severity)
 
     def _handle_task_created(self, message: dict[str, Any]) -> None:
         """Handle task created event."""
@@ -136,7 +157,7 @@ class EventHandlerRegistry:
         msg = TUIMessageBuilder.schedule_optimized(
             algorithm, scheduled_count, failed_count
         )
-        self.app.notify(msg, severity="information")
+        self._notify(msg, severity="information")
 
     def _handle_bulk_operation_completed(self, message: dict[str, Any]) -> None:
         """Handle bulk operation completed event."""
@@ -147,13 +168,9 @@ class EventHandlerRegistry:
         total = success_count + failure_count
         msg = f"Bulk {operation}: {success_count}/{total} succeeded"
         if failure_count > 0:
-            self.app.notify(msg, severity="warning")
+            self._notify(msg, severity="warning")
         else:
-            self.app.notify(msg, severity="information")
-
-    def _reload_tasks(self) -> None:
-        """Reload tasks via the app's single debounced reload funnel."""
-        self.app.request_reload()
+            self._notify(msg, severity="information")
 
     def _get_display_source(self, message: dict[str, Any]) -> str | None:
         """Get display source (user name or client ID) if different from this client.
@@ -173,7 +190,7 @@ class EventHandlerRegistry:
         source_client_id = message.get("source_client_id")
         if (
             isinstance(source_client_id, str)
-            and source_client_id != self.app.api_client.client_id
+            and source_client_id != self._get_client_id()
         ):
             return source_client_id
         return None
