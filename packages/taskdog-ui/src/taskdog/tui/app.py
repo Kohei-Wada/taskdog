@@ -40,6 +40,7 @@ from taskdog.tui.palette.providers import (
     BackupCommandProvider,
     ExportCommandProvider,
     ExportFormatProvider,
+    GanttFilterCommandProvider,
     HelpCommandProvider,
     OptimizeCommandProvider,
     SortCommandProvider,
@@ -208,6 +209,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         OptimizeCommandProvider,
         ExportCommandProvider,
         BackupCommandProvider,
+        GanttFilterCommandProvider,
         HelpCommandProvider,
     }
 
