@@ -98,3 +98,32 @@ class TestRestoreEndpoint:
         )
 
         assert response.status_code == 400
+
+
+class TestInMemoryStoreNotSupported:
+    """An in-memory store cannot be backed up/restored -> 501, not 500."""
+
+    @pytest.fixture
+    def client(self) -> TestClient:
+        app = FastAPI()
+        register_exception_handlers(app)
+
+        class _Ctx:
+            backup_controller = BackupController(
+                SqliteBackupStore("sqlite:///:memory:")
+            )
+
+        app.state.api_context = _Ctx()
+        app.state.server_config = ServerConfig(auth=AuthConfig(enabled=False))
+        app.include_router(backup_router, prefix="/api/v1", tags=["backup"])
+        return TestClient(app, raise_server_exceptions=False)
+
+    def test_backup_returns_501(self, client: TestClient) -> None:
+        assert client.get("/api/v1/backup").status_code == 501
+
+    def test_restore_returns_501(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/v1/restore",
+            files={"file": ("x.db", b"data", "application/octet-stream")},
+        )
+        assert response.status_code == 501

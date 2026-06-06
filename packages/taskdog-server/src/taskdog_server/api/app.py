@@ -1,5 +1,6 @@
 """FastAPI application factory and configuration."""
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -54,8 +55,16 @@ def create_app() -> FastAPI:
         configure_logging()
 
         # Apply a pending restore (if any) BEFORE the engine is created, so the
-        # restored DB is what Alembic then migrates forward.
-        SqliteBackupStore(resolve_database_url(config)).apply_pending_restore()
+        # restored DB is what Alembic then migrates forward. A failed swap must
+        # not leave the server permanently unstartable: log and continue with
+        # the existing DB, leaving the pending file for a later retry.
+        try:
+            SqliteBackupStore(resolve_database_url(config)).apply_pending_restore()
+        except OSError:
+            logging.getLogger(__name__).exception(
+                "Failed to apply pending database restore; "
+                "starting with the existing database."
+            )
 
         # Initialize API context and store in app.state
         api_context = initialize_api_context(config)

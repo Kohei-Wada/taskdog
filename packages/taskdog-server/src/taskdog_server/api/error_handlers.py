@@ -8,7 +8,10 @@ try/except blocks.
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from taskdog_core.domain.exceptions.backup_exceptions import BackupValidationError
+from taskdog_core.domain.exceptions.backup_exceptions import (
+    BackupNotSupportedError,
+    BackupValidationError,
+)
 from taskdog_core.domain.exceptions.tag_exceptions import TagNotFoundException
 from taskdog_core.domain.exceptions.task_exceptions import (
     TaskNotFoundException,
@@ -30,11 +33,19 @@ async def _bad_request_handler(_request: Request, exc: Exception) -> JSONRespons
     )
 
 
+async def _not_implemented_handler(_request: Request, exc: Exception) -> JSONResponse:
+    """Map unsupported-operation domain exceptions to 501 NOT_IMPLEMENTED."""
+    return JSONResponse(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED, content={"detail": str(exc)}
+    )
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Register domain exception handlers on the FastAPI app.
 
     - TaskNotFoundException, TagNotFoundException -> 404 NOT_FOUND
-    - TaskValidationError (and subclasses) -> 400 BAD_REQUEST
+    - TaskValidationError (and subclasses), BackupValidationError -> 400 BAD_REQUEST
+    - BackupNotSupportedError -> 501 NOT_IMPLEMENTED
 
     Starlette resolves handlers by walking the exception's MRO, so registering
     TaskValidationError also covers TaskAlreadyFinishedError, TaskNotStartedError,
@@ -47,3 +58,4 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(TagNotFoundException, _not_found_handler)
     app.add_exception_handler(TaskValidationError, _bad_request_handler)
     app.add_exception_handler(BackupValidationError, _bad_request_handler)
+    app.add_exception_handler(BackupNotSupportedError, _not_implemented_handler)

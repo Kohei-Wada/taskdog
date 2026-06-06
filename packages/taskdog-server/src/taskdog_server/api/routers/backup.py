@@ -1,5 +1,6 @@
 """Backup/restore endpoints for the SQLite store."""
 
+from collections.abc import Iterator
 from datetime import datetime
 from typing import Annotated
 
@@ -13,6 +14,9 @@ from taskdog_server.api.dependencies import (
 )
 
 router = APIRouter()
+
+# Read the spooled upload back off disk in 1 MiB chunks.
+_CHUNK_SIZE = 1024 * 1024
 
 
 @router.get("/backup")
@@ -37,5 +41,12 @@ async def restore(
     file: Annotated[UploadFile, File()],
 ) -> RestoreResultDTO:
     """Stage an uploaded `.db` snapshot to be applied on the next server restart."""
-    data = await file.read()
-    return controller.restore(iter([data]))
+
+    # Starlette already spooled the upload to a temp file, so read it back in
+    # bounded chunks instead of loading the whole DB into memory.
+    def _chunks() -> Iterator[bytes]:
+        file.file.seek(0)
+        while chunk := file.file.read(_CHUNK_SIZE):
+            yield chunk
+
+    return controller.restore(_chunks())

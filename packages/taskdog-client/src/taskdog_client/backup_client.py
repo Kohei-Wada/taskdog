@@ -40,6 +40,9 @@ class BackupClient:
             TaskNotFoundException / TaskValidationError / AuthenticationError /
             ServerError: Mapped from non-success HTTP responses.
         """
+        # Download to a temp file and atomically rename, so an interrupted
+        # download never leaves a corrupt partial snapshot at output_path.
+        tmp_path = output_path.with_name(output_path.name + ".part")
         try:
             with self._base.client.stream(
                 "GET", "/api/v1/backup", headers=self._base.auth_headers()
@@ -47,11 +50,16 @@ class BackupClient:
                 if not response.is_success:
                     response.read()
                     self._base._handle_error(response)
-                with output_path.open("wb") as out:
+                with tmp_path.open("wb") as out:
                     for chunk in response.iter_bytes(_CHUNK_SIZE):
                         out.write(chunk)
+            tmp_path.replace(output_path)
         except (httpx.ConnectError, httpx.TimeoutException, httpx.RequestError) as e:
+            tmp_path.unlink(missing_ok=True)
             raise ServerConnectionError(self._base.base_url, e) from e
+        except BaseException:
+            tmp_path.unlink(missing_ok=True)
+            raise
 
     def restore(self, file_path: Path) -> RestoreResultDTO:
         """Upload a `.db` snapshot to stage a restore.

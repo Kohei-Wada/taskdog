@@ -34,6 +34,8 @@ class TestBackupClient:
         self.client.backup(out)
 
         assert out.read_bytes() == b"chunk-1chunk-2"
+        # The temp file is renamed away on success.
+        assert not (tmp_path / "backup.db.part").exists()
 
     def test_backup_maps_error_response(self, tmp_path: Path):
         """A non-success response is routed through the base error handler."""
@@ -50,6 +52,9 @@ class TestBackupClient:
         with pytest.raises(RuntimeError, match="boom"):
             self.client.backup(tmp_path / "backup.db")
         self.mock_base._handle_error.assert_called_once_with(response)
+        # No partial file and no corrupt output left behind on failure.
+        assert not (tmp_path / "backup.db.part").exists()
+        assert not (tmp_path / "backup.db").exists()
 
     def test_restore_uploads_file_and_returns_dto(self, tmp_path: Path):
         """restore posts a multipart upload and parses the pending result."""
