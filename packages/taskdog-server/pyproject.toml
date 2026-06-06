@@ -47,18 +47,9 @@ Repository = "https://github.com/Kohei-Wada/taskdog"
 requires = ["setuptools>=68.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = [
-    "taskdog_server",
-    "taskdog_server.api",
-    "taskdog_server.api.models",
-    "taskdog_server.api.routers",
-    "taskdog_server.config",
-    "taskdog_server.websocket",
-    "taskdog_server.infrastructure",
-    "taskdog_server.infrastructure.logging",
-]
-package-dir = { "" = "src" }
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["taskdog*"]
 
 [tool.setuptools.package-data]
 taskdog_server = ["py.typed"]
