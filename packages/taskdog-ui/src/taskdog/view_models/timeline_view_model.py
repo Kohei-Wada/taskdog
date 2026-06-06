@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import date, time
 
 from taskdog.view_models.base import BaseViewModel
-from taskdog_core.domain.entities.task import TaskStatus
+from taskdog.view_models.status import TaskStatus
 
 
 @dataclass(frozen=True)

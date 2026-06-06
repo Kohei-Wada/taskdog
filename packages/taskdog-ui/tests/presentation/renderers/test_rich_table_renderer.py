@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from taskdog.renderers.rich_table_renderer import RichTableRenderer
+from taskdog.view_models.status import TaskStatus
 from taskdog.view_models.task_view_model import TaskRowViewModel
-from taskdog_core.domain.entities.task import TaskStatus
 
 
 class TestRichTableRenderer:

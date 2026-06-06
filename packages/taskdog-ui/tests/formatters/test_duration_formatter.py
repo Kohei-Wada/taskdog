@@ -6,8 +6,8 @@ from unittest.mock import patch
 import pytest
 
 from taskdog.formatters.duration_formatter import DurationFormatter
+from taskdog.view_models.status import TaskStatus
 from taskdog.view_models.task_view_model import TaskRowViewModel
-from taskdog_core.domain.entities.task import TaskStatus
 
 
 class TestDurationFormatter:

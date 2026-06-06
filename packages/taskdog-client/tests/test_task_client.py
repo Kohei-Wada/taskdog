@@ -6,8 +6,6 @@ from unittest.mock import Mock, patch
 import pytest
 from taskdog_client.task_client import TaskClient
 
-from taskdog_core.domain.entities.task import TaskStatus
-
 
 class TestTaskClient:
     """Test cases for TaskClient."""
@@ -57,7 +55,7 @@ class TestTaskClient:
         payload = self.client._build_update_payload(
             name="Updated",
             priority=75,
-            status=TaskStatus.IN_PROGRESS,
+            status="IN_PROGRESS",
             planned_start=datetime(2025, 1, 1, 9, 0),
             planned_end=datetime(2025, 1, 5, 17, 0),
             deadline=datetime(2025, 12, 31, 23, 59),

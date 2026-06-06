@@ -6,6 +6,7 @@ import pytest
 from fixtures.repositories import InMemoryTaskRepository
 
 from taskdog.presenters.table_presenter import TablePresenter
+from taskdog.view_models.status import TaskStatus as UITaskStatus
 from taskdog_core.application.dto.task_dto import TaskRowDto
 from taskdog_core.application.dto.task_list_output import TaskListOutput
 from taskdog_core.domain.entities.task import TaskStatus
@@ -46,10 +47,10 @@ class TestTablePresenter:
         assert len(view_models) == 2
         assert view_models[0].id == task1.id
         assert view_models[0].name == "Task 1"
-        assert view_models[0].status == TaskStatus.PENDING
+        assert view_models[0].status == UITaskStatus.PENDING
         assert view_models[1].id == task2.id
         assert view_models[1].name == "Task 2"
-        assert view_models[1].status == TaskStatus.IN_PROGRESS
+        assert view_models[1].status == UITaskStatus.IN_PROGRESS
 
     def test_present_includes_has_notes_from_dto(self):
         """Test present uses has_notes from TaskRowDto."""

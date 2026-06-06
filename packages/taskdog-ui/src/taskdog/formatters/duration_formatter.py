@@ -2,8 +2,8 @@
 
 from datetime import datetime
 
+from taskdog.view_models.status import TaskStatus
 from taskdog.view_models.task_view_model import TaskRowViewModel
-from taskdog_core.domain.entities.task import TaskStatus
 
 
 class DurationFormatter:

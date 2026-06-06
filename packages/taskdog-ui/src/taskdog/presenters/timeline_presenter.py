@@ -11,6 +11,7 @@ from taskdog.constants.timeline import (
     DEFAULT_START_HOUR,
     MIN_DISPLAY_HOURS,
 )
+from taskdog.view_models.status import TaskStatus
 from taskdog.view_models.timeline_view_model import (
     TimelineTaskRowViewModel,
     TimelineViewModel,
@@ -138,7 +139,7 @@ class TimelinePresenter:
             actual_start=start_time,
             actual_end=end_time,
             duration_hours=duration_hours,
-            status=task_row.status,
+            status=TaskStatus(task_row.status.value),
             is_finished=is_finished,
         )
 

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from taskdog.cli.context import CliContext
-from taskdog_core.domain.entities.task import TaskStatus
+from taskdog.view_models.status import TaskStatus
 
 
 def _validate_name(
@@ -103,15 +103,12 @@ def update_command(
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer
 
-    # Convert status string to Enum if provided
-    status_enum = TaskStatus(status) if status else None
-
     # Update task via API client
     result = ctx_obj.api_client.update_task(
         task_id=task_id,
         name=name,
         priority=priority,
-        status=status_enum,
+        status=status,
         planned_start=planned_start,
         planned_end=planned_end,
         deadline=deadline,

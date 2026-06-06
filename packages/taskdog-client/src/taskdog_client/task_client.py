@@ -10,7 +10,6 @@ from taskdog_client.converters import (
 )
 from taskdog_core.application.dto.task_operation_output import TaskOperationOutput
 from taskdog_core.application.dto.update_task_output import TaskUpdateOutput
-from taskdog_core.domain.entities.task import TaskStatus
 
 
 class TaskClient:
@@ -76,7 +75,7 @@ class TaskClient:
         self,
         name: str | None,
         priority: int | None,
-        status: TaskStatus | None,
+        status: str | None,
         planned_start: datetime | None,
         planned_end: datetime | None,
         deadline: datetime | None,
@@ -106,7 +105,7 @@ class TaskClient:
         if priority is not None:
             payload["priority"] = priority
         if status is not None:
-            payload["status"] = status.value
+            payload["status"] = status
         if planned_start is not None:
             payload["planned_start"] = planned_start.isoformat()
         if planned_end is not None:
@@ -126,7 +125,7 @@ class TaskClient:
         task_id: int,
         name: str | None = None,
         priority: int | None = None,
-        status: TaskStatus | None = None,
+        status: str | None = None,
         planned_start: datetime | None = None,
         planned_end: datetime | None = None,
         deadline: datetime | None = None,

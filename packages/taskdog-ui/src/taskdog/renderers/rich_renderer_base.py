@@ -1,7 +1,7 @@
 """Base class for Rich-based task renderers."""
 
 from taskdog.constants.colors import STATUS_STYLES
-from taskdog_core.domain.entities.task import TaskStatus
+from taskdog.view_models.status import TaskStatus
 
 
 class RichRendererBase:
