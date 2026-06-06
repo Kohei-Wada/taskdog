@@ -70,7 +70,7 @@ If you don't create any config files, Taskdog uses sensible defaults:
 taskdog-server  # Listens on 127.0.0.1:8000
 
 # Use CLI with defaults
-taskdog table   # Connects to 127.0.0.1:8000
+taskdog list   # Connects to 127.0.0.1:8000
 ```
 
 No configuration needed!
@@ -157,7 +157,7 @@ This separation provides several benefits:
 
 ```bash
 taskdog-server  # Uses defaults
-taskdog table   # Uses defaults
+taskdog list   # Uses defaults
 ```
 
 ### Scenario 2: Custom Server Port
@@ -220,7 +220,7 @@ Both configs support environment variable overrides:
 ```bash
 export TASKDOG_API_HOST=192.168.1.100
 export TASKDOG_API_PORT=3000
-taskdog table
+taskdog list
 ```
 
 ### Core (`core.toml`)

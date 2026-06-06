@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from click.testing import CliRunner
 
-from taskdog.cli.commands.add_dependency import add_dependency_command
+from taskdog.cli.commands.dep.add import add_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
@@ -30,9 +30,7 @@ class TestAddDependencyCommand:
         self.api_client.add_dependency.return_value = mock_task
 
         # Execute
-        result = self.runner.invoke(
-            add_dependency_command, ["5", "3"], obj=self.cli_context
-        )
+        result = self.runner.invoke(add_command, ["5", "3"], obj=self.cli_context)
 
         # Verify
         assert result.exit_code == 0
@@ -46,9 +44,7 @@ class TestAddDependencyCommand:
         self.api_client.add_dependency.side_effect = TaskNotFoundException(999)
 
         # Execute
-        result = self.runner.invoke(
-            add_dependency_command, ["999", "3"], obj=self.cli_context
-        )
+        result = self.runner.invoke(add_command, ["999", "3"], obj=self.cli_context)
 
         # Verify
         assert result.exit_code == 0
@@ -61,9 +57,7 @@ class TestAddDependencyCommand:
         self.api_client.add_dependency.side_effect = error
 
         # Execute
-        result = self.runner.invoke(
-            add_dependency_command, ["5", "3"], obj=self.cli_context
-        )
+        result = self.runner.invoke(add_command, ["5", "3"], obj=self.cli_context)
 
         # Verify
         assert result.exit_code == 0
@@ -71,10 +65,10 @@ class TestAddDependencyCommand:
 
     def test_missing_task_id(self):
         """Test add-dependency without task_id argument."""
-        result = self.runner.invoke(add_dependency_command, ["3"], obj=self.cli_context)
+        result = self.runner.invoke(add_command, ["3"], obj=self.cli_context)
         assert result.exit_code != 0
 
     def test_missing_depends_on_id(self):
         """Test add-dependency without depends_on_id argument."""
-        result = self.runner.invoke(add_dependency_command, ["5"], obj=self.cli_context)
+        result = self.runner.invoke(add_command, ["5"], obj=self.cli_context)
         assert result.exit_code != 0

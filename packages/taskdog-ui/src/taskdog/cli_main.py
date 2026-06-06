@@ -1,4 +1,3 @@
-import importlib
 from typing import Any
 
 import click
@@ -6,6 +5,7 @@ from rich.console import Console
 
 from taskdog import __version__
 from taskdog.cli.context import CliContext
+from taskdog.cli.lazy_group import LazyGroup
 from taskdog.console.rich_console_writer import RichConsoleWriter
 from taskdog.infrastructure.cli_config_manager import load_cli_config
 
@@ -15,37 +15,42 @@ from taskdog.infrastructure.cli_config_manager import load_cli_config
 # commands WITHOUT importing them — importing a command drags in heavy deps
 # (rich, markdown_it, pydantic DTOs, Textual for `tui`) and dominates startup.
 # Each command module is imported only when that command is actually invoked.
-# This mirrors pip's `commands_dict` registry.
+# This mirrors pip's `commands_dict` registry. Noun subgroups (dep, tag, db,
+# audit) are themselves lazy groups, so listing them imports nothing either.
 LAZY_SUBCOMMANDS: dict[str, tuple[str, str]] = {
     "add": ("taskdog.cli.commands.add.add_command", "Add a new task."),
-    "add-dependency": (
-        "taskdog.cli.commands.add_dependency.add_dependency_command",
-        "Add a dependency to a task.",
-    ),
-    "audit-logs": (
-        "taskdog.cli.commands.audit_logs.audit_logs_command",
-        "Display operation history (audit logs).",
-    ),
-    "backup": (
-        "taskdog.cli.commands.backup.backup_command",
-        "Back up the database to a physical .db snapshot.",
+    "audit": (
+        "taskdog.cli.commands.audit.audit_group",
+        "Inspect operation history (audit logs).",
     ),
     "cancel": (
         "taskdog.cli.commands.cancel.cancel_command",
         "Mark task(s) as canceled.",
+    ),
+    "db": (
+        "taskdog.cli.commands.db.db_group",
+        "Back up and restore the database.",
+    ),
+    "dep": (
+        "taskdog.cli.commands.dep.dep_group",
+        "Manage task dependencies.",
     ),
     "done": ("taskdog.cli.commands.done.done_command", "Mark task(s) as completed."),
     "export": (
         "taskdog.cli.commands.export.export_command",
         "Export tasks to various formats (exports non-archived tasks by default).",
     ),
-    "fix-actual": (
-        "taskdog.cli.commands.fix_actual.fix_actual_command",
+    "fix-times": (
+        "taskdog.cli.commands.fix_times.fix_times_command",
         "Correct actual start/end timestamps and duration for a task.",
     ),
     "gantt": (
         "taskdog.cli.commands.gantt.gantt_command",
         "Display tasks in Gantt chart format with workload analysis.",
+    ),
+    "list": (
+        "taskdog.cli.commands.list.list_command",
+        "Display tasks in flat table format (shows non-archived tasks by default).",
     ),
     "note": ("taskdog.cli.commands.note.note_command", "Edit task notes in markdown."),
     "optimize": (
@@ -56,10 +61,6 @@ LAZY_SUBCOMMANDS: dict[str, tuple[str, str]] = {
         "taskdog.cli.commands.pause.pause_command",
         "Pause task(s) and reset time tracking (sets status to PENDING).",
     ),
-    "remove-dependency": (
-        "taskdog.cli.commands.remove_dependency.remove_dependency_command",
-        "Remove a dependency from a task.",
-    ),
     "reopen": (
         "taskdog.cli.commands.reopen.reopen_command",
         "Reopen completed or canceled task(s).",
@@ -67,10 +68,6 @@ LAZY_SUBCOMMANDS: dict[str, tuple[str, str]] = {
     "restore": (
         "taskdog.cli.commands.restore.restore_command",
         "Restore archived task(s).",
-    ),
-    "restore-db": (
-        "taskdog.cli.commands.restore_db.restore_db_command",
-        "Restore the database from a physical .db snapshot (applied on restart).",
     ),
     "rm": (
         "taskdog.cli.commands.rm.rm_command",
@@ -88,12 +85,8 @@ LAZY_SUBCOMMANDS: dict[str, tuple[str, str]] = {
         "taskdog.cli.commands.stats.stats_command",
         "Display task statistics and analytics.",
     ),
-    "table": (
-        "taskdog.cli.commands.table.table_command",
-        "Display tasks in flat table format (shows non-archived tasks by default).",
-    ),
-    "tags": (
-        "taskdog.cli.commands.tags.tags_command",
+    "tag": (
+        "taskdog.cli.commands.tag.tag_group",
         "View, set, or delete task tags.",
     ),
     "timeline": (
@@ -110,60 +103,12 @@ LAZY_SUBCOMMANDS: dict[str, tuple[str, str]] = {
     ),
 }
 
+# Aliases: alias -> canonical command name (hidden from the command listing).
+COMMAND_ALIASES: dict[str, str] = {"ls": "list"}
 
-class TaskdogGroup(click.Group):
-    """Custom Click Group with lazy loading and ASCII art help display.
 
-    Implements Click's LazyGroup pattern (see
-    https://click.palletsprojects.com/en/stable/complex/) so that no subcommand
-    module is imported until the command is actually invoked. ``--help`` lists
-    commands from the static summaries in ``LAZY_SUBCOMMANDS`` instead of
-    importing them, keeping startup fast.
-    """
-
-    def __init__(
-        self,
-        *args: Any,
-        lazy_subcommands: dict[str, tuple[str, str]] | None = None,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self.lazy_subcommands = lazy_subcommands or {}
-
-    def list_commands(self, ctx: click.Context) -> list[str]:
-        """List all commands (eager + lazy), sorted."""
-        return sorted({*super().list_commands(ctx), *self.lazy_subcommands})
-
-    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
-        """Get a command, importing it lazily on first use."""
-        if cmd_name in self.lazy_subcommands:
-            import_path = self.lazy_subcommands[cmd_name][0]
-            modname, attr = import_path.rsplit(".", 1)
-            cmd: click.Command = getattr(importlib.import_module(modname), attr)
-            return cmd
-        return super().get_command(ctx, cmd_name)
-
-    def format_commands(self, ctx: click.Context, formatter: Any) -> None:
-        """List commands using static summaries so help imports nothing."""
-        names = self.list_commands(ctx)
-        if not names:
-            return
-        limit = formatter.width - 6 - max(len(name) for name in names)
-        rows = []
-        for name in names:
-            if name in self.lazy_subcommands:
-                summary = self.lazy_subcommands[name][1]
-                if len(summary) > limit:
-                    summary = summary[: max(limit - 3, 0)].rstrip() + "..."
-            else:
-                cmd = super().get_command(ctx, name)
-                if cmd is None or cmd.hidden:
-                    continue
-                summary = cmd.get_short_help_str(limit)
-            rows.append((name, summary))
-        if rows:
-            with formatter.section("Commands"):
-                formatter.write_dl(rows)
+class TaskdogGroup(LazyGroup):
+    """Root group: lazy loading (via LazyGroup) plus ASCII art in --help."""
 
     def format_help(self, ctx: click.Context, formatter: Any) -> None:
         """Override format_help to add ASCII art before help text."""
@@ -186,6 +131,7 @@ class TaskdogGroup(click.Group):
 @click.group(
     cls=TaskdogGroup,
     lazy_subcommands=LAZY_SUBCOMMANDS,
+    aliases=COMMAND_ALIASES,
     context_settings={"help_option_names": ["-h", "--help"]},
     invoke_without_command=True,
 )

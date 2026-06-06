@@ -120,7 +120,7 @@ The server will now:
 
 ```bash
 # In a new terminal, test the CLI
-taskdog table
+taskdog list
 
 # If you see an empty table (or a list of tasks), you're ready!
 ```
@@ -134,7 +134,7 @@ Now that everything is set up, try these commands:
 taskdog add "Learn Taskdog" --priority 10
 
 # View tasks in a table
-taskdog table
+taskdog list
 
 # Start working on the task
 taskdog start 1
@@ -296,7 +296,7 @@ See [taskdog-mcp README](../packages/taskdog-mcp/README.md) for more details.
 - Check [CLAUDE.md](../CLAUDE.md) for architecture details
 - Explore optimization algorithms: `taskdog optimize --help`
 - Try the Gantt chart: `taskdog gantt`
-- Add dependencies: `taskdog add-dependency TASK_ID DEPENDS_ON_ID`
+- Add dependencies: `taskdog dep add TASK_ID DEPENDS_ON_ID`
 - Set up MCP for AI-assisted task management
 
 ## Environment Variable Alternative
@@ -310,7 +310,7 @@ export TASKDOG_API_PORT=8000
 export TASKDOG_API_KEY=sk-your-api-key
 
 # Or set them temporarily
-TASKDOG_API_KEY=sk-your-key taskdog table
+TASKDOG_API_KEY=sk-your-key taskdog list
 ```
 
 Note: Environment variables take precedence over config file.

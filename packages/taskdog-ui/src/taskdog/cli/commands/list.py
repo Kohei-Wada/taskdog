@@ -1,4 +1,4 @@
-"""Table command - Display tasks in flat table format."""
+"""List command - Display tasks in flat table format."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from taskdog.shared.click_types.field_list import FieldList
 
 
 @click.command(
-    name="table",
+    name="list",
     help="Display tasks in flat table format (shows non-archived tasks by default).",
 )
 @click.option(
@@ -45,7 +45,7 @@ from taskdog.shared.click_types.field_list import FieldList
 @filter_options()
 @click.pass_context
 @handle_command_errors("displaying tasks")
-def table_command(
+def list_command(
     ctx: click.Context,
     include_archived: bool,
     status: str | None,
@@ -65,15 +65,15 @@ def table_command(
     Use --start-date and --end-date to filter by date range.
 
     Examples:
-        taskdog table                              # Show non-archived tasks
-        taskdog table -a                           # Show all tasks (including archived)
-        taskdog table --status archived            # Show only archived tasks
-        taskdog table --status completed           # Show only completed tasks
-        taskdog table -t work -t urgent            # Tasks with tag "work" OR "urgent"
-        taskdog table -s priority -r               # Sort by priority descending
-        taskdog table --fields id,name,status      # Show specific fields only
-        taskdog table --start-date 2025-10-01      # Tasks with dates >= Oct 1
-        taskdog table --start-date 2025-10-01 --end-date 2025-10-31  # October tasks
+        taskdog list                              # Show non-archived tasks
+        taskdog list -a                           # Show all tasks (including archived)
+        taskdog list --status archived            # Show only archived tasks
+        taskdog list --status completed           # Show only completed tasks
+        taskdog list -t work -t urgent            # Tasks with tag "work" OR "urgent"
+        taskdog list -s priority -r               # Sort by priority descending
+        taskdog list --fields id,name,status      # Show specific fields only
+        taskdog list --start-date 2025-10-01      # Tasks with dates >= Oct 1
+        taskdog list --start-date 2025-10-01 --end-date 2025-10-31  # October tasks
     """
     ctx_obj: CliContext = ctx.obj
 

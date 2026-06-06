@@ -1,4 +1,4 @@
-"""Add-dependency command - Add a task dependency."""
+"""`dep add` - Add a task dependency."""
 
 from __future__ import annotations
 
@@ -12,21 +12,19 @@ if TYPE_CHECKING:
     from taskdog.cli.context import CliContext
 
 
-@click.command(name="add-dependency", help="Add a dependency to a task.")
+@click.command(name="add", help="Add a dependency to a task.")
 @click.argument("task_id", type=int)
 @click.argument("depends_on_id", type=int)
 @click.pass_context
 @handle_task_errors("adding dependency")
-def add_dependency_command(
-    ctx: click.Context, task_id: int, depends_on_id: int
-) -> None:
+def add_command(ctx: click.Context, task_id: int, depends_on_id: int) -> None:
     """Add a dependency to a task.
 
     Usage:
-        taskdog add-dependency <TASK_ID> <DEPENDS_ON_ID>
+        taskdog dep add <TASK_ID> <DEPENDS_ON_ID>
 
     Examples:
-        taskdog add-dependency 5 3    # Task 5 depends on task 3
+        taskdog dep add 5 3    # Task 5 depends on task 3
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

@@ -1,4 +1,4 @@
-"""Audit logs command - Display operation history."""
+"""`audit list` - Display operation history."""
 
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ def _format_changes(row: AuditLogRowViewModel) -> str:
 
 
 @click.command(
-    name="audit-logs",
+    name="list",
     help="""Display operation history (audit logs).
 
 Shows a history of operations performed via the API, including task creates,
@@ -83,11 +83,11 @@ updates, status changes, and other modifications.
 Use filters to narrow down the logs by client name, operation type, task ID, etc.
 
 Examples:
-  taskdog audit-logs                           # Show latest 100 logs
-  taskdog audit-logs --client claude-code      # Filter by client
-  taskdog audit-logs --task 123                # Filter by task ID
-  taskdog audit-logs --operation complete_task # Filter by operation
-  taskdog audit-logs --since 2025-12-01        # Filter by date
+  taskdog audit list                           # Show latest 100 logs
+  taskdog audit list --client claude-code      # Filter by client
+  taskdog audit list --task 123                # Filter by task ID
+  taskdog audit list --operation complete_task # Filter by operation
+  taskdog audit list --since 2025-12-01        # Filter by date
 """,
 )
 @click.option(
@@ -140,7 +140,7 @@ Examples:
 )
 @click.pass_context
 @handle_command_errors("fetching audit logs")
-def audit_logs_command(
+def list_command(
     ctx: click.Context,
     client_filter: str | None,
     operation: str | None,

@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 import pytest
 from click.testing import CliRunner
 
-from taskdog.cli.commands.backup import backup_command
-from taskdog.cli.commands.restore_db import restore_db_command
+from taskdog.cli.commands.db.backup import backup_command
+from taskdog.cli.commands.db.restore import restore_command
 
 
 class TestBackupCommand:
@@ -73,7 +73,7 @@ class TestRestoreDbCommand:
         with self.runner.isolated_filesystem():
             Path("snap.db").write_bytes(b"db")
             result = self.runner.invoke(
-                restore_db_command, ["snap.db"], obj=self.cli_context, input="n\n"
+                restore_command, ["snap.db"], obj=self.cli_context, input="n\n"
             )
 
         assert result.exit_code == 0
@@ -84,7 +84,7 @@ class TestRestoreDbCommand:
         with self.runner.isolated_filesystem():
             Path("snap.db").write_bytes(b"db")
             result = self.runner.invoke(
-                restore_db_command, ["snap.db", "--yes"], obj=self.cli_context
+                restore_command, ["snap.db", "--yes"], obj=self.cli_context
             )
 
         assert result.exit_code == 0
@@ -95,7 +95,7 @@ class TestRestoreDbCommand:
     def test_restore_missing_file_errors(self):
         with self.runner.isolated_filesystem():
             result = self.runner.invoke(
-                restore_db_command, ["missing.db", "--yes"], obj=self.cli_context
+                restore_command, ["missing.db", "--yes"], obj=self.cli_context
             )
 
         assert result.exit_code != 0

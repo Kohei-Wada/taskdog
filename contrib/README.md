@@ -31,7 +31,7 @@ docker run -d -p 8000:8000 -v taskdog-data:/data taskdog-server
 
 ```bash
 # Run CLI commands via docker exec
-docker compose exec taskdog-server taskdog table
+docker compose exec taskdog-server taskdog list
 docker compose exec taskdog-server taskdog add "New task" -p 100
 
 # Load demo data
@@ -128,7 +128,7 @@ export TASKDOG_API_URL=http://127.0.0.1:8000
 
 ```bash
 # Test that CLI can connect to server
-taskdog table
+taskdog list
 
 # If you see a table (even if empty), you're ready!
 ```

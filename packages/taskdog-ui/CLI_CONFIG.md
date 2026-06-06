@@ -89,10 +89,10 @@ Environment variables have the highest priority and override settings from `cli.
 # Connect to remote server
 export TASKDOG_API_HOST=192.168.1.100
 export TASKDOG_API_PORT=3000
-taskdog table
+taskdog list
 
 # Or inline
-TASKDOG_API_HOST=192.168.1.100 taskdog table
+TASKDOG_API_HOST=192.168.1.100 taskdog list
 ```
 
 ## Priority Order
@@ -113,7 +113,7 @@ This works out-of-the-box if you start the server with default settings:
 
 ```bash
 taskdog-server  # Starts on 127.0.0.1:8000
-taskdog table   # CLI connects to 127.0.0.1:8000
+taskdog list   # CLI connects to 127.0.0.1:8000
 ```
 
 ## Custom Server Configuration
@@ -136,7 +136,7 @@ Or use environment variables:
 
 ```bash
 export TASKDOG_API_PORT=3000
-taskdog table
+taskdog list
 ```
 
 ## Remote Server Connection

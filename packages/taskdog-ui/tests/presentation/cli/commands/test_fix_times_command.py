@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 from click.testing import CliRunner
 
-from taskdog.cli.commands.fix_actual import fix_actual_command
+from taskdog.cli.commands.fix_times import fix_times_command
 from taskdog_core.domain.exceptions.task_exceptions import TaskNotFoundException
 
 
@@ -129,7 +129,7 @@ class TestFixActualCommand:
     )
     def test_fix_actual_success(self, args, expected_kwargs):
         """Test successful fix-actual operations."""
-        result = self.runner.invoke(fix_actual_command, args, obj=self.cli_context)
+        result = self.runner.invoke(fix_times_command, args, obj=self.cli_context)
 
         assert result.exit_code == 0
         self.api_client.fix_actual_times.assert_called_once_with(**expected_kwargs)
@@ -146,7 +146,7 @@ class TestFixActualCommand:
     )
     def test_clear_operations(self, args, expected_clear):
         """Test clearing actual values."""
-        result = self.runner.invoke(fix_actual_command, args, obj=self.cli_context)
+        result = self.runner.invoke(fix_times_command, args, obj=self.cli_context)
 
         assert result.exit_code == 0
         call_kwargs = self.api_client.fix_actual_times.call_args[1]
@@ -164,7 +164,7 @@ class TestFixActualCommand:
     )
     def test_validation_errors(self, args, error_message):
         """Test validation error cases."""
-        self.runner.invoke(fix_actual_command, args, obj=self.cli_context)
+        self.runner.invoke(fix_times_command, args, obj=self.cli_context)
 
         self.console_writer.validation_error.assert_called_once_with(error_message)
         self.api_client.fix_actual_times.assert_not_called()
@@ -172,7 +172,7 @@ class TestFixActualCommand:
     def test_end_before_start_error(self):
         """Test error when end is before start."""
         self.runner.invoke(
-            fix_actual_command,
+            fix_times_command,
             ["1", "--start", "2025-12-13 17:00:00", "--end", "2025-12-13 09:00:00"],
             obj=self.cli_context,
         )
@@ -188,7 +188,7 @@ class TestFixActualCommand:
         self.api_client.fix_actual_times.side_effect = TaskNotFoundException(999)
 
         result = self.runner.invoke(
-            fix_actual_command,
+            fix_times_command,
             ["999", "--start", "2025-12-13 09:00:00"],
             obj=self.cli_context,
         )
@@ -202,7 +202,7 @@ class TestFixActualCommand:
         self.api_client.fix_actual_times.side_effect = error
 
         result = self.runner.invoke(
-            fix_actual_command,
+            fix_times_command,
             ["1", "--start", "2025-12-13 09:00:00"],
             obj=self.cli_context,
         )
@@ -212,13 +212,13 @@ class TestFixActualCommand:
 
     def test_missing_task_id(self):
         """Test fix-actual without task_id argument."""
-        result = self.runner.invoke(fix_actual_command, [], obj=self.cli_context)
+        result = self.runner.invoke(fix_times_command, [], obj=self.cli_context)
         assert result.exit_code != 0
 
     def test_invalid_duration_format(self):
         """Test error with invalid duration format."""
         result = self.runner.invoke(
-            fix_actual_command,
+            fix_times_command,
             ["1", "--duration", "abc"],
             obj=self.cli_context,
         )

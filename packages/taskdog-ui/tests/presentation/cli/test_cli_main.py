@@ -34,7 +34,7 @@ class TestCliGlobalOptions:
 
         # Execute - invoke with a subcommand that triggers context setup
         # Using --help on a subcommand still triggers the group callback
-        self.runner.invoke(cli, ["table", "--help"])
+        self.runner.invoke(cli, ["list", "--help"])
 
         # Verify
         mock_api_client.assert_called_once_with(
@@ -56,7 +56,7 @@ class TestCliGlobalOptions:
         mock_api_client.return_value = mock_client_instance
 
         # Execute
-        self.runner.invoke(cli, ["--host", "192.168.1.100", "table", "--help"])
+        self.runner.invoke(cli, ["--host", "192.168.1.100", "list", "--help"])
 
         # Verify - host should be overridden, port should use config
         mock_api_client.assert_called_once_with(
@@ -78,7 +78,7 @@ class TestCliGlobalOptions:
         mock_api_client.return_value = mock_client_instance
 
         # Execute
-        self.runner.invoke(cli, ["--port", "3000", "table", "--help"])
+        self.runner.invoke(cli, ["--port", "3000", "list", "--help"])
 
         # Verify - port should be overridden, host should use config
         mock_api_client.assert_called_once_with(
@@ -101,7 +101,7 @@ class TestCliGlobalOptions:
 
         # Execute
         self.runner.invoke(
-            cli, ["--host", "192.168.1.100", "--port", "3000", "table", "--help"]
+            cli, ["--host", "192.168.1.100", "--port", "3000", "list", "--help"]
         )
 
         # Verify
@@ -124,7 +124,7 @@ class TestCliGlobalOptions:
     def test_port_validation_too_low(self):
         """Test that port 0 is rejected."""
         # Execute
-        result = self.runner.invoke(cli, ["--port", "0", "table"])
+        result = self.runner.invoke(cli, ["--port", "0", "list"])
 
         # Verify - Click returns exit code 2 for usage errors
         assert result.exit_code == 2
@@ -133,7 +133,7 @@ class TestCliGlobalOptions:
     def test_port_validation_too_high(self):
         """Test that port > 65535 is rejected."""
         # Execute
-        result = self.runner.invoke(cli, ["--port", "65536", "table"])
+        result = self.runner.invoke(cli, ["--port", "65536", "list"])
 
         # Verify - Click returns exit code 2 for usage errors
         assert result.exit_code == 2
@@ -154,14 +154,14 @@ class TestCliGlobalOptions:
         mock_api_client.return_value = mock_client_instance
 
         # Execute - test port 1
-        self.runner.invoke(cli, ["--port", "1", "table", "--help"])
+        self.runner.invoke(cli, ["--port", "1", "list", "--help"])
         mock_api_client.assert_called_with(base_url="http://127.0.0.1:1", api_key=None)
 
         # Reset mock
         mock_api_client.reset_mock()
 
         # Execute - test port 65535
-        self.runner.invoke(cli, ["--port", "65535", "table", "--help"])
+        self.runner.invoke(cli, ["--port", "65535", "list", "--help"])
         mock_api_client.assert_called_with(
             base_url="http://127.0.0.1:65535", api_key=None
         )
@@ -181,7 +181,7 @@ class TestCliGlobalOptions:
         mock_api_client.return_value = mock_client_instance
 
         # Execute
-        self.runner.invoke(cli, ["--api-key", "cli-key", "table", "--help"])
+        self.runner.invoke(cli, ["--api-key", "cli-key", "list", "--help"])
 
         # Verify - api_key should be overridden
         mock_api_client.assert_called_once_with(
@@ -203,7 +203,7 @@ class TestCliGlobalOptions:
         mock_api_client.return_value = mock_client_instance
 
         # Execute
-        self.runner.invoke(cli, ["table", "--help"])
+        self.runner.invoke(cli, ["list", "--help"])
 
         # Verify - api_key from config should be used
         mock_api_client.assert_called_once_with(
@@ -262,3 +262,37 @@ class TestLazySubcommands:
         assert command.name == name
         # The registry summary must not drift from the command's own help.
         assert command.get_short_help_str(10**6) == summary
+
+    def test_alias_resolves_to_canonical_command(self):
+        """Aliases dispatch to their canonical command and stay hidden from help."""
+        from taskdog.cli_main import COMMAND_ALIASES
+
+        result = self.runner.invoke(cli, ["--help"])
+        for alias, canonical in COMMAND_ALIASES.items():
+            assert canonical in result.output
+            # Aliases must not clutter the command listing.
+            assert f"  {alias} " not in result.output
+
+
+# Noun subgroups (dep/tag/db/audit) are themselves lazy groups; guard their
+# leaf registries the same way the top-level registry is guarded.
+NOUN_GROUPS = ["dep", "tag", "db", "audit"]
+
+
+class TestNounSubgroups:
+    """Guards for the lazy noun subgroups."""
+
+    @pytest.mark.parametrize("group_name", NOUN_GROUPS)
+    def test_subcommands_load_and_summaries_match(self, group_name):
+        """Every subcommand in a group imports cleanly with a matching summary."""
+        import_path = LAZY_SUBCOMMANDS[group_name][0]
+        modname, attr = import_path.rsplit(".", 1)
+        group = getattr(importlib.import_module(modname), attr)
+
+        assert isinstance(group, click.Group)
+        for sub_name, (sub_path, summary) in group.lazy_subcommands.items():
+            sub_modname, sub_attr = sub_path.rsplit(".", 1)
+            command = getattr(importlib.import_module(sub_modname), sub_attr)
+            assert isinstance(command, click.Command)
+            assert command.name == sub_name
+            assert command.get_short_help_str(10**6) == summary

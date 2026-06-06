@@ -1,4 +1,4 @@
-"""Remove-dependency command - Remove a task dependency."""
+"""`dep rm` - Remove a task dependency."""
 
 from __future__ import annotations
 
@@ -12,21 +12,19 @@ if TYPE_CHECKING:
     from taskdog.cli.context import CliContext
 
 
-@click.command(name="remove-dependency", help="Remove a dependency from a task.")
+@click.command(name="rm", help="Remove a dependency from a task.")
 @click.argument("task_id", type=int)
 @click.argument("depends_on_id", type=int)
 @click.pass_context
 @handle_task_errors("removing dependency")
-def remove_dependency_command(
-    ctx: click.Context, task_id: int, depends_on_id: int
-) -> None:
+def remove_command(ctx: click.Context, task_id: int, depends_on_id: int) -> None:
     """Remove a dependency from a task.
 
     Usage:
-        taskdog remove-dependency <TASK_ID> <DEPENDS_ON_ID>
+        taskdog dep rm <TASK_ID> <DEPENDS_ON_ID>
 
     Examples:
-        taskdog remove-dependency 5 3    # Remove task 3 from task 5's dependencies
+        taskdog dep rm 5 3    # Remove task 3 from task 5's dependencies
     """
     ctx_obj: CliContext = ctx.obj
     console_writer = ctx_obj.console_writer

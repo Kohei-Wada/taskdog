@@ -86,7 +86,7 @@ You'll need to manage the server process yourself (e.g., `taskdog-server &`).
 
 ```bash
 taskdog add "My first task" --priority 10
-taskdog table
+taskdog list
 taskdog gantt
 taskdog tui
 ```
