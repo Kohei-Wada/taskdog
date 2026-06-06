@@ -139,6 +139,32 @@ workload_moderate_hours = 8.0
 # - Compact view: min_display_days = 28 (4 weeks)
 
 # =============================================================================
+# TUI Keybindings
+# =============================================================================
+#
+# Remap TUI keys by mapping a binding id to a key string. Any id you omit
+# keeps its default key. Unknown ids are ignored with a warning on startup,
+# and a key that collides with another binding is reported at runtime.
+# Key strings follow Textual's syntax (e.g. "ctrl+s", "f5", "question_mark").
+#
+# Binding ids and their default keys:
+#   quit                "q"        add                  "a"
+#   start               "s"        pause                "P"
+#   done                "d"        cancel               "c"
+#   reopen              "R"        rm (archive)         "x"
+#   hard_delete         "X"        refresh              "r"
+#   show (info)         "i"        edit                 "e"
+#   fix_actual          "f"        note                 "v"
+#   show_search         "/"        hide_search          "escape"
+#   toggle_sort_reverse "ctrl+t"   show_help            "?"
+#   stats               "S"        toggle_maximize      "z"
+#   toggle_gantt_filter "t"
+
+[keybindings]
+# Example: remap "Start" from "s" to "ctrl+s".
+# start = "ctrl+s"
+
+# =============================================================================
 # Environment Variables
 # =============================================================================
 #

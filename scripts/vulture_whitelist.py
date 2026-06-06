@@ -20,3 +20,5 @@ _.matches  # unused method (packages/taskdog-ui/src/taskdog/tui/widgets/task_sea
 VI_ALL_BINDINGS  # unused variable (packages/taskdog-ui/src/taskdog/tui/widgets/vi_navigation_mixin.py:96)
 VI_SCROLL_BINDINGS  # unused variable (packages/taskdog-ui/src/taskdog/tui/widgets/vi_navigation_mixin.py:105)
 VI_SCROLL_ALL_BINDINGS  # unused variable (packages/taskdog-ui/src/taskdog/tui/widgets/vi_navigation_mixin.py:116)
+_.handle_bindings_clash  # Textual override called by the framework (packages/taskdog-ui/src/taskdog/tui/app.py)
+node  # Textual override signature param (packages/taskdog-ui/src/taskdog/tui/app.py)

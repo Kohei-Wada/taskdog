@@ -59,6 +59,25 @@ from taskdog_core.domain.exceptions.task_exceptions import (
 logger = logging.getLogger(__name__)
 
 
+def resolve_keymap(
+    config_keybindings: dict[str, str], valid_ids: set[str]
+) -> tuple[dict[str, str], list[str]]:
+    """Split user keybindings into a Textual keymap and unknown binding ids.
+
+    Entries whose id matches a real binding become a keymap (binding id -> key)
+    passed to ``App.set_keymap``; unrecognised ids are returned separately so the
+    caller can warn and fall back to the default keys.
+    """
+    keymap: dict[str, str] = {}
+    unknown: list[str] = []
+    for binding_id, key in config_keybindings.items():
+        if binding_id in valid_ids:
+            keymap[binding_id] = key
+        else:
+            unknown.append(binding_id)
+    return keymap, unknown
+
+
 class TaskdogTUI(App):  # type: ignore[type-arg]
     """Taskdog TUI application."""
 
@@ -71,15 +90,24 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Quit",
             show=True,
             tooltip="Quit the app and return to the command prompt",
+            id="quit",
         ),
-        Binding("a", "add", "Add", show=True, tooltip="Create a new task"),
-        Binding("s", "start", "Start", show=False, tooltip="Start the selected task"),
+        Binding("a", "add", "Add", show=True, tooltip="Create a new task", id="add"),
+        Binding(
+            "s",
+            "start",
+            "Start",
+            show=False,
+            tooltip="Start the selected task",
+            id="start",
+        ),
         Binding(
             "P",
             "pause",
             "Pause",
             show=False,
             tooltip="Pause the selected task and reset to PENDING status",
+            id="pause",
         ),
         Binding(
             "d",
@@ -87,9 +115,15 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Done",
             show=False,
             tooltip="Mark the selected task as completed",
+            id="done",
         ),
         Binding(
-            "c", "cancel", "Cancel", show=False, tooltip="Cancel the selected task"
+            "c",
+            "cancel",
+            "Cancel",
+            show=False,
+            tooltip="Cancel the selected task",
+            id="cancel",
         ),
         Binding(
             "R",
@@ -97,6 +131,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Reopen",
             show=False,
             tooltip="Reopen a completed or canceled task",
+            id="reopen",
         ),
         Binding(
             "x",
@@ -104,6 +139,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Archive",
             show=False,
             tooltip="Archive the selected task (soft delete)",
+            id="rm",
         ),
         Binding(
             "X",
@@ -111,6 +147,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Delete",
             show=False,
             tooltip="Permanently delete the selected task",
+            id="hard_delete",
         ),
         Binding(
             "r",
@@ -118,6 +155,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Refresh",
             show=True,
             tooltip="Refresh the task list from the server",
+            id="refresh",
         ),
         Binding(
             "i",
@@ -125,6 +163,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Info",
             show=False,
             tooltip="Show detailed information about the selected task",
+            id="show",
         ),
         Binding(
             "e",
@@ -132,6 +171,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Edit",
             show=False,
             tooltip="Edit the selected task's properties",
+            id="edit",
         ),
         Binding(
             "f",
@@ -139,6 +179,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Fix Time",
             show=False,
             tooltip="Fix actual start/end times or duration for the selected task",
+            id="fix_actual",
         ),
         Binding(
             "v",
@@ -146,10 +187,17 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Edit Note",
             show=False,
             tooltip="Edit markdown notes for the selected task",
+            id="note",
         ),
         Binding(
-            "/", "show_search", "Search", show=False, tooltip="Search for tasks by name"
+            "/",
+            "show_search",
+            "Search",
+            show=False,
+            tooltip="Search for tasks by name",
+            id="show_search",
         ),
+        # Fixed alias for show_search (not user-remappable; remap "show_search").
         Binding(
             "ctrl+r",
             "show_search",
@@ -163,6 +211,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Clear Search",
             show=False,
             tooltip="Clear the search filter and show all tasks",
+            id="hide_search",
         ),
         Binding(
             "ctrl+t",
@@ -170,6 +219,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Toggle Sort",
             show=False,
             tooltip="Toggle sort direction (ascending ⇔ descending)",
+            id="toggle_sort_reverse",
         ),
         Binding(
             "?",
@@ -177,6 +227,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Help",
             show=True,
             tooltip="Show help screen with keybindings and usage instructions",
+            id="show_help",
         ),
         Binding(
             "S",
@@ -184,6 +235,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Stats",
             show=True,
             tooltip="Show task statistics dashboard",
+            id="stats",
         ),
         Binding(
             "z",
@@ -191,6 +243,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Zoom",
             show=False,
             tooltip="Zoom: Toggle maximize/minimize for the focused widget",
+            id="toggle_maximize",
         ),
         Binding(
             "t",
@@ -198,6 +251,7 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
             "Gantt Filter",
             show=False,
             tooltip="Toggle search filter for Gantt chart",
+            id="toggle_gantt_filter",
         ),
     ]
 
@@ -352,6 +406,8 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
 
     async def on_mount(self) -> None:
         """Called when app is mounted."""
+        self._apply_custom_keybindings()
+
         # Apply theme from config with fallback for invalid themes
         try:
             self.theme = self._theme
@@ -390,6 +446,26 @@ class TaskdogTUI(App):  # type: ignore[type-arg]
         """Called when app is unmounted."""
         # Disconnect WebSocket
         await self.websocket_client.disconnect()
+
+    def _apply_custom_keybindings(self) -> None:
+        """Override default keys from ``cli.toml [keybindings]`` (id -> key)."""
+        valid_ids = {b.id for b in self.BINDINGS if isinstance(b, Binding) and b.id}
+        keymap, unknown = resolve_keymap(self._cli_config.keybindings, valid_ids)
+        if unknown:
+            self.notify(
+                f"Unknown keybinding id(s) in cli.toml: {', '.join(sorted(unknown))}",
+                severity="warning",
+            )
+        if keymap:
+            self.set_keymap(keymap)
+
+    def handle_bindings_clash(self, clashed_bindings: set[Binding], node: Any) -> None:
+        """Warn when custom keybindings collide with existing ones."""
+        keys = sorted({b.key for b in clashed_bindings})
+        self.notify(
+            f"Keybinding clash on: {', '.join(keys)}. Check cli.toml [keybindings].",
+            severity="warning",
+        )
 
     def _handle_api_error(
         self, error: ServerConnectionError | AuthenticationError | ServerError

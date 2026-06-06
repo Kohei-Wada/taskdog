@@ -114,7 +114,8 @@ class CliConfig:
         notes: Notes settings (template path, etc.)
         input_defaults: UI input completion defaults (datetime fields)
         gantt: Gantt chart display settings (workload thresholds)
-        keybindings: Future: Custom keybindings for TUI (not yet implemented)
+        keybindings: Custom TUI keybindings, mapping a binding id to a key
+            string (e.g. ``{"start": "ctrl+s"}``). Overrides the default keys.
     """
 
     api: CliApiConfig = field(default_factory=CliApiConfig)
