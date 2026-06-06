@@ -96,7 +96,7 @@ target-version = "py312"
 src = ["src", "tests"]
 # vulture whitelist is a list of bare names for vulture, not real Python.
 # force-exclude makes ruff honor this even when pre-commit passes the file explicitly.
-extend-exclude = ["vulture_whitelist.py"]
+extend-exclude = ["scripts/vulture_whitelist.py"]
 force-exclude = true
 
 [tool.ruff.lint]
@@ -161,7 +161,7 @@ section-order = [
 # Dead-code detection
 [tool.vulture]
 min_confidence = 60
-paths = ["packages", "vulture_whitelist.py"]
+paths = ["packages", "scripts/vulture_whitelist.py"]
 exclude = ["*/migrations/*", "*/tests/*", "*/build/*", "*/.venv/*"]
 # Framework-registered callables are reached dynamically, not by direct call.
 ignore_decorators = [
